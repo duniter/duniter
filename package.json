@@ -1,0 +1,27 @@
+{
+  "name": "nodecoin",
+  "version": "0.0.1",
+  "description": "OpenUDC-like implementation using Node.js",
+  "main": "lib/main.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:c-geek/nodecoin.git"
+  },
+  "keywords": [
+    "openudc",
+    "crypto-currency"
+  ],
+  "author": "Cedric Moreau <cem.moreau@gmail.com>",
+  "license": "GPL v2+",
+  "readmeFilename": "readme.md",
+  "gitHead": "d5185dc43a4ef2ed9fc0fd2d8ee46253d32e6fca",
+  "bugs": {
+    "url": "https://github.com/c-geek/nodecoin/issues"
+  }
+}

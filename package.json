@@ -23,5 +23,9 @@
   "gitHead": "b9f14112ebab9c30bf07607a0e3f8606098fc602",
   "bugs": {
     "url": "https://github.com/c-geek/nodecoin/issues"
+  },
+  "devDependencies": {
+    "mocha": "",
+    "should": ""
   }
 }

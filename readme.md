@@ -1,18 +1,19 @@
 # NodeCoin [![Build Status](https://api.travis-ci.org/c-geek/nodecoin.png)](https://api.travis-ci.org/c-geek/nodecoin.png)
 
-NodeCoin aims to be a free implementation of the [OpenUDC protocol](https://github.com/Open-UDC/open-udc), which allows to create new crypto-currencies based on individuals and exchange in those currencies.
+NodeCoin aims to be a free implementation of the [OpenUDC protocol](https://github.com/Open-UDC/open-udc), which allows to create new crypto-currencies based on individuals and Universal Dividend.
 
 ## Oh, yet another Bitcoin-like ?
 
-Well, NodeCoin allows to create new crypto-currencies, which Bitcoin *is*. But it has completely different fundation principles, such as individuals, trust and Universal Dividend (i.e.: money issuance directly on every individual).
-Actually, NodeCoin has a theoretical reference called [Relativity Theory of Money (french)](http://wiki.creationmonetaire.info/), the same OpenUDC has. This theory demonstrates that a currency which aims at respecting individuals economic liberties MUST implement the Universal Dividend, which is the only way to allow both a spatial (every living individual) and temporal (individuals yet to be born) symmetry in money issuance.
+Well, NodeCoin allows to create and use a new crypto-currency, just like Bitcoin *is*. But NodeCoin has completely different fundation principles, such as individuals, web of trust and Universal Dividend (i.e.: money issuance directly on every individual).
+Actually, NodeCoin has a theoretical reference called [Relativity Theory of Money (french)](http://wiki.creationmonetaire.info/). This theory demonstrates that a currency which aims at respecting individuals economic liberties MUST implement the Universal Dividend, which is the only way to allow both a spatial (every living individual) and temporal (individuals yet to be born) symmetry in money issuance.
 
-## Hmm ... and how do you plan to implement «this» ?
+## How to implement such a system ?
 
-Things are rather simple : as we want to implement Universal Dividend, we need to strongly authenticate individuals who belong to a money community, make them write and sign a Monetary Contract describing the money rules (notably the Universal Dividend amount and its periodicity) and finally give them tools to ensure everyone is playing the game (and ban them if some do not).
+Things are rather simple : as we want to implement Universal Dividend for money issuance, we need to strongly authenticate individuals in a monetary community, make them write and sign a Monetary Contract describing the money rules (notably the Universal Dividend amount and its periodicity) and finally give them tools to ensure everyone is playing the game (and ban some of them if they do not).
 For that purpose, OpenUDC and NodeCoin lean on OpenPGP mecanisms.
 
-### First concept : a monetary Web of Trust
+### First concept : the monetary Web of Trust (WoT)
+
 
 ### Second concept : the Monetary Contract
 

@@ -1,4 +1,4 @@
-# NodeCoin
+# NodeCoin [![Build Status](https://api.travis-ci.org/c-geek/nodecoin.png)](https://api.travis-ci.org/c-geek/nodecoin.png)
 
 NodeCoin aims to be a free implementation of the OpenUDC protocol, as defined [in its GitHub repository](https://github.com/Open-UDC/open-udc).
 

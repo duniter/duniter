@@ -17,8 +17,8 @@ The whole idea leans on OpenPGP mecanisms. The fundamental element is: OpenPGP a
 The whole basis of OpenUDC (and thus, NodeCoin) is made up of individuals who chose to trust each other and constitute a community, aka. Web of Trust. Note that *trust* does not mean considering every member as a trustworthy person: it only means that the community trusts each member is a unique and living person.
 
 Once a WoT is constituted, new members may only join by cooptation of existing members in the WoT. Cooptation is done throught a two step process:
-1. signatures from the current WoT members (a minimal amount of signatures recognizing the new member is required)
-2. explicit request of the new member to integrate the WoT
+	1. signatures from the current WoT members (a minimal amount of signatures recognizing the new member is required)
+	2. explicit request of the new member to integrate the WoT
 
 The acceptation of members is formalized in a special document called *Monetary Contract*.
 
@@ -40,6 +40,10 @@ Transactions are the last entity managed by NodeCoin: a transaction is the link 
 
 NodeCoin only *aims* to be an implementation of the OpenUDC protocol, but it is not. Firstly because OpenUDC protocol is still a in drafting state, and secondly because NodeCoin have some divergences in its mecanisms.
 Consequently, NodeCoin proposes its own protocol which differs with OpenUDC. However, we hope that those protocols will join at some point.
+
+## Get involved in NodeCoin project
+
+For the moment NodeCoin is developed only by its author. If you wish to participate/debate on it, you may join OpenUDC XMPP chatroom (open-udc@muc.jappix.com) on [OpenUDC blog](http://www.openudc.org/) (chat is available on the bottom-right corner of the blog) and contact *cgeek*.
 
 # License
 

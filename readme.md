@@ -1,29 +1,40 @@
 # NodeCoin [![Build Status](https://api.travis-ci.org/c-geek/nodecoin.png)](https://api.travis-ci.org/c-geek/nodecoin.png)
 
-NodeCoin aims to be a free implementation of the [OpenUDC protocol](https://github.com/Open-UDC/open-udc), which allows to create new crypto-currencies based on individuals and Universal Dividend.
+NodeCoin aims to be a free implementation of the [OpenUDC protocol](https://github.com/Open-UDC/open-udc), which allows to create new P2P crypto-currencies based on individuals and Universal Dividend.
 
 ## Oh, yet another Bitcoin-like ?
 
 Well, NodeCoin allows to create and use a new crypto-currency, just like Bitcoin *is*. But NodeCoin has completely different fundation principles, such as individuals, web of trust and Universal Dividend (i.e.: money issuance directly on every individual).
+
 Actually, NodeCoin has a theoretical reference called [Relativity Theory of Money (french)](http://wiki.creationmonetaire.info/). This theory demonstrates that a currency which aims at respecting individuals economic liberties MUST implement the Universal Dividend, which is the only way to allow both a spatial (every living individual) and temporal (individuals yet to be born) symmetry in money issuance.
 
 ## How to implement such a system ?
 
-The whole idea leans on OpenPGP mecanisms. The fundamental element is: OpenPGP allows to strongly authenticate individuals and produce signed data. Hence, it is notably possible for them to create an authentified community by a collective signing process, and define rules within it. In NodeCoin, this is materialized by a Monetary Contract defining individuals of the community and the money they can create.
+The whole idea leans on OpenPGP mecanisms. The fundamental element is: OpenPGP allows to strongly authenticate individuals and produce signed data. Hence, it is notably possible for them to create an authentified community by a collective signing process, and define rules within it. In NodeCoin, this is materialized by a Monetary Contract defining individuals of the community and the money they may create.
 
 ### The monetary Web of Trust (WoT)
 
-The very first data written in a Monetary Contract is the list of individuals constituing the community, aka. Web of Trust. Once a WoT is constituted, new members may join only by cooptation of existing members of the WoT. This cooptation is materialized by the common signin process of OpenPGP, with special OpenUDC data in it. When enough members signed a candidate, he may join the community by expressing it in a formalized way.
+The whole basis of OpenUDC (and thus, NodeCoin) is made up of individuals who chose to trust each other and constitute a community, aka. Web of Trust. Note that *trust* does not mean considering every member as a trustworthy person: it only means that the community trusts each member is a unique and living person.
+
+Once a WoT is constituted, new members may only join by cooptation of existing members in the WoT. Cooptation is done throught a two step process:
+1. signatures from the current WoT members (a minimal amount of signatures recognizing the new member is required)
+2. explicit request of the new member to integrate the WoT
+
+The acceptation of members is formalized in a special document called *Monetary Contract*.
 
 ### The Monetary Contract
 
-This document not only details the WoT composition, it also allows to define the money that may be created by individuals. More precisely, such a contract is a chained list of amendments, each defining its own data which may concern individuals, money, or both.
+As said earlier, this document details the WoT composition, but it also allows to define money that may be created by individuals. More precisely, this is the commonly agreed reference all the monetary data is based upon.
 
-Each amendment requires to be signed by at least 2/3 of the WoT voters to be considered as valid, and each amendment redefines the voters list so the democratic process should never be stuck.
+Such a contract is actually a chained list of amendments, each amendement defining its own data which may concern individuals, money, or both. Each amendment requires to be signed by at least 2/3 of the WoT voters to be considered as valid. Furthermore, each amendment also specifies a voters list reflecting people who desire to participate in the democratic process.
 
 ### Money issuance
 
+Money issuance is made by WoT members, in accordance with the Monetary Contract specifications. NodeCoin uses a divisionary money system divided in 3 decimal unities (1, 2, 5) completed with a POW 10 parameter. When issuing money, each individual may create the unities he desires, in the limits established by the Monetary Contract. Newly issued money is not usable as such, it needs to be affected to someone by its issuer throught a transaction process.
+
 ### Transactions
+
+Transactions are the last entity managed by NodeCoin: a transaction is the link between money and its owner, it materializes money ownership. Clearly, this is the last step after defining individuals and money, and maybe the most sensible part of NodeCoin. Indeed, NodeCoin assumes that transactions, in a decentralized system, can't be fully managed by each peer. So we need mecanisms to ensure that members do not cheat, and if they try, to _at least_ detect it.
 
 ## Disclaimer
 

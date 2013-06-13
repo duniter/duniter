@@ -122,6 +122,28 @@ Here is a description of each field:
 
 ## Transactions
 
+Transaction is a message with the following structure:
+
+	Version: VERSION
+	Sender: SENDER_FOOTPRINT
+	Number: INCREMENT
+	Recipient: RECIPIENT_FOOTPRINT
+	Coins:
+	COIN_ID1, TRANSACTION_ID1
+	COIN_ID2, TRANSACTION_ID1
+	COIN_ID3, TRANSACTION_ID7
+	...
+
+Here is a description of each field:
+
+* `Version` denotes the current structure version. This number may change in cases of evolution of this message structure.
+* `Sender` is the current owner footprint (an OpenPGP public key footprint, not necessarily a WoT member) who owns the coins to be sent.
+* `Number` is an increment number used for signing chain. This number MUST be incremented for a given owner each time he makes a transaction.
+* `Recipient` is the recipient footprint (an OpenPGP public key footprint, not necessarily a WoT member) to whom the coins are sent.
+* `Coins` is a list of coins that are to be sent. Each line is made up of a COIN_ID (identifying a coin), a semi-colon and a TRANSACTION_ID justifying the coin ownership.
+
+It is obvious that a coin a sender does not own CAN NOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.
+
 # Exemples of data structures
 
 # HTTP API

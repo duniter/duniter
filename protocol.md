@@ -6,7 +6,7 @@ Like Bitcoin, NodeCoin follows its own protocol to exchange monetary data (indiv
 
 ## Individuals
 
-An individual is represented by a OpenUDC certificate, which basically is an OpenPGP certificate (i.e.: an OpenPGP public key) with a OpenUDC-specific string for the comment field for one of its OpenPGP UID.
+An individual is represented by an OpenUDC certificate, which basically is an OpenPGP certificate (an OpenPGP public key) with an OpenUDC-specific string for the comment field for one of its OpenPGP UID.
 
 An OpenUDC certificate MUST be entirely stored, not just some parts of it. It may either be stored in binary or ASCII-Armored format (see [OpenPGP RFC (4880)](http://tools.ietf.org/html/rfc4880) for more details).
 
@@ -80,21 +80,21 @@ The structure of an amendment is the following:
 	+NEW_INDIVIDUAL_FPR
 	-LEAVING_INDIVIDUAL_FPR
 
-All fields are not mandatory for a given amendment. Note that this precise structure is the version 1 amendment structure, and that any other structure may be proposed with a different version number. The only requirement is to a `Version: VERSION` starting the text structure.
+All fields are not mandatory for a given amendment. Note that this precise structure is the version 1 amendment structure, and that any other structure may be proposed with a different version number. The only requirement is to have a `Version: VERSION` starting the text structure.
 
 Here is a description of each field:
 
-	* `Version` denotes the current structure version. This number may change in cases of evolution of the amendment structure.
-	* `Currency` contains the name of the currency. This is used to identify the target of the amendment in case of multiple moneys using NodeCoin protocol.
-	* `Number` references the position of the amendment in the amendment chain (aka. Monetary Contract). Initial amendment has the value '0'.
-	* `VotersRoot` is used to authenticate the list of members whose vote is required to accept this amendment. It contains the root hash of the Merkle tree listing the members's fingerprints.
-	* `VotersCount` is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree, hence makes harder to generate a fake Merkle tree with the same hash.
-	* `PreviousHash` is mandatory if `Number` is positive. It is a hash of all the content of an amendment, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough, `PreviousHash` is an authentication mecanism).
-	* `UniversalDividend` is a positive number if provided. It defines the amount of money each member of the community may create.
-	* `CoinMinimalPower` restricts the money issuance to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created. This field is used to avoid abuses linked to money issuance.
-	* `MembersRoot` is the root hash of a Merkle tree listing the members of the WoT. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle.
-	* `MembersCount` is used in combination of `MembersRoot`, just like `VotersCount` is with `VotersRoot`.
-	* `MembersChanges` contains a list of members joining or leaving the WoT. A joining member has a line starting with '+' and a leaving one with '-'.
+* `Version` denotes the current structure version. This number may change in cases of evolution of the amendment structure.
+* `Currency` contains the name of the currency. This is used to identify the target of the amendment in case of multiple moneys using NodeCoin protocol.
+* `Number` references the position of the amendment in the amendment chain (aka. Monetary Contract). Initial amendment has the value '0'.
+* `VotersRoot` is used to authenticate the list of members whose vote is required to accept this amendment. It contains the root hash of the Merkle tree listing the members's fingerprints.
+* `VotersCount` is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree, hence makes harder to generate a fake Merkle tree with the same hash.
+* `PreviousHash` is mandatory if `Number` is positive. It is a hash of all the content of an amendment, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough, `PreviousHash` is an authentication mecanism).
+* `UniversalDividend` is a positive number if provided. It defines the amount of money each member of the community may create.
+* `CoinMinimalPower` restricts the money issuance to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created. This field is used to avoid abuses linked to money issuance.
+* `MembersRoot` is the root hash of a Merkle tree listing the members of the WoT. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle.
+* `MembersCount` is used in combination of `MembersRoot`, just like `VotersCount` is with `VotersRoot`.
+* `MembersChanges` contains a list of members joining or leaving the WoT. A joining member has a line starting with '+' and a leaving one with '-'.
 
 ## Money issuances
 ## Transactions

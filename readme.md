@@ -9,17 +9,21 @@ Actually, NodeCoin has a theoretical reference called [Relativity Theory of Mone
 
 ## How to implement such a system ?
 
-Things are rather simple : as we want to implement Universal Dividend for money issuance, we need to strongly authenticate individuals in a monetary community, make them write and sign a Monetary Contract describing the money rules (notably the Universal Dividend amount and its periodicity) and finally give them tools to ensure everyone is playing the game (and ban some of them if they do not).
-For that purpose, OpenUDC and NodeCoin lean on OpenPGP mecanisms.
+The whole idea leans on OpenPGP mecanisms. The fundamental element is: OpenPGP allows to strongly authenticate individuals and produce signed data. Hence, it is notably possible for them to create an authentified community by a collective signing process, and define rules within it. In NodeCoin, this is materialized by a Monetary Contract defining individuals of the community and the money they can create.
 
-### First concept : the monetary Web of Trust (WoT)
+### The monetary Web of Trust (WoT)
 
+The very first data written in a Monetary Contract is the list of individuals constituing the community, aka. Web of Trust. Once a WoT is constituted, new members may join only by cooptation of existing members of the WoT. This cooptation is materialized by the common signin process of OpenPGP, with special OpenUDC data in it. When enough members signed a candidate, he may join the community by expressing it in a formalized way.
 
-### Second concept : the Monetary Contract
+### The Monetary Contract
 
-### Third concept : money issuance
+This document not only details the WoT composition, it also allows to define the money that may be created by individuals. More precisely, such a contract is a chained list of amendments, each defining its own data which may concern individuals, money, or both.
 
-### Last concept : transactions
+Each amendment requires to be signed by at least 2/3 of the WoT voters to be considered as valid, and each amendment redefines the voters list so the democratic process should never be stuck.
+
+### Money issuance
+
+### Transactions
 
 ## Disclaimer
 

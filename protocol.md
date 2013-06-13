@@ -147,3 +147,33 @@ It is obvious that a coin a sender does not own CAN NOT be sent by him. That is 
 # Exemples of data structures
 
 # HTTP API
+
+This HTTP API is mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit NodeCoin specificities.
+
+	http[s]://Node[:port]/...
+	|-- pks/
+	|   |-- add
+	|   `-- lookup
+	`-- udc/
+	    |-- amendments/
+	    |   |-- submit
+	    |   `-- view/
+	    |       `-- [AMENDMENT_ID]/
+	    |           |-- members
+	    |           |-- self
+	    |           `-- voters
+	    |-- coins/
+	    |   |-- submit
+	    |   `-- view/
+	    |       `-- [COIN_ID]
+	    |-- peer/
+	    |   |-- list
+	    |   |-- register
+	    |   `-- self
+	    `-- transactions/
+	        |-- list
+	        |-- merkle
+	        |-- search
+	        |-- submit
+	        `-- view/
+	            `-- [TRANSACTION_ID]

@@ -97,6 +97,29 @@ Here is a description of each field:
 * `MembersChanges` contains a list of members joining or leaving the WoT. A joining member has a line starting with '+' and a leaving one with '-'.
 
 ## Money issuances
+
+Money issuance is a simple message to create a new coin. It has the following structure:
+
+	Version: VERSION
+	Issuer: INDIVIDUAL_FOOTPRINT
+	Number: COIN_INCREMENT_NUMBER
+	Unity: COINT_ONE_TO_NINE_VALUE
+	Power: COIN_DECIMAL_POWER
+	AmendmentNumber: AMENDMENT_NUMBER
+	AmendmentHash: AMENDMENT_HASH
+	FusionCoins: COIN1_ID, COIN2_ID, ...
+
+Here is a description of each field:
+
+* `Version` denotes the current structure version. This number may change in cases of evolution of this message structure.
+* `Issuer` is the footprint of a member (the issuer). It is the 160 bits footprint of its OpenUDC public key.
+* `Number` is an increment value indentifying this particular coin among those issued by this member. When a member issues a new coin, he MUST increment this value. The couple `Issuer` and `Number` MUST be unique and identifies a coin in the monetary system.
+* `Unity` is a decimal value between 1 and 9. This value is multiplied by 10^`Power` to form the monetary value of the coin.
+* `Power` is a decimal and positive value.
+* `AmendmentNumber` if present is the value of the `Number` field of an amendment declaring a Universal Dividend. It is the justification for creating this coin.
+* `AmendmentHash` is the hash of the pointed amendment, just to authentify the targeted amendment.
+* `FusionCoins` if present lists the coins used for the fusion. This field can't be present if `AmendNumber` already is.
+
 ## Transactions
 
 # Exemples of data structures

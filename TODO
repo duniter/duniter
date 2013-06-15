@@ -1,22 +1,22 @@
 NodeCoin TODO list
 
 Documentation:
- ✔ Readme - Presentation @done (13-06-13 15:28)
+ ☐ Readme - Presentation
 
   Protocol:
 
    define NodeCoin messages (data structures):
-    ☐ OpenUDC certificates (individuals)
-    ☐ NodeCoin amendments
-    ☐ NodeCoin money issuances
-    ☐ NodeCoin transactions
+    ✔ OpenUDC certificates (individuals) @done (13-06-16 01:05)
+    ✔ NodeCoin amendments @done (13-06-16 01:05)
+    ✔ NodeCoin money issuances @done (13-06-16 01:05)
+    ✔ NodeCoin transactions @done (13-06-16 01:05)
    define NodeCoin HTTP API:
-    ☐ Submit/Search for OpenUDC certificates
-    ☐ Submit/Consult NodeCoin amendments
-    ☐ Submit/Consult NodeCoin money issuances
-    ☐ Submit/Consult NodeCoin transactions
+    ✔ Submit/Search for OpenUDC certificates @done (13-06-16 01:05)
+    ✔ Submit/Consult NodeCoin amendments @done (13-06-16 01:05)
+    ✔ Submit/Consult NodeCoin money issuances @done (13-06-16 01:05)
+    ✔ Submit/Consult NodeCoin transactions @done (13-06-16 01:05)
    define NodeCoin peering system:
-    ☐ Imagine and design a system using NodeCoin HTTP API
+    ✔ Imagine and design a system using NodeCoin HTTP API @done (13-06-16 01:06)
 
 Implementation:
   This part yet need to be explored after protocol definition

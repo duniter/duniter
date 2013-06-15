@@ -101,7 +101,7 @@ Here is a description of each field:
 Money issuance is a simple message to create a new coin. It has the following structure:
 
 	Version: VERSION
-	Issuer: INDIVIDUAL_FOOTPRINT
+	Issuer: INDIVIDUAL_FINGERPRINT
 	Number: COIN_INCREMENT_NUMBER
 	Unity: COINT_ONE_TO_NINE_VALUE
 	Power: COIN_DECIMAL_POWER
@@ -112,7 +112,7 @@ Money issuance is a simple message to create a new coin. It has the following st
 Here is a description of each field:
 
 * `Version` denotes the current structure version. This number may change in cases of evolution of this message structure.
-* `Issuer` is the footprint of a member (the issuer). It is the 160 bits footprint of its OpenUDC public key.
+* `Issuer` is the fingerprint of a member (the issuer). It is the 160 bits fingerprint of its OpenUDC public key.
 * `Number` is an increment value indentifying this particular coin among those issued by this member. When a member issues a new coin, he MUST increment this value. The couple `Issuer` and `Number` MUST be unique and identifies a coin in the monetary system.
 * `Unity` is a decimal value between 1 and 9. This value is multiplied by 10^`Power` to form the monetary value of the coin.
 * `Power` is a decimal and positive value.
@@ -125,9 +125,9 @@ Here is a description of each field:
 Transaction is a message with the following structure:
 
 	Version: VERSION
-	Sender: SENDER_FOOTPRINT
+	Sender: SENDER_FINGERPRINT
 	Number: INCREMENT
-	Recipient: RECIPIENT_FOOTPRINT
+	Recipient: RECIPIENT_FINGERPRINT
 	Coins:
 	COIN_ID1, TRANSACTION_ID1
 	COIN_ID2, TRANSACTION_ID1
@@ -137,9 +137,9 @@ Transaction is a message with the following structure:
 Here is a description of each field:
 
 * `Version` denotes the current structure version. This number may change in cases of evolution of this message structure.
-* `Sender` is the current owner footprint (an OpenPGP public key footprint, not necessarily a WoT member) who owns the coins to be sent.
+* `Sender` is the current owner fingerprint (an OpenPGP public key fingerprint, not necessarily a WoT member) who owns the coins to be sent.
 * `Number` is an increment number used for signing chain. This number MUST be incremented for a given owner each time he makes a transaction.
-* `Recipient` is the recipient footprint (an OpenPGP public key footprint, not necessarily a WoT member) to whom the coins are sent.
+* `Recipient` is the recipient fingerprint (an OpenPGP public key fingerprint, not necessarily a WoT member) to whom the coins are sent.
 * `Coins` is a list of coins that are to be sent. Each line is made up of a COIN_ID (identifying a coin), a semi-colon and a TRANSACTION_ID justifying the coin ownership.
 
 It is obvious that a coin a sender does not own CAN NOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.

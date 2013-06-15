@@ -188,9 +188,9 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 
 Merkle URL is a special kind of URL applicable for resources `udc/view/[AMENDMENT_ID]/members`, `udc/view/[AMENDMENT_ID]/voters`, `udc/transactions/recipient/[OPENPGP_FINGERPRINT]`, `udc/transactions/sender/[OPENPGP_FINGERPRINT]`, `udc/transactions/coin/[COIN_ID]`.
 
-Such kind of URL returns Merkle tree hashes informations. In NodeCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `udc/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propaged to the root hash. Change is then easy to detect.
+Such kind of URL returns Merkle tree hashes informations. In NodeCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `udc/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
-For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. NodeCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of theme.
+For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. NodeCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
 
 Here is an example of members Merkle tree with 5 members (taken from [Tree Hash EXchange format (THEX)](http://web.archive.org/web/20080316033726/http://www.open-content.net/specs/draft-jchapweske-thex-02.html):
 
@@ -206,11 +206,11 @@ Here is an example of members Merkle tree with 5 members (taken from [Tree Hash 
   	  A  		B 		C   	  D  	 E
 
 
-  Note: H() is some hash function
+  	Note: H() is some hash function
 
-With such a tree structure, NodeCoin consider the tree has exactly 6 nodes: [ROOT,H,E,F,G,E]. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of level 1 of another server LS2 (H and E, the second level): it requires nodes interval [1;2].
+With such a tree structure, NodeCoin consider the tree has exactly 6 nodes: `[ROOT,H,E,F,G,E]`. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of another server LS2 for level 1 (`H` and `E`, the second level): it requires nodes interval `[1;2]`.
 
-Hence it is quite easy for anyone who wants to check if a 'Z' members joined the NodeCoin community as it would alter the 'E' branch of the tree:
+Hence it is quite easy for anyone who wants to check if a `Z` member joined the NodeCoin community as it would alter the `E` branch of the tree:
 
                        	ROOT'=H(H+E')
                         /            \
@@ -223,11 +223,11 @@ Hence it is quite easy for anyone who wants to check if a 'Z' members joined the
        /       \         /       \       /       \
   	  A  		B 		C   	  D  	E		  Z
 
-ROOT changed, E' too, but H did not. The whole E' branch should be updated with the proper new data.
+`ROOT` changed to `ROOT'`, `E` to `E'`, but `H` did not. The whole `E'` branch should be updated with the proper new data.
 
 For that purpose, Merkle URL defines 4 parameters:
 
-* `level`: indicates the level of hashes to be returned. Levels start from 0 (ROOT hash).
+* `level`: indicates the level of hashes to be returned. `level` start from 0 (`ROOT` hash).
 * `index`: in combination with level, filter hashes to return only the hash of level `level` and position `index` on that level. `index` starts from 0.
 * `start`: defines the start range (inclusive) of desired hashes. If `level` is used, `start` references to the given level. Otherwise references to the root.
 * `end`: defines the end range (inclusive) of desired hashes. If `level` is used, `end` references to the given level. Otherwise references to the root.

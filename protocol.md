@@ -144,11 +144,13 @@ Here is a description of each field:
 
 It is obvious that a coin a sender does not own CAN NOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.
 
-# Exemples of data structures
+## Exemples of data structures
 
-# HTTP API
+# Data exchange
 
-This HTTP API is mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit NodeCoin specificities.
+_N.B.:_ *this part is highly sensible to changes, as peering mecanisms are not defined at all. This part is only a first draft not discussed with anyone and only proposed by its author (cgeek) as an initial way to exchange NodeCoin data.*
+
+Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit NodeCoin specificities.
 
 	http[s]://Node[:port]/...
 	|-- pks/
@@ -171,9 +173,82 @@ This HTTP API is mainly inspired from [OpenUDC_exchange_formats draft](https://g
 	    |   |-- register
 	    |   `-- self
 	    `-- transactions/
-	        |-- list
-	        |-- merkle
+	        |-- coin/
+	        |   `-- [COIN_ID]
+	        |-- recipient/
+	        |   `-- [OPENPGP_FINGERPRINT]
 	        |-- search
+	        |-- sender/
+	        |   `-- [OPENPGP_FINGERPRINT]
 	        |-- submit
 	        `-- view/
 	            `-- [TRANSACTION_ID]
+
+## Merkle URLs
+
+Merkle URL is a special kind of URL applicable for resources `udc/view/[AMENDMENT_ID]/members`, `udc/view/[AMENDMENT_ID]/voters`, `udc/transactions/recipient/[OPENPGP_FINGERPRINT]`, `udc/transactions/sender/[OPENPGP_FINGERPRINT]`, `udc/transactions/coin/[COIN_ID]`.
+
+Such kind of URL returns Merkle tree hashes informations. In NodeCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `udc/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propaged to the root hash. Change is then easy to detect.
+
+For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. NodeCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of theme.
+
+Here is an example of members Merkle tree with 5 members (taken from [Tree Hash EXchange format (THEX)](http://web.archive.org/web/20080316033726/http://www.open-content.net/specs/draft-jchapweske-thex-02.html):
+
+                       ROOT=H(H+E)
+                        /        \
+                       /          \
+                 H=H(F+G)          E
+                /       \           \
+               /         \           \
+        F=H(A+B)         G=H(C+D)     E
+        /     \           /     \      \
+       /       \         /       \      \
+  	  A  		B 		C   	  D  	 E
+
+
+  Note: H() is some hash function
+
+With such a tree structure, NodeCoin consider the tree has exactly 6 nodes: [ROOT,H,E,F,G,E]. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of level 1 of another server LS2 (H and E, the second level): it requires nodes interval [1;2].
+
+Hence it is quite easy for anyone who wants to check if a 'Z' members joined the NodeCoin community as it would alter the 'E' branch of the tree:
+
+                       	ROOT'=H(H+E')
+                        /            \
+                       /              \
+                 H=H(F+G)              E'
+                /       \               \
+               /         \               \
+        F=H(A+B)          G=H(C+D)       E'=H(E+Z)
+        /     \           /     \      	  /     \
+       /       \         /       \       /       \
+  	  A  		B 		C   	  D  	E		  Z
+
+ROOT changed, E' too, but H did not. The whole E' branch should be updated with the proper new data.
+
+For that purpose, Merkle URL defines 4 parameters:
+
+* `level`: indicates the level of hashes to be returned. Levels start from 0 (ROOT hash).
+* `index`: in combination with level, filter hashes to return only the hash of level `level` and position `index` on that level. `index` starts from 0.
+* `start`: defines the start range (inclusive) of desired hashes. If `level` is used, `start` references to the given level. Otherwise references to the root.
+* `end`: defines the end range (inclusive) of desired hashes. If `level` is used, `end` references to the given level. Otherwise references to the root.
+
+## Other URLs
+
+### pks/add
+### pks/lookup
+### udc/amendments/submit
+### udc/amendments/view/[AMENDMENT_ID]
+### udc/amendments/view/[AMENDMENT_ID]/members
+### udc/amendments/view/[AMENDMENT_ID]/self
+### udc/amendments/view/[AMENDMENT_ID]/voters
+### udc/coins/submit
+### udc/coins/view/[COIN_ID]
+### udc/peer/list
+### udc/peer/register
+### udc/peer/self
+### udc/transactions/coin/[COIN_ID]
+### udc/transactions/recipient/[OPENPGP_FINGERPRINT]
+### udc/transactions/sender/[OPENPGP_FINGERPRINT]
+### udc/transactions/search
+### udc/transactions/submit
+### udc/transactions/view/[TRANSACTION_ID]

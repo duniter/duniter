@@ -8,30 +8,32 @@ If you want to learn more on its concepts, go to [concepts page](https://github.
 
 NodeCoin is powered by Node.js v0.10+, so you need it installed first. Here is an example for Ubuntu installation:
 
-	$ sudo apt-get update
-	$ sudo apt-get install python-software-properties python g++ make
-	$ sudo add-apt-repository ppa:chris-lea/node.js
-	$ sudo apt-get update
-	$ sudo apt-get install nodejs
+  $ sudo apt-get update
+  $ sudo apt-get install python-software-properties python g++ make
+  $ sudo add-apt-repository ppa:chris-lea/node.js
+  $ sudo apt-get update
+  $ sudo apt-get install nodejs
 
 You can find the installation of Node.js for other distribution [on this GitHub document](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager).
 
 And then, just install NodeCoin:
 
-	sudo npm install -g nodecoin
+  sudo npm install -g nodecoin
 
 ## Get NodeCoin run
 
 Just launch it using the following command:
 
-	$ nodecoin
+  $ nodecoin
 
 By default, nodecoin runs on port 8081. You may change it using the --port parameter:
 
-	$ nodecoin --port 80
+  $ nodecoin --port 80
 
 Note that your system may require root access to launch on port 80.
-For more more details on the nodecoin command, run `nodecoin -h`:
+For more more details on the nodecoin command, run:
+
+  nodecoin -h
 
   Usage: nodecoin [options]
 

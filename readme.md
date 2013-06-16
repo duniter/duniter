@@ -2,7 +2,7 @@
 
 NodeCoin aims to be a free implementation of the [OpenUDC protocol](https://github.com/Open-UDC/open-udc), which allows to create new P2P crypto-currencies based on individuals and Universal Dividend.
 
-If you want to learn more on its concepts, go to [concepts page](https://github.com/c-geek/nodecoin/blob/master/protocol.md).
+If you want to learn more on its concepts, go to [concepts page](https://github.com/c-geek/nodecoin/blob/master/concepts.md).
 
 ## Installation
 

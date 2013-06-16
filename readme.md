@@ -12,6 +12,8 @@ NodeCoin is powered by Node.js v0.10+, so you need it installed first. Here is a
 	sudo apt-get update
 	sudo apt-get install nodejs
 
+You can find the installation of Node.js for other distribution [on this GitHub document](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager).
+
 And then, just install NodeCoin:
 
 	sudo npm install -g nodecoin

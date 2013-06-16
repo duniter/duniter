@@ -20,7 +20,7 @@
   "author": "Cedric Moreau <cem.moreau@gmail.com>",
   "license": "GPL v2+",
   "readmeFilename": "readme.md",
-  "gitHead": "b9f14112ebab9c30bf07607a0e3f8606098fc602",
+  "gitHead": "3abd4db425bdb2c89ceb3f38eb15942bc3ebaf1d",
   "bugs": {
     "url": "https://github.com/c-geek/nodecoin/issues"
   },
@@ -33,7 +33,6 @@
     "should": "",
     "supertest": ""
   },
-  "private": true,
   "bin": {
     "nodecoin": "./bin/nodecoin"
   }

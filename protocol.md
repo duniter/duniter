@@ -6,19 +6,49 @@ Like Bitcoin, NodeCoin follows its own protocol to exchange monetary data (indiv
 
 ## Individuals
 
-An individual is represented by an OpenUDC certificate, which basically is an OpenPGP certificate (an OpenPGP public key) with an OpenUDC-specific string for the comment field for one of its OpenPGP UID.
+An individual is represented by an OpenUDC certificate, which basically is an OpenPGP certificate containing exactly one OpenUDC User ID (UID) in it. An OpenPGP certificate with zero or more than one OpenUDC UID in it **IS NOT** a valid OpenUDC certificate.
 
-An OpenUDC certificate MUST be entirely stored, not just some parts of it. It may either be stored in binary or ASCII-Armored format (see [OpenPGP RFC (4880)](http://tools.ietf.org/html/rfc4880) for more details).
+### OpenUDC UID
 
-The specific string is defined in [OpenUDC specifications](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164) as "udid2". Such a string looks like:
+Common UID in OpenPGP looks like:
+
+	Full name (Comment) <email@address>
+
+Common UID in OpenUDC looks like:
+
+	Pseudonyms (udid2;c;LASTNAME;FIRSTNAME;1970-01-01;e+47.47-000.56;0;) <email@address>
+
+As shown, OpenUDC UID is simply an OpenPGP UID with the following transformations:
+
+* `Full name` turns into `Pseudonyms` which is a list of pseudonyms separated by spaces
+* `Comment` turns into an OpenUDC-specific string called `udid2`
+* `email@address` does not change
+
+Of course, turning `Full name` into `Pseudonyms` is not mandatory, as one may use its name as a pseudonym.
+
+For more informations on OpenPGP, see [RFC 4880 - OpenPGP Message Format](http://tools.ietf.org/html/rfc4880).
+
+### OpenUDC `udid2`
+
+This specific string is defined in [OpenUDC specifications](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164). Such a string looks like:
+
+	udid2;c;LASTNAME;FIRSTNAME;1970-01-01;e+47.47-000.56;0;
+
+#### Example
+
+In my particular case, the OpenUDC `udid2` is:
 
 	udid2;c;MOREAU;CEDRIC;1988-04-29;e+47.47-000.56;0;
 
-Which makes, for my OpenUDC certificate, the following OpenPGP "uid":
+Which makes, for my OpenUDC certificate, the following OpenPGP UID:
 
 	cgeek twicedd (udid2;c;MOREAU;CEDRIC;1988-04-29;e+47.47-000.56;0;) <cem.moreau@gmail.com>
 
-The complete OpenPGP public key corresponding to this uid is (in ASCII-Armored format):
+### Representing an OpenUDC certificate
+
+As OpenUDC certificate are just OpenPGP certificates, it can be represented exactly the same way. Classically, OpenPGP are represented in ASCII-Armored format which allows it to be transfered in a textual way.
+
+The complete OpenPGP certificate corresponding to the previous example (in ASCII-Armored format) is:
 
 	-----BEGIN PGP PUBLIC KEY BLOCK-----
 	Version: SKS 1.1.0

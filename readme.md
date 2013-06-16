@@ -35,13 +35,15 @@ For more more details on the nodecoin command, run:
 
   nodecoin -h
 
-  Usage: nodecoin [options]
+Which displays:
 
-  Options:
+    Usage: nodecoin [options]
 
-    -h, --help         output usage information
-    -V, --version      output the version number
-    -p, --port <port>  Port to listen for requests
+    Options:
+
+      -h, --help         output usage information
+      -V, --version      output the version number
+      -p, --port <port>  Port to listen for requests
 
 ## Disclaimer
 

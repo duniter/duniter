@@ -2,6 +2,20 @@
 
 NodeCoin aims to be a free implementation of the [OpenUDC protocol](https://github.com/Open-UDC/open-udc), which allows to create new P2P crypto-currencies based on individuals and Universal Dividend.
 
+## Installation
+
+NodeCoin is powered by Node.js v0.10+, so you need it installed first. Here is an example for Ubuntu installation:
+
+	sudo apt-get update
+	sudo apt-get install python-software-properties python g++ make
+	sudo add-apt-repository ppa:chris-lea/node.js
+	sudo apt-get update
+	sudo apt-get install nodejs
+
+And then, just install NodeCoin:
+
+	sudo npm install -g nodecoin
+
 ## Oh, yet another Bitcoin-like ?
 
 Well, NodeCoin uses the crypto-currency concept introduced by Bitcoin. In those terms, NodeCoin is another *Bitcoin-like*. But NodeCoin has completely different fundation principles, such as individuals, web of trust and Universal Dividend (i.e.: money issuance directly on every individual) to do *really* better than Bitcoin.

@@ -8,23 +8,23 @@ Well, NodeCoin uses the crypto-currency concept introduced by Bitcoin. In those 
 
 Actually, NodeCoin has a theoretical reference called [Relativity Theory of Money (french)](http://wiki.creationmonetaire.info/). This theory demonstrates that a currency which aims at respecting individuals economic liberties MUST implement the Universal Dividend, which is the only way to avoid both spatial and temporal asymmetry in money issuance.
 
-### Spatial and temporal asymmetry ? What the hell is that ?
+### Spatial and temporal what ?
 
-Those concepts refers to the relative access of individuals towards money issuance. Concretely, Bitcoin is both a spatially and temporally asymmetrical money for the following reasons:
+Those concepts refers to the relative access of individuals to newly created money. Concretely, Bitcoin is both a spatially and temporally asymmetrical money for the following reasons:
 
 #### Spatially
 
-When new Bitcoins are created, only *some* Bitcoin users are credited of brand new Bitcoins. *We believe this is the first injustice*. Some might say *«but miners used electricity and time to win it»* ... I would answer this work shouldn't be rewarded by newly created Bitcoins. New Bitcoins should spray every Bitcoin user. Miners should be rewared an other way, not by money issuance.
+When new Bitcoins are created, only **some** Bitcoin users are credited of brand new Bitcoins. **We believe this is the first injustice.** Some might say *«but miners used electricity and time to get it»* ... we would answer this work shouldn't be rewarded by newly created Bitcoins. New Bitcoins should spray every Bitcoin user. Miners should be rewared another way, but not by money issuance.
 
-Of course, Bitcoin can't do this as Bitcoin users are not strongly identified, and some might benefit multiple time of money creation if many wallet belong to them. But NodeCoin and OpenUDC can.
+Of course, Bitcoin can't do this as Bitcoin users are not strongly identified, and one might benefit multiple time of money creation if he owns several wallets. But NodeCoin and OpenUDC can fix this.
 
 #### Temporally
 
-And what about futur users ? Bitcoin has a planned limit of 21 million BTC. And then ? First adopters are the ones who could create Bitcoins, what about the others ? Just like Euros or Dollars, to get money you have to work for the ones who already own it. *We think this is the second injustice*.
+And what about futur users ? Bitcoin has a planned limit of 21 million BTC. And then ? First adopters are the ones who createted Bitcoins, what about the others ? Just like Euros or Dollars, to get money you have to work for the ones who already own it. **We believe this is the second injustice.**
 
-Every member of a monetary community should be equal towards money issuance, and get the same relative amount of newly created money even if he is a later adopter.
+Every member of a monetary community should be equal towards money issuance, and get the same relative amount of newly created money over the time, even if he is a later adopter.
 
-NodeCoin and OpenUDC aims at fixing this bug.
+NodeCoin and OpenUDC aims at fixing this bug too.
 
 ## How to implement such a system ?
 

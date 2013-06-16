@@ -2,7 +2,7 @@
   "name": "nodecoin",
   "version": "0.0.1",
   "description": "OpenUDC-like implementation using Node.js",
-  "main": "lib/main.js",
+  "main": "lib/nodecoin.js",
   "directories": {
     "test": "test"
   },
@@ -24,8 +24,17 @@
   "bugs": {
     "url": "https://github.com/c-geek/nodecoin/issues"
   },
+  "dependencies": {
+    "express": "",
+    "commander": ""
+  },
   "devDependencies": {
     "mocha": "",
-    "should": ""
+    "should": "",
+    "supertest": ""
+  },
+  "private": true,
+  "bin": {
+    "nodecoin": "./bin/nodecoin"
   }
 }

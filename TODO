@@ -22,7 +22,7 @@ Implementation:
   This part yet need to be explored after protocol definition
   
   First steps:
-   ☐ create HTTP server with 501 messages according with the HTTP API
+   ☐ create HTTP server with 501 messages according to the HTTP API
    ☐ allow to launch the server as a command line
   OpenUDC keyserver:
    ☐ pks/lookup

@@ -30,10 +30,30 @@ By default, nodecoin runs on port 8081. You may change it using the --port param
 
     $ nodecoin --port 80
 
-Note that your system may require root access to launch on port 80.
+Note that your system may require root access to launch on port 80. It is also possible to specify the IPv4 interface:
+
+    $ nodecoin -p 8888 --ipv4 127.0.0.1
+
+    NodeCoin server listening on 127.0.0.1 port 8888
+
+Or IPv6 interface:
+
+    $ nodecoin -p 8888 --ipv6 ::1
+
+    NodeCoin server listening on ::1 port 8888
+
+Or both:
+
+    $ nodecoin -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+
+    NodeCoin server listening on 127.0.0.1 port 8888
+    NodeCoin server listening on ::1 port 8888
+
+Note too that listening to multiple interfaces doesn't imply mutiple program instances: only *one* is running on multiple interfaces.
+
 For more more details on the nodecoin command, run:
 
-    nodecoin -h
+    nodecoin --help
 
 Which displays:
 
@@ -44,6 +64,8 @@ Which displays:
       -h, --help         output usage information
       -V, --version      output the version number
       -p, --port <port>  Port to listen for requests
+      --ipv4 <address>   IPV4 interface to listen for requests
+      --ipv6 <address>   IPV6 interface to listen for requests
 
 ## Disclaimer
 
@@ -53,6 +75,13 @@ Consequently, NodeCoin proposes its own protocol which differs with OpenUDC. How
 ## Get involved in NodeCoin project
 
 For the moment NodeCoin is developed only by its author. If you wish to participate/debate on it, you may join OpenUDC XMPP chatroom (open-udc@muc.jappix.com) on [OpenUDC blog](http://www.openudc.org/) (chat is available on the bottom-right corner of the blog) and contact *cgeek*.
+
+# References
+
+* Official OpenUDC project website: <http://www.openudc.org>
+* Official OpenUDC repository: <https://github.com/Open-UDC/open-udc>
+* Other project trying to implement OpenUDC in python: <https://github.com/canercandan/django-openudc>
+* Theoretical reference: [Relativity Theory of Money v2.718, Stephane Laborde - Nov. 2012](http://wiki.creationmonetaire.info/index.php?title=Main_Page)
 
 # License
 

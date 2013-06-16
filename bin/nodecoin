@@ -7,12 +7,30 @@ var config      = require('../config'),
 program
   .version('0.0.1')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
+  .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
+  .option('--ipv6 <address>', 'IPV6 interface to listen for requests')
   .parse(process.argv);
 
-config.server.port = program.port || config.server.port;
+config.server.port        = program.port || config.server.port;
+config.server.ipv4address = program.ipv4 || config.server.ipv4address;
+config.server.ipv6address = program.ipv6 || config.server.ipv6address;
 
 var app = nodecoin.express.app(config);
 
-http.createServer(app).listen(app.get('port'), function(){
-  console.log('NodeCoin server listening on port ' + app.get('port'));
-});
+if(!config.server.ipv4address){
+  http.createServer(app).listen(app.get('port'), function(){
+    console.log('NodeCoin server listening on port ' + app.get('port'));
+  });
+}
+
+if(config.server.ipv4address){
+  http.createServer(app).listen(app.get('port'), config.server.ipv4address, function(){
+    console.log('NodeCoin server listening on ' + config.server.ipv4address + ' port ' + app.get('port'));
+  });
+}
+
+if(config.server.ipv6address){
+  http.createServer(app).listen(app.get('port'), config.server.ipv6address, function(){
+    console.log('NodeCoin server listening on ' + config.server.ipv6address + ' port ' + app.get('port'));
+  });
+}

@@ -20,15 +20,10 @@ describe('Request on /pks/lookup', function(){
 });
 
 describe('Request on /pks/add', function(){
-  it('POST should respond 501', function(done){
+  it('POST should respond 400 BAD REQUEST', function(done){
     request(app)
       .post('/pks/add')
-      .expect(501, done);
-  });
-  it('GET should respond 404', function(done){
-    request(app)
-      .get('/pks/add')
-      .expect(404, done);
+      .expect(400, done);
   });
 });
 

@@ -3,14 +3,26 @@ var should = require('should');
 var request = require('supertest');
 var nodecoin = require('../lib/nodecoin');
 
-var app = nodecoin.express.app();
+var app = nodecoin.express.app({
+  server: { port: 8001 },
+  db: {
+    database : "nodecoin_test.db",
+    protocol : "sqlite",
+    dropAll: true
+  }
+});
 
 //----------- PKS -----------
 describe('Request on /pks/lookup', function(){
-  it('GET should respond 501', function(done){
+  it('GET should respond 200 with search parameter', function(done){
+    request(app)
+      .get('/pks/lookup?search=a')
+      .expect(200, done);
+  });
+  it('GET should respond 500 without search parameter', function(done){
     request(app)
       .get('/pks/lookup')
-      .expect(501, done);
+      .expect(500, done);
   });
   it('POST should respond 404', function(done){
     request(app)

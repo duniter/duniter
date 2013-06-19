@@ -14,12 +14,17 @@ var app = nodecoin.express.app({
 
 //----------- PKS -----------
 describe('Request on /pks/lookup', function(){
-  it('GET should respond 200 with search parameter', function(done){
+  it('GET should respond 200 with search=a&op=get', function(done){
     request(app)
-      .get('/pks/lookup?search=a')
+      .get('/pks/lookup?search=a&op=get')
       .expect(200, done);
   });
   it('GET should respond 500 without search parameter', function(done){
+    request(app)
+      .get('/pks/lookup')
+      .expect(500, done);
+  });
+  it('GET should respond 500 with search=a without op', function(done){
     request(app)
       .get('/pks/lookup')
       .expect(500, done);

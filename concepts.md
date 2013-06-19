@@ -1,6 +1,6 @@
 # NodeCoin, yet another Bitcoin-like ?
 
-Well, NodeCoin uses the crypto-currency concept introduced by Bitcoin. In those terms, NodeCoin is like Bitcoin. But NodeCoin has completely different fundation principles, such as individuals, web of trust and Universal Dividend (i.e.: money issuance directly on every individual) to do *really* better than Bitcoin.
+Well, NodeCoin uses the crypto-currency concept introduced by Bitcoin. In those terms, NodeCoin is like Bitcoin. But NodeCoin has completely different fundation principles, such as individuals, web of trust and Universal Dividend (i.e.: money issued directly by every individual) to do *really* better than Bitcoin.
 
 Actually, NodeCoin has a theoretical reference called [Relativity Theory of Money (french)](http://wiki.creationmonetaire.info/). This theory demonstrates that a currency which aims at respecting individuals economic liberties MUST implement the Universal Dividend, which is the only way to avoid both spatial and temporal asymmetry in money issuance.
 
@@ -10,7 +10,7 @@ Those concepts refers to the relative access of individuals to newly created mon
 
 ### Spatially
 
-When new Bitcoins are created, only **some** Bitcoin users are credited of brand new Bitcoins. **We believe this is the first injustice.** Some might say *«but miners used electricity and time to get it»* ... we would answer this work shouldn't be rewarded by newly created Bitcoins. New Bitcoins should spray every Bitcoin user. Miners should be rewared another way, but not by money issuance.
+When new Bitcoins are created, only **some** Bitcoin users are credited of brand new Bitcoins. **We believe this is the first injustice.** Some might say *«but miners used electricity and time to get it»* ... we would answer this work shouldn't be rewarded by newly created Bitcoins. New Bitcoins should spray every Bitcoin user. Miners should be rewared another way, not by money issuance.
 
 Of course, Bitcoin can't do this as Bitcoin users are not strongly identified, and one might benefit multiple time of money creation if he owns several wallets. But NodeCoin and OpenUDC can fix this.
 
@@ -18,7 +18,7 @@ Of course, Bitcoin can't do this as Bitcoin users are not strongly identified, a
 
 And what about futur users ? Bitcoin has a planned limit of 21 million BTC. And then ? First adopters are the ones who createted Bitcoins, what about the others ? Just like Euros or Dollars, to get money you have to work for the ones who already own it. **We believe this is the second injustice.**
 
-Every member of a monetary community should be equal towards money issuance, and get the same relative amount of newly created money over the time, even if he is a later adopter.
+Every member of a monetary community should be equal towards issuing new coins, and get the same relative amount of it over the time, even if he is a later adopter.
 
 NodeCoin and OpenUDC aims at fixing this bug too.
 
@@ -43,9 +43,9 @@ As said earlier, this document details the WoT composition, but it also allows t
 
 Such a contract is actually a chained list of amendments, each amendement defining its own data which may concern individuals, money, or both. Each amendment requires to be signed by at least 2/3 of the WoT voters to be considered as valid. Furthermore, each amendment also specifies a voters list reflecting people who desire to participate in the democratic process.
 
-### Money issuance
+### Coins
 
-Money issuance is made by WoT members, in accordance with the Monetary Contract specifications. NodeCoin uses a divisionary money system divided in 3 decimal unities (1, 2, 5) completed with a POW 10 parameter. When issuing money, each individual may create the unities he desires, in the limits established by the Monetary Contract. Newly issued money is not usable as such, it needs to be affected to someone by its issuer throught a transaction process.
+Coins are issued by WoT members, in accordance with the Monetary Contract specifications. NodeCoin uses a divisionary money system divided in 9 decimal unities (1..9) completed with a POW 10 parameter. When issuing money, each individual may create the unities he desires, in the limits established by the Monetary Contract. Newly issued money is not usable as such, it needs to be affected to someone by its issuer throught a transaction process.
 
 ### Transactions
 

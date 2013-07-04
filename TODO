@@ -1,37 +1,49 @@
 NodeCoin TODO list
 
 Documentation:
- ✔ Readme - Presentation @done (13-06-16 12:43)
+ ☐ Readme - Presentation
 
   Protocol:
 
    define NodeCoin messages (data structures):
-    ✔ OpenUDC certificates (individuals) @done (13-06-16 13:15)
-    ✔ NodeCoin amendments @done (13-06-16 01:05)
-    ✔ NodeCoin money issuances @done (13-06-16 01:05)
-    ✔ NodeCoin transactions @done (13-06-16 01:05)
-   define NodeCoin HTTP API:
-    ✔ Submit/Search for OpenUDC certificates @done (13-06-16 01:05)
-    ✔ Submit/Consult NodeCoin amendments @done (13-06-16 01:05)
-    ✔ Submit/Consult NodeCoin money issuances @done (13-06-16 01:05)
-    ✔ Submit/Consult NodeCoin transactions @done (13-06-16 01:05)
-   define NodeCoin peering system:
-    ✔ Imagine and design a system using NodeCoin HTTP API @done (13-06-16 01:06)
+    ☐ OpenUDC certificates
+    ☐ NodeCoin amendments
+    ☐ NodeCoin money issuances
+    ☐ NodeCoin transactions
+ 
+Protocol implementation:
 
-Implementation:
-  This part yet need to be explored after protocol definition
-  
-  First steps:
-   ✔ create HTTP server with 501 messages according to the HTTP API @done (13-06-16 20:28)
-   ☐ allow to launch the server as a command line
-  OpenUDC keyserver:
-   ☐ pks/lookup
-   ☐ pks/add
- Handle signed messages:
-   ☐ check integrity
-   ☐ check author
-   ☐ amendments
-   ☐ money issuances
-   ☐ transactions
-  Implement multipart/msigned:
-  ☐ develop node.js module
+   1) Retrieving PGP certificates:
+     ☐ REST service looking for OpenPGP certificates on public keyservers using HKP
+     ☐ Parse Base64 response and extract PGP keyring JSON structure
+     ☐ REST service to store a OpenPGP certificate Base64 encoded
+
+   2) Managing Amendment submission:
+    ☐ REST service to push root certificates used to initialize Amendment Chain
+    ☐ REST service for receiving an Amendment data structure
+    ☐ Check Amendment structure
+    ☐ Check Amendment eligibility according to the Node rules (notably UD amount)
+    ☐ Store Amendment as available for voting
+
+   3) Voting system:
+    ☐ REST service to handle voting requests
+    ☐ Store valid voting requests
+    ☐ According to the Node rules, chain the valid Amendment gathering enough votes
+ 
+   4) Accepting new members:
+    ☐ REST service to receive Joining Request
+    ☐ According to the rules, queue the request for integration in next Amendment
+ 
+    5) Transactions: handling issuance transactions:
+     ☐ REST service for a PGP certificate to declare which Nodes manages its transactions
+     ☐ REST service to process a money issuance transaction
+     ☐ REST service to process a handshaked transaction
+     ☐ REST service to process a forging transaction
+ 
+   6) Non-individual PGP keys (collective keys):
+    ☐ Define the OpenPGP comment format (ucid)
+    ☐ Accept PGP servers declaration of Nodes managing its money
+    ☐ Accept transactions fitting with this new PGP certificates format
+
+ GUI implementation:
+ Yet to define

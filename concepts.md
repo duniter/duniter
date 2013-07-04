@@ -12,7 +12,7 @@ Those concepts refers to the relative access of individuals to newly created mon
 
 When new Bitcoins are created, only **some** Bitcoin users are credited of brand new Bitcoins. **We believe this is the first injustice.** Some might say *«but miners used electricity and time to get it»* ... we would answer this work shouldn't be rewarded by newly created Bitcoins. New Bitcoins should spray every Bitcoin user. Miners should be rewared another way, not by money issuance.
 
-Of course, Bitcoin can't do this as Bitcoin users are not strongly identified, and one might benefit multiple time of money creation if he owns several wallets. But NodeCoin and OpenUDC can fix this.
+Of course, Bitcoin can't do this as Bitcoin users are not strongly identified, and one might benefit multiple time of money creation if he owns several wallets. But NodeCoin can fix this.
 
 ### Temporally
 
@@ -20,15 +20,15 @@ And what about futur users ? Bitcoin has a planned limit of 21 million BTC. And 
 
 Every member of a monetary community should be equal towards issuing new coins, and get the same relative amount of it over the time, even if he is a later adopter.
 
-NodeCoin and OpenUDC aims at fixing this bug too.
+NodeCoin aims at fixing this bug too.
 
 ## How to implement such a system ?
 
-To resolve those problems, the whole idea is to lean on OpenPGP mecanisms to create an authentified monetary community. With OpenPGP, such a community could democratically define the rules within it (who joins or leaves the community, what is money and how it is be created and exchanged) throught the writing of a common reference approved by a collective signing process : the Monetary Contract.
+To resolve those problems, the whole idea is to lean on OpenPGP mecanisms to create an authentified monetary community. With OpenPGP, such a community could democratically define the rules within it (who joins or leaves the community, what is money, how it is created and exchanged) throught the writing of a common reference approved by a collective signing process : the Monetary Contract.
 
 ### The monetary Web of Trust (WoT)
 
-The whole basis of OpenUDC (and thus, NodeCoin) is made up of individuals who chose to trust each other and constitute a community, aka. Web of Trust. Note that *trust* does not mean considering every member as a trustworthy person: it only means that the community trusts each member is a unique and living person.
+The whole basis of NodeCoin is made up of individuals who chose to trust each other and constitute a community, aka. Web of Trust. Note that *trust* does not mean considering every member as a trustworthy person: it only means that the community trusts each member is a unique and living person.
 
 Once a WoT is constituted, new members may only join by cooptation of existing members in the WoT. Cooptation is done throught a two step process:
 
@@ -45,8 +45,8 @@ Such a contract is actually a chained list of amendments, each amendement defini
 
 ### Coins
 
-Coins are issued by WoT members, in accordance with the Monetary Contract specifications. NodeCoin uses a divisionary money system divided in 9 decimal unities (1..9) completed with a POW 10 parameter. When issuing money, each individual may create the unities he desires, in the limits established by the Monetary Contract. Newly issued money is not usable as such, it needs to be affected to someone by its issuer throught a transaction process.
+Coins are issued by WoT members, in accordance with the Monetary Contract specifications. NodeCoin uses a divisionary money system divided in 9 decimal unities (1..9) completed with a POW 10 parameter. When issuing money, each individual may create the unities he desires, in the limits established by the Monetary Contract.
 
 ### Transactions
 
-Transactions are the last entity managed by NodeCoin: a transaction is the link between money and its owner, it materializes money ownership. Clearly, this is the last step after defining individuals and money, and maybe the most sensible part of NodeCoin. Indeed, NodeCoin assumes that transactions, in a decentralized system, can't be fully managed by each peer. So we need mecanisms to ensure that members do not cheat, and if they try, to _at least_ detect it.
+Transactions are the last entity managed by NodeCoin: it materializes money ownership. Transactions have a huge role in NodeCoin system: it both carries the role of money issuance and money transfert from one account to another.

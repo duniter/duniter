@@ -1,12 +1,12 @@
 # NodeCoin protocol
 
-Like Bitcoin, NodeCoin follows its own protocol to exchange monetary data (individuals, amendments, money, transactions). Such a protocol is subject to changes over the time because of potential weaknesses but mainly to match OpenUDC protocol, which aims to be the reference. Anyway, here is NodeCoin protocol.
+Like Bitcoin, NodeCoin follows its own protocol to exchange monetary data (individuals, amendments, money, transactions). Such a protocol is subject to changes over the time because of potential weaknesses or performance issues.
 
 # Data structure
 
 ## Individuals
 
-An individual is represented by an OpenUDC certificate, which basically is an OpenPGP certificate containing exactly one OpenUDC User ID (UID) in it. An OpenPGP certificate with zero or more than one OpenUDC UID in it **IS NOT** a valid OpenUDC certificate.
+An individual is represented by an OpenPGP certificate containing exactly one OpenUDC User ID (UID) in it. An OpenPGP certificate with zero or more than one OpenUDC UID in it **IS NOT** a valid OpenUDC certificate.
 
 ### OpenUDC UID
 
@@ -14,7 +14,7 @@ Common UID in OpenPGP looks like:
 
 	Full name (Comment) <email@address>
 
-Common UID in OpenUDC looks like:
+Common UID in NodeCoin looks like:
 
 	Pseudonyms (udid2;c;LASTNAME;FIRSTNAME;1970-01-01;e+47.47-000.56;0;) <email@address>
 
@@ -43,6 +43,8 @@ In my particular case, the OpenUDC `udid2` is:
 Which makes, for my OpenUDC certificate, the following OpenPGP UID:
 
 	cgeek twicedd (udid2;c;MOREAU;CEDRIC;1988-04-29;e+47.47-000.56;0;) <cem.moreau@gmail.com>
+
+A tool is provided in NodeCoin web interface to generate your udid2 (note that udid2 **is not** a confidential data).
 
 ### Representing an OpenUDC certificate
 
@@ -90,7 +92,7 @@ The complete OpenPGP certificate corresponding to the previous example (in ASCII
 	=dLy8
 	-----END PGP PUBLIC KEY BLOCK-----
 
-This is concretely what needs to be stored as a OpenUDC certificate. This OpenPGP certificate contains (among others) the mentionned uid.
+This is concretely what needs to be stored as a OpenPGP certificate, and what is stored by NodeCoin. This OpenPGP certificate contains (among others) the mentionned uid.
 
 ## Amendments
 
@@ -126,30 +128,6 @@ Here is a description of each field:
 * `MembersCount` is used in combination of `MembersRoot`, just like `VotersCount` is with `VotersRoot`.
 * `MembersChanges` contains a list of members joining or leaving the WoT. A joining member has a line starting with '+' and a leaving one with '-'.
 
-## Money issuances
-
-Money issuance is a simple message to create a new coin. It has the following structure:
-
-	Version: VERSION
-	Issuer: INDIVIDUAL_FINGERPRINT
-	Number: COIN_INCREMENT_NUMBER
-	Unity: COINT_ONE_TO_NINE_VALUE
-	Power: COIN_DECIMAL_POWER
-	AmendmentNumber: AMENDMENT_NUMBER
-	AmendmentHash: AMENDMENT_HASH
-	FusionCoins: COIN1_ID, COIN2_ID, ...
-
-Here is a description of each field:
-
-* `Version` denotes the current structure version. This number may change in cases of evolution of this message structure.
-* `Issuer` is the fingerprint of a member (the issuer). It is the 160 bits fingerprint of its OpenUDC public key.
-* `Number` is an increment value indentifying this particular coin among those issued by this member. When a member issues a new coin, he MUST increment this value. The couple `Issuer` and `Number` MUST be unique and identifies a coin in the monetary system.
-* `Unity` is a decimal value between 1 and 9. This value is multiplied by 10^`Power` to form the monetary value of the coin.
-* `Power` is a decimal and positive value.
-* `AmendmentNumber` if present is the value of the `Number` field of an amendment declaring a Universal Dividend. It is the justification for creating this coin.
-* `AmendmentHash` is the hash of the pointed amendment, just to authentify the targeted amendment.
-* `FusionCoins` if present lists the coins used for the fusion. This field can't be present if `AmendNumber` already is.
-
 ## Transactions
 
 Transaction is a message with the following structure:
@@ -159,9 +137,9 @@ Transaction is a message with the following structure:
 	Number: INCREMENT
 	Recipient: RECIPIENT_FINGERPRINT
 	Coins:
-	COIN_ID1, TRANSACTION_ID1
-	COIN_ID2, TRANSACTION_ID1
-	COIN_ID3, TRANSACTION_ID7
+	COIN_ID1[, TRANSACTION_ID1]
+	COIN_ID2[, TRANSACTION_ID1]
+	COIN_ID3[, TRANSACTION_ID7]
 	...
 
 Here is a description of each field:
@@ -170,11 +148,61 @@ Here is a description of each field:
 * `Sender` is the current owner fingerprint (an OpenPGP public key fingerprint, not necessarily a WoT member) who owns the coins to be sent.
 * `Number` is an increment number used for signing chain. This number MUST be incremented for a given owner each time he makes a transaction.
 * `Recipient` is the recipient fingerprint (an OpenPGP public key fingerprint, not necessarily a WoT member) to whom the coins are sent.
-* `Coins` is a list of coins that are to be sent. Each line is made up of a COIN_ID (identifying a coin), a semi-colon and a TRANSACTION_ID justifying the coin ownership.
+* `Coins` is a list of coins that are either to be sent or to be created. Each line starts with a COIN_ID (identifying a coin), and is eventually followed by a semi-colon and a TRANSACTION_ID.
 
-It is obvious that a coin a sender does not own CAN NOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.
+### How to interprete `Coins` field
 
-## Exemples of data structures
+This field is composed of a list of COIN_ID, each eventually followed by a TRANSACTION_ID. If a coin is followed by TRANSACTION_ID, then the coin is to be considered as a *source coin*. If it is not, then the coin is to be considered as a *issuance coin*.
+
+An *issuance coin* created from Universal Dividend is called a *new coin* and is identified by a special COIN_ID string. A transaction may both carry *new coins* and *source coins* in its `Coins` field.
+
+An *issuance coin* created by destruction of previous coins is called a *fusion coin* and is identified by a special COIN_ID string. A transaction may both carry *fusion coins* and *source coins* in its `Coins` field, **BUT** the sum of *source coins* value **MUST EXACTLY** be equal to the sum of *fusion coins* value.
+
+### COIN_ID format
+
+A COIN_ID has the following format:
+
+	INDIVIDUAL_FINGERPRINT-COIN_NUMBER-COIN_BASE-COIN_POWER-COIN_ORIGIN
+
+Here is a description of each field:
+
+* `INDIVIDUAL_FINGERPRINT` is the unique key ID of the WoT member issuing this coin
+* `COIN_NUMBER` is an increment number identifying this coin among all others issued by this individual
+* `COIN_BASE` is a decimal number between 1 and 9 defining the base value of the coin
+* `COIN_POWER` is a decimal number with no maximum power, but with a minimal value defined in the Monetary Contract
+* `COIN_ORIGIN` is a special string use to identify this coin origin
+
+`COIN_ORIGIN` is one of the following structure:
+
+	A-AMENDMENT_NUMBER
+	F-TRANSACTION_NUMBER
+
+With the following meaning:
+
+* `A or F` A indicates the coin is issued from an amendment, while F indicates the coin is issued by fusion from others
+* `AMENDMENT_NUMBER` is the unique Amendment number from which this coin is created (it is used for legitimity of issuance)
+* `TRANSACTION_NUMBER` is the unique Transaction number of the individual from which this coin is created (fusion case)
+
+Which means *issuance coin* are separated between *new coin* and *fusion coin*.
+
+#### Examples
+
+For a *new coin* of value 500 issued by individual 31A6302161AC8F5938969E85399EB3415C237F93 (me, my first!), COIN_ID will be:
+
+	31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1
+
+and my next coins will have a value of 40 and 60 respectively:
+
+	31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1
+	31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1
+
+if I ever forge coins 2 and 3 later (say in my 233th transaction), the future coin id of value 100 would be:
+
+	31A6302161AC8F5938969E85399EB3415C237F93-4-1-2-F-233
+
+### Money ownership
+
+It is obvious that a coin a sender does not own CAN NOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send. Spending not owned coins not only **won't** be accepted, but this **should** be considered and remembered by the server as a cheat trial and be reported to the whole community.
 
 # Data exchange
 

@@ -1,8 +1,8 @@
 # NodeCoin [![Build Status](https://api.travis-ci.org/c-geek/nodecoin.png)](https://api.travis-ci.org/c-geek/nodecoin.png)
 
-NodeCoin aims to be a free implementation of the [OpenUDC protocol](https://github.com/Open-UDC/open-udc), which allows to create new P2P crypto-currencies based on individuals and Universal Dividend.
+NodeCoin is a free server-side software which allows to create new P2P crypto-currencies based on individuals and implementing Universal Dividend.
 
-If you want to learn more on its concepts, go to [concepts page](https://github.com/c-geek/nodecoin/blob/master/concepts.md).
+It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called NCP (Nodecoin Currency Protocol). You can learn more on it going to the [concepts page](https://github.com/c-geek/nodecoin/blob/master/concepts.md).
 
 ## Installation
 
@@ -69,19 +69,24 @@ Which displays:
 
 ## Disclaimer
 
-NodeCoin only *aims* to be an implementation of the OpenUDC protocol, but it is not. Firstly because OpenUDC protocol is still a in drafting state, and secondly because NodeCoin have some divergences in its mecanisms.
-Consequently, NodeCoin proposes its own protocol which differs with OpenUDC. However, we hope that those protocols will join at some point.
+NodeCoin *is not* an implementation of the OpenUDC protocol. Firstly because OpenUDC protocol is still a in drafting state, and secondly because NodeCoin have some divergences in its mecanisms.
+Consequently, NodeCoin proposes its own protocol called NCP.
 
 ## Get involved in NodeCoin project
 
-For the moment NodeCoin is developed only by its author. If you wish to participate/debate on it, you may join OpenUDC XMPP chatroom (open-udc@muc.jappix.com) on [OpenUDC blog](http://www.openudc.org/) (chat is available on the bottom-right corner of the blog) and contact *cgeek*.
+For the moment NodeCoin is developed only by its author. If you wish to participate/debate on it, you contact me directly at cem.moreau@gmail.com.
 
 # References
+
+## Theoretical
+
+* [Relativity Theory of Money v2.718, Stephane Laborde - Nov. 2012](http://wiki.creationmonetaire.info/index.php?title=Main_Page)
+
+## OpenUDC
 
 * Official OpenUDC project website: <http://www.openudc.org>
 * Official OpenUDC repository: <https://github.com/Open-UDC/open-udc>
 * Other project trying to implement OpenUDC in python: <https://github.com/canercandan/django-openudc>
-* Theoretical reference: [Relativity Theory of Money v2.718, Stephane Laborde - Nov. 2012](http://wiki.creationmonetaire.info/index.php?title=Main_Page)
 
 # License
 

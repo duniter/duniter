@@ -1,15 +1,15 @@
 NodeCoin TODO list
 
 Documentation:
- ☐ Readme - Presentation
+ ✔ Readme - Presentation @done (13-07-08 22:58)
 
   Protocol:
 
    define NodeCoin messages (data structures):
-    ☐ OpenUDC certificates
-    ☐ NodeCoin amendments
-    ☐ NodeCoin money issuances
-    ☐ NodeCoin transactions
+    ✔ OpenUDC certificates @done (13-07-08 22:58)
+    ✔ NodeCoin amendments @done (13-07-08 22:58)
+    ✔ NodeCoin money issuances @done (13-07-08 22:58)
+    ✔ NodeCoin transactions @done (13-07-08 22:58)
  
 Protocol implementation:
 

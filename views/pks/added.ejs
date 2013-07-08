@@ -1,5 +1,7 @@
 <% for(var i = 0; i < pubKeys.length; i++){ %>
 <%= pubKeys[i].fingerprint %>
-<%= pubKeys[i].name %> (<%= pubKeys[i].comment %>) <<%= pubKeys[i].email %>>
-<%= pubKeys[i].asciiArmored %>
+<%- pubKeys[i].name %> (<%- pubKeys[i].comment %>) <<%- pubKeys[i].email %>>
+
+RAW:
+<%= pubKeys[i].raw %>
 <% } %>

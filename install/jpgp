@@ -1,0 +1,9 @@
+#!/bin/bash
+rm -Rf "$jpgp_folder"
+jpgp_folder="mvn-jpgp"
+git clone --branch=master git://github.com/c-geek/jpgp.git "$jpgp_folder"
+cd "$jpgp_folder"
+mvn clean install
+cp target/jpgp-0.0.1-SNAPSHOT.jar ../bin/
+cd ../
+rm -Rf "$jpgp_folder"

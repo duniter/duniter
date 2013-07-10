@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "preinstall": ""
+    "pretest": "install/jpgp",
     "test": "mocha test/*.js"
   },
   "repository": {

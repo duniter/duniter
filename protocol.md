@@ -216,29 +216,26 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 	|   `-- lookup
 	`-- udc/
 	    |-- amendments/
+	    |   |-- init
 	    |   |-- submit
-	    |   `-- view/
-	    |       `-- [AMENDMENT_ID]/
-	    |           |-- members
-	    |           |-- self
-	    |           `-- voters
+	    |   |-- view/
+	    |   |   `-- [AMENDMENT_ID]/
+	    |   |       |-- members
+	    |   |       |-- self
+	    |   |       `-- voters
+	    |   `-- vote
 	    |-- coins/
-	    |   |-- submit
-	    |   `-- view/
-	    |       `-- [COIN_ID]
-	    |-- peer/
-	    |   |-- list
-	    |   |-- register
-	    |   `-- self
+	    |   `-- [PGP_FINGERPRINT]/
+	    |       |-- list
+	    |       `-- view/
+	    |           `-- [COIN_NUMBER]
+	    |-- community/
+	    |   |-- declare
+	    |   `-- join
 	    `-- transactions/
-	        |-- coin/
-	        |   `-- [COIN_ID]
-	        |-- recipient/
-	        |   `-- [OPENPGP_FINGERPRINT]
-	        |-- search
-	        |-- sender/
-	        |   `-- [OPENPGP_FINGERPRINT]
-	        |-- submit
+	        |-- process/
+	        |   |-- issuance
+	        |   `-- transfert
 	        `-- view/
 	            `-- [TRANSACTION_ID]
 

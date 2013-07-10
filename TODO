@@ -13,26 +13,25 @@ Documentation:
  
 Protocol implementation:
 
-   1) Retrieving PGP certificates:
-     ☐ REST service looking for OpenPGP certificates on public keyservers using HKP
-     ☐ Parse Base64 response and extract PGP keyring JSON structure
-     ☐ REST service to store a OpenPGP certificate Base64 encoded
+    1) Retrieving PGP certificates:
+     ☐ REST service looking for OpenPGP certificates on public keyservers using HKP - pks/lookup
+     ☐ REST service to store a OpenPGP certificate in AA format, with signature of it AA format too - pks/add
 
-   2) Managing Amendment submission:
-    ☐ REST service to push root certificates used to initialize Amendment Chain
-    ☐ REST service for receiving an Amendment data structure
-    ☐ Check Amendment structure
-    ☐ Check Amendment eligibility according to the Node rules (notably UD amount)
-    ☐ Store Amendment as available for voting
+    2) Managing Amendment submission:
+     ☐ REST service to push root certificates used to initialize Amendment Chain - udc/amendments/init
+     ☐ REST service for receiving an Amendment data structure - udc/amendments/submit
+     ☐ Check Amendment structure
+     ☐ Check Amendment eligibility according to the Node rules (notably UD amount)
+     ☐ Store Amendment as available for voting
 
-   3) Voting system:
-    ☐ REST service to handle voting requests
-    ☐ Store valid voting requests
-    ☐ According to the Node rules, chain the valid Amendment gathering enough votes
+    3) Voting system:
+     ☐ REST service to handle voting requests - udc/amendments/vote
+     ☐ Store valid voting requests
+     ☐ According to the Node rules, chain the valid Amendment gathering enough votes
  
-   4) Accepting new members:
-    ☐ REST service to receive Joining Request
-    ☐ According to the rules, queue the request for integration in next Amendment
+    4) Accepting new members:
+     ☐ REST service to receive Joining Request - udc/community/join
+     ☐ According to the rules, queue the request for integration in next Amendment
  
     5) Transactions: handling issuance transactions:
      ☐ REST service for a PGP certificate to declare which Nodes manages its transactions
@@ -40,10 +39,10 @@ Protocol implementation:
      ☐ REST service to process a handshaked transaction
      ☐ REST service to process a forging transaction
  
-   6) Non-individual PGP keys (collective keys):
-    ☐ Define the OpenPGP comment format (ucid)
-    ☐ Accept PGP servers declaration of Nodes managing its money
-    ☐ Accept transactions fitting with this new PGP certificates format
+    6) Non-individual PGP keys (collective keys):
+     ☐ Define the OpenPGP comment format (ucid)
+     ☐ Accept PGP servers declaration of Nodes managing its money
+     ☐ Accept transactions fitting with this new PGP certificates format
 
  GUI implementation:
  Yet to define

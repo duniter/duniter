@@ -291,25 +291,22 @@ For that purpose, Merkle URL defines 4 parameters:
 
 ### pks/*
 
-This URL is used to manage OpenPGP certificates, making NodeCoin acting like an SKS server.
+This URL is used to manage OpenPGP certificates, making NodeCoin acting **like** an SKS server.
 * `add` allows to POST ASCII-ARMORED OpenPGP certificates.
 * `lookup` allows to search for OpenPGP certificates, according to [HKP draft](http://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#page-3).
 
 ### udc/*
 
-This URL pattern manages all the data exclusively used by NodeCoin.
+This URL pattern manages all the data used by NodeCoin based on the PKS.
+* `amendments/init` is used to POST the initial keys used to forge the initial amendment (aka. Monetary Contract).
 * `amendments/submit` is used to POST an amendment with the required signatures (votes) in ASCII-Armored format.
 * `amendments/view/[AMENDMENT_ID]/members` is a Merkle URL referencing to the members of the Web of Trust.
 * `amendments/view/[AMENDMENT_ID]/self` shows the raw data of the amendment with the given `[AMENDMENT_ID]`.
 * `amendments/view/[AMENDMENT_ID]/voters` is a Merkle URL referencing to the voters required to validate the given amendment.
-* `coins/submit` is the URL to POST for money issuance.
-* `coins/view/[COIN_ID]` allows to view money issuance document for a given `[COIN_ID]`
-* `peer/list` displays the list of peers listening events of this peer.
-* `peer/register` allows a node to register to this node, adding it to the peering list
-* `peer/self` displays information on the node, notably which coins/senders/recîpients are managed by it.
-* `transactions/coin/[COIN_ID]` is a Merkle URL referencing to the list of transactions containing this particular coin.
-* `transactions/recipient/[OPENPGP_FINGERPRINT]` is a Merkle URL referencing to the list of transactions containing this particular recipient.
-* `transactions/sender/[OPENPGP_FINGERPRINT]` is a Merkle URL referencing to the list of transactions containing this particular sender.
-* `transactions/search` is a way to look for transactions.
-* `transactions/submit` permits to submit new transactions.
+* `coins/[PGP_FINGERPRINT]/list` lists the coins owned by the given `PGP_FINGERPRINT`.
+* `coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]` allows to view money issuance transaction for this coin.
+* `community/join` is used to POST a an individual request for officially join the community.
+* `community/declare` is used to POST a declaration listing nodes where are hosted member's transactions.
+* `transactions/process/issuance` is a URL to POST an issuance transaction.
+* `transactions/process/transfert` is a URL to POST a transfert transaction.
 * `transactions/view/[TRANSACTION_ID]` displays detailed informations about a transaction.

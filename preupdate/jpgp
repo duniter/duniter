@@ -1,7 +1,7 @@
 #!/bin/bash
 jar=$1
 echo "jpgp - preupdate ($jar)"
-if [ -f $jar ]; then
+if [ -e bin/$jar ]; then
 	rm "bin/$jar"
 fi
 

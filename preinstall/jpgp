@@ -5,7 +5,7 @@ jar=$1
 echo "jpgp - preinstall ($jar)"
 
 jpgp_folder="mvn-jpgp"
-if [ ! -f $jar ]; then
+if [ ! -e "bin/$jar" ]; then
 	rm -Rf "$jpgp_folder"
 	git clone --branch=master http://github.com/c-geek/jpgp.git "$jpgp_folder"
 	cd "$jpgp_folder"

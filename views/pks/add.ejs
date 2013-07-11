@@ -1,7 +1,15 @@
 <html>
+  <head>
+    <style>
+      textarea{
+        float: left;
+      }
+    </style>
+  </head>
   <body>
     <form action="/pks/add" method="POST">
-      <textarea name="keytext" id="keytext" cols="80" rows="50"></textarea>
+      <textarea name="keytext" id="keytext" cols="80" rows="45"></textarea>
+      <textarea name="keysign" id="keysign" cols="80" rows="45"></textarea>
       <input type="submit">
     </form>
   </body>

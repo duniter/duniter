@@ -14,8 +14,8 @@ Documentation:
 Protocol implementation:
 
     1) Retrieving PGP certificates:
-     ☐ REST service looking for OpenPGP certificates on public keyservers using HKP - pks/lookup
-     ☐ REST service to store a OpenPGP certificate in AA format, with signature of it AA format too - pks/add
+     ✔ REST service looking for OpenPGP certificates - pks/lookup @done (13-07-12 01:20)
+     ✔ REST service to store a OpenPGP certificate in AA format, with signature of it AA format too - pks/add @done (13-07-12 01:20)
 
     2) Managing Amendment submission:
      ☐ REST service to push root certificates used to initialize Amendment Chain - udc/amendments/init

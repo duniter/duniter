@@ -1,3 +1,5 @@
 *.sublime*
 node_modules/
 *.html
+npm-debug.log
+bin/jpgp*.jar

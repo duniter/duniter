@@ -7,8 +7,9 @@
     "test": "test"
   },
   "scripts": {
-    "preinstall": "sh preinstall/jpgp",
-    "pretest": "sh preinstall/jpgp",
+    "preupdate": "sh preupdate/jpgp jpgp-0.0.1-SNAPSHOT.jar",
+    "preinstall": "sh preinstall/jpgp jpgp-0.0.1-SNAPSHOT.jar",
+    "pretest": "sh preinstall/jpgp jpgp-0.0.1-SNAPSHOT.jar",
     "test": "mocha test/*.js"
   },
   "repository": {

@@ -1,9 +1,16 @@
 #!/bin/bash
+
+# Checkout jpgp (Java module for PGP) from SCM, compiles it, and copies it to bin/ folder.
+jar=$1
+echo "jpgp - preinstall ($jar)"
+
 jpgp_folder="mvn-jpgp"
-rm -Rf "$jpgp_folder"
-git clone --branch=master http://github.com/c-geek/jpgp.git "$jpgp_folder"
-cd "$jpgp_folder"
-mvn clean install
-cp target/jpgp-0.0.1-SNAPSHOT.jar ../bin/
-cd ../
-rm -Rf "$jpgp_folder"
+if [ ! -f $jar ]; then
+	rm -Rf "$jpgp_folder"
+	git clone --branch=master http://github.com/c-geek/jpgp.git "$jpgp_folder"
+	cd "$jpgp_folder"
+	mvn clean install
+	cp -v "target/$jar " "../bin/"
+	cd ../
+	rm -Rf "$jpgp_folder"
+fi

@@ -9,7 +9,8 @@ var app = nodecoin.express.app({
     database : "nodecoin_test.db",
     protocol : "sqlite",
     dropAll: true
-  }
+  },
+  initKeys: []
 });
 
 var gets = [
@@ -23,7 +24,6 @@ var gets = [
 ];
 
 var posts = [
-  {should: 501, url: '/udc/amendments/init'},
   {should: 501, url: '/udc/amendments/submit'},
   {should: 501, url: '/udc/amendments/vote'},
   {should: 501, url: '/udc/community/declare'},
@@ -90,5 +90,15 @@ describe('Request on /pks/add', function(){
     request(app)
       .post('/pks/add')
       .expect(400, done);
+  });
+});
+
+
+//----------- AMENDMENTS -----------
+describe('Request on /udc/amendments/init', function(){
+  it('GET should respond 200', function(done){
+    request(app)
+      .get('/udc/amendments/init')
+      .expect(200, done);
   });
 });

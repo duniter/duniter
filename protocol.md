@@ -298,7 +298,7 @@ This URL is used to manage OpenPGP certificates, making NodeCoin acting **like**
 ### udc/*
 
 This URL pattern manages all the data used by NodeCoin based on the PKS.
-* `amendments/init` is used to POST the initial keys used to forge the initial amendment (aka. Monetary Contract).
+* `amendments/init` is used to GET the initial keys used to forge the initial amendment (aka. Monetary Contract).
 * `amendments/submit` is used to POST an amendment with the required signatures (votes) in ASCII-Armored format.
 * `amendments/view/[AMENDMENT_ID]/members` is a Merkle URL referencing to the members of the Web of Trust.
 * `amendments/view/[AMENDMENT_ID]/self` shows the raw data of the amendment with the given `[AMENDMENT_ID]`.

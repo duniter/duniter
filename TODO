@@ -18,7 +18,7 @@ Protocol implementation:
      ✔ REST service to store a OpenPGP certificate in AA format, with signature of it AA format too - pks/add @done (13-07-12 01:20)
 
     2) Managing Amendment submission:
-     ☐ REST service to push root certificates used to initialize Amendment Chain - udc/amendments/init
+     ✔ REST service to view root certificates used to initialize Amendment Chain - udc/amendments/init @done (13-07-12 23:55)
      ☐ REST service for receiving an Amendment data structure - udc/amendments/submit
      ☐ Check Amendment structure
      ☐ Check Amendment eligibility according to the Node rules (notably UD amount)

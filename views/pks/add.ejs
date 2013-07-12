@@ -12,5 +12,10 @@
       <textarea name="keysign" id="keysign" cols="80" rows="45"></textarea>
       <input type="submit">
     </form>
+    <form action="/pks/add" method="POST" enctype="multipart/form-data">
+      <input type="file" name="keytext">
+      <input type="file" name="keysign">
+      <input type="submit">
+    </form>
   </body>
 </html>

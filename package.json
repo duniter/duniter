@@ -1,6 +1,6 @@
 {
   "name": "nodecoin",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "OpenUDC-like implementation using Node.js",
   "main": "lib/nodecoin.js",
   "directories": {

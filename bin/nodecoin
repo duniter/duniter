@@ -4,9 +4,14 @@ var config      = require('../config'),
     nodecoin    = require('../lib/nodecoin'),
     program   = require('commander');
 
+function keys (val) {
+  return val.split(',');
+}
+
 program
   .version('0.0.1')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
+  .option('-k, --initKeys <keylist>', 'List of public key pathes, comma separated.', keys)
   .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
   .option('--ipv6 <address>', 'IPV6 interface to listen for requests')
   .parse(process.argv);
@@ -14,6 +19,13 @@ program
 config.server.port        = program.port || config.server.port;
 config.server.ipv4address = program.ipv4 || config.server.ipv4address;
 config.server.ipv6address = program.ipv6 || config.server.ipv6address;
+
+// Set init keys
+config.initKeys = [];
+program.initKeys = program.initKeys || [];
+for(var i in program.initKeys){
+  config.initKeys.push({path: program.initKeys[i]});
+}
 
 var app = nodecoin.express.app(config);
 

@@ -12,6 +12,9 @@ program
   .version('0.0.1')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
   .option('-k, --initKeys <keylist>', 'List of public key pathes, comma separated.', keys)
+  .option('--mhost <host>', 'MongoDB host.')
+  .option('--mport <port>', 'MongoDB port.')
+  .option('--mdb <name>', 'MongoDB database name.')
   .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
   .option('--ipv6 <address>', 'IPV6 interface to listen for requests')
   .parse(process.argv);
@@ -19,6 +22,9 @@ program
 config.server.port        = program.port || config.server.port;
 config.server.ipv4address = program.ipv4 || config.server.ipv4address;
 config.server.ipv6address = program.ipv6 || config.server.ipv6address;
+config.db.host            = program.mhost || config.db.host;
+config.db.port            = program.mport || config.db.port;
+config.db.database        = program.mdb || config.db.database;
 
 // Set init keys
 config.initKeys = [];

@@ -3,15 +3,25 @@ var should = require('should');
 var request = require('supertest');
 var nodecoin = require('../lib/nodecoin');
 
-var app = nodecoin.express.app({
+var config = {
   server: { port: 8001 },
   db: {
-    database : "nodecoin_test.db",
-    protocol : "sqlite",
-    dropAll: true
+    database : "nodecoin_test",
+    host: "localhost"
   },
   initKeys: []
+};
+
+// Bootstraps models
+nodecoin.database.init();
+nodecoin.database.connect(config, function (err) {
+  if(!err)
+    console.log("Connected to MongoDB.");
+  else
+    console.log("Error connecting to DB: " + err);
 });
+
+var app = nodecoin.express.app(config);
 
 var gets = [
   {should: 501, url: '/udc/amendments/view/[000001]/members'},

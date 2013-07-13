@@ -31,9 +31,7 @@
     "express": "",
     "commander": "",
     "ejs": "",
-    "orm": "",
-    "mysql" : "2.0.0-alpha7",
-    "sqlite3" : "",
+    "mongoose": "",
     "async": "",
     "underscore": ""
   },

@@ -9,8 +9,8 @@ if [ ! -e "bin/$jar" ]; then
 	rm -Rf "$jpgp_folder"
 	git clone --branch=master http://github.com/c-geek/jpgp.git "$jpgp_folder"
 	cd "$jpgp_folder"
-	mvn clean install
-	cp -v "target/$jar " "../bin/"
+	mvn clean package
+	cp -v "target/$jar" "../bin/"
 	cd ../
 	rm -Rf "$jpgp_folder"
 fi

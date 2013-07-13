@@ -101,11 +101,14 @@ The structure of an amendment is the following:
 	Version: VERSION
 	Currency: CURRENCY_NAME
 	Number: INCREMENT
-	VotersRoot: VOTERS_MERKLE_ROOT
-	VotersCount: VOTERS_COUNT
 	PreviousHash: PREVIOUS_HASH
 	UniversalDividend: UNIVERSAL_DIVIDEND
 	CoinMinimalPower: COIN_MINIMAL_POWER
+	VotersRoot: VOTERS_MERKLE_ROOT
+	VotersCount: VOTERS_COUNT
+	VotersChanges:
+	+INDIVIDUAL_FPR_VOTING_THIS_ONE_NOT_VOTED_PREVIOUS
+	-INDIVIDUAL_FPR_VOTED_PREVIOUS_NOT_VOTING_THIS_ONE
 	MembersRoot: WOT_MERKLE_ROOT
 	MembersCount: WOT_SIZE
 	MembersChanges:
@@ -119,14 +122,19 @@ Here is a description of each field:
 * `Version` denotes the current structure version. This number may change in cases of evolution of the amendment structure.
 * `Currency` contains the name of the currency. This is used to identify the target of the amendment in case of multiple moneys using NodeCoin protocol.
 * `Number` references the position of the amendment in the amendment chain (aka. Monetary Contract). Initial amendment has the value '0'.
-* `VotersRoot` is used to authenticate the list of members whose vote is required to accept this amendment. It contains the root hash of the Merkle tree listing the members's fingerprints.
-* `VotersCount` is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree, hence makes harder to generate a fake Merkle tree with the same hash.
 * `PreviousHash` is mandatory if `Number` is positive. It is a hash of all the content of an amendment, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough, `PreviousHash` is an authentication mecanism).
 * `UniversalDividend` is a positive number if provided. It defines the amount of money each member of the community may create.
 * `CoinMinimalPower` restricts the money issuance to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created. This field is used to avoid abuses linked to money issuance.
+* `VotersRoot` is the root hash of a Merkle tree listing the voters of this amendment. It is a checksum mecanism. Such a Merkle tree is composed of all previous voters, plus every `INDIVIDUAL_FPR_VOTING_THIS_ONE_NOT_VOTED_PREVIOUS`, minus every `INDIVIDUAL_FPR_VOTED_PREVIOUS_NOT_VOTING_THIS_ONE` members.
+* `VotersCount` is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree, hence makes harder to generate a fake Merkle tree with the same hash.
+* `VotersChanges` contains a list of members whose voting state change. A new voting member has a line starting with '+' and a no more voting one with '-'. Members who voted previous amendment and voted this one too are not listed here. Note that only individuals member may vote, i.e. having a valid `udid2` string in their OpenPGP certificate.
 * `MembersRoot` is the root hash of a Merkle tree listing the members of the WoT. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle.
 * `MembersCount` is used in combination of `MembersRoot`, just like `VotersCount` is with `VotersRoot`.
 * `MembersChanges` contains a list of members joining or leaving the WoT. A joining member has a line starting with '+' and a leaving one with '-'.
+
+A valid amendment MUST gather AT LEAST 2/3 votes of the previous amendment voters. That is to say, if AM(0) has voters [A,B,C], then AM(1) MUST have AT LEAST votes of [A,B] or [A,C]. Hence, [A,B] is valid, [A,D] is NOT, [A,B,D] is valid, [A,C,D] is too.
+
+This mecanism ensure a certain control of money community growth directly by its individual members. New voters don't see their vote having an immediate effect, however it allows them to weight for following amendments. Such mecanisms aims at giving stability and control to the system.
 
 ## Transactions
 

@@ -59,14 +59,14 @@ Nodecoin should be launched with a few more parameters to be part of a currency 
 
 First, it is required to tell the name of the currency:
 
-    $ nodecoin --currency beta_brousoufs
+    $ nodecoin --currency beta_brousouf
 
     NodeCoin server listening on port 8081
     Currency name: beta_brousouf
 
 Second, initial public keys of the first members of the community must be given:
 
-    $ nodecoin --currency beta_brousoufs --initKeys /path/to/key1.pub,/path/to/key2.pub
+    $ nodecoin --currency beta_brousouf --initKeys /path/to/key1.pub,/path/to/key2.pub
 
     NodeCoin server listening on port 8081
     Currency name: beta_brousouf

@@ -10,4 +10,8 @@ exports.db = {
   host     : "localhost"
 };
 
+exports.currency = {
+  name     : ""
+};
+
 exports.initKeys = [];

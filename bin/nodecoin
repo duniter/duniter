@@ -12,6 +12,7 @@ program
   .version('0.0.1')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
   .option('-k, --initKeys <keylist>', 'List of public key pathes, comma separated.', keys)
+  .option('-c, --currency <name>', 'Name of the currency managed by this node.')
   .option('--mhost <host>', 'MongoDB host.')
   .option('--mport <port>', 'MongoDB port.')
   .option('--mdb <name>', 'MongoDB database name.')
@@ -25,6 +26,7 @@ config.server.ipv6address = program.ipv6 || config.server.ipv6address;
 config.db.host            = program.mhost || config.db.host;
 config.db.port            = program.mport || config.db.port;
 config.db.database        = program.mdb || config.db.database;
+config.currency.name      = program.currency || config.currency.name;
 
 // Set init keys
 config.initKeys = [];

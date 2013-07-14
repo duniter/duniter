@@ -11,8 +11,6 @@ var config = {
   initKeys: []
 };
 
-var app = nodecoin.express.app(config);
-
 var gets = [
   {should: 501, url: '/udc/amendments/view/[000001]/members'},
   {should: 501, url: '/udc/amendments/view/[000001]/self'},
@@ -50,6 +48,14 @@ function testPOST(url, should) {
     });
   });
 }
+
+var app;
+before(function (done) {
+  nodecoin.express.app(config, function (err, appReady) {
+    app = appReady;
+    done();
+  });
+});
 
 for (var i = 0; i < gets.length; i++) {
   testGET(gets[i].url, gets[i].should);

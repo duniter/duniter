@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 var config   = require('../config/config');
-var nodecoin = require('../lib/nodecoin');
+var nodecoin = require('../app/lib/nodecoin');
 var http     = require('http');
 var program  = require('commander');
 
@@ -35,23 +35,23 @@ for(var i in program.initKeys){
   config.initKeys.push({path: program.initKeys[i]});
 }
 
-var app = nodecoin.express.app(config);
+nodecoin.express.app(config, function (err, app) {
+  if(!config.server.ipv4address){
+    http.createServer(app).listen(app.get('port'), function(){
+      console.log('NodeCoin server listening on port ' + app.get('port'));
+      console.log("Currency name: " + app.get('config').currency.name);
+    });
+  }
 
-if(!config.server.ipv4address){
-  http.createServer(app).listen(app.get('port'), function(){
-    console.log('NodeCoin server listening on port ' + app.get('port'));
-    console.log("Currency name: " + app.get('config').currency.name);
-  });
-}
+  if(config.server.ipv4address){
+    http.createServer(app).listen(app.get('port'), config.server.ipv4address, function(){
+      console.log('NodeCoin server listening on ' + config.server.ipv4address + ' port ' + app.get('port'));
+    });
+  }
 
-if(config.server.ipv4address){
-  http.createServer(app).listen(app.get('port'), config.server.ipv4address, function(){
-    console.log('NodeCoin server listening on ' + config.server.ipv4address + ' port ' + app.get('port'));
-  });
-}
-
-if(config.server.ipv6address){
-  http.createServer(app).listen(app.get('port'), config.server.ipv6address, function(){
-    console.log('NodeCoin server listening on ' + config.server.ipv6address + ' port ' + app.get('port'));
-  });
-}
+  if(config.server.ipv6address){
+    http.createServer(app).listen(app.get('port'), config.server.ipv6address, function(){
+      console.log('NodeCoin server listening on ' + config.server.ipv6address + ' port ' + app.get('port'));
+    });
+  }
+});

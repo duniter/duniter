@@ -59,45 +59,54 @@ module.exports.express = {
     app.get(    '/udc/amendments/submit',                       web.amendments.submit);
   },
 
-  app: function (config) {
-    var app = express();
+  app: function (config, onLoaded) {
 
-    configurer(config).parseFiles(function (err) {
-      if(!err){
-        console.log("Initkeys loaded.");
+    async.parallel({
+      loadInitKeys: function(callback){
+        configurer(config).parseFiles(function (err) {
+          if(!err){
+            console.log("Initkeys loaded.");
+          }
+          else{
+            console.log(err);
+          }
+          callback(err);
+        });
+      },
+      loadMongoDB: function(callback){
+        // Bootstraps models
+        nodecoin.database.init();
+        nodecoin.database.connect(config, function (err) {
+          if(!err)
+            console.log("Connected to MongoDB.");
+          else
+            console.log("Error connecting to DB: " + err);
+          callback(err);
+        });
       }
-      else{
-        console.log(err);
+    },
+    function(err, results) {
+      var app = express();
+
+      // all environments
+      app.set('config', config);
+      app.set('port', process.env.PORT || config.server.port);
+      app.use(express.favicon(__dirname + '/../public/favicon.ico'));
+      app.use(express.static(__dirname + '/../public'));
+      app.use(express.logger('dev'));
+      app.use(express.bodyParser());
+      app.use(express.methodOverride());
+      app.use(express.cookieParser('your secret here'));
+      app.use(express.session());
+      app.use(app.router);
+
+      // development only
+      if ('development' == app.get('env')) {
+        app.use(express.errorHandler());
       }
-    });
+      this.route(app);
 
-    // Bootstraps models
-    nodecoin.database.init();
-    nodecoin.database.connect(config, function (err) {
-      if(!err)
-        console.log("Connected to MongoDB.");
-      else
-        console.log("Error connecting to DB: " + err);
-    });
-
-    // all environments
-    app.set('config', config);
-    app.set('port', process.env.PORT || config.server.port);
-    app.use(express.favicon(__dirname + '/../public/favicon.ico'));
-    app.use(express.static(__dirname + '/../public'));
-    app.use(express.logger('dev'));
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(express.cookieParser('your secret here'));
-    app.use(express.session());
-    app.use(app.router);
-
-    // development only
-    if ('development' == app.get('env')) {
-      app.use(express.errorHandler());
-    }
-
-    this.route(app);
-    return app;
+      onLoaded(err, app);
+    }.bind(this));
   }
 };

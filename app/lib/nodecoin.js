@@ -1,7 +1,7 @@
 var express    = require('express');
 var fs         = require('fs');
 var async      = require('async');
-var config     = require('../config');
+var config     = require('../../config/config');
 var path       = require('path');
 var mongoose   = require('mongoose');
 var _          = require('underscore');
@@ -10,7 +10,7 @@ var configurer = require('../lib/configurer');
 
 module.exports.database = {
   init: function () {
-    var models_path = __dirname + '/../app/models';
+    var models_path = __dirname + '/../models';
     fs.readdirSync(models_path).forEach(function (file) {
       if (~file.indexOf('.js')) require(models_path + '/' + file);
     });
@@ -34,9 +34,9 @@ module.exports.express = {
       res.end();
     }
 
-    var amend = require('./amendments');
-    var pks   = require('./pks');
-    var web   = require('./web');
+    var amend = require('../controllers/amendments');
+    var pks   = require('../controllers/pks');
+    var web   = require('../controllers/web');
 
     app.get(    '/pks/lookup',                                  pks.lookup);
     app.post(   '/pks/add',                                     pks.add);

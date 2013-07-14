@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-var config      = require('../config'),
-    http        = require('http'),
-    nodecoin    = require('../lib/nodecoin'),
-    program   = require('commander');
+var config   = require('../config/config');
+var nodecoin = require('../lib/nodecoin');
+var http     = require('http');
+var program  = require('commander');
 
 function keys (val) {
   return val.split(',');

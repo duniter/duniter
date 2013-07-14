@@ -1,4 +1,4 @@
-var jpgp     = require('../../lib/jpgp');
+var jpgp     = require('../lib/jpgp');
 var mongoose = require('mongoose');
 var async    = require('async');
 var _        = require('underscore');

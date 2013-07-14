@@ -30,13 +30,13 @@ module.exports.lookup = function (req, res) {
             count = 1;
             armor = foundKeys[0].raw;
           }
-          res.render('../views/pks/lookup_get.ejs', {"armor": armor, "search": pattern, "nbKeys": foundKeys.length}, function (err, text) {
+          res.render('../app/views/pks/lookup_get.ejs', {"armor": armor, "search": pattern, "nbKeys": foundKeys.length}, function (err, text) {
             res.writeHead(200, {"Content-type": "text/html"});
             res.end(text);
           });
           break;
         case 'index':
-          res.render('../views/pks/lookup.ejs', {"pubKeys": foundKeys}, function (err, text) {
+          res.render('../app/views/pks/lookup.ejs', {"pubKeys": foundKeys}, function (err, text) {
             res.writeHead(200, {"Content-type": "text/plain"});
             res.end(text);
           });
@@ -162,7 +162,7 @@ module.exports.add = function (req, res) {
               }, function (err) {
                 // Creates/updates done.
                 if(!err){
-                  res.render('../views/pks/added.ejs', {"pubKeys": pubKeys}, function (err, text) {
+                  res.render('../app/views/pks/added.ejs', {"pubKeys": pubKeys}, function (err, text) {
                     res.writeHead(200, {"Content-type": "text/plain"});
                     res.end(text);
                   });

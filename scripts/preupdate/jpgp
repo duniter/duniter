@@ -2,7 +2,7 @@
 jar=$1
 echo "jpgp - preupdate ($jar)"
 if [ -e bin/$jar ]; then
-	rm "bin/$jar"
+	rm "../bin/$jar"
 fi
 
 sh preinstall/jpgp $jar

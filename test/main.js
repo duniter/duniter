@@ -1,7 +1,6 @@
-
-var should = require('should');
-var request = require('supertest');
-var nodecoin = require('../lib/nodecoin');
+var should   = require('should');
+var request  = require('supertest');
+var nodecoin = require('../app/lib/nodecoin');
 
 var config = {
   server: { port: 8001 },
@@ -11,15 +10,6 @@ var config = {
   },
   initKeys: []
 };
-
-// Bootstraps models
-nodecoin.database.init();
-nodecoin.database.connect(config, function (err) {
-  if(!err)
-    console.log("Connected to MongoDB.");
-  else
-    console.log("Error connecting to DB: " + err);
-});
 
 var app = nodecoin.express.app(config);
 
@@ -34,7 +24,6 @@ var gets = [
 ];
 
 var posts = [
-  {should: 501, url: '/udc/amendments/submit'},
   {should: 501, url: '/udc/amendments/vote'},
   {should: 501, url: '/udc/community/declare'},
   {should: 501, url: '/udc/community/join'},
@@ -110,5 +99,13 @@ describe('Request on /udc/amendments/init', function(){
     request(app)
       .get('/udc/amendments/init')
       .expect(200, done);
+  });
+});
+
+describe('Request on /udc/amendments/submit', function(){
+  it('GET should respond 400', function(done){
+    request(app)
+      .post('/udc/amendments/submit')
+      .expect(400, done);
   });
 });

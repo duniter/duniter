@@ -1,4 +1,4 @@
-var jpgp     = require('../../lib/jpgp');
+var jpgp     = require('../lib/jpgp');
 var mongoose = require('mongoose');
 var async    = require('async');
 var _        = require('underscore');
@@ -56,6 +56,10 @@ function multipleLinesExtraction(am, wholeAmend, cap, done) {
 
 AmendmentSchema.methods = {
   parse: function(rawAmend, callback) {
+    if(!rawAmend){
+      callback("No amendment given");
+      return;
+    }
     var obj = this;
     var captures = [
       {prop: "version",         regexp: /Version: (.*)/},

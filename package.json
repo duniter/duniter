@@ -34,6 +34,7 @@
     "ejs": "",
     "mongoose": "",
     "async": "",
+    "sha1": "",
     "underscore": ""
   },
   "devDependencies": {

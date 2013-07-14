@@ -160,6 +160,17 @@ AmendmentSchema.methods = {
     ], function (err, result) {
       callback(err);
     });
+  },
+
+  getNewMembers: function() {
+    var members = [];
+    for (var i = 0; i < this.membersChanges.length; i++) {
+      var matches = this.membersChanges[i].match(/^\+([\w\d]{40})$/);
+      if(matches){
+        members.push(matches[1]);
+      }
+    }
+    return members;
   }
 };
 

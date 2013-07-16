@@ -87,78 +87,78 @@ AmendmentSchema.methods = {
     else callback("Bad document structure: no new line character at the end of the document.");
   },
 
-  verify: function(currency, callback){
+  verify: function(currency, done){
     var obj = this;
     async.waterfall([
       function(callback, err){
         // Version
         if(!obj.version || !obj.version.match(/^1$/))
-          err = "Version unknown";
+          err = {code: 100, message: "Version unknown"};
         callback(err);
       },
       function(callback, err){
         // Currency
         if(!obj.currency || !obj.currency.match("^"+ currency.name + "$"))
-          err = "Currency not managed";
+          err = {code: 101, message: "Currency '"+ obj.currency +"' not managed"};
         callback(err);
       },
       function(callback, err){
         // Number
         if(!obj.number || !obj.number.match(/^\d+$/))
-          err = "Incorrect Number field";
+          err = {code: 102, message: "Incorrect Number field"};
         callback(err);
       },
       function(callback, err){
         // Previous hash
         var isRoot = parseInt(obj.number, 10) === 0;
         if(!isRoot && (!obj.previousHash || !obj.previousHash.match(/^[A-Z\d]{40}$/)))
-          err = "PreviousHash must be provided for non-root amendment and match an uppercase SHA1 hash";
+          err = {code: 103, message: "PreviousHash must be provided for non-root amendment and match an uppercase SHA1 hash"};
         else if(isRoot && obj.previousHash)
-          err = "PreviousHash must not be provided for root amendment";
+          err = {code: 104, message: "PreviousHash must not be provided for root amendment"};
         callback(err);
       },
       function(callback, err){
         // Universal Dividend
         if(obj.dividend && !obj.dividend.match(/^\d+$/))
-          err = "UniversalDividend must be a decimal number";
+          err = {code: 105, message: "UniversalDividend must be a decimal number"};
         callback(err);
       },
       function(callback, err){
         // Coin Minimal Power
         if(obj.coinMinPower && !obj.dividend)
-          err = "CoinMinimalPower requires a valued UniversalDividend field";
+          err = {code: 106, message: "CoinMinimalPower requires a valued UniversalDividend field"};
         else if(obj.coinMinPower && !obj.coinMinPower.match(/^\d+$/))
-          err = "CoinMinimalPower must be a decimal number";
+          err = {code: 107, message: "CoinMinimalPower must be a decimal number"};
         else if(obj.coinMinPower && obj.dividend.length < parseInt(obj.coinMinPower, 10) + 1)
-          err = "No coin can be created with this value of CoinMinimalPower and UniversalDividend";
+          err = {code: 108, message: "No coin can be created with this value of CoinMinimalPower and UniversalDividend"};
         callback(err);
       },
       function(callback, err){
         // VotersRoot
         if(!obj.votersRoot || !obj.votersRoot.match(/^[A-Z\d]{40}$/))
-          err = "VotersRoot must be provided and match an uppercase SHA1 hash";
+          err = {code: 109, message: "VotersRoot must be provided and match an uppercase SHA1 hash"};
         callback(err);
       },
       function(callback, err){
         // VotersCount
         if(!obj.votersCount || !obj.votersCount.match(/^\d+$/))
-          err = "VotersCount must be a positive or null decimal number";
+          err = {code: 110, message: "VotersCount must be a positive or null decimal number"};
         callback(err);
       },
       function(callback, err){
         // MembersRoot
         if(!obj.membersRoot || !obj.membersRoot.match(/^[A-Z\d]{40}$/))
-          err = "MembersRoot must be provided and match an uppercase SHA1 hash";
+          err = {code: 111, message: "MembersRoot must be provided and match an uppercase SHA1 hash"};
         callback(err);
       },
       function(callback, err){
         // MembersCount
         if(!obj.membersCount || !obj.membersCount.match(/^\d+$/))
-          err = "MembersCount must be a positive or null decimal number";
+          err = {code: 112, message: "MembersCount must be a positive or null decimal number"};
         callback(err);
       }
     ], function (err, result) {
-      callback(err);
+      done(err.message, err.code);
     });
   },
 
@@ -171,6 +171,39 @@ AmendmentSchema.methods = {
       }
     }
     return members;
+  },
+
+  getLeavingMembers: function() {
+    var members = [];
+    for (var i = 0; i < this.membersChanges.length; i++) {
+      var matches = this.membersChanges[i].match(/^\-([\w\d]{40})$/);
+      if(matches){
+        members.push(matches[1]);
+      }
+    }
+    return members;
+  },
+
+  getNewVoters: function() {
+    var voters = [];
+    for (var i = 0; i < this.votersChanges.length; i++) {
+      var matches = this.votersChanges[i].match(/^\+([\w\d]{40})$/);
+      if(matches){
+        voters.push(matches[1]);
+      }
+    }
+    return voters;
+  },
+
+  getLeavingVoters: function() {
+    var voters = [];
+    for (var i = 0; i < this.votersChanges.length; i++) {
+      var matches = this.votersChanges[i].match(/^\-([\w\d]{40})$/);
+      if(matches){
+        voters.push(matches[1]);
+      }
+    }
+    return voters;
   }
 };
 

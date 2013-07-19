@@ -2,6 +2,7 @@ var should   = require('should');
 var assert   = require('assert');
 var fs       = require('fs');
 var mongoose = require('mongoose');
+var sha1     = require('sha1');
 var nodecoin = require('../app/lib/nodecoin');
 
 
@@ -72,6 +73,11 @@ describe('Amendment', function(){
       assert.equal(newVoters[0], "2E69197FAB029D8669EF85E82457A1587CA0ED9C");
       assert.equal(newVoters[1], "33BBFC0C67078D72AF128B5BA296CC530126F372");
       assert.equal(newVoters[2], "C73882B64B7E72237A2F460CE9CAB76D19A8651E");
+    });
+
+    it('its hash should be 6F4ACBC7A25A0AAB9B58778EAD5A297EF3E51D00', function(){
+      assert.equal(amTest.hash, '6F4ACBC7A25A0AAB9B58778EAD5A297EF3E51D00');
+      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '6F4ACBC7A25A0AAB9B58778EAD5A297EF3E51D00');
     });
   });
 

@@ -19,8 +19,8 @@ Protocol implementation:
 
     2) Managing Amendment submission:
      ✔ REST service to view root certificates used to initialize Amendment Chain - udc/amendments/init @done (13-07-12 23:55)
-     ☐ REST service for receiving an Amendment data structure - udc/amendments/submit
-     ☐ Check Amendment structure
+     ✔ REST service for receiving an Amendment data structure - udc/amendments/submit @done (13-07-19 21:43)
+     ✔ Check Amendment structure @done (13-07-19 21:43)
      ☐ Check Amendment eligibility according to the Node rules (notably UD amount)
      ☐ Store Amendment as available for voting
 

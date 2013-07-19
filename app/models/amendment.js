@@ -1,6 +1,7 @@
 var jpgp     = require('../lib/jpgp');
 var mongoose = require('mongoose');
 var async    = require('async');
+var sha1     = require('sha1');
 var _        = require('underscore');
 var Schema   = mongoose.Schema;
 
@@ -17,6 +18,7 @@ var AmendmentSchema = new Schema({
   membersRoot: String,
   membersCount: String,
   membersChanges: Array,
+  hash: String,
   created: Date,
   updated: Date
 });
@@ -60,6 +62,7 @@ AmendmentSchema.methods = {
       callback("No amendment given");
       return;
     }
+    this.hash = sha1(rawAmend).toUpperCase();
     var obj = this;
     var captures = [
       {prop: "version",         regexp: /Version: (.*)/},
@@ -204,6 +207,35 @@ AmendmentSchema.methods = {
       }
     }
     return voters;
+  },
+
+  getRaw: function() {
+    var raw = "";
+    raw += "Version: " + this.version + "\n";
+    raw += "Currency: " + this.currency + "\n";
+    raw += "Number: " + this.number + "\n";
+    if(this.previousHash){
+      raw += "PreviousHash: " + this.previousHash + "\n";
+    }
+    if(this.dividend){
+      raw += "UniversalDividend: " + this.dividend + "\n";
+    }
+    if(this.coinMinPower){
+      raw += "CoinMinimalPower: " + this.coinMinPower + "\n";
+    }
+    raw += "VotersRoot: " + this.votersRoot + "\n";
+    raw += "VotersCount: " + this.votersCount + "\n";
+    raw += "VotersChanges:\n";
+    for(var j = 0; j < this.votersChanges.length; j++){
+      raw += this.votersChanges[j] + "\n";
+    }
+    raw += "MembersRoot: " + this.membersRoot + "\n";
+    raw += "MembersCount: " + this.membersCount + "\n";
+    raw += "MembersChanges:\n";
+    for(var i = 0; i < this.membersChanges.length; i++){
+      raw += this.membersChanges[i] + "\n";
+    }
+    return raw;
   }
 };
 

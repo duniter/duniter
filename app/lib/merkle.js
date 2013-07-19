@@ -48,6 +48,10 @@ function Merkle(strings) {
     });
   };
 
+  this.getRoot = function() {
+    return this.levels[0][0];
+  };
+
   // PRIVATE
   function getNodes(leaves) {
     var remainder = leaves.length % 2;

@@ -166,8 +166,8 @@ describe('Amendment', function(){
       assert.equal(amTest.previousHash, '3E6EDD8CF1391AFADB3E3619B3A131E9300B963F');
     });
 
-    it('should have D092366E448D18C0E72D7C7976A647A122B55225 members hash', function(){
-      assert.equal(amTest.membersRoot, 'D092366E448D18C0E72D7C7976A647A122B55225');
+    it('should have F92B6F81C85200250EE51783F5F9F6ACA57A9AFF members hash', function(){
+      assert.equal(amTest.membersRoot, 'F92B6F81C85200250EE51783F5F9F6ACA57A9AFF');
     });
 
     it('should have DC7A9229DFDABFB9769789B7BFAE08048BCB856F voters hash', function(){

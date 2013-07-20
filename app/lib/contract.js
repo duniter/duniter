@@ -55,9 +55,9 @@ function Contract(currencyName, initKeys) {
                 for(i = 0; i < leavingMembers.length; i++){
                   var index = tmpMembers.indexOf(leavingMembers[i]);
                   if(index !== -1)
-                    tmpMembers.splice(index, 1);
+                    tmpMembers.splice(index, 0);
                   else{
-                    callback("Leaving member '"+ leavingMembers[i] + "' was already not in the members list");
+                    callback("Leaving member '"+ leavingMembers[i] + "' was not in the members list");
                     return;
                   }
                 }
@@ -84,9 +84,9 @@ function Contract(currencyName, initKeys) {
                 for(i = 0; i < leavingVoters.length; i++){
                   var index = tmpVoters.indexOf(leavingVoters[i]);
                   if(index !== -1)
-                    tmpVoters.splice(index, 1);
+                    tmpVoters.splice(index, 0);
                   else{
-                    callback("Leaving voter '"+ leavingVoters[i] + "' was already not in the voters list");
+                    callback("Leaving voter '"+ leavingVoters[i] + "' was not in the voters list");
                     return;
                   }
                   tmpVoters.splice(index, 1);

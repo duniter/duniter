@@ -3,6 +3,7 @@ var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
+var fs       = require('fs');
 var Schema   = mongoose.Schema;
 
 var AmendmentSchema = new Schema({
@@ -101,7 +102,7 @@ AmendmentSchema.methods = {
       },
       function(callback, err){
         // Currency
-        if(!obj.currency || !obj.currency.match("^"+ currency.name + "$"))
+        if(!obj.currency || !obj.currency.match("^"+ currency + "$"))
           err = {code: 101, message: "Currency '"+ obj.currency +"' not managed"};
         callback(err);
       },
@@ -161,7 +162,10 @@ AmendmentSchema.methods = {
         callback(err);
       }
     ], function (err, result) {
-      done(err.message, err.code);
+      if(err)
+        done(err.message, err.code);
+      else
+        done();
     });
   },
 
@@ -236,6 +240,15 @@ AmendmentSchema.methods = {
       raw += this.membersChanges[i] + "\n";
     }
     return raw;
+  },
+
+  loadFromFile: function(file, done) {
+    var obj = this;
+    fs.readFile(file, {encoding: "utf8"}, function (err, data) {
+      obj.parse(data, function(err) {
+        done(err);
+      });
+    });
   }
 };
 

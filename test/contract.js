@@ -7,17 +7,19 @@ var async     = require('async');
 var nodecoin  = require('../app/lib/nodecoin');
 nodecoin.database.init();
 var Amendment = mongoose.model('Amendment');
-var contract  = require('../app/lib/contract');
+var Contract  = mongoose.model('Contract');
 
 describe('Monetary Contract', function(){
 
   describe('-beta_brousouf- 3 amendments', function(){
 
-    var MonetaryContract = new contract("beta_brousouf", [
+    var MonetaryContract = new Contract({
+      currency: "beta_brousouf",
+      initKeys: [
       "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
       "33BBFC0C67078D72AF128B5BA296CC530126F372",
       "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-    ]);
+    ]});
 
     before(function (done) {
       initContract(MonetaryContract, ["BB-AM0-OK", "BB-AM1-OK", "BB-AM2-OK"], done);
@@ -45,11 +47,13 @@ describe('Monetary Contract', function(){
 
   describe('-beta_brousouf- 2 amendments', function(){
 
-    var MonetaryContract = new contract("beta_brousouf", [
+    var MonetaryContract = new Contract({
+      currency: "beta_brousouf",
+      initKeys: [
       "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
       "33BBFC0C67078D72AF128B5BA296CC530126F372",
       "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-    ]);
+    ]});
 
     before(function (done) {
       initContract(MonetaryContract, ["BB-AM0-OK", "BB-AM1-OK"], done);
@@ -77,11 +81,13 @@ describe('Monetary Contract', function(){
 
   describe('-beta_brousouf- with wrong votes for AM2', function(){
 
-    var MonetaryContract = new contract("beta_brousouf", [
+    var MonetaryContract = new Contract({
+      currency: "beta_brousouf",
+      initKeys: [
       "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
       "33BBFC0C67078D72AF128B5BA296CC530126F372",
       "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-    ]);
+    ]});
 
     before(function (done) {
       initContract(MonetaryContract, ["BB-AM0-OK", "BB-AM1-OK", "BB-AM2-WRONG-VOTES"], function (err) {

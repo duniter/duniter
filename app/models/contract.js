@@ -1,21 +1,33 @@
 var sha1      = require('sha1');
 var async     = require('async');
-var merkle    = require('./merkle');
+var merkle    = require('../lib/merkle');
 var mongoose  = require('mongoose');
 var Amendment = mongoose.model('Amendment');
+var Schema    = mongoose.Schema;
 
-function Contract(currencyName, initKeys) {
+var ContractSchema = new Schema({
+  length: {"type": Number, "default": 0},
+  currency: String,
+  initKeys: Array,
+  monetaryMass: {"type": Number, "default": 0},
+  members: Array,
+  voters: Array,
+  currentHash: String,
+  amendments: Array,
+  created: Date,
+  updated: Date
+});
 
-  this.length = 0;
-  this.currency = currencyName;
-  this.initKeys = initKeys;
-  this.monetaryMass = 0;
-  this.members = [];
-  this.voters = [];
-  this.currentHash = "";
+function error(message, code) {
+  var err = message;
+  if(code)
+    message += " (" + code + ")";
+  return err;
+}
 
-  // PUBLIC
-  this.feed = function(rawAmendment, done) {
+ContractSchema.methods = {
+
+  check: function (rawAmendment, done) {
     var obj = this;
     var am = new Amendment();
     am.parse(rawAmendment, function(err) {
@@ -137,17 +149,9 @@ function Contract(currencyName, initKeys) {
                 }
               }
             ], function (err) {
-
               if(!err){
-                // Application of the amendment
-                obj.members = tmpMembers;
-                obj.voters = tmpVoters;
-                if(am.dividend){
-                  obj.monetaryMass += obj.members.length * parseInt(am.dividend, 10);
-                }
-                obj.currentHash = sha1(am.getRaw()).toUpperCase();
-                obj.length++;
-                done();
+                //****** VERIFICATION OK ******//
+                done(null, am, tmpMembers, tmpVoters, am.dividend, sha1(am.getRaw()).toUpperCase());
               }
               else done(err);
             });
@@ -157,24 +161,34 @@ function Contract(currencyName, initKeys) {
       }
       else done(error(err));
     });
-  };
+  },
 
-  function error(message, code) {
-    var err = message;
-    if(code)
-      message += " (" + code + ")";
-    return err;
-  }
+  feed: function(rawAmendment, done) {
+    var obj = this;
+    obj.check(rawAmendment, function (err, amendment, members, voters, dividend, hash) {
+      if(!err){
+        // Application of the amendment
+        obj.members = members;
+        obj.voters = voters;
+        if(dividend){
+          obj.monetaryMass += obj.members.length * parseInt(dividend, 10);
+        }
+        obj.currentHash = hash;
+        obj.amendments.push(amendment);
+        obj.length++;
+        done();
+      }
+      else done(err);
+    });
+  },
 
-  this.feedAll = function (amendments, done) {
+  feedAll: function (amendments, done) {
     // Loading Monetary Contract
     var obj = this;
     async.forEachSeries(amendments, function (am, callback) {
       obj.feed(am.getRaw(), callback);
     }, done);
-  };
-}
-
-module.exports = function (currencyName, initKeys) {
-  return new Contract(currencyName, initKeys);
+  }
 };
+
+var Contract = mongoose.model('Contract', ContractSchema);

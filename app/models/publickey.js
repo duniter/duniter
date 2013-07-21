@@ -97,20 +97,7 @@ PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
     .data(asciiArmored)
     .noCarriage()
     .signature(signature)
-    .verify(function (err, stdout, stderr) {
-      if(!err && !stderr){
-        var verified = JSON.parse(stdout).data;
-        if(verified){
-          done();
-        }
-        else{
-          done("Signature does not match.\n" + err + "\n" + stdout + "\n" + stderr);
-        }
-      }
-      else{
-        done(err + "\n" + stderr);
-      }
-  });
+    .verify(done);
 };
 
 var PublicKey = mongoose.model('PublicKey', PublicKeySchema);

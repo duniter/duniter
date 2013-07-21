@@ -43,7 +43,16 @@ function JPGP() {
   };
 
   this.verify = function(callback) {
-    command('V', this.args, callback);
+    command('V', this.args, function (err, stdout, stderr) {
+      if(!err && !stderr){
+        var verified = JSON.parse(stdout).data;
+        if(verified){
+          callback();
+        }
+        else callback("Signature does not match.\n" + err + "\n" + stdout + "\n" + stderr);
+      }
+      else callback(err + "\n" + stderr);
+    });
   };
 
   this.isSigned = function(callback) {
@@ -67,6 +76,7 @@ function JPGP() {
   }
 
   function call(c, args, callback) {
+    // var cmd = 'java -Xdebug -Xrunjdwp:transport=dt_socket,suspend=n,address=8044 -jar '+ JPGP_JAR + ' -' + c + args;
     var cmd = 'java -jar '+ JPGP_JAR + ' -' + c + args;
     var start = new Date();
     exec(cmd, function (err, stdout, stderr) {

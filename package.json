@@ -40,6 +40,7 @@
   "devDependencies": {
     "mocha": "",
     "should": "",
+    "sha1": "",
     "supertest": ""
   },
   "bin": {

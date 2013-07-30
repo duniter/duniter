@@ -34,7 +34,7 @@
     "ejs": "",
     "mongoose": "",
     "async": "",
-    "sha1": "",
+    "merkle": "",
     "underscore": ""
   },
   "devDependencies": {

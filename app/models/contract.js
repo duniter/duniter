@@ -1,6 +1,6 @@
 var sha1      = require('sha1');
 var async     = require('async');
-var merkle    = require('../lib/merkle');
+var merkle    = require('merkle');
 var mongoose  = require('mongoose');
 var Amendment = mongoose.model('Amendment');
 var Schema    = mongoose.Schema;
@@ -80,14 +80,10 @@ ContractSchema.methods = {
                 tmpMembers.sort();
 
                 // Merkle checking
-                membersMerkle = merkle(tmpMembers);
-                membersMerkle.process(function (err) {
-                  if(!err){
-                    if(am.membersRoot !== membersMerkle.getRoot())
-                      err = "Computed members Merkle '" + membersMerkle.getRoot() + "' does not match Amendment '" + am.membersRoot + "'";
-                  }
-                  callback(err);
-                });
+                membersMerkle = merkle(tmpMembers, 'sha1').process();
+                if(am.membersRoot !== membersMerkle.root())
+                  err = "Computed members Merkle '" + membersMerkle.root() + "' does not match Amendment '" + am.membersRoot + "'";
+                callback(err);
               },
               function(callback){
 
@@ -110,14 +106,10 @@ ContractSchema.methods = {
                 tmpVoters.sort();
 
                 // Merkle checking
-                votersMerkle = merkle(tmpVoters);
-                votersMerkle.process(function (err) {
-                  if(!err){
-                    if(am.votersRoot !== votersMerkle.getRoot())
-                      err = "Computed voters Merkle '" + votersMerkle.getRoot() + "' does not match Amendment '" + am.votersRoot + "'";
-                  }
-                  callback(err);
-                });
+                votersMerkle = merkle(tmpVoters, 'sha1').process();
+                if(am.votersRoot !== votersMerkle.root())
+                  err = "Computed voters Merkle '" + votersMerkle.root() + "' does not match Amendment '" + am.votersRoot + "'";
+                callback(err);
               },
               function(callback){
 
@@ -129,14 +121,10 @@ ContractSchema.methods = {
                     callback("First amendment requires to have the same keys as members and voters.");
                   }
                   else{
-                    var initKeysMerkle = merkle(obj.initKeys);
-                    initKeysMerkle.process(function (err) {
-                      if(!err){
-                        if(am.membersRoot !== initKeysMerkle.getRoot())
-                          err = "Members must be the same keys as the initKeys used for this server.";
-                      }
-                      callback(err);
-                    });
+                    var initKeysMerkle = merkle(obj.initKeys, 'sha1').process();
+                    if(am.membersRoot !== initKeysMerkle.root())
+                      err = "Members must be the same keys as the initKeys used for this server.";
+                    callback(err);
                   }
                 }
                 // Case : Amendment 1+

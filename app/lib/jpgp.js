@@ -1,91 +1,82 @@
-var exec = require('child_process').exec,
-sys      = require('sys');
+var openpgp = require('./openpgp').openpgp;
 
-var JPGP_JAR = 'bin/jpgp-0.0.2-SNAPSHOT.jar';
+openpgp.init();
 
 function JPGP() {
 
   this.args = [];
+  this.signature = "";
+  this.uid = "";
+  this.data = "";
+  this.noCarriage = false;
 
   // PUBLIC
-  this.certificate = function(asciiArmored) {
-    this.args.push({opt: 'c', value: escape(asciiArmored)});
+  this.publicKey = function(asciiArmored) {
+    openpgp.keyring.importPublicKey(asciiArmored);
     return this;
   };
 
-  this.publicKey = function(asciiArmored) {
-    this.args.push({opt: 'p', value: escape(asciiArmored)});
-    return this;
+  this.certificate = function(asciiArmored) {
+    var cert = openpgp.read_publicKey(asciiArmored)[0];
+    var fpr = hexstrdump(cert.publicKeyPacket.getFingerprint()).toUpperCase();
+    var uids = [];
+    cert.userIds.forEach(function (uid) {
+      uids.push(uid.text);
+    });
+    return {
+      "fingerprint": fpr,
+      "uids": uids,
+      "raw": cert
+    };
   };
 
   this.signature = function(asciiArmored) {
-    this.args.push({opt: 's', value: escape(asciiArmored)});
-    return this;
-  };
-
-  this.uid = function(uid_string) {
-    this.args.push({opt: 'u', value: escape(uid_string)});
+    this.signature = asciiArmored;
     return this;
   };
 
   this.data = function(data_string) {
-    this.args.push({opt: 'd', value: escape(data_string)});
+    this.data = data_string;
     return this;
   };
 
   this.noCarriage = function() {
-    this.args.push({opt: 'n'});
+    this.noCarriage = true;
     return this;
   };
 
-  this.parse = function(callback) {
-    command('P', this.args, callback);
-  };
-
   this.verify = function(callback) {
-    command('V', this.args, function (err, stdout, stderr) {
-      if(!err && !stderr){
-        var verified = JSON.parse(stdout).data;
-        if(verified){
-          callback();
-        }
-        else callback("Signature does not match.\n" + err + "\n" + stdout + "\n" + stderr);
-      }
-      else callback(err + "\n" + stderr);
-    });
+    var start = new Date();
+    // Do
+    var signatures = openpgp.read_message(this.signature);
+    var sig = signatures[2];
+    var verified = sig.verifySignature();
+    // Done
+    var end = new Date();
+    var diff = end.getTime() - start.getTime();
+    console.log("jpgp verify", diff + " ms");
+    if(verified){
+      callback();
+    }
+    else callback("Signature does not match.\n");
   };
 
-  this.isSigned = function(callback) {
-    command('I', this.args, callback);
-  };
 
   // PRIVATE
-  function escape(str) {
-    return '"' + str + '"';
-  }
-
-  function command(c, args, callback) {
-    var argsStr = "";
-    for (var i = 0; i < args.length; i++) {
-      argsStr += " -" + args[i].opt;
-      if(args[i].value){
-        argsStr += " " + args[i].value;
-      }
+  function hexstrdump(str) {
+    if (str == null)
+      return "";
+    var r=[];
+    var e=str.length;
+    var c=0;
+    var h;
+    while(c<e){
+        h=str[c++].charCodeAt().toString(16);
+        while(h.length<2) h="0"+h;
+        r.push(""+h);
     }
-    call(c, argsStr, callback);
-  }
-
-  function call(c, args, callback) {
-    // var cmd = 'java -Xdebug -Xrunjdwp:transport=dt_socket,suspend=n,address=8044 -jar '+ JPGP_JAR + ' -' + c + args;
-    var cmd = 'java -jar '+ JPGP_JAR + ' -' + c + args;
-    var start = new Date();
-    exec(cmd, function (err, stdout, stderr) {
-      var end = new Date();
-      var diff = end.getTime() - start.getTime();
-      console.log("jpgp -" + c, diff + " ms");
-      callback(err, stdout, stderr);
-    });
-  }
+    return r.join('');
+  };
 }
 
 module.exports = function () {

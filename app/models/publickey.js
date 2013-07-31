@@ -17,31 +17,24 @@ var PublicKeySchema = new Schema({
 PublicKeySchema.methods = {
   construct: function(done) {
     var obj = this;
-    jpgp().certificate(obj.raw).parse(function (err, stdout, stderr) {
-      if(stderr)
-        sys.print('stderr: \n' + stderr);
-      if (err !== null) {
-        console.log('exec error: ' + err);
-      }
-      var k = JSON.parse(stdout).data;
-      obj.fingerprint = k.fingerprint;
-      var uid = k.uids[0].uid;
-      var extract = uid.match(/([\s\S]*) \(([\s\S]*)\) <([\s\S]*)>/);
-      if(extract && extract.length === 4){
+    var k = jpgp().certificate(obj.raw);
+    obj.fingerprint = k.fingerprint;
+    var uid = k.uids[0];
+    var extract = uid.match(/([\s\S]*) \(([\s\S]*)\) <([\s\S]*)>/);
+    if(extract && extract.length === 4){
+      obj.name = extract[1];
+      obj.comment = extract[2];
+      obj.email = extract[3];
+    }
+    else{
+      extract = uid.match(/([\s\S]*) <([\s\S]*)>/);
+      if(extract && extract.length === 3){
         obj.name = extract[1];
-        obj.comment = extract[2];
-        obj.email = extract[3];
+        obj.comment = '';
+        obj.email = extract[2];
       }
-      else{
-        extract = uid.match(/([\s\S]*) <([\s\S]*)>/);
-        if(extract && extract.length === 3){
-          obj.name = extract[1];
-          obj.comment = '';
-          obj.email = extract[2];
-        }
-      }
-      done(err);
-    });
+    }
+    done();
   }
 };
 

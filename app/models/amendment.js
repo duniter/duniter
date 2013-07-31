@@ -1,4 +1,3 @@
-var jpgp     = require('../lib/jpgp');
 var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
@@ -63,7 +62,7 @@ AmendmentSchema.methods = {
       callback("No amendment given");
       return;
     }
-    this.hash = sha1(rawAmend).toUpperCase();
+    this.hash = sha1(rawAmend.unix2dos()).toUpperCase();
     var obj = this;
     var captures = [
       {prop: "version",         regexp: /Version: (.*)/},
@@ -239,7 +238,7 @@ AmendmentSchema.methods = {
     for(var i = 0; i < this.membersChanges.length; i++){
       raw += this.membersChanges[i] + "\n";
     }
-    return raw;
+    return raw.unix2dos();
   },
 
   loadFromFile: function(file, done) {

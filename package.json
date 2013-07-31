@@ -7,9 +7,6 @@
     "test": "test"
   },
   "scripts": {
-    "preupdate": "sh scripts/preupdate/jpgp jpgp-0.0.2-SNAPSHOT.jar",
-    "preinstall": "sh scripts/preinstall/jpgp jpgp-0.0.2-SNAPSHOT.jar",
-    "pretest": "sh scripts/preinstall/jpgp jpgp-0.0.2-SNAPSHOT.jar",
     "test": "mocha test/*.js",
     "start": "bin/nodecoin"
   },

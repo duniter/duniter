@@ -73,7 +73,7 @@ describe('Votes for', function(){
       (tests.tobi.verified).should.be.ok;
     });
 
-    it('non-legit CAT vote should be verified', function(){
+    it('non-legit CAT vote should not be verified', function(){
       (tests.cat2.verified).should.not.be.ok;
     });
   });

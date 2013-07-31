@@ -120,3 +120,16 @@ module.exports.express = {
     }.bind(this));
   }
 };
+
+
+String.prototype.trim = function(){
+  return this.replace(/^\s+|\s+$/g, '');
+};
+
+String.prototype.unix2dos = function(){
+  return this.dos2unix().replace(/\n/g, '\r\n');
+};
+
+String.prototype.dos2unix = function(){
+  return this.replace(/\r\n/g, '\n');
+};

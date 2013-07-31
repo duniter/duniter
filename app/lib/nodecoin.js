@@ -4,6 +4,7 @@ var async      = require('async');
 var config     = require('../../config/config');
 var path       = require('path');
 var mongoose   = require('mongoose');
+var connectPgp = require('connect-pgp');
 var _          = require('underscore');
 var nodecoin   = require('../lib/nodecoin');
 var configurer = require('../lib/configurer');
@@ -98,6 +99,15 @@ module.exports.express = {
       app.use(express.methodOverride());
       app.use(express.cookieParser('your secret here'));
       app.use(express.session());
+
+      // PGP signature of requests
+      if(config.server.pgp && config.server.pgp.key && config.server.pgp.password){
+        var privateKey = fs.readFileSync(config.server.pgp.key, 'utf8');
+        app.use(connectPgp(privateKey, config.server.pgp.password))
+        console.log('Signed requests with PGP: enabled.');
+      }
+
+      // Routing
       app.use(app.router);
 
       // development only

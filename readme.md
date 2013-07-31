@@ -76,6 +76,17 @@ This will tell Nodecoin where to find the initial keys. More keys can be given u
 
 Note: initial keys are a prerequisite for Monetary Contract: Nodecoin will only accept as first amendment the one that matches thoses keys.
 
+### PGP-signed HTTP requests
+
+This is one of the great features coming with NodeCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a NPM module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
+
+To use this feature, just launch NodeCoin using `--pgpkey` and `--pgppasswd` parameters:
+
+    nodecoin --pgpkey "/path/to/some/private.key" --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
+
+    Signed requests with PGP: **enabled**.
+    NodeCoin server listening on port 8081
+
 ### Help
 
 For more more details on the nodecoin command, run:

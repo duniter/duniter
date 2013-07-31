@@ -1,6 +1,6 @@
 {
   "name": "nodecoin",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "OpenUDC-like implementation using Node.js",
   "main": "bin/nodecoin",
   "directories": {
@@ -35,6 +35,7 @@
     "mongoose": "",
     "async": "",
     "merkle": "",
+    "connect-pgp": ">= 0.1.0",
     "underscore": ""
   },
   "devDependencies": {

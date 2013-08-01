@@ -128,7 +128,8 @@ PGP Public Key Messages.
   "keys": [{
     "email":"cem.moreau@gmail.com",
     "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
-    "name":"LoL Cat","fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "name":"LoL Cat",
+    "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
     "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
   },{
     // Another key
@@ -379,35 +380,66 @@ Transaction chain.
 }
 ```
 
-#### community/*
+#### `community/join`
+**Goal**
 
-URL | Description | Result
---- | ----------- | ------
-`join` | is used to POST an individual request for officially join the community. | The given public key and signature.
-`declare` | is used to POST a THT entry declaration. | The new THT entry, JSON formatted.
+POST an individual's PGP certificate with a signature of it to officialize his will join the community.
 
-#### transactions/*
+**Parameters**
 
-URL | Description | Result
---- | ----------- | ------
-`process/issuance` | is a URL to POST an issuance transaction. | The issuance transaction.
-`process/transfert` | is a URL to POST a transfert transaction. | The transfert transaction.
-`process/transfert` | is a URL to POST a fusion transaction. | The fusion transaction.
-`view/[TRANSACTION_ID]` | displays detailed informations about a transaction. | The asked transaction.
+Name | Value | Method
+---- | ----- | ------
+`certificate` | The raw individual's certificate. | POST
+`signature` | The signature of the `certificate`. | POST
 
-#### coins/*
+**Returns**
 
-URL | Description | Result
---- | ----------- | ------
-`[PGP_FINGERPRINT]/list` | lists the coins owned by the given `PGP_FINGERPRINT`. | A list of `COIN_ID`.
-`[PGP_FINGERPRINT]/view/[COIN_NUMBER]` | allows to view money issuance transaction for this coin. | The corresponding transaction.
+The posted certificate + posted signature.
+```js
+{
+  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "certificate": {
+    "email":"cem.moreau@gmail.com",
+    "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
+    "name":"LoL Cat",
+    "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
+  }
+}
+```
 
-#### community/*
+#### `community/declare`
+**Goal**
 
-URL | Description | Result
---- | ----------- | ------
-`join` | is used to POST an individual request for officially join the community. | The given public key and signature.
-`declare` | is used to POST a THT entry declaration. | The new THT entry, JSON formatted.
+POST a THT entry declaration.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`certificate` | The raw individual's certificate. | POST
+`signature` | The signature of the `certificate`. | POST
+
+**Returns**
+
+The new THT entry.
+```js
+{
+  "number", "1",
+  "dateTime": "1374852192",
+  "managedBy": [
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1"},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "22.22.22.22", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2"},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "33.33.33.33", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3"},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "44.44.44.44", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1"}
+  ],
+  "trusts": [
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1"},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2"},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3"}
+  ]
+}
+```
 
 #### transactions/*
 

@@ -297,12 +297,72 @@ The posted amendment + posted signature.
 }
 ```
 
-#### coins/*
+#### `coins/[PGP_FINGERPRINT]/list`
+**Goal**
 
-URL | Description | Result
---- | ----------- | ------
-`[PGP_FINGERPRINT]/list` | lists the coins owned by the given `PGP_FINGERPRINT`. | A list of `COIN_ID`.
-`[PGP_FINGERPRINT]/view/[COIN_NUMBER]` | allows to view money issuance transaction for this coin. | The corresponding transaction.
+GET a list of coins owned by the given `[PGP_FINGERPRINT]`.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | Owner of the coins. | URL
+
+**Returns**
+
+Coins list with their owner.
+```js
+{
+  "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+  "coins": [{
+      "issuer": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "ids": ["1-5-2-A-1", "2-4-1-A-1"]
+    },{
+      "issuer": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "ids": ["10-1-2-F-14"]
+    }
+  ]
+}
+```
+
+#### `[PGP_FINGERPRINT]/view/[COIN_ID]`
+**Goal**
+
+GET a transaction chain justifying that coin `[COIN_ID]` is owned by the given `[PGP_FINGERPRINT]`.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | Owner of the coins. | URL
+`COIN_ID` | Coin [unique identifier](https://github.com/c-geek/nodecoind/blob/master/doc/HDC.md#coins-format). | URL
+
+**Returns**
+
+Transaction chain.
+```js
+{
+  "transactions": [
+    {
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 144,
+      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "type": "TRANSFERT",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
+        },{
+          // Other coin
+        },{
+          // ...
+        }
+      ]
+    }
+  ]
+}
+```
 
 #### community/*
 

@@ -12,21 +12,20 @@ var config = {
 };
 
 var gets = [
-  {should: 501, url: '/udc/amendments/view/[000001]/members'},
-  {should: 501, url: '/udc/amendments/view/[000001]/self'},
-  {should: 501, url: '/udc/amendments/view/[000001]/voters'},
-  {should: 501, url: '/udc/coins/[SOME_PGP_FPR]/list'},
-  {should: 501, url: '/udc/coins/[SOME_PGP_FPR]/view/:coin_number'},
-  {should: 501, url: '/udc/transactions/sender/[SOME_PGP_FPR]'},
-  {should: 501, url: '/udc/transactions/view/[SOME_TX_ID]'}
+  {should: 501, url: '/hdc/amendments/view/[000001]/members'},
+  {should: 501, url: '/hdc/amendments/view/[000001]/self'},
+  {should: 501, url: '/hdc/amendments/view/[000001]/voters'},
+  {should: 501, url: '/hdc/coins/[SOME_PGP_FPR]/list'},
+  {should: 501, url: '/hdc/coins/[SOME_PGP_FPR]/view/:coin_number'},
+  {should: 501, url: '/hdc/transactions/view/[SOME_TX_ID]'}
 ];
 
 var posts = [
-  {should: 501, url: '/udc/amendments/vote'},
-  {should: 501, url: '/udc/community/declare'},
-  {should: 501, url: '/udc/community/join'},
-  {should: 501, url: '/udc/transactions/process/issuance'},
-  {should: 501, url: '/udc/transactions/process/transfert'}
+  {should: 501, url: '/hdc/amendments/vote'},
+  {should: 501, url: '/hdc/community/declare'},
+  {should: 501, url: '/hdc/community/join'},
+  {should: 501, url: '/hdc/transactions/process/issuance'},
+  {should: 501, url: '/hdc/transactions/process/transfert'}
 ];
 
 function testGET(url, should) {
@@ -100,18 +99,18 @@ describe('Request on /pks/add', function(){
 
 
 //----------- AMENDMENTS -----------
-describe('Request on /udc/amendments/init', function(){
+describe('Request on /hdc/amendments/init', function(){
   it('GET should respond 200', function(done){
     request(app)
-      .get('/udc/amendments/init')
+      .get('/hdc/amendments/init')
       .expect(200, done);
   });
 });
 
-describe('Request on /udc/amendments/submit', function(){
+describe('Request on /hdc/amendments/submit', function(){
   it('GET should respond 400', function(done){
     request(app)
-      .post('/udc/amendments/submit')
+      .post('/hdc/amendments/submit')
       .expect(400, done);
   });
 });

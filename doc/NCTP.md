@@ -111,16 +111,210 @@ This URL pattern manages all the data used by NodeCoin based on the PKS.
 
 In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
 
-#### amendments/*
+#### `amendments/init`
+**Goal**
+
+GET the initial keys used to forge the initial amendment.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+PGP Public Key Messages.
+```js
+{
+  "keys": [{
+    "email":"cem.moreau@gmail.com",
+    "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
+    "name":"LoL Cat","fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
+  },{
+    // Another key
+  },{
+    // ...
+  }]
+}
+```
+#### `amendments/submit`
+**Goal**
+
+POST an amendment in ASCII-Armored format ready for voting.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`amendment` | The raw amendment structure. | POST
+
+**Returns**
+
+The posted amendment.
+```js
+{
+  "version": "1",
+  "currency": "beta_brousoufs",
+  "number": "2",
+  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
+  "dividend": "100",
+  "coinMinimalPower": "0",
+  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
+  "votersCount": "2",
+  "votersChanges": [
+    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+  ],
+  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
+  "membersCount": "4",
+  "membersChanges": [
+    "+31A6302161AC8F5938969E85399EB3415C237F93"
+  ],
+  raw: "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+}
+```
+
+#### `view/[AMENDMENT_ID]/members`
+**Goal**
+
+Merkle URL referencing to the members of the Community.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```js
+{
+  "level": "1",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
+
+#### `view/[AMENDMENT_ID]/self`
+**Goal**
+
+Shows the raw data of the amendment `[AMENDMENT_ID]`.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`AMENDMENT_ID` | The amendment number. | URL
+
+**Returns**
+
+The requested amendment.
+```js
+{
+  "version": "1",
+  "currency": "beta_brousoufs",
+  "number": "2",
+  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
+  "dividend": "100",
+  "coinMinimalPower": "0",
+  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
+  "votersCount": "2",
+  "votersChanges": [
+    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+  ],
+  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
+  "membersCount": "4",
+  "membersChanges": [
+    "+31A6302161AC8F5938969E85399EB3415C237F93"
+  ],
+  raw: "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+}
+```
+
+#### `view/[AMENDMENT_ID]/voters`
+**Goal**
+
+Merkle URL referencing to the voters of the Community.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```js
+{
+  "level": "0",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
+
+#### `amendments/vote`
+**Goal**
+
+POST an amendment signed by a Community member, considering it as a vote for this amendment.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`amendment` | The raw amendment structure. | POST
+`signature` | The signature of the `amendment`. | POST
+
+**Returns**
+
+The posted amendment + posted signature.
+```js
+{
+  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "amendment": {
+    "version": "1",
+    "currency": "beta_brousoufs",
+    "number": "2",
+    "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
+    "dividend": "100",
+    "coinMinimalPower": "0",
+    "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
+    "votersCount": "2",
+    "votersChanges": [
+      "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+    ],
+    "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
+    "membersCount": "4",
+    "membersChanges": [
+      "+31A6302161AC8F5938969E85399EB3415C237F93"
+    ],
+    raw: "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+  }
+}
+```
+
+#### coins/*
 
 URL | Description | Result
 --- | ----------- | ------
-`init` | is used to GET the initial keys used to forge the initial amendment. | PGP Public Key Messages.
-`submit` | is used to POST an amendment in ASCII-Armored format ready for voting. | The posted amendment.
-`view/[AMENDMENT_ID]/members` | is a Merkle URL referencing to the members of the Community. | Merkle URL result.
-`view/[AMENDMENT_ID]/self` | shows the raw data of the amendment with the given `[AMENDMENT_ID]`. | The requested amendment.
-`view/[AMENDMENT_ID]/voters` | is a Merkle URL referencing to the voters required to validate the given amendment. | Merkle URL result.
-`vote` | is used to POST an amendment signed by a Community member. | The posted amendment and signature.
+`[PGP_FINGERPRINT]/list` | lists the coins owned by the given `PGP_FINGERPRINT`. | A list of `COIN_ID`.
+`[PGP_FINGERPRINT]/view/[COIN_NUMBER]` | allows to view money issuance transaction for this coin. | The corresponding transaction.
+
+#### community/*
+
+URL | Description | Result
+--- | ----------- | ------
+`join` | is used to POST an individual request for officially join the community. | The given public key and signature.
+`declare` | is used to POST a THT entry declaration. | The new THT entry, JSON formatted.
+
+#### transactions/*
+
+URL | Description | Result
+--- | ----------- | ------
+`process/issuance` | is a URL to POST an issuance transaction. | The issuance transaction.
+`process/transfert` | is a URL to POST a transfert transaction. | The transfert transaction.
+`process/transfert` | is a URL to POST a fusion transaction. | The fusion transaction.
+`view/[TRANSACTION_ID]` | displays detailed informations about a transaction. | The asked transaction.
 
 #### coins/*
 

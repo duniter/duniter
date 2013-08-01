@@ -359,7 +359,8 @@ Transaction chain.
         },{
           // ...
         }
-      ]
+      ],
+      "comment": "Paying LoLCat's food."
     },{
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
@@ -368,13 +369,17 @@ Transaction chain.
       "type": "FUSION",
       "coins": [
         {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
           "id": "2-4-1-A-1",
           "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
         },{
           "id": "3-6-1-A-1",
           "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
         }
-      ]
+      ],
+      "comment": "Too much coins ! Making big one."
     }
   ]
 }
@@ -441,11 +446,165 @@ The new THT entry.
 }
 ```
 
-#### transactions/*
+#### `transactions/process/issuance`
+**Goal**
 
-URL | Description | Result
---- | ----------- | ------
-`process/issuance` | is a URL to POST an issuance transaction. | The issuance transaction.
-`process/transfert` | is a URL to POST a transfert transaction. | The transfert transaction.
-`process/transfert` | is a URL to POST a fusion transaction. | The fusion transaction.
-`view/[TRANSACTION_ID]` | displays detailed informations about a transaction. | The asked transaction.
+POST an issuance transaction.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`transaction` | The raw transaction. | POST
+`signature` | The signature of the `transaction`. | POST
+
+**Returns**
+
+The issuance transaction and its signature.
+```js
+{
+  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "transaction":
+  {
+    "version": 1,
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 1,
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "ISSUANCE",
+    "coins": [
+      {
+        "id": "1-5-2-A-1",
+        "transaction_id": ""
+      },{
+        // Other coin
+      },{
+        // ...
+      }
+    ],
+    "comment": "Universal Dividend"
+  }
+}
+```
+
+#### `transactions/process/transfert`
+**Goal**
+
+POST a transfert transaction.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`transaction` | The raw transaction. | POST
+`signature` | The signature of the `transaction`. | POST
+
+**Returns**
+
+The transfert transaction and its signature.
+```js
+{
+  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "transaction":
+  {
+    "version": 1,
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 92,
+    "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+    "type": "TRANSFERT",
+    "coins": [
+      {
+        "id": "10-1-2-F-14",
+        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
+      },{
+        // Other coin
+      },{
+        // ...
+      }
+    ],
+    "comment": "Paying LoLCat's food."
+  }
+}
+```
+
+#### `transactions/process/fusion`
+**Goal**
+
+POST a fusion transaction.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`transaction` | The raw transaction. | POST
+`signature` | The signature of the `transaction`. | POST
+
+**Returns**
+
+The fusion transaction and its signature.
+```js
+{
+  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "transaction":
+  {
+    "version": 1,
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 14,
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "FUSION",
+    "coins": [
+      {
+        "id": "10-1-2-F-14",
+        "transaction_id": ""
+      },{
+        "id": "2-4-1-A-1",
+        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+      },{
+        "id": "3-6-1-A-1",
+        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+      }
+    ],
+    "comment": "Too much coins ! Making big one."
+  }
+}
+```
+
+#### `transactions/view/[TRANSACTION_ID]`
+**Goal**
+
+GET the transaction of given `TRANSACTION_ID`.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`TRANSACTION_ID` | The transaction [unique identifier](https://github.com/c-geek/nodecoind/blob/master/doc/HDC.md#transaction). | URL
+
+**Returns**
+
+The transaction and its signature.
+```js
+{
+  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "transaction":
+  {
+    "version": 1,
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 14,
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "FUSION",
+    "coins": [
+      {
+        "id": "10-1-2-F-14",
+        "transaction_id": ""
+      },{
+        "id": "2-4-1-A-1",
+        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+      },{
+        "id": "3-6-1-A-1",
+        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+      }
+    ],
+    "comment": "Too much coins ! Making big one."
+  }
+}
+```

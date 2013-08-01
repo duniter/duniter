@@ -179,6 +179,10 @@ Field | Description
 `Coins` | a list of coins that are to be sent. Each line starts with a `COIN_ID` identifying the coin, eventually followed by a comma and a `TRANSACTION_ID` justifying the ownership of the coin.
 `Comment` | comment for transaction. May be used for any future purpose. Multiline field, ends at the end of the transaction message.
 
+And `TRANSACTION_ID` has the following format:
+
+    SENDER_FINGERPRINT-INCREMENT
+
 ### Coins format
 
 A `COIN_ID` has the following format:
@@ -229,6 +233,33 @@ Such a transaction is used to *create* new money, i.e. new coins. To be a valid 
 
 #### Example
 
+    Version: 1
+    Sender: 31A6302161AC8F5938969E85399EB3415C237F93
+    Number: 1
+    Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
+    Type: ISSUANCE
+    Coins:
+    31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1
+    31A6302161AC8F5938969E85399EB3415C237F93-2-2-2-A-1
+    31A6302161AC8F5938969E85399EB3415C237F93-3-1-2-A-1
+    31A6302161AC8F5938969E85399EB3415C237F93-4-1-2-A-1
+    31A6302161AC8F5938969E85399EB3415C237F93-5-5-1-A-1
+    31A6302161AC8F5938969E85399EB3415C237F93-6-3-1-A-1
+    31A6302161AC8F5938969E85399EB3415C237F93-7-1-1-A-1
+    31A6302161AC8F5938969E85399EB3415C237F93-8-1-1-A-1
+    Comment:
+    Creating 8 new coins according to Amendment 1
+    (imaginary one, with Universal Dividend 1000)
+    Coins are:
+        - 1 value 500
+        - 1 value 200
+        - 2 value 100
+        - 1 value 50
+        - 1 value 30
+        - 2 value 10
+    Note that this comment is part of transaction thus
+    il also signed.
+
 ### Transfert transaction
 
 Transfert transaction is identified by having `Type: TRANSFERT` value. Such a transaction alter the ownership of one or more coins from `Sender` to `Recipient`. Ownership can be proved by the `Recipient` simply by showing this transaction.
@@ -237,11 +268,36 @@ Thereafter, when `Recipient` wants to send those coins to someone else, he will 
 
 #### Example
 
+    Version: 1
+    Sender: 31A6302161AC8F5938969E85399EB3415C237F93
+    Number: 92
+    Recipient: 86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8
+    Type: TRANSFERT
+    Coins:
+    31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
+    31A6302161AC8F5938969E85399EB3415C237F93-2-2-2-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
+    Comment:
+    Here I am sending coins 500 and 200 to someone else (either an individual or organization).
+
 ### Fusion transaction
 
 Fusion transaction is identified by having `Type: FUSION` value. Such a transaction allows to fusion *existing* coins into a *new* one with a value equals to the sum of the material coins.
 
 #### Example
+
+    Version: 1
+    Sender: 31A6302161AC8F5938969E85399EB3415C237F93
+    Number: 92
+    Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
+    Type: FUSION
+    Coins:
+    31A6302161AC8F5938969E85399EB3415C237F93-9-5-1-F-92
+    31A6302161AC8F5938969E85399EB3415C237F93-6-3-1-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
+    31A6302161AC8F5938969E85399EB3415C237F93-7-1-1-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
+    31A6302161AC8F5938969E85399EB3415C237F93-8-1-1-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
+    Comment:
+    Here I am fusioning my coins 6,7,8 (of respective value 30,10,10) to make a new coin of value 50.
+    Of course, coins 6,7,8 are therefore unusable as they are no more part of monetary mass.
 
 ### Validity
 

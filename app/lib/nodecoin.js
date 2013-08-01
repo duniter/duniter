@@ -41,23 +41,22 @@ module.exports.express = {
 
     app.get(    '/pks/lookup',                                  pks.lookup);
     app.post(   '/pks/add',                                     pks.add);
-    app.get(    '/udc/amendments/init',                         _(amend.init).partial(app.get('config').initKeys));
-    app.post(   '/udc/amendments/submit',                       _(amend.submit).partial(app.get('config').currency));
-    app.post(   '/udc/amendments/vote',                         notImplemented);
-    app.get(    '/udc/amendments/view/:amendment_id/members',   notImplemented);
-    app.get(    '/udc/amendments/view/:amendment_id/self',      notImplemented);
-    app.get(    '/udc/amendments/view/:amendment_id/voters',    notImplemented);
-    app.get(    '/udc/coins/:pgp_fpr/list',                     notImplemented);
-    app.get(    '/udc/coins/:pgp_fpr/view/:coin_number',        notImplemented);
-    app.post(   '/udc/community/declare',                       notImplemented);
-    app.post(   '/udc/community/join',                          notImplemented);
-    app.get(    '/udc/transactions/sender/:fingerprint',        notImplemented);
-    app.post(   '/udc/transactions/process/issuance',           notImplemented);
-    app.post(   '/udc/transactions/process/transfert',          notImplemented);
-    app.get(    '/udc/transactions/view/:transaction_id',       notImplemented);
+    app.get(    '/hdc/amendments/init',                         _(amend.init).partial(app.get('config').initKeys));
+    app.post(   '/hdc/amendments/submit',                       _(amend.submit).partial(app.get('config').currency));
+    app.get(    '/hdc/amendments/view/:amendment_id/members',   notImplemented);
+    app.get(    '/hdc/amendments/view/:amendment_id/self',      notImplemented);
+    app.get(    '/hdc/amendments/view/:amendment_id/voters',    notImplemented);
+    app.post(   '/hdc/amendments/vote',                         notImplemented);
+    app.get(    '/hdc/coins/:pgp_fpr/list',                     notImplemented);
+    app.get(    '/hdc/coins/:pgp_fpr/view/:coin_number',        notImplemented);
+    app.post(   '/hdc/community/declare',                       notImplemented);
+    app.post(   '/hdc/community/join',                          notImplemented);
+    app.post(   '/hdc/transactions/process/issuance',           notImplemented);
+    app.post(   '/hdc/transactions/process/transfert',          notImplemented);
+    app.get(    '/hdc/transactions/view/:transaction_id',       notImplemented);
 
     app.get(    '/pks/add',                                     web.pks.add);
-    app.get(    '/udc/amendments/submit',                       web.amendments.submit);
+    app.get(    '/hdc/amendments/submit',                       web.amendments.submit);
   },
 
   app: function (config, onLoaded) {

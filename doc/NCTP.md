@@ -4,8 +4,6 @@ NCTP is a transport protocol which aims at exchanging HDC data over HTTP.
 
 ## HTTP API
 
-_N.B.:_ *this part is highly sensible to changes, as peering mecanisms are not defined at all. This part is only a first draft not discussed with anyone and only proposed by its author (cgeek) as an initial way to exchange NodeCoin data.*
-
 Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit NodeCoin specificities.
 
     http[s]://Node[:port]/...
@@ -69,7 +67,7 @@ Here is an example of members Merkle tree with 5 members (taken from [Tree Hash 
 
 Where A,B,C,D,E are already hashed data.
 
-With such a tree structure, NodeCoin considers the tree has exactly 6 nodes: `[ROOT,H,E,F,G,E]`. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of another server LS2 for level 1 (`H` and `E`, the second level): it requires nodes interval `[1;2]`.
+With such a tree structure, NodeCoin consider the tree has exactly 6 nodes: `[ROOT,H,E,F,G,E]`. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of another server LS2 for level 1 (`H` and `E`, the second level): it requires nodes interval `[1;2]`.
 
 Hence it is quite easy for anyone who wants to check if a `Z` member joined the NodeCoin community as it would alter the `E` branch of the tree:
 
@@ -111,18 +109,38 @@ URL | Description
 
 This URL pattern manages all the data used by NodeCoin based on the PKS.
 
-URL | Description
---- | -----------
-`amendments/init` | is used to GET the initial keys used to forge the initial amendment.
-`amendments/submit` | is used to POST an amendment with the required signatures (votes) in ASCII-Armored format.
-`amendments/view/[AMENDMENT_ID]/members` | is a Merkle URL referencing to the members of the Community.
-`amendments/view/[AMENDMENT_ID]/self` | shows the raw data of the amendment with the given `[AMENDMENT_ID]`.
-`amendments/view/[AMENDMENT_ID]/voters` | is a Merkle URL referencing to the voters required to validate the given amendment.
-`coins/[PGP_FINGERPRINT]/list` | lists the coins owned by the given `PGP_FINGERPRINT`.
-`coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]` | allows to view money issuance transaction for this coin.
-`community/join` | is used to POST an individual request for officially join the community.
-`community/declare` | is used to POST a THT entry declaration.
-`transactions/process/issuance` | is a URL to POST an issuance transaction.
-`transactions/process/transfert` | is a URL to POST a transfert transaction.
-`transactions/process/transfert` | is a URL to POST a fusion transaction.
-`transactions/view/[TRANSACTION_ID]` | displays detailed informations about a transaction.
+In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
+
+#### amendments/*
+
+URL | Description | Result
+--- | ----------- | ------
+`init` | is used to GET the initial keys used to forge the initial amendment. | PGP Public Key Messages.
+`submit` | is used to POST an amendment in ASCII-Armored format ready for voting. | The posted amendment.
+`view/[AMENDMENT_ID]/members` | is a Merkle URL referencing to the members of the Community. | Merkle URL result.
+`view/[AMENDMENT_ID]/self` | shows the raw data of the amendment with the given `[AMENDMENT_ID]`. | The requested amendment.
+`view/[AMENDMENT_ID]/voters` | is a Merkle URL referencing to the voters required to validate the given amendment. | Merkle URL result.
+`vote` | is used to POST an amendment signed by a Community member. | The posted amendment and signature.
+
+#### coins/*
+
+URL | Description | Result
+--- | ----------- | ------
+`[PGP_FINGERPRINT]/list` | lists the coins owned by the given `PGP_FINGERPRINT`. | A list of `COIN_ID`.
+`[PGP_FINGERPRINT]/view/[COIN_NUMBER]` | allows to view money issuance transaction for this coin. | The corresponding transaction.
+
+#### community/*
+
+URL | Description | Result
+--- | ----------- | ------
+`join` | is used to POST an individual request for officially join the community. | The given public key and signature.
+`declare` | is used to POST a THT entry declaration. | The new THT entry, JSON formatted.
+
+#### transactions/*
+
+URL | Description | Result
+--- | ----------- | ------
+`process/issuance` | is a URL to POST an issuance transaction. | The issuance transaction.
+`process/transfert` | is a URL to POST a transfert transaction. | The transfert transaction.
+`process/transfert` | is a URL to POST a fusion transaction. | The fusion transaction.
+`view/[TRANSACTION_ID]` | displays detailed informations about a transaction. | The asked transaction.

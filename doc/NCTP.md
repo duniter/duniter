@@ -173,7 +173,7 @@ The posted amendment.
 }
 ```
 
-#### `view/[AMENDMENT_ID]/members`
+#### `amendments/view/[AMENDMENT_ID]/members`
 **Goal**
 
 Merkle URL referencing to the members of the Community.
@@ -197,7 +197,7 @@ Merkle URL result.
 }
 ```
 
-#### `view/[AMENDMENT_ID]/self`
+#### `amendments/view/[AMENDMENT_ID]/self`
 **Goal**
 
 Shows the raw data of the amendment `[AMENDMENT_ID]`.
@@ -233,7 +233,7 @@ The requested amendment.
 }
 ```
 
-#### `view/[AMENDMENT_ID]/voters`
+#### `amendments/view/[AMENDMENT_ID]/voters`
 **Goal**
 
 Merkle URL referencing to the voters of the Community.
@@ -325,7 +325,7 @@ Coins list with their owner.
 }
 ```
 
-#### `[PGP_FINGERPRINT]/view/[COIN_ID]`
+#### `coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
 **Goal**
 
 GET a transaction chain justifying that coin `[COIN_ID]` is owned by the given `[PGP_FINGERPRINT]`.
@@ -346,7 +346,7 @@ Transaction chain.
     {
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 144,
+      "number": 92,
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "type": "TRANSFERT",
       "coins": [
@@ -357,6 +357,21 @@ Transaction chain.
           // Other coin
         },{
           // ...
+        }
+      ]
+    },{
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 14,
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
         }
       ]
     }

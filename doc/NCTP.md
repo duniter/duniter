@@ -180,7 +180,9 @@ Merkle URL referencing to the members of the Community.
 
 **Parameters**
 
-*None*.
+Name | Value | Method
+---- | ----- | ------
+`AMENDMENT_ID` | The amendment number. | URL
 
 **Returns**
 
@@ -238,7 +240,9 @@ Merkle URL referencing to the voters of the Community.
 
 **Parameters**
 
-*None*.
+Name | Value | Method
+---- | ----- | ------
+`AMENDMENT_ID` | The amendment number. | URL
 
 **Returns**
 

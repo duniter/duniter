@@ -37,7 +37,6 @@ module.exports.express = {
 
     var amend = require('../controllers/amendments');
     var pks   = require('../controllers/pks');
-    var web   = require('../controllers/web');
 
     app.get(    '/pks/lookup',                                  pks.lookup);
     app.post(   '/pks/add',                                     pks.add);
@@ -54,9 +53,6 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process/issuance',           notImplemented);
     app.post(   '/hdc/transactions/process/transfert',          notImplemented);
     app.get(    '/hdc/transactions/view/:transaction_id',       notImplemented);
-
-    app.get(    '/pks/add',                                     web.pks.add);
-    app.get(    '/hdc/amendments/submit',                       web.amendments.submit);
   },
 
   app: function (config, onLoaded) {

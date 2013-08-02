@@ -162,7 +162,7 @@ module.exports.add = function (req, res) {
               }, function (err) {
                 // Creates/updates done.
                 if(!err){
-                  res.render('../app/views/pks/added.ejs', {"pubKeys": pubKeys}, function (err, text) {
+                  res.render('../app/views/pks/add.ejs', {"pubKeys": pubKeys}, function (err, text) {
                     res.writeHead(200, {"Content-type": "text/plain"});
                     res.end(text);
                   });

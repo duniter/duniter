@@ -100,10 +100,50 @@ Parameter | Description
 
 This URL is used to manage OpenPGP certificates, making NodeCoin acting **like** an SKS server.
 
-URL | Description
---- | -----------
-`add` | allows to POST ASCII-ARMORED OpenPGP certificates.
-`lookup` | allows to search for OpenPGP certificates, according to [HKP draft](http://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#page-3).
+#### `pks/add`
+**Goal**
+
+POST ASCII-armored OpenPGP certificates.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`keytext` | The raw certificate, ASCII-armored. | POST
+`keysign` | The raw signature of the `keytext` value. | POST
+
+**Returns**
+
+The sent PGP Public Key and signature.
+```js
+{
+  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "key":
+  {
+    "email":"cem.moreau@gmail.com",
+    "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
+    "name":"LoL Cat",
+    "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
+  }
+}
+```
+
+#### `pks/lookup`
+**Goal**
+
+Allows to search for OpenPGP certificates, according to [HKP draft](http://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#page-3).
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`search` | A value for searching in PGP certificates database. May start with '0x' for direct search on PGP fingerprint. | GET
+`op` | Operation: may be either 'index' or 'get'. | GET
+
+**Returns**
+
+Result differs according to parameters and is HKP-compliant.
 
 ### hdc/*
 

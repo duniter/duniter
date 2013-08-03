@@ -1,8 +1,28 @@
-# NCTP - NodeCoin Transport Protocol
+# NodeCoin HTTP API
 
-NCTP is a transport protocol which aims at exchanging HDC data over HTTP.
+* [Overview](#overview)
+* [Merkle URLs](#merkle-urls)
+* [API](#api)
+  * [pks/](#pks)
+      * [add](#pksadd)
+      * [lookup](#pkslookup)
+  * [hdc/](#hdc)
+      * [amendments/init](#amendmentsinit)
+      * [amendments/submit](#amendmentssubmit)
+      * [amendments/view/[AMENDMENT_ID]/members](#amendmentsviewamendment_idmembers)
+      * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
+      * [amendments/view/[AMENDMENT_ID]/voters](#amendmentsviewamendment_idvoters)
+      * [amendments/vote](#amendmentsvote)
+      * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
+      * [coins/[PGP_FINGERPRINT]/view/[COIN_ID]](#coinspgp_fingerprintviewcoin_id)
+      * [community/join](#communityjoin)
+      * [community/declare](#communitydeclare)
+      * [transactions/process/issuance](#transactionsprocessissuance)
+      * [transactions/process/transfert](#transactionsprocesstransfert)
+      * [transactions/process/fusion](#transactionsprocessfusion)
+      * [transactions/view/[TRANSACTION_ID]](#transactionsviewtransaction_id)
 
-## HTTP API
+## Overview
 
 Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit NodeCoin specificities.
 
@@ -39,13 +59,10 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 
 Merkle URL is a special kind of URL applicable for resources:
 
-* `udc/view/[AMENDMENT_ID]/members`
-* `udc/view/[AMENDMENT_ID]/voters`
-* `udc/transactions/recipient/[OPENPGP_FINGERPRINT]`
-* `udc/transactions/sender/[OPENPGP_FINGERPRINT]`
-* `udc/transactions/coin/[COIN_ID]`.
+* `hdc/amendments/view/[AMENDMENT_ID]/members`
+* `hdc/amendments/view/[AMENDMENT_ID]/voters`
 
-Such kind of URL returns Merkle tree hashes informations. In NodeCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `udc/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
+Such kind of URL returns Merkle tree hashes informations. In NodeCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
 For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. NodeCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
 
@@ -94,7 +111,7 @@ Parameter | Description
 `start` | defines the start range (inclusive) of desired hashes. If `level` is used, `start` references to the given level. Otherwise references to the root.
 `end` | defines the end range (inclusive) of desired hashes. If `level` is used, `end` references to the given level. Otherwise references to the root.
 
-## Other URLs
+## API
 
 ### pks/*
 

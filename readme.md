@@ -2,7 +2,11 @@
 
 NodeCoin is a free server-side software which allows to create new P2P crypto-currencies based on individuals and implementing Universal Dividend.
 
-It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called NCP (Nodecoin Currency Protocol). You can learn more on it going to the [concepts page](https://github.com/c-geek/nodecoin/blob/master/concepts.md).
+It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called NCP (NodeCoin Protocol).
+
+You can get more in NodeCoin project reading the following documents:
+* [Concepts](https://github.com/c-geek/nodecoin/blob/master/concepts.md)
+* [Architecture](https://github.com/c-geek/nodecoin/blob/master/architecture.md)
 
 ## Installation
 

@@ -1,6 +1,6 @@
-# NCCP - NodeCoin Currency Protocol
+# NCM - NodeCoin Messages format
 
-> NCCP is an extension of HDC Messages Format: it adds rules on top of HDC messages in order to implement a system compliant with NodeCoin monetary rules.
+NCM HDC Messages Format: it adds rules on top of HDC messages in order to implement a system compliant with NodeCoin monetary rules.
 
 ## Certificates
 

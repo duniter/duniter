@@ -2,6 +2,27 @@
 
 HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and an interpretation of it in order to describe a monetary system based on Humans and allowing to apply Universal Dividend on its community.
 
+## Contents
+* [Contents](#contents)
+* [Vocabluary](#vocabulary)
+* [Certificate](#certificate)
+  * [Definition](#definition)
+  * [Validity](#validity)
+  * [OpenUDC User ID](#openudc-user-id)
+  * [ASCII-armored format](#ascii-armored-format)
+* [Amendment](#amendment)
+  * [Definition](#definition-1)
+  * [Validity](#validity-1)
+* [Transaction](#transaction)
+  * [Definition](#definition-2)
+  * [Validity](#validity-2)
+  * [Coins format](#coins-format)
+  * [Issuance transaction](#issuance-transaction)
+  * [Transfert transaction](#transfert-transaction)
+  * [Fusion transaction](#fusion-transaction)
+  * [Money ownership](#money-ownership)
+  * [Transactions chain](#transactions-chain)
+
 ## Vocabulary
 
 Word | Description
@@ -11,6 +32,8 @@ Community | A groupment of individuals linked together trought a Monetary Contra
 Monetary Contract | A document gathering the informations defining the community members, voters and monetary mass inside it.
 
 ## Certificate
+
+### Definition
 
 A certificate is an OpenPGP public key used to identify an individual as unique inside the Community.
 
@@ -39,9 +62,9 @@ Of course, turning `Full name` into `Pseudonyms` is not mandatory. Any string ma
 
 The format of `udid2` is defined in [OpenUDC specifications](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164).
 
-### Representing an OpenPGP certificate
+### ASCII-armored format
 
-Classically, OpenPGP keys can be represented in ASCII-Armored format which allows it to be transfered in a textual way.
+Classically, OpenPGP keys can be represented in ASCII-armored format which allows it to be transfered in a textual way.
 
 An example of such a certificate could be:
 
@@ -78,6 +101,8 @@ An example of such a certificate could be:
     -----END PGP PUBLIC KEY BLOCK-----
 
 ## Amendment
+
+### Definition
 
 An amendment is the atomic part **constituting** a Monetary Contract. A Monetary Contract is nothing but a chained list of Amendments.
 An Amendment is an ASCII document defining:
@@ -143,6 +168,8 @@ Note that having an Amendment with a `CoinMinimalPower` without `UniversalDivide
 
 ## Transaction
 
+### Definition
+
 Transactions are the last step after defining Certificates and Amendments. Transactions are the conceptual support of money inside HDC: it allows to materialize money ownership.
 
 A transaction is used either to:
@@ -182,6 +209,24 @@ Field | Description
 And `TRANSACTION_ID` has the following format:
 
     SENDER_FINGERPRINT-INCREMENT
+
+### Validity
+
+In HDC, a Transaction structure is considered *valid* if:
+
+* Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
+* Fields `Version`, `Number` are zero or positive integer values.
+* Field `Type` has either `TRANSFERT`, `ISSUANCE` or `FUSION` value.
+* In case of `Type: TRANSFERT`:
+  * `Coins` must have at least one coin.
+  * Each line must be **with** `TRANSACTION_ID` provided.
+* In case of `Type: ISSUANCE`:
+  * `Coins` must have at least one coin.
+  * Each line must be **without** `TRANSACTION_ID` provided.
+* In case of `Type: FUSION`:
+  * `Coins` must have its first coin, matching a `F-TRANSACTION_NUMBER` format (it is the result coin).
+  * Following coins must have lines **with** `TRANSACTION_ID` provided.
+  * Following coins sum of values **must be exactly** the same value as the first coin (result coin)
 
 ### Coins format
 
@@ -298,24 +343,6 @@ Fusion transaction is identified by having `Type: FUSION` value. Such a transact
     Comment:
     Here I am fusioning my coins 6,7,8 (of respective value 30,10,10) to make a new coin of value 50.
     Of course, coins 6,7,8 are therefore unusable as they are no more part of monetary mass.
-
-### Validity
-
-In HDC, a Transaction structure is considered *valid* if:
-
-* Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
-* Fields `Version`, `Number` are zero or positive integer values.
-* Field `Type` has either `TRANSFERT`, `ISSUANCE` or `FUSION` value.
-* In case of `Type: TRANSFERT`:
-  * `Coins` must have at least one coin.
-  * Each line must be **with** `TRANSACTION_ID` provided.
-* In case of `Type: ISSUANCE`:
-  * `Coins` must have at least one coin.
-  * Each line must be **without** `TRANSACTION_ID` provided.
-* In case of `Type: FUSION`:
-  * `Coins` must have its first coin, matching a `F-TRANSACTION_NUMBER` format (it is the result coin).
-  * Following coins must have lines **with** `TRANSACTION_ID` provided.
-  * Following coins sum of values **must be exactly** the same value as the first coin (result coin)
 
 ### Money ownership
 

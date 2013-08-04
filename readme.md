@@ -59,7 +59,7 @@ Note too that listening to multiple interfaces doesn't imply mutiple program ins
 
 ### Currency parameters
 
-Nodecoin should be launched with a few more parameters to be part of a currency community.
+uCoin should be launched with a few more parameters to be part of a currency community.
 
 First, it is required to tell the name of the currency:
 
@@ -76,9 +76,9 @@ Second, initial public keys of the first members of the community must be given:
     Currency name: beta_brousouf
     Initkeys loaded.
 
-This will tell Nodecoin where to find the initial keys. More keys can be given using the comma separator.
+This will tell uCoin where to find the initial keys. More keys can be given using the comma separator.
 
-Note: initial keys are a prerequisite for Monetary Contract: Nodecoin will only accept as first amendment the one that matches thoses keys.
+Note: initial keys are a prerequisite for Monetary Contract: uCoin will only accept as first amendment the one that matches thoses keys.
 
 ### PGP-signed HTTP requests
 

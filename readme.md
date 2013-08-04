@@ -120,9 +120,12 @@ Which displays:
 uCoin *is not* an implementation of the OpenUDC protocol. Firstly because OpenUDC protocol is still a in drafting state, and secondly because uCoin have some divergences in its mecanisms.
 Consequently, uCoin proposes its own protocol called UCP.
 
-## Get involved in uCoin project
+## Talk about/get involved in uCoin project
 
-For the moment uCoin is developed only by its author. If you wish to participate/debate on it, you contact me directly at cem.moreau@gmail.com.
+For the moment uCoin is developed only by its author. If you wish to participate/debate on it, you can:
+
+* join XMPP chatroom [ucoin@muc.jappix.com](https://jappix.com/)
+* contact me directly at cem.moreau@gmail.com
 
 # References
 

@@ -5,8 +5,8 @@ uCoin is a free server-side software which allows to create new P2P crypto-curre
 It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called UCP (UCoin Protocol).
 
 You can get more in uCoin project reading the following documents:
-* [Concepts](https://github.com/c-geek/ucoind/blob/master/doc/concepts.md)
-* [Architecture](https://github.com/c-geek/ucoind/blob/master/doc/architecture.md)
+* [Concepts](https://github.com/c-geek/ucoin/blob/master/doc/concepts.md)
+* [Architecture](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
 
 ## Installation
 

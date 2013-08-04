@@ -54,7 +54,7 @@ function JPGP() {
     // Done
     var end = new Date();
     var diff = end.getTime() - start.getTime();
-    console.log("jpgp verify", diff + " ms");
+    // console.log("jpgp verify", diff + " ms");
     if(verified){
       callback();
     }

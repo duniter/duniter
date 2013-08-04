@@ -69,7 +69,6 @@ function getAAMessage(keytext, callback) {
 }
 
 function getAsciiArmoredMessages(body, files, callback) {
-  console.log(JSON.stringify(body), JSON.stringify(files));
   var keytext = body.keytext || (files ? files.keytext : "");
   var keysign = body.keysign || (files ? files.keysign : "");
   var aaPubkey, aaSignature;

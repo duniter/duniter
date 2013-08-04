@@ -32,6 +32,7 @@
     "mongoose": "",
     "async": "",
     "merkle": "",
+    "hdc": ">= 0.0.4",
     "connect-pgp": ">= 0.1.0",
     "underscore": ""
   },

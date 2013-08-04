@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-var config   = require('../config/config');
-var nodecoin = require('../app/lib/nodecoin');
-var http     = require('http');
-var program  = require('commander');
+var config  = require('../config/config');
+var server  = require('../app/lib/server');
+var http    = require('http');
+var program = require('commander');
 
 function keys (val) {
   return val.split(',');
@@ -39,7 +39,7 @@ for(var i in program.initKeys){
   config.initKeys.push({path: program.initKeys[i]});
 }
 
-nodecoin.express.app(config, function (err, app) {
+server.express.app(config, function (err, app) {
   if(!config.server.ipv4address){
     http.createServer(app).listen(app.get('port'), function(){
       console.log('NodeCoin server listening on port ' + app.get('port'));

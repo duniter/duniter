@@ -1,4 +1,4 @@
-# NodeCoin HTTP API
+# uCoin HTTP API
 
 * [Overview](#overview)
 * [Merkle URLs](#merkle-urls)
@@ -24,7 +24,7 @@
 
 ## Overview
 
-Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit NodeCoin specificities.
+Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit uCoin specificities.
 
     http[s]://Node[:port]/...
     |-- pks/
@@ -62,9 +62,9 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
 
-Such kind of URL returns Merkle tree hashes informations. In NodeCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
+Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
-For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. NodeCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
+For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. uCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
 
 Here is an example of members Merkle tree with 5 members (taken from [Tree Hash EXchange format (THEX)](http://web.archive.org/web/20080316033726/http://www.open-content.net/specs/draft-jchapweske-thex-02.html)):
 
@@ -84,9 +84,9 @@ Here is an example of members Merkle tree with 5 members (taken from [Tree Hash 
 
 Where A,B,C,D,E are already hashed data.
 
-With such a tree structure, NodeCoin consider the tree has exactly 6 nodes: `[ROOT,H,E,F,G,E]`. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of another server LS2 for level 1 (`H` and `E`, the second level): it requires nodes interval `[1;2]`.
+With such a tree structure, uCoin consider the tree has exactly 6 nodes: `[ROOT,H,E,F,G,E]`. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of another server LS2 for level 1 (`H` and `E`, the second level): it requires nodes interval `[1;2]`.
 
-Hence it is quite easy for anyone who wants to check if a `Z` member joined the NodeCoin community as it would alter the `E` branch of the tree:
+Hence it is quite easy for anyone who wants to check if a `Z` member joined the uCoin community as it would alter the `E` branch of the tree:
 
                         ROOT'=H(H+E')
                         /            \
@@ -115,7 +115,7 @@ Parameter | Description
 
 ### pks/*
 
-This URL is used to manage OpenPGP certificates, making NodeCoin acting **like** an SKS server.
+This URL is used to manage OpenPGP certificates, making uCoin acting **like** an SKS server.
 
 #### `pks/add`
 **Goal**
@@ -164,7 +164,7 @@ Result differs according to parameters and is HKP-compliant.
 
 ### hdc/*
 
-This URL pattern manages all the data used by NodeCoin based on the PKS.
+This URL pattern manages all the data used by uCoin based on the PKS.
 
 In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
 
@@ -393,7 +393,7 @@ GET a transaction chain justifying that coin `[COIN_ID]` is owned by the given `
 Name | Value | Method
 ---- | ----- | ------
 `PGP_FINGERPRINT` | Owner of the coins. | URL
-`COIN_ID` | Coin [unique identifier](https://github.com/c-geek/nodecoind/blob/master/doc/HDC.md#coins-format). | URL
+`COIN_ID` | Coin [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#coins-format). | URL
 
 **Returns**
 
@@ -634,7 +634,7 @@ GET the transaction of given `TRANSACTION_ID`.
 
 Name | Value | Method
 ---- | ----- | ------
-`TRANSACTION_ID` | The transaction [unique identifier](https://github.com/c-geek/nodecoind/blob/master/doc/HDC.md#transaction). | URL
+`TRANSACTION_ID` | The transaction [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction). | URL
 
 **Returns**
 

@@ -8,7 +8,7 @@ exports.server = {
 
 exports.db = {
   //port     : 27017, // optional
-  database : "nodecoin",
+  database : "ucoin",
   host     : "localhost"
 };
 

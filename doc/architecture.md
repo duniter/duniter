@@ -1,18 +1,18 @@
-# NodeCoin architecture
+# uCoin architecture
 
                     ------------
-                    | NodeCoin | The software
+                    |  uCoin   | The software
                     ------------
                          |
                          ▼
                     ------------
-                    |   NCP    | Implements NodeCoin Protocol
+                    |   UCP    | Implements uCoin Protocol
                     ------------
                          |
                 ,--------+---------,
                 ▼                  ▼
           ------------        ------------
-          |   HDC    |◀-------|   NCM    | Based on HDC and NCM messages formats
+          |   HDC    |◀-------|   UCM    | Based on HDC and UCM messages formats
           ------------        ------------
                 |                  |
                 '--------+---------'
@@ -26,8 +26,8 @@ More details on each layer:
 
 Layer | Role
 ----- | ----
-NodeCoin | The software that implements NCP. One instance of NodeCoin handles only one currency.
-[NCP](https://github.com/c-geek/nodecoind/blob/master/doc/NCP.md) | A protocol defining how to handle messages in order to build an HDC system.
-[HDC](https://github.com/c-geek/nodecoind/blob/master/doc/HDC.md) | A format defining messages to describe an HDC system.
-[NCM](https://github.com/c-geek/nodecoind/blob/master/doc/NCM.md) | A format defining messages used by NCP.
-[HTTP API](https://github.com/c-geek/nodecoind/blob/master/doc/HTTP_API.md) | The communication protocol to exchange HDC and NCM messages over HTTP.
+uCoin | The software that implements UCP. One instance of uCoin handles only one currency.
+[UCP](https://github.com/c-geek/ucoin/blob/master/doc/UCP.md) | A protocol defining how to handle messages in order to build an HDC system.
+[HDC](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md) | A format defining messages to describe an HDC system.
+[UCM](https://github.com/c-geek/ucoin/blob/master/doc/UCM.md) | A format defining messages used by UCP.
+[HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md) | The communication protocol to exchange HDC and UCM messages over HTTP.

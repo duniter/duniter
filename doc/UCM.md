@@ -1,6 +1,6 @@
-# NCM - NodeCoin Messages format
+# UCM - uCoin Messages format
 
-NCM HDC Messages Format: it adds rules on top of HDC messages in order to implement a system compliant with NodeCoin monetary rules.
+UCM is a format defining messages both based on and completing HDC messages to be used in uCoin Protocol (UCP).
 
 ## Certificates
 

@@ -1,16 +1,16 @@
-# NodeCoin [![Build Status](https://api.travis-ci.org/c-geek/nodecoin.png)](https://api.travis-ci.org/c-geek/nodecoin.png)
+# uCoin [![Build Status](https://api.travis-ci.org/c-geek/ucoin.png)](https://api.travis-ci.org/c-geek/ucoin.png)
 
-NodeCoin is a free server-side software which allows to create new P2P crypto-currencies based on individuals and implementing Universal Dividend.
+uCoin is a free server-side software which allows to create new P2P crypto-currencies based on individuals and implementing Universal Dividend.
 
-It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called NCP (NodeCoin Protocol).
+It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called UCP (UCoin Protocol).
 
-You can get more in NodeCoin project reading the following documents:
-* [Concepts](https://github.com/c-geek/nodecoind/blob/master/doc/concepts.md)
-* [Architecture](https://github.com/c-geek/nodecoind/blob/master/doc/architecture.md)
+You can get more in uCoin project reading the following documents:
+* [Concepts](https://github.com/c-geek/ucoind/blob/master/doc/concepts.md)
+* [Architecture](https://github.com/c-geek/ucoind/blob/master/doc/architecture.md)
 
 ## Installation
 
-NodeCoin is powered by Node.js v0.10+, so you need it installed first. Here is an example for Ubuntu installation:
+uCoin is powered by Node.js v0.10+, so you need it installed first. Here is an example for Ubuntu installation:
 
     $ sudo apt-get update
     $ sudo apt-get install python-software-properties python g++ make
@@ -20,40 +20,40 @@ NodeCoin is powered by Node.js v0.10+, so you need it installed first. Here is a
 
 You can find the installation of Node.js for other distribution [on this GitHub document](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager).
 
-And then, just install NodeCoin:
+And then, just install uCoin:
 
-    sudo npm install -g nodecoin
+    sudo npm install -g ucoin
 
-## Get NodeCoin run
+## Get uCoin run
 
 Launch it using the following command:
 
-    $ nodecoin
+    $ ucoin
 
-By default, nodecoin runs on port 8081. You may change it using the --port parameter:
+By default, ucoin runs on port 8081. You may change it using the --port parameter:
 
-    $ nodecoin --port 80
+    $ ucoin --port 80
 
 (may require root access to launch on port 80)
 
 It is also possible to specify the IPv4 interface:
 
-    $ nodecoin -p 8888 --ipv4 127.0.0.1
+    $ ucoin -p 8888 --ipv4 127.0.0.1
 
-    NodeCoin server listening on 127.0.0.1 port 8888
+    uCoin server listening on 127.0.0.1 port 8888
 
 Or IPv6 interface:
 
-    $ nodecoin -p 8888 --ipv6 ::1
+    $ ucoin -p 8888 --ipv6 ::1
 
-    NodeCoin server listening on ::1 port 8888
+    uCoin server listening on ::1 port 8888
 
 Or both:
 
-    $ nodecoin -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+    $ ucoin -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
 
-    NodeCoin server listening on 127.0.0.1 port 8888
-    NodeCoin server listening on ::1 port 8888
+    uCoin server listening on 127.0.0.1 port 8888
+    uCoin server listening on ::1 port 8888
 
 Note too that listening to multiple interfaces doesn't imply mutiple program instances: only *one* is running on multiple interfaces.
 
@@ -63,16 +63,16 @@ Nodecoin should be launched with a few more parameters to be part of a currency 
 
 First, it is required to tell the name of the currency:
 
-    $ nodecoin --currency beta_brousouf
+    $ ucoin --currency beta_brousouf
 
-    NodeCoin server listening on port 8081
+    uCoin server listening on port 8081
     Currency name: beta_brousouf
 
 Second, initial public keys of the first members of the community must be given:
 
-    $ nodecoin --currency beta_brousouf --initKeys /path/to/key1.pub,/path/to/key2.pub
+    $ ucoin --currency beta_brousouf --initKeys /path/to/key1.pub,/path/to/key2.pub
 
-    NodeCoin server listening on port 8081
+    uCoin server listening on port 8081
     Currency name: beta_brousouf
     Initkeys loaded.
 
@@ -82,24 +82,24 @@ Note: initial keys are a prerequisite for Monetary Contract: Nodecoin will only 
 
 ### PGP-signed HTTP requests
 
-This is one of the great features coming with NodeCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a NPM module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
+This is one of the great features coming with uCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a NPM module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
 
-To use this feature, just launch NodeCoin using `--pgpkey` and `--pgppasswd` parameters:
+To use this feature, just launch uCoin using `--pgpkey` and `--pgppasswd` parameters:
 
-    nodecoin --pgpkey "/path/to/some/private.key" --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
+    ucoin --pgpkey "/path/to/some/private.key" --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
 
     Signed requests with PGP: **enabled**.
-    NodeCoin server listening on port 8081
+    uCoin server listening on port 8081
 
 ### Help
 
-For more more details on the nodecoin command, run:
+For more more details on the ucoin command, run:
 
-    nodecoin --help
+    ucoin --help
 
 Which displays:
 
-    Usage: nodecoin [options]
+    Usage: ucoin [options]
 
     Options:
 
@@ -117,12 +117,12 @@ Which displays:
 
 ## Disclaimer
 
-NodeCoin *is not* an implementation of the OpenUDC protocol. Firstly because OpenUDC protocol is still a in drafting state, and secondly because NodeCoin have some divergences in its mecanisms.
-Consequently, NodeCoin proposes its own protocol called NCP.
+uCoin *is not* an implementation of the OpenUDC protocol. Firstly because OpenUDC protocol is still a in drafting state, and secondly because uCoin have some divergences in its mecanisms.
+Consequently, uCoin proposes its own protocol called UCP.
 
-## Get involved in NodeCoin project
+## Get involved in uCoin project
 
-For the moment NodeCoin is developed only by its author. If you wish to participate/debate on it, you contact me directly at cem.moreau@gmail.com.
+For the moment uCoin is developed only by its author. If you wish to participate/debate on it, you contact me directly at cem.moreau@gmail.com.
 
 # References
 
@@ -138,4 +138,4 @@ For the moment NodeCoin is developed only by its author. If you wish to particip
 
 # License
 
-This software is provided under [MIT license](https://raw.github.com/c-geek/nodecoin/master/LICENSE).
+This software is provided under [MIT license](https://raw.github.com/c-geek/ucoin/master/LICENSE).

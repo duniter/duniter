@@ -1,18 +1,18 @@
 {
-  "name": "nodecoin",
+  "name": "ucoin",
   "version": "0.0.6",
   "description": "OpenUDC-like implementation using Node.js",
-  "main": "bin/nodecoin",
+  "main": "bin/ucoin",
   "directories": {
     "test": "test"
   },
   "scripts": {
     "test": "mocha test/*.js",
-    "start": "bin/nodecoin"
+    "start": "bin/ucoin"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:c-geek/nodecoin.git"
+    "url": "git@github.com:c-geek/ucoin.git"
   },
   "keywords": [
     "openudc",
@@ -23,7 +23,7 @@
   "readmeFilename": "readme.md",
   "gitHead": "3abd4db425bdb2c89ceb3f38eb15942bc3ebaf1d",
   "bugs": {
-    "url": "https://github.com/c-geek/nodecoin/issues"
+    "url": "https://github.com/c-geek/ucoin/issues"
   },
   "dependencies": {
     "express": "",
@@ -42,6 +42,6 @@
     "supertest": ""
   },
   "bin": {
-    "nodecoin": "./bin/nodecoin"
+    "ucoin": "./bin/ucoin"
   }
 }

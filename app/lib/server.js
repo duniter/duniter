@@ -6,7 +6,7 @@ var path       = require('path');
 var mongoose   = require('mongoose');
 var connectPgp = require('connect-pgp');
 var _          = require('underscore');
-var nodecoin   = require('../lib/nodecoin');
+var server     = require('../lib/server');
 var configurer = require('../lib/configurer');
 
 module.exports.database = {
@@ -71,8 +71,8 @@ module.exports.express = {
       },
       loadMongoDB: function(callback){
         // Bootstraps models
-        nodecoin.database.init();
-        nodecoin.database.connect(config, function (err) {
+        server.database.init();
+        server.database.connect(config, function (err) {
           if(!err)
             console.log("Connected to MongoDB.");
           else

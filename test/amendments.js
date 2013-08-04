@@ -2,10 +2,10 @@ var should   = require('should');
 var assert   = require('assert');
 var mongoose = require('mongoose');
 var sha1     = require('sha1');
-var nodecoin = require('../app/lib/nodecoin');
+var server   = require('../app/lib/server');
 
 
-nodecoin.database.init();
+server.database.init();
 var Amendment = mongoose.model('Amendment');
 
 var amTest;

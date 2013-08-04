@@ -4,8 +4,8 @@ var mongoose  = require('mongoose');
 var sha1      = require('sha1');
 var fs        = require('fs');
 var async     = require('async');
-var nodecoin  = require('../app/lib/nodecoin');
-nodecoin.database.init();
+var server    = require('../app/lib/server');
+server.database.init();
 var Amendment = mongoose.model('Amendment');
 var Vote      = mongoose.model('Vote');
 

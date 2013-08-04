@@ -1,11 +1,11 @@
-var should   = require('should');
-var request  = require('supertest');
-var nodecoin = require('../app/lib/nodecoin');
+var should  = require('should');
+var request = require('supertest');
+var server  = require('../app/lib/server');
 
 var config = {
   server: { port: 8001 },
   db: {
-    database : "nodecoin_test",
+    database : "ucoin_test",
     host: "localhost"
   },
   initKeys: []
@@ -50,7 +50,7 @@ function testPOST(url, should) {
 
 var app;
 before(function (done) {
-  nodecoin.express.app(config, function (err, appReady) {
+  server.express.app(config, function (err, appReady) {
     app = appReady;
     done();
   });

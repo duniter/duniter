@@ -13,6 +13,11 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
 * [Amendment](#amendment)
   * [Definition](#definition-1)
   * [Validity](#validity-1)
+  * [Membership request](#membership-request)
+      * [Joining](#joining)
+      * [Actualizing](#actualizing)
+      * [Leaving](#leaving)
+  * [Vote request](#vote-request)
 * [Transaction](#transaction)
   * [Definition](#definition-2)
   * [Validity](#validity-2)
@@ -157,6 +162,7 @@ Field | Description | Required
 
 In HDC, an Amendment structure is considered *valid* if:
 
+* Every line ends with a DOS <CR><LN> next line character.
 * Every required field is present, without consideration of any order.
 * Every present field ends with new line character.
 * Fields `Version`, `Number`, `UniversalDividend` (if present), `CoinMinimalPower` (if present), `MembersCount`, `VotersCount` are zero or positive integer values.
@@ -165,6 +171,144 @@ In HDC, an Amendment structure is considered *valid* if:
 * When `Number` field is positive, Amendment has a `PreviousHash` value.
 
 Note that having an Amendment with a `CoinMinimalPower` without `UniversalDividend` field (or `0` valued) is not a considerated as invalid, but is a non-sense from HDC point of view.
+
+### Membership request
+
+In an Amendment, `JoinSignaturesRoot` is a Merkle tree of Joining requests which are the documents justifying the presence of a member inside the Community. It attests the will of an individual to join the Community.
+
+Joining request is the concatenation of this document:
+
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Status: JOIN|ACTUALIZE|LEAVE
+    Basis: AMENDMENT_NUMBER
+
+and signature of it, to make a single document which represents a *Membership request*.
+
+Field | Description | Required
+----- | ----------- | --------
+`Version` | denotes the current structure version. | **Required**
+`Currency` | contains the name of the currency. This is used to identify the target of the membership request, as several moneys may be HDC-based. | **Required**
+`Status` | mean the goal of the request, which may be either `JOIN` for joining, `ACTUALIZE` for actualizing and `LEAVE` for leaving the Community. | **Required**
+`Basis` | **is mandatory for `Status: ACTUALIZE` or `Status: LEAVE`**. Is an integer value denoting an Amendment `Number` vouching for the current status which is to be changed. | *Not Required*
+
+#### Joining
+
+**Goal** Joining request is to be used for joining a given Community.
+
+Requires **no** `Basis` entry. A valid joining example would be:
+
+    Version: 1
+    Currency: beta_brousoufs
+    Status: JOIN
+    -----BEGIN PGP MESSAGE-----
+    Version: GnuPG v1.4.12 (GNU/Linux)
+
+    owEBbgGR/pANAwAIAenKt20ZqGUeAaw+YgRqb2luUf9UHVZlcnNpb246IDENCkN1
+    cnJlbmN5OiBiZXRhX2Jyb3Vzb3Vmcw0KU3RhdHVzOiBKT0lODQqJARwEAAEIAAYF
+    AlH/VB0ACgkQ6cq3bRmoZR5Gogf+IcZicT5yiNfj9PH0Gt4dJsDSW+w5rvnNr2jM
+    9ZWOXn7YqOk53ILxgCsRvhtLCwBIohbTwq5giF3daFDh4bp+LYmo97LdMTYVL2F3
+    GQz2AHW2zMzN1mCRTdVfk2ARtErf6o+Is6hcC1+ITsHcjQE+++c838HPRMXXOff1
+    dNcR3u2RCBEZsjcbuu/JaX3n7AObSJ6+xXGB6/FejEsKqTPd9rq/FkNwv/U6VKsV
+    SlYP0sI2Jx5Dxpvoyx2+kzFQQoiD2inkMTcdrjYriSL5OPPIfG2KSSsrx4ncXG+w
+    tPC7WvvRqFaZet90WhmsVQYchCxUlBBus15TASV0zJm81aTJuw==
+    =rtKc
+    -----END PGP MESSAGE-----
+
+#### Actualizing
+
+**Goal** Actualizing request is to be used for actualizing a status in a given Community.
+
+**Requires** `Basis` entry. A valid actualizing example would be:
+
+    Version: 1
+    Currency: beta_brousoufs
+    Status: ACTUALIZE
+    Basis: 2
+    -----BEGIN PGP MESSAGE-----
+    Version: GnuPG v1.4.12 (GNU/Linux)
+
+    owEBeQGG/pANAwAIAenKt20ZqGUeAaxJYgRhY3R1Uf9WFFZlcnNpb246IDEKQ3Vy
+    cmVuY3k6IGJldGFfYnJvdXNvdWZzClN0YXR1czogQUNUVUFMSVpFCkJhc2lzOiAy
+    CokBHAQAAQgABgUCUf9WFAAKCRDpyrdtGahlHptqCACjciiEP5FmExHz3R5kpKCP
+    BulDm2eANXKiYSyStN6EOEfQaV6Z2yLx5JflmxYMS8yPvWPkLpxNxje8IyN6nMIG
+    lmxiqs1QegGq1cXc5g7KIXs6aBPAjJPPq0+G8SEI4RGOwAC+1K/7XweTquprG8QY
+    K+4JVGfOYK1/3ZHOBSbu1jCl27nXs3MA/xX2baEwWblBniriYUqQpeDdbrQH4Umd
+    EsI1SQbO7dv/CWmkizfH9qKEeUCYuEVCGr/5a1ZrTvmRpbN+MM+NF7IvWg8JbCjP
+    Gz9Ju8oUUxtQF9KRaOCjNqvAppwb5g+2ISXvqEe5VnijF9X+eiVb2M3Mjnk8iALX
+    =0Ftz
+    -----END PGP MESSAGE-----
+
+#### Leaving
+
+**Goal** Leaving request is to be used for leaving a given Community.
+
+**Requires** `Basis` entry. A valid leaving example would be:
+
+    Version: 1
+    Currency: beta_brousoufs
+    Status: LEAVE
+    Basis: 6
+    -----BEGIN PGP MESSAGE-----
+    Version: GnuPG v1.4.12 (GNU/Linux)
+
+    owEBeAGH/pANAwAIAenKt20ZqGUeAaxIYgdsZWF2aW5nUf9WuFZlcnNpb246IDEK
+    Q3VycmVuY3k6IGJldGFfYnJvdXNvdWZzClN0YXR1czogTEVBVkUKQmFzaXM6IDYK
+    iQEcBAABCAAGBQJR/1a4AAoJEOnKt20ZqGUehxMIAJf5bnI8Eg10rdcXO+vFbx74
+    4thx8h6BMByJ6uYI5G5A5hlSUaOsoP/I5PpQ9se3e7ZqXEkS82Gl+KzvAZcBvget
+    HffuSD906cKtTL+c2gZfz3F0LKLtuj89nuudG4qcrXDfut6BrFziyksAVlOOI8V7
+    j3RNHG972pt1ofM1DBuX19PiRAlTj+fj46PJsR5Wkp+T/aTJX05xSpbjVh2iMcUC
+    gBJxUtYHmk/qwc11jdD7rF+une+uBeKZtZ8zSKeV/7RsECOE2g3x3iWTSGbE8MVA
+    oRE+QQrDO2/VMqOskwn1ktriiMacu0g5IUgvV0B7kIzE+hMW6eEu1R6pJ/XInmE=
+    =kUj2
+    -----END PGP MESSAGE-----
+
+### Vote request
+
+Vote request is a document whose goal is to justify an entry inside an Amendment's `VotersChanges` field (thus impacting `VotersCount` and `VotersRoot` too).
+
+A valid vote is a just a signature of a given Amendment.
+
+#### Example
+
+For Amendment 0:
+
+    Version: 1
+    Currency: beta_brousouf
+    Number: 0
+    VotersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
+    VotersCount: 3
+    VotersChanges:
+    +2E69197FAB029D8669EF85E82457A1587CA0ED9C
+    +33BBFC0C67078D72AF128B5BA296CC530126F372
+    +C73882B64B7E72237A2F460CE9CAB76D19A8651E
+    MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
+    MembersCount: 3
+    MembersChanges:
+    +2E69197FAB029D8669EF85E82457A1587CA0ED9C
+    +33BBFC0C67078D72AF128B5BA296CC530126F372
+    +C73882B64B7E72237A2F460CE9CAB76D19A8651E
+
+A valid vote would be:
+
+    -----BEGIN PGP MESSAGE-----
+    Version: GnuPG v1.4.12 (GNU/Linux)
+
+    owGbwMvMwMH48tT2XMkVqXKMaxk/JHE6Oek6+hro+nsH/rSSCEstKs7Mz7NSMOTl
+    ci4tKkrNS660UkhKLUmMTyrKLy3OL03j5fIrzU1KLbJSMODlCssvAeoIys8vsVJw
+    M3V0dnMxM3dztjSwcDGycDYAch1dLCzMjEwsHZ2NzAxMDU2BcjBdzvmleUBtxnB+
+    RmJeemqxFS+XtpGrmaWhpbmbo5OBkaWLhZmZpaubhamrhZGJqbmjoamFubOjgauL
+    pTNQqbGxk5Mb0CozcwNzCxdzI0c3QyMLJ1MnRyNLM2dnU2MDQyMzN2NzI6BSZ3Nj
+    CwsjJzMTJ3NXcyMjY3NHIzcTMwNnV0tnRydzMxdDS0cLM1NDV14u31SQD0n2F1Qb
+    wmMwgcHjs05GGRYGRg4GNlYmUHwzcHEKwJLDnXfs/32Wnbh/J7PpxLatBnsn2k0R
+    u2BxhHHqxtQ1W4K3pOZ9E+NzzGTJmCQ4ZdupC+t4ulKeL+XdXfhnya+Pxtaz/h7Z
+    57/nU1gmj7FZo29EeFHbrFtulrtvV53WnNkY/eniDddwG42VwsWrYrdYBvhN4Q+7
+    IaGQ0tiRkb20+fODu56pG6Rk9lofPSuSZtUqkXF+66Mnf3+wfub3jdTp/Ph6HscP
+    75cx2pdyjR69iv3HefLY/7vtjyJfbD2y1LjIpOhM3PJKo+bI6ujdVnN5RCx3JN57
+    pCady7rGstjowtT01ezBi102mCUmqu96lN+0c05H7kyNX7PPfn/Ik1jOuf7Qz32N
+    4ldvbbc5f+u3ZuTNyQcB
+    =Oc3A
+    -----END PGP MESSAGE-----
 
 ## Transaction
 

@@ -138,8 +138,8 @@ Amendments have the following structure:
     VotersRoot: VOTERS_MERKLE_ROOT
     VotersCount: VOTERS_COUNT
     VotersChanges:
-    +INDIVIDUAL_FPR_VOTING_THIS_ONE_NOT_VOTED_PREVIOUS
-    -INDIVIDUAL_FPR_VOTED_PREVIOUS_NOT_VOTING_THIS_ONE
+    +INDIVIDUAL_FPR_VOTED_PREVIOUS_NOT_ANTE_PREVIOUS
+    -INDIVIDUAL_FPR_VOTED_ANTE_PREVIOUS_NOT_VOTED_PREVIOUS
 
 All fields are not mandatory for a given amendment. Note that this precise structure is the version 1 amendment structure, and that any other structure may be proposed with a different version number. The only requirement is to have a `Version: VERSION` starting the text structure.
 
@@ -160,7 +160,7 @@ Field | Description | Required
 `MembersChanges` | contains a list of members joining or leaving the community. A joining member has a line starting with `+` and a leaving one with `-`. | **Required**
 `VotersRoot` | is the root hash of a Merkle tree listing the current voters of the whole community. It is a checksum mecanism. Note that `VotersChanges` are included in the Merkle. | **Required**
 `VotersCount` | is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree. | **Required**
-`VotersChanges` | contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted previous amendment and voted this one is not considered a change, thus does not appear in this list. | **Required**
+`VotersChanges` | contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted ante previous amendment and voted previous is not considered a change, thus does not appear in this list. | **Required**
 
 ### Validity
 

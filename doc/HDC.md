@@ -198,9 +198,9 @@ Field | Description | Required
 
 #### Joining
 
-**Goal** Joining request is to be used for joining a given Community.
+**Goal** To be used for joining a given Community.
 
-A valid joining example would be:
+A valid example would be:
 
     Version: 1
     Currency: beta_brousoufs
@@ -223,9 +223,9 @@ A valid joining example would be:
 
 #### Actualizing
 
-**Goal** Actualizing request is to be used for actualizing a status in a given Community.
+**Goal** To be used for actualizing a status in a given Community.
 
-A valid actualizing example would be:
+A valid example would be:
 
     Version: 1
     Currency: beta_brousoufs
@@ -247,9 +247,9 @@ A valid actualizing example would be:
 
 #### Leaving
 
-**Goal** Leaving request is to be used for leaving a given Community.
+**Goal** To be used for leaving a given Community.
 
-A valid leaving example would be:
+A valid example would be:
 
     Version: 1
     Currency: beta_brousoufs

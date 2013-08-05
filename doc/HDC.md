@@ -154,7 +154,7 @@ Field | Description | Required
 `UniversalDividend` | if provided, is a positive number. It defines the amount of money each member of the community may create for **THIS** amendment. | *Not Required*
 `CoinMinimalPower` | if provided, is a zero or positive number. It restricts the newly issued coins to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created from this amendment. This field is used to avoid abuses linked to money issuance. | *Not Required*
 `MembersStatusRoot` | is the root hash of a Merkle tree listing the status requests of members to be inside the community. It is a checksum mecanism. | **Required**
-`VotersSignaturesRoot` | is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | **Required**
+`VotersSignaturesRoot` | **is mandatory if `VotersCount` is positive**. It is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | *Not Required*
 `MembersRoot` | is the root hash of a Merkle tree listing the current members of the whole community. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle. | **Required**
 `MembersCount` | is used in combination of `MembersRoot`, it defines how many leafs were used to generate the Merkle tree. | **Required**
 `MembersChanges` | contains a list of members joining or leaving the community. A joining member has a line starting with `+` and a leaving one with `-`. | **Required**

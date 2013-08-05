@@ -21,7 +21,6 @@
   "author": "Cedric Moreau <cem.moreau@gmail.com>",
   "license": "GPL v2+",
   "readmeFilename": "readme.md",
-  "gitHead": "3abd4db425bdb2c89ceb3f38eb15942bc3ebaf1d",
   "bugs": {
     "url": "https://github.com/c-geek/ucoin/issues"
   },
@@ -32,7 +31,7 @@
     "mongoose": "",
     "async": "",
     "merkle": "",
-    "hdc": ">= 0.0.4",
+    "hdc": ">= 0.0.6",
     "connect-pgp": ">= 0.1.0",
     "underscore": ""
   },

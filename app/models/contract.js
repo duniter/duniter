@@ -88,53 +88,31 @@ ContractSchema.methods = {
               function(callback){
 
                 // 4) Merkle of voters
-                var leavingVoters = am.getLeavingVoters();
-                for(i = 0; i < leavingVoters.length; i++){
-                  var index = tmpVoters.indexOf(leavingVoters[i]);
-                  if(index !== -1)
-                    tmpVoters.splice(index, 0);
-                  else{
-                    callback("Leaving voter '"+ leavingVoters[i] + "' was not in the voters list");
-                    return;
-                  }
-                  tmpVoters.splice(index, 1);
-                }
-                var joiningVoters = am.getNewVoters();
-                for(i = 0; i < joiningVoters.length; i++){
-                  tmpVoters.push(joiningVoters[i]);
-                }
-                tmpVoters.sort();
-
-                // Merkle checking
-                votersMerkle = merkle(tmpVoters, 'sha1').process();
-                if(am.votersRoot !== votersMerkle.root())
-                  err = "Computed voters Merkle '" + votersMerkle.root() + "' does not match Amendment '" + am.votersRoot + "'";
-                callback(err);
-              },
-              function(callback){
-
-                // 5) Voting acceptation
-                // Case : Amendment 0
-                //  * MembersChanges == VotersChanges == initKeys
-                if(am.number == "0"){
-                  if(am.votersRoot != am.membersRoot){
-                    callback("First amendment requires to have the same keys as members and voters.");
-                  }
-                  else{
-                    var initKeysMerkle = merkle(obj.initKeys, 'sha1').process();
-                    if(am.membersRoot !== initKeysMerkle.root())
-                      err = "Members must be the same keys as the initKeys used for this server.";
-                    callback(err);
-                  }
-                }
-                // Case : Amendment 1+
-                //  * '-' changes count must be <= (1/3 voters )
-                if(am.number != "0"){
+                if(am.votersCount > 0){
                   var leavingVoters = am.getLeavingVoters();
-                  if(leavingVoters.length > (1/3) * obj.voters.length)
-                    err = "It is required to have at least the approval of 2/3 of the previous voters.";
+                  for(i = 0; i < leavingVoters.length; i++){
+                    var index = tmpVoters.indexOf(leavingVoters[i]);
+                    if(index !== -1)
+                      tmpVoters.splice(index, 0);
+                    else{
+                      callback("Leaving voter '"+ leavingVoters[i] + "' was not in the voters list");
+                      return;
+                    }
+                    tmpVoters.splice(index, 1);
+                  }
+                  var joiningVoters = am.getNewVoters();
+                  for(i = 0; i < joiningVoters.length; i++){
+                    tmpVoters.push(joiningVoters[i]);
+                  }
+                  tmpVoters.sort();
+
+                  // Merkle checking
+                  votersMerkle = merkle(tmpVoters, 'sha1').process();
+                  if(am.votersRoot !== votersMerkle.root())
+                    err = "Computed voters Merkle '" + votersMerkle.root() + "' does not match Amendment '" + am.votersRoot + "'";
                   callback(err);
                 }
+                else callback();
               }
             ], function (err) {
               if(!err){

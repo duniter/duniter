@@ -13,9 +13,11 @@ var AmendmentSchema = new Schema({
   previousHash: String,
   dividend: String,
   coinMinPower: String,
+  votersSigRoot: String,
   votersRoot: String,
   votersCount: String,
   votersChanges: Array,
+  membersStatusRoot: String,
   membersRoot: String,
   membersCount: String,
   membersChanges: Array,
@@ -76,12 +78,16 @@ AmendmentSchema.methods = {
     if(this.coinMinPower){
       raw += "CoinMinimalPower: " + this.coinMinPower + "\n";
     }
-    raw += "VotersRoot: " + this.votersRoot + "\n";
-    raw += "VotersCount: " + this.votersCount + "\n";
-    raw += "VotersChanges:\n";
-    for(var j = 0; j < this.votersChanges.length; j++){
-      raw += this.votersChanges[j] + "\n";
+    if(this.votersCount > 0){
+      raw += "VotersSignaturesRoot: " + this.votersSigRoot + "\n";
+      raw += "VotersRoot: " + this.votersRoot + "\n";
+      raw += "VotersCount: " + this.votersCount + "\n";
+      raw += "VotersChanges:\n";
+      for(var j = 0; j < this.votersChanges.length; j++){
+        raw += this.votersChanges[j] + "\n";
+      }
     }
+    raw += "MembersStatusRoot: " + this.membersStatusRoot + "\n";
     raw += "MembersRoot: " + this.membersRoot + "\n";
     raw += "MembersCount: " + this.membersCount + "\n";
     raw += "MembersChanges:\n";
@@ -104,17 +110,19 @@ AmendmentSchema.methods = {
 var Amendment = mongoose.model('Amendment', AmendmentSchema);
 
 function fill (am1, am2) {
-  am1.version        = am2.version;
-  am1.currency       = am2.currency;
-  am1.number         = am2.number;
-  am1.previousHash   = am2.previousHash;
-  am1.dividend       = am2.dividend;
-  am1.coinMinPower   = am2.coinMinPower;
-  am1.votersRoot     = am2.votersRoot;
-  am1.votersCount    = am2.votersCount;
-  am1.votersChanges  = am2.votersChanges;
-  am1.membersRoot    = am2.membersRoot;
-  am1.membersCount   = am2.membersCount;
-  am1.membersChanges = am2.membersChanges;
-  am1.hash           = am2.hash;
+  am1.version           = am2.version;
+  am1.currency          = am2.currency;
+  am1.number            = am2.number;
+  am1.previousHash      = am2.previousHash;
+  am1.dividend          = am2.dividend;
+  am1.coinMinPower      = am2.coinMinPower;
+  am1.votersSigRoot     = am2.votersSigRoot;
+  am1.votersRoot        = am2.votersRoot;
+  am1.votersCount       = am2.votersCount;
+  am1.votersChanges     = am2.votersChanges;
+  am1.membersStatusRoot = am2.membersStatusRoot;
+  am1.membersRoot       = am2.membersRoot;
+  am1.membersCount      = am2.membersCount;
+  am1.membersChanges    = am2.membersChanges;
+  am1.hash              = am2.hash;
 }

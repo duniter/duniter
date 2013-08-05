@@ -154,13 +154,13 @@ Field | Description | Required
 `UniversalDividend` | if provided, is a positive number. It defines the amount of money each member of the community may create for **THIS** amendment. | *Not Required*
 `CoinMinimalPower` | if provided, is a zero or positive number. It restricts the newly issued coins to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created from this amendment. This field is used to avoid abuses linked to money issuance. | *Not Required*
 `MembersStatusRoot` | is the root hash of a Merkle tree listing the status requests of members to be inside the community. It is a checksum mecanism. | **Required**
-`VotersSignaturesRoot` | **is mandatory if `VotersCount` is positive**. It is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | *Not Required*
+`VotersSignaturesRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | *Not Required*
 `MembersRoot` | is the root hash of a Merkle tree listing the current members of the whole community. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle. | **Required**
 `MembersCount` | is used in combination of `MembersRoot`, it defines how many leafs were used to generate the Merkle tree. | **Required**
 `MembersChanges` | contains a list of members joining or leaving the community. A joining member has a line starting with `+` and a leaving one with `-`. | **Required**
-`VotersRoot` | is the root hash of a Merkle tree listing the current voters of the whole community. It is a checksum mecanism. Note that `VotersChanges` are included in the Merkle. | **Required**
-`VotersCount` | is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree. | **Required**
-`VotersChanges` | contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted ante previous amendment and voted previous is not considered a change, thus does not appear in this list. | **Required**
+`VotersRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the current voters of the whole community. It is a checksum mecanism. Note that `VotersChanges` are included in the Merkle. | *Not Required*
+`VotersCount` | **is mandatory if `Number` is positive**. It is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree. | *Not Required*
+`VotersChanges` | **is mandatory if `Number` is positive**. It contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted ante previous amendment and voted previous is not considered a change, thus does not appear in this list. | *Not Required*
 
 ### Validity
 
@@ -194,7 +194,7 @@ Field | Description | Required
 `Version` | denotes the current structure version. | **Required**
 `Currency` | contains the name of the currency. This is used to identify the target of the membership request, as several moneys may be HDC-based. | **Required**
 `Status` | mean the goal of the request, which may be either `JOIN` for joining, `ACTUALIZE` for actualizing and `LEAVE` for leaving the Community. | **Required**
-`Basis` | **is mandatory for `Status: ACTUALIZE` or `Status: LEAVE`**. Is an integer value denoting an Amendment `Number` vouching for the current status which is to be changed. | *Not Required*
+`Basis` | an Amendment `Number` targeted by this request. | **Required**
 
 #### Joining
 
@@ -205,18 +205,20 @@ Requires **no** `Basis` entry. A valid joining example would be:
     Version: 1
     Currency: beta_brousoufs
     Status: JOIN
+    Basis: 0
     -----BEGIN PGP MESSAGE-----
     Version: GnuPG v1.4.12 (GNU/Linux)
 
-    owEBbgGR/pANAwAIAenKt20ZqGUeAaw+YgRqb2luUf9UHVZlcnNpb246IDENCkN1
-    cnJlbmN5OiBiZXRhX2Jyb3Vzb3Vmcw0KU3RhdHVzOiBKT0lODQqJARwEAAEIAAYF
-    AlH/VB0ACgkQ6cq3bRmoZR5Gogf+IcZicT5yiNfj9PH0Gt4dJsDSW+w5rvnNr2jM
-    9ZWOXn7YqOk53ILxgCsRvhtLCwBIohbTwq5giF3daFDh4bp+LYmo97LdMTYVL2F3
-    GQz2AHW2zMzN1mCRTdVfk2ARtErf6o+Is6hcC1+ITsHcjQE+++c838HPRMXXOff1
-    dNcR3u2RCBEZsjcbuu/JaX3n7AObSJ6+xXGB6/FejEsKqTPd9rq/FkNwv/U6VKsV
-    SlYP0sI2Jx5Dxpvoyx2+kzFQQoiD2inkMTcdrjYriSL5OPPIfG2KSSsrx4ncXG+w
-    tPC7WvvRqFaZet90WhmsVQYchCxUlBBus15TASV0zJm81aTJuw==
-    =rtKc
+    owEBfwGA/pANAwAIAenKt20ZqGUeAaxPYgtsb2xjYXQuam9pblH/atBWZXJzaW9u
+    OiAxDQpDdXJyZW5jeTogYmV0YV9icm91c291ZnMNClN0YXR1czogSk9JTg0KQmFz
+    aXM6IDANCokBHAQAAQgABgUCUf9q0AAKCRDpyrdtGahlHrtKB/9fdpGXHkG57WiG
+    f9Svdr2t0aKtkUJZZPSxsockD3YVgVYESuJFVD9A5J7bKxDPnesa6jkUWYGpUnh0
+    sTtPSt7kNoDlEuuAHdF+mtzFaM4Uw0DN1QpqDe6eBszeMfr5BakJiIEuh81QiZtz
+    vAmRpDECjhphvJMbOdnRxmechcJj46bhNa/Ucz0gUWwZ8mo3Jecog1H02kyJxKv0
+    DowcX9F/XaxtbbEwVWu1YdZOf2AMEz1nekHjoBfj17ryh5oKnITYCZQ/9MgIPgNd
+    /3j2ddZGCHoWwFi/7VBoj3N3da6U4frb/Qz1WcIsKF4XEs+dt7X+4HYsfNbIgewU
+    cRIF9b5z
+    =neCo
     -----END PGP MESSAGE-----
 
 #### Actualizing
@@ -280,12 +282,7 @@ For Amendment 0:
     Version: 1
     Currency: beta_brousouf
     Number: 0
-    VotersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
-    VotersCount: 3
-    VotersChanges:
-    +2E69197FAB029D8669EF85E82457A1587CA0ED9C
-    +33BBFC0C67078D72AF128B5BA296CC530126F372
-    +C73882B64B7E72237A2F460CE9CAB76D19A8651E
+    MembersStatusRoot: BF5E8C1A8FD9AE05520A4D886846903546207470
     MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
     MembersCount: 3
     MembersChanges:
@@ -313,6 +310,22 @@ A valid vote would be:
     4ldvbbc5f+u3ZuTNyQcB
     =Oc3A
     -----END PGP MESSAGE-----
+
+### Root Amendment
+
+The root Amendment is special in that it has **no voters basis** and **no previous Amendment**. It just inventories the root members of the Community.
+
+#### Example
+
+    Version: 1
+    Currency: beta_brousouf
+    Number: 0
+    MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
+    MembersCount: 3
+    MembersChanges:
+    +2E69197FAB029D8669EF85E82457A1587CA0ED9C
+    +33BBFC0C67078D72AF128B5BA296CC530126F372
+    +C73882B64B7E72237A2F460CE9CAB76D19A8651E
 
 ## Transaction
 

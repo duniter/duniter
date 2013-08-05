@@ -6,17 +6,24 @@
   * [pks/](#pks)
       * [add](#pksadd)
       * [lookup](#pkslookup)
+  * [ucg/](#ucg)
+      * [peering](#ucgpeering)
+      * [tht (GET)](#ucgtht-get)
+      * [tht (POST)](#ucgtht-post)
+      * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
   * [hdc/](#hdc)
-      * [amendments/init](#amendmentsinit)
-      * [amendments/submit](#amendmentssubmit)
+      * [amendments/current](#amendmentscurrent)
       * [amendments/view/[AMENDMENT_ID]/members](#amendmentsviewamendment_idmembers)
       * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
       * [amendments/view/[AMENDMENT_ID]/voters](#amendmentsviewamendment_idvoters)
-      * [amendments/vote](#amendmentsvote)
+      * [amendments/votes (GET)](#amendmentsvotes-get)
+      * [amendments/votes (POST)](#amendmentsvotes-post)
+      * [amendments/votes/[AMENDMENT_ID]/signatures](#amendmentsvotesamendment_idsignatures)
       * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_ID]](#coinspgp_fingerprintviewcoin_id)
       * [community/join](#communityjoin)
-      * [community/declare](#communitydeclare)
+      * [community/members](#communitymembers)
+      * [community/votes](#communityvotes)
       * [transactions/process/issuance](#transactionsprocessissuance)
       * [transactions/process/transfert](#transactionsprocesstransfert)
       * [transactions/process/fusion](#transactionsprocessfusion)
@@ -30,24 +37,30 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |-- pks/
     |   |-- add
     |   `-- lookup
+    |-- ucg/
+    |   |-- peering
+    |   `-- tht/
+    |       `-- [PGP_FINGERPRINT]
     `-- hdc/
         |-- amendments/
-        |   |-- init
-        |   |-- submit
+        |   |-- current
         |   |-- view/
         |   |   `-- [AMENDMENT_ID]/
         |   |       |-- members
         |   |       |-- self
         |   |       `-- voters
-        |   `-- vote
+        |   `-- votes/
+        |   |   `-- [AMENDMENT_ID]/
+        |   |       `-- signatures
         |-- coins/
         |   `-- [PGP_FINGERPRINT]/
         |       |-- list
         |       `-- view/
         |           `-- [COIN_NUMBER]
         |-- community/
-        |   |-- declare
-        |   `-- join
+        |   |-- join
+        |   |-- members
+        |   `-- votes
         `-- transactions/
             |-- process/
             |   |-- issuance
@@ -61,6 +74,9 @@ Merkle URL is a special kind of URL applicable for resources:
 
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
+* `hdc/amendments/votes/[AMENDMENT_ID]/signatures`
+* `hdc/amendments/community/members`
+* `hdc/amendments/community/votes`
 
 Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
@@ -110,6 +126,7 @@ Parameter | Description
 `index` | in combination with level, filter hashes to return only the hash of level `level` and position `index` on that level. `index` starts from 0.
 `start` | defines the start range (inclusive) of desired hashes. If `level` is used, `start` references to the given level. Otherwise references to the root.
 `end` | defines the end range (inclusive) of desired hashes. If `level` is used, `end` references to the given level. Otherwise references to the root.
+`get` | index of the leaf whose underlying content should be extracted. When used, other parameters are ignored and result is the raw content of the leaf.
 
 ## API
 
@@ -132,7 +149,7 @@ Name | Value | Method
 **Returns**
 
 The sent PGP Public Key and signature.
-```js
+```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
   "key":
@@ -162,16 +179,14 @@ Name | Value | Method
 
 Result differs according to parameters and is HKP-compliant.
 
-### hdc/*
+### ucg/*
 
-This URL pattern manages all the data used by uCoin based on the PKS.
+This URL is used for uCoin Gossip protocol (exchanging UCG messages).
 
-In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
-
-#### `amendments/init`
+#### `ucg/peering`
 **Goal**
 
-GET the initial keys used to forge the initial amendment.
+GET peering informations about a peer.
 
 **Parameters**
 
@@ -179,37 +194,165 @@ GET the initial keys used to forge the initial amendment.
 
 **Returns**
 
-PGP Public Key Messages.
-```js
+The peering entry of this node.
+```json
 {
-  "keys": [{
-    "email":"cem.moreau@gmail.com",
-    "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
-    "name":"LoL Cat",
-    "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
-  },{
-    // Another key
-  },{
-    // ...
-  }]
+  "currency": "CURRENCY_NAME",
+  "key": "SOME_KEY_FINGERPRINT",
+  "dns": "name.example.com",
+  "ipv4": "11.11.11.11",
+  "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1",
+  "port": 8555
+  "peers": [
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+  ]
 }
 ```
-#### `amendments/submit`
+
+#### `ucg/tht (GET)`
 **Goal**
 
-POST an amendment in ASCII-Armored format ready for voting.
+GET the whole THT entries.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+The whole THT entries (may be big).
+```json
+{
+  "entries": [
+    {
+      "KEY_FINGERPRINT": {
+        "number", "1",
+        "dateTime": "1374852192",
+        "hosters": [
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+        ],
+        "trusts": [
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+        ],
+        "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+      }
+    },{
+      "OTHER_KEY_FINGERPRINT": {
+        "number", "6",
+        "dateTime": "1304888015",
+        "hosters": [
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+        ],
+        "trusts": [
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
+          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+        ],
+        "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+      }
+    }
+  ]
+}
+```
+
+#### `ucg/tht (POST)`
+**Goal**
+
+POST a THT entry.
 
 **Parameters**
 
 Name | Value | Method
 ---- | ----- | ------
-`amendment` | The raw amendment structure. | POST
+`entry` | Entry data. | POST
+`signature` | Signature of the THT entry value. | POST
 
 **Returns**
 
-The posted amendment.
-```js
+The posted THT entry.
+```json
+{
+  "KEY_FINGERPRINT": {
+    "number", "1",
+    "dateTime": "1374852192",
+    "hosters": [
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+    ],
+    "trusts": [
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+    ],
+    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+  }
+}
+```
+
+#### `ucg/tht/[PGP_FINGERPRINT]`
+**Goal**
+
+GET a unique THT entry.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | The key fingerprint we want Trust informations. | URL
+
+**Returns**
+
+The requested THT entry.
+```json
+{
+  "KEY_FINGERPRINT": {
+    "number", "1",
+    "dateTime": "1374852192",
+    "hosters": [
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+    ],
+    "trusts": [
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
+      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+    ],
+    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+  }
+}
+```
+
+### hdc/*
+
+This URL pattern manages all the data used by uCoin based on the PKS.
+
+In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
+
+#### `amendments/current`
+**Goal**
+
+GET the current promoted amendment (amendment which received enough votes to be accepted).
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+The current amendment.
+```json
 {
   "version": "1",
   "currency": "beta_brousoufs",
@@ -240,12 +383,12 @@ Merkle URL referencing to the members of the Community.
 
 Name | Value | Method
 ---- | ----- | ------
-`AMENDMENT_ID` | The amendment number. | URL
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
 
 **Returns**
 
 Merkle URL result.
-```js
+```json
 {
   "level": "1",
   "nodes": [
@@ -264,12 +407,12 @@ Shows the raw data of the amendment `[AMENDMENT_ID]`.
 
 Name | Value | Method
 ---- | ----- | ------
-`AMENDMENT_ID` | The amendment number. | URL
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
 
 **Returns**
 
 The requested amendment.
-```js
+```json
 {
   "version": "1",
   "currency": "beta_brousoufs",
@@ -300,12 +443,12 @@ Merkle URL referencing to the voters of the Community.
 
 Name | Value | Method
 ---- | ----- | ------
-`AMENDMENT_ID` | The amendment number. | URL
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
 
 **Returns**
 
 Merkle URL result.
-```js
+```json
 {
   "level": "0",
   "nodes": [
@@ -315,7 +458,46 @@ Merkle URL result.
 }
 ```
 
-#### `amendments/vote`
+#### `amendments/votes (GET)`
+**Goal**
+
+GET an index of votes received by this node.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+A list detailing for each amendment number, statistics of votes (grouped by amendment hash).
+```json
+{
+  "amendments": [
+    {
+      "number": 2,
+      "hashes": [
+        {
+          "hash": "AMENDMENT_HASH",
+          "votesCount": 14
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "hashes": [
+        {
+          "hash": "AMENDMENT_HASH",
+          "votesCount": 7
+        }
+      ]
+    },{
+      // Other stats...
+    }
+  ]
+}
+```
+
+#### `amendments/votes (POST)`
 **Goal**
 
 POST an amendment signed by a Community member, considering it as a vote for this amendment.
@@ -330,7 +512,7 @@ Name | Value | Method
 **Returns**
 
 The posted amendment + posted signature.
-```js
+```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
   "amendment": {
@@ -355,6 +537,30 @@ The posted amendment + posted signature.
 }
 ```
 
+#### `amendments/votes/[AMENDMENT_ID]/signatures`
+**Goal**
+
+Merkle URL referencing to the votes for a given amendment.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "level": "0",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
+
 #### `coins/[PGP_FINGERPRINT]/list`
 **Goal**
 
@@ -369,7 +575,7 @@ Name | Value | Method
 **Returns**
 
 Coins list with their owner.
-```js
+```json
 {
   "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
   "coins": [{
@@ -398,7 +604,7 @@ Name | Value | Method
 **Returns**
 
 Transaction chain.
-```js
+```json
 {
   "transactions": [
     {
@@ -457,7 +663,7 @@ Name | Value | Method
 **Returns**
 
 The posted certificate + posted signature.
-```js
+```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
   "certificate": {
@@ -470,35 +676,46 @@ The posted certificate + posted signature.
 }
 ```
 
-#### `community/declare`
+#### `community/members`
 **Goal**
 
-POST a THT entry declaration.
+Merkle URL referencing the members that request for joining in the next amendment.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`certificate` | The raw individual's certificate. | POST
-`signature` | The signature of the `certificate`. | POST
+*None*.
 
 **Returns**
 
-The new THT entry.
-```js
+Merkle URL result.
+```json
 {
-  "number", "1",
-  "dateTime": "1374852192",
-  "managedBy": [
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1"},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "22.22.22.22", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2"},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "33.33.33.33", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3"},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "44.44.44.44", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1"}
-  ],
-  "trusts": [
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1"},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2"},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3"}
+  "level": "1",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
+
+#### `community/votes`
+**Goal**
+
+Merkle URL referencing the votes that legitimate the current amendment.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "level": "1",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
   ]
 }
 ```
@@ -518,7 +735,7 @@ Name | Value | Method
 **Returns**
 
 The issuance transaction and its signature.
-```js
+```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
   "transaction":
@@ -558,7 +775,7 @@ Name | Value | Method
 **Returns**
 
 The transfert transaction and its signature.
-```js
+```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
   "transaction":
@@ -598,7 +815,7 @@ Name | Value | Method
 **Returns**
 
 The fusion transaction and its signature.
-```js
+```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
   "transaction":
@@ -639,7 +856,7 @@ Name | Value | Method
 **Returns**
 
 The transaction and its signature.
-```js
+```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
   "transaction":

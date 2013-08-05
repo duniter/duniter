@@ -200,7 +200,7 @@ Field | Description | Required
 
 **Goal** Joining request is to be used for joining a given Community.
 
-Requires **no** `Basis` entry. A valid joining example would be:
+A valid joining example would be:
 
     Version: 1
     Currency: beta_brousoufs
@@ -225,7 +225,7 @@ Requires **no** `Basis` entry. A valid joining example would be:
 
 **Goal** Actualizing request is to be used for actualizing a status in a given Community.
 
-**Requires** `Basis` entry. A valid actualizing example would be:
+A valid actualizing example would be:
 
     Version: 1
     Currency: beta_brousoufs
@@ -249,7 +249,7 @@ Requires **no** `Basis` entry. A valid joining example would be:
 
 **Goal** Leaving request is to be used for leaving a given Community.
 
-**Requires** `Basis` entry. A valid leaving example would be:
+A valid leaving example would be:
 
     Version: 1
     Currency: beta_brousoufs

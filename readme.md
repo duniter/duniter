@@ -7,10 +7,10 @@ It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-ud
 You can get more in uCoin project reading the following documents:
 * [Concepts](https://github.com/c-geek/ucoin/blob/master/doc/concepts.md)
 * [Architecture](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
-  * [UCP - uCoin Protocol](https://github.com/c-geek/ucoin/blob/master/doc/UCP.md)
-  * [API - uCoin HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md)
-  * [UCG - uCoin Gossip messages](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md)
-  * [HDC - Human Dividend Currency messages](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)
+  * [Protocol](https://github.com/c-geek/ucoin/blob/master/doc/UCP.md)
+  * [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md)
+  * [Peering](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md)
+  * [Human Dividend Currency](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)
 
 ## Installation
 

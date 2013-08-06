@@ -85,6 +85,9 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/amendments/votes/[AMENDMENT_ID]/signatures`
 * `hdc/community/members`
 * `hdc/community/votes`
+* `hdc/transactions/all`
+* `hdc/transactions/sender/[PGP_FINGERPRINT]`
+* `hdc/transactions/recipient/[PGP_FINGERPRINT]`
 
 Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
@@ -131,22 +134,60 @@ For that purpose, Merkle URL defines different parameters and results:
 
 Parameter | Description
 --------- | -----------
-`level` | indicates the level of hashes to be returned. `level` start from 0 (`ROOT` hash).
-`index` | in combination with level, filter hashes to return only the hash of level `level` and position `index` on that level. `index` starts from 0.
-`start` | defines the start range (inclusive) of desired hashes. If `level` is used, `start` references to the given level. Otherwise references to the root.
-`end` | defines the end range (inclusive) of desired hashes. If `level` is used, `end` references to the given level. Otherwise references to the root.
-`get` | index of the leaf we want both **hash** *and* **original content** values. When used, other parameters are ignored.
+`level` | Integer value that indicates the level of hashes to be returned. `level` start from `0` (`ROOT` hash). Defaults to `0`.
+`start` | Integer value that defines the start range (inclusive) of desired hashes for a given level.
+`end` | Integer value which  that defines the end range (inclusive) of desired hashes for a given level.
+`extract` | Boolean value that asks for result to inspect leaves and return both **hash** *and* **original content** values. Ignore `level` parameter.
 
 **Returns**
 
-Merkle URL result.
+Merkle URL result with `extract=false`.
 ```json
 {
-  "level": "1",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    },{
+      // Other levels...
+    }]
+  }
+}
+```
+
+Merkle URL result with `extract=true`.
+```json
+{
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "leaves": [
+    {
+      "index": 1,
+      "hash": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "value": // JSON value (object, string, int, ...)
+    },
+    {
+      "index": 2,
+      "hash": "E9D71F5EE7C92D6DC9E92FFDAD17B8BD49418F98",
+      "value": // JSON value (object, string, int, ...)
+    },{
+      // Other leaf...
+    }]
+  }
 }
 ```
 
@@ -392,7 +433,7 @@ The current amendment.
   "membersChanges": [
     "+31A6302161AC8F5938969E85399EB3415C237F93"
   ],
-  raw: "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
 }
 ```
 
@@ -412,19 +453,33 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "level": "1",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
 }
 ```
 
 Merkle URL leaf: member fingerprint
 ```json
 {
-  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "leaf_value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+  "index": 1,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
 }
 ```
 
@@ -460,7 +515,7 @@ The requested amendment.
   "membersChanges": [
     "+31A6302161AC8F5938969E85399EB3415C237F93"
   ],
-  raw: "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
 }
 ```
 
@@ -491,8 +546,9 @@ Merkle URL result.
 Merkle URL leaf: voter fingerprint
 ```json
 {
-  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "leaf_value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+  "index": 1,,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
 }
 ```
 
@@ -570,7 +626,7 @@ The posted amendment + posted signature.
     "membersChanges": [
       "+31A6302161AC8F5938969E85399EB3415C237F93"
     ],
-    raw: "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+    "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
   }
 }
 ```
@@ -602,8 +658,9 @@ Merkle URL result.
 Merkle URL leaf: signature
 ```json
 {
-  "leaf_hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
-  "leaf_value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+  "index": 1,,
+  "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
+  "value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
 }
 ```
 
@@ -736,19 +793,33 @@ Merkle URL referencing the members that request for joining in the next amendmen
 Merkle URL result.
 ```json
 {
-  "level": "1",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
 }
 ```
 
 Merkle URL leaf: member fingerprint
 ```json
 {
-  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "leaf_value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+  "index": 1,,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
 }
 ```
 
@@ -766,19 +837,33 @@ Merkle URL referencing the votes that legitimate the current amendment.
 Merkle URL result.
 ```json
 {
-  "level": "1",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
 }
 ```
 
 Merkle URL leaf: signature
 ```json
 {
-  "leaf_hash": "2D41234540938C4263CBC5E7E11564038DED2118",
-  "leaf_value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+  "index": 1,
+  "hash": "2D41234540938C4263CBC5E7E11564038DED2118",
+  "value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
 }
 ```
 
@@ -918,19 +1003,33 @@ Merkle URL referencing all the transactions stored by this node.
 Merkle URL result.
 ```json
 {
-  "level": "1",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
 }
 ```
 
 Merkle URL leaf: transaction
 ```json
 {
-  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "leaf_value": {
+  "index": 1,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
     "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
     "transaction":
     {
@@ -973,19 +1072,33 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "level": "1",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
 }
 ```
 
 Merkle URL leaf: transaction
 ```json
 {
-  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "leaf_value": {
+  "index": 1,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
     "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
     "transaction":
     {
@@ -1028,19 +1141,33 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "level": "1",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
 }
 ```
 
 Merkle URL leaf: transaction
 ```json
 {
-  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "leaf_value": {
+  "index": 1,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
     "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
     "transaction":
     {

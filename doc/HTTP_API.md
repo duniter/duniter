@@ -530,7 +530,7 @@ The requested amendment.
 #### `amendments/view/[AMENDMENT_ID]/voters`
 **Goal**
 
-Merkle URL referencing to the voters of the Community.
+Merkle URL refering to the voters of the Community for this amendment.
 
 **Parameters**
 
@@ -551,12 +551,12 @@ Merkle URL result.
 }
 ```
 
-Merkle URL leaf: voter fingerprint
+Merkle URL leaf: vote
 ```json
 {
   "index": 1,,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+  "value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
 }
 ```
 

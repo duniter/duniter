@@ -27,6 +27,9 @@
       * [transactions/process/issuance](#transactionsprocessissuance)
       * [transactions/process/transfert](#transactionsprocesstransfert)
       * [transactions/process/fusion](#transactionsprocessfusion)
+      * [transactions/all](#transactionsall)
+      * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
+      * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
       * [transactions/view/[TRANSACTION_ID]](#transactionsviewtransaction_id)
 
 ## Overview
@@ -65,6 +68,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
             |-- process/
             |   |-- issuance
             |   `-- transfert
+            |-- all
+            |-- sender/
+            |   `-- [PGP_FINGERPRINT]
+            |-- recipient/
+            |   `-- [PGP_FINGERPRINT]
             `-- view/
                 `-- [TRANSACTION_ID]
 
@@ -117,8 +125,9 @@ Hence it is quite easy for anyone who wants to check if a `Z` member joined the 
 
 `ROOT` changed to `ROOT'`, `E` to `E'`, but `H` did not. The whole `E'` branch should be updated with the proper new data.
 
-For that purpose, Merkle URL defines 4 parameters:
+For that purpose, Merkle URL defines different parameters and results:
 
+**Parameters**
 
 Parameter | Description
 --------- | -----------
@@ -127,6 +136,19 @@ Parameter | Description
 `start` | defines the start range (inclusive) of desired hashes. If `level` is used, `start` references to the given level. Otherwise references to the root.
 `end` | defines the end range (inclusive) of desired hashes. If `level` is used, `end` references to the given level. Otherwise references to the root.
 `get` | index of the leaf we want both **hash** *and* **original content** values. When used, other parameters are ignored.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "level": "1",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
 
 ## API
 
@@ -878,6 +900,169 @@ The fusion transaction and its signature.
       }
     ],
     "comment": "Too much coins ! Making big one."
+  }
+}
+```
+
+#### `transactions/all`
+**Goal**
+
+Merkle URL referencing all the transactions stored by this node.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "level": "1",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
+
+Merkle URL leaf: transaction
+```json
+{
+  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "leaf_value": {
+    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "transaction":
+    {
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 14,
+      "recipient": "[PGP_FINGERPRINT]",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Too much coins ! Making big one."
+    }
+  }
+}
+```
+
+#### `transactions/sender/[PGP_FINGERPRINT]`
+**Goal**
+
+Merkle URL referencing all the transactions sent by this sender stored by this node.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "level": "1",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
+
+Merkle URL leaf: transaction
+```json
+{
+  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "leaf_value": {
+    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "transaction":
+    {
+      "version": 1,
+      "sender": "[PGP_FINGERPRINT]",
+      "number": 14,
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Too much coins ! Making big one."
+    }
+  }
+}
+```
+
+#### `transactions/recipient/[PGP_FINGERPRINT]`
+**Goal**
+
+Merkle URL referencing all the transactions received for this recipient stored by this node.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see received transactions. | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "level": "1",
+  "nodes": [
+    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+  ]
+}
+```
+
+Merkle URL leaf: transaction
+```json
+{
+  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "leaf_value": {
+    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "transaction":
+    {
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 14,
+      "recipient": "[PGP_FINGERPRINT]",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Too much coins ! Making big one."
+    }
   }
 }
 ```

@@ -75,8 +75,8 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
 * `hdc/amendments/votes/[AMENDMENT_ID]/signatures`
-* `hdc/amendments/community/members`
-* `hdc/amendments/community/votes`
+* `hdc/community/members`
+* `hdc/community/votes`
 
 Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
@@ -126,7 +126,7 @@ Parameter | Description
 `index` | in combination with level, filter hashes to return only the hash of level `level` and position `index` on that level. `index` starts from 0.
 `start` | defines the start range (inclusive) of desired hashes. If `level` is used, `start` references to the given level. Otherwise references to the root.
 `end` | defines the end range (inclusive) of desired hashes. If `level` is used, `end` references to the given level. Otherwise references to the root.
-`get` | index of the leaf whose underlying content should be extracted. When used, other parameters are ignored and result is the raw content of the leaf.
+`get` | index of the leaf we want both **hash** *and* **original content** values. When used, other parameters are ignored.
 
 ## API
 
@@ -398,6 +398,14 @@ Merkle URL result.
 }
 ```
 
+Merkle URL leaf: member fingerprint
+```json
+{
+  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "leaf_value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+}
+```
+
 #### `amendments/view/[AMENDMENT_ID]/self`
 **Goal**
 
@@ -455,6 +463,14 @@ Merkle URL result.
     "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
     "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
   ]
+}
+```
+
+Merkle URL leaf: voter fingerprint
+```json
+{
+  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "leaf_value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
 }
 ```
 
@@ -558,6 +574,14 @@ Merkle URL result.
     "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
     "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
   ]
+}
+```
+
+Merkle URL leaf: signature
+```json
+{
+  "leaf_hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
+  "leaf_value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
 }
 ```
 
@@ -698,6 +722,14 @@ Merkle URL result.
 }
 ```
 
+Merkle URL leaf: member fingerprint
+```json
+{
+  "leaf_hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "leaf_value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+}
+```
+
 #### `community/votes`
 **Goal**
 
@@ -717,6 +749,14 @@ Merkle URL result.
     "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
     "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
   ]
+}
+```
+
+Merkle URL leaf: signature
+```json
+{
+  "leaf_hash": "2D41234540938C4263CBC5E7E11564038DED2118",
+  "leaf_value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
 }
 ```
 

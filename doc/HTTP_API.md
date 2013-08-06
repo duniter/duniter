@@ -440,7 +440,7 @@ The current amendment.
 #### `amendments/view/[AMENDMENT_ID]/members`
 **Goal**
 
-Merkle URL referencing to the members of the Community.
+Merkle URL refering to the membership requests for every member of the Community for this amendment.
 
 **Parameters**
 
@@ -474,15 +474,23 @@ Merkle URL result.
 }
 ```
 
-Merkle URL leaf: member fingerprint
+Merkle URL leaf: membership request
 ```json
 {
-  "index": 1,
+  "index": 1,,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "request": {
+      "version": 1,
+      "currency": "beta_brousoufs",
+      "status": "JOIN",
+      "basis": 0
+    }
+  }
 }
-```
-
+``
+`
 #### `amendments/view/[AMENDMENT_ID]/self`
 **Goal**
 
@@ -754,27 +762,26 @@ Transaction chain.
 #### `community/join`
 **Goal**
 
-POST an individual's PGP certificate with a signature of it to officialize his will join the community.
+POST an individual's membership request with a signature of it to register/actualize his status inside the Community.
 
 **Parameters**
 
 Name | Value | Method
 ---- | ----- | ------
-`certificate` | The raw individual's certificate. | POST
+`request` | The raw individual's membership request. | POST
 `signature` | The signature of the `certificate`. | POST
 
 **Returns**
 
-The posted certificate + posted signature.
+The posted membership request + posted signature.
 ```json
 {
   "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
-  "certificate": {
-    "email":"cem.moreau@gmail.com",
-    "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
-    "name":"LoL Cat",
-    "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
+  "request": {
+    "version": 1,
+    "currency": "beta_brousoufs",
+    "status": "JOIN",
+    "basis": 0
   }
 }
 ```
@@ -782,7 +789,7 @@ The posted certificate + posted signature.
 #### `community/members`
 **Goal**
 
-Merkle URL referencing the members that request for joining in the next amendment.
+Merkle URL referencing membership requests of individual's registering/actualizing for the next amendment.
 
 **Parameters**
 
@@ -814,12 +821,20 @@ Merkle URL result.
 }
 ```
 
-Merkle URL leaf: member fingerprint
+Merkle URL leaf: membership request
 ```json
 {
   "index": 1,,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "request": {
+      "version": 1,
+      "currency": "beta_brousoufs",
+      "status": "JOIN",
+      "basis": 0
+    }
+  }
 }
 ```
 

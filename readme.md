@@ -7,6 +7,10 @@ It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-ud
 You can get more in uCoin project reading the following documents:
 * [Concepts](https://github.com/c-geek/ucoin/blob/master/doc/concepts.md)
 * [Architecture](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
+  * [UCP - uCoin Protocol](https://github.com/c-geek/ucoin/blob/master/doc/UCP.md)
+  * [HDC - Human Dividend Currency messages](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)
+  * [UCG - uCoin Gossip messages](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md)
+  * [API - uCoin HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md)
 
 ## Installation
 
@@ -125,6 +129,7 @@ Consequently, uCoin proposes its own protocol called UCP.
 For the moment uCoin is developed only by its author. If you wish to participate/debate on it, you can:
 
 * join XMPP chatroom [ucoin@muc.jappix.com](https://jappix.com/)
+* join diffusion list [https://groups.google.com/forum/?hl=fr#!forum/ucoin](https://groups.google.com/forum/?hl=fr#!forum/ucoin)
 * contact me directly at cem.moreau@gmail.com
 
 # References

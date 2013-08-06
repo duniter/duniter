@@ -15,22 +15,17 @@ For that purpose, uCoin defines a peering table containing, for a given currency
 
 Here is an example describing its structure:
 
-```json
-{
-  "currency": "CURRENCY_NAME",
-  "key": "SOME_KEY_FINGERPRINT",
-  "dns": "name.example.com",
-  "ipv4": "11.11.11.11",
-  "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1",
-  "port": 8555
-  "peers": [
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
-  ]
-}
-```
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Dns: DNS_NAME
+    IPv4: IPV4_ADDRESS
+    IPv6: IPV6_ADDRESS
+    Port: PORT_NUMBER
+    Peers:
+    SOME_KEY_FINGERPRINT,name.example1.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8881
+    SOME_KEY_FINGERPRINT,name.example2.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8882
+    SOME_KEY_FINGERPRINT,name.example3.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8883
+    SOME_KEY_FINGERPRINT,name.example4.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8884
 
 ## Trust Hash Table
 
@@ -50,26 +45,19 @@ This is a very important feature for two points:
 
 In JSON format, a THT entry would look like:
 
-```json
-{
-  "KEY_FINGERPRINT": {
-    "number", "1",
-    "dateTime": "1374852192",
-    "hosters": [
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
-    ],
-    "trusts": [
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
-    ],
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
-  }
-}
-```
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Key: KEY_FINGERPRINT
+    DateTime: TIMESTAMP_OF_DECLARATION_DATE
+    Hosters:
+    SOME_KEY_FINGERPRINT,name.example1.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8881
+    SOME_KEY_FINGERPRINT,name.example2.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8882
+    SOME_KEY_FINGERPRINT,name.example3.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8883
+    SOME_KEY_FINGERPRINT,name.example4.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8884
+    Trusts:
+    SOME_KEY_FINGERPRINT,name.example4.com,77.77.77.77,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,7555
+    SOME_KEY_FINGERPRINT,name.example4.com,88.88.88.88,2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2,8002
+    SOME_KEY_FINGERPRINT,name.example4.com,99.99.99.99,3A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3,9005
 
 Of course this example has bad values, but it shows the global structure.
 

@@ -2,6 +2,13 @@
 
 uCoin defines its own protocol called UCP which defines messages, interpretation of them and structuration rules in order to build new currencies based on individuals and Universal Dividend.
 
+## Contents
+
+* [Contents](#contents)
+* [Database](#database)
+* [Dataflow](#dataflow)
+* [Bootstraping](#bootstraping)
+
 ## Database
 
 ### Definition
@@ -239,3 +246,33 @@ Serves the whole THT content.
 #### `tht/[PGP_FINGERPRINT]`
 
 Serves the THT entry of the given key fingerprint.
+
+## Bootstraping
+
+### Definition
+
+A node bootstrap is a process consisting in initialization of the node's data in order to integrate a currency.
+
+### From existing currency
+
+For a node to integrate an existing currency, bootstraping consists in fetching all the data from a trusted server. Once server is authenticated, the node fetches:
+
+* PGP keys
+* Amendments
+* Registrations
+* Votes
+* Transactions
+
+Once everything is fetched, the node may enter in a synchronization process using Merkle URLs provided by ucoin's [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md).
+
+### Create a new currency
+
+For a node to create a new currency, it must not synchronize another server. It must be started with no external references, just waiting for new messages feeding the node in HDC and UCG data.
+
+Typically, such a node will a have the following flow to initiate its currency:
+
+* New PGP keys received
+* New Regitrations received - checked with keys
+* New Votes received - amendment is promoted
+
+This cycle will then repeat to the will of its currency members.

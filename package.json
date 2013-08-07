@@ -30,6 +30,7 @@
     "ejs": "",
     "mongoose": "",
     "async": "",
+    "sha1": "",
     "merkle": "",
     "hdc": ">= 0.0.6",
     "connect-pgp": ">= 0.1.0",

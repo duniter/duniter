@@ -11,8 +11,8 @@ Documentation:
 Implementation: Autonomous server:
 
     Public keys:
-     ☐ Receive PGP certificates
-     ☐ View received PGP certificates
+     ✔ Receive PGP certificates @done (13-08-08 01:04)
+     ✔ View received PGP certificates @done (13-08-08 01:04)
 
     Registrations:
      ☐ Receive signed registration: join

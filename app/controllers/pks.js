@@ -161,22 +161,22 @@ module.exports.add = function (req, res) {
               }, function (err) {
                 // Creates/updates done.
                 if(!err){
-                  res.render('../app/views/pks/add.ejs', {"pubKeys": pubKeys}, function (err, text) {
-                    res.writeHead(200, {"Content-type": "text/plain"});
-                    res.end(text);
-                  });
+                  var pk = pubKeys[0];
+                  pk.cleanForTransport();
+                  res.writeHead(200);
+                  res.end(JSON.stringify(pk));
                 }
                 else{
-                  res.send(500, 'Error saving to database:' + err);
+                  res.send(500, 'Error saving to database: ' + err);
                 }
               });
             }
             else
-              res.send(500, 'Error asciiArmoring back:' + err);
+              res.send(500, 'Error asciiArmoring back: ' + err);
           });
         }
         else
-          res.send(500, 'Error verifying public key:' + err);
+          res.send(400, 'Error verifying public key: ' + err);
       });
     }
     else

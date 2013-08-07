@@ -47,10 +47,15 @@ function JPGP() {
 
   this.verify = function(callback) {
     var start = new Date();
+    var verified = false;
     // Do
-    var signatures = openpgp.read_message(this.signature);
-    var sig = signatures[2];
-    var verified = sig.verifySignature();
+    try{
+      var signatures = openpgp.read_message(this.signature);
+      var sig = signatures[2];
+      var verified = sig.verifySignature();
+    }
+    catch(err){
+    }
     // Done
     var end = new Date();
     var diff = end.getTime() - start.getTime();

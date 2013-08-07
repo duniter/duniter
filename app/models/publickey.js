@@ -35,6 +35,13 @@ PublicKeySchema.methods = {
       }
     }
     done();
+  },
+  cleanForTransport: function () {
+    this.raw = this.raw.replace('-----BEGIN PGP PUBLIC KEY BLOCK-----', 'BEGIN PGP PUBLIC KEY BLOCK');
+    this.raw = this.raw.replace('-----END PGP PUBLIC KEY BLOCK-----', 'END PGP PUBLIC KEY BLOCK');
+    this._id = null;
+    delete this._id;
+    return this;
   }
 };
 

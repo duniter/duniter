@@ -1,6 +1,6 @@
 {
   "name": "ucoin",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "OpenUDC-like implementation using Node.js",
   "main": "bin/ucoin",
   "directories": {
@@ -33,7 +33,7 @@
     "sha1": "",
     "merkle": "",
     "hdc": ">= 0.0.6",
-    "connect-pgp": ">= 0.1.0",
+    "connect-pgp": ">= 0.1.1",
     "underscore": ""
   },
   "devDependencies": {

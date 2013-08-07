@@ -129,22 +129,22 @@ $ ucoin --pgpkey /path/to/private/key
 Signed requests with PGP: enabled.
 ```
 
+### PGP-signed HTTP requests
+
+This is one of the great features coming with uCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a Node.js module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
+
+To use this feature, just launch uCoin using `--pgpkey` parameter:
+
+    ucoin --pgpkey /path/to/private/key
+
+    Signed requests with PGP: enabled.
+    uCoin server listening on port 8081
+
 Eventually, if the password is wrong, ucoin will crash. You then need to provide the correct password:
 
 ```bash
-$ ucoin --pgpkey /path/to/private/key --pgppasswd "my super secret password"
+$ ucoin --pgpkey /path/to/private/key --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
 ```
-
-### PGP-signed HTTP requests
-
-This is one of the great features coming with uCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a NPM module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
-
-To use this feature, just launch uCoin using `--pgpkey` and `--pgppasswd` parameters:
-
-    ucoin --pgpkey "/path/to/some/private.key" --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
-
-    Signed requests with PGP: **enabled**.
-    uCoin server listening on port 8081
 
 ### Help
 

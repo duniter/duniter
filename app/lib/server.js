@@ -101,11 +101,19 @@ module.exports.express = {
       app.use(express.session());
 
       // PGP signature of requests
-      if(config.server.pgp && config.server.pgp.key && config.server.pgp.password){
-        var privateKey = fs.readFileSync(config.server.pgp.key, 'utf8');
-        openpgp.keyring.importPrivateKey(privateKey, config.server.pgp.password);
-        app.use(connectPgp(privateKey, config.server.pgp.password))
-        console.log('Signed requests with PGP: enabled.');
+      if(config.server.pgp && config.server.pgp.key){
+        try{
+          var privateKey = fs.readFileSync(config.server.pgp.key, 'utf8');
+          openpgp.keyring.importPrivateKey(privateKey, config.server.pgp.password);
+          // Try to use it...
+          openpgp.write_signed_message(openpgp.keyring.privateKeys[0].obj, "test");
+          // Success: key is able to sign
+          app.use(connectPgp(privateKey, config.server.pgp.password))
+          console.log('Signed requests with PGP: enabled.');
+        }
+        catch(ex){
+          throw new Error("Wrong private key password.");
+        }
       }
 
       // Routing

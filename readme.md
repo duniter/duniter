@@ -42,11 +42,13 @@ You can get more in uCoin project reading the following documents:
 
 uCoin is powered by Node.js v0.10+, so you need it installed first. Here is an example for Ubuntu installation:
 
-    $ sudo apt-get update
-    $ sudo apt-get install python-software-properties python g++ make
-    $ sudo add-apt-repository ppa:chris-lea/node.js
-    $ sudo apt-get update
-    $ sudo apt-get install mongodb nodejs
+```bash
+$ sudo apt-get update
+$ sudo apt-get install python-software-properties python g++ make
+$ sudo add-apt-repository ppa:chris-lea/node.js
+$ sudo apt-get update
+$ sudo apt-get install mongodb nodejs
+```
 
 You can find the installation of Node.js for other distribution [on this GitHub document](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager).
 
@@ -54,39 +56,53 @@ You can find the installation of Node.js for other distribution [on this GitHub 
 
 And then, just install uCoin:
 
-    git clone git@github.com:c-geek/ucoin.git
-    sudo npm install ./ucoin -g
+```bash
+$ git clone git@github.com:c-geek/ucoin.git
+$ sudo npm install ./ucoin -g
+```
 
 ## Get uCoin run
 
 Launch it using the following command:
 
-    $ ucoin
+```bash
+$ ucoin
+```
+
+### Network parameters
 
 By default, ucoin runs on port 8081. You may change it using the --port parameter:
 
-    $ ucoin --port 80
+```bash
+$ ucoin --port 80
+```
 
 (may require root access to launch on port 80)
 
 It is also possible to specify the IPv4 interface:
 
-    $ ucoin -p 8888 --ipv4 127.0.0.1
+```bash
+$ ucoin -p 8888 --ipv4 127.0.0.1
 
-    uCoin server listening on 127.0.0.1 port 8888
+uCoin server listening on 127.0.0.1 port 8888
+```
 
 Or IPv6 interface:
 
-    $ ucoin -p 8888 --ipv6 ::1
+```bash
+$ ucoin -p 8888 --ipv6 ::1
 
-    uCoin server listening on ::1 port 8888
+uCoin server listening on ::1 port 8888
+```
 
 Or both:
 
-    $ ucoin -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+```bash
+$ ucoin -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
 
-    uCoin server listening on 127.0.0.1 port 8888
-    uCoin server listening on ::1 port 8888
+uCoin server listening on 127.0.0.1 port 8888
+uCoin server listening on ::1 port 8888
+```
 
 Note too that listening to multiple interfaces doesn't imply mutiple program instances: only *one* is running on multiple interfaces.
 
@@ -96,22 +112,28 @@ uCoin should be launched with a few more parameters to be part of a currency com
 
 First, it is required to tell the name of the currency:
 
-    $ ucoin --currency beta_brousouf
+```bash
+$ ucoin --currency beta_brousouf
 
-    uCoin server listening on port 8081
-    Currency name: beta_brousouf
+uCoin server listening on port 8081
+Currency name: beta_brousouf
+```
 
-Second, initial public keys of the first members of the community must be given:
+### HTTP signed messages
 
-    $ ucoin --currency beta_brousouf --initKeys /path/to/key1.pub,/path/to/key2.pub
+To be able to send PGP signed HTTP responses, ucoin needs to be provided a private key:
 
-    uCoin server listening on port 8081
-    Currency name: beta_brousouf
-    Initkeys loaded.
+```bash
+$ ucoin --pgpkey /path/to/private/key
 
-This will tell uCoin where to find the initial keys. More keys can be given using the comma separator.
+Signed requests with PGP: enabled.
+```
 
-Note: initial keys are a prerequisite for Monetary Contract: uCoin will only accept as first amendment the one that matches thoses keys.
+Eventually, if the password is wrong, ucoin will crash. You then need to provide the correct password:
+
+```bash
+$ ucoin --pgpkey /path/to/private/key --pgppasswd "my super secret password"
+```
 
 ### PGP-signed HTTP requests
 

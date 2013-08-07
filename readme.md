@@ -4,6 +4,30 @@ uCoin is a free server-side software which allows to create new P2P crypto-curre
 
 It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called UCP (UCoin Protocol).
 
+## Features
+
+**Peer-to-peer crypto-currency**
+
+uCoin fully relies on PGP cryptographically-signed data to describe a currency, and provide P2P synchronization mecanisms to allow decentralization of data.
+
+**Universal Dividend for people**
+
+uCoin uses [Human Dividend Currency format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md) to describe the monetary system, where money is issued directly and exclusively to individuals of the monetary community.
+
+**Universal Dividend by people**
+
+Even better, money of Universal Dividend is issued **BY** people. This is a currency where **U** coin. Individuals are the only ones who may issue money, and choose the unities they desire.
+
+**Democratic**
+
+In a uCoin currency, money is legitimated by collectively signed documents. *De facto*, uCoin implies a democratical process in money issuance and community members.
+
+**Humanity scale compliant**
+
+uCoin uses a distribution system for its transactions database, allowing for humanity scale currencies. Indeed, billions of people making millions of transactions per second is likely to saturate the network or people's server if they had to manage every transaction. uCoin comes with a solution for that.
+
+## Specifications
+
 You can get more in uCoin project reading the following documents:
 * [Concepts](https://github.com/c-geek/ucoin/blob/master/doc/concepts.md)
 * [Architecture](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
@@ -13,6 +37,8 @@ You can get more in uCoin project reading the following documents:
   * [Human Dividend Currency](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)
 
 ## Installation
+
+### Node.js
 
 uCoin is powered by Node.js v0.10+, so you need it installed first. Here is an example for Ubuntu installation:
 
@@ -24,9 +50,12 @@ uCoin is powered by Node.js v0.10+, so you need it installed first. Here is an e
 
 You can find the installation of Node.js for other distribution [on this GitHub document](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager).
 
+### uCoin from git repository
+
 And then, just install uCoin:
 
-    sudo npm install -g ucoin
+    git clone git@github.com:c-geek/ucoin.git
+    sudo npm install ./ucoin -g
 
 ## Get uCoin run
 

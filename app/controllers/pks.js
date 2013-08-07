@@ -36,10 +36,11 @@ module.exports.lookup = function (req, res) {
           });
           break;
         case 'index':
-          res.render('../app/views/pks/lookup.ejs', {"pubKeys": foundKeys}, function (err, text) {
-            res.writeHead(200, {"Content-type": "text/plain"});
-            res.end(text);
+          foundKeys.forEach(function (k) {
+            k.cleanForTransport();
           });
+          res.writeHead(200);
+          res.end(JSON.stringify(foundKeys));
           break;
         default:
           res.send(501, 'Operation not supported.');

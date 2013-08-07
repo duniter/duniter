@@ -8,6 +8,9 @@ var connectPgp = require('connect-pgp');
 var _          = require('underscore');
 var server     = require('../lib/server');
 var configurer = require('../lib/configurer');
+var openpgp    = require('./openpgp').openpgp;
+
+openpgp.init();
 
 module.exports.database = {
   init: function () {
@@ -37,9 +40,11 @@ module.exports.express = {
 
     var amend = require('../controllers/amendments');
     var pks   = require('../controllers/pks');
+    var ucg   = require('../controllers/ucg');
 
     app.get(    '/pks/lookup',                                  pks.lookup);
     app.post(   '/pks/add',                                     pks.add);
+    app.get(    '/ucg/pubkey',                                  _(ucg.pubkey).partial(openpgp));
     app.get(    '/hdc/amendments/init',                         _(amend.init).partial(app.get('config').initKeys));
     app.post(   '/hdc/amendments/submit',                       _(amend.submit).partial(app.get('config').currency));
     app.get(    '/hdc/amendments/view/:amendment_id/members',   notImplemented);
@@ -98,6 +103,7 @@ module.exports.express = {
       // PGP signature of requests
       if(config.server.pgp && config.server.pgp.key && config.server.pgp.password){
         var privateKey = fs.readFileSync(config.server.pgp.key, 'utf8');
+        openpgp.keyring.importPrivateKey(privateKey, config.server.pgp.password);
         app.use(connectPgp(privateKey, config.server.pgp.password))
         console.log('Signed requests with PGP: enabled.');
       }

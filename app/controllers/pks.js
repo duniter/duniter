@@ -40,7 +40,7 @@ module.exports.lookup = function (req, res) {
             k.cleanForTransport();
           });
           res.writeHead(200);
-          res.end(JSON.stringify(foundKeys));
+          res.end(JSON.stringify({"keys": foundKeys}));
           break;
         default:
           res.send(501, 'Operation not supported.');

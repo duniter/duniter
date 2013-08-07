@@ -1,48 +1,65 @@
 uCoin TODO list
 
 Documentation:
- ✔ Readme - Presentation @done (13-07-08 22:58)
+ ✔ Readme - Presentation, installation @done (13-08-07 13:56)
+     Specifications:
+      ✔ HDC messages @done (13-08-07 13:56)
+      ✔ UCG messages @done (13-08-07 13:56)
+      ✔ HTTP API @done (13-08-07 13:56)
+      ✔ Protocol @done (13-08-07 13:56)
 
-  Protocol:
+Implementation: Autonomous server:
 
-   define uCoin messages (data structures):
-    ✔ OpenUDC certificates @done (13-07-08 22:58)
-    ✔ uCoin amendments @done (13-07-08 22:58)
-    ✔ uCoin money issuances @done (13-07-08 22:58)
-    ✔ uCoin transactions @done (13-07-08 22:58)
- 
-Protocol implementation:
+    Public keys:
+     ☐ Receive PGP certificates
+     ☐ View received PGP certificates
 
-    1) Retrieving PGP certificates:
-     ✔ REST service looking for OpenPGP certificates - pks/lookup @done (13-07-12 01:20)
-     ✔ REST service to store a OpenPGP certificate in AA format, with signature of it AA format too - pks/add @done (13-07-12 01:20)
+    Registrations:
+     ☐ Receive signed registration: join
+     ☐ Receive signed registration: actualize
+     ☐ Receive signed registration: leave
+     ☐ View received registrations for pending amendment
+     ☐ Make strategies for registration acceptation
 
-    2) Managing Amendment submission:
-     ✔ REST service to view root certificates used to initialize Amendment Chain - udc/amendments/init @done (13-07-12 23:55)
-     ✔ REST service for receiving an Amendment data structure - udc/amendments/submit @done (13-07-19 21:43)
-     ✔ Check Amendment structure @done (13-07-19 21:43)
-     ☐ Check Amendment eligibility according to the Node rules (notably UD amount)
-     ☐ Store Amendment as available for voting
+    Votes:
+     ☐ Receive votes
+     ☐ Get an index of votes
+     ☐ View votes for a given pending amendment
+     ☐ When amendment enough votes, promote it as current
+     ☐ View received votes for current amendment
+     ☐ Make strategies for amendment promotion
 
-    3) Voting system:
-     ☐ REST service to handle voting requests - udc/amendments/vote
-     ☐ Store valid voting requests
-     ☐ According to the Node rules, chain the valid Amendment gathering enough votes
- 
-    4) Accepting new members:
-     ☐ REST service to receive Joining Request - udc/community/join
-     ☐ According to the rules, queue the request for integration in next Amendment
- 
-    5) Transactions: handling issuance transactions:
-     ☐ REST service for a PGP certificate to declare which Nodes manages its transactions
-     ☐ REST service to process a money issuance transaction
-     ☐ REST service to process a handshaked transaction
-     ☐ REST service to process a forging transaction
- 
-    6) Non-individual PGP keys (collective keys):
-     ☐ Define the OpenPGP comment format (ucid)
-     ☐ Accept PGP servers declaration of Nodes managing its money
-     ☐ Accept transactions fitting with this new PGP certificates format
+    Amendments:
+     ☐ Get the current promoted amendment
+     ☐ Get any stored amendment
+     ☐ View registrations of any stored amendment
+     ☐ View voting base of any stored amendment
 
- GUI implementation:
- Yet to define
+    Transactions:
+     ☐ Receive issuance transactions
+     ☐ Receive fusion transactions
+     ☐ Receive transfert transactions
+     ☐ View all transactions
+     ☐ View a single transaction
+     ☐ View transactions by sender
+     ☐ View transactions by recipient
+     ☐ View coins owned by a PGP key
+     ☐ View transactions chain for a given coin
+
+Implementation: Peering:
+
+    Authentication:
+     ☐ Authenticate responses before interpreting
+
+    THT:
+     ☐ Receive THT entries
+     ☐ View all THT entries at once
+     ☐ View one THT entry for a given key
+
+    Synchronization:
+     ☐ Retrieve PGP keys from another node
+     ☐ Retrieve promoted amendments from another node
+     ☐ Retrieve registrations for a given amendment from another node
+     ☐ Retrieve votes for a given amendment from another node
+     ☐ Retrieve transactions from another node
+     ☐ Retrieve filtered transactions from another node (sender, recipient)

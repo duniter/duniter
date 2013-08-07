@@ -9,7 +9,7 @@ function keys (val) {
 }
 
 program
-  .version('0.0.6')
+  .version('0.0.7')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
   .option('-k, --initKeys <keylist>', 'List of public key pathes, comma separated.', keys)
   .option('-c, --currency <name>', 'Name of the currency managed by this node.')

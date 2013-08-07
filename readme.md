@@ -33,7 +33,7 @@ You can get more in uCoin project reading the following documents:
 * [Architecture](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
   * [Protocol](https://github.com/c-geek/ucoin/blob/master/doc/UCP.md)
   * [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md)
-  * [Peering](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md)
+  * [uCoin Gossip](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md)
   * [Human Dividend Currency](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)
 
 ## Installation

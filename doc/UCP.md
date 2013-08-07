@@ -28,13 +28,15 @@ Amendments are collectively signed documents refering to [HDC Amendment format](
 
 ### Votes
 
-A vote is a simple signature of an amendment. When a member signs an amendment and submit the signatures to nodes, it express the will of this member (if he can legitimately do it) to promote the signed amendment.
+A vote is a simple signature of an amendment, refering to [HDC Vote request](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#vote-request). When a member signs an amendment and submit the signatures to nodes, it express the will of this member (if he can legitimately do it) to promote the signed amendment.
 
 ### Transactions
 
-Transaction is a document whose role is either to create, fusion or transfert money. It is the final support of money and it materializes money ownership.
+Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, fusion or transfert money. It is the final support of money and it materializes money ownership.
 
 ### Trust Hash Table
+
+THT is a hash table refering to [UCG THT format](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#trust-hash-table) whose role is to define, for a given PGP key, the nodes by which every transaction of the key pass through and the nodes the key is likely to trust for incoming transactions.
 
 ## Dataflow
 
@@ -119,13 +121,25 @@ OUT  | `community/votes`
 
 #### `amendments/votes (POST)`
 
+Refer to the same section in [Amendments - amendments/votes (POST)](#amendmentsvotes-POST).
+
 #### `amendments/votes (GET)`
+
+Serves an index of all the received votes. Index gives, for each amendment number, the different hashes and the number of votes for each hash.
 
 #### `amendments/view/[AMENDMENT_ID]/voters`
 
+Serves, for a given amendment, a Merkle tree of the signatures refering to the `VotersSigRoot` field of the amendment.
+
 #### `amendments/votes/[AMENDMENT_ID]/signatures`
 
+Serves, for a given amendment, a Merkle tree of the signatures already received for the amendment's promotion.
+
+Note that is the amendment is promoted, those signatures will be available under the `amendments/view/[AMENDMENT_ID]/voters` URL.
+
 #### `community/votes`
+
+Serves a Merkle tree of the signatures already received for the currently promoted amendment.
 
 ### Transactions
 
@@ -143,18 +157,85 @@ OUT  | `coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
 
 #### `transactions/process/issuance`
 
+Takes a transaction and a signature of it. If the following conditions matches:
+
+* The signature matches the transaction content
+* The `Sender` is handled by this node
+* The `Recipient` is handled by this node
+* The creation is justified by an amendment
+* The creation is justified according to transactions history (money was not already created)
+
+adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
+
 #### `transactions/process/transfert`
+
+Takes a transaction and a signature of it. If the following conditions matches:
+
+* The signature matches the transaction content
+* The `Sender` is handled by this node
+* The `Recipient` is handled by this node
+* The transaction chain matches (may need to ask many nodes for transaction history)
+
+adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 
 #### `transactions/process/fusion`
 
+Takes a transaction and a signature of it. If the following conditions matches:
+
+* The signature matches the transaction content
+* The `Sender` is handled by this node
+* The `Recipient` is handled by this node
+* The transaction chain matches
+* The transaction has a valid fusion content
+
+adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
+
 #### `transactions/all`
+
+Serves a Merkle tree containing all the transactions stored by this node.
 
 #### `transactions/sender/[PGP_FINGERPRINT]`
 
+Serves a Merkle tree containing all the transactions stored by this node, filtered for a given `Sender`.
+
 #### `transactions/recipient/[PGP_FINGERPRINT]`
+
+Serves a Merkle tree containing all the transactions stored by this node, filtered for a given `Recipient`.
 
 #### `transactions/view/[TRANSACTION_ID]`
 
+Serves a transaction content by its ID.
+
 #### `coins/[PGP_FINGERPRINT]/list`
 
+Serves a list of coins considered as owned by the given `PGP_FINGERPRINT`.
+
 #### `coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
+
+Serves a transaction chain (may not be complete, i.e. long enough to reach issuance transaction) justifying money ownership.
+
+### THT
+
+Flow | Interfaces
+---- | -----------
+IN   | `tht (POST)`
+OUT  | `tht (GET)`
+OUT  | `tht/[PGP_FINGERPRINT]`
+
+#### `tht (POST)``
+
+Takes a THT entry and its signature, and according to the following:
+
+* Signature matches
+* `Number` is either a good increment, or no entry exists and has value `1`
+* `DateTime` is superior to the previous entry
+
+adds the entry in the node THT and broadcast it to its peers.
+ 
+#### `tht (GET)``
+
+Serves the whole THT content.
+
+#### `tht/[PGP_FINGERPRINT]`
+
+Serves the THT entry of the given key fingerprint.

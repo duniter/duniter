@@ -119,17 +119,7 @@ uCoin server listening on port 8081
 Currency name: beta_brousouf
 ```
 
-### HTTP signed messages
-
-To be able to send PGP signed HTTP responses, ucoin needs to be provided a private key:
-
-```bash
-$ ucoin --pgpkey /path/to/private/key
-
-Signed requests with PGP: enabled.
-```
-
-### PGP-signed HTTP requests
+### Server authentication parameters
 
 This is one of the great features coming with uCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a Node.js module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
 

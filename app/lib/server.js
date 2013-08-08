@@ -76,11 +76,30 @@ module.exports.database = {
 
 module.exports.express = {
 
-  route: function(app){
+  app: function (conf, onLoaded) {
 
-    function notImplemented (req, res) {
-      res.writeHead(501);
-      res.end();
+    var app = express();
+
+    // all environments
+    app.set('conf', conf);
+    app.set('port', process.env.PORT || conf.port);
+    app.use(express.favicon(__dirname + '/../public/favicon.ico'));
+    app.use(express.static(__dirname + '/../public'));
+    app.use(express.logger('dev'));
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(express.cookieParser('your secret here'));
+    app.use(express.session());
+
+    // HTTP Signatures
+    sign(app, conf);
+
+    // Routing
+    app.use(app.router);
+
+    // development only
+    if ('development' == app.get('env')) {
+      app.use(express.errorHandler());
     }
 
     var amend = require('../controllers/amendments');
@@ -90,7 +109,7 @@ module.exports.express = {
     app.get(    '/pks/lookup',                                  pks.lookup);
     app.post(   '/pks/add',                                     pks.add);
     app.get(    '/ucg/pubkey',                                  _(ucg.pubkey).partial(openpgp));
-    app.post(   '/hdc/amendments/submit',                       _(amend.submit).partial(app.get('config').currency));
+    app.post(   '/hdc/amendments/submit',                       _(amend.submit).partial(app.get('conf').currency));
     app.get(    '/hdc/amendments/view/:amendment_id/members',   notImplemented);
     app.get(    '/hdc/amendments/view/:amendment_id/self',      notImplemented);
     app.get(    '/hdc/amendments/view/:amendment_id/voters',    notImplemented);
@@ -102,56 +121,33 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process/issuance',           notImplemented);
     app.post(   '/hdc/transactions/process/transfert',          notImplemented);
     app.get(    '/hdc/transactions/view/:transaction_id',       notImplemented);
-  },
 
-  app: function (config, onLoaded) {
-
-    async.parallel({
-    },
-    function(err, results) {
-      var app = express();
-
-      // all environments
-      app.set('config', config);
-      app.set('port', process.env.PORT || config.server.port);
-      app.use(express.favicon(__dirname + '/../public/favicon.ico'));
-      app.use(express.static(__dirname + '/../public'));
-      app.use(express.logger('dev'));
-      app.use(express.bodyParser());
-      app.use(express.methodOverride());
-      app.use(express.cookieParser('your secret here'));
-      app.use(express.session());
-
-      // PGP signature of requests
-      if(config.server.pgp && config.server.pgp.key){
-        try{
-          var privateKey = fs.readFileSync(config.server.pgp.key, 'utf8');
-          openpgp.keyring.importPrivateKey(privateKey, config.server.pgp.password);
-          // Try to use it...
-          openpgp.write_signed_message(openpgp.keyring.privateKeys[0].obj, "test");
-          // Success: key is able to sign
-          app.use(connectPgp(privateKey, config.server.pgp.password))
-          console.log('Signed requests with PGP: enabled.');
-        }
-        catch(ex){
-          throw new Error("Wrong private key password.");
-        }
-      }
-
-      // Routing
-      app.use(app.router);
-
-      // development only
-      if ('development' == app.get('env')) {
-        app.use(express.errorHandler());
-      }
-      this.route(app);
-
-      onLoaded(err, app);
-    }.bind(this));
+    onLoaded(null, app);
   }
 };
 
+function sign(app, conf) {
+  // PGP signature of requests
+  if(conf.pgpkey){
+    try{
+      var privateKey = conf.pgpkey;
+      openpgp.keyring.importPrivateKey(privateKey, conf.pgppasswd);
+      // Try to use it...
+      openpgp.write_signed_message(openpgp.keyring.privateKeys[0].obj, "test");
+      // Success: key is able to sign
+      app.use(connectPgp(privateKey, conf.pgppasswd));
+      console.log('Signed requests with PGP: enabled.');
+    }
+    catch(ex){
+      throw new Error("Wrong private key password.");
+    }
+  }
+}
+
+function notImplemented (req, res) {
+  res.writeHead(501);
+  res.end();
+}
 
 String.prototype.trim = function(){
   return this.replace(/^\s+|\s+$/g, '');

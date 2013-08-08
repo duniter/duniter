@@ -10,14 +10,6 @@ var ConfigurationSchema = new Schema({
 });
 
 ConfigurationSchema.methods = {
-  pgp: {
-    key: function () {
-      return this.pgpkey();
-    },
-    password: function () {
-      return this.pgppasswd();
-    }
-  }
 };
 
 var Configuration = mongoose.model('Configuration', ConfigurationSchema);

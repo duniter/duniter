@@ -66,7 +66,35 @@ $ sudo npm install ./ucoin -g
 Launch it using the following command:
 
 ```bash
-$ ucoin
+$ ucoin --currency beta_brousoufs
+
+uCoin server listening on localhost port 8081
+```
+
+Ok, this is cool, but several features may be turned on. Let's configure uCoin.
+
+## Get uCoin configured
+
+All uCoin configuration is stored in its database, i.e. MongoDB.
+The database name is the currency name given to uCoin when started.
+
+Thus, when using:
+
+```bash
+$ ucoin --currency beta_brousoufs
+```
+... the targeted database is "beta_brousoufs".
+
+To configure "beta_brousoufs" database, just run uCoin with the --config parameter:
+
+```bash
+$ ucoin --config beta_brousoufs
+```
+
+All the parameters given after this will be stored in the database, allowing you to run uCoin with all its configuration just using:
+
+```bash
+$ ucoin --currency beta_brousoufs
 ```
 
 ### Network parameters
@@ -74,7 +102,7 @@ $ ucoin
 By default, ucoin runs on port 8081. You may change it using the --port parameter:
 
 ```bash
-$ ucoin --port 80
+$ ucoin --config beta_brousoufs --port 80
 ```
 
 (may require root access to launch on port 80)
@@ -82,23 +110,25 @@ $ ucoin --port 80
 It is also possible to specify the IPv4 interface:
 
 ```bash
-$ ucoin -p 8888 --ipv4 127.0.0.1
-
-uCoin server listening on 127.0.0.1 port 8888
+$ ucoin --config beta_brousoufs -p 8888 --ipv4 127.0.0.1
 ```
 
 Or IPv6 interface:
 
 ```bash
-$ ucoin -p 8888 --ipv6 ::1
-
-uCoin server listening on ::1 port 8888
+$ ucoin --config beta_brousoufs -p 8888 --ipv6 ::1
 ```
 
 Or both:
 
 ```bash
-$ ucoin -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+$ ucoin --config beta_brousoufs -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+```
+
+Launching uCoin will results:
+
+```bash
+$ ucoin --currency beta_brousoufs
 
 uCoin server listening on 127.0.0.1 port 8888
 uCoin server listening on ::1 port 8888
@@ -106,34 +136,30 @@ uCoin server listening on ::1 port 8888
 
 Note too that listening to multiple interfaces doesn't imply mutiple program instances: only *one* is running on multiple interfaces.
 
-### Currency parameters
-
-uCoin should be launched with a few more parameters to be part of a currency community.
-
-First, it is required to tell the name of the currency:
-
-```bash
-$ ucoin --currency beta_brousouf
-
-uCoin server listening on port 8081
-Currency name: beta_brousouf
-```
-
 ### Server authentication parameters
 
 This is one of the great features coming with uCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a Node.js module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
 
-To use this feature, just launch uCoin using `--pgpkey` parameter:
-
-    ucoin --pgpkey /path/to/private/key
-
-    Signed requests with PGP: enabled.
-    uCoin server listening on port 8081
-
-Eventually, if the password is wrong, ucoin will crash. You then need to provide the correct password:
+To use this feature, just configure uCoin using `--pgpkey` parameter:
 
 ```bash
-$ ucoin --pgpkey /path/to/private/key --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
+$ ucoin --config beta_brousoufs --pgpkey /path/to/private/key
+```
+
+Eventually, you might need to give a password, otherwise uCoin will crash:
+
+```bash
+$ ucoin --config beta_brousoufs --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
+```
+
+Resulting in:
+
+```bash
+$ ucoin --currency beta_brousoufs
+
+Signed requests with PGP: enabled.
+uCoin server listening on 127.0.0.1 port 8888
+uCoin server listening on ::1 port 8888
 ```
 
 ### Help
@@ -144,20 +170,21 @@ For more more details on the ucoin command, run:
 
 Which displays:
 
-    Usage: ucoin [options]
+      Usage: ucoin [options]
 
-    Options:
+      Options:
 
-      -h, --help                output usage information
-      -V, --version             output the version number
-      -p, --port <port>         Port to listen for requests
-      -k, --initKeys <keylist>  List of public key pathes, comma separated.
-      -c, --currency <name>     Name of the currency managed by this node.
-      --mhost <host>            MongoDB host.
-      --mport <port>            MongoDB port.
-      --mdb <name>              MongoDB database name.
-      --ipv4 <address>          IPV4 interface to listen for requests
-      --ipv6 <address>          IPV6 interface to listen for requests
+        -h, --help              output usage information
+        -V, --version           output the version number
+        -p, --port <port>       Port to listen for requests
+        -c, --currency <name>   Name of the currency managed by this node.
+        -C, --config <name>     Name of the currency to configure.
+        --mhost <host>          MongoDB host.
+        --mport <port>          MongoDB port.
+        --pgpkey <keyPath>      Path to the private key used for signing HTTP responses.
+        --pgppasswd <password>  Password for the key provided with --httpgp-key option.
+        --ipv4 <address>        IPV4 interface to listen for requests
+        --ipv6 <address>        IPV6 interface to listen for requests
 
 
 ## Disclaimer

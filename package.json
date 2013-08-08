@@ -1,6 +1,7 @@
 {
   "name": "ucoin",
   "version": "0.0.8",
+  "private": true,
   "description": "OpenUDC-like implementation using Node.js",
   "main": "bin/ucoin",
   "directories": {

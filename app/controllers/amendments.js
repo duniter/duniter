@@ -7,24 +7,6 @@ Amendment = mongoose.model('Amendment'),
 _         = require('underscore'),
 stream    = require('stream');
 
-module.exports.init = function (initKeys, req, res) {
-  var pubkeys = [];
-  async.forEach(initKeys, function (initkey, done) {
-    var pk = new PublicKey({ raw:initkey.data });
-    pk.construct(function (err) {
-      pubkeys.push(pk);
-      done(err);
-    });
-  }, function (err) {
-    if(err)
-      res.send(503, err);
-    else{
-      res.writeHead(200, {"Content-type": "text/plain"});
-      res.end(JSON.stringify(pubkeys));
-    }
-  });
-};
-
 module.exports.submit = function (currency, req, res) {
   var am = new Amendment();
   am.parse(req.body.amendment, function (err) {

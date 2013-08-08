@@ -7,8 +7,7 @@ var config = {
   db: {
     database : "ucoin_test",
     host: "localhost"
-  },
-  initKeys: []
+  }
 };
 
 var gets = [
@@ -50,9 +49,11 @@ function testPOST(url, should) {
 
 var app;
 before(function (done) {
-  server.express.app(config, function (err, appReady) {
-    app = appReady;
-    done();
+  server.database.connect(config.db.database, config.db.host, config.db.port, function (err, conf) {
+    server.express.app(config, function (err, appReady) {
+      app = appReady;
+      done();
+    });
   });
 });
 
@@ -100,10 +101,10 @@ describe('Request on /pks/add', function(){
 
 //----------- AMENDMENTS -----------
 describe('Request on /hdc/amendments/init', function(){
-  it('GET should respond 200', function(done){
+  it('GET should respond 404', function(done){
     request(app)
       .get('/hdc/amendments/init')
-      .expect(200, done);
+      .expect(404, done);
   });
 });
 

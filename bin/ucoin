@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-var config  = require('../config/config');
-var server  = require('../app/lib/server');
-var http    = require('http');
-var program = require('commander');
+var server   = require('../app/lib/server');
+var http     = require('http');
+var fs       = require('fs');
+var program  = require('commander');
+var mongoose = require('mongoose');
 
 function keys (val) {
   return val.split(',');
@@ -11,51 +12,93 @@ function keys (val) {
 program
   .version('0.0.8')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
-  .option('-k, --initKeys <keylist>', 'List of public key pathes, comma separated.', keys)
   .option('-c, --currency <name>', 'Name of the currency managed by this node.')
+  .option('-C, --config <name>', 'Name of the currency to configure.')
   .option('--mhost <host>', 'MongoDB host.')
   .option('--mport <port>', 'MongoDB port.')
-  .option('--mdb <name>', 'MongoDB database name.')
   .option('--pgpkey <keyPath>', 'Path to the private key used for signing HTTP responses.')
   .option('--pgppasswd <password>', 'Password for the key provided with --httpgp-key option.')
   .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
   .option('--ipv6 <address>', 'IPV6 interface to listen for requests')
   .parse(process.argv);
 
-config.server.port         = program.port || config.server.port;
-config.server.ipv4address  = program.ipv4 || config.server.ipv4address;
-config.server.ipv6address  = program.ipv6 || config.server.ipv6address;
-config.server.pgp.key      = program.pgpkey || config.server.pgp.key;
-config.server.pgp.password = program.pgppasswd || config.server.pgp.password;
-config.db.host             = program.mhost || config.db.host;
-config.db.port             = program.mport || config.db.port;
-config.db.database         = program.mdb || config.db.database;
-config.currency.name       = program.currency || config.currency.name;
+var config = {
+  server: {
+    port: program.port,
+    ipv4address: program.ipv4,
+    ipv6address: program.ipv6,
+    pgp: {
+      key: program.pgpkey,
+      password: program.pgppasswd
+    }
+  },
+  db: {
+    host: program.mhost,
+    port: program.mport,
+    database: program.mdb,
+  }
+};
 
-// Set init keys
-config.initKeys = [];
-program.initKeys = program.initKeys || [];
-for(var i in program.initKeys){
-  config.initKeys.push({path: program.initKeys[i]});
+if(!program.currency && !program.config){
+  console.error("Either precise --currency or --config parameter.\nCurrency name is mandatory.");
+  return;
 }
 
-server.express.app(config, function (err, app) {
-  if(!config.server.ipv4address){
-    http.createServer(app).listen(app.get('port'), function(){
-      console.log('uCoin server listening on port ' + app.get('port'));
-      console.log("Currency name: " + app.get('config').currency.name);
-    });
+var currency = program.currency || program.config;
+
+// Connecting to DB
+server.database.connect(currency, config.db.host, config.db.port, function (err, conf) {
+
+  if(err){
+    console.log("Error connecting to DB: " + err);
+    server.database.disconnect();
+    return;
   }
 
-  if(config.server.ipv4address){
-    http.createServer(app).listen(app.get('port'), config.server.ipv4address, function(){
-      console.log('uCoin server listening on ' + config.server.ipv4address + ' port ' + app.get('port'));
-    });
-  }
+  // Update conf
+  if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
+  conf.ipv4      = config.server.ipv4address || conf.ipv4;
+  conf.ipv6      = config.server.ipv6address || conf.ipv6;
+  conf.port      = config.server.port || conf.port;
+  conf.pgpkey    = config.server.pgp.key || conf.pgpkey;
+  conf.pgppasswd = config.server.pgp.password || conf.pgppasswd;
 
-  if(config.server.ipv6address){
-    http.createServer(app).listen(app.get('port'), config.server.ipv6address, function(){
-      console.log('uCoin server listening on ' + config.server.ipv6address + ' port ' + app.get('port'));
-    });
-  }
+  conf.save(function (err) {
+
+    if(err){
+      console.error("Configuration could not be saved: " + err);
+      server.database.disconnect();
+      return;
+    }
+
+    if(program.config){
+      console.log("Configuration saved.");
+      server.database.disconnect();
+      return;
+    }
+
+    if(program.currency){
+
+      // Launching server
+      server.express.app(config, function (err, app) {
+
+        if(conf.ipv4){
+          http.createServer(app).listen(conf.port, conf.ipv4, function(){
+            console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
+          });
+        }
+
+        if(conf.ipv6){
+          http.createServer(app).listen(conf.port, conf.ipv6, function(){
+            console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
+          });
+        }
+
+        if(!conf.ipv4 && !conf.ipv6){
+          console.error("No interface to listen to. Relaunch with --config and eith --ipv4 or --ipv6 parameters.");
+        }
+      });
+    }
+  });
+
 });

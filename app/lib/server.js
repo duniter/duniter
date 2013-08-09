@@ -76,7 +76,7 @@ module.exports.database = {
 
 module.exports.express = {
 
-  app: function (conf, onLoaded) {
+  app: function (currency, conf, onLoaded) {
 
     var app = express();
 
@@ -104,13 +104,13 @@ module.exports.express = {
 
     var amend = require('../controllers/amendments');
     var pks   = require('../controllers/pks');
-    var ucg   = require('../controllers/ucg');
+    var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
 
     app.get(    '/pks/all',                                       notImplemented);
     app.get(    '/pks/lookup',                                    pks.lookup);
     app.post(   '/pks/add',                                       pks.add);
-    app.get(    '/ucg/pubkey',                                    _(ucg.pubkey).partial(openpgp));
-    app.get(    '/ucg/peering',                                   notImplemented);
+    app.get(    '/ucg/pubkey',                                    ucg.pubkey);
+    app.get(    '/ucg/peering',                                   ucg.peering);
     app.get(    '/ucg/tht',                                       notImplemented);
     app.post(   '/ucg/tht',                                       notImplemented);
     app.get(    '/ucg/tht/:pgp_fingerprint',                      notImplemented);

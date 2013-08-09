@@ -80,7 +80,7 @@ server.database.connect(currency, config.db.host, config.db.port, function (err,
     if(program.currency){
 
       // Launching server
-      server.express.app(conf, function (err, app) {
+      server.express.app(currency, conf, function (err, app) {
 
         if(conf.ipv4){
           http.createServer(app).listen(conf.port, conf.ipv4, function(){

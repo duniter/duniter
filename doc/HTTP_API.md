@@ -217,14 +217,14 @@ Name | Value | Method
 The sent PGP Public Key and signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "key":
   {
     "email":"cem.moreau@gmail.com",
     "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
     "name":"LoL Cat",
     "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
+    "raw":"BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK\r\n"
   }
 }
 ```
@@ -249,24 +249,24 @@ A list of matching PGP keys in json format if `op=index`, a single ASCII-armored
 {
   "keys": [
     {
-      "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+      "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
       "key":
       {
         "email":"cem.moreau@gmail.com",
         "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
         "name":"LoL Cat",
         "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-        "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
+        "raw":"BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK\r\n"
       }
     },{
-      "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+      "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
       "key":
       {
         "email":"cem.moreau@gmail.com",
         "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
         "name":"LoL Cat",
         "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-        "raw":"-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----\r\n"
+        "raw":"BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK\r\n"
       }
     }
   ]
@@ -312,7 +312,7 @@ Merkle URL leaf: public key
 {
   "index": 1,,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----"
+  "value": "BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK"
 }
 ```
 
@@ -333,7 +333,7 @@ GET the public key of the peer.
 
 The public key in ASCII-armored format.
 ```
------BEGIN PGP PUBLIC KEY BLOCK-----
+BEGIN PGP PUBLIC KEY BLOCK
 Version: GnuPG v1.4.12 (GNU/Linux)
 
 mQENBFHHC/EBCADWTLSN7EGP+n30snndS3ZNcB02foL+0opcS6LK2coPDJLg2noo
@@ -363,7 +363,7 @@ m1N9nmus5Ebr0zTVDmmfoqzokuDfHm5h6YrkFscMGjrCKWuXSiTaGj9Hm3MqeZ3T
 Kva5isa/h0h7Ai3wJ5XJpMrFNN6BU/wIt7fM2hsNAOwaG+WUfgjYEkOua8gPPtpL
 ZJJPb/89yrs9F7JkLi/oiAl5VpItm+hlFpLe1TE7oa6k53eZ2a+V
 =rOj9
------END PGP PUBLIC KEY BLOCK-----
+-----END PGP PUBLIC KEY BLOCK
 ```
 
 #### `ucg/peering`
@@ -425,7 +425,7 @@ The whole THT entries (may be big).
           {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
           {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
         ],
-        "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+        "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
       }
     },{
       "OTHER_KEY_FINGERPRINT": {
@@ -439,7 +439,7 @@ The whole THT entries (may be big).
           {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
           {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
         ],
-        "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+        "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
       }
     }
   ]
@@ -477,7 +477,7 @@ The posted THT entry.
       {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
       {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
     ],
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
   }
 }
 ```
@@ -512,7 +512,7 @@ The requested THT entry.
       {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
       {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
     ],
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
   }
 }
 ```
@@ -600,7 +600,7 @@ Merkle URL leaf: membership request
   "index": 1,,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
     "request": {
       "version": 1,
       "currency": "beta_brousoufs",
@@ -676,7 +676,7 @@ Merkle URL leaf: vote
 {
   "index": 1,,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+  "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
 ```
 
@@ -736,7 +736,7 @@ Name | Value | Method
 The posted amendment + posted signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "amendment": {
     "version": "1",
     "currency": "beta_brousoufs",
@@ -788,7 +788,7 @@ Merkle URL leaf: signature
 {
   "index": 1,,
   "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
-  "value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+  "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
 ```
 
@@ -896,7 +896,7 @@ Name | Value | Method
 The posted membership request + posted signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "request": {
     "version": 1,
     "currency": "beta_brousoufs",
@@ -947,7 +947,7 @@ Merkle URL leaf: membership request
   "index": 1,,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
     "request": {
       "version": 1,
       "currency": "beta_brousoufs",
@@ -998,7 +998,7 @@ Merkle URL leaf: signature
 {
   "index": 1,
   "hash": "2D41234540938C4263CBC5E7E11564038DED2118",
-  "value": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----"
+  "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
 ```
 
@@ -1019,7 +1019,7 @@ Name | Value | Method
 The issuance transaction and its signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "transaction":
   {
     "version": 1,
@@ -1059,7 +1059,7 @@ Name | Value | Method
 The transfert transaction and its signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "transaction":
   {
     "version": 1,
@@ -1099,7 +1099,7 @@ Name | Value | Method
 The fusion transaction and its signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "transaction":
   {
     "version": 1,
@@ -1165,7 +1165,7 @@ Merkle URL leaf: transaction
   "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
     "transaction":
     {
       "version": 1,
@@ -1234,7 +1234,7 @@ Merkle URL leaf: transaction
   "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
     "transaction":
     {
       "version": 1,
@@ -1303,7 +1303,7 @@ Merkle URL leaf: transaction
   "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
     "transaction":
     {
       "version": 1,
@@ -1345,7 +1345,7 @@ Name | Value | Method
 The transaction and its signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "transaction":
   {
     "version": 1,

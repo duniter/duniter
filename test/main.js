@@ -11,20 +11,33 @@ var config = {
 };
 
 var gets = [
-  {should: 501, url: '/hdc/amendments/view/[000001]/members'},
-  {should: 501, url: '/hdc/amendments/view/[000001]/self'},
-  {should: 501, url: '/hdc/amendments/view/[000001]/voters'},
-  {should: 501, url: '/hdc/coins/[SOME_PGP_FPR]/list'},
-  {should: 501, url: '/hdc/coins/[SOME_PGP_FPR]/view/:coin_number'},
-  {should: 501, url: '/hdc/transactions/view/[SOME_TX_ID]'}
+  {should: 501, url: '/pks/all'},
+  {should: 501, url: '/ucg/peering'},
+  {should: 501, url: '/ucg/tht'},
+  {should: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
+  {should: 501, url: '/hdc/amendments/current'},
+  {should: 501, url: '/hdc/amendments/view/000001/members'},
+  {should: 501, url: '/hdc/amendments/view/000001/self'},
+  {should: 501, url: '/hdc/amendments/view/000001/voters'},
+  {should: 501, url: '/hdc/amendments/votes'},
+  {should: 501, url: '/hdc/amendments/votes/SOME_AM_ID/signatures'},
+  {should: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
+  {should: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
+  {should: 501, url: '/hdc/community/members'},
+  {should: 501, url: '/hdc/community/votes'},
+  {should: 501, url: '/hdc/transactions/all'},
+  {should: 501, url: '/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
+  {should: 501, url: '/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
+  {should: 501, url: '/hdc/transactions/view/SOME_TX_ID'}
 ];
 
 var posts = [
-  {should: 501, url: '/hdc/amendments/vote'},
-  {should: 501, url: '/hdc/community/declare'},
+  {should: 501, url: '/ucg/tht'},
+  {should: 501, url: '/hdc/amendments/votes'},
   {should: 501, url: '/hdc/community/join'},
   {should: 501, url: '/hdc/transactions/process/issuance'},
-  {should: 501, url: '/hdc/transactions/process/transfert'}
+  {should: 501, url: '/hdc/transactions/process/transfert'},
+  {should: 501, url: '/hdc/transactions/process/fusion'}
 ];
 
 function testGET(url, should) {
@@ -109,9 +122,9 @@ describe('Request on /hdc/amendments/init', function(){
 });
 
 describe('Request on /hdc/amendments/submit', function(){
-  it('GET should respond 400', function(done){
+  it('GET should respond 404', function(done){
     request(app)
       .post('/hdc/amendments/submit')
-      .expect(400, done);
+      .expect(404, done);
   });
 });

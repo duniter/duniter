@@ -106,21 +106,33 @@ module.exports.express = {
     var pks   = require('../controllers/pks');
     var ucg   = require('../controllers/ucg');
 
-    app.get(    '/pks/lookup',                                  pks.lookup);
-    app.post(   '/pks/add',                                     pks.add);
-    app.get(    '/ucg/pubkey',                                  _(ucg.pubkey).partial(openpgp));
-    app.post(   '/hdc/amendments/submit',                       _(amend.submit).partial(app.get('conf').currency));
-    app.get(    '/hdc/amendments/view/:amendment_id/members',   notImplemented);
-    app.get(    '/hdc/amendments/view/:amendment_id/self',      notImplemented);
-    app.get(    '/hdc/amendments/view/:amendment_id/voters',    notImplemented);
-    app.post(   '/hdc/amendments/vote',                         notImplemented);
-    app.get(    '/hdc/coins/:pgp_fpr/list',                     notImplemented);
-    app.get(    '/hdc/coins/:pgp_fpr/view/:coin_number',        notImplemented);
-    app.post(   '/hdc/community/declare',                       notImplemented);
-    app.post(   '/hdc/community/join',                          notImplemented);
-    app.post(   '/hdc/transactions/process/issuance',           notImplemented);
-    app.post(   '/hdc/transactions/process/transfert',          notImplemented);
-    app.get(    '/hdc/transactions/view/:transaction_id',       notImplemented);
+    app.get(    '/pks/all',                                       notImplemented);
+    app.get(    '/pks/lookup',                                    pks.lookup);
+    app.post(   '/pks/add',                                       pks.add);
+    app.get(    '/ucg/pubkey',                                    _(ucg.pubkey).partial(openpgp));
+    app.get(    '/ucg/peering',                                   notImplemented);
+    app.get(    '/ucg/tht',                                       notImplemented);
+    app.post(   '/ucg/tht',                                       notImplemented);
+    app.get(    '/ucg/tht/:pgp_fingerprint',                      notImplemented);
+    app.get(    '/hdc/amendments/current',                        notImplemented);
+    app.get(    '/hdc/amendments/view/:amendment_id/members',     notImplemented);
+    app.get(    '/hdc/amendments/view/:amendment_id/self',        notImplemented);
+    app.get(    '/hdc/amendments/view/:amendment_id/voters',      notImplemented);
+    app.get(    '/hdc/amendments/votes',                          notImplemented);
+    app.post(   '/hdc/amendments/votes',                          notImplemented);
+    app.get(    '/hdc/amendments/votes/:amendment_id/signatures', notImplemented);
+    app.get(    '/hdc/coins/:pgp_fpr/list',                       notImplemented);
+    app.get(    '/hdc/coins/:pgp_fpr/view/:coin_id',              notImplemented);
+    app.post(   '/hdc/community/join',                            notImplemented);
+    app.get(    '/hdc/community/members',                         notImplemented);
+    app.get(    '/hdc/community/votes',                           notImplemented);
+    app.post(   '/hdc/transactions/process/issuance',             notImplemented);
+    app.post(   '/hdc/transactions/process/transfert',            notImplemented);
+    app.post(   '/hdc/transactions/process/fusion',               notImplemented);
+    app.get(    '/hdc/transactions/all',                          notImplemented);
+    app.get(    '/hdc/transactions/sender/:pgp_fingerprint',      notImplemented);
+    app.get(    '/hdc/transactions/recipient/:pgp_fingerprint',   notImplemented);
+    app.get(    '/hdc/transactions/view/:transaction_id',         notImplemented);
 
     onLoaded(null, app);
   }

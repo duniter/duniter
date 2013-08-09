@@ -6,6 +6,7 @@
   * [pks/](#pks)
       * [add](#pksadd)
       * [lookup](#pkslookup)
+      * [all](#pksall)
   * [ucg/](#ucg)
       * [pubkey](#ucgpubkey)
       * [peering](#ucgpeering)
@@ -81,6 +82,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 
 Merkle URL is a special kind of URL applicable for resources:
 
+* `pks/all`
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
 * `hdc/amendments/votes/[AMENDMENT_ID]/signatures`
@@ -270,6 +272,50 @@ A list of matching PGP keys in json format if `op=index`, a single ASCII-armored
   ]
 ```
 
+#### `pks/all`
+**Goal**
+
+Merkle URL refering all the received public keys.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
+}
+```
+
+Merkle URL leaf: public key
+```json
+{
+  "index": 1,,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": "-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----"
+}
+```
+
 ### ucg/*
 
 This URL is used for uCoin Gossip protocol (exchanging UCG messages).
@@ -336,10 +382,10 @@ The peering entry of this node.
 {
   "currency": "CURRENCY_NAME",
   "key": "SOME_KEY_FINGERPRINT",
-  "dns": "name.example.com",
-  "ipv4": "11.11.11.11",
-  "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1",
-  "port": 8555
+  "remote": {
+    "host": "name.example.com",
+    "port": 8555
+  },
   "peers": [
     {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
     {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
@@ -563,8 +609,8 @@ Merkle URL leaf: membership request
     }
   }
 }
-``
-`
+```
+
 #### `amendments/view/[AMENDMENT_ID]/self`
 **Goal**
 

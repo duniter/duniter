@@ -125,6 +125,12 @@ Or both:
 $ ucoin --config beta_brousoufs -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
 ```
 
+#### Remote parameters
+
+It might be useful to precise remote network parameters, as uCoin nodes may not be front apps, hidden behind reverse proxies.
+
+To precise such parameters, use:
+
 Launching uCoin will results:
 
 ```bash
@@ -136,7 +142,17 @@ uCoin server listening on ::1 port 8888
 
 Note too that listening to multiple interfaces doesn't imply mutiple program instances: only *one* is running on multiple interfaces.
 
-### Server authentication parameters
+### Remote parameters
+
+#### Peering informations
+
+As the server may be behind a reverse proxy, or because hosts may change of address, it might be useful to provide some remote informations like remote `host` and `port` telling where is really located the node:
+
+```bash
+$ ucoin --config beta_brousoufs --remoteh "some.remote.url" --remotep "8844"
+```
+
+#### Authentication
 
 This is one of the great features coming with uCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a Node.js module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
 

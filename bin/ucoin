@@ -68,8 +68,8 @@ server.database.connect(currency, config.db.host, config.db.port, function (err,
   conf.port       = config.server.port || conf.port;
   conf.pgpkey     = config.server.pgp.key || conf.pgpkey;
   conf.pgppasswd  = config.server.pgp.password || conf.pgppasswd;
-  conf.remotehost = config.server.remote.host || conf.remotehost;
-  conf.remoteport = config.server.remote.port || conf.remoteport;
+  conf.remotehost = config.server.remote.host != undefined ? config.server.remote.host : conf.remotehost;
+  conf.remoteport = config.server.remote.port != undefined ? config.server.remote.port : conf.remoteport;
 
   conf.save(function (err) {
 

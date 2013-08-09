@@ -185,6 +185,8 @@ Which displays:
         --pgppasswd <password>  Password for the key provided with --httpgp-key option.
         --ipv4 <address>        IPV4 interface to listen for requests
         --ipv6 <address>        IPV6 interface to listen for requests
+        --remoteh <host>        Remote interface others may use to contact this node
+        --remotep <port>        Remote port others may use to contact this node
 
 
 ## Disclaimer

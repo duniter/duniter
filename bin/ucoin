@@ -20,6 +20,8 @@ program
   .option('--pgppasswd <password>', 'Password for the key provided with --httpgp-key option.')
   .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
   .option('--ipv6 <address>', 'IPV6 interface to listen for requests')
+  .option('--remoteh <host>', 'Remote interface others may use to contact this node')
+  .option('--remotep <port>', 'Remote port others may use to contact this node')
   .parse(process.argv);
 
 var config = {
@@ -30,6 +32,10 @@ var config = {
     pgp: {
       key: program.pgpkey,
       password: program.pgppasswd
+    },
+    remote: {
+      host: program.remoteh,
+      port: program.remotep
     }
   },
   db: {
@@ -57,11 +63,13 @@ server.database.connect(currency, config.db.host, config.db.port, function (err,
 
   // Update conf
   if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
-  conf.ipv4      = config.server.ipv4address || conf.ipv4;
-  conf.ipv6      = config.server.ipv6address || conf.ipv6;
-  conf.port      = config.server.port || conf.port;
-  conf.pgpkey    = config.server.pgp.key || conf.pgpkey;
-  conf.pgppasswd = config.server.pgp.password || conf.pgppasswd;
+  conf.ipv4       = config.server.ipv4address || conf.ipv4;
+  conf.ipv6       = config.server.ipv6address || conf.ipv6;
+  conf.port       = config.server.port || conf.port;
+  conf.pgpkey     = config.server.pgp.key || conf.pgpkey;
+  conf.pgppasswd  = config.server.pgp.password || conf.pgppasswd;
+  conf.remotehost = config.server.remote.host || conf.remotehost;
+  conf.remoteport = config.server.remote.port || conf.remoteport;
 
   conf.save(function (err) {
 

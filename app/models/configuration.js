@@ -5,6 +5,8 @@ var ConfigurationSchema = new Schema({
   port: {"type": Number, "default": 0},
   ipv4: String,
   ipv6: String,
+  remotehost: String,
+  remoteport: Number,
   pgpkey: String,
   pgppasswd: String
 });

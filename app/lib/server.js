@@ -55,6 +55,8 @@ module.exports.database = {
               port: 8081,
               ipv4: "localhost",
               ipv6: null,
+              remotehost: null,
+              remoteport: null,
               pgpkey: null,
               pgppasswd: null
             }));

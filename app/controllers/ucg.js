@@ -13,9 +13,10 @@ module.exports = function (pgp, currency, conf) {
     res.end(JSON.stringify({
       currency: currency,
       key: jpgp().certificate(this.ascciiPubkey).fingerprint,
-      ipv4: conf.ipv4,
-      ipv6: conf.ipv6,
-      port: conf.port,
+      remote: {
+        host: conf.remotehost,
+        port: conf.remoteport
+      },
       peers: []
     }));
   }

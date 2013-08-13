@@ -41,7 +41,7 @@ MembershipSchema.methods = {
       .data(this.getRaw())
       .noCarriage()
       .signature(this.signature)
-      .verify(done);
+      .verify(publicKey, done);
   },
 
   getRaw: function() {

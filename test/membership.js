@@ -46,8 +46,10 @@ describe('Membership request', function(){
     });
 
     it('it should match signature', function(){
-      join.verifySignature(pk, function (err) {
+      join.verifySignature(pk, function (err, verified) {
         should.not.exist(err);
+        should.exist(verified);
+        verified.should.be.ok;
       })
     });
   });

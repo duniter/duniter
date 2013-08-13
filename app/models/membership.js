@@ -24,6 +24,9 @@ MembershipSchema.methods = {
   
   parse: function(rawMembership, callback) {
     var ms = new hdc.Membership(rawMembership);
+    var sigIndex = rawMembership.indexOf("-----BEGIN");
+    if(~sigIndex)
+      this.signature = rawMembership.substring(sigIndex);
     fill(this, ms);
     callback(ms.error);
   },
@@ -47,6 +50,8 @@ MembershipSchema.methods = {
     raw += "Currency: " + this.currency + "\n";
     raw += "Status: " + this.status + "\n";
     raw += "Basis: " + this.basis + "\n";
+    if(this.signature)
+      raw += this.signature;
     return raw.unix2dos();
   },
 

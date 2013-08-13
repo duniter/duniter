@@ -1,7 +1,11 @@
-var should     = require('should');
-var assert     = require('assert');
-var sha1       = require('sha1');
-var mongoose   = require('mongoose');
+var should   = require('should');
+var assert   = require('assert');
+var sha1     = require('sha1');
+var fs       = require('fs');
+var mongoose = require('mongoose');
+var server   = require('../app/lib/server');
+
+server.database.init();
 var Membership = mongoose.model('Membership');
 
 describe('Membership request', function(){
@@ -9,11 +13,12 @@ describe('Membership request', function(){
   describe('JOIN', function(){
 
     var join;
+    var pk = fs.readFileSync(__dirname + "/data/lolcat.pub", "utf8");
 
     // Loads join with its data
     before(function(done) {
       join = new Membership();
-      join.loadFromFile(__dirname + "/data/membership/join", done);
+      join.loadFromFile(__dirname + "/data/membership/lolcat.join", done);
     });
 
     it('should be version 1', function(){
@@ -32,12 +37,18 @@ describe('Membership request', function(){
       assert.equal(join.basis, 0);
     });
 
-    it('its computed hash should be 2E136EE15C5414162EC3F9B39D100A92C2A48219', function(){
-      assert.equal(join.hash, '2E136EE15C5414162EC3F9B39D100A92C2A48219');
+    it('its computed hash should be D0CF6CD300157B36319238A2CDAB6C37F01FEF2D', function(){
+      assert.equal(join.hash, 'D0CF6CD300157B36319238A2CDAB6C37F01FEF2D');
     });
 
-    it('its manual hash should be 2E136EE15C5414162EC3F9B39D100A92C2A48219', function(){
-      assert.equal(sha1(join.getRaw()).toUpperCase(), '2E136EE15C5414162EC3F9B39D100A92C2A48219');
+    it('its manual hash should be D0CF6CD300157B36319238A2CDAB6C37F01FEF2D', function(){
+      assert.equal(sha1(join.getRaw()).toUpperCase(), 'D0CF6CD300157B36319238A2CDAB6C37F01FEF2D');
+    });
+
+    it('it should match signature', function(){
+      join.verifySignature(pk, function (err) {
+        should.not.exist(err);
+      })
     });
   });
 

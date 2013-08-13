@@ -35,6 +35,18 @@ function JPGP() {
     return this;
   };
 
+  this.issuer = function() {
+    var issuer = "";
+    try{
+      var signatures = openpgp.read_message(this.signature);
+      var sig = signatures[2];
+      issuer = hexstrdump(sig.signature.getIssuer()).toUpperCase();
+    }
+    catch(ex){
+    }
+    return issuer;
+  };
+
   this.data = function(data_string) {
     this.data = data_string;
     return this;
@@ -45,14 +57,30 @@ function JPGP() {
     return this;
   };
 
-  this.verify = function(callback) {
+  this.verify = function(pubkey, callback) {
     var start = new Date();
     var verified = false;
+    var err = undefined;
+    if(pubkey && !callback){
+      callback = pubkey;
+      pubkey = undefined;
+    }
     // Do
     try{
       var signatures = openpgp.read_message(this.signature);
       var sig = signatures[2];
       var verified = sig.verifySignature();
+      if(!verified){
+        err = "Signature does not match signed data.";
+      }
+      if(verified && pubkey){
+        var cert = this.certificate(pubkey);
+        var issuer = hexstrdump(sig.signature.getIssuer()).toUpperCase();
+        verified = cert.fingerprint.toUpperCase().indexOf(issuer) != -1;
+        if(!verified){
+          err = "Signature does not match issuer.";
+        }
+      }
     }
     catch(err){
     }
@@ -60,10 +88,7 @@ function JPGP() {
     var end = new Date();
     var diff = end.getTime() - start.getTime();
     // console.log("jpgp verify", diff + " ms");
-    if(verified){
-      callback();
-    }
-    else callback("Signature does not match.\n");
+    callback(err, verified);
   };
 
 

@@ -11,6 +11,7 @@ var MembershipSchema = new Schema({
   currency: String,
   status: String,
   basis: {"type": Number, "default": 0},
+  fingerprint: String,
   signature: String,
   created: Date,
   updated: Date
@@ -22,17 +23,31 @@ MembershipSchema.methods = {
     return new hdc.Membership(this.getRaw());
   },
   
+  copyValues: function(to) {
+    fill(to, this);
+    to.fingerprint = this.fingerprint;
+    to.signature = this.signature;
+  },
+  
   parse: function(rawMembership, callback) {
     var ms = new hdc.Membership(rawMembership);
     var sigIndex = rawMembership.indexOf("-----BEGIN");
     if(~sigIndex)
       this.signature = rawMembership.substring(sigIndex);
     fill(this, ms);
-    callback(ms.error);
+    callback(ms.error, this);
   },
 
   verify: function (currency, done) {
-    return this.hdc().verify(currency);
+    var hdcMS = this.hdc();
+    var valid = hdcMS.verify(currency);
+    if(!valid && done){
+      done(hdcMS.error, valid);
+    }
+    if(valid && done){
+      done(null, valid);
+    }
+    return valid;
   },
 
   verifySignature: function (publicKey, done) {

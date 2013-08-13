@@ -52,7 +52,6 @@ var gets = [
 var posts = [
   {expect: 501, url: '/ucg/tht'},
   {expect: 501, url: '/hdc/amendments/votes'},
-  {expect: 501, url: '/hdc/community/join'},
   {expect: 501, url: '/hdc/transactions/process/issuance'},
   {expect: 501, url: '/hdc/transactions/process/transfert'},
   {expect: 501, url: '/hdc/transactions/process/fusion'}
@@ -157,6 +156,21 @@ describe('GET', function(){
         json.peers.length.should.equal(0);
         done();
       });
+  });
+});
+
+
+//----------- Community -----------
+describe('Request on /hdc/community/join', function(){
+  it('GET should respond 404', function(done){
+    request(app)
+      .get('/hdc/community/join')
+      .expect(404, done);
+  });
+  it('POST should respond 400', function(done){
+    request(app)
+      .post('/hdc/community/join')
+      .expect(400, done);
   });
 });
 

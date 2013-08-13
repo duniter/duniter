@@ -107,6 +107,7 @@ module.exports.express = {
     var amend = require('../controllers/amendments');
     var pks   = require('../controllers/pks');
     var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
+    var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
 
     app.get(    '/pks/all',                                       notImplemented);
     app.get(    '/pks/lookup',                                    pks.lookup);
@@ -125,7 +126,7 @@ module.exports.express = {
     app.get(    '/hdc/amendments/votes/:amendment_id/signatures', notImplemented);
     app.get(    '/hdc/coins/:pgp_fpr/list',                       notImplemented);
     app.get(    '/hdc/coins/:pgp_fpr/view/:coin_id',              notImplemented);
-    app.post(   '/hdc/community/join',                            notImplemented);
+    app.post(   '/hdc/community/join',                            hdc.join);
     app.get(    '/hdc/community/members',                         notImplemented);
     app.get(    '/hdc/community/votes',                           notImplemented);
     app.post(   '/hdc/transactions/process/issuance',             notImplemented);

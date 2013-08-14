@@ -137,10 +137,11 @@ For that purpose, Merkle URL defines different parameters and results:
 
 Parameter | Description
 --------- | -----------
-`level` | Integer value that indicates the level of hashes to be returned. `level` start from `0` (`ROOT` hash). Defaults to `0`.
-`start` | Integer value that defines the start range (inclusive) of desired hashes for a given level.
-`end` | Integer value which  that defines the end range (inclusive) of desired hashes for a given level.
-`extract` | Boolean value that asks for result to inspect leaves and return both **hash** *and* **original content** values. Ignore `level` parameter.
+`lstart` | Integer value that indicates the starting level (inclusive) of hashes to be returned. `lstart` start from `0` (`ROOT` hash). Defaults to `0`.
+`lend` | Integer value that indicates the ending level (exclusive) of hashes to be returned. `lend` start from `0` (`ROOT` hash). Defaults to `0`.
+`start` | Integer value that defines the start range (inclusive) of desired hashes for each level.
+`end` | Integer value which  that defines the end range (exclusive) of desired hashes for each level.
+`extract` | Boolean value that asks for result to inspect leaves and return both **hash** *and* **original content** values. Ignore `lstart` and `lend` parameters.
 
 **Returns**
 
@@ -310,7 +311,7 @@ Merkle URL result.
 Merkle URL leaf: public key
 ```json
 {
-  "index": 1,,
+  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": "BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK"
 }
@@ -597,7 +598,7 @@ Merkle URL result.
 Merkle URL leaf: membership request
 ```json
 {
-  "index": 1,,
+  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
@@ -674,7 +675,7 @@ Merkle URL result.
 Merkle URL leaf: vote
 ```json
 {
-  "index": 1,,
+  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
@@ -786,7 +787,7 @@ Merkle URL result.
 Merkle URL leaf: signature
 ```json
 {
-  "index": 1,,
+  "index": 1,
   "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
   "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
@@ -944,7 +945,7 @@ Merkle URL result.
 Merkle URL leaf: membership request
 ```json
 {
-  "index": 1,,
+  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",

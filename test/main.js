@@ -50,7 +50,6 @@ var gets = [
 
 var posts = [
   {expect: 501, url: '/ucg/tht'},
-  {expect: 501, url: '/hdc/amendments/votes'},
   {expect: 501, url: '/hdc/transactions/process/issuance'},
   {expect: 501, url: '/hdc/transactions/process/transfert'},
   {expect: 501, url: '/hdc/transactions/process/fusion'}
@@ -200,5 +199,18 @@ describe('Request on /hdc/amendments/submit', function(){
     request(app)
       .post('/hdc/amendments/submit')
       .expect(404, done);
+  });
+});
+
+describe('Request on /hdc/amendments/votes', function(){
+  it('GET should respond 501', function(done){
+    request(app)
+      .get('/hdc/amendments/votes')
+      .expect(501, done);
+  });
+  it('POST should respond 400', function(done){
+    request(app)
+      .post('/hdc/amendments/votes')
+      .expect(400, done);
   });
 });

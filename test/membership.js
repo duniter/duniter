@@ -25,8 +25,8 @@ describe('Membership request', function(){
       assert.equal(join.version, 1);
     });
 
-    it('should have beta_brousoufs currency name', function(){
-      assert.equal(join.currency, 'beta_brousoufs');
+    it('should have beta_brousouf currency name', function(){
+      assert.equal(join.currency, 'beta_brousouf');
     });
 
     it('should have JOIN status', function(){
@@ -37,12 +37,12 @@ describe('Membership request', function(){
       assert.equal(join.basis, 0);
     });
 
-    it('its computed hash should be D0CF6CD300157B36319238A2CDAB6C37F01FEF2D', function(){
-      assert.equal(join.hash, 'D0CF6CD300157B36319238A2CDAB6C37F01FEF2D');
+    it('its computed hash should be EE794AB868994AE418D5284BBBA2FD7B5A063F14', function(){
+      assert.equal(join.hash, 'EE794AB868994AE418D5284BBBA2FD7B5A063F14');
     });
 
-    it('its manual hash should be D0CF6CD300157B36319238A2CDAB6C37F01FEF2D', function(){
-      assert.equal(sha1(join.getRaw()).toUpperCase(), 'D0CF6CD300157B36319238A2CDAB6C37F01FEF2D');
+    it('its manual hash should be EE794AB868994AE418D5284BBBA2FD7B5A063F14', function(){
+      assert.equal(sha1(join.getRaw()).toUpperCase(), 'EE794AB868994AE418D5284BBBA2FD7B5A063F14');
     });
 
     it('it should match signature', function(){

@@ -10,6 +10,7 @@ var Merkle     = mongoose.model('Merkle');
 module.exports = function (pgp, currency, conf) {
 
   this.community = require('./community')(pgp, currency, conf);
+  this.amendments = require('./amendments')(pgp, currency, conf);
   
   return this;
 }

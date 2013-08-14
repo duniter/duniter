@@ -122,7 +122,7 @@ module.exports.express = {
     app.get(    '/hdc/amendments/view/:amendment_id/self',        notImplemented);
     app.get(    '/hdc/amendments/view/:amendment_id/voters',      notImplemented);
     app.get(    '/hdc/amendments/votes',                          notImplemented);
-    app.post(   '/hdc/amendments/votes',                          notImplemented);
+    app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
     app.get(    '/hdc/amendments/votes/:amendment_id/signatures', notImplemented);
     app.get(    '/hdc/coins/:pgp_fpr/list',                       notImplemented);
     app.get(    '/hdc/coins/:pgp_fpr/view/:coin_id',              notImplemented);

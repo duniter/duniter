@@ -3,6 +3,7 @@ var assert    = require('assert');
 var mongoose  = require('mongoose');
 var sha1      = require('sha1');
 var fs        = require('fs');
+var jpgp      = require('../app/lib/jpgp');
 var async     = require('async');
 var server    = require('../app/lib/server');
 server.database.init();
@@ -46,18 +47,17 @@ describe('Votes for', function(){
 
     before(function (done) {
       async.forEach([tests.cat, tests.john, tests.tobi, tests.cat2], function (test, callback) {
-        test.vote.loadFromFiles(test.file, test.amend, function (err) {
-          if(!err){
-            fs.readFile(test.pubKey, {encoding: "utf8"}, function (err, pkData) {
-              test.vote.publicKey = pkData;
-              test.vote.verify(function (err) {
-                if(!err) test.verified = true;
-                callback();
-              });
+        async.waterfall([
+          function (next){
+            test.vote.loadFromFiles(test.file, test.amend, test.pubKey, next);
+          },
+          function (next){
+            test.vote.verify('beta_brousouf', function (err) {
+              test.verified = err && err.match(/Bad members status root/) ? true : false;
+              next();
             });
           }
-          else callback(err);
-        });
+        ], callback);
       }, done);
     });
 

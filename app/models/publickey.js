@@ -45,6 +45,30 @@ PublicKeySchema.methods = {
   }
 };
 
+PublicKeySchema.statics.getTheOne = function (keyID, done) {
+  PublicKey.search("0x" + keyID, function (err, keys) {
+    if(keys.length > 1){
+      done('Multiple PGP keys found for this keyID.');
+      return;
+    }
+    if(keys.length < 1){
+      done('Corresponding Public Key not found.');
+      return;
+    }
+    var pubkey = keys[0];
+    done(null, pubkey);
+  });
+};
+
+PublicKeySchema.statics.getFromSignature = function (asciiArmoredsig, done) {
+  var keyID = jpgp().signature(asciiArmoredsig).issuer();
+  if(!(keyID && keyID.length == 16)){
+    done('Cannot identify signature issuer`s keyID');
+    return;
+  }
+  this.getTheOne(keyID, done);
+};
+
 PublicKeySchema.statics.search = function (motif, done) {
   var obj = this;
   var found = [];

@@ -38,6 +38,10 @@ MerkleSchema.methods = {
       leaves.sort();
       this.initialize(leaves);
     }
+  },
+
+  root: function () {
+    return this.levels.length > 0 ? this.levels[0][0] : '';
   }
 };
 
@@ -58,15 +62,7 @@ MerkleSchema.statics.forMembership = function (number, done) {
 
 MerkleSchema.statics.forNextMembership = function (done) {
   var that = this;
-  async.waterfall([
-    function(next){
-      Amendment.current(next);
-    },
-    function(current, next){
-      var number = current.number ? number = current.number + 1 : 0;
-      next(null, number);
-    }
-  ], function (err, number) {
+  Amendment.nextNumber(function (err, number) {
     that.forMembership(number, done);
   });
 };

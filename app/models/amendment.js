@@ -108,6 +108,19 @@ AmendmentSchema.methods = {
   }
 };
 
+AmendmentSchema.statics.nextNumber = function (done) {
+  var that = this;
+  async.waterfall([
+    function(next){
+      Amendment.current(next);
+    },
+    function(current, next){
+      var number = current.number ? number = current.number + 1 : 0;
+      next(null, number);
+    }
+  ], done);
+};
+
 AmendmentSchema.statics.current = function (done) {
 
   this.find({ current: true }, function (err, amends) {

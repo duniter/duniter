@@ -12,6 +12,7 @@ var MembershipSchema = new Schema({
   status: String,
   basis: {"type": Number, "default": 0},
   fingerprint: String,
+  hash: String,
   signature: String,
   created: Date,
   updated: Date
@@ -34,6 +35,7 @@ MembershipSchema.methods = {
     var sigIndex = rawMembership.indexOf("-----BEGIN");
     if(~sigIndex)
       this.signature = rawMembership.substring(sigIndex);
+    this.hash = sha1(rawMembership).toUpperCase();
     fill(this, ms);
     callback(ms.error, this);
   },

@@ -11,7 +11,7 @@ var Merkle = mongoose.model('Merkle');
 describe("Merkle ['a', 'b', 'c', 'd', 'e']", function(){
 
   var m = new Merkle({ type: 'CollectionName', criteria: '{}'});
-  m.init(['a', 'b', 'c', 'd', 'e']);
+  m.initialize(['a', 'b', 'c', 'd', 'e']);
 
   it('should have root 114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9', function(){
     assert.equal(m.levels[0], '114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9');
@@ -39,5 +39,31 @@ describe("Merkle ['a', 'b', 'c', 'd', 'e']", function(){
 
   it('should have 5 leaves', function(){
     assert.equal(m.leaves, 5);
+  });
+});
+
+describe("Merkle []", function(){
+
+  var m = new Merkle({ type: 'CollectionName', criteria: '{}'});
+  m.initialize([]);
+
+  it('should have root empty', function(){
+    assert.equal(m.levels[0], '');
+  });
+
+  it('should have 1 levels', function(){
+    assert.equal(m.levels.length, 1);
+  });
+
+  it('should have depth: 0', function(){
+    assert.equal(m.depth, 0);
+  });
+
+  it('should have 0 nodes', function(){
+    assert.equal(m.nodes, 0);
+  });
+
+  it('should have 0 leaves', function(){
+    assert.equal(m.leaves, 0);
   });
 });

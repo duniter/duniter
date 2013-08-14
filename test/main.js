@@ -41,7 +41,6 @@ var gets = [
   {expect: 501, url: '/hdc/amendments/votes/SOME_AM_ID/signatures'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
-  {expect: 501, url: '/hdc/community/members'},
   {expect: 501, url: '/hdc/community/votes'},
   {expect: 501, url: '/hdc/transactions/all'},
   {expect: 501, url: '/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
@@ -171,6 +170,19 @@ describe('Request on /hdc/community/join', function(){
     request(app)
       .post('/hdc/community/join')
       .expect(400, done);
+  });
+});
+
+describe('Request on /hdc/community/members', function(){
+  it('GET should respond 200', function(done){
+    request(app)
+      .get('/hdc/community/members')
+      .expect(200, done);
+  });
+  it('POST should respond 404', function(done){
+    request(app)
+      .post('/hdc/community/members')
+      .expect(404, done);
   });
 });
 

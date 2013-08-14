@@ -9,18 +9,19 @@ var Schema   = mongoose.Schema;
 var AmendmentSchema = new Schema({
   version: String,
   currency: String,
-  number: String,
+  number: {"type": Number, "default": 0},
   previousHash: String,
-  dividend: String,
-  coinMinPower: String,
+  dividend: Number,
+  coinMinPower: Number,
   votersSigRoot: String,
   votersRoot: String,
-  votersCount: String,
+  votersCount: {"type": Number, "default": 0},
   votersChanges: Array,
   membersStatusRoot: String,
   membersRoot: String,
-  membersCount: String,
+  membersCount: {"type": Number, "default": 0},
   membersChanges: Array,
+  current: {"type": Boolean, "default": false},
   hash: String,
   created: Date,
   updated: Date
@@ -72,10 +73,10 @@ AmendmentSchema.methods = {
     if(this.previousHash){
       raw += "PreviousHash: " + this.previousHash + "\n";
     }
-    if(this.dividend){
+    if(this.dividend != null){
       raw += "UniversalDividend: " + this.dividend + "\n";
     }
-    if(this.coinMinPower){
+    if(this.coinMinPower != null){
       raw += "CoinMinimalPower: " + this.coinMinPower + "\n";
     }
     if(this.votersCount > 0){
@@ -105,6 +106,31 @@ AmendmentSchema.methods = {
       });
     });
   }
+};
+
+AmendmentSchema.statics.current = function (done) {
+
+  this.find({ current: true }, function (err, amends) {
+    if(amends && amends.length == 1){
+      done(err, amends[0]);
+      return;
+    }
+    if(!amends || amends.length == 0){
+      done(err, new Amendment());
+      return;
+    }
+    if(amends || amends.length > 1){
+      var current = undefined;
+      amends.forEach(function (am) {
+        if(!current || (current && current.number < am.number))
+          current = am;
+      });
+      if(current)
+        done(err, current);
+      else
+        done(err, new Amendment());
+    }
+  });
 };
 
 var Amendment = mongoose.model('Amendment', AmendmentSchema);

@@ -2,8 +2,10 @@ var sha1      = require('sha1');
 var async     = require('async');
 var merkle    = require('merkle');
 var mongoose  = require('mongoose');
+var _         = require('underscore');
 var fs        = require('fs');
 var Schema    = mongoose.Schema;
+var Amendment = mongoose.model('Amendment');
 
 var MerkleSchema = new Schema({
   type: String,
@@ -18,7 +20,7 @@ var MerkleSchema = new Schema({
 
 MerkleSchema.methods = {
 
-  init: function (leaves) {
+  initialize: function (leaves) {
     var tree = merkle(leaves, 'sha1').process();
     this.depth = tree.depth();
     this.nodes = tree.nodes();
@@ -27,7 +29,46 @@ MerkleSchema.methods = {
     for (var i = 0; i < tree.levels(); i++) {
       this.levels[i] = tree.level(i);
     }
+  },
+
+  push: function (leaf) {
+    if(this.levels[this.depth].indexOf(leaf) == -1){
+      var leaves = this.levels[this.depth];
+      leaves.push(leaf);
+      leaves.sort();
+      this.initialize(leaves);
+    }
   }
+};
+
+MerkleSchema.statics.forMembership = function (number, done) {
+  async.waterfall([
+    function(next){
+      Merkle.findOne({ type: 'membership', criteria: '{"basis":'+number+'}' }, next);
+    },
+    function(merkle, next){
+      if(!merkle){
+        merkle = new Merkle({ type: 'membership', criteria: '{"basis":'+number+'}' });
+        merkle.initialize([]);
+      }
+      next(null, merkle);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.forNextMembership = function (done) {
+  var that = this;
+  async.waterfall([
+    function(next){
+      Amendment.current(next);
+    },
+    function(current, next){
+      var number = current.number ? number = current.number + 1 : 0;
+      next(null, number);
+    }
+  ], function (err, number) {
+    that.forMembership(number, done);
+  });
 };
 
 var Merkle = mongoose.model('Merkle', MerkleSchema);

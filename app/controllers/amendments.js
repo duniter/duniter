@@ -12,6 +12,76 @@ module.exports = function (pgp, currency, conf) {
 
   this.votes = {
 
+    get: function (req, res) {
+      async.waterfall([
+        function (next){
+          Vote.find(next);
+        },
+        function (votes, next){
+          var map = {};
+          votes.forEach(function (v) {
+            map[v._amendment] = map[v._amendment] ? map[v._amendment] + 1 : 1;
+          });
+          var tab = [];
+          for(var id in map){
+            tab.push({ id: id, count: map[id] });
+          }
+          next(null, tab);
+        },
+        function (tab, next) {
+          var stats = [];
+          async.forEach(tab, function (entry, done) {
+            Amendment.findById(entry.id, function (err, amendment) {
+              stats.push({
+                number: amendment.number,
+                hash: amendment.hash,
+                count: entry.count
+              });
+              done(err);
+            });
+          }, function (err) {
+            next(err, stats);
+          });
+        },
+        function (stats, next) {
+          var result = {};
+          async.forEach(stats, function(item, callback){
+              if(!result[item.number]) result[item.number] = {};
+              result[item.number][item.hash] = item.count;
+              callback();
+            }, function(err){
+              if(err){
+                next(err);
+                return;
+              }
+              var json = { amendments: [] };
+              for(var number in result){
+                var hashes = [];
+                for(var hash in result[number]){
+                  hashes.push({ hash: hash, votesCount: result[number][hash] });
+                }
+                json.amendments.push({
+                  number: number,
+                  hashes: hashes
+                });
+              }
+              next(null, json);
+            }
+          );
+        }
+      ], function (err, json) {
+        if(err){
+          res.send(500, err);
+          return;
+        }
+        if(req.query.nice){
+          res.setHeader("Content-Type", "text/plain");
+          res.end(JSON.stringify(json, null, "  "));
+        }
+        else res.end(JSON.stringify(json));
+      });
+    },
+
     post: function (req, res) {
       async.waterfall([
 

@@ -162,6 +162,12 @@ Field | Description | Required
 `VotersCount` | **is mandatory if `Number` is positive**. It is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree. | *Not Required*
 `VotersChanges` | **is mandatory if `Number` is positive**. It contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted ante previous amendment and voted previous is not considered a change, thus does not appear in this list. | *Not Required*
 
+And `AMENDMENT_ID` has the following format:
+
+    AMENDMENT_NUMBER-AMENDMENT_HASH
+
+Where `AMENDMENT_NUMBER` is the `Number`, and `AMENDMENT_HASH` is the computed hash of the Amendment #`Number`.
+
 ### Validity
 
 In HDC, an Amendment structure is considered *valid* if:

@@ -120,7 +120,7 @@ AmendmentSchema.methods = {
 
   getPrevious: function (done) {
     if(this.number == 0){
-      done('No previous amendment');
+      done();
       return;
     }
     Amendment.find({ number: this.number - 1, hash: this.previousHash }, function (err, ams) {
@@ -128,12 +128,156 @@ AmendmentSchema.methods = {
         done('Previous amendment not found');
         return;
       }
-      if(ams.length > 0){
+      if(ams.length > 1){
         done('Multiple previous amendments matches');
         return;
       }
       done(null, ams[0]);
     });
+  },
+
+  buildMembershipsMerkle: function (done) {
+    var that = this;
+    this.getPrevious(function (err, previous) {
+      if(err){
+        done(err);
+        return;
+      }
+      async.waterfall([
+        function (next){
+          if(!previous){
+            next(null, []);
+            return;
+          }
+          mongoose.model('Merkle').membershipsWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
+            next(err, merkle.leaves());
+          });
+        },
+        function (leaves, next) {
+          var newMemberships = [];
+          async.forEach(that.getNewMembers(), function (item,callback){
+            mongoose.model('Membership').find({ fingerprint: item, basis: that.number }, function (err, memberships) {
+              if(err){
+                callback(err);
+                return;
+              }
+              if(memberships.length == 0 || memberships.length > 1){
+                callback('Integrity error : zero or more that one membership for amendment #' + that.number + ' and member ' + item);
+                return;
+              }
+              newMemberships.push(memberships[0].hash);
+              callback();
+            });
+          }, function(err){
+            if(err){
+              next(err);                
+              return;
+            }
+            leaves = _(leaves).union(newMemberships);
+            next(null, leaves);
+          });
+        },
+        function (leaves, next) {
+          var leavingMemberships = [];
+          async.forEach(that.getLeavingMembers(), function(item,callback){
+            mongoose.model('Membership').find({ fingerprint: item, basis: that.number }, function (err, memberships) {
+              if(err){
+                callback(err);
+                return;
+              }
+              if(memberships.length == 0 || memberships.length > 1){
+                callback('Integrity error : zero or more that one membership for amendment #' + that.number + ' and member ' + item);
+                return;
+              }
+              leavingMemberships.push(memberships[0].hash);
+            callback();
+            });
+          }, function(err){
+            if(err){
+              next(err);                
+              return;
+            }
+            leaves = _(leaves).difference(leavingMemberships);
+            next(null, leaves);
+          });
+        }
+      ], function (err, leaves) {
+        if(leaves) leaves.sort();
+        done(err, leaves);
+      });
+    })
+  },
+
+  buildSignaturesMerkle: function (done) {
+    var that = this;
+    this.getPrevious(function (err, previous) {
+      if(err){
+        done(err);
+        return;
+      }
+      async.waterfall([
+        function (next){
+          if(!previous){
+            next(null, []);
+            return;
+          }
+          mongoose.model('Merkle').signaturesWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
+            next(err, merkle.leaves());
+          });
+        },
+        function (leaves, next) {
+          var newVotes = [];
+          async.forEach(that.getNewVoters(), function(item,callback){
+            mongoose.model('Vote').find({ issuer: item, basis: that.number }, function (err, votes) {
+              if(err){
+                callback(err);
+                return;
+              }
+              if(votes.length == 0 || votes.length > 1){
+                callback('Integrity error : zero or more that one signatures for amendment #' + that.number + ' and member ' + item);
+                return;
+              }
+              newVotes.push(votes[0].hash);
+              callback();
+            });
+          }, function(err){
+            if(err){
+              next(err);                
+              return;
+            }
+            leaves = _(leaves).union(newVotes);
+            next(null, leaves);
+          });
+        },
+        function (leaves, next) {
+          var leavingVotes = [];
+          async.forEach(that.getLeavingVoters(), function(item,callback){
+            mongoose.model('Vote').find({ issuer: item, basis: that.number }, function (err, votes) {
+              if(err){
+                callback(err);
+                return;
+              }
+              if(votes.length == 0 || votes.length > 1){
+                callback('Integrity error : zero or more that one signatures for amendment #' + that.number + ' and member ' + item);
+                return;
+              }
+              leavingVotes.push(votes[0].hash);
+              callback();
+            });
+          }, function(err){
+            if(err){
+              next(err);                
+              return;
+            }
+            leaves = _(leaves).difference(leavingVotes);
+            next(null, leaves);
+          });
+        }
+      ], function (err, leaves) {
+        if(leaves) leaves.sort();
+        done(err, leaves);
+      });
+    })
   },
 
   loadFromFile: function(file, done) {

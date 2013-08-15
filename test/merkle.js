@@ -38,7 +38,7 @@ describe("Merkle ['a', 'b', 'c', 'd', 'e']", function(){
   });
 
   it('should have 5 leaves', function(){
-    assert.equal(m.leaves, 5);
+    assert.equal(m.leaves().length, 5);
   });
 });
 
@@ -64,6 +64,6 @@ describe("Merkle []", function(){
   });
 
   it('should have 0 leaves', function(){
-    assert.equal(m.leaves, 0);
+    assert.equal(m.leaves().length, 0);
   });
 });

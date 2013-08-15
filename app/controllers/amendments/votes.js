@@ -177,7 +177,7 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             });
           },
           function (am, voteEntity, merkle, next) {
-            merkle.push(voteEntity.hash);
+            merkle.push(vote.hash);
             merkle.save(function (err) {
               next(err, am, voteEntity);
             });
@@ -196,22 +196,66 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
         ], callback);
       }
     ], function (err, am, recordedVote) {
-      shouldBePromoted(am, function (err, decision) {
-        if(decision){
-          am.promoted = true;
-          am.save(function (err) {
-            if(!err) console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
-            else console.err(err);
-          })
-        }
-      });
       if(err){
         res.send(400, err);
       }
-      else res.end(JSON.stringify({
-        amendment: am.hdc(),
-        signature: recordedVote.signature
-      }));
+      else
+      {
+        shouldBePromoted(am, function (err, decision) {
+          if(decision){
+            am.promoted = true;
+            am.save(function (err) {
+              if(!err){
+                console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
+                async.parallel({
+                  membershipsMerkle: function(callback){
+                    async.waterfall([
+                      function (next) {
+                        am.buildMembershipsMerkle(next);
+                      },
+                      function (leaves, next){
+                        Merkle.membershipsWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+                          merkle.initialize(leaves);
+                          next(err, merkle);
+                        });
+                      },
+                      function (merkle, next) {
+                        merkle.save(next);
+                      }
+                    ], callback);
+                  },
+                  signaturesMerkle: function(callback){
+                    async.waterfall([
+                      function (next) {
+                        am.buildSignaturesMerkle(next);
+                      },
+                      function (leaves, next){
+                        Merkle.signaturesWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+                          merkle.initialize(leaves);
+                          next(err, merkle);
+                        });
+                      },
+                      function (merkle, next) {
+                        merkle.save(next);
+                      }
+                    ], callback);
+                  },
+                },
+                function(err, results) {
+                  // Info only
+                  if(err) console.log(err);
+                });
+              }
+              else console.err(err);
+            })
+          }
+          else console.log(err);
+        });
+        res.end(JSON.stringify({
+          amendment: am.hdc(),
+          signature: recordedVote.signature
+        }));
+      }
     });
   };
   

@@ -12,7 +12,6 @@ var MerkleSchema = new Schema({
   criteria: String,
   depth: {"type": Number, "default": 0},
   nodes: {"type": Number, "default": 0},
-  leaves: {"type": Number, "default": 0},
   levels: Array,
   created: Date,
   updated: Date
@@ -24,7 +23,6 @@ MerkleSchema.methods = {
     var tree = merkle(leaves, 'sha1').process();
     this.depth = tree.depth();
     this.nodes = tree.nodes();
-    this.leaves = leaves.length;
     this.levels = [];
     for (var i = 0; i < tree.levels(); i++) {
       this.levels[i] = tree.level(i);
@@ -33,7 +31,7 @@ MerkleSchema.methods = {
 
   push: function (leaf) {
     if(this.levels[this.depth].indexOf(leaf) == -1){
-      var leaves = this.levels[this.depth];
+      var leaves = this.leaves();
       leaves.push(leaf);
       leaves.sort();
       this.initialize(leaves);
@@ -42,11 +40,14 @@ MerkleSchema.methods = {
 
   root: function () {
     return this.levels.length > 0 ? this.levels[0][0] : '';
+  },
+
+  leaves: function () {
+    return this.levels[this.depth];
   }
 };
 
-MerkleSchema.statics.forMembership = function (number, done) {
-  var merkleID = { type: 'membership', criteria: '{"basis":'+number+'}' };
+function retrieve(merkleID, done) {
   async.waterfall([
     function(next){
       Merkle.findOne(merkleID, next);
@@ -59,6 +60,10 @@ MerkleSchema.statics.forMembership = function (number, done) {
       next(null, merkle);
     }
   ], done);
+}
+
+MerkleSchema.statics.forMembership = function (number, done) {
+  retrieve({ type: 'membership', criteria: '{"basis":'+number+'}' }, done);
 };
 
 MerkleSchema.statics.forNextMembership = function (done) {
@@ -69,35 +74,19 @@ MerkleSchema.statics.forNextMembership = function (done) {
 };
 
 MerkleSchema.statics.signaturesOfAmendment = function (number, hash, done) {
-  var merkleID = { type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' };
-  async.waterfall([
-    function(next){
-      Merkle.findOne(merkleID, next);
-    },
-    function(merkle, next){
-      if(!merkle){
-        merkle = new Merkle(merkleID);
-        merkle.initialize([]);
-      }
-      next(null, merkle);
-    }
-  ], done);
+  retrieve({ type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
+};
+
+MerkleSchema.statics.signaturesWrittenForAmendment = function (number, hash, done) {
+  retrieve({ type: 'amendment_signatures', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
+};
+
+MerkleSchema.statics.membershipsWrittenForAmendment = function (number, hash, done) {
+  retrieve({ type: 'amendment_memberships', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
 MerkleSchema.statics.signatoriesOfAmendment = function (number, hash, done) {
-  var merkleID = { type: 'amendment_signatories', criteria: '{"number":'+number+',"hash": "'+hash+'"}' };
-  async.waterfall([
-    function(next){
-      Merkle.findOne(merkleID, next);
-    },
-    function(merkle, next){
-      if(!merkle){
-        merkle = new Merkle(merkleID);
-        merkle.initialize([]);
-      }
-      next(null, merkle);
-    }
-  ], done);
+  retrieve({ type: 'amendment_signatories', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
 MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {

@@ -49,7 +49,7 @@ function defaultPromotion (amendment, decision) {
         return;
       }
       if(!am && amendment.number != 0){
-        pass('Not promoted: need root amendment first');
+        next('Not promoted: need root amendment first');
         return;
       }
       async.waterfall([
@@ -61,7 +61,7 @@ function defaultPromotion (amendment, decision) {
           pass();
         },
         function (pass){
-          if(am.previousHash != amendment.hash){
+          if(am.hash != amendment.previousHash){
             pass('Not promoted: this amendment does not have current amendment as previous');
             return;
           }
@@ -71,8 +71,8 @@ function defaultPromotion (amendment, decision) {
           Merkle.signaturesOfAmendment(am.number, am.hash, pass);
         },
         function (sigMerkle, pass){
-          if(sigMerkle.root() != amendment.votersSigRoot || sigMerkle.leaves.length != amendment.votersCount){
-            pass('Not promoted: this amendment as it does not match received signatures of current amendment');
+          if(sigMerkle.root() != amendment.votersSigRoot || sigMerkle.leaves().length != amendment.votersCount){
+            pass('Not promoted: this amendment does not match received signatures of current amendment');
             return;
           }
           pass();

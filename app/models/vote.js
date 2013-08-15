@@ -10,6 +10,7 @@ var Schema    = mongoose.Schema;
 
 var VoteSchema = new Schema({
   issuer: String,
+  basis: {"type": Number, "default": 0},
   signature: String,
   _amendment: Schema.Types.ObjectId,
   hash: String,
@@ -70,14 +71,14 @@ VoteSchema.methods = {
             var k = new PublicKey({ raw: rawPubkey });
             k.construct(function () {
               that.pubkey = k;
-              that.fingerprint = k.fingerprint;
+              that.issuer = k.fingerprint;
               done(null, that);
             });
             return;
           }
           PublicKey.getFromSignature(that.signature, function (err, publicKey) {
             that.pubkey = publicKey;
-            that.fingerprint = publicKey.fingerprint;
+            that.issuer = publicKey.fingerprint;
             done(null, that);
           });
         },
@@ -88,6 +89,7 @@ VoteSchema.methods = {
               done(err, am);
               return;
             }
+            that.basis = am.number;
             Amendment.find({ number: am.number, hash: am.hash }, function (err, ams) {
               that.amendment = ams.length > 0 ? ams[0] : am;
               done(err, that.amendment);

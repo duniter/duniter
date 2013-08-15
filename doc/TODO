@@ -15,15 +15,15 @@ Implementation: Autonomous server:
      ✔ View received PGP certificates @done (13-08-08 01:04)
 
     Registrations:
-     ☐ Receive signed registration: join
+     ✔ Receive signed registration: join @done (13-08-15 12:01)
      ☐ Receive signed registration: actualize
      ☐ Receive signed registration: leave
      ☐ View received registrations for pending amendment
      ☐ Make strategies for registration acceptation
 
     Votes:
-     ☐ Receive votes
-     ☐ Get an index of votes
+     ✔ Receive votes @done (13-08-15 12:01)
+     ✔ Get an index of votes @done (13-08-15 12:01)
      ☐ View votes for a given pending amendment
      ☐ When amendment enough votes, promote it as current
      ☐ View received votes for current amendment

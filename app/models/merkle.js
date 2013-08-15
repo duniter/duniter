@@ -68,8 +68,24 @@ MerkleSchema.statics.forNextMembership = function (done) {
   });
 };
 
-MerkleSchema.statics.forAmendment = function (number, hash, done) {
+MerkleSchema.statics.signaturesOfAmendment = function (number, hash, done) {
   var merkleID = { type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' };
+  async.waterfall([
+    function(next){
+      Merkle.findOne(merkleID, next);
+    },
+    function(merkle, next){
+      if(!merkle){
+        merkle = new Merkle(merkleID);
+        merkle.initialize([]);
+      }
+      next(null, merkle);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.signatoriesOfAmendment = function (number, hash, done) {
+  var merkleID = { type: 'amendment_signatories', criteria: '{"number":'+number+',"hash": "'+hash+'"}' };
   async.waterfall([
     function(next){
       Merkle.findOne(merkleID, next);

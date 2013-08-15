@@ -8,7 +8,7 @@ var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
 
-module.exports = function (pgp, currency, conf) {
+module.exports = function (pgp, currency, conf, shouldBePromoted) {
 
   this.signatures = function (req, res) {
     if(!req.params.amendment_id){
@@ -24,7 +24,7 @@ module.exports = function (pgp, currency, conf) {
       function (next){
         var number = matches[1];
         var hash = matches[2];
-        Merkle.forAmendment(number, hash, next);
+        Merkle.signaturesOfAmendment(number, hash, next);
       },
       function (merkle, next){
         Merkle.processForURL(req, merkle, function (hashes, done) {
@@ -172,7 +172,7 @@ module.exports = function (pgp, currency, conf) {
             })
           },
           function (am, voteEntity, next) {
-            Merkle.forAmendment(am.number, am.hash, function (err, merkle) {
+            Merkle.signaturesOfAmendment(am.number, am.hash, function (err, merkle) {
               next(err, am, voteEntity, merkle);
             });
           },
@@ -181,10 +181,31 @@ module.exports = function (pgp, currency, conf) {
             merkle.save(function (err) {
               next(err, am, voteEntity);
             });
+          },
+          function (am, voteEntity, next) {
+            Merkle.signatoriesOfAmendment(am.number, am.hash, function (err, merkle) {
+              next(err, am, voteEntity, merkle);
+            });
+          },
+          function (am, voteEntity, merkle, next) {
+            merkle.push(vote.pubkey.fingerprint);
+            merkle.save(function (err) {
+              next(err, am, voteEntity);
+            });
           }
         ], callback);
       }
     ], function (err, am, recordedVote) {
+      shouldBePromoted(am, function (err, decision) {
+        if(decision){
+          am.promoted = true;
+          am.save(function (err) {
+            if(!err) console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
+            else console.err(err);
+          })
+        }
+        else console.error(err);
+      });
       if(err){
         res.send(400, err);
       }

@@ -21,7 +21,7 @@ var AmendmentSchema = new Schema({
   membersRoot: String,
   membersCount: {"type": Number, "default": 0},
   membersChanges: Array,
-  current: {"type": Boolean, "default": false},
+  promoted: {"type": Boolean, "default": false},
   hash: String,
   created: Date,
   updated: Date
@@ -98,6 +98,24 @@ AmendmentSchema.methods = {
     return raw.unix2dos();
   },
 
+  getPrevious: function (done) {
+    if(this.number == 0){
+      done('No previous amendment');
+      return;
+    }
+    Amendment.find({ number: this.number - 1, hash: this.previousHash }, function (err, ams) {
+      if(ams.length == 0){
+        done('Previous amendment not found');
+        return;
+      }
+      if(ams.length > 0){
+        done('Multiple previous amendments matches');
+        return;
+      }
+      done(null, ams[0]);
+    });
+  },
+
   loadFromFile: function(file, done) {
     var obj = this;
     fs.readFile(file, {encoding: "utf8"}, function (err, data) {
@@ -115,7 +133,11 @@ AmendmentSchema.statics.nextNumber = function (done) {
       Amendment.current(next);
     },
     function(current, next){
-      var number = current.number ? number = current.number + 1 : 0;
+      if(!next){
+        next = current;
+        current = null;
+      }
+      var number = current ? current.number : 0;
       next(null, number);
     }
   ], done);
@@ -123,13 +145,13 @@ AmendmentSchema.statics.nextNumber = function (done) {
 
 AmendmentSchema.statics.current = function (done) {
 
-  this.find({ current: true }, function (err, amends) {
+  this.find({ promoted: true }, function (err, amends) {
     if(amends && amends.length == 1){
       done(err, amends[0]);
       return;
     }
     if(!amends || amends.length == 0){
-      done(err, new Amendment());
+      done(err);
       return;
     }
     if(amends || amends.length > 1){
@@ -141,7 +163,7 @@ AmendmentSchema.statics.current = function (done) {
       if(current)
         done(err, current);
       else
-        done(err, new Amendment());
+        done(err);
     }
   });
 };

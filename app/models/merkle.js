@@ -46,13 +46,14 @@ MerkleSchema.methods = {
 };
 
 MerkleSchema.statics.forMembership = function (number, done) {
+  var merkleID = { type: 'membership', criteria: '{"basis":'+number+'}' };
   async.waterfall([
     function(next){
-      Merkle.findOne({ type: 'membership', criteria: '{"basis":'+number+'}' }, next);
+      Merkle.findOne(merkleID, next);
     },
     function(merkle, next){
       if(!merkle){
-        merkle = new Merkle({ type: 'membership', criteria: '{"basis":'+number+'}' });
+        merkle = new Merkle(merkleID);
         merkle.initialize([]);
       }
       next(null, merkle);
@@ -65,6 +66,22 @@ MerkleSchema.statics.forNextMembership = function (done) {
   Amendment.nextNumber(function (err, number) {
     that.forMembership(number, done);
   });
+};
+
+MerkleSchema.statics.forAmendment = function (number, hash, done) {
+  var merkleID = { type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' };
+  async.waterfall([
+    function(next){
+      Merkle.findOne(merkleID, next);
+    },
+    function(merkle, next){
+      if(!merkle){
+        merkle = new Merkle(merkleID);
+        merkle.initialize([]);
+      }
+      next(null, merkle);
+    }
+  ], done);
 };
 
 var Merkle = mongoose.model('Merkle', MerkleSchema);

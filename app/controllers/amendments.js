@@ -125,6 +125,17 @@ module.exports = function (pgp, currency, conf) {
               voteEntity.getAmendment(function (err, am) {
                 next(null, am, voteEntity);
               })
+            },
+            function (am, voteEntity, next) {
+              Merkle.forAmendment(am.number, am.hash, function (err, merkle) {
+                next(err, am, voteEntity, merkle);
+              });
+            },
+            function (am, voteEntity, merkle, next) {
+              merkle.push(voteEntity.hash);
+              merkle.save(function (err) {
+                next(err, am, voteEntity);
+              });
             }
           ], callback);
         }

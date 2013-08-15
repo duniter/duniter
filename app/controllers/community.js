@@ -100,61 +100,23 @@ module.exports = function (pgp, currency, conf) {
   };
 
   this.members = function (req, res) {
-    Merkle.forNextMembership(function (err, merkle) {
-      if(err){
-        res.send(500, err);
-        return;
-      }
-      // Level
-      var lstart = req.query.lstart ? parseInt(req.query.lstart) : 0;
-      var lend   = req.query.lend ? parseInt(req.query.lend) : lstart + 1;
-      if(req.query.extract){
-        lstart = merkle.depth;
-        lend = lstart + 1;
-      }
-      // Start
-      var start = req.query.start ? parseInt(req.query.start) : 0;
-      // End
-      var end = req.query.end ? parseInt(req.query.end) : merkle.levels[merkle.depth.length];
-      // Result
-      var json = {
-        "merkle": {
-          "depth": merkle.depth,
-          "nodesCount": merkle.nodes,
-          "levelsCount": merkle.levels.length
-        }
-      };
-      if(isNaN(lstart)) lstart = 0;
-      if(isNaN(lend)) lend = lstart + 1;
-      if(isNaN(start)) start = 0;
-      if(!req.query.extract){
-        json.merkle.levels = [];
-        for (var i = Math.max(lstart, 0); i < merkle.levels.length && i < lend; i++) {
-          var rowEnd = isNaN(end) ? merkle.levels[i].length : end;
-          json.merkle.levels.push({
-            "level": i,
-            "nodes": merkle.levels[i].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[i].length))
-          });
-        };
-        merkleDone(req, res, json);
-      }
-      else {
-        json.merkle.leaves = [];
-        var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
-        var hashes = merkle.levels[merkle.depth].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[lstart].length));
-        Membership
-        .find({ hash: { $in: hashes } })
-        .sort('hash')
-        .exec(function (err, memberships) {
-          var map = {};
-          memberships.forEach(function (m){
-            map[m.hash] = m;
-          });
-          hashes.forEach(function (hash, index){
-            json.merkle.leaves.push({
-              "index": index,
-              "hash": merkle.levels[lstart][index],
-              "value": {
+    async.waterfall([
+      function (next){
+        Merkle.forNextMembership(next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, function (hashes, done) {
+          Membership
+          .find({ hash: { $in: hashes } })
+          .sort('hash')
+          .exec(function (err, memberships) {
+            var map = {};
+            memberships.forEach(function (m){
+              map[m.hash] = m;
+            });
+            var values = {};
+            hashes.forEach(function (hash, index){
+              values[hash] = {
                 "signature": map[hash].signature,
                 "request": {
                   "version": map[hash].version,
@@ -162,12 +124,18 @@ module.exports = function (pgp, currency, conf) {
                   "status": map[hash].status,
                   "basis": map[hash].basis
                 }
-              },
+              }
             });
+            done(null, values);
           });
-          merkleDone(req, res, json);
-        });
+        }, next);
       }
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      merkleDone(req, res, json);
     });
   }
   

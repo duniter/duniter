@@ -7,6 +7,7 @@ var Merkle  = mongoose.model('Merkle');
 module.exports = function (pgp, currency, conf) {
 
   this.votes = require('./votes')(pgp, currency, conf, defaultPromotion);
+  this.view = require('./view')(pgp, currency, conf);
 
   this.current = function (req, res) {
     async.waterfall([
@@ -21,7 +22,7 @@ module.exports = function (pgp, currency, conf) {
       res.setHeader("Content-Type", "text/plain");
       res.send(JSON.stringify(current.json(), null, "  "));
     });
-  }
+  };
   
   return this;
 }

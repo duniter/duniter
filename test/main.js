@@ -34,7 +34,6 @@ var gets = [
   {expect: 501, url: '/ucg/tht'},
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/amendments/view/000001/members'},
-  {expect: 501, url: '/hdc/amendments/view/000001/self'},
   {expect: 501, url: '/hdc/amendments/view/000001/voters'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
@@ -218,7 +217,14 @@ describe('Request on /hdc/amendments/current', function(){
       .get('/hdc/amendments/current')
       .expect(404, done);
   });
+});
 
+describe('Request on /hdc/amendments/view/SOME_ID/self', function(){
+  it('GET should respond 400', function(done){
+    request(app)
+      .get('/hdc/amendments/view/SOME_ID/self')
+      .expect(400, done);
+  });
 });
 
 describe('Request on /hdc/amendments/votes/:amendment_id/signatures', function(){

@@ -128,18 +128,18 @@ Amendments have the following structure:
     PreviousHash: PREVIOUS_HASH
     UniversalDividend: UNIVERSAL_DIVIDEND
     CoinMinimalPower: COIN_MINIMAL_POWER
-    MembersStatusRoot: MEMBERS_STATUS_SIGNATURES_ROOT
-    MembersRoot: WOT_MERKLE_ROOT
-    MembersCount: WOT_SIZE
-    MembersChanges:
-    +NEW_INDIVIDUAL_FPR
-    -LEAVING_INDIVIDUAL_FPR
     VotersSignaturesRoot: VOTERS_SIGNATURES_ROOT
     VotersRoot: VOTERS_MERKLE_ROOT
     VotersCount: VOTERS_COUNT
     VotersChanges:
     +INDIVIDUAL_FPR_VOTED_PREVIOUS_NOT_ANTE_PREVIOUS
     -INDIVIDUAL_FPR_VOTED_ANTE_PREVIOUS_NOT_VOTED_PREVIOUS
+    MembersStatusRoot: MEMBERS_STATUS_SIGNATURES_ROOT
+    MembersRoot: WOT_MERKLE_ROOT
+    MembersCount: WOT_SIZE
+    MembersChanges:
+    +NEW_INDIVIDUAL_FPR
+    -LEAVING_INDIVIDUAL_FPR
 
 All fields are not mandatory for a given amendment. Note that this precise structure is the version 1 amendment structure, and that any other structure may be proposed with a different version number. The only requirement is to have a `Version: VERSION` starting the text structure.
 

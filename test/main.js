@@ -37,7 +37,6 @@ var gets = [
   {expect: 501, url: '/hdc/amendments/view/000001/members'},
   {expect: 501, url: '/hdc/amendments/view/000001/self'},
   {expect: 501, url: '/hdc/amendments/view/000001/voters'},
-  {expect: 501, url: '/hdc/amendments/votes'},
   {expect: 501, url: '/hdc/amendments/votes/SOME_AM_ID/signatures'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
@@ -203,10 +202,10 @@ describe('Request on /hdc/amendments/submit', function(){
 });
 
 describe('Request on /hdc/amendments/votes', function(){
-  it('GET should respond 501', function(done){
+  it('GET should respond 200', function(done){
     request(app)
       .get('/hdc/amendments/votes')
-      .expect(501, done);
+      .expect(200, done);
   });
   it('POST should respond 400', function(done){
     request(app)

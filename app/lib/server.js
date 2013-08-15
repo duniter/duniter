@@ -117,7 +117,7 @@ module.exports.express = {
     app.get(    '/ucg/tht',                                       notImplemented);
     app.post(   '/ucg/tht',                                       notImplemented);
     app.get(    '/ucg/tht/:pgp_fingerprint',                      notImplemented);
-    app.get(    '/hdc/amendments/current',                        notImplemented);
+    app.get(    '/hdc/amendments/current',                        hdc.amendments.current);
     app.get(    '/hdc/amendments/view/:amendment_id/members',     notImplemented);
     app.get(    '/hdc/amendments/view/:amendment_id/self',        notImplemented);
     app.get(    '/hdc/amendments/view/:amendment_id/voters',      notImplemented);

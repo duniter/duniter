@@ -204,7 +204,6 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             else console.err(err);
           })
         }
-        else console.error(err);
       });
       if(err){
         res.send(400, err);

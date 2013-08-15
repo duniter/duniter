@@ -7,6 +7,21 @@ var Merkle  = mongoose.model('Merkle');
 module.exports = function (pgp, currency, conf) {
 
   this.votes = require('./votes')(pgp, currency, conf, defaultPromotion);
+
+  this.current = function (req, res) {
+    async.waterfall([
+      function (next){
+        Amendment.current(next);
+      }
+    ], function (err, current) {
+      if(!current){
+        res.send(404, 'No amendment yet promoted');
+        return;
+      }
+      res.setHeader("Content-Type", "text/plain");
+      res.send(JSON.stringify(current.json(), null, "  "));
+    });
+  }
   
   return this;
 }

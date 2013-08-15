@@ -35,6 +35,26 @@ AmendmentSchema.methods = {
     return am;
   },
   
+  json: function() {
+    return {
+      version: this.version,
+      currency: this.currency,
+      number: this.number,
+      previousHash: this.previousHash,
+      dividend: this.dividend,
+      coinMinPower: this.coinMinPower,
+      votersSigRoot: this.votersSigRoot,
+      votersRoot: this.votersRoot,
+      votersCount: this.votersCount,
+      votersChanges: this.votersChanges,
+      membersStatusRoot: this.membersStatusRoot,
+      membersRoot: this.membersRoot,
+      membersCount: this.membersCount,
+      membersChanges: this.membersChanges,
+      raw: this.getRaw()
+    };
+  },
+  
   parse: function(rawAmend, callback) {
     var am = new hdc.Amendment(rawAmend);
     if(!am.error){

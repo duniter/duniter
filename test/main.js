@@ -33,7 +33,6 @@ var gets = [
   {expect: 501, url: '/pks/all'},
   {expect: 501, url: '/ucg/tht'},
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
-  {expect: 501, url: '/hdc/amendments/current'},
   {expect: 501, url: '/hdc/amendments/view/000001/members'},
   {expect: 501, url: '/hdc/amendments/view/000001/self'},
   {expect: 501, url: '/hdc/amendments/view/000001/voters'},
@@ -211,6 +210,15 @@ describe('Request on /hdc/amendments/votes', function(){
       .post('/hdc/amendments/votes')
       .expect(400, done);
   });
+});
+
+describe('Request on /hdc/amendments/current', function(){
+  it('GET should respond 404', function(done){
+    request(app)
+      .get('/hdc/amendments/current')
+      .expect(404, done);
+  });
+
 });
 
 describe('Request on /hdc/amendments/votes/:amendment_id/signatures', function(){

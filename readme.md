@@ -1,6 +1,6 @@
 # uCoin [![Build Status](https://api.travis-ci.org/c-geek/ucoin.png)](https://api.travis-ci.org/c-geek/ucoin.png)
 
-uCoin is a free server-side software which allows to create new P2P crypto-currencies based on individuals and implementing Universal Dividend.
+uCoin is a free server-side software allowing to create new P2P crypto-currencies based on individuals and Universal Dividend.
 
 It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called UCP (UCoin Protocol).
 
@@ -8,13 +8,13 @@ It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-ud
 
 **Peer-to-peer crypto-currency**
 
-uCoin fully relies on PGP cryptographically-signed data to describe a currency, and provide P2P synchronization mecanisms to allow decentralization of data.
+uCoin fully relies on PGP to describe crypto-currencies and provide P2P synchronization mecanisms to allow data decentralization.
 
-**Universal Dividend for people**
+**Universal Dividend - for people**
 
 uCoin uses [Human Dividend Currency format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md) to describe the monetary system, where money is issued directly and exclusively to individuals of the monetary community.
 
-**Universal Dividend by people**
+**Universal Dividend - by people**
 
 Even better, money of Universal Dividend is issued **BY** people. This is a currency where **U** coin. Individuals are the only ones who may issue money, and choose the unities they desire.
 
@@ -91,11 +91,7 @@ To configure "beta_brousoufs" database, just run uCoin with the --config paramet
 $ ucoin --config beta_brousoufs
 ```
 
-All the parameters given after this will be stored in the database, allowing you to run uCoin with all its configuration just using:
-
-```bash
-$ ucoin --currency beta_brousoufs
-```
+All the parameters given after this will be stored in the database.
 
 ### Network parameters
 
@@ -124,12 +120,6 @@ Or both:
 ```bash
 $ ucoin --config beta_brousoufs -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
 ```
-
-#### Remote parameters
-
-It might be useful to precise remote network parameters, as uCoin nodes may not be front apps, hidden behind reverse proxies.
-
-To precise such parameters, use:
 
 Launching uCoin will results:
 

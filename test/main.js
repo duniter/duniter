@@ -37,7 +37,6 @@ var gets = [
   {expect: 501, url: '/hdc/amendments/view/000001/members'},
   {expect: 501, url: '/hdc/amendments/view/000001/self'},
   {expect: 501, url: '/hdc/amendments/view/000001/voters'},
-  {expect: 501, url: '/hdc/amendments/votes/SOME_AM_ID/signatures'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
   {expect: 501, url: '/hdc/community/votes'},
@@ -210,6 +209,24 @@ describe('Request on /hdc/amendments/votes', function(){
   it('POST should respond 400', function(done){
     request(app)
       .post('/hdc/amendments/votes')
+      .expect(400, done);
+  });
+});
+
+describe('Request on /hdc/amendments/votes/:amendment_id/signatures', function(){
+  it('GET with good URL param should respond 200', function(done){
+    request(app)
+      .get('/hdc/amendments/votes/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures')
+      .expect(200, done);
+  });
+  it('POST should respond 404', function(done){
+    request(app)
+      .post('/hdc/amendments/votes/SOME_AM_ID/signatures')
+      .expect(404, done);
+  });
+  it('GET with wrong URL param should respond 400', function(done){
+    request(app)
+      .get('/hdc/amendments/votes/SOME_AM_ID/signatures')
       .expect(400, done);
   });
 });

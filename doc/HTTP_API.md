@@ -26,7 +26,7 @@
       * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_ID]](#coinspgp_fingerprintviewcoin_id)
       * [community/join](#communityjoin)
-      * [community/members](#communitymembers)
+      * [community/memberships](#communitymembers)
       * [community/votes](#communityvotes)
       * [transactions/process/issuance](#transactionsprocessissuance)
       * [transactions/process/transfert](#transactionsprocesstransfert)
@@ -90,7 +90,7 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/amendments/votes/[AMENDMENT_ID]/signatures`
-* `hdc/community/members`
+* `hdc/community/memberships`
 * `hdc/community/votes`
 * `hdc/transactions/all`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
@@ -1005,7 +1005,7 @@ The posted membership request + posted signature.
 }
 ```
 
-#### `community/members`
+#### `community/memberships`
 **Goal**
 
 Merkle URL referencing membership requests of individual's registering/actualizing for the next amendment.

@@ -71,14 +71,14 @@ Serves PGP public keys according to HKP protocol.
 Flow | Interfaces
 ---- | -----------
 IN   | `community/join`
-OUT  | `community/members`
+OUT  | `community/memberships`
 OUT  | `amendments/view/[AMENDMENT_ID]/status`
 
 #### `community/join`
 
 Takes a membership request and a signature of it. If the signature matches and the corresponding OpenUDC key have enough members signatures on it (this requirement is implementation specific), adds the document to pending membership requests to be integrated in next amendment.
 
-#### `community/members`
+#### `community/memberships`
 
 Serves membership requests received by `community/join` since last amendment promotion.
 

@@ -309,6 +309,35 @@ AmendmentSchema.methods = {
     })
   },
 
+  buildVotersMerkle: function (done) {
+    var that = this;
+    this.getPrevious(function (err, previous) {
+      if(err){
+        done(err);
+        return;
+      }
+      async.waterfall([
+        function (next){
+          if(!previous){
+            next(null, []);
+            return;
+          }
+          mongoose.model('Merkle').votersWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
+            next(err, merkle.leaves());
+          });
+        },
+        function (leaves, next) {
+          leaves = _(leaves).union(that.getNewVoters());
+          leaves = _(leaves).difference(that.getLeavingVoters());
+          next(null, leaves);
+        }
+      ], function (err, leaves) {
+        if(leaves) leaves.sort();
+        done(err, leaves);
+      });
+    })
+  },
+
   loadFromFile: function(file, done) {
     var obj = this;
     fs.readFile(file, {encoding: "utf8"}, function (err, data) {

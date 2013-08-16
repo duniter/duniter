@@ -256,6 +256,22 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
                       }
                     ], callback);
                   },
+                  votersMerkle: function(callback){
+                    async.waterfall([
+                      function (next) {
+                        am.buildVotersMerkle(next);
+                      },
+                      function (leaves, next){
+                        Merkle.votersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+                          merkle.initialize(leaves);
+                          next(err, merkle);
+                        });
+                      },
+                      function (merkle, next) {
+                        merkle.save(next);
+                      }
+                    ], callback);
+                  }
                 },
                 function(err, results) {
                   // Info only

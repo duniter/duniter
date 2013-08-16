@@ -57,6 +57,53 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
     }
   };
 
+  this.status = function (req, res) {
+    if(!req.params.amendment_id){
+      res.send(400, "Amendment ID is required");
+      return;
+    }
+    var matches = req.params.amendment_id.match(/(\d+)-(\w{40})/);
+    if(!matches){
+      res.send(400, "Amendment ID format is incorrect, must be 'number-hash'");
+      return;
+    }
+    async.waterfall([
+      function (next){
+        var number = matches[1];
+        var hash = matches[2];
+        Merkle.membershipsWrittenForAmendment(number, hash, next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, function (hashes, done) {
+          Membership
+          .find({ hash: { $in: hashes } })
+          .sort('hash')
+          .exec(function (err, memberships) {
+            var map = {};
+            memberships.forEach(function (membs){
+              map[membs.hash] = membs.signature;
+            });
+            done(null, map);
+          });
+        }, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      merkleDone(req, res, json);
+    });
+
+    function merkleDone(req, res, json) {
+      if(req.query.nice){
+        res.setHeader("Content-Type", "text/plain");
+        res.end(JSON.stringify(json, null, "  "));
+      }
+      else res.end(JSON.stringify(json));
+    }
+  };
+
   this.self = function (req, res) {
     if(!req.params.amendment_id){
       res.send(400, "Amendment ID is required");

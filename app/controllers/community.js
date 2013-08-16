@@ -99,7 +99,7 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
-  this.members = function (req, res) {
+  this.memberships = function (req, res) {
     async.waterfall([
       function (next){
         Merkle.forNextMembership(next);

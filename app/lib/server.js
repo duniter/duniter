@@ -129,7 +129,7 @@ module.exports.express = {
     app.get(    '/hdc/coins/:pgp_fpr/list',                       notImplemented);
     app.get(    '/hdc/coins/:pgp_fpr/view/:coin_id',              notImplemented);
     app.post(   '/hdc/community/join',                            hdc.community.join);
-    app.get(    '/hdc/community/members',                         hdc.community.members);
+    app.get(    '/hdc/community/memberships',                     hdc.community.memberships);
     app.get(    '/hdc/community/votes',                           notImplemented);
     app.post(   '/hdc/transactions/process/issuance',             notImplemented);
     app.post(   '/hdc/transactions/process/transfert',            notImplemented);

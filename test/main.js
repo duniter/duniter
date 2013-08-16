@@ -33,8 +33,6 @@ var gets = [
   {expect: 501, url: '/pks/all'},
   {expect: 501, url: '/ucg/tht'},
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
-  {expect: 501, url: '/hdc/amendments/view/000001/members'},
-  {expect: 501, url: '/hdc/amendments/view/000001/voters'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
   {expect: 501, url: '/hdc/community/votes'},
@@ -168,15 +166,15 @@ describe('Request on /hdc/community/join', function(){
   });
 });
 
-describe('Request on /hdc/community/members', function(){
+describe('Request on /hdc/community/memberships', function(){
   it('GET should respond 200', function(done){
     request(app)
-      .get('/hdc/community/members')
+      .get('/hdc/community/memberships')
       .expect(200, done);
   });
   it('POST should respond 404', function(done){
     request(app)
-      .post('/hdc/community/members')
+      .post('/hdc/community/memberships')
       .expect(404, done);
   });
 });
@@ -219,11 +217,57 @@ describe('Request on /hdc/amendments/current', function(){
   });
 });
 
-describe('Request on /hdc/amendments/view/SOME_ID/self', function(){
-  it('GET should respond 400', function(done){
+describe('Request on /hdc/amendments/view/SOME_ID', function(){
+  it('/self GET should respond 400', function(done){
     request(app)
       .get('/hdc/amendments/view/SOME_ID/self')
       .expect(400, done);
+  });
+  it('/members GET should respond 400', function(done){
+    request(app)
+      .get('/hdc/amendments/view/SOME_ID/members')
+      .expect(400, done);
+  });
+  it('/voters GET should respond 400', function(done){
+    request(app)
+      .get('/hdc/amendments/view/SOME_ID/voters')
+      .expect(400, done);
+  });
+  it('/signatures GET should respond 400', function(done){
+    request(app)
+      .get('/hdc/amendments/view/SOME_ID/signatures')
+      .expect(400, done);
+  });
+  it('/status GET should respond 400', function(done){
+    request(app)
+      .get('/hdc/amendments/view/SOME_ID/status')
+      .expect(400, done);
+  });
+  // Good param
+  it('/self GET should respond 404', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/self')
+      .expect(404, done);
+  });
+  it('/members GET should respond 404', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/members')
+      .expect(404, done);
+  });
+  it('/voters GET should respond 404', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/voters')
+      .expect(404, done);
+  });
+  it('/signatures GET should respond 404', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/signatures')
+      .expect(404, done);
+  });
+  it('/status GET should respond 404', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/status')
+      .expect(404, done);
   });
 });
 

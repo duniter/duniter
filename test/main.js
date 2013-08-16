@@ -1,5 +1,6 @@
 var should  = require('should');
 var assert  = require('assert');
+var async   = require('async');
 var request = require('supertest');
 var fs      = require('fs');
 var jpgp    = require('../app/lib/jpgp');
@@ -69,15 +70,100 @@ function testPOST(url, expect) {
   });
 }
 
+console.log("Reading files...");
+var pubkeySnow    = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
+var pubkeySnowSig = fs.readFileSync(__dirname + '/data/snow.pub.asc', 'utf8');
+var pubkeyCat     = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
+var pubkeyCatSig  = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
+var pubkeyTobi    = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
+var pubkeyTobiSig = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
+
 var app;
 before(function (done) {
-  server.database.connect(config.db.database, config.db.host, config.db.port, function (err, dbconf) {
-    server.express.app(config.db.database, conf, function (err, appReady) {
-      app = appReady;
-      done();
-    });
+  async.waterfall([
+    function (next){
+      server.database.connect(config.db.database, config.db.host, config.db.port, next);
+    },
+    function (dbconf, next){
+      server.express.app(config.db.database, conf, next);
+    },
+    function (appReady, next){
+      server.database.reset(function (err) {
+        next(err, appReady);
+      })
+    }
+  ], function (err, result) {
+    console.log("App ready.");
+    app = result;
+    done(err);
   });
 });
+
+//----------- PKS -----------
+describe('Sending public key', function(){
+  it('of John Snow should respond 200', function(done){
+    request(app)
+      .post('/pks/add')
+      .send({
+        "keytext": pubkeySnow,
+        "keysign": pubkeySnowSig
+      })
+      .end(jsonProxy(function (err, json) {
+        isPubKey(json);
+        done(err);
+      }));
+  });
+  it('of LoL Cat should respond 200', function(done){
+    request(app)
+      .post('/pks/add')
+      .send({
+        "keytext": pubkeyCat,
+        "keysign": pubkeyCatSig
+      })
+      .end(jsonProxy(function (err, json) {
+        isPubKey(json);
+        done(err);
+      }));
+  });
+  it('of Tobi Uchiha should respond 200', function(done){
+    request(app)
+      .post('/pks/add')
+      .send({
+        "keytext": pubkeyTobi,
+        "keysign": pubkeyTobiSig
+      })
+      .end(jsonProxy(function (err, json) {
+        isPubKey(json);
+        done(err);
+      }));
+  });
+  it('of Tobi Uchiha with signature of John Snow should respond 400', function(done){
+    request(app)
+      .post('/pks/add')
+      .send({
+        "keytext": pubkeyTobi,
+        "keysign": pubkeySnowSig
+      })
+      .expect(400, done);
+  });
+});
+
+function isPubKey (json) {
+  json.should.have.property('email');
+  json.should.have.property('name');
+  json.should.have.property('fingerprint');
+  json.should.have.property('raw');
+  json.should.not.have.property('_id');
+  json.raw.should.not.match(/-----/g);
+}
+
+function jsonProxy (callback) {
+  return function (err, res) {
+    should.not.exist(err);
+    res.should.have.status(200);
+    callback(err, JSON.parse(res.text));
+  }
+}
 
 for (var i = 0; i < gets.length; i++) {
   testGET(gets[i].url, gets[i].expect);

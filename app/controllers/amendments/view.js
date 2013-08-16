@@ -24,7 +24,7 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       function (next){
         var number = matches[1];
         var hash = matches[2];
-        Merkle.signaturesOfAmendment(number, hash, next);
+        Merkle.signaturesWrittenForAmendment(number, hash, next);
       },
       function (merkle, next){
         Merkle.processForURL(req, merkle, function (hashes, done) {

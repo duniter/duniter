@@ -15,9 +15,11 @@
       * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
   * [hdc/](#hdc)
       * [amendments/current](#amendmentscurrent)
+      * [amendments/view/[AMENDMENT_ID]/status](#amendmentsviewamendment_idstatus)
       * [amendments/view/[AMENDMENT_ID]/members](#amendmentsviewamendment_idmembers)
       * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
       * [amendments/view/[AMENDMENT_ID]/voters](#amendmentsviewamendment_idvoters)
+      * [amendments/view/[AMENDMENT_ID]/signatures](#amendmentsviewamendment_idsignatures)
       * [amendments/votes (GET)](#amendmentsvotes-get)
       * [amendments/votes (POST)](#amendmentsvotes-post)
       * [amendments/votes/[AMENDMENT_ID]/signatures](#amendmentsvotesamendment_idsignatures)
@@ -83,8 +85,10 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
+* `hdc/amendments/view/[AMENDMENT_ID]/status`
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
+* `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/amendments/votes/[AMENDMENT_ID]/signatures`
 * `hdc/community/members`
 * `hdc/community/votes`
@@ -558,7 +562,7 @@ The current amendment.
 }
 ```
 
-#### `amendments/view/[AMENDMENT_ID]/members`
+#### `amendments/view/[AMENDMENT_ID]/status`
 **Goal**
 
 Merkle URL refering to the membership requests for every member of the Community for this amendment.
@@ -612,6 +616,53 @@ Merkle URL leaf: membership request
 }
 ```
 
+#### `amendments/view/[AMENDMENT_ID]/members`
+**Goal**
+
+Merkle URL refering to the members present in the Community for this amendment.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
+}
+```
+
+Merkle URL leaf: member
+```json
+{
+  "index": 1,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": "31A6302161AC8F5938969E85399EB3415C237F93"
+  }
+}
+```
+
 #### `amendments/view/[AMENDMENT_ID]/self`
 **Goal**
 
@@ -651,7 +702,54 @@ The requested amendment.
 #### `amendments/view/[AMENDMENT_ID]/voters`
 **Goal**
 
-Merkle URL refering to the voters of the Community for this amendment.
+Merkle URL refering to the voters listed in this amendment.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "levels": [
+    {
+      "level": 0,
+      "nodes": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ]
+    },{
+      "level": 1,
+      "nodes": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }]
+  }
+}
+```
+
+Merkle URL leaf: voter (also a member)
+```json
+{
+  "index": 1,
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": "31A6302161AC8F5938969E85399EB3415C237F93"
+  }
+}
+```
+
+#### `amendments/view/[AMENDMENT_ID]/signatures`
+**Goal**
+
+Merkle URL refering to the signatures of the Community listed in this amendment.
 
 **Parameters**
 

@@ -72,7 +72,7 @@ Flow | Interfaces
 ---- | -----------
 IN   | `community/join`
 OUT  | `community/members`
-OUT  | `amendments/view/[AMENDMENT_ID]/members`
+OUT  | `amendments/view/[AMENDMENT_ID]/status`
 
 #### `community/join`
 
@@ -82,7 +82,7 @@ Takes a membership request and a signature of it. If the signature matches and t
 
 Serves membership requests received by `community/join` since last amendment promotion.
 
-#### `amendments/view/[AMENDMENT_ID]/members`
+#### `amendments/view/[AMENDMENT_ID]/status`
 
 Serves membership requests received and treated for the given amendment.
 
@@ -122,7 +122,7 @@ Flow | Interfaces
 ---- | -----------
 IN   | `amendments/votes (POST)`
 OUT  | `amendments/votes (GET)`
-OUT  | `amendments/view/[AMENDMENT_ID]/voters`
+OUT  | `amendments/view/[AMENDMENT_ID]/signatures`
 OUT  | `amendments/votes/[AMENDMENT_ID]/signatures`
 OUT  | `community/votes`
 
@@ -134,7 +134,7 @@ Refer to the same section in [Amendments - amendments/votes (POST)](#amendmentsv
 
 Serves an index of all the received votes. Index gives, for each amendment number, the different hashes and the number of votes for each hash.
 
-#### `amendments/view/[AMENDMENT_ID]/voters`
+#### `amendments/view/[AMENDMENT_ID]/signatures`
 
 Serves, for a given amendment, a Merkle tree of the signatures refering to the `VotersSigRoot` field of the amendment.
 

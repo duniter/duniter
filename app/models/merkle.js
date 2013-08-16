@@ -85,6 +85,14 @@ MerkleSchema.statics.membershipsWrittenForAmendment = function (number, hash, do
   retrieve({ type: 'amendment_memberships', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
+MerkleSchema.statics.membersWrittenForAmendment = function (number, hash, done) {
+  retrieve({ type: 'amendment_members', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
+};
+
+MerkleSchema.statics.votersWrittenForAmendment = function (number, hash, done) {
+  retrieve({ type: 'amendment_voters', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
+};
+
 MerkleSchema.statics.signatoriesOfAmendment = function (number, hash, done) {
   retrieve({ type: 'amendment_signatories', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };

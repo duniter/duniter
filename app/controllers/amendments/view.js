@@ -47,14 +47,6 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       }
       merkleDone(req, res, json);
     });
-
-    function merkleDone(req, res, json) {
-      if(req.query.nice){
-        res.setHeader("Content-Type", "text/plain");
-        res.end(JSON.stringify(json, null, "  "));
-      }
-      else res.end(JSON.stringify(json));
-    }
   };
 
   this.status = function (req, res) {
@@ -94,14 +86,40 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       }
       merkleDone(req, res, json);
     });
+  };
 
-    function merkleDone(req, res, json) {
-      if(req.query.nice){
-        res.setHeader("Content-Type", "text/plain");
-        res.end(JSON.stringify(json, null, "  "));
-      }
-      else res.end(JSON.stringify(json));
+  this.members = function (req, res) {
+    if(!req.params.amendment_id){
+      res.send(400, "Amendment ID is required");
+      return;
     }
+    var matches = req.params.amendment_id.match(/(\d+)-(\w{40})/);
+    if(!matches){
+      res.send(400, "Amendment ID format is incorrect, must be 'number-hash'");
+      return;
+    }
+    async.waterfall([
+      function (next){
+        var number = matches[1];
+        var hash = matches[2];
+        Merkle.membersWrittenForAmendment(number, hash, next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, function (hashes, done) {
+          var map = {};
+          merkle.leaves().forEach(function (leaf) {
+            map[leaf] = leaf;
+          });
+          done(null, map);
+        }, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      merkleDone(req, res, json);
+    });
   };
 
   this.self = function (req, res) {
@@ -142,4 +160,12 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
   };
 
   return this;
+}
+
+function merkleDone(req, res, json) {
+  if(req.query.nice){
+    res.setHeader("Content-Type", "text/plain");
+    res.end(JSON.stringify(json, null, "  "));
+  }
+  else res.end(JSON.stringify(json));
 }

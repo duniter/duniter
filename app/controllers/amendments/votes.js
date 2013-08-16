@@ -240,6 +240,22 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
                       }
                     ], callback);
                   },
+                  membersMerkle: function(callback){
+                    async.waterfall([
+                      function (next) {
+                        am.buildMembersMerkle(next);
+                      },
+                      function (leaves, next){
+                        Merkle.membersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+                          merkle.initialize(leaves);
+                          next(err, merkle);
+                        });
+                      },
+                      function (merkle, next) {
+                        merkle.save(next);
+                      }
+                    ], callback);
+                  },
                 },
                 function(err, results) {
                   // Info only

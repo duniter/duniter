@@ -68,6 +68,36 @@ module.exports.database = {
     });
   },
 
+  reset: function(done) {
+    async.waterfall([
+      function (next){
+        mongoose.model('Merkle').remove({}, function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        mongoose.model('Membership').remove({}, function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        mongoose.model('Amendment').remove({}, function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        mongoose.model('PublicKey').remove({}, function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        mongoose.model('Vote').remove({}, function (err) {
+          next(err);
+        });
+      }
+    ], done);
+  },
+
   disconnect: function() {
     mongoose.disconnect(function (err) {
       if(err)

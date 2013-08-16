@@ -15,6 +15,7 @@ var PublicKeySchema = new Schema({
 });
 
 PublicKeySchema.methods = {
+  
   construct: function(done) {
     var obj = this;
     var k = jpgp().certificate(obj.raw);
@@ -36,12 +37,17 @@ PublicKeySchema.methods = {
     }
     done();
   },
-  cleanForTransport: function () {
-    this.raw = this.raw.replace('-----BEGIN PGP PUBLIC KEY BLOCK-----', 'BEGIN PGP PUBLIC KEY BLOCK');
-    this.raw = this.raw.replace('-----END PGP PUBLIC KEY BLOCK-----', 'END PGP PUBLIC KEY BLOCK');
-    this._id = null;
-    delete this._id;
-    return this;
+
+  json: function () {
+    var raw = this.raw.replace('-----BEGIN PGP PUBLIC KEY BLOCK-----', 'BEGIN PGP PUBLIC KEY BLOCK');
+    raw = raw.replace('-----END PGP PUBLIC KEY BLOCK-----', 'END PGP PUBLIC KEY BLOCK');
+    return {
+      "email": this.email,
+      "name": this.name,
+      "fingerprint": this.fingerprint,
+      "comment": this.comment,
+      "raw": raw
+    };
   }
 };
 
@@ -116,12 +122,34 @@ PublicKeySchema.statics.search = function (motif, done) {
 };
 
 PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
-  jpgp()
-    .publicKey(asciiArmored)
-    .data(asciiArmored)
-    .noCarriage()
-    .signature(signature)
-    .verify(done);
+  async.waterfall([
+    function (next){
+      var keyID = jpgp().signature(signature).issuer();
+      var cert = jpgp().certificate(asciiArmored);
+      var fpr = cert.fingerprint;
+      if(!keyID){
+        next('Cannot find issuer of signature');
+        return;
+      }
+      if(!fpr){
+        next('Cannot extract fingerprint from certificate');
+        return;
+      }
+      if(fpr.indexOf(keyID) == -1){
+        next('This certificate is not owned by the signatory');
+        return;
+      }
+      next();
+    },
+    function (next){
+      jpgp()
+        .publicKey(asciiArmored)
+        .data(asciiArmored)
+        .noCarriage()
+        .signature(signature)
+        .verify(next);
+    }
+  ], done);
 };
 
 var PublicKey = mongoose.model('PublicKey', PublicKeySchema);

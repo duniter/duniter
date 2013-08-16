@@ -36,11 +36,12 @@ module.exports.lookup = function (req, res) {
           });
           break;
         case 'index':
+          var cleaned = [];
           foundKeys.forEach(function (k) {
-            k.cleanForTransport();
+            cleaned.push(k.json());
           });
           res.writeHead(200);
-          res.end(JSON.stringify({"keys": foundKeys}));
+          res.end(JSON.stringify({"keys": cleaned}));
           break;
         default:
           res.send(501, 'Operation not supported.');
@@ -163,9 +164,8 @@ module.exports.add = function (req, res) {
                 // Creates/updates done.
                 if(!err){
                   var pk = pubKeys[0];
-                  pk.cleanForTransport();
                   res.writeHead(200);
-                  res.end(JSON.stringify(pk));
+                  res.end(JSON.stringify(pk.json()));
                 }
                 else{
                   res.send(500, 'Error saving to database: ' + err);

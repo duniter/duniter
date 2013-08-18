@@ -15,7 +15,7 @@ var config = {
     }
   },
   db: {
-    database : "ucoin_test",
+    database : "beta_brousouf",
     host: "localhost"
   }
 };
@@ -108,9 +108,9 @@ describe('Sending public key', function(){
         "keytext": pubkeySnow,
         "keysign": pubkeySnowSig
       })
-      .end(jsonProxy(function (err, json) {
+      .end(jsonProxy(function (json) {
         isPubKey(json);
-        done(err);
+        done();
       }));
   });
   it('of LoL Cat should respond 200', function(done){
@@ -120,9 +120,9 @@ describe('Sending public key', function(){
         "keytext": pubkeyCat,
         "keysign": pubkeyCatSig
       })
-      .end(jsonProxy(function (err, json) {
+      .end(jsonProxy(function (json) {
         isPubKey(json);
-        done(err);
+        done();
       }));
   });
   it('of Tobi Uchiha should respond 200', function(done){
@@ -132,9 +132,9 @@ describe('Sending public key', function(){
         "keytext": pubkeyTobi,
         "keysign": pubkeyTobiSig
       })
-      .end(jsonProxy(function (err, json) {
+      .end(jsonProxy(function (json) {
         isPubKey(json);
-        done(err);
+        done();
       }));
   });
   it('of Tobi Uchiha with signature of John Snow should respond 400', function(done){
@@ -145,6 +145,52 @@ describe('Sending public key', function(){
         "keysign": pubkeySnowSig
       })
       .expect(400, done);
+  });
+});
+
+var joinSnow = fs.readFileSync(__dirname + '/data/membership/snow.join', 'utf8');
+var joinCat  = fs.readFileSync(__dirname + '/data/membership/lolcat.join', 'utf8');
+var joinTobi = fs.readFileSync(__dirname + '/data/membership/tobi.join', 'utf8');
+//----------- Memberships -----------
+describe('Sending membership', function(){
+  it('of John Snow should respond 200', function(done){
+    request(app)
+      .post('/hdc/community/join')
+      .send({
+        "request": joinSnow.substr(0, joinSnow.indexOf('-----BEGIN')),
+        "signature": joinSnow.substr(joinSnow.indexOf('-----BEGIN'))
+      })
+      .end(jsonProxy(function (json) {
+        json.should.have.property('request');
+        json.should.have.property('signature');
+        done();
+      }));
+  });
+  it('of LoL Cat should respond 200', function(done){
+    request(app)
+      .post('/hdc/community/join')
+      .send({
+        "request": joinCat.substr(0, joinCat.indexOf('-----BEGIN')),
+        "signature": joinCat.substr(joinCat.indexOf('-----BEGIN'))
+      })
+      .end(jsonProxy(function (json) {
+        json.should.have.property('request');
+        json.should.have.property('signature');
+        done();
+      }));
+  });
+  it('of Tobi Uchiha should respond 200', function(done){
+    request(app)
+      .post('/hdc/community/join')
+      .send({
+        "request": joinTobi.substr(0, joinTobi.indexOf('-----BEGIN')),
+        "signature": joinTobi.substr(joinTobi.indexOf('-----BEGIN'))
+      })
+      .end(jsonProxy(function (json) {
+        json.should.have.property('request');
+        json.should.have.property('signature');
+        done();
+      }));
   });
 });
 
@@ -159,9 +205,12 @@ function isPubKey (json) {
 
 function jsonProxy (callback) {
   return function (err, res) {
+    if(res.status != 200){
+      err = res.text;
+    }
     should.not.exist(err);
     res.should.have.status(200);
-    callback(err, JSON.parse(res.text));
+    callback(JSON.parse(res.text));
   }
 }
 
@@ -225,7 +274,7 @@ describe('GET', function(){
       .expect(200)
       .end(function (err, res) {
         var json = JSON.parse(res.text);
-        json.currency.should.equal("ucoin_test");
+        json.currency.should.equal("beta_brousouf");
         json.key.should.equal("C73882B64B7E72237A2F460CE9CAB76D19A8651E");
         should.not.exist(json.ipv4);
         should.not.exist(json.ipv6);

@@ -55,7 +55,7 @@ function defaultPromotion (amendment, decision) {
       async.waterfall([
         function (pass){
           if(amendment.number != am.number + 1){
-            pass('Not promoted: not a follower of current amendment');
+            pass('Not promoted: not a follower of current amendment (#' + amendment.number + ' does not follow #' + am.number + ')');
             return;
           }
           pass();
@@ -72,7 +72,7 @@ function defaultPromotion (amendment, decision) {
         },
         function (sigMerkle, pass){
           if(sigMerkle.root() != amendment.votersSigRoot || sigMerkle.leaves().length != amendment.votersCount){
-            pass('Not promoted: this amendment does not match received signatures of current amendment');
+            pass('Not promoted: this amendment does not match received signatures of current amendment (expect ' + sigMerkle.leaves().length + " votes with root " + sigMerkle.root() + ", got " + amendment.votersCount + " votes with root " + amendment.votersSigRoot);
             return;
           }
           pass();
@@ -81,18 +81,23 @@ function defaultPromotion (amendment, decision) {
           Merkle.signatoriesOfAmendment(am.number, am.hash, pass);
         },
         function (prevVotersMerkle, pass){
-          Merkle.signatoriesOfAmendment(am.number, am.hash, function (err, merkle) {
+          Merkle.signatoriesOfAmendment(amendment.number, amendment.hash, function (err, merkle) {
             pass(err, prevVotersMerkle, merkle);
           });
         },
         function (prevVotersMerkle, votersMerkle, pass) {
-          var inVoters = _(votersMerkle).difference(prevVotersMerkle);
-          var outVoters = _(prevVotersMerkle).difference(votersMerkle);
+          var inVoters = _(votersMerkle.leaves()).difference(prevVotersMerkle.leaves());
+          var outVoters = _(prevVotersMerkle.leaves()).difference(votersMerkle.leaves());
           pass(null, prevVotersMerkle, votersMerkle, inVoters, outVoters);
         },
         function (prevVotersMerkle, votersMerkle, inVoters, outVoters, pass) {
-          if(outVoters.length > prevVotersMerkle.length / 3.0){
-            pass('Not promoted: not enough votes for this amendment (requires at least 2/3 of the previous voters)');
+          console.log("Prevs: " + prevVotersMerkle.leaves());
+          console.log("Voter: " + votersMerkle.leaves());
+          console.log("In: " + inVoters);
+          console.log("Out: " + outVoters);
+          if(outVoters.length > 0){
+          // if(outVoters.length > prevVotersMerkle.length / 3.0){
+            pass('Not promoted: not enough votes for this amendment (requires at least 3/3 of the previous voters)');
             return;
           }
           pass();

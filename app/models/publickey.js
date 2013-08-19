@@ -69,7 +69,7 @@ PublicKeySchema.statics.getTheOne = function (keyID, done) {
 PublicKeySchema.statics.getFromSignature = function (asciiArmoredsig, done) {
   var keyID = jpgp().signature(asciiArmoredsig).issuer();
   if(!(keyID && keyID.length == 16)){
-    done('Cannot identify signature issuer`s keyID');
+    done('Cannot identify signature issuer`s keyID: ' + keyID);
     return;
   }
   this.getTheOne(keyID, done);

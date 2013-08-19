@@ -234,7 +234,7 @@ AmendmentSchema.methods = {
                 return;
               }
               if(votes.length == 0 || votes.length > 1){
-                callback('Integrity error : zero or more that one signatures for amendment #' + that.number + ' and member ' + item);
+                callback('Integrity error : ' + votes.length + ' signatures for amendment #' + that.number + ' and member ' + item);
                 return;
               }
               newVotes.push(votes[0].hash);
@@ -258,7 +258,7 @@ AmendmentSchema.methods = {
                 return;
               }
               if(votes.length == 0 || votes.length > 1){
-                callback('Integrity error : zero or more that one signatures for amendment #' + that.number + ' and member ' + item);
+                callback('Integrity error : ' + votes.length + ' signatures for amendment #' + that.number + ' and member ' + item);
                 return;
               }
               leavingVotes.push(votes[0].hash);
@@ -386,6 +386,23 @@ AmendmentSchema.statics.current = function (done) {
         done(err, current);
       else
         done(err);
+    }
+  });
+};
+
+AmendmentSchema.statics.findByNumberAndHash = function (number, hash, done) {
+
+  this.find({ number: number, hash: hash }, function (err, amends) {
+    if(amends && amends.length == 1){
+      done(err, amends[0]);
+      return;
+    }
+    if(!amends || amends.length == 0){
+      done('No amendment found');
+      return;
+    }
+    if(amends || amends.length > 1){
+      done('More than one amendment found');
     }
   });
 };

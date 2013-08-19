@@ -88,7 +88,9 @@ var voteCatAM0    = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-lolcat.vo
 var voteTobiAM0   = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-tobi.vote', 'utf8');
 var voteSnowAM0   = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.vote', 'utf8');
 var voteSnowAM0_2 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.dissident.vote', 'utf8');
-var voteSnowAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/OK-snow.vote', 'utf8');
+var voteSnowAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/snow.vote', 'utf8');
+var voteTobiAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.vote', 'utf8');
+var voteCatAM1    = fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.vote', 'utf8');
 
 var app;
 var apiRes = {
@@ -176,12 +178,14 @@ before(function (done) {
     function (next) { communityJoin(joinCat, next); },
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
-    function (next) { vote(voteCatAM0, next); },
-    function (next) { vote(voteTobiAM0, next); },
-    function (next) { vote(voteSnowAM0, next); },
+    function (next) { console.log("Sending Cat's AM0..."); vote(voteCatAM0, next); },
+    function (next) { console.log("Sending Tobi's AM0..."); vote(voteTobiAM0, next); },
+    function (next) { console.log("Sending Snow's AM0..."); vote(voteSnowAM0, next); },
     function (next) { get('/hdc/amendments/votes', next); },
-    function (next) { vote(voteSnowAM0_2, next); },
-    function (next) { vote(voteSnowAM1, next); },
+    function (next) { console.log("Sending Snow's AM0 dissident..."); vote(voteSnowAM0_2, next); },
+    function (next) { console.log("Sending Snow's AM1..."); vote(voteSnowAM1, next); },
+    function (next) { console.log("Sending Tobi's AM1..."); vote(voteTobiAM1, next); },
+    function (next) { console.log("Sending Cat's AM1..."); vote(voteCatAM1, next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
   ], function (err) {
@@ -277,8 +281,9 @@ describe('Sending membership', function(){
 
 function checkVote (index) {
   return function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
+    // console.log(apiRes['/hdc/amendments/votes'][index].res.text);
     apiRes['/hdc/amendments/votes'][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
     json.should.have.property('amendment');
     json.should.have.property('signature');
   }
@@ -317,8 +322,8 @@ function checkIndex2 (index) {
     json.amendments[0].hashes[1].hash.should.equal('0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763');
     json.amendments[1].hashes[0].should.have.property('hash');
     json.amendments[1].hashes[0].should.have.property('votesCount');
-    json.amendments[1].hashes[0].votesCount.should.equal(1);
-    json.amendments[1].hashes[0].hash.should.equal('2C5AF9BC4F355A5BB771B8EE250E97D4451EE578');
+    json.amendments[1].hashes[0].votesCount.should.equal(3);
+    json.amendments[1].hashes[0].hash.should.equal('0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
   };
 }
 
@@ -328,8 +333,10 @@ describe('Sending vote', function(){
   it('AM0 of Tobi Uchiha should respond 200', checkVote(++index));
   it('AM0 of John Snow should respond 200', checkVote(++index));
   it('- index should have ', checkIndex1(++index));
-  it('AM1 of John Snow should respond 200', checkVote(++index));
   it('AM0 (dissident) of John Snow should respond 200', checkVote(++index));
+  it('AM1 of John Snow should respond 200', checkVote(++index));
+  it('AM1 of Tobi should respond 200', checkVote(++index));
+  it('AM1 of Cat should respond 200', checkVote(++index));
   it('- index should have ', checkIndex2(++index));
 });
 
@@ -337,8 +344,8 @@ describe('Sending vote', function(){
 
 function checkAmendment (index) {
   return function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/current'][index].res.text);
     apiRes['/hdc/amendments/current'][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes['/hdc/amendments/current'][index].res.text);
     json.should.have.property('version');
     json.should.have.property('currency');
     json.should.have.property('number');
@@ -560,28 +567,55 @@ describe('Request on /hdc/amendments/view/SOME_ID', function(){
   // Good param
   it('/self GET should respond 404', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/self')
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/self')
       .expect(404, done);
   });
   it('/members GET should respond 404', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/members')
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/members')
       .expect(404, done);
   });
   it('/voters GET should respond 404', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/voters')
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/voters')
       .expect(404, done);
   });
   it('/signatures GET should respond 404', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/signatures')
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures')
       .expect(404, done);
   });
   it('/status GET should respond 404', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures/status')
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/status')
       .expect(404, done);
+  });
+
+  // Better param
+  it('/self GET should respond 200', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self')
+      .expect(200, done);
+  });
+  it('/members GET should respond 200', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members')
+      .expect(200, done);
+  });
+  it('/voters GET should respond 200', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters')
+      .expect(200, done);
+  });
+  it('/signatures GET should respond 200', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures')
+      .expect(200, done);
+  });
+  it('/status GET should respond 200', function(done){
+    request(app)
+      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/status')
+      .expect(200, done);
   });
 });
 

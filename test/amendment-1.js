@@ -50,8 +50,8 @@ describe('Amendment', function(){
       assert.equal(amTest.membersCount, 3);
     });
 
-    it('should have members status root BF5E8C1A8FD9AE05520A4D886846903546207470', function(){
-      assert.equal(amTest.membersStatusRoot, 'BF5E8C1A8FD9AE05520A4D886846903546207470');
+    it('should have members status root 2A42C5CCC315AF3B9D009CC8E635F8492111F91D', function(){
+      assert.equal(amTest.membersStatusRoot, '2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
     });
 
     it('should have F5ACFD67FC908D28C0CFDAD886249AC260515C90 voters hash', function(){
@@ -67,16 +67,16 @@ describe('Amendment', function(){
       assert.equal(newVoters[2], "C73882B64B7E72237A2F460CE9CAB76D19A8651E");
     });
 
-    it('should have voters signatures root DD9485E79D8AF76E5DAA1D689BC96B65792AFE39', function(){
-      assert.equal(amTest.votersSigRoot, 'DD9485E79D8AF76E5DAA1D689BC96B65792AFE39');
+    it('should have voters signatures root DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA', function(){
+      assert.equal(amTest.votersSigRoot, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
     });
 
-    it('its computed hash should be 5756AC297C0A536D1AB5BD6DBC1F2ADB5A88769E', function(){
-      assert.equal(amTest.hash, '5756AC297C0A536D1AB5BD6DBC1F2ADB5A88769E');
+    it('its computed hash should be 0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C', function(){
+      assert.equal(amTest.hash, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
     });
 
-    it('its manual hash should be 5756AC297C0A536D1AB5BD6DBC1F2ADB5A88769E', function(){
-      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '5756AC297C0A536D1AB5BD6DBC1F2ADB5A88769E');
+    it('its manual hash should be 0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C', function(){
+      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
     });
   });
 });

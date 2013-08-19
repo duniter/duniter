@@ -39,10 +39,21 @@ function JPGP() {
     var issuer = "";
     try{
       var signatures = openpgp.read_message(this.signature);
-      var sig = signatures[2];
+      var sig = null;
+      signatures.forEach(function (siga) {
+        if(siga.messagePacket && siga.messagePacket.tagType == 2)
+          sig = siga;
+      });
+      if(!sig){
+        throw new Error("No signature packet found");
+      }
       issuer = hexstrdump(sig.signature.getIssuer()).toUpperCase();
+      if(!issuer){
+        issuer = JSON.stringify(signatures);
+      }
     }
     catch(ex){
+      console.log("Error with signature: " + ex);
     }
     return issuer;
   };

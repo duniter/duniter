@@ -77,6 +77,10 @@ VoteSchema.methods = {
             return;
           }
           PublicKey.getFromSignature(that.signature, function (err, publicKey) {
+            if(err){
+              done(err);
+              return;
+            }
             that.pubkey = publicKey;
             that.issuer = publicKey.fingerprint;
             done(null, that);

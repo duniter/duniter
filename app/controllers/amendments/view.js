@@ -20,32 +20,39 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       res.send(400, "Amendment ID format is incorrect, must be 'number-hash'");
       return;
     }
-    async.waterfall([
-      function (next){
-        var number = matches[1];
-        var hash = matches[2];
-        Merkle.signaturesWrittenForAmendment(number, hash, next);
-      },
-      function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
-          Vote
-          .find({ hash: { $in: hashes } })
-          .sort('hash')
-          .exec(function (err, votes) {
-            var map = {};
-            votes.forEach(function (vote){
-              map[vote.hash] = vote.signature;
-            });
-            done(null, map);
-          });
-        }, next);
-      }
-    ], function (err, json) {
+
+    var number = matches[1];
+    var hash = matches[2];
+    Amendment.findByNumberAndHash(number, hash, function (err, am) {
       if(err){
-        res.send(500, err);
+        res.send(404, err);
         return;
       }
-      merkleDone(req, res, json);
+      async.waterfall([
+        function (next){
+          Merkle.signaturesWrittenForAmendment(am.number, am.hash, next);
+        },
+        function (merkle, next){
+          Merkle.processForURL(req, merkle, function (hashes, done) {
+            Vote
+            .find({ hash: { $in: hashes } })
+            .sort('hash')
+            .exec(function (err, votes) {
+              var map = {};
+              votes.forEach(function (vote){
+                map[vote.hash] = vote.signature;
+              });
+              done(null, map);
+            });
+          }, next);
+        }
+      ], function (err, json) {
+        if(err){
+          res.send(500, err);
+          return;
+        }
+        merkleDone(req, res, json);
+      });
     });
   };
 
@@ -59,32 +66,39 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       res.send(400, "Amendment ID format is incorrect, must be 'number-hash'");
       return;
     }
-    async.waterfall([
-      function (next){
-        var number = matches[1];
-        var hash = matches[2];
-        Merkle.membershipsWrittenForAmendment(number, hash, next);
-      },
-      function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
-          Membership
-          .find({ hash: { $in: hashes } })
-          .sort('hash')
-          .exec(function (err, memberships) {
-            var map = {};
-            memberships.forEach(function (membs){
-              map[membs.hash] = membs.signature;
-            });
-            done(null, map);
-          });
-        }, next);
-      }
-    ], function (err, json) {
+
+    var number = matches[1];
+    var hash = matches[2];
+    Amendment.findByNumberAndHash(number, hash, function (err, am) {
       if(err){
-        res.send(500, err);
+        res.send(404, err);
         return;
       }
-      merkleDone(req, res, json);
+      async.waterfall([
+        function (next){
+          Merkle.membershipsWrittenForAmendment(am.number, am.hash, next);
+        },
+        function (merkle, next){
+          Merkle.processForURL(req, merkle, function (hashes, done) {
+            Membership
+            .find({ hash: { $in: hashes } })
+            .sort('hash')
+            .exec(function (err, memberships) {
+              var map = {};
+              memberships.forEach(function (membs){
+                map[membs.hash] = membs.signature;
+              });
+              done(null, map);
+            });
+          }, next);
+        }
+      ], function (err, json) {
+        if(err){
+          res.send(500, err);
+          return;
+        }
+        merkleDone(req, res, json);
+      });
     });
   };
 
@@ -98,27 +112,34 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       res.send(400, "Amendment ID format is incorrect, must be 'number-hash'");
       return;
     }
-    async.waterfall([
-      function (next){
-        var number = matches[1];
-        var hash = matches[2];
-        Merkle.membersWrittenForAmendment(number, hash, next);
-      },
-      function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
-          var map = {};
-          merkle.leaves().forEach(function (leaf) {
-            map[leaf] = leaf;
-          });
-          done(null, map);
-        }, next);
-      }
-    ], function (err, json) {
+
+    var number = matches[1];
+    var hash = matches[2];
+    Amendment.findByNumberAndHash(number, hash, function (err, am) {
       if(err){
-        res.send(500, err);
+        res.send(404, err);
         return;
       }
-      merkleDone(req, res, json);
+      async.waterfall([
+        function (next){
+          Merkle.membersWrittenForAmendment(am.number, am.hash, next);
+        },
+        function (merkle, next){
+          Merkle.processForURL(req, merkle, function (hashes, done) {
+            var map = {};
+            merkle.leaves().forEach(function (leaf) {
+              map[leaf] = leaf;
+            });
+            done(null, map);
+          }, next);
+        }
+      ], function (err, json) {
+        if(err){
+          res.send(500, err);
+          return;
+        }
+        merkleDone(req, res, json);
+      });
     });
   };
 
@@ -132,27 +153,34 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       res.send(400, "Amendment ID format is incorrect, must be 'number-hash'");
       return;
     }
-    async.waterfall([
-      function (next){
-        var number = matches[1];
-        var hash = matches[2];
-        Merkle.votersWrittenForAmendment(number, hash, next);
-      },
-      function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
-          var map = {};
-          merkle.leaves().forEach(function (leaf) {
-            map[leaf] = leaf;
-          });
-          done(null, map);
-        }, next);
-      }
-    ], function (err, json) {
+
+    var number = matches[1];
+    var hash = matches[2];
+    Amendment.findByNumberAndHash(number, hash, function (err, am) {
       if(err){
-        res.send(500, err);
+        res.send(404, err);
         return;
       }
-      merkleDone(req, res, json);
+      async.waterfall([
+        function (next){
+          Merkle.votersWrittenForAmendment(am.number, am.hash, next);
+        },
+        function (merkle, next){
+          Merkle.processForURL(req, merkle, function (hashes, done) {
+            var map = {};
+            merkle.leaves().forEach(function (leaf) {
+              map[leaf] = leaf;
+            });
+            done(null, map);
+          }, next);
+        }
+      ], function (err, json) {
+        if(err){
+          res.send(500, err);
+          return;
+        }
+        merkleDone(req, res, json);
+      });
     });
   };
 
@@ -170,18 +198,7 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
       function (next){
         var number = matches[1];
         var hash = matches[2];
-        Amendment.find({ number: number, hash: hash }, next);
-      },
-      function (ams, next){
-        var am = null;
-        if(ams.length > 0){
-          am = ams[0];
-        }
-        if(!am){
-          next('Amendment not found');
-          return;
-        }
-        next(null, am);
+        Amendment.findByNumberAndHash(number, hash, next);
       }
     ], function (err, found) {
       if(err){

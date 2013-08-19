@@ -10,7 +10,8 @@ var Vote       = mongoose.model('Vote');
 
 module.exports = function (pgp, currency, conf, shouldBePromoted) {
 
-  this.signatures = function (req, res) {
+  this.sigs = function (req, res) {
+
     if(!req.params.amendment_id){
       res.send(400, "Amendment ID is required");
       return;

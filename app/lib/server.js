@@ -134,7 +134,6 @@ module.exports.express = {
       app.use(express.errorHandler());
     }
 
-    var amend = require('../controllers/amendments');
     var pks   = require('../controllers/pks');
     var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
     var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
@@ -155,7 +154,7 @@ module.exports.express = {
     app.get(    '/hdc/amendments/view/:amendment_id/voters',      hdc.amendments.voters);
     app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
-    app.get(    '/hdc/amendments/votes/:amendment_id/signatures', hdc.amendments.votes.signatures);
+    app.get(    '/hdc/amendments/votes/:amendment_id/signatures', hdc.amendments.votes.sigs);
     app.get(    '/hdc/coins/:pgp_fpr/list',                       notImplemented);
     app.get(    '/hdc/coins/:pgp_fpr/view/:coin_id',              notImplemented);
     app.post(   '/hdc/community/join',                            hdc.community.join);

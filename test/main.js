@@ -347,20 +347,37 @@ before(function (done) {
 describe('Sending public key', function(){
   var index = -1;
   var url = '/pks/add';
+  var url2 = '/pks/lookup?op=index&search=';
   it('of John Snow should respond 200', function(){
     apiRes[url][++index].res.should.have.status(200);
     isPubKey(JSON.parse(apiRes[url][index].res.text));
+    apiRes[url2][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes[url2][index].res.text);
+    json.should.have.property('keys');
+    json.keys.length.should.equal(1);
   });
   it('of LoL Cat should respond 200', function(){
     apiRes[url][++index].res.should.have.status(200);
     isPubKey(JSON.parse(apiRes[url][index].res.text));
+    apiRes[url2][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes[url2][index].res.text);
+    json.should.have.property('keys');
+    json.keys.length.should.equal(2);
   });
   it('of Tobi Uchiha should respond 200', function(){
     apiRes[url][++index].res.should.have.status(200);
     isPubKey(JSON.parse(apiRes[url][index].res.text));
+    apiRes[url2][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes[url2][index].res.text);
+    json.should.have.property('keys');
+    json.keys.length.should.equal(3);
   });
   it('of Tobi Uchiha with signature of John Snow should respond 400', function(){
     apiRes[url][++index].res.should.have.status(400);
+    apiRes[url2][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes[url2][index].res.text);
+    json.should.have.property('keys');
+    json.keys.length.should.equal(3);
   });
 });
 

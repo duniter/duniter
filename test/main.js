@@ -1,10 +1,12 @@
-var should  = require('should');
-var assert  = require('assert');
-var async   = require('async');
-var request = require('supertest');
-var fs      = require('fs');
-var jpgp    = require('../app/lib/jpgp');
-var server  = require('../app/lib/server');
+var should   = require('should');
+var assert   = require('assert');
+var async    = require('async');
+var request  = require('supertest');
+var fs       = require('fs');
+var sha1     = require('sha1');
+var jpgp     = require('../app/lib/jpgp');
+var server   = require('../app/lib/server');
+var mongoose = require('mongoose');
 
 var config = {
   server: {
@@ -87,7 +89,8 @@ var apiRes = {
   '/pks/add': [],
   '/pks/lookup?op=index&search=': [],
   '/hdc/community/join': [],
-  '/hdc/community/memberships': []
+  '/hdc/community/memberships': [],
+  '/hdc/community/memberships?extract=true': []
 };
 before(function (done) {
   async.waterfall([
@@ -213,6 +216,17 @@ before(function (done) {
         });
     },
     function (next) {
+      var url = '/hdc/community/memberships?extract=true';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
       var url = '/hdc/community/join';
       request(app)
         .post(url)
@@ -229,6 +243,17 @@ before(function (done) {
     },
     function (next) {
       var url = '/hdc/community/memberships';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      var url = '/hdc/community/memberships?extract=true';
       request(app)
         .get(url)
         .end(function (err, res) {
@@ -265,6 +290,17 @@ before(function (done) {
         });
     },
     function (next) {
+      var url = '/hdc/community/memberships?extract=true';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
       var url = '/hdc/community/join';
       request(app)
         .post(url)
@@ -281,6 +317,17 @@ before(function (done) {
     },
     function (next) {
       var url = '/hdc/community/memberships';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      var url = '/hdc/community/memberships?extract=true';
       request(app)
         .get(url)
         .end(function (err, res) {
@@ -337,27 +384,58 @@ describe('Sending membership', function(){
   });
   var index2 = -1;
   var url2 = '/hdc/community/memberships';
+  var url3 = '/hdc/community/memberships?extract=true';
   it('- Merkle root should be ""', function(){
     var json = JSON.parse(apiRes[url2][++index2].res.text);
+    var jsonEx = JSON.parse(apiRes[url3][index2].res.text);
     isMerkleNodesResult(json);
     json.merkle.levels[0].nodes.length.should.equal(0);
+    isMerkleLeavesResult(jsonEx);
+    jsonEx.merkle.leaves.length.should.equal(0);
   });
-  it('- Merkle root should be 0FBA64435A87B7B7CBA2A914A79EB015DD246ECB', function(){
+  it('- test memberships Merkle with Snowy', function(){
     var json = JSON.parse(apiRes[url2][++index2].res.text);
+    var jsonEx = JSON.parse(apiRes[url3][index2].res.text);
     isMerkleNodesResult(json);
     json.merkle.levels[0].nodes[0].should.equal('0FBA64435A87B7B7CBA2A914A79EB015DD246ECB');
+    isMerkleLeavesResult(jsonEx);
+    jsonEx.merkle.leaves.length.should.equal(1);
+    checkMerkleOfMemberships(jsonEx);
   });
-  it('- Merkle root should be C00DCEB6F1B00D4C0CADCC9E35011C50DE2549AB', function(){
+  it('- test memberships Merkle with Snowy, Cat', function(){
     var json = JSON.parse(apiRes[url2][++index2].res.text);
+    var jsonEx = JSON.parse(apiRes[url3][index2].res.text);
     isMerkleNodesResult(json);
     json.merkle.levels[0].nodes[0].should.equal('C00DCEB6F1B00D4C0CADCC9E35011C50DE2549AB');
+    isMerkleLeavesResult(jsonEx);
+    true.should.be.true;
+    jsonEx.merkle.leaves.length.should.equal(2);
+    checkMerkleOfMemberships(jsonEx);
   });
-  it('- Merkle root should be 2A42C5CCC315AF3B9D009CC8E635F8492111F91D', function(){
+  it('- test memberships Merkle with Snowy, Cat, Tobi', function(){
     var json = JSON.parse(apiRes[url2][++index2].res.text);
+    var jsonEx = JSON.parse(apiRes[url3][index2].res.text);
     isMerkleNodesResult(json);
     json.merkle.levels[0].nodes[0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
+    isMerkleLeavesResult(jsonEx);
+    jsonEx.merkle.leaves.length.should.equal(3);
+    checkMerkleOfMemberships(jsonEx);
   });
 });
+
+function checkMerkleOfMemberships (json) {
+  json.merkle.leaves.forEach(function (leaf) {
+    var Membership = mongoose.model('Membership');
+    var ms = new Membership({
+      version: leaf.value.request.version,
+      currency: leaf.value.request.currency,
+      status: leaf.value.request.status,
+      basis: leaf.value.request.basis,
+      signature: leaf.value.signature
+    });
+    leaf.hash.should.equal(sha1(ms.getRaw()).toUpperCase());
+  });
+}
 
 function isMerkleNodesResult (json) {
   isMerkleResult(json);
@@ -367,6 +445,11 @@ function isMerkleNodesResult (json) {
 function isMerkleLeavesResult (json) {
   isMerkleResult(json);
   json.merkle.should.have.property('leaves');
+  json.merkle.leaves.forEach(function (leaf) {
+    leaf.should.have.property('index');
+    leaf.should.have.property('hash');
+    leaf.should.have.property('value');
+  });
 }
 
 function isMerkleResult (json) {

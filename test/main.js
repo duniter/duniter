@@ -80,15 +80,15 @@ var pubkeyCatSig  = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
 var pubkeyTobi    = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
 var pubkeyTobiSig = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
 
-var joinSnow = fs.readFileSync(__dirname + '/data/membership/snow.join', 'utf8');
-var joinCat  = fs.readFileSync(__dirname + '/data/membership/lolcat.join', 'utf8');
-var joinTobi = fs.readFileSync(__dirname + '/data/membership/tobi.join', 'utf8');
+var joinSnow      = fs.readFileSync(__dirname + '/data/membership/snow.join', 'utf8');
+var joinCat       = fs.readFileSync(__dirname + '/data/membership/lolcat.join', 'utf8');
+var joinTobi      = fs.readFileSync(__dirname + '/data/membership/tobi.join', 'utf8');
 
-var voteCat1_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-LOLCAT.vote', 'utf8');
-var voteTobi1_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-UCHIWA.vote', 'utf8');
-var voteSnow1_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-SNOW2.vote', 'utf8');
-var voteSnow1_1= fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM1-OK-SNOW.vote', 'utf8');
-var voteSnow2_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-SNOW.vote', 'utf8');
+var voteCatAM0    = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-lolcat.vote', 'utf8');
+var voteTobiAM0   = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-tobi.vote', 'utf8');
+var voteSnowAM0   = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.vote', 'utf8');
+var voteSnowAM0_2 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.dissident.vote', 'utf8');
+var voteSnowAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/OK-snow.vote', 'utf8');
 
 var app;
 var apiRes = {
@@ -176,12 +176,12 @@ before(function (done) {
     function (next) { communityJoin(joinCat, next); },
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
-    function (next) { vote(voteCat1_0, next); },
-    function (next) { vote(voteTobi1_0, next); },
-    function (next) { vote(voteSnow1_0, next); },
+    function (next) { vote(voteCatAM0, next); },
+    function (next) { vote(voteTobiAM0, next); },
+    function (next) { vote(voteSnowAM0, next); },
     function (next) { get('/hdc/amendments/votes', next); },
-    function (next) { vote(voteSnow2_0, next); },
-    function (next) { vote(voteSnow1_1, next); },
+    function (next) { vote(voteSnowAM0_2, next); },
+    function (next) { vote(voteSnowAM1, next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
   ], function (err) {

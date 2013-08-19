@@ -92,6 +92,45 @@ var apiRes = {
   '/hdc/community/memberships': [],
   '/hdc/community/memberships?extract=true': []
 };
+
+function post (url, data, done) {
+  request(app)
+    .post(url)
+    .send(data)
+    .end(onHttpResult(url, done));
+}
+
+function get (url, done) {
+  request(app)
+    .get(url)
+    .end(onHttpResult(url, done));
+}
+
+function onHttpResult (url, done) {
+  if(!apiRes[url])
+    apiRes[url] = [];
+  return function (err, res) {
+    apiRes[url].push({
+      res: res
+    });
+    done();
+  }
+}
+
+function pksAdd (keytext, keysign, done) {
+  post('/pks/add', {
+    "keytext": keytext,
+    "keysign": keysign
+  }, done);
+}
+
+function communityJoin (join, done) {
+  post('/hdc/community/join', {
+    "request": join.substr(0, join.indexOf('-----BEGIN')),
+    "signature": join.substr(join.indexOf('-----BEGIN'))
+  }, done);
+}
+
 before(function (done) {
   async.waterfall([
     function (next){
@@ -104,239 +143,25 @@ before(function (done) {
       app = appReady;
       server.database.reset(next);
     },
-    function (next) {
-      request(app)
-        .post('/pks/add')
-        .send({
-          "keytext": pubkeySnow,
-          "keysign": pubkeySnowSig
-        })
-        .end(function (err, res) {
-          apiRes['/pks/add'].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/pks/lookup?op=index&search=';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      request(app)
-        .post('/pks/add')
-        .send({
-          "keytext": pubkeyCat,
-          "keysign": pubkeyCatSig
-        })
-        .end(function (err, res) {
-          apiRes['/pks/add'].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/pks/lookup?op=index&search=';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      request(app)
-        .post('/pks/add')
-        .send({
-          "keytext": pubkeyTobi,
-          "keysign": pubkeyTobiSig
-        })
-        .end(function (err, res) {
-          apiRes['/pks/add'].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/pks/lookup?op=index&search=';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      request(app)
-        .post('/pks/add')
-        .send({
-          "keytext": pubkeyTobi,
-          "keysign": pubkeySnowSig
-        })
-        .end(function (err, res) {
-          apiRes['/pks/add'].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/pks/lookup?op=index&search=';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships?extract=true';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/join';
-      request(app)
-        .post(url)
-        .send({
-          "request": joinSnow.substr(0, joinSnow.indexOf('-----BEGIN')),
-          "signature": joinSnow.substr(joinSnow.indexOf('-----BEGIN'))
-        })
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships?extract=true';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/join';
-      request(app)
-        .post(url)
-        .send({
-          "request": joinTobi.substr(0, joinTobi.indexOf('-----BEGIN')),
-          "signature": joinTobi.substr(joinTobi.indexOf('-----BEGIN'))
-        })
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships?extract=true';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/join';
-      request(app)
-        .post(url)
-        .send({
-          "request": joinCat.substr(0, joinCat.indexOf('-----BEGIN')),
-          "signature": joinCat.substr(joinCat.indexOf('-----BEGIN'))
-        })
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
-    function (next) {
-      var url = '/hdc/community/memberships?extract=true';
-      request(app)
-        .get(url)
-        .end(function (err, res) {
-          apiRes[url].push({
-            res: res
-          });
-          next();
-        });
-    },
+    function (next) { pksAdd(pubkeySnow, pubkeySnowSig, next); },
+    function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { pksAdd(pubkeyCat, pubkeyCatSig, next); },
+    function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { pksAdd(pubkeyTobi, pubkeyTobiSig, next); },
+    function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { pksAdd(pubkeyTobi, pubkeySnowSig, next); },
+    function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { get('/hdc/community/memberships', next); },
+    function (next) { get('/hdc/community/memberships?extract=true', next); },
+    function (next) { communityJoin(joinSnow, next); },
+    function (next) { get('/hdc/community/memberships', next); },
+    function (next) { get('/hdc/community/memberships?extract=true', next); },
+    function (next) { communityJoin(joinTobi, next); },
+    function (next) { get('/hdc/community/memberships', next); },
+    function (next) { get('/hdc/community/memberships?extract=true', next); },
+    function (next) { communityJoin(joinCat, next); },
+    function (next) { get('/hdc/community/memberships', next); },
+    function (next) { get('/hdc/community/memberships?extract=true', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);

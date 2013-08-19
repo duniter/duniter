@@ -79,6 +79,10 @@ var pubkeyTobi    = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
 var pubkeyTobiSig = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
 
 var app;
+var apiRes = {
+  '/pks/add': [],
+  '/pks/lookup?op=index&search=': []
+};
 before(function (done) {
   async.waterfall([
     function (next){
@@ -88,139 +92,138 @@ before(function (done) {
       server.express.app(config.db.database, conf, next);
     },
     function (appReady, next){
-      server.database.reset(function (err) {
-        next(err, appReady);
-      })
-    }
-  ], function (err, result) {
-    console.log("App ready.");
-    app = result;
+      app = appReady;
+      server.database.reset(next);
+    },
+    function (next) {
+      request(app)
+        .post('/pks/add')
+        .send({
+          "keytext": pubkeySnow,
+          "keysign": pubkeySnowSig
+        })
+        .end(function (err, res) {
+          apiRes['/pks/add'].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      var url = '/pks/lookup?op=index&search=';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      request(app)
+        .post('/pks/add')
+        .send({
+          "keytext": pubkeyCat,
+          "keysign": pubkeyCatSig
+        })
+        .end(function (err, res) {
+          apiRes['/pks/add'].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      var url = '/pks/lookup?op=index&search=';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      request(app)
+        .post('/pks/add')
+        .send({
+          "keytext": pubkeyTobi,
+          "keysign": pubkeyTobiSig
+        })
+        .end(function (err, res) {
+          apiRes['/pks/add'].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      var url = '/pks/lookup?op=index&search=';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      request(app)
+        .post('/pks/add')
+        .send({
+          "keytext": pubkeyTobi,
+          "keysign": pubkeySnowSig
+        })
+        .end(function (err, res) {
+          apiRes['/pks/add'].push({
+            res: res
+          });
+          next();
+        });
+    },
+    function (next) {
+      var url = '/pks/lookup?op=index&search=';
+      request(app)
+        .get(url)
+        .end(function (err, res) {
+          apiRes[url].push({
+            res: res
+          });
+          next();
+        });
+    },
+  ], function (err) {
+    console.log("API fed.");
     done(err);
   });
 });
 
 //----------- PKS -----------
 describe('Sending public key', function(){
-  it('of John Snow should respond 200', function(done){
-    request(app)
-      .post('/pks/add')
-      .send({
-        "keytext": pubkeySnow,
-        "keysign": pubkeySnowSig
-      })
-      .end(jsonProxy(function (json) {
-        isPubKey(json);
-        done();
-      }));
+  it('of John Snow should respond 200', function(){
+    apiRes['/pks/add'][0].res.should.have.status(200);
   });
-  it('of LoL Cat should respond 200', function(done){
-    request(app)
-      .post('/pks/add')
-      .send({
-        "keytext": pubkeyCat,
-        "keysign": pubkeyCatSig
-      })
-      .end(jsonProxy(function (json) {
-        isPubKey(json);
-        done();
-      }));
+  it('of LoL Cat should respond 200', function(){
+    apiRes['/pks/add'][1].res.should.have.status(200);
   });
-  it('of Tobi Uchiha should respond 200', function(done){
-    request(app)
-      .post('/pks/add')
-      .send({
-        "keytext": pubkeyTobi,
-        "keysign": pubkeyTobiSig
-      })
-      .end(jsonProxy(function (json) {
-        isPubKey(json);
-        done();
-      }));
+  it('of Tobi Uchiha should respond 200', function(){
+    apiRes['/pks/add'][2].res.should.have.status(200);
   });
-  it('of Tobi Uchiha with signature of John Snow should respond 400', function(done){
-    request(app)
-      .post('/pks/add')
-      .send({
-        "keytext": pubkeyTobi,
-        "keysign": pubkeySnowSig
-      })
-      .expect(400, done);
+  it('of Tobi Uchiha with signature of John Snow should respond 400', function(){
+    apiRes['/pks/add'][3].res.should.have.status(400);
   });
 });
 
-var joinSnow = fs.readFileSync(__dirname + '/data/membership/snow.join', 'utf8');
-var joinCat  = fs.readFileSync(__dirname + '/data/membership/lolcat.join', 'utf8');
-var joinTobi = fs.readFileSync(__dirname + '/data/membership/tobi.join', 'utf8');
-//----------- Memberships -----------
-describe('Sending membership', function(){
-  it('of John Snow should respond 200', function(done){
-    request(app)
-      .post('/hdc/community/join')
-      .send({
-        "request": joinSnow.substr(0, joinSnow.indexOf('-----BEGIN')),
-        "signature": joinSnow.substr(joinSnow.indexOf('-----BEGIN'))
-      })
-      .end(jsonProxy(function (json) {
-        json.should.have.property('request');
-        json.should.have.property('signature');
-        done();
-      }));
-  });
-  it('of LoL Cat should respond 200', function(done){
-    request(app)
-      .post('/hdc/community/join')
-      .send({
-        "request": joinCat.substr(0, joinCat.indexOf('-----BEGIN')),
-        "signature": joinCat.substr(joinCat.indexOf('-----BEGIN'))
-      })
-      .end(jsonProxy(function (json) {
-        json.should.have.property('request');
-        json.should.have.property('signature');
-        done();
-      }));
-  });
-  it('of Tobi Uchiha should respond 200', function(done){
-    request(app)
-      .post('/hdc/community/join')
-      .send({
-        "request": joinTobi.substr(0, joinTobi.indexOf('-----BEGIN')),
-        "signature": joinTobi.substr(joinTobi.indexOf('-----BEGIN'))
-      })
-      .end(jsonProxy(function (json) {
-        json.should.have.property('request');
-        json.should.have.property('signature');
-        done();
-      }));
-  });
-});
+// for (var i = 0; i < gets.length; i++) {
+//   testGET(gets[i].url, gets[i].expect);
+// }
 
-function isPubKey (json) {
-  json.should.have.property('email');
-  json.should.have.property('name');
-  json.should.have.property('fingerprint');
-  json.should.have.property('raw');
-  json.should.not.have.property('_id');
-  json.raw.should.not.match(/-----/g);
-}
-
-function jsonProxy (callback) {
-  return function (err, res) {
-    if(res.status != 200){
-      err = res.text;
-    }
-    should.not.exist(err);
-    res.should.have.status(200);
-    callback(JSON.parse(res.text));
-  }
-}
-
-for (var i = 0; i < gets.length; i++) {
-  testGET(gets[i].url, gets[i].expect);
-}
-
-for (var i = 0; i < posts.length; i++) {
-  testPOST(posts[i].url, posts[i].expect);
-}
+// for (var i = 0; i < posts.length; i++) {
+//   testPOST(posts[i].url, posts[i].expect);
+// }
 
 //----------- PKS -----------
 describe('Request on /pks/lookup', function(){

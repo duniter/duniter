@@ -84,13 +84,20 @@ var joinSnow = fs.readFileSync(__dirname + '/data/membership/snow.join', 'utf8')
 var joinCat  = fs.readFileSync(__dirname + '/data/membership/lolcat.join', 'utf8');
 var joinTobi = fs.readFileSync(__dirname + '/data/membership/tobi.join', 'utf8');
 
+var voteCat1_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-LOLCAT.vote', 'utf8');
+var voteTobi1_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-UCHIWA.vote', 'utf8');
+var voteSnow1_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-SNOW2.vote', 'utf8');
+var voteSnow1_1= fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM1-OK-SNOW.vote', 'utf8');
+var voteSnow2_0 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/BB-AM0-OK-SNOW.vote', 'utf8');
+
 var app;
 var apiRes = {
   '/pks/add': [],
   '/pks/lookup?op=index&search=': [],
   '/hdc/community/join': [],
   '/hdc/community/memberships': [],
-  '/hdc/community/memberships?extract=true': []
+  '/hdc/community/memberships?extract=true': [],
+  '/hdc/amendments/votes': []
 };
 
 function post (url, data, done) {
@@ -131,6 +138,13 @@ function communityJoin (join, done) {
   }, done);
 }
 
+function vote (voteFile, done) {
+  post('/hdc/amendments/votes', {
+    "amendment": voteFile.substr(0, voteFile.indexOf('-----BEGIN')),
+    "signature": voteFile.substr(voteFile.indexOf('-----BEGIN'))
+  }, done);
+}
+
 before(function (done) {
   async.waterfall([
     function (next){
@@ -162,6 +176,14 @@ before(function (done) {
     function (next) { communityJoin(joinCat, next); },
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
+    function (next) { vote(voteCat1_0, next); },
+    function (next) { vote(voteTobi1_0, next); },
+    function (next) { vote(voteSnow1_0, next); },
+    function (next) { get('/hdc/amendments/votes', next); },
+    function (next) { vote(voteSnow2_0, next); },
+    function (next) { vote(voteSnow1_1, next); },
+    function (next) { get('/hdc/amendments/votes', next); },
+    function (next) { get('/hdc/amendments/current', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -225,18 +247,6 @@ function checkMemberships (index, leavesCount, root) {
   }
 }
 
-describe('Sending membership', function(){
-  var index = -1;
-  it('of John Snow should respond 200', checkJoin(++index));
-  it('of LoL Cat should respond 200', checkJoin(++index));
-  it('of Tobi Uchiha should respond 200', checkJoin(++index));
-  var index2 = -1;
-  it('- Merkle root should be ""', checkMemberships(++index2, 0));
-  it('- test memberships Merkle with Snowy', checkMemberships(++index2, 1, '0FBA64435A87B7B7CBA2A914A79EB015DD246ECB'));
-  it('- test memberships Merkle with Snowy, Cat', checkMemberships(++index2, 2, 'C00DCEB6F1B00D4C0CADCC9E35011C50DE2549AB'));
-  it('- test memberships Merkle with Snowy, Cat, Tobi', checkMemberships(++index2, 3, '2A42C5CCC315AF3B9D009CC8E635F8492111F91D'));
-});
-
 function checkMerkleOfMemberships (json) {
   json.merkle.leaves.forEach(function (leaf) {
     var Membership = mongoose.model('Membership');
@@ -250,6 +260,107 @@ function checkMerkleOfMemberships (json) {
     leaf.hash.should.equal(sha1(ms.getRaw()).toUpperCase());
   });
 }
+
+describe('Sending membership', function(){
+  var index = -1;
+  it('of John Snow should respond 200', checkJoin(++index));
+  it('of LoL Cat should respond 200', checkJoin(++index));
+  it('of Tobi Uchiha should respond 200', checkJoin(++index));
+  var index2 = -1;
+  it('- Merkle root should be ""', checkMemberships(++index2, 0));
+  it('- test memberships Merkle with Snowy', checkMemberships(++index2, 1, '0FBA64435A87B7B7CBA2A914A79EB015DD246ECB'));
+  it('- test memberships Merkle with Snowy, Cat', checkMemberships(++index2, 2, 'C00DCEB6F1B00D4C0CADCC9E35011C50DE2549AB'));
+  it('- test memberships Merkle with Snowy, Cat, Tobi', checkMemberships(++index2, 3, '2A42C5CCC315AF3B9D009CC8E635F8492111F91D'));
+});
+
+//----------- Votes -----------
+
+function checkVote (index) {
+  return function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
+    apiRes['/hdc/amendments/votes'][index].res.should.have.status(200);
+    json.should.have.property('amendment');
+    json.should.have.property('signature');
+  }
+}
+
+function checkIndex1 (index) {
+  return function () {
+    var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
+    json.should.have.property('amendments');
+    json.amendments.length.should.equal(1);
+    json.amendments[0].should.have.property('number');
+    json.amendments[0].should.have.property('hashes');
+    json.amendments[0].hashes.length.should.equal(1);
+    json.amendments[0].hashes[0].should.have.property('hash');
+    json.amendments[0].hashes[0].should.have.property('votesCount');
+    json.amendments[0].hashes[0].hash.should.equal('376C5A6126A4688B18D95043261B2D59867D4047');
+    json.amendments[0].hashes[0].votesCount.should.equal(3);
+  };
+}
+
+function checkIndex2 (index) {
+  return function () {
+    var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
+    json.should.have.property('amendments');
+    json.amendments.length.should.equal(2);
+    json.amendments[0].should.have.property('number');
+    json.amendments[0].should.have.property('hashes');
+    json.amendments[0].hashes.length.should.equal(2);
+    json.amendments[0].hashes[0].should.have.property('hash');
+    json.amendments[0].hashes[0].should.have.property('votesCount');
+    json.amendments[0].hashes[0].votesCount.should.equal(3);
+    json.amendments[0].hashes[0].hash.should.equal('376C5A6126A4688B18D95043261B2D59867D4047');
+    json.amendments[0].hashes[1].should.have.property('hash');
+    json.amendments[0].hashes[1].should.have.property('votesCount');
+    json.amendments[0].hashes[1].votesCount.should.equal(1);
+    json.amendments[0].hashes[1].hash.should.equal('0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763');
+    json.amendments[1].hashes[0].should.have.property('hash');
+    json.amendments[1].hashes[0].should.have.property('votesCount');
+    json.amendments[1].hashes[0].votesCount.should.equal(1);
+    json.amendments[1].hashes[0].hash.should.equal('2C5AF9BC4F355A5BB771B8EE250E97D4451EE578');
+  };
+}
+
+describe('Sending vote', function(){
+  var index = -1;
+  it('AM0 of LoL Cat should respond 200', checkVote(++index));
+  it('AM0 of Tobi Uchiha should respond 200', checkVote(++index));
+  it('AM0 of John Snow should respond 200', checkVote(++index));
+  it('- index should have ', checkIndex1(++index));
+  it('AM1 of John Snow should respond 200', checkVote(++index));
+  it('AM0 (dissident) of John Snow should respond 200', checkVote(++index));
+  it('- index should have ', checkIndex2(++index));
+});
+
+//----------- Amendments -----------
+
+function checkAmendment (index) {
+  return function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/current'][index].res.text);
+    apiRes['/hdc/amendments/current'][index].res.should.have.status(200);
+    json.should.have.property('version');
+    json.should.have.property('currency');
+    json.should.have.property('number');
+    json.should.have.property('previousHash');
+    json.should.have.property('dividend');
+    json.should.have.property('coinMinPower');
+    json.should.have.property('votersSigRoot');
+    json.should.have.property('votersRoot');
+    json.should.have.property('votersCount');
+    json.should.have.property('votersChanges');
+    json.should.have.property('membersStatusRoot');
+    json.should.have.property('membersRoot');
+    json.should.have.property('membersCount');
+    json.should.have.property('membersChanges');
+    json.should.have.property('raw');
+  }
+}
+
+describe('Checking amendments', function(){
+  var index = -1;
+  it('current should respond 200', checkAmendment(++index));
+});
 
 function isMerkleNodesResult (json) {
   isMerkleResult(json);
@@ -413,10 +524,10 @@ describe('Request on /hdc/amendments/votes', function(){
 });
 
 describe('Request on /hdc/amendments/current', function(){
-  it('GET should respond 404', function(done){
+  it('GET should respond 200', function(done){
     request(app)
       .get('/hdc/amendments/current')
-      .expect(404, done);
+      .expect(200, done);
   });
 });
 

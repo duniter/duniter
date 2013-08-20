@@ -373,7 +373,7 @@ AmendmentSchema.statics.current = function (done) {
       return;
     }
     if(!amends || amends.length == 0){
-      done(err);
+      done('No current amendment');
       return;
     }
     if(amends || amends.length > 1){
@@ -382,10 +382,7 @@ AmendmentSchema.statics.current = function (done) {
         if(!current || (current && current.number < am.number))
           current = am;
       });
-      if(current)
-        done(err, current);
-      else
-        done(err);
+      done(err, current);
     }
   });
 };

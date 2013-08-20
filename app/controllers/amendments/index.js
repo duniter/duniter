@@ -37,7 +37,9 @@ function defaultPromotion (amendment, decision) {
       next();
     },
     function (next){
-      Amendment.current(next);
+      Amendment.current(function (err, am) {
+        next(null, am);
+      });
     },
     function (am, next){
       if(!next){

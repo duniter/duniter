@@ -384,7 +384,11 @@ function checkAmendment (index, hash) {
     json.should.have.property('membersCount');
     json.should.have.property('membersChanges');
     json.should.have.property('raw');
-    sha1(json.raw).toUpperCase().should.equal(hash);
+    var mHash = sha1(json.raw).toUpperCase();
+    if(mHash != hash){
+      console.log("Current issue: " + index);
+    }
+    mHash.should.equal(hash);
   }
 }
 

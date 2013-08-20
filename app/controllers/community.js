@@ -6,8 +6,40 @@ var Membership = mongoose.model('Membership');
 var Amendment  = mongoose.model('Amendment');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
+var Vote       = mongoose.model('Vote');
 
 module.exports = function (pgp, currency, conf) {
+
+  this.currentVotes = function (req, res) {
+    async.waterfall([
+      function (next){
+        Amendment.current(next);
+      },
+      function (am, next){
+        Merkle.signaturesOfAmendment(am.number, am.hash, next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, function (hashes, done) {
+          Vote
+          .find({ hash: { $in: hashes } })
+          .sort('hash')
+          .exec(function (err, votes) {
+            var map = {};
+            votes.forEach(function (vote){
+              map[vote.hash] = vote.signature;
+            });
+            done(null, map);
+          });
+        }, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      merkleDone(req, res, json);
+    });
+  };
 
   this.join = function (req, res) {
     async.waterfall([

@@ -188,6 +188,11 @@ before(function (done) {
     function (next) { console.log("Sending Cat's AM1..."); vote(voteCatAM1, next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
+    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self', next); },
+    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/status', next); },
+    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members', next); },
+    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures', next); },
+    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -364,9 +369,61 @@ function checkAmendment (index) {
   }
 }
 
-describe('Checking amendments', function(){
+describe('Checking current amendment', function(){
   var index = -1;
-  it('current should respond 200', checkAmendment(++index));
+  it('should respond 200', checkAmendment(++index));
+});
+
+describe('Checking amendments', function(){
+  it('0 should respond 200 and have self infos', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self'][0].res.text);
+    json.should.have.property('version');
+    json.should.have.property('currency');
+    json.should.have.property('number');
+    json.should.have.property('previousHash');
+    json.should.have.property('dividend');
+    json.should.have.property('coinMinPower');
+    json.should.have.property('votersSigRoot');
+    json.should.have.property('votersRoot');
+    json.should.have.property('votersCount');
+    json.should.have.property('votersChanges');
+    json.should.have.property('membersStatusRoot');
+    json.should.have.property('membersRoot');
+    json.should.have.property('membersCount');
+    json.should.have.property('membersChanges');
+    json.should.have.property('raw');
+    sha1(json.raw).toUpperCase().should.equal('376C5A6126A4688B18D95043261B2D59867D4047');
+  });
+  it('0 should respond 200 and have some status', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/status'][0].res.text);
+    isMerkleNodesResult(json);
+    json.merkle.levelsCount.should.equal(3);
+    json.merkle.levels.length.should.equal(1);
+    json.merkle.levels[0].nodes.length.should.equal(1);
+    json.merkle.levels[0].nodes[0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
+  });
+  it('0 should respond 200 and have some members', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members'][0].res.text);
+    isMerkleNodesResult(json);
+    json.merkle.levelsCount.should.equal(3);
+    json.merkle.levels.length.should.equal(1);
+    json.merkle.levels[0].nodes.length.should.equal(1);
+    json.merkle.levels[0].nodes[0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
+  });
+  it('0 should respond 200 and have 0 signatures', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures'][0].res.text);
+    isMerkleNodesResult(json);
+    json.merkle.levelsCount.should.equal(1);
+    json.merkle.levels.length.should.equal(1);
+    json.merkle.levels[0].nodes.length.should.equal(0);
+  });
+  it('0 should respond 200 and have 0 voters', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters'][0].res.text);
+    isMerkleNodesResult(json);
+    json.merkle.levelsCount.should.equal(1);
+    json.merkle.levels.length.should.equal(1);
+    json.merkle.levels[0].nodes.length.should.equal(0);
+  });
 });
 
 function isMerkleNodesResult (json) {

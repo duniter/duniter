@@ -100,16 +100,13 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
               next(err);
               return;
             }
-            var json = { amendments: [] };
+            var json = { amendments: {} };
             for(var number in result){
-              var hashes = [];
+              var hashes = {};
               for(var hash in result[number]){
-                hashes.push({ hash: hash, votesCount: result[number][hash] });
+                hashes[hash] = result[number][hash];
               }
-              json.amendments.push({
-                number: number,
-                hashes: hashes
-              });
+              json.amendments[number] = hashes;
             }
             next(null, json);
           }

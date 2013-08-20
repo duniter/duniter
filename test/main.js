@@ -325,14 +325,10 @@ function checkIndex1 (index) {
   return function () {
     var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
     json.should.have.property('amendments');
-    json.amendments.length.should.equal(1);
-    json.amendments[0].should.have.property('number');
-    json.amendments[0].should.have.property('hashes');
-    json.amendments[0].hashes.length.should.equal(1);
-    json.amendments[0].hashes[0].should.have.property('hash');
-    json.amendments[0].hashes[0].should.have.property('votesCount');
-    json.amendments[0].hashes[0].hash.should.equal('376C5A6126A4688B18D95043261B2D59867D4047');
-    json.amendments[0].hashes[0].votesCount.should.equal(3);
+    _(json.amendments).size().should.equal(1);
+    _(json.amendments[0]).size().should.equal(1);
+    json.amendments[0].should.have.property('376C5A6126A4688B18D95043261B2D59867D4047');
+    json.amendments[0]['376C5A6126A4688B18D95043261B2D59867D4047'].should.equal(3);
   };
 }
 
@@ -340,22 +336,14 @@ function checkIndex2 (index) {
   return function () {
     var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
     json.should.have.property('amendments');
-    json.amendments.length.should.equal(2);
-    json.amendments[0].should.have.property('number');
-    json.amendments[0].should.have.property('hashes');
-    json.amendments[0].hashes.length.should.equal(2);
-    json.amendments[0].hashes[0].should.have.property('hash');
-    json.amendments[0].hashes[0].should.have.property('votesCount');
-    json.amendments[0].hashes[0].votesCount.should.equal(3);
-    json.amendments[0].hashes[0].hash.should.equal('376C5A6126A4688B18D95043261B2D59867D4047');
-    json.amendments[0].hashes[1].should.have.property('hash');
-    json.amendments[0].hashes[1].should.have.property('votesCount');
-    json.amendments[0].hashes[1].votesCount.should.equal(1);
-    json.amendments[0].hashes[1].hash.should.equal('0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763');
-    json.amendments[1].hashes[0].should.have.property('hash');
-    json.amendments[1].hashes[0].should.have.property('votesCount');
-    json.amendments[1].hashes[0].votesCount.should.equal(3);
-    json.amendments[1].hashes[0].hash.should.equal('0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+    _(json.amendments).size().should.equal(2);
+    _(json.amendments[0]).size().should.equal(2);
+    json.amendments[0].should.have.property('376C5A6126A4688B18D95043261B2D59867D4047');
+    json.amendments[0].should.have.property('0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763');
+    json.amendments[1].should.have.property('0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+    json.amendments[0]['376C5A6126A4688B18D95043261B2D59867D4047'].should.equal(3);
+    json.amendments[0]['0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763'].should.equal(1);
+    json.amendments[1]['0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'].should.equal(3);
   };
 }
 

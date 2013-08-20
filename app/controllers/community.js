@@ -34,7 +34,7 @@ module.exports = function (pgp, currency, conf) {
       }
     ], function (err, json) {
       if(err){
-        res.send(500, err);
+        res.send(404, err);
         return;
       }
       merkleDone(req, res, json);

@@ -176,7 +176,7 @@ before(function (done) {
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
     function (next) { get('/hdc/amendments/current', next); },
-    // function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { console.log("Sending Cat's AM0..."); vote(voteCatAM0, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
@@ -395,7 +395,10 @@ describe('Sending vote', function(){
 });
 
 describe('Checking votes', function(){
-  var index = -1;
+  var index = 0;
+  it('should respond 200 and have some votes', function () {
+    apiRes['/hdc/community/votes'][0].res.should.have.status(404);
+  });
   it('should respond 200 and have some votes', checkVotes(++index, 1, '110A283836EC264294917D1B4A02D215B2767342'));
   it('should respond 200 and have some votes', checkVotes(++index, 2, '32F73F0A80CF7AB425F83B8AD8E377E0CAF29FB6'));
   it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));

@@ -156,21 +156,16 @@ Merkle URL result with `extract=false`.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    },{
-      // Other levels...
-    }]
+      ],
+      ...
+    }
   }
 }
 ```
@@ -182,19 +177,17 @@ Merkle URL result with `extract=true`.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "leaves": [
-    {
-      "index": 1,
-      "hash": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "value": // JSON value (object, string, int, ...)
+    "leaves": {
+      "1": {
+        "hash": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+        "value": // JSON value (object, string, int, ...)
+      },
+      "2": {
+        "hash": "E9D71F5EE7C92D6DC9E92FFDAD17B8BD49418F98",
+        "value": // JSON value (object, string, int, ...)
+      }
     },
-    {
-      "index": 2,
-      "hash": "E9D71F5EE7C92D6DC9E92FFDAD17B8BD49418F98",
-      "value": // JSON value (object, string, int, ...)
-    },{
-      // Other leaf...
-    }]
+	...
   }
 }
 ```
@@ -295,19 +288,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -315,7 +304,6 @@ Merkle URL result.
 Merkle URL leaf: public key
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": "BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK"
 }
@@ -582,19 +570,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -602,7 +586,6 @@ Merkle URL result.
 Merkle URL leaf: membership request
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
@@ -636,19 +619,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -656,10 +635,8 @@ Merkle URL result.
 Merkle URL leaf: member
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": "31A6302161AC8F5938969E85399EB3415C237F93"
-  }
 }
 ```
 
@@ -719,19 +696,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -739,10 +712,8 @@ Merkle URL result.
 Merkle URL leaf: voter (also a member)
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": "31A6302161AC8F5938969E85399EB3415C237F93"
-  }
 }
 ```
 
@@ -773,7 +744,6 @@ Merkle URL result.
 Merkle URL leaf: vote
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
@@ -885,7 +855,6 @@ Merkle URL result.
 Merkle URL leaf: signature
 ```json
 {
-  "index": 1,
   "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
   "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
@@ -1023,19 +992,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -1043,7 +1008,6 @@ Merkle URL result.
 Merkle URL leaf: membership request
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
@@ -1075,19 +1039,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -1095,7 +1055,6 @@ Merkle URL result.
 Merkle URL leaf: signature
 ```json
 {
-  "index": 1,
   "hash": "2D41234540938C4263CBC5E7E11564038DED2118",
   "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
@@ -1241,19 +1200,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -1261,7 +1216,6 @@ Merkle URL result.
 Merkle URL leaf: transaction
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
@@ -1310,19 +1264,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -1330,7 +1280,6 @@ Merkle URL result.
 Merkle URL leaf: transaction
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
@@ -1379,19 +1328,15 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
-    "levels": [
-    {
-      "level": 0,
-      "nodes": [
+    "levels": {
+      "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ]
-    },{
-      "level": 1,
-      "nodes": [
+      ],
+      "1": [
         "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
         "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
       ]
-    }]
+    }
   }
 }
 ```
@@ -1399,7 +1344,6 @@ Merkle URL result.
 Merkle URL leaf: transaction
 ```json
 {
-  "index": 1,
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",

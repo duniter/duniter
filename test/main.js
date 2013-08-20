@@ -34,7 +34,6 @@ var conf = {
 };
 
 var gets = [
-  {expect: 501, url: '/pks/all'},
   {expect: 501, url: '/ucg/tht'},
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
@@ -93,14 +92,7 @@ var voteTobiAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.vote', 
 var voteCatAM1    = fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.vote', 'utf8');
 
 var app;
-var apiRes = {
-  '/pks/add': [],
-  '/pks/lookup?op=index&search=': [],
-  '/hdc/community/join': [],
-  '/hdc/community/memberships': [],
-  '/hdc/community/memberships?extract=true': [],
-  '/hdc/amendments/votes': []
-};
+var apiRes = {};
 
 function post (url, data, done) {
   request(app)
@@ -159,14 +151,19 @@ before(function (done) {
       app = appReady;
       server.database.reset(next);
     },
+    function (next) { get('/pks/all', next); },
     function (next) { pksAdd(pubkeySnow, pubkeySnowSig, next); },
     function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { get('/pks/all', next); },
     function (next) { pksAdd(pubkeyCat, pubkeyCatSig, next); },
     function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { get('/pks/all', next); },
     function (next) { pksAdd(pubkeyTobi, pubkeyTobiSig, next); },
     function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { get('/pks/all', next); },
     function (next) { pksAdd(pubkeyTobi, pubkeySnowSig, next); },
     function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { get('/pks/all', next); },
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
     function (next) { communityJoin(joinSnow, next); },
@@ -251,6 +248,32 @@ describe('Sending public key', function(){
     json.should.have.property('keys');
     json.keys.length.should.equal(3);
   });
+});
+
+function checkPKS (index, keyCount, hash) {
+  return function(){
+    apiRes['/pks/all'][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes['/pks/all'][index].res.text);
+    isMerkleNodesResult(json);
+    json.merkle.levelsCount.should.equal(keyCount);
+    _(json.merkle.levels).size().should.equal(1);
+    if(hash){
+      _(json.merkle.levels[0]).size().should.equal(1);
+      json.merkle.levels[0][0].should.equal(hash);
+    }
+    else{
+      _(json.merkle.levels[0]).size().should.equal(0);
+    }
+  }
+}
+
+describe('Checking pubkeys', function(){
+  var index = -1;
+  it('all should respond 200 and have no pks', checkPKS(++index, 1));
+  it('all should respond 200 and have some pks', checkPKS(++index, 1, '33BBFC0C67078D72AF128B5BA296CC530126F372'));
+  it('all should respond 200 and have some pks', checkPKS(++index, 2, '5DB500A285BD380A68890D09232475A8CA003DC8'));
+  it('all should respond 200 and have some pks', checkPKS(++index, 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'));
+  it('all should respond 200 and have some pks', checkPKS(++index, 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'));
 });
 
 //----------- Memberships -----------

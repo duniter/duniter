@@ -179,20 +179,28 @@ before(function (done) {
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
     function (next) { get('/hdc/amendments/current', next); },
+    // function (next) { get('/hdc/community/votes', next); },
     function (next) { console.log("Sending Cat's AM0..."); vote(voteCatAM0, next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Tobi's AM0..."); vote(voteTobiAM0, next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Snow's AM0..."); vote(voteSnowAM0, next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { console.log("Sending Snow's AM0 dissident..."); vote(voteSnowAM0_2, next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Snow's AM1..."); vote(voteSnowAM1, next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Tobi's AM1..."); vote(voteTobiAM1, next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Cat's AM1..."); vote(voteCatAM1, next); },
+    function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { get('/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures', next); },
@@ -350,6 +358,18 @@ function checkIndex2 (index) {
   };
 }
 
+function checkVotes (index, votersCount, hash) {
+  return function(){
+    apiRes['/hdc/community/votes'][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes['/hdc/community/votes'][index].res.text);
+    isMerkleNodesResult(json);
+    json.merkle.levelsCount.should.equal(votersCount);
+    json.merkle.levels.length.should.equal(1);
+    json.merkle.levels[0].nodes.length.should.equal(1);
+    json.merkle.levels[0].nodes[0].should.equal(hash);
+  }
+}
+
 describe('Sending vote', function(){
   var index = -1;
   it('AM0 of LoL Cat should respond 200', checkVote(++index));
@@ -361,6 +381,20 @@ describe('Sending vote', function(){
   it('AM1 of Tobi should respond 200', checkVote(++index));
   it('AM1 of Cat should respond 200', checkVote(++index));
   it('- index should have ', checkIndex2(++index));
+});
+
+describe('Checking votes', function(){
+  var index = -1;
+  it('should respond 200 and have some votes', checkVotes(++index, 1, '110A283836EC264294917D1B4A02D215B2767342'));
+  it('should respond 200 and have some votes', checkVotes(++index, 2, '32F73F0A80CF7AB425F83B8AD8E377E0CAF29FB6'));
+  it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));
+  // Vote for a dissident AM0
+  it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));
+  // Fist vote for AM1 (not enough)
+  it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));
+  // Second vote for AM1 (promoted)
+  it('should respond 200 and have some votes', checkVotes(++index, 2, '16C619460FA207A2D94AF3C306591A384C8DC4B1'));
+  it('should respond 200 and have some votes', checkVotes(++index, 3, '931A15C9CAE0BA73E9B4F1E8B0251452F3A882C7'));
 });
 
 //----------- Amendments -----------

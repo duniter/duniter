@@ -121,27 +121,23 @@ MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
   if(isNaN(lend)) lend = lstart + 1;
   if(isNaN(start)) start = 0;
   if(!req.query.extract){
-    json.merkle.levels = [];
+    json.merkle.levels = {};
     for (var i = Math.max(lstart, 0); i < merkle.levels.length && i < lend; i++) {
       var rowEnd = isNaN(end) ? merkle.levels[i].length : end;
-      json.merkle.levels.push({
-        "level": i,
-        "nodes": merkle.levels[i].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[i].length))
-      });
+      json.merkle.levels[i] = merkle.levels[i].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[i].length));
     };
     done(null, json);
   }
   else {
-    json.merkle.leaves = [];
+    json.merkle.leaves = {};
     var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
     var hashes = merkle.levels[merkle.depth].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[lstart].length));
     valueCB(hashes, function (err, values) {
       hashes.forEach(function (hash, index){
-        json.merkle.leaves.push({
-          "index": index,
+        json.merkle.leaves[index] = {
           "hash": merkle.levels[lstart][index],
           "value": values[hash]
-        });
+        };
       });
       done(null, json);
     });

@@ -4,6 +4,7 @@ var async    = require('async');
 var request  = require('supertest');
 var fs       = require('fs');
 var sha1     = require('sha1');
+var _        = require('underscore');
 var jpgp     = require('../app/lib/jpgp');
 var server   = require('../app/lib/server');
 var mongoose = require('mongoose');
@@ -269,17 +270,17 @@ function checkMemberships (index, leavesCount, root) {
     var jsonEx = JSON.parse(apiRes['/hdc/community/memberships?extract=true'][index].res.text);
     isMerkleNodesResult(json);
     if(root)
-      json.merkle.levels[0].nodes[0].should.equal(root);
+      json.merkle.levels[0][0].should.equal(root);
     else
-      json.merkle.levels[0].nodes.length.should.equal(0);
+      _(json.merkle.levels[0]).size().should.equal(0);
     isMerkleLeavesResult(jsonEx);
-    jsonEx.merkle.leaves.length.should.equal(leavesCount);
+    _(jsonEx.merkle.leaves).size().should.equal(leavesCount);
     checkMerkleOfMemberships(jsonEx);
   }
 }
 
 function checkMerkleOfMemberships (json) {
-  json.merkle.leaves.forEach(function (leaf) {
+  _(json.merkle.leaves).each(function (leaf) {
     var Membership = mongoose.model('Membership');
     var ms = new Membership({
       version: leaf.value.request.version,
@@ -364,9 +365,9 @@ function checkVotes (index, votersCount, hash) {
     var json = JSON.parse(apiRes['/hdc/community/votes'][index].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(votersCount);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal(hash);
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal(hash);
   }
 }
 
@@ -470,39 +471,39 @@ describe('Checking amendments', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
   });
   it('0 should respond 200 and have some status', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/status'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
   });
   it('0 should respond 200 and have some members', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
   it('0 should respond 200 and have 0 signatures', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(1);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(0);
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(0);
   });
   it('0 should respond 200 and have 0 voters', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(1);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(0);
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(0);
   });
   it('1 should respond 200 and have self infos', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/self'][0].res.text);
@@ -527,41 +528,41 @@ describe('Checking amendments', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('931A15C9CAE0BA73E9B4F1E8B0251452F3A882C7');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('931A15C9CAE0BA73E9B4F1E8B0251452F3A882C7');
   });
   it('1 should respond 200 and have some status', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/status'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
   });
   it('1 should respond 200 and have some members', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/members'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
   it('1 should respond 200 and have some signatures', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
   });
   it('1 should respond 200 and have some voters', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/voters'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
-    json.merkle.levels.length.should.equal(1);
-    json.merkle.levels[0].nodes.length.should.equal(1);
-    json.merkle.levels[0].nodes[0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
+    _(json.merkle.levels).size().should.equal(1);
+    _(json.merkle.levels[0]).size().should.equal(1);
+    json.merkle.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
 });
 
@@ -573,8 +574,7 @@ function isMerkleNodesResult (json) {
 function isMerkleLeavesResult (json) {
   isMerkleResult(json);
   json.merkle.should.have.property('leaves');
-  json.merkle.leaves.forEach(function (leaf) {
-    leaf.should.have.property('index');
+  _(json.merkle.leaves).each(function (leaf) {
     leaf.should.have.property('hash');
     leaf.should.have.property('value');
   });

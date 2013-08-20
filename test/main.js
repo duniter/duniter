@@ -39,7 +39,6 @@ var gets = [
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
-  {expect: 501, url: '/hdc/community/votes'},
   {expect: 501, url: '/hdc/transactions/all'},
   {expect: 501, url: '/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
@@ -584,13 +583,13 @@ function isPubKey (json) {
   json.raw.should.not.match(/-----/g);
 }
 
-// for (var i = 0; i < gets.length; i++) {
-//   testGET(gets[i].url, gets[i].expect);
-// }
+for (var i = 0; i < gets.length; i++) {
+  testGET(gets[i].url, gets[i].expect);
+}
 
-// for (var i = 0; i < posts.length; i++) {
-//   testPOST(posts[i].url, posts[i].expect);
-// }
+for (var i = 0; i < posts.length; i++) {
+  testPOST(posts[i].url, posts[i].expect);
+}
 
 //----------- PKS -----------
 describe('Request on /pks/lookup', function(){

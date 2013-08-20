@@ -178,13 +178,20 @@ before(function (done) {
     function (next) { communityJoin(joinCat, next); },
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
+    function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Cat's AM0..."); vote(voteCatAM0, next); },
+    function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Tobi's AM0..."); vote(voteTobiAM0, next); },
+    function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Snow's AM0..."); vote(voteSnowAM0, next); },
+    function (next) { get('/hdc/amendments/current', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { console.log("Sending Snow's AM0 dissident..."); vote(voteSnowAM0_2, next); },
+    function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Snow's AM1..."); vote(voteSnowAM1, next); },
+    function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Tobi's AM1..."); vote(voteTobiAM1, next); },
+    function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Cat's AM1..."); vote(voteCatAM1, next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
@@ -358,7 +365,7 @@ describe('Sending vote', function(){
 
 //----------- Amendments -----------
 
-function checkAmendment (index) {
+function checkAmendment (index, hash) {
   return function(){
     apiRes['/hdc/amendments/current'][index].res.should.have.status(200);
     var json = JSON.parse(apiRes['/hdc/amendments/current'][index].res.text);
@@ -377,12 +384,28 @@ function checkAmendment (index) {
     json.should.have.property('membersCount');
     json.should.have.property('membersChanges');
     json.should.have.property('raw');
+    sha1(json.raw).toUpperCase().should.equal(hash);
+  }
+}
+
+function checkAmendmentNotFound (index) {
+  return function(){
+    apiRes['/hdc/amendments/current'][index].res.should.have.status(404);
   }
 }
 
 describe('Checking current amendment', function(){
   var index = -1;
-  it('should respond 200', checkAmendment(++index));
+  it('should respond 200', checkAmendmentNotFound(++index));
+  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
+  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
+  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
+  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
+  // 1 vote for AM1 (not enough)
+  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
+  // 2 votes for AM1 (enough ! (2/3))
+  it('should respond 200', checkAmendment(++index, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'));
+  it('should respond 200', checkAmendment(++index, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'));
 });
 
 describe('Checking amendments', function(){

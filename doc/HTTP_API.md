@@ -763,28 +763,16 @@ GET an index of votes received by this node.
 A list detailing for each amendment number, statistics of votes (grouped by amendment hash).
 ```json
 {
-  "amendments": [
-    {
-      "number": 2,
-      "hashes": [
-        {
-          "hash": "AMENDMENT_HASH",
-          "votesCount": 14
-        }
-      ]
+  "amendments": {
+    "0": {
+      "376C5A6126A4688B18D95043261B2D59867D4047": 3,
+      "0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763": 1
     },
-    {
-      "number": 3,
-      "hashes": [
-        {
-          "hash": "AMENDMENT_HASH",
-          "votesCount": 7
-        }
-      ]
-    },{
-      // Other stats...
-    }
-  ]
+    "1": {
+      "0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C": 3
+    },
+    ...
+  }
 }
 ```
 

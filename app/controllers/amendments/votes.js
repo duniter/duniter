@@ -208,75 +208,9 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             am.save(function (err) {
               if(!err){
                 console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
-                async.parallel({
-                  membershipsMerkle: function(callback){
-                    async.waterfall([
-                      function (next) {
-                        am.buildMembershipsMerkle(next);
-                      },
-                      function (leaves, next){
-                        Merkle.membershipsWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-                          merkle.initialize(leaves);
-                          next(err, merkle);
-                        });
-                      },
-                      function (merkle, next) {
-                        merkle.save(next);
-                      }
-                    ], callback);
-                  },
-                  signaturesMerkle: function(callback){
-                    async.waterfall([
-                      function (next) {
-                        am.buildSignaturesMerkle(next);
-                      },
-                      function (leaves, next){
-                        Merkle.signaturesWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-                          merkle.initialize(leaves);
-                          next(err, merkle);
-                        });
-                      },
-                      function (merkle, next) {
-                        merkle.save(next);
-                      }
-                    ], callback);
-                  },
-                  membersMerkle: function(callback){
-                    async.waterfall([
-                      function (next) {
-                        am.buildMembersMerkle(next);
-                      },
-                      function (leaves, next){
-                        Merkle.membersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-                          merkle.initialize(leaves);
-                          next(err, merkle);
-                        });
-                      },
-                      function (merkle, next) {
-                        merkle.save(next);
-                      }
-                    ], callback);
-                  },
-                  votersMerkle: function(callback){
-                    async.waterfall([
-                      function (next) {
-                        am.buildVotersMerkle(next);
-                      },
-                      function (leaves, next){
-                        Merkle.votersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-                          merkle.initialize(leaves);
-                          next(err, merkle);
-                        });
-                      },
-                      function (merkle, next) {
-                        merkle.save(next);
-                      }
-                    ], callback);
-                  }
-                },
-                function(err, results) {
-                  // Info only
-                  if(err) console.log(err);
+                am.updateMerkles(function (err) {
+                  if(err)
+                    console.error(err);
                 });
               }
               else console.err(err);

@@ -136,6 +136,41 @@ AmendmentSchema.methods = {
     });
   },
 
+  updateMerkles: function (done) {
+    var that = this;
+    var Merkle = mongoose.model('Merkle');
+    function build (func, funcAM, callback) {
+      async.waterfall([
+        function (next) {
+          funcAM.call(that, next);
+        },
+        function (leaves, next){
+          func.call(Merkle, that.number, that.hash, function (err, merkle) {
+            merkle.initialize(leaves);
+            next(err, merkle);
+          });
+        },
+        function (merkle, next) {
+          merkle.save(next);
+        }
+      ], callback);
+    }
+    async.parallel({
+      membershipsMerkle: function(callback){
+        build(Merkle.membershipsWrittenForAmendment, that.buildMembershipsMerkle, callback);
+      },
+      signaturesMerkle: function(callback){
+        build(Merkle.signaturesWrittenForAmendment, that.buildSignaturesMerkle, callback);
+      },
+      membersMerkle: function(callback){
+        build(Merkle.membersWrittenForAmendment, that.buildMembersMerkle, callback);
+      },
+      votersMerkle: function(callback){
+        build(Merkle.votersWrittenForAmendment, that.buildVotersMerkle, callback);
+      }
+    }, done);
+  },
+
   buildMembershipsMerkle: function (done) {
     var that = this;
     this.getPrevious(function (err, previous) {

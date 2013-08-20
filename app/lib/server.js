@@ -138,7 +138,7 @@ module.exports.express = {
     var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
     var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
 
-    app.get(    '/pks/all',                                       notImplemented);
+    app.get(    '/pks/all',                                       pks.all);
     app.get(    '/pks/lookup',                                    pks.lookup);
     app.post(   '/pks/add',                                       pks.add);
     app.get(    '/ucg/pubkey',                                    ucg.pubkey);

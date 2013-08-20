@@ -3,6 +3,7 @@ util      = require('util'),
 async     = require('async'),
 mongoose  = require('mongoose'),
 PublicKey = mongoose.model('PublicKey'),
+Merkle    = mongoose.model('Merkle'),
 _         = require('underscore'),
 stream    = require('stream');
 
@@ -16,6 +17,34 @@ function processRawKey (pubkey, done) {
     done(err);
   });
 }
+
+module.exports.all = function (req, res) {
+  async.waterfall([
+    function (next){
+      Merkle.forPublicKeys(next);
+    },
+    function (merkle, next){
+      Merkle.processForURL(req, merkle, function (hashes, done) {
+        PublicKey
+        .find({ fingerprint: { $in: hashes } })
+        .sort('fingerprint')
+        .exec(function (err, pubkeys) {
+          var map = {};
+          pubkeys.forEach(function (pubkey){
+            map[pubkey.fingerprint] = pubkey.raw;
+          });
+          done(null, map);
+        });
+      }, next);
+    }
+  ], function (err, json) {
+    if(err){
+      res.send(500, err);
+      return;
+    }
+    merkleDone(req, res, json);
+  });
+};
 
 module.exports.lookup = function (req, res) {
   var op = req.query.op;
@@ -119,6 +148,7 @@ function getAsciiArmoredMessages(body, files, callback) {
   });
 }
 
+// TODO: refactor
 module.exports.add = function (req, res) {
   getAsciiArmoredMessages(req.body, req.files, function (err, aaPubkey, aaSignature) {
     if(!err){
@@ -141,7 +171,27 @@ module.exports.add = function (req, res) {
                       comment: pubkey.comment,
                       created: now,
                       updated: now
-                    }], function (err, items) {
+                    }], function (err, pubkey) {
+                      if(!err){
+                        // Update Merkle
+                        async.waterfall([
+                          function (next) {
+                            Merkle.forPublicKeys(function (err, merkle) {
+                              next(err, merkle);
+                            });
+                          },
+                          function (merkle, next) {
+                            merkle.push(pubkey.fingerprint);
+                            merkle.save(function (err) {
+                              next(err);
+                            });
+                          }
+                        ], function (err, result) {
+                          if(err){
+                            console.error(err);
+                          }
+                        });
+                      }
                       console.log("Created " + pubkey.fingerprint + ".");
                       done(err);
                     });
@@ -184,3 +234,11 @@ module.exports.add = function (req, res) {
       res.send(400, 'Not a OpenPGP data: ' + err);
   });
 };
+
+function merkleDone(req, res, json) {
+  if(req.query.nice){
+    res.setHeader("Content-Type", "text/plain");
+    res.end(JSON.stringify(json, null, "  "));
+  }
+  else res.end(JSON.stringify(json));
+}

@@ -73,6 +73,10 @@ MerkleSchema.statics.forNextMembership = function (done) {
   });
 };
 
+MerkleSchema.statics.forPublicKeys = function (done) {
+  retrieve({ type: 'pubkeys' }, done);
+};
+
 MerkleSchema.statics.signaturesOfAmendment = function (number, hash, done) {
   retrieve({ type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };

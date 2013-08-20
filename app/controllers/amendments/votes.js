@@ -193,6 +193,11 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             merkle.save(function (err) {
               next(err, am, voteEntity);
             });
+          },
+          function (am, voteEntity, next) {
+            am.updateMerkles(function (err) {
+              next(err, am, voteEntity);
+            });
           }
         ], callback);
       }
@@ -208,10 +213,6 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             am.save(function (err) {
               if(!err){
                 console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
-                am.updateMerkles(function (err) {
-                  if(err)
-                    console.error(err);
-                });
               }
               else console.err(err);
             })

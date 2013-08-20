@@ -52,6 +52,10 @@ function defaultPromotion (amendment, decision) {
         next('Not promoted: need root amendment first');
         return;
       }
+      if(am && am.number == amendment.number && am.hash == amendment.hash){
+        next('Stacked vote of currently promoted');
+        return;
+      }
       async.waterfall([
         function (pass){
           if(amendment.number != am.number + 1){
@@ -95,9 +99,9 @@ function defaultPromotion (amendment, decision) {
           console.log("Voter: " + votersMerkle.leaves());
           console.log("In: " + inVoters);
           console.log("Out: " + outVoters);
-          if(outVoters.length > 0){
-          // if(outVoters.length > prevVotersMerkle.length / 3.0){
-            pass('Not promoted: not enough votes for this amendment (requires at least 3/3 of the previous voters)');
+          // if(outVoters.length > 0){
+          if(outVoters.length > prevVotersMerkle.length / 3.0){
+            pass('Not promoted: not enough votes for this amendment (requires at least 2/3 of the previous voters)');
             return;
           }
           pass();

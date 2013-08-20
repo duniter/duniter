@@ -142,9 +142,11 @@ AmendmentSchema.methods = {
     function build (func, funcAM, callback) {
       async.waterfall([
         function (next) {
+          // Computes leaves
           funcAM.call(that, next);
         },
         function (leaves, next){
+          // Points to good Merkle and overwrite it
           func.call(Merkle, that.number, that.hash, function (err, merkle) {
             merkle.initialize(leaves);
             next(err, merkle);
@@ -171,6 +173,9 @@ AmendmentSchema.methods = {
     }, done);
   },
 
+  /**
+  * Computes a the Merkle tree of memberships fetching previous amendment's Merkle and applying it recorded memberships changes.
+  */
   buildMembershipsMerkle: function (done) {
     var that = this;
     this.getPrevious(function (err, previous) {
@@ -184,23 +189,27 @@ AmendmentSchema.methods = {
             next(null, []);
             return;
           }
+          // Get memberships of the previous amendment
           mongoose.model('Merkle').membershipsWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
             next(err, merkle.leaves());
           });
         },
         function (leaves, next) {
           var newMemberships = [];
+          // Get memberships of JOIN or ACTUALIZE of this amendment (pending actually)
           async.forEach(that.getNewMembers(), function (item,callback){
-            mongoose.model('Membership').find({ fingerprint: item, basis: that.number }, function (err, memberships) {
+            mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: { $in: ['JOIN', 'ACTUALIZE'] } }, function (err, memberships) {
               if(err){
                 callback(err);
                 return;
               }
-              if(memberships.length == 0 || memberships.length > 1){
-                callback('Integrity error : zero or more that one membership for amendment #' + that.number + ' and member ' + item);
+              if(memberships.length > 1){
+                callback('Integrity error : more that one (' + that.number + ') membership for amendment');
                 return;
               }
-              newMemberships.push(memberships[0].hash);
+              if(memberships.length == 1){
+                newMemberships.push(memberships[0].hash);
+              }
               callback();
             });
           }, function(err){
@@ -214,17 +223,21 @@ AmendmentSchema.methods = {
         },
         function (leaves, next) {
           var leavingMemberships = [];
+          // Get memberships of LEAVE of this amendment (pending actually)
+          // TODO: add outdated memberships requests
           async.forEach(that.getLeavingMembers(), function(item,callback){
-            mongoose.model('Membership').find({ fingerprint: item, basis: that.number }, function (err, memberships) {
+            mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: 'LEAVE' }, function (err, memberships) {
               if(err){
                 callback(err);
                 return;
               }
-              if(memberships.length == 0 || memberships.length > 1){
-                callback('Integrity error : zero or more that one membership for amendment #' + that.number + ' and member ' + item);
+              if(memberships.length > 1){
+                callback('Integrity error : more that one (' + memberships.length + ') membership for amendment');
                 return;
               }
-              leavingMemberships.push(memberships[0].hash);
+              if(memberships.length == 1){
+                leavingMemberships.push(memberships[0].hash);
+              }
             callback();
             });
           }, function(err){
@@ -256,56 +269,8 @@ AmendmentSchema.methods = {
             next(null, []);
             return;
           }
-          mongoose.model('Merkle').signaturesWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
+          mongoose.model('Merkle').signaturesOfAmendment(previous.number, previous.hash, function (err, merkle) {
             next(err, merkle.leaves());
-          });
-        },
-        function (leaves, next) {
-          var newVotes = [];
-          async.forEach(that.getNewVoters(), function(item,callback){
-            mongoose.model('Vote').find({ issuer: item, basis: that.number }, function (err, votes) {
-              if(err){
-                callback(err);
-                return;
-              }
-              if(votes.length == 0 || votes.length > 1){
-                callback('Integrity error : ' + votes.length + ' signatures for amendment #' + that.number + ' and member ' + item);
-                return;
-              }
-              newVotes.push(votes[0].hash);
-              callback();
-            });
-          }, function(err){
-            if(err){
-              next(err);                
-              return;
-            }
-            leaves = _(leaves).union(newVotes);
-            next(null, leaves);
-          });
-        },
-        function (leaves, next) {
-          var leavingVotes = [];
-          async.forEach(that.getLeavingVoters(), function(item,callback){
-            mongoose.model('Vote').find({ issuer: item, basis: that.number }, function (err, votes) {
-              if(err){
-                callback(err);
-                return;
-              }
-              if(votes.length == 0 || votes.length > 1){
-                callback('Integrity error : ' + votes.length + ' signatures for amendment #' + that.number + ' and member ' + item);
-                return;
-              }
-              leavingVotes.push(votes[0].hash);
-              callback();
-            });
-          }, function(err){
-            if(err){
-              next(err);                
-              return;
-            }
-            leaves = _(leaves).difference(leavingVotes);
-            next(null, leaves);
           });
         }
       ], function (err, leaves) {

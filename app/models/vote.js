@@ -37,17 +37,26 @@ VoteSchema.methods = {
           .signature(that.signature)
           .verify(next);
       },
-      function (verified, next) {
-        Merkle.forNextMembership(function (err, merkle) {
-          if(!verified){
-            next('Bad signature for amendment');
-            return;
+    function (verified, next) {
+        if(!verified){
+          next('Bad signature for amendment');
+          return;
+        }
+        async.waterfall([
+          function (next){
+            that.amendment.buildMembershipsMerkle(next);
+          },
+          function (leaves, next){
+            var merkle = new Merkle();
+            merkle.initialize(leaves);
+            if(merkle.root() != that.amendment.membersStatusRoot){
+              next('Bad members status root (require ' + that.amendment.membersStatusRoot + ', computed ' + merkle.root() + ')');
+              return;
+            }
+            next(null, verified);
           }
-          if(merkle.root() != that.amendment.membersStatusRoot){
-            next('Bad members status root (require ' + that.amendment.membersStatusRoot + ', computed ' + merkle.root() + ')');
-            return;
-          }
-          next(err, verified);
+        ], function (err, result) {
+          next(err, result);
         });
       }
     ], done);

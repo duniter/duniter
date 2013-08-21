@@ -40,7 +40,10 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             .exec(function (err, votes) {
               var map = {};
               votes.forEach(function (vote){
-                map[vote.hash] = vote.signature;
+                map[vote.hash] = {
+                  issuer: vote.issuer,
+                  signature: vote.signature
+                };
               });
               done(null, map);
             });
@@ -86,7 +89,16 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             .exec(function (err, memberships) {
               var map = {};
               memberships.forEach(function (membs){
-                map[membs.hash] = membs.signature;
+                map[membs.hash] = {
+                  "signature": membs.signature,
+                  "request": {
+                    "version": membs.version,
+                    "currency": membs.currency,
+                    "status": membs.status,
+                    "basis": membs.basis
+                  },
+                  "issuer": membs.fingerprint
+                };
               });
               done(null, map);
             });

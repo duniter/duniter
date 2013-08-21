@@ -35,7 +35,10 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
           .exec(function (err, votes) {
             var map = {};
             votes.forEach(function (vote){
-              map[vote.hash] = vote.signature;
+              map[vote.hash] = {
+                issuer: vote.issuer,
+                signature: vote.signature
+              };
             });
             done(null, map);
           });

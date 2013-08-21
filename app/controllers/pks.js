@@ -31,7 +31,10 @@ module.exports.all = function (req, res) {
         .exec(function (err, pubkeys) {
           var map = {};
           pubkeys.forEach(function (pubkey){
-            map[pubkey.fingerprint] = pubkey.raw;
+            map[pubkey.fingerprint] = {
+              fingerprint: pubkey.fingerprint,
+              pubkey: pubkey.raw
+            };
           });
           done(null, map);
         });

@@ -309,7 +309,10 @@ Merkle URL leaf: public key
 ```json
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK"
+  "value": {
+    "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "pubkey": "BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK"
+  }
 }
 ```
 
@@ -598,7 +601,8 @@ Merkle URL leaf: membership request
       "currency": "beta_brousoufs",
       "status": "JOIN",
       "basis": 0
-    }
+    },
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
   }
 }
 ```
@@ -749,7 +753,10 @@ Merkle URL leaf: vote
 ```json
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
+  "value": {
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
+  }
 }
 ```
 
@@ -848,7 +855,10 @@ Merkle URL leaf: signature
 ```json
 {
   "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
-  "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
+  "value": {
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
+  }
 }
 ```
 
@@ -1008,7 +1018,8 @@ Merkle URL leaf: membership request
       "currency": "beta_brousoufs",
       "status": "JOIN",
       "basis": 0
-    }
+    },
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
   }
 }
 ```
@@ -1048,7 +1059,10 @@ Merkle URL leaf: signature
 ```json
 {
   "hash": "2D41234540938C4263CBC5E7E11564038DED2118",
-  "value": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
+  "value": {
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
+  }
 }
 ```
 

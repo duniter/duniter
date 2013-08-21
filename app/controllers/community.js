@@ -26,7 +26,10 @@ module.exports = function (pgp, currency, conf) {
           .exec(function (err, votes) {
             var map = {};
             votes.forEach(function (vote){
-              map[vote.hash] = vote.signature;
+              map[vote.hash] = {
+                issuer: vote.issuer,
+                signature: vote.signature
+              };
             });
             done(null, map);
           });
@@ -155,7 +158,8 @@ module.exports = function (pgp, currency, conf) {
                   "currency": map[hash].currency,
                   "status": map[hash].status,
                   "basis": map[hash].basis
-                }
+                },
+                "issuer": map[hash].fingerprint
               }
             });
             done(null, values);

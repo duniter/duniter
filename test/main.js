@@ -203,12 +203,12 @@ before(function (done) {
     function (next) { get('/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures', next); },
     function (next) { get('/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self', next); },
-    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/status', next); },
+    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/memberships', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters', next); },
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/self', next); },
-    function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/status', next); },
+    function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/memberships', next); },
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/members', next); },
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures', next); },
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/voters', next); },
@@ -488,8 +488,8 @@ describe('Checking amendments', function(){
     _(json.merkle.levels[0]).size().should.equal(1);
     json.merkle.levels[0][0].should.equal('DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
   });
-  it('0 should respond 200 and have some status', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/status'][0].res.text);
+  it('0 should respond 200 and have some memberships', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/memberships'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
     _(json.merkle.levels).size().should.equal(1);
@@ -545,8 +545,8 @@ describe('Checking amendments', function(){
     _(json.merkle.levels[0]).size().should.equal(1);
     json.merkle.levels[0][0].should.equal('931A15C9CAE0BA73E9B4F1E8B0251452F3A882C7');
   });
-  it('1 should respond 200 and have some status', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/status'][0].res.text);
+  it('1 should respond 200 and have some memberships', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/memberships'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
     _(json.merkle.levels).size().should.equal(1);
@@ -768,9 +768,9 @@ describe('Request on /hdc/amendments/view/SOME_ID', function(){
       .get('/hdc/amendments/view/SOME_ID/signatures')
       .expect(400, done);
   });
-  it('/status GET should respond 400', function(done){
+  it('/memberships GET should respond 400', function(done){
     request(app)
-      .get('/hdc/amendments/view/SOME_ID/status')
+      .get('/hdc/amendments/view/SOME_ID/memberships')
       .expect(400, done);
   });
   // Good param
@@ -794,9 +794,9 @@ describe('Request on /hdc/amendments/view/SOME_ID', function(){
       .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures')
       .expect(404, done);
   });
-  it('/status GET should respond 404', function(done){
+  it('/memberships GET should respond 404', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/status')
+      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/memberships')
       .expect(404, done);
   });
 
@@ -821,9 +821,9 @@ describe('Request on /hdc/amendments/view/SOME_ID', function(){
       .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures')
       .expect(200, done);
   });
-  it('/status GET should respond 200', function(done){
+  it('/memberships GET should respond 200', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/status')
+      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/memberships')
       .expect(200, done);
   });
 });

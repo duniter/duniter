@@ -15,7 +15,7 @@
       * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
   * [hdc/](#hdc)
       * [amendments/current](#amendmentscurrent)
-      * [amendments/view/[AMENDMENT_ID]/status](#amendmentsviewamendment_idstatus)
+      * [amendments/view/[AMENDMENT_ID]/memberships](#amendmentsviewamendment_idmemberships)
       * [amendments/view/[AMENDMENT_ID]/members](#amendmentsviewamendment_idmembers)
       * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
       * [amendments/view/[AMENDMENT_ID]/voters](#amendmentsviewamendment_idvoters)
@@ -43,8 +43,10 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     http[s]://Node[:port]/...
     |-- pks/
     |   |-- add
+    |   |-- all
     |   `-- lookup
     |-- ucg/
+    |   |-- pubkey
     |   |-- peering
     |   `-- tht/
     |       `-- [PGP_FINGERPRINT]
@@ -53,9 +55,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |   |-- current
         |   |-- view/
         |   |   `-- [AMENDMENT_ID]/
+        |   |       |-- memberships
         |   |       |-- members
         |   |       |-- self
         |   |       `-- voters
+        |   |       `-- signatures
         |   `-- votes/
         |   |   `-- [AMENDMENT_ID]/
         |   |       `-- signatures
@@ -63,10 +67,10 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |   `-- [PGP_FINGERPRINT]/
         |       |-- list
         |       `-- view/
-        |           `-- [COIN_NUMBER]
+        |           `-- [COIN_ID]
         |-- community/
         |   |-- join
-        |   |-- members
+        |   |-- memberships
         |   `-- votes
         `-- transactions/
             |-- process/
@@ -85,7 +89,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
-* `hdc/amendments/view/[AMENDMENT_ID]/status`
+* `hdc/amendments/view/[AMENDMENT_ID]/memberships`
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
@@ -550,7 +554,7 @@ The current amendment.
 }
 ```
 
-#### `amendments/view/[AMENDMENT_ID]/status`
+#### `amendments/view/[AMENDMENT_ID]/memberships`
 **Goal**
 
 Merkle URL refering to the membership requests for every member of the Community for this amendment.

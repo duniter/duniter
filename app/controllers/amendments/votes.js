@@ -204,26 +204,36 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
     ], function (err, am, recordedVote) {
       if(err){
         res.send(400, err);
+        return;
       }
-      else
-      {
-        shouldBePromoted(am, function (err, decision) {
+      // Promotion time
+      async.waterfall([
+        function (next){
+          shouldBePromoted(am, next);
+        },
+        function (decision, next){
           if(decision){
             am.promoted = true;
             am.save(function (err) {
               if(!err){
                 console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
+                next(null);
               }
-              else console.err(err);
+              else next(err);
             })
           }
-          else console.log(err);
-        });
+          else next(null)
+        }
+      ], function (err) {
+        if(err){
+          console.error(err);
+        }
+        // Promoted or not, vote is recorded
         res.end(JSON.stringify({
           amendment: am.hdc(),
           signature: recordedVote.signature
         }));
-      }
+      });
     });
   };
   

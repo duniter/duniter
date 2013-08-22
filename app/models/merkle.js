@@ -118,7 +118,8 @@ MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
     "merkle": {
       "depth": merkle.depth,
       "nodesCount": merkle.nodes,
-      "levelsCount": merkle.levels.length
+      "levelsCount": merkle.levels.length,
+      "leavesCount": merkle.levels[merkle.depth].length
     }
   };
   if(isNaN(lstart)) lstart = 0;

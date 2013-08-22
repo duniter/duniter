@@ -160,6 +160,7 @@ Merkle URL result with `extract=false`.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -181,6 +182,7 @@ Merkle URL result with `extract=true`.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "leaves": {
       "1": {
         "hash": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
@@ -292,6 +294,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -577,6 +580,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -627,6 +631,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -704,6 +709,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -994,6 +1000,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -1042,6 +1049,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -1206,6 +1214,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -1270,6 +1279,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
@@ -1334,6 +1344,7 @@ Merkle URL result.
     "depth": 3,
     "nodesCount": 6,
     "levelsCount": 4,
+    "leavesCount": 5,
     "levels": {
       "0": [
         "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"

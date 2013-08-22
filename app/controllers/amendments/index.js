@@ -102,7 +102,7 @@ function defaultPromotion (amendment, decision) {
           console.log("In: " + inVoters);
           console.log("Out: " + outVoters);
           // if(outVoters.length > 0){
-          if(outVoters.length > prevVotersMerkle.length / 3.0){
+          if(outVoters.length > prevVotersMerkle.leaves().length / 3.0){
             pass('Not promoted: not enough votes for this amendment (requires at least 2/3 of the previous voters)');
             return;
           }

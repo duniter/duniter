@@ -140,6 +140,7 @@ function vote (voteFile, done) {
 }
 
 before(function (done) {
+  this.timeout(10000);
   async.waterfall([
     function (next){
       server.database.connect(config.db.database, config.db.host, config.db.port, next);

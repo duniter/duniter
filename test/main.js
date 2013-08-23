@@ -671,10 +671,10 @@ describe('GET', function(){
         var json = JSON.parse(res.text);
         json.currency.should.equal("beta_brousouf");
         json.key.should.equal("C73882B64B7E72237A2F460CE9CAB76D19A8651E");
+        json.remote.port.should.equal("");
+        json.remote.port.should.equal("");
         should.not.exist(json.ipv4);
         should.not.exist(json.ipv6);
-        should.not.exist(json.remote.port);
-        should.not.exist(json.remote.host);
         json.peers.length.should.equal(0);
         done();
       });

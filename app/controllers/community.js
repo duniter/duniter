@@ -96,6 +96,12 @@ module.exports = function (pgp, currency, conf) {
             ms.verifySignature(pubkey.raw, next);
           },
           function (verified, next){
+            if(verified){
+              ms.fingerprint = pubkey.fingerprint;
+            }
+            ms.checkCoherence(next);
+          },
+          function (next){
             Amendment.current(function (err, am) {
               if(am && ms.basis <= am.number){
                 next('Membership request must target NEXT amendment');
@@ -105,8 +111,7 @@ module.exports = function (pgp, currency, conf) {
             });
           },
           function (next){
-            var cert = jpgp().certificate(pubkey.raw);
-            Membership.find({ fingerprint: cert.fingerprint, basis: ms.basis }, next);
+            Membership.find({ fingerprint: pubkey.fingerprint, basis: ms.basis }, next);
           },
           function (requests, next){
             var msEntity = ms;

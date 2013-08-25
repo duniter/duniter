@@ -165,30 +165,34 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             vote.saveAmendment(next);
           },
           function (am, next){
-            Vote.find({ hash: vote.hash }, next);
+            // Find preceding vote of the issuer, for this amendment
+            Vote.find({ issuer: vote.issuer, basis: vote.basis, amendmentHash: am.hash }, next);
           },
           function (votes, next){
+            // Save vote
             var voteEntity = vote;
+            var previousHash = voteEntity.hash;
             if(votes.length > 0){
               voteEntity = votes[0];
+              previousHash = voteEntity.hash;
               vote.copyValues(voteEntity);
             }
             voteEntity.save(function (err) {
-              next(err, voteEntity);
+              next(err, voteEntity, previousHash);
             });
           },
-          function (voteEntity, next){
+          function (voteEntity, previousHash, next){
             voteEntity.getAmendment(function (err, am) {
-              next(null, am, voteEntity);
+              next(null, am, voteEntity, previousHash);
             })
           },
-          function (am, voteEntity, next) {
+          function (am, voteEntity, previousHash, next) {
             Merkle.signaturesOfAmendment(am.number, am.hash, function (err, merkle) {
-              next(err, am, voteEntity, merkle);
+              next(err, am, voteEntity, previousHash, merkle);
             });
           },
-          function (am, voteEntity, merkle, next) {
-            merkle.push(vote.hash);
+          function (am, voteEntity, previousHash, merkle, next) {
+            merkle.push(vote.hash, previousHash);
             merkle.save(function (err) {
               next(err, am, voteEntity);
             });

@@ -14,6 +14,7 @@ var VoteSchema = new Schema({
   signature: String,
   _amendment: Schema.Types.ObjectId,
   hash: String,
+  amendmentHash: String,
   created: Date,
   updated: Date
 });
@@ -122,6 +123,7 @@ VoteSchema.methods = {
               return;
             }
             that.basis = am.number;
+            that.amendmentHash = am.hash;
             Amendment.find({ number: am.number, hash: am.hash }, function (err, ams) {
               that.amendment = ams.length > 0 ? ams[0] : am;
               done(err, that.amendment);

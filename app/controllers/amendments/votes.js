@@ -156,12 +156,24 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
           function (verified, next){
             vote.issuerIsMember(next);
           },
-          // Save amendment
           function (isMember, next){
             if(!isMember && vote.amendment.number != 0){
               next('Only members may vote for amendments');
               return;
             }
+            next();
+          },
+          // Is not leaving the community
+          function (next) {
+            Membership.find({ fingerprint: vote.issuer, basis: vote.basis, status: 'LEAVE' }, function (err, memberships) {
+              if(memberships.length > 0){
+                next('Vote forbidden: a leaving request was received for this member');
+                return;
+              }
+              next();
+            });
+          },
+          function (next) {
             vote.saveAmendment(next);
           },
           function (am, next){

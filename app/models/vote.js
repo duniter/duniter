@@ -37,7 +37,7 @@ VoteSchema.methods = {
           .signature(that.signature)
           .verify(next);
       },
-    function (verified, next) {
+      function (verified, next) {
         if(!verified){
           next('Bad signature for amendment');
           return;
@@ -61,6 +61,25 @@ VoteSchema.methods = {
       }
     ], done);
     return this;
+  },
+
+  issuerIsMember: function(done) {
+    var that = this;
+    Amendment.current(function (err, current) {
+      if(err){
+        // No amendmennt, thus no member
+        done(null, false);
+        return;
+      }
+      async.waterfall([
+        function (next){
+          Merkle.membersWrittenForAmendment(current.number, current.hash, next);
+        },
+        function (membersMerkle, next){
+          next(null, ~membersMerkle.leaves().indexOf(that.issuer));
+        }
+      ], done);
+    });
   },
   
   parse: function(rawVote, rawPubkey, callback) {

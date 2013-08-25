@@ -78,10 +78,13 @@ var pubkeyCat     = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
 var pubkeyCatSig  = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
 var pubkeyTobi    = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
 var pubkeyTobiSig = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
+var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
+var pubkeyWhiteSig = fs.readFileSync(__dirname + '/data/white.pub.asc', 'utf8');
 
 var joinSnow      = fs.readFileSync(__dirname + '/data/membership/snow.join', 'utf8');
 var joinCat       = fs.readFileSync(__dirname + '/data/membership/lolcat.join', 'utf8');
 var joinTobi      = fs.readFileSync(__dirname + '/data/membership/tobi.join', 'utf8');
+var joinWhite     = fs.readFileSync(__dirname + '/data/membership/white.join', 'utf8');
 
 var voteCatAM0    = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-lolcat.vote', 'utf8');
 var voteTobiAM0   = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-tobi.vote', 'utf8');
@@ -90,6 +93,7 @@ var voteSnowAM0_2 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.diss
 var voteSnowAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/snow.vote', 'utf8');
 var voteTobiAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.vote', 'utf8');
 var voteCatAM1    = fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.vote', 'utf8');
+var voteWhiteAM1  = fs.readFileSync(__dirname + '/data/votes/BB-AM1/white.vote', 'utf8');
 
 var app;
 var apiRes = {};
@@ -165,6 +169,9 @@ before(function (done) {
     function (next) { pksAdd(pubkeyTobi, pubkeySnowSig, next); },
     function (next) { get('/pks/lookup?op=index&search=', next); },
     function (next) { get('/pks/all', next); },
+    function (next) { pksAdd(pubkeyWhite, pubkeyWhiteSig, next); },
+    function (next) { get('/pks/lookup?op=index&search=', next); },
+    function (next) { get('/pks/all', next); },
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
     function (next) { communityJoin(joinSnow, next); },
@@ -198,6 +205,7 @@ before(function (done) {
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
     function (next) { console.log("Sending Cat's AM1..."); vote(voteCatAM1, next); },
+    function (next) { console.log("Sending White's AM1..."); vote(voteWhiteAM1, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
@@ -241,9 +249,10 @@ describe('Sending public key', function(){
   it('of John Snow should respond 200', checkPKSres(++index, 1, 200));
   it('of LoL Cat should respond 200', checkPKSres(++index, 2, 200));
   it('of Tobi Uchiha should respond 200', checkPKSres(++index, 3, 200));
+  it('of Walter White should respond 200', checkPKSres(++index+1, 4, 200));
   it('of Tobi Uchiha with signature of John Snow should respond 400', function(){
     // Issue refactoring because of status
-    apiRes[url][++index].res.should.have.status(400);
+    apiRes[url][index].res.should.have.status(400);
     apiRes[url2][index].res.should.have.status(200);
     var json = JSON.parse(apiRes[url2][index].res.text);
     json.should.have.property('keys');
@@ -330,17 +339,19 @@ describe('Sending membership', function(){
 
 //----------- Votes -----------
 
-function checkVote (index) {
+function checkVote (index, statusCode) {
   return function(){
     // console.log(apiRes['/hdc/amendments/votes'][index].res.text);
     var status = apiRes['/hdc/amendments/votes'][index].res.status;
-    if(status != 200){
+    if(!statusCode && status != 200){
       console.log('HTTP ' + status + ': ' + apiRes['/hdc/amendments/votes'][index].res.text);
     }
-    apiRes['/hdc/amendments/votes'][index].res.should.have.status(200);
-    var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
-    json.should.have.property('amendment');
-    json.should.have.property('signature');
+    apiRes['/hdc/amendments/votes'][index].res.should.have.status(statusCode);
+    if(statusCode == 200){
+      var json = JSON.parse(apiRes['/hdc/amendments/votes'][index].res.text);
+      json.should.have.property('amendment');
+      json.should.have.property('signature');
+    }
   }
 }
 
@@ -384,14 +395,15 @@ function checkVotes (index, votersCount, hash) {
 
 describe('Sending vote', function(){
   var index = -1;
-  it('AM0 of LoL Cat should respond 200', checkVote(++index));
-  it('AM0 of Tobi Uchiha should respond 200', checkVote(++index));
-  it('AM0 of John Snow should respond 200', checkVote(++index));
+  it('AM0 of LoL Cat should respond 200', checkVote(++index, 200));
+  it('AM0 of Tobi Uchiha should respond 200', checkVote(++index, 200));
+  it('AM0 of John Snow should respond 200', checkVote(++index, 200));
   it('- index should have ', checkIndex1(++index));
-  it('AM0 (dissident) of John Snow should respond 200', checkVote(++index));
-  it('AM1 of John Snow should respond 200', checkVote(++index));
-  it('AM1 of Tobi should respond 200', checkVote(++index));
-  it('AM1 of Cat should respond 200', checkVote(++index));
+  it('AM0 (dissident) of John Snow should respond 200', checkVote(++index, 200));
+  it('AM1 of John Snow should respond 200', checkVote(++index, 200));
+  it('AM1 of Tobi should respond 200', checkVote(++index, 200));
+  it('AM1 of Cat should respond 200', checkVote(++index, 200));
+  it('AM1 of Walter White should respond 400', checkVote(++index, 400));
   it('- index should have ', checkIndex2(++index));
 });
 

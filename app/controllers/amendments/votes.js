@@ -145,13 +145,23 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
         var vote = new Vote();
         async.waterfall([
           function (next){
+            // Extract data
             vote.parse(rawVote, next);
           },
           function (vote, next){
+            // Verify content and signature
             vote.verify(currency, next);
           },
-          // Save amendment
+          // Issuer is a member
           function (verified, next){
+            vote.issuerIsMember(next);
+          },
+          // Save amendment
+          function (isMember, next){
+            if(!isMember && vote.amendment.number != 0){
+              next('Only members may vote for amendments');
+              return;
+            }
             vote.saveAmendment(next);
           },
           function (am, next){

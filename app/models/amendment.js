@@ -222,30 +222,44 @@ AmendmentSchema.methods = {
           });
         },
         function (leaves, next) {
-          var leavingMemberships = [];
+          var leavingMemberships = {};
           // Get memberships of LEAVE of this amendment (pending actually)
           // TODO: add outdated memberships requests
           async.forEach(that.getLeavingMembers(), function(item,callback){
-            mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: 'LEAVE' }, function (err, memberships) {
+            async.waterfall([
+              function (next){
+                mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: 'LEAVE' }, function (err, memberships) {
+                  if(memberships.length > 1){
+                    next('Integrity error : more than one (' + memberships.length + ') leave membership for amendment');
+                    return;
+                  }
+                  next(null, memberships[0]);
+                });
+              },
+              function (leaveMS, next){
+                mongoose.model('Membership').find({ fingerprint: item }).sort('-number').exec(function (err, memberships) {
+                  next(null, leaveMS, memberships[0]);
+                });
+              }
+            ], function (err, leaveMS, oldMS) {
               if(err){
                 callback(err);
                 return;
               }
-              if(memberships.length > 1){
-                callback('Integrity error : more that one (' + memberships.length + ') membership for amendment');
-                return;
+              if(oldMS){
+                var index = leaves.indexOf(oldMS.hash);
+                if(~index){
+                  leaves.splice(index, 1);
+                }
               }
-              if(memberships.length == 1){
-                leavingMemberships.push(memberships[0].hash);
-              }
-            callback();
+              leaves.push(leaveMS.hash);
+              callback();
             });
           }, function(err){
             if(err){
               next(err);                
               return;
             }
-            leaves = _(leaves).difference(leavingMemberships);
             next(null, leaves);
           });
         }

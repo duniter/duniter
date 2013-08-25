@@ -29,9 +29,17 @@ MerkleSchema.methods = {
     }
   },
 
-  push: function (leaf) {
+  push: function (leaf, previous) {
     if(this.levels[this.depth].indexOf(leaf) == -1){
       var leaves = this.leaves();
+      // Update or replacement ?
+      if(previous && leaf != previous){
+        var index = leaves.indexOf(previous);
+        if(~index){
+          // Replacement: remove previous hash
+          leaves.splice(index, 1);
+        }
+      }
       leaves.push(leaf);
       leaves.sort();
       this.initialize(leaves);

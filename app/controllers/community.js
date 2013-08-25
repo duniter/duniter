@@ -101,22 +101,25 @@ module.exports = function (pgp, currency, conf) {
           },
           function (requests, next){
             var msEntity = ms;
+            var previousHash = msEntity.hash;
             if(requests.length > 0){
+              // Already existing status request
               msEntity = requests[0];
+              previousHash = requests[0].hash;
               ms.copyValues(msEntity);
             }
             msEntity.fingerprint = pubkey.fingerprint;
             msEntity.save(function (err) {
-              next(err, msEntity);
+              next(err, msEntity, previousHash);
             });
           },
-          function (ms, next) {
+          function (ms, previousHash, next) {
             Merkle.forNextMembership(function (err, merkle) {
-              next(err, ms, merkle);
+              next(err, ms, previousHash, merkle);
             });
           },
-          function (ms, merkle, next) {
-            merkle.push(ms.hash);
+          function (ms, previousHash, merkle, next) {
+            merkle.push(ms.hash, previousHash);
             merkle.save(function (err) {
               next(err, ms);
             });

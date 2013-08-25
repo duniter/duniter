@@ -96,6 +96,15 @@ module.exports = function (pgp, currency, conf) {
             ms.verifySignature(pubkey.raw, next);
           },
           function (verified, next){
+            Amendment.current(function (err, am) {
+              if(am && ms.basis <= am.number){
+                next('Membership request must target NEXT amendment');
+                return;
+              }
+              next();
+            });
+          },
+          function (next){
             var cert = jpgp().certificate(pubkey.raw);
             Membership.find({ fingerprint: cert.fingerprint, basis: ms.basis }, next);
           },

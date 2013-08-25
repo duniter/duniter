@@ -201,8 +201,8 @@ before(function (done) {
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/current', next); },
-    function (next) { get('/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures', next); },
-    function (next) { get('/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures', next); },
+    function (next) { get('/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047', next); },
+    function (next) { get('/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/memberships', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members', next); },
@@ -482,7 +482,7 @@ describe('Checking amendments', function(){
     sha1(json.raw).toUpperCase().should.equal('376C5A6126A4688B18D95043261B2D59867D4047');
   });
   it('0 should respond 200 and be legitimated by 3 signatures', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
     _(json.merkle.levels).size().should.equal(1);
@@ -539,7 +539,7 @@ describe('Checking amendments', function(){
     sha1(json.raw).toUpperCase().should.equal('0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
   });
   it('1 should respond 200 and be legitimated by 3 signatures', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'][0].res.text);
     isMerkleNodesResult(json);
     json.merkle.levelsCount.should.equal(3);
     _(json.merkle.levels).size().should.equal(1);
@@ -829,20 +829,20 @@ describe('Request on /hdc/amendments/view/SOME_ID', function(){
   });
 });
 
-describe('Request on /hdc/amendments/votes/:amendment_id/signatures', function(){
+describe('Request on /hdc/amendments/votes/:amendment_id', function(){
   it('GET with good URL param should respond 200', function(done){
     request(app)
-      .get('/hdc/amendments/votes/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures')
+      .get('/hdc/amendments/votes/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A')
       .expect(200, done);
   });
   it('POST should respond 404', function(done){
     request(app)
-      .post('/hdc/amendments/votes/SOME_AM_ID/signatures')
+      .post('/hdc/amendments/votes/SOME_AM_ID')
       .expect(404, done);
   });
   it('GET with wrong URL param should respond 400', function(done){
     request(app)
-      .get('/hdc/amendments/votes/SOME_AM_ID/signatures')
+      .get('/hdc/amendments/votes/SOME_AM_ID')
       .expect(400, done);
   });
 });

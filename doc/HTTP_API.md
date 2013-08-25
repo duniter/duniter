@@ -22,7 +22,7 @@
       * [amendments/view/[AMENDMENT_ID]/signatures](#amendmentsviewamendment_idsignatures)
       * [amendments/votes (GET)](#amendmentsvotes-get)
       * [amendments/votes (POST)](#amendmentsvotes-post)
-      * [amendments/votes/[AMENDMENT_ID]/signatures](#amendmentsvotesamendment_idsignatures)
+      * [amendments/votes/[AMENDMENT_ID]](#amendmentsvotesamendment_id)
       * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_ID]](#coinspgp_fingerprintviewcoin_id)
       * [community/join](#communityjoin)
@@ -93,7 +93,7 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
-* `hdc/amendments/votes/[AMENDMENT_ID]/signatures`
+* `hdc/amendments/votes/[AMENDMENT_ID]`
 * `hdc/community/memberships`
 * `hdc/community/votes`
 * `hdc/transactions/all`
@@ -833,7 +833,7 @@ The posted amendment + posted signature.
 }
 ```
 
-#### `amendments/votes/[AMENDMENT_ID]/signatures`
+#### `amendments/votes/[AMENDMENT_ID]`
 **Goal**
 
 Merkle URL referencing to the votes for a given amendment.

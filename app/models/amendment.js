@@ -195,16 +195,73 @@ AmendmentSchema.methods = {
           });
         },
         function (leaves, next) {
+          if(!previous){
+            next(null, leaves, []);
+            return;
+          }
+          mongoose.model('Merkle').membersWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
+            next(err, leaves, merkle.leaves());
+          });
+        },
+        function (leaves, members, next) {
+          // Get memberships of ACTUALIZE of this amendment (pending actually)
+          // TODO: add outdated memberships requests
+          var actuMembers = _(members).difference(that.getNewMembers(), that.getLeavingMembers());
+          async.forEach(actuMembers, function(item, callback){
+            async.waterfall([
+              function (cb){
+                mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: 'ACTUALIZE' }, function (err, memberships) {
+                  if(memberships.length > 1){
+                    cb('Integrity error : more than one (' + memberships.length + ') ACTUALIZE membership for amendment');
+                    return;
+                  }
+                  cb(null, memberships[0]);
+                });
+              },
+              function (actuMS, cb){
+                if(arguments.length == 1){
+                  cb = actuMS;
+                  actuMS = null;
+                }
+                mongoose.model('Membership').find({ fingerprint: item }).sort('-number').exec(function (err, memberships) {
+                  cb(null, actuMS, memberships[0]);
+                });
+              }
+            ], function (err, actuMS, oldMS) {
+              if(err){
+                callback(err);
+                return;
+              }
+              if(actuMS){
+                if(oldMS){
+                  var index = leaves.indexOf(oldMS.hash);
+                  if(~index){
+                    leaves.splice(index, 1);
+                  }
+                }
+                leaves.push(actuMS.hash);
+              }
+              callback();
+            });
+          }, function(err){
+            if(err){
+              next(err);                
+              return;
+            }
+            next(null, leaves);
+          });
+        },
+        function (leaves, next) {
           var newMemberships = [];
           // Get memberships of JOIN or ACTUALIZE of this amendment (pending actually)
           async.forEach(that.getNewMembers(), function (item,callback){
-            mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: { $in: ['JOIN', 'ACTUALIZE'] } }, function (err, memberships) {
+            mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: 'JOIN' }, function (err, memberships) {
               if(err){
                 callback(err);
                 return;
               }
               if(memberships.length > 1){
-                callback('Integrity error : more that one (' + that.number + ') membership for amendment');
+                callback('Integrity error : more that one (' + that.number + ') JOIN for amendment');
                 return;
               }
               if(memberships.length == 1){
@@ -230,7 +287,7 @@ AmendmentSchema.methods = {
               function (next){
                 mongoose.model('Membership').find({ fingerprint: item, basis: that.number, status: 'LEAVE' }, function (err, memberships) {
                   if(memberships.length > 1){
-                    next('Integrity error : more than one (' + memberships.length + ') leave membership for amendment');
+                    next('Integrity error : more than one (' + memberships.length + ') LEAVE membership for amendment');
                     return;
                   }
                   next(null, memberships[0]);

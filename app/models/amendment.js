@@ -252,6 +252,15 @@ AmendmentSchema.methods = {
           });
         },
         function (leaves, next) {
+          // Remove LEAVE membership of old amendment
+          mongoose.model('Membership').find({ basis: that.number-1, hash: { $in: leaves }, status: 'LEAVE' }, function (err, memberships) {
+            memberships.forEach(function (ms) {
+              leaves.splice(leaves.indexOf(ms.hash), 1);
+            });
+            next(null, leaves);
+          });
+        },
+        function (leaves, next) {
           var newMemberships = [];
           // Get memberships of JOIN or ACTUALIZE of this amendment (pending actually)
           async.forEach(that.getNewMembers(), function (item,callback){

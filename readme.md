@@ -66,7 +66,7 @@ $ sudo npm install ./ucoin -g
 Launch it using the following command:
 
 ```bash
-$ ucoin --currency beta_brousoufs
+$ ucoind --currency beta_brousoufs
 
 uCoin server listening on localhost port 8081
 ```
@@ -81,14 +81,14 @@ The database name is the currency name given to uCoin when started.
 Thus, when using:
 
 ```bash
-$ ucoin --currency beta_brousoufs
+$ ucoind --currency beta_brousoufs
 ```
 ... the targeted database is "beta_brousoufs".
 
 To configure "beta_brousoufs" database, just run uCoin with the --config parameter:
 
 ```bash
-$ ucoin --config beta_brousoufs
+$ ucoind --config beta_brousoufs
 ```
 
 All the parameters given after this will be stored in the database.
@@ -98,7 +98,7 @@ All the parameters given after this will be stored in the database.
 By default, ucoin runs on port 8081. You may change it using the --port parameter:
 
 ```bash
-$ ucoin --config beta_brousoufs --port 80
+$ ucoind --config beta_brousoufs --port 80
 ```
 
 (may require root access to launch on port 80)
@@ -106,25 +106,25 @@ $ ucoin --config beta_brousoufs --port 80
 It is also possible to specify the IPv4 interface:
 
 ```bash
-$ ucoin --config beta_brousoufs -p 8888 --ipv4 127.0.0.1
+$ ucoind --config beta_brousoufs -p 8888 --ipv4 127.0.0.1
 ```
 
 Or IPv6 interface:
 
 ```bash
-$ ucoin --config beta_brousoufs -p 8888 --ipv6 ::1
+$ ucoind --config beta_brousoufs -p 8888 --ipv6 ::1
 ```
 
 Or both:
 
 ```bash
-$ ucoin --config beta_brousoufs -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+$ ucoind --config beta_brousoufs -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
 ```
 
 Launching uCoin will results:
 
 ```bash
-$ ucoin --currency beta_brousoufs
+$ ucoind --currency beta_brousoufs
 
 uCoin server listening on 127.0.0.1 port 8888
 uCoin server listening on ::1 port 8888
@@ -139,7 +139,7 @@ Note too that listening to multiple interfaces doesn't imply mutiple program ins
 As the server may be behind a reverse proxy, or because hosts may change of address, it might be useful to provide some remote informations like remote `host` and `port` telling where is really located the node:
 
 ```bash
-$ ucoin --config beta_brousoufs --remoteh "some.remote.url" --remotep "8844"
+$ ucoind --config beta_brousoufs --remoteh "some.remote.url" --remotep "8844"
 ```
 
 #### Authentication
@@ -149,19 +149,19 @@ This is one of the great features coming with uCoin: [connect-pgp](https://githu
 To use this feature, just configure uCoin using `--pgpkey` parameter:
 
 ```bash
-$ ucoin --config beta_brousoufs --pgpkey /path/to/private/key
+$ ucoind --config beta_brousoufs --pgpkey /path/to/private/key
 ```
 
 Eventually, you might need to give a password, otherwise uCoin will crash:
 
 ```bash
-$ ucoin --config beta_brousoufs --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
+$ ucoind --config beta_brousoufs --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
 ```
 
 Resulting in:
 
 ```bash
-$ ucoin --currency beta_brousoufs
+$ ucoind --currency beta_brousoufs
 
 Signed requests with PGP: enabled.
 uCoin server listening on 127.0.0.1 port 8888
@@ -172,11 +172,11 @@ uCoin server listening on ::1 port 8888
 
 For more more details on the ucoin command, run:
 
-    ucoin --help
+    ucoind --help
 
 Which displays:
 
-      Usage: ucoin [options]
+      Usage: ucoind [options]
 
       Options:
 

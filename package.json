@@ -44,6 +44,6 @@
     "supertest": ""
   },
   "bin": {
-    "ucoin": "./bin/ucoin"
+    "ucoind": "./bin/ucoind"
   }
 }

@@ -16,24 +16,24 @@ Implementation: Autonomous server:
 
     Registrations:
      ✔ Receive signed registration: join @done (13-08-15 12:01)
-     ☐ Receive signed registration: actualize
-     ☐ Receive signed registration: leave
-     ☐ View received registrations for pending amendment
+     ✔ Receive signed registration: actualize @done (13-08-27 22:04)
+     ✔ Receive signed registration: leave @done (13-08-27 22:04)
+     ✔ View received registrations for pending amendment @done (13-08-27 22:04)
      ☐ Make strategies for registration acceptation
 
     Votes:
      ✔ Receive votes @done (13-08-15 12:01)
      ✔ Get an index of votes @done (13-08-15 12:01)
-     ☐ View votes for a given pending amendment
-     ☐ When amendment enough votes, promote it as current
-     ☐ View received votes for current amendment
+     ✔ View votes for a given pending amendment @done (13-08-27 22:08)
+     ✔ When amendment enough votes, promote it as current @done (13-08-27 22:08)
+     ✔ View received votes for current amendment @done (13-08-27 22:08)
      ☐ Make strategies for amendment promotion
 
     Amendments:
-     ☐ Get the current promoted amendment
-     ☐ Get any stored amendment
-     ☐ View registrations of any stored amendment
-     ☐ View voting base of any stored amendment
+     ✔ Get the current promoted amendment @done (13-08-27 22:08)
+     ✔ Get any stored amendment @done (13-08-27 22:08)
+     ✔ View registrations of any stored amendment @done (13-08-27 22:08)
+     ✔ View voting base of any stored amendment @done (13-08-27 22:08)
 
     Transactions:
      ☐ Receive issuance transactions

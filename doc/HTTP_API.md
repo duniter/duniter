@@ -381,6 +381,9 @@ GET peering informations about a peer.
 **Returns**
 
 The peering entry of this node.
+
+This entry contains a sum-up of common Merkle URLs handled by this node, with their respective root value (level `0`).
+
 ```json
 {
   "currency": "CURRENCY_NAME",
@@ -394,7 +397,53 @@ The peering entry of this node.
     {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
     {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
     {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
-  ]
+  ],
+  "merkles": {
+    "pks/all": {
+      "depth": 3,
+      "nodesCount": 6,
+      "levelsCount": 4,
+      "leavesCount": 5,
+      "levels": {
+        "0": [
+          "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+        ]
+      }
+    },
+    "hdc/community/memberships": {
+      "depth": 3,
+      "nodesCount": 6,
+      "levelsCount": 4,
+      "leavesCount": 5,
+      "levels": {
+        "0": [
+          "389F50C7AF7A13F08F4371F6F5066A0B3D829E68"
+        ]
+      }
+    },
+    "hdc/community/votes": {
+      "depth": 3,
+      "nodesCount": 6,
+      "levelsCount": 4,
+      "leavesCount": 5,
+      "levels": {
+        "0": [
+          "9D5DC18A6CB3FA94B8FC3E07793D391CA1CA5BE5"
+        ]
+      }
+    },
+    "hdc/transactions/all": {
+      "depth": 3,
+      "nodesCount": 6,
+      "levelsCount": 4,
+      "leavesCount": 5,
+      "levels": {
+        "0": [
+          "8E3F5A2363752601E92AE12047B5AEAED79166D5"
+        ]
+      }
+    }
+  }
 }
 ```
 

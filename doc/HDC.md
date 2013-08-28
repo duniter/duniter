@@ -350,6 +350,7 @@ A transaction is defined by the following format:
     Version: VERSION
     Sender: SENDER_FINGERPRINT
     Number: INCREMENT
+    PreviousHash: PREVIOUS_TRANSACTION_HASH
     Recipient: RECIPIENT_FINGERPRINT
     Type: TRANSACTION_TYPE
     Coins:
@@ -368,6 +369,7 @@ Field | Description
 `Version` | denotes the current structure version.
 `Sender` | the current owner's OpenPGP fingerprint of the coins to be sent.
 `Number` | an increment number identifying this transaction among all others sender's transactions.
+`PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous transaction (content AND signature), and is used to identify without ambiguity the previous transaction (it is an integrity mecanism).
 `Recipient` | the recipient's OpenPGP fingerprint to whom the coins are to be sent.
 `Type` | gives information on how to to interprete the coin list. Value is either `TRANSFERT`, `ISSUANCE` or `FUSION`.
 `Coins` | a list of coins that are to be sent. Each line starts with a `COIN_ID` identifying the coin, eventually followed by a comma and a `TRANSACTION_ID` justifying the ownership of the coin.
@@ -383,6 +385,7 @@ In HDC, a Transaction structure is considered *valid* if:
 
 * Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
 * Fields `Version`, `Number` are zero or positive integer values.
+* Field `PreviousHash` is an upper-cased SHA-1 hash, if present.
 * Field `Type` has either `TRANSFERT`, `ISSUANCE` or `FUSION` value.
 * In case of `Type: TRANSFERT`:
   * `Coins` must have at least one coin.
@@ -448,6 +451,7 @@ Such a transaction is used to *create* new money, i.e. new coins. To be a valid 
     Version: 1
     Sender: 31A6302161AC8F5938969E85399EB3415C237F93
     Number: 1
+    PreviousHash: AE5780D605097BA393B4F32DC858C46D4344339D
     Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
     Type: ISSUANCE
     Coins:
@@ -483,6 +487,7 @@ Thereafter, when `Recipient` wants to send those coins to someone else, he will 
     Version: 1
     Sender: 31A6302161AC8F5938969E85399EB3415C237F93
     Number: 92
+    PreviousHash: 45D873050A5F63F4A801B626C0E95D1CACA6B8AF
     Recipient: 86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8
     Type: TRANSFERT
     Coins:
@@ -500,6 +505,7 @@ Fusion transaction is identified by having `Type: FUSION` value. Such a transact
     Version: 1
     Sender: 31A6302161AC8F5938969E85399EB3415C237F93
     Number: 92
+    PreviousHash: 3121CAB678CAC26D8E2E285812719672E3430A75
     Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
     Type: FUSION
     Coins:

@@ -348,6 +348,7 @@ A transaction is used either to:
 A transaction is defined by the following format:
 
     Version: VERSION
+    Currency: CURRENCY_NAME
     Sender: SENDER_FINGERPRINT
     Number: INCREMENT
     PreviousHash: PREVIOUS_TRANSACTION_HASH
@@ -367,6 +368,7 @@ Here is a description of each field:
 Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
+`Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be HDC-based.
 `Sender` | the current owner's OpenPGP fingerprint of the coins to be sent.
 `Number` | an increment number identifying this transaction among all others sender's transactions.
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous transaction (content AND signature), and is used to identify without ambiguity the previous transaction (it is an integrity mecanism).
@@ -383,6 +385,7 @@ And `TRANSACTION_ID` has the following format:
 
 In HDC, a Transaction structure is considered *valid* if:
 
+* Field `Currency` is not empty.
 * Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
 * Fields `Version`, `Number` are zero or positive integer values.
 * Field `PreviousHash` is an upper-cased SHA-1 hash, if present.
@@ -449,6 +452,7 @@ Such a transaction is used to *create* new money, i.e. new coins. To be a valid 
 #### Example
 
     Version: 1
+    Currency: beta_brousouf
     Sender: 31A6302161AC8F5938969E85399EB3415C237F93
     Number: 1
     PreviousHash: AE5780D605097BA393B4F32DC858C46D4344339D
@@ -485,6 +489,7 @@ Thereafter, when `Recipient` wants to send those coins to someone else, he will 
 #### Example
 
     Version: 1
+    Currency: beta_brousouf
     Sender: 31A6302161AC8F5938969E85399EB3415C237F93
     Number: 92
     PreviousHash: 45D873050A5F63F4A801B626C0E95D1CACA6B8AF
@@ -503,6 +508,7 @@ Fusion transaction is identified by having `Type: FUSION` value. Such a transact
 #### Example
 
     Version: 1
+    Currency: beta_brousouf
     Sender: 31A6302161AC8F5938969E85399EB3415C237F93
     Number: 92
     PreviousHash: 3121CAB678CAC26D8E2E285812719672E3430A75

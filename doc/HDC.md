@@ -394,9 +394,11 @@ In HDC, a Transaction structure is considered *valid* if:
   * `Coins` must have at least one coin.
   * Each line must be **with** `TRANSACTION_ID` provided.
 * In case of `Type: ISSUANCE`:
+  * `Sender` equals to `Recipient`
   * `Coins` must have at least one coin.
   * Each line must be **without** `TRANSACTION_ID` provided.
 * In case of `Type: FUSION`:
+  * `Sender` equals to `Recipient`
   * `Coins` must have its first coin, matching a `F-TRANSACTION_NUMBER` format (it is the result coin).
   * Following coins must have lines **with** `TRANSACTION_ID` provided.
   * Following coins sum of values **must be exactly** the same value as the first coin (result coin)

@@ -405,13 +405,13 @@ In HDC, a Transaction structure is considered *valid* if:
 
 A `COIN_ID` has the following format:
 
-    INDIVIDUAL_FINGERPRINT-COIN_NUMBER-COIN_BASE-COIN_POWER-COIN_ORIGIN
+    ISSUER_FINGERPRINT-COIN_NUMBER-COIN_BASE-COIN_POWER-COIN_ORIGIN
 
 Here is a description of each field:
 
 Field | Description
 ----- | -----------
-`INDIVIDUAL_FINGERPRINT` | is the member's OpenPGP fingerprint issuing this coin.
+`ISSUER_FINGERPRINT` | is the issuer's OpenPGP fingerprint issuing this coin (not necessarily a member).
 `COIN_NUMBER` | is an increment number identifying this coin among all others issued by this individual.
 `COIN_BASE` | is a decimal number between 1 and 9 defining the base value of the coin.
 `COIN_POWER` | is a decimal number with no maximum power, but with a minimal value defined in the Monetary Contract.
@@ -429,6 +429,10 @@ Field | Description
 `A or F` | `A` indicates the coin is issued from an amendment, while `F` indicates the coin is issued by fusion of other coins.
 `AMENDMENT_NUMBER` | is the unique Amendment number from which this coin is created (justifying the issuance).
 `TRANSACTION_NUMBER` | is the unique Transaction number of the individual from which this coin is created (fusion case).
+
+** Rule **
+
+If a coin's origin is type 'A', then the `ISSUER_FINGERPRINT` is supposed to be a member of the Community for the amendment `AMENDMENT_NUMBER`. If it is not the case, transaction is to be considered invalid (otherwise it would mean any PGP key could receive Universal Dividend which is reserved to human members).
 
 #### Examples
 

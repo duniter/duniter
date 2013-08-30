@@ -11,7 +11,26 @@ var Vote       = mongoose.model('Vote');
 module.exports = function (pgp, currency, conf) {
 
   this.all = function (req, res) {
-    showMerkle(Merkle.txAll, null, req, res);
+    async.waterfall([
+      function (next){
+        Merkle.txAll(next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, function (hashes, done) {
+          var map = {};
+          hashes.forEach(function (hash){
+            map[hash] = hash;
+          });
+          done(null, map);
+        }, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      merkleDone(req, res, json);
+    });
   }
 
   this.sender = {

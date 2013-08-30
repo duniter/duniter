@@ -38,8 +38,6 @@ var gets = [
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
-  {expect: 501, url: '/hdc/transactions/all'},
-  {expect: 501, url: '/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/transactions/view/SOME_TX_ID'}
 ];
@@ -856,5 +854,22 @@ describe('Request on /hdc/amendments/votes/:amendment_id', function(){
     request(app)
       .get('/hdc/amendments/votes/SOME_AM_ID')
       .expect(400, done);
+  });
+});
+
+
+describe('Request on /hdc/transactions/all', function(){
+  it('GET with good URL param should respond 200', function(done){
+    request(app)
+      .get('/hdc/transactions/all')
+      .expect(200, done);
+  });
+});
+
+describe('Request on /hdc/transactions/all', function(){
+  it('GET with good URL param should respond 200', function(done){
+    request(app)
+      .get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C')
+      .expect(200, done);
   });
 });

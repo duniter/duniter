@@ -163,11 +163,11 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process/issuance',             notImplemented);
     app.post(   '/hdc/transactions/process/transfert',            notImplemented);
     app.post(   '/hdc/transactions/process/fusion',               notImplemented);
-    app.get(    '/hdc/transactions/all',                          notImplemented);
+    app.get(    '/hdc/transactions/all',                          hdc.transactions.all);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
     app.get(    '/hdc/transactions/sender/:fpr/issuance',                  hdc.transactions.sender.issuance);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend',         hdc.transactions.sender.dividend);
-    app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend/:amnum',  hdc.transactions.sender.dividendOfAmendment);
+    app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend/:amnum',  hdc.transactions.sender.amDividend);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/fusion',           hdc.transactions.sender.fusion);
     app.get(    '/hdc/transactions/sender/:fpr/transfert',                 hdc.transactions.sender.transfert);
     app.get(    '/hdc/transactions/recipient/:fpr',               notImplemented);

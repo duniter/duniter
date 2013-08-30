@@ -109,6 +109,34 @@ MerkleSchema.statics.signatoriesOfAmendment = function (number, hash, done) {
   retrieve({ type: 'amendment_signatories', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
+MerkleSchema.statics.txAll = function (done) {
+  retrieve({ type: 'txAll', criteria: '' }, done);
+};
+
+MerkleSchema.statics.txOfSender = function (fingerprint, done) {
+  retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+};
+
+MerkleSchema.statics.txIssuanceOfSender = function (fingerprint, done) {
+  retrieve({ type: 'txIssuanceOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+};
+
+MerkleSchema.statics.txDividendOfSender = function (fingerprint, done) {
+  retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+};
+
+MerkleSchema.statics.txDividendOfSenderByAmendment = function (fingerprint, amNumber, done) {
+  retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":'+fingerprint+'",am":'+amNumber+'"}}' }, done);
+};
+
+MerkleSchema.statics.txFusionOfSender = function (fingerprint, done) {
+  retrieve({ type: 'txFusionOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+};
+
+MerkleSchema.statics.txTransfertOfSender = function (fingerprint, done) {
+  retrieve({ type: 'txTransfertOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+};
+
 MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
   // Level
   var lstart = req.query.lstart ? parseInt(req.query.lstart) : 0;
@@ -145,7 +173,6 @@ MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
     json.merkle.leaves = {};
     var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
     var hashes = merkle.levels[merkle.depth].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[lstart].length));
-    console.log(hashes);
     valueCB(hashes, function (err, values) {
       hashes.forEach(function (hash, index){
         json.merkle.leaves[Math.max(start, 0) + index] = {

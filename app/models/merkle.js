@@ -145,10 +145,11 @@ MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
     json.merkle.leaves = {};
     var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
     var hashes = merkle.levels[merkle.depth].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[lstart].length));
+    console.log(hashes);
     valueCB(hashes, function (err, values) {
       hashes.forEach(function (hash, index){
-        json.merkle.leaves[index] = {
-          "hash": merkle.levels[lstart][index],
+        json.merkle.leaves[Math.max(start, 0) + index] = {
+          "hash": hash,
           "value": values[hash]
         };
       });

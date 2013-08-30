@@ -145,7 +145,7 @@ module.exports.express = {
     app.get(    '/ucg/peering',                                   ucg.peering);
     app.get(    '/ucg/tht',                                       notImplemented);
     app.post(   '/ucg/tht',                                       notImplemented);
-    app.get(    '/ucg/tht/:pgp_fingerprint',                      notImplemented);
+    app.get(    '/ucg/tht/:fpr',                                  notImplemented);
     app.get(    '/hdc/amendments/current',                        hdc.amendments.current);
     app.get(    '/hdc/amendments/view/:amendment_id/memberships', hdc.amendments.status);
     app.get(    '/hdc/amendments/view/:amendment_id/members',     hdc.amendments.members);
@@ -164,8 +164,13 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process/transfert',            notImplemented);
     app.post(   '/hdc/transactions/process/fusion',               notImplemented);
     app.get(    '/hdc/transactions/all',                          notImplemented);
-    app.get(    '/hdc/transactions/sender/:pgp_fingerprint',      notImplemented);
-    app.get(    '/hdc/transactions/recipient/:pgp_fingerprint',   notImplemented);
+    app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
+    app.get(    '/hdc/transactions/sender/:fpr/issuance',                  hdc.transactions.sender.issuance);
+    app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend',         hdc.transactions.sender.dividend);
+    app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend/:amnum',  hdc.transactions.sender.dividendOfAmendment);
+    app.get(    '/hdc/transactions/sender/:fpr/issuance/fusion',           hdc.transactions.sender.fusion);
+    app.get(    '/hdc/transactions/sender/:fpr/transfert',                 hdc.transactions.sender.transfert);
+    app.get(    '/hdc/transactions/recipient/:fpr',               notImplemented);
     app.get(    '/hdc/transactions/view/:transaction_id',         notImplemented);
 
     onLoaded(null, app);

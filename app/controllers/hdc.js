@@ -11,6 +11,7 @@ module.exports = function (pgp, currency, conf) {
 
   this.community = require('./community')(pgp, currency, conf);
   this.amendments = require('./amendments')(pgp, currency, conf);
+  this.transactions = require('./transactions')(pgp, currency, conf);
   
   return this;
 }

@@ -36,7 +36,6 @@ var conf = {
 var gets = [
   {expect: 501, url: '/ucg/tht'},
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
-  {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/list'},
   {expect: 501, url: '/hdc/coins/SOME_PGP_FPR/view/COIN_ID'},
   {expect: 501, url: '/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/transactions/view/SOME_TX_ID'}
@@ -910,5 +909,13 @@ describe('Request on /hdc/transactions/all', function(){
     request(app)
       .get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C')
       .expect(200, done);
+  });
+});
+
+describe('Request on /hdc/coins/SOME_PGP_FPR/list', function(){
+  it('GET with bad fingerprint format should respond 400', function(done){
+    request(app)
+      .get('/hdc/coins/SOME_PGP_FPR/list')
+      .expect(400, done);
   });
 });

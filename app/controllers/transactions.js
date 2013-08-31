@@ -6,6 +6,7 @@ var Membership  = mongoose.model('Membership');
 var Amendment   = mongoose.model('Amendment');
 var PublicKey   = mongoose.model('PublicKey');
 var Merkle      = mongoose.model('Merkle');
+var Coin        = mongoose.model('Coin');
 var Transaction = mongoose.model('Transaction');
 
 module.exports = function (pgp, currency, conf) {
@@ -298,6 +299,15 @@ module.exports = function (pgp, currency, conf) {
         function (merkle, next){
           merkle.push(tx.hash);
           merkle.save(next);
+        },
+        function (merkle, code, next){
+          async.forEach(tx.coins, function(coin, callback){
+            var c = new Coin({
+              id: coin.match(/([A-Z\d]{40}-\d+-\d-\d+-\w-\d+)?/)[1],
+              owner: tx.sender
+            });
+            c.save(callback);
+          }, next);
         }
       ], function (err, result) {
         if(err){

@@ -99,6 +99,11 @@ module.exports.database = {
         mongoose.model('Transaction').remove({}, function (err) {
           next(err);
         });
+      },
+      function (next){
+        mongoose.model('Coin').remove({}, function (err) {
+          next(err);
+        });
       }
     ], done);
   },
@@ -160,8 +165,8 @@ module.exports.express = {
     app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
     app.get(    '/hdc/amendments/votes/:amendment_id',            hdc.amendments.votes.sigs);
-    app.get(    '/hdc/coins/:pgp_fpr/list',                       notImplemented);
-    app.get(    '/hdc/coins/:pgp_fpr/view/:coin_id',              notImplemented);
+    app.get(    '/hdc/coins/:fpr/list',                           hdc.coins.list);
+    app.get(    '/hdc/coins/:fpr/view/:coin_id',                  notImplemented);
     app.post(   '/hdc/community/join',                            hdc.community.join);
     app.get(    '/hdc/community/memberships',                     hdc.community.memberships);
     app.get(    '/hdc/community/votes',                           hdc.community.currentVotes);

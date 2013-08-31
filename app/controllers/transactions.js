@@ -16,13 +16,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.txAll(next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
-          var map = {};
-          hashes.forEach(function (hash){
-            map[hash] = hash;
-          });
-          done(null, map);
-        }, next);
+        Merkle.processForURL(req, merkle, lambda, next);
       }
     ], function (err, json) {
       if(err){
@@ -284,13 +278,7 @@ function showMerkle (merkleGetFunc, merkleHashFunc, amNumber, req, res) {
         merkleGetFunc.call(merkleGetFunc, hash, next);
     },
     function (merkle, next){
-      Merkle.processForURL(req, merkle, function (hashes, done) {
-        var map = {};
-        hashes.forEach(function (hash){
-          map[hash] = hash;
-        });
-        done(null, map);
-      }, next);
+      Merkle.processForURL(req, merkle, merkleHashFunc || lambda, next);
     }
   ], function (err, json) {
     if(err){
@@ -299,6 +287,25 @@ function showMerkle (merkleGetFunc, merkleHashFunc, amNumber, req, res) {
     }
     merkleDone(req, res, json);
   });
+}
+
+function lambda(hashes, done) {
+  async.waterfall([
+    function (next){
+      Transaction.find({ hash: { $in: hashes } }, next);
+    },
+    function (txs, next){
+      var map = {};
+      txs.forEach(function (tx){
+        map[tx.hash] = {
+          signature: tx.signature,
+          transaction: tx.json(),
+          raw: tx.getRaw()
+        };
+      });
+      next(null, map);
+    }
+  ], done);
 }
 
 function merkleDone(req, res, json) {

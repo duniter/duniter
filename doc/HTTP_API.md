@@ -985,6 +985,7 @@ Transaction chain.
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "type": "TRANSFERT",
       "coins": [
@@ -1159,11 +1160,14 @@ The issuance transaction and its signature.
 ```json
 {
   "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
     "version": 1,
+    "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
     "number": 1,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
     "type": "ISSUANCE",
     "coins": [
@@ -1199,11 +1203,14 @@ The transfert transaction and its signature.
 ```json
 {
   "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
     "version": 1,
+    "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
     "number": 92,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
     "type": "TRANSFERT",
     "coins": [
@@ -1239,11 +1246,14 @@ The fusion transaction and its signature.
 ```json
 {
   "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
     "version": 1,
+    "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
     "number": 14,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
     "type": "FUSION",
     "coins": [
@@ -1840,11 +1850,14 @@ The transaction and its signature.
 ```json
 {
   "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
     "version": 1,
+    "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
     "number": 14,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
     "type": "FUSION",
     "coins": [

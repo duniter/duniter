@@ -17,6 +17,7 @@ var TransactionSchema = new Schema({
   type: String,
   coins: Array,
   comment: String,
+  signature: String,
   hash: String,
   created: Date,
   updated: Date
@@ -31,13 +32,18 @@ TransactionSchema.methods = {
   },
   
   parse: function(rawTX, callback) {
-    var ms = new hdc.Transaction(rawTX);
+    var tx = null;
     var sigIndex = rawTX.lastIndexOf("-----BEGIN");
-    if(~sigIndex)
+    if(~sigIndex){
       this.signature = rawTX.substring(sigIndex);
-    fill(this, ms);
+      tx = new hdc.Transaction(rawTX.substring(0, sigIndex));
+    }
+    else{
+      tx = new hdc.Transaction(rawTX);
+    }
+    fill(this, tx);
     this.hash = sha1(rawTX).toUpperCase();
-    callback(ms.error, this);
+    callback(tx.error, this);
   },
 
   verify: function (currency, done) {
@@ -112,6 +118,11 @@ TransactionSchema.methods = {
     return raw.unix2dos();
   },
 
+  getRawSigned: function() {
+    var raw = this.getRaw() + this.signature;
+    return raw.unix2dos();
+  },
+
   json: function() {
     var obj = {
       version: this.version,
@@ -121,9 +132,15 @@ TransactionSchema.methods = {
       previousHash: this.previousHash,
       recipient: this.recipient,
       type: this.type,
-      coins: this.getCoins(),
+      coins: [],
       comment: this.comment
     }
+    this.coins.forEach(function (coin) {
+      obj.coins.push({
+        id: coin.substring(41),
+        transaction_id: coin.length > 50 ? coin.substring(53) : ''
+      });
+    });
     return obj;
   }
 };

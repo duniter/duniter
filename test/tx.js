@@ -284,7 +284,7 @@ describe('Transaction', function(){
     });
 
     it('its manual hash should be D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E', function(){
-      assert.equal(sha1(tx1.getRaw()).toUpperCase(), 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E');
+      assert.equal(sha1(tx1.getRawSigned()).toUpperCase(), 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E');
     });
   });
 });

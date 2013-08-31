@@ -214,6 +214,79 @@ describe('Transaction', function(){
       assert.equal(sha1(tx1.getRaw()).toUpperCase(), 'CBB0C2E9A9D5C9150C6DA52E1FD03FA556909A43');
     });
   });
+
+  describe('Tobi ISSUANCE', function(){
+
+    var tx1;
+
+    // Loads tx1 with its data
+    before(function(done) {
+      tx1 = new Transaction();
+      loadFromFile(tx1, __dirname + "/data/tx/tobi.issuance", done);
+    });
+
+    it('should be version 1', function(){
+      assert.equal(tx1.version, 1);
+    });
+
+    it('should be number 0', function(){
+      assert.equal(tx1.number, 0);
+    });
+
+    it('should have beta_brousoufs currency name', function(){
+      assert.equal(tx1.currency, 'beta_brousouf');
+    });
+
+    it('should be ISSUANCE', function(){
+      assert.equal(tx1.type, 'ISSUANCE');
+    });
+
+    it('should have sender 2E69197FAB029D8669EF85E82457A1587CA0ED9C', function(){
+      assert.equal(tx1.sender, "2E69197FAB029D8669EF85E82457A1587CA0ED9C");
+    });
+
+    it('should have recipient 2E69197FAB029D8669EF85E82457A1587CA0ED9C', function(){
+      assert.equal(tx1.recipient, "2E69197FAB029D8669EF85E82457A1587CA0ED9C");
+    });
+
+    it('should have 7 coins', function(){
+      assert.equal(tx1.getCoins().length, 7);
+    });
+
+    it('should have first coin with transaction link,n ot the others', function(){
+      var coins = tx1.getCoins();
+      for (var i = 0; i < coins.length; i++) {
+        should.not.exist(coins[i].transaction);
+        coins[i].number.should.equal(i);
+      };
+      coins[0].base.should.equal(1);
+      coins[1].base.should.equal(1);
+      coins[2].base.should.equal(1);
+      coins[3].base.should.equal(1);
+      coins[4].base.should.equal(1);
+      coins[5].base.should.equal(1);
+      coins[6].base.should.equal(2);
+      coins[0].power.should.equal(1);
+      coins[1].power.should.equal(1);
+      coins[2].power.should.equal(1);
+      coins[3].power.should.equal(1);
+      coins[4].power.should.equal(1);
+      coins[5].power.should.equal(1);
+      coins[6].power.should.equal(1);
+    });
+
+    it('should have a comment', function(){
+      should.exist(tx1.comment);
+    });
+
+    it('its computed hash should be D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E', function(){
+      assert.equal(tx1.hash, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E');
+    });
+
+    it('its manual hash should be D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E', function(){
+      assert.equal(sha1(tx1.getRaw()).toUpperCase(), 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E');
+    });
+  });
 });
 
 function loadFromFile(tx, file, done) {
@@ -222,7 +295,7 @@ function loadFromFile(tx, file, done) {
       function (next){
         tx.parse(data, next);
       },
-      function (next){
+      function (tx, next){
         tx.verify('beta_brousouf', next);
       }
     ], done);

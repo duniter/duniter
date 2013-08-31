@@ -484,6 +484,23 @@ AmendmentSchema.statics.findByNumberAndHash = function (number, hash, done) {
   });
 };
 
+AmendmentSchema.statics.findPromotedByNumber = function (number, done) {
+
+  this.find({ number: number, promoted: true }, function (err, amends) {
+    if(amends && amends.length == 1){
+      done(err, amends[0]);
+      return;
+    }
+    if(!amends || amends.length == 0){
+      done('No amendment found');
+      return;
+    }
+    if(amends || amends.length > 1){
+      done('More than one amendment found');
+    }
+  });
+};
+
 var Amendment = mongoose.model('Amendment', AmendmentSchema);
 
 function fill (am1, am2) {

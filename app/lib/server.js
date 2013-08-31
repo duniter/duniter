@@ -94,6 +94,11 @@ module.exports.database = {
         mongoose.model('Vote').remove({}, function (err) {
           next(err);
         });
+      },
+      function (next){
+        mongoose.model('Transaction').remove({}, function (err) {
+          next(err);
+        });
       }
     ], done);
   },
@@ -160,7 +165,7 @@ module.exports.express = {
     app.post(   '/hdc/community/join',                            hdc.community.join);
     app.get(    '/hdc/community/memberships',                     hdc.community.memberships);
     app.get(    '/hdc/community/votes',                           hdc.community.currentVotes);
-    app.post(   '/hdc/transactions/process/issuance',             notImplemented);
+    app.post(   '/hdc/transactions/process/issuance',             hdc.transactions.processTx.issuance);
     app.post(   '/hdc/transactions/process/transfert',            notImplemented);
     app.post(   '/hdc/transactions/process/fusion',               notImplemented);
     app.get(    '/hdc/transactions/all',                          hdc.transactions.all);

@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
+var jpgp     = require('../lib/jpgp');
 var fs       = require('fs');
 var hdc      = require('../../node_modules/hdc');
 var Schema   = mongoose.Schema;
@@ -10,7 +11,7 @@ var TransactionSchema = new Schema({
   version: String,
   currency: String,
   sender: String,
-  number: {"type": Number, "default": 0},
+  number: String,
   previousHash: String,
   recipient: String,
   type: String,
@@ -29,18 +30,35 @@ TransactionSchema.methods = {
     return tx;
   },
   
-  parse: function(rawAmend, callback) {
-    var tx = new hdc.Transaction(rawAmend);
-    if(!tx.error){
-      fill(this, tx);
-    }
-    callback(tx.error);
+  parse: function(rawTX, callback) {
+    var ms = new hdc.Transaction(rawTX);
+    var sigIndex = rawTX.lastIndexOf("-----BEGIN");
+    if(~sigIndex)
+      this.signature = rawTX.substring(sigIndex);
+    fill(this, ms);
+    this.hash = sha1(rawTX).toUpperCase();
+    callback(ms.error, this);
   },
 
-  verify: function(currency, done){
-    var tx = new hdc.Transaction(this.getRaw());
-    tx.verify(currency);
-    done(tx.error, tx.errorCode);
+  verify: function (currency, done) {
+    var hdcTX = this.hdc();
+    var valid = hdcTX.verify(currency);
+    if(!valid && done){
+      done(hdcTX.error, valid);
+    }
+    if(valid && done){
+      done(null, valid);
+    }
+    return valid;
+  },
+
+  verifySignature: function (publicKey, done) {
+    jpgp()
+      .publicKey(publicKey)
+      .data(this.getRaw())
+      .noCarriage()
+      .signature(this.signature)
+      .verify(publicKey, done);
   },
 
   getCoins: function() {
@@ -65,6 +83,16 @@ TransactionSchema.methods = {
     return coins;
   },
 
+  getIssuanceSum: function() {
+    var sum = 0;
+    this.getCoins().forEach(function (coin) {
+      if(coin.originType == 'A'){
+        sum += coin.base * Math.pow(10, coin.power);
+      }
+    });
+    return sum;
+  },
+
   getRaw: function() {
     var raw = "";
     raw += "Version: " + this.version + "\n";
@@ -82,7 +110,68 @@ TransactionSchema.methods = {
     }
     raw += "Comment:\n" + this.comment;
     return raw.unix2dos();
+  },
+
+  json: function() {
+    var obj = {
+      version: this.version,
+      currency: this.currency,
+      sender: this.sender,
+      number: this.number,
+      previousHash: this.previousHash,
+      recipient: this.recipient,
+      type: this.type,
+      coins: this.getCoins(),
+      comment: this.comment
+    }
+    return obj;
   }
+};
+
+TransactionSchema.statics.findLast = function (fingerprint, done) {
+
+  this.find({ sender: fingerprint }).sort({number: -1}).limit(1).exec(function (err, txs) {
+    if(txs && txs.length == 1){
+      done(err, txs[0]);
+      return;
+    }
+    if(!txs || txs.length == 0){
+      done('No transaction found');
+      return;
+    }
+    if(txs || txs.length > 1){
+      done('More than one transaction found');
+    }
+  });
+};
+
+TransactionSchema.statics.findLastIssuance = function (fingerprint, done) {
+
+  this.find({ sender: fingerprint, type: 'ISSUANCE' }).sort({number: -1}).limit(1).exec(function (err, txs) {
+    if(txs && txs.length == 1){
+      done(err, txs[0]);
+      return;
+    }
+    if(!txs || txs.length == 0){
+      done('No transaction found');
+      return;
+    }
+    if(txs || txs.length > 1){
+      done('More than one transaction found');
+    }
+  });
+};
+
+TransactionSchema.statics.findAllIssuanceOfSenderForAmendment = function (fingerprint, amNumber, done) {
+
+  async.waterfall([
+    function (next){
+      mongoose.model('Merkle').txDividendOfSenderByAmendment(fingerprint, amNumber, next);
+    },
+    function (merkle, next){
+      Transaction.find({ sender: fingerprint, hash: { $in: merkle.leaves() }}).sort({number: -1}).exec(next);
+    }
+  ], done);
 };
 
 var Transaction = mongoose.model('Transaction', TransactionSchema);

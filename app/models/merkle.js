@@ -56,6 +56,7 @@ MerkleSchema.methods = {
 };
 
 function retrieve(merkleID, done) {
+  // console.log(merkleID, done);
   async.waterfall([
     function(next){
       Merkle.findOne(merkleID, next);
@@ -110,7 +111,7 @@ MerkleSchema.statics.signatoriesOfAmendment = function (number, hash, done) {
 };
 
 MerkleSchema.statics.txAll = function (done) {
-  retrieve({ type: 'txAll', criteria: '' }, done);
+  retrieve({ type: 'txAll', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.txOfSender = function (fingerprint, done) {
@@ -118,23 +119,23 @@ MerkleSchema.statics.txOfSender = function (fingerprint, done) {
 };
 
 MerkleSchema.statics.txIssuanceOfSender = function (fingerprint, done) {
-  retrieve({ type: 'txIssuanceOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+  retrieve({ type: 'txIssuanceOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
 MerkleSchema.statics.txDividendOfSender = function (fingerprint, done) {
-  retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+  retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
 MerkleSchema.statics.txDividendOfSenderByAmendment = function (fingerprint, amNumber, done) {
-  retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":'+fingerprint+'",am":'+amNumber+'"}}' }, done);
+  retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":"'+fingerprint+'",am":'+amNumber+'"}' }, done);
 };
 
 MerkleSchema.statics.txFusionOfSender = function (fingerprint, done) {
-  retrieve({ type: 'txFusionOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+  retrieve({ type: 'txFusionOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
 MerkleSchema.statics.txTransfertOfSender = function (fingerprint, done) {
-  retrieve({ type: 'txTransfertOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+  retrieve({ type: 'txTransfertOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
 MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {

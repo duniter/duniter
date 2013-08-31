@@ -44,7 +44,6 @@ var gets = [
 
 var posts = [
   {expect: 501, url: '/ucg/tht'},
-  {expect: 501, url: '/hdc/transactions/process/issuance'},
   {expect: 501, url: '/hdc/transactions/process/transfert'},
   {expect: 501, url: '/hdc/transactions/process/fusion'}
 ];
@@ -60,7 +59,7 @@ function testGET(url, expect) {
 }
 
 function testPOST(url, expect) {
-  describe('GET on ' + url, function(){
+  describe('POST on ' + url, function(){
     it(' expect answer ' + expect, function(done){
       request(app)
         .post(url)
@@ -92,6 +91,11 @@ var voteSnowAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/snow.vote', 
 var voteTobiAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.vote', 'utf8');
 var voteCatAM1    = fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.vote', 'utf8');
 var voteWhiteAM1  = fs.readFileSync(__dirname + '/data/votes/BB-AM1/white.vote', 'utf8');
+var voteSnowAM2   = fs.readFileSync(__dirname + '/data/votes/BB-AM2/snow.vote', 'utf8');
+var voteTobiAM2   = fs.readFileSync(__dirname + '/data/votes/BB-AM2/tobi.vote', 'utf8');
+var voteCatAM2    = fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.vote', 'utf8');
+
+var txTobi = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8');
 
 var app;
 var apiRes = {};
@@ -138,6 +142,13 @@ function vote (voteFile, done) {
   post('/hdc/amendments/votes', {
     "amendment": voteFile.substr(0, voteFile.indexOf('-----BEGIN')),
     "signature": voteFile.substr(voteFile.indexOf('-----BEGIN'))
+  }, done);
+}
+
+function issue (txFile, done) {
+  post('/hdc/transactions/process/issuance', {
+    "transaction": txFile.substr(0, txFile.indexOf('-----BEGIN')),
+    "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
   }, done);
 }
 
@@ -219,6 +230,15 @@ before(function (done) {
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/members', next); },
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures', next); },
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/voters', next); },
+    function (next) { console.log("Sending Snow's AM2..."); vote(voteSnowAM2, next); },
+    function (next) { console.log("Sending Tobi's AM2..."); vote(voteTobiAM2, next); },
+    function (next) { console.log("Sending Cat's AM2..."); vote(voteCatAM2, next); },
+    function (next) { issue(txTobi, next); },
+    function (next) { get('/hdc/transactions/all', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -588,6 +608,25 @@ describe('Checking amendments', function(){
     _(json.merkle.levels[0]).size().should.equal(1);
     json.merkle.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
+});
+
+function checkTx (url, index, leavesCount, hash) {
+  return function(){
+    apiRes[url][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes[url][index].res.text);
+    isMerkleNodesResult(json);
+    json.merkle.leavesCount.should.equal(leavesCount);
+    json.merkle.levels[0][0].should.equal(hash);
+  }
+}
+
+describe('Checking TX', function(){
+  var index = 0;
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/all', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
 });
 
 function isMerkleNodesResult (json) {

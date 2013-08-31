@@ -63,13 +63,57 @@ module.exports = function (pgp, currency, conf) {
 
     var fingerprint = matches[1];
 
-    if(!req.params.coin_id){
-      res.send(400, "Coin ID is required");
+    if(!req.params.coin_number){
+      res.send(400, "Coin number is required");
       return;
     }
-    var matches = req.params.coin_id.match(/^\d+-\d-\d+-(A|F)-\d+$/);
+    var matches = req.params.coin_number.match(/^\d+$/);
     if(!matches){
-      res.send(400, "Coind ID format is incorrect");
+      res.send(400, "Coind number format is incorrect");
+      return;
+    }
+
+    var coindID = matches[0];
+
+    async.waterfall([
+      function (next){
+        console.log(fingerprint+'-'+coindID);
+        Coin.findByCoinID(fingerprint+'-'+coindID, next);
+      }
+    ], function (err, coin) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      res.send(200, JSON.stringify({
+        id: coin.id,
+        transaction: coin.transaction,
+        owner: coin.owner
+      }, null, "  "));
+    });
+  };
+
+  this.history = function (req, res) {
+
+    if(!req.params.fpr){
+      res.send(400, "Fingerprint is required");
+      return;
+    }
+    var matches = req.params.fpr.match(/(\w{40})/);
+    if(!matches){
+      res.send(400, "Fingerprint format is incorrect, must be an upper-cased SHA1 hash");
+      return;
+    }
+
+    var fingerprint = matches[1];
+
+    if(!req.params.coin_number){
+      res.send(400, "Coin number is required");
+      return;
+    }
+    var matches = req.params.coin_number.match(/^\d+$/);
+    if(!matches){
+      res.send(400, "Coind number format is incorrect");
       return;
     }
 

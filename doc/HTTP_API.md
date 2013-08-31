@@ -24,7 +24,8 @@
       * [amendments/votes (POST)](#amendmentsvotes-post)
       * [amendments/votes/[AMENDMENT_ID]](#amendmentsvotesamendment_id)
       * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
-      * [coins/[PGP_FINGERPRINT]/view/[COIN_ID]](#coinspgp_fingerprintviewcoin_id)
+      * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]](#coinspgp_fingerprintviewcoin_number)
+      * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]/history](#coinspgp_fingerprintviewcoin_numberhistory)
       * [community/join](#communityjoin)
       * [community/memberships](#communitymembers)
       * [community/votes](#communityvotes)
@@ -75,7 +76,8 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |   `-- [PGP_FINGERPRINT]/
         |       |-- list
         |       `-- view/
-        |           `-- [COIN_ID]
+        |           `-- [COIN_NUMBER]/
+        |               `-- history
         |-- community/
         |   |-- join
         |   |-- memberships
@@ -967,10 +969,33 @@ Coins list with their owner.
 }
 ```
 
-#### `coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
+#### `coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]`
 **Goal**
 
-GET a transaction chain justifying that coin `[COIN_ID]` is owned by the given `[PGP_FINGERPRINT]`.
+GET the ownership state of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRINT]`.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | Owner of the coins. | URL
+`COIN_ID` | Coin [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#coins-format). | URL
+
+**Returns**
+
+Coin ownership state.
+```json
+{
+  "id" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0-1-1-A-2",
+  "transaction" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0",
+  "owner" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+}
+```
+
+#### `coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]/history`
+**Goal**
+
+GET a transaction history of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRINT]`.
 
 **Parameters**
 

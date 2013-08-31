@@ -105,11 +105,11 @@ module.exports = function (pgp, currency, conf) {
     },
 
     transfert: function (req, res) {
-      showMerkle(Merkle.txFusionOfSender, null, null, req, res);
+      showMerkle(Merkle.txTransfertOfSender, null, null, req, res);
     },
 
     fusion: function (req, res) {
-      showMerkle(Merkle.txTransfertOfSender, null, null, req, res);
+      showMerkle(Merkle.txFusionOfSender, null, null, req, res);
     }
   };
 

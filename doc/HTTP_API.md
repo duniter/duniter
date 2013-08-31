@@ -34,7 +34,9 @@
       * [transactions/all](#transactionsall)
       * [transactions/keys](#transactionskeys)
       * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
+      * [transactions/sender/[PGP_FINGERPRINT]/last](#transactionssenderpgp_fingerprintlast)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance](#transactionssenderpgp_fingerprintissuance)
+      * [transactions/sender/[PGP_FINGERPRINT]/issuance/last](#transactionssenderpgp_fingerprintissuancelast)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend](#transactionssenderpgp_fingerprintissuancedividend)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]](#transactionssenderpgp_fingerprintissuancedividendam_number)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/fusion](#transactionssenderpgp_fingerprintissuancefusion)
@@ -86,9 +88,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
             |-- keys
             |-- sender/
             |   `-- [PGP_FINGERPRINT]/
+            |       |-- last
             |       |-- transfert
             |       `-- issuance/
-            |           |-- fusion/
+            |           |-- last
+            |           |-- fusion
             |           `-- dividend/
             |               `-- [AM_NUMBER]/
             |-- recipient/
@@ -1443,6 +1447,48 @@ Merkle URL leaf: transaction
 }
 ```
 
+#### `transactions/sender/[PGP_FINGERPRINT]/last`
+**Goal**
+
+Get the last received transaction of a PGP key.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction. | URL
+
+**Returns**
+
+The last transaction of given PGP key.
+```json
+{
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "raw": "Version: 1\r\n...\r\n",
+  "transaction":
+  {
+    "version": 1,
+    "currency": "beta_brousouf",
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 1,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "ISSUANCE",
+    "coins": [
+      {
+        "id": "1-5-2-A-1",
+        "transaction_id": ""
+      },{
+        // Other coin
+      },{
+        // ...
+      }
+    ],
+    "comment": "Universal Dividend"
+  }
+}
+```
+
 #### `transactions/sender/[PGP_FINGERPRINT]/transfert`
 **Goal**
 
@@ -1569,6 +1615,48 @@ Merkle URL leaf: transaction
       ],
       "comment": "Too much coins ! Making big one."
     }
+  }
+}
+```
+
+#### `transactions/sender/[PGP_FINGERPRINT]/issuance/last`
+**Goal**
+
+Get the last received *issuance* transaction of a PGP key.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last issuance transaction. | URL
+
+**Returns**
+
+The last *issuance* transaction of given PGP key.
+```json
+{
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "raw": "Version: 1\r\n...\r\n",
+  "transaction":
+  {
+    "version": 1,
+    "currency": "beta_brousouf",
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 1,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "ISSUANCE",
+    "coins": [
+      {
+        "id": "1-5-2-A-1",
+        "transaction_id": ""
+      },{
+        // Other coin
+      },{
+        // ...
+      }
+    ],
+    "comment": "Universal Dividend"
   }
 }
 ```

@@ -166,7 +166,6 @@ module.exports = function (pgp, currency, conf) {
           tx.verifySignature(pubkey.raw, next);
         },
         function (verified, next){
-          console.log(verified);
           // Get targeted AM
           Amendment.findPromotedByNumber(tx.getCoins()[0].originNumber, next);
         },
@@ -309,6 +308,144 @@ module.exports = function (pgp, currency, conf) {
             });
             c.save(callback);
           }, next);
+        }
+      ], function (err, result) {
+        if(err){
+          console.error(err);
+          res.send(500, err);
+          return;
+        }
+        else{
+          res.send(200, JSON.stringify(tx.json(), null, "  "));
+          return;
+        }
+      });
+    },
+
+    transfert: function (req, res) {
+      var tx = new Transaction({});
+      var am = null;
+      var pubkey = null;
+      async.waterfall([
+
+        // Parameters
+        function(callback){
+          if(!(req.body && req.body.transaction && req.body.signature)){
+            callback('Requires a transaction + signature');
+            return;
+          }
+          callback(null, req.body.transaction, req.body.signature);
+        },
+
+        // Check signature's key ID
+        function(tx, sig, callback){
+          var keyID = jpgp().signature(sig).issuer();
+          if(!(keyID && keyID.length == 16)){
+            callback('Cannot identify signature issuer`s keyID');
+            return;
+          }
+          callback(null, tx + sig, keyID);
+        },
+
+        // Looking for corresponding public key
+        function(signedTX, keyID, callback){
+          PublicKey.search("0x" + keyID, function (err, keys) {
+            if(keys.length > 1){
+              callback('Multiple PGP keys found for this keyID.');
+              return;
+            }
+            if(keys.length < 1){
+              callback('Corresponding Public Key not found.');
+              return;
+            }
+            pubkey = keys[0];
+            callback(null, signedTX);
+          });
+        },
+
+        function (signedTX, next){
+          tx.parse(signedTX, next);
+        },
+        function (tx, next){
+          tx.verify(currency, next);
+        },
+        function (verified, next){
+          tx.verifySignature(pubkey.raw, next);
+        },
+        function (verified, next){
+          // Get last transaction
+          Transaction.findLast(tx.sender, function (err, lastTX) {
+            if(lastTX){
+              // Verify tx chaining
+              if(lastTX.number != tx.number - 1){
+                next('Transaction doest not follow your last one');
+                return;
+              }
+              if(lastTX.hash != tx.previousHash) {
+                next('Transaction have wrong previousHash (given ' + tx.previousHash + ', expected ' + lastTX.hash + ')');
+                return;
+              }
+            }
+            else{
+              if(tx.number != 0){
+                next('Transaction must have number #0 as it is your first');
+                return;
+              }
+              if(tx.previousHash){
+                next('Transaction must not have a previousHash as it is your first');
+                return;
+              }
+            }
+            next();
+          });
+        },
+        function (next){
+          // Verify each coin is owned
+          async.forEach(tx.getCoins(), function(coin, callback){
+            Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
+              if(err || ownership.owner != tx.sender){
+                callback(err || 'You are not the owner of coin ' + coin.issuer + '-' + coin.number + ' (' + (coin.base * Math.pow(10, coin.power)) + '). Cannot send it.');
+                return;
+              }
+              callback();
+            })
+          }, next);
+        },
+        function (next){
+          tx.save(next);
+        },
+        function (txSaved, code, next){
+          // Verify each coin is owned
+          async.forEach(tx.getCoins(), function(coin, callback){
+            Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
+              ownership.owner = tx.recipient;
+              ownership.save(callback);
+            });
+          }, next);
+        },
+        function (next){
+          // M All
+          Merkle.txAll(next);
+        },
+        function (merkle, next){
+          merkle.push(tx.hash);
+          merkle.save(next);
+        },
+        function (merkle, code, next){
+          // M1
+          Merkle.txOfSender(tx.sender, next);
+        },
+        function (merkle, next){
+          merkle.push(tx.hash);
+          merkle.save(next);
+        },
+        function (merkle, code, next){
+          // M6
+          Merkle.txTransfertOfSender(tx.sender, next);
+        },
+        function (merkle, next){
+          merkle.push(tx.hash);
+          merkle.save(next);
         }
       ], function (err, result) {
         if(err){

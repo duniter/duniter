@@ -33,6 +33,64 @@ module.exports = function (pgp, currency, conf) {
       showMerkle(Merkle.txOfSender, null, null, req, res);
     },
 
+    last: function (req, res) {
+
+      if(!req.params.fpr){
+        res.send(400, "Fingerprint is required");
+        return;
+      }
+      var matches = req.params.fpr.match(/(\w{40})/);
+      if(!matches){
+        res.send(400, "Fingerprint format is incorrect, must be an upper-cased SHA1 hash");
+        return;
+      }
+
+      async.waterfall([
+        function (next){
+          Transaction.findLast(matches[1], next);
+        }
+      ], function (err, result) {
+        if(err){
+          res.send(404, err);
+          return;
+        }
+        res.send(200, JSON.stringify({
+          raw: result.getRaw(),
+          signature: result.signature,
+          transaction: result.json()
+        }, null, "  "));
+      });
+    },
+
+    dividendLast: function (req, res) {
+
+      if(!req.params.fpr){
+        res.send(400, "Fingerprint is required");
+        return;
+      }
+      var matches = req.params.fpr.match(/(\w{40})/);
+      if(!matches){
+        res.send(400, "Fingerprint format is incorrect, must be an upper-cased SHA1 hash");
+        return;
+      }
+
+      async.waterfall([
+        function (next){
+          Transaction.findLastIssuance(matches[1], next);
+        }
+      ], function (err, result) {
+        if(err){
+          res.send(404, err);
+          return;
+        }
+        res.send(200, JSON.stringify({
+          raw: result.getRaw(),
+          signature: result.signature,
+          transaction: result.json()
+        }, null, "  "));
+      });
+    },
+
     issuance: function (req, res) {
       showMerkle(Merkle.txIssuanceOfSender, null, null, req, res);
     },

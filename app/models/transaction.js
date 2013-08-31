@@ -145,6 +145,23 @@ TransactionSchema.methods = {
   }
 };
 
+TransactionSchema.statics.getBySenderAndNumber = function (fingerprint, number, done) {
+
+  this.find({ sender: fingerprint, number: number }).exec(function (err, txs) {
+    if(txs && txs.length == 1){
+      done(err, txs[0]);
+      return;
+    }
+    if(!txs || txs.length == 0){
+      done('No transaction found');
+      return;
+    }
+    if(txs || txs.length > 1){
+      done('More than one transaction found');
+    }
+  });
+};
+
 TransactionSchema.statics.findLast = function (fingerprint, done) {
 
   this.find({ sender: fingerprint }).sort({number: -1}).limit(1).exec(function (err, txs) {

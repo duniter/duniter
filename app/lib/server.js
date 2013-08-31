@@ -166,7 +166,7 @@ module.exports.express = {
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
     app.get(    '/hdc/amendments/votes/:amendment_id',            hdc.amendments.votes.sigs);
     app.get(    '/hdc/coins/:fpr/list',                           hdc.coins.list);
-    app.get(    '/hdc/coins/:fpr/view/:coin_id',                  notImplemented);
+    app.get(    '/hdc/coins/:fpr/view/:coin_id',                  hdc.coins.view);
     app.post(   '/hdc/community/join',                            hdc.community.join);
     app.get(    '/hdc/community/memberships',                     hdc.community.memberships);
     app.get(    '/hdc/community/votes',                           hdc.community.currentVotes);

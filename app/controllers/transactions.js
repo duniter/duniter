@@ -304,6 +304,7 @@ module.exports = function (pgp, currency, conf) {
           async.forEach(tx.coins, function(coin, callback){
             var c = new Coin({
               id: coin.match(/([A-Z\d]{40}-\d+-\d-\d+-\w-\d+)?/)[1],
+              transaction: tx.sender + '-' + tx.number,
               owner: tx.sender
             });
             c.save(callback);

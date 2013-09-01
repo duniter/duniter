@@ -105,6 +105,8 @@ function ResultAPI () {
   this.pksAllIndex = 0;
   this.pksAddIndex = 0;
   this.pksLookupIndex = 0;
+  this.joinIndex = 0;
+  this.membershipsIndex = 0;
 
   this.push = function (url, res) {
     if(!this.apiRes[url]) this.apiRes[url] = [];
@@ -161,6 +163,39 @@ function ResultAPI () {
       json.should.have.property('keys');
       json.keys.length.should.equal(keyCount);
     })
+  };
+
+  this.join = function(comment) {
+    var index = this.joinIndex++;
+    var obj = this;
+    it('expect membership accepted for ' + comment, function () {
+      var res = obj.apiRes['/hdc/community/join'][index].res;
+      var json = JSON.parse(res.text);
+      res.should.have.status(200);
+      json.should.have.property('request');
+      json.should.have.property('signature');
+    })
+  };
+
+  this.memberships = function(comment, leavesCount, root) {
+    var index = this.membershipsIndex++;
+    var obj = this;
+    it('expect ' + comment, function () {
+      var res = obj.apiRes['/hdc/community/memberships'][index].res;
+      var resEx = obj.apiRes['/hdc/community/memberships?extract=true'][index].res;
+      var json = JSON.parse(res.text);
+      var jsonEx = JSON.parse(resEx.text);
+      res.should.have.status(200);
+      resEx.should.have.status(200);
+      isMerkleNodesResult(json);
+      if(root)
+        json.merkle.levels[0][0].should.equal(root);
+      else
+        _(json.merkle.levels[0]).size().should.equal(0);
+      isMerkleLeavesResult(jsonEx);
+      _(jsonEx.merkle.leaves).size().should.equal(leavesCount);
+      checkMerkleOfMemberships(jsonEx);
+    });
   };
 }
 
@@ -390,29 +425,6 @@ describe('Sending public key', function(){
 
 //----------- Memberships -----------
 
-function checkJoin (index) {
-  return function(){
-    var json = JSON.parse(apiRes['/hdc/community/join'][index].res.text);
-    json.should.have.property('request');
-    json.should.have.property('signature');
-  }
-}
-
-function checkMemberships (index, leavesCount, root) {
-  return function(){
-    var json = JSON.parse(apiRes['/hdc/community/memberships'][index].res.text);
-    var jsonEx = JSON.parse(apiRes['/hdc/community/memberships?extract=true'][index].res.text);
-    isMerkleNodesResult(json);
-    if(root)
-      json.merkle.levels[0][0].should.equal(root);
-    else
-      _(json.merkle.levels[0]).size().should.equal(0);
-    isMerkleLeavesResult(jsonEx);
-    _(jsonEx.merkle.leaves).size().should.equal(leavesCount);
-    checkMerkleOfMemberships(jsonEx);
-  }
-}
-
 function checkMerkleOfMemberships (json) {
   _(json.merkle.leaves).each(function (leaf) {
     var Membership = mongoose.model('Membership');
@@ -428,15 +440,13 @@ function checkMerkleOfMemberships (json) {
 }
 
 describe('Sending membership', function(){
-  var index = -1;
-  it('of John Snow should respond 200', checkJoin(++index));
-  it('of LoL Cat should respond 200', checkJoin(++index));
-  it('of Tobi Uchiha should respond 200', checkJoin(++index));
-  var index2 = -1;
-  it('- Merkle root should be ""', checkMemberships(++index2, 0));
-  it('- test memberships Merkle with Snowy', checkMemberships(++index2, 1, '0FBA64435A87B7B7CBA2A914A79EB015DD246ECB'));
-  it('- test memberships Merkle with Snowy, Cat', checkMemberships(++index2, 2, 'C00DCEB6F1B00D4C0CADCC9E35011C50DE2549AB'));
-  it('- test memberships Merkle with Snowy, Cat, Tobi', checkMemberships(++index2, 3, '2A42C5CCC315AF3B9D009CC8E635F8492111F91D'));
+  api.join('John Snow');
+  api.join('LoL Cat');
+  api.join('Tobi Uchiha');
+  api.memberships('Merkle root empty', 0, '');
+  api.memberships('memberships Merkle with Snowy', 1, '0FBA64435A87B7B7CBA2A914A79EB015DD246ECB');
+  api.memberships('memberships Merkle with Snowy, Cat', 2, 'C00DCEB6F1B00D4C0CADCC9E35011C50DE2549AB');
+  api.memberships('memberships Merkle with Snowy, Cat, Tobi', 3, '2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
 });
 
 //----------- Votes -----------

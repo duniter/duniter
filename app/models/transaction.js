@@ -181,7 +181,7 @@ TransactionSchema.statics.findLast = function (fingerprint, done) {
 
 TransactionSchema.statics.findLastIssuance = function (fingerprint, done) {
 
-  this.find({ sender: fingerprint, type: 'ISSUANCE' }).sort({number: -1}).limit(1).exec(function (err, txs) {
+  this.find({ sender: fingerprint, type: { $in: ['ISSUANCE', 'FUSION'] } }).sort({number: -1}).limit(1).exec(function (err, txs) {
     if(txs && txs.length == 1){
       done(err, txs[0]);
       return;

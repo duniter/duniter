@@ -212,7 +212,9 @@ module.exports = function (pgp, currency, conf) {
             var lastNum = -1;
             if(lastTX){
               var lastCoins = lastTX.getCoins();
-              lastNum = lastCoins[lastCoins.length - 1].number;
+              // For issuance transaction, last num <=> LAST coin
+              // For fusion transaction, last num <=> FIRST coin
+              lastNum =  lastTX.type == 'ISSUANCE' ? lastCoins[lastCoins.length - 1].number : lastCoins[0].number;
             }
             var newCoins = tx.getCoins();
             if(newCoins[0].number != lastNum + 1){

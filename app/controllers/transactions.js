@@ -28,6 +28,54 @@ module.exports = function (pgp, currency, conf) {
     });
   }
 
+  this.lastAll = function (req, res) {
+
+    async.waterfall([
+      function (next){
+        Transaction.findLastAll(1, next);
+      }
+    ], function (err, result) {
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      res.send(200, JSON.stringify({
+        raw: result.getRaw(),
+        signature: result.signature,
+        transaction: result.json()
+      }, null, "  "));
+    });
+  };
+
+  this.lastNAll = function (req, res) {
+
+      if(!req.params.count){
+        res.send(400, "Count is required");
+        return;
+      }
+      var matches2 = req.params.count.match(/^(\d+)$/);
+      if(!matches2){
+        res.send(400, "Count format is incorrect, must be an upper-cased SHA1 hash");
+        return;
+      }
+
+      async.waterfall([
+        function (next){
+          Transaction.findLasts(matches2[1], next);
+        }
+      ], function (err, results) {
+        if(err){
+          res.send(404, err);
+          return;
+        }
+        var json = { transactions: [] };
+        results.forEach(function (tx) {
+          json.transactions.push(tx.json());
+        });
+        res.send(200, JSON.stringify(json, null, "  "));
+      });
+  };
+
   this.sender = {
 
     get: function (req, res) {
@@ -48,7 +96,7 @@ module.exports = function (pgp, currency, conf) {
 
       async.waterfall([
         function (next){
-          Transaction.findLast(matches[1], next);
+          Transaction.findLastOf(matches[1], next);
         }
       ], function (err, result) {
         if(err){
@@ -60,6 +108,45 @@ module.exports = function (pgp, currency, conf) {
           signature: result.signature,
           transaction: result.json()
         }, null, "  "));
+      });
+    },
+
+    lastNofSender: function (req, res) {
+
+      if(!req.params.fpr){
+        res.send(400, "Fingerprint is required");
+        return;
+      }
+      var matches = req.params.fpr.match(/(\w{40})/);
+      if(!matches){
+        res.send(400, "Fingerprint format is incorrect, must be an upper-cased SHA1 hash");
+        return;
+      }
+
+      if(!req.params.count){
+        res.send(400, "Count is required");
+        return;
+      }
+      var matches2 = req.params.count.match(/^(\d+)$/);
+      if(!matches2){
+        res.send(400, "Count format is incorrect, must be an upper-cased SHA1 hash");
+        return;
+      }
+
+      async.waterfall([
+        function (next){
+          Transaction.findLastsOf(matches[1], matches2[1], next);
+        }
+      ], function (err, results) {
+        if(err){
+          res.send(404, err);
+          return;
+        }
+        var json = { transactions: [] };
+        results.forEach(function (tx) {
+          json.transactions.push(tx.json());
+        });
+        res.send(200, JSON.stringify(json, null, "  "));
       });
     },
 
@@ -180,7 +267,7 @@ module.exports = function (pgp, currency, conf) {
             return;
           }
           // Get last transaction
-          Transaction.findLast(tx.sender, function (err, lastTX) {
+          Transaction.findLastOf(tx.sender, function (err, lastTX) {
             if(lastTX){
               // Verify tx chaining
               if(lastTX.number != tx.number - 1){
@@ -376,7 +463,7 @@ module.exports = function (pgp, currency, conf) {
         },
         function (verified, next){
           // Get last transaction
-          Transaction.findLast(tx.sender, function (err, lastTX) {
+          Transaction.findLastOf(tx.sender, function (err, lastTX) {
             if(lastTX){
               // Verify tx chaining
               if(lastTX.number != tx.number - 1){
@@ -515,7 +602,7 @@ module.exports = function (pgp, currency, conf) {
         },
         function (verified, next){
           // Get last transaction
-          Transaction.findLast(tx.sender, function (err, lastTX) {
+          Transaction.findLastOf(tx.sender, function (err, lastTX) {
             if(lastTX){
               // Verify tx chaining
               if(lastTX.number != tx.number - 1){

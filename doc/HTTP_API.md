@@ -36,8 +36,12 @@
       * [transactions/process/fusion](#transactionsprocessfusion)
       * [transactions/all](#transactionsall)
       * [transactions/keys](#transactionskeys)
+      * [transactions/last](#transactionskeyslast)
+      * [transactions/last/[count]](#transactionskeyslastcount)
+      * [transactions/sender](#transactionssender)
       * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
       * [transactions/sender/[PGP_FINGERPRINT]/last](#transactionssenderpgp_fingerprintlast)
+      * [transactions/sender/[PGP_FINGERPRINT]/last/[count]](#transactionssenderpgp_fingerprintlastcount)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance](#transactionssenderpgp_fingerprintissuance)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/last](#transactionssenderpgp_fingerprintissuancelast)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend](#transactionssenderpgp_fingerprintissuancedividend)
@@ -92,15 +96,18 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
             |   `-- transfert
             |-- all
             |-- keys
+            |-- last/
+            |   `-- [count]
             |-- sender/
             |   `-- [PGP_FINGERPRINT]/
-            |       |-- last
+            |       |-- last/
+            |           `-- [count]
             |       |-- transfert
             |       `-- issuance/
             |           |-- last
             |           |-- fusion
             |           `-- dividend/
-            |               `-- [AM_NUMBER]/
+            |               `-- [AM_NUMBER]
             |-- recipient/
             |   `-- [PGP_FINGERPRINT]
             `-- view/
@@ -1452,6 +1459,105 @@ Merkle URL leaf: PGP key's fingerprint
 }
 ```
 
+#### `transactions/last`
+**Goal**
+
+Get the last received transaction.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+The last transaction received.
+```json
+{
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "raw": "Version: 1\r\n...\r\n",
+  "transaction":
+  {
+    "version": 1,
+    "currency": "beta_brousouf",
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 1,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "ISSUANCE",
+    "coins": [
+      {
+        "id": "1-5-2-A-1",
+        "transaction_id": ""
+      },{
+        // Other coin
+      },{
+        // ...
+      }
+    ],
+    "comment": "Universal Dividend"
+  }
+}
+```
+
+#### `transactions/last/[COUNT]`
+**Goal**
+
+Get the last `n` received transactions.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`COUNT` | Integer indicating to retrieve the last [COUNT] transactions. | URL
+
+**Returns**
+
+The last [COUNT] transactions received.
+```json
+{
+  "transactions": [
+    {
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 92,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "type": "TRANSFERT",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
+        },{
+          // Other coin
+        },{
+          // ...
+        }
+      ],
+      "comment": "Paying LoLCat's food."
+    },{
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 14,
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Too much coins ! Making big one."
+    }
+  ]
+}
+```
+
 #### `transactions/sender/[PGP_FINGERPRINT]`
 **Goal**
 
@@ -1556,6 +1662,66 @@ The last transaction of given PGP key.
     ],
     "comment": "Universal Dividend"
   }
+}
+```
+
+#### `transactions/sender/[PGP_FINGERPRINT]/last/[COUNT]`
+**Goal**
+
+Get the last `n` received transactions of a PGP key.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction. | URL
+`COUNT` | Integer indicating to retrieve the last [COUNT] transactions. | URL
+
+**Returns**
+
+The last [COUNT] transactions of given PGP key.
+```json
+{
+  "transactions": [
+    {
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 92,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "type": "TRANSFERT",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
+        },{
+          // Other coin
+        },{
+          // ...
+        }
+      ],
+      "comment": "Paying LoLCat's food."
+    },{
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 14,
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Too much coins ! Making big one."
+    }
+  ]
 }
 ```
 

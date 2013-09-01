@@ -177,8 +177,12 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process/transfert',            hdc.transactions.processTx.transfert);
     app.post(   '/hdc/transactions/process/fusion',               hdc.transactions.processTx.fusion);
     app.get(    '/hdc/transactions/all',                          hdc.transactions.all);
+    app.get(    '/hdc/transactions/keys',                         notImplemented);
+    app.get(    '/hdc/transactions/last',                         hdc.transactions.lastAll);
+    app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
     app.get(    '/hdc/transactions/sender/:fpr/last',                      hdc.transactions.sender.last);
+    app.get(    '/hdc/transactions/sender/:fpr/last/:count',               hdc.transactions.sender.lastNofSender);
     app.get(    '/hdc/transactions/sender/:fpr/issuance',                  hdc.transactions.sender.issuance);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/last',             hdc.transactions.sender.dividendLast);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend',         hdc.transactions.sender.dividend);

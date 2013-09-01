@@ -162,7 +162,7 @@ TransactionSchema.statics.getBySenderAndNumber = function (fingerprint, number, 
   });
 };
 
-TransactionSchema.statics.findLast = function (fingerprint, done) {
+TransactionSchema.statics.findLastOf = function (fingerprint, done) {
 
   this.find({ sender: fingerprint }).sort({number: -1}).limit(1).exec(function (err, txs) {
     if(txs && txs.length == 1){
@@ -194,6 +194,16 @@ TransactionSchema.statics.findLastIssuance = function (fingerprint, done) {
       done('More than one transaction found');
     }
   });
+};
+
+TransactionSchema.statics.findLastsOf = function (fingerprint, limit, done) {
+
+  this.find({ sender: fingerprint }).sort({number: -1}).limit(limit).exec(done);
+};
+
+TransactionSchema.statics.findLasts = function (limit, done) {
+
+  this.find().sort({created: -1}).limit(limit).exec(done);
 };
 
 TransactionSchema.statics.findAllIssuanceOfSenderForAmendment = function (fingerprint, amNumber, done) {

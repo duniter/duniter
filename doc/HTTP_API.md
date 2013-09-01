@@ -15,6 +15,8 @@
       * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
   * [hdc/](#hdc)
       * [amendments/current](#amendmentscurrent)
+      * [amendments/promoted](#amendmentspromoted)
+      * [amendments/promoted/[AMENDMENT_NUMBER]](#amendmentspromotedamendment_number)
       * [amendments/view/[AMENDMENT_ID]/memberships](#amendmentsviewamendment_idmemberships)
       * [amendments/view/[AMENDMENT_ID]/members](#amendmentsviewamendment_idmembers)
       * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
@@ -62,6 +64,8 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     `-- hdc/
         |-- amendments/
         |   |-- current
+        |   |-- promoted
+        |   |   `-- [AMENDMENT_NUMBER]
         |   |-- view/
         |   |   `-- [AMENDMENT_ID]/
         |   |       |-- memberships
@@ -602,6 +606,11 @@ In a general way, those URLs return HTTP **200** code on success, HTTP **501** i
 #### `amendments/current`
 **Goal**
 
+Alias of `amendments/promoted`.
+
+#### `amendments/promoted`
+**Goal**
+
 GET the current promoted amendment (amendment which received enough votes to be accepted).
 
 **Parameters**
@@ -611,6 +620,42 @@ GET the current promoted amendment (amendment which received enough votes to be 
 **Returns**
 
 The current amendment.
+```json
+{
+  "version": "1",
+  "currency": "beta_brousoufs",
+  "number": "2",
+  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
+  "dividend": "100",
+  "coinMinimalPower": "0",
+  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
+  "votersCount": "2",
+  "votersChanges": [
+    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+  ],
+  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
+  "membersCount": "4",
+  "membersChanges": [
+    "+31A6302161AC8F5938969E85399EB3415C237F93"
+  ],
+  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+}
+```
+
+#### `amendments/promoted/[AMENDMENT_NUMBER]`
+**Goal**
+
+GET the current promoted amendment (amendment which received enough votes to be accepted).
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`AMENDMENT_NUMBER` | The promoted amendment number (integer value) we want to see. | URL
+
+**Returns**
+
+The promoted amendment if it exists (otherwise return HTTP 404).
 ```json
 {
   "version": "1",

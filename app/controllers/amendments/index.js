@@ -9,7 +9,7 @@ module.exports = function (pgp, currency, conf) {
   this.votes = require('./votes')(pgp, currency, conf, defaultPromotion);
   this.view = require('./view')(pgp, currency, conf);
 
-  this.current = function (req, res) {
+  this.promoted = function (req, res) {
     async.waterfall([
       function (next){
         Amendment.current(next);
@@ -23,6 +23,35 @@ module.exports = function (pgp, currency, conf) {
       res.send(JSON.stringify(current.json(), null, "  "));
     });
   };
+
+  this.promotedNumber = function (req, res) {
+
+    if(!req.params.amendment_number){
+      res.send(400, "Amendment number is required");
+      return;
+    }
+    var matches = req.params.amendment_number.match(/^(\d+)$/);
+    if(!matches){
+      res.send(400, "Amendment number format is incorrect, must be an integer value");
+      return;
+    }
+
+    async.waterfall([
+      function (next){
+        Amendment.findPromotedByNumber(matches[1], next);
+      }
+    ], function (err, current) {
+      if(!current){
+        res.send(404, 'No amendment yet promoted');
+        return;
+      }
+      res.setHeader("Content-Type", "text/plain");
+      res.send(JSON.stringify(current.json(), null, "  "));
+    });
+  };
+
+  // Retro-compatibility
+  this.current = this.promoted;
   
   return this;
 }

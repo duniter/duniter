@@ -120,7 +120,7 @@ TransactionSchema.methods = {
 
   getRawSigned: function() {
     var raw = this.getRaw() + this.signature;
-    return raw.unix2dos();
+    return raw;
   },
 
   json: function() {

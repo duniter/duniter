@@ -279,12 +279,12 @@ describe('Transaction', function(){
       should.exist(tx1.comment);
     });
 
-    it('its computed hash should be D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E', function(){
-      assert.equal(tx1.hash, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E');
+    it('its computed hash should be E04D9FE0B450F3718E675A32ECACE7F04D84115F', function(){
+      assert.equal(tx1.hash, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F');
     });
 
-    it('its manual hash should be D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E', function(){
-      assert.equal(sha1(tx1.getRawSigned()).toUpperCase(), 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E');
+    it('its manual hash should be E04D9FE0B450F3718E675A32ECACE7F04D84115F', function(){
+      assert.equal(sha1(tx1.getRawSigned()).toUpperCase(), 'E04D9FE0B450F3718E675A32ECACE7F04D84115F');
     });
   });
 });

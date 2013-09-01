@@ -72,6 +72,7 @@ function JPGP() {
     var start = new Date();
     var verified = false;
     var err = undefined;
+    var sig = undefined;
     if(pubkey && !callback){
       callback = pubkey;
       pubkey = undefined;
@@ -79,10 +80,22 @@ function JPGP() {
     // Do
     try{
       var signatures = openpgp.read_message(this.signature);
-      var sig = signatures[2];
+      sig = signatures[2];
       var verified = sig.verifySignature();
       if(!verified){
-        err = "Signature does not match signed data.";
+        err = "Signature does not match.";
+      }
+      if(verified){
+        if(!sig.text){
+          err = 'Signature does not contain text data';
+          verified = false;
+        }
+        else{
+          if(sig.text != this.data){
+            err = "Signature does not match signed data.";
+            verified = false;
+          }
+        }
       }
       if(verified && pubkey){
         var cert = this.certificate(pubkey);
@@ -94,6 +107,16 @@ function JPGP() {
       }
     }
     catch(err){
+      verified = false;
+    }
+    if(err && sig && sig.text){
+      console.error('==========================================================');
+      console.error(err);
+      console.error('==========================================================');
+      console.error(sig.text);
+      console.error('----------------------------------------------------------');
+      console.error(this.data);
+      console.error('----------------------------------------------------------');
     }
     // Done
     var end = new Date();

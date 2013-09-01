@@ -67,8 +67,6 @@ MembershipSchema.methods = {
     raw += "Currency: " + this.currency + "\n";
     raw += "Status: " + this.status + "\n";
     raw += "Basis: " + this.basis + "\n";
-    if(this.signature)
-      raw += this.signature;
     return raw.unix2dos();
   },
 

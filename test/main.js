@@ -393,7 +393,7 @@ function checkMerkleOfMemberships (json) {
       basis: leaf.value.request.basis,
       signature: leaf.value.signature
     });
-    leaf.hash.should.equal(sha1(ms.getRaw()).toUpperCase());
+    leaf.hash.should.equal(sha1(ms.getRaw() + ms.signature).toUpperCase());
   });
 }
 
@@ -679,25 +679,25 @@ function checkTx (url, index, leavesCount, hash) {
 
 describe('Checking TX', function(){
   var index = 0;
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/all', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 0, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/fusion', 0, 0, ''));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 0, 0, ''));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/all', 1, 2, '32B0D76B9955F3646868EE72EEB623370532F01A'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 1, 2, '32B0D76B9955F3646868EE72EEB623370532F01A'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 1, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 1, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 1, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 1, 1, '5DBECBDCFB9041D3441CE980B6D269A51A61FAC7'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/all', 2, 3, '36C9A8B3F0D1A5B80C3E4D1EFE2CE260B2FDA8F5'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 2, 3, '36C9A8B3F0D1A5B80C3E4D1EFE2CE260B2FDA8F5'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 2, 2, 'F9E453D5D38918BBF19E5E57B73C5F2F5B831CF0'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 2, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 2, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
-  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 2, 1, '5DBECBDCFB9041D3441CE980B6D269A51A61FAC7'));
+  it('should respond 200 ISSUANCE', checkTx('/hdc/transactions/all', 0, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 ISSUANCE', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 0, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 ISSUANCE', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 0, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 ISSUANCE', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 0, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 ISSUANCE', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 0, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 ISSUANCE', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/fusion', 0, 0, ''));
+  it('should respond 200 ISSUANCE', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 0, 0, ''));
+  it('should respond 200 TRANSFERT', checkTx('/hdc/transactions/all', 1, 2, '6492741E1BE3461537EDC6D5B2820DC851156612'));
+  it('should respond 200 TRANSFERT', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 1, 2, '6492741E1BE3461537EDC6D5B2820DC851156612'));
+  it('should respond 200 TRANSFERT', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 1, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 TRANSFERT', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 1, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 TRANSFERT', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 1, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 TRANSFERT', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 1, 1, '644AB61348723D6F657B0EA5577F4CE15CA64400'));
+  it('should respond 200 FUSION', checkTx('/hdc/transactions/all', 2, 3, 'FCEFF28B10A460EAEE6F3F071EE35EAAFCC11391'));
+  it('should respond 200 FUSION', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 2, 3, 'FCEFF28B10A460EAEE6F3F071EE35EAAFCC11391'));
+  it('should respond 200 FUSION', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 2, 2, 'ACBE13C611689BDA82DC8CE70EA3926FE5D766D5'));
+  it('should respond 200 FUSION', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 2, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 FUSION', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 2, 1, 'E04D9FE0B450F3718E675A32ECACE7F04D84115F'));
+  it('should respond 200 FUSION', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 2, 1, '644AB61348723D6F657B0EA5577F4CE15CA64400'));
 });
 
 function checkListCoins(index, owner, coinsCount) {

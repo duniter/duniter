@@ -42,7 +42,7 @@ describe('Membership request', function(){
     });
 
     it('its manual hash should be EE794AB868994AE418D5284BBBA2FD7B5A063F14', function(){
-      assert.equal(sha1(join.getRaw()).toUpperCase(), 'EE794AB868994AE418D5284BBBA2FD7B5A063F14');
+      assert.equal(sha1(join.getRaw() + join.signature).toUpperCase(), 'EE794AB868994AE418D5284BBBA2FD7B5A063F14');
     });
 
     it('it should match signature', function(){

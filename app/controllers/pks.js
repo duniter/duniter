@@ -90,7 +90,7 @@ function getAAMessage(keytext, callback) {
   if(keytext){
     var extractPK = keytext.trim().match(/(-----BEGIN PGP[\s\S]*-----END PGP.*-----)/);
     if(extractPK && extractPK.length > 1){
-      var asciiArmored = extractPK[1];
+      var asciiArmored = extractPK[1] + '\r\n';
       callback(null, asciiArmored);
     }
     else{

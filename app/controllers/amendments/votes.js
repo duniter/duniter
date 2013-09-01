@@ -230,6 +230,7 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
     ], function (err, am, recordedVote) {
       if(err){
         res.send(400, err);
+        console.error(err);
         return;
       }
       // Promotion time

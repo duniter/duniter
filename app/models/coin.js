@@ -11,8 +11,13 @@ var CoinSchema = new Schema({
   id: String,
   owner: String,
   transaction: String,
-  created: Date,
-  updated: Date
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
+});
+
+CoinSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
 });
 
 CoinSchema.methods = {

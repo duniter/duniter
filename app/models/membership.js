@@ -14,8 +14,13 @@ var MembershipSchema = new Schema({
   fingerprint: String,
   hash: String,
   signature: String,
-  created: Date,
-  updated: Date
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
+});
+
+MembershipSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
 });
 
 MembershipSchema.methods = {

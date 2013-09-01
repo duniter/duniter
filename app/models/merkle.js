@@ -13,8 +13,13 @@ var MerkleSchema = new Schema({
   depth: {"type": Number, "default": 0},
   nodes: {"type": Number, "default": 0},
   levels: Array,
-  created: Date,
-  updated: Date
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
+});
+
+MerkleSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
 });
 
 MerkleSchema.methods = {

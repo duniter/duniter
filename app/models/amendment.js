@@ -23,8 +23,13 @@ var AmendmentSchema = new Schema({
   membersChanges: Array,
   promoted: {"type": Boolean, "default": false},
   hash: String,
-  created: Date,
-  updated: Date
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
+});
+
+AmendmentSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
 });
 
 AmendmentSchema.methods = {

@@ -15,8 +15,13 @@ var VoteSchema = new Schema({
   _amendment: Schema.Types.ObjectId,
   hash: String,
   amendmentHash: String,
-  created: Date,
-  updated: Date
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
+});
+
+VoteSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
 });
 
 VoteSchema.methods = {

@@ -10,8 +10,13 @@ var PublicKeySchema = new Schema({
   name: String,
   email: String,
   comment: String,
-  created: Date,
-  updated: Date
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
+});
+
+PublicKeySchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
 });
 
 PublicKeySchema.methods = {

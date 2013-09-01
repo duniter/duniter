@@ -19,8 +19,13 @@ var TransactionSchema = new Schema({
   comment: String,
   signature: String,
   hash: String,
-  created: Date,
-  updated: Date
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now }
+});
+
+TransactionSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
 });
 
 TransactionSchema.methods = {

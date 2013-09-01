@@ -419,6 +419,7 @@ module.exports = function (pgp, currency, conf) {
           async.forEach(tx.getCoins(), function(coin, callback){
             Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
               ownership.owner = tx.recipient;
+              ownership.transaction = tx.sender + '-' + tx.number;
               ownership.save(callback);
             });
           }, next);

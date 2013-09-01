@@ -96,6 +96,75 @@ var txTobiToSnow = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', '
 var txTobiFusion = fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7', 'utf8');
 
 var app;
+
+function ResultAPI () {
+  
+  this.apiRes = {};
+  this.apiStack = [];
+
+  this.pksAllIndex = 0;
+  this.pksAddIndex = 0;
+  this.pksLookupIndex = 0;
+
+  this.push = function (url, res) {
+    if(!this.apiRes[url]) this.apiRes[url] = [];
+    this.apiRes[url].push({ res: res });
+    this.apiStack.push(url);
+  };
+
+  this.last = function () {
+    return this.apiRes[this.apiStack[this.apiStack.length - 1]][_(this.apiRes).size() - 1].res;
+  };
+
+  this.pksAll = function(status, expectCount, expectHash) {
+    var index = this.pksAllIndex++;
+    var obj = this;
+    it('expect to see ' + expectCount + ' keys with root hash ' + expectHash, function () {
+      var res = obj.apiRes['/pks/all'][index].res;
+      var json = JSON.parse(res.text);
+      res.should.have.status(status);
+      isMerkleNodesResult(json);
+      json.merkle.leavesCount.should.equal(expectCount);
+      if(expectCount == 0){
+        json.merkle.levels.should.have.property("0");
+        json.merkle.levels["0"].should.have.length(0);
+        json.merkle.levels["0"].should.have.length(0);
+      }
+      else{
+        json.merkle.levels.should.have.property("0");
+        json.merkle.levels["0"].should.have.length(1);
+        json.merkle.levels["0"][0].should.equal(expectHash);
+      }
+    })
+  };
+
+  this.pksAdd = function(status) {
+    var index = this.pksAddIndex++;
+    var obj = this;
+    it('expect to have status ' + status + ' for pks/add', function () {
+      var res = obj.apiRes['/pks/add'][index].res;
+      res.should.have.status(status);
+      if(status == 200){
+        var json = JSON.parse(res.text);
+        isPubKey(json);
+      }
+    })
+  };
+
+  this.pksLookup = function(status, keyCount) {
+    var index = this.pksLookupIndex++;
+    var obj = this;
+    it('expect to have status ' + status + ' and ' + keyCount + ' keys for pks/lookup', function () {
+      var res = obj.apiRes['/pks/lookup?op=index&search='][index].res;
+      var json = JSON.parse(res.text);
+      res.should.have.status(status);
+      json.should.have.property('keys');
+      json.keys.length.should.equal(keyCount);
+    })
+  };
+}
+
+var api = new ResultAPI();
 var apiRes = {};
 
 function post (url, data, done) {
@@ -112,12 +181,10 @@ function get (url, done) {
 }
 
 function onHttpResult (url, done) {
-  if(!apiRes[url])
-    apiRes[url] = [];
+  if(!apiRes[url]) apiRes[url] = [];
   return function (err, res) {
-    apiRes[url].push({
-      res: res
-    });
+    api.push(url, res);
+    apiRes[url].push({ res: res });
     done();
   }
 }
@@ -301,61 +368,24 @@ before(function (done) {
 
 //----------- PKS -----------
 
-function checkPKSres (index, keyCount, status) {
-  return function () {
-    var add = apiRes['/pks/add'][index].res;
-    var lookup = apiRes['/pks/lookup?op=index&search='][index].res;
-    add.should.have.status(status);
-    isPubKey(JSON.parse(add.text));
-    lookup.should.have.status(200);
-    var json = JSON.parse(lookup.text);
-    json.should.have.property('keys');
-    json.keys.length.should.equal(keyCount);
-  }
-}
-
 describe('Sending public key', function(){
-  var index = -1;
-  var url = '/pks/add';
-  var url2 = '/pks/lookup?op=index&search=';
-  it('of John Snow should respond 200', checkPKSres(++index, 1, 200));
-  it('of LoL Cat should respond 200', checkPKSres(++index, 2, 200));
-  it('of Tobi Uchiha should respond 200', checkPKSres(++index, 3, 200));
-  it('of Walter White should respond 200', checkPKSres(++index+1, 4, 200));
-  it('of Tobi Uchiha with signature of John Snow should respond 400', function(){
-    // Issue refactoring because of status
-    apiRes[url][index].res.should.have.status(400);
-    apiRes[url2][index].res.should.have.status(200);
-    var json = JSON.parse(apiRes[url2][index].res.text);
-    json.should.have.property('keys');
-    json.keys.length.should.equal(3);
-  });
-});
 
-function checkPKS (index, keyCount, hash) {
-  return function(){
-    apiRes['/pks/all'][index].res.should.have.status(200);
-    var json = JSON.parse(apiRes['/pks/all'][index].res.text);
-    isMerkleNodesResult(json);
-    json.merkle.levelsCount.should.equal(keyCount);
-    _(json.merkle.levels).size().should.equal(1);
-    if(hash){
-      _(json.merkle.levels[0]).size().should.equal(1);
-      json.merkle.levels[0][0].should.equal(hash);
-    }
-    else{
-      _(json.merkle.levels[0]).size().should.equal(0);
-    }
-  }
-}
-
-describe('Checking pubkeys', function(){
-  var index = -1;
-  it('all should respond 200 and have no pks', checkPKS(++index, 1));
-  it('all should respond 200 and have some pks', checkPKS(++index, 1, '33BBFC0C67078D72AF128B5BA296CC530126F372'));
-  it('all should respond 200 and have some pks', checkPKS(++index, 2, '5DB500A285BD380A68890D09232475A8CA003DC8'));
-  it('all should respond 200 and have some pks', checkPKS(++index, 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'));
-  it('all should respond 200 and have some pks', checkPKS(++index, 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'));
+  api.pksAll(200, 0, '');
+  api.pksAll(200, 1, '33BBFC0C67078D72AF128B5BA296CC530126F372'); // Added 33BBFC0C67078D72AF128B5BA296CC530126F372
+  api.pksAll(200, 2, '5DB500A285BD380A68890D09232475A8CA003DC8'); // Added C73882B64B7E72237A2F460CE9CAB76D19A8651E
+  api.pksAll(200, 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'); // Added 2E69197FAB029D8669EF85E82457A1587CA0ED9C
+  api.pksAll(200, 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'); // Added nothing (wrong signature)
+  api.pksAll(200, 4, '7B66992FD748579B0774EDFAD7AB84143357F7BC'); // Added B6AE93DDE390B1E11FA97EEF78B494F99025C77E
+  api.pksAdd(200); // Added 33BBFC0C67078D72AF128B5BA296CC530126F372 Snow
+  api.pksAdd(200); // Added C73882B64B7E72237A2F460CE9CAB76D19A8651E Cat 
+  api.pksAdd(200); // Added 2E69197FAB029D8669EF85E82457A1587CA0ED9C Tobi
+  api.pksAdd(400); // Added 2E69197FAB029D8669EF85E82457A1587CA0ED9C Tobi with Sig of Snow
+  api.pksAdd(200); // Added B6AE93DDE390B1E11FA97EEF78B494F99025C77E White
+  api.pksLookup(200, 1); // Added Snow
+  api.pksLookup(200, 2); // Added Cat
+  api.pksLookup(200, 3); // Added Tobi
+  api.pksLookup(200, 3); // Added nothing
+  api.pksLookup(200, 4); // Added Walter
 });
 
 //----------- Memberships -----------

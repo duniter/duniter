@@ -173,7 +173,7 @@ module.exports.express = {
     app.get(    '/hdc/community/votes',                           hdc.community.currentVotes);
     app.post(   '/hdc/transactions/process/issuance',             hdc.transactions.processTx.issuance);
     app.post(   '/hdc/transactions/process/transfert',            hdc.transactions.processTx.transfert);
-    app.post(   '/hdc/transactions/process/fusion',               notImplemented);
+    app.post(   '/hdc/transactions/process/fusion',               hdc.transactions.processTx.fusion);
     app.get(    '/hdc/transactions/all',                          hdc.transactions.all);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
     app.get(    '/hdc/transactions/sender/:fpr/last',                      hdc.transactions.sender.last);

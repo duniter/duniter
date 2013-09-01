@@ -42,7 +42,6 @@ var gets = [
 
 var posts = [
   {expect: 501, url: '/ucg/tht'},
-  {expect: 501, url: '/hdc/transactions/process/fusion'}
 ];
 
 function testGET(url, expect) {
@@ -94,6 +93,7 @@ var voteCatAM2    = fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.vote', '
 
 var txTobi = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8');
 var txTobiToSnow = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', 'utf8');
+var txTobiFusion = fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7', 'utf8');
 
 var app;
 var apiRes = {};
@@ -152,6 +152,13 @@ function issue (txFile, done) {
 
 function transfert (txFile, done) {
   post('/hdc/transactions/process/transfert', {
+    "transaction": txFile.substr(0, txFile.indexOf('-----BEGIN')),
+    "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
+  }, done);
+}
+
+function fusion (txFile, done) {
+  post('/hdc/transactions/process/fusion', {
     "transaction": txFile.substr(0, txFile.indexOf('-----BEGIN')),
     "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
   }, done);
@@ -259,6 +266,20 @@ before(function (done) {
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
     function (next) { transfert(txTobiToSnow, next); },
+    function (next) { get('/hdc/transactions/all', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/fusion', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', next); },
+    function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
+    function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/0', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
+    function (next) { fusion(txTobiFusion, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', next); },
@@ -671,6 +692,12 @@ describe('Checking TX', function(){
   it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 1, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
   it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 1, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
   it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 1, 1, '5DBECBDCFB9041D3441CE980B6D269A51A61FAC7'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/all', 2, 3, '36C9A8B3F0D1A5B80C3E4D1EFE2CE260B2FDA8F5'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', 2, 3, '36C9A8B3F0D1A5B80C3E4D1EFE2CE260B2FDA8F5'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', 2, 2, 'F9E453D5D38918BBF19E5E57B73C5F2F5B831CF0'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', 2, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', 2, 1, 'D241B9EAC70D60579DFC64D42BA9503CC8B1EE8E'));
+  it('should respond 200 and have 1 TX', checkTx('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', 2, 1, '5DBECBDCFB9041D3441CE980B6D269A51A61FAC7'));
 });
 
 function checkListCoins(index, owner, coinsCount) {

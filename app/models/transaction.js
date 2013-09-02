@@ -11,7 +11,7 @@ var TransactionSchema = new Schema({
   version: String,
   currency: String,
   sender: String,
-  number: String,
+  number: Number,
   previousHash: String,
   recipient: String,
   type: String,
@@ -33,6 +33,7 @@ TransactionSchema.methods = {
   hdc: function() {
     var tx = new hdc.Transaction(this.getRaw());
     fill(tx, this);
+    tx.number = this.number + "";
     return tx;
   },
   

@@ -141,9 +141,10 @@ TransactionSchema.methods = {
       comment: this.comment
     }
     this.coins.forEach(function (coin) {
+      var matches = coin.match(/^([A-Z\d]{40}-\d+-\d-\d+-(A|F)-\d+)(, ([A-Z\d]{40}-\d+))?/);
       obj.coins.push({
-        id: coin.substring(41),
-        transaction_id: coin.length > 50 ? coin.substring(53) : ''
+        id: matches[1],
+        transaction_id: matches[4] ? matches[4] : ''
       });
     });
     return obj;

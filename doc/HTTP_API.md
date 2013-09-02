@@ -1253,7 +1253,7 @@ The issuance transaction and its signature.
     "type": "ISSUANCE",
     "coins": [
       {
-        "id": "1-5-2-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
         "transaction_id": ""
       },{
         // Other coin
@@ -1339,13 +1339,13 @@ The fusion transaction and its signature.
     "type": "FUSION",
     "coins": [
       {
-        "id": "10-1-2-F-14",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-F-14",
         "transaction_id": ""
       },{
-        "id": "2-4-1-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1",
         "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
       },{
-        "id": "3-6-1-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1",
         "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
       }
     ],
@@ -1486,7 +1486,7 @@ The last transaction received.
     "type": "ISSUANCE",
     "coins": [
       {
-        "id": "1-5-2-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
         "transaction_id": ""
       },{
         // Other coin
@@ -1652,7 +1652,7 @@ The last transaction of given PGP key.
     "type": "ISSUANCE",
     "coins": [
       {
-        "id": "1-5-2-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
         "transaction_id": ""
       },{
         // Other coin
@@ -1884,7 +1884,7 @@ The last *issuance* transaction of given PGP key.
     "type": "ISSUANCE",
     "coins": [
       {
-        "id": "1-5-2-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
         "transaction_id": ""
       },{
         // Other coin
@@ -2186,13 +2186,13 @@ The transaction and its signature.
     "type": "FUSION",
     "coins": [
       {
-        "id": "10-1-2-F-14",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-F-14",
         "transaction_id": ""
       },{
-        "id": "2-4-1-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1",
         "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
       },{
-        "id": "3-6-1-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1",
         "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
       }
     ],

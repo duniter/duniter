@@ -32,7 +32,7 @@ module.exports = function (pgp, currency, conf) {
 
     async.waterfall([
       function (next){
-        Transaction.findLastAll(1, next);
+        Transaction.findLastAll(next);
       }
     ], function (err, result) {
       if(err){
@@ -61,7 +61,7 @@ module.exports = function (pgp, currency, conf) {
 
       async.waterfall([
         function (next){
-          Transaction.findLasts(matches2[1], next);
+          Transaction.find().sort({created: -1}).limit(matches2[1]).exec(next);
         }
       ], function (err, results) {
         if(err){
@@ -135,7 +135,7 @@ module.exports = function (pgp, currency, conf) {
 
       async.waterfall([
         function (next){
-          Transaction.findLastsOf(matches[1], matches2[1], next);
+          Transaction.find({ sender: matches[1] }).sort({number: -1}).limit(matches2[1]).exec(next);
         }
       ], function (err, results) {
         if(err){

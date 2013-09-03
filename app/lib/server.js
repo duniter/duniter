@@ -108,6 +108,10 @@ module.exports.database = {
     ], done);
   },
 
+  resetConf: function(done) {
+    mongoose.model('Configuration').remove({}, done);
+  },
+
   disconnect: function() {
     mongoose.disconnect(function (err) {
       if(err)

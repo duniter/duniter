@@ -11,7 +11,7 @@ function keys (val) {
 
 program
   .version('0.1.0')
-  .usage('--currency <name> [options] [command]')
+  .usage('--currency <name> [options] start')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
   .option('-c, --currency <name>', 'Name of the currency managed by this node.')
   .option('--mhost <host>', 'MongoDB host.')
@@ -38,6 +38,35 @@ program
       server.database.disconnect();
       return;
     });
+  }));
+
+program
+  .command('reset [config|data]')
+  .description('Reset configuration or data in database')
+  .action(connect(function (type, conf) {
+    if(!~['config', 'data'].indexOf(type)){
+      console.error('Bad command: usage `reset config` or `reset data`');
+      server.database.disconnect();
+      return;
+    }
+    if(type == 'data'){
+      server.database.reset(function (err) {
+        if(err)
+          console.error(err);
+        else
+          console.log('Data successfuly reseted.');
+        server.database.disconnect();
+      });
+    }
+    if(type == 'config'){
+      server.database.resetConf(function (err) {
+        if(err)
+          console.error(err);
+        else
+          console.log('Configuration successfuly reseted.');
+        server.database.disconnect();
+      });
+    }
   }));
 
 program

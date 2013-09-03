@@ -143,6 +143,181 @@ MerkleSchema.statics.txTransfertOfSender = function (fingerprint, done) {
   retrieve({ type: 'txTransfertOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
+MerkleSchema.statics.addPublicKey = function (fingerprint, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.forPublicKeys(function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.push(fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateSignaturesOfAmendment = function (am, previousHash, newHash, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.signaturesOfAmendment(am.number, am.hash, function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.push(newHash, previousHash);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateSignatoriesOfAmendment = function (am, fingerprint, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.signatoriesOfAmendment(am.number, am.hash, function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.push(fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForNextMembership = function (previousHash, newHash, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.forNextMembership(function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.push(newHash, previousHash);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
+  async.waterfall([
+    function (next) {
+      // M All
+      Merkle.txAll(next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M1
+      Merkle.txOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M2
+      Merkle.txIssuanceOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M3
+      Merkle.txDividendOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M4
+      Merkle.txDividendOfSenderByAmendment(tx.sender, am.number, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForTransfert = function (tx, done) {
+  async.waterfall([
+    function (next) {
+      // M All
+      Merkle.txAll(next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M1
+      Merkle.txOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M6
+      Merkle.txTransfertOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForFusion = function (tx, done) {
+  async.waterfall([
+    function (next) {
+      // M All
+      Merkle.txAll(next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M1
+      Merkle.txOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M2
+      Merkle.txIssuanceOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M5
+      Merkle.txFusionOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    }
+  ], done);
+};
+
 MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
   // Level
   var lstart = req.query.lstart ? parseInt(req.query.lstart) : 0;

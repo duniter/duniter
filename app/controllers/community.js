@@ -128,13 +128,7 @@ module.exports = function (pgp, currency, conf) {
             });
           },
           function (ms, previousHash, next) {
-            Merkle.forNextMembership(function (err, merkle) {
-              next(err, ms, previousHash, merkle);
-            });
-          },
-          function (ms, previousHash, merkle, next) {
-            merkle.push(ms.hash, previousHash);
-            merkle.save(function (err) {
+            Merkle.updateForNextMembership(previousHash, ms.hash, function (err) {
               next(err, ms);
             });
           }

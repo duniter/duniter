@@ -190,38 +190,29 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
               vote.copyValues(voteEntity);
             }
             voteEntity.save(function (err) {
-              next(err, voteEntity, previousHash);
+              next(err, voteEntity, previousHash, votes.length == 0);
             });
           },
-          function (voteEntity, previousHash, next){
+          function (voteEntity, previousHash, newAm, next){
             voteEntity.getAmendment(function (err, am) {
-              next(null, am, voteEntity, previousHash);
+              next(null, am, voteEntity, previousHash, newAm);
             })
           },
+          function (am, voteEntity, previousHash, newAm, next) {
+            if(newAm){
+              am.updateMerkles(function (err) {
+                next(err, am, voteEntity, previousHash);
+              });
+            }
+            else next(null, am, voteEntity, previousHash);
+          },
           function (am, voteEntity, previousHash, next) {
-            Merkle.signaturesOfAmendment(am.number, am.hash, function (err, merkle) {
-              next(err, am, voteEntity, previousHash, merkle);
-            });
-          },
-          function (am, voteEntity, previousHash, merkle, next) {
-            merkle.push(vote.hash, previousHash);
-            merkle.save(function (err) {
+            Merkle.updateSignaturesOfAmendment(am, previousHash, vote.hash, function (err) {
               next(err, am, voteEntity);
             });
           },
           function (am, voteEntity, next) {
-            Merkle.signatoriesOfAmendment(am.number, am.hash, function (err, merkle) {
-              next(err, am, voteEntity, merkle);
-            });
-          },
-          function (am, voteEntity, merkle, next) {
-            merkle.push(vote.pubkey.fingerprint);
-            merkle.save(function (err) {
-              next(err, am, voteEntity);
-            });
-          },
-          function (am, voteEntity, next) {
-            am.updateMerkles(function (err) {
+            Merkle.updateSignatoriesOfAmendment(am, vote.pubkey.fingerprint, function (err) {
               next(err, am, voteEntity);
             });
           }

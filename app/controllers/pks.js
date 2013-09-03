@@ -175,28 +175,15 @@ module.exports.add = function (req, res) {
                       created: now,
                       updated: now
                     }], function (err, pubkey) {
-                      if(!err){
-                        // Update Merkle
-                        async.waterfall([
-                          function (next) {
-                            Merkle.forPublicKeys(function (err, merkle) {
-                              next(err, merkle);
-                            });
-                          },
-                          function (merkle, next) {
-                            merkle.push(pubkey.fingerprint);
-                            merkle.save(function (err) {
-                              next(err);
-                            });
-                          }
-                        ], function (err, result) {
-                          if(err){
-                            console.error(err);
-                          }
-                        });
+                      if(err){
+                        done(err);
+                        return;
                       }
-                      console.log("Created " + pubkey.fingerprint + ".");
-                      done(err);
+                      // Update Merkle
+                      Merkle.addPublicKey(pubkey.fingerprint, function (err) {
+                        console.log("Created " + pubkey.fingerprint + ".");
+                        done(err);
+                      });
                     });
                   }
                   else{

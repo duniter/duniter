@@ -349,44 +349,7 @@ module.exports = function (pgp, currency, conf) {
           tx.save(next);
         },
         function (txSaved, code, next){
-          // M All
-          Merkle.txAll(next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M1
-          Merkle.txOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M2
-          Merkle.txIssuanceOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M3
-          Merkle.txDividendOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M4
-          Merkle.txDividendOfSenderByAmendment(tx.sender, am.number, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
+          Merkle.updateForIssuance(tx, am, next);
         },
         function (merkle, code, next){
           async.forEach(tx.coins, function(coin, callback){
@@ -514,28 +477,7 @@ module.exports = function (pgp, currency, conf) {
           }, next);
         },
         function (next){
-          // M All
-          Merkle.txAll(next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M1
-          Merkle.txOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M6
-          Merkle.txTransfertOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
+          Merkle.updateForTransfert(tx, next);
         }
       ], function (err, result) {
         if(err){
@@ -678,36 +620,7 @@ module.exports = function (pgp, currency, conf) {
           tx.save(next);
         },
         function (txSaved, code, next){
-          // M All
-          Merkle.txAll(next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M1
-          Merkle.txOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M2
-          Merkle.txIssuanceOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
-        },
-        function (merkle, code, next){
-          // M5
-          Merkle.txFusionOfSender(tx.sender, next);
-        },
-        function (merkle, next){
-          merkle.push(tx.hash);
-          merkle.save(next);
+          Merkle.updateForFusion(tx, next);
         },
         function (merkle, code, next){
           // Remove ownership of fusion coins

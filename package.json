@@ -33,7 +33,7 @@
     "async": "",
     "sha1": "",
     "merkle": "",
-    "hdc": ">= 0.0.10",
+    "hdc": ">= 0.0.11",
     "connect-pgp": ">= 0.1.4",
     "underscore": ""
   },

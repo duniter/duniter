@@ -434,20 +434,10 @@ AmendmentSchema.methods = {
 };
 
 AmendmentSchema.statics.nextNumber = function (done) {
-  var that = this;
-  async.waterfall([
-    function(next){
-      Amendment.current(next);
-    },
-    function(current, next){
-      if(!next){
-        next = current;
-        current = null;
-      }
-      var number = current ? current.number : 0;
-      next(null, number);
-    }
-  ], done);
+  Amendment.current(function (err, am) {
+    var number = err ? -1 : am.number;
+    done(null, number + 1);
+  });
 };
 
 AmendmentSchema.statics.current = function (done) {

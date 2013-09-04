@@ -2,6 +2,8 @@
 var server   = require('../app/lib/server');
 var http     = require('http');
 var fs       = require('fs');
+var async    = require('async');
+var _        = require('underscore');
 var program  = require('commander');
 var mongoose = require('mongoose');
 
@@ -67,6 +69,71 @@ program
         server.database.disconnect();
       });
     }
+  }));
+
+program
+  .command('update-merkles')
+  .description('Reset Merkle trees and computes them again according to stored data.')
+  .action(connect(function (type, conf) {
+    var Merkle      = mongoose.model('Merkle');
+    var PublicKey   = mongoose.model('PublicKey');
+    var Membership  = mongoose.model('Membership');
+    var Vote        = mongoose.model('Vote');
+    var Amendment   = mongoose.model('Amendment');
+    var Transaction = mongoose.model('Transaction');
+    async.waterfall([
+
+      // Public keys
+      function (next){
+        PublicKey.find(next);
+      },
+      function (pubkeys, next){
+        var fingerprints = [];
+        pubkeys.forEach(function (pubkey) {
+          fingerprints.push(pubkey.fingerprint);
+        });
+        Merkle.forPublicKeys(function (err, merkle) {
+          next(err, merkle, fingerprints);
+        });
+      },
+      function (merkle, fingerprints, next) {
+        fingerprints.sort(); // Important!
+        merkle.initialize(fingerprints);
+        merkle.save(next);
+      },
+
+      // Memberships
+      function (merkle, code, next){
+        Membership.find(next);
+      },
+      function (mss, next){
+        var mapMS = {};
+        mss.forEach(function (ms) {
+          mapMS[ms.basis] = mapMS[ms.basis] || [];
+          mapMS[ms.basis].push(ms.hash);
+        });
+        // Overwrites Merkle for each #basis
+        async.forEach(_(mapMS).keys(), function(key, callback){
+          var hashes = mapMS[key];
+          hashes.sort();
+          async.waterfall([
+            function (done){
+              Merkle.forMembership(key, done);
+            },
+            function (merkle, done){
+              merkle.initialize(hashes);
+              merkle.save(done);
+            }
+          ], callback);
+        }, next);
+      }
+    ], function (err, result) {
+      if(err){
+        console.error(err);
+      }
+      else console.log('Merkles computed successfuly.');
+      server.database.disconnect();
+    });
   }));
 
 program

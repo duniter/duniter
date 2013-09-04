@@ -83,7 +83,7 @@ MerkleSchema.statics.forMembership = function (number, done) {
 MerkleSchema.statics.forNextMembership = function (done) {
   var that = this;
   Amendment.nextNumber(function (err, number) {
-    that.forMembership(number, done);
+    that.forMembership(number || 0, done);
   });
 };
 

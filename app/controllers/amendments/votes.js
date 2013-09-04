@@ -163,6 +163,21 @@ module.exports = function (pgp, currency, conf, shouldBePromoted) {
             }
             next();
           },
+          function (next){
+            Amendment.current(function (err, am) {
+              var currNumber = am ? parseInt(am.number) : -1;
+              var voteNumber = parseInt(vote.basis);
+              if(voteNumber > currNumber + 1){
+                next('Previous amendment not found, cannot record vote for amendment #' + vote.basis);
+                return;
+              }
+              if(voteNumber < currNumber){
+                next('Cannot record vote for previous amendments');
+                return;
+              }
+              next();
+            });
+          },
           // Is not leaving the community
           function (next) {
             Membership.find({ fingerprint: vote.issuer, basis: vote.basis, status: 'LEAVE' }, function (err, memberships) {

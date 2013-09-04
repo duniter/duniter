@@ -126,6 +126,26 @@ program
             }
           ], callback);
         }, next);
+      },
+
+      // Transactions
+      function (next){
+        Transaction.find().sort('created').exec(next);
+      },
+      function (txs, next){
+        async.forEachSeries(txs, function(tx, callback){
+          if(tx.type == 'ISSUANCE'){
+            var amNum = tx.getCoins()[0].originNumber;
+            Merkle.updateForIssuance(tx, { number: amNum }, callback);
+          }
+          else if(tx.type == 'TRANSFERT'){
+            Merkle.updateForTransfert(tx, callback);
+          }
+          else if(tx.type == 'FUSION'){
+            Merkle.updateForFusion(tx, callback);
+          }
+          else callback('Unknow transaction type \'%s\'', tx.type);
+        }, next);
       }
     ], function (err, result) {
       if(err){

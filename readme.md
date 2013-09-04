@@ -66,7 +66,7 @@ $ sudo npm install ./ucoin -g
 Launch it using the following command:
 
 ```bash
-$ ucoind --currency beta_brousoufs
+$ ucoind --currency beta_brousouf start
 
 uCoin server listening on localhost port 8081
 ```
@@ -81,14 +81,14 @@ The database name is the currency name given to uCoin when started.
 Thus, when using:
 
 ```bash
-$ ucoind --currency beta_brousoufs
+$ ucoind --currency beta_brousouf start
 ```
-... the targeted database is "beta_brousoufs".
+... the targeted database is "beta_brousouf".
 
-To configure "beta_brousoufs" database, just run uCoin with the --config parameter:
+To configure "beta_brousouf" database, just run uCoin with the `config` command, instead of `start` parameter:
 
 ```bash
-$ ucoind --config beta_brousoufs
+$ ucoind --currency beta_brousouf config
 ```
 
 All the parameters given after this will be stored in the database.
@@ -98,7 +98,7 @@ All the parameters given after this will be stored in the database.
 By default, ucoin runs on port 8081. You may change it using the --port parameter:
 
 ```bash
-$ ucoind --config beta_brousoufs --port 80
+$ ucoind --currency beta_brousouf config --port 80
 ```
 
 (may require root access to launch on port 80)
@@ -106,25 +106,25 @@ $ ucoind --config beta_brousoufs --port 80
 It is also possible to specify the IPv4 interface:
 
 ```bash
-$ ucoind --config beta_brousoufs -p 8888 --ipv4 127.0.0.1
+$ ucoind --currency beta_brousouf config -p 8888 --ipv4 127.0.0.1
 ```
 
 Or IPv6 interface:
 
 ```bash
-$ ucoind --config beta_brousoufs -p 8888 --ipv6 ::1
+$ ucoind --currency beta_brousouf config -p 8888 --ipv6 ::1
 ```
 
 Or both:
 
 ```bash
-$ ucoind --config beta_brousoufs -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+$ ucoind --currency beta_brousouf config -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
 ```
 
 Launching uCoin will results:
 
 ```bash
-$ ucoind --currency beta_brousoufs
+$ ucoind --currency beta_brousouf start
 
 uCoin server listening on 127.0.0.1 port 8888
 uCoin server listening on ::1 port 8888
@@ -139,7 +139,7 @@ Note too that listening to multiple interfaces doesn't imply mutiple program ins
 As the server may be behind a reverse proxy, or because hosts may change of address, it might be useful to provide some remote informations like remote `host` and `port` telling where is really located the node:
 
 ```bash
-$ ucoind --config beta_brousoufs --remoteh "some.remote.url" --remotep "8844"
+$ ucoind --currency beta_brousouf config --remoteh "some.remote.url" --remotep "8844"
 ```
 
 #### Authentication
@@ -149,19 +149,19 @@ This is one of the great features coming with uCoin: [connect-pgp](https://githu
 To use this feature, just configure uCoin using `--pgpkey` parameter:
 
 ```bash
-$ ucoind --config beta_brousoufs --pgpkey /path/to/private/key
+$ ucoind --currency beta_brousouf config --pgpkey /path/to/private/key
 ```
 
 Eventually, you might need to give a password, otherwise uCoin will crash:
 
 ```bash
-$ ucoind --config beta_brousoufs --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
+$ ucoind --currency beta_brousouf config --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
 ```
 
 Resulting in:
 
 ```bash
-$ ucoind --currency beta_brousoufs
+$ ucoind --currency beta_brousouf start
 
 Signed requests with PGP: enabled.
 uCoin server listening on 127.0.0.1 port 8888
@@ -176,7 +176,14 @@ For more more details on the ucoin command, run:
 
 Which displays:
 
-      Usage: ucoind [options]
+      Usage: ucoind --currency <name> [options] <command> [options]
+
+      Commands:
+
+        config                 Register configuration in database
+        reset [config|data]    Reset configuration or data in database
+        update-merkles         Reset Merkle trees and computes them again according to stored data.
+        start                  Start uCoin server using given --currency
 
       Options:
 
@@ -184,7 +191,6 @@ Which displays:
         -V, --version           output the version number
         -p, --port <port>       Port to listen for requests
         -c, --currency <name>   Name of the currency managed by this node.
-        -C, --config <name>     Name of the currency to configure.
         --mhost <host>          MongoDB host.
         --mport <port>          MongoDB port.
         --pgpkey <keyPath>      Path to the private key used for signing HTTP responses.
@@ -193,6 +199,7 @@ Which displays:
         --ipv6 <address>        IPV6 interface to listen for requests
         --remoteh <host>        Remote interface others may use to contact this node
         --remotep <port>        Remote port others may use to contact this node
+
 
 
 ## Disclaimer

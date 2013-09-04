@@ -36,9 +36,8 @@
       * [transactions/process/fusion](#transactionsprocessfusion)
       * [transactions/all](#transactionsall)
       * [transactions/keys](#transactionskeys)
-      * [transactions/last](#transactionskeyslast)
-      * [transactions/last/[count]](#transactionskeyslastcount)
-      * [transactions/sender](#transactionssender)
+      * [transactions/last](#transactionslast)
+      * [transactions/last/[count]](#transactionslastcount)
       * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
       * [transactions/sender/[PGP_FINGERPRINT]/last](#transactionssenderpgp_fingerprintlast)
       * [transactions/sender/[PGP_FINGERPRINT]/last/[count]](#transactionssenderpgp_fingerprintlastcount)
@@ -232,6 +231,32 @@ Merkle URL result with `extract=true`.
   }
 }
 ```
+
+### uCoin Merkle trees leaves
+
+Each tree manages different data, and has a different goal. Hence, each tree has its own rules on how are generated and sorted tree leaves.
+Here is a summup of such rules:
+
+
+Merkle URL | Leaf | Sort
+---------- | ---- | ----
+`pks/all` | Fingerprint of the key | By fingerprint string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/memberships` | Hash of the membership + signature | By hash string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/members` | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/voters` | Fingerprint of voter's key fingeprint | By fingerprint string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/signatures` | Hash of the signature | By hash string sort, ascending.
+`hdc/amendments/votes/[AMENDMENT_ID]` | Hash of the signature | By hash string sort, ascending.
+`hdc/community/memberships` | Hash of the membership + signature | By hash string sort, ascending.
+`hdc/community/votes` | Hash of the signature | By hash string sort, ascending.
+`hdc/transactions/all` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/keys` | Fingerprint of the key | By fingerprint string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/transfert` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/recipient/[PGP_FINGERPRINT]` | Hash of the transaction + signature | By hash string sort, ascending.
 
 ## API
 

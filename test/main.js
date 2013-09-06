@@ -36,7 +36,6 @@ var conf = {
 var gets = [
   {expect: 501, url: '/ucg/tht'},
   {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
-  {expect: 501, url: '/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
   {expect: 501, url: '/hdc/transactions/view/SOME_TX_ID'}
 ];
 
@@ -239,35 +238,39 @@ function ResultAPI () {
   };
 
   this.txSenderMerkle = function(type, owner, root, txCount) {
-    checkTxMerklePath(this, '', 'sender', type, owner, root, txCount);
+    checkTxMerklePath(this, '/sender', '', 'sender', type, owner, root, txCount);
   };
 
   this.txIssuerMerkle = function(type, owner, root, txCount) {
-    checkTxMerklePath(this, '/issuance', 'issuance', type, owner, root, txCount);
+    checkTxMerklePath(this, '/sender', '/issuance', 'issuance', type, owner, root, txCount);
   };
 
   this.txIssuerDividendMerkle = function(type, owner, root, txCount) {
-    checkTxMerklePath(this, '/issuance/dividend', 'dividend', type, owner, root, txCount);
+    checkTxMerklePath(this, '/sender', '/issuance/dividend', 'dividend', type, owner, root, txCount);
   };
 
   this.txIssuerDividen2dMerkle = function(type, owner, root, txCount) {
-    checkTxMerklePath(this, '/issuance/dividend/2', 'dividend2', type, owner, root, txCount);
+    checkTxMerklePath(this, '/sender', '/issuance/dividend/2', 'dividend2', type, owner, root, txCount);
   };
 
   this.txIssuerTransfertMerkle = function(type, owner, root, txCount) {
-    checkTxMerklePath(this, '/transfert', 'transfert', type, owner, root, txCount);
+    checkTxMerklePath(this, '/sender', '/transfert', 'transfert', type, owner, root, txCount);
   };
 
   this.txIssuerFusionMerkle = function(type, owner, root, txCount) {
-    checkTxMerklePath(this, '/issuance/fusion', 'fusion', type, owner, root, txCount);
+    checkTxMerklePath(this, '/sender', '/issuance/fusion', 'fusion', type, owner, root, txCount);
   };
 
-  function checkTxMerklePath(obj, path, name, type, owner, root, txCount) {
+  this.txRecipientMerkle = function(type, owner, root, txCount) {
+    checkTxMerklePath(this, '/recipient', '', 'recipient', type, owner, root, txCount);
+  };
+
+  function checkTxMerklePath(obj, pathRoot, path, name, type, owner, root, txCount) {
     if(!obj['specialIndex'+name+owner])
       obj['specialIndex'+name+owner] = 0;
     var index = obj['specialIndex'+name+owner]++;
     it('after ' + type + ' tx of owner '+owner+' should respond 200 with ' + txCount + ' transactions', function () {
-      var url = '/hdc/transactions/sender/'+owner+path;
+      var url = '/hdc/transactions'+pathRoot+'/'+owner+path;
       checkTxMerkle(obj, url, index, txCount, root);
     });
   }
@@ -456,6 +459,9 @@ before(function (done) {
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
     function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
     function (next) { issue(txTobi, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -472,6 +478,9 @@ before(function (done) {
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
     function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
     function (next) { transfert(txTobiToSnow, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -488,6 +497,9 @@ before(function (done) {
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
     function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
     function (next) { fusion(txTobiFusion, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -504,6 +516,9 @@ before(function (done) {
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
     function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
     function (next) { transfert(txTobiToCat, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -520,6 +535,9 @@ before(function (done) {
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
     function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
     function (next) { issue(txCat, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -536,6 +554,9 @@ before(function (done) {
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
     function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -877,6 +898,28 @@ describe('Checking TX', function(){
   api.txIssuerFusionMerkle('TRANSFERT',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '', 0);
   api.txIssuerFusionMerkle('FUSION',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '953BD10646E860B4DF2F9EA4C81C9DE20DD668FB', 1);
   api.txIssuerFusionMerkle('TRANSFERT to Cat',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '953BD10646E860B4DF2F9EA4C81C9DE20DD668FB', 1);
+
+  // Recipients API
+  api.txRecipientMerkle('NONE',             '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '', 0);
+  api.txRecipientMerkle('ISSUANCE',         '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
+  api.txRecipientMerkle('TRANSFERT',        '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
+  api.txRecipientMerkle('FUSION',           '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'ACBE13C611689BDA82DC8CE70EA3926FE5D766D5', 2);
+  api.txRecipientMerkle('TRANSFERT to Cat', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'ACBE13C611689BDA82DC8CE70EA3926FE5D766D5', 2);
+  api.txRecipientMerkle('ISSUANCE to Cat',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'ACBE13C611689BDA82DC8CE70EA3926FE5D766D5', 2);
+
+  api.txRecipientMerkle('NONE',             '33BBFC0C67078D72AF128B5BA296CC530126F372', '', 0);
+  api.txRecipientMerkle('ISSUANCE',         '33BBFC0C67078D72AF128B5BA296CC530126F372', '', 0);
+  api.txRecipientMerkle('TRANSFERT',        '33BBFC0C67078D72AF128B5BA296CC530126F372', '644AB61348723D6F657B0EA5577F4CE15CA64400', 1);
+  api.txRecipientMerkle('FUSION',           '33BBFC0C67078D72AF128B5BA296CC530126F372', '644AB61348723D6F657B0EA5577F4CE15CA64400', 1);
+  api.txRecipientMerkle('TRANSFERT to Cat', '33BBFC0C67078D72AF128B5BA296CC530126F372', '644AB61348723D6F657B0EA5577F4CE15CA64400', 1);
+  api.txRecipientMerkle('ISSUANCE to Cat',  '33BBFC0C67078D72AF128B5BA296CC530126F372', '644AB61348723D6F657B0EA5577F4CE15CA64400', 1);
+
+  api.txRecipientMerkle('NONE',             'C73882B64B7E72237A2F460CE9CAB76D19A8651E', '', 0);
+  api.txRecipientMerkle('ISSUANCE',         'C73882B64B7E72237A2F460CE9CAB76D19A8651E', '', 0);
+  api.txRecipientMerkle('TRANSFERT',        'C73882B64B7E72237A2F460CE9CAB76D19A8651E', '', 0);
+  api.txRecipientMerkle('FUSION',           'C73882B64B7E72237A2F460CE9CAB76D19A8651E', '', 0);
+  api.txRecipientMerkle('TRANSFERT to Cat', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', '710055FFF0A541280C19C94FEA5B6544E98B20A0', 1);
+  api.txRecipientMerkle('ISSUANCE of Cat',  'C73882B64B7E72237A2F460CE9CAB76D19A8651E', '23A81CFAD6B25EF29119E8C43DB54B55B2FC9F17', 2);
 });
 
 describe('Checking COINS', function(){

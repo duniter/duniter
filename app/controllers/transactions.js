@@ -94,6 +94,34 @@ module.exports = function (pgp, currency, conf) {
       });
   };
 
+  this.recipient = function (req, res) {
+
+    if(!req.params.fpr){
+      res.send(400, "Fingerprint is required");
+      return;
+    }
+    var matches = req.params.fpr.match(/(\w{40})/);
+    if(!matches){
+      res.send(400, "Fingerprint format is incorrect, must be an upper-cased SHA1 hash");
+      return;
+    }
+
+    async.waterfall([
+      function (next){
+        Merkle.txToRecipient(matches[1], next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, lambda, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      merkleDone(req, res, json);
+    });
+  };
+
   this.sender = {
 
     get: function (req, res) {

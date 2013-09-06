@@ -198,7 +198,7 @@ module.exports.express = {
     app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend/:amnum',  hdc.transactions.sender.amDividend);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/fusion',           hdc.transactions.sender.fusion);
     app.get(    '/hdc/transactions/sender/:fpr/transfert',                 hdc.transactions.sender.transfert);
-    app.get(    '/hdc/transactions/recipient/:fpr',               notImplemented);
+    app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
     app.get(    '/hdc/transactions/view/:transaction_id',         notImplemented);
 
     onLoaded(null, app);

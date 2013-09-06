@@ -144,6 +144,10 @@ MerkleSchema.statics.txTransfertOfSender = function (fingerprint, done) {
   retrieve({ type: 'txTransfertOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
+MerkleSchema.statics.txToRecipient = function (fingerprint, done) {
+  retrieve({ type: 'txToRecipient', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
+};
+
 MerkleSchema.statics.keys = function (done) {
   retrieve({ type: 'keys', criteria: '{}' }, done);
 };
@@ -253,6 +257,14 @@ MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
     function (merkle, next){
       merkle.push(tx.hash);
       merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M7
+      Merkle.txToRecipient(tx.recipient, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
     }
   ], done);
 };
@@ -278,6 +290,14 @@ MerkleSchema.statics.updateForTransfert = function (tx, done) {
     function (merkle, code, next){
       // M6
       Merkle.txTransfertOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M7
+      Merkle.txToRecipient(tx.recipient, next);
     },
     function (merkle, next){
       merkle.push(tx.hash);
@@ -315,6 +335,14 @@ MerkleSchema.statics.updateForFusion = function (tx, done) {
     function (merkle, code, next){
       // M5
       Merkle.txFusionOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M7
+      Merkle.txToRecipient(tx.recipient, next);
     },
     function (merkle, next){
       merkle.push(tx.hash);

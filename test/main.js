@@ -93,7 +93,9 @@ var voteCatAM2    = fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.vote', '
 
 var txTobi = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8');
 var txTobiToSnow = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', 'utf8');
+var txTobiToCat = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.cat', 'utf8');
 var txTobiFusion = fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7', 'utf8');
+var txCat = fs.readFileSync(__dirname + '/data/tx/cat.issuance', 'utf8');
 
 var app;
 
@@ -107,6 +109,7 @@ function ResultAPI () {
   this.pksLookupIndex = 0;
   this.joinIndex = 0;
   this.membershipsIndex = 0;
+  this.keysIndex = 0;
 
   this.push = function (url, res) {
     if(!this.apiRes[url]) this.apiRes[url] = [];
@@ -198,7 +201,8 @@ function ResultAPI () {
     });
   };
 
-  this.coinsList = function(type, owner, coinsCount) {
+  this.coinsList = function(type, owner, coinsCount, issuersCount) {
+    issuersCount = issuersCount || 1;
     if(!this['indexOf' + owner])
       this['indexOf' + owner] = 0;
     var index = this['indexOf' + owner]++;
@@ -210,8 +214,12 @@ function ResultAPI () {
       res.should.have.status(200);
       json.owner.should.equal(owner);
       if(coinsCount > 0){
-        json.coins.should.have.length(1);
-        json.coins[0].ids.should.have.length(coinsCount);
+        json.coins.should.have.length(issuersCount);
+        var count = 0;
+        json.coins.forEach(function (coins) {
+          count += coins.ids.length;
+        });
+        count.should.equal(coinsCount);
       }
       else{
         json.coins.should.have.length(0);
@@ -275,6 +283,21 @@ function ResultAPI () {
     else
       should.not.exist(json.merkle.levels[0][0]);
   }
+
+  this.keys = function(comment, leavesCount, root) {
+    var index = this.keysIndex++;
+    var obj = this;
+    it('expect ' + comment, function () {
+      var res = obj.apiRes['/hdc/transactions/keys'][index].res;
+      var json = JSON.parse(res.text);
+      res.should.have.status(200);
+      isMerkleNodesResult(json);
+      if(root)
+        json.merkle.levels[0][0].should.equal(root);
+      else
+        _(json.merkle.levels[0]).size().should.equal(0);
+    });
+  };
 }
 
 var api = new ResultAPI();
@@ -428,9 +451,11 @@ before(function (done) {
     function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
     function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
+    function (next) { get('/hdc/coins/C73882B64B7E72237A2F460CE9CAB76D19A8651E/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/0', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
+    function (next) { get('/hdc/transactions/keys', next); },
     function (next) { issue(txTobi, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -442,9 +467,11 @@ before(function (done) {
     function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
     function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
+    function (next) { get('/hdc/coins/C73882B64B7E72237A2F460CE9CAB76D19A8651E/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/0', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
+    function (next) { get('/hdc/transactions/keys', next); },
     function (next) { transfert(txTobiToSnow, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -456,9 +483,11 @@ before(function (done) {
     function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
     function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
+    function (next) { get('/hdc/coins/C73882B64B7E72237A2F460CE9CAB76D19A8651E/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/0', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
+    function (next) { get('/hdc/transactions/keys', next); },
     function (next) { fusion(txTobiFusion, next); },
     function (next) { get('/hdc/transactions/all', next); },
     function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
@@ -470,9 +499,43 @@ before(function (done) {
     function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
     function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
+    function (next) { get('/hdc/coins/C73882B64B7E72237A2F460CE9CAB76D19A8651E/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/0', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
+    function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { transfert(txTobiToCat, next); },
+    function (next) { get('/hdc/transactions/all', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/fusion', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', next); },
+    function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
+    function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
+    function (next) { get('/hdc/coins/C73882B64B7E72237A2F460CE9CAB76D19A8651E/list', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/0', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
+    function (next) { get('/hdc/transactions/keys', next); },
+    function (next) { issue(txCat, next); },
+    function (next) { get('/hdc/transactions/all', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/dividend/2', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/issuance/fusion', next); },
+    function (next) { get('/hdc/transactions/sender/2E69197FAB029D8669EF85E82457A1587CA0ED9C/transfert', next); },
+    function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
+    function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
+    function (next) { get('/hdc/coins/C73882B64B7E72237A2F460CE9CAB76D19A8651E/list', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/0', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/1', next); },
+    function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/view/8', next); },
+    function (next) { get('/hdc/transactions/keys', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -786,43 +849,75 @@ describe('Checking TX', function(){
   api.txAllMerkle('ISSUANCE',   'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txAllMerkle('TRANSFERT',  '6492741E1BE3461537EDC6D5B2820DC851156612', 2);
   api.txAllMerkle('FUSION',     'FCEFF28B10A460EAEE6F3F071EE35EAAFCC11391', 3);
+
   api.txSenderMerkle('ISSUANCE',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txSenderMerkle('TRANSFERT', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '6492741E1BE3461537EDC6D5B2820DC851156612', 2);
   api.txSenderMerkle('FUSION',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'FCEFF28B10A460EAEE6F3F071EE35EAAFCC11391', 3);
+
   api.txIssuerMerkle('ISSUANCE',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txIssuerMerkle('TRANSFERT', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txIssuerMerkle('FUSION',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'ACBE13C611689BDA82DC8CE70EA3926FE5D766D5', 2);
+  api.txIssuerMerkle('TRANSFERT to Cat',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'ACBE13C611689BDA82DC8CE70EA3926FE5D766D5', 2);
+
   api.txIssuerDividendMerkle('ISSUANCE',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txIssuerDividendMerkle('TRANSFERT', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txIssuerDividendMerkle('FUSION',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
+  api.txIssuerDividendMerkle('TRANSFERT to Cat',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
+
   api.txIssuerDividen2dMerkle('ISSUANCE',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txIssuerDividen2dMerkle('TRANSFERT', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
   api.txIssuerDividen2dMerkle('FUSION',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
+  api.txIssuerDividen2dMerkle('TRANSFERT to Cat',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 'E04D9FE0B450F3718E675A32ECACE7F04D84115F', 1);
+
   api.txIssuerTransfertMerkle('ISSUANCE',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '', 0);
   api.txIssuerTransfertMerkle('TRANSFERT', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '644AB61348723D6F657B0EA5577F4CE15CA64400', 1);
   api.txIssuerTransfertMerkle('FUSION',    '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '644AB61348723D6F657B0EA5577F4CE15CA64400', 1);
+
   api.txIssuerFusionMerkle('ISSUANCE',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '', 0);
   api.txIssuerFusionMerkle('TRANSFERT',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '', 0);
   api.txIssuerFusionMerkle('FUSION',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '953BD10646E860B4DF2F9EA4C81C9DE20DD668FB', 1);
+  api.txIssuerFusionMerkle('TRANSFERT to Cat',  '2E69197FAB029D8669EF85E82457A1587CA0ED9C', '953BD10646E860B4DF2F9EA4C81C9DE20DD668FB', 1);
 });
 
 describe('Checking COINS', function(){
-  var index = 0;
-  api.coinsList('INITIALLY', '33BBFC0C67078D72AF128B5BA296CC530126F372', 0);
-  api.coinsList('INITIALLY', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 0);
-  api.coinsList('INITIALLY', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0);
+  api.coinsList('INITIALLY', '33BBFC0C67078D72AF128B5BA296CC530126F372', 0); // Snow
+  api.coinsList('INITIALLY', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 0); // Tobi
+  api.coinsList('INITIALLY', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0); // Non-existing
+  api.coinsList('INITIALLY', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 0); // Cat
 
   api.coinsList('ISSUANCE of Tobi', '33BBFC0C67078D72AF128B5BA296CC530126F372', 0);
   api.coinsList('ISSUANCE of Tobi', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 7);
   api.coinsList('ISSUANCE of Tobi', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0);
+  api.coinsList('ISSUANCE of Tobi', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 0);
 
   api.coinsList('TRANSFERT of Tobi', '33BBFC0C67078D72AF128B5BA296CC530126F372', 1);
   api.coinsList('TRANSFERT of Tobi', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 6);
   api.coinsList('TRANSFERT of Tobi', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0);
+  api.coinsList('TRANSFERT of Tobi', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 0);
 
   api.coinsList('FUSION of Tobi', '33BBFC0C67078D72AF128B5BA296CC530126F372', 1);
   api.coinsList('FUSION of Tobi', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 5);
   api.coinsList('FUSION of Tobi', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0);
+  api.coinsList('FUSION of Tobi', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 0);
+
+  api.coinsList('TRANSFERT to Cat', '33BBFC0C67078D72AF128B5BA296CC530126F372', 1);
+  api.coinsList('TRANSFERT to Cat', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 4);
+  api.coinsList('TRANSFERT to Cat', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0);
+  api.coinsList('TRANSFERT to Cat', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 1);
+
+  api.coinsList('ISSUANCE of Cat', '33BBFC0C67078D72AF128B5BA296CC530126F372', 1);
+  api.coinsList('ISSUANCE of Cat', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 4);
+  api.coinsList('ISSUANCE of Cat', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0);
+  api.coinsList('ISSUANCE of Cat', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 5, 2);
+});
+
+describe('Received keys for transactions', function(){
+  api.keys('with NO transactions should be 0', 0, '');
+  api.keys('with NO transactions should be 1', 1, '2E69197FAB029D8669EF85E82457A1587CA0ED9C');
+  api.keys('with NO transactions should be 2', 2, 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F');
+  api.keys('with NO transactions should be 2', 2, 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F');
+  api.keys('with NO transactions should be 2', 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90');
+  api.keys('with NO transactions should be 2', 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90');
 });
 
 function isMerkleNodesResult (json) {

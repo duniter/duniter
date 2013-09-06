@@ -104,6 +104,11 @@ module.exports.database = {
         mongoose.model('Coin').remove({}, function (err) {
           next(err);
         });
+      },
+      function (next){
+        mongoose.model('Key').remove({}, function (err) {
+          next(err);
+        });
       }
     ], done);
   },
@@ -181,7 +186,7 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process/transfert',            hdc.transactions.processTx.transfert);
     app.post(   '/hdc/transactions/process/fusion',               hdc.transactions.processTx.fusion);
     app.get(    '/hdc/transactions/all',                          hdc.transactions.all);
-    app.get(    '/hdc/transactions/keys',                         notImplemented);
+    app.get(    '/hdc/transactions/keys',                         hdc.transactions.keys);
     app.get(    '/hdc/transactions/last',                         hdc.transactions.lastAll);
     app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);

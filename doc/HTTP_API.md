@@ -29,7 +29,7 @@
       * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]](#coinspgp_fingerprintviewcoin_number)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]/history](#coinspgp_fingerprintviewcoin_numberhistory)
       * [community/join](#communityjoin)
-      * [community/memberships](#communitymembers)
+      * [community/memberships](#communitymemberships)
       * [community/votes](#communityvotes)
       * [transactions/process/issuance](#transactionsprocessissuance)
       * [transactions/process/transfert](#transactionsprocesstransfert)

@@ -35,6 +35,7 @@ MerkleSchema.methods = {
   },
 
   push: function (leaf, previous) {
+    // If leaf is not present
     if(this.levels[this.depth].indexOf(leaf) == -1){
       var leaves = this.leaves();
       // Update or replacement ?
@@ -141,6 +142,10 @@ MerkleSchema.statics.txFusionOfSender = function (fingerprint, done) {
 
 MerkleSchema.statics.txTransfertOfSender = function (fingerprint, done) {
   retrieve({ type: 'txTransfertOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
+};
+
+MerkleSchema.statics.keys = function (done) {
+  retrieve({ type: 'keys', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.addPublicKey = function (fingerprint, done) {

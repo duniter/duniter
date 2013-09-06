@@ -7,9 +7,27 @@ var Amendment   = mongoose.model('Amendment');
 var PublicKey   = mongoose.model('PublicKey');
 var Merkle      = mongoose.model('Merkle');
 var Coin        = mongoose.model('Coin');
+var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
 
 module.exports = function (pgp, currency, conf) {
+
+  this.keys = function (req, res) {
+    async.waterfall([
+      function (next){
+        Merkle.keys(next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, lambda, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      merkleDone(req, res, json);
+    });
+  }
 
   this.all = function (req, res) {
     async.waterfall([
@@ -349,6 +367,9 @@ module.exports = function (pgp, currency, conf) {
           tx.save(next);
         },
         function (txSaved, code, next){
+          Key.setSeenTX(tx, true, next);
+        },
+        function (next){
           Merkle.updateForIssuance(tx, am, next);
         },
         function (merkle, code, next){
@@ -475,6 +496,9 @@ module.exports = function (pgp, currency, conf) {
               ownership.save(callback);
             });
           }, next);
+        },
+        function (next){
+          Key.setSeenTX(tx, true, next);
         },
         function (next){
           Merkle.updateForTransfert(tx, next);
@@ -620,6 +644,9 @@ module.exports = function (pgp, currency, conf) {
           tx.save(next);
         },
         function (txSaved, code, next){
+          Key.setSeenTX(tx, true, next);
+        },
+        function (next){
           Merkle.updateForFusion(tx, next);
         },
         function (merkle, code, next){

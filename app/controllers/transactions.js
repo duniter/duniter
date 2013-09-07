@@ -29,6 +29,35 @@ module.exports = function (pgp, currency, conf) {
     });
   }
 
+  this.viewtx = function (req, res) {
+
+    if(!req.params.transaction_id){
+      res.send(400, "Transaction ID is required");
+      return;
+    }
+    var matches = req.params.transaction_id.match(/(\w{40})-(\d+)/);
+    if(!matches){
+      res.send(400, "Transaction ID format is incorrect, must be an upper-cased SHA1 hash");
+      return;
+    }
+    
+    async.waterfall([
+      function (next){
+        Transaction.find({ sender: matches[1], number: matches[2] }, next);
+      }
+    ], function (err, result) {
+      if(err || result.length == 0){
+        res.send(404, err);
+        return;
+      }
+      res.send(200, JSON.stringify({
+        raw: result[0].getRaw(),
+        signature: result[0].signature,
+        transaction: result[0].json()
+      }, null, "  "));
+    });
+  };
+
   this.all = function (req, res) {
     async.waterfall([
       function (next){

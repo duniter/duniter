@@ -35,8 +35,7 @@ var conf = {
 
 var gets = [
   {expect: 501, url: '/ucg/tht'},
-  {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'},
-  {expect: 501, url: '/hdc/transactions/view/SOME_TX_ID'}
+  {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'}
 ];
 
 var posts = [

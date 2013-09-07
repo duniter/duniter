@@ -71,7 +71,7 @@ module.exports = function (pgp, currency, conf) {
           currentNumber: am ? "" + am.number : '',
           hash: am ? am.hash : ''
         },
-        "hdc/pks/all": pkMerkle,
+        "pks/all": pkMerkle,
         "hdc/community/memberships": msMerkle,
         "hdc/community/votes": votesMerkle
       }, null, "  "));

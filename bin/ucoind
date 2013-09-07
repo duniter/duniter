@@ -204,6 +204,8 @@ function overrideConf(conf) {
       },
       remote: {
         host: program.remoteh,
+        ipv4: program.remote4,
+        ipv6: program.remote6,
         port: program.remotep
       }
     },
@@ -223,6 +225,8 @@ function overrideConf(conf) {
   conf.pgpkey     = config.server.pgp.key || conf.pgpkey;
   conf.pgppasswd  = config.server.pgp.password || conf.pgppasswd;
   conf.remotehost = config.server.remote.host != undefined ? config.server.remote.host : conf.remotehost;
+  conf.remoteipv4 = config.server.remote.ipv4 != undefined ? config.server.remote.ipv4 : conf.remoteipv4;
+  conf.remoteipv6 = config.server.remote.ipv6 != undefined ? config.server.remote.ipv6 : conf.remoteipv6;
   conf.remoteport = config.server.remote.port != undefined ? config.server.remote.port : conf.remoteport;
   return conf;
 }

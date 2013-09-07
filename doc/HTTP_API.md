@@ -10,6 +10,12 @@
   * [ucg/](#ucg)
       * [pubkey](#ucgpubkey)
       * [peering](#ucgpeering)
+      * [peering/peers/upstream](#ucgpeeringpeersupstream)
+      * [peering/peers/upstream/[PGP_FINGERPRINT]](#ucgpeeringpeersupstreampgp_fingerprint)
+      * [peering/peers/downstream](#ucgpeeringpeersdownstream)
+      * [peering/peers/downstream/[PGP_FINGERPRINT]](#ucgpeeringpeersdownstreampgp_fingerprint)
+      * [peering/subscribe](#ucgpeeringsubscribe)
+      * [peering/status](#ucgpeeringstatus)
       * [tht (GET)](#ucgtht-get)
       * [tht (POST)](#ucgtht-post)
       * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
@@ -62,6 +68,13 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |-- ucg/
     |   |-- pubkey
     |   |-- peering
+    |   |   |-- subscribe
+    |   |   |-- status
+    |   |   `-- peers/
+    |   |       |-- upstream/
+    |   |       |   `-- [PGP_FINGERPRINT]
+    |   |       `-- downstream/
+    |   |           `-- [PGP_FINGERPRINT]
     |   `-- tht/
     |       `-- [PGP_FINGERPRINT]
     `-- hdc/
@@ -504,6 +517,140 @@ This entry contains a sum-up of common Merkle URLs handled by this node, with th
       }
     }
   }
+}
+```
+
+#### `ucg/peering/peers/upstream`
+**Goal**
+
+GET a list of peers this node is **listening to** for ANY incoming transaction.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+The corresponding peer list.
+
+```json
+{
+  "peers": [
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+  ]
+}
+```
+
+#### `ucg/peering/peers/upstream/[PGP_FINGERPRINT]`
+**Goal**
+
+GET a list of peers this node is **listening to** for incoming transactions of `PGP_FINGERPRINT`.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP key's fingerprint whose incoming transactions are listened by this node. | URL
+
+**Returns**
+
+The corresponding peer list.
+
+```json
+{
+  "peers": [
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+  ]
+}
+```
+
+#### `ucg/peering/peers/downstream`
+**Goal**
+
+GET a list of peers this node is **listened by** for ANY incoming transaction.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+The corresponding peer list.
+
+```json
+{
+  "peers": [
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+  ]
+}
+```
+
+#### `ucg/peering/peers/downstream/[PGP_FINGERPRINT]`
+**Goal**
+
+GET a list of peers this node is **listened by** for incoming transactions of `PGP_FINGERPRINT`.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP key's fingerprint whose incoming transactions are listened by other nodes. | URL
+
+**Returns**
+
+The corresponding peer list.
+
+```json
+{
+  "peers": [
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
+    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+  ]
+}
+```
+
+#### `ucg/peering/subscribe`
+**Goal**
+
+POST a UCG subscription document to this node in order to be sent back incoming transactions.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`subscription` | UCG subscription document. | POST
+`signature` | Signature of the UCG entry's value. | POST
+
+**Returns**
+
+The posted entry.
+```json
+{
+  "version": "1",
+  "currency": "beta_brousouf",
+  "dns": "DNS_VALUE",
+  "ipv4": "IPV4_ADDRESS",
+  "ipv6": "IPV6_ADDRESS",
+  "port": "PORT",
+  "forward": "KEYS",
+  "keys": [
+    "395DF8F7C51F007019CB30201C49E884B46B92FA",
+    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F",
+    "4DC7C9EC434ED06502767136789763EC11D2C4B7",
+    "8EFD86FB78A56A5145ED7739DCB00C78581C5375",
+    "95CB0BFD2977C761298D9624E4B4D4C72A39974A"
+  ]
 }
 ```
 

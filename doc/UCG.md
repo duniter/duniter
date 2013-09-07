@@ -27,6 +27,44 @@ Here is an example describing its structure:
     SOME_KEY_FINGERPRINT,name.example3.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8883
     SOME_KEY_FINGERPRINT,name.example4.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8884
 
+## Peering request
+
+Such a document tells a node to forward transactions to another node for given keys.
+
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Dns: DNS_NAME
+    IPv4: IPV4_ADDRESS
+    IPv6: IPV6_ADDRESS
+    Port: PORT_NUMBER
+    Forward: ALL|KEYS
+    Keys:
+    395DF8F7C51F007019CB30201C49E884B46B92FA
+    58E6B3A414A1E090DFC6029ADD0F3555CCBA127F
+    4DC7C9EC434ED06502767136789763EC11D2C4B7
+    8EFD86FB78A56A5145ED7739DCB00C78581C5375
+    95CB0BFD2977C761298D9624E4B4D4C72A39974A
+
+
+Field | Description
+----- | -----------
+`Version` | denotes the current structure version.
+`Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be HDC-based.
+`Dns` | the DNS name to access the node.
+`IPv4` | the IPv4 address to access the node.
+`IPv6` | the IPv6 address to access the node.
+`Port` | the port of the address to access the node.
+`Forward` | the forwarding rule, either `ALL` to forward ANY incoming transaction or `KEYS` to forward only transactions whose sender or recipient belongs to values of `Keys`.
+`Keys` | if `Forward: KEYS`, tells the keys whose transaction shall be forwarded.
+
+## Status request
+
+Such a document informs a node on current node's status, either connected, up, or disconnected.
+
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Status: CONNECTED|UP|DISCONNECTED
+
 ## Trust Hash Table
 
 uCoin introduces a new data structure called *Trust Hash Table* (THT).

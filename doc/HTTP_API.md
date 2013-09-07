@@ -673,7 +673,7 @@ The posted status.
 {
   "version": "1",
   "currency": "beta_brousouf",
-  "status": "UP
+  "status": "UP"
 }
 ```
 

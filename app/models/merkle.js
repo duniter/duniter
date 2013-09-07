@@ -375,7 +375,7 @@ MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
   if(isNaN(lstart)) lstart = 0;
   if(isNaN(lend)) lend = lstart + 1;
   if(isNaN(start)) start = 0;
-  if(!req.query.extract){
+  if(!req.query.extract || !valueCB){
     json.merkle.levels = {};
     for (var i = Math.max(lstart, 0); i < merkle.levels.length && i < lend; i++) {
       var rowEnd = isNaN(end) ? merkle.levels[i].length : end;

@@ -139,7 +139,7 @@ Note too that listening to multiple interfaces doesn't imply mutiple program ins
 As the server may be behind a reverse proxy, or because hosts may change of address, it might be useful to provide some remote informations like remote `host` and `port` telling where is really located the node:
 
 ```bash
-$ ucoind --currency beta_brousouf config --remoteh "some.remote.url" --remotep "8844"
+$ ucoind --currency beta_brousouf config --remoteh "some.remote.url" --remotep "8844" --remote4 "11.11.11.11" --remote6 "::1"
 ```
 
 #### Authentication

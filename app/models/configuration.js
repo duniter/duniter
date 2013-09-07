@@ -6,6 +6,8 @@ var ConfigurationSchema = new Schema({
   ipv4: String,
   ipv6: String,
   remotehost: String,
+  remoteipv4: String,
+  remoteipv6: String,
   remoteport: Number,
   pgpkey: String,
   pgppasswd: String

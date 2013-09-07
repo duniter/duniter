@@ -1056,9 +1056,15 @@ describe('GET', function(){
         json.key.should.equal("C73882B64B7E72237A2F460CE9CAB76D19A8651E");
         json.remote.port.should.equal("");
         json.remote.port.should.equal("");
-        should.not.exist(json.ipv4);
-        should.not.exist(json.ipv6);
-        json.peers.length.should.equal(0);
+        json.remote.should.have.property("ipv4");
+        json.remote.should.have.property("ipv6");
+        json.should.have.property("contract");
+        json.contract.should.have.property("currentNumber");
+        json.contract.should.have.property("hash");
+        json.should.have.property("hdc/pks/all");
+        json.should.have.property("hdc/community/memberships");
+        json.should.have.property("hdc/community/votes");
+        should.not.exist(json.peers);
         done();
       });
   });

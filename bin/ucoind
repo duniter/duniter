@@ -23,6 +23,8 @@ program
   .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
   .option('--ipv6 <address>', 'IPV6 interface to listen for requests')
   .option('--remoteh <host>', 'Remote interface others may use to contact this node')
+  .option('--remote4 <host>', 'Remote interface for IPv4 access')
+  .option('--remote6 <host>', 'Remote interface for IPv6 access')
   .option('--remotep <port>', 'Remote port others may use to contact this node')
   ;
 

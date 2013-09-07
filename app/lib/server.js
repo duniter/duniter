@@ -56,6 +56,8 @@ module.exports.database = {
               ipv4: "localhost",
               ipv6: null,
               remotehost: null,
+              remoteipv4: null,
+              remoteipv6: null,
               remoteport: null,
               pgpkey: null,
               pgppasswd: null
@@ -162,6 +164,12 @@ module.exports.express = {
     app.post(   '/pks/add',                                       pks.add);
     app.get(    '/ucg/pubkey',                                    ucg.pubkey);
     app.get(    '/ucg/peering',                                   ucg.peering);
+    app.get(    '/ucg/peering/peers/upstream',                    notImplemented);
+    app.get(    '/ucg/peering/peers/upstream/:fingerprint',       notImplemented);
+    app.get(    '/ucg/peering/peers/downstream',                  notImplemented);
+    app.get(    '/ucg/peering/peers/downstream/:fingerprint',     notImplemented);
+    app.post(   '/ucg/peering/subscribe',                         notImplemented);
+    app.post(   '/ucg/peering/status',                            notImplemented);
     app.get(    '/ucg/tht',                                       notImplemented);
     app.post(   '/ucg/tht',                                       notImplemented);
     app.get(    '/ucg/tht/:fpr',                                  notImplemented);

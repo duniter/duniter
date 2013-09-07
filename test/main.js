@@ -1061,7 +1061,7 @@ describe('GET', function(){
         json.should.have.property("contract");
         json.contract.should.have.property("currentNumber");
         json.contract.should.have.property("hash");
-        json.should.have.property("hdc/pks/all");
+        json.should.have.property("pks/all");
         json.should.have.property("hdc/community/memberships");
         json.should.have.property("hdc/community/votes");
         should.not.exist(json.peers);

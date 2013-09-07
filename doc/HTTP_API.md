@@ -623,6 +623,29 @@ The corresponding peer list.
 #### `ucg/peering/subscribe`
 **Goal**
 
+POST a UCG status document to this node in order notify of its status.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`status` | UCG status document. | POST
+`signature` | Signature of the UCG entry's value. | POST
+
+**Returns**
+
+The posted status.
+```json
+{
+  "version": "1",
+  "currency": "beta_brousouf",
+  "status": "UP
+}
+```
+
+#### `ucg/peering/status`
+**Goal**
+
 POST a UCG subscription document to this node in order to be sent back incoming transactions.
 
 **Parameters**

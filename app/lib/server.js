@@ -169,8 +169,8 @@ module.exports.express = {
     app.post(   '/pks/add',                                       pks.add);
     app.get(    '/ucg/pubkey',                                    ucg.pubkey);
     app.get(    '/ucg/peering',                                   ucg.peering);
-    app.get(    '/ucg/peering/peers/upstream',                    notImplemented);
-    app.get(    '/ucg/peering/peers/upstream/:fingerprint',       notImplemented);
+    app.get(    '/ucg/peering/peers/upstream',                    ucg.upstreamAll);
+    app.get(    '/ucg/peering/peers/upstream/:fingerprint',       ucg.upstreamKey);
     app.get(    '/ucg/peering/peers/downstream',                  ucg.downstreamAll);
     app.get(    '/ucg/peering/peers/downstream/:fingerprint',     ucg.downstreamKey);
     app.post(   '/ucg/peering/subscribe',                         ucg.subscribe);

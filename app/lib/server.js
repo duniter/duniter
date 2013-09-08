@@ -171,7 +171,7 @@ module.exports.express = {
     app.get(    '/ucg/peering',                                   ucg.peering);
     app.get(    '/ucg/peering/peers/upstream',                    notImplemented);
     app.get(    '/ucg/peering/peers/upstream/:fingerprint',       notImplemented);
-    app.get(    '/ucg/peering/peers/downstream',                  notImplemented);
+    app.get(    '/ucg/peering/peers/downstream',                  ucg.downstreamAll);
     app.get(    '/ucg/peering/peers/downstream/:fingerprint',     notImplemented);
     app.post(   '/ucg/peering/subscribe',                         ucg.subscribe);
     app.post(   '/ucg/peering/status',                            notImplemented);

@@ -138,7 +138,7 @@ module.exports = function (pgp, currency, conf) {
             next();
           },
           function (next){
-            Peer.find({ fingerprint: peer.fingerprint }, next);
+            Peer.find({ fingerprint: peer.fingerprint, upstream: false }, next);
           },
           function (peers, next){
             var peerEntity = peer;
@@ -158,6 +158,30 @@ module.exports = function (pgp, currency, conf) {
         res.send(400, err);
       }
       else res.end(JSON.stringify(recordedPR.json(), null, "  "));
+    });
+  }
+
+  this.downstreamAll = function (req, res) {
+    async.waterfall([
+      function (next){
+        Peer.find({ forward: "ALL", upstream: true }, next);
+      },
+      function (peers, next){
+        var json = { peers: [] };
+        peers.forEach(function (peer) {
+          json.peers.push({});
+          ['key', 'dns', 'ipv4', 'ipv6'].forEach(function (key) {
+            json.peers[json.peers.length - 1][key] = peer[key] || "";
+          });
+        });
+        next(null, json);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      res.send(200, JSON.stringify(json, null, "  "));
     });
   }
   

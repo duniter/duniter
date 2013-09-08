@@ -16,6 +16,7 @@ var PeerSchema = new Schema({
   status: String,
   forward: String,
   keys: [String],
+  upstream: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -231,12 +232,12 @@ function extractKeys(pr, rawPR, cap) {
   return;
 }
 
-PeerSchema.statics.findByFingerprint = function(fingerprint, done){
-  this.findOne({ fingerprint: fingerprint }, done);
+PeerSchema.statics.findByFingerprint = function(fingerprint, upstream, done){
+  this.findOne({ fingerprint: fingerprint, upstream: upstream }, done);
 }
 
-PeerSchema.statics.findManagingKey = function(keyFPR, done){
-  this.find({ keys: { $in: [keyFPR] } }, done);
+PeerSchema.statics.findManagingKey = function(keyFPR, upstream, done){
+  this.find({ upstream: upstream, keys: { $in: [keyFPR] } }, done);
 }
 
 var Peer = mongoose.model('Peer', PeerSchema);

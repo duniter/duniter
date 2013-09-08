@@ -14,9 +14,6 @@ var PeerSchema = new Schema({
   ipv6: String,
   port: { type: Number, default: 8081 },
   status: String,
-  forward: String,
-  keys: [String],
-  upstream: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -25,7 +22,7 @@ PeerSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "status", "forward", "keys"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "status"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
@@ -33,7 +30,7 @@ PeerSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "dns", "ipv4", "ipv6", "port", "status", "forward", "keys"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "status"].forEach(function (key) {
       json[key] = obj[key];
     });
     return json;
@@ -55,22 +52,16 @@ PeerSchema.methods = {
       var captures = [
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
+        {prop: "fingerprint",       regexp: /Fingerprint: (.*)/},
         {prop: "dns",               regexp: /Dns: (.*)/},
         {prop: "ipv4",              regexp: /IPv4: (.*)/},
         {prop: "ipv6",              regexp: /IPv6: (.*)/},
         {prop: "port",              regexp: /Port: (.*)/},
-        {prop: "forward",           regexp: /Forward: (.*)/},
-        {prop: "keys",              regexp: /Keys:\n([\s\S]*)/}
       ];
       var crlfCleaned = rawPR.replace(/\r\n/g, "\n");
       if(crlfCleaned.match(/\n$/)){
         captures.forEach(function (cap) {
-          if(cap.prop == "keys"){
-            extractKeys(obj, crlfCleaned, cap);
-          }
-          else{
-            simpleLineExtraction(obj, crlfCleaned, cap);
-          }
+          simpleLineExtraction(obj, crlfCleaned, cap);
         });
       }
       else{
@@ -117,6 +108,7 @@ PeerSchema.methods = {
     var raw = "";
     raw += "Version: " + this.version + "\n";
     raw += "Currency: " + this.currency + "\n";
+    raw += "Fingerprint: " + this.fingerprint + "\n";
     if(this.dns)
       raw += "Dns: " + this.dns + "\n";
     if(this.ipv4)
@@ -125,14 +117,6 @@ PeerSchema.methods = {
       raw += "IPv6: " + this.ipv6 + "\n";
     if(this.port)
       raw += "Port: " + this.port + "\n";
-    if(this.forward)
-      raw += "Forward: " + this.forward + "\n";
-    if(this.keys.length > 0){
-      raw += "Keys:\n";
-      for(var i = 0; i < this.keys.length; i++){
-        raw += this.keys[i] + "\n";
-      }
-    }
     return raw.unix2dos();
   },
 
@@ -152,8 +136,7 @@ function verify(obj, currency) {
     'BAD_IPV4': 153,
     'BAD_IPV6': 154,
     'BAD_PORT': 155,
-    'BAD_FORWARD': 156,
-    'BAD_KEYS': 157,
+    'BAD_FINGERPRINT': 156,
     'NO_IP_GIVEN': 158
   }
   if(!err){
@@ -165,6 +148,11 @@ function verify(obj, currency) {
     // Currency
     if(!obj.currency || !obj.currency.match("^"+ currency + "$"))
       err = {code: codes['BAD_CURRENCY'], message: "Currency '"+ obj.currency +"' not managed"};
+  }
+  if(!err){
+    // Fingerprint
+    if(obj.fingerprint && !obj.fingerprint.match(/^[A-Z\d]+$/))
+      err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect fingerprint field"};
   }
   if(!err){
     // DNS
@@ -191,11 +179,6 @@ function verify(obj, currency) {
     if(obj.port && !(obj.port + "").match(/^\d+$/))
       err = {code: codes['BAD_PORT'], message: "Port must be provided and match an integer format"};
   }
-  if(!err){
-    // Forward
-    if(!obj.forward || !obj.forward.match(/^(ALL|KEYS)$/))
-      err = {code: codes['BAD_FORWARD'], message: "Forward must be provided and match either ALL or KEYS string"};
-  }
   if(err){
     return { result: false, errorMessage: err.message, errorCode: err.code};
   }
@@ -206,28 +189,6 @@ function simpleLineExtraction(pr, rawPR, cap) {
   var fieldValue = rawPR.match(cap.regexp);
   if(fieldValue && fieldValue.length === 2){
     pr[cap.prop] = fieldValue[1];
-  }
-  return;
-}
-
-function extractKeys(pr, rawPR, cap) {
-  var fieldValue = rawPR.match(cap.regexp);
-  pr[cap.prop] = [];
-  if(fieldValue && fieldValue.length == 2){
-    var lines = fieldValue[1].split(/\n/);
-    if(lines[lines.length - 1].match(/^$/)){
-      for (var i = 0; i < lines.length - 1; i++) {
-        var line = lines[i];
-        var key = line.match(/^([A-Z\d]{40})$/);
-        if(key && key.length == 2){
-          pr[cap.prop].push(line);
-        }
-        else{
-          return "Wrong structure for line: '" + line + "'";
-        }
-      }
-    }
-    else return "Wrong structure for 'Keys' field of the peering request";
   }
   return;
 }

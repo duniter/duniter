@@ -116,6 +116,11 @@ module.exports.database = {
         mongoose.model('Peer').remove({}, function (err) {
           next(err);
         });
+      },
+      function (next){
+        mongoose.model('Forward').remove({}, function (err) {
+          next(err);
+        });
       }
     ], done);
   },

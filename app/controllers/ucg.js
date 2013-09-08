@@ -162,9 +162,27 @@ module.exports = function (pgp, currency, conf) {
   }
 
   this.downstreamAll = function (req, res) {
+    givePeers({ forward: "ALL", upstream: false }, req, res);
+  }
+
+  this.downstreamKey = function (req, res) {
+
+    if(!req.params.fingerprint){
+      res.send(400, "Key fingerprint is required");
+      return;
+    }
+    var matches = req.params.fingerprint.match(/^([A-Z\d]{40})$/);
+    if(!matches){
+      res.send(400, "Key fingerprint format is incorrect, must be an upper-cased SHA1 hash");
+      return;
+    }
+    givePeers({ forward: "KEYS", upstream: false, keys: { $in: [matches[1]] } }, req, res);
+  }
+
+  function givePeers (criterias, req, res) {
     async.waterfall([
       function (next){
-        Peer.find({ forward: "ALL", upstream: true }, next);
+        Peer.find(criterias, next);
       },
       function (peers, next){
         var json = { peers: [] };

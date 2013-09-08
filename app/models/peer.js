@@ -232,12 +232,4 @@ function extractKeys(pr, rawPR, cap) {
   return;
 }
 
-PeerSchema.statics.findByFingerprint = function(fingerprint, upstream, done){
-  this.findOne({ fingerprint: fingerprint, upstream: upstream }, done);
-}
-
-PeerSchema.statics.findManagingKey = function(keyFPR, upstream, done){
-  this.find({ upstream: upstream, keys: { $in: [keyFPR] } }, done);
-}
-
 var Peer = mongoose.model('Peer', PeerSchema);

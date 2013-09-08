@@ -111,6 +111,11 @@ module.exports.database = {
         mongoose.model('Key').remove({}, function (err) {
           next(err);
         });
+      },
+      function (next){
+        mongoose.model('Peer').remove({}, function (err) {
+          next(err);
+        });
       }
     ], done);
   },
@@ -168,7 +173,7 @@ module.exports.express = {
     app.get(    '/ucg/peering/peers/upstream/:fingerprint',       notImplemented);
     app.get(    '/ucg/peering/peers/downstream',                  notImplemented);
     app.get(    '/ucg/peering/peers/downstream/:fingerprint',     notImplemented);
-    app.post(   '/ucg/peering/subscribe',                         notImplemented);
+    app.post(   '/ucg/peering/subscribe',                         ucg.subscribe);
     app.post(   '/ucg/peering/status',                            notImplemented);
     app.get(    '/ucg/tht',                                       notImplemented);
     app.post(   '/ucg/tht',                                       notImplemented);

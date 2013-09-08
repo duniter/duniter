@@ -1,78 +1,85 @@
 # uCoin Gossip messages format
 
-## Peers table
+## Peering table
 
-uCoin uses P2P networks to manage the money data, hence it needs to know which nodes makes the network for a given currency.
+uCoin uses P2P networks to manage money data, hence it needs to know which nodes makes the network for a given currency.
 
-For that purpose, uCoin defines a peering table containing, for a given currency and host:
+For that purpose, uCoin defines a peering table containing, for a given currency and host's PGP key:
 
-* its DNS name
-* its network IP (v4, v6 or both)
-* a currency
-* a port for this currency
-* its PGP public key
-* a list of known awake nodes
+* a DNS name
+* a network IP (v4, v6 or both)
+* a port
 
-Here is an example describing its structure:
+This link is made through a document called *peering entry* whose format is:
 
-    Version: VERSION
-    Currency: CURRENCY_NAME
-    Dns: DNS_NAME
-    IPv4: IPV4_ADDRESS
-    IPv6: IPV6_ADDRESS
-    Port: PORT_NUMBER
-    Peers:
-    SOME_KEY_FINGERPRINT,name.example1.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8881
-    SOME_KEY_FINGERPRINT,name.example2.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8882
-    SOME_KEY_FINGERPRINT,name.example3.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8883
-    SOME_KEY_FINGERPRINT,name.example4.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8884
-
-## Peering request
-
-Such a document tells a node to forward transactions to another node for given keys.
-
-    Version: VERSION
-    Currency: CURRENCY_NAME
-    Dns: DNS_NAME
-    IPv4: IPV4_ADDRESS
-    IPv6: IPV6_ADDRESS
-    Port: PORT_NUMBER
-    Forward: ALL|KEYS
-    Keys:
-    395DF8F7C51F007019CB30201C49E884B46B92FA
-    58E6B3A414A1E090DFC6029ADD0F3555CCBA127F
-    4DC7C9EC434ED06502767136789763EC11D2C4B7
-    8EFD86FB78A56A5145ED7739DCB00C78581C5375
-    95CB0BFD2977C761298D9624E4B4D4C72A39974A
-
-
+```plain
+Version: VERSION
+Currency: CURRENCY_NAME
+Fingerprint: A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468
+Dns: DNS_NAME
+IPv4: IPV4_ADDRESS
+IPv6: IPV6_ADDRESS
+Port: PORT_NUMBER
+```
 Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
-`Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be HDC-based.
+`Currency` | contains the name of the currency.
+`Fingerprint` | PGP key identifier linked to this address.
 `Dns` | the DNS name to access the node.
 `IPv4` | the IPv4 address to access the node.
 `IPv6` | the IPv6 address to access the node.
 `Port` | the port of the address to access the node.
+With the signature attached, this document certifies that this fingerprint's key is owned by host at given network address.
+
+The aggregation of all peering entries is called the *peering table*, and allows to authentify addresses of all nodes identified by their PGP key's fingerprint.
+
+## Peering request
+
+In addition to peering table, which only allows to know the address of each peer, *peering request* is a document allowing peers to ask each other to be forwarded of specific transactions when received.
+
+*Peering table* can be seen as an address book, and *peering requests* as rules of sending.
+
+Its format is the following:
+
+```plain
+Version: VERSION
+Currency: CURRENCY_NAME
+Fingerprint: FORWARDED_TO_FINGERPRINT
+Forward: ALL|KEYS
+Keys:
+395DF8F7C51F007019CB30201C49E884B46B92FA
+58E6B3A414A1E090DFC6029ADD0F3555CCBA127F
+4DC7C9EC434ED06502767136789763EC11D2C4B7
+8EFD86FB78A56A5145ED7739DCB00C78581C5375
+95CB0BFD2977C761298D9624E4B4D4C72A39974A
+```
+Field | Description
+----- | -----------
+`Version` | denotes the current structure version.
+`Currency` | contains the name of the currency.
+`Fingerprint` | PGP key identifier asking for this forwarding.
 `Forward` | the forwarding rule, either `ALL` to forward ANY incoming transaction or `KEYS` to forward only transactions whose sender or recipient belongs to values of `Keys`.
-`Keys` | if `Forward: KEYS`, tells the keys whose transaction shall be forwarded.
+`Keys` | if `Forward: KEYS`, tells the keys whose transaction shall be forwarded. Must not be present if `Forward: ALL`.
 
 ## Status request
 
 Such a document informs a node on current node's status, either connected, up, or disconnected.
 
-    Version: VERSION
-    Currency: CURRENCY_NAME
-    Status: CONNECTED|UP|DISCONNECTED
+```plain
+Version: VERSION
+Currency: CURRENCY_NAME
+Status: CONNECTED|UP|DISCONNECTED
+```
 
 ## Trust Hash Table
 
 uCoin introduces a new data structure called *Trust Hash Table* (THT).
 
-Such a structure is a simple Hash Table whose entries are OpenPGP key fingerprint, and values are two ojects describing respectively:
+Such a structure is a simple Hash Table whose entries are OpenPGP key fingerprint, and values are two arrays describing respectively:
 
-* which are the keys/servers **hosting this key's transactions**
-* which are the keys/servers this key would rather trust *for others' key hosting*
+* which are the nodes **hosting this key's transactions**
+* which are the nodes this key would rather trust *for others' key hosting*
 
 This is a very important feature for two points:
 
@@ -81,24 +88,22 @@ This is a very important feature for two points:
 
 ## THT Structure
 
-In JSON format, a THT entry would look like:
+A THT entry format is the following:
 
-    Version: VERSION
-    Currency: CURRENCY_NAME
-    Key: KEY_FINGERPRINT
-    DateTime: TIMESTAMP_OF_DECLARATION_DATE
-    Hosters:
-    SOME_KEY_FINGERPRINT,name.example1.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8881
-    SOME_KEY_FINGERPRINT,name.example2.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8882
-    SOME_KEY_FINGERPRINT,name.example3.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8883
-    SOME_KEY_FINGERPRINT,name.example4.com,11.11.11.11,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,8884
-    Trusts:
-    SOME_KEY_FINGERPRINT,name.example4.com,77.77.77.77,1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1,7555
-    SOME_KEY_FINGERPRINT,name.example4.com,88.88.88.88,2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2,8002
-    SOME_KEY_FINGERPRINT,name.example4.com,99.99.99.99,3A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3,9005
-
-Of course this example has bad values, but it shows the global structure.
-
+```plain
+Version: VERSION
+Currency: CURRENCY_NAME
+Key: KEY_FINGERPRINT
+Hosters:
+C139D011FAC7E3AA8E54619F7729F0179526FA54
+14808C7325B28B38CBC62CF9CCEE37CD1AA03408
+516B9783FCA517EECBD1D064DA2D165310B19759
+0499A0A3F2F4DA8697632D5B7AF66EC607B06D99
+Trusts:
+A5ED399E2E411BF4B09132EFA2CC5E0CA49B835E
+25AC706AF69E60A0334B2A072F4B802C3242B159
+```
+and is followed by signature of `KEY_FINGERPRINT`'s owner.
 ## THT Signification
 
 ### hosters

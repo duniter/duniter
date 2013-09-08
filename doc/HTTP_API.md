@@ -10,6 +10,8 @@
   * [ucg/](#ucg)
       * [pubkey](#ucgpubkey)
       * [peering](#ucgpeering)
+      * [peering/peers (GET)](#ucgpeeringpeers-get)
+      * [peering/peers (POST)](#ucgpeeringpeers-post)
       * [peering/peers/upstream](#ucgpeeringpeersupstream)
       * [peering/peers/upstream/[PGP_FINGERPRINT]](#ucgpeeringpeersupstreampgp_fingerprint)
       * [peering/peers/downstream](#ucgpeeringpeersdownstream)
@@ -130,6 +132,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
+* `ucg/peering/peers (GET)`
 * `hdc/amendments/view/[AMENDMENT_ID]/memberships`
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
@@ -254,6 +257,7 @@ Here is a summup of such rules:
 Merkle URL | Leaf | Sort
 ---------- | ---- | ----
 `pks/all` | Fingerprint of the key | By fingerprint string sort, ascending.
+`ucg/peering/peers (GET)` | Hash of the peering entry + signature | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/memberships` | Hash of the membership + signature | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/members` | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/voters` | Fingerprint of voter's key fingeprint | By fingerprint string sort, ascending.
@@ -509,6 +513,81 @@ This entry contains a sum-up of common Merkle URLs handled by this node, with th
 }
 ```
 
+#### `ucg/peering/peers (GET)`
+**Goal**
+
+Merkle URL refering to peering entries of every node inside the currency network.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "merkle": {
+    "depth": 3,
+    "nodesCount": 6,
+    "levelsCount": 4,
+    "leavesCount": 5,
+    "levels": {
+      "0": [
+        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+      ],
+      "1": [
+        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+      ]
+    }
+  }
+}
+```
+
+Merkle URL leaf: peering entry
+```json
+{
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
+    "version": "1",
+    "currency": "beta_brousouf",
+    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "dns": "DNS_VALUE",
+    "ipv4": "IPV4_ADDRESS",
+    "ipv6": "IPV6_ADDRESS",
+    "port": "PORT"
+  }
+}
+```
+
+#### `ucg/peering/peers (POST)`
+**Goal**
+
+POST a UCG peering entry document to this node in order to alter UCG peering table.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`entry` | UCG peering entry document. | POST
+`signature` | Signature of the UCG entry's value. | POST
+
+**Returns**
+
+The posted entry.
+```json
+{
+  "version": "1",
+  "currency": "beta_brousouf",
+  "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+  "dns": "DNS_VALUE",
+  "ipv4": "IPV4_ADDRESS",
+  "ipv6": "IPV6_ADDRESS",
+  "port": "PORT"
+}
+```
+
 #### `ucg/peering/peers/upstream`
 **Goal**
 
@@ -628,10 +707,7 @@ The posted entry.
 {
   "version": "1",
   "currency": "beta_brousouf",
-  "dns": "DNS_VALUE",
-  "ipv4": "IPV4_ADDRESS",
-  "ipv6": "IPV6_ADDRESS",
-  "port": "PORT",
+  "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
   "forward": "KEYS",
   "keys": [
     "395DF8F7C51F007019CB30201C49E884B46B92FA",
@@ -683,32 +759,30 @@ The whole THT entries (may be big).
   "entries": [
     {
       "KEY_FINGERPRINT": {
-        "number", "1",
-        "dateTime": "1374852192",
+        "version": "1",
         "hosters": [
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+          "SOME_KEY_FINGERPRINT",
+          "SOME_KEY_FINGERPRINT",
+          "SOME_KEY_FINGERPRINT",
+          "SOME_KEY_FINGERPRINT"
         ],
         "trusts": [
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+          "SOME_KEY_FINGERPRINT",
+          "SOME_KEY_FINGERPRINT",
+          "SOME_KEY_FINGERPRINT"
         ],
         "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
       }
     },{
       "OTHER_KEY_FINGERPRINT": {
-        "number", "6",
-        "dateTime": "1304888015",
+        "version": "1",
         "hosters": [
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
+          "SOME_KEY_FINGERPRINT",
+          "SOME_KEY_FINGERPRINT",
         ],
         "trusts": [
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
-          {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+          "SOME_KEY_FINGERPRINT",
+          "SOME_KEY_FINGERPRINT"
         ],
         "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
       }
@@ -735,18 +809,17 @@ The posted THT entry.
 ```json
 {
   "KEY_FINGERPRINT": {
-    "number", "1",
-    "dateTime": "1374852192",
+    "version": "1",
     "hosters": [
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT"
     ],
     "trusts": [
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT"
     ],
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
   }
@@ -770,18 +843,17 @@ The requested THT entry.
 ```json
 {
   "KEY_FINGERPRINT": {
-    "number", "1",
-    "dateTime": "1374852192",
+    "version": "1",
     "hosters": [
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT"
     ],
     "trusts": [
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "77.77.77.77", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 7555},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "88.88.88.88", "ipv6": "2A02:E35:2421:4BE0:CDBC:C04E:A7AB:ECF2", "port": 8002},
-      {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "99.99.99.99", "ipv6": "3A03:E35:2421:4BE0:CDBC:C04E:A7AB:ECF3", "port": 9005}
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT",
+      "SOME_KEY_FINGERPRINT"
     ],
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
   }

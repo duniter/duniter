@@ -16,7 +16,7 @@
       * [peering/peers/upstream/[PGP_FINGERPRINT]](#ucgpeeringpeersupstreampgp_fingerprint)
       * [peering/peers/downstream](#ucgpeeringpeersdownstream)
       * [peering/peers/downstream/[PGP_FINGERPRINT]](#ucgpeeringpeersdownstreampgp_fingerprint)
-      * [peering/subscribe](#ucgpeeringsubscribe)
+      * [peering/forward](#ucgpeeringforward)
       * [peering/status](#ucgpeeringstatus)
       * [tht (GET)](#ucgtht-get)
       * [tht (POST)](#ucgtht-post)
@@ -70,7 +70,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |-- ucg/
     |   |-- pubkey
     |   |-- peering
-    |   |   |-- subscribe
+    |   |   |-- forward
     |   |   |-- status
     |   |   `-- peers/
     |   |       |-- upstream/
@@ -688,21 +688,21 @@ The corresponding peer list.
 }
 ```
 
-#### `ucg/peering/subscribe`
+#### `ucg/peering/forward`
 **Goal**
 
-POST a UCG subscription document to this node in order to be sent back incoming transactions.
+POST a UCG forward document to this node in order to be sent back incoming transactions.
 
 **Parameters**
 
 Name | Value | Method
 ---- | ----- | ------
-`subscription` | UCG subscription document. | POST
-`signature` | Signature of the UCG entry's value. | POST
+`forward` | UCG forward document. | POST
+`signature` | Signature of the UCG forward document. | POST
 
 **Returns**
 
-The posted entry.
+The posted forward.
 ```json
 {
   "version": "1",

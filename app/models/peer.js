@@ -94,6 +94,14 @@ PeerSchema.methods = {
       .verify(publicKey, done);
   },
 
+  getHost: function() {
+    var host =
+      (this.ipv6 ? this.ipv6 :
+        (this.ipv4 ? this.ipv4 :
+          (this.dns ? this.dns : '')));
+    return host;
+  },
+
   getURL: function() {
     var base =
       (this.ipv6 ? '[' + this.ipv6 + ']' :

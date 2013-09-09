@@ -3,7 +3,9 @@ var async     = require('async');
 var vucoin    = require('vucoin');
 var mongoose  = require('mongoose');
 var Peer      = mongoose.model('Peer');
+var Forward   = mongoose.model('Forward');
 var Amendment = mongoose.model('Amendment');
+var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
 
 module.exports = function (pgp, currency, conf) {
@@ -80,16 +82,97 @@ module.exports = function (pgp, currency, conf) {
     });
   }
 
-  this.subscribe = function (req, res) {
+  this.forward = function (req, res) {
     async.waterfall([
 
       // Parameters
       function(callback){
-        if(!(req.body && req.body.subscription && req.body.signature)){
-          callback('Requires a peering subscription + signature');
+        if(!(req.body && req.body.forward && req.body.signature)){
+          callback('Requires a peering forward + signature');
           return;
         }
-        callback(null, req.body.subscription, req.body.signature);
+        callback(null, req.body.forward, req.body.signature);
+      },
+
+      // Check signature's key ID
+      function(pr, sig, callback){
+        PublicKey.getFromSignature(sig, function (err, pubkey) {
+          callback(null, new Forward(), pr + sig, pubkey);
+        });
+      },
+
+      // Verify signature
+      function(fwd, signedPR, pubkey, callback){
+
+        async.waterfall([
+          function (next){
+            if(!pubkey){
+              next('Public key not found, POST at ucg/peering/peers to make the node retrieve it');
+              return;
+            }
+            next();
+          },
+          function (next){
+            fwd.parse(signedPR, next);
+          },
+          function (fwd, next){
+            fwd.verify(currency, next);
+          },
+          function(valid, next){
+            if(!valid){
+              next('Not a valid peering request');
+              return;
+            }
+            next();
+          },
+          function (next){
+            if(!fwd.fingerprint.match(new RegExp("^" + pubkey.fingerprint + "$", "g"))){
+              next('Forward\'s fingerprint ('+fwd.fingerprint+') does not match signatory (' + pubkey.fingerprint + ')');
+              return;
+            }
+            fwd.verifySignature(pubkey.raw, next);
+          },
+          function (verified, next){
+            if(!verified){
+              next('Signature does not match');
+              return;
+            }
+            next();
+          },
+          function (next){
+            Forward.find({ fingerprint: fwd.fingerprint, upstream: false }, next);
+          },
+          function (fwds, next){
+            var fwdEntity = fwd;
+            if(fwds.length > 0){
+              // Already existing fwd
+              fwdEntity = fwds[0];
+              fwd.copyValues(fwdEntity);
+            }
+            fwdEntity.save(function (err) {
+              next(err, fwdEntity);
+            });
+          }
+        ], callback);
+      }
+    ], function (err, recordedPR) {
+      if(err){
+        res.send(400, err);
+      }
+      else res.end(JSON.stringify(recordedPR.json(), null, "  "));
+    });
+  }
+
+  this.peersPost = function (req, res) {
+    async.waterfall([
+
+      // Parameters
+      function(callback){
+        if(!(req.body && req.body.entry && req.body.signature)){
+          callback('Requires a peering entry + signature');
+          return;
+        }
+        callback(null, req.body.entry, req.body.signature);
       },
 
       // Check signature's key ID
@@ -112,7 +195,6 @@ module.exports = function (pgp, currency, conf) {
           function (peer, next){
             peer.verify(currency, next);
           },
-
           // Looking for corresponding public key
           function(valid, next){
             if(!valid){
@@ -124,10 +206,18 @@ module.exports = function (pgp, currency, conf) {
           function (httpRes, body, next){
             var cert = jpgp().certificate(body);
             if(!cert.fingerprint.match(new RegExp(keyID + "$", "g"))){
-              next('Peer\'s public key ('+cert.fingerprint+') does not match peering request signatory (0x' + keyID + ')');
+              next('Peer\'s public key ('+cert.fingerprint+') does not match signatory (0x' + keyID + ')');
               return;
             }
-            peer.fingerprint = cert.fingerprint;
+            if(!peer.fingerprint.match(new RegExp(keyID + "$", "g"))){
+              next('Fingerprint in peering entry ('+cert.fingerprint+') does not match signatory (0x' + keyID + ')');
+              return;
+            }
+            PublicKey.persistFromRaw(body, function (err) {
+              next(err, body);
+            });
+          },
+          function (body, next) {
             peer.verifySignature(body, next);
           },
           function (verified, next){
@@ -138,7 +228,7 @@ module.exports = function (pgp, currency, conf) {
             next();
           },
           function (next){
-            Peer.find({ fingerprint: peer.fingerprint, upstream: false }, next);
+            Peer.find({ fingerprint: peer.fingerprint }, next);
           },
           function (peers, next){
             var peerEntity = peer;
@@ -200,17 +290,35 @@ module.exports = function (pgp, currency, conf) {
   function givePeers (criterias, req, res) {
     async.waterfall([
       function (next){
-        Peer.find(criterias, next);
+        Forward.find(criterias, next);
       },
-      function (peers, next){
+      function (forwards, next){
         var json = { peers: [] };
-        peers.forEach(function (peer) {
-          json.peers.push({});
-          ['key', 'dns', 'ipv4', 'ipv6'].forEach(function (key) {
-            json.peers[json.peers.length - 1][key] = peer[key] || "";
+        async.forEach(forwards, function(fwd, callback){
+          var p = {};
+          ['fingerprint', 'dns', 'ipv4', 'ipv6', 'port'].forEach(function (key) {
+            p[key] = fwd[key] || "";
           });
+          async.waterfall([
+            function (cb){
+              Peer.find({ fingerprint: fwd.fingerprint }, cb);
+            },
+            function (peers, cb){
+              if(peers.length == 0){
+                cb();
+                return;
+              }
+              var peer = peers[0];
+              ['dns', 'ipv4', 'ipv6', 'port'].forEach(function (key) {
+                p[key] = peer[key] || "";
+              });
+              json.peers.push(p);
+              cb();
+            }
+          ], callback);
+        }, function(err){
+          next(null, json);
         });
-        next(null, json);
       }
     ], function (err, json) {
       if(err){

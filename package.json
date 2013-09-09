@@ -34,9 +34,9 @@
     "sha1": "",
     "merkle": "",
     "hdc": ">= 0.0.11",
-    "connect-pgp": ">= 0.1.4",
+    "connect-pgp": ">= 0.1.5",
     "underscore": "",
-    "vucoin": "0.2.7",
+    "vucoin": "0.2.8",
     "request": ""
   },
   "devDependencies": {

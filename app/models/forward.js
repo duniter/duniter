@@ -20,7 +20,7 @@ ForwardSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "forward", "keys"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "forward", "keys", "upstream"].forEach(function (key) {
       to[key] = obj[key];
     });
   },

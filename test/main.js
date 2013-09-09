@@ -89,11 +89,19 @@ var voteSnowAM2   = fs.readFileSync(__dirname + '/data/votes/BB-AM2/snow.vote', 
 var voteTobiAM2   = fs.readFileSync(__dirname + '/data/votes/BB-AM2/tobi.vote', 'utf8');
 var voteCatAM2    = fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.vote', 'utf8');
 
-var txTobi = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8');
-var txTobiToSnow = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', 'utf8');
-var txTobiToCat = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.cat', 'utf8');
-var txTobiFusion = fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7', 'utf8');
-var txCat = fs.readFileSync(__dirname + '/data/tx/cat.issuance', 'utf8');
+var txTobi          = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8');
+var txTobiToSnow    = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', 'utf8');
+var txTobiToCat     = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.cat', 'utf8');
+var txTobiFusion    = fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7', 'utf8');
+var txCat           = fs.readFileSync(__dirname + '/data/tx/cat.issuance', 'utf8');
+
+var peeringCat      = fs.readFileSync(__dirname + '/data/peering/cat.peering', 'utf8');
+var peeringCatSig   = fs.readFileSync(__dirname + '/data/peering/cat.peering.asc', 'utf8');
+
+var forwardCat      = fs.readFileSync(__dirname + '/data/peering/cat.all', 'utf8');
+var forwardCatSig   = fs.readFileSync(__dirname + '/data/peering/cat.all.asc', 'utf8');
+var forwardUbot1    = fs.readFileSync(__dirname + '/data/peering/ubot1.keys', 'utf8');
+var forwardUbot1Sig = fs.readFileSync(__dirname + '/data/peering/ubot1.keys.asc', 'utf8');
 
 var app;
 
@@ -300,6 +308,28 @@ function ResultAPI () {
         _(json.merkle.levels[0]).size().should.equal(0);
     });
   };
+
+  this.downstream = function(comment, streamsCount, fingerprint) {
+    testStreams(this, 'down', comment, streamsCount, fingerprint);
+  };
+
+  this.upstream = function(comment, streamsCount, fingerprint) {
+    testStreams(this, 'up', comment, streamsCount, fingerprint);
+  };
+
+  function testStreams(obj, type, comment, streamsCount, fingerprint) {
+    if(!obj[type+'streamIndex'+fingerprint])
+      obj[type+'streamIndex'+fingerprint] = 0;
+    var index = obj[type+'streamIndex'+fingerprint]++;
+    var obj = obj;
+    it((fingerprint ? 'for fingerprint '+fingerprint+' ' : '')+'expect '+ comment, function () {
+      var res = obj.apiRes['/ucg/peering/peers/'+type+'stream' + (fingerprint ? '/'+fingerprint : '')][index].res;
+      var json = JSON.parse(res.text);
+      res.should.have.status(200);
+      json.should.have.property('peers');
+      json.peers.should.have.length(streamsCount);
+    });
+  };
 }
 
 var api = new ResultAPI();
@@ -366,6 +396,20 @@ function fusion (txFile, done) {
   post('/hdc/transactions/process/fusion', {
     "transaction": txFile.substr(0, txFile.indexOf('-----BEGIN')),
     "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
+  }, done);
+}
+
+function peer (peering, signature, done) {
+  post('/ucg/peering/peers', {
+    "entry": peering,
+    "signature": signature
+  }, done);
+}
+
+function forward (forward, signature, done) {
+  post('/ucg/peering/forward', {
+    "forward": forward,
+    "signature": signature
   }, done);
 }
 
@@ -556,6 +600,20 @@ before(function (done) {
     function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
     function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
     function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
+    function (next) { get('/ucg/peering/peers/downstream', next); },
+    function (next) { get('/ucg/peering/peers/downstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
+    function (next) { get('/ucg/peering/peers/upstream', next); },
+    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
+    function (next) { forward(forwardCat, forwardCatSig, next); },
+    function (next) { get('/ucg/peering/peers/downstream', next); },
+    function (next) { get('/ucg/peering/peers/downstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
+    function (next) { get('/ucg/peering/peers/upstream', next); },
+    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
+    function (next) { forward(forwardUbot1, forwardUbot1Sig, next); },
+    function (next) { get('/ucg/peering/peers/downstream', next); },
+    function (next) { get('/ucg/peering/peers/downstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
+    function (next) { get('/ucg/peering/peers/upstream', next); },
+    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -960,6 +1018,24 @@ describe('Received keys for transactions', function(){
   api.keys('with NO transactions should be 2', 2, 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F');
   api.keys('with NO transactions should be 2', 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   api.keys('with NO transactions should be 2', 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90');
+});
+
+describe('Upstream', function(){
+  api.upstream('to have no upstreams', 0, '');
+  api.upstream('to have no upstreams', 0, '');
+  api.upstream('to have no upstreams', 0, '');
+  api.upstream('to have no upstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
+  api.upstream('to have no upstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
+  api.upstream('to have no upstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
+});
+
+describe('Downstream', function(){
+  api.downstream('to have no downstreams', 0, '');
+  api.downstream('to have no downstreams', 0, '');
+  api.downstream('to have no downstreams', 0, '');
+  api.downstream('to have no downstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
+  api.downstream('to have no downstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
+  api.downstream('to have no downstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
 });
 
 function isMerkleNodesResult (json) {

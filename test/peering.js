@@ -55,7 +55,6 @@ describe('Peer', function(){
     });
 
     it('its manual hash should be 93FCDB40152973EEF1F4872E5B9C283BD8938CD0', function(){
-      console.log(pr.getRaw());
       assert.equal(sha1(pr.getRaw()).toUpperCase(), '93FCDB40152973EEF1F4872E5B9C283BD8938CD0');
     });
   });

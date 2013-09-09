@@ -34,11 +34,11 @@ With the signature attached, this document certifies that this fingerprint's key
 
 The aggregation of all peering entries is called the *peering table*, and allows to authentify addresses of all nodes identified by their PGP key's fingerprint.
 
-## Peering request
+## Forward request
 
-In addition to peering table, which only allows to know the address of each peer, *peering request* is a document allowing peers to ask each other to be forwarded of specific transactions when received.
+In addition to peering table, which only allows to know the address of each peer, *forward request* is a document allowing peers to ask each other to be forwarded of specific transactions when received.
 
-*Peering table* can be seen as an address book, and *peering requests* as rules of sending.
+*Forward table* can be seen as an address book, and *forward requests* as rules of sending.
 
 Its format is the following:
 

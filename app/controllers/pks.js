@@ -162,45 +162,7 @@ module.exports.add = function (req, res) {
           async.each(pubKeys, processRawKey, function (err) {
             if(!err){
               // Now has entity from aaPubkey
-              async.each(pubKeys, function (pubkey, done) {
-                var now = new Date();
-                PublicKey.count({fingerprint: pubkey.fingerprint}, function (err, count) {
-                  if(count === 0){
-                    PublicKey.create([{
-                      raw: pubkey.raw,
-                      fingerprint: pubkey.fingerprint,
-                      email: pubkey.email,
-                      name: pubkey.name,
-                      comment: pubkey.comment,
-                      created: now,
-                      updated: now
-                    }], function (err, pubkey) {
-                      if(err){
-                        done(err);
-                        return;
-                      }
-                      // Update Merkle
-                      Merkle.addPublicKey(pubkey.fingerprint, function (err) {
-                        console.log("Created " + pubkey.fingerprint + ".");
-                        done(err);
-                      });
-                    });
-                  }
-                  else{
-                    PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
-                      foundKeys[0].raw = pubkey.raw;
-                      foundKeys[0].email = pubkey.email;
-                      foundKeys[0].name = pubkey.name;
-                      foundKeys[0].comment = pubkey.comment;
-                      foundKeys[0].updated = now;
-                      foundKeys[0].save(function (err) {
-                        console.log("Updated " + pubkey.fingerprint + ".");
-                        done(err);
-                      });
-                    });
-                  }
-                });
-              }, function (err) {
+              async.each(pubKeys, PublicKey.persist, function (err) {
                 // Creates/updates done.
                 if(!err){
                   var pk = pubKeys[0];

@@ -163,6 +163,34 @@ module.exports = function (pgp, currency, conf) {
     });
   }
 
+  this.peersGet = function (req, res) {
+    async.waterfall([
+      function (next){
+        Merkle.peers(next);
+      },
+      function (merkle, next){
+        Merkle.processForURL(req, merkle, function (hashes, done) {
+          Peer
+          .find({ hash: { $in: hashes } })
+          .sort('hash')
+          .exec(function (err, peers) {
+            var map = {};
+            peers.forEach(function (peer){
+              map[peer.hash] = peer.json();
+            });
+            done(null, map);
+          });
+        }, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      merkleDone(req, res, json);
+    });
+  }
+
   this.peersPost = function (req, res) {
     async.waterfall([
 
@@ -232,13 +260,20 @@ module.exports = function (pgp, currency, conf) {
           },
           function (peers, next){
             var peerEntity = peer;
+            var previousHash = null;
             if(peers.length > 0){
               // Already existing peer
               peerEntity = peers[0];
+              previousHash = peerEntity.hash;
               peer.copyValues(peerEntity);
             }
             peerEntity.save(function (err) {
-              next(err, peerEntity);
+              next(err, peerEntity, previousHash);
+            });
+          },
+          function (recordedPR, previousHash, next) {
+            Merkle.updatePeers(recordedPR, previousHash, function (err, code, merkle) {
+              next(err, recordedPR);
             });
           }
         ], callback);
@@ -330,4 +365,12 @@ module.exports = function (pgp, currency, conf) {
   }
   
   return this;
+}
+
+function merkleDone(req, res, json) {
+  if(req.query.nice){
+    res.setHeader("Content-Type", "text/plain");
+    res.end(JSON.stringify(json, null, "  "));
+  }
+  else res.end(JSON.stringify(json));
 }

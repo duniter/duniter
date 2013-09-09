@@ -13,6 +13,7 @@ var PeerSchema = new Schema({
   ipv4: String,
   ipv6: String,
   port: { type: Number, default: 8081 },
+  hash: String,
   status: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -22,7 +23,7 @@ PeerSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "status"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "hash", "status"].forEach(function (key) {
       to[key] = obj[key];
     });
   },

@@ -148,8 +148,26 @@ MerkleSchema.statics.txToRecipient = function (fingerprint, done) {
   retrieve({ type: 'txToRecipient', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
+MerkleSchema.statics.peers = function (done) {
+  retrieve({ type: 'peers', criteria: '{}' }, done);
+};
+
 MerkleSchema.statics.keys = function (done) {
   retrieve({ type: 'keys', criteria: '{}' }, done);
+};
+
+MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.peers(next);
+    },
+    function (merkle, next) {
+      merkle.push(peer.hash, previousHash);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
 };
 
 MerkleSchema.statics.addPublicKey = function (fingerprint, done) {
@@ -391,7 +409,7 @@ MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
       hashes.forEach(function (hash, index){
         json.merkle.leaves[Math.max(start, 0) + index] = {
           "hash": hash,
-          "value": values[hash]
+          "value": values[hash] || ""
         };
       });
       done(null, json);

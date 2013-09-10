@@ -1,60 +1,39 @@
+var jpgp       = require('../lib/jpgp');
 var async      = require('async');
 var mongoose   = require('mongoose');
-var _ = require('underscore');
+var _          = require('underscore');
+var Membership = mongoose.model('Membership');
 var Amendment  = mongoose.model('Amendment');
-var Merkle  = mongoose.model('Merkle');
+var PublicKey  = mongoose.model('PublicKey');
+var Merkle     = mongoose.model('Merkle');
+var Vote       = mongoose.model('Vote');
 
-module.exports = function (pgp, currency, conf) {
-
-  this.votes = require('./votes')(pgp, currency, conf, defaultPromotion);
-  this.view = require('./view')(pgp, currency, conf);
-
-  this.promoted = function (req, res) {
-    async.waterfall([
-      function (next){
-        Amendment.current(next);
-      }
-    ], function (err, current) {
-      if(!current){
-        res.send(404, 'No amendment yet promoted');
-        return;
-      }
-      res.setHeader("Content-Type", "text/plain");
-      res.send(JSON.stringify(current.json(), null, "  "));
-    });
-  };
-
-  this.promotedNumber = function (req, res) {
-
-    if(!req.params.amendment_number){
-      res.send(400, "Amendment number is required");
-      return;
-    }
-    var matches = req.params.amendment_number.match(/^(\d+)$/);
-    if(!matches){
-      res.send(400, "Amendment number format is incorrect, must be an integer value");
-      return;
-    }
-
-    async.waterfall([
-      function (next){
-        Amendment.findPromotedByNumber(matches[1], next);
-      }
-    ], function (err, current) {
-      if(!current){
-        res.send(404, 'No amendment yet promoted');
-        return;
-      }
-      res.setHeader("Content-Type", "text/plain");
-      res.send(JSON.stringify(current.json(), null, "  "));
-    });
-  };
-
-  // Retro-compatibility
-  this.current = this.promoted;
+module.exports = function () {
   
+  this.tryToPromote = function (am, done) {
+    async.waterfall([
+      function (next){
+        defaultPromotion(am, next);
+      },
+      function (decision, next){
+        if(decision){
+          am.promoted = true;
+          am.save(function (err) {
+            if(!err){
+              console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
+              next(null);
+            }
+            else next(err);
+          })
+        }
+        else next(null)
+      }
+    ], done);
+  }
+
   return this;
 }
+
 
 function defaultPromotion (amendment, decision) {
   async.waterfall([

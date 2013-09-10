@@ -9,6 +9,8 @@ var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
 
 module.exports = function (pgp, currency, conf) {
+  
+  var MerkleService = require('../service/MerkleService');
 
   this.currentVotes = function (req, res) {
     async.waterfall([
@@ -19,7 +21,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.signaturesOfAmendment(am.number, am.hash, next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
+        MerkleService.processForURL(req, merkle, function (hashes, done) {
           Vote
           .find({ hash: { $in: hashes } })
           .sort('hash')
@@ -151,7 +153,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.forNextMembership(next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
+        MerkleService.processForURL(req, merkle, function (hashes, done) {
           Membership
           .find({ hash: { $in: hashes } })
           .sort('hash')

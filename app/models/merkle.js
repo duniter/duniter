@@ -1,11 +1,10 @@
-var sha1      = require('sha1');
-var async     = require('async');
-var merkle    = require('merkle');
-var mongoose  = require('mongoose');
-var _         = require('underscore');
-var fs        = require('fs');
-var Schema    = mongoose.Schema;
-var Amendment = mongoose.model('Amendment');
+var sha1       = require('sha1');
+var async      = require('async');
+var merkle     = require('merkle');
+var mongoose   = require('mongoose');
+var _          = require('underscore');
+var fs         = require('fs');
+var Schema     = mongoose.Schema;
 
 var MerkleSchema = new Schema({
   type: String,
@@ -52,6 +51,18 @@ MerkleSchema.methods = {
     }
   },
 
+  pushMany: function (leaves) {
+    var that = this;
+    leaves.forEach(function (leaf) {
+      // If leaf is not present
+      if(that.levels[that.depth].indexOf(leaf) == -1){
+        that.leaves().push(leaf);
+      }
+    });
+    leaves.sort();
+    this.initialize(leaves);
+  },
+
   root: function () {
     return this.levels.length > 0 ? this.levels[0][0] : '';
   },
@@ -83,7 +94,7 @@ MerkleSchema.statics.forMembership = function (number, done) {
 
 MerkleSchema.statics.forNextMembership = function (done) {
   var that = this;
-  Amendment.nextNumber(function (err, number) {
+  mongoose.model('Amendment').nextNumber(function (err, number) {
     that.forMembership(number || 0, done);
   });
 };
@@ -369,52 +380,50 @@ MerkleSchema.statics.updateForFusion = function (tx, done) {
   ], done);
 };
 
-MerkleSchema.statics.processForURL = function (req, merkle, valueCB, done) {
-  // Level
-  var lstart = req.query.lstart ? parseInt(req.query.lstart) : 0;
-  var lend   = req.query.lend ? parseInt(req.query.lend) : lstart + 1;
-  if(req.query.extract){
-    lstart = merkle.depth;
-    lend = lstart + 1;
-  }
-  // Start
-  var start = req.query.start ? parseInt(req.query.start) : 0;
-  // End
-  var end = req.query.end ? parseInt(req.query.end) : merkle.levels[merkle.depth.length];
-  // Result
-  var json = {
-    "merkle": {
-      "depth": merkle.depth,
-      "nodesCount": merkle.nodes,
-      "levelsCount": merkle.levels.length,
-      "leavesCount": merkle.levels[merkle.depth].length
-    }
-  };
-  if(isNaN(lstart)) lstart = 0;
-  if(isNaN(lend)) lend = lstart + 1;
-  if(isNaN(start)) start = 0;
-  if(!req.query.extract || !valueCB){
-    json.merkle.levels = {};
-    for (var i = Math.max(lstart, 0); i < merkle.levels.length && i < lend; i++) {
-      var rowEnd = isNaN(end) ? merkle.levels[i].length : end;
-      json.merkle.levels[i] = merkle.levels[i].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[i].length));
-    };
-    done(null, json);
-  }
-  else {
-    json.merkle.leaves = {};
-    var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
-    var hashes = merkle.levels[merkle.depth].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[lstart].length));
-    valueCB(hashes, function (err, values) {
-      hashes.forEach(function (hash, index){
-        json.merkle.leaves[Math.max(start, 0) + index] = {
-          "hash": hash,
-          "value": values[hash] || ""
-        };
-      });
-      done(null, json);
+MerkleSchema.statics.mapIdentical = function (hashes, done) {
+  var map = {};
+  merkle.leaves().forEach(function (leaf) {
+    map[leaf] = leaf;
+  });
+  done(null, map);
+};
+
+MerkleSchema.statics.mapForSignatures = function (hashes, done) {
+  mongoose.model('Vote')
+  .find({ hash: { $in: hashes } })
+  .sort('hash')
+  .exec(function (err, votes) {
+    var map = {};
+    votes.forEach(function (vote){
+      map[vote.hash] = {
+        issuer: vote.issuer,
+        signature: vote.signature
+      };
     });
-  }
-}
+    done(null, map);
+  });
+};
+
+MerkleSchema.statics.mapForMemberships = function (hashes, done) {
+  mongoose.model('Membership')
+  .find({ hash: { $in: hashes } })
+  .sort('hash')
+  .exec(function (err, memberships) {
+    var map = {};
+    memberships.forEach(function (membs){
+      map[membs.hash] = {
+        "signature": membs.signature,
+        "request": {
+          "version": membs.version,
+          "currency": membs.currency,
+          "status": membs.status,
+          "basis": membs.basis
+        },
+        "issuer": membs.fingerprint
+      };
+    });
+    done(null, map);
+  });
+};
 
 var Merkle = mongoose.model('Merkle', MerkleSchema);

@@ -6,6 +6,7 @@ PublicKey = mongoose.model('PublicKey'),
 Merkle    = mongoose.model('Merkle'),
 _         = require('underscore'),
 stream    = require('stream');
+var MerkleService = require('../service/MerkleService');
 
 function processRawKey (pubkey, done) {
   async.parallel([
@@ -24,7 +25,7 @@ module.exports.all = function (req, res) {
       Merkle.forPublicKeys(next);
     },
     function (merkle, next){
-      Merkle.processForURL(req, merkle, function (hashes, done) {
+      MerkleService.processForURL(req, merkle, function (hashes, done) {
         PublicKey
         .find({ fingerprint: { $in: hashes } })
         .sort('fingerprint')

@@ -9,6 +9,7 @@ var Merkle      = mongoose.model('Merkle');
 var Coin        = mongoose.model('Coin');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
+var MerkleService = require('../service/MerkleService');
 
 module.exports = function (pgp, currency, conf) {
 
@@ -18,7 +19,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.keys(next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, lambda, next);
+        MerkleService.processForURL(req, merkle, lambda, next);
       }
     ], function (err, json) {
       if(err){
@@ -64,7 +65,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.txAll(next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, lambda, next);
+        MerkleService.processForURL(req, merkle, lambda, next);
       }
     ], function (err, json) {
       if(err){
@@ -140,7 +141,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.txToRecipient(matches[1], next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, lambda, next);
+        MerkleService.processForURL(req, merkle, lambda, next);
       }
     ], function (err, json) {
       if(err){
@@ -762,7 +763,7 @@ function showMerkle (merkleGetFunc, merkleHashFunc, amNumber, req, res) {
         merkleGetFunc.call(merkleGetFunc, hash, next);
     },
     function (merkle, next){
-      Merkle.processForURL(req, merkle, merkleHashFunc || lambda, next);
+      MerkleService.processForURL(req, merkle, merkleHashFunc || lambda, next);
     }
   ], function (err, json) {
     if(err){

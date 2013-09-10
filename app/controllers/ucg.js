@@ -7,6 +7,7 @@ var Forward   = mongoose.model('Forward');
 var Amendment = mongoose.model('Amendment');
 var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
+var MerkleService = require('../service/MerkleService');
 
 module.exports = function (pgp, currency, conf) {
   
@@ -32,14 +33,14 @@ module.exports = function (pgp, currency, conf) {
         Merkle.forPublicKeys(next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, null, next);
+        MerkleService.processForURL(req, merkle, null, next);
       },
       function (json, next){
         pkMerkle = json;
         Merkle.forNextMembership(next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, null, next);
+        MerkleService.processForURL(req, merkle, null, next);
       },
       function (json, next){
         msMerkle = json;
@@ -48,7 +49,7 @@ module.exports = function (pgp, currency, conf) {
             Merkle.signaturesOfAmendment(am ? am.number : undefined, am ? am.hash : undefined, cb);
           },
           function (merkle, cb){
-            Merkle.processForURL(req, merkle, null, cb);
+            MerkleService.processForURL(req, merkle, null, cb);
           },
           function (json, cb){
             votesMerkle = json;
@@ -169,7 +170,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.peers(next);
       },
       function (merkle, next){
-        Merkle.processForURL(req, merkle, function (hashes, done) {
+        MerkleService.processForURL(req, merkle, function (hashes, done) {
           Peer
           .find({ hash: { $in: hashes } })
           .sort('hash')

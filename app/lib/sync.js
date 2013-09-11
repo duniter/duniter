@@ -61,7 +61,11 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                     function (cb){
                       PublicKey.verify(keytext, keysign, cb);
                     },
-                    function (cb){
+                    function (verified, cb){
+                      if(!verified){
+                        cb('Key was not verified by its signature');
+                        return;
+                      }
                       hashes.push(json.leaves[index].hash);
                       PublicKey.persistFromRaw(keytext, keysign, cb);
                     }

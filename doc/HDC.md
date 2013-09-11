@@ -36,6 +36,14 @@ Universal Dividend | Money issuance **directly** and **exclusively** on communit
 Community | A groupment of individuals linked together trought a Monetary Contract.
 Monetary Contract | A document gathering the informations defining the community members, voters and monetary mass inside it.
 
+## Conventions
+
+### HDC Data
+
+Please not **very carefully** that every HDC document's line **ENDS with a newline character Windows-style**, that is to say **<CR><LF>**.
+
+This is a *very important information* as every document is subject to hashes, and Unix-style endings won't produce the expected hashes.
+
 ## Certificate
 
 ### Definition

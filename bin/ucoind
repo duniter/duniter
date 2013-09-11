@@ -29,6 +29,19 @@ program
   ;
 
 program
+  .command('sync [host] [port]')
+  .description('Tries to synchronise data with remote uCoin node')
+  .action(connect(function (host, port, conf) {
+    var Synchroniser = require('../app/lib/sync');
+    new Synchroniser(host, port, false, program.currency).sync(function (err, stats) {
+      if(err){
+        console.error('Error during sync %s', err);
+      }
+      server.database.disconnect();
+    });
+  }));
+
+program
   .command('config')
   .description('Register configuration in database')
   .action(connect(function (conf) {

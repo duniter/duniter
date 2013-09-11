@@ -9,7 +9,7 @@ module.exports = {
   },
 
   getAmendmentID: function (req, callback) {
-    if(!req.params.amendment_id){
+    if(!req.params || !req.params.amendment_id){
       callback("Amendment ID is required");
       return;
     }
@@ -22,7 +22,7 @@ module.exports = {
   },
 
   getAmendmentNumber: function (req, callback) {
-    if(!req.params.amendment_number){
+    if(!req.params || !req.params.amendment_number){
       callback("Amendment number is required");
       return;
     }

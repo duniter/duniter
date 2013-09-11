@@ -330,6 +330,37 @@ function ResultAPI () {
       json.peers.should.have.length(streamsCount);
     });
   };
+
+  this.checkPromoted = function(number, statusCode, hash) {
+    if(!this['promoted'+number])
+      this['promoted'+number] = 0;
+    var index = this['promoted'+number]++;
+    var obj = this;
+    it('- #'+number+' should '+(statusCode == 200 ? '' : 'not ')+'exist', function () {
+      var res = obj.apiRes['/hdc/amendments/promoted' + (number != null ? '/'+number : '')][index].res;
+      res.should.have.status(statusCode);
+      if(statusCode == 200){
+        var json = JSON.parse(res.text);
+        json.should.have.property('version');
+        json.should.have.property('currency');
+        json.should.have.property('number');
+        json.should.have.property('previousHash');
+        json.should.have.property('dividend');
+        json.should.have.property('coinMinPower');
+        json.should.have.property('votersSigRoot');
+        json.should.have.property('votersRoot');
+        json.should.have.property('votersCount');
+        json.should.have.property('votersChanges');
+        json.should.have.property('membersStatusRoot');
+        json.should.have.property('membersRoot');
+        json.should.have.property('membersCount');
+        json.should.have.property('membersChanges');
+        json.should.have.property('raw');
+        var mHash = sha1(json.raw).toUpperCase();
+        mHash.should.equal(hash);
+      }
+    });
+  };
 }
 
 var api = new ResultAPI();
@@ -454,31 +485,68 @@ before(function (done) {
     function (next) { get('/hdc/community/memberships', next); },
     function (next) { get('/hdc/community/memberships?extract=true', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { console.log("Sending Cat's AM0..."); vote(voteCatAM0, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Tobi's AM0..."); vote(voteTobiAM0, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Snow's AM0..."); vote(voteSnowAM0, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { console.log("Sending Snow's AM0 dissident..."); vote(voteSnowAM0_2, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Snow's AM1..."); vote(voteSnowAM1, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Tobi's AM1..."); vote(voteTobiAM1, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Cat's AM1..."); vote(voteCatAM1, next); },
+    function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending White's AM1..."); vote(voteWhiteAM1, next); },
     function (next) { get('/hdc/community/votes', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { get('/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047', next); },
     function (next) { get('/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C', next); },
     function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self', next); },
@@ -492,8 +560,23 @@ before(function (done) {
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures', next); },
     function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/voters', next); },
     function (next) { console.log("Sending Snow's AM2..."); vote(voteSnowAM2, next); },
+    function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Tobi's AM2..."); vote(voteTobiAM2, next); },
+    function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Cat's AM2..."); vote(voteCatAM2, next); },
+    function (next) { get('/hdc/amendments/promoted', next); },
+    function (next) { get('/hdc/amendments/promoted/0', next); },
+    function (next) { get('/hdc/amendments/promoted/1', next); },
+    function (next) { get('/hdc/amendments/promoted/2', next); },
+    function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { get('/hdc/coins/33BBFC0C67078D72AF128B5BA296CC530126F372/list', next); },
     function (next) { get('/hdc/coins/2E69197FAB029D8669EF85E82457A1587CA0ED9C/list', next); },
     function (next) { get('/hdc/coins/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/list', next); },
@@ -757,51 +840,83 @@ describe('Checking votes', function(){
 
 //----------- Amendments -----------
 
-function checkAmendment (index, hash) {
-  return function(){
-    apiRes['/hdc/amendments/promoted'][index].res.should.have.status(200);
-    var json = JSON.parse(apiRes['/hdc/amendments/promoted'][index].res.text);
-    json.should.have.property('version');
-    json.should.have.property('currency');
-    json.should.have.property('number');
-    json.should.have.property('previousHash');
-    json.should.have.property('dividend');
-    json.should.have.property('coinMinPower');
-    json.should.have.property('votersSigRoot');
-    json.should.have.property('votersRoot');
-    json.should.have.property('votersCount');
-    json.should.have.property('votersChanges');
-    json.should.have.property('membersStatusRoot');
-    json.should.have.property('membersRoot');
-    json.should.have.property('membersCount');
-    json.should.have.property('membersChanges');
-    json.should.have.property('raw');
-    var mHash = sha1(json.raw).toUpperCase();
-    if(mHash != hash){
-      console.log("Current issue: " + index);
-    }
-    mHash.should.equal(hash);
-  }
-}
-
-function checkAmendmentNotFound (index) {
-  return function(){
-    apiRes['/hdc/amendments/promoted'][index].res.should.have.status(404);
-  }
-}
-
 describe('Checking current amendment', function(){
   var index = -1;
-  it('should respond 200', checkAmendmentNotFound(++index));
-  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
-  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
-  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
-  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
+  api.checkPromoted(null, 404);
+  api.checkPromoted(0   , 404);
+  api.checkPromoted(1   , 404);
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+  // 1 vote for AM0 (enough)
+  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 404);
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 404);
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 404);
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 404);
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
   // 1 vote for AM1 (not enough)
-  it('should respond 200', checkAmendment(++index, '376C5A6126A4688B18D95043261B2D59867D4047'));
-  // 2 votes for AM1 (enough ! (2/3))
-  it('should respond 200', checkAmendment(++index, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'));
-  it('should respond 200', checkAmendment(++index, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'));
+  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 404);
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  // 2 votes for AM1 (enough)
+  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  // 1 vote for AM2 (not enough)
+  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(2   , 404);
+  api.checkPromoted(3   , 404);
+
+  // 2 votes for AM2 (enough)
+  api.checkPromoted(null, 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(2   , 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(3   , 404);
+
+  api.checkPromoted(null, 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(2   , 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(3   , 404);
 });
 
 describe('Checking amendments', function(){

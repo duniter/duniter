@@ -1,4 +1,3 @@
-
 module.exports = {
 
   getVote: function (req, callback){
@@ -33,5 +32,14 @@ module.exports = {
       return;
     }
     callback(null, matches[1]);
+  },
+
+  getMembership: function (req, callback) {
+    // Parameters
+    if(!(req.body && req.body.request && req.body.signature)){
+      callback('Requires a membership request + signature');
+      return;
+    }
+    callback(null, req.body.request + req.body.signature);
   }
 }

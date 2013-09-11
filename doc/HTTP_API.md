@@ -206,21 +206,19 @@ Parameter | Description
 Merkle URL result with `extract=false`.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ],
-      ...
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ],
+    ...
   }
 }
 ```
@@ -228,22 +226,19 @@ Merkle URL result with `extract=false`.
 Merkle URL result with `extract=true`.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "leaves": {
-      "1": {
-        "hash": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-        "value": // JSON value (object, string, int, ...)
-      },
-      "2": {
-        "hash": "E9D71F5EE7C92D6DC9E92FFDAD17B8BD49418F98",
-        "value": // JSON value (object, string, int, ...)
-      }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "leaves": {
+    "1": {
+      "hash": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "value": // JSON value (object, string, int, ...)
     },
-	...
+    "2": {
+      "hash": "E9D71F5EE7C92D6DC9E92FFDAD17B8BD49418F98",
+      "value": // JSON value (object, string, int, ...)
+    }
   }
 }
 ```
@@ -367,20 +362,18 @@ Merkle URL refering all the received public keys.
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -527,20 +520,18 @@ Merkle URL refering to peering entries of every node inside the currency network
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -957,20 +948,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1008,20 +997,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1086,20 +1073,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1401,20 +1386,18 @@ Merkle URL referencing membership requests of individual's registering/actualizi
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1450,20 +1433,18 @@ Merkle URL referencing the votes that legitimate the current amendment.
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1624,20 +1605,18 @@ Merkle URL referencing all the transactions stored by this node.
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1689,20 +1668,18 @@ Merkle URL referencing PGP keys whose transactions are recoreded by this node (s
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1830,20 +1807,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -1997,20 +1972,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -2062,20 +2035,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -2169,20 +2140,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -2234,20 +2203,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -2299,20 +2266,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```
@@ -2364,20 +2329,18 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "merkle": {
-    "depth": 3,
-    "nodesCount": 6,
-    "levelsCount": 4,
-    "leavesCount": 5,
-    "levels": {
-      "0": [
-        "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-      ],
-      "1": [
-        "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-        "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-      ]
-    }
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
   }
 }
 ```

@@ -23,31 +23,29 @@ module.exports = {
     var end = req.query.end ? parseInt(req.query.end) : merkle.levels[merkle.depth.length];
     // Result
     var json = {
-      "merkle": {
-        "depth": merkle.depth,
-        "nodesCount": merkle.nodes,
-        "levelsCount": merkle.levels.length,
-        "leavesCount": merkle.levels[merkle.depth].length
-      }
+      "depth": merkle.depth,
+      "nodesCount": merkle.nodes,
+      "levelsCount": merkle.levels.length,
+      "leavesCount": merkle.levels[merkle.depth].length
     };
     if(isNaN(lstart)) lstart = 0;
     if(isNaN(lend)) lend = lstart + 1;
     if(isNaN(start)) start = 0;
     if(!req.query.extract || !valueCB){
-      json.merkle.levels = {};
+      json.levels = {};
       for (var i = Math.max(lstart, 0); i < merkle.levels.length && i < lend; i++) {
         var rowEnd = isNaN(end) ? merkle.levels[i].length : end;
-        json.merkle.levels[i] = merkle.levels[i].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[i].length));
+        json.levels[i] = merkle.levels[i].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[i].length));
       };
       done(null, json);
     }
     else {
-      json.merkle.leaves = {};
+      json.leaves = {};
       var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
       var hashes = merkle.levels[merkle.depth].slice(Math.max(start, 0), Math.min(rowEnd, merkle.levels[lstart].length));
       valueCB(hashes, function (err, values) {
         hashes.forEach(function (hash, index){
-          json.merkle.leaves[Math.max(start, 0) + index] = {
+          json.leaves[Math.max(start, 0) + index] = {
             "hash": hash,
             "value": values[hash] || ""
           };

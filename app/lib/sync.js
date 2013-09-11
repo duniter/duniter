@@ -141,9 +141,17 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
               function (json, callback) {
                 applyVotes(amendments, number, number, json, node, callback);
               }
-            ], next);
+            ], function (err) {
+              next(err);
+            });
           }
           else next();
+        },
+        function (next) {
+          node.hdc.community.memberships({ extract: true }, next);
+        },
+        function (json, next) {
+          applyTargetedMemberships(json.merkle.leaves, function () { return true; }, next);
         }
       ], function (err, result) {
         console.log('Sync finished.');
@@ -179,25 +187,9 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                 node.hdc.amendments.view.memberships(amNumber, sha1(amendments[amNumber]).toUpperCase(), { extract: true }, callback2);
               },
               function (json, callback2) {
-                console.log("Memberships: %s", _(json.merkle.leaves).size());
-                async.forEachSeries(_(json.merkle.leaves).keys(), function(key, callback3){
-                  var msObj = json.merkle.leaves[key];
-                  if(~difff.indexOf(msObj.hash)){
-                    var ms = new Membership({});
-                    _(msObj.value.request).keys().forEach(function (field) {
-                      ms[field] = msObj.value.request[field];
-                    });
-                    var signedMSR = ms.getRaw() + msObj.value.signature;
-                    MembershipService.submit(signedMSR, callback3);
-                  }
-                  else callback3();
-                }, function(err, result){
-                  if(err){
-                    callback2(err);
-                    return;
-                  }
-                  callback2();
-                });
+                applyTargetedMemberships(json.merkle.leaves, function (hash) {
+                  return ~difff.indexOf(hash);
+                }, callback2);
               }
             ], cb);
           }
@@ -205,6 +197,28 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
         });
       }
     ], function (err, result) {
+    });
+  }
+
+  function applyTargetedMemberships(merkleUrlLeaves, isToApply, done) {
+    console.log("Source memberships: %s", _(merkleUrlLeaves).size());
+    async.forEachSeries(_(merkleUrlLeaves).keys(), function(key, callback){
+      var msObj = merkleUrlLeaves[key];
+      if(isToApply(msObj.hash)){
+        var ms = new Membership({});
+        _(msObj.value.request).keys().forEach(function (field) {
+          ms[field] = msObj.value.request[field];
+        });
+        var signedMSR = ms.getRaw() + msObj.value.signature;
+        MembershipService.submit(signedMSR, callback);
+      }
+      else callback();
+    }, function(err, result){
+      if(err){
+        done(err);
+        return;
+      }
+      done();
     });
   }
 

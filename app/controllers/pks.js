@@ -6,18 +6,8 @@ PublicKey = mongoose.model('PublicKey'),
 Merkle    = mongoose.model('Merkle'),
 _         = require('underscore'),
 stream    = require('stream');
-var MerkleService = require('../service/MerkleService');
-
-function processRawKey (pubkey, done) {
-  async.parallel([
-    function (callback) {
-      pubkey.construct(callback);
-    }
-  ], function (err) {
-    // Brand new key struture is done.
-    done(err);
-  });
-}
+var MerkleService     = require('../service/MerkleService');
+var ParametersService = require('../service/ParametersService');
 
 module.exports.all = function (req, res) {
   async.waterfall([
@@ -25,28 +15,14 @@ module.exports.all = function (req, res) {
       Merkle.forPublicKeys(next);
     },
     function (merkle, next){
-      MerkleService.processForURL(req, merkle, function (hashes, done) {
-        PublicKey
-        .find({ fingerprint: { $in: hashes } })
-        .sort('fingerprint')
-        .exec(function (err, pubkeys) {
-          var map = {};
-          pubkeys.forEach(function (pubkey){
-            map[pubkey.fingerprint] = {
-              fingerprint: pubkey.fingerprint,
-              pubkey: pubkey.raw
-            };
-          });
-          done(null, map);
-        });
-      }, next);
+      MerkleService.processForURL(req, merkle, Merkle.mapForPublicKeys, next);
     }
   ], function (err, json) {
     if(err){
-      res.send(500, err);
+      res.send(400, err);
       return;
     }
-    merkleDone(req, res, json);
+    MerkleService.merkleDone(req, res, json);
   });
 };
 
@@ -87,111 +63,30 @@ module.exports.lookup = function (req, res) {
   }
 };
 
-function getAAMessage(keytext, callback) {
-  if(keytext){
-    var extractPK = keytext.trim().match(/(-----BEGIN PGP[\s\S]*-----END PGP.*-----)/);
-    if(extractPK && extractPK.length > 1){
-      var asciiArmored = extractPK[1] + '\r\n';
-      callback(null, asciiArmored);
+module.exports.add = function (req, res) {
+  var pubkey;
+  async.waterfall([
+    function (next){
+      ParametersService.getPubkey(req, next);
+    },
+    function (aaPubkey, aaSignature, next){
+      PublicKey.verify(aaPubkey, aaSignature, function (err) {
+        next(err, aaPubkey, aaSignature);
+      });
+    },
+    function (aaPubkey, aaSignature, next) {
+      pubkey = new PublicKey({ raw: aaPubkey, signature: aaSignature });
+      pubkey.construct(next);
+    },
+    function (next) {
+      PublicKey.persist(pubkey, next);
     }
-    else{
-      callback("Not a PGP message.");
-    }
-  }
-  else{
-    callback("keytext HTTP param is null.");
-  }
-}
-
-function getAsciiArmoredMessages(body, files, callback) {
-  var keytext = body.keytext || (files ? files.keytext : "");
-  var keysign = body.keysign || (files ? files.keysign : "");
-  var aaPubkey, aaSignature;
-  async.parallel({
-      one: function(done){
-        if(keytext && keytext.path){
-          fs.readFile(keytext.path, {encoding: "utf8"}, function (err, data) {
-            keytext = data;
-            done(err);
-          });
-        }
-        else done();
-      },
-      two: function(done){
-        if(keysign && keysign.path){
-          fs.readFile(keysign.path, {encoding: "utf8"}, function (err, data) {
-            keysign = data;
-            done(err);
-          });
-        }
-        else done();
-      }
-  },
-  function(err) {
+  ], function (err) {
     if(err){
-      callback(err);
+      res.send(400, err);
+      console.error(err);
       return;
     }
-    async.parallel({
-        one: function(done){
-          getAAMessage(keytext, function (err, data) {
-            aaPubkey = data;
-            done(err);
-          });
-        },
-        two: function(done){
-          getAAMessage(keysign, function (err, data) {
-            aaSignature = data;
-            done(err);
-          });
-        }
-    },
-    function(err) {
-      callback(err, aaPubkey, aaSignature);
-    });
-  });
-}
-
-// TODO: refactor
-module.exports.add = function (req, res) {
-  getAsciiArmoredMessages(req.body, req.files, function (err, aaPubkey, aaSignature) {
-    if(!err){
-      var pubKeys = [];
-      PublicKey.verify(aaPubkey, aaSignature, function (err) {
-        if(!err){
-          pubKeys.push(new PublicKey({ raw: aaPubkey }));
-          async.each(pubKeys, processRawKey, function (err) {
-            if(!err){
-              // Now has entity from aaPubkey
-              async.each(pubKeys, PublicKey.persist, function (err) {
-                // Creates/updates done.
-                if(!err){
-                  var pk = pubKeys[0];
-                  res.writeHead(200);
-                  res.end(JSON.stringify(pk.json()));
-                }
-                else{
-                  res.send(500, 'Error saving to database: ' + err);
-                }
-              });
-            }
-            else
-              res.send(500, 'Error asciiArmoring back: ' + err);
-          });
-        }
-        else
-          res.send(400, 'Error verifying public key: ' + err);
-      });
-    }
-    else
-      res.send(400, 'Not a OpenPGP data: ' + err);
+    res.send(200, JSON.stringify(pubkey.json()));
   });
 };
-
-function merkleDone(req, res, json) {
-  if(req.query.nice){
-    res.setHeader("Content-Type", "text/plain");
-    res.end(JSON.stringify(json, null, "  "));
-  }
-  else res.end(JSON.stringify(json));
-}

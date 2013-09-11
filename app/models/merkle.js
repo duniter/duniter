@@ -404,6 +404,23 @@ MerkleSchema.statics.mapIdentical = function (hashes, done) {
   done(null, map);
 };
 
+MerkleSchema.statics.mapForPublicKeys = function (hashes, done) {
+  mongoose.model('PublicKey')
+  .find({ fingerprint: { $in: hashes } })
+  .sort('fingerprint')
+  .exec(function (err, pubkeys) {
+    var map = {};
+    pubkeys.forEach(function (pubkey){
+      map[pubkey.fingerprint] = {
+        fingerprint: pubkey.fingerprint,
+        pubkey: pubkey.raw,
+        signature: pubkey.signature
+      };
+    });
+    done(null, map);
+  });
+}
+
 MerkleSchema.statics.mapForSignatures = function (hashes, done) {
   mongoose.model('Vote')
   .find({ hash: { $in: hashes } })

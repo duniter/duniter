@@ -55,8 +55,17 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                 });
                 var hashes = [];
                 async.forEachSeries(indexesToAdd, function(index, callback){
-                  hashes.push(json.leaves[index].hash);
-                  PublicKey.persistFromRaw(json.leaves[index].value.pubkey, callback);
+                  var keytext = json.leaves[index].value.pubkey;
+                  var keysign = json.leaves[index].value.signature;
+                  async.waterfall([
+                    function (cb){
+                      PublicKey.verify(keytext, keysign, cb);
+                    },
+                    function (cb){
+                      hashes.push(json.leaves[index].hash);
+                      PublicKey.persistFromRaw(keytext, keysign, cb);
+                    }
+                  ], callback);
                 }, function(err, result){
                   next(err);
                 });

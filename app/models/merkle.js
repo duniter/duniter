@@ -245,6 +245,22 @@ MerkleSchema.statics.updateForNextMembership = function (previousHash, newHash, 
   ], done);
 };
 
+MerkleSchema.statics.updateManyForNextMembership = function (leaves, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.forNextMembership(function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.pushMany(leaves);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
 MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
   async.waterfall([
     function (next) {
@@ -382,7 +398,7 @@ MerkleSchema.statics.updateForFusion = function (tx, done) {
 
 MerkleSchema.statics.mapIdentical = function (hashes, done) {
   var map = {};
-  merkle.leaves().forEach(function (leaf) {
+  hashes.forEach(function (leaf) {
     map[leaf] = leaf;
   });
   done(null, map);

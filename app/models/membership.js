@@ -96,8 +96,8 @@ MembershipSchema.methods = {
           next('May only JOIN the community first');
           return;
         }
-        else if(mems.length > 0 && mems[0].basis < number){
-          next('Cannot recored membership for previous amendment');
+        else if(that.basis < number){
+          next('Cannot record membership for current or previous amendment');
           return;
         }
         else if(mems.length == 0){

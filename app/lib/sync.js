@@ -47,16 +47,16 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
               // console.log('Merkles for public keys: differences !');
               var indexesToAdd = [];
               node.pks.all({ extract: true }, function (err, json) {
-                _(json.merkle.leaves).keys().forEach(function(key){
-                  var leaf = json.merkle.leaves[key];
+                _(json.leaves).keys().forEach(function(key){
+                  var leaf = json.leaves[key];
                   if(merkle.leaves().indexOf(leaf.hash) == -1){
                     indexesToAdd.push(key);
                   }
                 });
                 var hashes = [];
                 async.forEachSeries(indexesToAdd, function(index, callback){
-                  hashes.push(json.merkle.leaves[index].hash);
-                  PublicKey.persistFromRaw(json.merkle.leaves[index].value.pubkey, callback);
+                  hashes.push(json.leaves[index].hash);
+                  PublicKey.persistFromRaw(json.leaves[index].value.pubkey, callback);
                 }, function(err, result){
                   next(err);
                 });
@@ -148,7 +148,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
           node.hdc.community.memberships({ extract: true }, next);
         },
         function (json, next) {
-          applyTargetedMemberships(json.merkle.leaves, function () { return true; }, next);
+          applyTargetedMemberships(json.leaves, function () { return true; }, next);
         }
       ], function (err, result) {
         console.log('Sync finished.');
@@ -171,20 +171,20 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
       },
       function (json, next){
         Merkle.forMembership(amNumber - 1, function (err, prevMerkle) {
-          if(prevMerkle.root() != json.merkle.levels[0][0]){
-            // console.log('MS CHANGES (%s != %s)', prevMerkle.root(), json.merkle.levels[0][0]);
+          if(prevMerkle.root() != json.levels[0][0]){
+            // console.log('MS CHANGES (%s != %s)', prevMerkle.root(), json.levels[0][0]);
             var difff = [];
             async.waterfall([
               function (callback2) {
-                node.hdc.amendments.view.memberships(amNumber, sha1(amendments[amNumber]).toUpperCase(), { lstart: json.merkle.depth, lend: json.merkle.levelsCount }, callback2);
+                node.hdc.amendments.view.memberships(amNumber, sha1(amendments[amNumber]).toUpperCase(), { lstart: json.depth, lend: json.levelsCount }, callback2);
               },
               function (json2, callback2){
-                var leaves = json2.merkle.levels[json2.merkle.levelsCount -1];
+                var leaves = json2.levels[json2.levelsCount -1];
                 difff = _(leaves).difference(prevMerkle.leaves());
                 node.hdc.amendments.view.memberships(amNumber, sha1(amendments[amNumber]).toUpperCase(), { extract: true }, callback2);
               },
               function (json, callback2) {
-                applyTargetedMemberships(json.merkle.leaves, function (hash) {
+                applyTargetedMemberships(json.leaves, function (hash) {
                   return ~difff.indexOf(hash);
                 }, callback2);
               }
@@ -221,9 +221,9 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
 
   function applyVotes(amendments, amNumber, number, json, node, cb) {
     // console.log('Applying votes for amendment #%s', amNumber);
-    // console.log("Signatures: %s", _(json.merkle.leaves).size());
-    async.forEachSeries(_(json.merkle.leaves).keys(), function(key, callback){
-      var vote = json.merkle.leaves[key];
+    // console.log("Signatures: %s", _(json.leaves).size());
+    async.forEachSeries(_(json.leaves).keys(), function(key, callback){
+      var vote = json.leaves[key];
       VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {
         // Promotion time
         StrategyService.tryToPromote(am, function (err) {
@@ -242,13 +242,13 @@ function NodesMerkle (json) {
   
   var that = this;
   ["depth", "nodesCount", "leavesCount", "levelsCount"].forEach(function (key) {
-    that[key] = json.merkle[key];
+    that[key] = json[key];
   });
 
   var i = 0;
   this.levels = [];
-  while(json.merkle && json.merkle.levels[i]){
-    this.levels.push(json.merkle.levels[i]);
+  while(json && json.levels[i]){
+    this.levels.push(json.levels[i]);
     i++;
   }
 

@@ -1174,12 +1174,14 @@ function isMerkleResult (json) {
 }
 
 function isPubKey (json) {
-  json.should.have.property('email');
-  json.should.have.property('name');
-  json.should.have.property('fingerprint');
-  json.should.have.property('raw');
-  json.should.not.have.property('_id');
-  json.raw.should.not.match(/-----/g);
+  json.should.have.property('signature');
+  json.should.have.property('key');
+  json.key.should.have.property('email');
+  json.key.should.have.property('name');
+  json.key.should.have.property('fingerprint');
+  json.key.should.have.property('raw');
+  json.key.should.not.have.property('_id');
+  json.key.raw.should.not.match(/-----/g);
 }
 
 for (var i = 0; i < gets.length; i++) {

@@ -7,6 +7,7 @@ var Schema   = mongoose.Schema;
 var PublicKeySchema = new Schema({
   raw: String,
   fingerprint: String,
+  signature: String,
   name: String,
   email: String,
   comment: String,
@@ -47,11 +48,14 @@ PublicKeySchema.methods = {
     var raw = this.raw.replace('-----BEGIN PGP PUBLIC KEY BLOCK-----', 'BEGIN PGP PUBLIC KEY BLOCK');
     raw = raw.replace('-----END PGP PUBLIC KEY BLOCK-----', 'END PGP PUBLIC KEY BLOCK');
     return {
-      "email": this.email,
-      "name": this.name,
-      "fingerprint": this.fingerprint,
-      "comment": this.comment,
-      "raw": raw
+      "signature": this.signature,
+      "key": {
+        "email": this.email,
+        "name": this.name,
+        "fingerprint": this.fingerprint,
+        "comment": this.comment,
+        "raw": raw
+      }
     };
   }
 };
@@ -157,8 +161,8 @@ PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
   ], done);
 };
 
-PublicKeySchema.statics.persistFromRaw = function (rawPubkey, done) {
-  var pubkey = new PublicKey({ raw: rawPubkey });
+PublicKeySchema.statics.persistFromRaw = function (rawPubkey, rawSignature, done) {
+  var pubkey = new PublicKey({ raw: rawPubkey, signature: rawSignature });
   async.waterfall([
     function (next){
       pubkey.construct(next);
@@ -176,6 +180,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
       PublicKey.create([{
         raw: pubkey.raw,
         fingerprint: pubkey.fingerprint,
+        signature: pubkey.signature,
         email: pubkey.email,
         name: pubkey.name,
         comment: pubkey.comment,
@@ -196,6 +201,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
     else{
       PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
         foundKeys[0].raw = pubkey.raw;
+        foundKeys[0].signature = pubkey.signature;
         foundKeys[0].email = pubkey.email;
         foundKeys[0].name = pubkey.name;
         foundKeys[0].comment = pubkey.comment;

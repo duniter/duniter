@@ -41,5 +41,29 @@ module.exports = {
       return;
     }
     callback(null, req.body.request + req.body.signature);
+  },
+
+  getPubkey: function (req, callback) {
+    if(!req.body){
+      callback('Parameters `keytext` and `keysign` are required');
+      return;
+    }
+    if(!req.body.keytext){
+      callback('Key is required');
+      return;
+    }
+    if(!req.body.keysign){
+      callback('Key signature is required');
+      return;
+    }
+    if(!req.body.keytext.match(/BEGIN PGP PUBLIC KEY/) || !req.body.keytext.match(/END PGP PUBLIC KEY/)){
+      callback('Keytext does not look like a public key message');
+      return;
+    }
+    if(!req.body.keysign.match(/BEGIN PGP/) || !req.body.keysign.match(/END PGP/)){
+      callback('Keysign does not look like a PGP message');
+      return;
+    }
+    callback(null, req.body.keytext, req.body.keysign);
   }
 }

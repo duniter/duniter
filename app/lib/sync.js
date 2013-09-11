@@ -44,7 +44,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
           node.pks.all({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
-              console.log('Merkles for public keys: differences !');
+              // console.log('Merkles for public keys: differences !');
               var indexesToAdd = [];
               node.pks.all({ extract: true }, function (err, json) {
                 _(json.merkle.leaves).keys().forEach(function(key){
@@ -54,14 +54,11 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                   }
                 });
                 var hashes = [];
-                async.forEach(indexesToAdd, function(index, callback){
+                async.forEachSeries(indexesToAdd, function(index, callback){
                   hashes.push(json.merkle.leaves[index].hash);
                   PublicKey.persistFromRaw(json.merkle.leaves[index].value.pubkey, callback);
                 }, function(err, result){
-                  merkle.pushMany(hashes);
-                  merkle.save(function (err) {
-                    next(err);
-                  });
+                  next(err);
                 });
               });
             }
@@ -95,7 +92,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                 },
                 function (am, cb){
                   amendments[amNumber] = am.raw;
-                  console.log('ID: %s-%s', amNumber, sha1(amendments[amNumber]).toUpperCase());
+                  // console.log('ID: %s-%s', amNumber, sha1(amendments[amNumber]).toUpperCase());
                   node.hdc.amendments.promoted(amNumber + 1, cb);
                 },
                 function (am, cb){
@@ -161,7 +158,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
   }
 
   function applyMemberships(amendments, amNumber, node, cb) {
-    console.log('Applying memberships for amendment #%s', amNumber);
+    // console.log('Applying memberships for amendment #%s', amNumber);
     async.waterfall([
       function (next) {
         Merkle.forMembership(amNumber - 1, next);
@@ -175,7 +172,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
       function (json, next){
         Merkle.forMembership(amNumber - 1, function (err, prevMerkle) {
           if(prevMerkle.root() != json.merkle.levels[0][0]){
-            console.log('MS CHANGES (%s != %s)', prevMerkle.root(), json.merkle.levels[0][0]);
+            // console.log('MS CHANGES (%s != %s)', prevMerkle.root(), json.merkle.levels[0][0]);
             var difff = [];
             async.waterfall([
               function (callback2) {
@@ -201,7 +198,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
   }
 
   function applyTargetedMemberships(merkleUrlLeaves, isToApply, done) {
-    console.log("Source memberships: %s", _(merkleUrlLeaves).size());
+    // console.log("Source memberships: %s", _(merkleUrlLeaves).size());
     async.forEachSeries(_(merkleUrlLeaves).keys(), function(key, callback){
       var msObj = merkleUrlLeaves[key];
       if(isToApply(msObj.hash)){
@@ -223,17 +220,15 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
   }
 
   function applyVotes(amendments, amNumber, number, json, node, cb) {
-    console.log('Applying votes for amendment #%s', amNumber);
-    console.log("Signatures: %s", _(json.merkle.leaves).size());
+    // console.log('Applying votes for amendment #%s', amNumber);
+    // console.log("Signatures: %s", _(json.merkle.leaves).size());
     async.forEachSeries(_(json.merkle.leaves).keys(), function(key, callback){
       var vote = json.merkle.leaves[key];
       VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {
         // Promotion time
         StrategyService.tryToPromote(am, function (err) {
-          if(err){
-            console.error(err);
-          }
-          else number++;
+          if(!err)
+            number++;
           callback();
         });
       });

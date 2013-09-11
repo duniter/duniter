@@ -24,16 +24,16 @@ module.exports = function (pgp, currency, conf) {
   this.promotedNumber = function (req, res) {
     async.waterfall([
       function (next){
-        ParametersService.getAmendmentNumber(next);
+        ParametersService.getAmendmentNumber(req, next);
       }
-    ], function (err, result) {
+    ], function (err, number) {
       if(err){
         res.send(400, err);
         return;
       }
       async.waterfall([
         function (callback){
-          Amendment.findPromotedByNumber(matches[1], callback);
+          Amendment.findPromotedByNumber(number, callback);
         }
       ], function (err, current) {
         showAmendment(res, current);

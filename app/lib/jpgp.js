@@ -87,7 +87,16 @@ function JPGP() {
     // Do
     try{
       var signatures = openpgp.read_message(this.signature);
-      sig = signatures[2];
+      if(signatures.length >= 3){
+        sig = signatures[2];
+      }
+      else if(signatures.length == 1){
+        sig = signatures[0];
+        sig.text = this.data;
+      }
+      else{
+        throw new Error('No signature found');
+      }
       var verified = sig.verifySignature();
       if(!verified){
         err = "Signature does not match.";
@@ -113,8 +122,9 @@ function JPGP() {
         }
       }
     }
-    catch(err){
+    catch(ex){
       verified = false;
+      err = ex.toString();
     }
     if(err && sig && sig.text){
       console.error('==========================================================');

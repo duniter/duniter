@@ -70,7 +70,7 @@ module.exports.add = function (req, res) {
       ParametersService.getPubkey(req, next);
     },
     function (aaPubkey, aaSignature, next){
-      PublicKey.verify(aaPubkey, aaSignature, function (err) {
+      PublicKey.verify(aaPubkey, aaSignature, function (err, verified) {
         next(err, aaPubkey, aaSignature);
       });
     },

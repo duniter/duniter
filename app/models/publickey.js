@@ -133,22 +133,27 @@ PublicKeySchema.statics.search = function (motif, done) {
 PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
   async.waterfall([
     function (next){
-      var keyID = jpgp().signature(signature).issuer();
-      var cert = jpgp().certificate(asciiArmored);
-      var fpr = cert.fingerprint;
-      if(!keyID){
-        next('Cannot find issuer of signature');
-        return;
+      try{
+        var keyID = jpgp().signature(signature).issuer();
+        var cert = jpgp().certificate(asciiArmored);
+        var fpr = cert.fingerprint;
+        if(!keyID){
+          next('Cannot find issuer of signature');
+          return;
+        }
+        if(!fpr){
+          next('Cannot extract fingerprint from certificate');
+          return;
+        }
+        if(fpr.indexOf(keyID) == -1){
+          next('This certificate is not owned by the signatory');
+          return;
+        }
+        next();
       }
-      if(!fpr){
-        next('Cannot extract fingerprint from certificate');
-        return;
+      catch(ex){
+        next(ex.toString());
       }
-      if(fpr.indexOf(keyID) == -1){
-        next('This certificate is not owned by the signatory');
-        return;
-      }
-      next();
     },
     function (next){
       jpgp()

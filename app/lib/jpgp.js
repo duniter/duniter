@@ -17,7 +17,14 @@ function JPGP() {
   };
 
   this.certificate = function(asciiArmored) {
-    var cert = openpgp.read_publicKey(asciiArmored)[0];
+    var readKeys = openpgp.read_publicKey(asciiArmored);
+    if(readKeys.length == 0){
+      throw new Error('No key found in ASCII armored message');
+    }
+    if(readKeys.length > 1){
+      throw new Error('Multiple keys found in ASCII armored message');
+    }
+    var cert = readKeys[0];
     var fpr = hexstrdump(cert.publicKeyPacket.getFingerprint()).toUpperCase();
     var uids = [];
     cert.userIds.forEach(function (uid) {

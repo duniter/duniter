@@ -4,14 +4,18 @@ var mongoose = require('mongoose');
 module.exports = {
 
   getTransaction: function (req, callback) {
+    this.getTransactionFromRaw(req.body && req.body.transaction, req.body && req.body.signature, callback);
+  },
+
+  getTransactionFromRaw: function (transaction, signature, callback) {
     // Parameters
-    if(!(req.body && req.body.transaction && req.body.signature)){
+    if(!(transaction && signature)){
       callback('Requires a transaction + signature');
       return;
     }
 
     // Check signature's key ID
-    var keyID = jpgp().signature(req.body.signature).issuer();
+    var keyID = jpgp().signature(signature).issuer();
     if(!(keyID && keyID.length == 16)){
       callback('Cannot identify signature issuer`s keyID');
       return;
@@ -27,7 +31,7 @@ module.exports = {
         callback('Corresponding Public Key not found.');
         return;
       }
-      callback(null, keys[0], req.body.transaction + req.body.signature);
+      callback(null, keys[0], transaction + signature);
     });
   },
 

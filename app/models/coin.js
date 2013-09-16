@@ -30,7 +30,7 @@ CoinSchema.statics.findByOwner = function (fingerprint, done) {
 
 CoinSchema.statics.findByCoinID = function (coindID, done) {
 
-  this.find({ id: new RegExp('^'+coindID) }).exec(function (err, coins) {
+  this.find({ id: new RegExp('^'+coindID+'-') }).exec(function (err, coins) {
     if(err || coins.length == 0){
       done('Coin not found');
       return;

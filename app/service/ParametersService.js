@@ -58,7 +58,7 @@ module.exports = {
       callback("Count format is incorrect, must be an upper-cased SHA1 hash");
       return;
     }
-    callback(null, matches[1]);
+    callback(null, matches2[1]);
   },
 
   getTransactionID: function (req, callback) {

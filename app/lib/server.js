@@ -202,9 +202,7 @@ module.exports.express = {
     app.post(   '/hdc/community/join',                            hdc.community.join);
     app.get(    '/hdc/community/memberships',                     hdc.community.memberships);
     app.get(    '/hdc/community/votes',                           hdc.community.currentVotes);
-    app.post(   '/hdc/transactions/process/issuance',             hdc.transactions.processTx.issuance);
-    app.post(   '/hdc/transactions/process/transfert',            hdc.transactions.processTx.transfert);
-    app.post(   '/hdc/transactions/process/fusion',               hdc.transactions.processTx.fusion);
+    app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
     app.get(    '/hdc/transactions/all',                          hdc.transactions.all);
     app.get(    '/hdc/transactions/keys',                         hdc.transactions.keys);
     app.get(    '/hdc/transactions/last',                         hdc.transactions.lastAll);

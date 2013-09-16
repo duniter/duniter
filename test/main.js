@@ -410,21 +410,21 @@ function vote (voteFile, done) {
 }
 
 function issue (txFile, done) {
-  post('/hdc/transactions/process/issuance', {
+  post('/hdc/transactions/process', {
     "transaction": txFile.substr(0, txFile.indexOf('-----BEGIN')),
     "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
   }, done);
 }
 
 function transfert (txFile, done) {
-  post('/hdc/transactions/process/transfert', {
+  post('/hdc/transactions/process', {
     "transaction": txFile.substr(0, txFile.indexOf('-----BEGIN')),
     "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
   }, done);
 }
 
 function fusion (txFile, done) {
-  post('/hdc/transactions/process/fusion', {
+  post('/hdc/transactions/process', {
     "transaction": txFile.substr(0, txFile.indexOf('-----BEGIN')),
     "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
   }, done);

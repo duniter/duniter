@@ -39,9 +39,7 @@
       * [community/join](#communityjoin)
       * [community/memberships](#communitymemberships)
       * [community/votes](#communityvotes)
-      * [transactions/process/issuance](#transactionsprocessissuance)
-      * [transactions/process/transfert](#transactionsprocesstransfert)
-      * [transactions/process/fusion](#transactionsprocessfusion)
+      * [transactions/process/issuance](#transactionsprocess)
       * [transactions/all](#transactionsall)
       * [transactions/keys](#transactionskeys)
       * [transactions/last](#transactionslast)
@@ -105,9 +103,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |   |-- memberships
         |   `-- votes
         `-- transactions/
-            |-- process/
-            |   |-- issuance
-            |   `-- transfert
+            |-- process
             |-- all
             |-- keys
             |-- last/
@@ -1460,10 +1456,10 @@ Merkle URL leaf: signature
 }
 ```
 
-#### `transactions/process/issuance`
+#### `transactions/process`
 **Goal**
 
-POST an issuance transaction.
+POST a transaction.
 
 **Parameters**
 
@@ -1474,7 +1470,7 @@ Name | Value | Method
 
 **Returns**
 
-The issuance transaction and its signature.
+The recorded transaction and its signature.
 ```json
 {
   "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
@@ -1499,94 +1495,6 @@ The issuance transaction and its signature.
       }
     ],
     "comment": "Universal Dividend"
-  }
-}
-```
-
-#### `transactions/process/transfert`
-**Goal**
-
-POST a transfert transaction.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`transaction` | The raw transaction. | POST
-`signature` | The signature of the `transaction`. | POST
-
-**Returns**
-
-The transfert transaction and its signature.
-```json
-{
-  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 92,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-    "type": "TRANSFERT",
-    "coins": [
-      {
-        "id": "10-1-2-F-14",
-        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
-      },{
-        // Other coin
-      },{
-        // ...
-      }
-    ],
-    "comment": "Paying LoLCat's food."
-  }
-}
-```
-
-#### `transactions/process/fusion`
-**Goal**
-
-POST a fusion transaction.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`transaction` | The raw transaction. | POST
-`signature` | The signature of the `transaction`. | POST
-
-**Returns**
-
-The fusion transaction and its signature.
-```json
-{
-  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 14,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "FUSION",
-    "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-F-14",
-        "transaction_id": ""
-      },{
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1",
-        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-      },{
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1",
-        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-      }
-    ],
-    "comment": "Too much coins ! Making big one."
   }
 }
 ```

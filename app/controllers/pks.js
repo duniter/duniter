@@ -50,7 +50,7 @@ module.exports.lookup = function (req, res) {
             cleaned.push(k.json());
           });
           res.writeHead(200);
-          res.end(JSON.stringify({"keys": cleaned}));
+          res.end(JSON.stringify({"keys": cleaned}, null, "  "));
           break;
         default:
           res.send(501, 'Operation not supported.');

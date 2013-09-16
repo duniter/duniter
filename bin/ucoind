@@ -42,6 +42,46 @@ program
   }));
 
 program
+  .command('manage-key [key]')
+  .description('Add given key to stack of managed keys of this node')
+  .action(connect(function (key, conf) {
+    handleKey(key, true, 'Key %s is now managed');
+  }));
+
+program
+  .command('forget-key [key]')
+  .description('Remove given key of the managed keys\' stack of this node')
+  .action(connect(function (key, conf) {
+    handleKey(key, false, 'Key %s no more managed from now');
+  }));
+
+function handleKey (key, isManaged, message) {
+  key = key || "";
+  key = key.toUpperCase();
+  async.waterfall([
+    function (next){
+      var matches = key.match(/^\w{40}$/);
+      if(!matches){
+        next("Bad key must be a 40 characters SHA-1 hash");
+        return;
+      }
+      next();
+    },
+    function (next) {
+      mongoose.model('Key').setManaged(key, isManaged, next);
+    }
+  ], function (err, result) {
+    if(err){
+      console.error('Error: %s', err);
+      server.database.disconnect();
+      return;
+    }
+    console.log(message , key);
+    server.database.disconnect();
+  });
+}
+
+program
   .command('config')
   .description('Register configuration in database')
   .action(connect(function (conf) {

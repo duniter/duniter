@@ -13,11 +13,9 @@ var KeySchema = new Schema({
 KeySchema.statics.setSeenTX = function(tx, seen, done){
   async.waterfall([
     function (next){
-      console.log('KEY %s', tx.sender);
       mongoose.model('Key').setSeen(tx.sender, true, next);
     },
     function (next){
-      console.log('KEY %s', tx.recipient);
       mongoose.model('Key').setSeen(tx.recipient, true, next);
     }
   ], done);
@@ -34,11 +32,9 @@ KeySchema.statics.setSeen = function(fingerprint, seen, done){
     key.seen = seen;
     async.waterfall([
       function (next){
-      console.log('SAVEING1...');
         key.save(next);
       },
       function (obj, code, next){
-      console.log('SAVEING1...');
         updateMerkle(key, next);
       }
     ], done);
@@ -56,11 +52,9 @@ KeySchema.statics.setManaged = function(fingerprint, managed, done){
     key.managed = managed;
     async.waterfall([
       function (next){
-      console.log('SAVEING2...');
         key.save(next);
       },
       function (obj, code, next){
-      console.log('SAVEING2...');
         updateMerkle(key, next);
       }
     ], done);
@@ -68,16 +62,13 @@ KeySchema.statics.setManaged = function(fingerprint, managed, done){
 }
 
 function updateMerkle (key, done) {
-      console.log('UPDATE MERKLE...');
   async.waterfall([
     function (next){
       mongoose.model('Merkle').keys(next);
     },
     function (merkle, next){
-      console.log('SAVINGD MERKLE...');
       merkle.push(key.fingerprint);
       merkle.save(function (err) {
-        console.log('SAVED MERKLE %s', err);
         next(err);
       });
     }

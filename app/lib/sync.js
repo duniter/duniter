@@ -7,6 +7,7 @@ var Membership = mongoose.model('Membership');
 var Amendment  = mongoose.model('Amendment');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
+var Key        = mongoose.model('Key');
 var vucoin     = require('vucoin');
 
 module.exports = function Synchroniser (host, port, authenticated, currency) {
@@ -34,135 +35,173 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
           next();
         },
 
-        //============
-        // Public Keys
-        //============
-        function (next){
-          Merkle.forPublicKeys(next);
-        },
-        function (merkle, next) {
-          node.pks.all({}, function (err, json) {
-            var rm = new NodesMerkle(json);
-            if(rm.root() != merkle.root()){
-              // console.log('Merkles for public keys: differences !');
-              var indexesToAdd = [];
-              node.pks.all({ extract: true }, function (err, json) {
-                _(json.leaves).keys().forEach(function(key){
-                  var leaf = json.leaves[key];
-                  if(merkle.leaves().indexOf(leaf.hash) == -1){
-                    indexesToAdd.push(key);
-                  }
-                });
-                var hashes = [];
-                async.forEachSeries(indexesToAdd, function(index, callback){
-                  var keytext = json.leaves[index].value.pubkey;
-                  var keysign = json.leaves[index].value.signature;
-                  async.waterfall([
-                    function (cb){
-                      PublicKey.verify(keytext, keysign, cb);
-                    },
-                    function (verified, cb){
-                      if(!verified){
-                        cb('Key was not verified by its signature');
-                        return;
-                      }
-                      hashes.push(json.leaves[index].hash);
-                      PublicKey.persistFromRaw(keytext, keysign, cb);
-                    }
-                  ], callback);
-                }, function(err, result){
-                  next(err);
-                });
-              });
-            }
-            else next();
-          });
-        },
+        // //============
+        // // Public Keys
+        // //============
+        // function (next){
+        //   Merkle.forPublicKeys(next);
+        // },
+        // function (merkle, next) {
+        //   node.pks.all({}, function (err, json) {
+        //     var rm = new NodesMerkle(json);
+        //     if(rm.root() != merkle.root()){
+        //       // console.log('Merkles for public keys: differences !');
+        //       var indexesToAdd = [];
+        //       node.pks.all({ extract: true }, function (err, json) {
+        //         _(json.leaves).keys().forEach(function(key){
+        //           var leaf = json.leaves[key];
+        //           if(merkle.leaves().indexOf(leaf.hash) == -1){
+        //             indexesToAdd.push(key);
+        //           }
+        //         });
+        //         var hashes = [];
+        //         async.forEachSeries(indexesToAdd, function(index, callback){
+        //           var keytext = json.leaves[index].value.pubkey;
+        //           var keysign = json.leaves[index].value.signature;
+        //           async.waterfall([
+        //             function (cb){
+        //               PublicKey.verify(keytext, keysign, cb);
+        //             },
+        //             function (verified, cb){
+        //               if(!verified){
+        //                 cb('Key was not verified by its signature');
+        //                 return;
+        //               }
+        //               hashes.push(json.leaves[index].hash);
+        //               PublicKey.persistFromRaw(keytext, keysign, cb);
+        //             }
+        //           ], callback);
+        //         }, function(err, result){
+        //           next(err);
+        //         });
+        //       });
+        //     }
+        //     else next();
+        //   });
+        // },
 
-        //============
-        // Amendments
-        //============
+        // //============
+        // // Amendments
+        // //============
+        // function (next){
+        //   Amendment.nextNumber(next);
+        // },
+        // function (number, next) {
+        //   node.hdc.amendments.current(function (err, json) {
+        //     if(err){
+        //       next();
+        //       return;
+        //     }
+        //     remoteCurrentNumber = parseInt(json.number);
+        //     amendments[remoteCurrentNumber] = json.raw;
+        //     var toGetNumbers = _.range(number, remoteCurrentNumber);
+        //     async.forEachSeries(toGetNumbers, function(amNumber, callback){
+        //       console.log("Fetching amendment #%s ...", amNumber);
+        //       async.waterfall([
+        //         function (cb){
+        //           if(!amendments[amNumber])
+        //             node.hdc.amendments.promoted(amNumber, cb);
+        //           else
+        //             cb(null, { raw: amendments[amNumber] });
+        //         },
+        //         function (am, cb){
+        //           amendments[amNumber] = am.raw;
+        //           // console.log('ID: %s-%s', amNumber, sha1(amendments[amNumber]).toUpperCase());
+        //           node.hdc.amendments.promoted(amNumber + 1, cb);
+        //         },
+        //         function (am, cb){
+        //           amendments[amNumber + 1] = am.raw;
+        //           // _(amendments).keys().forEach(function (key) {
+        //           //   console.log('=====> AM %s = %s', key, amendments[key] ? 'OK' : amendments[key]);
+        //           // });
+        //           cb();
+        //         },
+        //         function (cb) {
+        //           applyMemberships(amendments, amNumber, node, cb);
+        //         },
+        //         function (cb) {
+        //           node.hdc.amendments.view.signatures(amNumber + 1, sha1(amendments[amNumber + 1]).toUpperCase(), { extract: true }, cb);
+        //         },
+        //         function (json, cb){
+        //           applyVotes(amendments, amNumber, number, json, node, cb);
+        //         },
+        //         function (nextNumber, cb) {
+        //           number = nextNumber;
+        //           cb();
+        //         }
+        //       ], function (err, result) {
+        //         callback(err);
+        //       });
+        //     }, function(err, result){
+        //       next(err, number);
+        //     });
+        //   });
+        // },
+        // function (number, next) {
+        //   if(number == remoteCurrentNumber){
+        //     console.log('Synchronise current #%s ...', remoteCurrentNumber);
+        //     // console.log(amendments[remoteCurrentNumber] + '---------------');
+        //     // Synchronise remote's current
+        //     async.waterfall([
+        //       function (callback){
+        //         applyMemberships(amendments, number, node, callback);
+        //       },
+        //       function (callback){
+        //         node.hdc.community.votes({ extract: true }, callback);
+        //       },
+        //       function (json, callback) {
+        //         applyVotes(amendments, number, number, json, node, callback);
+        //       }
+        //     ], function (err) {
+        //       next(err);
+        //     });
+        //   }
+        //   else next();
+        // },
+        // function (next) {
+        //   node.hdc.community.memberships({ extract: true }, next);
+        // },
+        // function (json, next) {
+        //   applyTargetedMemberships(json.leaves, function () { return true; }, next);
+        // },
+
+        //==============
+        // Transactions
+        //==============
         function (next){
-          Amendment.nextNumber(next);
+          Key.find({ managed: true }, next);
         },
-        function (number, next) {
-          node.hdc.amendments.current(function (err, json) {
-            if(err){
-              next();
-              return;
-            }
-            remoteCurrentNumber = parseInt(json.number);
-            amendments[remoteCurrentNumber] = json.raw;
-            var toGetNumbers = _.range(number, remoteCurrentNumber);
-            async.forEachSeries(toGetNumbers, function(amNumber, callback){
-              console.log("Fetching amendment #%s ...", amNumber);
-              async.waterfall([
-                function (cb){
-                  if(!amendments[amNumber])
-                    node.hdc.amendments.promoted(amNumber, cb);
-                  else
-                    cb(null, { raw: amendments[amNumber] });
-                },
-                function (am, cb){
-                  amendments[amNumber] = am.raw;
-                  // console.log('ID: %s-%s', amNumber, sha1(amendments[amNumber]).toUpperCase());
-                  node.hdc.amendments.promoted(amNumber + 1, cb);
-                },
-                function (am, cb){
-                  amendments[amNumber + 1] = am.raw;
-                  // _(amendments).keys().forEach(function (key) {
-                  //   console.log('=====> AM %s = %s', key, amendments[key] ? 'OK' : amendments[key]);
-                  // });
-                  cb();
-                },
-                function (cb) {
-                  applyMemberships(amendments, amNumber, node, cb);
-                },
-                function (cb) {
-                  node.hdc.amendments.view.signatures(amNumber + 1, sha1(amendments[amNumber + 1]).toUpperCase(), { extract: true }, cb);
-                },
-                function (json, cb){
-                  applyVotes(amendments, amNumber, number, json, node, cb);
-                },
-                function (nextNumber, cb) {
-                  number = nextNumber;
-                  cb();
-                }
-              ], function (err, result) {
-                callback(err);
-              });
-            }, function(err, result){
-              next(err, number);
-            });
-          });
-        },
-        function (number, next) {
-          if(number == remoteCurrentNumber){
-            console.log('Synchronise current #%s ...', remoteCurrentNumber);
-            // console.log(amendments[remoteCurrentNumber] + '---------------');
-            // Synchronise remote's current
+        function (keys, next) {
+          async.forEachSeries(keys, function (key, onKeysDone) {
             async.waterfall([
-              function (callback){
-                applyMemberships(amendments, number, node, callback);
+              function (onRootsGotten){
+                async.parallel({
+                  local: function(cb){
+                    Merkle.txOfSender(key.fingerprint, cb);
+                  },
+                  remote: function(cb){
+                    node.hdc.transactions.sender.get(key.fingerprint, {}, cb);
+                  }
+                }, onRootsGotten);
               },
-              function (callback){
-                node.hdc.community.votes({ extract: true }, callback);
-              },
-              function (json, callback) {
-                applyVotes(amendments, number, number, json, node, callback);
+              function (results, onKeySyncFinished){
+                var rm = new NodesMerkle(results.remote);
+                if(results.local.root() == rm.root()){
+                  onKeySyncFinished();
+                  return;
+                }
+                console.log('Key %s\'s transactions not sync !', key.fingerprint);
+                async.waterfall([
+                  function (next){
+                    node.hdc.transactions.sender.get(key.fingerprint, { extract: true }, cb);
+                  },
+                  function (json, next){
+                  }
+                ], onKeySyncFinished);
               }
-            ], function (err) {
-              next(err);
-            });
-          }
-          else next();
+            ], onKeysDone);
+          }, next);
         },
-        function (next) {
-          node.hdc.community.memberships({ extract: true }, next);
-        },
-        function (json, next) {
-          applyTargetedMemberships(json.leaves, function () { return true; }, next);
-        }
       ], function (err, result) {
         console.log('Sync finished.');
         done(err);

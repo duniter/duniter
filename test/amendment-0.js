@@ -62,11 +62,11 @@ describe('Amendment', function(){
     });
 
     it('should have no voters hash', function(){
-      assert.not.exist(amTest.votersRoot);
+      should.not.exist(amTest.votersRoot);
     });
 
     it('should have no voters signatures root', function(){
-      assert.not.exist(amTest.votersSigRoot);
+      should.not.exist(amTest.votersSigRoot);
     });
 
     it('should have the following 0 new voters', function(){

@@ -38,6 +38,7 @@ TransactionSchema.methods = {
   },
   
   parse: function(rawTX, callback) {
+    rawTX = rawTX.unix2dos();
     var tx = null;
     var sigIndex = rawTX.lastIndexOf("-----BEGIN");
     if(~sigIndex){

@@ -23,6 +23,18 @@ module.exports.get = function (currency) {
         tx.verify(currency, next);
       },
       function (verified, next){
+        if(!verified){
+          next('Bad document structure');
+          return;
+        }
+        Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err) {
+          if(err)
+            next();
+          else
+            next('Transaction already processed');
+        });
+      },
+      function (next){
         tx.verifySignature(pubkey.raw, next);
       }
     ], function (err, verified) {
@@ -50,6 +62,13 @@ module.exports.get = function (currency) {
   function issue(tx, callback) {
     async.waterfall([
       function (next){
+        Key.isManaged(tx.sender, next);
+      },
+      function (verified, next){
+        if(!verified){
+          next('Issuer\'s key not managed by this node');
+          return;
+        }
         // Get targeted AM
         Amendment.findPromotedByNumber(tx.getCoins()[0].originNumber, next);
       },
@@ -167,45 +186,96 @@ module.exports.get = function (currency) {
   }
 
   function transfert(tx, callback) {
+    var senderManaged = false;
+    var recipientManaged = false;
     async.waterfall([
-      function (next){
-        // Get last transaction
-        Transaction.findLastOf(tx.sender, function (err, lastTX) {
-          if(lastTX){
-            // Verify tx chaining
-            if(lastTX.number != tx.number - 1){
-              next('Transaction doest not follow your last one');
-              return;
-            }
-            if(lastTX.hash != tx.previousHash) {
-              next('Transaction have wrong previousHash (given ' + tx.previousHash + ', expected ' + lastTX.hash + ')');
-              return;
-            }
+      function (next) {
+        async.parallel({
+          sender: function(senderDone){
+            async.waterfall([
+              function (next){
+                Key.isManaged(tx.sender, next);
+              },
+              function (isManaged, next){
+                senderManaged = isManaged;
+                if(!isManaged){
+                  next('Sender\'s key ' + tx.sender + ' not managed by this node');
+                  return;
+                }
+                // Get last transaction
+                Transaction.findLastOf(tx.sender, function (err, lastTX) {
+                  if(lastTX){
+                    // Verify tx chaining
+                    if(lastTX.number != tx.number - 1){
+                      next('Transaction doest not follow your last one');
+                      return;
+                    }
+                    if(lastTX.hash != tx.previousHash) {
+                      next('Transaction have wrong previousHash (given ' + tx.previousHash + ', expected ' + lastTX.hash + ')');
+                      return;
+                    }
+                  }
+                  else{
+                    if(tx.number != 0){
+                      next('Transaction must have number #0 as it is your first');
+                      return;
+                    }
+                    if(tx.previousHash){
+                      next('Transaction must not have a previousHash as it is your first');
+                      return;
+                    }
+                  }
+                  next();
+                });
+              },
+              function (next){
+                // Verify each coin is owned
+                async.forEach(tx.getCoins(), function(coin, callback){
+                  Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
+                    if(err || ownership.owner != tx.sender){
+                      callback(err || 'You are not the owner of coin ' + coin.issuer + '-' + coin.number + ' (' + (coin.base * Math.pow(10, coin.power)) + '). Cannot send it.');
+                      return;
+                    }
+                    callback();
+                  })
+                }, next);
+              }
+            ], function (err) {
+              senderDone(null, err);
+            });
+          },
+          recipient: function(recipientDone){
+            async.waterfall([
+              function (next){
+                Key.isManaged(tx.recipient, next);
+              },
+              function (isManaged, next){
+                recipientManaged = isManaged;
+                if(isManaged){
+                  // Recipient managed
+                  // THT verifications
+                  next();
+                }
+                else{
+                  next('Recipient\'s key ' + tx.recipient + ' is not managed by this node');
+                }
+              }
+            ], function (err) {
+              recipientDone(null, err);
+            });
+          },
+        },
+        function(err, results) {
+          if(results.sender && senderManaged){
+            next(results.sender);
+            return;
           }
-          else{
-            if(tx.number != 0){
-              next('Transaction must have number #0 as it is your first');
-              return;
-            }
-            if(tx.previousHash){
-              next('Transaction must not have a previousHash as it is your first');
-              return;
-            }
+          if(results.recipient && recipientManaged){
+            next(results.recipient);
+            return;
           }
           next();
         });
-      },
-      function (next){
-        // Verify each coin is owned
-        async.forEach(tx.getCoins(), function(coin, callback){
-          Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
-            if(err || ownership.owner != tx.sender){
-              callback(err || 'You are not the owner of coin ' + coin.issuer + '-' + coin.number + ' (' + (coin.base * Math.pow(10, coin.power)) + '). Cannot send it.');
-              return;
-            }
-            callback();
-          })
-        }, next);
       },
       function (next){
         tx.save(next);
@@ -229,11 +299,18 @@ module.exports.get = function (currency) {
     ], function (err, result) {
       callback(err, tx);
     });
-  }  
+  }
 
   function fusion(tx, callback) {
     async.waterfall([
       function (next){
+        Key.isManaged(tx.sender, next);
+      },
+      function (verified, next){
+        if(!verified){
+          next('Issuer\'s key not managed by this node');
+          return;
+        }
         // Get last transaction
         Transaction.findLastOf(tx.sender, function (err, lastTX) {
           if(lastTX){

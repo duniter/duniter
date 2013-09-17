@@ -361,6 +361,35 @@ function ResultAPI () {
       }
     });
   };
+
+  this.checkProcessedTX = function(comment, statusCode) {
+    if(!this['transaction'])
+      this['transaction'] = 0;
+    var index = this['transaction']++;
+    var obj = this;
+    it(comment+' should '+(statusCode == 200 ? '' : 'not ')+'exist', function () {
+      var res = obj.apiRes['/hdc/transactions/process'][index].res;
+      res.should.have.status(statusCode);
+      if(statusCode == 200){
+        var json = JSON.parse(res.text);
+        json.should.have.property('signature');
+        json.should.have.property('raw');
+        json.should.have.property('transaction');
+        json.transaction.should.have.property('version');
+        json.transaction.should.have.property('currency');
+        json.transaction.should.have.property('sender');
+        json.transaction.should.have.property('number');
+        if(json.transaction.number > 0)
+          json.transaction.should.have.property('previousHash');
+        json.transaction.should.have.property('recipient');
+        json.transaction.should.have.property('type');
+        json.transaction.should.have.property('coins');
+        json.transaction.should.have.property('comment');
+        // var mHash = sha1(json.raw).toUpperCase();
+        // mHash.should.equal(hash);
+      }
+    });
+  };
 }
 
 var api = new ResultAPI();
@@ -456,6 +485,23 @@ before(function (done) {
     function (appReady, next){
       app = appReady;
       server.database.reset(next);
+    },
+    function (next){
+      var Key = mongoose.model('Key');
+      async.parallel({
+        snow: function(callback){
+          new Key({ fingerprint: "33BBFC0C67078D72AF128B5BA296CC530126F372", managed: true }).save(callback);
+        },
+        tobi: function(callback){
+          new Key({ fingerprint: "2E69197FAB029D8669EF85E82457A1587CA0ED9C", managed: true }).save(callback);
+        },
+        cat: function(callback){
+          new Key({ fingerprint: "C73882B64B7E72237A2F460CE9CAB76D19A8651E", managed: true }).save(callback);
+        },
+      },
+      function(err, results) {
+        next(err);
+      });
     },
     function (next) { get('/pks/all', next); },
     function (next) { pksAdd(pubkeySnow, pubkeySnowSig, next); },
@@ -1036,6 +1082,16 @@ describe('Checking amendments', function(){
     _(json.levels[0]).size().should.equal(1);
     json.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
+});
+
+
+
+describe('Checking TX processed -', function(){
+  api.checkProcessedTX('Issuance of Tobi (80)', 200);
+  api.checkProcessedTX('Transfert of Tobi (20)', 200);
+  api.checkProcessedTX('Fusion of Tobi (20)', 200);
+  api.checkProcessedTX('Transfert of Tobi (10)', 200);
+  api.checkProcessedTX('Issuance of Cat (110)', 200);
 });
 
 describe('Checking TX', function(){

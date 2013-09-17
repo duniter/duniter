@@ -61,6 +61,16 @@ KeySchema.statics.setManaged = function(fingerprint, managed, done){
   });
 }
 
+KeySchema.statics.isManaged = function(fingerprint, done){
+  Key.find({ fingerprint: fingerprint, managed: true }, function (err, keys) {
+    if(keys.length > 1){
+      done('More than one key managed with fingerprint ' + fingerprint);
+      return;
+    }
+    done(null, keys.length == 1);
+  });
+}
+
 function updateMerkle (key, done) {
   async.waterfall([
     function (next){

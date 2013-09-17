@@ -239,11 +239,15 @@ module.exports = function (pgp, currency, conf) {
     ], function (err, tx) {
       if(err){
         console.error(err);
-        res.send(500, err);
+        res.send(400, err);
         return;
       }
       else{
-        res.send(200, JSON.stringify(tx.json(), null, "  "));
+        res.send(200, JSON.stringify({
+          signature: tx.signature,
+          transaction: tx.json(),
+          raw: tx.getRaw()
+        }, null, "  "));
         return;
       }
     });

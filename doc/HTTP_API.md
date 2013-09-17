@@ -39,7 +39,7 @@
       * [community/join](#communityjoin)
       * [community/memberships](#communitymemberships)
       * [community/votes](#communityvotes)
-      * [transactions/process/issuance](#transactionsprocess)
+      * [transactions/process](#transactionsprocess)
       * [transactions/all](#transactionsall)
       * [transactions/keys](#transactionskeys)
       * [transactions/last](#transactionslast)

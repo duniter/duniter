@@ -175,71 +175,8 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
           Key.find({ managed: true }, next);
         },
         function (keys, next) {
-          async.forEachSeries(keys, function (key, onKeysDone) {
-            async.waterfall([
-              function (onRootsGotten){
-                async.parallel({
-                  local: function(cb){
-                    Merkle.txOfSender(key.fingerprint, cb);
-                  },
-                  remote: function(cb){
-                    node.hdc.transactions.sender.get(key.fingerprint, {}, cb);
-                  }
-                }, onRootsGotten);
-              },
-              function (results, onKeySyncFinished){
-                var rm = new NodesMerkle(results.remote);
-                if(results.local.root() == rm.root()){
-                  console.log('Transactions synced: %s == %s', results.local.root(), rm.root());
-                  onKeySyncFinished();
-                  return;
-                }
-                console.log('Key %s\'s transactions not sync !', key.fingerprint);
-                async.waterfall([
-                  function (next){
-                    node.hdc.transactions.sender.get(key.fingerprint, { extract: true }, next);
-                  },
-                  function (json, onEveryTransactionProcessed){
-                    var txNumbers = {};
-                    _(json.leaves).keys().forEach(function (key) {
-                      var txNumber = json.leaves[key].value.transaction.number;
-                      txNumbers[txNumber] = key;
-                    });
-                    var numbers = _(txNumbers).keys();
-                    numbers = _(numbers).map(function (num) {
-                      return parseInt(num);
-                    });
-                    numbers.sort(function (a,b) {
-                      return a - b;
-                    });
-                    async.forEachSeries(numbers, function(number, onTransactionProcessed){
-                      var key = txNumbers[number];
-                      var transaction = json.leaves[key].value.transaction;
-                      var signature = json.leaves[key].value.signature;
-                      var raw = json.leaves[key].value.raw;
-                      async.waterfall([
-                        function (next){
-                          ParametersService.getTransactionFromRaw(raw, signature, next);
-                        },
-                        function (pubkey, signedTx, next) {
-                          Transaction.find({ sender: transaction.sender, number: transaction.number }, function (err, txs) {
-                            next(err, pubkey, signedTx, txs);
-                          });
-                        },
-                        function (pubkey, signedTx, txs, next){
-                          if(txs.length == 0){
-                            console.log(transaction.sender, transaction.number);
-                            TransactionService.process(pubkey, signedTx, next);
-                            return;
-                          }
-                          next();
-                        }
-                      ], onTransactionProcessed);
-                    }, onEveryTransactionProcessed);
-                  }
-                ], onKeySyncFinished);
-              }
-            ], onKeysDone);
+          async.forEachSeries(keys, function (key, onKeyDone) {
+            syncTransactionsOfKey(node, key.fingerprint, onKeyDone);
           }, next);
         },
       ], function (err, result) {
@@ -247,6 +184,180 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
         done(err);
       });
     })
+  }
+
+  function syncTransactionsOfKey (node, keyFingerprint, onKeyDone) {
+    console.log('------------> %s', keyFingerprint);
+    async.waterfall([
+
+      //==============
+      // Sent TXs
+      //==============
+      function (onRootsGotten){
+        async.parallel({
+          local: function(cb){
+            Merkle.txOfSender(keyFingerprint, cb);
+          },
+          remote: function(cb){
+            node.hdc.transactions.sender.get(keyFingerprint, {}, cb);
+          }
+        }, onRootsGotten);
+      },
+      function (results, onKeySentTransactionFinished){
+        var rm = new NodesMerkle(results.remote);
+        if(results.local.root() == rm.root()){
+          console.log('Transactions synced: %s == %s', results.local.root(), rm.root());
+          onKeySentTransactionFinished();
+          return;
+        }
+        console.log('Key %s\'s SENT transactions not sync ! %s != %s', keyFingerprint, results.local.root(), rm.root());
+        async.waterfall([
+          function (next){
+            node.hdc.transactions.sender.get(keyFingerprint, { extract: true }, next);
+          },
+          function (json, onEveryTransactionProcessed){
+            var txNumbers = {};
+            _(json.leaves).keys().forEach(function (key) {
+              var txNumber = json.leaves[key].value.transaction.number;
+              txNumbers[txNumber] = key;
+            });
+            var numbers = _(txNumbers).keys();
+            numbers = _(numbers).map(function (num) {
+              return parseInt(num);
+            });
+            numbers.sort(function (a,b) {
+              return a - b;
+            });
+            async.forEachSeries(numbers, function(number, onSentTransactionsProcessed){
+              var k = txNumbers[number];
+              var transaction = json.leaves[k].value.transaction;
+              var signature = json.leaves[k].value.signature;
+              var raw = json.leaves[k].value.raw;
+              var i = 0;
+              async.whilst(
+                function (){ return transaction.type != 'ISSUANCE' && i < transaction.coins.length; },
+                function (callback){
+                  var coin = transaction.coins[i];
+                  // console.log('Coin #%s = %s', i, JSON.stringify(coin));
+                  var txIssuer = coin.transaction_id.substring(0, 40);
+                  async.waterfall([
+                    function (next){
+                      if(txIssuer == keyFingerprint){
+                        next(null, false);
+                        return;
+                      }
+                      Key.isManaged(txIssuer, next);
+                    },
+                    function  (isOtherManagedKey, next) {
+                      if(isOtherManagedKey){
+                        syncTransactionsOfKey(node, txIssuer, next);
+                        return;
+                      }
+                      next();
+                    }
+                  ], function (err) {
+                    i++;
+                    callback(err);
+                  });
+                },
+                function (err) {
+                  // console.log("Whilst done, key %s, tx #", keyFingerprint, number);
+                  async.waterfall([
+                    function (next){
+                      ParametersService.getTransactionFromRaw(raw, signature, next);
+                    },
+                    function (pubkey, signedTx, next) {
+                      Transaction.find({ sender: transaction.sender, number: transaction.number }, function (err, txs) {
+                        next(err, pubkey, signedTx, txs);
+                      });
+                    },
+                    function (pubkey, signedTx, txs, next){
+                      if(txs.length == 0){
+                        console.log(transaction.sender, transaction.number);
+                        TransactionService.process(pubkey, signedTx, next);
+                        return;
+                      }
+                      next();
+                    }
+                  ], onSentTransactionsProcessed);
+                }
+              );
+            }, onEveryTransactionProcessed);
+          }
+        ], onKeySentTransactionFinished);
+      },
+
+
+      //==============
+      // Received TXs
+      //==============
+      function (onRootsGotten){
+        async.parallel({
+          local: function(cb){
+            Merkle.txToRecipient(keyFingerprint, cb);
+          },
+          remote: function(cb){
+            node.hdc.transactions.recipient(keyFingerprint, {}, cb);
+          }
+        }, onRootsGotten);
+      },
+      function (results, onKeySentTransactionFinished){
+        var rm = new NodesMerkle(results.remote);
+        if(results.local.root() == rm.root()){
+          console.log('Transactions synced: %s == %s', results.local.root(), rm.root());
+          onKeySentTransactionFinished();
+          return;
+        }
+        console.log('Key %s\'s RECEIVED transactions not sync ! %s != %s', keyFingerprint, results.local.root(), rm.root());
+        console.log(results.local.leaves());
+        async.waterfall([
+          function (next){
+            node.hdc.transactions.recipient(keyFingerprint, { extract: true }, next);
+          },
+          function (json, onEveryTransactionProcessed){
+            var txNumbers = {};
+            _(json.leaves).keys().forEach(function (key) {
+              var txNumber = json.leaves[key].value.transaction.number;
+              txNumbers[txNumber] = key;
+            });
+            var numbers = _(txNumbers).keys();
+            numbers = _(numbers).map(function (num) {
+              return parseInt(num);
+            });
+            numbers.sort(function (a,b) {
+              return a - b;
+            });
+            async.forEachSeries(numbers, function(number, onSentTransactionsProcessed){
+              var key = txNumbers[number];
+              var transaction = json.leaves[key].value.transaction;
+              var signature = json.leaves[key].value.signature;
+              var raw = json.leaves[key].value.raw;
+              async.waterfall([
+                function (next){
+                  ParametersService.getTransactionFromRaw(raw, signature, next);
+                },
+                function (pubkey, signedTx, next) {
+                  Transaction.find({ sender: transaction.sender, number: transaction.number }, function (err, txs) {
+                    next(err, pubkey, signedTx, txs);
+                  });
+                },
+                function (pubkey, signedTx, txs, next){
+                  if(txs.length == 0){
+                    console.log(transaction.sender, transaction.number);
+                    TransactionService.process(pubkey, signedTx, next);
+                    return;
+                  }
+                  next();
+                }
+              ], onSentTransactionsProcessed);
+            }, onEveryTransactionProcessed);
+          }
+        ], onKeySentTransactionFinished);
+      }
+    ], function (err, res) {
+      console.log('<------------ %s', keyFingerprint);
+      onKeyDone(err, res);
+    });
   }
 
   function applyMemberships(amendments, amNumber, node, cb) {

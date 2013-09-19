@@ -445,6 +445,46 @@ function ResultAPI () {
       }
     });
   };
+
+  this.postPeering = function(comment, statusCode, issuer) {
+    if(!this['peeringPeers'])
+      this['peeringPeers'] = 0;
+    var index = this['peeringPeers']++;
+    var obj = this;
+    it(comment+' should '+(statusCode == 200 ? '' : 'not ')+'exist', function () {
+      var res = obj.apiRes['/ucg/peering/peers'][index].res;
+      res.should.have.status(statusCode);
+      if(statusCode == 200){
+        var json = JSON.parse(res.text);
+        json.should.have.property('version');
+        json.should.have.property('currency');
+        json.should.have.property('fingerprint');
+        json.should.have.property('dns');
+        json.should.have.property('ipv4');
+        json.should.have.property('ipv6');
+        json.should.have.property('port');
+        json.fingerprint.should.equal(issuer);
+      }
+    });
+  };
+
+  this.getPeering = function(comment, leavesCount, root) {
+    if(!this['peeringPeers'])
+      this['peeringPeers'] = 0;
+    var index = this['peeringPeers']++;
+    var obj = this;
+    it('expect ' + comment, function () {
+      var res = obj.apiRes['/ucg/peering/peers'][index].res;
+      var json = JSON.parse(res.text);
+      res.should.have.status(200);
+      isMerkleNodesResult(json);
+      json.leavesCount.should.equal(leavesCount);
+      if(root)
+        json.levels[0][0].should.equal(root);
+      else
+        _(json.levels[0]).size().should.equal(0);
+    });
+  };
 }
 
 var api = new ResultAPI();
@@ -1284,6 +1324,11 @@ describe('THT', function(){
   api.fprTHT('GET for FPR', '33BBFC0C67078D72AF128B5BA296CC530126F372', 404);
   api.fprTHT('GET for FPR', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
 });
+
+// describe('Peering', function(){
+//   api.postPeering('POST for Cat should be ok', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+//   api.getPeering('GET for Merkle', 1, '5AD4313941BA2AB7B0F0E5578AEB6AB32039964F');
+// });
 
 function isMerkleNodesResult (json) {
   isMerkleResult(json);

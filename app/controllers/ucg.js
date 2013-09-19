@@ -191,7 +191,7 @@ module.exports = function (pgp, currency, conf) {
         res.send(500, err);
         return;
       }
-      merkleDone(req, res, json);
+      MerkleService.merkleDone(req, res, json);
     });
   }
 
@@ -340,6 +340,23 @@ module.exports = function (pgp, currency, conf) {
       }
       else res.end(JSON.stringify(entry.json()));
     });
+  },
+
+  this.thtGET = function(req, res) {
+    async.waterfall([
+      function (next){
+        Merkle.THTEntries(next);
+      },
+      function (merkle, next){
+        MerkleService.processForURL(req, merkle, Merkle.mapForTHTEntries, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      MerkleService.merkleDone(req, res, json);
+    });
   }
 
   function givePeers (criterias, req, res) {
@@ -385,12 +402,4 @@ module.exports = function (pgp, currency, conf) {
   }
   
   return this;
-}
-
-function merkleDone(req, res, json) {
-  if(req.query.nice){
-    res.setHeader("Content-Type", "text/plain");
-    res.end(JSON.stringify(json, null, "  "));
-  }
-  else res.end(JSON.stringify(json));
 }

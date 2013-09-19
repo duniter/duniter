@@ -182,7 +182,7 @@ module.exports.express = {
     app.get(    '/ucg/peering/peers/downstream/:fingerprint',     ucg.downstreamKey);
     app.post(   '/ucg/peering/forward',                           ucg.forward);
     app.post(   '/ucg/peering/status',                            notImplemented);
-    app.get(    '/ucg/tht',                                       notImplemented);
+    app.get(    '/ucg/tht',                                       ucg.thtGET);
     app.post(   '/ucg/tht',                                       ucg.thtPOST);
     app.get(    '/ucg/tht/:fpr',                                  notImplemented);
     app.get(    '/hdc/amendments/current',                        hdc.amendments.current);

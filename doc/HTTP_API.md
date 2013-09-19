@@ -128,6 +128,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
+* `ucg/tht (GET)`
 * `ucg/peering/peers (GET)`
 * `hdc/amendments/view/[AMENDMENT_ID]/memberships`
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
@@ -248,6 +249,7 @@ Here is a summup of such rules:
 Merkle URL | Leaf | Sort
 ---------- | ---- | ----
 `pks/all` | Fingerprint of the key | By fingerprint string sort, ascending.
+`ucg/tht (GET)` | Hash of the THT entry + signature | By hash string sort, ascending.
 `ucg/peering/peers (GET)` | Hash of the peering entry + signature | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/memberships` | Hash of the membership + signature | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/members` | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
@@ -778,6 +780,59 @@ The whole THT entries (may be big).
 }
 ```
 
+#### `ucg/tht (GET)`
+**Goal**
+
+Merkle URL refering to THT entries.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
+  }
+}
+```
+
+Merkle URL leaf: THT entry
+```json
+{
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+    "entry": {
+      "version": "1",
+      "currency": "beta_brousouf"
+      "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "hosters": [
+        "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+        "D049002A6724D35F867F64CC087BA351C0AEB6DF"
+      ],
+      "trusts": [
+        "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+        "D049002A6724D35F867F64CC087BA351C0AEB6DF"
+      ]
+    }
+  }
+}
+```
+
 #### `ucg/tht (POST)`
 **Goal**
 
@@ -829,21 +884,17 @@ Name | Value | Method
 The requested THT entry.
 ```json
 {
-  "KEY_FINGERPRINT": {
-    "version": "1",
-    "hosters": [
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT"
-    ],
-    "trusts": [
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT"
-    ],
-    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
-  }
+  "version": "1",
+  "currency": "beta_brousouf"
+  "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+  "hosters": [
+    "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "D049002A6724D35F867F64CC087BA351C0AEB6DF"
+  ],
+  "trusts": [
+    "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "D049002A6724D35F867F64CC087BA351C0AEB6DF"
+  ]
 }
 ```
 

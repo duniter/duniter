@@ -479,4 +479,20 @@ MerkleSchema.statics.mapForMemberships = function (hashes, done) {
   });
 };
 
+MerkleSchema.statics.mapForTHTEntries = function (hashes, done) {
+  mongoose.model('THTEntry')
+  .find({ hash: { $in: hashes } })
+  .sort('hash')
+  .exec(function (err, entries) {
+    var map = {};
+    entries.forEach(function (entry){
+      map[entry.hash] = {
+        "signature": entry.signature,
+        "entry": entry.json()
+      };
+    });
+    done(null, map);
+  });
+};
+
 var Merkle = mongoose.model('Merkle', MerkleSchema);

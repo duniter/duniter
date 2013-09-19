@@ -11,6 +11,7 @@ var THTEntrySchema = new Schema({
   fingerprint: String,
   hosters: [String],
   trusts: [String],
+  signature: String,
   hash: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -20,7 +21,7 @@ THTEntrySchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "hosters", "trusts", "hash"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
@@ -28,7 +29,7 @@ THTEntrySchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "hosters", "trusts", "signature"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
       json[key] = obj[key];
     });
     return json;

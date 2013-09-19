@@ -184,7 +184,7 @@ module.exports.express = {
     app.post(   '/ucg/peering/status',                            notImplemented);
     app.get(    '/ucg/tht',                                       ucg.thtGET);
     app.post(   '/ucg/tht',                                       ucg.thtPOST);
-    app.get(    '/ucg/tht/:fpr',                                  notImplemented);
+    app.get(    '/ucg/tht/:fpr',                                  ucg.thtFPR);
     app.get(    '/hdc/amendments/current',                        hdc.amendments.current);
     app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
     app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);

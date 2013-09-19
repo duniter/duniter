@@ -7,6 +7,7 @@ var Forward   = mongoose.model('Forward');
 var Amendment = mongoose.model('Amendment');
 var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
+var THTEntry  = mongoose.model('THTEntry');
 
 module.exports = function (pgp, currency, conf) {
 
@@ -356,6 +357,27 @@ module.exports = function (pgp, currency, conf) {
         return;
       }
       MerkleService.merkleDone(req, res, json);
+    });
+  },
+
+  this.thtFPR = function(req, res) {
+    var errCode = 404;
+    async.waterfall([
+      function (next){
+        ParametersService.getFingerprint(req, function (err, fpr) {
+          if(err) errCode = 400;
+          next(err, fpr);
+        });
+      },
+      function (fingerprint, next){
+        THTEntry.getTheOne(fingerprint, next);
+      }
+    ], function (err, entry) {
+      if(err){
+        res.send(errCode, err);
+        return;
+      }
+      res.send(200, JSON.stringify(entry.json(), null, "  "));
     });
   }
 

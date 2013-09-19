@@ -486,10 +486,7 @@ MerkleSchema.statics.mapForTHTEntries = function (hashes, done) {
   .exec(function (err, entries) {
     var map = {};
     entries.forEach(function (entry){
-      map[entry.hash] = {
-        "signature": entry.signature,
-        "entry": entry.json()
-      };
+      map[entry.hash] = entry.json();
     });
     done(null, map);
   });

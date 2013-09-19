@@ -734,55 +734,6 @@ The posted status.
 #### `ucg/tht (GET)`
 **Goal**
 
-GET the whole THT entries.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The whole THT entries (may be big).
-```json
-{
-  "entries": [
-    {
-      "KEY_FINGERPRINT": {
-        "version": "1",
-        "hosters": [
-          "SOME_KEY_FINGERPRINT",
-          "SOME_KEY_FINGERPRINT",
-          "SOME_KEY_FINGERPRINT",
-          "SOME_KEY_FINGERPRINT"
-        ],
-        "trusts": [
-          "SOME_KEY_FINGERPRINT",
-          "SOME_KEY_FINGERPRINT",
-          "SOME_KEY_FINGERPRINT"
-        ],
-        "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
-      }
-    },{
-      "OTHER_KEY_FINGERPRINT": {
-        "version": "1",
-        "hosters": [
-          "SOME_KEY_FINGERPRINT",
-          "SOME_KEY_FINGERPRINT",
-        ],
-        "trusts": [
-          "SOME_KEY_FINGERPRINT",
-          "SOME_KEY_FINGERPRINT"
-        ],
-        "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
-      }
-    }
-  ]
-}
-```
-
-#### `ucg/tht (GET)`
-**Goal**
-
 Merkle URL refering to THT entries.
 
 **Parameters**
@@ -850,20 +801,19 @@ Name | Value | Method
 The posted THT entry.
 ```json
 {
-  "KEY_FINGERPRINT": {
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "entry": {
     "version": "1",
+    "currency": "beta_brousouf"
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
     "hosters": [
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT"
+      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
     ],
     "trusts": [
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT",
-      "SOME_KEY_FINGERPRINT"
-    ],
-    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
+      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
+    ]
   }
 }
 ```
@@ -884,17 +834,20 @@ Name | Value | Method
 The requested THT entry.
 ```json
 {
-  "version": "1",
-  "currency": "beta_brousouf"
-  "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-  "hosters": [
-    "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-  ],
-  "trusts": [
-    "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-  ]
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
+  "entry": {
+    "version": "1",
+    "currency": "beta_brousouf"
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "hosters": [
+      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
+    ],
+    "trusts": [
+      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
+    ]
+  }
 }
 ```
 

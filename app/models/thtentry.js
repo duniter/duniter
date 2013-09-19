@@ -32,7 +32,7 @@ THTEntrySchema.methods = {
     ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
       json[key] = obj[key];
     });
-    return json;
+    return { signature: this.signature, entry: json };
   },
   
   parse: function(rawEntryReq, callback) {
@@ -176,6 +176,22 @@ function multipleLinesExtraction(entry, rawEntry, cap) {
     else return "Wrong structure for line: '" + line + "'";
   }
   return;
+}
+
+THTEntrySchema.statics.getTheOne = function (fingerprint, done) {
+  this.find({ fingerprint: fingerprint }, function (err, entries) {
+    if(entries && entries.length == 1){
+      done(err, entries[0]);
+      return;
+    }
+    if(!entries || entries.length == 0){
+      done('No THT entry found');
+      return;
+    }
+    if(entries || entries.length > 1){
+      done('More than one THT entry found');
+    }
+  });
 }
 
 var THTEntry = mongoose.model('THTEntry', THTEntrySchema);

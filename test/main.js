@@ -33,15 +33,6 @@ var conf = {
   pgppasswd: config.server.pgp.password
 };
 
-var gets = [
-  {expect: 501, url: '/ucg/tht'},
-  {expect: 501, url: '/ucg/tht/2E69197FAB029D8669EF85E82457A1587CA0ED9C'}
-];
-
-var posts = [
-  {expect: 501, url: '/ucg/tht'},
-];
-
 function testGET(url, expect) {
   describe('GET on ' + url, function(){
     it(' expect answer ' + expect, function(done){
@@ -102,6 +93,8 @@ var forwardCat      = fs.readFileSync(__dirname + '/data/peering/cat.all', 'utf8
 var forwardCatSig   = fs.readFileSync(__dirname + '/data/peering/cat.all.asc', 'utf8');
 var forwardUbot1    = fs.readFileSync(__dirname + '/data/peering/ubot1.keys', 'utf8');
 var forwardUbot1Sig = fs.readFileSync(__dirname + '/data/peering/ubot1.keys.asc', 'utf8');
+
+var thtCat = fs.readFileSync(__dirname + '/data/tht/cat.entry', 'utf8');
 
 var app;
 
@@ -390,6 +383,68 @@ function ResultAPI () {
       }
     });
   };
+
+  this.postTHT = function(comment, statusCode, issuer) {
+    if(!this['tht'])
+      this['tht'] = 0;
+    var index = this['tht']++;
+    var obj = this;
+    it(comment+' should '+(statusCode == 200 ? '' : 'not ')+'exist', function () {
+      var res = obj.apiRes['/ucg/tht'][index].res;
+      res.should.have.status(statusCode);
+      if(statusCode == 200){
+        var json = JSON.parse(res.text);
+        json.should.have.property('signature');
+        json.should.have.property('entry');
+        json.entry.should.have.property('version');
+        json.entry.should.have.property('currency');
+        json.entry.should.have.property('fingerprint');
+        json.entry.should.have.property('hosters');
+        json.entry.should.have.property('trusts');
+        json.entry.fingerprint.should.equal(issuer);
+      }
+    });
+  };
+
+  this.getTHT = function(comment, leavesCount, root) {
+    if(!this['tht'])
+      this['tht'] = 0;
+    var index = this['tht']++;
+    var obj = this;
+    it('expect ' + comment, function () {
+      var res = obj.apiRes['/ucg/tht'][index].res;
+      var json = JSON.parse(res.text);
+      res.should.have.status(200);
+      isMerkleNodesResult(json);
+      json.leavesCount.should.equal(leavesCount);
+      if(root)
+        json.levels[0][0].should.equal(root);
+      else
+        _(json.levels[0]).size().should.equal(0);
+    });
+  };
+
+  this.fprTHT = function(comment, fpr, statusCode, issuer) {
+    if(!this['fprTHT'+fpr])
+      this['fprTHT'+fpr] = 0;
+    var index = this['fprTHT'+fpr]++;
+    var obj = this;
+    it(comment+' should '+(statusCode == 200 ? '' : 'not ')+'exist', function () {
+      var res = obj.apiRes['/ucg/tht/'+fpr][index].res;
+      res.should.have.status(statusCode);
+      if(statusCode == 200){
+        var json = JSON.parse(res.text);
+        json.should.have.property('signature');
+        json.should.have.property('entry');
+        json.entry.should.have.property('version');
+        json.entry.should.have.property('currency');
+        json.entry.should.have.property('fingerprint');
+        json.entry.should.have.property('hosters');
+        json.entry.should.have.property('trusts');
+        json.entry.fingerprint.should.equal(issuer);
+      }
+    });
+  };
 }
 
 var api = new ResultAPI();
@@ -470,6 +525,13 @@ function forward (forward, signature, done) {
   post('/ucg/peering/forward', {
     "forward": forward,
     "signature": signature
+  }, done);
+}
+
+function trust (txFile, done) {
+  post('/ucg/tht', {
+    "entry": txFile.substr(0, txFile.indexOf('-----BEGIN')),
+    "signature": txFile.substr(txFile.indexOf('-----BEGIN'))
   }, done);
 }
 
@@ -743,6 +805,12 @@ before(function (done) {
     function (next) { get('/ucg/peering/peers/downstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
     function (next) { get('/ucg/peering/peers/upstream', next); },
     function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
+    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
+    function (next) { trust(thtCat, next); },
+    function (next) { get('/ucg/tht', next); },
+    function (next) { get('/ucg/tht/SOME_WRONG_FPR', next); },
+    function (next) { get('/ucg/tht/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    function (next) { get('/ucg/tht/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -1209,6 +1277,14 @@ describe('Downstream', function(){
   api.downstream('to have no downstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
 });
 
+describe('THT', function(){
+  api.postTHT('POST for Cat should be ok', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+  api.getTHT('GET for Merkle', 1, '5AD4313941BA2AB7B0F0E5578AEB6AB32039964F');
+  api.fprTHT('GET for FPR', 'SOME_WRONG_FPR', 400);
+  api.fprTHT('GET for FPR', '33BBFC0C67078D72AF128B5BA296CC530126F372', 404);
+  api.fprTHT('GET for FPR', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+});
+
 function isMerkleNodesResult (json) {
   isMerkleResult(json);
   json.should.have.property('levels');
@@ -1238,14 +1314,6 @@ function isPubKey (json) {
   json.key.should.have.property('raw');
   json.key.should.not.have.property('_id');
   json.key.raw.should.not.match(/-----/g);
-}
-
-for (var i = 0; i < gets.length; i++) {
-  testGET(gets[i].url, gets[i].expect);
-}
-
-for (var i = 0; i < posts.length; i++) {
-  testPOST(posts[i].url, posts[i].expect);
 }
 
 //----------- PKS -----------

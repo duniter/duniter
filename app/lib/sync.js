@@ -9,6 +9,7 @@ var PublicKey   = mongoose.model('PublicKey');
 var Merkle      = mongoose.model('Merkle');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
+var THTEntry    = mongoose.model('THTEntry');
 var vucoin      = require('vucoin');
 
 module.exports = function Synchroniser (host, port, authenticated, currency) {
@@ -16,6 +17,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
   var VoteService        = require('../service/VoteService')(currency);
   var MembershipService  = require('../service/MembershipService').get(currency);
   var TransactionService = require('../service/TransactionsService').get(currency);
+  var THTService         = require('../service/THTService').get(currency);
   var StrategyService    = require('../service/StrategyService')();
   var ParametersService  = require('../service/ParametersService');
   var that = this;
@@ -178,6 +180,47 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
           async.forEachSeries(keys, function (key, onKeyDone) {
             syncTransactionsOfKey(node, key.fingerprint, onKeyDone);
           }, next);
+        },
+
+        //==================
+        // Trust Hash Table
+        //==================
+        function (next){
+          Merkle.THTEntries(next);
+        },
+        function (merkle, next) {
+          node.ucg.tht.get({}, function (err, json) {
+            var rm = new NodesMerkle(json);
+            if(rm.root() != merkle.root()){
+              console.log('Merkles for THT: differences !');
+              var indexesToAdd = [];
+              node.ucg.tht.get({ extract: true }, function (err, json) {
+                _(json.leaves).keys().forEach(function(key){
+                  var leaf = json.leaves[key];
+                  if(merkle.leaves().indexOf(leaf.hash) == -1){
+                    indexesToAdd.push(key);
+                  }
+                });
+                var hashes = [];
+                async.forEachSeries(indexesToAdd, function(index, callback){
+                  var jsonEntry = json.leaves[index].value.entry;
+                  var sign = json.leaves[index].value.signature;
+                  var entry = new THTEntry({});
+                  ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
+                    entry[key] = jsonEntry[key];
+                  });
+                  async.waterfall([
+                    function (cb){
+                      THTService.submit(entry.getRaw() + sign, cb);
+                    }
+                  ], callback);
+                }, function(err, result){
+                  next(err);
+                });
+              });
+            }
+            else next();
+          });
         },
       ], function (err, result) {
         console.log('Sync finished.');

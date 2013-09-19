@@ -38,7 +38,7 @@ module.exports.get = function (currency) {
           next('Fingerprint in peering entry ('+cert.fingerprint+') does not match signatory (0x' + keyID + ')');
           return;
         }
-        PublicKey.persistFromRaw(body, function (err) {
+        PublicKey.persistFromRaw(body, '', function (err) {
           next(err, body);
         });
       },

@@ -117,6 +117,14 @@ module.exports = {
     callback(null, req.body.request + req.body.signature);
   },
 
+  getTHTEntry: function (req, callback) {
+    if(!(req.body && req.body.entry && req.body.signature)){
+      callback('Requires a THT entry + signature');
+      return;
+    }
+    callback(null, req.body.entry + req.body.signature);
+  },
+
   getPubkey: function (req, callback) {
     if(!req.body){
       callback('Parameters `keytext` and `keysign` are required');

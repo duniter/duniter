@@ -12,7 +12,6 @@ var THTEntrySchema = new Schema({
   hosters: [String],
   trusts: [String],
   hash: String,
-  status: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -21,7 +20,7 @@ THTEntrySchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "status"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "hosters", "trusts", "hash"].forEach(function (key) {
       to[key] = obj[key];
     });
   },

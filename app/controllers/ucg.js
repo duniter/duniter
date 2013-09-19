@@ -7,9 +7,12 @@ var Forward   = mongoose.model('Forward');
 var Amendment = mongoose.model('Amendment');
 var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
-var MerkleService = require('../service/MerkleService');
 
 module.exports = function (pgp, currency, conf) {
+
+  var MerkleService = require('../service/MerkleService');
+  var ParametersService = require('../service/ParametersService');
+  var THTService = require('../service/THTService').get(currency);
   
   this.ascciiPubkey = pgp.keyring.privateKeys[0] ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
 
@@ -321,6 +324,22 @@ module.exports = function (pgp, currency, conf) {
       return;
     }
     givePeers({ forward: "KEYS", upstream: false, keys: { $in: [matches[1]] } }, req, res);
+  },
+
+  this.thtPOST = function(req, res) {
+    async.waterfall([
+      function (callback) {
+        ParametersService.getTHTEntry(req, callback);
+      },
+      function(entry, callback){
+        THTService.submit(entry, callback);
+      }
+    ], function (err, entry) {
+      if(err){
+        res.send(400, err);
+      }
+      else res.end(JSON.stringify(entry.json()));
+    });
   }
 
   function givePeers (criterias, req, res) {

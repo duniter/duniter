@@ -167,6 +167,10 @@ MerkleSchema.statics.keys = function (done) {
   retrieve({ type: 'keys', criteria: '{}' }, done);
 };
 
+MerkleSchema.statics.THTEntries = function (done) {
+  retrieve({ type: 'thtentries', criteria: '{}' }, done);
+};
+
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
   async.waterfall([
     function (next) {
@@ -254,6 +258,22 @@ MerkleSchema.statics.updateManyForNextMembership = function (leaves, done) {
     },
     function (merkle, next) {
       merkle.pushMany(leaves);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForTHTEntries= function (previousHash, newHash, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.THTEntries(function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.push(newHash, previousHash);
       merkle.save(function (err) {
         next(err);
       });

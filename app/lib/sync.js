@@ -186,7 +186,13 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
     })
   }
 
+  var alreadyDone = [];
+
   function syncTransactionsOfKey (node, keyFingerprint, onKeyDone) {
+    if(~alreadyDone.indexOf(keyFingerprint)){
+      onKeyDone();
+      return;
+    }
     console.log('Transactions of %s...', keyFingerprint);
     async.waterfall([
 
@@ -203,7 +209,11 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
       function (next){
         syncTransactionTrees(node, keyFingerprint, Merkle.txToRecipient, node.hdc.transactions.recipient, next);
       }
-    ], onKeyDone);
+    ], function (err) {
+      // Avoid to loop on already synced keys
+      alreadyDone.push(keyFingerprint);
+      onKeyDone(err);
+    });
   }
 
   function syncTransactionTrees (node, keyFingerprint, localMerkleFunc, remoteMerkleFunc, onceSyncFinished) {

@@ -222,6 +222,46 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
             else next();
           });
         },
+
+        //=======
+        // Peers
+        //=======
+        function (next){
+          Merkle.peers(next);
+        },
+        function (merkle, next) {
+          node.ucg.peering.peers.get({}, function (err, json) {
+            var rm = new NodesMerkle(json);
+            if(rm.root() != merkle.root()){
+              var indexesToAdd = [];
+              node.ucg.peering.peers.get({ extract: true }, function (err, json) {
+                _(json.leaves).keys().forEach(function(key){
+                  var leaf = json.leaves[key];
+                  if(merkle.leaves().indexOf(leaf.hash) == -1){
+                    indexesToAdd.push(key);
+                  }
+                });
+                var hashes = [];
+                async.forEachSeries(indexesToAdd, function(index, callback){
+                  var jsonEntry = json.leaves[index].value.entry;
+                  var sign = json.leaves[index].value.signature;
+                  var entry = new THTEntry({});
+                  ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port"].forEach(function (key) {
+                    entry[key] = jsonEntry[key];
+                  });
+                  async.waterfall([
+                    function (cb){
+                      PeeringService.submit(entry.getRaw() + sign, cb);
+                    }
+                  ], callback);
+                }, function(err, result){
+                  next(err);
+                });
+              });
+            }
+            else next();
+          });
+        },
       ], function (err, result) {
         console.log('Sync finished.');
         done(err);

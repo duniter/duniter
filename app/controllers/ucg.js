@@ -14,6 +14,7 @@ module.exports = function (pgp, currency, conf) {
   var MerkleService = require('../service/MerkleService');
   var ParametersService = require('../service/ParametersService');
   var THTService = require('../service/THTService').get(currency);
+  var PeeringService = require('../service/PeeringService').get(currency);
   
   this.ascciiPubkey = pgp.keyring.privateKeys[0] ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
 
@@ -200,89 +201,12 @@ module.exports = function (pgp, currency, conf) {
     async.waterfall([
 
       // Parameters
-      function(callback){
-        if(!(req.body && req.body.entry && req.body.signature)){
-          callback('Requires a peering entry + signature');
-          return;
-        }
-        callback(null, req.body.entry, req.body.signature);
+      function(next){
+        ParametersService.getPeeringEntry(req, next);
       },
 
-      // Check signature's key ID
-      function(pr, sig, callback){
-        var keyID = jpgp().signature(sig).issuer();
-        if(!(keyID && keyID.length == 16)){
-          callback('Cannot identify signature issuer`s keyID');
-          return;
-        }
-        callback(null, new Peer(), pr + sig, keyID);
-      },
+      PeeringService.submit
 
-      // Verify signature
-      function(peer, signedPR, keyID, callback){
-
-        async.waterfall([
-          function (next){
-            peer.parse(signedPR, next);
-          },
-          function (peer, next){
-            peer.verify(currency, next);
-          },
-          // Looking for corresponding public key
-          function(valid, next){
-            if(!valid){
-              next('Not a valid peering request');
-              return;
-            }
-            require('request')('http://' + peer.getURL()+ '/ucg/pubkey', next);
-          },
-          function (httpRes, body, next){
-            var cert = jpgp().certificate(body);
-            if(!cert.fingerprint.match(new RegExp(keyID + "$", "g"))){
-              next('Peer\'s public key ('+cert.fingerprint+') does not match signatory (0x' + keyID + ')');
-              return;
-            }
-            if(!peer.fingerprint.match(new RegExp(keyID + "$", "g"))){
-              next('Fingerprint in peering entry ('+cert.fingerprint+') does not match signatory (0x' + keyID + ')');
-              return;
-            }
-            PublicKey.persistFromRaw(body, function (err) {
-              next(err, body);
-            });
-          },
-          function (body, next) {
-            peer.verifySignature(body, next);
-          },
-          function (verified, next){
-            if(!verified){
-              next('Signature does not match');
-              return;
-            }
-            next();
-          },
-          function (next){
-            Peer.find({ fingerprint: peer.fingerprint }, next);
-          },
-          function (peers, next){
-            var peerEntity = peer;
-            var previousHash = null;
-            if(peers.length > 0){
-              // Already existing peer
-              peerEntity = peers[0];
-              previousHash = peerEntity.hash;
-              peer.copyValues(peerEntity);
-            }
-            peerEntity.save(function (err) {
-              next(err, peerEntity, previousHash);
-            });
-          },
-          function (recordedPR, previousHash, next) {
-            Merkle.updatePeers(recordedPR, previousHash, function (err, code, merkle) {
-              next(err, recordedPR);
-            });
-          }
-        ], callback);
-      }
     ], function (err, recordedPR) {
       if(err){
         res.send(400, err);

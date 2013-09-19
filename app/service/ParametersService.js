@@ -35,6 +35,26 @@ module.exports = {
     });
   },
 
+  getPeeringEntry: function (req, callback) {
+    this.getPeeringEntryFromRaw(req.body && req.body.entry, req.body && req.body.signature, callback);
+  },
+
+  getPeeringEntryFromRaw: function (entry, signature, callback) {
+    // Parameters
+    if(!(entry && signature)){
+      callback('Requires a peering entry + signature');
+      return;
+    }
+
+    // Check signature's key ID
+    var keyID = jpgp().signature(signature).issuer();
+    if(!(keyID && keyID.length == 16)){
+      callback('Cannot identify signature issuer`s keyID');
+      return;
+    }
+    callback(null, entry + signature, keyID);
+  },
+
   getFingerprint: function (req, callback){
     if(!req.params.fpr){
       callback("Fingerprint is required");

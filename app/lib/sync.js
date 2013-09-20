@@ -10,6 +10,7 @@ var Merkle      = mongoose.model('Merkle');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
 var THTEntry    = mongoose.model('THTEntry');
+var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
 
 module.exports = function Synchroniser (host, port, authenticated, currency) {
@@ -18,6 +19,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
   var MembershipService  = require('../service/MembershipService').get(currency);
   var TransactionService = require('../service/TransactionsService').get(currency);
   var THTService         = require('../service/THTService').get(currency);
+  var PeeringService     = require('../service/PeeringService').get(currency);
   var StrategyService    = require('../service/StrategyService')();
   var ParametersService  = require('../service/ParametersService');
   var that = this;
@@ -243,15 +245,19 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                 });
                 var hashes = [];
                 async.forEachSeries(indexesToAdd, function(index, callback){
-                  var jsonEntry = json.leaves[index].value.entry;
+                  var jsonEntry = json.leaves[index].value;
                   var sign = json.leaves[index].value.signature;
-                  var entry = new THTEntry({});
+                  var entry = new Peer({});
                   ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port"].forEach(function (key) {
                     entry[key] = jsonEntry[key];
                   });
                   async.waterfall([
-                    function (cb){
-                      PeeringService.submit(entry.getRaw() + sign, cb);
+                    function (cb) {
+                      ParametersService.getPeeringEntryFromRaw(entry.getRaw(), sign, cb);
+                    },
+                    function (rawSigned, keyID, cb){
+                      console.log('Peer 0x' + keyID);
+                      PeeringService.submit(rawSigned, keyID, cb);
                     }
                   ], callback);
                 }, function(err, result){

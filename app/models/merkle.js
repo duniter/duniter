@@ -33,6 +33,20 @@ MerkleSchema.methods = {
     }
   },
 
+  remove: function (leaf) {
+    // If leaf IS present
+    if(~this.levels[this.depth].indexOf(leaf)){
+      var leaves = this.leaves();
+      var index = leaves.indexOf(leaf);
+      if(~index){
+        // Replacement: remove previous hash
+        leaves.splice(index, 1);
+      }
+      leaves.sort();
+      this.initialize(leaves);
+    }
+  },
+
   push: function (leaf, previous) {
     // If leaf is not present
     if(this.levels[this.depth].indexOf(leaf) == -1){
@@ -194,6 +208,22 @@ MerkleSchema.statics.addPublicKey = function (fingerprint, done) {
     },
     function (merkle, next) {
       merkle.push(fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.removePublicKey = function (fingerprint, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.forPublicKeys(function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.remove(fingerprint);
       merkle.save(function (err) {
         next(err);
       });

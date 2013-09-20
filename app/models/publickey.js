@@ -131,39 +131,42 @@ PublicKeySchema.statics.search = function (motif, done) {
 };
 
 PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
-  async.waterfall([
-    function (next){
-      try{
-        var keyID = jpgp().signature(signature).issuer();
-        var cert = jpgp().certificate(asciiArmored);
-        var fpr = cert.fingerprint;
-        if(!keyID){
-          next('Cannot find issuer of signature');
-          return;
+  if(signature){
+    async.waterfall([
+      function (next){
+        try{
+          var keyID = jpgp().signature(signature).issuer();
+          var cert = jpgp().certificate(asciiArmored);
+          var fpr = cert.fingerprint;
+          if(!keyID){
+            next('Cannot find issuer of signature');
+            return;
+          }
+          if(!fpr){
+            next('Cannot extract fingerprint from certificate');
+            return;
+          }
+          if(fpr.indexOf(keyID) == -1){
+            next('This certificate is not owned by the signatory');
+            return;
+          }
+          next();
         }
-        if(!fpr){
-          next('Cannot extract fingerprint from certificate');
-          return;
+        catch(ex){
+          next(ex.toString());
         }
-        if(fpr.indexOf(keyID) == -1){
-          next('This certificate is not owned by the signatory');
-          return;
-        }
-        next();
+      },
+      function (next){
+        jpgp()
+          .publicKey(asciiArmored)
+          .data(asciiArmored)
+          .noCarriage()
+          .signature(signature)
+          .verify(next);
       }
-      catch(ex){
-        next(ex.toString());
-      }
-    },
-    function (next){
-      jpgp()
-        .publicKey(asciiArmored)
-        .data(asciiArmored)
-        .noCarriage()
-        .signature(signature)
-        .verify(next);
-    }
-  ], done);
+    ], done);
+  }
+  else done('Signature is empty', false);
 };
 
 PublicKeySchema.statics.persistFromRaw = function (rawPubkey, rawSignature, done) {
@@ -180,44 +183,58 @@ PublicKeySchema.statics.persistFromRaw = function (rawPubkey, rawSignature, done
 
 PublicKeySchema.statics.persist = function (pubkey, done) {
   var now = new Date();
-  PublicKey.count({fingerprint: pubkey.fingerprint}, function (err, count) {
-    if(count === 0){
-      PublicKey.create([{
-        raw: pubkey.raw,
-        fingerprint: pubkey.fingerprint,
-        signature: pubkey.signature,
-        email: pubkey.email,
-        name: pubkey.name,
-        comment: pubkey.comment,
-        created: now,
-        updated: now
-      }], function (err, pubkey) {
-        if(err){
-          done(err);
-          return;
+  async.waterfall([
+    function (next) {
+      PublicKey.count({fingerprint: pubkey.fingerprint}, function (err, count) {
+        if(count === 0){
+          PublicKey.create([{
+            raw: pubkey.raw,
+            fingerprint: pubkey.fingerprint,
+            signature: pubkey.signature,
+            email: pubkey.email,
+            name: pubkey.name,
+            comment: pubkey.comment,
+            created: now,
+            updated: now
+          }], function (err, pubkey) {
+            console.log("Created " + pubkey.fingerprint + ".");
+            next(err);
+          });
         }
+        else{
+          PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
+            foundKeys[0].raw = pubkey.raw;
+            foundKeys[0].signature = pubkey.signature;
+            foundKeys[0].email = pubkey.email;
+            foundKeys[0].name = pubkey.name;
+            foundKeys[0].comment = pubkey.comment;
+            foundKeys[0].updated = now;
+            foundKeys[0].save(function (err) {
+              console.log("Updated " + pubkey.fingerprint + ".");
+              next(err);
+            });
+          });
+        }
+      });
+    },
+    function (next) {
+      PublicKey.verify(pubkey.raw, pubkey.signature, function (err, verified) {
         // Update Merkle
-        mongoose.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
-          console.log("Created " + pubkey.fingerprint + ".");
-          done(err);
-        });
+        if(!err && verified){
+          mongoose.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
+            console.log("Signed: added to Merkle");
+            next(err);
+          });
+        }
+        else{
+          mongoose.model('Merkle').removePublicKey(pubkey.fingerprint, function (err) {
+            console.log("Unsigned: removed from Merkle");
+            next(err);
+          });
+        }
       });
     }
-    else{
-      PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
-        foundKeys[0].raw = pubkey.raw;
-        foundKeys[0].signature = pubkey.signature;
-        foundKeys[0].email = pubkey.email;
-        foundKeys[0].name = pubkey.name;
-        foundKeys[0].comment = pubkey.comment;
-        foundKeys[0].updated = now;
-        foundKeys[0].save(function (err) {
-          console.log("Updated " + pubkey.fingerprint + ".");
-          done(err);
-        });
-      });
-    }
-  });
+  ], done);
 };
 
 var PublicKey = mongoose.model('PublicKey', PublicKeySchema);

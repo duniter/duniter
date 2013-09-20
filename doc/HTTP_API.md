@@ -545,7 +545,8 @@ Merkle URL leaf: peering entry
     "dns": "DNS_VALUE",
     "ipv4": "IPV4_ADDRESS",
     "ipv6": "IPV6_ADDRESS",
-    "port": "PORT"
+    "port": "PORT",
+    "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
   }
 }
 ```
@@ -573,7 +574,8 @@ The posted entry.
   "dns": "DNS_VALUE",
   "ipv4": "IPV4_ADDRESS",
   "ipv6": "IPV6_ADDRESS",
-  "port": "PORT"
+  "port": "PORT",
+  "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE"
 }
 ```
 

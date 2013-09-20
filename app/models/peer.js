@@ -13,6 +13,7 @@ var PeerSchema = new Schema({
   ipv4: String,
   ipv6: String,
   port: { type: Number, default: 8081 },
+  signature: String,
   hash: String,
   status: String,
   created: { type: Date, default: Date.now },
@@ -31,7 +32,7 @@ PeerSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "status"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "status", "signature"].forEach(function (key) {
       json[key] = obj[key];
     });
     return json;

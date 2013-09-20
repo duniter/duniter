@@ -121,6 +121,11 @@ module.exports.database = {
         mongoose.model('Forward').remove({}, function (err) {
           next(err);
         });
+      },
+      function (next){
+        mongoose.model('THTEntry').remove({}, function (err) {
+          next(err);
+        });
       }
     ], done);
   },

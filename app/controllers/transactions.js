@@ -22,7 +22,7 @@ module.exports = function (pgp, currency, conf) {
         Merkle.keys(next);
       },
       function (merkle, next){
-        MerkleService.processForURL(req, merkle, lambda, next);
+        MerkleService.processForURL(req, merkle, Merkle.mapIdentical, next);
       }
     ], function (err, json) {
       if(err){

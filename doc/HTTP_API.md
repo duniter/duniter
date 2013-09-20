@@ -1571,7 +1571,7 @@ Merkle URL leaf: transaction
 #### `transactions/keys`
 **Goal**
 
-Merkle URL referencing PGP keys whose transactions are recoreded by this node (sent and received).
+Merkle URL referencing PGP keys for which some transactions have been recoreded by this node (sent and received).
 
 **Parameters**
 

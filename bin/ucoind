@@ -26,6 +26,7 @@ program
   .option('--remote4 <host>', 'Remote interface for IPv4 access')
   .option('--remote6 <host>', 'Remote interface for IPv6 access')
   .option('--remotep <port>', 'Remote port others may use to contact this node')
+  .option('--kmanagement <ALL|KEYS>', 'Define key management policy')
   ;
 
 program
@@ -45,30 +46,22 @@ program
   .command('manage-key [key]')
   .description('Add given key to stack of managed keys of this node')
   .action(connect(function (key, conf) {
-    handleKey(key, true, 'Key %s is now managed');
+    handleKey(conf, key, true, 'Key %s is now managed');
   }));
 
 program
   .command('forget-key [key]')
   .description('Remove given key of the managed keys\' stack of this node')
   .action(connect(function (key, conf) {
-    handleKey(key, false, 'Key %s no more managed from now');
+    handleKey(conf, key, false, 'Key %s no more managed from now');
   }));
 
-function handleKey (key, isManaged, message) {
+function handleKey (conf, key, isManaged, message) {
   key = key || "";
   key = key.toUpperCase();
   async.waterfall([
     function (next){
-      var matches = key.match(/^\w{40}$/);
-      if(!matches){
-        next("Bad key must be a 40 characters SHA-1 hash");
-        return;
-      }
-      next();
-    },
-    function (next) {
-      mongoose.model('Key').setManaged(key, isManaged, next);
+      require('../app/service/KeyService').get(conf).handleKey(key, isManaged, next);
     }
   ], function (err, result) {
     if(err){
@@ -221,6 +214,7 @@ program
 
       if(err){
         console.error('Could not start: %s', err);
+        server.database.disconnect();
         return;
       }
 
@@ -238,6 +232,8 @@ program
 
       if(!conf.ipv4 && !conf.ipv6){
         console.error("No interface to listen to. Relaunch with --config and eith --ipv4 or --ipv6 parameters.");
+        server.database.disconnect();
+        return;
       }
     });
   }));
@@ -266,21 +262,25 @@ function overrideConf(conf) {
       host: program.mhost,
       port: program.mport,
       database: program.mdb,
+    },
+    policy: {
+      keys: program.kmanagement
     }
   };
 
   // Update conf
   conf = conf || {};
   if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
-  conf.ipv4       = config.server.ipv4address || conf.ipv4;
-  conf.ipv6       = config.server.ipv6address || conf.ipv6;
-  conf.port       = config.server.port || conf.port;
-  conf.pgpkey     = config.server.pgp.key || conf.pgpkey;
-  conf.pgppasswd  = config.server.pgp.password || conf.pgppasswd;
-  conf.remotehost = config.server.remote.host != undefined ? config.server.remote.host : conf.remotehost;
-  conf.remoteipv4 = config.server.remote.ipv4 != undefined ? config.server.remote.ipv4 : conf.remoteipv4;
-  conf.remoteipv6 = config.server.remote.ipv6 != undefined ? config.server.remote.ipv6 : conf.remoteipv6;
-  conf.remoteport = config.server.remote.port != undefined ? config.server.remote.port : conf.remoteport;
+  conf.ipv4        = config.server.ipv4address || conf.ipv4;
+  conf.ipv6        = config.server.ipv6address || conf.ipv6;
+  conf.port        = config.server.port || conf.port;
+  conf.pgpkey      = config.server.pgp.key || conf.pgpkey;
+  conf.pgppasswd   = config.server.pgp.password || conf.pgppasswd;
+  conf.remotehost  = config.server.remote.host != undefined ? config.server.remote.host : conf.remotehost;
+  conf.remoteipv4  = config.server.remote.ipv4 != undefined ? config.server.remote.ipv4 : conf.remoteipv4;
+  conf.remoteipv6  = config.server.remote.ipv6 != undefined ? config.server.remote.ipv6 : conf.remoteipv6;
+  conf.remoteport  = config.server.remote.port != undefined ? config.server.remote.port : conf.remoteport;
+  conf.kmanagement = config.policy.keys || conf.kmanagement;
   return conf;
 }
 

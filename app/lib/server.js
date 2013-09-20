@@ -60,7 +60,8 @@ module.exports.database = {
               remoteipv6: null,
               remoteport: null,
               pgpkey: null,
-              pgppasswd: null
+              pgppasswd: null,
+              kmanagement: 'KEYS'
             }));
           }
           else done(err);

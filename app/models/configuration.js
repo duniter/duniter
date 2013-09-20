@@ -10,10 +10,17 @@ var ConfigurationSchema = new Schema({
   remoteipv6: String,
   remoteport: Number,
   pgpkey: String,
-  pgppasswd: String
+  pgppasswd: String,
+  kmanagement: String
 });
 
-ConfigurationSchema.methods = {
-};
+ConfigurationSchema.pre('save', function (next) {
+  if(!this.kmanagement.match(/^(ALL|KEYS)$/)){
+    console.error('Incorrect --kmanagement value, reset to default `KEYS` value');
+    this.kmanagement = 'KEYS';
+  }
+  this.updated = Date.now();
+  next();
+});
 
 var Configuration = mongoose.model('Configuration', ConfigurationSchema);

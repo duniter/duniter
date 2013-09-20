@@ -8,6 +8,7 @@ var Amendment = mongoose.model('Amendment');
 var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
 var THTEntry  = mongoose.model('THTEntry');
+var Key       = mongoose.model('Key');
 
 module.exports = function (pgp, currency, conf) {
 
@@ -302,6 +303,23 @@ module.exports = function (pgp, currency, conf) {
         return;
       }
       res.send(200, JSON.stringify(entry.json(), null, "  "));
+    });
+  }
+
+  this.managedKeys = function (req, res) {
+    async.waterfall([
+      function (next){
+        Key.find({ managed: true }, next);
+      },
+      function (keys, next) {
+        var fprs = [];
+        keys.forEach(function (k) {
+          fprs.push(k.fingerprint);
+        });
+        next(null, fprs);
+      }
+    ], function (err, keys) {
+      res.send(200, JSON.stringify({ keys: keys }));
     });
   }
 

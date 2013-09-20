@@ -10,6 +10,7 @@
   * [ucg/](#ucg)
       * [pubkey](#ucgpubkey)
       * [peering](#ucgpeering)
+      * [peering/keys](#ucgpeeringkeys)
       * [peering/peers (GET)](#ucgpeeringpeers-get)
       * [peering/peers (POST)](#ucgpeeringpeers-post)
       * [peering/peers/upstream](#ucgpeeringpeersupstream)
@@ -68,6 +69,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |-- ucg/
     |   |-- pubkey
     |   |-- peering
+    |   |   |-- keys
     |   |   |-- forward
     |   |   |-- status
     |   |   `-- peers/
@@ -501,6 +503,31 @@ This entry contains a sum-up of common Merkle URLs handled by this node, with th
       }
     }
   }
+}
+```
+
+#### `ucg/peering/keys`
+**Goal**
+
+GET PGP keys' fingerprint this node manages, i.e. this node will have transactions history and follow ohter nodes for this history.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+An array fingerprint.
+```json
+{
+  "keys": [
+    "1B81D68C54F2EDEBC905E89FF9815FEE9C30D231",
+    "8629912EA08714C3FE02073F85716D24A96D2E39",
+    "3DD387A7C3637D36D23F30CD9D9B0A3B33353B75",
+    "E39A7298648FA2CC500E7C7352F622A79BE02B5C",
+    "F20AFBDE3480949A73C17D50C0CB271BC3511BC0",
+    "1B6453892473A467D07372D45EB05ABC2031647A"
+  ]
 }
 ```
 

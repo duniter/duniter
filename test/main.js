@@ -831,21 +831,6 @@ before(function (done) {
     function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
     function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
     function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
-    function (next) { get('/ucg/peering/peers/downstream', next); },
-    function (next) { get('/ucg/peering/peers/downstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
-    function (next) { get('/ucg/peering/peers/upstream', next); },
-    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
-    function (next) { forward(forwardCat, forwardCatSig, next); },
-    function (next) { get('/ucg/peering/peers/downstream', next); },
-    function (next) { get('/ucg/peering/peers/downstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
-    function (next) { get('/ucg/peering/peers/upstream', next); },
-    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
-    function (next) { forward(forwardUbot1, forwardUbot1Sig, next); },
-    function (next) { get('/ucg/peering/peers/downstream', next); },
-    function (next) { get('/ucg/peering/peers/downstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
-    function (next) { get('/ucg/peering/peers/upstream', next); },
-    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
-    function (next) { get('/ucg/peering/peers/upstream/58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', next); },
     function (next) { trust(thtCat, next); },
     function (next) { get('/ucg/tht', next); },
     function (next) { get('/ucg/tht/SOME_WRONG_FPR', next); },
@@ -1297,24 +1282,6 @@ describe('Received keys for transactions', function(){
   api.keys('with NO transactions should be 2', 2, 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F');
   api.keys('with NO transactions should be 2', 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   api.keys('with NO transactions should be 2', 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90');
-});
-
-describe('Upstream', function(){
-  api.upstream('to have no upstreams', 0, '');
-  api.upstream('to have no upstreams', 0, '');
-  api.upstream('to have no upstreams', 0, '');
-  api.upstream('to have no upstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
-  api.upstream('to have no upstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
-  api.upstream('to have no upstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
-});
-
-describe('Downstream', function(){
-  api.downstream('to have no downstreams', 0, '');
-  api.downstream('to have no downstreams', 0, '');
-  api.downstream('to have no downstreams', 0, '');
-  api.downstream('to have no downstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
-  api.downstream('to have no downstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
-  api.downstream('to have no downstreams', 0, '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
 });
 
 describe('THT', function(){

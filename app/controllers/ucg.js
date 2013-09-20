@@ -18,6 +18,7 @@ module.exports = function (pgp, currency, conf) {
   var PeeringService = require('../service/PeeringService').get(currency);
   
   this.ascciiPubkey = pgp.keyring.privateKeys[0] ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
+  this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
 
   this.pubkey = function (req, res) {
     res.send(200, this.ascciiPubkey);
@@ -133,8 +134,12 @@ module.exports = function (pgp, currency, conf) {
             next();
           },
           function (next){
-            if(!fwd.fingerprint.match(new RegExp("^" + pubkey.fingerprint + "$", "g"))){
-              next('Forward\'s fingerprint ('+fwd.fingerprint+') does not match signatory (' + pubkey.fingerprint + ')');
+            if(!fwd.to.match(new RegExp("^" + cert.fingerprint + "$", "g"))){
+              next('Node\'s fingerprint ('+cert.fingerprint+') is not concerned by this forwarding (' + fwd.to + ')');
+              return;
+            }
+            if(!fwd.from.match(new RegExp("^" + pubkey.fingerprint + "$", "g"))){
+              next('Forwarder\'s fingerprint ('+fwd.from+') does not match signatory (' + pubkey.fingerprint + ')');
               return;
             }
             fwd.verifySignature(pubkey.raw, next);
@@ -147,7 +152,7 @@ module.exports = function (pgp, currency, conf) {
             next();
           },
           function (next){
-            Forward.find({ fingerprint: fwd.fingerprint, upstream: false }, next);
+            Forward.find({ from: fwd.from, to: this.cert.fingerprint }, next);
           },
           function (fwds, next){
             var fwdEntity = fwd;
@@ -217,7 +222,7 @@ module.exports = function (pgp, currency, conf) {
   }
 
   this.upstreamAll = function (req, res) {
-    givePeers({ forward: "ALL", upstream: true }, req, res);
+    givePeers({ forward: "ALL", from: this.cert.fingerprint }, req, res);
   }
 
   this.upstreamKey = function (req, res) {
@@ -231,11 +236,11 @@ module.exports = function (pgp, currency, conf) {
       res.send(400, "Key fingerprint format is incorrect, must be an upper-cased SHA1 hash");
       return;
     }
-    givePeers({ forward: "KEYS", upstream: true, keys: { $in: [matches[1]] } }, req, res);
+    givePeers({ forward: "KEYS", from: this.cert.fingerprint, keys: { $in: [matches[1]] } }, req, res);
   }
 
   this.downstreamAll = function (req, res) {
-    givePeers({ forward: "ALL", upstream: false }, req, res);
+    givePeers({ forward: "ALL", to: this.cert.fingerprint }, req, res);
   }
 
   this.downstreamKey = function (req, res) {
@@ -249,7 +254,7 @@ module.exports = function (pgp, currency, conf) {
       res.send(400, "Key fingerprint format is incorrect, must be an upper-cased SHA1 hash");
       return;
     }
-    givePeers({ forward: "KEYS", upstream: false, keys: { $in: [matches[1]] } }, req, res);
+    givePeers({ forward: "KEYS", to: this.cert.fingerprint, keys: { $in: [matches[1]] } }, req, res);
   },
 
   this.thtPOST = function(req, res) {
@@ -324,6 +329,9 @@ module.exports = function (pgp, currency, conf) {
   }
 
   function givePeers (criterias, req, res) {
+    var that = this;
+    var oneWay = criterias.from ? 'from' : 'to';
+    var otherWay = criterias.from ? 'to' : 'from';
     async.waterfall([
       function (next){
         Forward.find(criterias, next);
@@ -331,13 +339,10 @@ module.exports = function (pgp, currency, conf) {
       function (forwards, next){
         var json = { peers: [] };
         async.forEach(forwards, function(fwd, callback){
-          var p = {};
-          ['fingerprint', 'dns', 'ipv4', 'ipv6', 'port'].forEach(function (key) {
-            p[key] = fwd[key] || "";
-          });
+          p['fingerprint'] = fwd[oneWay] || "";
           async.waterfall([
             function (cb){
-              Peer.find({ fingerprint: fwd.fingerprint }, cb);
+              Peer.find({ fingerprint: fwd[otherWay] }, cb);
             },
             function (peers, cb){
               if(peers.length == 0){

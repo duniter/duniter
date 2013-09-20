@@ -29,20 +29,24 @@ describe('Forward', function(){
       assert.equal(pr.currency, 'beta_brousouf');
     });
 
-    it('should have fingerprint', function(){
-      assert.equal(pr.fingerprint, 'D049002A6724D35F867F64CC087BA351C0AEB6DF');
+    it('should have from', function(){
+      assert.equal(pr.from, 'D049002A6724D35F867F64CC087BA351C0AEB6DF');
+    });
+
+    it('should have to', function(){
+      assert.equal(pr.to, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
     });
 
     it('should have 5 keys', function(){
       assert.equal(pr.keys.length, 5);
     });
 
-    it('its computed hash should be DC95EF67F30764D24977026801F1F71063795A2D', function(){
-      assert.equal(pr.hash, 'DC95EF67F30764D24977026801F1F71063795A2D');
+    it('its computed hash should be 9512594D09A65EB7684DB5541F07B17AACFB5460', function(){
+      assert.equal(pr.hash, '9512594D09A65EB7684DB5541F07B17AACFB5460');
     });
 
-    it('its manual hash should be DC95EF67F30764D24977026801F1F71063795A2D', function(){
-      assert.equal(sha1(pr.getRaw()).toUpperCase(), 'DC95EF67F30764D24977026801F1F71063795A2D');
+    it('its manual hash should be 9512594D09A65EB7684DB5541F07B17AACFB5460', function(){
+      assert.equal(sha1(pr.getRaw()).toUpperCase(), '9512594D09A65EB7684DB5541F07B17AACFB5460');
     });
   });
 
@@ -64,20 +68,24 @@ describe('Forward', function(){
       assert.equal(pr.currency, 'beta_brousouf');
     });
 
-    it('should have fingerprint', function(){
-      assert.equal(pr.fingerprint, '33BBFC0C67078D72AF128B5BA296CC530126F372');
+    it('should have from', function(){
+      assert.equal(pr.from, '33BBFC0C67078D72AF128B5BA296CC530126F372');
+    });
+
+    it('should have to', function(){
+      assert.equal(pr.to, 'D049002A6724D35F867F64CC087BA351C0AEB6DF');
     });
 
     it('should have 0 keys', function(){
       assert.equal(pr.keys.length, 0);
     });
 
-    it('its computed hash should be CC0BDED6DED99808CF885915BA38C3F520B8F7FB', function(){
-      assert.equal(pr.hash, 'CC0BDED6DED99808CF885915BA38C3F520B8F7FB');
+    it('its computed hash should be 13F1B64A24A0156F61CF991AD6F57508871502F5', function(){
+      assert.equal(pr.hash, '13F1B64A24A0156F61CF991AD6F57508871502F5');
     });
 
-    it('its manual hash should be CC0BDED6DED99808CF885915BA38C3F520B8F7FB', function(){
-      assert.equal(sha1(pr.getRaw()).toUpperCase(), 'CC0BDED6DED99808CF885915BA38C3F520B8F7FB');
+    it('its manual hash should be 13F1B64A24A0156F61CF991AD6F57508871502F5', function(){
+      assert.equal(sha1(pr.getRaw()).toUpperCase(), '13F1B64A24A0156F61CF991AD6F57508871502F5');
     });
   });
 });

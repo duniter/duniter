@@ -8,7 +8,8 @@ var Schema   = mongoose.Schema;
 var ForwardSchema = new Schema({
   version: String,
   currency: String,
-  fingerprint: String,
+  from: String,
+  to: String,
   forward: String,
   keys: [String],
   upstream: { type: Boolean, default: false },
@@ -20,7 +21,7 @@ ForwardSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "forward", "keys", "upstream"].forEach(function (key) {
+    ["version", "currency", "from", "to", "forward", "keys", "upstream"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
@@ -28,7 +29,7 @@ ForwardSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "fingerprint", "forward", "keys"].forEach(function (key) {
+    ["version", "currency", "from", "to", "forward", "keys"].forEach(function (key) {
       json[key] = obj[key];
     });
     return json;
@@ -50,7 +51,8 @@ ForwardSchema.methods = {
       var captures = [
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
-        {prop: "fingerprint",       regexp: /Fingerprint: (.*)/},
+        {prop: "from",              regexp: /From: (.*)/},
+        {prop: "to",                regexp: /To: (.*)/},
         {prop: "forward",           regexp: /Forward: (.*)/},
         {prop: "keys",              regexp: /Keys:\n([\s\S]*)/}
       ];
@@ -99,7 +101,8 @@ ForwardSchema.methods = {
     var raw = "";
     raw += "Version: " + this.version + "\n";
     raw += "Currency: " + this.currency + "\n";
-    raw += "Fingerprint: " + this.fingerprint + "\n";
+    raw += "From: " + this.from + "\n";
+    raw += "To: " + this.to + "\n";
       raw += "Forward: " + this.forward + "\n";
     if(this.keys.length > 0){
       raw += "Keys:\n";
@@ -137,9 +140,14 @@ function verify(obj, currency) {
       err = {code: codes['BAD_CURRENCY'], message: "Currency '"+ obj.currency +"' not managed"};
   }
   if(!err){
-    // Fingerprint
-    if(obj.dns && !obj.dns.match(/^[A-Z\d]+$/))
-      err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect fingerprint field"};
+    // From
+    if(obj.from && !obj.from.match(/^[A-Z\d]+$/))
+      err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect From field"};
+  }
+  if(!err){
+    // To
+    if(obj.to && !obj.to.match(/^[A-Z\d]+$/))
+      err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect To field"};
   }
   if(!err){
     // Forward

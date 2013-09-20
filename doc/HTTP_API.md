@@ -725,7 +725,8 @@ The posted forward.
 {
   "version": "1",
   "currency": "beta_brousouf",
-  "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+  "from": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+  "to": "CC5AE6DA4307AD2339FB52013119E9704EDE0802",
   "forward": "KEYS",
   "keys": [
     "395DF8F7C51F007019CB30201C49E884B46B92FA",

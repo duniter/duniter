@@ -45,7 +45,8 @@ Its format is the following:
 ```plain
 Version: VERSION
 Currency: CURRENCY_NAME
-Fingerprint: FORWARDED_TO_FINGERPRINT
+From: FORWARDED_TO_FINGERPRINT
+To: FORWARDED_BY_FINGERPRINT
 Forward: ALL|KEYS
 Keys:
 395DF8F7C51F007019CB30201C49E884B46B92FA
@@ -58,7 +59,8 @@ Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
 `Currency` | contains the name of the currency.
-`Fingerprint` | PGP key identifier asking for this forwarding.
+`From` | PGP key identifier asking for this forwarding request.
+`To` | PGP key identifier targeted by this forwarding request.
 `Forward` | the forwarding rule, either `ALL` to forward ANY incoming transaction or `KEYS` to forward only transactions whose sender or recipient belongs to values of `Keys`.
 `Keys` | if `Forward: KEYS`, tells the keys whose transaction shall be forwarded. Must not be present if `Forward: ALL`.
 

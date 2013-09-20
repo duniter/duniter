@@ -197,7 +197,6 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
             created: now,
             updated: now
           }], function (err, pubkey) {
-            console.log("Created " + pubkey.fingerprint + ".");
             next(err);
           });
         }
@@ -210,7 +209,6 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
             foundKeys[0].comment = pubkey.comment;
             foundKeys[0].updated = now;
             foundKeys[0].save(function (err) {
-              console.log("Updated " + pubkey.fingerprint + ".");
               next(err);
             });
           });
@@ -222,13 +220,11 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
         // Update Merkle
         if(!err && verified){
           mongoose.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
-            console.log("Signed: added to Merkle");
             next(err);
           });
         }
         else{
           mongoose.model('Merkle').removePublicKey(pubkey.fingerprint, function (err) {
-            console.log("Unsigned: removed from Merkle");
             next(err);
           });
         }

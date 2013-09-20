@@ -52,7 +52,6 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
           node.pks.all({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
-              // console.log('Merkles for public keys: differences !');
               var indexesToAdd = [];
               node.pks.all({ extract: true }, function (err, json) {
                 _(json.leaves).keys().forEach(function(key){
@@ -103,7 +102,6 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
             amendments[remoteCurrentNumber] = json.raw;
             var toGetNumbers = _.range(number, remoteCurrentNumber);
             async.forEachSeries(toGetNumbers, function(amNumber, callback){
-              console.log("Fetching amendment #%s ...", amNumber);
               async.waterfall([
                 function (cb){
                   if(!amendments[amNumber])
@@ -113,14 +111,10 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                 },
                 function (am, cb){
                   amendments[amNumber] = am.raw;
-                  // console.log('ID: %s-%s', amNumber, sha1(amendments[amNumber]).toUpperCase());
                   node.hdc.amendments.promoted(amNumber + 1, cb);
                 },
                 function (am, cb){
                   amendments[amNumber + 1] = am.raw;
-                  // _(amendments).keys().forEach(function (key) {
-                  //   console.log('=====> AM %s = %s', key, amendments[key] ? 'OK' : amendments[key]);
-                  // });
                   cb();
                 },
                 function (cb) {
@@ -146,8 +140,6 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
         },
         function (number, next) {
           if(number == remoteCurrentNumber){
-            console.log('Synchronise current #%s ...', remoteCurrentNumber);
-            // console.log(amendments[remoteCurrentNumber] + '---------------');
             // Synchronise remote's current
             async.waterfall([
               function (callback){
@@ -194,7 +186,6 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
           node.ucg.tht.get({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
-              console.log('Merkles for THT: differences !');
               var indexesToAdd = [];
               node.ucg.tht.get({ extract: true }, function (err, json) {
                 _(json.leaves).keys().forEach(function(key){
@@ -213,6 +204,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency) {
                   });
                   async.waterfall([
                     function (cb){
+                      console.log('THT entry %s', jsonEntry.fingerprint);
                       THTService.submit(entry.getRaw() + sign, cb);
                     }
                   ], callback);

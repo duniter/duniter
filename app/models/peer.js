@@ -24,7 +24,7 @@ PeerSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "hash", "status"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "hash", "status", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   },

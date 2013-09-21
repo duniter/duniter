@@ -13,13 +13,13 @@ var THTEntry    = mongoose.model('THTEntry');
 var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
 
-module.exports = function Synchroniser (host, port, authenticated, currency) {
+module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
 
   var VoteService        = require('../service/VoteService')(currency);
   var MembershipService  = require('../service/MembershipService').get(currency);
   var TransactionService = require('../service/TransactionsService').get(currency);
   var THTService         = require('../service/THTService').get(currency);
-  var PeeringService     = require('../service/PeeringService').get(currency);
+  var PeeringService     = require('../service/PeeringService').get(pgp, currency, conf);
   var StrategyService    = require('../service/StrategyService')();
   var ParametersService  = require('../service/ParametersService');
   var that = this;

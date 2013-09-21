@@ -15,8 +15,8 @@ module.exports = function (pgp, currency, conf) {
   var MerkleService = require('../service/MerkleService');
   var ParametersService = require('../service/ParametersService');
   var THTService = require('../service/THTService').get(currency);
-  var PeeringService = require('../service/PeeringService').get(currency);
-  
+  var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
+
   this.ascciiPubkey = pgp.keyring.privateKeys[0] ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
 

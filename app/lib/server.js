@@ -17,6 +17,8 @@ function initModels() {
   });
 }
 
+module.exports.pgp = openpgp;
+
 module.exports.database = {
 
   init: function () {

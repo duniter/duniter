@@ -190,4 +190,11 @@ function extractKeys(pr, rawPR, cap) {
   return;
 }
 
+ForwardSchema.statics.getTheOne = function (from, to, done) {
+  Forward.findOne({ from: from, to: to }, function (err, fwd) {
+    fwd = fwd || new Forward({ from: from, to: to, forward: 'KEYS', keys: [] });
+    done(null, fwd);
+  });
+}
+
 var Forward = mongoose.model('Forward', ForwardSchema);

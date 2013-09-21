@@ -42,6 +42,10 @@ function JPGP() {
     return this;
   };
 
+  this.sign = function (message, privateKey, done) {
+    done(null, openpgp.write_signed_message(privateKey.obj, message));
+  }
+
   this.issuer = function() {
     var issuer = "";
     try{

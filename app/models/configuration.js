@@ -15,7 +15,7 @@ var ConfigurationSchema = new Schema({
 });
 
 ConfigurationSchema.pre('save', function (next) {
-  if(!this.kmanagement.match(/^(ALL|KEYS)$/)){
+  if(!this.kmanagement || !this.kmanagement.match(/^(ALL|KEYS)$/)){
     console.error('Incorrect --kmanagement value, reset to default `KEYS` value');
     this.kmanagement = 'KEYS';
   }

@@ -35,9 +35,7 @@ module.exports.get = function (currency) {
 
       // Looking for corresponding public key
       function(keyID, callback){
-        PublicKey.getTheOne(keyID, function (err, pubkey) {
-          callback(null, pubkey);
-        });
+        PublicKey.getTheOne(keyID, callback);
       },
 
       // Verify signature

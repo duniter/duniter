@@ -814,7 +814,7 @@ Merkle URL leaf: THT entry
     "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
     "entry": {
       "version": "1",
-      "currency": "beta_brousouf"
+      "currency": "beta_brousouf",
       "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
       "hosters": [
         "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
@@ -849,8 +849,8 @@ The posted THT entry.
   "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "entry": {
     "version": "1",
-    "currency": "beta_brousouf"
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "currency": "beta_brousouf",
+    "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
     "hosters": [
       "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
       "D049002A6724D35F867F64CC087BA351C0AEB6DF"
@@ -882,8 +882,8 @@ The requested THT entry.
   "signature": "BEGIN PGP SIGNATURE ... END PGP SIGNATURE",
   "entry": {
     "version": "1",
-    "currency": "beta_brousouf"
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "currency": "beta_brousouf",
+    "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
     "hosters": [
       "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
       "D049002A6724D35F867F64CC087BA351C0AEB6DF"

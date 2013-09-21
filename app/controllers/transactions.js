@@ -19,7 +19,7 @@ module.exports = function (pgp, currency, conf) {
   this.keys = function (req, res) {
     async.waterfall([
       function (next){
-        Merkle.keys(next);
+        Merkle.seenKeys(next);
       },
       function (merkle, next){
         MerkleService.processForURL(req, merkle, Merkle.mapIdentical, next);

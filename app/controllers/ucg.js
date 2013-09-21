@@ -314,17 +314,17 @@ module.exports = function (pgp, currency, conf) {
   this.managedKeys = function (req, res) {
     async.waterfall([
       function (next){
-        Key.find({ managed: true }, next);
+        Merkle.managedKeys(next);
       },
-      function (keys, next) {
-        var fprs = [];
-        keys.forEach(function (k) {
-          fprs.push(k.fingerprint);
-        });
-        next(null, fprs);
+      function (merkle, next){
+        MerkleService.processForURL(req, merkle, Merkle.mapIdentical, next);
       }
-    ], function (err, keys) {
-      res.send(200, JSON.stringify({ keys: keys }));
+    ], function (err, json) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      MerkleService.merkleDone(req, res, json);
     });
   }
 

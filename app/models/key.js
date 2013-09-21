@@ -35,7 +35,7 @@ KeySchema.statics.setSeen = function(fingerprint, seen, done){
         key.save(next);
       },
       function (obj, code, next){
-        updateMerkle(key, next);
+        updateSeenMerkle(key, next);
       }
     ], done);
   });
@@ -55,7 +55,7 @@ KeySchema.statics.setManaged = function(fingerprint, managed, done){
         key.save(next);
       },
       function (obj, code, next){
-        updateMerkle(key, next);
+        updateManagedMerkle(key, next);
       }
     ], done);
   });
@@ -71,10 +71,26 @@ KeySchema.statics.isManaged = function(fingerprint, done){
   });
 }
 
-function updateMerkle (key, done) {
+function updateSeenMerkle (key, done) {
   async.waterfall([
     function (next){
-      mongoose.model('Merkle').keys(next);
+      mongoose.model('Merkle').seenKeys(next);
+    },
+    function (merkle, next){
+      merkle.push(key.fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], function (err, result) {
+    done(err);
+  });
+}
+
+function updateManagedMerkle (key, done) {
+  async.waterfall([
+    function (next){
+      mongoose.model('Merkle').managedKeys(next);
     },
     function (merkle, next){
       merkle.push(key.fingerprint);

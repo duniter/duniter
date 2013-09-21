@@ -132,6 +132,7 @@ Merkle URL is a special kind of URL applicable for resources:
 * `pks/all`
 * `ucg/tht (GET)`
 * `ucg/peering/peers (GET)`
+* `ucg/peering/keys`
 * `hdc/amendments/view/[AMENDMENT_ID]/memberships`
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
@@ -253,6 +254,7 @@ Merkle URL | Leaf | Sort
 `pks/all` | Fingerprint of the key | By fingerprint string sort, ascending.
 `ucg/tht (GET)` | Hash of the THT entry + signature | By hash string sort, ascending.
 `ucg/peering/peers (GET)` | Hash of the peering entry + signature | By hash string sort, ascending.
+`ucg/peering/keys` | Fingerprint of the key | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/memberships` | Hash of the membership + signature | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/members` | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/voters` | Fingerprint of voter's key fingeprint | By fingerprint string sort, ascending.
@@ -509,7 +511,7 @@ This entry contains a sum-up of common Merkle URLs handled by this node, with th
 #### `ucg/peering/keys`
 **Goal**
 
-GET PGP keys' fingerprint this node manages, i.e. this node will have transactions history and follow ohter nodes for this history.
+Merkle URL referencing PGP keys' fingerprint this node manages, i.e. this node will have transactions history and follow ohter nodes for this history.
 
 **Parameters**
 
@@ -517,17 +519,30 @@ GET PGP keys' fingerprint this node manages, i.e. this node will have transactio
 
 **Returns**
 
-An array fingerprint.
+Merkle URL result.
 ```json
 {
-  "keys": [
-    "1B81D68C54F2EDEBC905E89FF9815FEE9C30D231",
-    "8629912EA08714C3FE02073F85716D24A96D2E39",
-    "3DD387A7C3637D36D23F30CD9D9B0A3B33353B75",
-    "E39A7298648FA2CC500E7C7352F622A79BE02B5C",
-    "F20AFBDE3480949A73C17D50C0CB271BC3511BC0",
-    "1B6453892473A467D07372D45EB05ABC2031647A"
-  ]
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
+  }
+}
+```
+
+Merkle URL leaf: key
+```json
+{
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
 }
 ```
 

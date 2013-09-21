@@ -62,6 +62,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                 });
                 var hashes = [];
                 async.forEachSeries(indexesToAdd, function(index, callback){
+                  console.log('Importing public key %s', json.leaves[index].hash);
                   var keytext = json.leaves[index].value.pubkey;
                   var keysign = json.leaves[index].value.signature;
                   async.waterfall([

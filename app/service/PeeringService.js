@@ -197,6 +197,13 @@ module.exports.get = function (pgp, currency, conf) {
                     next('Peer ' + peerFPR + ' : forward already sent');
                     return;
                   }
+                  if(fwd._id){
+                    fwd.remove(next);
+                    return;
+                  }
+                  next();
+                },
+                function (next) {
                   forward = new Forward({
                     version: 1,
                     currency: currency,

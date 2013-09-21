@@ -91,6 +91,7 @@ module.exports = function (pgp, currency, conf) {
   }
 
   this.forward = function (req, res) {
+    var errCode = 400;
     async.waterfall([
 
       // Parameters
@@ -114,13 +115,6 @@ module.exports = function (pgp, currency, conf) {
 
         async.waterfall([
           function (next){
-            if(!pubkey){
-              next('Public key not found, POST at ucg/peering/peers to make the node retrieve it');
-              return;
-            }
-            next();
-          },
-          function (next){
             fwd.parse(signedPR, next);
           },
           function (fwd, next){
@@ -129,6 +123,24 @@ module.exports = function (pgp, currency, conf) {
           function(valid, next){
             if(!valid){
               next('Not a valid peering request');
+              return;
+            }
+            next();
+          },
+          function (next) {
+            Peer.find({ fingerprint: fwd.from }, next);
+          },
+          function (peers, next) {
+            if(peers.length == 0){
+              errCode = 404;
+              next('Peer ' + fwd.from + ' not found, POST at ucg/peering/peers first');
+              return;
+            }
+            next();
+          },
+          function (next){
+            if(!pubkey){
+              next('Public key not found, POST at ucg/peering/peers to make the node retrieve it');
               return;
             }
             next();
@@ -169,7 +181,7 @@ module.exports = function (pgp, currency, conf) {
       }
     ], function (err, recordedPR) {
       if(err){
-        res.send(400, err);
+        res.send(errCode, err);
       }
       else res.end(JSON.stringify(recordedPR.json(), null, "  "));
     });
@@ -339,7 +351,7 @@ module.exports = function (pgp, currency, conf) {
       function (forwards, next){
         var json = { peers: [] };
         async.forEach(forwards, function(fwd, callback){
-          p['fingerprint'] = fwd[oneWay] || "";
+          var p = { fingerprint: fwd[oneWay] || "" };
           async.waterfall([
             function (cb){
               Peer.find({ fingerprint: fwd[otherWay] }, cb);

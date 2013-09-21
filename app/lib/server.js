@@ -7,6 +7,7 @@ var connectPgp = require('connect-pgp');
 var _          = require('underscore');
 var server     = require('../lib/server');
 var openpgp    = require('./openpgp').openpgp;
+var jpgp       = require('./jpgp');
 
 openpgp.init();
 
@@ -18,6 +19,20 @@ function initModels() {
 }
 
 module.exports.pgp = openpgp;
+
+module.exports.privateKey = function () {
+  return openpgp.keyring.privateKeys[0];
+}
+
+module.exports.publicKey = function () {
+  var privateKey = module.exports.privateKey();
+  return (openpgp && privateKey) ? privateKey.obj.extractPublicKey() : '';
+}
+
+module.exports.fingerprint = function () {
+  var ascciiPubkey = module.exports.publicKey();
+  return ascciiPubkey ? jpgp().certificate(ascciiPubkey).fingerprint : '';
+};
 
 module.exports.database = {
 

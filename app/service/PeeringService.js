@@ -20,6 +20,7 @@ module.exports.get = function (pgp, currency, conf) {
 
   this.submit = function(signedPR, keyID, callback){
     var peer = new Peer();
+    var that = this;
     async.waterfall([
       function (next){
         peer.parse(signedPR, next);
@@ -49,8 +50,23 @@ module.exports.get = function (pgp, currency, conf) {
           next(err, body);
         });
       },
-      function (body, next) {
-        peer.verifySignature(body, next);
+      function (pubkey, next){
+        that.persistPeering(signedPR, pubkey, next);
+      }
+    ], callback);
+  }
+
+  this.persistPeering = function (signedPR, pubkey, done) {
+    var peer = new Peer();
+    async.waterfall([
+      function (next){
+        peer.parse(signedPR, next);
+      },
+      function (peer, next){
+        peer.verify(currency, next);
+      },
+      function (verified, next) {
+        peer.verifySignature(pubkey, next);
       },
       function (verified, next){
         if(!verified){
@@ -80,7 +96,7 @@ module.exports.get = function (pgp, currency, conf) {
           next(err, recordedPR);
         });
       }
-    ], callback);
+    ], done);
   }
 
   this.initKeys = function (done) {
@@ -155,12 +171,19 @@ module.exports.get = function (pgp, currency, conf) {
             async.forEach(_(keysByPeer).keys(), function(peerFPR, callback){
               var forward, peer;
               async.waterfall([
+                function (next) {
+                  if(peerFPR == that.cert.fingerprint){
+                    next('Peer ' + peerFPR + ' : self');
+                    return;
+                  }
+                  next();
+                },
                 function (next){
                   Peer.find({ fingerprint: peerFPR }, next);
                 },
                 function (peers, next) {
                   if(peers.length < 1){
-                    next('Peer ' + peerFPR + ' unknow yet');
+                    next('Peer ' + peerFPR + ' : unknow yet');
                     return;
                   }
                   peer = peers[0];
@@ -171,7 +194,7 @@ module.exports.get = function (pgp, currency, conf) {
                 },
                 function (fwd, next) {
                   if(fwd.forward == 'KEYS' && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
-                    next('Forward already sent');
+                    next('Peer ' + peerFPR + ' already sent');
                     return;
                   }
                   forward = new Forward({
@@ -189,7 +212,6 @@ module.exports.get = function (pgp, currency, conf) {
                 function (peer, rawForward, signature, next) {
                   sendForward(peer, rawForward, signature, function (err, res, body) {
                     if(!err && res && res.statusCode && res.statusCode == 404){
-                      console.log('404');
                       async.waterfall([
                         function (next){
                           Peer.find({ fingerprint: that.cert.fingerprint }, next);
@@ -199,7 +221,7 @@ module.exports.get = function (pgp, currency, conf) {
                             next('Cannot send self-peering request: does not exist');
                             return;
                           }
-                          sendPeering(peers[0], next);
+                          sendPeering(peer, peers[0], next);
                         },
                         function (res, body, next) {
                           sendForward(peer, rawForward, signature, function (err, res, body) {
@@ -271,6 +293,13 @@ module.exports.get = function (pgp, currency, conf) {
         }
       ], done);
     }
+  }
+
+  function sendPeering(toPeer, peer, done) {
+    post(toPeer, '/ucg/peering/peers', {
+      "entry": peer.getRaw(),
+      "signature": peer.signature
+    }, done);
   }
 
   function sendForward(peer, rawForward, signature, done) {

@@ -181,6 +181,7 @@ module.exports = function (pgp, currency, conf) {
       }
     ], function (err, recordedPR) {
       if(err){
+        console.log(err);
         res.send(errCode, err);
       }
       else res.end(JSON.stringify(recordedPR.json(), null, "  "));
@@ -223,7 +224,9 @@ module.exports = function (pgp, currency, conf) {
         ParametersService.getPeeringEntry(req, next);
       },
 
-      PeeringService.submit
+      function (signedPR, pubkey, next) {
+        PeeringService.submit(signedPR, pubkey, next);
+      }
 
     ], function (err, recordedPR) {
       if(err){

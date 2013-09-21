@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 var server   = require('../app/lib/server');
 var http     = require('http');
+var jpgp     = require('../app/lib/jpgp');
 var fs       = require('fs');
 var async    = require('async');
 var _        = require('underscore');
@@ -34,7 +35,7 @@ program
   .description('Tries to synchronise data with remote uCoin node')
   .action(connect(function (host, port, conf) {
     var Synchroniser = require('../app/lib/sync');
-    new Synchroniser(host, port, false, program.currency).sync(function (err, stats) {
+    new Synchroniser(host, port, false, server.pgp, program.currency, conf).sync(function (err, stats) {
       if(err){
         console.error('Error during sync %s', err);
       }
@@ -212,29 +213,78 @@ program
     // Launching server
     server.express.app(program.currency, conf, function (err, app) {
 
-      if(err){
-        console.error('Could not start: %s', err);
-        server.database.disconnect();
-        return;
-      }
+      var PeeringService = require('../app/service/PeeringService').get(server.pgp, program.currency, conf);
 
-      if(conf.ipv4){
-        http.createServer(app).listen(conf.port, conf.ipv4, function(){
-          console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
-        });
-      }
-
-      if(conf.ipv6){
-        http.createServer(app).listen(conf.port, conf.ipv6, function(){
-          console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
-        });
-      }
-
-      if(!conf.ipv4 && !conf.ipv6){
-        console.error("No interface to listen to. Relaunch with --config and eith --ipv4 or --ipv6 parameters.");
-        server.database.disconnect();
-        return;
-      }
+      async.waterfall([
+        function (next){
+          next(err);
+        },
+        function (next) {
+          if(!conf.ipv4 && !conf.ipv6){
+            next("No interface to listen to. Relaunch with --config and eith --ipv4 or --ipv6 parameters.");
+            return;
+          }
+          next();
+        },
+        function (next) {
+          mongoose.model('Peer').find({ fingerprint: server.fingerprint() }, next);
+        },
+        function (peers, next) {
+          if(peers == 0){
+            console.log('Generating server\'s peering entry...');
+            var Peer = mongoose.model('Peer');
+            var p = new Peer({
+              version: 1,
+              currency: program.currency,
+              fingerprint: server.fingerprint(),
+              dns: conf.remotehost ? conf.remotehost : '',
+              ipv4: conf.remoteipv4 ? conf.remoteipv4 : '',
+              ipv6: conf.remoteipv6 ? conf.remoteipv6 : '',
+              port: conf.remoteport ? conf.remoteport : ''
+            });
+            async.waterfall([
+              function (next){
+                jpgp().sign(p.getRaw(), server.privateKey(), next);
+              },
+              function (signature, next) {
+                PeeringService.persistPeering(p.getRaw() + signature, server.publicKey(), next);
+              }
+            ], function (err) {
+              next(err);
+            });
+          }
+          else next();
+        },
+        function (next) {
+          if(conf.ipv4){
+            http.createServer(app).listen(conf.port, conf.ipv4, function(){
+              console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
+              next();
+            });
+          }
+          else next();
+        },
+        function (next) {
+          if(conf.ipv6){
+            http.createServer(app).listen(conf.port, conf.ipv6, function(){
+              console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
+            });
+          }
+          else next();
+        },
+        function (next) {
+          PeeringService.initKeys(next);
+        },
+        function (next) {
+          PeeringService.initForwards(next);
+        }
+      ], function (err) {
+        if(err){
+          console.error('Could not start: %s', err);
+          server.database.disconnect();
+          return;
+        }
+      });
     });
   }));
 

@@ -100,6 +100,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   this.initKeys = function (done) {
+    var that = this;
     var manual = conf.kmanagement == 'KEYS';
     if(manual){
       done();
@@ -109,7 +110,7 @@ module.exports.get = function (pgp, currency, conf) {
     var managedKeys = [];
     async.waterfall([
       function (next){
-        Key.find({ managed: true });
+        Key.find({ managed: true }, next);
       },
       function (keys, next) {
         keys.forEach(function (k) {
@@ -137,7 +138,10 @@ module.exports.get = function (pgp, currency, conf) {
           Key.setManaged(key, true, that.cert.fingerprint, callback);
         }, next);
       }
-    ], done);
+    ], function (err) {
+      console.log('Managed keys updated.');
+      done();
+    });
   }
 
   this.initForwards = function (done) {
@@ -262,23 +266,35 @@ module.exports.get = function (pgp, currency, conf) {
       */
       async.waterfall([
         function (next){
-          Key.find({ managed: true });
+          Peer.find({}, next);
         },
-        function (keys, next) {
-          async.forEachSeries(keys, function(peerFPR, callback){
+        function (peers, next) {
+          async.forEachSeries(peers, function(peer, callback){
+            var forward;
             async.waterfall([
-              function (next){
-                Peer.find({ fingerprint: peerFPR }, next);
-              },
-              function (peers, next) {
-                if(peers.length < 1){
-                  next('Peer unknow yet')
+              function (next) {
+                if(peer.fingerprint == that.cert.fingerprint){
+                  next('Peer ' + peer.fingerprint + ' : self');
                   return;
                 }
-                next(null, peers[0]);
+                next();
               },
-              function (peer, next) {
-                var forward = new Forward({
+              function (next) {
+                Forward.getTheOne(this.cert.fingerprint, peer.fingerprint, next);
+              },
+              function (fwd, next) {
+                if(fwd.forward == 'ALL'){
+                  next('Peer ' + peer.fingerprint + ' : forward already sent');
+                  return;
+                }
+                if(fwd._id){
+                  fwd.remove(next);
+                  return;
+                }
+                next();
+              },
+              function (next) {
+                forward = new Forward({
                   version: 1,
                   currency: currency,
                   from: that.cert.fingerprint,
@@ -290,7 +306,33 @@ module.exports.get = function (pgp, currency, conf) {
                 });
               },
               function (peer, rawForward, signature, next) {
-                sendForward(peer, rawForward, signature, next);
+                sendForward(peer, rawForward, signature, function (err, res, body) {
+                  if(!err && res && res.statusCode && res.statusCode == 404){
+                    async.waterfall([
+                      function (next){
+                        Peer.find({ fingerprint: that.cert.fingerprint }, next);
+                      },
+                      function (peers, next) {
+                        if(peers.length == 0){
+                          next('Cannot send self-peering request: does not exist');
+                          return;
+                        }
+                        sendPeering(peer, peers[0], next);
+                      },
+                      function (res, body, next) {
+                        sendForward(peer, rawForward, signature, function (err, res, body) {
+                          next(err);
+                        });
+                      }
+                    ], next);
+                  }
+                  else if(!res) next('No HTTP result');
+                  else if(!res.statusCode) next('No HTTP result code');
+                  else next(err);
+                });
+              },
+              function (next) {
+                forward.save(next);
               }
             ], function (err) {
               if(err) console.error(err);

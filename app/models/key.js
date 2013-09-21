@@ -41,7 +41,7 @@ KeySchema.statics.setSeen = function(fingerprint, seen, done){
   });
 }
 
-KeySchema.statics.setManaged = function(fingerprint, managed, done){
+KeySchema.statics.setManaged = function(fingerprint, managed, nodeFingerprint, done){
   Key.findOne({ fingerprint: fingerprint }, function (err, key) {
     key = key || new Key({ fingerprint: fingerprint });
     if(key.managed == managed && key._id){
@@ -56,6 +56,10 @@ KeySchema.statics.setManaged = function(fingerprint, managed, done){
       },
       function (obj, code, next){
         updateManagedMerkle(key, next);
+      },
+      function (next) {
+        var Forward = mongoose.model('Forward');
+        Forward.remove({ from: nodeFingerprint }, next);
       }
     ], done);
   });

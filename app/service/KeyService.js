@@ -3,7 +3,7 @@ var async      = require('async');
 var mongoose   = require('mongoose');
 var _          = require('underscore');
 
-module.exports.get = function (conf) {
+module.exports.get = function (nodeFingerprint, conf) {
 
   this.handleKey = function(key, isManaged, done) {
     key = key || "";
@@ -18,7 +18,7 @@ module.exports.get = function (conf) {
         next();
       },
       function (next) {
-        mongoose.model('Key').setManaged(key, isManaged, next);
+        mongoose.model('Key').setManaged(key, isManaged, nodeFingerprint, next);
       }
     ], done);
   }

@@ -134,7 +134,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (notManaged, next) {
         async.forEachSeries(notManaged, function (key, callback) {
           console.log('Add %s to managed keys...', key);
-          Key.setManaged(key, true, callback);
+          Key.setManaged(key, true, that.cert.fingerprint, callback);
         }, next);
       }
     ], done);
@@ -194,7 +194,7 @@ module.exports.get = function (pgp, currency, conf) {
                 },
                 function (fwd, next) {
                   if(fwd.forward == 'KEYS' && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
-                    next('Peer ' + peerFPR + ' already sent');
+                    next('Peer ' + peerFPR + ' : forward already sent');
                     return;
                   }
                   forward = new Forward({

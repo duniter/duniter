@@ -61,8 +61,11 @@ function handleKey (conf, key, isManaged, message) {
   key = key || "";
   key = key.toUpperCase();
   async.waterfall([
-    function (next){
-      require('../app/service/KeyService').get(conf).handleKey(key, isManaged, next);
+    function (next) {
+      server.express.app(program.currency, conf, next);
+    },
+    function (app, next){
+      require('../app/service/KeyService').get(server.fingerprint(), conf).handleKey(key, isManaged, next);
     }
   ], function (err, result) {
     if(err){

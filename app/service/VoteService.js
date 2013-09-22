@@ -69,6 +69,10 @@ module.exports = function (currency) {
         var voteEntity = vote;
         var previousHash = voteEntity.hash;
         if(votes.length > 0){
+          if(votes[0].sigDate >= voteEntity.sigDate){
+            next('This vote is not more recent than already recorded');
+            return;
+          }
           voteEntity = votes[0];
           previousHash = voteEntity.hash;
           vote.copyValues(voteEntity);

@@ -15,6 +15,7 @@ var VoteSchema = new Schema({
   _amendment: Schema.Types.ObjectId,
   hash: String,
   amendmentHash: String,
+  sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -99,6 +100,10 @@ VoteSchema.methods = {
       var rawAmendment = rawVote.substring(0, sigIndex);
       this.signature = rawVote.substring(sigIndex);
       this.hash = sha1(this.signature).toUpperCase();
+      try{
+        this.sigDate = jpgp().signature(this.signature).signatureDate();
+      }
+      catch(ex){}
       async.parallel({
         pubkey: function(done){
           if(rawPubkey){

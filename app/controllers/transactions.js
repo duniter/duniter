@@ -249,7 +249,7 @@ module.exports = function (pgp, currency, conf) {
           raw: tx.getRaw()
         }, null, "  "));
       }
-      if(!err & !alreadyProcessed){
+      if(!alreadyProcessed){
         process.nextTick(function () {
           PeeringService.propagateTransaction(req, function (err) {
             if(err) console.error('Error during transaction\'s propagation: %s', err);

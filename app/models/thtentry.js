@@ -12,6 +12,7 @@ var THTEntrySchema = new Schema({
   hosters: [String],
   trusts: [String],
   signature: String,
+  propagated: { type: Boolean, default: false },
   hash: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }

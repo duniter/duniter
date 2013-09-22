@@ -284,7 +284,37 @@ module.exports = function (pgp, currency, conf) {
       if(err){
         res.send(400, err);
       }
-      else res.end(JSON.stringify(entry.json()));
+      else{
+        async.series({
+          answers: function(callback){
+            res.end(JSON.stringify(entry.json()));
+            callback();
+          },
+          propagates: function(callback){
+            PeeringService.propagateTHT(req, function (err, propagated) {
+              if(err && propagated){
+                console.log(err);
+              }
+              else if(err){
+                console.log('Not propageted: %s', err);
+              }
+              else if(propagated){
+                console.log('Propagated successfully %s', entry.fingerprint);
+              }
+              else{
+                console.log('Unknown error during propagation');
+              }
+              callback();
+            });
+          },
+          callback: function (callback) {
+            PeeringService.initForwards(callback);
+          }
+        },
+        function(err) {
+          if(err) console.error('Error during THT POST: ' + err);
+        });
+      }
     });
   },
 

@@ -18,6 +18,8 @@ module.exports.get = function (pgp, currency, conf) {
   this.ascciiPubkey = (pgp && pgp.keyring.privateKeys[0]) ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
 
+  var ParametersService = require('./ParametersService');
+
   this.submit = function(signedPR, keyID, callback){
     var peer = new Peer();
     var that = this;
@@ -344,6 +346,56 @@ module.exports.get = function (pgp, currency, conf) {
     }
   }
 
+  this.propagateTHT = function (req, done) {
+    var that = this;
+    var entry = new THTEntry();
+    async.waterfall([
+      function (next) {
+        ParametersService.getTHTEntry(req, next);
+      },
+      function (signedEntry, next){
+        entry.parse(signedEntry, next);
+      },
+      function (entry, next){
+        entry.verify(currency, next);
+      },
+      function(verified, next){
+        THTEntry.getTheOne(entry.fingerprint, next);
+      },
+      function (dbEntry, next) {
+        if(dbEntry.hash != entry.hash){
+          next('Cannot propagate THT entry: DB is not sync with posted entry (' + entry.fingerprint + ')');
+          return;
+        }
+        entry = dbEntry;
+        if(entry.propagated){
+          next('THT entry for ' + entry.fingerprint + ' already propagated', true);
+          return;
+        }
+        next();
+      },
+      function (next) {
+        Peer.find({}, next);
+      },
+      function (peers, next) {
+        async.forEach(peers, function(peer, callback){
+          if(peer.fingerprint == that.cert.fingerprint){
+            callback();
+            return;
+          }
+          post(peer, '/ucg/tht', { entry: entry.getRaw(), signature: entry.signature }, callback);
+        }, next);
+      },
+      function (next) {
+        entry.propagated = true;
+        entry.save(next);
+      },
+      function (entry, code, next) {
+        next(null, entry.propagated);
+      }
+    ], done);
+  }
+
   function sendPeering(toPeer, peer, done) {
     post(toPeer, '/ucg/peering/peers', {
       "entry": peer.getRaw(),
@@ -359,13 +411,14 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function post(peer, url, data, done) {
-    console.log('http://' + peer.getURL() + url);
+    console.log('POST http://' + peer.getURL() + url);
     request
     .post('http://' + peer.getURL() + url, done)
     .form(data);
   }
 
   function get(peer, url, done) {
+    console.log('GET http://' + peer.getURL() + url);
     request
     .get('http://' + peer.getURL() + url)
     .end(done);

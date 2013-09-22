@@ -27,18 +27,23 @@ module.exports.get = function (currency) {
           next('Bad document structure');
           return;
         }
-        Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err) {
+        Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err, found) {
           if(err)
             next();
-          else
-            next('Transaction already processed');
+          else{
+            tx = found;
+            next('Transaction already processed', false, true);
+          }
         });
       },
       function (next){
         tx.verifySignature(pubkey.raw, next);
       }
-    ], function (err, verified) {
-      if(err){
+    ], function (err, verified, alreadyProcessed) {
+      if(err && alreadyProcessed){
+        callback(err, tx, alreadyProcessed);
+      }
+      else if(err){
         callback(err);
       }
       else if(!verified){

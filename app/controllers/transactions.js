@@ -15,6 +15,7 @@ var ParametersService = require('../service/ParametersService');
 module.exports = function (pgp, currency, conf) {
 
   var TransactionService = require('../service/TransactionsService').get(currency);
+  var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
 
   this.keys = function (req, res) {
     async.waterfall([
@@ -236,11 +237,10 @@ module.exports = function (pgp, currency, conf) {
       function (extractedPubkey, signedTx, next) {
         TransactionService.process(extractedPubkey, signedTx, next);
       }
-    ], function (err, tx) {
+    ], function (err, tx, alreadyProcessed) {
       if(err){
         console.error(err);
         res.send(400, err);
-        return;
       }
       else{
         res.send(200, JSON.stringify({
@@ -248,7 +248,13 @@ module.exports = function (pgp, currency, conf) {
           transaction: tx.json(),
           raw: tx.getRaw()
         }, null, "  "));
-        return;
+      }
+      if(!err & !alreadyProcessed){
+        process.nextTick(function () {
+          PeeringService.propagateTransaction(req, function (err) {
+            if(err) console.error('Error during transaction\'s propagation: %s', err);
+          });
+        });
       }
     });
   };

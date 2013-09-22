@@ -1,16 +1,17 @@
-var jpgp      = require('../lib/jpgp');
-var async     = require('async');
-var request   = require('request');
-var mongoose  = require('mongoose');
-var _         = require('underscore');
-var THTEntry  = mongoose.model('THTEntry');
-var Amendment = mongoose.model('Amendment');
-var PublicKey = mongoose.model('PublicKey');
-var Merkle    = mongoose.model('Merkle');
-var Vote      = mongoose.model('Vote');
-var Peer      = mongoose.model('Peer');
-var Key       = mongoose.model('Key');
-var Forward   = mongoose.model('Forward');
+var jpgp        = require('../lib/jpgp');
+var async       = require('async');
+var request     = require('request');
+var mongoose    = require('mongoose');
+var _           = require('underscore');
+var THTEntry    = mongoose.model('THTEntry');
+var Amendment   = mongoose.model('Amendment');
+var PublicKey   = mongoose.model('PublicKey');
+var Transaction = mongoose.model('Transaction');
+var Merkle      = mongoose.model('Merkle');
+var Vote        = mongoose.model('Vote');
+var Peer        = mongoose.model('Peer');
+var Key         = mongoose.model('Key');
+var Forward     = mongoose.model('Forward');
 
 module.exports.get = function (pgp, currency, conf) {
   
@@ -392,6 +393,96 @@ module.exports.get = function (pgp, currency, conf) {
         next(null, entry.propagated);
       }
     ], done);
+  }
+
+  this.propagateTransaction = function (req, done) {
+    var am = null;
+    var pubkey = null;
+    var that = this;
+    async.waterfall([
+      function (next){
+        ParametersService.getTransaction(req, next);
+      },
+      function (extractedPubkey, signedTX, next) {
+        var tx = new Transaction({});
+        async.waterfall([
+          function (next){
+            tx.parse(signedTX, next);
+          },
+          function (tx, next){
+            tx.verify(currency, next);
+          },
+          function (verified, next){
+            if(verified){
+              var fingerprints = [];
+              async.waterfall([
+                function (next){
+                  Transaction.getBySenderAndNumber(tx.sender, tx.number, next);
+                },
+                function (dbTX, next){
+                  tx = dbTX;
+                  tx.propagated = true;
+                  tx.save(next);
+                },
+                function (tx, code, next){
+                  Forward.findMatchingTransaction(tx, next);
+                },
+                function (fwds, next) {
+                  fwds.forEach(function (fwd) {
+                    fingerprints.push(fwd.from);
+                  });
+                  next();
+                },
+                function (next){
+                  THTEntry.findMatchingTransaction(tx, next);
+                },
+                function (entries, next){
+                  entries.forEach(function(entry){
+                    entry.hosters.forEach(function(host){
+                      fingerprints.push(host);
+                    });
+                  });
+                  next();
+                },
+                function (next){
+                  async.waterfall([
+                    function (next){
+                      fingerprints.sort();
+                      async.forEach(_(fingerprints).uniq(), function(fpr, callback){
+                        if(fpr == that.cert.fingerprint){
+                          callback();
+                          return;
+                        }
+                        async.waterfall([
+                          function (next){
+                            Peer.find({ fingerprint: fpr}, next);
+                          },
+                          function (peers, next){
+                            if(peers.length > 0){
+                              sendTransaction(peers[0], tx, next);
+                            }
+                            else next();
+                          },
+                        ], callback);
+                      }, next);
+                    },
+                  ], next);
+                },
+              ], next);
+            }
+            else next('Transaction cannot be propagated as it is not valid');
+          }
+        ], next);
+      }
+    ], done);
+  }
+
+  function sendTransaction(peer, transaction, done) {
+    console.log('POST transaction to %s', peer.fingerprint);
+    post(peer, '/hdc/transactions/process', {
+      "transaction": transaction.getRaw(),
+      "signature": transaction.signature
+    }, done);
   }
 
   function sendTHT(peer, entry, done) {

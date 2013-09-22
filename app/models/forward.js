@@ -197,4 +197,13 @@ ForwardSchema.statics.getTheOne = function (from, to, done) {
   });
 }
 
+ForwardSchema.statics.findMatchingTransaction = function (tx, done) {
+  Forward.find({
+    $or: [
+      { forward: "ALL" },
+      { forward: 'KEYS', keys: { $in: [tx.sender, tx.recipient ]} }
+    ]
+  }, done);
+}
+
 var Forward = mongoose.model('Forward', ForwardSchema);

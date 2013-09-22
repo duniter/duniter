@@ -195,4 +195,10 @@ THTEntrySchema.statics.getTheOne = function (fingerprint, done) {
   });
 }
 
+THTEntrySchema.statics.findMatchingTransaction = function (tx, done) {
+  THTEntry.find({
+    fingerprint: { $in: [tx.sender, tx.recipient ]}
+  }, done);
+}
+
 var THTEntry = mongoose.model('THTEntry', THTEntrySchema);

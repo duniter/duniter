@@ -1,6 +1,7 @@
 var jpgp     = require('../lib/jpgp');
 var mongoose = require('mongoose');
 var async    = require('async');
+var sha1     = require('sha1');
 var _        = require('underscore');
 var Schema   = mongoose.Schema;
 
@@ -11,6 +12,7 @@ var PublicKeySchema = new Schema({
   name: String,
   email: String,
   comment: String,
+  hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -27,6 +29,7 @@ PublicKeySchema.methods = {
     var obj = this;
     var k = jpgp().certificate(obj.raw);
     obj.fingerprint = k.fingerprint;
+    obj.hash = sha1(obj.raw).toUpperCase();
     var uid = k.uids[0];
     var extract = uid.match(/([\s\S]*) \(([\s\S]*)\) <([\s\S]*)>/);
     if(extract && extract.length === 4){
@@ -207,6 +210,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
             name: pubkey.name,
             comment: pubkey.comment,
             sigDate: pubkey.sigDate,
+            hash: pubkey.hash,
             created: now,
             updated: now
           }], function (err, pubkey) {
@@ -215,6 +219,10 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
         }
         else{
           PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
+            if(foundKeys[0].hash == pubkey.hash){
+              next('Key has no changes and won\'t be updated');
+              return;
+            }
             if(foundKeys[0].sigDate >= pubkey.sigDate){
               next('Key update is possible only for more recent signature');
               return;
@@ -225,6 +233,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
             foundKeys[0].name = pubkey.name;
             foundKeys[0].comment = pubkey.comment;
             foundKeys[0].sigDate = pubkey.sigDate;
+            foundKeys[0].hash = pubkey.hash;
             foundKeys[0].updated = now;
             foundKeys[0].save(function (err) {
               next(err);

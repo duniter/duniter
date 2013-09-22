@@ -417,14 +417,18 @@ module.exports.get = function (pgp, currency, conf) {
               var fingerprints = [];
               async.waterfall([
                 function (next){
-                  Transaction.getBySenderAndNumber(tx.sender, tx.number, next);
+                  Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err, dbTX) {
+                    if(!err && dbTX){
+                      tx.propagated = true;
+                      dbTX.propagated = true;
+                      dbTX.save(function (err) {
+                        next(err);
+                      });
+                    }
+                    else next();
+                  });
                 },
-                function (dbTX, next){
-                  tx = dbTX;
-                  tx.propagated = true;
-                  tx.save(next);
-                },
-                function (tx, code, next){
+                function (next){
                   Forward.findMatchingTransaction(tx, next);
                 },
                 function (fwds, next) {

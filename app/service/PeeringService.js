@@ -252,7 +252,6 @@ module.exports.get = function (pgp, currency, conf) {
                   forward.save(next);
                 },
               ], function (err) {
-                if(err) console.error(err);
                 callback();
               });
             }, next);

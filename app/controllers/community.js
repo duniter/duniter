@@ -13,6 +13,7 @@ module.exports = function (pgp, currency, conf) {
   var MerkleService     = require('../service/MerkleService');
   var ParametersService = require('../service/ParametersService');
   var MembershipService = require('../service/MembershipService').get(currency);
+  var PeeringService    = require('../service/PeeringService').get(pgp, currency, conf);
 
   this.currentVotes = function (req, res) {
     async.waterfall([
@@ -46,10 +47,13 @@ module.exports = function (pgp, currency, conf) {
       if(err){
         res.send(400, err);
       }
-      else res.end(JSON.stringify({
-        request: recordedMS.hdc(),
-        signature: recordedMS.signature
-      }));
+      else{
+        res.end(JSON.stringify({
+          request: recordedMS.hdc(),
+          signature: recordedMS.signature
+        }));
+        PeeringService.propagateMembership(recordedMS);
+      }
     });
   };
 

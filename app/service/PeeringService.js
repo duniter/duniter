@@ -485,6 +485,10 @@ module.exports.get = function (pgp, currency, conf) {
     this.propagate(pubkey, sendPubkey);
   }
 
+  this.propagateMembership = function (membership) {
+    this.propagate(membership, sendMembership);
+  }
+
   this.propagate = function (obj, sendMethod, done) {
     var that = this;
     async.waterfall([
@@ -518,6 +522,14 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/pks/add', {
       "keytext": pubkey.getRaw(),
       "keysign": pubkey.signature
+    }, done);
+  }
+
+  function sendMembership(peer, membership, done) {
+    console.log('POST membership to %s', peer.fingerprint);
+    post(peer, '/hdc/community/join', {
+      "request": membership.getRaw(),
+      "signature": membership.signature
     }, done);
   }
 

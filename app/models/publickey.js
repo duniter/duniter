@@ -260,4 +260,40 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
   ], done);
 };
 
+PublicKeySchema.statics.getForPeer = function (peer, done) {
+  async.waterfall([
+    function (next){
+      PublicKey.find({ fingerprint: peer.fingerprint }, next);
+    },
+    function (keys, next){
+      if(keys.length > 0){
+        next(null, keys[0]);
+      }
+      else{
+        async.waterfall([
+          function (next){
+            require('request')('http://' + peer.getURL()+ '/ucg/pubkey', next);
+          },
+          function (httpRes, body, next){
+            var cert = jpgp().certificate(body);
+            if(!cert.fingerprint.match(new RegExp("^" + peer.fingerprint + "$", "g"))){
+              next('Peer\'s public key ('+cert.fingerprint+') does not match peering (' + peer.fingerprint + ')');
+              return;
+            }
+            PublicKey.persistFromRaw(body, '', function (err) {
+              next();
+            });
+          },
+          function (next){
+            PublicKey.find({ fingerprint: peer.fingerprint }, function (err, pubkeys) {
+              if(pubkeys.length > 0) next(null, pubkeys[0]);
+              else if(pubkeys.length == 0) next('Error getting public key for peer ' + peer.getURL());
+            });
+          },
+        ], next);
+      }
+    },
+  ], done);
+}
+
 var PublicKey = mongoose.model('PublicKey', PublicKeySchema);

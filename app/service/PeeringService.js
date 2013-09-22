@@ -37,21 +37,18 @@ module.exports.get = function (pgp, currency, conf) {
           next('Not a valid peering request');
           return;
         }
-        require('request')('http://' + peer.getURL()+ '/ucg/pubkey', next);
+        PublicKey.getForPeer(peer, next);
       },
-      function (httpRes, body, next){
-        var cert = jpgp().certificate(body);
-        if(!cert.fingerprint.match(new RegExp(keyID + "$", "g"))){
-          next('Peer\'s public key ('+cert.fingerprint+') does not match signatory (0x' + keyID + ')');
+      function (pubkey, next){
+        if(!pubkey.fingerprint.match(new RegExp(keyID + "$", "g"))){
+          next('Peer\'s public key ('+pubkey.fingerprint+') does not match signatory (0x' + keyID + ')');
           return;
         }
         if(!peer.fingerprint.match(new RegExp(keyID + "$", "g"))){
-          next('Fingerprint in peering entry ('+cert.fingerprint+') does not match signatory (0x' + keyID + ')');
+          next('Fingerprint in peering entry ('+pubkey.fingerprint+') does not match signatory (0x' + keyID + ')');
           return;
         }
-        PublicKey.persistFromRaw(body, '', function (err) {
-          next(err, body);
-        });
+        next(null, pubkey.raw);
       },
       function (pubkey, next){
         that.persistPeering(signedPR, pubkey, next);
@@ -492,6 +489,10 @@ module.exports.get = function (pgp, currency, conf) {
   this.propagateVote = function (amendment, vote) {
     amendment.signature = vote.signature;
     this.propagate(amendment, sendVote);
+  }
+
+  this.propagatePeering = function (peering, vote) {
+    this.propagate(peering, sendPeering);
   }
 
   this.propagate = function (obj, sendMethod, done) {

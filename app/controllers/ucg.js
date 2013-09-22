@@ -232,7 +232,10 @@ module.exports = function (pgp, currency, conf) {
       if(err){
         res.send(400, err);
       }
-      else res.end(JSON.stringify(recordedPR.json(), null, "  "));
+      else{
+        res.end(JSON.stringify(recordedPR.json(), null, "  "));
+        PeeringService.propagatePeering(recordedPR);
+      }
     });
   }
 

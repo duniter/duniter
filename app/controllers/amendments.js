@@ -8,8 +8,9 @@ var MerkleService     = require('../service/MerkleService');
 
 module.exports = function (pgp, currency, conf) {
 
-  var VoteService       = require('../service/VoteService')(currency);
-  var StrategyService   = require('../service/StrategyService')();
+  var VoteService     = require('../service/VoteService')(currency);
+  var StrategyService = require('../service/StrategyService')();
+  var PeeringService  = require('../service/PeeringService').get(pgp, currency, conf);
 
   this.promoted = function (req, res) {
     async.waterfall([
@@ -148,6 +149,8 @@ module.exports = function (pgp, currency, conf) {
             amendment: am.hdc(),
             signature: recordedVote.signature
           }));
+          // And vote is forwarded
+          PeeringService.propagateVote(am, recordedVote);
         });
       });
     }

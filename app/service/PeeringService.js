@@ -489,6 +489,11 @@ module.exports.get = function (pgp, currency, conf) {
     this.propagate(membership, sendMembership);
   }
 
+  this.propagateVote = function (amendment, vote) {
+    amendment.signature = vote.signature;
+    this.propagate(amendment, sendVote);
+  }
+
   this.propagate = function (obj, sendMethod, done) {
     var that = this;
     async.waterfall([
@@ -530,6 +535,14 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/hdc/community/join', {
       "request": membership.getRaw(),
       "signature": membership.signature
+    }, done);
+  }
+
+  function sendVote(peer, vote, done) {
+    console.log('POST vote to %s', peer.fingerprint);
+    post(peer, '/hdc/amendments/votes', {
+      "amendment": vote.getRaw(),
+      "signature": vote.signature
     }, done);
   }
 

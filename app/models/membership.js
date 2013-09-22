@@ -13,7 +13,9 @@ var MembershipSchema = new Schema({
   basis: {"type": Number, "default": 0},
   fingerprint: String,
   hash: String,
+  dataHash: String,
   signature: String,
+  sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -38,10 +40,16 @@ MembershipSchema.methods = {
   parse: function(rawMembership, callback) {
     var ms = new hdc.Membership(rawMembership);
     var sigIndex = rawMembership.indexOf("-----BEGIN");
-    if(~sigIndex)
+    if(~sigIndex){
       this.signature = rawMembership.substring(sigIndex);
+      try{
+        this.sigDate = jpgp().signature(this.signature).signatureDate();
+      }
+      catch(ex){}
+    }
     this.hash = sha1(rawMembership).toUpperCase();
     fill(this, ms);
+    this.dataHash = sha1(this.getRaw()).toUpperCase();
     callback(ms.error, this);
   },
 
@@ -153,4 +161,5 @@ function fill (ms1, ms2) {
   ms1.status   = ms2.status;
   ms1.basis    = ms2.basis;
   ms1.hash     = ms2.hash;
+  ms1.dataHash = ms2.dataHash;
 }

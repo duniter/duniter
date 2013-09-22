@@ -74,6 +74,14 @@ module.exports.get = function (currency) {
             var previousHash = msEntity.hash;
             if(requests.length > 0){
               // Already existing status request
+              if(requests[0].sigDate >= msEntity.sigDate){
+                next('A more recent membership was already submitted');
+                return;
+              }
+              if(requests[0].dataHash == msEntity.dataHash){
+                next('Membership request already recorded');
+                return;
+              }
               msEntity = requests[0];
               previousHash = requests[0].hash;
               ms.copyValues(msEntity);

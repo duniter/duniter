@@ -188,7 +188,7 @@ module.exports.express = {
       app.use(express.errorHandler());
     }
 
-    var pks   = require('../controllers/pks');
+    var pks   = require('../controllers/pks')(openpgp, currency, conf);
     var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
     var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
 

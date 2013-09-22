@@ -69,6 +69,26 @@ function JPGP() {
     return issuer;
   };
 
+  this.signatureDate = function() {
+    var sigDate;
+    try{
+      var signatures = openpgp.read_message(this.signature);
+      var sig = null;
+      signatures.forEach(function (siga) {
+        if(siga.messagePacket && siga.messagePacket.tagType == 2)
+          sig = siga;
+      });
+      if(!sig){
+        throw new Error("No signature packet found");
+      }
+      sigDate = sig.signature.creationTime;
+    }
+    catch(ex){
+      console.log("Error with signature: " + ex);
+    }
+    return sigDate;
+  };
+
   this.data = function(data_string) {
     this.data = data_string;
     return this;

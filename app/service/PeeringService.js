@@ -481,6 +481,41 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
+  this.propagatePubkey = function (pubkey) {
+    var that = this;
+    async.waterfall([
+      function (next){
+        Forward.find({ to: that.cert.fingerprint }, next);
+      },
+      function (fwds, next){
+        async.forEach(fwds, function(fwd, callback){
+          async.waterfall([
+            function (next){
+              Peer.find({ fingerprint: fwd.from }, next);
+            },
+            function (peers, next){
+              if(peers.length > 0){
+                sendPubkey(peers[0], pubkey, next);
+              }
+              else next();
+            },
+          ], function (err) {
+            callback();
+          });
+        }, next);
+      },
+    ], function (err) {
+    });
+  }
+
+  function sendPubkey(peer, pubkey, done) {
+    console.log('POST pubkey to %s', peer.fingerprint);
+    post(peer, '/pks/add', {
+      "keytext": pubkey.getRaw(),
+      "keysign": pubkey.signature
+    }, done);
+  }
+
   function sendTransaction(peer, transaction, done) {
     console.log('POST transaction to %s', peer.fingerprint);
     post(peer, '/hdc/transactions/process', {

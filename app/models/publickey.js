@@ -11,6 +11,7 @@ var PublicKeySchema = new Schema({
   name: String,
   email: String,
   comment: String,
+  sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -57,6 +58,10 @@ PublicKeySchema.methods = {
         "raw": raw
       }
     };
+  },
+
+  getRaw: function () {
+    return this.raw;
   }
 };
 
@@ -184,6 +189,13 @@ PublicKeySchema.statics.persistFromRaw = function (rawPubkey, rawSignature, done
 PublicKeySchema.statics.persist = function (pubkey, done) {
   var now = new Date();
   async.waterfall([
+    function (next){
+      try{
+        pubkey.sigDate = jpgp().signature(pubkey.signature).signatureDate();
+      }
+      catch(ex){}
+      next();
+    },
     function (next) {
       PublicKey.count({fingerprint: pubkey.fingerprint}, function (err, count) {
         if(count === 0){
@@ -194,6 +206,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
             email: pubkey.email,
             name: pubkey.name,
             comment: pubkey.comment,
+            sigDate: pubkey.sigDate,
             created: now,
             updated: now
           }], function (err, pubkey) {
@@ -202,11 +215,16 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
         }
         else{
           PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
+            if(foundKeys[0].sigDate >= pubkey.sigDate){
+              next('Key update is possible only for more recent signature');
+              return;
+            }
             foundKeys[0].raw = pubkey.raw;
             foundKeys[0].signature = pubkey.signature;
             foundKeys[0].email = pubkey.email;
             foundKeys[0].name = pubkey.name;
             foundKeys[0].comment = pubkey.comment;
+            foundKeys[0].sigDate = pubkey.sigDate;
             foundKeys[0].updated = now;
             foundKeys[0].save(function (err) {
               next(err);

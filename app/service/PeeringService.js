@@ -482,6 +482,10 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   this.propagatePubkey = function (pubkey) {
+    this.propagate(pubkey, sendPubkey);
+  }
+
+  this.propagate = function (obj, sendMethod, done) {
     var that = this;
     async.waterfall([
       function (next){
@@ -495,7 +499,7 @@ module.exports.get = function (pgp, currency, conf) {
             },
             function (peers, next){
               if(peers.length > 0){
-                sendPubkey(peers[0], pubkey, next);
+                sendMethod.call(sendMethod, peers[0], obj, next);
               }
               else next();
             },
@@ -505,6 +509,7 @@ module.exports.get = function (pgp, currency, conf) {
         }, next);
       },
     ], function (err) {
+      if(done) done(err);
     });
   }
 

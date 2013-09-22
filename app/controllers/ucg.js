@@ -292,16 +292,10 @@ module.exports = function (pgp, currency, conf) {
           },
           propagates: function(callback){
             PeeringService.propagateTHT(req, function (err, propagated) {
-              if(err && propagated){
-                console.log(err);
+              if(err && !propagated){
+                console.log('Not propagated: %s', err);
               }
-              else if(err){
-                console.log('Not propageted: %s', err);
-              }
-              else if(propagated){
-                console.log('Propagated successfully %s', entry.fingerprint);
-              }
-              else{
+              else if(!propagated){
                 console.log('Unknown error during propagation');
               }
               callback();

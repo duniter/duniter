@@ -337,7 +337,6 @@ module.exports.get = function (pgp, currency, conf) {
                 forward.save(next);
               }
             ], function (err) {
-              if(err) console.error(err);
               callback();
             });
           }, next);
@@ -383,7 +382,7 @@ module.exports.get = function (pgp, currency, conf) {
             callback();
             return;
           }
-          post(peer, '/ucg/tht', { entry: entry.getRaw(), signature: entry.signature }, callback);
+          sendTHT(peer, entry, callback);
         }, next);
       },
       function (next) {
@@ -396,7 +395,16 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
+  function sendTHT(peer, entry, done) {
+    console.log('POST THT entry %s to %s', entry.fingerprint, peer.fingerprint);
+    post(peer, '/ucg/tht', {
+      "entry": entry.getRaw(),
+      "signature": entry.signature
+    }, done);
+  }
+
   function sendPeering(toPeer, peer, done) {
+    console.log('POST peering to %s', toPeer.fingerprint);
     post(toPeer, '/ucg/peering/peers', {
       "entry": peer.getRaw(),
       "signature": peer.signature
@@ -404,6 +412,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendForward(peer, rawForward, signature, done) {
+    console.log('POST forward to %s', peer.fingerprint);
     post(peer, '/ucg/peering/forward', {
       "forward": rawForward,
       "signature": signature
@@ -411,14 +420,14 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function post(peer, url, data, done) {
-    console.log('POST http://' + peer.getURL() + url);
+    // console.log('POST http://' + peer.getURL() + url);
     request
     .post('http://' + peer.getURL() + url, done)
     .form(data);
   }
 
   function get(peer, url, done) {
-    console.log('GET http://' + peer.getURL() + url);
+    // console.log('GET http://' + peer.getURL() + url);
     request
     .get('http://' + peer.getURL() + url)
     .end(done);

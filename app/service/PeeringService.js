@@ -83,6 +83,10 @@ module.exports.get = function (pgp, currency, conf) {
         var previousHash = null;
         if(peers.length > 0){
           // Already existing peer
+          if(peers[0].sigDate < peerEntity.sigDate){
+            next('Cannot record a previous peering');
+            return;
+          }
           peerEntity = peers[0];
           previousHash = peerEntity.hash;
           peer.copyValues(peerEntity);

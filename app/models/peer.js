@@ -16,6 +16,7 @@ var PeerSchema = new Schema({
   signature: String,
   hash: String,
   status: String,
+  sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -44,6 +45,10 @@ PeerSchema.methods = {
     if(~sigIndex){
       this.signature = rawPeeringReq.substring(sigIndex);
       rawPR = rawPeeringReq.substring(0, sigIndex);
+      try{
+        this.sigDate = jpgp().signature(this.signature).signatureDate();
+      }
+      catch(ex){}
     }
     if(!rawPR){
       callback("No peering request given");

@@ -3,6 +3,7 @@ var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
+var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
 
 var PublicKeySchema = new Schema({
@@ -75,7 +76,7 @@ PublicKeySchema.statics.getTheOne = function (keyID, done) {
       return;
     }
     if(keys.length < 1){
-      done('Corresponding Public Key not found.');
+      done('Corresponding Public Key (0x' + keyID + ') not found.');
       return;
     }
     var pubkey = keys[0];
@@ -272,15 +273,18 @@ PublicKeySchema.statics.getForPeer = function (peer, done) {
       else{
         async.waterfall([
           function (next){
-            require('request')('http://' + peer.getURL()+ '/ucg/pubkey', next);
+            vucoin(peer.ipv6 || peer.ipv4 || peer.dns, peer.port, true, true, next);
           },
-          function (httpRes, body, next){
-            var cert = jpgp().certificate(body);
+          function (node, next){
+            node.ucg.pubkey(next);
+          },
+          function (rawPubkey, signature, next){
+            var cert = jpgp().certificate(rawPubkey);
             if(!cert.fingerprint.match(new RegExp("^" + peer.fingerprint + "$", "g"))){
               next('Peer\'s public key ('+cert.fingerprint+') does not match peering (' + peer.fingerprint + ')');
               return;
             }
-            PublicKey.persistFromRaw(body, '', function (err) {
+            PublicKey.persistFromRaw(rawPubkey, signature, function (err) {
               next();
             });
           },

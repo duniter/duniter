@@ -49,7 +49,7 @@ function JPGP() {
   this.issuer = function() {
     var issuer = "";
     try{
-      var signatures = openpgp.read_message(this.signature);
+      var signatures = openpgp.read_message(this.signature) || [];
       var sig = null;
       signatures.forEach(function (siga) {
         if(siga.messagePacket && siga.messagePacket.tagType == 2)
@@ -72,7 +72,7 @@ function JPGP() {
   this.signatureDate = function() {
     var sigDate;
     try{
-      var signatures = openpgp.read_message(this.signature);
+      var signatures = openpgp.read_message(this.signature) || [];
       var sig = null;
       signatures.forEach(function (siga) {
         if(siga.messagePacket && siga.messagePacket.tagType == 2)

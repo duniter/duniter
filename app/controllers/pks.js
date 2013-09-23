@@ -13,7 +13,7 @@ module.exports = function (pgp, currency, conf) {
 
   var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
 
-  this.all = function (req, res) {
+  this.getAll = function (req, res) {
     async.waterfall([
       function (next){
         Merkle.forPublicKeys(next);

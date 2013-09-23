@@ -53,7 +53,8 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
               var indexesToAdd = [];
-              node.pks.all({ extract: true }, function (err, json) {
+              // Call with nice no to have PGP error 'gpg: input line longer than 19995 characters'
+              node.pks.all({ extract: true, nice: true }, function (err, json) {
                 _(json.leaves).keys().forEach(function(key){
                   var leaf = json.leaves[key];
                   if(merkle.leaves().indexOf(leaf.hash) == -1){

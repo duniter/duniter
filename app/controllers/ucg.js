@@ -276,6 +276,7 @@ module.exports = function (pgp, currency, conf) {
   },
 
   this.thtPOST = function(req, res) {
+    var that = this;
     async.waterfall([
       function (callback) {
         ParametersService.getTHTEntry(req, callback);
@@ -292,6 +293,14 @@ module.exports = function (pgp, currency, conf) {
           answers: function(callback){
             res.end(JSON.stringify(entry.json()));
             callback();
+          },
+          manageKey: function(callback){
+            var manual = conf.kmanagement == 'KEYS';
+            if(manual){
+              callback();
+              return;
+            }
+            Key.setManaged(entry.fingerprint, true, that.cert.fingerprint, callback);
           },
           propagates: function(callback){
             PeeringService.propagateTHT(req, function (err, propagated) {

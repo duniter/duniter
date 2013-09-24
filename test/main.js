@@ -27,10 +27,10 @@ var config = {
 if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
 var conf = {
   ipv4: config.server.ipv4address,
-  ipv4: config.server.ipv4address,
   port: config.server.port,
   pgpkey: config.server.pgp.key,
-  pgppasswd: config.server.pgp.password
+  pgppasswd: config.server.pgp.password,
+  remoteipv4: '127.0.0.1'
 };
 
 function testGET(url, expect) {

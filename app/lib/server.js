@@ -244,6 +244,10 @@ module.exports.express = {
     app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
     app.get(    '/hdc/transactions/view/:transaction_id',         hdc.transactions.viewtx);
 
+    if(!conf.remoteipv4 && !conf.remoteipv6){
+      onLoaded('Cannot start: need to be configured either --remote4 or --remote6');
+      return;
+    }
     async.waterfall([
       function (next) {
         mongoose.model('Peer').find({ fingerprint: module.exports.fingerprint() }, next);

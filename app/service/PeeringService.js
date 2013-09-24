@@ -495,7 +495,7 @@ module.exports.get = function (pgp, currency, conf) {
     this.propagate(amendment, sendVote);
   }
 
-  this.propagatePeering = function (peering, vote) {
+  this.propagatePeering = function (peering) {
     this.propagate(peering, sendPeering);
   }
 

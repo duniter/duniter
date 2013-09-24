@@ -20,6 +20,7 @@ var TransactionSchema = new Schema({
   signature: String,
   propagated: { type: Boolean, default: false },
   hash: String,
+  sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -45,6 +46,10 @@ TransactionSchema.methods = {
     if(~sigIndex){
       this.signature = rawTX.substring(sigIndex);
       tx = new hdc.Transaction(rawTX.substring(0, sigIndex));
+      try{
+        this.sigDate = jpgp().signature(this.signature).signatureDate();
+      }
+      catch(ex){}
     }
     else{
       tx = new hdc.Transaction(rawTX);
@@ -173,7 +178,7 @@ TransactionSchema.statics.getBySenderAndNumber = function (fingerprint, number, 
 
 TransactionSchema.statics.findLastAll = function (done) {
 
-  this.find().sort({created: -1}).limit(1).exec(function (err, txs) {
+  this.find().sort({sigDate: -1}).limit(1).exec(function (err, txs) {
     if(txs && txs.length == 1){
       done(err, txs[0]);
       return;

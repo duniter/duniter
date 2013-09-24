@@ -97,7 +97,7 @@ module.exports = function (pgp, currency, conf) {
           ParametersService.getCount(req, next);
         },
         function (count, next){
-          Transaction.find().sort({created: -1}).limit(count).exec(next);
+          Transaction.find().sort({sigDate: -1}).limit(count).exec(next);
         }
       ], function (err, results) {
         if(err){

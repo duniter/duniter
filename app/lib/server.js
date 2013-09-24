@@ -244,7 +244,40 @@ module.exports.express = {
     app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
     app.get(    '/hdc/transactions/view/:transaction_id',         hdc.transactions.viewtx);
 
-    onLoaded(null, app);
+    async.waterfall([
+      function (next) {
+        mongoose.model('Peer').find({ fingerprint: module.exports.fingerprint() }, next);
+      },
+      function (peers, next) {
+        if(peers == 0){
+          console.log('Generating server\'s peering entry...');
+          var Peer = mongoose.model('Peer');
+          var p = new Peer({
+            version: 1,
+            currency: currency,
+            fingerprint: module.exports.fingerprint(),
+            dns: conf.remotehost ? conf.remotehost : '',
+            ipv4: conf.remoteipv4 ? conf.remoteipv4 : '',
+            ipv6: conf.remoteipv6 ? conf.remoteipv6 : '',
+            port: conf.remoteport ? conf.remoteport : ''
+          });
+          async.waterfall([
+            function (next){
+              jpgp().sign(p.getRaw(), module.exports.privateKey(), next);
+            },
+            function (signature, next) {
+              var PeeringService = require('../service/PeeringService').get(module.exports.pgp, currency, conf);
+              PeeringService.persistPeering(p.getRaw() + signature, module.exports.publicKey(), next);
+            }
+          ], function (err) {
+            next(err);
+          });
+        }
+        else next();
+      },
+    ], function (err) {
+      onLoaded(err, app);
+    });
   }
 };
 

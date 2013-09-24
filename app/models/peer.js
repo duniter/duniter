@@ -215,14 +215,14 @@ function simpleLineExtraction(pr, rawPR, cap) {
   return;
 }
 
-PeerSchema.statics.getTheOne = function (fingerprint, done) {
+PeerSchema.statics.getTheOnePeer = function (fpr, done) {
   async.waterfall([
     function (next){
-      Peer.find({ fingerprint: fingerprint }, next);
+      Peer.find({ fingerprint: fpr }, next);
     },
     function (peers, next){
       if(peers.length == 0){
-        next('Unknown peer 0x' + fingerprint);
+        next('Unknown peer 0x' + fpr);
         return;
       }
       else{

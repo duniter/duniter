@@ -23,6 +23,8 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
   var StrategyService    = require('../service/StrategyService')();
   var ParametersService  = require('../service/ParametersService');
   var that = this;
+  
+  this.remoteFingerprint = null;
 
   this.sync = function (done) {
     console.log('Connecting remote host...');
@@ -33,12 +35,31 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
       }
 
       // Global sync vars
+      var remotePeer = new Peer({});
       var amendments = {};
       var remoteCurrentNumber;
 
       async.waterfall([
         function (next){
           console.log('Sync started.');
+          next();
+        },
+
+        //============
+        // Peer
+        //============
+        function (next){
+          node.ucg.peering.peer(next);
+        },
+        function (json, next){
+          remotePeer.copyValuesFrom(json);
+          ParametersService.getPeeringEntryFromRaw(remotePeer.getRaw(), remotePeer.signature, next);
+        },
+        function (signedPR, pubkey, next) {
+          PeeringService.submit(signedPR, pubkey, next);
+        },
+        function (recordedPR, next){
+          that.remoteFingerprint = recordedPR.fingerprint;
           next();
         },
 
@@ -251,7 +272,9 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                     },
                     function (rawSigned, keyID, cb){
                       console.log('Peer 0x' + keyID);
-                      PeeringService.submit(rawSigned, keyID, cb);
+                      PeeringService.submit(rawSigned, keyID, function (err) {
+                        cb();
+                      });
                     }
                   ], callback);
                 }, function(err, result){
@@ -267,6 +290,21 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
         done(err);
       });
     })
+  }
+
+  this.sendSelfPeering = function(done){
+    if(!that.remoteFingerprint){
+      done('Must sync before submitting self peering');
+      return;
+    }
+    async.waterfall([
+      function (next){
+        Peer.getTheOnePeer(that.remoteFingerprint, next);
+      },
+      function (toPeer, next){
+        PeeringService.submitSelfPeering(toPeer, next);
+      },
+    ], done);
   }
 
   var alreadyDone = [];

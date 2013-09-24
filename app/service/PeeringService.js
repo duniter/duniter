@@ -482,6 +482,18 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
+  this.submitSelfPeering = function(toPeer, done){
+    var that = this;
+    async.waterfall([
+      function (next){
+        Peer.getTheOnePeer(that.cert.fingerprint, next);
+      },
+      function (peering, next){
+        sendPeering(toPeer, peering, next);
+      },
+    ], done);
+  }
+
   this.propagatePubkey = function (pubkey) {
     this.propagate(pubkey, sendPubkey);
   }

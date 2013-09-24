@@ -30,6 +30,13 @@ PeerSchema.methods = {
     });
   },
   
+  copyValuesFrom: function(from) {
+    var obj = this;
+    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "signature"].forEach(function (key) {
+      obj[key] = from[key];
+    });
+  },
+  
   json: function() {
     var obj = this;
     var json = {};
@@ -206,6 +213,23 @@ function simpleLineExtraction(pr, rawPR, cap) {
     pr[cap.prop] = fieldValue[1];
   }
   return;
+}
+
+PeerSchema.statics.getTheOne = function (fingerprint, done) {
+  async.waterfall([
+    function (next){
+      Peer.find({ fingerprint: fingerprint }, next);
+    },
+    function (peers, next){
+      if(peers.length == 0){
+        next('Unknown peer 0x' + fingerprint);
+        return;
+      }
+      else{
+        next(null, peers[0]);
+      }
+    },
+  ], done);
 }
 
 var Peer = mongoose.model('Peer', PeerSchema);

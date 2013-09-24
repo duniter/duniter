@@ -11,6 +11,7 @@
       * [pubkey](#ucgpubkey)
       * [peering](#ucgpeering)
       * [peering/keys](#ucgpeeringkeys)
+      * [peering/peer](#ucgpeeringpeer)
       * [peering/peers (GET)](#ucgpeeringpeers-get)
       * [peering/peers (POST)](#ucgpeeringpeers-post)
       * [peering/peers/upstream](#ucgpeeringpeersupstream)
@@ -72,6 +73,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |   |-- keys
     |   |   |-- forward
     |   |   |-- status
+    |   |   |-- peer
     |   |   `-- peers/
     |   |       |-- upstream/
     |   |       |   `-- [PGP_FINGERPRINT]
@@ -543,6 +545,31 @@ Merkle URL leaf: key
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+}
+```
+
+#### `ucg/peering/peer`
+**Goal**
+
+GET the peering informations of this node.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Peering entry of the node.
+```json
+{
+  "version": "1",
+  "currency": "beta_brousouf",
+  "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+  "dns": "DNS_VALUE",
+  "ipv4": "IPV4_ADDRESS",
+  "ipv6": "IPV6_ADDRESS",
+  "port": "PORT",
+  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
 }
 ```
 

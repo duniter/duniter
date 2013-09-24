@@ -198,6 +198,7 @@ module.exports.express = {
     app.get(    '/ucg/pubkey',                                    ucg.pubkey);
     app.get(    '/ucg/peering',                                   ucg.peering);
     app.get(    '/ucg/peering/keys',                              ucg.managedKeys);
+    app.get(    '/ucg/peering/peer',                              ucg.peer);
     app.get(    '/ucg/peering/peers',                             ucg.peersGet);
     app.post(   '/ucg/peering/peers',                             ucg.peersPost);
     app.get(    '/ucg/peering/peers/upstream',                    ucg.upstreamAll);

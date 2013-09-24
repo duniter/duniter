@@ -20,6 +20,8 @@ module.exports = function (pgp, currency, conf) {
   this.ascciiPubkey = pgp.keyring.privateKeys[0] ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
 
+  var that = this;
+
   this.pubkey = function (req, res) {
     res.send(200, this.ascciiPubkey);
   },
@@ -185,6 +187,20 @@ module.exports = function (pgp, currency, conf) {
         res.send(errCode, err);
       }
       else res.end(JSON.stringify(recordedPR.json(), null, "  "));
+    });
+  }
+
+  this.peer = function (req, res) {
+    async.waterfall([
+      function (next){
+        Peer.getTheOne(that.cert.fingerprint, next);
+      },
+    ], function (err, found) {
+      if(err){
+        res.send(500, err);
+        return;
+      }
+      res.send(200, JSON.stringify(found.json(), null, "  "));
     });
   }
 

@@ -29,8 +29,7 @@ var conf = {
   ipv4: config.server.ipv4address,
   port: config.server.port,
   pgpkey: config.server.pgp.key,
-  pgppasswd: config.server.pgp.password,
-  remoteipv4: '127.0.0.1'
+  pgppasswd: config.server.pgp.password
 };
 
 function testGET(url, expect) {

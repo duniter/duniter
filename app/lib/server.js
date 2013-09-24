@@ -245,7 +245,7 @@ module.exports.express = {
     app.get(    '/hdc/transactions/view/:transaction_id',         hdc.transactions.viewtx);
 
     if(!conf.remoteipv4 && !conf.remoteipv6){
-      onLoaded('Cannot start: need to be configured either --remote4 or --remote6');
+      onLoaded(null, app);
       return;
     }
     async.waterfall([
@@ -265,13 +265,15 @@ module.exports.express = {
             ipv6: conf.remoteipv6 ? conf.remoteipv6 : '',
             port: conf.remoteport ? conf.remoteport : ''
           });
+          var raw = p.getRaw().unix2dos();
           async.waterfall([
             function (next){
-              jpgp().sign(p.getRaw(), module.exports.privateKey(), next);
+              jpgp().sign(raw, module.exports.privateKey(), next);
             },
             function (signature, next) {
+              signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
               var PeeringService = require('../service/PeeringService').get(module.exports.pgp, currency, conf);
-              PeeringService.persistPeering(p.getRaw() + signature, module.exports.publicKey(), next);
+              PeeringService.persistPeering(raw + signature, module.exports.publicKey(), next);
             }
           ], function (err) {
             next(err);

@@ -18,7 +18,7 @@ describe('Membership request', function(){
     // Loads join with its data
     before(function(done) {
       join = new Membership();
-      join.loadFromFile(__dirname + "/data/membership/lolcat.join", done);
+      join.parse(fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.cat.asc', 'utf8'), done);
     });
 
     it('should be version 1', function(){
@@ -160,10 +160,3 @@ describe('Membership request', function(){
     });
   });
 });
-
-function loadFromFile(membershipReq, file, done) {
-  fs.readFile(file, {encoding: "utf8"}, function (err, data) {
-    membershipReq.parse(data);
-    done(err);
-  });
-}

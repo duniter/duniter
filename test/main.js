@@ -63,28 +63,28 @@ var pubkeyTobiSig = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
 var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
 var pubkeyWhiteSig = fs.readFileSync(__dirname + '/data/white.pub.asc', 'utf8');
 
-var joinSnow      = fs.readFileSync(__dirname + '/data/membership/snow.join', 'utf8');
-var joinCat       = fs.readFileSync(__dirname + '/data/membership/lolcat.join', 'utf8');
-var joinTobi      = fs.readFileSync(__dirname + '/data/membership/tobi.join', 'utf8');
-var joinWhite     = fs.readFileSync(__dirname + '/data/membership/white.join', 'utf8');
+var joinSnow      = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.snow.asc', 'utf8');
+var joinCat       = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.cat.asc', 'utf8');
+var joinTobi      = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.tobi.asc', 'utf8');
+var joinWhite     = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.white.asc', 'utf8');
 
-var voteCatAM0    = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-lolcat.vote', 'utf8');
-var voteTobiAM0   = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-tobi.vote', 'utf8');
-var voteSnowAM0   = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.vote', 'utf8');
+var voteCatAM0    = fs.readFileSync(__dirname + '/data/amendments/BB-AM0-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM0/cat.asc', 'utf8');
+var voteTobiAM0   = fs.readFileSync(__dirname + '/data/amendments/BB-AM0-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM0/tobi.asc', 'utf8');
+var voteSnowAM0   = fs.readFileSync(__dirname + '/data/amendments/BB-AM0-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM0/snow.asc', 'utf8');
 var voteSnowAM0_2 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.dissident.vote', 'utf8');
-var voteSnowAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/snow.vote', 'utf8');
-var voteTobiAM1   = fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.vote', 'utf8');
-var voteCatAM1    = fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.vote', 'utf8');
-var voteWhiteAM1  = fs.readFileSync(__dirname + '/data/votes/BB-AM1/white.vote', 'utf8');
-var voteSnowAM2   = fs.readFileSync(__dirname + '/data/votes/BB-AM2/snow.vote', 'utf8');
-var voteTobiAM2   = fs.readFileSync(__dirname + '/data/votes/BB-AM2/tobi.vote', 'utf8');
-var voteCatAM2    = fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.vote', 'utf8');
+var voteSnowAM1   = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/snow.asc', 'utf8');
+var voteTobiAM1   = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.asc', 'utf8');
+var voteCatAM1    = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.asc', 'utf8');
+var voteWhiteAM1  = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/white.asc', 'utf8');
+var voteSnowAM2   = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK-VOTED', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/snow.asc', 'utf8');
+var voteTobiAM2   = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK-VOTED', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/tobi.asc', 'utf8');
+var voteCatAM2    = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK-VOTED', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.asc', 'utf8');
 
-var txTobi          = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8');
-var txTobiToSnow    = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', 'utf8');
-var txTobiToCat     = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.cat', 'utf8');
-var txTobiFusion    = fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7', 'utf8');
-var txCat           = fs.readFileSync(__dirname + '/data/tx/cat.issuance', 'utf8');
+var txTobi          = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8') + fs.readFileSync(__dirname + '/data/tx/tobi.issuance.asc', 'utf8');
+var txTobiToSnow    = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', 'utf8') + fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow.asc', 'utf8');
+var txTobiToCat     = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.cat', 'utf8') + fs.readFileSync(__dirname + '/data/tx/tobi.transfert.cat.asc', 'utf8');
+var txTobiFusion    = fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7', 'utf8') + fs.readFileSync(__dirname + '/data/tx/tobi.fusion.7.asc', 'utf8');
+var txCat           = fs.readFileSync(__dirname + '/data/tx/cat.issuance', 'utf8') + fs.readFileSync(__dirname + '/data/tx/cat.issuance.asc', 'utf8');
 
 var peeringCat      = fs.readFileSync(__dirname + '/data/peering/cat.peering', 'utf8');
 var peeringCatSig   = fs.readFileSync(__dirname + '/data/peering/cat.peering.asc', 'utf8');
@@ -94,7 +94,7 @@ var forwardCatSig   = fs.readFileSync(__dirname + '/data/peering/cat.all.asc', '
 var forwardUbot1    = fs.readFileSync(__dirname + '/data/peering/ubot1.keys', 'utf8');
 var forwardUbot1Sig = fs.readFileSync(__dirname + '/data/peering/ubot1.keys.asc', 'utf8');
 
-var thtCat = fs.readFileSync(__dirname + '/data/tht/cat.entry', 'utf8');
+var thtCat = fs.readFileSync(__dirname + '/data/tht/cat.entry', 'utf8') + fs.readFileSync(__dirname + '/data/tht/cat.entry.asc', 'utf8');
 
 var app;
 
@@ -973,8 +973,8 @@ describe('Checking votes', function(){
   // Fist vote for AM1 (not enough)
   it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));
   // Second vote for AM1 (promoted)
-  it('should respond 200 and have some votes', checkVotes(++index, 2, '16C619460FA207A2D94AF3C306591A384C8DC4B1'));
-  it('should respond 200 and have some votes', checkVotes(++index, 3, '931A15C9CAE0BA73E9B4F1E8B0251452F3A882C7'));
+  it('should respond 200 and have some votes', checkVotes(++index, 2, 'AEB0FAE04CDFC15641F8BDC57B99835A76E3EAA7'));
+  it('should respond 200 and have some votes', checkVotes(++index, 3, '2593E2BB129B561A1316B6C448E7AAB80362453D'));
 });
 
 //----------- Amendments -----------
@@ -1045,16 +1045,16 @@ describe('Checking current amendment', function(){
   api.checkPromoted(3   , 404);
 
   // 2 votes for AM2 (enough)
-  api.checkPromoted(null, 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(null, 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
   api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
   api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(2   , 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(2   , 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(null, 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
   api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
   api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(2   , 200, '09BA3E2EE604E169FCBE4A53AD66CF28E439FAF2');
+  api.checkPromoted(2   , 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
   api.checkPromoted(3   , 404);
 });
 
@@ -1141,7 +1141,7 @@ describe('Checking amendments', function(){
     json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
     _(json.levels[0]).size().should.equal(1);
-    json.levels[0][0].should.equal('931A15C9CAE0BA73E9B4F1E8B0251452F3A882C7');
+    json.levels[0][0].should.equal('2593E2BB129B561A1316B6C448E7AAB80362453D');
   });
   it('1 should respond 200 and have some memberships', function(){
     var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/memberships'][0].res.text);
@@ -1286,7 +1286,7 @@ describe('Received keys for transactions', function(){
 
 describe('THT', function(){
   api.postTHT('POST for Cat should be ok', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
-  api.getTHT('GET for Merkle', 1, '5AD4313941BA2AB7B0F0E5578AEB6AB32039964F');
+  api.getTHT('GET for Merkle', 1, 'ACFCBC2327524C8363418D49E50169BB558641B3');
   api.fprTHT('GET for FPR', 'SOME_WRONG_FPR', 400);
   api.fprTHT('GET for FPR', '33BBFC0C67078D72AF128B5BA296CC530126F372', 404);
   api.fprTHT('GET for FPR', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
@@ -1294,7 +1294,7 @@ describe('THT', function(){
 
 // describe('Peering', function(){
 //   api.postPeering('POST for Cat should be ok', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
-//   api.getPeering('GET for Merkle', 1, '5AD4313941BA2AB7B0F0E5578AEB6AB32039964F');
+//   api.getPeering('GET for Merkle', 1, 'ACFCBC2327524C8363418D49E50169BB558641B3');
 // });
 
 function isMerkleNodesResult (json) {

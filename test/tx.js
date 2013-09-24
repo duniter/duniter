@@ -283,7 +283,11 @@ describe('Transaction', function(){
       assert.equal(tx1.hash, '5D2AB118FA861D73B66400DA06015EA2D2158E34');
     });
 
-    it('its manual hash should be 5D2AB118FA861D73B66400DA06015EA2D2158E34', function(){
+    it('its manual hash should be 8AC7E6179DEEB6E86744BB076535826EF6EE1327', function(){
+      assert.equal(sha1(tx1.getRaw()).toUpperCase(), '8AC7E6179DEEB6E86744BB076535826EF6EE1327');
+    });
+
+    it('its manual signed hash should be 5D2AB118FA861D73B66400DA06015EA2D2158E34', function(){
       assert.equal(sha1(tx1.getRawSigned()).toUpperCase(), '5D2AB118FA861D73B66400DA06015EA2D2158E34');
     });
   });
@@ -291,6 +295,9 @@ describe('Transaction', function(){
 
 function loadFromFile(tx, file, done) {
   fs.readFile(file, {encoding: "utf8"}, function (err, data) {
+    if(fs.existsSync(file + ".asc")){
+      data += fs.readFileSync(file + '.asc', 'utf8');
+    }
     async.waterfall([
       function (next){
         tx.parse(data, next);

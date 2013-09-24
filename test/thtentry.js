@@ -11,7 +11,7 @@ var THTEntry = mongoose.model('THTEntry');
 
 describe('THTEntry', function(){
 
-  describe('KEYS signed by ubot1', function(){
+  describe('KEYS signed by cat', function(){
 
     var entry;
 
@@ -42,18 +42,26 @@ describe('THTEntry', function(){
       assert.equal(entry.trusts[1], "D049002A6724D35F867F64CC087BA351C0AEB6DF");
     });
 
-    it('its computed hash should be 5AD4313941BA2AB7B0F0E5578AEB6AB32039964F', function(){
-      assert.equal(entry.hash, '5AD4313941BA2AB7B0F0E5578AEB6AB32039964F');
+    it('its computed hash should be ACFCBC2327524C8363418D49E50169BB558641B3', function(){
+      assert.equal(entry.hash, 'ACFCBC2327524C8363418D49E50169BB558641B3');
     });
 
-    it('its manual hash should be 5AD4313941BA2AB7B0F0E5578AEB6AB32039964F', function(){
-      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), '5AD4313941BA2AB7B0F0E5578AEB6AB32039964F');
+    it('its manual hash should be B9D8E564EFB29B7F632D32037E619AD293473E4C', function(){
+      assert.equal(sha1(entry.getRaw()).toUpperCase(), 'B9D8E564EFB29B7F632D32037E619AD293473E4C');
+    });
+
+    it('its manual signed hash should be ACFCBC2327524C8363418D49E50169BB558641B3', function(){
+      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), 'ACFCBC2327524C8363418D49E50169BB558641B3');
     });
   });
 });
 
 function loadFromFile(entry, file, done) {
   fs.readFile(file, {encoding: "utf8"}, function (err, data) {
+    if(fs.existsSync(file + ".asc")){
+      data += fs.readFileSync(file + '.asc', 'utf8');
+    }
+    // data = data.unix2dos();
     async.waterfall([
       function (next){
         entry.parse(data, next);

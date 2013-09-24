@@ -99,7 +99,7 @@ module.exports = {
       callback('Requires an amendment + signature');
       return;
     }
-    callback(null, req.body.amendment + req.body.signature);
+    callback(null, req.body.amendment.unix2dos() + req.body.signature.unix2dos());
   },
 
   getAmendmentID: function (req, callback) {

@@ -319,7 +319,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
     }
     async.waterfall([
       function (next){
-        Peer.getTheOnePeer(that.remoteFingerprint, next);
+        Peer.getTheOne(that.remoteFingerprint, next);
       },
       function (toPeer, next){
         PeeringService.submitSelfPeering(toPeer, next);

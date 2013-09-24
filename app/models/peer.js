@@ -215,7 +215,7 @@ function simpleLineExtraction(pr, rawPR, cap) {
   return;
 }
 
-PeerSchema.statics.getTheOnePeer = function (fpr, done) {
+PeerSchema.statics.getTheOne = function (fpr, done) {
   async.waterfall([
     function (next){
       Peer.find({ fingerprint: fpr }, next);

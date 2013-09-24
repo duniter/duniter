@@ -493,7 +493,7 @@ module.exports.get = function (pgp, currency, conf) {
     var that = this;
     async.waterfall([
       function (next){
-        Peer.getTheOnePeer(that.cert.fingerprint, next);
+        Peer.getTheOne(that.cert.fingerprint, next);
       },
       function (peering, next){
         sendPeering(toPeer, peering, next);

@@ -148,10 +148,17 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
+  /**
+  * initForwards : look THT entries to deduce the forward rules of the node.
+  * Two cases:
+  *
+  *   - restricted case: send forwards containing the keys managed by the node
+  *   - all case: send forwards asking to be forwarded ALL transactions
+  **/
   this.initForwards = function (done) {
-    var manual = conf.kmanagement == 'KEYS';
+    var restricted = conf.kmanagement == 'KEYS';
     var that = this;
-    if(manual){
+    if(restricted){
 
       /**
       * Forward: KEYS

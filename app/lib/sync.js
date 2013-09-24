@@ -56,7 +56,27 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
           ParametersService.getPeeringEntryFromRaw(remotePeer.getRaw(), remotePeer.signature, next);
         },
         function (signedPR, pubkey, next) {
-          PeeringService.submit(signedPR, pubkey, next);
+          async.waterfall([
+            function (next){
+              Peer.find({ fingerprint: remotePeer.fingerprint, hash: sha1(signedPR).toUpperCase() }, next);
+            },
+            function (peers, next){
+              if(peers.length > 0){
+                next('Peer already saved', peers[0]);
+                return;
+              }
+              next();
+            },
+            function (next){
+              PeeringService.submit(signedPR, pubkey, next);
+            },
+          ], function (err, peer) {
+            if(err && !peer){
+              next(err);
+              return;
+            }
+            next(null, peer);
+          });
         },
         function (recordedPR, next){
           that.remoteFingerprint = recordedPR.fingerprint;

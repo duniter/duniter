@@ -14,6 +14,7 @@ var THTEntrySchema = new Schema({
   signature: String,
   propagated: { type: Boolean, default: false },
   hash: String,
+  sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -42,6 +43,10 @@ THTEntrySchema.methods = {
     if(~sigIndex){
       this.signature = rawEntryReq.substring(sigIndex);
       rawEntry = rawEntryReq.substring(0, sigIndex);
+      try{
+        this.sigDate = jpgp().signature(this.signature).signatureDate();
+      }
+      catch(ex){}
     }
     if(!rawEntry){
       callback("No THT entry given");

@@ -72,6 +72,10 @@ module.exports.get = function (currency) {
             var previousHash = entryEntity.hash;
             if(entries.length > 0){
               // Already existing THT entry
+              if(entries[0].sigDate >= entryEntity.sigDate){
+                next('Cannot record a previous THT entry');
+                return;
+              }
               entryEntity = entries[0];
               previousHash = entries[0].hash;
               entry.copyValues(entryEntity);

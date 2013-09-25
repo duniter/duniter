@@ -463,7 +463,7 @@ module.exports = function (pgp, currency, conf) {
             if(err){
               console.error('But encountered following error: %s', err);
             }
-          }, [ peer.fingerprint ]);
+          }, peer ? [ peer.fingerprint ] : null);
         });
       }
     });

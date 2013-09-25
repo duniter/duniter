@@ -206,7 +206,7 @@ module.exports.express = {
     app.get(    '/ucg/peering/peers/downstream',                  ucg.downstreamAll);
     app.get(    '/ucg/peering/peers/downstream/:fingerprint',     ucg.downstreamKey);
     app.post(   '/ucg/peering/forward',                           ucg.forward);
-    app.post(   '/ucg/peering/status',                            notImplemented);
+    app.post(   '/ucg/peering/status',                            ucg.statusPOST);
     app.get(    '/ucg/tht',                                       ucg.thtGET);
     app.post(   '/ucg/tht',                                       ucg.thtPOST);
     app.get(    '/ucg/tht/:fpr',                                  ucg.thtFPR);

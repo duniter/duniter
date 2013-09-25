@@ -12,6 +12,7 @@ var Vote        = mongoose.model('Vote');
 var Peer        = mongoose.model('Peer');
 var Key         = mongoose.model('Key');
 var Forward     = mongoose.model('Forward');
+var Status      = require('../models/statusMessage');
 
 module.exports.get = function (pgp, currency, conf) {
   
@@ -52,6 +53,33 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (pubkey, next){
         that.persistPeering(signedPR, pubkey, next);
+      }
+    ], callback);
+  }
+
+  this.submitStatus = function(signedSR, keyID, callback){
+    var status = new Status();
+    var that = this;
+    async.waterfall([
+      function (next){
+        status.parse(signedSR, next);
+      },
+      function (status, next){
+        status.verify(currency, next);
+      },
+      // Looking for corresponding public key
+      function(valid, next){
+        if(!valid){
+          next('Not a valid status request');
+          return;
+        }
+        PublicKey.getFromSignature(status.signature, next);
+      },
+      function (pubkey, next){
+        Peer.getTheOne(pubkey.fingerprint, next);
+      },
+      function (peer, next){
+        peer.setStatus(status.status.isUp() ? Peer.status.UP : Peer.status.DOWN, next);
       }
     ], callback);
   }
@@ -501,6 +529,27 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
+  this.sendUpSignal = function (done) {
+    var that = this;
+    var status = new Status({
+      version: 1,
+      currency: currency,
+      status: 'UP'
+    });
+    var raw = status.getRaw().unix2dos();
+    async.waterfall([
+      function (next){
+        jpgp().sign(raw, that.privateKey, next);
+      },
+      function (signature, next) {
+        status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
+        that.propagate(status, sendStatus, next);
+      }
+    ], function (err) {
+      done(err);
+    });
+  }
+
   this.propagatePubkey = function (pubkey) {
     this.propagate(pubkey, sendPubkey);
   }
@@ -599,6 +648,14 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/ucg/peering/forward', {
       "forward": rawForward,
       "signature": signature
+    }, done);
+  }
+
+  function sendStatus(peer, status, done) {
+    console.log('POST status %s to %s', status.status, peer.fingerprint);
+    post(peer, '/ucg/peering/status', {
+      "status": status.getRaw(),
+      "signature": status.signature
     }, done);
   }
 

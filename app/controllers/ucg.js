@@ -436,6 +436,24 @@ module.exports = function (pgp, currency, conf) {
       res.send(200, JSON.stringify(json, null, "  "));
     });
   }
+
+  this.statusPOST = function(req, res) {
+    var that = this;
+    async.waterfall([
+      function (callback) {
+        ParametersService.getStatus(req, callback);
+      },
+      function(signedStatus, callback){
+        PeeringService.submitStatus(signedStatus, callback);
+      }
+    ], function (err, entry) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      res.end(JSON.stringify(status.json()));
+    });
+  }
   
   return this;
 }

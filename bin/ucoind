@@ -292,6 +292,9 @@ program
         },
         function (next) {
           PeeringService.initForwards(next);
+        },
+        function (next) {
+          PeeringService.sendUpSignal(next);
         }
       ], function (err) {
         if(err){
@@ -299,6 +302,7 @@ program
           server.database.disconnect();
           return;
         }
+        console.log('Server ready!');
       });
     });
   }));

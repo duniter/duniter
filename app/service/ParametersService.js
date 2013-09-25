@@ -145,6 +145,14 @@ module.exports = {
     callback(null, req.body.entry + req.body.signature);
   },
 
+  getStatus: function (req, callback) {
+    if(!(req.body && req.body.status && req.body.signature)){
+      callback('Requires a status + signature');
+      return;
+    }
+    callback(null, req.body.status + req.body.signature);
+  },
+
   getPubkey: function (req, callback) {
     if(!req.body){
       callback('Parameters `keytext` and `keysign` are required');

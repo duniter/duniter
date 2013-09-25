@@ -455,10 +455,15 @@ module.exports = function (pgp, currency, conf) {
       process.nextTick(function () {
         res.end(JSON.stringify(status.json()));
       });
-      if(status.status.isNew()){
+      if(status.isNew()){
         // Send forwards for this node
         process.nextTick(function () {
-          PeeringService.initForwards(callback, [ peer.fingerprint ]);
+          PeeringService.initForwards(function (err) {
+            console.log('Renegociated FORWARD');
+            if(err){
+              console.error('But encountered following error: %s', err);
+            }
+          }, [ peer.fingerprint ]);
         });
       }
     });

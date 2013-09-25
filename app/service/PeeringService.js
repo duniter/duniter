@@ -549,6 +549,7 @@ module.exports.get = function (pgp, currency, conf) {
         fwds.forEach(function(fwd){
           forwardsFPRS.push(fwd.from);
         });
+        next();
       },
       function (next){
         Peer.find({ fingerprint: { $nin: forwardsFPRS} }, next);
@@ -566,10 +567,10 @@ module.exports.get = function (pgp, currency, conf) {
       }
       async.parallel({
         forwardPeers: function(callback){
-          sendStatusTo('UP', forwardsFPRS, callback);
+          that.sendStatusTo('UP', forwardsFPRS, callback);
         },
         otherPeers: function(callback){
-          sendStatusTo('NEW', othersFPRS, callback);
+          that.sendStatusTo('NEW', othersFPRS, callback);
         },
       },
       function(err, results) {
@@ -578,7 +579,8 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  function sendStatusTo (statusStr, fingerprints, done) {
+  this.sendStatusTo = function (statusStr, fingerprints, done) {
+    var that = this;
     var status = new Status({
       version: 1,
       currency: currency,
@@ -592,8 +594,8 @@ module.exports.get = function (pgp, currency, conf) {
       function (signature, next) {
         status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
         async.forEach(fingerprints, function(fingerprint, callback){
-          propagateToFingerprint(fingerprint, status, sendStatus, callback);
-        }, callback);
+          that.propagateToFingerprint(fingerprint, status, sendStatus, callback);
+        }, next);
       }
     ], function (err) {
       done(err);

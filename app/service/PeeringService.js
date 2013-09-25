@@ -603,9 +603,12 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function post(peer, url, data, done) {
-    // console.log('POST http://' + peer.getURL() + url);
     request
-    .post('http://' + peer.getURL() + url, done)
+    .post('http://' + peer.getURL() + url, function (err, res, body) {
+      peer.setStatus((err && Peer.status.DOWN) || Peer.status.UP, function (err) {
+        done(err, res, body);
+      });
+    })
     .form(data);
   }
 

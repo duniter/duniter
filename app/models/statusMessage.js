@@ -10,7 +10,7 @@ module.exports = function StatusMessage (values) {
   var that = this;
 
   ['version', 'currency', 'status'].forEach(function(field){
-    that[field] = values[field] || '';
+    that[field] = values && values[field] || '';
   });
 
   this.json = function () {

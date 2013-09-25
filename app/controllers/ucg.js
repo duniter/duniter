@@ -446,7 +446,7 @@ module.exports = function (pgp, currency, conf) {
       function(signedStatus, callback){
         PeeringService.submitStatus(signedStatus, callback);
       }
-    ], function (err, entry) {
+    ], function (err, status) {
       if(err){
         res.send(400, err);
         return;

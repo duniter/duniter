@@ -57,7 +57,7 @@ module.exports.get = function (pgp, currency, conf) {
     ], callback);
   }
 
-  this.submitStatus = function(signedSR, keyID, callback){
+  this.submitStatus = function(signedSR, callback){
     var status = new Status();
     var that = this;
     async.waterfall([
@@ -79,9 +79,11 @@ module.exports.get = function (pgp, currency, conf) {
         Peer.getTheOne(pubkey.fingerprint, next);
       },
       function (peer, next){
-        peer.setStatus(status.status.isUp() ? Peer.status.UP : Peer.status.DOWN, next);
+        peer.setStatus(status.isUp() ? Peer.status.UP : Peer.status.DOWN, next);
       }
-    ], callback);
+    ], function (err) {
+      callback(err, status);
+    });
   }
 
   this.persistPeering = function (signedPR, pubkey, done) {

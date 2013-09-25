@@ -5,7 +5,7 @@ var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
 var Schema   = mongoose.Schema;
 
-var STATUS = { UP: "UP", DOWN: "DOWN" };
+var STATUS = { UP: "UP", DOWN: "DOWN", NEW: "NEW" };
 
 var PeerSchema = new Schema({
   version: String,
@@ -17,7 +17,7 @@ var PeerSchema = new Schema({
   port: { type: Number, default: 8081 },
   signature: String,
   hash: String,
-  status: { type: String, default: STATUS.UP },
+  status: { type: String, default: STATUS.NEW },
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }

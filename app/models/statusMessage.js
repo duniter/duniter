@@ -21,8 +21,12 @@ module.exports = function StatusMessage (values) {
     return obj;
   }
 
+  this.isNew = function () {
+    return ~['NEW'].indexOf(this.status);
+  }
+
   this.isUp = function () {
-    return ~['UP', 'CONNECTED'].indexOf(this.status);
+    return ~['UP', 'NEW'].indexOf(this.status);
   }
 
   this.isDown = function () {
@@ -123,8 +127,8 @@ module.exports = function StatusMessage (values) {
     }
     if(!err){
       // Status
-      if(obj.status && !(obj.status + "").match(/^(CONNECTED|UP|DISCONNECTED)$/))
-        err = {code: codes['BAD_STATUS'], message: "Status must be provided and match either CONNECTED, UP or DISCONNECTED"};
+      if(obj.status && !(obj.status + "").match(/^(NEW|UP|DOWN)$/))
+        err = {code: codes['BAD_STATUS'], message: "Status must be provided and match either NEW, UP or DOWN"};
     }
     if(err){
       return { result: false, errorMessage: err.message, errorCode: err.code};

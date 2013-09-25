@@ -446,12 +446,21 @@ module.exports = function (pgp, currency, conf) {
       function(signedStatus, callback){
         PeeringService.submitStatus(signedStatus, callback);
       }
-    ], function (err, status) {
+    ], function (err, status, peer) {
       if(err){
         res.send(400, err);
         return;
       }
-      res.end(JSON.stringify(status.json()));
+      // Answers
+      process.nextTick(function () {
+        res.end(JSON.stringify(status.json()));
+      });
+      if(status.status.isNew()){
+        // Send forwards for this node
+        process.nextTick(function () {
+          PeeringService.initForwards(callback, [ peer.fingerprint ]);
+        });
+      }
     });
   }
   

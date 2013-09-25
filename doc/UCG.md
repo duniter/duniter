@@ -71,7 +71,7 @@ Such a document informs a node on current node's status, either connected, up, o
 ```plain
 Version: VERSION
 Currency: CURRENCY_NAME
-Status: CONNECTED|UP|DISCONNECTED
+Status: NEW|UP|DOWN
 ```
 
 ## Trust Hash Table

@@ -82,7 +82,7 @@ module.exports.get = function (pgp, currency, conf) {
         peer.setStatus(status.isUp() ? Peer.status.UP : Peer.status.DOWN, next);
       }
     ], function (err) {
-      callback(err, status);
+      callback(err, status, peer);
     });
   }
 
@@ -185,7 +185,7 @@ module.exports.get = function (pgp, currency, conf) {
   *   - restricted case: send forwards containing the keys managed by the node
   *   - all case: send forwards asking to be forwarded ALL transactions
   **/
-  this.initForwards = function (done) {
+  this.initForwards = function (done, forKeys) {
     var restricted = conf.kmanagement == 'KEYS';
     var that = this;
     if(restricted){
@@ -197,7 +197,10 @@ module.exports.get = function (pgp, currency, conf) {
       var keysByPeer = {};
       async.waterfall([
         function (next){
-          Key.find({ managed: true }, next);
+          if(forKeys)
+            Key.find({ managed: true, fingerprint: { $in: forKeys } }, next);
+          else
+            Key.find({ managed: true }, next);
         },
         function (keys, next) {
           async.forEachSeries(keys, function (k, callback) {
@@ -306,7 +309,10 @@ module.exports.get = function (pgp, currency, conf) {
       */
       async.waterfall([
         function (next){
-          Peer.find({}, next);
+          if(forKeys)
+            Peer.find({fingerprint: { $in: forKeys }}, next);
+          else
+            Peer.find({}, next);
         },
         function (peers, next) {
           async.forEachSeries(peers, function(peer, callback){
@@ -533,10 +539,50 @@ module.exports.get = function (pgp, currency, conf) {
 
   this.sendUpSignal = function (done) {
     var that = this;
+    var forwardsFPRS = [];
+    var othersFPRS = [];
+    async.waterfall([
+      function (next){
+        Forward.find({ to: that.cert.fingerprint }, next);
+      },
+      function (fwds, next){
+        fwds.forEach(function(fwd){
+          forwardsFPRS.push(fwd.from);
+        });
+      },
+      function (next){
+        Peer.find({ fingerprint: { $nin: forwardsFPRS} }, next);
+      },
+      function (peers, next){
+        peers.forEach(function(peer){
+          othersFPRS.push(peer.fingerprint);
+        });
+        next();
+      },
+    ], function (err) {
+      if(err){
+        done(err);
+        return;
+      }
+      async.parallel({
+        forwardPeers: function(callback){
+          sendStatusTo('UP', forwardsFPRS, callback);
+        },
+        otherPeers: function(callback){
+          sendStatusTo('NEW', othersFPRS, callback);
+        },
+      },
+      function(err, results) {
+        done(err);
+      });
+    });
+  }
+
+  function sendStatusTo (statusStr, fingerprints, done) {
     var status = new Status({
       version: 1,
       currency: currency,
-      status: 'UP'
+      status: statusStr
     });
     var raw = status.getRaw().unix2dos();
     async.waterfall([
@@ -545,7 +591,9 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (signature, next) {
         status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
-        that.propagate(status, sendStatus, next);
+        async.forEach(fingerprints, function(fingerprint, callback){
+          propagateToFingerprint(fingerprint, status, sendStatus, callback);
+        }, callback);
       }
     ], function (err) {
       done(err);
@@ -577,23 +625,28 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (fwds, next){
         async.forEach(fwds, function(fwd, callback){
-          async.waterfall([
-            function (next){
-              Peer.find({ fingerprint: fwd.from }, next);
-            },
-            function (peers, next){
-              if(peers.length > 0){
-                sendMethod.call(sendMethod, peers[0], obj, next);
-              }
-              else next();
-            },
-          ], function (err) {
-            callback();
-          });
+          propagateToFingerprint(fwd.from, obj, sendMethod, callback);
         }, next);
       },
     ], function (err) {
       if(done) done(err);
+    });
+  }
+
+  this.propagateToFingerprint = function (fpr, obj, sendMethod, done) {
+    var that = this;
+    async.waterfall([
+      function (next){
+        Peer.find({ fingerprint: fpr }, next);
+      },
+      function (peers, next){
+        if(peers.length > 0){
+          sendMethod.call(sendMethod, peers[0], obj, next);
+        }
+        else next();
+      },
+    ], function (err) {
+      done();
     });
   }
 

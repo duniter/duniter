@@ -625,7 +625,7 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (fwds, next){
         async.forEach(fwds, function(fwd, callback){
-          propagateToFingerprint(fwd.from, obj, sendMethod, callback);
+          that.propagateToFingerprint(fwd.from, obj, sendMethod, callback);
         }, next);
       },
     ], function (err) {

@@ -80,6 +80,7 @@ module.exports.get = function (currency) {
               previousHash = entries[0].hash;
               entry.copyValues(entryEntity);
             }
+            entryEntity.propagated = false;
             entryEntity.fingerprint = pubkey.fingerprint;
             entryEntity.save(function (err) {
               next(err, entryEntity, previousHash);

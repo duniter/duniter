@@ -311,12 +311,14 @@ module.exports = function (pgp, currency, conf) {
             callback();
           },
           manageKey: function(callback){
-            var manual = conf.kmanagement == 'KEYS';
-            if(manual){
-              callback();
+            var all = conf.kmanagement == 'ALL';
+            if(all){
+              // THT entry new/changed: if kmanagement == ALL, manage it
+              Key.setManaged(entry.fingerprint, true, that.cert.fingerprint, callback);
               return;
             }
-            Key.setManaged(entry.fingerprint, true, that.cert.fingerprint, callback);
+            // If kmanagement == KEYS, then it should have been set manually earlier, or can be later
+            callback();
           },
           propagates: function(callback){
             PeeringService.propagateTHT(req, function (err, propagated) {
@@ -455,16 +457,30 @@ module.exports = function (pgp, currency, conf) {
       process.nextTick(function () {
         res.end(JSON.stringify(status.json()));
       });
-      if(status.isNew()){
-        // Send forwards for this node
-        process.nextTick(function () {
+      async.waterfall([
+        function (next){
+          if(status.isNew()){
+            next(null, true);
+            return;
+          }
+          if(status.isUp()){
+            Forward.find({ from: peer.fingerprint, to: that.cert.fingerprint }, function (err, fwds) {
+              // If fwd does not exist, it needs to be resent
+              next(err, fwds.length == 0 ? true : false);
+            });
+            return;
+          }
+          next(null, false);
+        },
+      ], function (err, needForward) {
+        if(needForward){
           PeeringService.initForwards(function (err) {
             if(err){
               console.error('Encountered following error during FORWARD renegociation: %s', err);
             }
           }, peer ? [ peer.fingerprint ] : null);
-        });
-      }
+        }
+      });
     });
   }
   

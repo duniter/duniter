@@ -459,9 +459,9 @@ module.exports = function (pgp, currency, conf) {
         // Send forwards for this node
         process.nextTick(function () {
           PeeringService.initForwards(function (err) {
-            console.log('Renegociated FORWARD');
+            console.log('Renegociated FORWARD for peer %s', peer.fingerprint);
             if(err){
-              console.error('But encountered following error: %s', err);
+              console.error('Encountered following error during FORWARD renegociation: %s', err);
             }
           }, peer ? [ peer.fingerprint ] : null);
         });

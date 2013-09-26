@@ -243,7 +243,7 @@ module.exports.get = function (pgp, currency, conf) {
                   Forward.getTheOne(this.cert.fingerprint, peerFPR, next);
                 },
                 function (fwd, next) {
-                  if(fwd.forward == 'KEYS' && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
+                  if(fwd.forward == 'KEYS' && !forKeys && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
                     next('Peer ' + peerFPR + ' : forward already sent');
                     return;
                   }
@@ -331,7 +331,7 @@ module.exports.get = function (pgp, currency, conf) {
                 Forward.getTheOne(this.cert.fingerprint, peer.fingerprint, next);
               },
               function (fwd, next) {
-                if(fwd.forward == 'ALL'){
+                if(fwd.forward == 'ALL' && !forKeys){
                   next('Peer ' + peer.fingerprint + ' : forward already sent');
                   return;
                 }

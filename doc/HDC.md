@@ -13,10 +13,6 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
 * [Amendment](#amendment)
   * [Definition](#definition-1)
   * [Validity](#validity-1)
-  * [Membership request](#membership-request)
-      * [Joining](#joining)
-      * [Actualizing](#actualizing)
-      * [Leaving](#leaving)
   * [Vote request](#vote-request)
 * [Transaction](#transaction)
   * [Definition](#definition-2)
@@ -121,9 +117,12 @@ An amendment is the atomic part **constituting** a Monetary Contract. A Monetary
 An Amendment is an ASCII document defining:
 
 * A currency name
-* An exhaustive list of current members
-* An exhaustive list of current voters
+* A date of generation (timestamp format)
+* A list of incoming/outcoming members
+* A list of incoming/outcoming voters
+* The minimum votes count for *next* amendment to be eligible
 * Eventually, a Universal Dividend amount
+* Eventually, a minimum limit to new coins' value
 * Eventually, a reference to its preceding Amendment (every Amendment have a predecessor, excepted the first)
 
 Amendments, forming the Monetary Contract, are *collectively signed* and thus should be considered as the only authentic reference document towards money community and potential monetary mass.
@@ -133,21 +132,23 @@ Amendments have the following structure:
     Version: VERSION
     Currency: CURRENCY_NAME
     Number: INCREMENT
-    PreviousHash: PREVIOUS_HASH
+    GeneratedOn: TIMESTAMP
     UniversalDividend: UNIVERSAL_DIVIDEND
     CoinMinimalPower: COIN_MINIMAL_POWER
-    VotersSignaturesRoot: VOTERS_SIGNATURES_ROOT
-    VotersRoot: VOTERS_MERKLE_ROOT
-    VotersCount: VOTERS_COUNT
-    VotersChanges:
-    +INDIVIDUAL_FPR_VOTED_PREVIOUS_NOT_ANTE_PREVIOUS
-    -INDIVIDUAL_FPR_VOTED_ANTE_PREVIOUS_NOT_VOTED_PREVIOUS
-    MembersStatusRoot: MEMBERS_STATUS_SIGNATURES_ROOT
+    NextRequiredVotes: REQUIRED_VOTES_COUNT
+    PreviousHash: PREVIOUS_HASH
+    PreviousVotesRoot: VOTERS_SIGNATURES_ROOT
+    PreviousVotesCount: VOTERS_SIGNATURES_COUNT
     MembersRoot: WOT_MERKLE_ROOT
     MembersCount: WOT_SIZE
     MembersChanges:
     +NEW_INDIVIDUAL_FPR
     -LEAVING_INDIVIDUAL_FPR
+    VotersRoot: WOT_MERKLE_ROOT
+    VotersCount: WOT_SIZE
+    VotersChanges:
+    +NEW_VOTER_FPR
+    -LEAVING_VOTER_FPR
 
 All fields are not mandatory for a given amendment. Note that this precise structure is the version 1 amendment structure, and that any other structure may be proposed with a different version number. The only requirement is to have a `Version: VERSION` starting the text structure.
 
@@ -158,16 +159,19 @@ Field | Description | Required
 `Version` | denotes the current structure version. | **Required**
 `Currency` | contains the name of the currency. This is used to identify the target of the amendment, as several moneys may be HDC-based. | **Required**
 `Number` | references the position of the amendment in the amendment chain. Initial amendment has the value `0`. | **Required**
-`PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous amendment content, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough for that purpose, `PreviousHash` is an authentication mecanism to do this job). | *Not Required*
+`GeneratedOn` | references the generation date of the amendment. | **Required**
 `UniversalDividend` | if provided, is a positive number. It defines the amount of money each member of the community may create for **THIS** amendment. | *Not Required*
 `CoinMinimalPower` | if provided, is a zero or positive number. It restricts the newly issued coins to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created from this amendment. This field is used to avoid abuses linked to money issuance. | *Not Required*
+`NextRequiredVotes` | give the minimum votes count for next amendment to be considered a valid following amendment. | **Required**
+`PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous amendment content, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough for that purpose, `PreviousHash` is an authentication mecanism to do this job). | *Not Required*
+`PreviousVotesRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | *Not Required*
+`PreviousVotesCount` | is used in combination of `PreviousVotesRoot`, it defines how many leaves were used to generate the Merkle tree. | **Required**
 `MembersStatusRoot` | is the root hash of a Merkle tree listing the status requests of members to be inside the community. It is a checksum mecanism. | **Required**
 `MembersRoot` | is the root hash of a Merkle tree listing the current members of the whole community. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle. | **Required**
-`MembersCount` | is used in combination of `MembersRoot`, it defines how many leafs were used to generate the Merkle tree. | **Required**
+`MembersCount` | is used in combination of `MembersRoot`, it defines how many leaves were used to generate the Merkle tree. | **Required**
 `MembersChanges` | contains a list of members joining or leaving the community. A joining member has a line starting with `+` and a leaving one with `-`. | **Required**
-`VotersSignaturesRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | *Not Required*
 `VotersRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the current voters of the whole community. It is a checksum mecanism. Note that `VotersChanges` are included in the Merkle. | *Not Required*
-`VotersCount` | **is mandatory if `Number` is positive**. It is used in combination of `VotersRoot`, it defines how many leafs were used to generate the Merkle tree. | *Not Required*
+`VotersCount` | **is mandatory if `Number` is positive**. It is used in combination of `VotersRoot`, it defines how many leaves were used to generate the Merkle tree. | *Not Required*
 `VotersChanges` | **is mandatory if `Number` is positive**. It contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted ante previous amendment and voted previous is not considered a change, thus does not appear in this list. | *Not Required*
 
 And `AMENDMENT_ID` has the following format:
@@ -180,108 +184,15 @@ Where `AMENDMENT_NUMBER` is the `Number`, and `AMENDMENT_HASH` is the computed h
 
 In HDC, an Amendment structure is considered *valid* if:
 
-* Every line ends with a DOS <CR><LN> next line character.
-* Every required field is present, without consideration of any order.
-* Every present field ends with new line character.
-* Fields `Version`, `Number`, `UniversalDividend` (if present), `CoinMinimalPower` (if present), `MembersCount`, `VotersCount` are zero or positive integer values.
-* Fields `PreviousHash`, `MembersRoot`, `VotersRoot` are upper-cased SHA-1 hashes.
+* Every line ends with a DOS `<CR><LN>` new line character.
+* Every required field is present, **with** consideration of fields' order.
+* Every present field ends with a DOS `<CR><LN>` new line character.
+* Fields `Version`, `Number`, `GeneratedOn`, `UniversalDividend` (if present), `CoinMinimalPower` (if present), `NextRequiredVotes`, `PreviousVotesCount`, `MembersCount`, `VotersCount` are zero or positive integer values.
+* Fields `PreviousHash`, `PreviousVotesRoot`, `MembersRoot`, `VotersRoot` are upper-cased SHA-1 hashes.
 * Fields `MembersChanges` and `VotersChanges` are upper-cased SHA-1 hashes, preceded either by a `+` or `-` character.
-* When `Number` field is positive, Amendment has a `PreviousHash` value.
+* When `Number` field is positive, Amendment has a `PreviousHash`, `PreviousVotesRoot`, `PreviousVotesCount` value.
 
 Note that having an Amendment with a `CoinMinimalPower` without `UniversalDividend` field (or `0` valued) is not a considerated as invalid, but is a non-sense from HDC point of view.
-
-### Membership request
-
-In an Amendment, `JoinSignaturesRoot` is a Merkle tree of Joining requests which are the documents justifying the presence of a member inside the Community. It attests the will of an individual to join the Community.
-
-Joining request is the concatenation of this document:
-
-    Version: VERSION
-    Currency: CURRENCY_NAME
-    Status: JOIN|ACTUALIZE|LEAVE
-    Basis: AMENDMENT_NUMBER
-
-and signature of it, to make a single document which represents a *Membership request*.
-
-Field | Description | Required
------ | ----------- | --------
-`Version` | denotes the current structure version. | **Required**
-`Currency` | contains the name of the currency. This is used to identify the target of the membership request, as several moneys may be HDC-based. | **Required**
-`Status` | mean the goal of the request, which may be either `JOIN` for joining, `ACTUALIZE` for actualizing and `LEAVE` for leaving the Community. | **Required**
-`Basis` | an Amendment `Number` targeted by this request. | **Required**
-
-#### Joining
-
-**Goal** To be used for joining a given Community.
-
-A valid example would be:
-
-    Version: 1
-    Currency: beta_brousoufs
-    Status: JOIN
-    Basis: 0
-    -----BEGIN PGP MESSAGE-----
-    Version: GnuPG v1.4.12 (GNU/Linux)
-
-    owEBfwGA/pANAwAIAenKt20ZqGUeAaxPYgtsb2xjYXQuam9pblH/atBWZXJzaW9u
-    OiAxDQpDdXJyZW5jeTogYmV0YV9icm91c291ZnMNClN0YXR1czogSk9JTg0KQmFz
-    aXM6IDANCokBHAQAAQgABgUCUf9q0AAKCRDpyrdtGahlHrtKB/9fdpGXHkG57WiG
-    f9Svdr2t0aKtkUJZZPSxsockD3YVgVYESuJFVD9A5J7bKxDPnesa6jkUWYGpUnh0
-    sTtPSt7kNoDlEuuAHdF+mtzFaM4Uw0DN1QpqDe6eBszeMfr5BakJiIEuh81QiZtz
-    vAmRpDECjhphvJMbOdnRxmechcJj46bhNa/Ucz0gUWwZ8mo3Jecog1H02kyJxKv0
-    DowcX9F/XaxtbbEwVWu1YdZOf2AMEz1nekHjoBfj17ryh5oKnITYCZQ/9MgIPgNd
-    /3j2ddZGCHoWwFi/7VBoj3N3da6U4frb/Qz1WcIsKF4XEs+dt7X+4HYsfNbIgewU
-    cRIF9b5z
-    =neCo
-    -----END PGP MESSAGE-----
-
-#### Actualizing
-
-**Goal** To be used for actualizing a status in a given Community.
-
-A valid example would be:
-
-    Version: 1
-    Currency: beta_brousoufs
-    Status: ACTUALIZE
-    Basis: 2
-    -----BEGIN PGP MESSAGE-----
-    Version: GnuPG v1.4.12 (GNU/Linux)
-
-    owEBeQGG/pANAwAIAenKt20ZqGUeAaxJYgRhY3R1Uf9WFFZlcnNpb246IDEKQ3Vy
-    cmVuY3k6IGJldGFfYnJvdXNvdWZzClN0YXR1czogQUNUVUFMSVpFCkJhc2lzOiAy
-    CokBHAQAAQgABgUCUf9WFAAKCRDpyrdtGahlHptqCACjciiEP5FmExHz3R5kpKCP
-    BulDm2eANXKiYSyStN6EOEfQaV6Z2yLx5JflmxYMS8yPvWPkLpxNxje8IyN6nMIG
-    lmxiqs1QegGq1cXc5g7KIXs6aBPAjJPPq0+G8SEI4RGOwAC+1K/7XweTquprG8QY
-    K+4JVGfOYK1/3ZHOBSbu1jCl27nXs3MA/xX2baEwWblBniriYUqQpeDdbrQH4Umd
-    EsI1SQbO7dv/CWmkizfH9qKEeUCYuEVCGr/5a1ZrTvmRpbN+MM+NF7IvWg8JbCjP
-    Gz9Ju8oUUxtQF9KRaOCjNqvAppwb5g+2ISXvqEe5VnijF9X+eiVb2M3Mjnk8iALX
-    =0Ftz
-    -----END PGP MESSAGE-----
-
-#### Leaving
-
-**Goal** To be used for leaving a given Community.
-
-A valid example would be:
-
-    Version: 1
-    Currency: beta_brousoufs
-    Status: LEAVE
-    Basis: 6
-    -----BEGIN PGP MESSAGE-----
-    Version: GnuPG v1.4.12 (GNU/Linux)
-
-    owEBeAGH/pANAwAIAenKt20ZqGUeAaxIYgdsZWF2aW5nUf9WuFZlcnNpb246IDEK
-    Q3VycmVuY3k6IGJldGFfYnJvdXNvdWZzClN0YXR1czogTEVBVkUKQmFzaXM6IDYK
-    iQEcBAABCAAGBQJR/1a4AAoJEOnKt20ZqGUehxMIAJf5bnI8Eg10rdcXO+vFbx74
-    4thx8h6BMByJ6uYI5G5A5hlSUaOsoP/I5PpQ9se3e7ZqXEkS82Gl+KzvAZcBvget
-    HffuSD906cKtTL+c2gZfz3F0LKLtuj89nuudG4qcrXDfut6BrFziyksAVlOOI8V7
-    j3RNHG972pt1ofM1DBuX19PiRAlTj+fj46PJsR5Wkp+T/aTJX05xSpbjVh2iMcUC
-    gBJxUtYHmk/qwc11jdD7rF+une+uBeKZtZ8zSKeV/7RsECOE2g3x3iWTSGbE8MVA
-    oRE+QQrDO2/VMqOskwn1ktriiMacu0g5IUgvV0B7kIzE+hMW6eEu1R6pJ/XInmE=
-    =kUj2
-    -----END PGP MESSAGE-----
 
 ### Vote request
 

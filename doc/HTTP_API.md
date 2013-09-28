@@ -25,9 +25,9 @@
       * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
   * [hdc/](#hdc)
       * [amendments/current](#amendmentscurrent)
+      * [amendments/current/votes](#amendmentscurrentvotes)
       * [amendments/promoted](#amendmentspromoted)
       * [amendments/promoted/[AMENDMENT_NUMBER]](#amendmentspromotedamendment_number)
-      * [amendments/view/[AMENDMENT_ID]/memberships](#amendmentsviewamendment_idmemberships)
       * [amendments/view/[AMENDMENT_ID]/members](#amendmentsviewamendment_idmembers)
       * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
       * [amendments/view/[AMENDMENT_ID]/voters](#amendmentsviewamendment_idvoters)
@@ -38,9 +38,6 @@
       * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]](#coinspgp_fingerprintviewcoin_number)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]/history](#coinspgp_fingerprintviewcoin_numberhistory)
-      * [community/join](#communityjoin)
-      * [community/memberships](#communitymemberships)
-      * [community/votes](#communityvotes)
       * [transactions/process](#transactionsprocess)
       * [transactions/all](#transactionsall)
       * [transactions/keys](#transactionskeys)
@@ -83,12 +80,12 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       `-- [PGP_FINGERPRINT]
     `-- hdc/
         |-- amendments/
-        |   |-- current
+        |   |-- current/
+        |   |   `-- votes
         |   |-- promoted
         |   |   `-- [AMENDMENT_NUMBER]
         |   |-- view/
         |   |   `-- [AMENDMENT_ID]/
-        |   |       |-- memberships
         |   |       |-- members
         |   |       |-- self
         |   |       `-- voters
@@ -102,10 +99,6 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |       `-- view/
         |           `-- [COIN_NUMBER]/
         |               `-- history
-        |-- community/
-        |   |-- join
-        |   |-- memberships
-        |   `-- votes
         `-- transactions/
             |-- process
             |-- all
@@ -135,13 +128,11 @@ Merkle URL is a special kind of URL applicable for resources:
 * `ucg/tht (GET)`
 * `ucg/peering/peers (GET)`
 * `ucg/peering/keys`
-* `hdc/amendments/view/[AMENDMENT_ID]/memberships`
+* `hdc/amendments/current/votes`
 * `hdc/amendments/view/[AMENDMENT_ID]/members`
 * `hdc/amendments/view/[AMENDMENT_ID]/voters`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/amendments/votes/[AMENDMENT_ID]`
-* `hdc/community/memberships`
-* `hdc/community/votes`
 * `hdc/transactions/all`
 * `hdc/transactions/keys`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
@@ -257,13 +248,11 @@ Merkle URL | Leaf | Sort
 `ucg/tht (GET)` | Hash of the THT entry + signature | By hash string sort, ascending.
 `ucg/peering/peers (GET)` | Hash of the peering entry + signature | By hash string sort, ascending.
 `ucg/peering/keys` | Fingerprint of the key | By hash string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/memberships` | Hash of the membership + signature | By hash string sort, ascending.
+`hdc/amendments/current/votes` | Hash of the signature | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/members` | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/voters` | Fingerprint of voter's key fingeprint | By fingerprint string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/signatures` | Hash of the signature | By hash string sort, ascending.
 `hdc/amendments/votes/[AMENDMENT_ID]` | Hash of the signature | By hash string sort, ascending.
-`hdc/community/memberships` | Hash of the membership + signature | By hash string sort, ascending.
-`hdc/community/votes` | Hash of the signature | By hash string sort, ascending.
 `hdc/transactions/all` | Hash of the transaction + signature | By hash string sort, ascending.
 `hdc/transactions/keys` | Fingerprint of the key | By fingerprint string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]` | Hash of the transaction + signature | By hash string sort, ascending.
@@ -484,18 +473,7 @@ This entry contains a sum-up of common Merkle URLs handled by this node, with th
         ]
       }
     },
-    "hdc/community/memberships": {
-      "depth": 3,
-      "nodesCount": 6,
-      "levelsCount": 4,
-      "leavesCount": 5,
-      "levels": {
-        "0": [
-          "389F50C7AF7A13F08F4371F6F5066A0B3D829E68"
-        ]
-      }
-    },
-    "hdc/community/votes": {
+    "hdc/amendments/current/votes": {
       "depth": 3,
       "nodesCount": 6,
       "levelsCount": 4,
@@ -934,6 +912,47 @@ In a general way, those URLs return HTTP **200** code on success, HTTP **501** i
 
 Alias of `amendments/promoted`.
 
+#### `amendments/current/votes`
+**Goal**
+
+Merkle URL referencing the votes that legitimate the current amendment.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
+  }
+}
+```
+
+Merkle URL leaf: signature
+```json
+{
+  "hash": "2D41234540938C4263CBC5E7E11564038DED2118",
+  "value": {
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
+  }
+}
+```
+
 #### `amendments/promoted`
 **Goal**
 
@@ -1001,55 +1020,6 @@ The promoted amendment if it exists (otherwise return HTTP 404).
     "+31A6302161AC8F5938969E85399EB3415C237F93"
   ],
   "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-}
-```
-
-#### `amendments/view/[AMENDMENT_ID]/memberships`
-**Goal**
-
-Merkle URL refering to the membership requests for every member of the Community for this amendment.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "levelsCount": 4,
-  "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
-}
-```
-
-Merkle URL leaf: membership request
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "request": {
-      "version": 1,
-      "currency": "beta_brousoufs",
-      "status": "JOIN",
-      "basis": 0
-    },
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  }
 }
 ```
 
@@ -1414,121 +1384,6 @@ Transaction chain.
       "comment": "Too much coins ! Making big one."
     }
   ]
-}
-```
-
-#### `community/join`
-**Goal**
-
-POST an individual's membership request with a signature of it to register/actualize his status inside the Community.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`request` | The raw individual's membership request. | POST
-`signature` | The signature of the `certificate`. | POST
-
-**Returns**
-
-The posted membership request + posted signature.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-  "request": {
-    "version": 1,
-    "currency": "beta_brousoufs",
-    "status": "JOIN",
-    "basis": 0
-  }
-}
-```
-
-#### `community/memberships`
-**Goal**
-
-Merkle URL referencing membership requests of individual's registering/actualizing for the next amendment.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "levelsCount": 4,
-  "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
-}
-```
-
-Merkle URL leaf: membership request
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "request": {
-      "version": 1,
-      "currency": "beta_brousoufs",
-      "status": "JOIN",
-      "basis": 0
-    },
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  }
-}
-```
-
-#### `community/votes`
-**Goal**
-
-Merkle URL referencing the votes that legitimate the current amendment.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "levelsCount": 4,
-  "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
-}
-```
-
-Merkle URL leaf: signature
-```json
-{
-  "hash": "2D41234540938C4263CBC5E7E11564038DED2118",
-  "value": {
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
-  }
 }
 ```
 

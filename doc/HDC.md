@@ -165,14 +165,13 @@ Field | Description | Required
 `NextRequiredVotes` | give the minimum votes count for next amendment to be considered a valid following amendment. | **Required**
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous amendment content, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough for that purpose, `PreviousHash` is an authentication mecanism to do this job). | *Not Required*
 `PreviousVotesRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | *Not Required*
-`PreviousVotesCount` | is used in combination of `PreviousVotesRoot`, it defines how many leaves were used to generate the Merkle tree. | **Required**
-`MembersStatusRoot` | is the root hash of a Merkle tree listing the status requests of members to be inside the community. It is a checksum mecanism. | **Required**
+`PreviousVotesCount` | is used in combination of `PreviousVotesRoot`, it defines how many leaves were used to generate the Merkle tree. | *Not Required*
 `MembersRoot` | is the root hash of a Merkle tree listing the current members of the whole community. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle. | **Required**
 `MembersCount` | is used in combination of `MembersRoot`, it defines how many leaves were used to generate the Merkle tree. | **Required**
 `MembersChanges` | contains a list of members joining or leaving the community. A joining member has a line starting with `+` and a leaving one with `-`. | **Required**
-`VotersRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the current voters of the whole community. It is a checksum mecanism. Note that `VotersChanges` are included in the Merkle. | *Not Required*
-`VotersCount` | **is mandatory if `Number` is positive**. It is used in combination of `VotersRoot`, it defines how many leaves were used to generate the Merkle tree. | *Not Required*
-`VotersChanges` | **is mandatory if `Number` is positive**. It contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted ante previous amendment and voted previous is not considered a change, thus does not appear in this list. | *Not Required*
+`VotersRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the current voters of the whole community. It is a checksum mecanism. Note that `VotersChanges` are included in the Merkle. | **Required**
+`VotersCount` | **is mandatory if `Number` is positive**. It is used in combination of `VotersRoot`, it defines how many leaves were used to generate the Merkle tree. | **Required**
+`VotersChanges` | **is mandatory if `Number` is positive**. It contains a list of members whose voting state change. A new voting member has a line starting with `+` and a no more voting one with `-`. Members who voted ante previous amendment and voted previous is not considered a change, thus does not appear in this list. | **Required**
 
 And `AMENDMENT_ID` has the following format:
 

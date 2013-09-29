@@ -33,7 +33,7 @@
     "async": "",
     "sha1": "",
     "merkle": "",
-    "hdc": ">= 0.0.11",
+    "hdc": ">= 0.1.0",
     "connect-pgp": "",
     "underscore": "",
     "vucoin": "",

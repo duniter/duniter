@@ -960,16 +960,16 @@ describe('Checking current amendment', function(){
   api.checkPromoted(3   , 404);
 
   // 2 votes for AM2 (enough)
-  api.checkPromoted(null, 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+  api.checkPromoted(null, 200, 'F5372B1A5505DB5FBFDD146E5B391C6252B7D174');
   api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
-  api.checkPromoted(2   , 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+  api.checkPromoted(2   , 200, 'F5372B1A5505DB5FBFDD146E5B391C6252B7D174');
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+  api.checkPromoted(null, 200, 'F5372B1A5505DB5FBFDD146E5B391C6252B7D174');
   api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
-  api.checkPromoted(2   , 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+  api.checkPromoted(2   , 200, 'F5372B1A5505DB5FBFDD146E5B391C6252B7D174');
   api.checkPromoted(3   , 404);
 });
 

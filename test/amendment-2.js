@@ -50,8 +50,8 @@ describe('Amendment', function(){
       should.not.exist(amTest.membersStatusRoot);
     });
 
-    it('should have F92B6F81C85200250EE51783F5F9F6ACA57A9AFF members hash', function(){
-      assert.equal(amTest.membersRoot, 'F92B6F81C85200250EE51783F5F9F6ACA57A9AFF');
+    it('should have 7B66992FD748579B0774EDFAD7AB84143357F7BC members hash', function(){
+      assert.equal(amTest.membersRoot, '7B66992FD748579B0774EDFAD7AB84143357F7BC');
     });
 
     it('should have DC7A9229DFDABFB9769789B7BFAE08048BCB856F voters hash', function(){
@@ -66,7 +66,7 @@ describe('Amendment', function(){
       var newMembers = amTest.getNewMembers();
       assert.equal(newMembers.length, 1);
       assert.equal(amTest.membersCount, 4);
-      assert.equal(newMembers[0], "31A6302161AC8F5938969E85399EB3415C237F93"); // cgeek
+      assert.equal(newMembers[0], "B6AE93DDE390B1E11FA97EEF78B494F99025C77E"); // walter white
     });
 
     it('should have 0 new voters', function(){
@@ -81,12 +81,12 @@ describe('Amendment', function(){
       assert.equal(amTest.votersCount, 2);
     });
 
-    it('its computed hash should be 3A9BB33C2E0AC064526028B9509D380D273DDAFD', function(){
-      assert.equal(amTest.hash, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+    it('its computed hash should be F5372B1A5505DB5FBFDD146E5B391C6252B7D174', function(){
+      assert.equal(amTest.hash, 'F5372B1A5505DB5FBFDD146E5B391C6252B7D174');
     });
 
-    it('its manual hash should be 3A9BB33C2E0AC064526028B9509D380D273DDAFD', function(){
-      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+    it('its manual hash should be F5372B1A5505DB5FBFDD146E5B391C6252B7D174', function(){
+      assert.equal(sha1(amTest.getRaw()).toUpperCase(), 'F5372B1A5505DB5FBFDD146E5B391C6252B7D174');
     });
   });
 });

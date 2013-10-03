@@ -37,8 +37,8 @@ describe('Monetary Contract', function(){
       assert.equal(MonetaryContract.members.length, 4);
       assert.equal(MonetaryContract.voters.length, 2);
       assert.equal(MonetaryContract.members[0], "2E69197FAB029D8669EF85E82457A1587CA0ED9C");
-      assert.equal(MonetaryContract.members[1], "31A6302161AC8F5938969E85399EB3415C237F93");
-      assert.equal(MonetaryContract.members[2], "33BBFC0C67078D72AF128B5BA296CC530126F372");
+      assert.equal(MonetaryContract.members[1], "33BBFC0C67078D72AF128B5BA296CC530126F372");
+      assert.equal(MonetaryContract.members[2], "B6AE93DDE390B1E11FA97EEF78B494F99025C77E");
       assert.equal(MonetaryContract.members[3], "C73882B64B7E72237A2F460CE9CAB76D19A8651E");
       assert.equal(MonetaryContract.voters[0], "2E69197FAB029D8669EF85E82457A1587CA0ED9C");
       assert.equal(MonetaryContract.voters[1], "33BBFC0C67078D72AF128B5BA296CC530126F372");

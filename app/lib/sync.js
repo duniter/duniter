@@ -181,7 +181,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             // Synchronise remote's current
             async.waterfall([
               function (callback){
-                node.hdc.community.votes({ extract: true }, callback);
+                node.hdc.amendments.currentVotes({ extract: true }, callback);
               },
               function (json, callback) {
                 applyVotes(amendments, number, number, json, node, callback);

@@ -271,11 +271,14 @@ AmendmentSchema.methods = {
 
   loadFromFile: function(file, done) {
     var obj = this;
-    fs.readFile(file, {encoding: "utf8"}, function (err, data) {
-      obj.parse(data, function(err) {
-        done(err);
-      });
-    });
+    async.waterfall([
+      function (next){
+        fs.readFile(file, {encoding: "utf8"}, next);
+      },
+      function (data, next){
+        obj.parse(data, next);
+      },
+    ], done);
   }
 };
 

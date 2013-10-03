@@ -17,7 +17,9 @@ describe('Amendment', function(){
     // Loads amTest with its data
     before(function(done) {
       amTest = new Amendment();
-      amTest.loadFromFile(__dirname + "/data/amendments/BB-AM2-OK", done);
+      amTest.loadFromFile(__dirname + "/data/amendments/BB-AM2-OK", function () {
+        done();
+      });
     });
 
     it('should be version 1', function(){
@@ -32,20 +34,20 @@ describe('Amendment', function(){
       assert.equal(amTest.number, 2);
     });
 
-    it('should have a niversal Dividend of value 100', function(){
-      assert.equal(amTest.dividend, 100);
+    it('should have a niversal Dividend of value 110', function(){
+      assert.equal(amTest.dividend, 110);
     });
 
     it('should have a Minimal Coin Power of 0', function(){
       assert.equal(amTest.coinMinPower, 0);
     });
 
-    it('should have 0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C previous hash', function(){
-      assert.equal(amTest.previousHash, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+    it('should have 5A6434BCD09400625CEA75BFE6F786829018BAD1 previous hash', function(){
+      assert.equal(amTest.previousHash, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
     });
 
-    it('should have members status root F01226A87106117FEFBACEC1DD78C8EBF2F69690', function(){
-      assert.equal(amTest.membersStatusRoot, 'F01226A87106117FEFBACEC1DD78C8EBF2F69690');
+    it('should have no members status root', function(){
+      should.not.exist(amTest.membersStatusRoot);
     });
 
     it('should have F92B6F81C85200250EE51783F5F9F6ACA57A9AFF members hash', function(){
@@ -56,8 +58,8 @@ describe('Amendment', function(){
       assert.equal(amTest.votersRoot, 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F');
     });
 
-    it('should have voters signatures root C8713BB218554D6B61D8897EE1AF675909E7506D', function(){
-      assert.equal(amTest.votersSigRoot, 'C8713BB218554D6B61D8897EE1AF675909E7506D');
+    it('should have no voters signatures root', function(){
+      should.not.exist(amTest.votersSigRoot);
     });
 
     it('should have the following new member', function(){
@@ -79,12 +81,12 @@ describe('Amendment', function(){
       assert.equal(amTest.votersCount, 2);
     });
 
-    it('its computed hash should be 2F6E88D9BA8E04C69597DDCBC24AE4F06B469091', function(){
-      assert.equal(amTest.hash, '2F6E88D9BA8E04C69597DDCBC24AE4F06B469091');
+    it('its computed hash should be 3A9BB33C2E0AC064526028B9509D380D273DDAFD', function(){
+      assert.equal(amTest.hash, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
     });
 
-    it('its manual hash should be 2F6E88D9BA8E04C69597DDCBC24AE4F06B469091', function(){
-      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '2F6E88D9BA8E04C69597DDCBC24AE4F06B469091');
+    it('its manual hash should be 3A9BB33C2E0AC064526028B9509D380D273DDAFD', function(){
+      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
     });
   });
 });

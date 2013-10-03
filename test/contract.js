@@ -29,8 +29,8 @@ describe('Monetary Contract', function(){
       assert.equal(MonetaryContract.length, 3);
     });
 
-    it('should have Monetary Mass of 400', function(){
-      assert.equal(MonetaryContract.monetaryMass, 400);
+    it('should have Monetary Mass of 440', function(){
+      assert.equal(MonetaryContract.monetaryMass, 440);
     });
 
     it('should have 4 members, 2 voters', function(){

@@ -17,7 +17,9 @@ describe('Amendment', function(){
     // Loads amTest with its data
     before(function(done) {
       amTest = new Amendment();
-      amTest.loadFromFile(__dirname + "/data/amendments/BB-AM1-OK", done);
+      amTest.loadFromFile(__dirname + "/data/amendments/BB-AM1-OK", function () {
+        done();
+      });
     });
 
     it('should be version 1', function(){
@@ -40,8 +42,8 @@ describe('Amendment', function(){
       should.not.exist(amTest.coinMinPower);
     });
 
-    it('should have 376C5A6126A4688B18D95043261B2D59867D4047 previous hash', function(){
-      assert.equal(amTest.previousHash, '376C5A6126A4688B18D95043261B2D59867D4047');
+    it('should have 58A2700B6CE56E112238FDCD81C8DACE2F2D06DC previous hash', function(){
+      assert.equal(amTest.previousHash, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
     });
 
     it('should have 0 new members', function(){
@@ -50,33 +52,30 @@ describe('Amendment', function(){
       assert.equal(amTest.membersCount, 3);
     });
 
-    it('should have members status root 2A42C5CCC315AF3B9D009CC8E635F8492111F91D', function(){
-      assert.equal(amTest.membersStatusRoot, '2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
+    it('should have no members status root', function(){
+      should.not.exist(amTest.membersStatusRoot);
     });
 
     it('should have F5ACFD67FC908D28C0CFDAD886249AC260515C90 voters hash', function(){
       assert.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90', amTest.votersRoot);
     });
 
-    it('should have the following 3 new voters', function(){
+    it('should have the following 0 new voters', function(){
       var newVoters = amTest.getNewVoters();
-      assert.equal(newVoters.length, 3);
+      assert.equal(newVoters.length, 0);
       assert.equal(amTest.votersCount, 3);
-      assert.equal(newVoters[0], "2E69197FAB029D8669EF85E82457A1587CA0ED9C");
-      assert.equal(newVoters[1], "33BBFC0C67078D72AF128B5BA296CC530126F372");
-      assert.equal(newVoters[2], "C73882B64B7E72237A2F460CE9CAB76D19A8651E");
     });
 
-    it('should have voters signatures root DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA', function(){
-      assert.equal(amTest.votersSigRoot, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
+    it('should have no voters signatures root', function(){
+      should.not.exist(amTest.votersSigRoot);
     });
 
-    it('its computed hash should be 0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C', function(){
-      assert.equal(amTest.hash, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+    it('its computed hash should be 5A6434BCD09400625CEA75BFE6F786829018BAD1', function(){
+      assert.equal(amTest.hash, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
     });
 
-    it('its manual hash should be 0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C', function(){
-      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+    it('its manual hash should be 5A6434BCD09400625CEA75BFE6F786829018BAD1', function(){
+      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '5A6434BCD09400625CEA75BFE6F786829018BAD1');
     });
   });
 });

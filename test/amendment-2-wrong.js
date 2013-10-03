@@ -46,8 +46,8 @@ describe('Amendment', function(){
       assert.equal(amTest.coinMinPower, 3);
     });
 
-    it('should have verification error code 108', function(){
-      assert.equal(errCode, 108);
+    it('should have verification error code 172', function(){
+      assert.equal(errCode, 172);
     });
   });
 });

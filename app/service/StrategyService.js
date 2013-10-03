@@ -2,7 +2,6 @@ var jpgp       = require('../lib/jpgp');
 var async      = require('async');
 var mongoose   = require('mongoose');
 var _          = require('underscore');
-var Membership = mongoose.model('Membership');
 var Amendment  = mongoose.model('Amendment');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
@@ -85,8 +84,8 @@ function defaultPromotion (amendment, decision) {
           Merkle.signaturesOfAmendment(am.number, am.hash, pass);
         },
         function (sigMerkle, pass){
-          if(sigMerkle.root() != amendment.votersSigRoot || sigMerkle.leaves().length != amendment.votersCount){
-            pass('Not promoted: this amendment does not match received signatures of current amendment (expect ' + sigMerkle.leaves().length + " votes with root " + sigMerkle.root() + ", got " + amendment.votersCount + " votes with root " + amendment.votersSigRoot);
+          if(sigMerkle.root() != amendment.previousVotesRoot || sigMerkle.leaves().length != amendment.previousVotesCount){
+            pass('Not promoted: this amendment does not match received signatures of current amendment (expect ' + sigMerkle.leaves().length + " votes with root " + sigMerkle.root() + ", got " + amendment.previousVotesCount + " votes with root " + amendment.previousVotesRoot);
             return;
           }
           pass();

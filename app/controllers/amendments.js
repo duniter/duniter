@@ -42,6 +42,26 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.currentVotes = function (req, res) {
+    async.waterfall([
+      function (next){
+        Amendment.current(next);
+      },
+      function (am, next){
+        Merkle.signaturesOfAmendment(am.number, am.hash, next);
+      },
+      function (merkle, next){
+        MerkleService.processForURL(req, merkle, Merkle.mapForSignatures, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      MerkleService.merkleDone(req, res, json);
+    });
+  };
+
   // Retro-compatibility
   this.current = this.promoted;
 
@@ -49,10 +69,6 @@ module.exports = function (pgp, currency, conf) {
 
     signatures: function (req, res) {
       amendmentMerkle(req, res, Merkle.signaturesWrittenForAmendment, Merkle.mapForSignatures);
-    },
-
-    status: function (req, res) {
-      amendmentMerkle(req, res, Merkle.membershipsWrittenForAmendment, Merkle.mapForMemberships);
     },
 
     members: function (req, res) {

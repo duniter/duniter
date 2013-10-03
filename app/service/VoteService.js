@@ -2,7 +2,6 @@ var jpgp       = require('../lib/jpgp');
 var async      = require('async');
 var mongoose   = require('mongoose');
 var _          = require('underscore');
-var Membership = mongoose.model('Membership');
 var Amendment  = mongoose.model('Amendment');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
@@ -27,7 +26,18 @@ module.exports = function (currency) {
       },
       function (isMember, next){
         if(!isMember && vote.amendment.number != 0){
-          next('Only members may vote for amendments');
+          next('Only members may be voters');
+          return;
+        }
+        next();
+      },
+      // Issuer is a voter
+      function (next){
+        vote.issuerIsVoter(next);
+      },
+      function (isVoter, next){
+        if(!isVoter && vote.amendment.number != 0){
+          next('Only voters may vote for amendments');
           return;
         }
         next();
@@ -42,16 +52,6 @@ module.exports = function (currency) {
           }
           if(voteNumber < currNumber){
             next('Cannot record vote for previous amendments');
-            return;
-          }
-          next();
-        });
-      },
-      // Is not leaving the community
-      function (next) {
-        Membership.find({ fingerprint: vote.issuer, basis: vote.basis, status: 'LEAVE' }, function (err, memberships) {
-          if(memberships.length > 0){
-            next('Vote forbidden: a leaving request was received for this member');
             return;
           }
           next();

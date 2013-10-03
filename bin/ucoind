@@ -170,7 +170,6 @@ program
   .action(connect(function (type, conf) {
     var Merkle      = mongoose.model('Merkle');
     var PublicKey   = mongoose.model('PublicKey');
-    var Membership  = mongoose.model('Membership');
     var Vote        = mongoose.model('Vote');
     var Amendment   = mongoose.model('Amendment');
     var Transaction = mongoose.model('Transaction');
@@ -193,32 +192,6 @@ program
         fingerprints.sort(); // Important!
         merkle.initialize(fingerprints);
         merkle.save(next);
-      },
-
-      // Memberships
-      function (merkle, code, next){
-        Membership.find(next);
-      },
-      function (mss, next){
-        var mapMS = {};
-        mss.forEach(function (ms) {
-          mapMS[ms.basis] = mapMS[ms.basis] || [];
-          mapMS[ms.basis].push(ms.hash);
-        });
-        // Overwrites Merkle for each #basis
-        async.forEach(_(mapMS).keys(), function(key, callback){
-          var hashes = mapMS[key];
-          hashes.sort();
-          async.waterfall([
-            function (done){
-              Merkle.forMembership(key, done);
-            },
-            function (merkle, done){
-              merkle.initialize(hashes);
-              merkle.save(done);
-            }
-          ], callback);
-        }, next);
       },
 
       // Transactions

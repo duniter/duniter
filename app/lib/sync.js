@@ -3,7 +3,6 @@ var mongoose    = require('mongoose');
 var _           = require('underscore');
 var sha1        = require('sha1');
 var merkle      = require('merkle');
-var Membership  = mongoose.model('Membership');
 var Amendment   = mongoose.model('Amendment');
 var PublicKey   = mongoose.model('PublicKey');
 var Merkle      = mongoose.model('Merkle');
@@ -16,7 +15,6 @@ var vucoin      = require('vucoin');
 module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
 
   var VoteService        = require('../service/VoteService')(currency);
-  var MembershipService  = require('../service/MembershipService').get(currency);
   var TransactionService = require('../service/TransactionsService').get(currency);
   var THTService         = require('../service/THTService').get(currency);
   var PeeringService     = require('../service/PeeringService').get(pgp, currency, conf);
@@ -161,9 +159,6 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                   cb();
                 },
                 function (cb) {
-                  applyMemberships(amendments, amNumber, node, cb);
-                },
-                function (cb) {
                   node.hdc.amendments.view.signatures(amNumber + 1, sha1(amendments[amNumber + 1]).toUpperCase(), { extract: true }, cb);
                 },
                 function (json, cb){
@@ -186,9 +181,6 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             // Synchronise remote's current
             async.waterfall([
               function (callback){
-                applyMemberships(amendments, number, node, callback);
-              },
-              function (callback){
                 node.hdc.community.votes({ extract: true }, callback);
               },
               function (json, callback) {
@@ -199,12 +191,6 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             });
           }
           else next();
-        },
-        function (next) {
-          node.hdc.community.memberships({ extract: true }, next);
-        },
-        function (json, next) {
-          applyTargetedMemberships(json.leaves, function () { return true; }, next);
         },
 
         //==============
@@ -449,68 +435,6 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
         ], onKeySentTransactionFinished);
       }
     ], onceSyncFinished);
-  }
-
-  function applyMemberships(amendments, amNumber, node, cb) {
-    // console.log('Applying memberships for amendment #%s', amNumber);
-    async.waterfall([
-      function (next) {
-        Merkle.forMembership(amNumber - 1, next);
-      },
-      function (prevMerkle, next) {
-        Merkle.updateManyForNextMembership(prevMerkle.leaves(), next);
-      },
-      function (next) {
-        node.hdc.amendments.view.memberships(amNumber, sha1(amendments[amNumber]).toUpperCase(), {}, next);
-      },
-      function (json, next){
-        Merkle.forMembership(amNumber - 1, function (err, prevMerkle) {
-          if(prevMerkle.root() != json.levels[0][0]){
-            // console.log('MS CHANGES (%s != %s)', prevMerkle.root(), json.levels[0][0]);
-            var difff = [];
-            async.waterfall([
-              function (callback2) {
-                node.hdc.amendments.view.memberships(amNumber, sha1(amendments[amNumber]).toUpperCase(), { lstart: json.depth, lend: json.levelsCount }, callback2);
-              },
-              function (json2, callback2){
-                var leaves = json2.levels[json2.levelsCount -1];
-                difff = _(leaves).difference(prevMerkle.leaves());
-                node.hdc.amendments.view.memberships(amNumber, sha1(amendments[amNumber]).toUpperCase(), { extract: true }, callback2);
-              },
-              function (json, callback2) {
-                applyTargetedMemberships(json.leaves, function (hash) {
-                  return ~difff.indexOf(hash);
-                }, callback2);
-              }
-            ], cb);
-          }
-          else cb();
-        });
-      }
-    ], function (err, result) {
-    });
-  }
-
-  function applyTargetedMemberships(merkleUrlLeaves, isToApply, done) {
-    // console.log("Source memberships: %s", _(merkleUrlLeaves).size());
-    async.forEachSeries(_(merkleUrlLeaves).keys(), function(key, callback){
-      var msObj = merkleUrlLeaves[key];
-      if(isToApply(msObj.hash)){
-        var ms = new Membership({});
-        _(msObj.value.request).keys().forEach(function (field) {
-          ms[field] = msObj.value.request[field];
-        });
-        var signedMSR = ms.getRaw() + msObj.value.signature;
-        MembershipService.submit(signedMSR, callback);
-      }
-      else callback();
-    }, function(err, result){
-      if(err){
-        done(err);
-        return;
-      }
-      done();
-    });
   }
 
   function applyVotes(amendments, amNumber, number, json, node, cb) {

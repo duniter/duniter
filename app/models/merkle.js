@@ -102,17 +102,6 @@ function retrieve(merkleID, done) {
   ], done);
 }
 
-MerkleSchema.statics.forMembership = function (number, done) {
-  retrieve({ type: 'membership', criteria: '{"basis":'+number+'}' }, done);
-};
-
-MerkleSchema.statics.forNextMembership = function (done) {
-  var that = this;
-  mongoose.model('Amendment').nextNumber(function (err, number) {
-    that.forMembership(number || 0, done);
-  });
-};
-
 MerkleSchema.statics.forPublicKeys = function (done) {
   retrieve({ type: 'pubkeys' }, done);
 };
@@ -123,10 +112,6 @@ MerkleSchema.statics.signaturesOfAmendment = function (number, hash, done) {
 
 MerkleSchema.statics.signaturesWrittenForAmendment = function (number, hash, done) {
   retrieve({ type: 'amendment_signatures', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
-};
-
-MerkleSchema.statics.membershipsWrittenForAmendment = function (number, hash, done) {
-  retrieve({ type: 'amendment_memberships', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
 MerkleSchema.statics.membersWrittenForAmendment = function (number, hash, done) {
@@ -260,38 +245,6 @@ MerkleSchema.statics.updateSignatoriesOfAmendment = function (am, fingerprint, d
     },
     function (merkle, next) {
       merkle.push(fingerprint);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForNextMembership = function (previousHash, newHash, done) {
-  async.waterfall([
-    function (next) {
-      Merkle.forNextMembership(function (err, merkle) {
-        next(err, merkle);
-      });
-    },
-    function (merkle, next) {
-      merkle.push(newHash, previousHash);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateManyForNextMembership = function (leaves, done) {
-  async.waterfall([
-    function (next) {
-      Merkle.forNextMembership(function (err, merkle) {
-        next(err, merkle);
-      });
-    },
-    function (merkle, next) {
-      merkle.pushMany(leaves);
       merkle.save(function (err) {
         next(err);
       });
@@ -485,28 +438,6 @@ MerkleSchema.statics.mapForSignatures = function (hashes, done) {
       map[vote.hash] = {
         issuer: vote.issuer,
         signature: vote.signature
-      };
-    });
-    done(null, map);
-  });
-};
-
-MerkleSchema.statics.mapForMemberships = function (hashes, done) {
-  mongoose.model('Membership')
-  .find({ hash: { $in: hashes } })
-  .sort('hash')
-  .exec(function (err, memberships) {
-    var map = {};
-    memberships.forEach(function (membs){
-      map[membs.hash] = {
-        "signature": membs.signature,
-        "request": {
-          "version": membs.version,
-          "currency": membs.currency,
-          "status": membs.status,
-          "basis": membs.basis
-        },
-        "issuer": membs.fingerprint
       };
     });
     done(null, map);

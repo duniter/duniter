@@ -49,22 +49,7 @@ VoteSchema.methods = {
           next('Bad signature for amendment');
           return;
         }
-        async.waterfall([
-          function (next){
-            that.amendment.buildMembershipsMerkle(next);
-          },
-          function (leaves, next){
-            var merkle = new Merkle();
-            merkle.initialize(leaves);
-            if(merkle.root() != that.amendment.membersStatusRoot){
-              next('Bad members status root (require ' + that.amendment.membersStatusRoot + ', computed ' + merkle.root() + ')');
-              return;
-            }
-            next(null, verified);
-          }
-        ], function (err, result) {
-          next(err, result);
-        });
+        next(null, true);
       }
     ], done);
     return this;
@@ -84,6 +69,25 @@ VoteSchema.methods = {
         },
         function (membersMerkle, next){
           next(null, ~membersMerkle.leaves().indexOf(that.issuer));
+        }
+      ], done);
+    });
+  },
+
+  issuerIsVoter: function(done) {
+    var that = this;
+    Amendment.current(function (err, current) {
+      if(err){
+        // No amendmennt, thus no member
+        done(null, false);
+        return;
+      }
+      async.waterfall([
+        function (next){
+          Merkle.votersWrittenForAmendment(current.number, current.hash, next);
+        },
+        function (votersMerkle, next){
+          next(null, ~votersMerkle.leaves().indexOf(that.issuer));
         }
       ], done);
     });

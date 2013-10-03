@@ -2,7 +2,6 @@ var jpgp        = require('../lib/jpgp');
 var async       = require('async');
 var mongoose    = require('mongoose');
 var _           = require('underscore');
-var Membership  = mongoose.model('Membership');
 var Amendment   = mongoose.model('Amendment');
 var PublicKey   = mongoose.model('PublicKey');
 var Merkle      = mongoose.model('Merkle');

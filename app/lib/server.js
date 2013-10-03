@@ -96,11 +96,6 @@ module.exports.database = {
         });
       },
       function (next){
-        mongoose.model('Membership').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
         mongoose.model('Amendment').remove({}, function (err) {
           next(err);
         });
@@ -211,9 +206,9 @@ module.exports.express = {
     app.post(   '/ucg/tht',                                       ucg.thtPOST);
     app.get(    '/ucg/tht/:fpr',                                  ucg.thtFPR);
     app.get(    '/hdc/amendments/current',                        hdc.amendments.current);
+    app.get(    '/hdc/amendments/current/votes',                  hdc.amendments.currentVotes);
     app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
     app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
-    app.get(    '/hdc/amendments/view/:amendment_id/memberships', hdc.amendments.viewAM.status);
     app.get(    '/hdc/amendments/view/:amendment_id/members',     hdc.amendments.viewAM.members);
     app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
     app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.viewAM.signatures);
@@ -224,9 +219,6 @@ module.exports.express = {
     app.get(    '/hdc/coins/:fpr/list',                           hdc.coins.list);
     app.get(    '/hdc/coins/:fpr/view/:coin_number',              hdc.coins.view);
     app.get(    '/hdc/coins/:fpr/view/:coin_number/history',      hdc.coins.history);
-    app.post(   '/hdc/community/join',                            hdc.community.join);
-    app.get(    '/hdc/community/memberships',                     hdc.community.memberships);
-    app.get(    '/hdc/community/votes',                           hdc.community.currentVotes);
     app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
     app.get(    '/hdc/transactions/all',                          hdc.transactions.all);
     app.get(    '/hdc/transactions/keys',                         hdc.transactions.keys);

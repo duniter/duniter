@@ -46,13 +46,6 @@ module.exports = function (pgp, currency, conf) {
       },
       function (json, next){
         pkMerkle = json;
-        Merkle.forNextMembership(next);
-      },
-      function (merkle, next){
-        MerkleService.processForURL(req, merkle, null, next);
-      },
-      function (json, next){
-        msMerkle = json;
         async.waterfall([
           function (cb){
             Merkle.signaturesOfAmendment(am ? am.number : undefined, am ? am.hash : undefined, cb);
@@ -86,8 +79,7 @@ module.exports = function (pgp, currency, conf) {
           hash: am ? am.hash : ''
         },
         "pks/all": pkMerkle,
-        "hdc/community/memberships": msMerkle,
-        "hdc/community/votes": votesMerkle
+        "hdc/amendments/current/votes": votesMerkle
       }, null, "  "));
     });
   }

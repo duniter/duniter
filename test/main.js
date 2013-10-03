@@ -62,22 +62,17 @@ var pubkeyTobiSig = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
 var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
 var pubkeyWhiteSig = fs.readFileSync(__dirname + '/data/white.pub.asc', 'utf8');
 
-var joinSnow      = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.snow.asc', 'utf8');
-var joinCat       = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.cat.asc', 'utf8');
-var joinTobi      = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.tobi.asc', 'utf8');
-var joinWhite     = fs.readFileSync(__dirname + '/data/membership/join.0', 'utf8') + fs.readFileSync(__dirname + '/data/membership/join.0.white.asc', 'utf8');
-
 var voteCatAM0    = fs.readFileSync(__dirname + '/data/amendments/BB-AM0-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM0/cat.asc', 'utf8');
 var voteTobiAM0   = fs.readFileSync(__dirname + '/data/amendments/BB-AM0-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM0/tobi.asc', 'utf8');
 var voteSnowAM0   = fs.readFileSync(__dirname + '/data/amendments/BB-AM0-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM0/snow.asc', 'utf8');
 var voteSnowAM0_2 = fs.readFileSync(__dirname + '/data/votes/BB-AM0/OK-snow.dissident.vote', 'utf8');
-var voteSnowAM1   = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/snow.asc', 'utf8');
-var voteTobiAM1   = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.asc', 'utf8');
-var voteCatAM1    = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.asc', 'utf8');
-var voteWhiteAM1  = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8')+ fs.readFileSync(__dirname + '/data/votes/BB-AM1/white.asc', 'utf8');
-var voteSnowAM2   = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK-VOTED', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/snow.asc', 'utf8');
-var voteTobiAM2   = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK-VOTED', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/tobi.asc', 'utf8');
-var voteCatAM2    = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK-VOTED', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.asc', 'utf8');
+var voteSnowAM1   = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM1/snow.asc', 'utf8');
+var voteTobiAM1   = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM1/tobi.asc', 'utf8');
+var voteCatAM1    = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM1/cat.asc', 'utf8');
+var voteWhiteAM1  = fs.readFileSync(__dirname + '/data/amendments/BB-AM1-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM1/white.asc', 'utf8');
+var voteSnowAM2   = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/snow.asc', 'utf8');
+var voteTobiAM2   = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/tobi.asc', 'utf8');
+var voteCatAM2    = fs.readFileSync(__dirname + '/data/amendments/BB-AM2-OK', 'utf8') + fs.readFileSync(__dirname + '/data/votes/BB-AM2/cat.asc', 'utf8');
 
 var txTobi          = fs.readFileSync(__dirname + '/data/tx/tobi.issuance', 'utf8') + fs.readFileSync(__dirname + '/data/tx/tobi.issuance.asc', 'utf8');
 var txTobiToSnow    = fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow', 'utf8') + fs.readFileSync(__dirname + '/data/tx/tobi.transfert.snow.asc', 'utf8');
@@ -106,7 +101,6 @@ function ResultAPI () {
   this.pksAddIndex = 0;
   this.pksLookupIndex = 0;
   this.joinIndex = 0;
-  this.membershipsIndex = 0;
   this.keysIndex = 0;
 
   this.push = function (url, res) {
@@ -164,39 +158,6 @@ function ResultAPI () {
       json.should.have.property('keys');
       json.keys.length.should.equal(keyCount);
     })
-  };
-
-  this.join = function(comment) {
-    var index = this.joinIndex++;
-    var obj = this;
-    it('expect membership accepted for ' + comment, function () {
-      var res = obj.apiRes['/hdc/community/join'][index].res;
-      var json = JSON.parse(res.text);
-      res.should.have.status(200);
-      json.should.have.property('request');
-      json.should.have.property('signature');
-    })
-  };
-
-  this.memberships = function(comment, leavesCount, root) {
-    var index = this.membershipsIndex++;
-    var obj = this;
-    it('expect ' + comment, function () {
-      var res = obj.apiRes['/hdc/community/memberships'][index].res;
-      var resEx = obj.apiRes['/hdc/community/memberships?extract=true'][index].res;
-      var json = JSON.parse(res.text);
-      var jsonEx = JSON.parse(resEx.text);
-      res.should.have.status(200);
-      resEx.should.have.status(200);
-      isMerkleNodesResult(json);
-      if(root)
-        json.levels[0][0].should.equal(root);
-      else
-        _(json.levels[0]).size().should.equal(0);
-      isMerkleLeavesResult(jsonEx);
-      _(jsonEx.leaves).size().should.equal(leavesCount);
-      checkMerkleOfMemberships(jsonEx);
-    });
   };
 
   this.coinsList = function(type, owner, coinsCount, issuersCount) {
@@ -336,17 +297,18 @@ function ResultAPI () {
         json.should.have.property('version');
         json.should.have.property('currency');
         json.should.have.property('number');
-        json.should.have.property('previousHash');
+        json.should.have.property('generated');
         json.should.have.property('dividend');
         json.should.have.property('coinMinPower');
-        json.should.have.property('votersSigRoot');
-        json.should.have.property('votersRoot');
-        json.should.have.property('votersCount');
-        json.should.have.property('votersChanges');
-        json.should.have.property('membersStatusRoot');
+        json.should.have.property('previousHash');
+        json.should.have.property('previousVotesRoot');
+        json.should.have.property('previousVotesCount');
         json.should.have.property('membersRoot');
         json.should.have.property('membersCount');
         json.should.have.property('membersChanges');
+        json.should.have.property('votersRoot');
+        json.should.have.property('votersCount');
+        json.should.have.property('votersChanges');
         json.should.have.property('raw');
         var mHash = sha1(json.raw).toUpperCase();
         mHash.should.equal(hash);
@@ -518,13 +480,6 @@ function pksAdd (keytext, keysign, done) {
   }, done);
 }
 
-function communityJoin (join, done) {
-  post('/hdc/community/join', {
-    "request": join.substr(0, join.indexOf('-----BEGIN')),
-    "signature": join.substr(join.indexOf('-----BEGIN'))
-  }, done);
-}
-
 function vote (voteFile, done) {
   post('/hdc/amendments/votes', {
     "amendment": voteFile.substr(0, voteFile.indexOf('-----BEGIN')),
@@ -620,39 +575,28 @@ before(function (done) {
     function (next) { pksAdd(pubkeyWhite, pubkeyWhiteSig, next); },
     function (next) { get('/pks/lookup?op=index&search=', next); },
     function (next) { get('/pks/all', next); },
-    function (next) { get('/hdc/community/memberships', next); },
-    function (next) { get('/hdc/community/memberships?extract=true', next); },
-    function (next) { communityJoin(joinSnow, next); },
-    function (next) { get('/hdc/community/memberships', next); },
-    function (next) { get('/hdc/community/memberships?extract=true', next); },
-    function (next) { communityJoin(joinTobi, next); },
-    function (next) { get('/hdc/community/memberships', next); },
-    function (next) { get('/hdc/community/memberships?extract=true', next); },
-    function (next) { communityJoin(joinCat, next); },
-    function (next) { get('/hdc/community/memberships', next); },
-    function (next) { get('/hdc/community/memberships?extract=true', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
     function (next) { get('/hdc/amendments/promoted/2', next); },
     function (next) { get('/hdc/amendments/promoted/3', next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { console.log("Sending Cat's AM0..."); vote(voteCatAM0, next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
     function (next) { get('/hdc/amendments/promoted/2', next); },
     function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Tobi's AM0..."); vote(voteTobiAM0, next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
     function (next) { get('/hdc/amendments/promoted/2', next); },
     function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Snow's AM0..."); vote(voteSnowAM0, next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
@@ -660,21 +604,21 @@ before(function (done) {
     function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { console.log("Sending Snow's AM0 dissident..."); vote(voteSnowAM0_2, next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
     function (next) { get('/hdc/amendments/promoted/2', next); },
     function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Snow's AM1..."); vote(voteSnowAM1, next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
     function (next) { get('/hdc/amendments/promoted/2', next); },
     function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending Tobi's AM1..."); vote(voteTobiAM1, next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
@@ -687,25 +631,23 @@ before(function (done) {
     function (next) { get('/hdc/amendments/promoted/2', next); },
     function (next) { get('/hdc/amendments/promoted/3', next); },
     function (next) { console.log("Sending White's AM1..."); vote(voteWhiteAM1, next); },
-    function (next) { get('/hdc/community/votes', next); },
+    function (next) { get('/hdc/amendments/current/votes', next); },
     function (next) { get('/hdc/amendments/votes', next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
     function (next) { get('/hdc/amendments/promoted/1', next); },
     function (next) { get('/hdc/amendments/promoted/2', next); },
     function (next) { get('/hdc/amendments/promoted/3', next); },
-    function (next) { get('/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047', next); },
-    function (next) { get('/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C', next); },
-    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self', next); },
-    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/memberships', next); },
-    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members', next); },
-    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures', next); },
-    function (next) { get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters', next); },
-    function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/self', next); },
-    function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/memberships', next); },
-    function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/members', next); },
-    function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures', next); },
-    function (next) { get('/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/voters', next); },
+    function (next) { get('/hdc/amendments/votes/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC', next); },
+    function (next) { get('/hdc/amendments/votes/1-5A6434BCD09400625CEA75BFE6F786829018BAD1', next); },
+    function (next) { get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/self', next); },
+    function (next) { get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/members', next); },
+    function (next) { get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/signatures', next); },
+    function (next) { get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/voters', next); },
+    function (next) { get('/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/self', next); },
+    function (next) { get('/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/members', next); },
+    function (next) { get('/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/signatures', next); },
+    function (next) { get('/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/voters', next); },
     function (next) { console.log("Sending Snow's AM2..."); vote(voteSnowAM2, next); },
     function (next) { get('/hdc/amendments/promoted', next); },
     function (next) { get('/hdc/amendments/promoted/0', next); },
@@ -830,11 +772,11 @@ before(function (done) {
     function (next) { get('/hdc/transactions/recipient/2E69197FAB029D8669EF85E82457A1587CA0ED9C', next); },
     function (next) { get('/hdc/transactions/recipient/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
     function (next) { get('/hdc/transactions/recipient/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
-    function (next) { trust(thtCat, next); },
-    function (next) { get('/ucg/tht', next); },
-    function (next) { get('/ucg/tht/SOME_WRONG_FPR', next); },
-    function (next) { get('/ucg/tht/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
-    function (next) { get('/ucg/tht/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
+    // function (next) { trust(thtCat, next); },
+    // function (next) { get('/ucg/tht', next); },
+    // function (next) { get('/ucg/tht/SOME_WRONG_FPR', next); },
+    // function (next) { get('/ucg/tht/33BBFC0C67078D72AF128B5BA296CC530126F372', next); },
+    // function (next) { get('/ucg/tht/C73882B64B7E72237A2F460CE9CAB76D19A8651E', next); },
   ], function (err) {
     console.log("API fed.");
     done(err);
@@ -863,32 +805,6 @@ describe('Sending public key', function(){
   api.pksLookup(200, 4); // Added Walter
 });
 
-//----------- Memberships -----------
-
-function checkMerkleOfMemberships (json) {
-  _(json.leaves).each(function (leaf) {
-    var Membership = mongoose.model('Membership');
-    var ms = new Membership({
-      version: leaf.value.request.version,
-      currency: leaf.value.request.currency,
-      status: leaf.value.request.status,
-      basis: leaf.value.request.basis,
-      signature: leaf.value.signature
-    });
-    leaf.hash.should.equal(sha1(ms.getRaw() + ms.signature).toUpperCase());
-  });
-}
-
-describe('Sending membership', function(){
-  api.join('John Snow');
-  api.join('LoL Cat');
-  api.join('Tobi Uchiha');
-  api.memberships('Merkle root empty', 0, '');
-  api.memberships('memberships Merkle with Snowy', 1, '0FBA64435A87B7B7CBA2A914A79EB015DD246ECB');
-  api.memberships('memberships Merkle with Snowy, Cat', 2, 'C00DCEB6F1B00D4C0CADCC9E35011C50DE2549AB');
-  api.memberships('memberships Merkle with Snowy, Cat, Tobi', 3, '2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
-});
-
 //----------- Votes -----------
 
 function checkVote (index, statusCode) {
@@ -913,8 +829,8 @@ function checkIndex1 (index) {
     json.should.have.property('amendments');
     _(json.amendments).size().should.equal(1);
     _(json.amendments[0]).size().should.equal(1);
-    json.amendments[0].should.have.property('376C5A6126A4688B18D95043261B2D59867D4047');
-    json.amendments[0]['376C5A6126A4688B18D95043261B2D59867D4047'].should.equal(3);
+    json.amendments[0].should.have.property('58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+    json.amendments[0]['58A2700B6CE56E112238FDCD81C8DACE2F2D06DC'].should.equal(3);
   };
 }
 
@@ -924,19 +840,19 @@ function checkIndex2 (index) {
     json.should.have.property('amendments');
     _(json.amendments).size().should.equal(2);
     _(json.amendments[0]).size().should.equal(2);
-    json.amendments[0].should.have.property('376C5A6126A4688B18D95043261B2D59867D4047');
-    json.amendments[0].should.have.property('0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763');
-    json.amendments[1].should.have.property('0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-    json.amendments[0]['376C5A6126A4688B18D95043261B2D59867D4047'].should.equal(3);
-    json.amendments[0]['0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763'].should.equal(1);
-    json.amendments[1]['0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'].should.equal(3);
+    json.amendments[0].should.have.property('58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+    json.amendments[0].should.have.property('A5C998BD0B47B64E727FFC5EDA652CCAC7C86DF5');
+    json.amendments[1].should.have.property('5A6434BCD09400625CEA75BFE6F786829018BAD1');
+    json.amendments[0]['58A2700B6CE56E112238FDCD81C8DACE2F2D06DC'].should.equal(3);
+    json.amendments[0]['A5C998BD0B47B64E727FFC5EDA652CCAC7C86DF5'].should.equal(1);
+    json.amendments[1]['5A6434BCD09400625CEA75BFE6F786829018BAD1'].should.equal(3);
   };
 }
 
 function checkVotes (index, votersCount, hash) {
   return function(){
-    apiRes['/hdc/community/votes'][index].res.should.have.status(200);
-    var json = JSON.parse(apiRes['/hdc/community/votes'][index].res.text);
+    apiRes['/hdc/amendments/current/votes'][index].res.should.have.status(200);
+    var json = JSON.parse(apiRes['/hdc/amendments/current/votes'][index].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(votersCount);
     _(json.levels).size().should.equal(1);
@@ -962,18 +878,18 @@ describe('Sending vote', function(){
 describe('Checking votes', function(){
   var index = 0;
   it('should respond 200 and have some votes', function () {
-    apiRes['/hdc/community/votes'][0].res.should.have.status(404);
+    apiRes['/hdc/amendments/current/votes'][0].res.should.have.status(404);
   });
-  it('should respond 200 and have some votes', checkVotes(++index, 1, '110A283836EC264294917D1B4A02D215B2767342'));
-  it('should respond 200 and have some votes', checkVotes(++index, 2, '32F73F0A80CF7AB425F83B8AD8E377E0CAF29FB6'));
-  it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));
+  it('should respond 200 and have some votes', checkVotes(++index, 1, 'C375AD6F94E0D2E57301E5AE522E64E5EA696139'));
+  it('should respond 200 and have some votes', checkVotes(++index, 2, '9C1292795D434AB938EA2509E85C1E2726875D7E'));
+  it('should respond 200 and have some votes', checkVotes(++index, 3, 'C8239FF2434490AFE28BA339F53C7237B7C14B19'));
   // Vote for a dissident AM0
-  it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));
+  it('should respond 200 and have some votes', checkVotes(++index, 3, 'C8239FF2434490AFE28BA339F53C7237B7C14B19'));
   // Fist vote for AM1 (not enough)
-  it('should respond 200 and have some votes', checkVotes(++index, 3, 'DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA'));
+  it('should respond 200 and have some votes', checkVotes(++index, 3, 'C8239FF2434490AFE28BA339F53C7237B7C14B19'));
   // Second vote for AM1 (promoted)
-  it('should respond 200 and have some votes', checkVotes(++index, 2, 'AEB0FAE04CDFC15641F8BDC57B99835A76E3EAA7'));
-  it('should respond 200 and have some votes', checkVotes(++index, 3, '2593E2BB129B561A1316B6C448E7AAB80362453D'));
+  it('should respond 200 and have some votes', checkVotes(++index, 2, '096BCADFFBAB6FE9CA2E44265FCCAD7ADE0E33CA'));
+  it('should respond 200 and have some votes', checkVotes(++index, 3, '21DDC685FB54AB0520B091E3762845F0AA97C257'));
 });
 
 //----------- Amendments -----------
@@ -986,115 +902,108 @@ describe('Checking current amendment', function(){
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
   // 1 vote for AM0 (enough)
-  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(null, 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   api.checkPromoted(1   , 404);
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(null, 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   api.checkPromoted(1   , 404);
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(null, 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   api.checkPromoted(1   , 404);
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(null, 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   api.checkPromoted(1   , 404);
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
   // 1 vote for AM1 (not enough)
-  api.checkPromoted(null, 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
+  api.checkPromoted(null, 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   api.checkPromoted(1   , 404);
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
   // 2 votes for AM1 (enough)
-  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(null, 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(null, 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(null, 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
   // 1 vote for AM2 (not enough)
-  api.checkPromoted(null, 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+  api.checkPromoted(null, 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
   api.checkPromoted(2   , 404);
   api.checkPromoted(3   , 404);
 
   // 2 votes for AM2 (enough)
-  api.checkPromoted(null, 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(2   , 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
+  api.checkPromoted(null, 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
+  api.checkPromoted(2   , 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
   api.checkPromoted(3   , 404);
 
-  api.checkPromoted(null, 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
-  api.checkPromoted(0   , 200, '376C5A6126A4688B18D95043261B2D59867D4047');
-  api.checkPromoted(1   , 200, '0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
-  api.checkPromoted(2   , 200, 'F4F8FE127836A4E159BF1B3D82D6F2DA51029CF4');
+  api.checkPromoted(null, 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
+  api.checkPromoted(0   , 200, '58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
+  api.checkPromoted(1   , 200, '5A6434BCD09400625CEA75BFE6F786829018BAD1');
+  api.checkPromoted(2   , 200, '3A9BB33C2E0AC064526028B9509D380D273DDAFD');
   api.checkPromoted(3   , 404);
 });
 
 describe('Checking amendments', function(){
   it('0 should respond 200 and have self infos', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/self'][0].res.text);
     json.should.have.property('version');
     json.should.have.property('currency');
     json.should.have.property('number');
-    json.should.have.property('previousHash');
+    json.should.have.property('generated');
     json.should.have.property('dividend');
     json.should.have.property('coinMinPower');
-    json.should.have.property('votersSigRoot');
-    json.should.have.property('votersRoot');
-    json.should.have.property('votersCount');
-    json.should.have.property('votersChanges');
-    json.should.have.property('membersStatusRoot');
+    json.should.have.property('previousHash');
+    json.should.have.property('previousVotesRoot');
+    json.should.have.property('previousVotesCount');
     json.should.have.property('membersRoot');
     json.should.have.property('membersCount');
     json.should.have.property('membersChanges');
+    json.should.have.property('votersRoot');
+    json.should.have.property('votersCount');
+    json.should.have.property('votersChanges');
     json.should.have.property('raw');
-    sha1(json.raw).toUpperCase().should.equal('376C5A6126A4688B18D95043261B2D59867D4047');
+    sha1(json.raw).toUpperCase().should.equal('58A2700B6CE56E112238FDCD81C8DACE2F2D06DC');
   });
   it('0 should respond 200 and be legitimated by 3 signatures', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/votes/0-376C5A6126A4688B18D95043261B2D59867D4047'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/votes/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC'][0].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
     _(json.levels[0]).size().should.equal(1);
-    json.levels[0][0].should.equal('DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
-  });
-  it('0 should respond 200 and have some memberships', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/memberships'][0].res.text);
-    isMerkleNodesResult(json);
-    json.levelsCount.should.equal(3);
-    _(json.levels).size().should.equal(1);
-    _(json.levels[0]).size().should.equal(1);
-    json.levels[0][0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
+    json.levels[0][0].should.equal('C8239FF2434490AFE28BA339F53C7237B7C14B19');
   });
   it('0 should respond 200 and have some members', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/members'][0].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
@@ -1102,56 +1011,50 @@ describe('Checking amendments', function(){
     json.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
   it('0 should respond 200 and have 0 signatures', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/signatures'][0].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(1);
     _(json.levels).size().should.equal(1);
     _(json.levels[0]).size().should.equal(0);
   });
-  it('0 should respond 200 and have 0 voters', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters'][0].res.text);
+  it('0 should respond 200 and have 3 voters', function(){
+    var json = JSON.parse(apiRes['/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/voters'][0].res.text);
     isMerkleNodesResult(json);
-    json.levelsCount.should.equal(1);
+    json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
-    _(json.levels[0]).size().should.equal(0);
+    _(json.levels[0]).size().should.equal(1);
+    json.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
   it('1 should respond 200 and have self infos', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/self'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/self'][0].res.text);
     json.should.have.property('version');
     json.should.have.property('currency');
     json.should.have.property('number');
-    json.should.have.property('previousHash');
+    json.should.have.property('generated');
     json.should.have.property('dividend');
     json.should.have.property('coinMinPower');
-    json.should.have.property('votersSigRoot');
-    json.should.have.property('votersRoot');
-    json.should.have.property('votersCount');
-    json.should.have.property('votersChanges');
-    json.should.have.property('membersStatusRoot');
+    json.should.have.property('previousHash');
+    json.should.have.property('previousVotesRoot');
+    json.should.have.property('previousVotesCount');
     json.should.have.property('membersRoot');
     json.should.have.property('membersCount');
     json.should.have.property('membersChanges');
+    json.should.have.property('votersRoot');
+    json.should.have.property('votersCount');
+    json.should.have.property('votersChanges');
     json.should.have.property('raw');
-    sha1(json.raw).toUpperCase().should.equal('0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C');
+    sha1(json.raw).toUpperCase().should.equal('5A6434BCD09400625CEA75BFE6F786829018BAD1');
   });
   it('1 should respond 200 and be legitimated by 3 signatures', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/votes/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/votes/1-5A6434BCD09400625CEA75BFE6F786829018BAD1'][0].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
     _(json.levels[0]).size().should.equal(1);
-    json.levels[0][0].should.equal('2593E2BB129B561A1316B6C448E7AAB80362453D');
-  });
-  it('1 should respond 200 and have some memberships', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/memberships'][0].res.text);
-    isMerkleNodesResult(json);
-    json.levelsCount.should.equal(3);
-    _(json.levels).size().should.equal(1);
-    _(json.levels[0]).size().should.equal(1);
-    json.levels[0][0].should.equal('2A42C5CCC315AF3B9D009CC8E635F8492111F91D');
+    json.levels[0][0].should.equal('21DDC685FB54AB0520B091E3762845F0AA97C257');
   });
   it('1 should respond 200 and have some members', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/members'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/members'][0].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
@@ -1159,15 +1062,15 @@ describe('Checking amendments', function(){
     json.levels[0][0].should.equal('F5ACFD67FC908D28C0CFDAD886249AC260515C90');
   });
   it('1 should respond 200 and have some signatures', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/signatures'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/signatures'][0].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
     _(json.levels[0]).size().should.equal(1);
-    json.levels[0][0].should.equal('DD3581D5F7DBA96DDA98D4B415CB2E067C5B48BA');
+    json.levels[0][0].should.equal('C8239FF2434490AFE28BA339F53C7237B7C14B19');
   });
   it('1 should respond 200 and have some voters', function(){
-    var json = JSON.parse(apiRes['/hdc/amendments/view/1-0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C/voters'][0].res.text);
+    var json = JSON.parse(apiRes['/hdc/amendments/view/1-5A6434BCD09400625CEA75BFE6F786829018BAD1/voters'][0].res.text);
     isMerkleNodesResult(json);
     json.levelsCount.should.equal(3);
     _(json.levels).size().should.equal(1);
@@ -1283,13 +1186,13 @@ describe('Received keys for transactions', function(){
   api.keys('with NO transactions should be 2', 3, 'F5ACFD67FC908D28C0CFDAD886249AC260515C90');
 });
 
-describe('THT', function(){
-  api.postTHT('POST for Cat should be ok', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
-  api.getTHT('GET for Merkle', 1, 'ACFCBC2327524C8363418D49E50169BB558641B3');
-  api.fprTHT('GET for FPR', 'SOME_WRONG_FPR', 400);
-  api.fprTHT('GET for FPR', '33BBFC0C67078D72AF128B5BA296CC530126F372', 404);
-  api.fprTHT('GET for FPR', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
-});
+// describe('THT', function(){
+//   api.postTHT('POST for Cat should be ok', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+//   api.getTHT('GET for Merkle', 1, 'ACFCBC2327524C8363418D49E50169BB558641B3');
+//   api.fprTHT('GET for FPR', 'SOME_WRONG_FPR', 400);
+//   api.fprTHT('GET for FPR', '33BBFC0C67078D72AF128B5BA296CC530126F372', 404);
+//   api.fprTHT('GET for FPR', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+// });
 
 // describe('Peering', function(){
 //   api.postPeering('POST for Cat should be ok', 200, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
@@ -1389,39 +1292,10 @@ describe('GET', function(){
         json.contract.should.have.property("currentNumber");
         json.contract.should.have.property("hash");
         json.should.have.property("pks/all");
-        json.should.have.property("hdc/community/memberships");
-        json.should.have.property("hdc/community/votes");
+        json.should.have.property("hdc/amendments/current/votes");
         should.not.exist(json.peers);
         done();
       });
-  });
-});
-
-
-//----------- Community -----------
-describe('Request on /hdc/community/join', function(){
-  it('GET should respond 404', function(done){
-    request(app)
-      .get('/hdc/community/join')
-      .expect(404, done);
-  });
-  it('POST should respond 400', function(done){
-    request(app)
-      .post('/hdc/community/join')
-      .expect(400, done);
-  });
-});
-
-describe('Request on /hdc/community/memberships', function(){
-  it('GET should respond 200', function(done){
-    request(app)
-      .get('/hdc/community/memberships')
-      .expect(200, done);
-  });
-  it('POST should respond 404', function(done){
-    request(app)
-      .post('/hdc/community/memberships')
-      .expect(404, done);
   });
 });
 
@@ -1484,11 +1358,6 @@ describe('Request on /hdc/amendments/view/SOME_ID', function(){
       .get('/hdc/amendments/view/SOME_ID/signatures')
       .expect(400, done);
   });
-  it('/memberships GET should respond 400', function(done){
-    request(app)
-      .get('/hdc/amendments/view/SOME_ID/memberships')
-      .expect(400, done);
-  });
   // Good param
   it('/self GET should respond 404', function(done){
     request(app)
@@ -1510,36 +1379,26 @@ describe('Request on /hdc/amendments/view/SOME_ID', function(){
       .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/signatures')
       .expect(404, done);
   });
-  it('/memberships GET should respond 404', function(done){
-    request(app)
-      .get('/hdc/amendments/view/0-875F8DCCF2E24B5DEADF4410558E77D5ED2EC40A/memberships')
-      .expect(404, done);
-  });
 
   // Better param
   it('/self GET should respond 200', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/self')
+      .get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/self')
       .expect(200, done);
   });
   it('/members GET should respond 200', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/members')
+      .get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/members')
       .expect(200, done);
   });
   it('/voters GET should respond 200', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/voters')
+      .get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/voters')
       .expect(200, done);
   });
   it('/signatures GET should respond 200', function(done){
     request(app)
-      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/signatures')
-      .expect(200, done);
-  });
-  it('/memberships GET should respond 200', function(done){
-    request(app)
-      .get('/hdc/amendments/view/0-376C5A6126A4688B18D95043261B2D59867D4047/memberships')
+      .get('/hdc/amendments/view/0-58A2700B6CE56E112238FDCD81C8DACE2F2D06DC/signatures')
       .expect(200, done);
   });
 });

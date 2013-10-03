@@ -128,15 +128,6 @@ module.exports = {
     callback(null, matches[1]);
   },
 
-  getMembership: function (req, callback) {
-    // Parameters
-    if(!(req.body && req.body.request && req.body.signature)){
-      callback('Requires a membership request + signature');
-      return;
-    }
-    callback(null, req.body.request + req.body.signature);
-  },
-
   getTHTEntry: function (req, callback) {
     if(!(req.body && req.body.entry && req.body.signature)){
       callback('Requires a THT entry + signature');

@@ -104,6 +104,7 @@ function JPGP() {
     var verified = false;
     var err = undefined;
     var sig = undefined;
+    var detached = false;
     if(pubkey && !callback){
       callback = pubkey;
       pubkey = undefined;
@@ -117,6 +118,9 @@ function JPGP() {
       else if(signatures.length == 1){
         sig = signatures[0];
         sig.text = this.data;
+        // if(this.data.match(/-C73882B64B7E72237A2F460CE9CAB76D19A8651E/))
+        //   sig.text = this.data.unix2dos();
+        detached = true;
       }
       else{
         throw new Error('No signature found');
@@ -152,12 +156,16 @@ function JPGP() {
     }
     if(err && sig && sig.text){
       console.error('==========================================================');
-      console.error(err);
+      console.error(detached ? '[DETACHED] ' + err : err);
       console.error('==========================================================');
-      console.error(sig.text);
+      console.error({ text: sig.text });
+      // console.error(hexstrdump(sig.text));
       console.error('----------------------------------------------------------');
-      console.error(this.data);
-      console.error('----------------------------------------------------------');
+      if(!detached){
+        console.error({ text: this.data });
+        // console.error(hexstrdump(this.data));
+        console.error('----------------------------------------------------------');
+      }
     }
     // Done
     var end = new Date();

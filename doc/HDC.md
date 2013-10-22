@@ -8,7 +8,6 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
 * [Certificate](#certificate)
   * [Definition](#definition)
   * [Validity](#validity)
-  * [OpenUDC User ID](#openudc-user-id)
   * [ASCII-armored format](#ascii-armored-format)
 * [Amendment](#amendment)
   * [Definition](#definition-1)

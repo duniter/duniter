@@ -40,38 +40,31 @@ Please not **very carefully** that every HDC document's line **ENDS with a newli
 
 This is a *very important information* as every document is subject to hashes, and Unix-style endings won't produce the expected hashes.
 
-## Certificate
+## Public key
 
 ### Definition
 
-A certificate is an OpenPGP public key used to identify an individual as unique inside the Community.
+In HDC, a public key is to be understood as a OpenPGP public key. Public keys are at the heart of HDC data as it allows to:
+
+* identify Community members
+* materialize money ownership
+
+A key may be used either to fit those two functions, or only one at a time. Hence, one individual may use either one, two or more keys in HDC system.
 
 For more informations on OpenPGP, see [RFC 4880 - OpenPGP Message Format](http://tools.ietf.org/html/rfc4880).
 
 ### Validity
-To be valid, a certificate MUST contain exactly one OpenUDC User ID in it. An OpenPGP certificate with zero or more than one OpenUDC User ID in it **IS NOT** a valid certificate.
+There is no particular requirement about PGP keys to be valid. A key simply need to fit OpenPGP format.
 
-### OpenUDC User ID
+However, any Community is free to add some restrictions to it: for example, to accept only PGP keys containing at least one User ID in [OpenUDC format](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164), a minimum number of signatures, etc.
 
-A common User ID in **OpenPGP** looks like:
+### Representation
 
-    Full name (Comment) <email@address>
+#### Fingerprint
 
-A common User ID in **OpenUDC** looks like:
+HDC format considers the 40 alphanumeric SHA1 hash of a key as its identifier, also known as fingerprint of the key.
 
-    Pseudonyms (udid2;c;LASTNAME;FIRSTNAME;1970-01-01;e+47.47-000.56;0;) <email@address>
-
-As shown, OpenUDC User ID is simply an OpenPGP User ID with the following transformations:
-
-* `Full name` turns into `Pseudonyms` which is a list of pseudonyms separated by spaces
-* `Comment` turns into an OpenUDC-specific string called `udid2`
-* `email@address` does not change
-
-Of course, turning `Full name` into `Pseudonyms` is not mandatory. Any string may be used here.
-
-The format of `udid2` is defined in [OpenUDC specifications](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164).
-
-### ASCII-armored format
+#### ASCII-armored format
 
 Classically, OpenPGP keys can be represented in ASCII-armored format which allows it to be transfered in a textual way.
 

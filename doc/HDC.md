@@ -5,10 +5,10 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
 ## Contents
 * [Contents](#contents)
 * [Vocabluary](#vocabulary)
-* [Certificate](#certificate)
+* [Public key](#public-key)
   * [Definition](#definition)
   * [Validity](#validity)
-  * [ASCII-armored format](#ascii-armored-format)
+  * [Representation](#representation)
 * [Amendment](#amendment)
   * [Definition](#definition-1)
   * [Validity](#validity-1)

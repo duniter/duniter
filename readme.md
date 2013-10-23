@@ -4,27 +4,40 @@ uCoin is a free server-side software allowing to create new P2P crypto-currencie
 
 It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called UCP (UCoin Protocol).
 
+## Development state
+
+Software is still under development, and is not used yet. **This means no currency using uCoin exists for now**.
+
+However, it is hoped to build a new currency in a near future according to the following roadmap:
+
+1. uCoin has to be tested, thus a beta currency will be planned
+2. If beta is convincing, and in a collective agreement process, a brand new money will be started
+3. New softwares will need to be coded:
+  * A ready-to-be-signed amendments generator
+  * Siblings of uCoin in other programming languages
+  * Clients and GUIs to interact with uCoin servers
+  * Analysis softwares
+  * ...
+
+So, there is still lot of work. *But*, all this is not required in short-term.
+
 ## Features
 
 **Peer-to-peer crypto-currency**
 
-uCoin fully relies on PGP to describe crypto-currencies and provide P2P synchronization mecanisms to allow data decentralization.
+uCoin fully relies on OpenPGP standard to describe crypto-currencies, provide P2P synchronization mecanisms and allow data distribution.
 
-**Universal Dividend - for people**
+**Universal Dividend - by people, for people**
 
-uCoin uses [Human Dividend Currency format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md) to describe the monetary system, where money is issued directly and exclusively to individuals of the monetary community.
-
-**Universal Dividend - by people**
-
-Even better, money of Universal Dividend is issued **BY** people. This is a currency where **U** coin. Individuals are the only ones who may issue money, and choose the unities they desire.
+uCoin uses [Human Dividend Currency format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md) to describe the monetary system, where money is issued directly and exclusively **by** individuals of the Community to themselves. Individuals are the only ones who may issue new money, and choose the unities they desire : this is a monetary system where **U** coin.
 
 **Democratic**
 
-In a uCoin currency, money is legitimated by collectively signed documents. *De facto*, uCoin implies a democratical process in money issuance and community members.
+In a uCoin currency, money is legitimated by collectively signed documents. *De facto*, uCoin implies a democratical process in money issuance and community membership.
 
 **Humanity scale compliant**
 
-uCoin uses a distribution system for its transactions database, allowing for humanity scale currencies. Indeed, billions of people making millions of transactions per second is likely to saturate the network or people's server if they had to manage every transaction. uCoin comes with a solution for that.
+uCoin uses a distribution system for its transactions database, allowing for potentially humanity scale currencies. Indeed, billions of people making together millions of transactions per second is not likely to be handled by every unit of a PC made network. That is why uCoin transactions database is distributed.
 
 ## Specifications
 
@@ -33,7 +46,7 @@ You can get more in uCoin project reading the following documents:
 * [Architecture](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
   * [Protocol](https://github.com/c-geek/ucoin/blob/master/doc/UCP.md)
   * [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md)
-  * [uCoin Gossip](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md)
+  * [uCoin Gossip](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md) (draft)
   * [Human Dividend Currency](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)
 
 ## Installation
@@ -142,11 +155,11 @@ As the server may be behind a reverse proxy, or because hosts may change of addr
 $ ucoind --currency beta_brousouf config --remoteh "some.remote.url" --remotep "8844" --remote4 "11.11.11.11" --remote6 "::1"
 ```
 
+Note that this is not required and may be removed in the future, as uCoin protocol already include peering mecanisms giving network informations.
+
 #### Authentication
 
-This is one of the great features coming with uCoin: [connect-pgp](https://github.com/c-geek/connect-pgp) is a Node.js module which *signs HTTP responses*. Such a feature is very important to authentify incoming responses over the network.
-
-To use this feature, just configure uCoin using `--pgpkey` parameter:
+uCoin protocol requires your responses to be signed in order to be interpreted. Such a feature is very important to authenticate nodes messages. To use this feature, just configure uCoin using `--pgpkey` parameter:
 
 ```bash
 $ ucoind --currency beta_brousouf config --pgpkey /path/to/private/key
@@ -176,36 +189,38 @@ For more more details on the ucoin command, run:
 
 Which displays:
 
-      Usage: ucoind --currency <name> [options] <command> [options]
+```
+Usage: ucoind --currency <name> [options] <command> [options]
 
-      Commands:
+Commands:
 
-        config                 Register configuration in database
-        reset [config|data]    Reset configuration or data in database
-        update-merkles         Reset Merkle trees and computes them again according to stored data.
-        start                  Start uCoin server using given --currency
+  sync [host] [port]     Tries to synchronise data with remote uCoin node
+  manage-keys            Update managed keys configuration and send corresponding forwards to other peers
+  manage-key [key]       Add given key to stack of managed keys of this node
+  forget-key [key]       Remove given key of the managed keys' stack of this node
+  config                 Register configuration in database
+  reset [config|data]    Reset configuration or data in database
+  update-merkles         Reset Merkle trees and computes them again according to stored data.
+  start                  Start uCoin server using given --currency
 
-      Options:
+Options:
 
-        -h, --help              output usage information
-        -V, --version           output the version number
-        -p, --port <port>       Port to listen for requests
-        -c, --currency <name>   Name of the currency managed by this node.
-        --mhost <host>          MongoDB host.
-        --mport <port>          MongoDB port.
-        --pgpkey <keyPath>      Path to the private key used for signing HTTP responses.
-        --pgppasswd <password>  Password for the key provided with --httpgp-key option.
-        --ipv4 <address>        IPV4 interface to listen for requests
-        --ipv6 <address>        IPV6 interface to listen for requests
-        --remoteh <host>        Remote interface others may use to contact this node
-        --remotep <port>        Remote port others may use to contact this node
-
-
-
-## Disclaimer
-
-uCoin *is not* an implementation of the OpenUDC protocol. Firstly because OpenUDC protocol is still a in drafting state, and secondly because uCoin have some divergences in its mecanisms.
-Consequently, uCoin proposes its own protocol called UCP.
+  -h, --help                output usage information
+  -V, --version             output the version number
+  -p, --port <port>         Port to listen for requests
+  -c, --currency <name>     Name of the currency managed by this node.
+  --mhost <host>            MongoDB host.
+  --mport <port>            MongoDB port.
+  --pgpkey <keyPath>        Path to the private key used for signing HTTP responses.
+  --pgppasswd <password>    Password for the key provided with --httpgp-key option.
+  --ipv4 <address>          IPV4 interface to listen for requests
+  --ipv6 <address>          IPV6 interface to listen for requests
+  --remoteh <host>          Remote interface others may use to contact this node
+  --remote4 <host>          Remote interface for IPv4 access
+  --remote6 <host>          Remote interface for IPv6 access
+  --remotep <port>          Remote port others may use to contact this node
+  --kmanagement <ALL|KEYS>  Define key management policy
+```
 
 ## Talk about/get involved in uCoin project
 

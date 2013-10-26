@@ -1155,11 +1155,19 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "level": "0",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
+  }
 }
 ```
 
@@ -1257,11 +1265,19 @@ Name | Value | Method
 Merkle URL result.
 ```json
 {
-  "level": "0",
-  "nodes": [
-    "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-  ]
+  "depth": 3,
+  "nodesCount": 6,
+  "levelsCount": 4,
+  "leavesCount": 5,
+  "levels": {
+    "0": [
+      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+    ],
+    "1": [
+      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
+      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
+    ]
+  }
 }
 ```
 

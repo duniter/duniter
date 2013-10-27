@@ -4,30 +4,26 @@ uCoin defines its own protocol called UCP which defines messages, interpretation
 
 ## Contents
 
-* [Contents](#contents)
 * [Database](#database)
 * [Dataflow](#dataflow)
+  * [Definition](#definition-1)
+  * [PGP keys](#pgp-public-keys-1)
+  * [Peering](#peering)
+  * [Amendments](#amendments-1)
+  * [Transactions](#transactions-1)
 * [Bootstraping](#bootstraping)
 
 ## Database
 
 ### Definition
 
-The whole point of uCoin is to build a database describing a currency and its state. For that purpose, UCP considers each node have its own datasource able to manage the following entites.
+The whole point of uCoin is to build a database describing a currency in HDC format. For that purpose, UCP considers each node have its own datasource able to manage the following entites.
 
 ### PGP public keys
 
 PGP public keys are cryptographic keys representing either an individual or an organization. PGP keys are uniquely identified by their PGP fingerprint.
 
-UCP consider two type of PGP keys:
-* OpenUDC keys: such keys matches [HDC Certificate format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#certificate) and may **only** represent individuals.
-* Other keys: may represent either individuals or organizations.
-
-Only OpenUDC keys may be used for joining the Community, hence why it is necessary to have 2 types of keys.
-
-### Registrations
-
-Registration is a signed document refering to [HDC Membership request](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#membership-request). Such document must be interpreted as a will of an individual to register or actualize his status inside the Community using his OpenUDC key.
+PGP keys must be available under ASCII-armored format.
 
 ### Amendments
 
@@ -35,11 +31,15 @@ Amendments are collectively signed documents refering to [HDC Amendment format](
 
 ### Votes
 
-A vote is a simple signature of an amendment, refering to [HDC Vote request](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#vote-request). When a member signs an amendment and submit the signatures to nodes, it express the will of this member (if he can legitimately do it) to promote the signed amendment.
+A vote is a simple signature of an amendment, refering to [HDC Vote request](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#vote-request). When a voter signs an amendment and submit the signatures to nodes, it expresses the will of this voter (if he can legitimately do it, i.e. if he is part of voters written in Monetary Contract) to promote the signed amendment.
 
 ### Transactions
 
 Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, fusion or transfert money. It is the final support of money and it materializes money ownership.
+
+### Peering Table
+
+uCoin network is made up of peers identified by their PGP fingerprint. Peering table is a hash table linking a PGP fingerprint to connection data: IP address (v4, v6, or both), DNS name and port. This link is made through a document called *peering entry* signed by the owner of the PGP key and giving peer's network informations. Peering table is a set of all peering entries.
 
 ### Trust Hash Table
 
@@ -49,7 +49,23 @@ THT is a hash table refering to [UCG THT format](https://github.com/c-geek/ucoin
 
 ### Definition
 
-To feed the database and synchronise with other nodes, UCP defines HTTP interfaces used either to receive or send messages.
+To feed the database and synchronise with other nodes, UCP defines [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md) used either to receive or send messages.
+
+As a generic overview, it can be noted what are the API inputs of the protocol:
+
+Flow | Interfaces
+---- | -----------
+IN   | `pks/add`
+IN   | `ucg/peering/peers (POST)`
+IN   | `ucg/peering/forward`
+IN   | `ucg/peering/status`
+IN   | `ucg/tht (POST)`
+IN   | `hdc/amendments/votes (POST)`
+IN   | `hdc/transactions/process/issuance`
+IN   | `hdc/transactions/process/transfert`
+IN   | `hdc/transactions/process/fusion`
+
+All remainging URLs are only outputs of the protocol allowing consultation, verification, synchronization with other clients or peers.
 
 ### PGP public keys
 
@@ -57,112 +73,216 @@ Flow | Interfaces
 ---- | -----------
 IN   | `pks/add`
 OUT  | `pks/lookup`
+OUT  | `pks/all`
 
 #### `pks/add`
 
-Takes a PGP public key and a signature of the whole key. If the signature matches, adds the key to the PGP public keys database.
+Takes a PGP public key and a signature of the whole key. If the signature matches (key was sent by its owner), adds the key to the PGP public keys database.
 
 #### `pks/lookup`
 
 Serves PGP public keys according to HKP protocol.
 
-### Registrations
+#### `pks/all`
+
+Merkle URL pointing to a set of all PGP public key registered by the node. Mainly used for synchronization purposes.
+
+### Peering
+
+#### Self
+
+This API is special, as it does not deal with HTTP received data. This set of URL gives peering informations according to *a node's configuration*.
 
 Flow | Interfaces
 ---- | -----------
-IN   | `community/join`
-OUT  | `community/memberships`
-OUT  | `amendments/view/[AMENDMENT_ID]/status`
+OUT  | `ucg/pubkey`
+OUT  | `ucg/peering`
+OUT  | `ucg/peering/keys`
+OUT  | `ucg/peering/peer`
 
-#### `community/join`
+##### `ucg/pubkey`
 
-Takes a membership request and a signature of it. If the signature matches and the corresponding OpenUDC key have enough members signatures on it (this requirement is implementation specific), adds the document to pending membership requests to be integrated in next amendment.
+Get the public key of the node, ASCII-armored format. This key is used to authentify the node's responses by other peers.
 
-#### `community/memberships`
+##### `ucg/peering`
 
-Serves membership requests received by `community/join` since last amendment promotion.
+Get a sum up of node's informations, notably peering and Monetary Contract state.
 
-#### `amendments/view/[AMENDMENT_ID]/status`
+##### `ucg/peering/keys`
 
-Serves membership requests received and treated for the given amendment.
+Merkle URL referencing the PGP keys' fingerprint whose transactions are stored by this node.
+
+##### `ucg/peering/peer`
+
+Peering entry of the node.
+
+#### Peers
+
+Interface whose role is to network informations of peers.
+
+Flow | Interfaces
+---- | -----------
+IN   | `ucg/peering/peers (POST)`
+OUT  | `ucg/peering/peers (GET)`
+
+
+##### `ucg/peering/peers (POST)`
+
+Receive peering entry with signature of it. Signature must match PGP fingerprint written in the entry.
+
+##### `ucg/peering/peers (GET)`
+
+Merkle URL referencing a set of all peering entries. Used for synchronizing peering entries between peers.
+
+#### Forwarding
+
+Interface whose role is to define network rules for transactions propagation.
+
+Flow | Interfaces
+---- | -----------
+IN   | `ucg/peering/forward`
+OUT  | `ucg/peering/peers/upstream`
+OUT  | `ucg/peering/peers/upstream/[PGP_FINGERPRINT]`
+OUT  | `ucg/peering/peers/downstream`
+OUT  | `ucg/peering/peers/downstream/[PGP_FINGERPRINT]`
+
+##### `ucg/peering/forward`
+
+Receive forward rule issued by a peer to be forwarded transactions of precised keys (either some, or all).
+
+##### `ucg/peering/peers/upstream`
+
+GET a list of peering entries **of nodes who asked** to be forwarded of ALL incoming transactions.
+
+##### `ucg/peering/peers/upstream/[PGP_FINGERPRINT]`
+
+GET a list of peering entries **of nodes who asked** to be forwarded of PGP_FINGERPRINT's incoming transactions.
+
+##### `ucg/peering/peers/downstream`
+
+GET a list of peering entries **to whom this node asked** to be forwarded of ALL incoming transactions.
+
+##### `ucg/peering/peers/downstream/[PGP_FINGERPRINT]`
+
+GET a list of peering entries **to whom this node asked** to be forwarded of PGP_FINGERPRINT's incoming transactions.
+
+#### Status
+
+This interface does not provide output information. It is only here to notify the status of a node.
+
+Flow | Interfaces
+---- | -----------
+IN   | `ucg/peering/status`
+
+Receive a status notification from another peer.
+
+#### Trust Hash Table (THT)
+
+Interface whose role is to gather informations of transactions storage distribution troughout peers network.
+
+Flow | Interfaces
+---- | -----------
+IN   | `ucg/tht (POST)`
+OUT  | `ucg/tht (GET)`
+OUT  | `ucg/tht/[PGP_FINGERPRINT]`
+
+##### `ucg/tht (POST)`
+
+Receive a THT entry, issued by the owner of the key precised in the entry.
+
+##### `ucg/tht (GET)`
+
+Merkle URL referencing a set of ALL THT entries.
+
+##### `ucg/tht/[PGP_FINGERPRINT]`
+
+GET the THT entry issued by key whose fingerprint is PGP_FINGERPRINT.
 
 ### Amendments
 
+Interface whose role is to handle Monetary Contract amendments.
+
 Flow | Interfaces
 ---- | -----------
-IN   | `amendments/votes (POST)`
-OUT  | `amendments/current`
-OUT  | `amendments/view/[AMENDMENT_ID]/self`
+IN   | `hdc/amendments/votes (POST)`
+OUT  | `hdc/amendments/votes (GET)`
+OUT  | `hdc/amendments/votes/[AMENDMENT_ID]`
+OUT  | `hdc/amendments/current`
+OUT  | `hdc/amendments/current/votes`
+OUT  | `hdc/amendments/promoted`
+OUT  | `hdc/amendments/promoted/[AMENDMENT_NUMBER]`
+OUT  | `hdc/amendments/view/[AMENDMENT_ID]/self`
+OUT  | `hdc/amendments/view/[AMENDMENT_ID]/members`
+OUT  | `hdc/amendments/view/[AMENDMENT_ID]/voters`
+OUT  | `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 
-#### `amendments/votes (POST)`
+#### `hdc/amendments/votes (POST)`
 
 Takes an amendment and a signature of it. If the following conditions matches:
 
 * The signature matches the amendment content
 * The signing key is a member eligible to voting
-* The amendment `PreviousHash` field matches `amendments/current` hash
-* The amendment `MembersStatusRoot` field matches received registrations
-* The amendment `VotersSignaturesRoot` field matches received votes for previous amendment
+* The amendment voting chain is either 1) already recorded on the node or 2) available to download on another node, and can be verified (i.e, can be authenticated)
 
 add the amendment to pending amendment database with the signature attached.
 
-If the resulting pending amendment have enough votes (this requirement is implementation specific), then the amendment has to be promoted to `amendments/current`.
+If the resulting pending amendment have enough votes (this requirement is implementation specific), then the amendment has to be promoted to `hdc/amendments/current`.
 
-#### `amendments/current`
+#### `hdc/amendments/votes (GET)`
+
+GET an index containing all received amendments (through voting), and number of votes for each amendment (amendment is represented by a number and hash).
+
+#### `hdc/amendments/votes/[AMENDMENT_ID]`
+
+Merkle URL referencing a set of ALL votes received by this node for amendment AMENDMENT_ID.
+
+#### `hdc/amendments/current`
 
 Serves the currently promoted amendment.
 
-#### `amendments/view/[AMENDMENT_ID]/self`
+#### `hdc/amendments/current/votes`
 
-Serves amendment with the given identifier.
+Same as `hdc/amendments/votes/[AMENDMENT_ID]`, but for currently promoted amendment.
 
-### Votes
+#### `hdc/amendments/promoted`
 
-Flow | Interfaces
----- | -----------
-IN   | `amendments/votes (POST)`
-OUT  | `amendments/votes (GET)`
-OUT  | `amendments/view/[AMENDMENT_ID]/signatures`
-OUT  | `amendments/votes/[AMENDMENT_ID]/signatures`
-OUT  | `community/votes`
+Same as `hdc/amendments/current`.
 
-#### `amendments/votes (POST)`
+#### `hdc/amendments/promoted/[AMENDMENT_NUMBER]`
 
-Refer to the same section in [Amendments - amendments/votes (POST)](#amendmentsvotes-POST).
+Serves an amendment is the promoted chain whose number is AMENDMENT_NUMBER.
 
-#### `amendments/votes (GET)`
+#### `hdc/amendments/view/[AMENDMENT_ID]/self`
 
-Serves an index of all the received votes. Index gives, for each amendment number, the different hashes and the number of votes for each hash.
+Serves amendment with given identifier.
 
-#### `amendments/view/[AMENDMENT_ID]/signatures`
+#### `hdc/amendments/view/[AMENDMENT_ID]/members`
 
-Serves, for a given amendment, a Merkle tree of the signatures refering to the `VotersSigRoot` field of the amendment.
+Merkle URL referencing a set of PGP public keys fingerprints considered as the members of the monetary community for amendment AMENDMENT_ID.
 
-#### `amendments/votes/[AMENDMENT_ID]/signatures`
+#### `hdc/amendments/view/[AMENDMENT_ID]/voters`
 
-Serves, for a given amendment, a Merkle tree of the signatures already received for the amendment's promotion.
+Merkle URL referencing a set of PGP public keys fingerprints considered as the voters of the monetary community for amendment AMENDMENT_ID.
 
-Note that is the amendment is promoted, those signatures will be available under the `amendments/view/[AMENDMENT_ID]/voters` URL.
+#### `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 
-#### `community/votes`
-
-Serves a Merkle tree of the signatures already received for the currently promoted amendment.
+Merkle URL referencing a set of signatures recognized as votes of the previous amendment, and whose Merkle root matches `PreviousVotesRoot` of the amendment AMENDMENT_ID.
 
 ### Transactions
 
 Flow | Interfaces
 ---- | -----------
-IN   | `transactions/process/issuance`
-IN   | `transactions/process/transfert`
-IN   | `transactions/process/fusion`
-OUT  | `transactions/all`
-OUT  | `transactions/sender/[PGP_FINGERPRINT]`
-OUT  | `transactions/recipient/[PGP_FINGERPRINT]`
-OUT  | `transactions/view/[TRANSACTION_ID]`
-OUT  | `coins/[PGP_FINGERPRINT]/list`
-OUT  | `coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
+IN   | `hdc/transactions/process/issuance`
+IN   | `hdc/transactions/process/transfert`
+IN   | `hdc/transactions/process/fusion`
+OUT  | `hdc/transactions/all`
+OUT  | `hdc/transactions/sender/[PGP_FINGERPRINT]`
+OUT  | `hdc/transactions/recipient/[PGP_FINGERPRINT]`
+OUT  | `hdc/transactions/view/[TRANSACTION_ID]`
+OUT  | `hdc/coins/[PGP_FINGERPRINT]/list`
+OUT  | `hdc/coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
 
-#### `transactions/process/issuance`
+#### `hdc/transactions/process/issuance`
 
 Takes a transaction and a signature of it. If the following conditions matches:
 
@@ -174,7 +294,7 @@ Takes a transaction and a signature of it. If the following conditions matches:
 
 adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 
-#### `transactions/process/transfert`
+#### `hdc/transactions/process/transfert`
 
 Takes a transaction and a signature of it. If the following conditions matches:
 
@@ -185,7 +305,7 @@ Takes a transaction and a signature of it. If the following conditions matches:
 
 adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 
-#### `transactions/process/fusion`
+#### `hdc/transactions/process/fusion`
 
 Takes a transaction and a signature of it. If the following conditions matches:
 
@@ -197,55 +317,29 @@ Takes a transaction and a signature of it. If the following conditions matches:
 
 adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 
-#### `transactions/all`
+#### `hdc/transactions/all`
 
 Serves a Merkle tree containing all the transactions stored by this node.
 
-#### `transactions/sender/[PGP_FINGERPRINT]`
+#### `hdc/transactions/sender/[PGP_FINGERPRINT]`
 
 Serves a Merkle tree containing all the transactions stored by this node, filtered for a given `Sender`.
 
-#### `transactions/recipient/[PGP_FINGERPRINT]`
+#### `hdc/transactions/recipient/[PGP_FINGERPRINT]`
 
 Serves a Merkle tree containing all the transactions stored by this node, filtered for a given `Recipient`.
 
-#### `transactions/view/[TRANSACTION_ID]`
+#### `hdc/transactions/view/[TRANSACTION_ID]`
 
 Serves a transaction content by its ID.
 
-#### `coins/[PGP_FINGERPRINT]/list`
+#### `hdc/coins/[PGP_FINGERPRINT]/list`
 
 Serves a list of coins considered as owned by the given `PGP_FINGERPRINT`.
 
-#### `coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
+#### `hdc/coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
 
 Serves a transaction chain (may not be complete, i.e. long enough to reach issuance transaction) justifying money ownership.
-
-### THT
-
-Flow | Interfaces
----- | -----------
-IN   | `tht (POST)`
-OUT  | `tht (GET)`
-OUT  | `tht/[PGP_FINGERPRINT]`
-
-#### `tht (POST)``
-
-Takes a THT entry and its signature, and according to the following:
-
-* Signature matches
-* `Number` is either a good increment, or no entry exists and has value `1`
-* `DateTime` is superior to the previous entry
-
-adds the entry in the node THT and broadcast it to its peers.
- 
-#### `tht (GET)``
-
-Serves the whole THT content.
-
-#### `tht/[PGP_FINGERPRINT]`
-
-Serves the THT entry of the given key fingerprint.
 
 ## Bootstraping
 
@@ -258,12 +352,10 @@ A node bootstrap is a process consisting in initialization of the node's data in
 For a node to integrate an existing currency, bootstraping consists in fetching all the data from a trusted server. Once server is authenticated, the node fetches:
 
 * PGP keys
-* Amendments
-* Registrations
 * Votes
 * Transactions
 
-Once everything is fetched, the node may enter in a synchronization process using Merkle URLs provided by ucoin's [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md).
+Once everything is fetched, the node may be started to follow normal protocol events.
 
 ### Create a new currency
 
@@ -272,7 +364,6 @@ For a node to create a new currency, it must not synchronize another server. It 
 Typically, such a node will a have the following flow to initiate its currency:
 
 * New PGP keys received
-* New Regitrations received - checked with keys
 * New Votes received - amendment is promoted
 
 This cycle will then repeat to the will of its currency members.

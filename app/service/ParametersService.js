@@ -99,7 +99,8 @@ module.exports = {
       callback('Requires an amendment + signature');
       return;
     }
-    callback(null, req.body.amendment.unix2dos() + req.body.signature.unix2dos());
+    // Note: peer is not mandatory and may be undefined
+    callback(null, req.body.amendment.unix2dos() + req.body.signature.unix2dos(), req.body.peer || "");
   },
 
   getAmendmentID: function (req, callback) {

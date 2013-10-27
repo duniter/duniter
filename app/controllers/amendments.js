@@ -146,8 +146,10 @@ module.exports = function (pgp, currency, conf) {
         function (callback){
           ParametersService.getVote(req, callback);
         },
-        function (rawVote, callback){
-          VoteService.submit(rawVote, callback);
+        function (rawVote, peer, callback){
+          peer = peer.toUpperCase();
+          peer = peer.match(/^\w{40}$/) ? peer : undefined;
+          VoteService.submit(rawVote, peer, callback);
         }
       ], function (err, am, recordedVote) {
         if(err){

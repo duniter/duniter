@@ -1220,6 +1220,7 @@ Name | Value | Method
 ---- | ----- | ------
 `amendment` | The raw amendment structure. | POST
 `signature` | The signature of the `amendment`. | POST
+`peer` | **Not mandatory**. A peer's fingerprint where to check and download `amendment`'s signatures Merkle tree | POST
 
 **Returns**
 

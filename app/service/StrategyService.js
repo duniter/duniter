@@ -34,10 +34,10 @@ module.exports = function () {
 }
 
 
-function defaultPromotion (amendment, decision) {
+function defaultPromotion (followingAm, decision) {
   async.waterfall([
     function (next) {
-      if(!amendment){
+      if(!followingAm){
         next('No new amendment for promotion');
         return;
       }
@@ -48,69 +48,49 @@ function defaultPromotion (amendment, decision) {
         next(null, am);
       });
     },
-    function (am, next){
+    function (currentAm, next){
       if(!next){
-        next = am;
-        am = null;
+        next = currentAm;
+        currentAm = null;
       }
-      if(!am && amendment.number == 0){
+      // Root amendment does not require votes
+      if(!currentAm && followingAm.number == 0){
         next(null, true);
         return;
       }
-      if(!am && amendment.number != 0){
+      if(!currentAm && followingAm.number != 0){
         next('Not promoted: need root amendment first');
         return;
       }
-      if(am && am.number == amendment.number && am.hash == amendment.hash){
+      // Vote for currently promoted: does not require promotion anymore
+      if(currentAm && currentAm.number == followingAm.number && currentAm.hash == followingAm.hash){
         next('Stacked vote of currently promoted');
         return;
       }
+      // The amendment may be promoted
       async.waterfall([
         function (pass){
-          if(amendment.number != am.number + 1){
-            pass('Not promoted: not a follower of current amendment (#' + amendment.number + ' does not follow #' + am.number + ')');
+          if(followingAm.number != currentAm.number + 1){
+            pass('Not promoted: bad number: not a follower of current amendment (#' + followingAm.number + ' does not follow #' + currentAm.number + ')');
             return;
           }
           pass();
         },
         function (pass){
-          if(am.hash != amendment.previousHash){
-            pass('Not promoted: this amendment does not have current amendment as previous');
+          if(currentAm.hash != followingAm.previousHash){
+            pass('Not promoted: bad previous hash: this amendment does not have current amendment as previous');
             return;
           }
           pass();
         },
         function (pass){
-          Merkle.signaturesOfAmendment(am.number, am.hash, pass);
-        },
-        function (sigMerkle, pass){
-          if(sigMerkle.root() != amendment.previousVotesRoot || sigMerkle.leaves().length != amendment.previousVotesCount){
-            pass('Not promoted: this amendment does not match received signatures of current amendment (expect ' + sigMerkle.leaves().length + " votes with root " + sigMerkle.root() + ", got " + amendment.previousVotesCount + " votes with root " + amendment.previousVotesRoot);
-            return;
-          }
-          pass();
-        },
-        function (pass){
-          Merkle.signatoriesOfAmendment(am.number, am.hash, pass);
-        },
-        function (prevVotersMerkle, pass){
-          Merkle.signatoriesOfAmendment(amendment.number, amendment.hash, function (err, merkle) {
-            pass(err, prevVotersMerkle, merkle);
+          Merkle.signaturesOfAmendment(followingAm.number, followingAm.hash, function (err, merkle) {
+            pass(err, merkle);
           });
         },
-        function (prevVotersMerkle, votersMerkle, pass) {
-          var inVoters = _(votersMerkle.leaves()).difference(prevVotersMerkle.leaves());
-          var outVoters = _(prevVotersMerkle.leaves()).difference(votersMerkle.leaves());
-          pass(null, prevVotersMerkle, votersMerkle, inVoters, outVoters);
-        },
-        function (prevVotersMerkle, votersMerkle, inVoters, outVoters, pass) {
-          // console.log("Prevs: " + prevVotersMerkle.leaves());
-          // console.log("Voter: " + votersMerkle.leaves());
-          // console.log("In: " + inVoters);
-          // console.log("Out: " + outVoters);
-          // if(outVoters.length > 0){
-          if(outVoters.length > prevVotersMerkle.leaves().length / 3.0){
-            pass('Not promoted: not enough votes for this amendment (requires at least 2/3 of the previous voters)');
+        function (votesMerkle, pass) {
+          if(votesMerkle.leaves().length < currentAm.nextVotes){
+            pass('Not promoted: not enough votes for this amendment (requires at least ' + followingAm.nextVotes + ' votes)');
             return;
           }
           pass();

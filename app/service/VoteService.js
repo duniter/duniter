@@ -1,15 +1,22 @@
-var jpgp       = require('../lib/jpgp');
-var async      = require('async');
-var mongoose   = require('mongoose');
-var _          = require('underscore');
-var Amendment  = mongoose.model('Amendment');
-var PublicKey  = mongoose.model('PublicKey');
-var Merkle     = mongoose.model('Merkle');
-var Vote       = mongoose.model('Vote');
+var jpgp      = require('../lib/jpgp');
+var async     = require('async');
+var mongoose  = require('mongoose');
+var _         = require('underscore');
+var merkle    = require('merkle');
+var Amendment = mongoose.model('Amendment');
+var PublicKey = mongoose.model('PublicKey');
+var Merkle    = mongoose.model('Merkle');
+var Peer      = mongoose.model('Peer');
+var Vote      = mongoose.model('Vote');
 
 module.exports = function (currency) {
 
-  this.submit = function(rawVote, callback) {
+  this.submit = function(rawVote, peerFPR, callback) {
+    var that = this;
+    if(arguments.length == 2){
+      callback = peerFPR;
+      peerFPR = undefined;
+    }
     var vote = new Vote();
     async.waterfall([
       function (next){
@@ -45,20 +52,130 @@ module.exports = function (currency) {
       function (next){
         Amendment.current(function (err, am) {
           var currNumber = am ? parseInt(am.number) : -1;
-          var voteNumber = parseInt(vote.basis);
+          var voteNumber = parseInt(vote.basis)
           if(voteNumber > currNumber + 1){
             next('Previous amendment not found, cannot record vote for amendment #' + vote.basis);
-            return;
-          }
-          if(voteNumber < currNumber){
-            next('Cannot record vote for previous amendments');
             return;
           }
           next();
         });
       },
-      function (next) {
-        vote.saveAmendment(next);
+      function (next){
+        if(parseInt(vote.basis) > 0){
+          // Check if previous votes tree matches
+          var pendingAm;
+          async.waterfall([
+            function (next){
+              vote.getAmendment(next);
+            },
+            function (am, next){
+              pendingAm = am;
+              Merkle.signaturesOfAmendment(pendingAm.number - 1, pendingAm.previousHash, function (err, merkle) {
+                next(err, merkle);
+              });
+            },
+            function (signaturesMerkle, next){
+              if(signaturesMerkle.root() == pendingAm.previousVotesRoot){
+                // We already have exactly the same signatures Merkle, use it for saving
+                next(null, signaturesMerkle.leaves());
+              } else {
+                var node;
+                // Tries to get it from remote peer
+                async.waterfall([
+                  function (next){
+                    // Find peer in local DB
+                    if(!peerFPR){
+                      next('Signatures of previous amendment not foud, and no peer was provided.');
+                      return;
+                    }
+                    Peer.getTheOne(peerFPR, next);
+                  },
+                  function (peer, next){
+                    // Tries to connect
+                    peer.connect(next);
+                  },
+                  function (remoteNode, next){
+                    // Check Merkle tree
+                    node = remoteNode;
+                    node.hdc.amendments.view.signatures(pendingAm.number, pendingAm.hash, next);
+                  },
+                  function (json, next){
+                    var signaturesRoot = json.levels["0"][0];
+                    if(signaturesRoot != pendingAm.previousVotesRoot){
+                      next("Given remote peer's signatures Merkle tree root for amendment #" + pendingAm.number + "-" + pendingAm.hash + " does not match: exptected " + pendingAm.previousVotesRoot + ", given " + signaturesRoot);
+                      return;
+                    }
+                    // Get the whole leaves (hashes)
+                    node.hdc.amendments.view.signatures(pendingAm.number, pendingAm.hash, { lstart: json.levelsCount - 1 }, next);
+                  },
+                  function (json, next){
+                    var hashes = json.levels[json.levelsCount - 1];
+                    var leavesMerkle = merkle(hashes, 'sha1').process();
+                    var missing = [];
+                    if(leavesMerkle.root() != pendingAm.previousVotesRoot){
+                      next("Computed remote peer's signatures Merkle tree root for amendment #" + pendingAm.number + "-" + pendingAm.hash + ", according to its leaves, does not match: exptected " + pendingAm.previousVotesRoot + ", given " + leavesMerkle.root());
+                      return;
+                    }
+                    async.forEach(hashes, function(hash, callback){
+                      Vote.findByHashAndBasis(hash, pendingAm.number - 1, function (err){
+                        if(err){
+                          missing.push(hash);
+                        }
+                        callback();
+                      });
+                    }, function(err, result){
+                      next(null, json, hashes, missing);
+                    });
+                  },
+                  function (json, hashes, missing, next){
+                    var previousAm = new Amendment({});
+                    async.waterfall([
+                      function (next){
+                        node.hdc.amendments.view.self(pendingAm.number - 1, pendingAm.previousHash, next);
+                      },
+                      function (jsonAM, next){
+                        previousAm.parse(jsonAM.raw, next);
+                      },
+                      function (next){
+                        async.forEachSeries(missing, function(hash, callback){
+                          // Get every leaf's value that is not recorded yet
+                          var index = hashes.indexOf(hash);
+                          async.waterfall([
+                            function (next){
+                              var options = {
+                                lstart: json.levelsCount - 1,
+                                start: index,
+                                end: index + 1,
+                                extract: true
+                              };
+                              node.hdc.amendments.view.signatures(pendingAm.number, pendingAm.hash, options, next);
+                            },
+                            function (json, next){
+                              var leaf = json.leaves[index];
+                              // Begin a sub cycle submitting the vote
+                              that.submit(previousAm.getRaw() + leaf.value.signature, peerFPR, next);
+                            }
+                          ], callback);
+                        }, function (err){
+                          next(err, hashes);
+                        });
+                      },
+                    ], next);
+                  },
+                ], next);
+              }
+            }
+          ], next);
+        } else {
+          // No previous votes exists for AM0, no need to check signatures
+          next(null, []);
+        }
+      },
+      function (signaturesMerkle, next) {
+        /* Update URLs:
+            - hdc/amendments/[AMENDMENT_ID]/self
+            - hdc/amendments/[AMENDMENT_ID]/signatures */
+        vote.saveAmendment(signaturesMerkle, next);
       },
       function (am, next){
         // Find preceding vote of the issuer, for this amendment
@@ -88,6 +205,9 @@ module.exports = function (currency) {
       },
       function (am, voteEntity, previousHash, newAm, next) {
         if(newAm){
+          /* Update Merkles for URLs:
+            - hdc/amendments/[AMENDMENT_ID]/voters
+            - hdc/amendments/[AMENDMENT_ID]/members */
           am.updateMerkles(function (err) {
             next(err, am, voteEntity, previousHash);
           });
@@ -95,12 +215,8 @@ module.exports = function (currency) {
         else next(null, am, voteEntity, previousHash);
       },
       function (am, voteEntity, previousHash, next) {
+        // Update signatures (hdc/amendments/votes/[AMENDMENT_ID])
         Merkle.updateSignaturesOfAmendment(am, previousHash, vote.hash, function (err) {
-          next(err, am, voteEntity);
-        });
-      },
-      function (am, voteEntity, next) {
-        Merkle.updateSignatoriesOfAmendment(am, vote.pubkey.fingerprint, function (err) {
           next(err, am, voteEntity);
         });
       }

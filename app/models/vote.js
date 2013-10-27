@@ -162,18 +162,34 @@ VoteSchema.methods = {
     else done(null, this.amendment);
   },
 
-  saveAmendment: function (done) {
+  saveAmendment: function (signaturesLeaves, done) {
     var that = this;
+    var am;
     async.waterfall([
       function (next){
         that.getAmendment(next);
       },
-      function (am, next){
-        am.save(function (err) {
-          next(err, am);
+      function (amendment, next){
+        am = amendment;
+        next();
+      },
+      function (next){
+        // Donne le Merkle des signatures (hdc/amendments/[AMENDMENT_ID]/signatures)
+        Merkle.signaturesWrittenForAmendment(am.number, am.hash, next);
+      },
+      function (merkle, next){
+        // Met à jour le Merkle
+        merkle.initialize(signaturesLeaves);
+        merkle.save(function (err){
+          next(err);
         });
       },
-      function (am, next){
+      function (next){
+        am.save(function (err) {
+          next(err);
+        });
+      },
+      function (next){
         that._amendment = am._id;
         next(null, am);
       }
@@ -207,7 +223,21 @@ VoteSchema.methods = {
   }
 };
 
-VoteSchema.statics.verify = function (amendment, signature, publicKey, done) {
+VoteSchema.statics.findByHashAndBasis = function (hash, basis, done) {
+
+  this.find({ hash: hash, basis: basis }, function (err, votes) {
+    if(votes && votes.length == 1){
+      done(err, votes[0]);
+      return;
+    }
+    if(!votes || votes.length == 0){
+      done('No amendment found');
+      return;
+    }
+    if(votes || votes.length > 1){
+      done('More than one amendment found');
+    }
+  });
 };
 
 var Vote = mongoose.model('Vote', VoteSchema);

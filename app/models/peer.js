@@ -3,6 +3,7 @@ var async    = require('async');
 var sha1     = require('sha1');
 var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
+var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
 
 var STATUS = { UP: "UP", DOWN: "DOWN", NEW: "NEW" };
@@ -158,7 +159,12 @@ PeerSchema.methods = {
   getRawSigned: function() {
     var raw = this.getRaw() + this.signature;
     return raw;
-  }
+  },
+
+  connect: function (done){
+    var WITH_SIGNATURE_PARAM = false;
+    vucoin(this.ipv6 || this.ipv4 || this.dns, this.port, true, WITH_SIGNATURE_PARAM, done);
+  },
 }
 
 function verify(obj, currency) {

@@ -122,10 +122,6 @@ MerkleSchema.statics.votersWrittenForAmendment = function (number, hash, done) {
   retrieve({ type: 'amendment_voters', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
-MerkleSchema.statics.signatoriesOfAmendment = function (number, hash, done) {
-  retrieve({ type: 'amendment_signatories', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
-};
-
 MerkleSchema.statics.txAll = function (done) {
   retrieve({ type: 'txAll', criteria: '{}' }, done);
 };
@@ -229,22 +225,6 @@ MerkleSchema.statics.updateSignaturesOfAmendment = function (am, previousHash, n
     },
     function (merkle, next) {
       merkle.push(newHash, previousHash);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateSignatoriesOfAmendment = function (am, fingerprint, done) {
-  async.waterfall([
-    function (next) {
-      Merkle.signatoriesOfAmendment(am.number, am.hash, function (err, merkle) {
-        next(err, merkle);
-      });
-    },
-    function (merkle, next) {
-      merkle.push(fingerprint);
       merkle.save(function (err) {
         next(err);
       });

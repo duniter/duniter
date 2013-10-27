@@ -175,9 +175,6 @@ AmendmentSchema.methods = {
       ], callback);
     }
     async.parallel({
-      signaturesMerkle: function(callback){
-        build(Merkle.signaturesWrittenForAmendment, that.buildSignaturesMerkle, callback);
-      },
       membersMerkle: function(callback){
         build(Merkle.membersWrittenForAmendment, that.buildMembersMerkle, callback);
       },
@@ -187,30 +184,12 @@ AmendmentSchema.methods = {
     }, done);
   },
 
-  buildSignaturesMerkle: function (done) {
-    var that = this;
-    this.getPrevious(function (err, previous) {
-      if(err){
-        done(err);
-        return;
-      }
-      async.waterfall([
-        function (next){
-          if(!previous){
-            next(null, []);
-            return;
-          }
-          mongoose.model('Merkle').signaturesOfAmendment(previous.number, previous.hash, function (err, merkle) {
-            next(err, merkle.leaves());
-          });
-        }
-      ], function (err, leaves) {
-        if(leaves) leaves.sort();
-        done(err, leaves);
-      });
-    })
-  },
-
+  /**
+  * Build Merkle of members for this amendment, according
+  * to previous amendment members Merkle and applying MembersChanges field.
+  *
+  * Result API: hdc/amendments/view/[AMENDMENT_ID]/members
+  */
   buildMembersMerkle: function (done) {
     var that = this;
     this.getPrevious(function (err, previous) {
@@ -224,11 +203,13 @@ AmendmentSchema.methods = {
             next(null, []);
             return;
           }
+          // Get members Merkle of previous amendment
           mongoose.model('Merkle').membersWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
             next(err, merkle.leaves());
           });
         },
         function (leaves, next) {
+          // Apply MembersChanges field
           leaves = _(leaves).union(that.getNewMembers());
           leaves = _(leaves).difference(that.getLeavingMembers());
           next(null, leaves);
@@ -240,6 +221,12 @@ AmendmentSchema.methods = {
     })
   },
 
+  /**
+  * Build Merkle of voters for this amendment, according
+  * to previous amendment voters Merkle and applying VotersChanges field.
+  *
+  * Result API: hdc/amendments/view/[AMENDMENT_ID]/voters
+  */
   buildVotersMerkle: function (done) {
     var that = this;
     this.getPrevious(function (err, previous) {
@@ -253,11 +240,13 @@ AmendmentSchema.methods = {
             next(null, []);
             return;
           }
+          // Get voters Merkle of previous amendment
           mongoose.model('Merkle').votersWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
             next(err, merkle.leaves());
           });
         },
         function (leaves, next) {
+          // Apply VotersChanges field
           leaves = _(leaves).union(that.getNewVoters());
           leaves = _(leaves).difference(that.getLeavingVoters());
           next(null, leaves);

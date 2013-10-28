@@ -3,7 +3,6 @@ var async    = require('async');
 var sha1     = require('sha1');
 var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
-var Schema   = mongoose.Schema;
 
 module.exports = function StatusMessage (values) {
 

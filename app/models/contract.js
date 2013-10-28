@@ -2,7 +2,6 @@ var sha1      = require('sha1');
 var async     = require('async');
 var merkle    = require('merkle');
 var mongoose  = require('mongoose');
-var Amendment = mongoose.model('Amendment');
 var Schema    = mongoose.Schema;
 
 var ContractSchema = new Schema({
@@ -34,6 +33,7 @@ ContractSchema.methods = {
 
   check: function (rawAmendment, done) {
     var obj = this;
+    var Amendment = mongoose.model('Amendment');
     var am = new Amendment();
     am.parse(rawAmendment, function(err) {
       if(!err){

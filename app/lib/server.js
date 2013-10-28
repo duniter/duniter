@@ -11,10 +11,11 @@ var jpgp       = require('./jpgp');
 
 openpgp.init();
 
+var models = ['Amendment', 'Coin', 'Configuration', 'Contract', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote'];
+
 function initModels() {
-  var models_path = __dirname + '/../models';
-  fs.readdirSync(models_path).forEach(function (file) {
-    if (~file.indexOf('.js')) require(models_path + '/' + file);
+  models.forEach(function (entity) {
+    require(__dirname + '/../models/' + entity.toLowerCase() + '.js');
   });
 }
 
@@ -89,58 +90,11 @@ module.exports.database = {
   },
 
   reset: function(done) {
-    async.waterfall([
-      function (next){
-        mongoose.model('Merkle').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('Amendment').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('PublicKey').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('Vote').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('Transaction').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('Coin').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('Key').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('Peer').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('Forward').remove({}, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        mongoose.model('THTEntry').remove({}, function (err) {
-          next(err);
-        });
-      }
-    ], done);
+    async.forEachSeries(_(models).without('Configuration'), function(entity, next){
+      mongoose.model(entity).remove({}, function (err) {
+        next(err);
+      });
+    }, done);
   },
 
   resetConf: function(done) {

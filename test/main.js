@@ -1197,7 +1197,7 @@ describe('Checking COINS', function(){
   var ownedByTobi = 7 - 1 - 2 + 1 - 1;
   it('should have '+ownedByTobi+' coins owned by tobi', function (done) {
     mongoose.model('Coin').find({owner: "2E69197FAB029D8669EF85E82457A1587CA0ED9C" }, function (err, coins){
-      coins.should.have.length(0);
+      coins.should.have.length(ownedByTobi);
       done();
     });
   });
@@ -1205,7 +1205,7 @@ describe('Checking COINS', function(){
   var ownedByCat = 4 + 1; // Issued + 1 from Tobi
   it('should have '+ownedByCat+' coins owned by cat', function (done) {
     mongoose.model('Coin').find({owner: "C73882B64B7E72237A2F460CE9CAB76D19A8651E" }, function (err, coins){
-      coins.should.have.length(0);
+      coins.should.have.length(ownedByCat);
       done();
     });
   });
@@ -1213,7 +1213,7 @@ describe('Checking COINS', function(){
   var ownedBySnow = 1; // Transfered by Tobi
   it('should have '+ownedBySnow+' coins owned by snow', function (done) {
     mongoose.model('Coin').find({owner: "33BBFC0C67078D72AF128B5BA296CC530126F372" }, function (err, coins){
-      coins.should.have.length(0);
+      coins.should.have.length(ownedBySnow);
       done();
     });
   });

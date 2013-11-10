@@ -298,21 +298,6 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
     })
   }
 
-  this.sendSelfPeering = function(done){
-    if(!that.remoteFingerprint){
-      done('Must sync before submitting self peering');
-      return;
-    }
-    async.waterfall([
-      function (next){
-        Peer.getTheOne(that.remoteFingerprint, next);
-      },
-      function (toPeer, next){
-        PeeringService.submitSelfPeering(toPeer, next);
-      },
-    ], done);
-  }
-
   var alreadyDone = [];
 
   function syncTransactionsOfKey (node, keyFingerprint, onKeyDone) {

@@ -46,9 +46,6 @@ program
         function (next){
           remote.sync(next);
         },
-        function (next){
-          remote.sendSelfPeering(next);
-        },
       ], function (err) {
         if(err){
           console.error('Error during sync %s', err);
@@ -269,7 +266,14 @@ program
         function (next) {
           PeeringService.initForwards(next);
         },
-        function (next) {
+        function (next){
+          // Submit its own public key to it
+          mongoose.model('Peer').getTheOne(server.fingerprint(), next);
+        },
+        function (peer, next) {
+          mongoose.model('PublicKey').getForPeer(peer, next);
+        },
+        function (pubkey, next) {
           PeeringService.sendUpSignal(next);
         }
       ], function (err) {

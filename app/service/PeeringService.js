@@ -662,18 +662,31 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (peers, next){
         if(peers.length > 0){
+          var remote = peers[0];
           async.waterfall([
             function (next){
-              // Might require a pubkey send before anything
-              if (pubkey) {
-                sendPubkey(peers[0], pubkey, function (err) {
-                  next(err);
-                });
+              if (!pubkey) {
+                next();
+                return;
               }
-              else next();
+              // Might need to introduce ourselves to remote
+              async.waterfall([
+                function (next){
+                  // Send pubkey
+                  sendPubkey(remote, pubkey, function (err) {
+                    next(err);
+                  });
+                },
+                function (next){
+                  // Send peering entry
+                  that.submitSelfPeering(remote, function (err) {
+                    next(err);
+                  });
+                }
+              ], next);
             },
             function (next){
-              sendMethod.call(sendMethod, peers[0], obj, next);
+              sendMethod.call(sendMethod, remote, obj, next);
             }
           ], next);
         }

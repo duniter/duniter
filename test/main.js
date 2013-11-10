@@ -1175,6 +1175,48 @@ describe('Checking COINS', function(){
   api.coinsList('ISSUANCE of Cat', '2E69197FAB029D8669EF85E82457A1587CA0ED9C', 4);
   api.coinsList('ISSUANCE of Cat', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0);
   api.coinsList('ISSUANCE of Cat', 'C73882B64B7E72237A2F460CE9CAB76D19A8651E', 5, 2);
+
+  var issuedFromTobi = 7 + 1; // Issue 7, Fusion 1
+  var issuedFromCat = 4; // Issue 4
+  var totalIssued = issuedFromTobi + issuedFromCat;
+  it('should have '+totalIssued+' coins issued', function (done) {
+    mongoose.model('Coin').find({}, function (err, coins){
+      coins.should.have.length(totalIssued);
+      done();
+    });
+  });
+
+  var nonDestroyed = totalIssued - 2; // 2 fusionned
+  it('should have '+nonDestroyed+' coins issued', function (done) {
+    mongoose.model('Coin').find({owner: { $not: { $in: ["", null] } }}, function (err, coins){
+      coins.should.have.length(nonDestroyed);
+      done();
+    });
+  });
+
+  var ownedByTobi = 7 - 1 - 2 + 1 - 1;
+  it('should have '+ownedByTobi+' coins owned by tobi', function (done) {
+    mongoose.model('Coin').find({owner: "2E69197FAB029D8669EF85E82457A1587CA0ED9C" }, function (err, coins){
+      coins.should.have.length(0);
+      done();
+    });
+  });
+
+  var ownedByCat = 4 + 1; // Issued + 1 from Tobi
+  it('should have '+ownedByCat+' coins owned by cat', function (done) {
+    mongoose.model('Coin').find({owner: "C73882B64B7E72237A2F460CE9CAB76D19A8651E" }, function (err, coins){
+      coins.should.have.length(0);
+      done();
+    });
+  });
+
+  var ownedBySnow = 1; // Transfered by Tobi
+  it('should have '+ownedBySnow+' coins owned by snow', function (done) {
+    mongoose.model('Coin').find({owner: "33BBFC0C67078D72AF128B5BA296CC530126F372" }, function (err, coins){
+      coins.should.have.length(0);
+      done();
+    });
+  });
 });
 
 describe('Received keys for transactions', function(){

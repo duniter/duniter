@@ -152,6 +152,7 @@ module.exports.get = function (currency) {
           sum += txOfAM.getIssuanceSum();
         });
         if(sum > am.dividend){
+          // This should NEVER happen
           next('Integrity error: you already issued more coins than you could');
           return;
         }
@@ -175,6 +176,7 @@ module.exports.get = function (currency) {
         Merkle.updateForIssuance(tx, am, next);
       },
       function (merkle, code, next){
+        // Saves transaction's coins IDs
         async.forEach(tx.coins, function(coin, callback){
           var c = new Coin({
             id: coin.match(/([A-Z\d]{40}-\d+-\d-\d+-\w-\d+)?/)[1],
@@ -245,6 +247,8 @@ module.exports.get = function (currency) {
                 }, next);
               }
             ], function (err) {
+              // Do not send err as async.parallel() error, but as a result.
+              // So async wait for recipient() to end too.
               senderDone(null, err);
             });
           },
@@ -256,8 +260,8 @@ module.exports.get = function (currency) {
               function (isManaged, next){
                 recipientManaged = isManaged;
                 if(isManaged){
-                  // Recipient managed
-                  // THT verifications
+                  // Recipient managed: transaction will be saved
+                  // without local full transaction chain test
                   next();
                 }
                 else{
@@ -265,17 +269,25 @@ module.exports.get = function (currency) {
                 }
               }
             ], function (err) {
+              // Do not send err as async.parallel() error, but as a result.
+              // So async wait for sender() to end too.
               recipientDone(null, err);
             });
           },
         },
         function(err, results) {
-          if(results.sender && senderManaged){
-            next(results.sender);
+          var senderError = results.sender;
+          var recipientError = results.recipient;
+          if(senderError && senderManaged){
+            next(senderError);
             return;
           }
-          if(results.recipient && recipientManaged){
-            next(results.recipient);
+          if(recipientError && recipientManaged){
+            next(recipientError);
+            return;
+          }
+          if(!senderManaged && !recipientManaged){
+            next('Neither sender nor recipient managed by this node');
             return;
           }
           next();
@@ -288,9 +300,20 @@ module.exports.get = function (currency) {
         // Save new ownership
         async.forEach(tx.getCoins(), function(coin, callback){
           Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
-            ownership.owner = tx.recipient;
-            ownership.transaction = tx.sender + '-' + tx.number;
-            ownership.save(callback);
+            if(err){
+              // Creation
+              var ownership = new Coin({
+                id: coin.id,
+                owner: tx.recipient,
+                transaction: tx.sender + '-' + tx.number
+              });
+              ownership.save(callback);
+            } else {
+              // Modification
+              ownership.owner = tx.recipient;
+              ownership.transaction = tx.sender + '-' + tx.number;
+              ownership.save(callback);
+            }
           });
         }, next);
       },

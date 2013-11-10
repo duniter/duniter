@@ -86,6 +86,7 @@ TransactionSchema.methods = {
       var matches = this.coins[i].match(/([A-Z\d]{40})-(\d+)-(\d)-(\d+)-(A|F)-(\d+)(, ([A-Z\d]{40})-(\d+))?/);
       if(matches && matches.length == 10){
         coins.push({
+          id: matches[0],
           issuer: matches[1],
           number: parseInt(matches[2], 10),
           base: parseInt(matches[3], 10),

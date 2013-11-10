@@ -280,6 +280,7 @@ program
         if(err){
           console.error('Could not start: %s', err);
           server.database.disconnect();
+          process.exit();
           return;
         }
         console.log('Server ready!');

@@ -114,10 +114,11 @@ module.exports.express = {
   app: function (currency, conf, onLoaded) {
 
     var app = express();
+    var port = process.env.PORT || conf.port;
 
     // all environments
     app.set('conf', conf);
-    app.set('port', process.env.PORT || conf.port);
+    app.set('port', port);
     app.use(express.favicon(__dirname + '/../public/favicon.ico'));
     app.use(express.static(__dirname + '/../public'));
     app.use(express.logger('dev'));
@@ -127,7 +128,7 @@ module.exports.express = {
     app.use(express.session());
 
     // HTTP Signatures
-    sign(currency, app, conf);
+    sign(currency + '_' + port, app, conf);
 
     // Routing
     app.use(app.router);
@@ -242,7 +243,7 @@ module.exports.express = {
   }
 };
 
-function sign(currency, app, conf) {
+function sign(fileName, app, conf) {
   // PGP signature of requests
   if(conf.pgpkey){
     try{
@@ -251,7 +252,7 @@ function sign(currency, app, conf) {
       // Try to use it...
       openpgp.write_signed_message(openpgp.keyring.privateKeys[0].obj, "test");
       // Success: key is able to sign
-      app.use(connectPgp(privateKey, conf.pgppasswd, 'ucoin_' + currency));
+      app.use(connectPgp(privateKey, conf.pgppasswd, 'ucoin_' + fileName));
       console.log('Signed requests with PGP: enabled.');
     }
     catch(ex){

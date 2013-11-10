@@ -128,7 +128,7 @@ module.exports.express = {
     app.use(express.session());
 
     // HTTP Signatures
-    sign(currency + '_' + port, app, conf);
+    sign(app, conf);
 
     // Routing
     app.use(app.router);
@@ -243,7 +243,7 @@ module.exports.express = {
   }
 };
 
-function sign(fileName, app, conf) {
+function sign(app, conf) {
   // PGP signature of requests
   if(conf.pgpkey){
     try{
@@ -252,10 +252,11 @@ function sign(fileName, app, conf) {
       // Try to use it...
       openpgp.write_signed_message(openpgp.keyring.privateKeys[0].obj, "test");
       // Success: key is able to sign
-      app.use(connectPgp(privateKey, conf.pgppasswd, 'ucoin_' + fileName));
+      app.use(connectPgp(privateKey, conf.pgppasswd, 'ucoin_' + module.exports.fingerprint()));
       console.log('Signed requests with PGP: enabled.');
     }
     catch(ex){
+      console.log(ex);
       throw new Error("Wrong private key password.");
     }
   }

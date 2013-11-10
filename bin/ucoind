@@ -19,6 +19,7 @@ program
   .option('-c, --currency <name>', 'Name of the currency managed by this node.')
   .option('--mhost <host>', 'MongoDB host.')
   .option('--mport <port>', 'MongoDB port.')
+  .option('--mdb <name>', 'MongoDB database name (defaults to currency name).')
   .option('--pgpkey <keyPath>', 'Path to the private key used for signing HTTP responses.')
   .option('--pgppasswd <password>', 'Password for the key provided with --httpgp-key option.')
   .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
@@ -245,6 +246,7 @@ program
         },
         function (next) {
           if(conf.ipv4){
+            console.log('Connecting on interface %s...', conf.ipv4);
             http.createServer(app).listen(conf.port, conf.ipv4, function(){
               console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
               next();
@@ -254,6 +256,7 @@ program
         },
         function (next) {
           if(conf.ipv6){
+            console.log('Connecting on interface %s...', conf.ipv6);
             http.createServer(app).listen(conf.port, conf.ipv6, function(){
               console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
             });
@@ -336,7 +339,7 @@ function connect(callback) {
     }
 
     // Connecting to DB
-    server.database.connect(program.currency, program.mhost, program.mport, function (err, conf) {
+    server.database.connect(program.mdb || program.currency, program.mhost, program.mport, function (err, conf) {
 
       if(err){
         console.log("Error connecting to DB: " + err);

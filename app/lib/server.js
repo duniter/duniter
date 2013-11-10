@@ -194,38 +194,47 @@ module.exports.express = {
       onLoaded(null, app);
       return;
     }
+
+    // If the node's peering entry does not exist or is outdated,
+    // a new one is generated.
     async.waterfall([
       function (next) {
         mongoose.model('Peer').find({ fingerprint: module.exports.fingerprint() }, next);
       },
       function (peers, next) {
-        if(peers == 0){
+        var Peer = mongoose.model('Peer');
+        var p1 = new Peer({});
+        if(peers.length != 0){
+          p1 = peers[0];
+        }
+        var p2 = new Peer({
+          version: 1,
+          currency: currency,
+          fingerprint: module.exports.fingerprint(),
+          dns: conf.remotehost ? conf.remotehost : '',
+          ipv4: conf.remoteipv4 ? conf.remoteipv4 : '',
+          ipv6: conf.remoteipv6 ? conf.remoteipv6 : '',
+          port: conf.remoteport ? conf.remoteport : ''
+        });
+        var raw1 = p1.getRaw().unix2dos();
+        var raw2 = p2.getRaw().unix2dos();
+        if (raw1 != raw2) {
           console.log('Generating server\'s peering entry...');
-          var Peer = mongoose.model('Peer');
-          var p = new Peer({
-            version: 1,
-            currency: currency,
-            fingerprint: module.exports.fingerprint(),
-            dns: conf.remotehost ? conf.remotehost : '',
-            ipv4: conf.remoteipv4 ? conf.remoteipv4 : '',
-            ipv6: conf.remoteipv6 ? conf.remoteipv6 : '',
-            port: conf.remoteport ? conf.remoteport : ''
-          });
-          var raw = p.getRaw().unix2dos();
           async.waterfall([
             function (next){
-              jpgp().sign(raw, module.exports.privateKey(), next);
+              jpgp().sign(raw2, module.exports.privateKey(), next);
             },
             function (signature, next) {
               signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
               var PeeringService = require('../service/PeeringService').get(module.exports.pgp, currency, conf);
-              PeeringService.persistPeering(raw + signature, module.exports.publicKey(), next);
+              PeeringService.persistPeering(raw2 + signature, module.exports.publicKey(), next);
             }
           ], function (err) {
             next(err);
           });
+        } else {
+          next();
         }
-        else next();
       },
     ], function (err) {
       onLoaded(err, app);

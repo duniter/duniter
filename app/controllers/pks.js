@@ -12,6 +12,7 @@ var ParametersService = require('../service/ParametersService');
 module.exports = function (pgp, currency, conf) {
 
   var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
+  var PublicKeyService = require('../service/PublicKeyService')(currency);
 
   this.getAll = function (req, res) {
     async.waterfall([
@@ -68,24 +69,14 @@ module.exports = function (pgp, currency, conf) {
   };
 
   this.add = function (req, res) {
-    var pubkey;
     async.waterfall([
       function (next){
         ParametersService.getPubkey(req, next);
       },
       function (aaPubkey, aaSignature, next){
-        PublicKey.verify(aaPubkey, aaSignature, function (err, verified) {
-          next(err, aaPubkey, aaSignature);
-        });
-      },
-      function (aaPubkey, aaSignature, next) {
-        pubkey = new PublicKey({ raw: aaPubkey, signature: aaSignature });
-        pubkey.construct(next);
-      },
-      function (next) {
-        PublicKey.persist(pubkey, next);
+        PublicKeyService.submitPubkey(aaPubkey, aaSignature, next);
       }
-    ], function (err) {
+    ], function (err, pubkey) {
       if(err){
         res.send(400, err);
         console.error(err);

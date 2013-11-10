@@ -261,10 +261,8 @@ program
           else next();
         },
         function (next) {
+          // Initialize managed keys
           PeeringService.initKeys(next);
-        },
-        function (next) {
-          PeeringService.initForwards(next);
         },
         function (next){
           // Submit its own public key to it
@@ -275,6 +273,9 @@ program
         },
         function (pubkey, next) {
           PeeringService.sendUpSignal(next);
+        },
+        function (next) {
+          PeeringService.initForwards(next);
         }
       ], function (err) {
         if(err){

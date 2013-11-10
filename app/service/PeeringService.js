@@ -336,7 +336,9 @@ module.exports.get = function (pgp, currency, conf) {
                   return;
                 }
                 if(fwd._id){
-                  fwd.remove(next);
+                  fwd.remove(function (err) {
+                    next(err);
+                  });
                   return;
                 }
                 next();
@@ -545,6 +547,7 @@ module.exports.get = function (pgp, currency, conf) {
     var othersFPRS = [];
     async.waterfall([
       function (next){
+        // Look for Forward requests already sent to this node
         Forward.find({ to: that.cert.fingerprint }, next);
       },
       function (fwds, next){
@@ -554,6 +557,9 @@ module.exports.get = function (pgp, currency, conf) {
         next();
       },
       function (next){
+        // Look for known peers that have not sent any forward request yet.
+        // Those nodes are considered new to this node, as any node
+        // should be aware of what another wants to be forwarded of.
         Peer.find({ fingerprint: { $nin: forwardsFPRS} }, next);
       },
       function (peers, next){
@@ -572,7 +578,14 @@ module.exports.get = function (pgp, currency, conf) {
           that.sendStatusTo('UP', _(forwardsFPRS).without(that.cert.fingerprint), callback);
         },
         otherPeers: function(callback){
-          that.sendStatusTo('NEW', _(othersFPRS).without(that.cert.fingerprint), callback);
+          async.waterfall([
+            function (next){
+              PublicKey.getTheOne(that.cert.fingerprint, next);
+            },
+            function (pubkey, next){
+              that.sendStatusTo('NEW', _(othersFPRS).without(that.cert.fingerprint), pubkey, next);
+            },
+          ], callback);
         }
       },
       function(err, results) {
@@ -581,7 +594,11 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  this.sendStatusTo = function (statusStr, fingerprints, done) {
+  this.sendStatusTo = function (statusStr, fingerprints, pubkey, done) {
+    if (arguments.length == 3) {
+      done = pubkey;
+      pubkey = undefined;
+    }
     var that = this;
     var status = new Status({
       version: 1,
@@ -596,7 +613,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (signature, next) {
         status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
         async.forEach(fingerprints, function(fingerprint, callback){
-          that.propagateToFingerprint(fingerprint, status, sendStatus, callback);
+          that.propagateToFingerprint(fingerprint, status, sendStatus, pubkey, callback);
         }, next);
       }
     ], function (err) {
@@ -633,7 +650,11 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  this.propagateToFingerprint = function (fpr, obj, sendMethod, done) {
+  this.propagateToFingerprint = function (fpr, obj, sendMethod, pubkey, done) {
+    if (arguments.length == 4){
+      done = pubkey;
+      pubkey = undefined;
+    }
     var that = this;
     async.waterfall([
       function (next){
@@ -641,7 +662,20 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (peers, next){
         if(peers.length > 0){
-          sendMethod.call(sendMethod, peers[0], obj, next);
+          async.waterfall([
+            function (next){
+              // Might require a pubkey send before anything
+              if (pubkey) {
+                sendPubkey(peers[0], pubkey, function (err) {
+                  next(err);
+                });
+              }
+              else next();
+            },
+            function (next){
+              sendMethod.call(sendMethod, peers[0], obj, next);
+            }
+          ], next);
         }
         else next();
       },

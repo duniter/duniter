@@ -9,7 +9,7 @@ module.exports = function () {
 
   this.answer = function(res, code, err, done) {
     if (err) {
-      logger.warning(err);
+      logger.warn(err);
       res.send(code, err);
     }
     else done();

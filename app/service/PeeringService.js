@@ -719,7 +719,7 @@ module.exports.get = function (pgp, currency, conf) {
     }, function (err) {
       // Stop future propagation
       pubkey.propagated = true;
-      pubkey.update(function (err) {
+      pubkey.save(function (err) {
         done(err);
       });
     });
@@ -733,7 +733,7 @@ module.exports.get = function (pgp, currency, conf) {
     }, function (err) {
       // Stop future propagation
       vote.propagated = true;
-      vote.update(function (err) {
+      vote.save(function (err) {
         done(err);
       });
     });
@@ -747,7 +747,7 @@ module.exports.get = function (pgp, currency, conf) {
     }, function (err) {
       // Stop future propagation
       transaction.propagated = true;
-      transaction.update(function (err) {
+      transaction.save(function (err) {
         done(err);
       });
     });
@@ -761,7 +761,7 @@ module.exports.get = function (pgp, currency, conf) {
     }, function (err) {
       // Stop future propagation
       entry.propagated = true;
-      entry.update(function (err) {
+      entry.save(function (err) {
         done(err);
       });
     });
@@ -775,7 +775,7 @@ module.exports.get = function (pgp, currency, conf) {
     }, function (err) {
       // Stop future propagation
       peer.propagated = true;
-      peer.update(function (err) {
+      peer.save(function (err) {
         done(err);
       });
     });

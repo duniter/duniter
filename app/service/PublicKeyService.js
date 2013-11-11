@@ -8,6 +8,10 @@ var logger    = require('../lib/logger')('http');
 
 module.exports = function (currency) {
 
+  /**
+  * Tries to persist a public key given in ASCII-armored format.
+  * Returns the database stored public key.
+  */
   this.submitPubkey = function(aaPubkey, aaSignature, callback) {
     var pubkey;
     async.waterfall([
@@ -22,10 +26,15 @@ module.exports = function (currency) {
       },
       function (next) {
         logger.debug('Incoming pubkey: for: %s', pubkey.fingerprint);
-        PublicKey.persist(pubkey, next);
-      }
-    ], function (err) {
-      callback(err, pubkey);
+        PublicKey.persist(pubkey, function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        PublicKey.getTheOne(pubkey.fingerprint, next);
+      },
+    ], function (err, dbPubkey) {
+      callback(err, dbPubkey);
     });
   };
 

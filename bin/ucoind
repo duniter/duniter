@@ -285,7 +285,7 @@ program
         }
       ], function (err) {
         if(err){
-          console.error('Could not start: %s', err);
+          logger.error(err);
           server.database.disconnect();
           process.exit();
           return;

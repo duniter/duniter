@@ -10,7 +10,7 @@ var logger   = log4js.getLogger('pubkey');
 
 var PublicKeySchema = new Schema({
   raw: String,
-  fingerprint: String,
+  fingerprint: { type: String, unique: true },
   signature: String,
   name: String,
   email: String,

@@ -8,7 +8,7 @@ var Schema   = mongoose.Schema;
 var THTEntrySchema = new Schema({
   version: String,
   currency: String,
-  fingerprint: String,
+  fingerprint: { type: String, unique: true },
   hosters: [String],
   trusts: [String],
   signature: String,

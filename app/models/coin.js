@@ -8,7 +8,7 @@ var hdc      = require('../../node_modules/hdc');
 var Schema   = mongoose.Schema;
 
 var CoinSchema = new Schema({
-  id: String,
+  id: { type: String, unique: true },
   owner: String,
   transaction: String,
   created: { type: Date, default: Date.now },

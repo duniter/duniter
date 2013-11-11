@@ -3,7 +3,7 @@ var async    = require('async');
 var Schema   = mongoose.Schema;
 
 var KeySchema = new Schema({
-  fingerprint: String,
+  fingerprint: { type: String, unique: true },
   seen: { type: Boolean, default: false },
   managed: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },

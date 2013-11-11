@@ -11,7 +11,7 @@ var STATUS = { UP: "UP", DOWN: "DOWN", NEW: "NEW" };
 var PeerSchema = new Schema({
   version: String,
   currency: String,
-  fingerprint: String,
+  fingerprint: { type: String, unique: true },
   dns: String,
   ipv4: String,
   ipv6: String,

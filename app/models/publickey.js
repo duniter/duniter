@@ -234,6 +234,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           foundKeys[0].sigDate = pubkey.sigDate;
           foundKeys[0].hash = pubkey.hash;
           foundKeys[0].updated = now;
+          foundKeys[0].propagated = false;
           foundKeys[0].save(function (err) {
             next(err);
           });

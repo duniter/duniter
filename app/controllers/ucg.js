@@ -256,7 +256,7 @@ module.exports = function (pgp, currency, conf) {
               // as remote node may ask us in response to UP/NEW signal
               setTimeout(function () {
                 // Send self FWD rules (does nothing if already sent)
-                PeeringService.initForwards(next, recordedPR.fingerprint);
+                PeeringService.initForwards(next, [ recordedPR.fingerprint ]);
               }, 3000);
             }
           ], function (err) {

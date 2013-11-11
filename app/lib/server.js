@@ -11,7 +11,7 @@ var jpgp       = require('./jpgp');
 
 openpgp.init();
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Contract', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote'];
 
 function initModels() {
   models.forEach(function (entity) {

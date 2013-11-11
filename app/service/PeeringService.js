@@ -231,7 +231,7 @@ module.exports.get = function (pgp, currency, conf) {
             },
             function (fwd, next) {
               // Already sent: skip FWD regnegociation for this peer
-              if(fwd.forward == 'ALL' && !filterKeys){
+              if(fwd.forward == 'ALL'){
                 next('Peer ' + peer.fingerprint + ' : forward already sent');
                 return;
               }
@@ -323,7 +323,7 @@ module.exports.get = function (pgp, currency, conf) {
                 Forward.getTheOne(this.cert.fingerprint, peerFPR, next);
               },
               function (fwd, next) {
-                if(fwd.forward == 'KEYS' && !filterKeys && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
+                if(fwd.forward == 'KEYS' && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
                   next('Peer ' + peerFPR + ' : forward already sent');
                   return;
                 }

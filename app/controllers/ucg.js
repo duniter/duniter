@@ -462,44 +462,42 @@ module.exports = function (pgp, currency, conf) {
         PeeringService.submitStatus(signedStatus, callback);
       }
     ], function (err, status, peer) {
-      logger.debug('Incoming status: from: %s, status: %s', peer.fingerprint, status.status);
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      // Answers
-      process.nextTick(function () {
-        res.end(JSON.stringify(status.json()));
-      });
-      // Send forward request if not done yet
-      async.waterfall([
-        function (next){
-          if(status.isNew()){
-            // Any previous forward must be removed and resent by each other
-            Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
-              next(err, true);
-            });
-            return;
-          }
-          if(status.isUp()){
-            Forward.find({ from: peer.fingerprint, to: that.cert.fingerprint }, function (err, fwds) {
-              // If fwd does not exist, it needs to be resent
-              next(err, fwds.length == 0 ? true : false);
-            });
-            return;
-          }
-          next(null, false);
-        },
-      ], function (err, needForward) {
-        if(err) logger.error(err);
-        if(needForward){
-          PeeringService.initForwards(function (err) {
-            if(err){
-              logger.error('Encountered following error during FORWARD renegociation: %s', err);
+      http.answer(res, 400, err, function () {
+        logger.debug('Incoming status: from: %s, status: %s', peer.fingerprint, status.status);
+        // Answers
+        process.nextTick(function () {
+          res.end(JSON.stringify(status.json()));
+        });
+        // Send forward request if not done yet
+        async.waterfall([
+          function (next){
+            if(status.isNew()){
+              // Any previous forward must be removed and resent by each other
+              Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
+                next(err, true);
+              });
+              return;
             }
-          }, peer ? [ peer.fingerprint ] : null);
-        }
-      });
+            if(status.isUp()){
+              Forward.find({ from: peer.fingerprint, to: that.cert.fingerprint }, function (err, fwds) {
+                // If fwd does not exist, it needs to be resent
+                next(err, fwds.length == 0 ? true : false);
+              });
+              return;
+            }
+            next(null, false);
+          },
+        ], function (err, needForward) {
+          if(err) logger.error(err);
+          if(needForward){
+            PeeringService.initForwards(function (err) {
+              if(err){
+                logger.error('Encountered following error during FORWARD renegociation: %s', err);
+              }
+            }, peer ? [ peer.fingerprint ] : null);
+          }
+        });
+      })
     });
   }
   

@@ -597,8 +597,8 @@ module.exports.get = function (pgp, currency, conf) {
           othersFPRS.push(peer.fingerprint);
         });
         if (toFingerprints) {
-          forwardsFPRS = forwardsFPRS.intersection(toFingerprints);
-          othersFPRS = othersFPRS.intersection(toFingerprints);
+          forwardsFPRS = _(forwardsFPRS).intersection(toFingerprints);
+          othersFPRS = _(othersFPRS).intersection(toFingerprints);
         }
         next(null, forwardsFPRS, othersFPRS);
       }

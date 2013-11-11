@@ -14,6 +14,7 @@ var PublicKeySchema = new Schema({
   email: String,
   comment: String,
   hash: String,
+  propagated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }

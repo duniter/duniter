@@ -644,6 +644,9 @@ module.exports.get = function (pgp, currency, conf) {
     var that = this;
     async.waterfall([
       function (next){
+        // Propagation is done ONLY to nodes which
+        // negociated forwarding with this node.
+        // Reason: avoid n*n propagation messages
         Forward.find({ to: that.cert.fingerprint }, next);
       },
       function (fwds, next){
@@ -708,7 +711,13 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/pks/add', {
       "keytext": pubkey.getRaw(),
       "keysign": pubkey.signature
-    }, done);
+    }, function (err) {
+      // Stop future propagation
+      pubkey.propagated = true;
+      pubkey.save(function (err) {
+        done(err);
+      });
+    });
   }
 
   function sendVote(peer, vote, done) {
@@ -716,7 +725,13 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/hdc/amendments/votes', {
       "amendment": vote.getRaw(),
       "signature": vote.signature
-    }, done);
+    }, function (err) {
+      // Stop future propagation
+      vote.propagated = true;
+      vote.save(function (err) {
+        done(err);
+      });
+    });
   }
 
   function sendTransaction(peer, transaction, done) {
@@ -724,7 +739,13 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/hdc/transactions/process', {
       "transaction": transaction.getRaw(),
       "signature": transaction.signature
-    }, done);
+    }, function (err) {
+      // Stop future propagation
+      transaction.propagated = true;
+      transaction.save(function (err) {
+        done(err);
+      });
+    });
   }
 
   function sendTHT(peer, entry, done) {
@@ -732,7 +753,13 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/ucg/tht', {
       "entry": entry.getRaw(),
       "signature": entry.signature
-    }, done);
+    }, function (err) {
+      // Stop future propagation
+      entry.propagated = true;
+      entry.save(function (err) {
+        done(err);
+      });
+    });
   }
 
   function sendPeering(toPeer, peer, done) {
@@ -740,7 +767,13 @@ module.exports.get = function (pgp, currency, conf) {
     post(toPeer, '/ucg/peering/peers', {
       "entry": peer.getRaw(),
       "signature": peer.signature
-    }, done);
+    }, function (err) {
+      // Stop future propagation
+      peer.propagated = true;
+      peer.save(function (err) {
+        done(err);
+      });
+    });
   }
 
   function sendForward(peer, rawForward, signature, done) {

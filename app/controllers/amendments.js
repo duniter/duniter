@@ -168,7 +168,9 @@ module.exports = function (pgp, currency, conf) {
             signature: recordedVote.signature
           }));
           // And vote is forwarded
-          PeeringService.propagateVote(am, recordedVote);
+          if (!recordedVote.propagated) {
+            PeeringService.propagateVote(am, recordedVote);
+          }
         });
       });
     }

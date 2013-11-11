@@ -15,6 +15,7 @@ var VoteSchema = new Schema({
   _amendment: Schema.Types.ObjectId,
   hash: String,
   amendmentHash: String,
+  propagated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }

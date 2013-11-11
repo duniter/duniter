@@ -13,6 +13,8 @@ var Peer        = mongoose.model('Peer');
 var Key         = mongoose.model('Key');
 var Forward     = mongoose.model('Forward');
 var Status      = require('../models/statusMessage');
+var log4js      = require('log4js');
+var logger      = log4js.getLogger();
 
 module.exports.get = function (pgp, currency, conf) {
   
@@ -115,7 +117,7 @@ module.exports.get = function (pgp, currency, conf) {
         var previousHash = null;
         if(peers.length > 0){
           // Already existing peer
-          if(peers[0].sigDate >= peerEntity.sigDate){
+          if(peers[0].sigDate > peerEntity.sigDate){
             next('Cannot record a previous peering');
             return;
           }
@@ -700,7 +702,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendPubkey(peer, pubkey, done) {
-    console.log('POST pubkey to %s', peer.fingerprint);
+    logger.info('POST pubkey to %s', peer.fingerprint);
     post(peer, '/pks/add', {
       "keytext": pubkey.getRaw(),
       "keysign": pubkey.signature
@@ -708,7 +710,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendVote(peer, vote, done) {
-    console.log('POST vote to %s', peer.fingerprint);
+    logger.info('POST vote to %s', peer.fingerprint);
     post(peer, '/hdc/amendments/votes', {
       "amendment": vote.getRaw(),
       "signature": vote.signature
@@ -716,7 +718,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendTransaction(peer, transaction, done) {
-    console.log('POST transaction to %s', peer.fingerprint);
+    logger.info('POST transaction to %s', peer.fingerprint);
     post(peer, '/hdc/transactions/process', {
       "transaction": transaction.getRaw(),
       "signature": transaction.signature
@@ -724,7 +726,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendTHT(peer, entry, done) {
-    console.log('POST THT entry %s to %s', entry.fingerprint, peer.fingerprint);
+    logger.info('POST THT entry %s to %s', entry.fingerprint, peer.fingerprint);
     post(peer, '/ucg/tht', {
       "entry": entry.getRaw(),
       "signature": entry.signature
@@ -732,7 +734,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendPeering(toPeer, peer, done) {
-    console.log('POST peering to %s', toPeer.fingerprint);
+    logger.info('POST peering to %s', toPeer.fingerprint);
     post(toPeer, '/ucg/peering/peers', {
       "entry": peer.getRaw(),
       "signature": peer.signature
@@ -740,7 +742,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendForward(peer, rawForward, signature, done) {
-    console.log('POST forward to %s', peer.fingerprint);
+    logger.info('POST forward to %s', peer.fingerprint);
     post(peer, '/ucg/peering/forward', {
       "forward": rawForward,
       "signature": signature
@@ -748,7 +750,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function sendStatus(peer, status, done) {
-    console.log('POST status %s to %s', status.status, peer.fingerprint);
+    logger.info('POST status %s to %s', status.status, peer.fingerprint);
     post(peer, '/ucg/peering/status', {
       "status": status.getRaw(),
       "signature": status.signature
@@ -766,7 +768,7 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function get(peer, url, done) {
-    // console.log('GET http://' + peer.getURL() + url);
+    logger.debug('GET http://' + peer.getURL() + url);
     request
     .get('http://' + peer.getURL() + url)
     .end(done);

@@ -9,6 +9,9 @@ var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
 var THTEntry  = mongoose.model('THTEntry');
 var Key       = mongoose.model('Key');
+var log4js    = require('log4js');
+var logger    = log4js.getLogger();
+var http      = require('../service/HTTPService')();
 
 module.exports = function (pgp, currency, conf) {
 
@@ -173,12 +176,11 @@ module.exports = function (pgp, currency, conf) {
           }
         ], callback);
       }
-    ], function (err, recordedPR) {
-      if(err){
-        console.log(err);
-        res.send(errCode, err);
-      }
-      else res.end(JSON.stringify(recordedPR.json(), null, "  "));
+    ], function (err, recordedFWD) {
+      http.answer(res, errCode, err, function () {
+        logger.debug('Incoming forward: from: %s, type: %s', recordedFWD.from, recordedFWD.forward);
+        res.end(JSON.stringify(recordedFWD.json(), null, "  "));
+      });
     });
   }
 
@@ -237,13 +239,11 @@ module.exports = function (pgp, currency, conf) {
       }
 
     ], function (err, recordedPR) {
-      if(err){
-        res.send(400, err);
-      }
-      else{
+      http.answer(res, 400, err, function () {
+        logger.debug('Incoming peering: from: %s, ip: %s, port: %s', recordedPR.fingerprint, recordedPR.ipv4 || recordedPR.ipv6, recordedPR.port);
         res.end(JSON.stringify(recordedPR.json(), null, "  "));
         PeeringService.propagatePeering(recordedPR);
-      }
+      });
     });
   }
 
@@ -315,10 +315,10 @@ module.exports = function (pgp, currency, conf) {
           propagates: function(callback){
             PeeringService.propagateTHT(req, function (err, propagated) {
               if(err && !propagated){
-                console.log('Not propagated: %s', err);
+                logger.error('Not propagated: %s', err);
               }
               else if(!propagated){
-                console.log('Unknown error during propagation');
+                logger.error('Unknown error during propagation');
               }
               callback();
             });
@@ -328,7 +328,7 @@ module.exports = function (pgp, currency, conf) {
           }
         },
         function(err) {
-          if(err) console.error('Error during THT POST: ' + err);
+          if(err) logger.error('Error during THT POST: ' + err);
         });
       }
     });
@@ -441,6 +441,7 @@ module.exports = function (pgp, currency, conf) {
         PeeringService.submitStatus(signedStatus, callback);
       }
     ], function (err, status, peer) {
+      logger.debug('Incoming status: from: %s, status: %s', peer.fingerprint, status.status);
       if(err){
         res.send(400, err);
         return;
@@ -469,10 +470,11 @@ module.exports = function (pgp, currency, conf) {
           next(null, false);
         },
       ], function (err, needForward) {
+        if(err) logger.error(err);
         if(needForward){
           PeeringService.initForwards(function (err) {
             if(err){
-              console.error('Encountered following error during FORWARD renegociation: %s', err);
+              logger.error('Encountered following error during FORWARD renegociation: %s', err);
             }
           }, peer ? [ peer.fingerprint ] : null);
         }

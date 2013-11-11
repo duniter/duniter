@@ -221,7 +221,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
         else{
           PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
             if(foundKeys[0].hash == pubkey.hash){
-              next('Key has no changes and won\'t be updated');
+              next(null);
               return;
             }
             if(foundKeys[0].sigDate >= pubkey.sigDate){

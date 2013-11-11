@@ -6,8 +6,11 @@ PublicKey = mongoose.model('PublicKey'),
 Merkle    = mongoose.model('Merkle'),
 _         = require('underscore'),
 stream    = require('stream');
+var log4js    = require('log4js');
+var logger    = log4js.getLogger();
 var MerkleService     = require('../service/MerkleService');
 var ParametersService = require('../service/ParametersService');
+var http = require('../service/HTTPService')();
 
 module.exports = function (pgp, currency, conf) {
 
@@ -77,15 +80,11 @@ module.exports = function (pgp, currency, conf) {
         PublicKeyService.submitPubkey(aaPubkey, aaSignature, next);
       }
     ], function (err, pubkey) {
-      if(err){
-        res.send(400, err);
-        console.error(err);
-        return;
-      }
-      res.send(200, JSON.stringify(pubkey.json()));
-      if(!err){
+      http.answer(res, 400, err, function () {
+        logger.debug('Incoming pubkey: from: %s', pubkey.fingerprint);
+        res.send(200, JSON.stringify(pubkey.json()));
         PeeringService.propagatePubkey(pubkey);
-      }
+      });
     });
   };
 

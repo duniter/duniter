@@ -186,20 +186,20 @@ module.exports.get = function (pgp, currency, conf) {
   * initForwards : look THT entries to deduce the forward rules of the node.
   * Two cases:
   *
-  *   - restricted case: send forwards containing the keys managed by the node
-  *   - all case: send forwards asking to be forwarded ALL transactions
+  *   - keys: send forwards containing the keys managed by the node
+  *   - all : send forwards asking to be forwarded ALL transactions
   **/
-  this.initForwards = function (done, forKeys) {
+  this.initForwards = function (done, filterKeys) {
     var that = this;
     if(conf.kmanagement == 'KEYS'){
-      that.initForKeys(done, forKeys);
+      that.initForKeys(done, filterKeys);
     }
     else{
-      that.initForAll(done, forKeys);
+      that.initForAll(done, filterKeys);
     }
   }
 
-  this.initForAll = function (done, forKeys) {
+  this.initForAll = function (done, filterKeys) {
     /**
     * Forward: ALL
     * Send simple ALL forward to every known peer
@@ -207,12 +207,14 @@ module.exports.get = function (pgp, currency, conf) {
     var that = this;
     async.waterfall([
       function (next){
-        if(forKeys)
-          Peer.find({ fingerprint: { $in: forKeys }}, next);
+        // Look for registered peers
+        if(filterKeys)
+          Peer.find({ fingerprint: { $in: filterKeys }}, next);
         else
           Peer.find({}, next);
       },
       function (peers, next) {
+        // For each peer
         async.forEachSeries(peers, function(peer, callback){
           var forward;
           async.waterfall([
@@ -224,13 +226,16 @@ module.exports.get = function (pgp, currency, conf) {
               next();
             },
             function (next) {
+              // Check wether it has already sent FWD rule
               Forward.getTheOne(this.cert.fingerprint, peer.fingerprint, next);
             },
             function (fwd, next) {
-              if(fwd.forward == 'ALL' && !forKeys){
+              // Already sent: skip FWD regnegociation for this peer
+              if(fwd.forward == 'ALL' && !filterKeys){
                 next('Peer ' + peer.fingerprint + ' : forward already sent');
                 return;
               }
+              // Not sent yet: FWD regnegociation
               if(fwd._id){
                 fwd.remove(function (err) {
                   next(err);
@@ -265,7 +270,7 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
-  this.initForKeys = function (done, forKeys) {
+  this.initForKeys = function (done, filterKeys) {
     /**
     * Forward: KEYS
     * Send forwards only to concerned hosts
@@ -274,8 +279,8 @@ module.exports.get = function (pgp, currency, conf) {
     var keysByPeer = {};
     async.waterfall([
       function (next){
-        if(forKeys)
-          Key.find({ managed: true, fingerprint: { $in: forKeys } }, next);
+        if(filterKeys)
+          Key.find({ managed: true, fingerprint: { $in: filterKeys } }, next);
         else
           Key.find({ managed: true }, next);
       },
@@ -318,7 +323,7 @@ module.exports.get = function (pgp, currency, conf) {
                 Forward.getTheOne(this.cert.fingerprint, peerFPR, next);
               },
               function (fwd, next) {
-                if(fwd.forward == 'KEYS' && !forKeys && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
+                if(fwd.forward == 'KEYS' && !filterKeys && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
                   next('Peer ' + peerFPR + ' : forward already sent');
                   return;
                 }

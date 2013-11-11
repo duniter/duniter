@@ -227,6 +227,7 @@ module.exports = function (pgp, currency, conf) {
   }
 
   this.peersPost = function (req, res) {
+    var that = this;
     async.waterfall([
 
       // Parameters
@@ -243,7 +244,24 @@ module.exports = function (pgp, currency, conf) {
         logger.debug('Incoming peering: from: %s, ip: %s, port: %s', recordedPR.fingerprint, recordedPR.ipv4 || recordedPR.ipv6, recordedPR.port);
         res.end(JSON.stringify(recordedPR.json(), null, "  "));
         if (!recordedPR.propagated) {
+          // Propagates peering infos
           PeeringService.propagatePeering(recordedPR);
+          async.waterfall([
+            function (next){
+              // Send UP/NEW signal for receiving its FORWARD rules (this also send self peering infos)
+              PeeringService.sendUpSignal(next, recordedPR.fingerprint);
+            },
+            function (next){
+              // Wait 3 seconds before sending our own FORWARD rule,
+              // as remote node may ask us in response to UP/NEW signal
+              setTimeout(function () {
+                // Send self FWD rules (does nothing if already sent)
+                PeeringService.initForwards(next, recordedPR.fingerprint);
+              }, 3000);
+            }
+          ], function (err) {
+            if (err) logger.error(err);
+          });
         }
       });
     });
@@ -325,7 +343,8 @@ module.exports = function (pgp, currency, conf) {
               callback();
             });
           },
-          callback: function (callback) {
+          initForwards: function (callback) {
+            // Eventually renegociate FWD rules according to new THT entry
             PeeringService.initForwards(callback);
           }
         },

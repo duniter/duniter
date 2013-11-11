@@ -4,6 +4,7 @@ var mongoose  = require('mongoose');
 var _         = require('underscore');
 var merkle    = require('merkle');
 var PublicKey = mongoose.model('PublicKey');
+var logger    = require('../lib/logger')('http');
 
 module.exports = function (currency) {
 

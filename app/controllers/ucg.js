@@ -449,10 +449,14 @@ module.exports = function (pgp, currency, conf) {
       process.nextTick(function () {
         res.end(JSON.stringify(status.json()));
       });
+      // Send forward request if not done yet
       async.waterfall([
         function (next){
           if(status.isNew()){
-            next(null, true);
+            // Any previous forward must be removed and resent by each other
+            Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
+              next(err, true);
+            });
             return;
           }
           if(status.isUp()){

@@ -188,157 +188,138 @@ module.exports.get = function (pgp, currency, conf) {
   *   - all case: send forwards asking to be forwarded ALL transactions
   **/
   this.initForwards = function (done, forKeys) {
-    var restricted = conf.kmanagement == 'KEYS';
     var that = this;
-    if(restricted){
-
-      /**
-      * Forward: KEYS
-      * Send forwards only to concerned hosts
-      */
-      var keysByPeer = {};
-      async.waterfall([
-        function (next){
-          if(forKeys)
-            Key.find({ managed: true, fingerprint: { $in: forKeys } }, next);
-          else
-            Key.find({ managed: true }, next);
-        },
-        function (keys, next) {
-          async.forEachSeries(keys, function (k, callback) {
-            THTEntry.getTheOne(k.fingerprint, function (err, entry) {
-              if(err){
-                callback();
-                return;
-              }
-              entry.hosters.forEach(function (peer) {
-                keysByPeer[peer] = keysByPeer[peer] || [];
-                keysByPeer[peer].push(k.fingerprint);
-              });
-              callback();
-            });
-          }, function (err) {
-            async.forEach(_(keysByPeer).keys(), function(peerFPR, callback){
-              var forward, peer;
-              async.waterfall([
-                function (next) {
-                  if(peerFPR == that.cert.fingerprint){
-                    next('Peer ' + peerFPR + ' : self');
-                    return;
-                  }
-                  next();
-                },
-                function (next){
-                  Peer.find({ fingerprint: peerFPR }, next);
-                },
-                function (peers, next) {
-                  if(peers.length < 1){
-                    next('Peer ' + peerFPR + ' : unknow yet');
-                    return;
-                  }
-                  peer = peers[0];
-                  next();
-                },
-                function (next) {
-                  Forward.getTheOne(this.cert.fingerprint, peerFPR, next);
-                },
-                function (fwd, next) {
-                  if(fwd.forward == 'KEYS' && !forKeys && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
-                    next('Peer ' + peerFPR + ' : forward already sent');
-                    return;
-                  }
-                  if(fwd._id){
-                    fwd.remove(next);
-                    return;
-                  }
-                  next();
-                },
-                function (next) {
-                  forward = new Forward({
-                    version: 1,
-                    currency: currency,
-                    from: that.cert.fingerprint,
-                    to: peer.fingerprint,
-                    forward: 'KEYS',
-                    keys: keysByPeer[peerFPR]
-                  });
-                  jpgp().sign(forward.getRaw(), that.privateKey, function (err, signature) {
-                    next(err, peer, forward.getRaw(), signature);
-                  });
-                },
-                function (peer, rawForward, signature, next) {
-                  sendForward(peer, rawForward, signature, function (err, res, body) {
-                    if(!err && res && res.statusCode && res.statusCode == 404){
-                      async.waterfall([
-                        function (next){
-                          Peer.find({ fingerprint: that.cert.fingerprint }, next);
-                        },
-                        function (peers, next) {
-                          if(peers.length == 0){
-                            next('Cannot send self-peering request: does not exist');
-                            return;
-                          }
-                          sendPeering(peer, peers[0], next);
-                        },
-                        function (res, body, next) {
-                          sendForward(peer, rawForward, signature, function (err, res, body) {
-                            next(err);
-                          });
-                        }
-                      ], next);
-                    }
-                    else if(!res) next('No HTTP result');
-                    else if(!res.statusCode) next('No HTTP result code');
-                    else next(err);
-                  });
-                },
-                function (next) {
-                  forward.save(next);
-                },
-              ], function (err) {
-                callback();
-              });
-            }, next);
-          });
-        }
-      ], done);
+    if(conf.kmanagement == 'KEYS'){
+      that.initForKeys(done, forKeys);
     }
     else{
-      
-      /**
-      * Forward: ALL
-      * Send simple ALL forward to every known peer
-      */
-      async.waterfall([
-        function (next){
-          if(forKeys)
-            Peer.find({ fingerprint: { $in: forKeys }}, next);
-          else
-            Peer.find({}, next);
-        },
-        function (peers, next) {
-          async.forEachSeries(peers, function(peer, callback){
-            var forward;
+      that.initForAll(done, forKeys);
+    }
+  }
+
+  this.initForAll = function (done, forKeys) {
+    /**
+    * Forward: ALL
+    * Send simple ALL forward to every known peer
+    */
+    async.waterfall([
+      function (next){
+        if(forKeys)
+          Peer.find({ fingerprint: { $in: forKeys }}, next);
+        else
+          Peer.find({}, next);
+      },
+      function (peers, next) {
+        async.forEachSeries(peers, function(peer, callback){
+          var forward;
+          async.waterfall([
+            function (next) {
+              if(peer.fingerprint == that.cert.fingerprint){
+                next('Peer ' + peer.fingerprint + ' : self');
+                return;
+              }
+              next();
+            },
+            function (next) {
+              Forward.getTheOne(this.cert.fingerprint, peer.fingerprint, next);
+            },
+            function (fwd, next) {
+              if(fwd.forward == 'ALL' && !forKeys){
+                next('Peer ' + peer.fingerprint + ' : forward already sent');
+                return;
+              }
+              if(fwd._id){
+                fwd.remove(function (err) {
+                  next(err);
+                });
+                return;
+              }
+              next();
+            },
+            function (next) {
+              forward = new Forward({
+                version: 1,
+                currency: currency,
+                from: that.cert.fingerprint,
+                to: peer.fingerprint,
+                forward: 'ALL'
+              });
+              jpgp().sign(forward.getRaw(), that.privateKey, function (err, signature) {
+                next(err, peer, forward.getRaw(), signature);
+              });
+            },
+            function (peer, rawForward, signature, next) {
+              that.initKeysSendForward(peer, rawForward, signature, next);
+            },
+            function (next) {
+              forward.save(next);
+            }
+          ], function (err) {
+            callback();
+          });
+        }, next);
+      }
+    ], done);
+  }
+
+  this.initForKeys = function (done, forKeys) {
+    /**
+    * Forward: KEYS
+    * Send forwards only to concerned hosts
+    */
+    var keysByPeer = {};
+    async.waterfall([
+      function (next){
+        if(forKeys)
+          Key.find({ managed: true, fingerprint: { $in: forKeys } }, next);
+        else
+          Key.find({ managed: true }, next);
+      },
+      function (keys, next) {
+        async.forEachSeries(keys, function (k, callback) {
+          THTEntry.getTheOne(k.fingerprint, function (err, entry) {
+            if(err){
+              callback();
+              return;
+            }
+            entry.hosters.forEach(function (peer) {
+              keysByPeer[peer] = keysByPeer[peer] || [];
+              keysByPeer[peer].push(k.fingerprint);
+            });
+            callback();
+          });
+        }, function (err) {
+          async.forEach(_(keysByPeer).keys(), function(peerFPR, callback){
+            var forward, peer;
             async.waterfall([
               function (next) {
-                if(peer.fingerprint == that.cert.fingerprint){
-                  next('Peer ' + peer.fingerprint + ' : self');
+                if(peerFPR == that.cert.fingerprint){
+                  next('Peer ' + peerFPR + ' : self');
                   return;
                 }
                 next();
               },
+              function (next){
+                Peer.find({ fingerprint: peerFPR }, next);
+              },
+              function (peers, next) {
+                if(peers.length < 1){
+                  next('Peer ' + peerFPR + ' : unknow yet');
+                  return;
+                }
+                peer = peers[0];
+                next();
+              },
               function (next) {
-                Forward.getTheOne(this.cert.fingerprint, peer.fingerprint, next);
+                Forward.getTheOne(this.cert.fingerprint, peerFPR, next);
               },
               function (fwd, next) {
-                if(fwd.forward == 'ALL' && !forKeys){
-                  next('Peer ' + peer.fingerprint + ' : forward already sent');
+                if(fwd.forward == 'KEYS' && !forKeys && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
+                  next('Peer ' + peerFPR + ' : forward already sent');
                   return;
                 }
                 if(fwd._id){
-                  fwd.remove(function (err) {
-                    next(err);
-                  });
+                  fwd.remove(next);
                   return;
                 }
                 next();
@@ -349,48 +330,54 @@ module.exports.get = function (pgp, currency, conf) {
                   currency: currency,
                   from: that.cert.fingerprint,
                   to: peer.fingerprint,
-                  forward: 'ALL'
+                  forward: 'KEYS',
+                  keys: keysByPeer[peerFPR]
                 });
                 jpgp().sign(forward.getRaw(), that.privateKey, function (err, signature) {
                   next(err, peer, forward.getRaw(), signature);
                 });
               },
               function (peer, rawForward, signature, next) {
-                sendForward(peer, rawForward, signature, function (err, res, body) {
-                  if(!err && res && res.statusCode && res.statusCode == 404){
-                    async.waterfall([
-                      function (next){
-                        Peer.find({ fingerprint: that.cert.fingerprint }, next);
-                      },
-                      function (peers, next) {
-                        if(peers.length == 0){
-                          next('Cannot send self-peering request: does not exist');
-                          return;
-                        }
-                        sendPeering(peer, peers[0], next);
-                      },
-                      function (res, body, next) {
-                        sendForward(peer, rawForward, signature, function (err, res, body) {
-                          next(err);
-                        });
-                      }
-                    ], next);
-                  }
-                  else if(!res) next('No HTTP result');
-                  else if(!res.statusCode) next('No HTTP result code');
-                  else next(err);
-                });
+                that.initKeysSendForward(peer, rawForward, signature, next);
               },
               function (next) {
                 forward.save(next);
-              }
+              },
             ], function (err) {
               callback();
             });
           }, next);
-        }
-      ], done);
-    }
+        });
+      }
+    ], done);
+  }
+
+  this.initKeysSendForward = function (peer, rawForward, signature, done) {
+    var that = this;
+    sendForward(peer, rawForward, signature, function (err, res, body) {
+      if(!err && res && res.statusCode && res.statusCode == 404){
+        async.waterfall([
+          function (next){
+            Peer.find({ fingerprint: that.cert.fingerprint }, next);
+          },
+          function (peers, next) {
+            if(peers.length == 0){
+              next('Cannot send self-peering request: does not exist');
+              return;
+            }
+            sendPeering(peer, peers[0], next);
+          },
+          function (res, body, next) {
+            sendForward(peer, rawForward, signature, function (err, res, body) {
+              next(err);
+            });
+          }
+        ], done);
+      }
+      else if(!res) done('No HTTP result');
+      else if(!res.statusCode) done('No HTTP result code');
+      else done(err);
+    });
   }
 
   this.propagateTHT = function (req, done) {
@@ -541,7 +528,41 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
-  this.sendUpSignal = function (done) {
+  this.sendUpSignal = function (done, toFingerprints) {
+    var that = this;
+    async.waterfall([
+      function (next){
+        that.getKnownPeersGroupedByForward(toFingerprints, next);
+      },
+      function (whoSentForwardPeers, whoDoesNot, next) {
+        var sendUpFPRS = _(whoSentForwardPeers).without(that.cert.fingerprint);
+        var sendNewFPRS = _(whoDoesNot).without(that.cert.fingerprint);
+        async.parallel({
+          forwardPeers: function(callback){
+            that.sendStatusTo('UP', sendUpFPRS, callback);
+          },
+          otherPeers: function(callback){
+            async.waterfall([
+              function (next){
+                PublicKey.getTheOne(that.cert.fingerprint, next);
+              },
+              function (pubkey, next){
+                that.sendStatusTo('NEW', sendNewFPRS, pubkey, next);
+              },
+            ], callback);
+          }
+        }, function(err, results) {
+          done(err);
+        });
+      }
+    ], done);
+  }
+
+  this.getKnownPeersGroupedByForward = function (toFingerprints, done) {
+    if (arguments.length == 1) {
+      done = toFingerprints;
+      toFingerprints = undefined;
+    }
     var that = this;
     var forwardsFPRS = [];
     var othersFPRS = [];
@@ -566,32 +587,13 @@ module.exports.get = function (pgp, currency, conf) {
         peers.forEach(function(peer){
           othersFPRS.push(peer.fingerprint);
         });
-        next();
-      },
-    ], function (err) {
-      if(err){
-        done(err);
-        return;
-      }
-      async.parallel({
-        forwardPeers: function(callback){
-          that.sendStatusTo('UP', _(forwardsFPRS).without(that.cert.fingerprint), callback);
-        },
-        otherPeers: function(callback){
-          async.waterfall([
-            function (next){
-              PublicKey.getTheOne(that.cert.fingerprint, next);
-            },
-            function (pubkey, next){
-              that.sendStatusTo('NEW', _(othersFPRS).without(that.cert.fingerprint), pubkey, next);
-            },
-          ], callback);
+        if (toFingerprints) {
+          forwardsFPRS = forwardsFPRS.intersection(toFingerprints);
+          othersFPRS = othersFPRS.intersection(toFingerprints);
         }
-      },
-      function(err, results) {
-        done(err);
-      });
-    });
+        next(null, forwardsFPRS, othersFPRS);
+      }
+    ], done);
   }
 
   this.sendStatusTo = function (statusStr, fingerprints, pubkey, done) {

@@ -11,6 +11,7 @@ var Transaction = mongoose.model('Transaction');
 var THTEntry    = mongoose.model('THTEntry');
 var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
+var logger      = require('./logger')('sync');
 
 module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
 
@@ -25,7 +26,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
   this.remoteFingerprint = null;
 
   this.sync = function (done) {
-    console.log('Connecting remote host...');
+    logger.info('Connecting remote host...');
     vucoin(host, port, authenticated, function (err, node) {
       if(err){
         done('Cannot sync: ' + err);
@@ -39,7 +40,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
 
       async.waterfall([
         function (next){
-          console.log('Sync started.');
+          logger.info('Sync started.');
           next();
         },
 
@@ -102,7 +103,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                 });
                 var hashes = [];
                 async.forEachSeries(indexesToAdd, function(index, callback){
-                  console.log('Importing public key %s', json.leaves[index].hash);
+                  logger.info('Importing public key %s', json.leaves[index].hash);
                   var keytext = json.leaves[index].value.pubkey;
                   var keysign = json.leaves[index].value.signature;
                   async.waterfall([
@@ -233,7 +234,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                   });
                   async.waterfall([
                     function (cb){
-                      console.log('THT entry %s', jsonEntry.fingerprint);
+                      logger.info('THT entry %s', jsonEntry.fingerprint);
                       THTService.submit(entry.getRaw() + sign, cb);
                     }
                   ], callback);
@@ -277,7 +278,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                       ParametersService.getPeeringEntryFromRaw(entry.getRaw(), sign, cb);
                     },
                     function (rawSigned, keyID, cb){
-                      console.log('Peer 0x' + keyID);
+                      logger.info('Peer 0x' + keyID);
                       PeeringService.submit(rawSigned, keyID, function (err) {
                         cb();
                       });
@@ -292,7 +293,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
           });
         },
       ], function (err, result) {
-        console.log('Sync finished.');
+        logger.info('Sync finished.');
         done(err);
       });
     })
@@ -305,7 +306,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
       onKeyDone();
       return;
     }
-    console.log('Transactions of %s...', keyFingerprint);
+    logger.info('Transactions of %s...', keyFingerprint);
     async.waterfall([
 
       //==============
@@ -406,7 +407,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                     },
                     function (pubkey, signedTx, txs, next){
                       if(txs.length == 0){
-                        console.log(transaction.sender, transaction.number);
+                        logger.info(transaction.sender, transaction.number);
                         TransactionService.process(pubkey, signedTx, next);
                         return;
                       }
@@ -423,8 +424,8 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
   }
 
   function applyVotes(amendments, amNumber, number, json, node, cb) {
-    // console.log('Applying votes for amendment #%s', amNumber);
-    // console.log("Signatures: %s", _(json.leaves).size());
+    // logger.info('Applying votes for amendment #%s', amNumber);
+    // logger.info("Signatures: %s", _(json.leaves).size());
     async.forEachSeries(_(json.leaves).keys(), function(key, callback){
       var vote = json.leaves[key];
       VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {

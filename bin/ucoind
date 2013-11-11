@@ -8,6 +8,7 @@ var _        = require('underscore');
 var program  = require('commander');
 var mongoose = require('mongoose');
 var log4js   = require('log4js');
+var logger   = require('../app/lib/logger')('ucoind');
 
 // log4js configuration
 log4js.replaceConsole();
@@ -270,10 +271,10 @@ program
         },
         function (next){
           // Submit its own public key to it
+          logger.info('Submitting its own key for storage...');
           mongoose.model('Peer').getTheOne(server.fingerprint(), next);
         },
         function (peer, next) {
-          // 
           mongoose.model('PublicKey').getForPeer(peer, next);
         },
         function (pubkey, next) {

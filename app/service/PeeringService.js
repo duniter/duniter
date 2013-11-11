@@ -204,6 +204,7 @@ module.exports.get = function (pgp, currency, conf) {
     * Forward: ALL
     * Send simple ALL forward to every known peer
     */
+    var that = this;
     async.waterfall([
       function (next){
         if(forKeys)
@@ -269,6 +270,7 @@ module.exports.get = function (pgp, currency, conf) {
     * Forward: KEYS
     * Send forwards only to concerned hosts
     */
+    var that = this;
     var keysByPeer = {};
     async.waterfall([
       function (next){

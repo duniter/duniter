@@ -20,6 +20,7 @@ module.exports = function (currency) {
         pubkey.construct(next);
       },
       function (next) {
+        logger.debug('Incoming pubkey: for: %s', pubkey.fingerprint);
         PublicKey.persist(pubkey, next);
       }
     ], function (err) {

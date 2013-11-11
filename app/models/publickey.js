@@ -5,6 +5,8 @@ var sha1     = require('sha1');
 var _        = require('underscore');
 var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
+var log4js   = require('log4js');
+var logger   = log4js.getLogger('pubkey');
 
 var PublicKeySchema = new Schema({
   raw: String,
@@ -191,8 +193,13 @@ PublicKeySchema.statics.persistFromRaw = function (rawPubkey, rawSignature, done
   ], done);
 }
 
+// Persistance lock to avoid duplicates
+var persistQueue = async.queue(function (fingerprint, persistTask) {
+  logger.debug('Persisting pubkey %s', fingerprint);
+  persistTask();
+}, 1);
+
 PublicKeySchema.statics.persist = function (pubkey, done) {
-  var now = new Date();
   async.waterfall([
     function (next){
       try{
@@ -202,46 +209,35 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
       next();
     },
     function (next) {
-      PublicKey.count({fingerprint: pubkey.fingerprint}, function (err, count) {
-        if(count === 0){
-          PublicKey.create([{
-            raw: pubkey.raw,
-            fingerprint: pubkey.fingerprint,
-            signature: pubkey.signature,
-            email: pubkey.email,
-            name: pubkey.name,
-            comment: pubkey.comment,
-            sigDate: pubkey.sigDate,
-            hash: pubkey.hash,
-            created: now,
-            updated: now
-          }], function (err, pubkey) {
+      persistQueue.push(pubkey.fingerprint, function(){
+        var now = new Date();
+        PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
+          if (foundKeys.length == 0) {
+            foundKeys.push(new PublicKey({
+              fingerprint: pubkey.fingerprint,
+              created: now
+            }));
+          }
+          if(foundKeys[0].hash == pubkey.hash){
+            next(null);
+            return;
+          }
+          if(foundKeys[0].sigDate >= pubkey.sigDate){
+            next('Key update is possible only for more recent signature');
+            return;
+          }
+          foundKeys[0].raw = pubkey.raw;
+          foundKeys[0].signature = pubkey.signature;
+          foundKeys[0].email = pubkey.email;
+          foundKeys[0].name = pubkey.name;
+          foundKeys[0].comment = pubkey.comment;
+          foundKeys[0].sigDate = pubkey.sigDate;
+          foundKeys[0].hash = pubkey.hash;
+          foundKeys[0].updated = now;
+          foundKeys[0].save(function (err) {
             next(err);
           });
-        }
-        else{
-          PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
-            if(foundKeys[0].hash == pubkey.hash){
-              next(null);
-              return;
-            }
-            if(foundKeys[0].sigDate >= pubkey.sigDate){
-              next('Key update is possible only for more recent signature');
-              return;
-            }
-            foundKeys[0].raw = pubkey.raw;
-            foundKeys[0].signature = pubkey.signature;
-            foundKeys[0].email = pubkey.email;
-            foundKeys[0].name = pubkey.name;
-            foundKeys[0].comment = pubkey.comment;
-            foundKeys[0].sigDate = pubkey.sigDate;
-            foundKeys[0].hash = pubkey.hash;
-            foundKeys[0].updated = now;
-            foundKeys[0].save(function (err) {
-              next(err);
-            });
-          });
-        }
+        });
       });
     },
     function (next) {

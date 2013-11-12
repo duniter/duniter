@@ -23,7 +23,7 @@ THTEntrySchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature", "sigDate"].forEach(function (key) {
       to[key] = obj[key];
     });
   },

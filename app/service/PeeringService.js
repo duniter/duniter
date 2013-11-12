@@ -389,28 +389,10 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  this.propagateTHT = function (req, done) {
+  this.propagateTHT = function (entry, done) {
     var that = this;
-    var entry = new THTEntry();
     async.waterfall([
       function (next) {
-        ParametersService.getTHTEntry(req, next);
-      },
-      function (signedEntry, next){
-        entry.parse(signedEntry, next);
-      },
-      function (entry, next){
-        entry.verify(currency, next);
-      },
-      function(verified, next){
-        THTEntry.getTheOne(entry.fingerprint, next);
-      },
-      function (dbEntry, next) {
-        if(dbEntry.hash != entry.hash){
-          next('Cannot propagate THT entry: DB is not sync with posted entry (' + entry.fingerprint + ')');
-          return;
-        }
-        entry = dbEntry;
         if(entry.propagated){
           next('THT entry for ' + entry.fingerprint + ' already propagated', true);
           return;
@@ -758,13 +740,7 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/ucg/tht', {
       "entry": entry.getRaw(),
       "signature": entry.signature
-    }, function (err) {
-      // Stop future propagation
-      entry.propagated = true;
-      entry.save(function (err) {
-        done(err);
-      });
-    });
+    }, done);
   }
 
   function sendPeering(toPeer, peer, done) {

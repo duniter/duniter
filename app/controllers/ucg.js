@@ -333,7 +333,7 @@ module.exports = function (pgp, currency, conf) {
             callback();
           },
           propagates: function(callback){
-            PeeringService.propagateTHT(req, function (err, propagated) {
+            PeeringService.propagateTHT(entry, function (err, propagated) {
               if(err && !propagated){
                 logger.error('Not propagated: %s', err);
               }

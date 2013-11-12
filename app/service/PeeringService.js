@@ -328,7 +328,9 @@ module.exports.get = function (pgp, currency, conf) {
                   return;
                 }
                 if(fwd._id){
-                  fwd.remove(next);
+                  fwd.remove(function (err) {
+                    next(err);
+                  });
                   return;
                 }
                 next();

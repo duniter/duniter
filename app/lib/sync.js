@@ -137,7 +137,12 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
         function (number, next) {
           node.hdc.amendments.current(function (err, json) {
             if(err){
-              next(err);
+              logger.warn('Issue getting current:');
+              err.split('\n').forEach(function (msg) {
+                logger.warn(msg);
+              });
+              remoteCurrentNumber = -1;
+              next(null, -2);
               return;
             }
             remoteCurrentNumber = parseInt(json.number);

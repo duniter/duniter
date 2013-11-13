@@ -617,16 +617,25 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   this.propagatePubkey = function (pubkey) {
-    this.propagate(pubkey, sendPubkey);
+    this.propagate(pubkey, sendPubkey, function (err) {
+      pubkey.propagated = true;
+      pubkey.save();
+    });
   }
 
   this.propagateVote = function (amendment, vote) {
     amendment.signature = vote.signature;
-    this.propagate(amendment, sendVote);
+    this.propagate(amendment, sendVote, function (err) {
+      vote.propagated = true;
+      vote.save();
+    });
   }
 
   this.propagatePeering = function (peering) {
-    this.propagate(peering, sendPeering);
+    this.propagate(peering, sendPeering, function (err) {
+      peering.propagated = true;
+      peering.save();
+    });
   }
 
   this.propagate = function (obj, sendMethod, done) {
@@ -700,13 +709,7 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/pks/add', {
       "keytext": pubkey.getRaw(),
       "keysign": pubkey.signature
-    }, function (err) {
-      // Stop future propagation
-      pubkey.propagated = true;
-      pubkey.save(function (err) {
-        done(err);
-      });
-    });
+    }, done);
   }
 
   function sendVote(peer, vote, done) {
@@ -714,13 +717,7 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/hdc/amendments/votes', {
       "amendment": vote.getRaw(),
       "signature": vote.signature
-    }, function (err) {
-      // Stop future propagation
-      vote.propagated = true;
-      vote.save(function (err) {
-        done(err);
-      });
-    });
+    }, done);
   }
 
   function sendTransaction(peer, transaction, done) {
@@ -750,13 +747,7 @@ module.exports.get = function (pgp, currency, conf) {
     post(toPeer, '/ucg/peering/peers', {
       "entry": peer.getRaw(),
       "signature": peer.signature
-    }, function (err) {
-      // Stop future propagation
-      peer.propagated = true;
-      peer.save(function (err) {
-        done(err);
-      });
-    });
+    }, done);
   }
 
   function sendForward(peer, rawForward, signature, done) {

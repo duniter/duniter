@@ -220,7 +220,9 @@ module.exports = function (currency) {
           next(err, am, voteEntity);
         });
       }
-    ], callback);
+    ], function (err, am, vote) {
+      callback(err, am, vote);
+    });
   };
 
   this.votesIndex = function (onceDone) {

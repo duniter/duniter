@@ -160,7 +160,7 @@ module.exports = function (pgp, currency, conf) {
         // Promotion time
         StrategyService.tryToPromote(am, function (err) {
           if(err){
-            console.error(err);
+            console.info(err);
           }
           // Promoted or not, vote is recorded
           res.end(JSON.stringify({

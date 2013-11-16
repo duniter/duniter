@@ -180,7 +180,7 @@ In HDC, an Amendment structure is considered *valid* if:
 * Every present field ends with a DOS `<CR><LN>` new line character.
 * Fields `Version`, `Number`, `GeneratedOn`, `UniversalDividend` (if present), `CoinMinimalPower` (if present), `NextRequiredVotes`, `PreviousVotesCount`, `MembersCount`, `VotersCount` are zero or positive integer values.
 * Fields `PreviousHash`, `PreviousVotesRoot`, `MembersRoot`, `VotersRoot` are upper-cased SHA-1 hashes.
-* Fields `MembersChanges` and `VotersChanges` are upper-cased SHA-1 hashes, preceded either by a `+` or `-` character.
+* Fields `MembersChanges` and `VotersChanges` are upper-cased SHA-1 hashes, preceded either by a `+` or `-` character. Furthermore, lists must be string sorted.
 * When `Number` field is positive, Amendment has a `PreviousHash`, `PreviousVotesRoot`, `PreviousVotesCount` value.
 
 Note that having an Amendment with a `CoinMinimalPower` without `UniversalDividend` field (or `0` valued) is not a considerated as invalid, but is a non-sense from HDC point of view.

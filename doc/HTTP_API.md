@@ -917,6 +917,8 @@ Alias of `amendments/promoted`.
 
 Merkle URL referencing the votes that legitimate the current amendment.
 
+This URL is a shortcut for `hdc/amendments/votes/[CURRENT_AMENDMENT_ID]`.
+
 **Parameters**
 
 *None*.
@@ -1143,6 +1145,8 @@ Merkle URL leaf: voter (also a member)
 **Goal**
 
 Merkle URL refering to the signatures of the Community listed in this amendment.
+
+This URL should give the same result as `hdc/amendments/votes/[PREVIOUS_AMENDEMENT_ID]` if all votes present in this URL were taken in count as signatures for this `AMENDMENT_ID`.
 
 **Parameters**
 

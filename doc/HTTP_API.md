@@ -188,10 +188,10 @@ For that purpose, Merkle URL defines different parameters and results:
 
 Parameter | Description
 --------- | -----------
-`lstart` | Integer value that indicates the starting level (inclusive) of hashes to be returned. `lstart` start from `0` (`ROOT` hash). Defaults to `0`.
-`lend` | Integer value that indicates the ending level (exclusive) of hashes to be returned. `lend` start from `0` (`ROOT` hash). Defaults to `0`.
-`start` | Integer value that defines the start range (inclusive) of desired hashes for each level.
-`end` | Integer value which  that defines the end range (exclusive) of desired hashes for each level.
+`lstart` | Integer value that indicates the starting level (inclusive) of hashes to be returned. `lstart` start from `0`. Defaults to `0` (`ROOT` hash).
+`lend` | Integer value that indicates the ending level (exclusive) of hashes to be returned. `lend` start from `0`. Defaults to `1` (`ROOT` hash).
+`start` | Integer value that defines the start range (inclusive) of desired hashes for each level. Defaults to `0`.
+`end` | Integer value which  that defines the end range (exclusive) of desired hashes for each level. Defaults to `leavesCount` of the Merkle.
 `extract` | Boolean value that asks for result to inspect leaves and return both **hash** *and* **original content** values. Ignore `lstart` and `lend` parameters.
 
 **Returns**

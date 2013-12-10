@@ -283,7 +283,7 @@ Field | Description
 `Number` | an increment number identifying this transaction among all others sender's transactions.
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous transaction (content AND signature), and is used to identify without ambiguity the previous transaction (it is an integrity mecanism).
 `Recipient` | the recipient's OpenPGP fingerprint to whom the coins are to be sent.
-`Type` | gives information on how to to interprete the coin list. Value is either `TRANSFERT`, `ISSUANCE` or `FUSION`.
+`Type` | gives information on how to to interprete the coin list. Value is either `TRANSFER`, `ISSUANCE` or `FUSION`.
 `Coins` | a list of coins that are to be sent. Each line starts with a `COIN_ID` identifying the coin, eventually followed by a comma and a `TRANSACTION_ID` justifying the ownership of the coin.
 `Comment` | comment for transaction. May be used for any future purpose. Multiline field, ends at the end of the transaction message.
 
@@ -299,8 +299,8 @@ In HDC, a Transaction structure is considered *valid* if:
 * Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
 * Fields `Version`, `Number` are zero or positive integer values.
 * Field `PreviousHash` is an upper-cased SHA-1 hash, if present.
-* Field `Type` has either `TRANSFERT`, `ISSUANCE` or `FUSION` value.
-* In case of `Type: TRANSFERT`:
+* Field `Type` has either `TRANSFER`, `ISSUANCE` or `FUSION` value.
+* In case of `Type: TRANSFER`:
   * `Coins` must have at least one coin.
   * Each line must be **with** `TRANSACTION_ID` provided.
 * In case of `Type: ISSUANCE`:
@@ -398,7 +398,7 @@ Such a transaction is used to *create* new money, i.e. new coins. To be a valid 
 
 ### Transfert transaction
 
-Transfert transaction is identified by having `Type: TRANSFERT` value. Such a transaction alter the ownership of one or more coins from `Sender` to `Recipient`. Ownership can be proved by the `Recipient` simply by showing this transaction.
+Transfert transaction is identified by having `Type: TRANSFER` value. Such a transaction alter the ownership of one or more coins from `Sender` to `Recipient`. Ownership can be proved by the `Recipient` simply by showing this transaction.
 
 Thereafter, when `Recipient` wants to send those coins to someone else, he will put himself as sender, put those coins in the `Coins` field, adding the previous transaction's `TRANSACTION_ID` besides the coins to justify he is the owner of the coins.
 
@@ -410,7 +410,7 @@ Thereafter, when `Recipient` wants to send those coins to someone else, he will 
     Number: 92
     PreviousHash: 45D873050A5F63F4A801B626C0E95D1CACA6B8AF
     Recipient: 86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8
-    Type: TRANSFERT
+    Type: TRANSFER
     Coins:
     31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
     31A6302161AC8F5938969E85399EB3415C237F93-2-2-2-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1

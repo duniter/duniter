@@ -188,50 +188,48 @@ For that purpose, Merkle URL defines different parameters and results:
 
 Parameter | Description
 --------- | -----------
-`lstart` | Integer value that indicates the starting level (inclusive) of hashes to be returned. `lstart` start from `0`. Defaults to `0` (`ROOT` hash).
-`lend` | Integer value that indicates the ending level (exclusive) of hashes to be returned. `lend` start from `0`. Defaults to `1` (`ROOT` hash).
-`start` | Integer value that defines the start range (inclusive) of desired hashes for each level. Defaults to `0`.
-`end` | Integer value which  that defines the end range (exclusive) of desired hashes for each level. Defaults to `leavesCount` of the Merkle.
-`extract` | Boolean value that asks for result to inspect leaves and return both **hash** *and* **original content** values. Ignore `lstart` and `lend` parameters.
+`leaves` | Defines wether or not leaves hashes should be returned too. Defaults to `false`.
+`leaf` | Hash of a leaf whose content should be returned. Ignore `leaves` parameter.
 
 **Returns**
 
-Merkle URL result with `extract=false`.
+Merkle URL result with `leaves=false`.
 ```json
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ],
-    ...
-  }
+  "root": "6513D6A1582DAE614D8A3B364BF3C64C513D236B"
 }
 ```
 
-Merkle URL result with `extract=true`.
+Merkle URL result with `leaves=true`.
 ```json
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "leaves": {
-    "1": {
-      "hash": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "value": // JSON value (object, string, int, ...)
-    },
-    "2": {
-      "hash": "E9D71F5EE7C92D6DC9E92FFDAD17B8BD49418F98",
-      "value": // JSON value (object, string, int, ...)
-    }
+  "root": "6513D6A1582DAE614D8A3B364BF3C64C513D236B",
+  "leaves": [
+    "32096C2E0EFF33D844EE6D675407ACE18289357D",
+    "50C9E8D5FC98727B4BBC93CF5D64A68DB647F04F",
+    "6DCD4CE23D88E2EE9568BA546C007C63D9131C1B",
+    "AE4F281DF5A5D0FF3CAD6371F76D5C29B6D953EC",
+    "E0184ADEDF913B076626646D3F52C3B49C39AD6D"
+  ]
+}
+```
+
+Merkle URL result with `leaf=AE4F281DF5A5D0FF3CAD6371F76D5C29B6D953EC`.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "6513D6A1582DAE614D8A3B364BF3C64C513D236B",
+  "leaf": {
+    "hash": "AE4F281DF5A5D0FF3CAD6371F76D5C29B6D953EC",
+    "value": // JSON value (object, string, int, ...)
   }
 }
 ```
@@ -357,17 +355,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -465,24 +454,14 @@ This entry contains a sum-up of common Merkle URLs handled by this node, with th
     "pks/all": {
       "depth": 3,
       "nodesCount": 6,
-      "levelsCount": 4,
       "leavesCount": 5,
-      "levels": {
-        "0": [
-          "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-        ]
-      }
+      "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
     },
     "hdc/amendments/current/votes": {
       "depth": 3,
       "nodesCount": 6,
-      "levelsCount": 4,
       "leavesCount": 5,
-      "levels": {
-        "0": [
-          "9D5DC18A6CB3FA94B8FC3E07793D391CA1CA5BE5"
-        ]
-      }
+      "root": "9D5DC18A6CB3FA94B8FC3E07793D391CA1CA5BE5"
     }
   }
 }
@@ -504,17 +483,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -567,17 +537,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -797,17 +758,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -930,17 +882,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1043,17 +986,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1119,17 +1053,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1161,17 +1086,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1272,17 +1188,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1467,17 +1374,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1530,17 +1428,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1669,17 +1558,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1834,17 +1714,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -1897,17 +1768,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -2002,17 +1864,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -2065,17 +1918,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -2128,17 +1972,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 
@@ -2191,17 +2026,8 @@ Merkle URL result.
 {
   "depth": 3,
   "nodesCount": 6,
-  "levelsCount": 4,
   "leavesCount": 5,
-  "levels": {
-    "0": [
-      "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    ],
-    "1": [
-      "585DD1B0A3A55D9A36DE747EC37524D318E2EBEE",
-      "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F"
-    ]
-  }
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
 }
 ```
 

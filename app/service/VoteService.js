@@ -27,16 +27,16 @@ module.exports = function (currency) {
         // Verify content and signature
         vote.verify(currency, next);
       },
-      // Issuer is a member
       function (verified, next){
-        vote.issuerIsMember(next);
-      },
-      function (isMember, next){
-        if(!isMember && vote.amendment.number != 0){
-          next('Only members may be voters');
-          return;
-        }
-        next();
+        Amendment.current(function (err, am) {
+          var currNumber = am ? parseInt(am.number) : -1;
+          var voteNumber = parseInt(vote.basis)
+          if(voteNumber > currNumber + 1){
+            next('Previous amendment not found, cannot record vote for amendment #' + vote.basis);
+            return;
+          }
+          next();
+        });
       },
       // Issuer is a voter
       function (next){
@@ -48,17 +48,6 @@ module.exports = function (currency) {
           return;
         }
         next();
-      },
-      function (next){
-        Amendment.current(function (err, am) {
-          var currNumber = am ? parseInt(am.number) : -1;
-          var voteNumber = parseInt(vote.basis)
-          if(voteNumber > currNumber + 1){
-            next('Previous amendment not found, cannot record vote for amendment #' + vote.basis);
-            return;
-          }
-          next();
-        });
       },
       function (next){
         if(parseInt(vote.basis) > 0){

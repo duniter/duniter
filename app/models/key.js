@@ -1,6 +1,7 @@
 var mongoose = require('mongoose');
 var async    = require('async');
 var Schema   = mongoose.Schema;
+var logger   = require('../../app/lib/logger')('key model');
 
 var KeySchema = new Schema({
   fingerprint: { type: String, unique: true },
@@ -41,7 +42,7 @@ KeySchema.statics.setSeen = function(fingerprint, seen, done){
   });
 }
 
-KeySchema.statics.setManaged = function(fingerprint, managed, nodeFingerprint, done){
+KeySchema.statics.setManaged = function(fingerprint, managed, done){
   Key.findOne({ fingerprint: fingerprint }, function (err, key) {
     key = key || new Key({ fingerprint: fingerprint });
     if(key.managed == managed && key._id){
@@ -50,16 +51,17 @@ KeySchema.statics.setManaged = function(fingerprint, managed, nodeFingerprint, d
       return;
     }
     key.managed = managed;
+    if (managed) {
+      logger.debug("Added key %s to managed keys", fingerprint);
+    } else {
+      logger.debug("Removed key %s from managed keys", fingerprint);
+    }
     async.waterfall([
       function (next){
         key.save(next);
       },
       function (obj, code, next){
         updateManagedMerkle(key, next);
-      },
-      function (next) {
-        var Forward = mongoose.model('Forward');
-        Forward.remove({ from: nodeFingerprint }, next);
       }
     ], done);
   });

@@ -109,7 +109,7 @@ function handleKey (conf, key, isManaged, message) {
       server.express.app(program.currency, conf, next);
     },
     function (app, next){
-      require('../app/service/KeyService').get(server.fingerprint(), conf).handleKey(key, isManaged, next);
+      require('../app/service/KeyService').get().handleKey(key, isManaged, next);
     }
   ], function (err, result) {
     if(err){

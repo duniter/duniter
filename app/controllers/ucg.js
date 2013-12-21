@@ -326,7 +326,7 @@ module.exports = function (pgp, currency, conf) {
             var all = conf.kmanagement == 'ALL';
             if(all){
               // THT entry new/changed: if kmanagement == ALL, manage it
-              Key.setManaged(entry.fingerprint, true, that.cert.fingerprint, callback);
+              Key.setManaged(entry.fingerprint, true, callback);
               return;
             }
             // If kmanagement == KEYS, then it should have been set manually earlier, or can be later

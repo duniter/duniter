@@ -173,7 +173,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (notManaged, next) {
         async.forEachSeries(notManaged, function (key, callback) {
           console.log('Add %s to managed keys...', key);
-          Key.setManaged(key, true, that.cert.fingerprint, callback);
+          Key.setManaged(key, true, callback);
         }, next);
       }
     ], function (err) {

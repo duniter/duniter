@@ -8,6 +8,8 @@ var logger    = require('../lib/logger')('http');
 
 module.exports = function (currency) {
 
+  var KeyService = require('./KeyService').get();
+
   /**
   * Tries to persist a public key given in ASCII-armored format.
   * Returns the database stored public key.
@@ -29,6 +31,9 @@ module.exports = function (currency) {
         PublicKey.persist(pubkey, function (err) {
           next(err);
         });
+      },
+      function (next) {
+        KeyService.handleKey(pubkey.fingerprint, true, next)
       },
       function (next){
         PublicKey.getTheOne(pubkey.fingerprint, next);

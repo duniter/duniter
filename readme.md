@@ -234,7 +234,7 @@ For the moment uCoin is developed only by its author. If you wish to participate
 
 ## Theoretical
 
-* [Relativity Theory of Money v2.718, Stephane Laborde - Nov. 2012](http://wiki.creationmonetaire.info/index.php?title=Main_Page)
+* [Relative Money Theory v2.718, Stephane Laborde - Nov. 2012](http://wiki.creationmonetaire.info/index.php?title=Main_Page)
 
 ## OpenUDC
 
@@ -244,4 +244,4 @@ For the moment uCoin is developed only by its author. If you wish to participate
 
 # License
 
-This software is provided under [MIT license](https://raw.github.com/c-geek/ucoin/master/LICENSE).
+This software is provided under [GPLv3](https://raw.github.com/c-geek/ucoin/master/LICENSE).

@@ -15,7 +15,7 @@ var http = require('../service/HTTPService')();
 module.exports = function (pgp, currency, conf) {
 
   var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
-  var PublicKeyService = require('../service/PublicKeyService')(currency);
+  var PublicKeyService = require('../service/PublicKeyService')(currency, conf);
 
   this.getAll = function (req, res) {
     async.waterfall([

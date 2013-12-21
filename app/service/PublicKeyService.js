@@ -6,7 +6,7 @@ var merkle    = require('merkle');
 var PublicKey = mongoose.model('PublicKey');
 var logger    = require('../lib/logger')('http');
 
-module.exports = function (currency) {
+module.exports = function (currency, conf) {
 
   var KeyService = require('./KeyService').get();
 
@@ -33,7 +33,7 @@ module.exports = function (currency) {
         });
       },
       function (next) {
-        KeyService.handleKey(pubkey.fingerprint, true, next)
+        KeyService.handleKey(pubkey.fingerprint, conf && conf.kmanagement == 'ALL', next);
       },
       function (next){
         PublicKey.getTheOne(pubkey.fingerprint, next);

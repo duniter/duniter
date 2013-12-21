@@ -8,6 +8,8 @@ var _          = require('underscore');
 var server     = require('../lib/server');
 var openpgp    = require('./openpgp').openpgp;
 var jpgp       = require('./jpgp');
+var log4js     = require('log4js');
+var logger     = require('./logger')('[HTTP]');
 
 openpgp.init();
 
@@ -122,6 +124,7 @@ module.exports.express = {
     app.use(express.favicon(__dirname + '/../public/favicon.ico'));
     app.use(express.static(__dirname + '/../public'));
     app.use(express.logger('dev'));
+    // app.use(log4js.connectLogger(logger, { level: log4js.levels.INFO, format: ':method :url :status :response-timems' }));
     app.use(express.urlencoded())
     app.use(express.json())
     app.use(express.methodOverride());

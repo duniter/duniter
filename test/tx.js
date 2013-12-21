@@ -108,8 +108,8 @@ describe('Transaction', function(){
       assert.equal(tx1.currency, 'beta_brousouf');
     });
 
-    it('should be TRANSFERT', function(){
-      assert.equal(tx1.type, 'TRANSFERT');
+    it('should be TRANSFER', function(){
+      assert.equal(tx1.type, 'TRANSFER');
     });
 
     it('should have sender 31A6302161AC8F5938969E85399EB3415C237F93', function(){
@@ -139,12 +139,12 @@ describe('Transaction', function(){
       should.exist(tx1.comment);
     });
 
-    it('its computed hash should be 85E6A838A80893BAAC0F1702F6407BC0E20E3D98', function(){
-      assert.equal(tx1.hash, '85E6A838A80893BAAC0F1702F6407BC0E20E3D98');
+    it('its computed hash should be 1A317CD0A15EDF6577B08B03EADA215B1D675E75', function(){
+      assert.equal(tx1.hash, '1A317CD0A15EDF6577B08B03EADA215B1D675E75');
     });
 
-    it('its manual hash should be 85E6A838A80893BAAC0F1702F6407BC0E20E3D98', function(){
-      assert.equal(sha1(tx1.getRaw()).toUpperCase(), '85E6A838A80893BAAC0F1702F6407BC0E20E3D98');
+    it('its manual hash should be 1A317CD0A15EDF6577B08B03EADA215B1D675E75', function(){
+      assert.equal(sha1(tx1.getRaw()).toUpperCase(), '1A317CD0A15EDF6577B08B03EADA215B1D675E75');
     });
   });
 

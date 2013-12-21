@@ -17,11 +17,11 @@ module.exports = {
       "leavesCount": merkle.levels[merkle.depth].length,
       "root": merkle.levels[0][0] || ""
     };
-    if(!req.query.leaf || !valueCB){
+    if(req.query.leaves){
       // Leaves
       json.leaves = merkle.leaves();
       done(null, json);
-    } else {
+    } else if (req.query.leaf) {
       // Extract of a leaf
       json.leaves = {};
       var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
@@ -36,6 +36,8 @@ module.exports = {
         });
         done(null, json);
       });
+    } else {
+      done(null, json);
     }
   }
 }

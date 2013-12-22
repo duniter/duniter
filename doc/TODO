@@ -6,20 +6,14 @@ Documentation:
       ✔ HDC messages @done (13-08-07 13:56)
       ✔ UCG messages @done (13-08-07 13:56)
       ✔ HTTP API @done (13-08-07 13:56)
-      ✔ Protocol @done (13-08-07 13:56)
+      ☐ UCP Protocol
 
-Implementation: Autonomous server:
+Implementation: Witness server:
 
     Public keys:
      ✔ Receive PGP certificates @done (13-08-08 01:04)
      ✔ View received PGP certificates @done (13-08-08 01:04)
-
-    Registrations:
-     ✔ Receive signed registration: join @done (13-08-15 12:01)
-     ✔ Receive signed registration: actualize @done (13-08-27 22:04)
-     ✔ Receive signed registration: leave @done (13-08-27 22:04)
-     ✔ View received registrations for pending amendment @done (13-08-27 22:04)
-     ☐ Make strategies for registration acceptation
+     ☐ Handle public key revoke
 
     Votes:
      ✔ Receive votes @done (13-08-15 12:01)
@@ -27,7 +21,7 @@ Implementation: Autonomous server:
      ✔ View votes for a given pending amendment @done (13-08-27 22:08)
      ✔ When amendment enough votes, promote it as current @done (13-08-27 22:08)
      ✔ View received votes for current amendment @done (13-08-27 22:08)
-     ☐ Make strategies for amendment promotion
+     ✔ Make strategies for amendment promotion
 
     Amendments:
      ✔ Get the current promoted amendment @done (13-08-27 22:08)
@@ -36,30 +30,77 @@ Implementation: Autonomous server:
      ✔ View voting base of any stored amendment @done (13-08-27 22:08)
 
     Transactions:
-     ☐ Receive issuance transactions
-     ☐ Receive fusion transactions
-     ☐ Receive transfert transactions
-     ☐ View all transactions
-     ☐ View a single transaction
-     ☐ View transactions by sender
-     ☐ View transactions by recipient
-     ☐ View coins owned by a PGP key
-     ☐ View transactions chain for a given coin
+     ✔ Receive issuance transactions
+     ✔ Receive fusion transactions
+     ✔ Receive transfert transactions
+     ✔ View all transactions
+     ✔ iew a single transaction
+     ✔ View transactions by sender
+     ✔ View transactions by recipient
+     ✔ View coins owned by a PGP key
+     ✔ View transactions chain for a given coin
 
 Implementation: Peering:
 
     Authentication:
-     ☐ Authenticate responses before interpreting
+     ✔ Authenticate responses before interpreting
 
     THT:
-     ☐ Receive THT entries
-     ☐ View all THT entries at once
-     ☐ View one THT entry for a given key
+     ✔ Receive THT entries
+     ✔ View all THT entries at once
+     ✔ View one THT entry for a given key
 
     Synchronization:
-     ☐ Retrieve PGP keys from another node
-     ☐ Retrieve promoted amendments from another node
-     ☐ Retrieve registrations for a given amendment from another node
-     ☐ Retrieve votes for a given amendment from another node
-     ☐ Retrieve transactions from another node
-     ☐ Retrieve filtered transactions from another node (sender, recipient)
+     ✔ Retrieve PGP keys from another node
+     ✔ Retrieve promoted amendments from another node
+     ✔ Retrieve registrations for a given amendment from another node
+     ✔ Retrieve votes for a given amendment from another node
+     ✔ Retrieve transactions from another node
+     ✔ Retrieve filtered transactions from another node (sender, recipient)
+
+    Routing:
+     ☐ On signed public key reception, broadcast to all known peers
+     ☐ On signed vote reception, broadcast to all known peers
+     ☐ On signed transaction reception, forward to peers using forward routes
+     ☐ On signed THT entry reception, broadcast to all known peers
+     ☐ On signed peering entry reception, broadcast to all known peers
+     ☐ On signed forward reception, answer with customized forward rule
+
+Functional issues:
+
+    Public keys:
+     ☐ How to handle public key revoke?
+     ☐ How to handle multiple key found for one signature issuer?
+
+    Amendments:
+
+    Transactions:
+     ☐ Add a dry-run transaction process
+
+    Peering:
+     ☐ Do not accept peering entries whose `fingerprint` field does not match signature issuer
+
+    Forward:
+     ☐ Do not accept forwards whose `from` field does not match signature issuer
+
+Technical issues:
+
+    General:
+     ☐ Find a strategy for unit tests and functional tests
+     ☐ Rewrite tests
+     ☐ Code refactoring (check good practices for node.js development)
+     ☐ HTTP responses: for non 200 code, make a JSON error response
+
+    Configuration:
+     ☐ Make private key mandatory
+     ☐ Make --remote<4|6|h> and --remotep mandatory
+
+    Merkle URLs:
+     ☐ How to handle Merkle leaves collision?
+     ☐ Check MapReduce algorithm for Merkle trees processing
+
+    PGP related:
+     ☐ Update openpgpjs & make Node.js compliant
+     ☐ Usable for multipart/signed? Check benefits/drawbacks compared to system pgp calls
+     ☐ Accept only detached signatures (reject others)
+     ☐ Better strategy for private key password storage?

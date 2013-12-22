@@ -15,6 +15,7 @@ var logger      = require('./logger')('sync');
 
 module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
 
+  var KeyService         = require('../service/KeyService').get();
   var VoteService        = require('../service/VoteService')(currency);
   var TransactionService = require('../service/TransactionsService').get(currency);
   var THTService         = require('../service/THTService').get(currency);
@@ -92,22 +93,25 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
           node.pks.all({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
-              var indexesToAdd = [];
+              var leavesToAdd = [];
               // Call with nice no to have PGP error 'gpg: input line longer than 19995 characters'
-              node.pks.all({ extract: true, nice: true }, function (err, json) {
-                _(json.leaves).keys().forEach(function(key){
-                  var leaf = json.leaves[key];
-                  if(merkle.leaves().indexOf(leaf.hash) == -1){
-                    indexesToAdd.push(key);
+              node.pks.all({ leaves: true, nice: true }, function (err, json) {
+                _(json.leaves).forEach(function(leaf){
+                  if(merkle.leaves().indexOf(leaf) == -1){
+                    leavesToAdd.push(leaf);
                   }
                 });
                 var hashes = [];
-                async.forEachSeries(indexesToAdd, function(index, callback){
-                  logger.info('Importing public key %s', json.leaves[index].hash);
-                  var keytext = json.leaves[index].value.pubkey;
-                  var keysign = json.leaves[index].value.signature;
+                async.forEachSeries(leavesToAdd, function(leaf, callback){
+                  logger.info('Importing public key %s...', leaf);
+                  var keytext, keysign;
                   async.waterfall([
                     function (cb){
+                      node.pks.all({ "leaf": leaf}, cb);
+                    },
+                    function (json, cb){
+                      keytext = json.leaf.value.pubkey;
+                      keysign = json.leaf.value.signature;
                       PublicKey.verify(keytext, keysign, cb);
                     },
                     function (verified, cb){
@@ -115,9 +119,12 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                         cb('Key was not verified by its signature');
                         return;
                       }
-                      hashes.push(json.leaves[index].hash);
+                      hashes.push(leaf);
                       PublicKey.persistFromRaw(keytext, keysign, cb);
-                    }
+                    },
+                    function (next) {
+                      KeyService.handleKey(leaf, conf && conf.kmanagement == 'ALL', next);
+                    },
                   ], callback);
                 }, function(err, result){
                   next(err);
@@ -165,7 +172,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                   cb();
                 },
                 function (cb) {
-                  node.hdc.amendments.view.signatures(amNumber + 1, sha1(amendments[amNumber + 1]).toUpperCase(), { extract: true }, cb);
+                  node.hdc.amendments.view.signatures(amNumber + 1, sha1(amendments[amNumber + 1]).toUpperCase(), { leaves: true }, cb);
                 },
                 function (json, cb){
                   applyVotes(amendments, amNumber, number, json, node, cb);
@@ -187,7 +194,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             // Synchronise remote's current
             async.waterfall([
               function (callback){
-                node.hdc.amendments.currentVotes({ extract: true }, callback);
+                node.hdc.amendments.currentVotes({ leaves: true }, callback);
               },
               function (json, callback) {
                 applyVotes(amendments, number, number, json, node, callback);
@@ -221,23 +228,27 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
           node.ucg.tht.get({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
-              var indexesToAdd = [];
+              var leavesToAdd = [];
               node.ucg.tht.get({ extract: true }, function (err, json) {
-                _(json.leaves).keys().forEach(function(key){
-                  var leaf = json.leaves[key];
+                _(json.leaves).forEach(function(leaf){
                   if(merkle.leaves().indexOf(leaf.hash) == -1){
-                    indexesToAdd.push(key);
+                    leavesToAdd.push(leaf);
                   }
                 });
                 var hashes = [];
-                async.forEachSeries(indexesToAdd, function(index, callback){
-                  var jsonEntry = json.leaves[index].value.entry;
-                  var sign = json.leaves[index].value.signature;
-                  var entry = new THTEntry({});
-                  ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
-                    entry[key] = jsonEntry[key];
-                  });
+                async.forEachSeries(leavesToAdd, function(leaf, callback){
                   async.waterfall([
+                    function (cb){
+                      node.ucg.tht.get({ "leaf": leaf }, next);
+                    },
+                    function (json, cb){
+                      var jsonEntry = json.leaf.value.entry;
+                      var sign = json.leaf.value.signature;
+                      var entry = new THTEntry({});
+                      ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
+                        entry[key] = jsonEntry[key];
+                      });
+                    },
                     function (cb){
                       logger.info('THT entry %s', jsonEntry.fingerprint);
                       THTService.submit(entry.getRaw() + sign, cb);
@@ -262,23 +273,27 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
           node.ucg.peering.peers.get({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
-              var indexesToAdd = [];
+              var leavesToAdd = [];
               node.ucg.peering.peers.get({ extract: true }, function (err, json) {
-                _(json.leaves).keys().forEach(function(key){
-                  var leaf = json.leaves[key];
+                _(json.leaves).forEach(function(leaf){
                   if(merkle.leaves().indexOf(leaf.hash) == -1){
-                    indexesToAdd.push(key);
+                    leavesToAdd.push(leaf);
                   }
                 });
                 var hashes = [];
-                async.forEachSeries(indexesToAdd, function(index, callback){
-                  var jsonEntry = json.leaves[index].value;
-                  var sign = json.leaves[index].value.signature;
-                  var entry = new Peer({});
-                  ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port"].forEach(function (key) {
-                    entry[key] = jsonEntry[key];
-                  });
+                async.forEachSeries(leavesToAdd, function(leaf, callback){
                   async.waterfall([
+                    function (cb) {
+                      node.ucg.peering.peers.get({ "leaf": leaf }, next);
+                    },
+                    function (json, cb) {
+                      var jsonEntry = json.leaf.value;
+                      var sign = json.leaf.value.signature;
+                      var entry = new Peer({});
+                      ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port"].forEach(function (key) {
+                        entry[key] = jsonEntry[key];
+                      });
+                    },
                     function (cb) {
                       ParametersService.getPeeringEntryFromRaw(entry.getRaw(), sign, cb);
                     },
@@ -354,73 +369,76 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
         }
         async.waterfall([
           function (next){
-            remoteMerkleFunc.call(remoteMerkleFunc, keyFingerprint, { extract: true }, next);
+            remoteMerkleFunc.call(remoteMerkleFunc, keyFingerprint, { leaves: false }, next);
           },
           function (json, onEveryTransactionProcessed){
-            var txNumbers = {};
-            _(json.leaves).keys().forEach(function (key) {
-              var txNumber = json.leaves[key].value.transaction.number;
-              txNumbers[txNumber] = key;
-            });
-            var numbers = _(txNumbers).keys();
-            numbers = _(numbers).map(function (num) {
-              return parseInt(num);
-            });
-            numbers.sort(function (a,b) {
-              return a - b;
-            });
+            var transactions = {};
+            var numbers = _.range(json.leavesCount);
             async.forEachSeries(numbers, function(number, onSentTransactionsProcessed){
-              var k = txNumbers[number];
-              var transaction = json.leaves[k].value.transaction;
-              var signature = json.leaves[k].value.signature;
-              var raw = json.leaves[k].value.raw;
-              var i = 0;
-              async.whilst(
-                function (){ return transaction.type != 'ISSUANCE' && i < transaction.coins.length; },
-                function (callback){
-                  var coin = transaction.coins[i];
-                  var txIssuer = coin.transaction_id.substring(0, 40);
-                  async.waterfall([
-                    function (next){
-                      if(txIssuer == keyFingerprint){
-                        next(null, false);
-                        return;
-                      }
-                      Key.isManaged(txIssuer, next);
-                    },
-                    function  (isOtherManagedKey, next) {
-                      if(isOtherManagedKey){
-                        syncTransactionsOfKey(node, txIssuer, next);
-                        return;
-                      }
-                      next();
-                    }
-                  ], function (err) {
-                    i++;
-                    callback(err);
-                  });
+              var transaction;
+              var signature;
+              var raw;
+              var i;
+              async.waterfall([
+                function (next){
+                  node.hdc.transactions.view(keyFingerprint, number, next);
                 },
-                function (err) {
-                  async.waterfall([
-                    function (next){
-                      ParametersService.getTransactionFromRaw(raw, signature, next);
-                    },
-                    function (pubkey, signedTx, next) {
-                      Transaction.find({ sender: transaction.sender, number: transaction.number }, function (err, txs) {
-                        next(err, pubkey, signedTx, txs);
+                function (json, next){
+                  transaction = json.transaction;
+                  signature = json.signature;
+                  raw = json.raw;
+                  i = 0;
+                  next();
+                },
+                function (next){
+                  async.whilst(
+                    function (){ return transaction.type != 'ISSUANCE' && i < transaction.coins.length; },
+                    function (callback){
+                      var coin = transaction.coins[i];
+                      var txIssuer = coin.transaction_id.substring(0, 40);
+                      async.waterfall([
+                        function (next){
+                          if(txIssuer == keyFingerprint){
+                            next(null, false);
+                            return;
+                          }
+                          Key.isManaged(txIssuer, next);
+                        },
+                        function  (isOtherManagedKey, next) {
+                          if(isOtherManagedKey){
+                            syncTransactionsOfKey(node, txIssuer, next);
+                            return;
+                          }
+                          next();
+                        }
+                      ], function (err) {
+                        i++;
+                        callback(err);
                       });
                     },
-                    function (pubkey, signedTx, txs, next){
-                      if(txs.length == 0){
-                        logger.info(transaction.sender, transaction.number);
-                        TransactionService.process(pubkey, signedTx, next);
-                        return;
-                      }
-                      next();
+                    function (err) {
+                      async.waterfall([
+                        function (next){
+                          ParametersService.getTransactionFromRaw(raw, signature, next);
+                        },
+                        function (pubkey, signedTx, next) {
+                          Transaction.find({ sender: transaction.sender, number: transaction.number }, function (err, txs) {
+                            next(err, pubkey, signedTx, txs);
+                          });
+                        },
+                        function (pubkey, signedTx, txs, next){
+                          if(txs.length == 0){
+                            logger.info(transaction.sender, transaction.number);
+                            TransactionService.process(pubkey, signedTx, next);
+                            return;
+                          }
+                          next();
+                        }
+                      ], next);
                     }
-                  ], onSentTransactionsProcessed);
-                }
-              );
+                  );
+                },
+              ], onSentTransactionsProcessed);
             }, onEveryTransactionProcessed);
           }
         ], onKeySentTransactionFinished);
@@ -431,16 +449,24 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
   function applyVotes(amendments, amNumber, number, json, node, cb) {
     // logger.info('Applying votes for amendment #%s', amNumber);
     // logger.info("Signatures: %s", _(json.leaves).size());
-    async.forEachSeries(_(json.leaves).keys(), function(key, callback){
-      var vote = json.leaves[key];
-      VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {
-        // Promotion time
-        StrategyService.tryToPromote(am, function (err) {
-          if(!err)
-            number++;
-          callback();
-        });
-      });
+    async.forEachSeries(json.leaves, function(leaf, callback){
+      async.waterfall([
+        function (next){
+          var hash = sha1(amendments[amNumber]).toUpperCase();
+          node.hdc.amendments.votes.of(amNumber, hash, { "leaf": leaf }, next);
+        },
+        function (json, next){
+          var vote = json.leaf;
+          VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {
+            // Promotion time
+            StrategyService.tryToPromote(am, function (err) {
+              if(!err)
+                number++;
+              next();
+            });
+          });
+        },
+      ], callback);
     }, function(err, result){
       cb(err, number);
     });
@@ -450,18 +476,21 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
 function NodesMerkle (json) {
   
   var that = this;
-  ["depth", "nodesCount", "leavesCount", "levelsCount"].forEach(function (key) {
+  var merkleRoot = null;
+  ["depth", "nodesCount", "leavesCount"].forEach(function (key) {
     that[key] = json[key];
   });
 
-  var i = 0;
-  this.levels = [];
-  while(json && json.levels[i]){
-    this.levels.push(json.levels[i]);
-    i++;
-  }
+  this.merkleRoot = json["root"];
+
+  // var i = 0;
+  // this.levels = [];
+  // while(json && json.levels[i]){
+  //   this.levels.push(json.levels[i]);
+  //   i++;
+  // }
 
   this.root = function () {
-    return this.levels.length > 0 ? this.levels[0][0] : '';
+    return this.merkleRoot;
   }
 }

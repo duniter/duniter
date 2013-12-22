@@ -1,55 +1,137 @@
 # UCP - uCoin Protocol
 
-uCoin defines its own protocol called UCP which defines messages, interpretation of them and structuration rules in order to build new currencies based on individuals and Universal Dividend.
+As a mean to build new currencies based on individuals and Universal Dividend, *uCoin defines its own protocol called UCP* which defines messages, interpretation of them and structuration rules *allowing to build a uCoin distributed data network*.
+
+This document is divided in two parts:
+
+* [Definitions](#definitions), which describes uCoin actors (human, machines) and data, and their mutual behaviors.
+* [Data flow](#data-flow), which is an overview of [uCoin HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md) - a guide to understand API purposes detailing each method's responsability.
 
 ## Contents
 
-* [Database](#database)
-* [Dataflow](#dataflow)
-  * [Definition](#definition-1)
-  * [PGP keys](#pgp-public-keys-1)
-  * [Peering](#peering)
-  * [Amendments](#amendments-1)
-  * [Transactions](#transactions-1)
-* [Bootstraping](#bootstraping)
+* [Contents](#contents)
+* [Definitions](#definitions)
+  * [uCoin HDC data](#ucoin-hdc-data)
+    * [Public keys](#pgp-public-keys)
+    * [Amendments](#amendments)
+    * [Transactions](#transactions)
+  * [uCoin UCG data](#ucoin-ucg-data)
+    * [Peers](#peers)
+    * [Forwards](#forwards)
+    * [Status](#status)
+    * [Trust entries](#trust-entries)
+  * [uCoin network](#ucoin-network)
+    * [Peering](#peering)
+    * [Status](#status-1)
+    * [Data routing](#data-routing)
+      * [General case](#general-case)
+      * [Forward routes](#forward-routes)
+* [Data flow](#data-flow)
+  * [Public keys](#public-keys)
+  * [UCG messages](#ucg-messages)
+  * [HDC Amendments](#hdc-amendments)
+  * [HDC Transactions](#hdc-transactions)
 
-## Database
+## Definitions
+
+uCoin (upper-cased *C*) word is the generic name covering uCoin project, whose goal is to build a P2P crypto-currency system. In its technical details, uCoin can be divided in two parts:
+
+1. uCoin node: a unit running a uCoin software on personal or company servers listening for and storing uCoin data
+2. uCoin network: a network of uCoin nodes, sharing data between them and displaying this data to whoever wants to check it
+
+UCP defines what should be a uCoin node and its behavior according to uCoin messages over the network. A network of such nodes holding uCoin data can *then* be seen as a *Distributed uCoin Transactions Database*.
+
+### uCoin HDC data
+
+The whole point of a uCoin node is to build a database of [HDC data](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md). For that purpose, a node will listen to incoming data over the network an store it according to UCP rules.
+
+#### PGP public keys
+
+PGP public keys are the foundation of uCoin data. In uCoin, any data is signed using a PGP key giving it authenticity, and *then* the eligibility to be stored. A non-signed data is just to be thrown away from UCP point of view.
+
+A key represents an actor, which may be either an individual or an organization, or even a robot under their control. PGP keys are uniquely identified by their PGP fingerprint and are used under their ASCII-armored format.
+
+#### Amendments
+
+Amendments are inner parts of a document called the *Monetary Contract*. In uCoin, the Monetary Contract is the main document defining currency name, Community members, voters and monetary unities. Amendments are just the parts which, placed end-to-end, *constitue* the Monetary Contract.
+
+Amendments are collectively signed documents refering to [HDC Amendment format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#amendment) allowing to define a currency, members or voters joining or leaving, and periodical Universal Dividend.
+
+##### Votes
+
+A vote is a simple signature of an amendment, refering to [HDC Vote request](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#vote-request). When a voter signs an amendment and submit the signatures to a node, it expresses the will of this voter (if he can legitimately do it, i.e. if he is part of voters written in Monetary Contract) to promote the signed amendment.
+
+#### Transactions
+
+Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, fusion or transfer money. It is the final support of money and it materializes money ownership.
+
+### uCoin UCG data
+
+UCG data is a list of messages used for uCoin peering features. This is what make a network of nodes possible.
+
+#### Peers
+
+uCoin network is made up of peers identified by their PGP fingerprint. In UCP, each node maintains a Peering table which is a hash table linking a PGP fingerprint to network data: IP address (v4, v6, or both), DNS name and port. This link is made through a document called [peering entry](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#peering-table) signed by the owner of the PGP key and giving peer's network informations. Peering table is a set of all peering entries.
+
+#### Forwards
+
+[Forward](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#forward-request) is a document signed by a node giving rules for data forwarding. Forward can be seen a routing rule that nodes use to know where to send received data. This mecanism helps not to broadcast all transactions to the whole network each time, but only to the interested nodes.
+
+#### Status
+
+[Status](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#status-request) messages are just notifications nodes use between them to know their state and eventually trigger exchanges of informations between them.
+
+#### Trust entries
+
+Trust entries are part of a hash table refering to [UCG THT format](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#trust-hash-table) whose role is to define, for a given PGP key, the nodes by which every transaction of the key pass through and the nodes the key is likely to trust for incoming transactions. Such entries are written and signed by PGP keys managing money units.
+
+### uCoin network
+
+A uCoin node is a simple unit of a uCoin network, unit by which circulate uCoin HDC data. To be able to be part of a network, uCoin units uses UCG messages to introduce each other and exchange HDC data. Below are definitions of UCG messages events and behaviors.
+
+#### Peering
+
+When a node is started, it already knows its remote peering informations, i.e. IP address and port plus its own public key PGP fingerprint. This informations are to be gathered and represent peering entry of the node. Thus, any node has its own peering entry and must display it.
+
+To be known by others peers, a node should broadcast his signed peering entry to them using `/ucg/peering/peers (POST)` interface. Of course, those peers has to be notified the node's key first so then cas verify peering entry's signature.
+
+*The way the node is aware of other peers addresses to send them his peering entry is implementation specific.*
+
+#### Status
+
+Each node may send Status requests. Such requests send either status:
+
+* `NEW` to say the node consider itself as new to requested node
+* `UP` to say the node consider itself as waking up to requested node (i.e. a `NEW` request was already sent before)
+* `DOWN` to say the node consider itself as waking down to requested node (i.e. an `UP` request was already sent before)
+
+*The way other nodes may react asynchronously to such requests is implementation specific.*
+
+#### Data routing
+
+When receiving new data such as Public key or Transaction, a uCoin node should forward it to other known peers. However, uCoin recommend 2 different behavior according to the following rules.
+
+##### General case
+
+For any data that is not either:
+
+* Transaction related
+* Forward related
+
+then data should be broadcasted to all other known peers. Note that a data passing two times through a node should be broadcasted only once.
+
+##### Forward routes
+
+For Transaction or Forward case, data should be smartly forwarded. That is:
+
+* if a Transaction matches Forward rules for its issuer or recipient, then it should forward this transaction to the peer pointed by the `From` field of a Forward document.
+* if a Forward document is received, then it should be forwarded to the peer pointed by the `To` field of the Forward. Indeed, this document is destinated to pointed peer and should be given to it.
+
+## Data flow
 
 ### Definition
 
-The whole point of uCoin is to build a database describing a currency in HDC format. For that purpose, UCP considers each node have its own datasource able to manage the following entites.
-
-### PGP public keys
-
-PGP public keys are cryptographic keys representing either an individual or an organization. PGP keys are uniquely identified by their PGP fingerprint.
-
-PGP keys must be available under ASCII-armored format.
-
-### Amendments
-
-Amendments are collectively signed documents refering to [HDC Amendment format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#amendment) allowing to define a currency, its Community members and voters. It is also the document justifying money issuance *by* the members.
-
-### Votes
-
-A vote is a simple signature of an amendment, refering to [HDC Vote request](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#vote-request). When a voter signs an amendment and submit the signatures to nodes, it expresses the will of this voter (if he can legitimately do it, i.e. if he is part of voters written in Monetary Contract) to promote the signed amendment.
-
-### Transactions
-
-Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, fusion or transfert money. It is the final support of money and it materializes money ownership.
-
-### Peering Table
-
-uCoin network is made up of peers identified by their PGP fingerprint. Peering table is a hash table linking a PGP fingerprint to connection data: IP address (v4, v6, or both), DNS name and port. This link is made through a document called *peering entry* signed by the owner of the PGP key and giving peer's network informations. Peering table is a set of all peering entries.
-
-### Trust Hash Table
-
-THT is a hash table refering to [UCG THT format](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#trust-hash-table) whose role is to define, for a given PGP key, the nodes by which every transaction of the key pass through and the nodes the key is likely to trust for incoming transactions.
-
-## Dataflow
-
-### Definition
-
-To feed the database and synchronise with other nodes, UCP defines [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md) used either to receive or send messages.
+To feed a node and synchronise it with other nodes, UCP defines an [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md) used either to receive or send messages.
 
 As a generic overview, it can be noted what are the API inputs of the protocol:
 
@@ -61,13 +143,11 @@ IN   | `ucg/peering/forward`
 IN   | `ucg/peering/status`
 IN   | `ucg/tht (POST)`
 IN   | `hdc/amendments/votes (POST)`
-IN   | `hdc/transactions/process/issuance`
-IN   | `hdc/transactions/process/transfert`
-IN   | `hdc/transactions/process/fusion`
+IN   | `hdc/transactions/process`
 
-All remainging URLs are only outputs of the protocol allowing consultation, verification, synchronization with other clients or peers.
+All remainging URLs only have consultation purposes, used for verification and synchronization with other clients or peers.
 
-### PGP public keys
+### Public keys
 
 Flow | Interfaces
 ---- | -----------
@@ -77,7 +157,7 @@ OUT  | `pks/all`
 
 #### `pks/add`
 
-Takes a PGP public key and a signature of the whole key. If the signature matches (key was sent by its owner), adds the key to the PGP public keys database.
+Takes a PGP public key and a signature of the whole key (ascii-armored format). If the signature matches (key was sent by its owner), adds the key to the PGP public keys database.
 
 #### `pks/lookup`
 
@@ -87,11 +167,11 @@ Serves PGP public keys according to HKP protocol.
 
 Merkle URL pointing to a set of all PGP public key registered by the node. Mainly used for synchronization purposes.
 
-### Peering
+### UCG messages
 
 #### Self
 
-This API is special, as it does not deal with HTTP received data. This set of URL gives peering informations according to *a node's configuration*.
+This API is special, as it does not deal with HTTP received data. This set of URLs gives peering informations according to *a node's configuration*.
 
 Flow | Interfaces
 ---- | -----------
@@ -198,7 +278,7 @@ Merkle URL referencing a set of ALL THT entries.
 
 GET the THT entry issued by key whose fingerprint is PGP_FINGERPRINT.
 
-### Amendments
+### HDC Amendments
 
 Interface whose role is to handle Monetary Contract amendments.
 
@@ -268,13 +348,11 @@ Merkle URL referencing a set of PGP public keys fingerprints considered as the v
 
 Merkle URL referencing a set of signatures recognized as votes of the previous amendment, and whose Merkle root matches `PreviousVotesRoot` of the amendment AMENDMENT_ID.
 
-### Transactions
+### HDC Transactions
 
 Flow | Interfaces
 ---- | -----------
-IN   | `hdc/transactions/process/issuance`
-IN   | `hdc/transactions/process/transfert`
-IN   | `hdc/transactions/process/fusion`
+IN   | `hdc/transactions/process`
 OUT  | `hdc/transactions/all`
 OUT  | `hdc/transactions/sender/[PGP_FINGERPRINT]`
 OUT  | `hdc/transactions/recipient/[PGP_FINGERPRINT]`
@@ -282,9 +360,13 @@ OUT  | `hdc/transactions/view/[TRANSACTION_ID]`
 OUT  | `hdc/coins/[PGP_FINGERPRINT]/list`
 OUT  | `hdc/coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
 
-#### `hdc/transactions/process/issuance`
+#### `hdc/transactions/process`
 
-Takes a transaction and a signature of it. If the following conditions matches:
+Takes a transaction and a signature of it.
+
+##### Transaction type: ISSUANCE
+
+If the following conditions matches:
 
 * The signature matches the transaction content
 * The `Sender` is handled by this node
@@ -294,9 +376,9 @@ Takes a transaction and a signature of it. If the following conditions matches:
 
 adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 
-#### `hdc/transactions/process/transfert`
+##### Transaction type: TRANSFER
 
-Takes a transaction and a signature of it. If the following conditions matches:
+If the following conditions matches:
 
 * The signature matches the transaction content
 * The `Sender` is handled by this node
@@ -305,7 +387,7 @@ Takes a transaction and a signature of it. If the following conditions matches:
 
 adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 
-#### `hdc/transactions/process/fusion`
+##### Transaction type: FUSION
 
 Takes a transaction and a signature of it. If the following conditions matches:
 
@@ -340,30 +422,3 @@ Serves a list of coins considered as owned by the given `PGP_FINGERPRINT`.
 #### `hdc/coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
 
 Serves a transaction chain (may not be complete, i.e. long enough to reach issuance transaction) justifying money ownership.
-
-## Bootstraping
-
-### Definition
-
-A node bootstrap is a process consisting in initialization of the node's data in order to integrate a currency.
-
-### From existing currency
-
-For a node to integrate an existing currency, bootstraping consists in fetching all the data from a trusted server. Once server is authenticated, the node fetches:
-
-* PGP keys
-* Votes
-* Transactions
-
-Once everything is fetched, the node may be started to follow normal protocol events.
-
-### Create a new currency
-
-For a node to create a new currency, it must not synchronize another server. It must be started with no external references, just waiting for new messages feeding the node in HDC and UCG data.
-
-Typically, such a node will a have the following flow to initiate its currency:
-
-* New PGP keys received
-* New Votes received - amendment is promoted
-
-This cycle will then repeat to the will of its currency members.

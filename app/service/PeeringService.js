@@ -740,13 +740,7 @@ module.exports.get = function (pgp, currency, conf) {
     post(peer, '/hdc/transactions/process', {
       "transaction": transaction.getRaw(),
       "signature": transaction.signature
-    }, function (err) {
-      // Stop future propagation
-      transaction.propagated = true;
-      transaction.save(function (err) {
-        done(err);
-      });
-    });
+    }, done);
   }
 
   function sendTHT(peer, entry, done) {

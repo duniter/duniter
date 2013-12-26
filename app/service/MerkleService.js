@@ -24,7 +24,6 @@ module.exports = {
     } else if (req.query.leaf) {
       // Extract of a leaf
       json.leaves = {};
-      var rowEnd = isNaN(end) ? merkle.levels[merkle.depth].length : end;
       var hashes = [req.query.leaf];
       // This code is in a loop for historic reasons. Should be set to non-loop style.
       valueCB(hashes, function (err, values) {

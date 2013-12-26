@@ -14,7 +14,7 @@ var Key         = mongoose.model('Key');
 var Forward     = mongoose.model('Forward');
 var Status      = require('../models/statusMessage');
 var log4js      = require('log4js');
-var logger      = log4js.getLogger();
+var logger      = log4js.getLogger('peering');
 
 module.exports.get = function (pgp, currency, conf) {
   
@@ -521,20 +521,29 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
+  /**
+  * Send UP or NEW signal to gvien peers' fingerprints according to wether a
+  * Forward was received (UP) or not (NEW).
+  *
+  */
   this.sendUpSignal = function (done, toFingerprints) {
     var that = this;
     async.waterfall([
       function (next){
+        // Get two list of peers: the ones which already sent FWD, and those which did not
         that.getKnownPeersGroupedByForward(toFingerprints, next);
       },
-      function (whoSentForwardPeers, whoDoesNot, next) {
-        var sendUpFPRS = _(whoSentForwardPeers).without(that.cert.fingerprint);
-        var sendNewFPRS = _(whoDoesNot).without(that.cert.fingerprint);
+      function (peersWhichSentForward, whichDidNot, next) {
+        var sendUpFPRS = _(peersWhichSentForward).without(that.cert.fingerprint);
+        var sendNewFPRS = _(whichDidNot).without(that.cert.fingerprint);
         async.parallel({
           forwardPeers: function(callback){
+            // Send UP signal to those who already sent FWD
             that.sendStatusTo('UP', sendUpFPRS, callback);
           },
           otherPeers: function(callback){
+            // Others get a NEW signal (as they did not introduce themselves)
+            // + a pubkey sending before to ensure we get introduced ourselves
             async.waterfall([
               function (next){
                 PublicKey.getTheOne(that.cert.fingerprint, next);
@@ -589,6 +598,12 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
+  /**
+  * Send given status to a list of peers.
+  * @param statusStr Status string to send
+  * @param fingerprints List of peers' fingerprints to which status is to be sent
+  * @param pubkey (optional) Pubkey to send before send signed status request.
+  */
   this.sendStatusTo = function (statusStr, fingerprints, pubkey, done) {
     if (arguments.length == 3) {
       done = pubkey;

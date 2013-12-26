@@ -81,8 +81,10 @@ module.exports = function (pgp, currency, conf) {
           currentNumber: am ? "" + am.number : '',
           hash: am ? am.hash : ''
         },
-        "pks/all": pkMerkle,
-        "hdc/amendments/current/votes": votesMerkle
+        merkles: {
+          "pks/all": pkMerkle,
+          "hdc/amendments/current/votes": votesMerkle
+        }
       }, null, "  "));
     });
   }
@@ -249,7 +251,7 @@ module.exports = function (pgp, currency, conf) {
           async.waterfall([
             function (next){
               // Send UP/NEW signal for receiving its FORWARD rules (this also send self peering infos)
-              PeeringService.sendUpSignal(next, recordedPR.fingerprint);
+              PeeringService.sendUpSignal(next, [recordedPR.fingerprint]);
             },
             function (next){
               // Wait 3 seconds before sending our own FORWARD rule,

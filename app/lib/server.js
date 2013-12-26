@@ -13,7 +13,7 @@ var logger     = require('./logger')('[HTTP]');
 
 openpgp.init();
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory'];
 
 function initModels() {
   models.forEach(function (entity) {

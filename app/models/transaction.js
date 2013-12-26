@@ -27,7 +27,11 @@ var TransactionSchema = new Schema({
 
 TransactionSchema.pre('save', function (next) {
   this.updated = Date.now();
-  next();
+  async.waterfall([
+    function (next){
+      mongoose.model('TxMemory').deleteOverNumber(this.sender, this.number, next);
+    }
+  ], next);
 });
 
 TransactionSchema.methods = {

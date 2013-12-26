@@ -53,7 +53,7 @@ program
         },
       ], function (err) {
         if(err){
-          console.error('Error during sync %s', err);
+          console.error('Error during sync:', err);
         }
         server.database.disconnect();
       });

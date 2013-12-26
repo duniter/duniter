@@ -13,6 +13,8 @@ var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
 var logger      = require('./logger')('sync');
 
+var CONST_FORCE_TX_PROCESSING = false;
+
 module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
 
   var KeyService         = require('../service/KeyService').get();
@@ -429,7 +431,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                         function (pubkey, signedTx, txs, next){
                           if(txs.length == 0){
                             logger.info(transaction.sender, transaction.number);
-                            TransactionService.process(pubkey, signedTx, next);
+                            TransactionService.process(pubkey, signedTx, CONST_FORCE_TX_PROCESSING, next);
                             return;
                           }
                           next();

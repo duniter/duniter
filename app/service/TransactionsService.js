@@ -8,11 +8,16 @@ var Merkle      = mongoose.model('Merkle');
 var Coin        = mongoose.model('Coin');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
+var TxMemory    = mongoose.model('TxMemory');
 var MerkleService = require('../service/MerkleService');
 
 module.exports.get = function (currency) {
 
-  this.process = function (pubkey, signedTX, callback) {
+  this.process = function (pubkey, signedTX, doFilter, callback) {
+    if (arguments.length == 3) {
+      callback = doFilter;
+      doFilter = true;
+    }
     var tx = new Transaction({});
     async.waterfall([
       function (next){
@@ -26,14 +31,26 @@ module.exports.get = function (currency) {
           next('Bad document structure');
           return;
         }
-        Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err, found) {
-          if(err)
-            next();
-          else{
-            tx = found;
-            next('Transaction already processed', false, true);
-          }
-        });
+        if (doFilter) {
+          TxMemory.getTheOne(tx.sender, tx.number, tx.hash, function (err, found) {
+            if(err) {
+              // Sibling was not found: transaction was not processed
+              var txMem = new TxMemory({
+                "sender": tx.sender,
+                "number": tx.number,
+                "hash": tx.hash
+              });
+              txMem.save(function (err){
+                next(err);
+              });
+            } else {
+              tx = found;
+              next('Transaction already processed', false, true);
+            }
+          });
+        } else {
+          next();
+        }
       },
       function (next){
         tx.verifySignature(pubkey.raw, next);

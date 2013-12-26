@@ -43,11 +43,7 @@ uCoin uses a distribution system for its transactions database, allowing for pot
 
 You can get more in uCoin project reading the following documents:
 * [Concepts](https://github.com/c-geek/ucoin/blob/master/doc/concepts.md)
-* [Architecture](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
-  * [Protocol](https://github.com/c-geek/ucoin/blob/master/doc/UCP.md)
-  * [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md)
-  * [uCoin Gossip](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md) (draft)
-  * [Human Dividend Currency](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)
+* [Technical specifications](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
 
 ## Installation
 

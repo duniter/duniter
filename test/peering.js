@@ -34,28 +34,28 @@ describe('Peer', function(){
     });
 
     it('should have DNS', function(){
-      assert.equal(pr.dns, 'ucoin.twiced.fr');
+      assert.equal(pr.getDns(), 'ucoin.twiced.fr');
     });
 
     it('should have IPv4', function(){
-      should.exist(pr.ipv4);
-      assert.equal(pr.ipv4, "88.163.127.43");
+      should.exist(pr.getIPv4());
+      assert.equal(pr.getIPv4(), "88.163.127.43");
     });
 
     it('should have no IPv6 address', function(){
-      should.not.exist(pr.ipv6);
+      should.not.exist(pr.getIPv6());
     });
 
     it('should have port 9101', function(){
-      assert.equal(pr.port, 9101);
+      assert.equal(pr.getPort(), 9101);
     });
 
-    it('its computed hash should be 93FCDB40152973EEF1F4872E5B9C283BD8938CD0', function(){
-      assert.equal(pr.hash, '93FCDB40152973EEF1F4872E5B9C283BD8938CD0');
+    it('its computed hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){
+      assert.equal(pr.hash, 'D031ECEB784DA346239DB7AF1F5389361E6F1988');
     });
 
-    it('its manual hash should be 93FCDB40152973EEF1F4872E5B9C283BD8938CD0', function(){
-      assert.equal(sha1(pr.getRaw()).toUpperCase(), '93FCDB40152973EEF1F4872E5B9C283BD8938CD0');
+    it('its manual hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){
+      assert.equal(sha1(pr.getRaw()).toUpperCase(), 'D031ECEB784DA346239DB7AF1F5389361E6F1988');
     });
   });
 });

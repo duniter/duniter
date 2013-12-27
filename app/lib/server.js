@@ -212,14 +212,24 @@ module.exports.express = {
         if(peers.length != 0){
           p1 = peers[0];
         }
+        var endpoint = 'BASIC_MERKLED_API';
+        if (conf.remotehost) {
+          endpoint += ' ' + conf.remotehost;
+        }
+        if (conf.remoteipv4) {
+          endpoint += ' ' + conf.remoteipv4;
+        }
+        if (conf.remoteipv6) {
+          endpoint += ' ' + conf.remoteipv6;
+        }
+        if (conf.remoteport) {
+          endpoint += ' ' + conf.remoteport;
+        }
         var p2 = new Peer({
           version: 1,
           currency: currency,
           fingerprint: module.exports.fingerprint(),
-          dns: conf.remotehost ? conf.remotehost : '',
-          ipv4: conf.remoteipv4 ? conf.remoteipv4 : '',
-          ipv6: conf.remoteipv6 ? conf.remoteipv6 : '',
-          port: conf.remoteport ? conf.remoteport : ''
+          endpoints: [endpoint]
         });
         var raw1 = p1.getRaw().unix2dos();
         var raw2 = p2.getRaw().unix2dos();

@@ -271,7 +271,7 @@ PublicKeySchema.statics.getForPeer = function (peer, done) {
       else{
         async.waterfall([
           function (next){
-            vucoin(peer.ipv6 || peer.ipv4 || peer.dns, peer.port, true, true, next);
+            vucoin(peer.getIPv6() || peer.getIPv4() || peer.getDns(), peer.getPort(), true, true, next);
           },
           function (node, next){
             node.ucg.pubkey(next);

@@ -7,15 +7,13 @@ var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
 
 var STATUS = { UP: "UP", DOWN: "DOWN", NEW: "NEW" };
+var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]+))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 var PeerSchema = new Schema({
   version: String,
   currency: String,
   fingerprint: { type: String, unique: true },
-  dns: String,
-  ipv4: String,
-  ipv6: String,
-  port: { type: Number, default: 8081 },
+  endpoints: [String],
   signature: String,
   hash: String,
   status: { type: String, default: STATUS.NEW },
@@ -40,14 +38,14 @@ PeerSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "hash", "status", "signature"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "endpoints", "hash", "status", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
   
   copyValuesFrom: function(from) {
     var obj = this;
-    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "signature"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "endpoints", "signature"].forEach(function (key) {
       obj[key] = from[key];
     });
   },
@@ -55,7 +53,7 @@ PeerSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port", "status", "signature"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "endpoints", "status", "signature"].forEach(function (key) {
       json[key] = obj[key];
     });
     return json;
@@ -82,15 +80,19 @@ PeerSchema.methods = {
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
         {prop: "fingerprint",       regexp: /Fingerprint: (.*)/},
-        {prop: "dns",               regexp: /Dns: (.*)/},
-        {prop: "ipv4",              regexp: /IPv4: (.*)/},
-        {prop: "ipv6",              regexp: /IPv6: (.*)/},
-        {prop: "port",              regexp: /Port: (.*)/},
+        {prop: "endpoints",         regexp: /Endpoints:\r\n(.*)/},
       ];
       var crlfCleaned = rawPR.replace(/\r\n/g, "\n");
       if(crlfCleaned.match(/\n$/)){
         captures.forEach(function (cap) {
-          simpleLineExtraction(obj, crlfCleaned, cap);
+          if (cap.prop != 'endpoints') {
+            simpleLineExtraction(obj, crlfCleaned, cap);
+          } else {
+            var fieldValue = rawPR.match(cap.regexp);
+            if(fieldValue && fieldValue.length === 2){
+              obj[cap.prop] = fieldValue[1].split('\n');
+            }
+          }
         });
       }
       else{
@@ -123,21 +125,59 @@ PeerSchema.methods = {
       .verify(publicKey, done);
   },
 
+  getBMA: function() {
+    var bma = null;
+    this.endpoints.forEach(function(ep){
+      var matches = !bma && ep.match(BMA_REGEXP);
+      if (matches) {
+        bma = {
+          "dns": matches[2] || '',
+          "ipv4": matches[4] || '',
+          "ipv6": matches[6] || '',
+          "port": matches[8] || 9101
+        };
+      }
+    });
+    return bma || {};
+  },
+
+  getDns: function() {
+    var bma = this.getBMA();
+    return bma.dns ? bma.dns : null;
+  },
+
+  getIPv4: function() {
+    var bma = this.getBMA();
+    return bma.ipv4 ? bma.ipv4 : null;
+  },
+
+  getIPv6: function() {
+    var bma = this.getBMA();
+    return bma.ipv6 ? bma.ipv6 : null;
+  },
+
+  getPort: function() {
+    var bma = this.getBMA();
+    return bma.port ? bma.port : null;
+  },
+
   getHost: function() {
+    var bma = this.getBMA();
     var host =
-      (this.ipv6 ? this.ipv6 :
-        (this.ipv4 ? this.ipv4 :
-          (this.dns ? this.dns : '')));
+      (bma.ipv6 ? bma.ipv6 :
+        (bma.ipv4 ? bma.ipv4 :
+          (bma.dns ? bma.dns : '')));
     return host;
   },
 
   getURL: function() {
+    var bma = this.getBMA();
     var base =
-      (this.ipv6 ? '[' + this.ipv6 + ']' :
-        (this.ipv4 ? this.ipv4 :
-          (this.dns ? this.dns : '')));
-    if(this.port)
-      base += ':' + this.port;
+      (bma.ipv6 ? '[' + bma.ipv6 + ']' :
+        (bma.ipv4 ? bma.ipv4 :
+          (bma.dns ? bma.dns : '')));
+    if(bma.port)
+      base += ':' + bma.port;
     return base;
   },
 
@@ -146,14 +186,10 @@ PeerSchema.methods = {
     raw += "Version: " + this.version + "\n";
     raw += "Currency: " + this.currency + "\n";
     raw += "Fingerprint: " + this.fingerprint + "\n";
-    if(this.dns)
-      raw += "Dns: " + this.dns + "\n";
-    if(this.ipv4)
-      raw += "IPv4: " + this.ipv4 + "\n";
-    if(this.ipv6)
-      raw += "IPv6: " + this.ipv6 + "\n";
-    if(this.port)
-      raw += "Port: " + this.port + "\n";
+    raw += "Endpoints:" + "\n";
+    this.endpoints.forEach(function(ep){
+      raw += ep + "\n";
+    });
     return raw.unix2dos();
   },
 
@@ -164,7 +200,7 @@ PeerSchema.methods = {
 
   connect: function (done){
     var WITH_SIGNATURE_PARAM = false;
-    vucoin(this.ipv6 || this.ipv4 || this.dns, this.port, true, WITH_SIGNATURE_PARAM, done);
+    vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), true, WITH_SIGNATURE_PARAM, done);
   },
 }
 
@@ -196,29 +232,31 @@ function verify(obj, currency) {
     if(obj.fingerprint && !obj.fingerprint.match(/^[A-Z\d]+$/))
       err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect fingerprint field"};
   }
+  // Basic Merkled API requirements
+  var bma = obj.getBMA();
   if(!err){
     // DNS
-    if(obj.dns && !obj.dns.match(/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/))
+    if(bma.dns && !bma.dns.match(/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/))
       err = {code: codes['BAD_DNS'], message: "Incorrect Dns field"};
   }
   if(!err){
     // IPv4
-    if(obj.ipv4 && !obj.ipv4.match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/))
+    if(bma.ipv4 && !bma.ipv4.match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/))
       err = {code: codes['BAD_IPV4'], message: "Incorrect IPv4 field"};
   }
   if(!err){
     // IPv6
-    if(obj.ipv6 && !obj.ipv6.match(/^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/))
+    if(bma.ipv6 && !bma.ipv6.match(/^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/))
       err = {code: codes['BAD_IPV6'], message: "Incorrect IPv6 field"};
   }
   if(!err){
     // IP
-    if(!obj.ipv4 && !obj.ipv6)
+    if(!bma.ipv4 && !bma.ipv6)
       err = {code: codes['NO_IP_GIVEN'], message: "It must be given at least one IP, either v4 or v6"};
   }
   if(!err){
     // Port
-    if(obj.port && !(obj.port + "").match(/^\d+$/))
+    if(bma.port && !(bma.port + "").match(/^\d+$/))
       err = {code: codes['BAD_PORT'], message: "Port must be provided and match an integer format"};
   }
   if(err){

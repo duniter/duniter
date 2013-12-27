@@ -1,6 +1,5 @@
 Version: 1
 Currency: beta_brousouf
 Fingerprint: D049002A6724D35F867F64CC087BA351C0AEB6DF
-Dns: ucoin.twiced.fr
-IPv4: 88.163.127.43
-Port: 9101
+Endpoints:
+BASIC_MERKLED_API ucoin.twiced.fr 88.163.127.43 9101

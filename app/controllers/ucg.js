@@ -243,7 +243,7 @@ module.exports = function (pgp, currency, conf) {
 
     ], function (err, recordedPR) {
       http.answer(res, 400, err, function () {
-        logger.debug('Incoming peering: from: %s, ip: %s, port: %s', recordedPR.fingerprint, recordedPR.ipv4 || recordedPR.ipv6, recordedPR.port);
+        logger.debug('Incoming peering: from: %s, ip: %s, port: %s', recordedPR.fingerprint, recordedPR.getIPv4() || recordedPR.getIPv6(), recordedPR.getPort());
         res.end(JSON.stringify(recordedPR.json(), null, "  "));
         if (!recordedPR.propagated) {
           // Propagates peering infos

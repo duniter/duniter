@@ -1,39 +1,72 @@
 # uCoin Gossip messages format
 
-## Peering table
+## Peering entry
 
-uCoin uses P2P networks to manage money data, hence it needs to know which nodes makes the network for a given currency.
+uCoin uses P2P networks to manage money data, hence it needs to know which nodes make the network for a given currency.
 
-For that purpose, uCoin defines a peering table containing, for a given currency and host's PGP key:
+For that purpose, uCoin defines a peering table containing, for a given node PGP key:
 
-* a DNS name
-* a network IP (v4, v6 or both)
-* a port
+* a currency name
+* a list of endpoints to contact the node
 
 This link is made through a document called *peering entry* whose format is:
 
 ```plain
 Version: VERSION
 Currency: CURRENCY_NAME
-Fingerprint: A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468
-Dns: DNS_NAME
-IPv4: IPV4_ADDRESS
-IPv6: IPV6_ADDRESS
-Port: PORT_NUMBER
+Fingerprint: NODE_FINGERPRINT
+Endpoints:
+END_POINT_1
+END_POINT_2
+END_POINT_3
+[...]
 ```
+With the signature attached, this document certifies that this fingerprint's key is owned by host at given network endpoints.
+
+The aggregation of all peering entries is called the *peering table*, and allows to authentify addresses of all nodes identified by their PGP key's fingerprint.
+
+### Fields details
+
 Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
 `Currency` | contains the name of the currency.
-`Fingerprint` | PGP key identifier linked to this address.
-`Dns` | the DNS name to access the node.
-`IPv4` | the IPv4 address to access the node.
-`IPv6` | the IPv6 address to access the node.
-`Port` | the port of the address to access the node.
-With the signature attached, this document certifies that this fingerprint's key is owned by host at given network address.
+`Fingerprint` | PGP key identifier owned by this node.
+`Endpoints` | a list of endpoints to interact with the node
 
-The aggregation of all peering entries is called the *peering table*, and allows to authentify addresses of all nodes identified by their PGP key's fingerprint.
+`Endpoints` has a particular structure: it is made up of at least one line with each line following format:
 
+```
+PROTOCOL_NAME[ OPTIONS]
+[...]
+```
+
+For example, the first written uCoin peering protocol is BASIC_MERKLED_API, which defines an HTTP API. An endpoint of such protocol would look like:
+
+```
+BASIC_MERKLED_API[ DNS][ IPv4][ IPv6] PORT
+```
+
+Where :
+
+Field | Description
+----- | -----------
+`DNS` | is the dns name to access the node.
+`IPv4` | is the IPv4 address to access the node.
+`IPv6` | is the IPv6 address to access the node.
+`PORT` | is the port of the address to access the node.
+
+### Example
+
+```plain
+Version: 1
+Currency: beta_brousouf
+Fingerprint: A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468
+Endpoints:
+BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001
+BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002
+OTHER_PROTOCOL 88.77.66.55 9001
+```
 ## Forward request
 
 In addition to peering table, which only allows to know the address of each peer, *forward request* is a document allowing peers to ask each other to be forwarded of specific transactions when received.

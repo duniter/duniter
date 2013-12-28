@@ -15,8 +15,6 @@ var AmendmentSchema = new Schema({
   coinMinPower: Number,
   nextVotes: {"type": Number, "default": 0},
   previousHash: String,
-  previousVotesRoot: String,
-  previousVotesCount: {"type": Number, "default": 0},
   votersRoot: String,
   votersCount: {"type": Number, "default": 0},
   votersChanges: Array,
@@ -54,8 +52,6 @@ AmendmentSchema.methods = {
       "dividend",
       "coinMinPower",
       "previousHash",
-      "previousVotesRoot",
-      "previousVotesCount",
       "votersRoot",
       "votersCount",
       "votersChanges",
@@ -113,12 +109,6 @@ AmendmentSchema.methods = {
     raw += "NextRequiredVotes: " + this.nextVotes + "\n";
     if(this.previousHash){
       raw += "PreviousHash: " + this.previousHash + "\n";
-    }
-    if(this.previousVotesRoot){
-      raw += "PreviousVotesRoot: " + this.previousVotesRoot + "\n";
-    }
-    if(this.previousVotesCount){
-      raw += "PreviousVotesCount: " + this.previousVotesCount + "\n";
     }
     raw += "MembersRoot: " + this.membersRoot + "\n";
     raw += "MembersCount: " + this.membersCount + "\n";
@@ -346,8 +336,6 @@ function fill (am1, am2) {
     "dividend",
     "coinMinPower",
     "previousHash",
-    "previousVotesRoot",
-    "previousVotesCount",
     "votersRoot",
     "votersCount",
     "votersChanges",

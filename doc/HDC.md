@@ -12,7 +12,6 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
 * [Amendment](#amendment)
   * [Definition](#definition-1)
   * [Validity](#validity-1)
-  * [Vote request](#vote-request)
 * [Transaction](#transaction)
   * [Definition](#definition-2)
   * [Validity](#validity-2)
@@ -115,9 +114,9 @@ An Amendment is an ASCII document defining:
 * The minimum votes count for *next* amendment to be eligible
 * Eventually, a Universal Dividend amount
 * Eventually, a minimum limit to new coins' value
-* Eventually, a reference to its preceding Amendment (every Amendment have a predecessor, excepted the first)
+* Eventually, a reference to its preceding Amendment (every Amendment have a predecessor, excepted first)
 
-Amendments, forming the Monetary Contract, are *collectively signed* and thus should be considered as the only authentic reference document towards money community and potential monetary mass.
+Amendments, forming the Monetary Contract, are to be *collectively signed* and thus should be considered as the only authentic reference document towards money community and potential monetary mass.
 
 Amendments have the following structure:
 
@@ -129,8 +128,6 @@ Amendments have the following structure:
     CoinMinimalPower: COIN_MINIMAL_POWER
     NextRequiredVotes: REQUIRED_VOTES_COUNT
     PreviousHash: PREVIOUS_HASH
-    PreviousVotesRoot: VOTERS_SIGNATURES_ROOT
-    PreviousVotesCount: VOTERS_SIGNATURES_COUNT
     MembersRoot: WOT_MERKLE_ROOT
     MembersCount: WOT_SIZE
     MembersChanges:
@@ -156,8 +153,6 @@ Field | Description | Required
 `CoinMinimalPower` | if provided, is a zero or positive number. It restricts the newly issued coins to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created from this amendment. This field is used to avoid abuses linked to money issuance. | *Not Required*
 `NextRequiredVotes` | give the minimum votes count for next amendment to be considered a valid following amendment. | **Required**
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous amendment content, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough for that purpose, `PreviousHash` is an authentication mecanism to do this job). | *Not Required*
-`PreviousVotesRoot` | **is mandatory if `Number` is positive**. It is the root hash of a Merkle tree listing the signatures of voters for the previous amendment. It is a checksum mecanism. | *Not Required*
-`PreviousVotesCount` | is used in combination of `PreviousVotesRoot`, it defines how many leaves were used to generate the Merkle tree. | *Not Required*
 `MembersRoot` | is the root hash of a Merkle tree listing the current members of the whole community. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle. | **Required**
 `MembersCount` | is used in combination of `MembersRoot`, it defines how many leaves were used to generate the Merkle tree. | **Required**
 `MembersChanges` | contains a list of members joining or leaving the community. A joining member has a line starting with `+` and a leaving one with `-`. | **Required**
@@ -176,60 +171,18 @@ Where `AMENDMENT_NUMBER` is the `Number`, and `AMENDMENT_HASH` is the computed h
 In HDC, an Amendment structure is considered *valid* if:
 
 * Every line ends with a DOS `<CR><LN>` new line character.
-* Every required field is present, **with** consideration of fields' order.
+* Every required field is present, **with** consideration of fields order.
 * Every present field ends with a DOS `<CR><LN>` new line character.
-* Fields `Version`, `Number`, `GeneratedOn`, `UniversalDividend` (if present), `CoinMinimalPower` (if present), `NextRequiredVotes`, `PreviousVotesCount`, `MembersCount`, `VotersCount` are zero or positive integer values.
-* Fields `PreviousHash`, `PreviousVotesRoot`, `MembersRoot`, `VotersRoot` are upper-cased SHA-1 hashes.
+* Fields `Version`, `Number`, `GeneratedOn`, `UniversalDividend` (if present), `CoinMinimalPower` (if present), `NextRequiredVotes`, `MembersCount`, `VotersCount` are zero or positive integer values.
+* Fields `PreviousHash`, `MembersRoot`, `VotersRoot` are upper-cased SHA-1 hashes.
 * Fields `MembersChanges` and `VotersChanges` are upper-cased SHA-1 hashes, preceded either by a `+` or `-` character. Furthermore, lists must be string sorted.
-* When `Number` field is positive, Amendment has a `PreviousHash`, `PreviousVotesRoot`, `PreviousVotesCount` value.
+* When `Number` field is positive, Amendment has a `PreviousHash` value.
 
 Note that having an Amendment with a `CoinMinimalPower` without `UniversalDividend` field (or `0` valued) is not a considerated as invalid, but is a non-sense from HDC point of view.
 
-### Vote request
-
-Vote request is a document whose goal is to justify an entry inside an Amendment's `VotersChanges` field (thus impacting `VotersCount` and `VotersRoot` too).
-
-A valid vote is a just a signature of a given Amendment.
-
-#### Example
-
-For Amendment 0:
-
-    Version: 1
-    Currency: beta_brousouf
-    Number: 0
-    MembersStatusRoot: BF5E8C1A8FD9AE05520A4D886846903546207470
-    MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
-    MembersCount: 3
-    MembersChanges:
-    +2E69197FAB029D8669EF85E82457A1587CA0ED9C
-    +33BBFC0C67078D72AF128B5BA296CC530126F372
-    +C73882B64B7E72237A2F460CE9CAB76D19A8651E
-
-A valid vote would be:
-
-    -----BEGIN PGP MESSAGE-----
-    Version: GnuPG v1.4.12 (GNU/Linux)
-
-    owGbwMvMwMH48tT2XMkVqXKMaxk/JHE6Oek6+hro+nsH/rSSCEstKs7Mz7NSMOTl
-    ci4tKkrNS660UkhKLUmMTyrKLy3OL03j5fIrzU1KLbJSMODlCssvAeoIys8vsVJw
-    M3V0dnMxM3dztjSwcDGycDYAch1dLCzMjEwsHZ2NzAxMDU2BcjBdzvmleUBtxnB+
-    RmJeemqxFS+XtpGrmaWhpbmbo5OBkaWLhZmZpaubhamrhZGJqbmjoamFubOjgauL
-    pTNQqbGxk5Mb0CozcwNzCxdzI0c3QyMLJ1MnRyNLM2dnU2MDQyMzN2NzI6BSZ3Nj
-    CwsjJzMTJ3NXcyMjY3NHIzcTMwNnV0tnRydzMxdDS0cLM1NDV14u31SQD0n2F1Qb
-    wmMwgcHjs05GGRYGRg4GNlYmUHwzcHEKwJLDnXfs/32Wnbh/J7PpxLatBnsn2k0R
-    u2BxhHHqxtQ1W4K3pOZ9E+NzzGTJmCQ4ZdupC+t4ulKeL+XdXfhnya+Pxtaz/h7Z
-    57/nU1gmj7FZo29EeFHbrFtulrtvV53WnNkY/eniDddwG42VwsWrYrdYBvhN4Q+7
-    IaGQ0tiRkb20+fODu56pG6Rk9lofPSuSZtUqkXF+66Mnf3+wfub3jdTp/Ph6HscP
-    75cx2pdyjR69iv3HefLY/7vtjyJfbD2y1LjIpOhM3PJKo+bI6ujdVnN5RCx3JN57
-    pCady7rGstjowtT01ezBi102mCUmqu96lN+0c05H7kyNX7PPfn/Ik1jOuf7Qz32N
-    4ldvbbc5f+u3ZuTNyQcB
-    =Oc3A
-    -----END PGP MESSAGE-----
-
 ### Root Amendment
 
-The root Amendment is special in that it has **no voters basis** and **no previous Amendment**. It just inventories the root members of the Community.
+The root Amendment is special in that it has *no previous Amendment* and inventories the root members and voters of the Community.
 
 #### Example
 
@@ -242,6 +195,10 @@ The root Amendment is special in that it has **no voters basis** and **no previo
     +2E69197FAB029D8669EF85E82457A1587CA0ED9C
     +33BBFC0C67078D72AF128B5BA296CC530126F372
     +C73882B64B7E72237A2F460CE9CAB76D19A8651E
+    VotersRoot: 2E69197FAB029D8669EF85E82457A1587CA0ED9C
+    VotersCount: 1
+    VotersChanges:
+    +2E69197FAB029D8669EF85E82457A1587CA0ED9C
 
 ## Transaction
 
@@ -342,13 +299,9 @@ Field | Description
 `AMENDMENT_NUMBER` | is the unique Amendment number from which this coin is created (justifying the issuance).
 `TRANSACTION_NUMBER` | is the unique Transaction number of the individual from which this coin is created (fusion case).
 
-** Rule **
-
-If a coin's origin is type 'A', then the `ISSUER_FINGERPRINT` is supposed to be a member of the Community for the amendment `AMENDMENT_NUMBER`. If it is not the case, transaction is to be considered invalid (otherwise it would mean any PGP key could receive Universal Dividend which is reserved to human members).
-
 #### Examples
 
-For a *new coin* of value 500 issued by individual 31A6302161AC8F5938969E85399EB3415C237F93, `COIN_ID` would be:
+For a *new coin* of value 500 issued by individual's key 31A6302161AC8F5938969E85399EB3415C237F93, `COIN_ID` would be:
 
     31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1
 
@@ -441,7 +394,7 @@ Fusion transaction is identified by having `Type: FUSION` value. Such a transact
 
 ### Money ownership
 
-Money ownership **IS NOT** limited to members of the Community. Any owner (an individual or an organization) of an OpenPGP certificate may own money. However, he won't be able to issue new coins as only individuals can be part of the Community, i.e. be inscribed in the amendments chain to which refers any Issuance Transaction.
+Money ownership **IS NOT** limited to members of the Community. Any owner (an individual or an organization) of an OpenPGP certificate may own money: it only requires the key's fingerprint to match `Recipient` fingerprint to become an owning key.
 
 ### Transactions chain
 

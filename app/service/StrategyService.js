@@ -8,6 +8,8 @@ var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
 
 module.exports = function () {
+
+  var KeyService = require('./KeyService').get();
   
   this.tryToPromote = function (am, done) {
     async.waterfall([
@@ -26,7 +28,19 @@ module.exports = function () {
           })
         }
         else next(null)
-      }
+      },
+      function (next){
+        // Set new members as known keys
+        async.forEach(am.getNewMembers(), function(leaf, callback){
+          KeyService.setKnown(leaf, callback);
+        }, next);
+      },
+      function (next){
+        // Set new voters as known keys
+        async.forEach(am.getNewVoters(), function(leaf, callback){
+          KeyService.setKnown(leaf, callback);
+        }, next);
+      },
     ], done);
   }
 

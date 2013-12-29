@@ -28,11 +28,20 @@ module.exports = function (currency, conf) {
       },
       function (next) {
         logger.debug('Incoming pubkey: for: %s', pubkey.fingerprint);
+        KeyService.isKnown(pubkey.fingerprint, next);
+      },
+      function (isKnown, next) {
+        if (!isKnown) {
+          next('Unknown key - rejected');
+          return;
+        }
+        // Known key: persist
         PublicKey.persist(pubkey, function (err) {
           next(err);
         });
       },
       function (next) {
+        // If kmanagement == ALL, mark key as handled to handle key's transactions
         KeyService.handleKey(pubkey.fingerprint, conf && conf.kmanagement == 'ALL', next);
       },
       function (next){

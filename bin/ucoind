@@ -88,6 +88,37 @@ program
   }));
 
 program
+  .command('allow-key [key]')
+  .description('Add given key to authorized keys of this node')
+  .action(connect(function (key, conf) {
+    key = key || "";
+    key = key.toUpperCase();
+    async.waterfall([
+      function (next) {
+        server.express.app(program.currency, conf, next);
+      },
+      function (app, next) {
+        if (!key.isSha1()) {
+          next("Key must match a SHA-1 hash");
+          return;
+        }
+        next(null, app);
+      },
+      function (app, next){
+        require('../app/service/KeyService').get().setKnown(key, next);
+      }
+    ], function (err, result) {
+      if(err){
+        console.error('Error: %s', err);
+        server.database.disconnect();
+        return;
+      }
+      console.log("Key %s is now allowed to be stored" , key);
+      server.database.disconnect();
+    });
+  }));
+
+program
   .command('manage-key [key]')
   .description('Add given key to stack of managed keys of this node')
   .action(connect(function (key, conf) {

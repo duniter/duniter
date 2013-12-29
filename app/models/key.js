@@ -18,7 +18,7 @@ KeySchema.statics.setSeenTX = function(tx, seen, done){
     },
     function (next){
       mongoose.model('Key').setSeen(tx.recipient, true, next);
-    }
+    } 
   ], done);
 }
 
@@ -31,6 +31,26 @@ KeySchema.statics.setSeen = function(fingerprint, seen, done){
       return;
     }
     key.seen = seen;
+    async.waterfall([
+      function (next){
+        key.save(next);
+      },
+      function (obj, code, next){
+        updateSeenMerkle(key, next);
+      }
+    ], done);
+  });
+}
+
+KeySchema.statics.setKnown = function(fingerprint, done){
+  Key.findOne({ fingerprint: fingerprint }, function (err, key) {
+    var newKey = key == null;
+    key = key || new Key({ fingerprint: fingerprint });
+    if(!newKey){
+      // Already recorded
+      done();
+      return;
+    }
     async.waterfall([
       function (next){
         key.save(next);

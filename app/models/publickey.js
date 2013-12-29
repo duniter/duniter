@@ -241,6 +241,10 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
         });
       });
     },
+    function (next){
+      var KeyService = require('../service/KeyService').get();
+      KeyService.setKnown(pubkey.fingerprint, next);
+    },
     function (next) {
       PublicKey.verify(pubkey.raw, pubkey.signature, function (err, verified) {
         // Update Merkle

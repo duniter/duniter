@@ -292,3 +292,7 @@ String.prototype.unix2dos = function(){
 String.prototype.dos2unix = function(){
   return this.replace(/\r\n/g, '\n');
 };
+
+String.prototype.isSha1 = function(){
+  return this.match(/^[A-Z0-9]{40}$/);
+};

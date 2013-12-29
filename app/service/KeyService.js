@@ -23,5 +23,26 @@ module.exports.get = function () {
     ], done);
   }
 
+  /**
+  * Return true if key has an entry in Key collection, false otherwise.
+  */
+  this.isKnown = function(keyFingerprint, done) {
+    async.waterfall([
+      function (next) {
+        mongoose.model('Key').find({ fingerprint: keyFingerprint }, next);
+      },
+      function (keys, next){
+        next(null, keys.length == 1);
+      },
+    ], done);
+  }
+
+  /**
+  * Persist a key
+  */
+  this.setKnown = function(keyFingerprint, done) {
+    mongoose.model('Key').setKnown(keyFingerprint, done);
+  }
+
   return this;
 }

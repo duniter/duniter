@@ -449,8 +449,8 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
   }
 
   function applyVotes(amendments, amNumber, number, json, node, cb) {
-    // logger.info('Applying votes for amendment #%s', amNumber);
-    // logger.info("Signatures: %s", _(json.leaves).size());
+    logger.info('Applying votes for amendment #%s', amNumber);
+    logger.info("Signatures: %s", _(json.leaves).size());
     async.forEachSeries(json.leaves, function(leaf, callback){
       async.waterfall([
         function (next){
@@ -464,7 +464,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             StrategyService.tryToPromote(am, function (err) {
               if(!err)
                 number++;
-              next();
+              next(err);
             });
           });
         },

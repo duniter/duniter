@@ -4,7 +4,7 @@ var mongoose  = require('mongoose');
 var _         = require('underscore');
 var merkle    = require('merkle');
 var PublicKey = mongoose.model('PublicKey');
-var logger    = require('../lib/logger')('http');
+var logger    = require('../lib/logger')('pubkey');
 
 module.exports = function (currency, conf) {
 
@@ -27,7 +27,7 @@ module.exports = function (currency, conf) {
         pubkey.construct(next);
       },
       function (next) {
-        logger.debug('Incoming pubkey: for: %s', pubkey.fingerprint);
+        logger.debug('⬇ %s', pubkey.fingerprint);
         KeyService.isKnown(pubkey.fingerprint, next);
       },
       function (isKnown, next) {

@@ -17,6 +17,7 @@ var PeerSchema = new Schema({
   signature: String,
   hash: String,
   status: { type: String, default: STATUS.NEW },
+  statusSigDate: { type: Date, default: function(){ return new Date(0); } },
   propagated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },

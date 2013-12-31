@@ -195,7 +195,7 @@ PublicKeySchema.statics.persistFromRaw = function (rawPubkey, rawSignature, done
 
 // Persistance lock to avoid duplicates
 var persistQueue = async.queue(function (fingerprint, persistTask) {
-  logger.debug('Persisting pubkey %s', fingerprint);
+  // logger.debug('Persisting pubkey %s', fingerprint);
   persistTask();
 }, 1);
 
@@ -260,7 +260,12 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
         }
       });
     }
-  ], done);
+  ], function (err) {
+    if (!err) {
+      logger.debug('✔ %s', pubkey.fingerprint);
+    }
+    done(err);
+  });
 };
 
 PublicKeySchema.statics.getForPeer = function (peer, done) {
@@ -275,6 +280,7 @@ PublicKeySchema.statics.getForPeer = function (peer, done) {
       else{
         async.waterfall([
           function (next){
+            logger.debug("⟳ Retrieving peer %s public key", peer.fingerprint);
             vucoin(peer.getIPv6() || peer.getIPv4() || peer.getDns(), peer.getPort(), true, true, next);
           },
           function (node, next){

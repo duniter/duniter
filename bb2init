@@ -1,0 +1,6 @@
+#!/bin/bash
+
+bin/ucoind --currency beta_brousouf --mdb bb2 reset data
+bin/ucoind --currency beta_brousouf --mdb bb2 sync 192.168.1.13 8080
+bin/ucoind --currency beta_brousouf --mdb bb2 start
+

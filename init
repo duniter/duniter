@@ -1,0 +1,5 @@
+#!/bin/bash
+
+bin/ucoind --currency beta_brousouf reset data
+bin/ucoind --currency beta_brousouf allow-key 2E69197FAB029D8669EF85E82457A1587CA0ED9C
+bin/ucoind --currency beta_brousouf start

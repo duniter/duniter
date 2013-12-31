@@ -40,6 +40,7 @@ module.exports.get = function (pgp, currency, conf) {
           next('Not a valid peering request');
           return;
         }
+        logger.debug('⬇ %s %s:%s', peer.fingerprint, peer.getIPv4() || peer.getIPv6(), peer.getPort());
         PublicKey.getForPeer(peer, next);
       },
       function (pubkey, next){
@@ -61,7 +62,7 @@ module.exports.get = function (pgp, currency, conf) {
 
   this.submitStatus = function(signedSR, callback){
     var status = new Status();
-    var peer;
+    var peer, pubkey;
     var that = this;
     async.waterfall([
       function (next){
@@ -78,12 +79,25 @@ module.exports.get = function (pgp, currency, conf) {
         }
         PublicKey.getFromSignature(status.signature, next);
       },
-      function (pubkey, next){
+      function (pk, next){
+        pubkey = pk;
+        status.verifySignature(pubkey.raw, next);
+      },
+      function (verified, next){
+        if (!verified) {
+          next('Wrong signature');
+          return;
+        }
         Peer.getTheOne(pubkey.fingerprint, next);
       },
       function (theOne, next){
         peer = theOne;
+        if (peer.statusSigDate > status.sigDate) {
+          next('Old status given');
+          return;
+        }
         peer.setStatus(status.isUp() ? Peer.status.UP : Peer.status.DOWN, next);
+        peer.statusSigDate = status.sigDate;
       }
     ], function (err) {
       callback(err, status, peer);
@@ -543,15 +557,7 @@ module.exports.get = function (pgp, currency, conf) {
           },
           otherPeers: function(callback){
             // Others get a NEW signal (as they did not introduce themselves)
-            // + a pubkey sending before to ensure we get introduced ourselves
-            async.waterfall([
-              function (next){
-                PublicKey.getTheOne(that.cert.fingerprint, next);
-              },
-              function (pubkey, next){
-                that.sendStatusTo('NEW', sendNewFPRS, pubkey, next);
-              },
-            ], callback);
+            that.sendStatusTo('NEW', sendNewFPRS, callback);
           }
         }, function(err, results) {
           done(err);
@@ -602,13 +608,8 @@ module.exports.get = function (pgp, currency, conf) {
   * Send given status to a list of peers.
   * @param statusStr Status string to send
   * @param fingerprints List of peers' fingerprints to which status is to be sent
-  * @param pubkey (optional) Pubkey to send before send signed status request.
   */
-  this.sendStatusTo = function (statusStr, fingerprints, pubkey, done) {
-    if (arguments.length == 3) {
-      done = pubkey;
-      pubkey = undefined;
-    }
+  this.sendStatusTo = function (statusStr, fingerprints, done) {
     var that = this;
     var status = new Status({
       version: 1,
@@ -623,7 +624,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (signature, next) {
         status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
         async.forEach(fingerprints, function(fingerprint, callback){
-          that.propagateToFingerprint(fingerprint, status, sendStatus, pubkey, callback);
+          that.propagateToFingerprint(fingerprint, status, sendStatus, callback);
         }, next);
       }
     ], function (err) {
@@ -672,11 +673,7 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  this.propagateToFingerprint = function (fpr, obj, sendMethod, pubkey, done) {
-    if (arguments.length == 4){
-      done = pubkey;
-      pubkey = undefined;
-    }
+  this.propagateToFingerprint = function (fpr, obj, sendMethod, done) {
     var that = this;
     async.waterfall([
       function (next){
@@ -687,25 +684,14 @@ module.exports.get = function (pgp, currency, conf) {
           var remote = peers[0];
           async.waterfall([
             function (next){
-              if (!pubkey) {
+              if (remote.status == "NEW") {
+                // Send peering entry
+                that.submitSelfPeering(remote, function (err) {
+                  next(err);
+                });
+              } else {
                 next();
-                return;
               }
-              // Might need to introduce ourselves to remote
-              async.waterfall([
-                function (next){
-                  // Send pubkey
-                  sendPubkey(remote, pubkey, function (err) {
-                    next(err);
-                  });
-                },
-                function (next){
-                  // Send peering entry
-                  that.submitSelfPeering(remote, function (err) {
-                    next(err);
-                  });
-                }
-              ], next);
             },
             function (next){
               sendMethod.call(sendMethod, remote, obj, next);

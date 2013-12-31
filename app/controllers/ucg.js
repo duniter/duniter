@@ -11,6 +11,10 @@ var THTEntry  = mongoose.model('THTEntry');
 var Key       = mongoose.model('Key');
 var log4js    = require('log4js');
 var logger    = log4js.getLogger();
+var plogger      = log4js.getLogger('peering');
+var flogger      = log4js.getLogger('forward');
+var slogger      = log4js.getLogger('status');
+var tlogger      = log4js.getLogger('tht');
 var http      = require('../service/HTTPService')();
 
 module.exports = function (pgp, currency, conf) {
@@ -124,6 +128,7 @@ module.exports = function (pgp, currency, conf) {
               next('Not a valid peering request');
               return;
             }
+            flogger.debug('⬇ %s type %s', fwd.from, fwd.forward);
             next();
           },
           function (next) {
@@ -180,7 +185,7 @@ module.exports = function (pgp, currency, conf) {
       }
     ], function (err, recordedFWD) {
       http.answer(res, errCode, err, function () {
-        logger.debug('Incoming forward: from: %s, type: %s', recordedFWD.from, recordedFWD.forward);
+        flogger.debug('✔ %s type %s', recordedFWD.from, recordedFWD.forward);
         res.end(JSON.stringify(recordedFWD.json(), null, "  "));
       });
     });
@@ -243,7 +248,7 @@ module.exports = function (pgp, currency, conf) {
 
     ], function (err, recordedPR) {
       http.answer(res, 400, err, function () {
-        logger.debug('Incoming peering: from: %s, ip: %s, port: %s', recordedPR.fingerprint, recordedPR.getIPv4() || recordedPR.getIPv6(), recordedPR.getPort());
+        plogger.debug('✔ %s %s:%s', recordedPR.fingerprint, recordedPR.getIPv4() || recordedPR.getIPv6(), recordedPR.getPort());
         res.end(JSON.stringify(recordedPR.json(), null, "  "));
         if (!recordedPR.propagated) {
           // Propagates peering infos
@@ -254,15 +259,16 @@ module.exports = function (pgp, currency, conf) {
               PeeringService.sendUpSignal(next, [recordedPR.fingerprint]);
             },
             function (next){
-              // Wait 3 seconds before sending our own FORWARD rule,
+              // Wait 10 seconds before sending our own FORWARD rule,
               // as remote node may ask us in response to UP/NEW signal
               setTimeout(function () {
                 // Send self FWD rules (does nothing if already sent)
+                flogger.debug("Negociate FWD due to received peering");
                 PeeringService.initForwards(next, [ recordedPR.fingerprint ]);
-              }, 3000);
+              }, 10000);
             }
           ], function (err) {
-            if (err) logger.error(err);
+            if (err) plogger.error(err);
           });
         }
       });
@@ -337,10 +343,10 @@ module.exports = function (pgp, currency, conf) {
           propagates: function(callback){
             PeeringService.propagateTHT(entry, function (err, propagated) {
               if(err && !propagated){
-                logger.error('Not propagated: %s', err);
+                tlogger.error('Not propagated: %s', err);
               }
               else if(!propagated){
-                logger.error('Unknown error during propagation');
+                tlogger.error('Unknown error during propagation');
               }
               callback();
             });
@@ -351,7 +357,7 @@ module.exports = function (pgp, currency, conf) {
           }
         },
         function(err) {
-          if(err) logger.error('Error during THT POST: ' + err);
+          if(err) tlogger.error('Error during THT POST: ' + err);
         });
       }
     });
@@ -465,7 +471,7 @@ module.exports = function (pgp, currency, conf) {
       }
     ], function (err, status, peer) {
       http.answer(res, 400, err, function () {
-        logger.debug('Incoming status: from: %s, status: %s', peer.fingerprint, status.status);
+        slogger.debug('⬇ %s status %s', peer.fingerprint, status.status);
         // Answers
         process.nextTick(function () {
           res.end(JSON.stringify(status.json()));
@@ -490,13 +496,17 @@ module.exports = function (pgp, currency, conf) {
             next(null, false);
           },
         ], function (err, needForward) {
-          if(err) logger.error(err);
+          if(err) slogger.error(err);
           if(needForward){
-            PeeringService.initForwards(function (err) {
-              if(err){
-                logger.error('Encountered following error during FORWARD renegociation: %s', err);
-              }
-            }, peer ? [ peer.fingerprint ] : null);
+            async.waterfall([
+              function (next){
+                PeeringService.initForwards(next, peer ? [ peer.fingerprint ] : null);
+              },
+              function (next){
+                PeeringService.sendUpSignal(next, peer ? [ peer.fingerprint ] : null);
+              },
+            ], function (err) {
+            });
           }
         });
       })

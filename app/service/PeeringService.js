@@ -545,9 +545,9 @@ module.exports.get = function (pgp, currency, conf) {
     async.waterfall([
       function (next){
         // Get two list of peers: the ones which already sent FWD, and those which did not
-        that.getKnownPeersGroupedByForward(toFingerprints, next);
+        that.getKnownPeersBySentStatus(toFingerprints, next);
       },
-      function (peersWhichSentForward, whichDidNot, next) {
+      function (sentNothingPeers, sentNewPeers, sentUpPeers, next) {
         var sendUpFPRS = _(peersWhichSentForward).without(that.cert.fingerprint);
         var sendNewFPRS = _(whichDidNot).without(that.cert.fingerprint);
         async.parallel({
@@ -566,40 +566,35 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
-  this.getKnownPeersGroupedByForward = function (toFingerprints, done) {
+  this.getKnownPeersBySentStatus = function (toFingerprints, done) {
     if (arguments.length == 1) {
       done = toFingerprints;
       toFingerprints = undefined;
     }
     var that = this;
-    var forwardsFPRS = [];
-    var othersFPRS = [];
+    var newPeers = [];
+    var upPeers = [];
     async.waterfall([
       function (next){
-        // Look for Forward requests already sent to this node
-        Forward.find({ to: that.cert.fingerprint }, next);
-      },
-      function (fwds, next){
-        fwds.forEach(function(fwd){
-          forwardsFPRS.push(fwd.from);
-        });
-        next();
-      },
-      function (next){
-        // Look for known peers that have not sent any forward request yet.
-        // Those nodes are considered new to this node, as any node
-        // should be aware of what another wants to be forwarded of.
-        Peer.find({ fingerprint: { $nin: forwardsFPRS} }, next);
+        if (toFingerprints) {
+          Peer.find({ $in: { "fingerprint": toFingerprints }}, next);
+        } else {
+          Peer.find({}, next);
+        }
       },
       function (peers, next){
-        peers.forEach(function(peer){
-          othersFPRS.push(peer.fingerprint);
+        var peersSent = {};
+        Peer.status.forEach(function(item){
+          peersSent[item] = [];
         });
-        if (toFingerprints) {
-          forwardsFPRS = _(forwardsFPRS).intersection(toFingerprints);
-          othersFPRS = _(othersFPRS).intersection(toFingerprints);
-        }
-        next(null, forwardsFPRS, othersFPRS);
+        peersSent.forEach(function(peer){
+          peersSent[peer.statusSent].push(peer);
+        });
+        next(
+          null,
+          peersSent[Peer.status.NOTHING],
+          peersSent[Peer.status.NOTHING],
+          peersSent[Peer.status.NOTHING]);
       }
     ], done);
   }

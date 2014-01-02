@@ -6,7 +6,12 @@ var _        = require('underscore');
 var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
 
-var STATUS = { UP: "UP", DOWN: "DOWN", NEW: "NEW" };
+var STATUS = {
+  NEW: "NEW",
+  UP: "UP",
+  DOWN: "DOWN",
+  NOTHING: "NOTHING"
+};
 var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]+))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 var PeerSchema = new Schema({
@@ -16,7 +21,8 @@ var PeerSchema = new Schema({
   endpoints: [String],
   signature: String,
   hash: String,
-  status: { type: String, default: STATUS.NEW },
+  status: { type: String, default: STATUS.NOTHING },
+  statusSent: { type: String, default: STATUS.NOTHING },
   statusSigDate: { type: Date, default: function(){ return new Date(0); } },
   propagated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },

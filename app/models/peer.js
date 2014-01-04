@@ -23,6 +23,7 @@ var PeerSchema = new Schema({
   hash: String,
   status: { type: String, default: STATUS.NOTHING },
   statusSent: { type: String, default: STATUS.NOTHING },
+  statusSentPending: { type: Boolean, default: false },
   statusSigDate: { type: Date, default: function(){ return new Date(0); } },
   propagated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },

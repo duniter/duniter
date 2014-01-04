@@ -64,6 +64,7 @@ module.exports.get = function (pgp, currency, conf) {
     var status = new Status();
     var peer, pubkey;
     var that = this;
+    var wasStatus = null;
     async.waterfall([
       function (next){
         status.parse(signedSR, next);
@@ -96,11 +97,12 @@ module.exports.get = function (pgp, currency, conf) {
           next('Old status given');
           return;
         }
-        peer.setStatus(status.isUp() ? Peer.status.UP : Peer.status.DOWN, next);
+        wasStatus = peer.status;
+        peer.setStatus(status.status, next);
         peer.statusSigDate = status.sigDate;
       }
     ], function (err) {
-      callback(err, status, peer);
+      callback(err, status, peer, wasStatus);
     });
   }
 
@@ -548,16 +550,12 @@ module.exports.get = function (pgp, currency, conf) {
         that.getKnownPeersBySentStatus(toFingerprints, next);
       },
       function (sentNothingPeers, sentNewPeers, sentUpPeers, next) {
-        var sendUpFPRS = _(peersWhichSentForward).without(that.cert.fingerprint);
-        var sendNewFPRS = _(whichDidNot).without(that.cert.fingerprint);
         async.parallel({
-          forwardPeers: function(callback){
-            // Send UP signal to those who already sent FWD
-            that.sendStatusTo('UP', sendUpFPRS, callback);
+          newPeers: function(callback){
+            that.sendStatusTo('NEW', sentNothingPeers, callback);
           },
-          otherPeers: function(callback){
-            // Others get a NEW signal (as they did not introduce themselves)
-            that.sendStatusTo('NEW', sendNewFPRS, callback);
+          knownPeers: function(callback){
+            that.sendStatusTo('UP', _.union(sentNewPeers, sentUpPeers), callback);
           }
         }, function(err, results) {
           done(err);
@@ -577,24 +575,33 @@ module.exports.get = function (pgp, currency, conf) {
     async.waterfall([
       function (next){
         if (toFingerprints) {
-          Peer.find({ $in: { "fingerprint": toFingerprints }}, next);
+          Peer.find({
+            statusSentPending: false,
+            "fingerprint": { $ne: that.cert.fingerprint },
+            $in: {
+              "fingerprint": toFingerprints
+            }
+          }, next);
         } else {
-          Peer.find({}, next);
+          Peer.find({
+            statusSentPending: false,
+            "fingerprint": { $ne: that.cert.fingerprint }
+          }, next);
         }
       },
       function (peers, next){
         var peersSent = {};
-        Peer.status.forEach(function(item){
+        _(Peer.status).keys().forEach(function(item){
           peersSent[item] = [];
         });
-        peersSent.forEach(function(peer){
-          peersSent[peer.statusSent].push(peer);
+        peers.forEach(function(peer){
+          peersSent[peer.statusSent].push(peer.fingerprint);
         });
         next(
           null,
           peersSent[Peer.status.NOTHING],
-          peersSent[Peer.status.NOTHING],
-          peersSent[Peer.status.NOTHING]);
+          peersSent[Peer.status.NEW],
+          peersSent[Peer.status.UP]);
       }
     ], done);
   }
@@ -642,10 +649,12 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  this.propagatePeering = function (peering) {
+  this.propagatePeering = function (peering, done) {
     this.propagate(peering, sendPeering, function (err) {
-      peering.propagated = true;
-      peering.save();
+      logger.debug("⇶ peering %s", peering.fingerprint);
+      Peer.update({ "fingerprint": peering.fingerprint }, { propagated: true }, done || function (err) {
+        // logger.debug("Propagated peering %s", peering.fingerprint);
+      });
     });
   }
 
@@ -679,8 +688,9 @@ module.exports.get = function (pgp, currency, conf) {
           var remote = peers[0];
           async.waterfall([
             function (next){
-              if (remote.status == "NEW") {
+              if (remote.status == "NOTHING" && remote.statusSent == "NOTHING") {
                 // Send peering entry
+                logger.debug("NEVER KNOWN peer %s, send self peering", remote.fingerprint);
                 that.submitSelfPeering(remote, function (err) {
                   next(err);
                 });
@@ -750,20 +760,40 @@ module.exports.get = function (pgp, currency, conf) {
 
   function sendStatus(peer, status, done) {
     logger.info('POST status %s to %s', status.status, peer.fingerprint);
-    post(peer, '/ucg/peering/status', {
-      "status": status.getRaw(),
-      "signature": status.signature
-    }, done);
+    var previouslySent = peer.statusSent;
+    async.waterfall([
+      function (next) {
+        peer.statusSent = status.status;
+        peer.statusSentPending = true;
+        peer.save(function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        post(peer, '/ucg/peering/status', {
+          "status": status.getRaw(),
+          "signature": status.signature
+        }, next);
+      }
+    ], function (err){
+      peer.statusSentPending = false;
+      if (err) {
+        peer.statusSent = previouslySent;
+      }
+      peer.save(function (err2) {
+        done(err || err2);
+      });
+    });
   }
 
   function post(peer, url, data, done) {
-    request
-    .post('http://' + peer.getURL() + url, function (err, res, body) {
-      peer.setStatus((err && Peer.status.DOWN) || Peer.status.UP, function (err) {
-        done(err, res, body);
-      });
-    })
-    .form(data);
+    var postReq = request.post('http://' + peer.getURL() + url, function (err, res, body) {
+      done(err, res, body);
+      // peer.setStatus((err && Peer.status.DOWN) || Peer.status.UP, function (err) {
+      //   done(err, res, body);
+      // });
+    });
+    postReq.form(data);
   }
 
   function get(peer, url, done) {

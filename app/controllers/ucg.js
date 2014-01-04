@@ -10,6 +10,7 @@ var Merkle    = mongoose.model('Merkle');
 var THTEntry  = mongoose.model('THTEntry');
 var Key       = mongoose.model('Key');
 var log4js    = require('log4js');
+var _         = require('underscore');
 var logger    = log4js.getLogger();
 var plogger      = log4js.getLogger('peering');
 var flogger      = log4js.getLogger('forward');
@@ -258,15 +259,6 @@ module.exports = function (pgp, currency, conf) {
               // Send UP/NEW signal for receiving its FORWARD rules (this also send self peering infos)
               PeeringService.sendUpSignal(next, [recordedPR.fingerprint]);
             },
-            function (next){
-              // Wait 10 seconds before sending our own FORWARD rule,
-              // as remote node may ask us in response to UP/NEW signal
-              setTimeout(function () {
-                // Send self FWD rules (does nothing if already sent)
-                flogger.debug("Negociate FWD due to received peering");
-                PeeringService.initForwards(next, [ recordedPR.fingerprint ]);
-              }, 10000);
-            }
           ], function (err) {
             if (err) plogger.error(err);
           });
@@ -469,7 +461,7 @@ module.exports = function (pgp, currency, conf) {
       function(signedStatus, callback){
         PeeringService.submitStatus(signedStatus, callback);
       }
-    ], function (err, status, peer) {
+    ], function (err, status, peer, wasStatus) {
       http.answer(res, 400, err, function () {
         slogger.debug('⬇ %s status %s', peer.fingerprint, status.status);
         // Answers
@@ -486,31 +478,94 @@ module.exports = function (pgp, currency, conf) {
               });
               return;
             }
-            if(status.isUp()){
-              Forward.find({ from: peer.fingerprint, to: that.cert.fingerprint }, function (err, fwds) {
-                // If fwd does not exist, it needs to be resent
-                next(err, fwds.length == 0 ? true : false);
-              });
-              return;
-            }
             next(null, false);
           },
         ], function (err, needForward) {
           if(err) slogger.error(err);
-          if(needForward){
-            async.waterfall([
-              function (next){
+          async.waterfall([
+            function (next){
+              if(needForward){
                 PeeringService.initForwards(next, peer ? [ peer.fingerprint ] : null);
-              },
-              function (next){
-                PeeringService.sendUpSignal(next, peer ? [ peer.fingerprint ] : null);
-              },
-            ], function (err) {
-            });
-          }
+              }
+            },
+            function (next){
+              var newStatus = status.status;
+              var answerStatus = chooseActionForIncomingStatusAndPeer(wasStatus, newStatus, peer);
+              answerStatus(peer, next);
+            },
+          ], function (err) {
+            if (err) slogger.error(err);
+          });
         });
       })
     });
+  }
+
+  // 3D associative array
+  // Dim. 1: sent status
+  // Dim. 2: received status
+  // Dim. 3: incoming status
+  var actionMatrix = {};
+  _(Peer.status).keys().forEach(function(sentSt){
+    actionMatrix[sentSt] = {};
+    _(Peer.status).keys().forEach(function(receivedSt){
+      actionMatrix[sentSt][receivedSt] = {};
+      _(Peer.status).keys().forEach(function(incomingSt){
+        actionMatrix[sentSt][receivedSt][incomingSt] = doNothing;
+      });
+    });
+  });
+  _(Peer.status).keys().forEach(function(receivedSt){
+    _(Peer.status).keys().forEach(function(incomingSt){
+      actionMatrix["NOTHING"][receivedSt][incomingSt] = sendNewStatus;
+    });
+  });
+  _(Peer.status).keys().forEach(function(sentSt){
+    _(Peer.status).keys().forEach(function(receivedSt){
+      if (sentSt != 'NOTHING') {
+        actionMatrix[sentSt][receivedSt]["NEW"] = resetAndSendNewStatus;
+      }
+    });
+  });
+  // Avoid NEW infinite loop
+  actionMatrix["NEW"]["NOTHING"]["NEW"]   = doNothing;
+  // Other reset cases
+  actionMatrix["NEW"]["NOTHING"]["UP"]    = resetAndSendNewStatus;
+  actionMatrix["NEW"]["NOTHING"]["DOWN"]  = resetAndSendNewStatus;
+  actionMatrix["UP"]["NOTHING"]["UP"]     = resetAndSendNewStatus;
+  actionMatrix["UP"]["NOTHING"]["DOWN"]   = resetAndSendNewStatus;
+  actionMatrix["DOWN"]["NOTHING"]["UP"]   = resetAndSendNewStatus;
+  actionMatrix["DOWN"]["NOTHING"]["DOWN"] = resetAndSendNewStatus;
+
+  function chooseActionForIncomingStatusAndPeer (wasStatus , newStatus, peer) {
+    slogger.debug("Choose action for %s %s %s", peer.statusSent, wasStatus, newStatus);
+    return actionMatrix[peer.statusSent][wasStatus][newStatus];
+  }
+
+  function sendNewStatus (peer, done) {
+    slogger.debug("Send NEW status to %s", peer.fingerprint);
+    PeeringService.sendStatusTo(Peer.status.NEW, [ peer.fingerprint ], done);
+  }
+
+  function resetAndSendNewStatus (peer, done) {
+    slogger.debug("RESET and send NEW status to %s", peer.fingerprint);
+    async.waterfall([
+      function (next){
+        peer.status = Peer.status.NOTHING;
+        peer.statusSent = Peer.status.NOTHING;
+        peer.statusSentPending = false;
+        peer.save(function (err){
+          next(err);
+        });
+      },
+      function (next){
+        PeeringService.sendStatusTo(Peer.status.NEW, [ peer.fingerprint ], next);
+      },
+    ], done);
+  }
+
+  function doNothing (peer, done) {
+    done();
   }
   
   return this;

@@ -21,15 +21,15 @@ module.exports = function StatusMessage (values) {
   }
 
   this.isNew = function () {
-    return ~['NEW'].indexOf(this.status);
+    return this.status == 'NEW';
   }
 
   this.isUp = function () {
-    return ~['UP', 'NEW'].indexOf(this.status);
+    return this.status == 'UP';
   }
 
   this.isDown = function () {
-    return !this.isUp();
+    return this.status == 'DOWN';
   }
   
   this.parse = function(rawStatusReq, callback) {

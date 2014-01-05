@@ -412,8 +412,7 @@ module.exports = function (pgp, currency, conf) {
 
   function givePeers (criterias, req, res) {
     var that = this;
-    var oneWay = criterias.from ? 'from' : 'to';
-    var otherWay = criterias.from ? 'to' : 'from';
+    var watcher = criterias.from ? 'to' : 'from';
     async.waterfall([
       function (next){
         Forward.find(criterias, next);
@@ -421,10 +420,10 @@ module.exports = function (pgp, currency, conf) {
       function (forwards, next){
         var json = { peers: [] };
         async.forEach(forwards, function(fwd, callback){
-          var p = { fingerprint: fwd[oneWay] || "" };
+          var p = { fingerprint: fwd[watcher] || "" };
           async.waterfall([
             function (cb){
-              Peer.find({ fingerprint: fwd[otherWay] }, cb);
+              Peer.find({ fingerprint: fwd[watcher] }, cb);
             },
             function (peers, cb){
               if(peers.length == 0){
@@ -432,9 +431,10 @@ module.exports = function (pgp, currency, conf) {
                 return;
               }
               var peer = peers[0];
-              ['dns', 'ipv4', 'ipv6', 'port'].forEach(function (key) {
-                p[key] = peer[key] || "";
-              });
+              p['dns'] = peer.getDns() || "";
+              p['ipv4'] = peer.getIPv4() || "";
+              p['ipv6'] = peer.getIPv6() || "";
+              p['port'] = peer.getPort() || "";
               json.peers.push(p);
               cb();
             }

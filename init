@@ -1,5 +1,15 @@
 #!/bin/bash
 
+host=127.0.0.1
+port=8080
+
+bin/ucoind --currency beta_brousouf reset config
 bin/ucoind --currency beta_brousouf reset data
 bin/ucoind --currency beta_brousouf allow-key 2E69197FAB029D8669EF85E82457A1587CA0ED9C
+bin/ucoind --currency beta_brousouf config --pgpkey test/data/lolcat.priv --ipv4 $host --port $port --remote4 $host --remotep $port --pgppasswd "lolcat" --kmanagement ALL
 bin/ucoind --currency beta_brousouf start
+
+#bin/ucoind --currency beta_brousouf reset data
+#bin/ucoind --currency beta_brousouf allow-key 2E69197FAB029D8669EF85E82457A1587CA0ED9C
+#bin/ucoind --currency beta_brousouf start
+#node --debug bin/ucoind --currency beta_brousouf start

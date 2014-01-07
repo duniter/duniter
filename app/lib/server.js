@@ -81,7 +81,8 @@ module.exports.database = {
               remoteport: null,
               pgpkey: null,
               pgppasswd: null,
-              kmanagement: 'KEYS'
+              kmanagement: 'KEYS',
+              kaccept: 'ALL'
             }));
           }
           else done(err);

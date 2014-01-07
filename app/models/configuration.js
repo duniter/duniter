@@ -11,13 +11,18 @@ var ConfigurationSchema = new Schema({
   remoteport: Number,
   pgpkey: String,
   pgppasswd: String,
-  kmanagement: String
+  kmanagement: String,
+  kaccept: String
 });
 
 ConfigurationSchema.pre('save', function (next) {
   if(!this.kmanagement || !this.kmanagement.match(/^(ALL|KEYS)$/)){
     console.error('Incorrect --kmanagement value, reset to default `KEYS` value');
     this.kmanagement = 'KEYS';
+  }
+  if(!this.kaccept || !this.kaccept.match(/^(ALL|KEYS)$/)){
+    console.error('Incorrect --kaccept value, reset to default `KEYS` value');
+    this.kaccept = 'KEYS';
   }
   this.updated = Date.now();
   next();

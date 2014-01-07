@@ -28,7 +28,11 @@ module.exports = function (currency, conf) {
       },
       function (next) {
         logger.debug('⬇ %s', pubkey.fingerprint);
-        KeyService.isKnown(pubkey.fingerprint, next);
+        if (conf.kaccept == "KEYS") {
+          KeyService.isKnown(pubkey.fingerprint, next);
+        } else {
+          next(null, true);
+        }
       },
       function (isKnown, next) {
         if (!isKnown) {

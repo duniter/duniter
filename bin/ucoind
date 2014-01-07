@@ -34,6 +34,7 @@ program
   .option('--remote6 <host>', 'Remote interface for IPv6 access')
   .option('--remotep <port>', 'Remote port others may use to contact this node')
   .option('--kmanagement <ALL|KEYS>', 'Define key management policy')
+  .option('--kaccept <ALL|KEYS>', 'Define key acceptance policy')
   ;
 
 program
@@ -350,7 +351,8 @@ function overrideConf(conf) {
       database: program.mdb,
     },
     policy: {
-      keys: program.kmanagement
+      keys: program.kmanagement,
+      pubkeys: program.kaccept
     }
   };
 
@@ -367,6 +369,7 @@ function overrideConf(conf) {
   conf.remoteipv6  = config.server.remote.ipv6 != undefined ? config.server.remote.ipv6 : conf.remoteipv6;
   conf.remoteport  = config.server.remote.port != undefined ? config.server.remote.port : conf.remoteport;
   conf.kmanagement = config.policy.keys || conf.kmanagement;
+  conf.kaccept     = config.policy.pubkeys || conf.kaccept;
   return conf;
 }
 

@@ -200,64 +200,6 @@ program
   }));
 
 program
-  .command('update-merkles')
-  .description('Reset Merkle trees and computes them again according to stored data.')
-  .action(connect(function (type, conf) {
-    var Merkle      = mongoose.model('Merkle');
-    var PublicKey   = mongoose.model('PublicKey');
-    var Vote        = mongoose.model('Vote');
-    var Amendment   = mongoose.model('Amendment');
-    var Transaction = mongoose.model('Transaction');
-    async.waterfall([
-
-      // Public keys
-      function (next){
-        PublicKey.find(next);
-      },
-      function (pubkeys, next){
-        var fingerprints = [];
-        pubkeys.forEach(function (pubkey) {
-          fingerprints.push(pubkey.fingerprint);
-        });
-        Merkle.forPublicKeys(function (err, merkle) {
-          next(err, merkle, fingerprints);
-        });
-      },
-      function (merkle, fingerprints, next) {
-        fingerprints.sort(); // Important!
-        merkle.initialize(fingerprints);
-        merkle.save(next);
-      },
-
-      // Transactions
-      function (next){
-        Transaction.find().sort('created').exec(next);
-      },
-      function (txs, next){
-        async.forEachSeries(txs, function(tx, callback){
-          if(tx.type == 'ISSUANCE'){
-            var amNum = tx.getCoins()[0].originNumber;
-            Merkle.updateForIssuance(tx, { number: amNum }, callback);
-          }
-          else if(tx.type == 'TRANSFERT'){
-            Merkle.updateForTransfert(tx, callback);
-          }
-          else if(tx.type == 'FUSION'){
-            Merkle.updateForFusion(tx, callback);
-          }
-          else callback('Unknow transaction type \'%s\'', tx.type);
-        }, next);
-      }
-    ], function (err, result) {
-      if(err){
-        console.error(err);
-      }
-      else console.log('Merkles computed successfuly.');
-      server.database.disconnect();
-    });
-  }));
-
-program
   .command('start')
   .description('Start uCoin server using given --currency')
   .action(connect(function (conf) {

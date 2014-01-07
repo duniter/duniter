@@ -47,6 +47,14 @@ You can get more in uCoin project reading the following documents:
 
 ## Installation
 
+### Environment
+
+uCoin was already tested and should be working on majority of Debian-based systems. To work, it requires the following softwares:
+
+* nodejs (0.10+)
+* gnupg
+* mongodb
+
 ### Node.js
 
 uCoin is powered by Node.js v0.10+, so you need it installed first. Here is an example for Ubuntu installation:
@@ -56,10 +64,18 @@ $ sudo apt-get update
 $ sudo apt-get install python-software-properties python g++ make
 $ sudo add-apt-repository ppa:chris-lea/node.js
 $ sudo apt-get update
-$ sudo apt-get install mongodb nodejs
+$ sudo apt-get install nodejs
 ```
 
 You can find the installation of Node.js for other distribution [on this GitHub document](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager).
+
+### GnuPG + MongoDB
+
+It's that simple:
+
+```bash
+$ sudo apt-get install mongodb gnupg
+```
 
 ### uCoin from git repository
 
@@ -145,7 +161,16 @@ Note too that listening to multiple interfaces doesn't imply mutiple program ins
 
 #### Peering informations
 
-As the server may be behind a reverse proxy, or because hosts may change of address, it might be useful to provide some remote informations like remote `host` and `port` telling where is really located the node:
+uCoin protocol uses peering mecanisms, hence needs to any ucoin node to be reachable through the network.
+
+As the server may be behind a reverse proxy, or because hosts may change of address, remote informations are likely to be different from listening host and port parameters. ucoin software defines 4 remote parameters you need to precise for your ucoin instance to be working:
+
+* `--remoteh`
+* `--remote4`
+* `--remote6`
+* `--remotep`
+
+You must define at least `--remote4` and `--remotep` not to have any error. Here is an example:
 
 ```bash
 $ ucoind --currency beta_brousouf config --remoteh "some.remote.url" --remotep "8844" --remote4 "11.11.11.11" --remote6 "::1"
@@ -176,6 +201,41 @@ Signed requests with PGP: enabled.
 uCoin server listening on 127.0.0.1 port 8888
 uCoin server listening on ::1 port 8888
 ```
+
+### Initial data
+
+Once your server is running, it is already usable. However, at this step, you have 2 choices: you might either want to create your brand new currency with fresh new data, or just want to add your node to an already existing currency. Below are how to do each.
+
+#### Brand new currency
+
+You should follow [this gist](https://gist.github.com/c-geek/6343172) which explains how to use [ucoin-cli](https://github.com/c-geek/ucoin-cli) software, allowing to add your first keys, create your initial Monetary Contract and make transactions.
+
+#### Existing currency
+
+In this cas, you need to synchronize with existing peers to fetch existing:
+
+* Public keys
+* Monetary Contract
+* Transactions
+* Peers
+* Trust Hash Table
+
+This is easily done with:
+
+```bash
+$ ucoin --currency beta_brousouf sync <host_name> <port>
+```
+
+For example, to synchronise with [ucoin.twiced.fr:9101](http://ucoin.twiced.fr:9101/ucg/peering):
+
+```bash
+$ ucoin --currency beta_brousouf sync ucoin.twiced.fr 9101
+[2014-01-07 23:21:52.571] [INFO] sync - Sync started.
+...
+[2014-01-07 23:21:52.997] [INFO] sync - Sync finished.
+```
+
+Your node is then ready to be started, making it contact all known peers to introduce itself and exchange peering informations.
 
 ### Help
 
@@ -216,6 +276,7 @@ Options:
   --remote6 <host>          Remote interface for IPv6 access
   --remotep <port>          Remote port others may use to contact this node
   --kmanagement <ALL|KEYS>  Define key management policy
+  --kaccept <ALL|KEYS>      Define key acceptance policy
 ```
 
 ## Talk about/get involved in uCoin project

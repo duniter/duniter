@@ -76,10 +76,17 @@ It's that simple:
 ```bash
 $ sudo apt-get install mongodb gnupg
 ```
+### uCoin from npm repository (recommended)
+
+This fetches ucoin using npm. Fast & easy to do:
+
+```bash
+$ sudo npm install ucoin -g
+```
 
 ### uCoin from git repository
 
-And then, just install uCoin:
+This just fetch & install uCoin (development state):
 
 ```bash
 $ git clone git@github.com:c-geek/ucoin.git

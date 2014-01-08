@@ -1,7 +1,7 @@
 {
   "name": "ucoin",
-  "version": "0.3.0",
-  "private": true,
+  "version": "0.4.0",
+  "private": false,
   "description": "Crypto-currency software using Node.js",
   "main": "bin/ucoin",
   "directories": {
@@ -26,19 +26,19 @@
     "url": "https://github.com/c-geek/ucoin/issues"
   },
   "dependencies": {
-    "express": "",
-    "commander": "",
-    "ejs": "",
-    "mongoose": "",
-    "async": "",
-    "sha1": "",
-    "merkle": "",
-    "hdc": ">= 0.3.0",
-    "connect-pgp": "",
-    "underscore": "",
-    "vucoin": "",
-    "request": "",
-    "log4js": ""
+    "express": "~3.4.7",
+    "commander": "~2.1.0",
+    "ejs": "~0.8.5",
+    "mongoose": "~3.8.4",
+    "async": "~0.2.9",
+    "sha1": "~1.1.0",
+    "merkle": "~0.1.0",
+    "hdc": "~0.3.0",
+    "connect-pgp": "~0.1.15",
+    "underscore": "~1.5.2",
+    "vucoin": "~0.8.0",
+    "request": "~2.31.0",
+    "log4js": "~0.6.9"
   },
   "devDependencies": {
     "mocha": "",

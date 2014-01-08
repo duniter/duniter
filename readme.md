@@ -223,13 +223,13 @@ In this cas, you need to synchronize with existing peers to fetch existing:
 This is easily done with:
 
 ```bash
-$ ucoin --currency beta_brousouf sync <host_name> <port>
+$ ucoind --currency beta_brousouf sync <host_name> <port>
 ```
 
 For example, to synchronise with [ucoin.twiced.fr:9101](http://ucoin.twiced.fr:9101/ucg/peering):
 
 ```bash
-$ ucoin --currency beta_brousouf sync ucoin.twiced.fr 9101
+$ ucoind --currency beta_brousouf sync ucoin.twiced.fr 9101
 [2014-01-07 23:21:52.571] [INFO] sync - Sync started.
 ...
 [2014-01-07 23:21:52.997] [INFO] sync - Sync finished.

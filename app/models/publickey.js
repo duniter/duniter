@@ -47,6 +47,17 @@ PublicKeySchema.methods = {
         obj.name = extract[1];
         obj.comment = '';
         obj.email = extract[2];
+      } else {
+        extract = uid.match(/([\s\S]*) \(([\s\S]*)\)/);
+        if(extract && extract.length === 3) {
+        obj.name = extract[1];
+          obj.comment = extract[2];
+          obj.email = "";
+        } else {
+          obj.name = "";
+          obj.comment = "";
+          obj.email = "";
+        }
       }
     }
     done();

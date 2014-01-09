@@ -290,6 +290,7 @@ Options:
 
 For the moment uCoin is developed only by its author. If you wish to participate/debate on it, you can:
 
+* visit official website [ucoin.io](http://ucoin.io)
 * join XMPP chatroom [ucoin@muc.jappix.com](https://jappix.com/)
 * join diffusion list [https://groups.google.com/forum/?hl=fr#!forum/ucoin](https://groups.google.com/forum/?hl=fr#!forum/ucoin)
 * contact me directly at cem.moreau@gmail.com

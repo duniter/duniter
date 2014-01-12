@@ -71,7 +71,7 @@ module.exports.get = function (currency) {
       else if(tx.type == 'FUSION'){
         fusion(tx, callback);
       }
-      else if(tx.type == 'TRANSFERT'){
+      else if(tx.type == 'TRANSFER'){
         transfert(tx, callback);
       }
       else{

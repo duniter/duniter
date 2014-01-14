@@ -51,7 +51,7 @@
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend](#transactionssenderpgp_fingerprintissuancedividend)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]](#transactionssenderpgp_fingerprintissuancedividendam_number)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/fusion](#transactionssenderpgp_fingerprintissuancefusion)
-      * [transactions/sender/[PGP_FINGERPRINT]/transfert](#transactionssenderpgp_fingerprinttransfert)
+      * [transactions/sender/[PGP_FINGERPRINT]/transfer](#transactionssenderpgp_fingerprinttransfer)
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
       * [transactions/view/[TRANSACTION_ID]](#transactionsviewtransaction_id)
 
@@ -109,7 +109,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
             |   `-- [PGP_FINGERPRINT]/
             |       |-- last/
             |           `-- [count]
-            |       |-- transfert
+            |       |-- transfer
             |       `-- issuance/
             |           |-- last
             |           |-- fusion
@@ -140,7 +140,7 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`
-* `hdc/transactions/sender/[PGP_FINGERPRINT]/transfert`
+* `hdc/transactions/sender/[PGP_FINGERPRINT]/transfer`
 * `hdc/transactions/recipient/[PGP_FINGERPRINT]`
 
 Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
@@ -258,7 +258,7 @@ Merkle URL | Leaf | Sort
 `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend` | Hash of the transaction + signature | By hash string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]` | Hash of the transaction + signature | By hash string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/transfert` | Hash of the transaction + signature | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/transfer` | Hash of the transaction + signature | By hash string sort, ascending.
 `hdc/transactions/recipient/[PGP_FINGERPRINT]` | Hash of the transaction + signature | By hash string sort, ascending.
 
 ## API
@@ -470,7 +470,7 @@ This entry contains a sum-up of common Merkle URLs handled by this node, with th
 #### `ucg/peering/keys`
 **Goal**
 
-Merkle URL referencing PGP keys' fingerprint this node manages, i.e. this node will have transactions history and follow ohter nodes for this history.
+Merkle URL referencing PGP keys' fingerprint this node manages, i.e. this node will have transactions history and follow other nodes for this history.
 
 **Parameters**
 
@@ -1241,8 +1241,8 @@ GET the ownership state of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRINT]
 
 Name | Value | Method
 ---- | ----- | ------
-`PGP_FINGERPRINT` | Owner of the coins. | URL
-`COIN_ID` | Coin [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#coins-format). | URL
+`PGP_FINGERPRINT` | Issuer of the coin. | URL
+`COIN_NUMBER` | Coin number in the issuer's list of issued coins | URL
 
 **Returns**
 
@@ -1264,8 +1264,8 @@ GET a transaction history of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRIN
 
 Name | Value | Method
 ---- | ----- | ------
-`PGP_FINGERPRINT` | Owner of the coins. | URL
-`COIN_ID` | Coin [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#coins-format). | URL
+`PGP_FINGERPRINT` | Issuer of the coin. | URL
+`COIN_NUMBER` | Coin number in the issuer's list of issued coins | URL
 
 **Returns**
 
@@ -1696,10 +1696,10 @@ The last [COUNT] transactions of given PGP key.
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/transfert`
+#### `transactions/sender/[PGP_FINGERPRINT]/transfer`
 **Goal**
 
-Merkle URL referencing all **transfert** transactions sent by this sender and stored by this node (should contain all **transfert** transactions of the sender).
+Merkle URL referencing all **transfer** transactions sent by this sender and stored by this node (should contain all **transfer** transactions of the sender).
 
 **Parameters**
 

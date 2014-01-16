@@ -34,9 +34,15 @@ Monetary Contract | A document gathering the informations defining the community
 
 ### HDC Data
 
+#### Line endings
+
 Please not **very carefully** that every HDC document's line **ENDS with a newline character Windows-style**, that is to say **<CR><LF>**.
 
 This is a *very important information* as every document is subject to hashes, and Unix-style endings won't produce the expected hashes.
+
+#### Numbering
+
+For [Amendments](#amendment) and [Transactions](#transaction), number starts from `0`. That is, first amendments is `AM#0`, and first transaction of a node is `TX#0`.
 
 ## Public key
 

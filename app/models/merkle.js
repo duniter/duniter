@@ -146,6 +146,10 @@ MerkleSchema.statics.txFusionOfSender = function (fingerprint, done) {
   retrieve({ type: 'txFusionOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
+MerkleSchema.statics.txDivisionOfSender = function (fingerprint, done) {
+  retrieve({ type: 'txDivisionOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
+};
+
 MerkleSchema.statics.txTransfertOfSender = function (fingerprint, done) {
   retrieve({ type: 'txTransfertOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
@@ -380,6 +384,51 @@ MerkleSchema.statics.updateForFusion = function (tx, done) {
     function (merkle, code, next){
       // M5
       Merkle.txFusionOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M7
+      Merkle.txToRecipient(tx.recipient, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForDivision = function (tx, done) {
+  async.waterfall([
+    function (next) {
+      // M All
+      Merkle.txAll(next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M1
+      Merkle.txOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M2
+      Merkle.txIssuanceOfSender(tx.sender, next);
+    },
+    function (merkle, next){
+      merkle.push(tx.hash);
+      merkle.save(next);
+    },
+    function (merkle, code, next){
+      // M5
+      Merkle.txDivisionOfSender(tx.sender, next);
     },
     function (merkle, next){
       merkle.push(tx.hash);

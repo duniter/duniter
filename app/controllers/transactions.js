@@ -223,6 +223,10 @@ module.exports = function (pgp, currency, conf) {
 
     fusion: function (req, res) {
       showMerkle(Merkle.txFusionOfSender, null, null, req, res);
+    },
+
+    division: function (req, res) {
+      showMerkle(Merkle.txDivisionOfSender, null, null, req, res);
     }
   };
 

@@ -71,6 +71,9 @@ module.exports.get = function (currency) {
       else if(tx.type == 'FUSION'){
         fusion(tx, callback);
       }
+      else if(tx.type == 'DIVISION'){
+        division(tx, callback);
+      }
       else if(tx.type == 'TRANSFER'){
         transfert(tx, callback);
       }
@@ -135,10 +138,11 @@ module.exports.get = function (currency) {
           // Verify coins chaining
           var lastNum = -1;
           if(lastTX){
-            var lastCoins = lastTX.getCoins();
-            // For issuance transaction, last num <=> LAST coin
-            // For fusion transaction, last num <=> FIRST coin
-            lastNum =  lastTX.type == 'ISSUANCE' ? lastCoins[lastCoins.length - 1].number : lastCoins[0].number;
+            lastNum = lastTX.getLastIssuedCoin();
+            lastNum = lastNum && lastNum.number;
+            if (lastNum == null) {
+              lastNum = -1;
+            }
           }
           var newCoins = tx.getCoins();
           if(newCoins[0].number != lastNum + 1){
@@ -387,8 +391,11 @@ module.exports.get = function (currency) {
           // Verify coins chaining
           var lastNum = -1;
           if(lastTX){
-            var lastCoins = lastTX.getCoins();
-            lastNum = lastTX.type == 'ISSUANCE' ? lastCoins[lastCoins.length - 1].number : lastCoins[0].number;
+            lastNum = lastTX.getLastIssuedCoin();
+            lastNum = lastNum && lastNum.number;
+            if (lastNum == null) {
+              lastNum = -1;
+            }
           }
           var newCoins = tx.getCoins();
           if(newCoins[0].number != lastNum + 1){
@@ -455,6 +462,152 @@ module.exports.get = function (currency) {
           owner: tx.sender
         });
         c.save(next);
+      }
+    ], function (err, result) {
+      callback(err, tx);
+    });
+  }
+
+  function division(tx, callback) {
+    var divisionCoins = [];
+    async.waterfall([
+      function (next){
+        Key.isManaged(tx.sender, next);
+      },
+      function (verified, next){
+        if(!verified){
+          next('Issuer\'s key not managed by this node');
+          return;
+        }
+        // Get last transaction
+        Transaction.findLastOf(tx.sender, function (err, lastTX) {
+          if(lastTX){
+            // Verify tx chaining
+            if(lastTX.number != tx.number - 1){
+              next('Transaction doest not follow your last one');
+              return;
+            }
+            if(lastTX.hash != tx.previousHash) {
+              next('Transaction have wrong previousHash (given ' + tx.previousHash + ', expected ' + lastTX.hash + ')');
+              return;
+            }
+          }
+          else{
+            if(tx.number != 0){
+              next('Transaction must have number #0 as it is your first');
+              return;
+            }
+            if(tx.previousHash){
+              next('Transaction must not have a previousHash as it is your first');
+              return;
+            }
+          }
+          next();
+        });
+      },
+      function (next){
+        // Get last issuance
+        Transaction.findLastIssuance(tx.sender, function (err, lastTX) {
+          // Verify coins chaining
+          var lastNum = -1;
+          if(lastTX){
+            lastNum = lastTX.getLastIssuedCoin();
+            lastNum = lastNum && lastNum.number;
+            if (lastNum == null) {
+              lastNum = -1;
+            }
+          }
+          var coins = tx.getCoins();
+          if(coins[0].number != lastNum + 1){
+            next('Bad transaction: coins number must follow last issuance transaction' + coins[0].number + ' ' + lastNum);
+            return;
+          }
+          var err = null;
+          var isDivisionCoin = true;
+          coins.forEach(function (coin) {
+            isDivisionCoin = isDivisionCoin && !coin.transaction;
+            if (isDivisionCoin) {
+              divisionCoins.push(coin);
+            }
+            if(!err && isDivisionCoin && coin.number != ++lastNum){
+              err = 'Bad transaction: coins do not have a good sequential numerotation';
+            }
+          });
+          if(err){
+            next(err);
+            return;
+          }
+          next();
+        });
+      },
+      function (next){
+        // Verify fusion coin sum
+        var divisionSum = 0;
+        var materialSum = 0;
+        var isDivisionCoin = true;
+        tx.getCoins().forEach(function (coin, index) {
+          isDivisionCoin = isDivisionCoin && !coin.transaction;
+          if (!isDivisionCoin && !coin.transaction) {
+            next('Bad coin sequence: first part must contains only division coins, second part must contain only material coins');
+            return;
+          }
+          if(isDivisionCoin)
+            divisionSum += coin.base * Math.pow(10, coin.power);
+          else
+            materialSum += coin.base * Math.pow(10, coin.power);
+        });
+        if(materialSum != divisionSum){
+          next('Bad division sum: division sum (' + divisionSum + ') != material sum (' + materialSum + ')');
+          return;
+        }
+        next();
+      },
+      function (next){
+        // Verify each coin is owned
+        var coins = tx.getCoins();
+        coins = _(coins).last(coins.length - divisionCoins.length);
+        async.forEach(coins, function(coin, callback){
+          Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
+            if(err || ownership.owner != tx.sender){
+              callback(err || 'You are not the owner of coin ' + coin.issuer + '-' + coin.number + ' (' + (coin.base * Math.pow(10, coin.power)) + '). Cannot send it.');
+              return;
+            }
+            callback();
+          })
+        }, next);
+      },
+      function (next){
+        tx.save(next);
+      },
+      function (txSaved, code, next){
+        Key.setSeenTX(tx, true, next);
+      },
+      function (next){
+        Merkle.updateForDivision(tx, next);
+      },
+      function (merkle, code, next){
+        // Remove ownership of division coins
+        var coins = tx.getCoins();
+        var materialCoins = _(coins).last(coins.length - divisionCoins.length);
+        async.forEach(materialCoins, function(coin, callback){
+          Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
+            ownership.owner = '';
+            ownership.transaction = tx.sender + '-' + tx.number;
+            ownership.save(callback);
+          });
+        }, next);
+      },
+      function (next) {
+        async.forEach(divisionCoins, function(coin, callback){
+          var c = new Coin({
+            id: coin.id,
+            transaction: tx.sender + '-' + tx.number,
+            owner: tx.sender
+          });
+          c.save(function (err) {
+            callback(err);
+          });
+        }, next);
       }
     ], function (err, result) {
       callback(err, tx);

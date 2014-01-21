@@ -51,6 +51,7 @@
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend](#transactionssenderpgp_fingerprintissuancedividend)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]](#transactionssenderpgp_fingerprintissuancedividendam_number)
       * [transactions/sender/[PGP_FINGERPRINT]/issuance/fusion](#transactionssenderpgp_fingerprintissuancefusion)
+      * [transactions/sender/[PGP_FINGERPRINT]/issuance/division](#transactionssenderpgp_fingerprintissuancedivision)
       * [transactions/sender/[PGP_FINGERPRINT]/transfer](#transactionssenderpgp_fingerprinttransfer)
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
       * [transactions/view/[TRANSACTION_ID]](#transactionsviewtransaction_id)
@@ -1846,60 +1847,6 @@ The last *issuance* transaction of given PGP key.
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`
-**Goal**
-
-Merkle URL referencing all **fusion** transactions sent by this sender and stored by this node (should contain all **fusion** transactions of the sender).
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
-      "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
-      "coins": [
-        {
-          "id": "10-1-2-F-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Too much coins ! Making big one."
-    }
-  }
-}
-```
-
 #### `transactions/sender/[PGP_FINGERPRINT]/issuance/dividend`
 **Goal**
 
@@ -2003,6 +1950,117 @@ Merkle URL leaf: transaction
         }
       ],
       "comment": "Too much coins ! Making big one."
+    }
+  }
+}
+```
+
+#### `transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`
+**Goal**
+
+Merkle URL referencing all **fusion** transactions sent by this sender and stored by this node (should contain all **fusion** transactions of the sender).
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: transaction
+```json
+{
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "transaction":
+    {
+      "version": 1,
+      "sender": "[PGP_FINGERPRINT]",
+      "number": 14,
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Too much coins ! Making big one."
+    }
+  }
+}
+```
+
+#### `transactions/sender/[PGP_FINGERPRINT]/issuance/division`
+**Goal**
+
+Merkle URL referencing all **division** transactions sent by this sender and stored by this node (should contain all **division** transactions of the sender).
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: transaction
+```json
+{
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "transaction":
+    {
+      "version": 1,
+      "sender": "[PGP_FINGERPRINT]",
+      "number": 15,
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "DIVISION",
+      "coins": [
+        {
+          "id": "10-2-1-D-15",
+          "transaction_id": ""
+        },{
+          "id": "10-1-1-D-16",
+          "transaction_id": ""
+        },{
+          "id": "10-1-1-D-17",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Can't give only 10! Division may do it."
     }
   }
 }

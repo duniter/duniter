@@ -132,6 +132,21 @@ module.exports.get = function (currency) {
           next();
         });
       },
+      function (next) {
+        // Check coins minimum power
+        Amendment.findClosestPreviousWithMinimalCoinPower(tx.sigDate, next);
+      },
+      function (am, next) {
+        var err = null;
+        if (am) {
+          tx.getCoins().forEach(function (coin) {
+            if (!err && coin.power < am.coinMinPower) {
+              err = 'Coins must now have a minimum power of ' + am.coinMinPower + ', as written in amendment #' + am.number;
+            }
+          });
+        }
+        next(err);
+      },
       function (next){
         // Get last issuance
         Transaction.findLastIssuance(tx.sender, function (err, lastTX) {
@@ -155,11 +170,7 @@ module.exports.get = function (currency) {
               err = 'Bad transaction: coins do not have a good sequential numerotation';
             }
           });
-          if(err){
-            next(err);
-            return;
-          }
-          next();
+          next(err);
         });
       },
       function (next){
@@ -421,6 +432,20 @@ module.exports.get = function (currency) {
         }
         next();
       },
+      function (next) {
+        // Check coins minimum power
+        Amendment.findClosestPreviousWithMinimalCoinPower(tx.sigDate, next);
+      },
+      function (am, next) {
+        var err = null;
+        if (am) {
+          var coin = tx.getCoins()[0];
+          if (!err && coin.power < am.coinMinPower) {
+            err = 'Coins must now have a minimum power of ' + am.coinMinPower + ', as written in amendment #' + am.number;
+          }
+        }
+        next(err);
+      },
       function (next){
         // Verify each coin is owned
         var coins = tx.getCoins();
@@ -561,6 +586,21 @@ module.exports.get = function (currency) {
           return;
         }
         next();
+      },
+      function (next) {
+        // Check coins minimum power
+        Amendment.findClosestPreviousWithMinimalCoinPower(tx.sigDate, next);
+      },
+      function (am, next) {
+        var err = null;
+        if (am) {
+          divisionCoins.forEach(function (coin) {
+            if (!err && coin.power < am.coinMinPower) {
+              err = 'Coins must now have a minimum power of ' + am.coinMinPower + ', as written in amendment #' + am.number;
+            }
+          });
+        }
+        next(err);
       },
       function (next){
         // Verify each coin is owned

@@ -1,5 +1,15 @@
 # uCoin Gossip messages format
 
+## Contents
+* [Contents](#contents)
+* [Peering](#peering-entry)
+* [Forward](#forward-request)
+* [Status](#status-request)
+* [Trust Hash Table (THT)](#trust-hash-table)
+  * [Structure](#tht-structure)
+  * [Signification](#tht-signification)
+  * [Protection](#tht-protections)
+
 ## Peering entry
 
 uCoin uses P2P networks to manage money data, hence it needs to know which nodes make the network for a given currency.
@@ -121,7 +131,7 @@ This is a very important feature for two points:
 * it makes possible the repartition of the whole transactions database (a random individual's computer can't handle a humanity scale transactions database)
 * it aims at preventing double-spending issue
 
-## THT Structure
+### THT Structure
 
 A THT entry format is the following:
 
@@ -139,13 +149,13 @@ A5ED399E2E411BF4B09132EFA2CC5E0CA49B835E
 25AC706AF69E60A0334B2A072F4B802C3242B159
 ```
 and is followed by signature of `KEY_FINGERPRINT`'s owner.
-## THT Signification
+### THT Signification
 
-### hosters
+#### hosters
 
 The `hosters` field is a list of *nodes* a given key declares as the ones that **officialy manages this key's transactions**. That is, which are the nodes by which **every transactions of this key pass** trough.
 
-### trusts
+#### trusts
 
 The `trusts` field is a list of *nodes* a given key does trust for receiving transactions. This means, for a given `Recipient`, that he would rather accept transactions from `Sender` if the sender's transactions are managed by one of the trusted nodes of `Recipient`.
 
@@ -153,6 +163,6 @@ The `trusts` field is a list of *nodes* a given key does trust for receiving tra
 
 > If the owner of a key declares a node he *trusts* is not subject to corruption as trading node, it will be more difficult for a dishonest man to cheat against him as he does not control the trusted node.
 
-## THT Protections
+### THT Protections
 
 Of course, a THT entry is a critical data. Thus, **it has to be signed** by the owner of the key. If an entry is not signed by the owner of the key, it should not be considered as trustworthy information.

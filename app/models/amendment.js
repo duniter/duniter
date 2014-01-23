@@ -324,6 +324,18 @@ AmendmentSchema.statics.findPromotedByNumber = function (number, done) {
   });
 };
 
+AmendmentSchema.statics.findClosestPreviousWithMinimalCoinPower = function (sigDate, done) {
+
+  var sigDateToTimestamp = parseInt(sigDate.getTime()/1000, 10);
+  this
+    .find({ coinMinPower: { $gte: 0 }, promoted: true, generated: { $lte: sigDateToTimestamp } })
+    .sort({ 'number': -1 })
+    .limit(1)
+    .exec(function (err, amends) {
+      done(null, amends.length == 1 ? amends[0] : null);
+  });
+};
+
 var Amendment = mongoose.model('Amendment', AmendmentSchema);
 
 function fill (am1, am2) {

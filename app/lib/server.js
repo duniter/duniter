@@ -171,7 +171,7 @@ module.exports.express = {
     app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
     app.get(    '/hdc/amendments/view/:amendment_id/members',     hdc.amendments.viewAM.members);
     app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
-    app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.viewAM.signatures);
+    app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
     app.get(    '/hdc/amendments/view/:amendment_id/voters',      hdc.amendments.viewAM.voters);
     app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);

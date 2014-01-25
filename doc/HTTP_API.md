@@ -1070,38 +1070,9 @@ Merkle URL leaf: voter (also a member)
 #### `amendments/view/[AMENDMENT_ID]/signatures`
 **Goal**
 
-Merkle URL refering to the signatures of the Community listed in this amendment.
+Merkle URL refering to the received signatures for this amendment.
 
-This URL should give the same result as `hdc/amendments/votes/[PREVIOUS_AMENDEMENT_ID]` if all votes present in this URL were taken in count as signatures for this `AMENDMENT_ID`.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: vote
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
-  }
-}
-```
+Shortcut for `hdc/amendments/votes/[PREVIOUS_AMENDEMENT_ID]`.
 
 #### `amendments/votes (GET)`
 **Goal**

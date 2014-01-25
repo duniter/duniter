@@ -1729,23 +1729,21 @@ Merkle URL leaf: transaction
     "transaction":
     {
       "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 2102,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "type": "TRANSFERT",
       "coins": [
         {
           "id": "10-1-2-F-14",
-          "transaction_id": ""
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
         },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+          "id": "10-1-2-A-38",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1218"
         }
       ],
-      "comment": "Too much coins ! Making big one."
+      "comment": "Paying LoLCat's food."
     }
   }
 }
@@ -1783,7 +1781,7 @@ Merkle URL leaf: transaction
     "transaction":
     {
       "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
       "type": "FUSION",
@@ -1821,28 +1819,30 @@ Name | Value | Method
 The last *issuance* transaction of given PGP key.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 1,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "ISSUANCE",
-    "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
-        "transaction_id": ""
-      },{
-        // Other coin
-      },{
-        // ...
-      }
-    ],
-    "comment": "Universal Dividend"
+  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "transaction":
+    {
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 14,
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "FUSION",
+      "coins": [
+        {
+          "id": "10-1-2-F-14",
+          "transaction_id": ""
+        },{
+          "id": "2-4-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        },{
+          "id": "3-6-1-A-1",
+          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
+        }
+      ],
+      "comment": "Too much coins ! Making big one."
+    }
   }
 }
 ```
@@ -1873,30 +1873,28 @@ Merkle URL result.
 Merkle URL leaf: transaction
 ```json
 {
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
-      "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
-      "coins": [
-        {
-          "id": "10-1-2-F-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Too much coins ! Making big one."
-    }
+  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "raw": "Version: 1\r\n...\r\n",
+  "transaction":
+  {
+    "version": 1,
+    "currency": "beta_brousouf",
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 1,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "ISSUANCE",
+    "coins": [
+      {
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
+        "transaction_id": ""
+      },{
+        // Other coin
+      },{
+        // ...
+      }
+    ],
+    "comment": "Universal Dividend"
   }
 }
 ```
@@ -1927,30 +1925,28 @@ Merkle URL result.
 Merkle URL leaf: transaction
 ```json
 {
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
-      "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
-      "coins": [
-        {
-          "id": "10-1-2-F-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Too much coins ! Making big one."
-    }
+  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "raw": "Version: 1\r\n...\r\n",
+  "transaction":
+  {
+    "version": 1,
+    "currency": "beta_brousouf",
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 1,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "type": "ISSUANCE",
+    "coins": [
+      {
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
+        "transaction_id": ""
+      },{
+        // Other coin
+      },{
+        // ...
+      }
+    ],
+    "comment": "Universal Dividend"
   }
 }
 ```

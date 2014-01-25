@@ -1280,7 +1280,7 @@ Transaction chain.
       "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFERT",
+      "type": "TRANSFER",
       "coins": [
         {
           "id": "10-1-2-F-14",
@@ -1505,7 +1505,7 @@ The last [COUNT] transactions received.
       "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFERT",
+      "type": "TRANSFER",
       "coins": [
         {
           "id": "10-1-2-F-14",
@@ -1661,7 +1661,7 @@ The last [COUNT] transactions of given PGP key.
       "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFERT",
+      "type": "TRANSFER",
       "coins": [
         {
           "id": "10-1-2-F-14",
@@ -1733,7 +1733,7 @@ Merkle URL leaf: transaction
       "number": 2102,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFERT",
+      "type": "TRANSFER",
       "coins": [
         {
           "id": "10-1-2-F-14",

@@ -29,9 +29,7 @@ Field | Description
 `Version` | Denotes the current structure version.
 `Currency` | Contains the name of the currency.
 `Issuer` | Full PGP key fingerprint issuing this message.
-`Membership` | Membership message. Value is either `JOIN` or `LEAVE` to express wether a member wishes to join or leave the community.
-
-Note that `JOIN` message is mandatory to integrate the Community and receive Universal Dividend, while `LEAVE` make leaving the Community and no more receive Universal Dividend.
+`Membership` | Membership message. Value is either `JOIN`, `ACTUALIZE` or `LEAVE` to express wether a member wishes to join, confirm its status in, or leave the community.
 
 ## Voting
 

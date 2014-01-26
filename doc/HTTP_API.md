@@ -138,8 +138,16 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |           `-- [TRANSACTION_ID]
     `-- ucs/
         |-- community/
-        |   |-- members
-        |   `-- voters
+        |   |-- members/
+        |   |   `-- [PGP_FINGERPRINT]/
+        |   |       `-- membership/
+        |   |           |-- history
+        |   |           `-- current
+        |   |-- voters/
+        |       `-- [PGP_FINGERPRINT]/
+        |           `-- voting/
+        |               |-- history
+        |               `-- current
         `-- amendment/
             `-- [AM_NUMBER]/
                 |-- vote

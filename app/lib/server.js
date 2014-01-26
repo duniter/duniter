@@ -146,6 +146,7 @@ module.exports.express = {
     var pks   = require('../controllers/pks')(openpgp, currency, conf);
     var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
     var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
+    var ucs   = require('../controllers/ucs')(openpgp, currency, conf);
 
     app.get(    '/pks/all',                                       pks.getAll);
     app.get(    '/pks/lookup',                                    pks.lookup);
@@ -196,6 +197,20 @@ module.exports.express = {
     app.get(    '/hdc/transactions/sender/:fpr/transfert',                 hdc.transactions.sender.transfert);
     app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
     app.get(    '/hdc/transactions/view/:transaction_id',         hdc.transactions.viewtx);
+    app.post(   '/ucs/community/members',                         notImplemented);
+    app.get(    '/ucs/community/members/:fpr/membership/current', notImplemented);
+    app.get(    '/ucs/community/members/:fpr/membership/history', notImplemented);
+    app.post(   '/ucs/community/voters',                          notImplemented);
+    app.get(    '/ucs/community/voters/:fpr/voting/current',      notImplemented);
+    app.get(    '/ucs/community/voters/:fpr/voting/history',      notImplemented);
+    app.get(    '/ucs/amendment/:number/members/changes',         notImplemented);
+    app.get(    '/ucs/amendment/:number/members/tree',            notImplemented);
+    app.get(    '/ucs/amendment/:number/members/reason',          notImplemented);
+    app.get(    '/ucs/amendment/:number/voters/changes',          notImplemented);
+    app.get(    '/ucs/amendment/:number/voters/tree',             notImplemented);
+    app.get(    '/ucs/amendment/:number/voters/reason',           notImplemented);
+    app.get(    '/ucs/amendment/:number/parameters',              notImplemented);
+    app.get(    '/ucs/amendment/:number/vote',                    notImplemented);
 
     if(!conf.remoteipv4 && !conf.remoteipv6){
       onLoaded(null, app);
@@ -279,7 +294,7 @@ function sign(app, conf) {
 }
 
 function notImplemented (req, res) {
-  res.writeHead(501);
+  res.send(501, "Not implemented.");
   res.end();
 }
 

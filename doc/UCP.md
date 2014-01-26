@@ -13,7 +13,7 @@ This document is divided in two parts:
 * [Definitions](#definitions)
   * [uCoin HDC data](#ucoin-hdc-data)
     * [Public keys](#pgp-public-keys)
-    * [Amendments](#amendments)
+    * [Amendments](#amendaments)
     * [Transactions](#transactions)
   * [uCoin UCG data](#ucoin-ucg-data)
     * [Peers](#peers)

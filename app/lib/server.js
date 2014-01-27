@@ -13,7 +13,7 @@ var logger     = require('./logger')('[HTTP]');
 
 openpgp.init();
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
 
 function initModels() {
   models.forEach(function (entity) {
@@ -197,20 +197,22 @@ module.exports.express = {
     app.get(    '/hdc/transactions/sender/:fpr/transfert',                 hdc.transactions.sender.transfert);
     app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
     app.get(    '/hdc/transactions/view/:transaction_id',         hdc.transactions.viewtx);
-    app.post(   '/ucs/community/members',                         notImplemented);
+    app.get(    '/ucs/parameters',                                notImplemented);
+    app.post(   '/ucs/community/members',                         ucs.membershipPost);
     app.get(    '/ucs/community/members/:fpr/membership/current', notImplemented);
     app.get(    '/ucs/community/members/:fpr/membership/history', notImplemented);
     app.post(   '/ucs/community/voters',                          notImplemented);
     app.get(    '/ucs/community/voters/:fpr/voting/current',      notImplemented);
     app.get(    '/ucs/community/voters/:fpr/voting/history',      notImplemented);
-    app.get(    '/ucs/amendment/:number/members/changes',         notImplemented);
-    app.get(    '/ucs/amendment/:number/members/tree',            notImplemented);
-    app.get(    '/ucs/amendment/:number/members/reason',          notImplemented);
-    app.get(    '/ucs/amendment/:number/voters/changes',          notImplemented);
-    app.get(    '/ucs/amendment/:number/voters/tree',             notImplemented);
-    app.get(    '/ucs/amendment/:number/voters/reason',           notImplemented);
-    app.get(    '/ucs/amendment/:number/parameters',              notImplemented);
-    app.get(    '/ucs/amendment/:number/vote',                    notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number',                   ucs.amendmentNext);
+    app.get(    '/ucs/amendment/:amendment_number/members/changes',   notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/members/tree',      notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/members/reason',    notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/voters/changes',    notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/voters/tree',       notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/voters/reason',     notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/parameters',        notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/vote',              notImplemented);
 
     if(!conf.remoteipv4 && !conf.remoteipv6){
       onLoaded(null, app);

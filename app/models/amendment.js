@@ -22,6 +22,8 @@ var AmendmentSchema = new Schema({
   membersCount: {"type": Number, "default": 0},
   membersChanges: Array,
   promoted: {"type": Boolean, "default": false},
+  monetaryMass: {"type": Number, "default": 0},
+  selfGenerated: {"type": Boolean, "default": false},
   hash: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -333,6 +335,45 @@ AmendmentSchema.statics.findClosestPreviousWithMinimalCoinPower = function (sigD
     .limit(1)
     .exec(function (err, amends) {
       done(null, amends.length == 1 ? amends[0] : null);
+  });
+};
+
+AmendmentSchema.statics.findPromotedPreceding = function (timpestamp, done) {
+
+  this
+    .find({ generated: { $lte: timpestamp }, promoted: true })
+    .sort({ 'number': -1 })
+    .limit(1)
+    .exec(function (err, amends) {
+      done(null, amends.length == 1 ? amends[0] : null);
+  });
+};
+
+AmendmentSchema.statics.getPreviouslyPromotedWithDividend = function (am, done) {
+
+  this
+    .find({ number: { $lt: am.number }, promoted: true, dividend: { $gt: 0 } })
+    .sort({ 'number': -1 })
+    .limit(1)
+    .exec(function (err, amends) {
+      done(null, amends.length == 1 ? amends[0] : null);
+  });
+};
+
+AmendmentSchema.statics.getTheOneToBeVoted = function (number, done) {
+
+  this.find({ number: number, selfGenerated: true }, function (err, amends) {
+    if(amends && amends.length == 1){
+      done(err, amends[0]);
+      return;
+    }
+    if(!amends || amends.length == 0){
+      done('No amendment found');
+      return;
+    }
+    if(amends || amends.length > 1){
+      done('More than one amendment found');
+    }
   });
 };
 

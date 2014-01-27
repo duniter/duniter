@@ -295,6 +295,8 @@ function overrideConf(conf) {
     policy: {
       keys: program.kmanagement,
       pubkeys: program.kaccept
+    },
+    sync: {
     }
   };
 
@@ -312,6 +314,23 @@ function overrideConf(conf) {
   conf.remoteport  = config.server.remote.port != undefined ? config.server.remote.port : conf.remoteport;
   conf.kmanagement = config.policy.keys || conf.kmanagement;
   conf.kaccept     = config.policy.pubkeys || conf.kaccept;
+  // Monetary Contract sync default parameters:
+  //  - Voting frequency: 1 day
+  //  - UD frequency: 1 month
+  //  - UD Min (aka UD(0)): 100 unities
+  //  - UD % (aka 'c'): 9.22% a year <=> 0.7376575% a month
+  //  - UD Minimal Coin: none
+  //  - Voting % threshold: 2/3 of votes
+  //  - Membership max. delay: 6 monthes
+  conf.sync        = {
+    votingFrequence: config.sync.votingFrequence || 3600*24,
+    UDFrequence: config.sync.UDFrequence || 2629800,
+    UDMin: config.sync.UDMin || 100,
+    UDPercent: config.sync.UDPercent || 0.007376575,
+    UDMinCoin: config.sync.UDMinCoin,
+    VotesPercent: config.sync.VotesPercent || 2/3,
+    ActualizeFrequence: config.sync.ActualizeFrequence || 2629800*6
+  };
   return conf;
 }
 

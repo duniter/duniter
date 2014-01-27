@@ -7,9 +7,10 @@ var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
 
-module.exports = function () {
+module.exports = function (currency, conf) {
 
   var KeyService = require('./KeyService').get();
+  var SyncService = require('./SyncService').get(currency, conf);
   
   this.tryToPromote = function (am, done) {
     async.waterfall([
@@ -40,6 +41,9 @@ module.exports = function () {
         async.forEach(am.getNewVoters(), function(leaf, callback){
           KeyService.setKnown(leaf, callback);
         }, next);
+      },
+      function (next){
+        SyncService.createNext(am, next);
       },
     ], done);
   }

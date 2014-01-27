@@ -129,6 +129,14 @@ module.exports = {
     callback(null, matches[1]);
   },
 
+  getMembership: function (req, callback) {
+    if(!(req.body && req.body.membership && req.body.signature)){
+      callback('Requires a membership + signature');
+      return;
+    }
+    callback(null, req.body.membership + req.body.signature);
+  },
+
   getTHTEntry: function (req, callback) {
     if(!(req.body && req.body.entry && req.body.signature)){
       callback('Requires a THT entry + signature');

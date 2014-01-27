@@ -186,6 +186,19 @@ VoteSchema.methods = {
         });
       },
       function (next){
+        // Met à jour la Masse Monétaire
+        am.getPrevious(function (err, previous) {
+          next(null, previous);
+        });
+      },
+      function (previous, next){
+        var massBefore = (previous && previous.monetaryMass) || 0;
+        var massAfter = massBefore + (am.dividend * am.membersCount);
+        am.monetaryMass = massAfter;
+        next();
+      },
+      function (next){
+        // Termine la sauvegarde
         am.save(function (err) {
           next(err);
         });

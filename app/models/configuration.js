@@ -12,7 +12,8 @@ var ConfigurationSchema = new Schema({
   pgpkey: String,
   pgppasswd: String,
   kmanagement: String,
-  kaccept: String
+  kaccept: String,
+  sync: Object
 });
 
 ConfigurationSchema.pre('save', function (next) {

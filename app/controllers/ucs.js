@@ -12,10 +12,8 @@ var Key       = mongoose.model('Key');
 var log4js    = require('log4js');
 var _         = require('underscore');
 var logger    = log4js.getLogger();
-var plogger      = log4js.getLogger('peering');
-var flogger      = log4js.getLogger('forward');
-var slogger      = log4js.getLogger('status');
-var tlogger      = log4js.getLogger('tht');
+var mlogger      = log4js.getLogger('membership');
+var vlogger      = log4js.getLogger('voting');
 var http      = require('../service/HTTPService')();
 
 module.exports = function (pgp, currency, conf) {
@@ -24,4 +22,44 @@ module.exports = function (pgp, currency, conf) {
   var ParametersService = require('../service/ParametersService');
   var THTService = require('../service/THTService').get(currency);
   var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
+  var SyncService = require('../service/SyncService').get(pgp, currency, conf);
+
+  this.amendmentNext = function (req, res) {
+    async.waterfall([
+      function (next){
+        ParametersService.getAmendmentNumber(req, next);
+      },
+      function (amNumber, next){
+        Amendment.getTheOneToBeVoted(amNumber, next);
+      },
+    ], function (err, am) {
+      http.answer(res, 404, err, function () {
+        // Render the amendment
+        res.end(JSON.stringify(am.json(), null, "  "));
+      });
+    });
+  };
+
+  this.membershipPost = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getMembership(req, next);
+      },
+
+      function (signedMS, pubkey, next) {
+        SyncService.submit(signedMS, pubkey, next);
+      }
+
+    ], function (err, recordedMS) {
+      http.answer(res, 400, err, function () {
+        mlogger.debug('✔ %s %s', recordedMS.issuer, recordedMS.membership);
+        res.end(JSON.stringify(recordedMS.json(), null, "  "));
+      });
+    });
+  };
+
+  return this;
 }

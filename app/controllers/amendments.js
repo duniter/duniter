@@ -9,7 +9,7 @@ var MerkleService     = require('../service/MerkleService');
 module.exports = function (pgp, currency, conf) {
 
   var VoteService     = require('../service/VoteService')(currency);
-  var StrategyService = require('../service/StrategyService')();
+  var StrategyService = require('../service/StrategyService')(currency, conf);
   var PeeringService  = require('../service/PeeringService').get(pgp, currency, conf);
 
   this.promoted = function (req, res) {

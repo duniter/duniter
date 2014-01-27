@@ -175,7 +175,7 @@ TransactionSchema.methods = {
       recipient: this.recipient,
       type: this.type,
       coins: [],
-      sigDate: this.sigDate,
+      sigDate: parseInt(this.sigDate.getTime()/1000, 10),
       comment: this.comment
     }
     this.coins.forEach(function (coin) {

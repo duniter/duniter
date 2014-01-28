@@ -169,4 +169,15 @@ MembershipSchema.statics.getCurrentJoinOrActuOlderThan = function (exclusiveLimi
   });
 }
 
+MembershipSchema.statics.getCurrent = function (done) {
+  
+  this
+    .find({ current: true })
+    .sort({ 'sigDate': -1 })
+    .limit(1)
+    .exec(function (err, mss) {
+      done(null, mss.length == 1 ? mss[0] : null);
+  });
+}
+
 var Membership = mongoose.model('Membership', MembershipSchema);

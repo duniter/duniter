@@ -122,6 +122,14 @@ MerkleSchema.statics.votersWrittenForAmendment = function (number, hash, done) {
   retrieve({ type: 'amendment_voters', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
+MerkleSchema.statics.membersWrittenForProposedAmendment = function (number, done) {
+  retrieve({ type: 'amendment_members', criteria: '{"number":'+number+'}' }, done);
+};
+
+MerkleSchema.statics.votersWrittenForProposedAmendment = function (number, done) {
+  retrieve({ type: 'amendment_voters', criteria: '{"number":'+number+'}' }, done);
+};
+
 MerkleSchema.statics.txAll = function (done) {
   retrieve({ type: 'txAll', criteria: '{}' }, done);
 };
@@ -197,6 +205,70 @@ MerkleSchema.statics.addPublicKey = function (fingerprint, done) {
     },
     function (merkle, next) {
       merkle.push(fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.addProposedMember = function (fingerprint, amNumber, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.membersWrittenForProposedAmendment(amNumber, function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.push(fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.removeProposedMember = function (fingerprint, amNumber, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.membersWrittenForProposedAmendment(amNumber, function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.remove(fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.addProposedVoter = function (fingerprint, amNumber, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.votersWrittenForProposedAmendment(amNumber, function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.push(fingerprint);
+      merkle.save(function (err) {
+        next(err);
+      });
+    }
+  ], done);
+};
+
+MerkleSchema.statics.addProposedVoter = function (fingerprint, amNumber, done) {
+  async.waterfall([
+    function (next) {
+      Merkle.votersWrittenForProposedAmendment(amNumber, function (err, merkle) {
+        next(err, merkle);
+      });
+    },
+    function (merkle, next) {
+      merkle.remove(fingerprint);
       merkle.save(function (err) {
         next(err);
       });

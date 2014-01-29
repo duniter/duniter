@@ -235,6 +235,7 @@ module.exports.get = function (pgp, currency, conf) {
           function (amNext, next){
             var isJoining = false;
             var isLeaving = false;
+            var isCancelled = false;
             // Impacts on changes
             if (!nowIsIgnored) {
               if (entry.membership == 'JOIN') {
@@ -257,6 +258,7 @@ module.exports.get = function (pgp, currency, conf) {
               index = amNext.membersChanges.indexOf('+' + entry.issuer);
               if (~index) {
                 amNext.membersChanges.splice(index, 1);
+                isCancelled = true;
               }
               // Computes regarding what is current
               var exclusionDate = getExclusionDate(amNext);
@@ -265,61 +267,75 @@ module.exports.get = function (pgp, currency, conf) {
                 isLeaving = true;
               }
             }
-            async.parallel({
-              joining: function(callback){
-                if (isJoining) {
-                  amNext.membersChanges.push('+' + entry.issuer);
-                  amNext.membersChanges.sort();
+            async.waterfall([
+              function(next){
+                if (isCancelled) {
                   async.waterfall([
                     function (next){
                       Merkle.membersWrittenForProposedAmendment(amNext.number, next);
                     },
                     function (merkle, next){
-                      merkle.push(entry.issuer);
+                      merkle.remove(entry.issuer);
                       amNext.membersRoot = merkle.root();
                       amNext.membersCount = merkle.leaves().length;
                       merkle.save(function (err) {
                         next(err);
                       });
                     },
-                    function (next){
-                      amNext.save(function (err) {
-                        next(err);
-                      });
-                    },
-                  ], callback);
-                } else callback();
+                  ], next);
+                }
+                else next();
               },
-              leaving: function(callback){
-                if (isLeaving) {
-                  amNext.votersChanges.push('-' + entry.issuer);
-                  amNext.votersChanges.sort();
-                  async.waterfall([
-                    function (next){
-                      Merkle.votersWrittenForProposedAmendment(amNext.number, next);
-                    },
-                    function (merkle, next){
-                      merkle.remove(entry.issuer);
-                      amNext.votersRoot = merkle.root();
-                      amNext.votersCount = merkle.leaves().length;
-                      merkle.save(function (err) {
-                        next(err);
-                      });
-                    },
-                    function (next){
-                      amNext.save(function (err) {
-                        next(err);
-                      });
-                    },
-                  ], callback);
-                } else callback();
-              }
-            }, function(err) {
-              // Impacts on reason
-              // Impacts on tree
-              //nowIsIgnored && "Already received membership: all received membership for this key will be ignored for next amendment"
-              next(err, entry);
-            });
+              function (next){
+                async.parallel({
+                  joining: function(callback){
+                    if (isJoining) {
+                      amNext.membersChanges.push('+' + entry.issuer);
+                      amNext.membersChanges.sort();
+                      async.waterfall([
+                        function (next){
+                          Merkle.membersWrittenForProposedAmendment(amNext.number, next);
+                        },
+                        function (merkle, next){
+                          merkle.push(entry.issuer);
+                          amNext.membersRoot = merkle.root();
+                          amNext.membersCount = merkle.leaves().length;
+                          merkle.save(function (err) {
+                            next(err);
+                          });
+                        },
+                      ], callback);
+                    } else callback();
+                  },
+                  leaving: function(callback){
+                    if (isLeaving) {
+                      amNext.membersChanges.push('-' + entry.issuer);
+                      amNext.membersChanges.sort();
+                      async.waterfall([
+                        function (next){
+                          Merkle.membersWrittenForProposedAmendment(amNext.number, next);
+                        },
+                        function (merkle, next){
+                          merkle.remove(entry.issuer);
+                          amNext.membersRoot = merkle.root();
+                          amNext.membersCount = merkle.leaves().length;
+                          merkle.save(function (err) {
+                            next(err);
+                          });
+                        },
+                      ], callback);
+                    } else callback();
+                  }
+                }, function(err) {
+                  // Impacts on reason
+                  // Impacts on tree
+                  //nowIsIgnored && "Already received membership: all received membership for this key will be ignored for next amendment"
+                  amNext.save(function (err) {
+                    next(err, entry);
+                  });
+                });
+              },
+            ], next);
           },
         ], callback);
       }

@@ -208,6 +208,7 @@ program
     server.express.app(program.currency, conf, function (err, app) {
 
       var PeeringService = require('../app/service/PeeringService').get(server.pgp, program.currency, conf);
+      var SyncService    = require('../app/service/SyncService').get(server.pgp, program.currency, conf);
 
       async.waterfall([
         function (next){
@@ -254,7 +255,18 @@ program
         function (pubkey, next) {
           logger.info('Broadcasting UP/NEW signals...');
           PeeringService.sendUpSignal(next);
-        }
+        },
+        function (next) {
+          // Create AM0 proposal if not existing
+          mongoose.model('Amendment').getTheOneToBeVoted(0, function (err, am) {
+            if (err || !am) {
+          logger.info('Creating root AM proposal...');
+              SyncService.createNext(null, next);
+              return;
+            }
+            next();
+          });
+        },
       ], function (err) {
         if(err){
           logger.error(err);
@@ -315,6 +327,7 @@ function overrideConf(conf) {
   conf.kmanagement = config.policy.keys || conf.kmanagement;
   conf.kaccept     = config.policy.pubkeys || conf.kaccept;
   // Monetary Contract sync default parameters:
+  //  - Voting start: 01-01-2014 00:00:00
   //  - Voting frequency: 1 day
   //  - UD frequency: 1 month
   //  - UD Min (aka UD(0)): 100 unities
@@ -323,6 +336,7 @@ function overrideConf(conf) {
   //  - Voting % threshold: 2/3 of votes
   //  - Membership max. delay: 6 monthes
   conf.sync        = {
+    votingStart: config.sync.votingStart || 1388530800,
     votingFrequence: config.sync.votingFrequence || 3600*24,
     UDFrequence: config.sync.UDFrequence || 2629800,
     UDMin: config.sync.UDMin || 100,

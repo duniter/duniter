@@ -22,32 +22,42 @@ module.exports.get = function (pgp, currency, conf) {
 
   this.createNext = function (am, done) {
     var amNext = new Amendment();
-    var membersMerklePrev = null;
-    var votersMerklePrev = null;
+    var membersMerklePrev = [];
+    var votersMerklePrev = [];
     async.waterfall([
       function(next){
         amNext.selfGenerated = true;
-        ["version", "currency", "membersRoot", "membersCount", "votersRoot", "votersCount"].forEach(function(property){
-          amNext[property] = am[property];
-        });
-        amNext.number = am.number + 1;
-        amNext.previousHash = am.hash;
-        amNext.generated = am.generated + conf.sync.votingFrequence;
-        amNext.membersChanges = [];
-        amNext.membersRoot = am.membersRoot;
-        amNext.membersCount = am.membersCount;
-        amNext.votersChanges = [];
-        amNext.votersRoot = am.votersRoot;
-        amNext.votersCount = am.votersCount;
-        amNext.monetaryMass = am.monetaryMass
+        if (am) {
+          ["version", "currency", "membersRoot", "membersCount", "votersRoot", "votersCount", "monetaryMass"].forEach(function(property){
+            amNext[property] = am[property];
+          });
+          amNext.number = am.number + 1;
+          amNext.previousHash = am.hash;
+          amNext.generated = am.generated + conf.sync.votingFrequence;
+          amNext.membersChanges = [];
+          amNext.votersChanges = [];
+        } else {
+          amNext.version = 1;
+          amNext.currency = currency;
+          amNext.number = 0;
+          amNext.generated = conf.sync.votingStart;
+          amNext.membersChanges = [];
+          amNext.membersRoot = "";
+          amNext.membersCount = 0;
+          amNext.votersChanges = [];
+          amNext.votersRoot = "";
+          amNext.votersCount = 0;
+          amNext.monetaryMass = 0;
+        }
         // Time for Universal Dividend
-        if (amNext.generated % conf.sync.UDFrequence == 0) {
+        var delayPassedSinceRootAM = (amNext.generated - conf.sync.votingStart);
+        if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFrequence == 0) {
           var monetaryMassDelta = am.monetaryMass * conf.sync.UDPercent;
           var dividendPerMember = monetaryMassDelta / am.membersCount;
           amNext.dividend = Math.max(conf.sync.UDMin, Math.floor(dividendPerMember));
           amNext.monetaryMass += am.dividend * am.membersCount;
         }
-        amNext.nextVotes = Math.ceil((am.votersCount || 0) * conf.sync.VotesPercent);
+        amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.VotesPercent);
         // Computes changes due to too old JOIN/ACTUALIZE
         var exclusionDate = getExclusionDate(amNext);
         Membership.getCurrentJoinOrActuOlderThan(exclusionDate, next);
@@ -59,14 +69,20 @@ module.exports.get = function (pgp, currency, conf) {
         });
         changes.sort();
         amNext.membersChanges = changes;
-        Merkle.membersWrittenForAmendment(am.number, am.hash, next);
+        if (am) {
+          Merkle.membersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+            next(err, (merkle && merkle.leaves) || []);
+          });
+        } else {
+          next(null, []);
+        }
       },
-      function (merkle, next){
-        membersMerklePrev = merkle;
+      function (leaves, next){
+        membersMerklePrev = leaves;
         Merkle.membersWrittenForProposedAmendment(amNext.number, next);
       },
       function (merkle, next){
-        var leaves = membersMerklePrev.leaves();
+        var leaves = membersMerklePrev;
         // Remove from Merkle members not actualized
         amNext.membersChanges.forEach(function(change){
           var issuer = change.substring(1);
@@ -83,20 +99,28 @@ module.exports.get = function (pgp, currency, conf) {
         });
       },
       function (next){
-        Merkle.votersWrittenForAmendment(am.number, am.hash, next);
+        if (am) {
+          Merkle.votersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+            next(err, (merkle && merkle.leaves) || []);
+          });
+        } else {
+          next(null, []);
+        }
       },
-      function (merkle, next){
-        votersMerklePrev = merkle;
+      function (leaves, next){
+        votersMerklePrev = leaves;
         Merkle.votersWrittenForProposedAmendment(amNext.number, next);
       },
       function (merkle, next){
-        merkle.initialize(votersMerklePrev.leaves());
+        merkle.initialize(votersMerklePrev);
         merkle.save(function (err) {
           next(err);
         });
       },
       function (next){
         // Finally save proposed amendment
+        amNext.membersRoot = amNext.membersRoot || "";
+        amNext.votersRoot = amNext.votersRoot || "";
         amNext.save(function (err) {
           next(err);
         });
@@ -173,15 +197,21 @@ module.exports.get = function (pgp, currency, conf) {
           function (next){
             // var timestampInSeconds = parseInt(entry.sigDate.getTime()/1000, 10);
             // Amendment.findPromotedPreceding(timestampInSeconds, next);
-            Amendment.current(next);
+            Amendment.current(function (err, am) {
+              next(null, am);
+            });
           },
           function (am, next){
-            var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
-            if (am.generated > entryTimestamp) {
-              next('Too late for this membership. Retry.');
-              return;
+            if (am) {
+              var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
+              if (am.generated > entryTimestamp) {
+                next('Too late for this membership. Retry.');
+                return;
+              }
+              entry.amNumber = am.number;
+            } else {
+              entry.amNumber = -1;
             }
-            entry.amNumber = am.number;
             Membership.getCurrent(next);
           },
           function (currentlyRecorded, next){
@@ -330,9 +360,21 @@ module.exports.get = function (pgp, currency, conf) {
                   // Impacts on reason
                   // Impacts on tree
                   //nowIsIgnored && "Already received membership: all received membership for this key will be ignored for next amendment"
-                  amNext.save(function (err) {
-                    next(err, entry);
-                  });
+
+                  async.waterfall([
+                    function (next){
+                      amNext.save(function (err) {
+                        next(err);
+                      });
+                    },
+                    function (next) {
+                      if (isCancelled) {
+                        next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
+                        return;
+                      }
+                      else next(null, entry);
+                    },
+                  ], next);
                 });
               },
             ], next);

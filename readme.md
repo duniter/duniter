@@ -1,4 +1,4 @@
-# uCoin [![Build Status](https://api.travis-ci.org/c-geek/ucoin.png)](https://api.travis-ci.org/c-geek/ucoin.png)
+# uCoin [![Build Status](https://api.travis-ci.org/ucoin-io/ucoin.png)](https://api.travis-ci.org/ucoin-io/ucoin.png)
 
 uCoin is a free server-side software allowing to create new P2P crypto-currencies based on individuals and Universal Dividend.
 
@@ -29,7 +29,7 @@ uCoin fully relies on OpenPGP standard to describe crypto-currencies, provide P2
 
 **Universal Dividend - by people, for people**
 
-uCoin uses [Human Dividend Currency format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md) to describe the monetary system, where money is issued directly and exclusively **by** individuals of the Community to themselves. Individuals are the only ones who may issue new money, and choose the unities they desire : this is a monetary system where **U** coin.
+uCoin uses [Human Dividend Currency format](https://github.com/ucoin-io/ucoin/blob/master/doc/HDC.md) to describe the monetary system, where money is issued directly and exclusively **by** individuals of the Community to themselves. Individuals are the only ones who may issue new money, and choose the unities they desire : this is a monetary system where **U** coin.
 
 **Democratic**
 
@@ -42,8 +42,8 @@ uCoin uses a distribution system for its transactions database, allowing for pot
 ## Specifications
 
 You can get more in uCoin project reading the following documents:
-* [Concepts](https://github.com/c-geek/ucoin/blob/master/doc/concepts.md)
-* [Technical specifications](https://github.com/c-geek/ucoin/blob/master/doc/architecture.md)
+* [Concepts](https://github.com/ucoin-io/ucoin/blob/master/doc/concepts.md)
+* [Technical specifications](https://github.com/ucoin-io/ucoin/blob/master/doc/architecture.md)
 
 ## Installation
 
@@ -89,7 +89,7 @@ $ sudo npm install ucoin -g
 This just fetch & install uCoin (development state):
 
 ```bash
-$ git clone git@github.com:c-geek/ucoin.git
+$ git clone git@github.com:ucoin-io/ucoin.git
 $ sudo npm install ./ucoin -g
 ```
 
@@ -215,7 +215,7 @@ Once your server is running, it is already usable. However, at this step, you ha
 
 #### Brand new currency
 
-You should follow [this gist](https://gist.github.com/c-geek/6343172) which explains how to use [ucoin-cli](https://github.com/c-geek/ucoin-cli) software, allowing to add your first keys, create your initial Monetary Contract and make transactions.
+You should follow [this gist](https://gist.github.com/c-geek/6343172) which explains how to use [ucoin-cli](https://github.com/ucoin-io/ucoin-cli) software, allowing to add your first keys, create your initial Monetary Contract and make transactions.
 
 #### Existing currency
 
@@ -309,4 +309,4 @@ For the moment uCoin is developed only by its author. If you wish to participate
 
 # License
 
-This software is provided under [GPLv3](https://raw.github.com/c-geek/ucoin/master/LICENSE).
+This software is provided under [GPLv3](https://raw.github.com/ucoin-io/ucoin/master/LICENSE).

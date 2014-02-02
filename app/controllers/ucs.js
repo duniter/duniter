@@ -82,5 +82,36 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.askVote = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getAmendmentNumber(req, next);
+      },
+
+      function (amNumber, next) {
+        SyncService.getVote(amNumber, next)
+      },
+
+      function (vote, next){
+        vote.getAmendment(function (err, am) {
+          next(err, vote, am);
+        });
+      },
+
+    ], function (err, vote, am) {
+
+      http.answer(res, 404, err, function () {
+        res.end(JSON.stringify({
+          "issuer": vote.issuer,
+          "amendment": am.json(),
+          "signature": vote.signature
+        }, null, "  "));
+      });
+    });
+  };
+
   return this;
 }

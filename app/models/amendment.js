@@ -145,11 +145,9 @@ AmendmentSchema.methods = {
     });
   },
 
-  updateMerkles: function (done, membersFunction, votersFunction) {
+  updateMerkles: function (done) {
     var that = this;
     var Merkle = mongoose.model('Merkle');
-    membersFunction = membersFunction || Merkle.membersWrittenForAmendment;
-    votersFunction = membersFunction || Merkle.votersWrittenForAmendment;
     function build (func, funcAM, callback) {
       async.waterfall([
         function (next) {
@@ -170,10 +168,10 @@ AmendmentSchema.methods = {
     }
     async.parallel({
       membersMerkle: function(callback){
-        build(membersFunction, that.buildMembersMerkle, callback);
+        build(Merkle.membersWrittenForAmendment, that.buildMembersMerkle, callback);
       },
       votersMerkle: function(callback){
-        build(votersFunction, that.buildVotersMerkle, callback);
+        build(Merkle.votersWrittenForAmendment, that.buildVotersMerkle, callback);
       }
     }, done);
   },

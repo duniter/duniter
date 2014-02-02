@@ -16,6 +16,7 @@ var VoteSchema = new Schema({
   hash: String,
   amendmentHash: String,
   propagated: { type: Boolean, default: false },
+  selfGenerated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -193,7 +194,8 @@ VoteSchema.methods = {
       },
       function (previous, next){
         var massBefore = (previous && previous.monetaryMass) || 0;
-        var massAfter = massBefore + (am.dividend * am.membersCount);
+        var dividend = am.dividend || 0;
+        var massAfter = massBefore + (dividend * am.membersCount);
         am.monetaryMass = massAfter;
         next();
       },
@@ -251,6 +253,27 @@ VoteSchema.statics.findByHashAndBasis = function (hash, basis, done) {
     if(votes || votes.length > 1){
       done('More than one amendment found');
     }
+  });
+};
+
+VoteSchema.statics.getSelf = function (amNumber, done) {
+  
+  this
+    .find({ selfGenerated: true, basis: amNumber })
+    .sort({ 'sigDate': -1 })
+    .limit(1)
+    .exec(function (err, votes) {
+      done(null, votes.length == 1 ? votes[0] : null);
+  });
+};
+
+VoteSchema.statics.getByIssuerHashAndBasis = function (issuer, hash, amNumber, done) {
+  
+  this
+    .find({ issuer: issuer, hash: hash, basis: amNumber })
+    .limit(1)
+    .exec(function (err, votes) {
+      done(null, votes.length == 1 ? votes[0] : null);
   });
 };
 

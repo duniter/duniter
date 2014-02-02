@@ -2,6 +2,7 @@ var jpgp       = require('../lib/jpgp');
 var async      = require('async');
 var request    = require('request');
 var mongoose   = require('mongoose');
+var vucoin     = require('vucoin');
 var _          = require('underscore');
 var THTEntry   = mongoose.model('THTEntry');
 var Amendment  = mongoose.model('Amendment');
@@ -72,7 +73,7 @@ module.exports.get = function (pgp, currency, conf) {
         amNext.membersChanges = changes;
         if (am) {
           Merkle.membersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-            next(err, (merkle && merkle.leaves) || []);
+            next(err, (merkle && merkle.leaves()) || []);
           });
         } else {
           next(null, []);
@@ -102,7 +103,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (next){
         if (am) {
           Merkle.votersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-            next(err, (merkle && merkle.leaves) || []);
+            next(err, (merkle && merkle.leaves()) || []);
           });
         } else {
           next(null, []);
@@ -122,6 +123,7 @@ module.exports.get = function (pgp, currency, conf) {
         // Finally save proposed amendment
         amNext.membersRoot = amNext.membersRoot || "";
         amNext.votersRoot = amNext.votersRoot || "";
+        amNext.hash = amNext.getRaw().hash();
         amNext.save(function (err) {
           next(err);
         });
@@ -364,6 +366,9 @@ module.exports.get = function (pgp, currency, conf) {
 
                   async.waterfall([
                     function (next){
+                      amNext.membersRoot = amNext.membersRoot || "";
+                      amNext.votersRoot = amNext.votersRoot || "";
+                      amNext.hash = amNext.getRaw().hash();
                       amNext.save(function (err) {
                         next(err);
                       });
@@ -617,6 +622,8 @@ module.exports.get = function (pgp, currency, conf) {
                 function (next){
                   amNext.membersRoot = amNext.membersRoot || "";
                   amNext.votersRoot = amNext.votersRoot || "";
+                  amNext.nextVotes = Math.ceil((amNext.votersCount || 0) * conf.sync.VotesPercent);
+                  amNext.hash = amNext.getRaw().hash();
                   amNext.save(function (err) {
                     next(err);
                   });
@@ -633,6 +640,68 @@ module.exports.get = function (pgp, currency, conf) {
           },
         ], callback);
       }
+    ], done);
+  };
+
+  this.getVote = function (amNumber, done) {
+    async.waterfall([
+      function (next){
+        Vote.getSelf(amNumber, next);
+      },
+      function (vote, next){
+        if (vote){
+          next(null, vote);
+          return;
+        }
+        // Tries to vote
+        var now = new Date();
+        async.waterfall([
+          function (next){
+            Amendment.getTheOneToBeVoted(amNumber, next);
+          },
+          function (amNext, next){
+            if (now.timestamp() >= amNext.generated) {
+
+              var privateKey = pgp.keyring.privateKeys[0];
+              var cert = jpgp().certificate(this.ascciiPubkey);
+              var raw = amNext.getRaw();
+              async.waterfall([
+                function (next){
+                  jpgp().signsDetached(raw, privateKey, next);
+                },
+                function (signature, next){
+                  var signedAm = raw + signature;
+                  vucoin(conf.ipv6 || conf.ipv4 || conf.dns, conf.port, false, false, function (err, node) {
+                    next(null, signedAm, node);
+                  });
+                },
+                function (vote, node, next){
+                  node.hdc.amendments.votes.post(vote, next);
+                },
+                function (json, next){
+                  var am = new Amendment(json.amendment);
+                  var issuer = cert.fingerprint;
+                  var hash = json.signature.unix2dos().hash();
+                  var basis = json.amendment.number;
+                  Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
+                },
+                function (vote, next){
+                  if (!vote) {
+                    next('Self vote was not found');
+                    return;
+                  }
+                  vote.selfGenerated = true;
+                  vote.save(function  (err) {
+                    next(err, vote);
+                  });
+                },
+              ], next);
+              return;
+            }
+            next('Not yet');
+          },
+        ], next);
+      },
     ], done);
   };
 

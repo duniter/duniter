@@ -8,6 +8,7 @@ var _          = require('underscore');
 var server     = require('../lib/server');
 var openpgp    = require('./openpgp').openpgp;
 var jpgp       = require('./jpgp');
+var sha1       = require('sha1');
 var log4js     = require('log4js');
 var logger     = require('./logger')('[HTTP]');
 
@@ -212,7 +213,7 @@ module.exports.express = {
     app.get(    '/ucs/amendment/:amendment_number/voters/tree',       notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/voters/reason',     notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/parameters',        notImplemented);
-    app.get(    '/ucs/amendment/:amendment_number/vote',              notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/vote',              ucs.askVote);
 
     if(!conf.remoteipv4 && !conf.remoteipv6){
       onLoaded(null, app);
@@ -314,4 +315,12 @@ String.prototype.dos2unix = function(){
 
 String.prototype.isSha1 = function(){
   return this.match(/^[A-Z0-9]{40}$/);
+};
+
+String.prototype.hash = function(){
+  return sha1(this).toUpperCase();
+};
+
+Date.prototype.timestamp = function(){
+  return Math.floor(this.getTime() / 1000);
 };

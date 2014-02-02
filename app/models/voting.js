@@ -8,8 +8,11 @@ var Schema   = mongoose.Schema;
 var VotingSchema = new Schema({
   version: String,
   currency: String,
-  issuer: { type: String, unique: true },
+  issuer: { type: String },
   votingKey: String,
+  amNumber: Number,
+  eligible: { type: Boolean, default: true },
+  current: { type: Boolean, default: false },
   signature: String,
   propagated: { type: Boolean, default: false },
   hash: String,
@@ -101,7 +104,7 @@ VotingSchema.methods = {
     raw += "Version: " + this.version + "\n";
     raw += "Currency: " + this.currency + "\n";
     raw += "Issuer: " + this.issuer + "\n";
-    raw += "Voting: " + this.votingKey + "\n";
+    raw += "VotingKey: " + this.votingKey + "\n";
     return raw.unix2dos();
   },
 
@@ -132,12 +135,12 @@ function verify(obj, currency) {
   }
   if(!err){
     // Issuer
-    if(obj.issuer && !obj.issuer.match(/^[A-Z\d]+$/))
+    if(obj.issuer && !obj.issuer.isSha1())
       err = {code: codes['BAD_ISSUER'], message: "Incorrect issuer field"};
   }
   if(!err){
     // Voting Key
-    if(obj.votingKey && !obj.votingKey.match(/^[A-Z\d]+$/))
+    if(obj.votingKey && !obj.votingKey.isSha1())
       err = {code: codes['BAD_KEY'], message: "Incorrect voting key field"};
   }
   if(err){
@@ -152,6 +155,22 @@ function simpleLineExtraction(pr, rawMS, cap) {
     pr[cap.prop] = fieldValue[1];
   }
   return;
+}
+
+VotingSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, done) {
+  
+  this.find({ issuer: issuer, amNumber: amNumber }, done);
+}
+
+VotingSchema.statics.getCurrent = function (done) {
+  
+  this
+    .find({ current: true })
+    .sort({ 'sigDate': -1 })
+    .limit(1)
+    .exec(function (err, mss) {
+      done(null, mss.length == 1 ? mss[0] : null);
+  });
 }
 
 var Voting = mongoose.model('Voting', VotingSchema);

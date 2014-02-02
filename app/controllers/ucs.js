@@ -61,5 +61,26 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.votingPost = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getVoting(req, next);
+      },
+
+      function (signedVoting, pubkey, next) {
+        SyncService.submitVoting(signedVoting, pubkey, next);
+      }
+
+    ], function (err, recordedVoting) {
+      http.answer(res, 400, err, function () {
+        vlogger.debug('✔ %s\'s voting key -> %s', recordedVoting.issuer, recordedVoting.votingKey);
+        res.end(JSON.stringify(recordedVoting.json(), null, "  "));
+      });
+    });
+  };
+
   return this;
 }

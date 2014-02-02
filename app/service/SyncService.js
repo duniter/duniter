@@ -1,20 +1,21 @@
-var jpgp        = require('../lib/jpgp');
-var async       = require('async');
-var request     = require('request');
-var mongoose    = require('mongoose');
-var _           = require('underscore');
-var THTEntry    = mongoose.model('THTEntry');
-var Amendment   = mongoose.model('Amendment');
-var PublicKey   = mongoose.model('PublicKey');
-var Membership  = mongoose.model('Membership');
-var Merkle      = mongoose.model('Merkle');
-var Vote        = mongoose.model('Vote');
-var Peer        = mongoose.model('Peer');
-var Key         = mongoose.model('Key');
-var Forward     = mongoose.model('Forward');
-var Status      = require('../models/statusMessage');
-var log4js      = require('log4js');
-var logger      = log4js.getLogger('peering');
+var jpgp       = require('../lib/jpgp');
+var async      = require('async');
+var request    = require('request');
+var mongoose   = require('mongoose');
+var _          = require('underscore');
+var THTEntry   = mongoose.model('THTEntry');
+var Amendment  = mongoose.model('Amendment');
+var PublicKey  = mongoose.model('PublicKey');
+var Membership = mongoose.model('Membership');
+var Voting     = mongoose.model('Voting');
+var Merkle     = mongoose.model('Merkle');
+var Vote       = mongoose.model('Vote');
+var Peer       = mongoose.model('Peer');
+var Key        = mongoose.model('Key');
+var Forward    = mongoose.model('Forward');
+var Status     = require('../models/statusMessage');
+var log4js     = require('log4js');
+var logger     = log4js.getLogger('peering');
 
 module.exports.get = function (pgp, currency, conf) {
 
@@ -134,7 +135,7 @@ module.exports.get = function (pgp, currency, conf) {
 
       function (callback) {
         if(signedEntry.indexOf('-----BEGIN') == -1){
-          callback('Signature not found in given THT entry');
+          callback('Signature not found in given Membership');
           return;
         }
         callback();
@@ -382,7 +383,258 @@ module.exports.get = function (pgp, currency, conf) {
         ], callback);
       }
     ], done);
-  }
+  };
+
+  this.submitVoting = function (signedEntry, done) {
+    
+    async.waterfall([
+
+      function (callback) {
+        if(signedEntry.indexOf('-----BEGIN') == -1){
+          callback('Signature not found in given Voting');
+          return;
+        }
+        callback();
+      },
+
+      // Check signature's key ID
+      function(callback){
+        var sig = signedEntry.substring(signedEntry.indexOf('-----BEGIN'));
+        var keyID = jpgp().signature(sig).issuer();
+        if(!(keyID && keyID.length == 16)){
+          callback('Cannot identify signature issuer`s keyID');
+          return;
+        }
+        callback(null, keyID);
+      },
+
+      // Looking for corresponding public key
+      function(keyID, callback){
+        PublicKey.getTheOne(keyID, function (err, pubkey) {
+          callback(err, pubkey);
+        });
+      },
+
+      // Verify signature
+      function(pubkey, callback){
+        var entry = new Voting();
+        var current = null;
+        var previous = null;
+        var nowIsIgnored = false;
+        async.waterfall([
+          function (next){
+            entry.parse(signedEntry, next);
+          },
+          function (entry, next){
+            entry.verify(currency, next);
+          },
+          function (valid, next){
+            entry.verifySignature(pubkey.raw, next);
+          },
+          function (verified, next){
+            if(!verified){
+              next('Bad signature');
+              return;
+            }
+            if(pubkey.fingerprint != entry.issuer){
+              next('Fingerprint in Voting (' + entry.issuer + ') does not match signatory (' + pubkey.fingerprint + ')');
+              return;
+            }
+            next();
+          },
+          function (next){
+            Voting.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
+          },
+          function (entries, next){
+            if (entries.length > 0) {
+              next('Already received voting');
+              return;
+            }
+            next();
+          },
+          function (next){
+            // var timestampInSeconds = parseInt(entry.sigDate.getTime()/1000, 10);
+            // Amendment.findPromotedPreceding(timestampInSeconds, next);
+            Amendment.current(function (err, am) {
+              next(null, am);
+            });
+          },
+          function (am, next){
+            if (am) {
+              var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
+              if (am.generated > entryTimestamp) {
+                next('Too late for this voting. Retry.');
+                return;
+              }
+              entry.amNumber = am.number;
+            } else {
+              entry.amNumber = -1;
+            }
+            Voting.getCurrent(next);
+          },
+          function (currentlyRecorded, next){
+            current = currentlyRecorded;
+            async.waterfall([
+              function (next){
+                Merkle.membersWrittenForProposedAmendment(entry.amNumber + 1, next);
+              },
+              function (merkle, next){
+                if (merkle.leaves().indexOf(entry.issuer) == -1) {
+                  next('Only members may be voters');
+                  return;
+                }
+                next();
+              },
+            ], next);
+          },
+          function (next){
+            // Get already existing Voting for same amendment
+            Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
+          },
+          function (entries, next){
+            if (entries.length > 1) {
+              next('Refused: already received more than one voting for next amendment.');
+              return;
+            } else if(entries.length > 0){
+              // Already existing voting for this AM : this voting and the previous for this AM
+              // are no more to be considered
+              entry.eligible = false;
+              previous = entries[0];
+              entries[0].eligible = false;
+              entries[0].save(function (err) {
+                nowIsIgnored = true;
+                next(err);
+              });
+            } else {
+              next();
+            }
+          },
+          function (next){
+            // Saves entry
+            entry.propagated = false;
+            entry.save(function (err) {
+              next(err);
+            });
+          },
+          function (next){
+            Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
+          },
+          function (amNext, next){
+            var merkleOfNextVoters;
+            async.waterfall([
+              function (next){
+                Merkle.votersWrittenForProposedAmendment(amNext.number, next);
+              },
+              function (votersMerkle, next){
+                merkleOfNextVoters = votersMerkle;
+                if (!nowIsIgnored) {
+                  var index = merkleOfNextVoters.leaves().indexOf(entry.votingKey);
+                  // Case 1) key is arleady used, by the same issuer --> error
+                  if (~index && current && current.votingKey == entry.votingKey) {
+                    next('Already used as voting key');
+                    return;
+                  }
+                  // Case 2) key is arleady used, by another issuer --> error
+                  if (~index) {
+                    next('Already used by someone else as voting key');
+                    return;
+                  }
+                  // Case 3) key is not already used, because it is currently leaving
+                  if (~amNext.votersChanges.indexOf('-' + entry.votingKey)) {
+                    next('Key is currently leaving. You can use it only after voting next amendment.');
+                    return;
+                  }
+                  // Case 4) key is not already used, but issuer has previous other key --> cancel OLD key + add new
+                  if (current) {
+                    next(null, current.votingKey, null, entry.votingKey, null);
+                    return;
+                  }
+                  // Case 5) key is not arleady used, without having any previous --> add new
+                  next(null, null, null, entry.votingKey, null);
+                }
+                else {
+                  // Cancelling previous
+                  // Case 1) Voting was just new voter ==> Un-add new voting key
+                  if (!current) {
+                    next(null, null, null, null, previous.votingKey);
+                    return;
+                  }
+                  // Case 2) Voting was changing key ==> Un-add new voting key, unleave current
+                  // TODO
+                  next(null, null, current.votingKey, previous.votingKey, null);
+                }
+              },
+              function (keyToRemove, keyToUnleave, keyToAdd, keyToUnadd, next){
+                async.waterfall([
+                  function (next){
+                    var merkle = merkleOfNextVoters;
+                    // Update keys according to what is to be added/removed
+                    if (keyToRemove) {
+                      merkle.remove(keyToRemove);
+                    }
+                    if (keyToUnadd) {
+                      merkle.remove(keyToUnadd);
+                    }
+                    if (keyToUnleave) {
+                      merkle.push(keyToUnleave);
+                    }
+                    if (keyToAdd) {
+                      merkle.push(keyToAdd);
+                    }
+                    // Update resulting root + count
+                    amNext.votersRoot = merkle.root();
+                    amNext.votersCount = merkle.leaves().length;
+                    merkle.save(function (err) {
+                      next(err);
+                    });
+                  },
+                  function (next){
+                    // Update changes
+                    if (keyToRemove) {
+                      amNext.votersChanges.push('-' + keyToRemove);
+                    }
+                    if (keyToUnleave) {
+                      var index = amNext.votersChanges.indexOf('-' + keyToUnleave);
+                      if (~index) {
+                        amNext.votersChanges.splice(index, 1);
+                      }
+                    }
+                    if (keyToAdd) {
+                      amNext.votersChanges.push('+' + keyToAdd);
+                    }
+                    if (keyToUnadd) {
+                      var index = amNext.votersChanges.indexOf('+' + keyToUnadd);
+                      if (~index) {
+                        amNext.votersChanges.splice(index, 1);
+                      }
+                    }
+                    next();
+                  },
+                ], next);
+              },
+            ], function (err) {
+              async.waterfall([
+                function (next){
+                  amNext.membersRoot = amNext.membersRoot || "";
+                  amNext.votersRoot = amNext.votersRoot || "";
+                  amNext.save(function (err) {
+                    next(err);
+                  });
+                },
+                function (next) {
+                  if (nowIsIgnored) {
+                    next('Cancelled: a previous voting was found, thus none of your voting requests will be taken for next amendment');
+                    return;
+                  }
+                  else next(err, entry);
+                },
+              ], next);
+            });
+          },
+        ], callback);
+      }
+    ], done);
+  };
 
   function getExclusionDate (amNext) {
     var nextTimestamp = amNext.generated;

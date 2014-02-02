@@ -137,6 +137,14 @@ module.exports = {
     callback(null, req.body.membership + req.body.signature);
   },
 
+  getVoting: function (req, callback) {
+    if(!(req.body && req.body.voting && req.body.signature)){
+      callback('Requires a voting + signature');
+      return;
+    }
+    callback(null, req.body.voting + req.body.signature);
+  },
+
   getTHTEntry: function (req, callback) {
     if(!(req.body && req.body.entry && req.body.signature)){
       callback('Requires a THT entry + signature');

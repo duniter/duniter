@@ -186,4 +186,12 @@ MembershipSchema.statics.getCurrent = function (issuer, done) {
   });
 }
 
+MembershipSchema.statics.getHistory = function (issuer, done) {
+  
+  this
+    .find({ issuer: issuer })
+    .sort({ 'sigDate': -1 })
+    .exec(done);
+}
+
 var Membership = mongoose.model('Membership', MembershipSchema);

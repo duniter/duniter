@@ -201,7 +201,7 @@ module.exports.express = {
     app.get(    '/ucs/parameters',                                notImplemented);
     app.post(   '/ucs/community/members',                         ucs.membershipPost);
     app.get(    '/ucs/community/members/:fpr/membership/current', ucs.membershipCurrent);
-    app.get(    '/ucs/community/members/:fpr/membership/history', notImplemented);
+    app.get(    '/ucs/community/members/:fpr/membership/history', ucs.membershipHistory);
     app.post(   '/ucs/community/voters',                          ucs.votingPost);
     app.get(    '/ucs/community/voters/:fpr/voting/current',      notImplemented);
     app.get(    '/ucs/community/voters/:fpr/voting/history',      notImplemented);

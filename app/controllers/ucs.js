@@ -87,6 +87,30 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.membershipHistory = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getFingerprint(req, next);
+      },
+
+      function (fingerprint, next) {
+        Membership.getHistory(fingerprint, next);
+      }
+
+    ], function (err, history) {
+      var list = [];
+      history.forEach(function(ms){
+        list.push(ms.json());
+      });
+      http.answer(res, 400, err, function () {
+        res.end(JSON.stringify(list, null, "  "));
+      });
+    });
+  };
+
   this.votingPost = function (req, res) {
     var that = this;
     async.waterfall([

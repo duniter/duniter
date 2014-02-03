@@ -179,4 +179,12 @@ VotingSchema.statics.getCurrent = function (issuer, done) {
   });
 }
 
+VotingSchema.statics.getHistory = function (issuer, done) {
+  
+  this
+    .find({ issuer: issuer })
+    .sort({ 'sigDate': -1 })
+    .exec(done);
+}
+
 var Voting = mongoose.model('Voting', VotingSchema);

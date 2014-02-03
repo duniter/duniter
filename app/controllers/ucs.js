@@ -156,6 +156,30 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.votingHistory = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getFingerprint(req, next);
+      },
+
+      function (fingerprint, next) {
+        Voting.getHistory(fingerprint, next);
+      }
+
+    ], function (err, history) {
+      var list = [];
+      history.forEach(function(voting){
+        list.push(voting.json());
+      });
+      http.answer(res, 400, err, function () {
+        res.end(JSON.stringify(list, null, "  "));
+      });
+    });
+  };
+
   this.askVote = function (req, res) {
     var that = this;
     async.waterfall([

@@ -202,6 +202,10 @@ module.exports = function (pgp, currency, conf) {
     amendmentMerkle(req, res, Merkle.membersWrittenForProposedAmendment, Merkle.mapIdentical);
   };
 
+  this.amendmentVoters = function (req, res) {
+    amendmentMerkle(req, res, Merkle.votersWrittenForProposedAmendment, Merkle.mapIdentical);
+  };
+
   this.askVote = function (req, res) {
     var that = this;
     async.waterfall([

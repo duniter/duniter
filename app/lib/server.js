@@ -205,11 +205,10 @@ module.exports.express = {
     app.post(   '/ucs/community/voters',                          ucs.votingPost);
     app.get(    '/ucs/community/voters/:fpr/voting/current',      ucs.votingCurrent);
     app.get(    '/ucs/community/voters/:fpr/voting/history',      ucs.votingHistory);
+    app.get(    '/ucs/amendment',                                     ucs.amendmentCurrent);
     app.get(    '/ucs/amendment/:amendment_number',                   ucs.amendmentNext);
-    app.get(    '/ucs/amendment/:amendment_number/members/changes',   notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/members/tree',      notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/members/reason',    notImplemented);
-    app.get(    '/ucs/amendment/:amendment_number/voters/changes',    notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/voters/tree',       notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/voters/reason',     notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/parameters',        notImplemented);

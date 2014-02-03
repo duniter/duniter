@@ -26,6 +26,24 @@ module.exports = function (pgp, currency, conf) {
   var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
   var SyncService = require('../service/SyncService').get(pgp, currency, conf);
 
+  this.amendmentCurrent = function (req, res) {
+    async.waterfall([
+      function (next){
+        Amendment.current(function (err, am) {
+          next(null, am ? am.number + 1 : 0);
+        });
+      },
+      function (amNumber, next){
+        Amendment.getTheOneToBeVoted(amNumber, next);
+      },
+    ], function (err, am) {
+      http.answer(res, 404, err, function () {
+        // Render the amendment
+        res.end(JSON.stringify(am.json(), null, "  "));
+      });
+    });
+  };
+
   this.amendmentNext = function (req, res) {
     async.waterfall([
       function (next){

@@ -1,20 +1,22 @@
-var jpgp      = require('../lib/jpgp');
-var async     = require('async');
-var vucoin    = require('vucoin');
-var mongoose  = require('mongoose');
-var Peer      = mongoose.model('Peer');
-var Forward   = mongoose.model('Forward');
-var Amendment = mongoose.model('Amendment');
-var PublicKey = mongoose.model('PublicKey');
-var Merkle    = mongoose.model('Merkle');
-var THTEntry  = mongoose.model('THTEntry');
-var Key       = mongoose.model('Key');
-var log4js    = require('log4js');
-var _         = require('underscore');
-var logger    = log4js.getLogger();
-var mlogger      = log4js.getLogger('membership');
-var vlogger      = log4js.getLogger('voting');
-var http      = require('../service/HTTPService')();
+var jpgp       = require('../lib/jpgp');
+var async      = require('async');
+var vucoin     = require('vucoin');
+var mongoose   = require('mongoose');
+var Peer       = mongoose.model('Peer');
+var Forward    = mongoose.model('Forward');
+var Amendment  = mongoose.model('Amendment');
+var Membership = mongoose.model('Membership');
+var Voting     = mongoose.model('Voting');
+var PublicKey  = mongoose.model('PublicKey');
+var Merkle     = mongoose.model('Merkle');
+var THTEntry   = mongoose.model('THTEntry');
+var Key        = mongoose.model('Key');
+var log4js     = require('log4js');
+var _          = require('underscore');
+var logger     = log4js.getLogger();
+var mlogger    = log4js.getLogger('membership');
+var vlogger    = log4js.getLogger('voting');
+var http       = require('../service/HTTPService')();
 
 module.exports = function (pgp, currency, conf) {
 
@@ -57,6 +59,30 @@ module.exports = function (pgp, currency, conf) {
       http.answer(res, 400, err, function () {
         mlogger.debug('✔ %s %s', recordedMS.issuer, recordedMS.membership);
         res.end(JSON.stringify(recordedMS.json(), null, "  "));
+      });
+    });
+  };
+
+  this.membershipCurrent = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getFingerprint(req, next);
+      },
+
+      function (fingerprint, next) {
+        Membership.getCurrent(fingerprint, next);
+      }
+
+    ], function (err, ms) {
+      if (!ms) {
+        res.send(404, "Not found");
+        return;
+      }
+      http.answer(res, 400, err, function () {
+        res.end(JSON.stringify(ms.json(), null, "  "));
       });
     });
   };

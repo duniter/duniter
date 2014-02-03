@@ -33,9 +33,10 @@ MembershipSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "issuer", "membership", "amNumber", "sigDate"].forEach(function (key) {
+    ["version", "currency", "issuer", "membership"].forEach(function (key) {
       json[key] = obj[key];
     });
+    json.sigDate = this.sigDate && this.sigDate.timestamp();
     json.raw = this.getRaw();
     return { signature: this.signature, entry: json };
   },

@@ -157,6 +157,11 @@ function simpleLineExtraction(pr, rawMS, cap) {
   return;
 }
 
+MembershipSchema.statics.getEligibleForAmendment = function (amNumber, done) {
+  
+  this.find({ eligible: true, amNumber: amNumber }, done);
+}
+
 MembershipSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, done) {
   
   this.find({ issuer: issuer, amNumber: amNumber }, done);

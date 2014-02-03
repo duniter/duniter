@@ -198,6 +198,10 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.amendmentMembers = function (req, res) {
+    amendmentMerkle(req, res, Merkle.membersWrittenForProposedAmendment, Merkle.mapIdentical);
+  };
+
   this.askVote = function (req, res) {
     var that = this;
     async.waterfall([
@@ -228,6 +232,39 @@ module.exports = function (pgp, currency, conf) {
       });
     });
   };
+
+  function amendmentMerkle (req, res, merkleSource, merkleMap) {
+    ParametersService.getAmendmentNumber(req, function (err, number) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      async.waterfall([
+        function (next){
+          Amendment.getTheOneToBeVoted(number, next);
+        },
+      ], function (err, am) {
+        if(err){
+          res.send(404, err);
+          return;
+        }
+        async.waterfall([
+          function (next){
+            merkleSource.call(merkleSource, am.number, next);
+          },
+          function (merkle, next){
+            MerkleService.processForURL(req, merkle, merkleMap, next);
+          }
+        ], function (err, json) {
+          if(err){
+            res.send(400, err);
+            return;
+          }
+          MerkleService.merkleDone(req, res, json);
+        });
+      });
+    });
+  }
 
   return this;
 }

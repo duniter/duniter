@@ -207,7 +207,7 @@ module.exports.express = {
     app.get(    '/ucs/community/voters/:fpr/voting/history',      ucs.votingHistory);
     app.get(    '/ucs/amendment',                                     ucs.amendmentCurrent);
     app.get(    '/ucs/amendment/:amendment_number',                   ucs.amendmentNext);
-    app.get(    '/ucs/amendment/:amendment_number/members/tree',      notImplemented);
+    app.get(    '/ucs/amendment/:amendment_number/members/tree',      ucs.amendmentMembers);
     app.get(    '/ucs/amendment/:amendment_number/members/reason',    notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/voters/tree',       notImplemented);
     app.get(    '/ucs/amendment/:amendment_number/voters/reason',     notImplemented);

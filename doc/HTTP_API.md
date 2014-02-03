@@ -64,10 +64,8 @@
       * [community/voters/[PGP_FINGERPRINT]/voting/current](#communitymemberspgp_fingerprintvotingcurrent)
       * [community/voters/[PGP_FINGERPRINT]/voting/history](#communitymemberspgp_fingerprintvotinghistory)
       * [amendment/[AM_NUMBER]](#amendmentam_number)
-      * [amendment/[AM_NUMBER]/members/changes](#amendmentam_numbermemberschanges)
       * [amendment/[AM_NUMBER]/members/tree](#amendmentam_numbermemberstree)
       * [amendment/[AM_NUMBER]/members/reason](#amendmentam_numbermembersreason)
-      * [amendment/[AM_NUMBER]/voters/changes](#amendmentam_numbervoterschanges)
       * [amendment/[AM_NUMBER]/voters/tree](#amendmentam_numbervoterstree)
       * [amendment/[AM_NUMBER]/voters/reason](#amendmentam_numbervotersreason)
       * [amendment/[AM_NUMBER]/parameters](#amendmentam_numberparameters)
@@ -155,11 +153,9 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
                 |-- vote
                 |-- parameters
                 |-- members/
-                |   |-- changes
                 |   |-- tree
                 |   `-- reason
                 `-- voters/
-                    |-- changes
                     |-- tree
                     `-- reason
 
@@ -2462,31 +2458,6 @@ Amendment to be voted by this node if voting happened.
 }
 ```
 
-#### `amendment/[AM_NUMBER]/members/changes`
-
-**Goal**
-
-List of changes to be done to members of Monetary Contract.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
-
-**Returns**
-
-Array of changes.
-```json
-{
-  "changes": [
-    "+CF723558CA52C265F28B7DCFFA1FBDD21B203CAA",
-    "+FDA56D9020CFC84210943B4BA44E649BA5097DAE",
-    "-C11B44CD28BC0D07A5DC2100EED8E730A2AFE10D"
-  ]
-}
-```
-
 #### `amendment/[AM_NUMBER]/members/tree`
 
 **Goal**
@@ -2572,31 +2543,6 @@ Code | Meaning
 `TOO_OLD` | A previously integrated member has not actualized its status early enough
 
 Document is always a Membership document. It is to be interpreted according to given code.
-
-#### `amendment/[AM_NUMBER]/voters/changes`
-
-**Goal**
-
-List of changes to be done to voters of Monetary Contract.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
-
-**Returns**
-
-Array of changes.
-```json
-{
-  "changes": [
-    "+CF723558CA52C265F28B7DCFFA1FBDD21B203CAA",
-    "+FDA56D9020CFC84210943B4BA44E649BA5097DAE",
-    "-C11B44CD28BC0D07A5DC2100EED8E730A2AFE10D"
-  ]
-}
-```
 
 #### `amendment/[AM_NUMBER]/voters/tree`
 

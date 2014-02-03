@@ -164,8 +164,11 @@ module.exports.get = function (pgp, currency, conf) {
       // Verify signature
       function(pubkey, callback){
         var entry = new Membership();
+        var previous;
         var current = null;
         var nowIsIgnored = false;
+        var merkleOfNextMembers;
+        var amNext;
         async.waterfall([
           function (next){
             entry.parse(signedEntry, next);
@@ -246,6 +249,7 @@ module.exports.get = function (pgp, currency, conf) {
               // Already existing membership for this AM : this membership and the previous for this AM
               // are no more to be considered
               entry.eligible = false;
+              previous = entries[0];
               entries[0].eligible = false;
               entries[0].save(function (err) {
                 nowIsIgnored = true;
@@ -265,123 +269,156 @@ module.exports.get = function (pgp, currency, conf) {
           function (next){
             Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
           },
-          function (amNext, next){
-            var isJoining = false;
-            var isLeaving = false;
-            var isCancelled = false;
+          function (amendmentNext, next){
+            amNext = amendmentNext;
+            var isLeaving = amNext.membersChanges.indexOf('-' + entry.issuer);
+            var isJoining = amNext.membersChanges.indexOf('+' + entry.issuer);
             // Impacts on changes
             if (!nowIsIgnored) {
+              if (~isLeaving && entry.membership == 'JOIN') {
+                // Key was leaving lacking from actualization
+                next('Cannot join: already a member, currently leaving lacking of actualization');
+                return;
+              }
+              if (~isLeaving && entry.membership == 'ACTUALIZE') {
+                // Key was leaving lacking from actualization
+                next(null, { keyToUnleave: entry.issuer });
+                return;
+              }
+              if (~isLeaving && entry.membership == 'LEAVE') {
+                // Key was leaving lacking from actualization
+                next(null, { });
+                return;
+              }
               if (entry.membership == 'JOIN') {
-                isJoining = true;
+                next(null, { keyToAdd: entry.issuer });
+                return;
               }
-              else if (entry.membership == 'ACTUALIZE') {
-                var index = amNext.membersChanges.indexOf('-' + entry.issuer);
-                if (~index) {
-                  amNext.membersChanges.splice(index, 1);
-                }
-              } else {
-                isLeaving = true;
+              if (entry.membership == 'ACTUALIZE') {
+                // Should do nothing
+                next(null, { keyToUnleave: entry.issuer });
+                return;
               }
-            } else {
-              // Remove what was present for members changes
-              var index = amNext.membersChanges.indexOf('-' + entry.issuer);
-              if (~index) {
-                amNext.membersChanges.splice(index, 1);
-              }
-              index = amNext.membersChanges.indexOf('+' + entry.issuer);
-              if (~index) {
-                amNext.membersChanges.splice(index, 1);
-                isCancelled = true;
-              }
-              // Computes regarding what is current
-              var exclusionDate = getExclusionDate(amNext);
-              if (current && current.membership != 'LEAVE' && current.sigDate < exclusionDate) {
-                // If too old actualization
-                isLeaving = true;
+              if (entry.membership == 'LEAVE') {
+                next(null, { keyToRemove: entry.issuer });
+                return;
               }
             }
-            async.waterfall([
-              function(next){
-                if (isCancelled) {
-                  async.waterfall([
-                    function (next){
-                      Merkle.membersWrittenForProposedAmendment(amNext.number, next);
-                    },
-                    function (merkle, next){
-                      merkle.remove(entry.issuer);
-                      amNext.membersRoot = merkle.root();
-                      amNext.membersCount = merkle.leaves().length;
-                      merkle.save(function (err) {
-                        next(err);
-                      });
-                    },
-                  ], next);
+            else {
+              // Cancelling previous
+
+              // Case 1) key is on default of JOIN/ACTUALIZATION
+              var exclusionDate = getExclusionDate(amNext);
+              if (current && current.sigDate < exclusionDate) {
+                // Case 1.1) Was leaving, for whatever reason
+                if (~isLeaving) {
+                  // Key had to leave anyway
+                  next(null, { });
+                  return;
                 }
-                else next();
+                // Case 1.2) Was joining
+                if (~isJoining) {
+                  next(null, { keyToUnadd: entry.issuer, keyToRemove: entry.issuer });
+                  return;
+                }
+                // Case 1.3) Was nowhere because currently ACTUALIZED
+                if (isJoining == -1 && isLeaving == -1) {
+                  next(null, { keyToRemove: entry.issuer });
+                  return;
+                }
+                next('Member should be excluded but no rule found!');
+                console.error('Member should be excluded but no rule found!');
+                return;
+              }
+              // Case 2) key either do not exist or is OK
+              else {
+                // Case 2.1) Was leaving because of LEAVE
+                if (~isLeaving && previous.membership == 'LEAVE') {
+                  next(null, { keyToUnleave: entry.issuer });
+                  return;
+                }
+                // Case 2.2) Was joining because of JOIN
+                if (~isJoining && previous.membership == 'JOIN') {
+                  next(null, { keyToUnadd: entry.issuer });
+                  return;
+                }
+                // Case 2.3) Was nowhere because of ACTUALIZE
+                if (isJoining == -1 && isLeaving == -1 && previous.membership == 'ACTUALIZE') {
+                  next(null, { });
+                  return;
+                }
+                console.error('No rule found for this membership cancelling!');
+                next('Error while cancelling your membership');
+                return;
+              }
+            }
+          },
+          function (actions, next){
+            var merkle;
+            async.waterfall([
+              function (next){
+                Merkle.membersWrittenForProposedAmendment(amNext.number, next);
+              },
+              function (membersMerkle, next){
+                merkle = membersMerkle;
+                // Additions
+                if (actions.keyToAdd) {
+                  merkle.push(actions.keyToAdd);
+                }
+                if (actions.keyToUnleave) {
+                  merkle.push(actions.keyToUnleave);
+                }
+                // Deletions
+                if (actions.keyToUnadd) {
+                  merkle.remove(actions.keyToUnadd);
+                }
+                if (actions.keyToRemove) {
+                  merkle.remove(actions.keyToRemove);
+                }
+                amNext.membersRoot = merkle.root();
+                amNext.membersCount = merkle.leaves().length;
+                merkle.save(function (err) {
+                  next(err);
+                });
+              },
+              function(next){
+                // Update changes
+                if (actions.keyToRemove) {
+                  amNext.membersChanges.push('-' + actions.keyToRemove);
+                }
+                if (actions.keyToUnleave) {
+                  var index = amNext.membersChanges.indexOf('-' + actions.keyToUnleave);
+                  if (~index) {
+                    amNext.membersChanges.splice(index, 1);
+                  }
+                }
+                if (actions.keyToAdd) {
+                  amNext.membersChanges.push('+' + actions.keyToAdd);
+                }
+                if (actions.keyToUnadd) {
+                  var index = amNext.membersChanges.indexOf('+' + actions.keyToUnadd);
+                  if (~index) {
+                    amNext.membersChanges.splice(index, 1);
+                  }
+                }
+                next();
               },
               function (next){
-                async.parallel({
-                  joining: function(callback){
-                    if (isJoining) {
-                      amNext.membersChanges.push('+' + entry.issuer);
-                      amNext.membersChanges.sort();
-                      async.waterfall([
-                        function (next){
-                          Merkle.membersWrittenForProposedAmendment(amNext.number, next);
-                        },
-                        function (merkle, next){
-                          merkle.push(entry.issuer);
-                          amNext.membersRoot = merkle.root();
-                          amNext.membersCount = merkle.leaves().length;
-                          merkle.save(function (err) {
-                            next(err);
-                          });
-                        },
-                      ], callback);
-                    } else callback();
-                  },
-                  leaving: function(callback){
-                    if (isLeaving) {
-                      amNext.membersChanges.push('-' + entry.issuer);
-                      amNext.membersChanges.sort();
-                      async.waterfall([
-                        function (next){
-                          Merkle.membersWrittenForProposedAmendment(amNext.number, next);
-                        },
-                        function (merkle, next){
-                          merkle.remove(entry.issuer);
-                          amNext.membersRoot = merkle.root();
-                          amNext.membersCount = merkle.leaves().length;
-                          merkle.save(function (err) {
-                            next(err);
-                          });
-                        },
-                      ], callback);
-                    } else callback();
-                  }
-                }, function(err) {
-                  // Impacts on reason
-                  // Impacts on tree
-                  //nowIsIgnored && "Already received membership: all received membership for this key will be ignored for next amendment"
-
-                  async.waterfall([
-                    function (next){
-                      amNext.membersRoot = amNext.membersRoot || "";
-                      amNext.votersRoot = amNext.votersRoot || "";
-                      amNext.hash = amNext.getRaw().hash();
-                      amNext.save(function (err) {
-                        next(err);
-                      });
-                    },
-                    function (next) {
-                      if (isCancelled) {
-                        next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
-                        return;
-                      }
-                      else next(null, entry);
-                    },
-                  ], next);
+                amNext.membersRoot = amNext.membersRoot || "";
+                amNext.votersRoot = amNext.votersRoot || "";
+                amNext.hash = amNext.getRaw().hash();
+                amNext.save(function (err) {
+                  next(err);
                 });
+              },
+              function (next) {
+                // Impacts on reason
+                // Impacts on tree
+                if (nowIsIgnored) {
+                  next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
+                  return;
+                }
+                else next(null, entry);
               },
             ], next);
           },

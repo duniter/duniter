@@ -205,14 +205,11 @@ module.exports.express = {
     app.post(   '/ucs/community/voters',                          ucs.votingPost);
     app.get(    '/ucs/community/voters/:fpr/voting/current',      ucs.votingCurrent);
     app.get(    '/ucs/community/voters/:fpr/voting/history',      ucs.votingHistory);
-    app.get(    '/ucs/amendment',                                     ucs.amendmentCurrent);
-    app.get(    '/ucs/amendment/:amendment_number',                   ucs.amendmentNext);
-    app.get(    '/ucs/amendment/:amendment_number/members/tree',      ucs.amendmentMembers);
-    app.get(    '/ucs/amendment/:amendment_number/members/reason',    notImplemented);
-    app.get(    '/ucs/amendment/:amendment_number/voters/tree',       ucs.amendmentVoters);
-    app.get(    '/ucs/amendment/:amendment_number/voters/reason',     notImplemented);
-    app.get(    '/ucs/amendment/:amendment_number/parameters',        notImplemented);
-    app.get(    '/ucs/amendment/:amendment_number/vote',              ucs.askVote);
+    app.get(    '/ucs/amendment',                                 ucs.amendmentCurrent);
+    app.get(    '/ucs/amendment/:amendment_number',               ucs.amendmentNext);
+    app.get(    '/ucs/amendment/:amendment_number/members',       ucs.amendmentMembers);
+    app.get(    '/ucs/amendment/:amendment_number/voters',        ucs.amendmentVoters);
+    app.get(    '/ucs/amendment/:amendment_number/vote',          ucs.askVote);
 
     if(!conf.remoteipv4 && !conf.remoteipv6){
       onLoaded(null, app);

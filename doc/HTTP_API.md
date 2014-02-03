@@ -64,11 +64,8 @@
       * [community/voters/[PGP_FINGERPRINT]/voting/current](#communitymemberspgp_fingerprintvotingcurrent)
       * [community/voters/[PGP_FINGERPRINT]/voting/history](#communitymemberspgp_fingerprintvotinghistory)
       * [amendment/[AM_NUMBER]](#amendmentam_number)
-      * [amendment/[AM_NUMBER]/members/tree](#amendmentam_numbermemberstree)
-      * [amendment/[AM_NUMBER]/members/reason](#amendmentam_numbermembersreason)
-      * [amendment/[AM_NUMBER]/voters/tree](#amendmentam_numbervoterstree)
-      * [amendment/[AM_NUMBER]/voters/reason](#amendmentam_numbervotersreason)
-      * [amendment/[AM_NUMBER]/parameters](#amendmentam_numberparameters)
+      * [amendment/[AM_NUMBER]/members](#amendmentam_numbermembers)
+      * [amendment/[AM_NUMBER]/voters](#amendmentam_numbervoters)
       * [amendment/[AM_NUMBER]/vote](#amendmentam_numbervote)
 
 ## Overview
@@ -137,6 +134,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       `-- view/
     |           `-- [TRANSACTION_ID]
     `-- ucs/
+        |-- parameters
         |-- community/
         |   |-- members/
         |   |   `-- [PGP_FINGERPRINT]/
@@ -151,13 +149,8 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         `-- amendment/
             `-- [AM_NUMBER]/
                 |-- vote
-                |-- parameters
-                |-- members/
-                |   |-- tree
-                |   `-- reason
-                `-- voters/
-                    |-- tree
-                    `-- reason
+                |-- members
+                `-- voters
 
 ## Merkle URLs
 
@@ -181,10 +174,8 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]/transfer`
 * `hdc/transactions/recipient/[PGP_FINGERPRINT]`
-* `ucs/amendment/[AM_NUMBER]/members/tree`
-* `ucs/amendment/[AM_NUMBER]/members/reason`
-* `ucs/amendment/[AM_NUMBER]/voters/tree`
-* `ucs/amendment/[AM_NUMBER]/voters/reason`
+* `ucs/amendment/[AM_NUMBER]/members`
+* `ucs/amendment/[AM_NUMBER]/voters`
 
 Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
@@ -303,10 +294,8 @@ Merkle URL | Leaf | Sort
 `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion` | Hash of the transaction + signature | By hash string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]/transfer` | Hash of the transaction + signature | By hash string sort, ascending.
 `hdc/transactions/recipient/[PGP_FINGERPRINT]` | Hash of the transaction + signature | By hash string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/members/tree` | Fingerprint of the key | By fingerprint string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/members/reason` | Fingerprint of the key | By fingerprint string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/voters/tree` | Fingerprint of the key | By fingerprint string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/voters/reason` | Fingerprint of the key | By fingerprint string sort, ascending.
+`ucs/amendment/[AM_NUMBER]/members` | Fingerprint of the key | By fingerprint string sort, ascending.
+`ucs/amendment/[AM_NUMBER]/voters` | Fingerprint of the key | By fingerprint string sort, ascending.
 
 ## API
 
@@ -2458,7 +2447,7 @@ Amendment to be voted by this node if voting happened.
 }
 ```
 
-#### `amendment/[AM_NUMBER]/members/tree`
+#### `amendment/[AM_NUMBER]/members`
 
 **Goal**
 
@@ -2490,61 +2479,7 @@ Merkle URL leaf: member
 }
 ```
 
-#### `amendment/[AM_NUMBER]/members/reason`
-
-
-**Goal**
-
-Merkle URL refering to the reasons of members changes to be done for this amendment.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL key: public key's fingerprint
-Merkle URL leaf: specific object giving the reason of the change
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "code": "CODE",
-    "document": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-      "membership": "JOIN",
-      "sigDate": 1390739944,
-      "raw": "Version: 1\r\n...Membership: JOIN\r\n"
-    }
-  }
-}
-```
-
-`CODE` is one of the following:
-
-Code | Meaning
----- | -------
-`JOINING` | A public key has sent a membership `JOIN` valid request
-`LEAVING` | A public key has sent a membership `LEAVE` valid request
-`TOO_OLD` | A previously integrated member has not actualized its status early enough
-
-Document is always a Membership document. It is to be interpreted according to given code.
-
-#### `amendment/[AM_NUMBER]/voters/tree`
+#### `amendment/[AM_NUMBER]/voters`
 
 **Goal**
 
@@ -2575,86 +2510,6 @@ Merkle URL leaf: voter
   "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
 }
 ```
-
-#### `amendment/[AM_NUMBER]/voters/reason`
-
-
-**Goal**
-
-Merkle URL refering to the reasons of voters changes to be done for this amendment.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL key: public key's fingerprint
-Merkle URL leaf: specific object giving the reason of the change
-
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "code": "CODE",
-    "document": // Some JSON value
-  }
-}
-```
-
-Code is one of the following:
-
-Code | Meaning
----- | -------
-`VOTING_KEY_CHANGE` | A member has sent a new voting request
-`INACTIVE_OR_DISSIDENT` | A voter did not vote previous amendment
-
-Document is present for code `VOTING_KEY_CHANGE`, but is not for `INACTIVE_OR_DISSIDENT`. Document is to be interpreted according to given code.
-
-#### `amendment/[AM_NUMBER]/parameters`
-
-**Goal**
-
-GET the list of parameters to be written in amendment. Parameters are:
-
-* GeneratedOn timestamp
-* Universal Dividend
-* New coin's minimal power value
-* Next amendment required votes count
-* Previous amendment's hash
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
-
-**Returns**
-
-Parameters object.
-```json
-{
-  "generated": 1388325001502,
-  "dividend": 100,
-  "coinMinimalPower": 2,
-  "nextVotes": 6,
-  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5"
-}
-```
-
-A parameter may be null or non-present.
 
 #### `amendment/[AM_NUMBER]/vote`
 

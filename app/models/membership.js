@@ -174,10 +174,10 @@ MembershipSchema.statics.getCurrentJoinOrActuOlderThan = function (exclusiveLimi
   });
 }
 
-MembershipSchema.statics.getCurrent = function (done) {
+MembershipSchema.statics.getCurrent = function (issuer, done) {
   
   this
-    .find({ current: true })
+    .find({ current: true, issuer: issuer })
     .sort({ 'sigDate': -1 })
     .limit(1)
     .exec(function (err, mss) {

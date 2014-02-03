@@ -162,10 +162,10 @@ VotingSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, done
   this.find({ issuer: issuer, amNumber: amNumber }, done);
 }
 
-VotingSchema.statics.getCurrent = function (done) {
+VotingSchema.statics.getCurrent = function (issuer, done) {
   
   this
-    .find({ current: true })
+    .find({ current: true, issuer: issuer })
     .sort({ 'sigDate': -1 })
     .limit(1)
     .exec(function (err, mss) {

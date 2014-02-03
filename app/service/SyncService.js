@@ -218,7 +218,7 @@ module.exports.get = function (pgp, currency, conf) {
             } else {
               entry.amNumber = -1;
             }
-            Membership.getCurrent(next);
+            Membership.getCurrent(entry.issuer, next);
           },
           function (currentlyRecorded, next){
             current = currentlyRecorded;
@@ -415,8 +415,17 @@ module.exports.get = function (pgp, currency, conf) {
                 // Impacts on reason
                 // Impacts on tree
                 if (nowIsIgnored) {
-                  next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
-                  return;
+                  async.waterfall([
+                    function (next){
+                      Merkle.votersWrittenForProposedAmendment(amNext.number, next);
+                    },
+                    function (merkleOfNextVoters, next){
+                      cancelVoter(entry.issuer, amNext, merkleOfNextVoters, null, null, next);
+                    },
+                  ], function (err) {
+                    next(err || 'Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
+                    return;
+                  });
                 }
                 else next(null, entry);
               },
@@ -512,7 +521,7 @@ module.exports.get = function (pgp, currency, conf) {
             } else {
               entry.amNumber = -1;
             }
-            Voting.getCurrent(next);
+            Voting.getCurrent(entry.issuer, next);
           },
           function (currentlyRecorded, next){
             current = currentlyRecorded;
@@ -588,31 +597,21 @@ module.exports.get = function (pgp, currency, conf) {
                   }
                   // Case 4) key is not already used, but issuer has previous other key --> cancel OLD key + add new
                   if (current) {
-                    next(null, current.votingKey, null, entry.votingKey, null);
+                    updateNextVoters(amNext, merkleOfNextVoters, {
+                      "keyToRemove": current.votingKey,
+                      "keyToAdd": entry.votingKey
+                    }, next);
                     return;
                   }
                   // Case 5) key is not arleady used, without having any previous --> add new
-                  next(null, null, null, entry.votingKey, null);
+                  updateNextVoters(amNext, merkleOfNextVoters, {
+                    "keyToAdd": entry.votingKey
+                  }, next);
                 }
                 else {
                   // Cancelling previous
-                  // Case 1) Voting was just new voter ==> Un-add new voting key
-                  if (!current) {
-                    next(null, null, null, null, previous.votingKey);
-                    return;
-                  }
-                  // Case 2) Voting was changing key ==> Un-add new voting key, unleave current
-                  // TODO
-                  next(null, null, current.votingKey, previous.votingKey, null);
+                  cancelVoter(entry.issuer, amNext, merkleOfNextVoters, current, previous, next);
                 }
-              },
-              function (keyToRemove, keyToUnleave, keyToAdd, keyToUnadd, next){
-                updateNextVoters(amNext, merkleOfNextVoters, {
-                  "keyToRemove": keyToRemove,
-                  "keyToUnleave": keyToUnleave,
-                  "keyToAdd": keyToAdd,
-                  "keyToUnadd": keyToUnadd
-                }, next);
               },
               function (next) {
                 if (nowIsIgnored) {
@@ -752,6 +751,47 @@ module.exports.get = function (pgp, currency, conf) {
         });
       },
     ], done);
+  }
+
+  function cancelVoter (issuer, amNext, merkleOfNextVoters, currentVoting, previousVoting, done) {
+    var current;
+    var previous;
+    async.parallel({
+      current: function(callback){
+        if (currentVoting) {
+          callback(null, currentVoting);
+          return;
+        }
+        // Find current
+        Voting.getCurrent(issuer, callback);
+      },
+      previous: function(callback){
+        if (previousVoting) {
+          callback(null, previousVoting);
+          return;
+        }
+        // Find previous
+        Voting.getForAmendmentAndIssuer(amNext.number - 1, issuer, function (err, entries) {
+          callback(err, (entries && entries[0]) || null);
+        });
+      },
+    }, function(err, res) {
+      current = res.current;
+      previous = res.previous;
+
+      // Case 1) Voting was just new voter ==> Un-add new voting key
+      if (!current) {
+        updateNextVoters(amNext, merkleOfNextVoters, {
+          "keyToUnadd": previous.votingKey
+        }, done);
+        return;
+      }
+      // Case 2) Voting was changing key ==> Un-add new voting key, unleave current
+      updateNextVoters(amNext, merkleOfNextVoters, {
+        "keyToUnleave": current.votingKey,
+        "keyToAdd": previous.votingKey
+      }, done);
+    });
   }
 
   return this;

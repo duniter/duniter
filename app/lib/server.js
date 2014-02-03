@@ -203,7 +203,7 @@ module.exports.express = {
     app.get(    '/ucs/community/members/:fpr/membership/current', ucs.membershipCurrent);
     app.get(    '/ucs/community/members/:fpr/membership/history', ucs.membershipHistory);
     app.post(   '/ucs/community/voters',                          ucs.votingPost);
-    app.get(    '/ucs/community/voters/:fpr/voting/current',      notImplemented);
+    app.get(    '/ucs/community/voters/:fpr/voting/current',      ucs.votingCurrent);
     app.get(    '/ucs/community/voters/:fpr/voting/history',      notImplemented);
     app.get(    '/ucs/amendment/:amendment_number',                   ucs.amendmentNext);
     app.get(    '/ucs/amendment/:amendment_number/members/changes',   notImplemented);

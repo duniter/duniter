@@ -33,9 +33,10 @@ VotingSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "issuer", "votingKey", "sigDate"].forEach(function (key) {
+    ["version", "currency", "issuer", "votingKey"].forEach(function (key) {
       json[key] = obj[key];
     });
+    json.sigDate = this.sigDate.timestamp();
     json.raw = this.getRaw();
     return { signature: this.signature, entry: json };
   },

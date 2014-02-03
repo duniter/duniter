@@ -132,6 +132,30 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.votingCurrent = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getFingerprint(req, next);
+      },
+
+      function (fingerprint, next) {
+        Voting.getCurrent(fingerprint, next);
+      }
+
+    ], function (err, voting) {
+      if (!voting) {
+        res.send(404, "Not found");
+        return;
+      }
+      http.answer(res, 400, err, function () {
+        res.end(JSON.stringify(voting.json(), null, "  "));
+      });
+    });
+  };
+
   this.askVote = function (req, res) {
     var that = this;
     async.waterfall([

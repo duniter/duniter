@@ -162,6 +162,11 @@ VotingSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, done
   this.find({ issuer: issuer, amNumber: amNumber }, done);
 }
 
+VotingSchema.statics.getEligibleForAmendment = function (amNumber, done) {
+  
+  this.find({ eligible: true, amNumber: amNumber }, done);
+}
+
 VotingSchema.statics.getCurrent = function (issuer, done) {
   
   this

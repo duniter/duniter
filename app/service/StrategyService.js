@@ -4,6 +4,7 @@ var mongoose   = require('mongoose');
 var _          = require('underscore');
 var Amendment  = mongoose.model('Amendment');
 var Membership = mongoose.model('Membership');
+var Voting     = mongoose.model('Voting');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
@@ -51,6 +52,18 @@ module.exports = function (currency, conf) {
         async.forEach(memberships, function(ms, callback){
           ms.current = true;
           ms.save(function (err) {
+            callback(err);
+          });
+        }, next);
+      },
+      function (next){
+        // Set eligible memberships as current
+        Voting.getEligibleForAmendment(am.number - 1, next);
+      },
+      function (votings, next) {
+        async.forEach(votings, function(voting, callback){
+          voting.current = true;
+          voting.save(function (err) {
             callback(err);
           });
         }, next);

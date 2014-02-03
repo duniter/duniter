@@ -271,161 +271,87 @@ module.exports.get = function (pgp, currency, conf) {
           },
           function (amendmentNext, next){
             amNext = amendmentNext;
-            var isLeaving = amNext.membersChanges.indexOf('-' + entry.issuer);
-            var isJoining = amNext.membersChanges.indexOf('+' + entry.issuer);
-            // Impacts on changes
-            if (!nowIsIgnored) {
-              if (~isLeaving && entry.membership == 'JOIN') {
-                // Key was leaving lacking from actualization
-                next('Cannot join: already a member, currently leaving lacking of actualization');
-                return;
-              }
-              if (~isLeaving && entry.membership == 'ACTUALIZE') {
-                // Key was leaving lacking from actualization
-                next(null, { keyToUnleave: entry.issuer });
-                return;
-              }
-              if (~isLeaving && entry.membership == 'LEAVE') {
-                // Key was leaving lacking from actualization
-                next(null, { });
-                return;
-              }
-              if (entry.membership == 'JOIN') {
-                next(null, { keyToAdd: entry.issuer });
-                return;
-              }
-              if (entry.membership == 'ACTUALIZE') {
-                // Should do nothing
-                next(null, { keyToUnleave: entry.issuer });
-                return;
-              }
-              if (entry.membership == 'LEAVE') {
-                next(null, { keyToRemove: entry.issuer });
-                return;
-              }
-            }
-            else {
-              // Cancelling previous
-
-              // Case 1) key is on default of JOIN/ACTUALIZATION
-              var exclusionDate = getExclusionDate(amNext);
-              if (current && current.sigDate < exclusionDate) {
-                // Case 1.1) Was leaving, for whatever reason
-                if (~isLeaving) {
-                  // Key had to leave anyway
-                  next(null, { });
-                  return;
+            var currentVoting, previousVoting;
+            async.waterfall([
+              function (next) {
+                Voting.getCurrent(entry.issuer, next);
+              },
+              function (voting, next){
+                currentVoting = voting;
+                Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, function (err, votings) {
+                  next(err, (votings && votings[0]) || null);
+                });
+              },
+              function (voting, next){
+                previousVoting = voting;
+                // Impacts on changes
+                if (!nowIsIgnored) {
+                  deltas (entry.issuer, current, currentVoting, entry, null, exclusionDate, function (err, res) {
+                    next(err, {
+                      keyToAdd: res.Mdeltas.keyAdd,
+                      keyToRemove: res.Mdeltas.keyRemove
+                    }, {
+                      keyToAdd: res.Vdeltas.keyAdd,
+                      keyToRemove: res.Vdeltas.keyRemove
+                    });
+                  });
                 }
-                // Case 1.2) Was joining
-                if (~isJoining) {
-                  next(null, { keyToUnadd: entry.issuer, keyToRemove: entry.issuer });
-                  return;
+                else {
+                  // Cancelling previous
+                  var membersActions = {};
+                  var votersActions = {};
+                  var exclusionDate = getExclusionDate(amNext);
+                  async.waterfall([
+                    function (next) {
+                      // Unapply last changes
+                      deltas (entry.issuer, current, currentVoting, previous, previousVoting, exclusionDate, next);
+                    },
+                    function (res, next){
+                      _(membersActions).extend({
+                        keyToUnadd: res.Mdeltas.keyAdd,
+                        keyToUnleave: res.Mdeltas.keyRemove
+                      });
+                      _(votersActions).extend({
+                        keyToUnadd: res.Vdeltas.keyAdd,
+                        keyToUnleave: res.Vdeltas.keyRemove
+                      });
+                      next();
+                    },
+                    function (next){
+                      deltas (entry.issuer, current, currentVoting, null, null, exclusionDate, next);
+                    },
+                    function (res, next){
+                      _(membersActions).extend({
+                        keyToAdd: res.Mdeltas.keyAdd,
+                        keyToRemove: res.Mdeltas.keyRemove
+                      });
+                      _(votersActions).extend({
+                        keyToAdd: res.Vdeltas.keyAdd,
+                        keyToRemove: res.Vdeltas.keyRemove
+                      });
+                      next();
+                    },
+                  ], function (err) {
+                    next(err, membersActions, votersActions);
+                  });
                 }
-                // Case 1.3) Was nowhere because currently ACTUALIZED
-                if (isJoining == -1 && isLeaving == -1) {
-                  next(null, { keyToRemove: entry.issuer });
-                  return;
-                }
-                next('Member should be excluded but no rule found!');
-                console.error('Member should be excluded but no rule found!');
-                return;
-              }
-              // Case 2) key either do not exist or is OK
-              else {
-                // Case 2.1) Was leaving because of LEAVE
-                if (~isLeaving && previous.membership == 'LEAVE') {
-                  next(null, { keyToUnleave: entry.issuer });
-                  return;
-                }
-                // Case 2.2) Was joining because of JOIN
-                if (~isJoining && previous.membership == 'JOIN') {
-                  next(null, { keyToUnadd: entry.issuer });
-                  return;
-                }
-                // Case 2.3) Was nowhere because of ACTUALIZE
-                if (isJoining == -1 && isLeaving == -1 && previous.membership == 'ACTUALIZE') {
-                  next(null, { });
-                  return;
-                }
-                console.error('No rule found for this membership cancelling!');
-                next('Error while cancelling your membership');
-                return;
-              }
-            }
+              },
+            ], next);
           },
-          function (actions, next){
-            var merkle;
+          function (membersActions, votersActions, next){
             async.waterfall([
               function (next){
-                Merkle.membersWrittenForProposedAmendment(amNext.number, next);
-              },
-              function (membersMerkle, next){
-                merkle = membersMerkle;
-                // Additions
-                if (actions.keyToAdd) {
-                  merkle.push(actions.keyToAdd);
-                }
-                if (actions.keyToUnleave) {
-                  merkle.push(actions.keyToUnleave);
-                }
-                // Deletions
-                if (actions.keyToUnadd) {
-                  merkle.remove(actions.keyToUnadd);
-                }
-                if (actions.keyToRemove) {
-                  merkle.remove(actions.keyToRemove);
-                }
-                amNext.membersRoot = merkle.root();
-                amNext.membersCount = merkle.leaves().length;
-                merkle.save(function (err) {
-                  next(err);
-                });
-              },
-              function(next){
-                // Update changes
-                if (actions.keyToRemove) {
-                  amNext.membersChanges.push('-' + actions.keyToRemove);
-                }
-                if (actions.keyToUnleave) {
-                  var index = amNext.membersChanges.indexOf('-' + actions.keyToUnleave);
-                  if (~index) {
-                    amNext.membersChanges.splice(index, 1);
-                  }
-                }
-                if (actions.keyToAdd) {
-                  amNext.membersChanges.push('+' + actions.keyToAdd);
-                }
-                if (actions.keyToUnadd) {
-                  var index = amNext.membersChanges.indexOf('+' + actions.keyToUnadd);
-                  if (~index) {
-                    amNext.membersChanges.splice(index, 1);
-                  }
-                }
-                next();
+                updateMembers(amNext, membersActions, next);
               },
               function (next){
-                amNext.membersRoot = amNext.membersRoot || "";
-                amNext.votersRoot = amNext.votersRoot || "";
-                amNext.hash = amNext.getRaw().hash();
-                amNext.save(function (err) {
-                  next(err);
-                });
+                updateVoters(amNext, votersActions, next);
               },
               function (next) {
                 // Impacts on reason
                 // Impacts on tree
                 if (nowIsIgnored) {
-                  async.waterfall([
-                    function (next){
-                      Merkle.votersWrittenForProposedAmendment(amNext.number, next);
-                    },
-                    function (merkleOfNextVoters, next){
-                      cancelVoter(entry.issuer, amNext, merkleOfNextVoters, null, null, next);
-                    },
-                  ], function (err) {
-                    next(err || 'Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
-                    return;
-                  });
+                  next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
+                  return;
                 }
                 else next(null, entry);
               },
@@ -572,8 +498,19 @@ module.exports.get = function (pgp, currency, conf) {
           },
           function (amNext, next){
             var merkleOfNextVoters;
+            var currentMembership, eligibleMembership;
             async.waterfall([
-              function (next){
+              function (next) {
+                Membership.getCurrent(entry.issuer, next);
+              },
+              function (ms, next){
+                currentMembership = ms;
+                Membership.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, function (err, mss) {
+                  next(err, (mss && mss[0]) || null);
+                });
+              },
+              function (ms, next){
+                eligibleMembership = ms;
                 Merkle.votersWrittenForProposedAmendment(amNext.number, next);
               },
               function (votersMerkle, next){
@@ -595,23 +532,47 @@ module.exports.get = function (pgp, currency, conf) {
                     next('Key is currently leaving. You can use it only after voting next amendment.');
                     return;
                   }
-                  // Case 4) key is not already used, but issuer has previous other key --> cancel OLD key + add new
-                  if (current) {
-                    updateNextVoters(amNext, merkleOfNextVoters, {
-                      "keyToRemove": current.votingKey,
-                      "keyToAdd": entry.votingKey
-                    }, next);
-                    return;
-                  }
-                  // Case 5) key is not arleady used, without having any previous --> add new
-                  updateNextVoters(amNext, merkleOfNextVoters, {
-                    "keyToAdd": entry.votingKey
-                  }, next);
+                  // May be updated
+                  deltas (entry.issuer, currentMembership, current, eligibleMembership, entry, null, function (err, res) {
+                    next(err, amNext, {
+                      keyToAdd: res.Vdeltas.keyAdd,
+                      keyToRemove: res.Vdeltas.keyRemove
+                    });
+                  });
                 }
                 else {
                   // Cancelling previous
-                  cancelVoter(entry.issuer, amNext, merkleOfNextVoters, current, previous, next);
+                  var votersActions = {};
+                  async.waterfall([
+                    function (next) {
+                      // Unapply last changes
+                      deltas (entry.issuer, currentMembership, current, eligibleMembership, previous, null, next);
+                    },
+                    function (res, next){
+                      _(votersActions).extend({
+                        keyToUnadd: res.Vdeltas.keyAdd,
+                        keyToUnleave: res.Vdeltas.keyRemove
+                      });
+                      next();
+                    },
+                    function (next){
+                      deltas (entry.issuer, currentMembership, current, eligibleMembership, null, null, next);
+                    },
+                    function (res, next){
+                      _(votersActions).extend({
+                        keyToAdd: res.Vdeltas.keyAdd,
+                        keyToRemove: res.Vdeltas.keyRemove
+                      });
+                      next();
+                    },
+                  ], function (err) {
+                    next(err, amNext, votersActions);
+                  });
+                  return;
                 }
+              },
+              function (amNext, votersActions, next){
+                updateVoters(amNext, votersActions, next);
               },
               function (next) {
                 if (nowIsIgnored) {
@@ -696,9 +657,72 @@ module.exports.get = function (pgp, currency, conf) {
     return exclusionDate;
   }
 
-  function updateNextVoters(amNext, merkle, actions, done){
+  function updateMembers (amNext, actions, done) {
     async.waterfall([
       function (next){
+        Merkle.membersWrittenForProposedAmendment(amNext.number, next);
+      },
+      function (membersMerkle, next){
+        merkle = membersMerkle;
+        // Additions
+        if (actions.keyToAdd) {
+          merkle.push(actions.keyToAdd);
+        }
+        if (actions.keyToUnleave) {
+          merkle.push(actions.keyToUnleave);
+        }
+        // Deletions
+        if (actions.keyToUnadd) {
+          merkle.remove(actions.keyToUnadd);
+        }
+        if (actions.keyToRemove) {
+          merkle.remove(actions.keyToRemove);
+        }
+        amNext.membersRoot = merkle.root();
+        amNext.membersCount = merkle.leaves().length;
+        merkle.save(function (err) {
+          next(err);
+        });
+      },
+      function(next){
+        // Update changes
+        if (actions.keyToRemove) {
+          amNext.membersChanges.push('-' + actions.keyToRemove);
+        }
+        if (actions.keyToUnleave) {
+          var index = amNext.membersChanges.indexOf('-' + actions.keyToUnleave);
+          if (~index) {
+            amNext.membersChanges.splice(index, 1);
+          }
+        }
+        if (actions.keyToAdd) {
+          amNext.membersChanges.push('+' + actions.keyToAdd);
+        }
+        if (actions.keyToUnadd) {
+          var index = amNext.membersChanges.indexOf('+' + actions.keyToUnadd);
+          if (~index) {
+            amNext.membersChanges.splice(index, 1);
+          }
+        }
+        next();
+      },
+      function (next){
+        amNext.membersRoot = amNext.membersRoot || "";
+        amNext.votersRoot = amNext.votersRoot || "";
+        amNext.hash = amNext.getRaw().hash();
+        amNext.save(function (err) {
+          next(err);
+        });
+      },
+    ], done);
+  }
+
+  function updateVoters(amNext, actions, done){
+    async.waterfall([
+      function (next) {
+        Merkle.votersWrittenForProposedAmendment(amNext.number, next);
+      },
+      function (merkle, next){
         // Update keys according to what is to be added/removed
         if (actions.keyToRemove) {
           merkle.remove(actions.keyToRemove);
@@ -753,45 +777,68 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
-  function cancelVoter (issuer, amNext, merkleOfNextVoters, currentVoting, previousVoting, done) {
-    var current;
-    var previous;
-    async.parallel({
-      current: function(callback){
-        if (currentVoting) {
-          callback(null, currentVoting);
-          return;
-        }
-        // Find current
-        Voting.getCurrent(issuer, callback);
-      },
-      previous: function(callback){
-        if (previousVoting) {
-          callback(null, previousVoting);
-          return;
-        }
-        // Find previous
-        Voting.getForAmendmentAndIssuer(amNext.number - 1, issuer, function (err, entries) {
-          callback(err, (entries && entries[0]) || null);
-        });
-      },
-    }, function(err, res) {
-      current = res.current;
-      previous = res.previous;
+  function deltas (issuer, membershipA, votingA, membershipR, votingR, exclusionDate, done) {
+    // Members deltas
+    var Mdeltas = {};
+    // Voters deltas
+    var Vdeltas = {};
+    // Integrity controls
+    // No previous MS
+    if (!membershipA && membershipR && membershipR.membership != 'JOIN') {
+      done('Cannot have other than JOIN membership for first request');
+      return;
+    }
+    // With previous MS
+    if (membershipA && membershipR && membershipA.membership == 'JOIN' && membershipR.membership == 'JOIN') {
+      done('Cannot have other than ACTUALIZE or LEAVE after JOIN');
+      return;
+    }
+    if (membershipA && membershipR && membershipA.membership == 'ACTUALIZE' && membershipR.membership == 'JOIN') {
+      done('Cannot have other than ACTUALIZE or LEAVE after ACTUALIZE');
+      return;
+    }
+    if (membershipA && membershipR && membershipA.membership == 'LEAVE' && membershipR.membership != 'JOIN') {
+      done('Cannot have other than JOIN after LEAVE');
+      return;
+    }
 
-      // Case 1) Voting was just new voter ==> Un-add new voting key
-      if (!current) {
-        updateNextVoters(amNext, merkleOfNextVoters, {
-          "keyToUnadd": previous.votingKey
-        }, done);
-        return;
+    // -------------
+    // Membership part
+    // -------------
+    var willBeMember = membershipA && membershipA.membership != 'LEAVE';
+    // No renewal + too old membership
+    if (!membershipR && membershipA && membershipA.sigDate < exclusionDate) {
+      Mdeltas.keyRemove = issuer;
+      willBeMember = false;
+    }
+    // Join
+    if (membershipR && membershipR.membership == 'JOIN') {
+      Mdeltas.keyAdd = issuer;
+      willBeMember = true;
+    }
+    // Leave
+    if (membershipR && membershipR.membership == 'LEAVE') {
+      Mdeltas.keyRemove = issuer;
+      willBeMember = false;
+    }
+
+    // -------------
+    // Voting part
+    // -------------
+    if (willBeMember) {
+      if (votingR) {
+        if (votingA) {
+          Vdeltas.keyRemove = votingA.votingKey;
+        }
+        Vdeltas.keyAdd = votingR.votingKey;
       }
-      // Case 2) Voting was changing key ==> Un-add new voting key, unleave current
-      updateNextVoters(amNext, merkleOfNextVoters, {
-        "keyToUnleave": current.votingKey,
-        "keyToAdd": previous.votingKey
-      }, done);
-    });
+    } else {
+      if (votingA) {
+        Vdeltas.keyRemove = votingA.votingKey;
+      }
+    }
+
+    done(null, { "Mdeltas": Mdeltas, "Vdeltas": Vdeltas });
   }
 
   return this;

@@ -607,73 +607,21 @@ module.exports.get = function (pgp, currency, conf) {
                 }
               },
               function (keyToRemove, keyToUnleave, keyToAdd, keyToUnadd, next){
-                async.waterfall([
-                  function (next){
-                    var merkle = merkleOfNextVoters;
-                    // Update keys according to what is to be added/removed
-                    if (keyToRemove) {
-                      merkle.remove(keyToRemove);
-                    }
-                    if (keyToUnadd) {
-                      merkle.remove(keyToUnadd);
-                    }
-                    if (keyToUnleave) {
-                      merkle.push(keyToUnleave);
-                    }
-                    if (keyToAdd) {
-                      merkle.push(keyToAdd);
-                    }
-                    // Update resulting root + count
-                    amNext.votersRoot = merkle.root();
-                    amNext.votersCount = merkle.leaves().length;
-                    merkle.save(function (err) {
-                      next(err);
-                    });
-                  },
-                  function (next){
-                    // Update changes
-                    if (keyToRemove) {
-                      amNext.votersChanges.push('-' + keyToRemove);
-                    }
-                    if (keyToUnleave) {
-                      var index = amNext.votersChanges.indexOf('-' + keyToUnleave);
-                      if (~index) {
-                        amNext.votersChanges.splice(index, 1);
-                      }
-                    }
-                    if (keyToAdd) {
-                      amNext.votersChanges.push('+' + keyToAdd);
-                    }
-                    if (keyToUnadd) {
-                      var index = amNext.votersChanges.indexOf('+' + keyToUnadd);
-                      if (~index) {
-                        amNext.votersChanges.splice(index, 1);
-                      }
-                    }
-                    next();
-                  },
-                ], next);
+                updateNextVoters(amNext, merkleOfNextVoters, {
+                  "keyToRemove": keyToRemove,
+                  "keyToUnleave": keyToUnleave,
+                  "keyToAdd": keyToAdd,
+                  "keyToUnadd": keyToUnadd
+                }, next);
               },
-            ], function (err) {
-              async.waterfall([
-                function (next){
-                  amNext.membersRoot = amNext.membersRoot || "";
-                  amNext.votersRoot = amNext.votersRoot || "";
-                  amNext.nextVotes = Math.ceil((amNext.votersCount || 0) * conf.sync.VotesPercent);
-                  amNext.hash = amNext.getRaw().hash();
-                  amNext.save(function (err) {
-                    next(err);
-                  });
-                },
-                function (next) {
-                  if (nowIsIgnored) {
-                    next('Cancelled: a previous voting was found, thus none of your voting requests will be taken for next amendment');
-                    return;
-                  }
-                  else next(err, entry);
-                },
-              ], next);
-            });
+              function (next) {
+                if (nowIsIgnored) {
+                  next('Cancelled: a previous voting was found, thus none of your voting requests will be taken for next amendment');
+                  return;
+                }
+                else next(null, entry);
+              },
+            ], next);
           },
         ], callback);
       }
@@ -747,6 +695,63 @@ module.exports.get = function (pgp, currency, conf) {
     var exclusionDate = new Date();
     exclusionDate.setTime(nextTimestamp*1000 - conf.sync.ActualizeFrequence*1000);
     return exclusionDate;
+  }
+
+  function updateNextVoters(amNext, merkle, actions, done){
+    async.waterfall([
+      function (next){
+        // Update keys according to what is to be added/removed
+        if (actions.keyToRemove) {
+          merkle.remove(actions.keyToRemove);
+        }
+        if (actions.keyToUnadd) {
+          merkle.remove(actions.keyToUnadd);
+        }
+        if (actions.keyToUnleave) {
+          merkle.push(actions.keyToUnleave);
+        }
+        if (actions.keyToAdd) {
+          merkle.push(actions.keyToAdd);
+        }
+        // Update resulting root + count
+        amNext.votersRoot = merkle.root();
+        amNext.votersCount = merkle.leaves().length;
+        merkle.save(function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        // Update changes
+        if (actions.keyToRemove) {
+          amNext.votersChanges.push('-' + actions.keyToRemove);
+        }
+        if (actions.keyToUnleave) {
+          var index = amNext.votersChanges.indexOf('-' + actions.keyToUnleave);
+          if (~index) {
+            amNext.votersChanges.splice(index, 1);
+          }
+        }
+        if (actions.keyToAdd) {
+          amNext.votersChanges.push('+' + actions.keyToAdd);
+        }
+        if (actions.keyToUnadd) {
+          var index = amNext.votersChanges.indexOf('+' + actions.keyToUnadd);
+          if (~index) {
+            amNext.votersChanges.splice(index, 1);
+          }
+        }
+        next();
+      },
+      function (next){
+        amNext.membersRoot = amNext.membersRoot || "";
+        amNext.votersRoot = amNext.votersRoot || "";
+        amNext.nextVotes = Math.ceil((amNext.votersCount || 0) * conf.sync.VotesPercent);
+        amNext.hash = amNext.getRaw().hash();
+        amNext.save(function (err) {
+          next(err);
+        });
+      },
+    ], done);
   }
 
   return this;

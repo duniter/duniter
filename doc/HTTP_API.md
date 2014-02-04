@@ -2187,7 +2187,7 @@ The synchronization parameters.
     "AMStart": 1388530800,
     "AMFrequency": 86400,
     "UDFrequency": 2629800,
-    "UDMin": 100,
+    "UD0": 100,
     "UDPercent": 0.007376575,
     "UDMinCoin": null,
     "VotesPercent": 0.6666666666666666,
@@ -2202,7 +2202,7 @@ Parameter         | Meaning
 AMStart           | Root amendment starting timestamp (in seconds)
 AMFrequency       | Amendment frequency (in seconds)
 UDFrequency       | Universal Dividend frequency (in seconds)
-UDMin             | Universal Dividend minimal value
+UD0               | Universal Dividend initial value
 UDPercent         | Universal Dividend % of monetary mass growth
 UDMinCoin         | Universal Dividend minimal coin value
 VotesPercent      | Percent of voters required to valid an Amendment

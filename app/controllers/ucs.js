@@ -31,7 +31,7 @@ module.exports = function (pgp, currency, conf) {
       AMStart: conf.sync.votingStart,
       AMFrequency: conf.sync.votingFrequence,
       UDFrequency: conf.sync.UDFrequence,
-      UDMin: conf.sync.UDMin,
+      UD0: conf.sync.UD0,
       UDPercent: conf.sync.UDPercent,
       UDMinCoin: conf.sync.UDMinCoin,
       VotesPercent: conf.sync.VotesPercent,

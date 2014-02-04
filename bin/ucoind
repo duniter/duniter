@@ -330,7 +330,7 @@ function overrideConf(conf) {
   //  - Voting start: 01-01-2014 00:00:00
   //  - Voting frequency: 1 day
   //  - UD frequency: 1 month
-  //  - UD Min (aka UD(0)): 100 unities
+  //  - UD(0): 100 unities
   //  - UD % (aka 'c'): 9.22% a year <=> 0.7376575% a month
   //  - UD Minimal Coin: none
   //  - Voting % threshold: 2/3 of votes
@@ -338,8 +338,8 @@ function overrideConf(conf) {
   conf.sync        = {
     votingStart: config.sync.votingStart || 1388530800,
     votingFrequence: config.sync.votingFrequence || 3600*24,
-    UDFrequence: config.sync.UDFrequence || 2629800,
-    UDMin: config.sync.UDMin || 100,
+    UDFrequence: config.sync.UDFrequence || 3600*24,
+    UD0: config.sync.UD0 || 100,
     UDPercent: config.sync.UDPercent || 0.007376575,
     UDMinCoin: config.sync.UDMinCoin,
     VotesPercent: config.sync.VotesPercent || 2/3,

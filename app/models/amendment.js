@@ -334,7 +334,7 @@ AmendmentSchema.statics.findClosestPreviousWithMinimalCoinPower = function (sigD
     .sort({ 'number': -1 })
     .limit(1)
     .exec(function (err, amends) {
-      done(null, amends.length == 1 ? amends[0] : null);
+      done(err, (amends && amends.length == 1) ? amends[0] : null);
   });
 };
 
@@ -345,18 +345,18 @@ AmendmentSchema.statics.findPromotedPreceding = function (timpestamp, done) {
     .sort({ 'number': -1 })
     .limit(1)
     .exec(function (err, amends) {
-      done(null, amends.length == 1 ? amends[0] : null);
+      done(err, (amends && amends.length == 1) ? amends[0] : null);
   });
 };
 
-AmendmentSchema.statics.getPreviouslyPromotedWithDividend = function (am, done) {
+AmendmentSchema.statics.getPreviouslyPromotedWithDividend = function (done) {
 
   this
-    .find({ number: { $lt: am.number }, promoted: true, dividend: { $gt: 0 } })
+    .find({ promoted: true, dividend: { $gt: 0 } })
     .sort({ 'number': -1 })
     .limit(1)
     .exec(function (err, amends) {
-      done(null, amends.length == 1 ? amends[0] : null);
+      done(err, (amends && amends.length == 1) ? amends[0] : null);
   });
 };
 

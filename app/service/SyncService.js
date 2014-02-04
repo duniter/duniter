@@ -27,7 +27,7 @@ module.exports.get = function (pgp, currency, conf) {
     var membersMerklePrev = [];
     var votersMerklePrev = [];
     async.waterfall([
-      function(next){
+      function (next){
         amNext.selfGenerated = true;
         if (am) {
           ["version", "currency", "membersRoot", "membersCount", "votersRoot", "votersCount", "monetaryMass"].forEach(function(property){
@@ -50,14 +50,6 @@ module.exports.get = function (pgp, currency, conf) {
           amNext.votersRoot = "";
           amNext.votersCount = 0;
           amNext.monetaryMass = 0;
-        }
-        // Time for Universal Dividend
-        var delayPassedSinceRootAM = (amNext.generated - conf.sync.votingStart);
-        if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFrequence == 0) {
-          var monetaryMassDelta = am.monetaryMass * conf.sync.UDPercent;
-          var dividendPerMember = monetaryMassDelta / am.membersCount;
-          amNext.dividend = Math.max(conf.sync.UDMin, Math.floor(dividendPerMember));
-          amNext.monetaryMass += am.dividend * am.membersCount;
         }
         amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.VotesPercent);
         // Computes changes due to too old JOIN/ACTUALIZE
@@ -118,6 +110,10 @@ module.exports.get = function (pgp, currency, conf) {
         merkle.save(function (err) {
           next(err);
         });
+      },
+      function (next){
+        // Update UD
+        updateUniversalDividend(amNext, am, next);
       },
       function (next){
         // Finally save proposed amendment
@@ -655,6 +651,29 @@ module.exports.get = function (pgp, currency, conf) {
     var exclusionDate = new Date();
     exclusionDate.setTime(nextTimestamp*1000 - conf.sync.ActualizeFrequence*1000);
     return exclusionDate;
+  }
+
+  function updateUniversalDividend (amNext, amCurrent, done) {
+    // Time for Universal Dividend
+    var delayPassedSinceRootAM = (amNext.generated - conf.sync.votingStart);
+    if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFrequence == 0) {
+      async.waterfall([
+        function (next) {
+          Amendment.getPreviouslyPromotedWithDividend(next);
+        },
+        function (previousWithUD, next){
+          var monetaryMassDelta = amCurrent.monetaryMass * conf.sync.UDPercent;
+          var dividendPerMember = monetaryMassDelta / amNext.membersCount;
+          var previousUD = (previousWithUD && previousWithUD.dividend) || conf.sync.UD0;
+          amNext.dividend = Math.max(previousUD, Math.floor(dividendPerMember)); // Integer
+          amNext.monetaryMass += amNext.dividend * amNext.membersCount; // Integer
+          amNext.save(function (err) {
+            next(err);
+          });
+        },
+      ], done);
+    }
+    else done(null);
   }
 
   function updateMembers (amNext, actions, done) {

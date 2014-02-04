@@ -304,11 +304,18 @@ function overrideConf(conf) {
       port: program.mport,
       database: program.mdb,
     },
-    policy: {
-      keys: program.kmanagement,
+    policy: 
+{      keys: program.kmanagement,
       pubkeys: program.kaccept
     },
     sync: {
+      votingStart: program.amstart,
+      votingFrequence: program.amfreq,
+      UDFrequence: program.udfreq,
+      UD0: program.ud0,
+      UDPercent: program.udpercent,
+      VotesPercent: program.votespercent,
+      ActualizeFrequence: program.msfreq
     }
   };
 
@@ -337,7 +344,7 @@ function overrideConf(conf) {
   //  - Membership max. delay: 6 monthes
   conf.sync        = {
     votingStart: config.sync.votingStart || 1388530800,
-    votingFrequence: config.sync.votingFrequence || 3600*24,
+    votingFrequence: config.sync.votingFrequence || 1,
     UDFrequence: config.sync.UDFrequence || 3600*24,
     UD0: config.sync.UD0 || 100,
     UDPercent: config.sync.UDPercent || 0.007376575,

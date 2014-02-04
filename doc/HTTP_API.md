@@ -223,8 +223,8 @@ For that purpose, Merkle URL defines different parameters and results:
 
 Parameter | Description
 --------- | -----------
-`leaves` | Defines wether or not leaves hashes should be returned too. Defaults to `false`.
-`leaf` | Hash of a leaf whose content should be returned. Ignore `leaves` parameter.
+`leaves`  | Defines wether or not leaves hashes should be returned too. Defaults to `false`.
+`leaf`    | Hash of a leaf whose content should be returned. Ignore `leaves` parameter.
 
 **Returns**
 
@@ -275,28 +275,28 @@ Each tree manages different data, and has a different goal. Hence, each tree has
 Here is a summup of such rules:
 
 
-Merkle URL | Leaf | Sort
----------- | ---- | ----
-`pks/all` | Fingerprint of the key | By fingerprint string sort, ascending.
-`ucg/tht (GET)` | Hash of the THT entry + signature | By hash string sort, ascending.
-`ucg/peering/peers (GET)` | Hash of the peering entry + signature | By hash string sort, ascending.
-`ucg/peering/keys` | Fingerprint of the key | By hash string sort, ascending.
-`hdc/amendments/current/votes` | Hash of the signature | By hash string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/members` | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/voters` | Fingerprint of voter's key fingeprint | By fingerprint string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/signatures` | Hash of the signature | By hash string sort, ascending.
-`hdc/amendments/votes/[AMENDMENT_ID]` | Hash of the signature | By hash string sort, ascending.
-`hdc/transactions/all` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/keys` | Fingerprint of the key | By fingerprint string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/transfer` | Hash of the transaction + signature | By hash string sort, ascending.
-`hdc/transactions/recipient/[PGP_FINGERPRINT]` | Hash of the transaction + signature | By hash string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/members` | Fingerprint of the key | By fingerprint string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/voters` | Fingerprint of the key | By fingerprint string sort, ascending.
+Merkle URL                                                                | Leaf                                    | Sort
+------------------------------------------------------------------------- | ----------------------------------------| ---------------------------------------
+`pks/all`                                                                 | Fingerprint of the key                  | By fingerprint string sort, ascending.
+`ucg/tht (GET)`                                                           | Hash of the THT entry + signature       | By hash string sort, ascending.
+`ucg/peering/peers (GET)`                                                 | Hash of the peering entry + signature   | By hash string sort, ascending.
+`ucg/peering/keys`                                                        | Fingerprint of the key                  | By hash string sort, ascending.
+`hdc/amendments/current/votes`                                            | Hash of the signature                   | By hash string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/members`                              | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/voters`                               | Fingerprint of voter's key fingeprint   | By fingerprint string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Hash of the signature                   | By hash string sort, ascending.
+`hdc/amendments/votes/[AMENDMENT_ID]`                                     | Hash of the signature                   | By hash string sort, ascending.
+`hdc/transactions/all`                                                    | Hash of the transaction + signature     | By hash string sort, ascending.
+`hdc/transactions/keys`                                                   | Fingerprint of the key                  | By fingerprint string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of the transaction + signature     | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance`                      | Hash of the transaction + signature     | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend`             | Hash of the transaction + signature     | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]` | Hash of the transaction + signature     | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`               | Hash of the transaction + signature     | By hash string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]/transfer`                      | Hash of the transaction + signature     | By hash string sort, ascending.
+`hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of the transaction + signature     | By hash string sort, ascending.
+`ucs/amendment/[AM_NUMBER]/members`                                       | Fingerprint of the key                  | By fingerprint string sort, ascending.
+`ucs/amendment/[AM_NUMBER]/voters`                                        | Fingerprint of the key                  | By fingerprint string sort, ascending.
 
 ## API
 
@@ -311,9 +311,9 @@ POST ASCII-armored OpenPGP certificates.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`keytext` | The raw certificate, ASCII-armored. | POST
+Name      | Value                                     | Method
+--------- | ----------------------------------------- | ------
+`keytext` | The raw certificate, ASCII-armored.       | POST
 `keysign` | The raw signature of the `keytext` value. | POST
 
 **Returns**
@@ -340,10 +340,10 @@ Allows to search for OpenPGP certificates, according to [HKP draft](http://tools
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
+Name     | Value                                                                                                         | Method
+-------- | ------------------------------------------------------------------------------------------------------------- | ------
 `search` | A value for searching in PGP certificates database. May start with '0x' for direct search on PGP fingerprint. | GET
-`op` | Operation: may be either 'index' or 'get'. | GET
+`op`     | Operation: may be either 'index' or 'get'.                                                                    | GET
 
 **Returns**
 
@@ -603,9 +603,9 @@ POST a UCG peering entry document to this node in order to alter UCG peering tab
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`entry` | UCG peering entry document. | POST
+Name        | Value                               | Method
+----------- | ----------------------------------- | ------
+`entry`     | UCG peering entry document.         | POST
 `signature` | Signature of the UCG entry's value. | POST
 
 **Returns**
@@ -655,8 +655,8 @@ GET a list of peers this node is **listening to** for incoming transactions of `
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
+Name              | Value                                                                        | Method
+----------------- | ---------------------------------------------------------------------------- | ------
 `PGP_FINGERPRINT` | PGP key's fingerprint whose incoming transactions are listened by this node. | URL
 
 **Returns**
@@ -705,8 +705,8 @@ GET a list of peers this node is **listened by** for incoming transactions of `P
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
+Name              | Value                                                                          | Method
+----------------- | ------------------------------------------------------------------------------ | ------
 `PGP_FINGERPRINT` | PGP key's fingerprint whose incoming transactions are listened by other nodes. | URL
 
 **Returns**
@@ -731,9 +731,9 @@ POST a UCG forward document to this node in order to be sent back incoming trans
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`forward` | UCG forward document. | POST
+Name        | Value                                  | Method
+----------- | -------------------------------------- | ------
+`forward`   | UCG forward document.                  | POST
 `signature` | Signature of the UCG forward document. | POST
 
 **Returns**
@@ -763,10 +763,10 @@ POST a UCG status document to this node in order notify of its status.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`status` | UCG status document. | POST
-`signature` | Signature of the UCG entry's value. | POST
+Name        | Value                                  | Method
+----------- | -------------------------------------- | ------
+`status`    | UCG status document.                   | POST
+`signature` | Signature of the UCG entry's value.    | POST
 
 **Returns**
 
@@ -830,10 +830,10 @@ POST a THT entry.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`entry` | Entry data. | POST
-`signature` | Signature of the THT entry value. | POST
+Name        | Value                                  | Method
+----------- | -------------------------------------- | ------
+`entry`     | Entry data.                            | POST
+`signature` | Signature of the THT entry value.      | POST
 
 **Returns**
 
@@ -864,8 +864,8 @@ GET a unique THT entry.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
+Name              | Value                                           | Method
+----------------- | ----------------------------------------------- | ------
 `PGP_FINGERPRINT` | The key fingerprint we want Trust informations. | URL
 
 **Returns**
@@ -976,8 +976,8 @@ GET the current promoted amendment (amendment which received enough votes to be 
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
+Name               | Value                                                         | Method
+------------------ | ------------------------------------------------------------- | ------
 `AMENDMENT_NUMBER` | The promoted amendment number (integer value) we want to see. | URL
 
 **Returns**
@@ -1012,9 +1012,9 @@ Merkle URL refering to the members present in the Community for this amendment.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
+Name           | Value                                                         | Method
+-------------- | ------------------------------------------------------------- | ------
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
 
 **Returns**
 
@@ -1043,9 +1043,9 @@ Shows the raw data of the amendment `[AMENDMENT_ID]`.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
+Name           | Value                                                         | Method
+-------------- | ------------------------------------------------------------- | ------
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
 
 **Returns**
 
@@ -1079,9 +1079,9 @@ Merkle URL refering to the voters listed in this amendment.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
+Name           | Value                                                         | Method
+-------------- | ------------------------------------------------------------- | ------
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
 
 **Returns**
 
@@ -1144,11 +1144,11 @@ POST an amendment signed by a Community member, considering it as a vote for thi
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`amendment` | The raw amendment structure. | POST
-`signature` | The signature of the `amendment`. | POST
-`peer` | **Not mandatory**. A peer's fingerprint where to check and download `amendment`'s signatures Merkle tree | POST
+Name           | Value                                                                                                    | Method
+-------------- | -------------------------------------------------------------------------------------------------------- | ------
+`amendment`    | The raw amendment structure.                                                                             | POST
+`signature`    | The signature of the `amendment`.                                                                        | POST
+`peer`         | **Not mandatory**. A peer's fingerprint where to check and download `amendment`'s signatures Merkle tree | POST
 
 **Returns**
 
@@ -1185,9 +1185,9 @@ Merkle URL referencing to the votes for a given amendment.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`). | URL
+Name           | Value                                                         | Method
+-------------- | ------------------------------------------------------------- | ------
+`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
 
 **Returns**
 
@@ -1219,9 +1219,9 @@ GET a list of coins owned by the given `[PGP_FINGERPRINT]`.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | Owner of the coins. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Owner of the coins.                                           | URL
 
 **Returns**
 
@@ -1247,10 +1247,10 @@ GET the ownership state of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRINT]
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | Issuer of the coin. | URL
-`COIN_NUMBER` | Coin number in the issuer's list of issued coins | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Issuer of the coin.                                           | URL
+`COIN_NUMBER`     | Coin number in the issuer's list of issued coins              | URL
 
 **Returns**
 
@@ -1270,10 +1270,10 @@ GET a transaction history of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRIN
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | Issuer of the coin. | URL
-`COIN_NUMBER` | Coin number in the issuer's list of issued coins | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Issuer of the coin.                                           | URL
+`COIN_NUMBER`     | Coin number in the issuer's list of issued coins              | URL
 
 **Returns**
 
@@ -1330,10 +1330,10 @@ POST a transaction.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`transaction` | The raw transaction. | POST
-`signature` | The signature of the `transaction`. | POST
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`transaction`     | The raw transaction.                                          | POST
+`signature`       | The signature of the `transaction`.                           | POST
 
 **Returns**
 
@@ -1496,9 +1496,9 @@ Get the last `n` received transactions.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`COUNT` | Integer indicating to retrieve the last [COUNT] transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. | URL
 
 **Returns**
 
@@ -1555,9 +1555,9 @@ Merkle URL referencing all the transactions sent by this sender and stored by th
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
 
 **Returns**
 
@@ -1609,9 +1609,9 @@ Get the last received transaction of a PGP key.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction.   | URL
 
 **Returns**
 
@@ -1651,10 +1651,10 @@ Get the last `n` received transactions of a PGP key.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction. | URL
-`COUNT` | Integer indicating to retrieve the last [COUNT] transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction.   | URL
+`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. | URL
 
 **Returns**
 
@@ -1711,9 +1711,9 @@ Merkle URL referencing all **transfer** transactions sent by this sender and sto
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
 
 **Returns**
 
@@ -1763,9 +1763,9 @@ Merkle URL referencing all **issuance** transactions (forged coins) sent by this
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
 
 **Returns**
 
@@ -1817,8 +1817,8 @@ Get the last received *issuance* transaction of a PGP key.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
+Name              | Value                                                                | Method
+----------------- | -------------------------------------------------------------------- | ------
 `PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last issuance transaction. | URL
 
 **Returns**
@@ -1861,9 +1861,9 @@ Merkle URL referencing all **dividend** transactions (issuance of new coins) sen
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
 
 **Returns**
 
@@ -1913,9 +1913,9 @@ Merkle URL referencing all **dividend** transactions (issuance of new coins) **f
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
 
 **Returns**
 
@@ -1965,9 +1965,9 @@ Merkle URL referencing all **fusion** transactions sent by this sender and store
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
 
 **Returns**
 
@@ -2019,9 +2019,9 @@ Merkle URL referencing all **division** transactions sent by this sender and sto
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
 
 **Returns**
 
@@ -2076,8 +2076,8 @@ Merkle URL referencing all the transactions received for this recipient stored b
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
+Name              | Value                                                            | Method
+----------------- | ---------------------------------------------------------------- | ------
 `PGP_FINGERPRINT` | PGP fingerprint of the key we want to see received transactions. | URL
 
 **Returns**
@@ -2130,9 +2130,9 @@ GET the transaction of given `TRANSACTION_ID`.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`TRANSACTION_ID` | The transaction [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction). | URL
+Name              | Value                                                                                                    | Method
+----------------- | -------------------------------------------------------------------------------------------------------- | ------
+`TRANSACTION_ID`  | The transaction [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction). | URL
 
 **Returns**
 
@@ -2246,9 +2246,9 @@ GET last received valid [Membership](https://github.com/c-geek/ucoin/blob/master
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
 
 **Returns**
 
@@ -2275,9 +2275,9 @@ GET an history of all received and stored valid [Membership](https://github.com/
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
 
 **Returns**
 
@@ -2328,10 +2328,10 @@ POST a [Voting](https://github.com/c-geek/ucoin/blob/master/doc/UCS.md#voting) d
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`voting` | The raw voting structure. | POST
-`signature` | The signature of the `voting` parameter. | POST
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`voting`          | The raw voting structure.                                     | POST
+`signature`       | The signature of the `voting` parameter.                      | POST
 
 **Returns**
 
@@ -2358,9 +2358,9 @@ GET last received valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
 
 **Returns**
 
@@ -2386,9 +2386,9 @@ GET an history of all received and stored valid [Voting](https://github.com/c-ge
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
 
 **Returns**
 
@@ -2474,9 +2474,9 @@ GET the next amendment *this node* would vote for when time has come with given 
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`AM_NUMBER`       | The amendment number to be promoted.                          | URL
 
 **Returns**
 
@@ -2511,9 +2511,9 @@ Merkle URL refering to the members present in the Community for this amendment.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`AM_NUMBER`       | The amendment number to be promoted.                          | URL
 
 **Returns**
 
@@ -2543,9 +2543,9 @@ Merkle URL refering to the members present in the Community for this amendment.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`AM_NUMBER`       | The amendment number to be promoted.                          | URL
 
 **Returns**
 
@@ -2576,9 +2576,9 @@ GET the vote of current node for given amendment number (both amendment + signat
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`AM_NUMBER` | The amendment number to be promoted. | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`AM_NUMBER`       | The amendment number to be promoted.                          | URL
 
 **Returns**
 

@@ -662,7 +662,8 @@ module.exports.get = function (pgp, currency, conf) {
           Amendment.getPreviouslyPromotedWithDividend(next);
         },
         function (previousWithUD, next){
-          var monetaryMassDelta = amCurrent.monetaryMass * conf.sync.UDPercent;
+          var currentMass = (amCurrent && amCurrent.monetaryMass) || 0;
+          var monetaryMassDelta = currentMass * conf.sync.UDPercent;
           var dividendPerMember = monetaryMassDelta / amNext.membersCount;
           var previousUD = (previousWithUD && previousWithUD.dividend) || conf.sync.UD0;
           amNext.dividend = Math.max(previousUD, Math.floor(dividendPerMember)); // Integer
@@ -724,6 +725,15 @@ module.exports.get = function (pgp, currency, conf) {
           }
         }
         next();
+      },
+      function (next) {
+        Amendment.current(function (err, am) {
+          next(null, am);
+        });
+      },
+      function (currentAm, next){
+        // Update UD
+        updateUniversalDividend(amNext, currentAm, next);
       },
       function (next){
         amNext.membersRoot = amNext.membersRoot || "";

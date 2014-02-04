@@ -63,6 +63,7 @@
       * [community/voters (POST)](#communityvoters-post)
       * [community/voters/[PGP_FINGERPRINT]/voting/current](#communitymemberspgp_fingerprintvotingcurrent)
       * [community/voters/[PGP_FINGERPRINT]/voting/history](#communitymemberspgp_fingerprintvotinghistory)
+      * [amendment](#amendment)
       * [amendment/[AM_NUMBER]](#amendmentam_number)
       * [amendment/[AM_NUMBER]/members](#amendmentam_numbermembers)
       * [amendment/[AM_NUMBER]/voters](#amendmentam_numbervoters)
@@ -2203,7 +2204,7 @@ AMFrequency       | Amendment frequency (in seconds)
 UDFrequency       | Universal Dividend frequency (in seconds)
 UDMin             | Universal Dividend minimal value
 UDPercent         | Universal Dividend % of monetary mass growth
-UDMinCoin         | Universal Dividend minimal value
+UDMinCoin         | Universal Dividend minimal coin value
 VotesPercent      | Percent of voters required to valid an Amendment
 MembershipExpires | Delay by which a membership is to be considered expired
 
@@ -2430,11 +2431,46 @@ A list of posted voting requests + posted signatures.
 }
 ```
 
-#### `amendment/[AM_NUMBER]`
+#### `amendment`
 
 **Goal**
 
 GET the next amendment *this node* would vote for when time has come.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Amendment to be voted by this node if voting happened.
+```json
+{
+  "version": "1",
+  "currency": "beta_brousouf",
+  "number": "2",
+  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
+  "dividend": "100",
+  "coinMinimalPower": "0",
+  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
+  "votersCount": "2",
+  "votersChanges": [
+    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+  ],
+  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
+  "membersCount": "4",
+  "membersChanges": [
+    "+31A6302161AC8F5938969E85399EB3415C237F93"
+  ],
+  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+}
+```
+
+#### `amendment/[AM_NUMBER]`
+
+**Goal**
+
+GET the next amendment *this node* would vote for when time has come with given AM number.
 
 **Parameters**
 

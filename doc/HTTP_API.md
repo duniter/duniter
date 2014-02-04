@@ -2183,9 +2183,29 @@ GET the synchronization parameters used by this node.
 The synchronization parameters.
 ```json
 {
-  // To define
+    "AMStart": 1388530800,
+    "AMFrequency": 86400,
+    "UDFrequency": 2629800,
+    "UDMin": 100,
+    "UDPercent": 0.007376575,
+    "UDMinCoin": null,
+    "VotesPercent": 0.6666666666666666,
+    "MembershipExpires": 15778800
 }
 ```
+
+Below are parameters meaning:
+
+Parameter         | Meaning
+----------------- | ------------
+AMStart           | Root amendment starting timestamp (in seconds)
+AMFrequency       | Amendment frequency (in seconds)
+UDFrequency       | Universal Dividend frequency (in seconds)
+UDMin             | Universal Dividend minimal value
+UDPercent         | Universal Dividend % of monetary mass growth
+UDMinCoin         | Universal Dividend minimal value
+VotesPercent      | Percent of voters required to valid an Amendment
+MembershipExpires | Delay by which a membership is to be considered expired
 
 #### `community/members (POST)`
 

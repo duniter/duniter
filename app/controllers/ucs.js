@@ -26,6 +26,19 @@ module.exports = function (pgp, currency, conf) {
   var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
   var SyncService = require('../service/SyncService').get(pgp, currency, conf);
 
+  this.parameters = function (req, res) {
+    res.end(JSON.stringify({
+      AMStart: conf.sync.votingStart,
+      AMFrequency: conf.sync.votingFrequence,
+      UDFrequency: conf.sync.UDFrequence,
+      UDMin: conf.sync.UDMin,
+      UDPercent: conf.sync.UDPercent,
+      UDMinCoin: conf.sync.UDMinCoin,
+      VotesPercent: conf.sync.VotesPercent,
+      MembershipExpires: conf.sync.ActualizeFrequence
+    }, null, "  "));
+  };
+
   this.amendmentCurrent = function (req, res) {
     async.waterfall([
       function (next){

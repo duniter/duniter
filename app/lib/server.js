@@ -198,7 +198,7 @@ module.exports.express = {
     app.get(    '/hdc/transactions/sender/:fpr/transfert',                 hdc.transactions.sender.transfert);
     app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
     app.get(    '/hdc/transactions/view/:transaction_id',         hdc.transactions.viewtx);
-    app.get(    '/ucs/parameters',                                notImplemented);
+    app.get(    '/ucs/parameters',                                ucs.parameters);
     app.post(   '/ucs/community/members',                         ucs.membershipPost);
     app.get(    '/ucs/community/members/:fpr/membership/current', ucs.membershipCurrent);
     app.get(    '/ucs/community/members/:fpr/membership/history', ucs.membershipHistory);

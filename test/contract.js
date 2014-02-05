@@ -60,27 +60,63 @@ var conf = {
   pgppasswd: config.server.pgp.password
 };
 
+function HTTPTestCase (label, params) {
+  
+  var that = this;
+
+  // Test label
+  this.label = label;
+
+  // Task to be launched
+  this.task = function (next) {
+    params.task(function (err, res) {
+
+      // Test function
+      that.test = _.partial(params.test, res.statusCode, res.text);
+      next();
+    });
+  };
+  return this;
+}
+
 var testCases = [
-  {
-    label: "some label",
+  new HTTPTestCase("pks/all", {
     task: function (next) {
-      getJSON('/pks/all', this, function (code, json) {
-        should.exist(code);
-        code.should.equal(200);
-      }, next);
+      // Do
+      getJSON('/pks/all', next);
+    },
+    test: function (code, json) {
+      // Test
+      should.exist(code);
+      code.should.equal(200);
     }
-  }
+  }),
+  new HTTPTestCase("pks/all", {
+    task: function (next) {
+      // Do
+      getJSON('/pks/all', next);
+    },
+    test: function (code, json) {
+      // Test
+      should.exist(code);
+      code.should.equal(200);
+    }
+  }),
 ];
 
 var app;
 
-function getJSON (url, obj, test, done) {
+function getJSON (url, done) {
   request(app)
     .get(url)
-    .end(function (err, res) {
-      obj.test = _.partial(test, res.statusCode, res.text);
-      done();
-    });
+    .end(done);
+}
+
+function pksAdd (keytext, keysign, done) {
+  post('/pks/add', {
+    "keytext": keytext,
+    "keysign": keysign
+  }, done);
 }
 
 before(function (done) {
@@ -109,9 +145,7 @@ before(function (done) {
   });
 });
 
-//----------- PKS -----------
-
-describe('Sending public key', function(){
+describe('PKS: ', function(){
 
   testCases.forEach(function(testCase){
     it(testCase.label, function () {

@@ -9,6 +9,8 @@ var jpgp      = require('../app/lib/jpgp');
 var server    = require('../app/lib/server');
 var mongoose  = require('mongoose');
 var signatory = require('./tool/signatory');
+var test      = require('./tool/test');
+var tester    = test.tester();
 
 console.log("Reading files & initializing...");
 
@@ -60,57 +62,13 @@ var conf = {
   pgppasswd: config.server.pgp.password
 };
 
-function HTTPTestCase (label, params) {
-  
-  var that = this;
-
-  // Test label
-  this.label = label;
-
-  // Task to be launched
-  this.task = function (next) {
-    params.task(function (err, res) {
-
-      // Test function
-      that.test = _.partial(params.test, res.statusCode, res.text);
-      next();
-    });
-  };
-  return this;
-}
-
 var testCases = [
-  new HTTPTestCase("pks/all", {
-    task: function (next) {
-      // Do
-      getJSON('/pks/all', next);
-    },
-    test: function (code, json) {
-      // Test
-      should.exist(code);
-      code.should.equal(200);
-    }
-  }),
-  new HTTPTestCase("pks/all", {
-    task: function (next) {
-      // Do
-      getJSON('/pks/all', next);
-    },
-    test: function (code, json) {
-      // Test
-      should.exist(code);
-      code.should.equal(200);
-    }
-  }),
+  tester.create({
+    label: "pks/all",
+    task: tester.doGet("/pks/all"),
+    test: tester.expectMerkle('')
+  })
 ];
-
-var app;
-
-function getJSON (url, done) {
-  request(app)
-    .get(url)
-    .end(done);
-}
 
 function pksAdd (keytext, keysign, done) {
   post('/pks/add', {
@@ -130,7 +88,7 @@ before(function (done) {
       server.express.app(config.db.database, conf, next);
     },
     function (appReady, next){
-      app = appReady;
+      tester.app(appReady);
       server.database.reset(next);
     },
     function (next) {

@@ -160,19 +160,19 @@ function JPGP() {
       verified = false;
       err = ex.toString();
     }
-    if(err && sig && sig.text){
-      console.error('==========================================================');
-      console.error(detached ? '[DETACHED] ' + err : err);
-      console.error('==========================================================');
-      console.error({ text: sig.text });
-      // console.error(hexstrdump(sig.text));
-      console.error('----------------------------------------------------------');
-      if(!detached){
-        console.error({ text: this.data });
-        // console.error(hexstrdump(this.data));
-        console.error('----------------------------------------------------------');
-      }
-    }
+    // if(err && sig && sig.text){
+    //   console.error('==========================================================');
+    //   console.error(detached ? '[DETACHED] ' + err : err);
+    //   console.error('==========================================================');
+    //   console.error({ text: sig.text });
+    //   // console.error(hexstrdump(sig.text));
+    //   console.error('----------------------------------------------------------');
+    //   if(!detached){
+    //     console.error({ text: this.data });
+    //     // console.error(hexstrdump(this.data));
+    //     console.error('----------------------------------------------------------');
+    //   }
+    // }
     // Done
     var end = new Date();
     var diff = end.getTime() - start.getTime();

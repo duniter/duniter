@@ -10,7 +10,7 @@ var server    = require('../app/lib/server');
 var mongoose  = require('mongoose');
 var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
-var tester    = test.tester();
+var tester    = is = on = test.tester();
 
 console.log("Reading files & initializing...");
 
@@ -21,12 +21,14 @@ var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), 
 var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow");
 var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
 
-var pubkeySnow    = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-var pubkeySnowSig = fs.readFileSync(__dirname + '/data/snow.pub.asc', 'utf8');
-var pubkeyCat     = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-var pubkeyCatSig  = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
-var pubkeyTobi    = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
-var pubkeyTobiSig = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
+var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
+var pubkeySnowSig  = fs.readFileSync(__dirname + '/data/snow.pub.asc', 'utf8');
+var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
+var pubkeyCat2     = fs.readFileSync(__dirname + '/data/lolcat.pub2', 'utf8');
+var pubkeyCatSig   = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
+var pubkeyTobi     = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
+var pubkeyTobiSig  = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
+var pubkeyTobiSig2 = fs.readFileSync(__dirname + '/data/uchiha.pub.asc2', 'utf8');
 var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
 var pubkeyWhiteSig = fs.readFileSync(__dirname + '/data/white.pub.asc', 'utf8');
 
@@ -63,23 +65,83 @@ var conf = {
 };
 
 var testCases = [
-  tester.create({
-    label: "pks/all",
-    task: tester.doGet("/pks/all"),
-    test: tester.expectMerkle('')
-  })
+  testMerkle("/pks/all", ''),
+
+  tester.verify(
+    "Snow giving his key for first time must pass",
+    on.pksAdd(pubkeySnow, pubkeySnowSig),
+    is.expectedPubkey('33BBFC0C67078D72AF128B5BA296CC530126F372')
+  ),
+  testMerkle("/pks/all", '33BBFC0C67078D72AF128B5BA296CC530126F372'),
+
+  tester.verify(
+    "Cat giving his key for first time must pass",
+    on.pksAdd(pubkeyCat, pubkeyCatSig),
+    is.expectedPubkey('C73882B64B7E72237A2F460CE9CAB76D19A8651E')
+  ),
+  testMerkle("/pks/all", '5DB500A285BD380A68890D09232475A8CA003DC8'),
+
+  tester.verify(
+    "Tobi giving his key for first time must pass",
+    on.pksAdd(pubkeyTobi, pubkeyTobiSig2),
+    is.expectedPubkey('2E69197FAB029D8669EF85E82457A1587CA0ED9C')
+  ),
+  testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
+
+  tester.verify(
+    "Tobi giving older signature must not pass",
+    on.pksAdd(pubkeyTobi, pubkeyTobiSig),
+    is.expectedHTTPCode(400)
+  ),
+  testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
+
+  tester.verify(
+    "White signed by Tobi must not pass",
+    on.pksAdd(pubkeyWhite, pubkeyTobiSig),
+    is.expectedHTTPCode(400)
+  ),
+  testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
+
+  tester.verify(
+    "White giving his key must pass",
+    on.pksAdd(pubkeyWhite, pubkeyWhiteSig),
+    is.expectedPubkey('B6AE93DDE390B1E11FA97EEF78B494F99025C77E')
+  ),
+  testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
+
+  tester.verify(
+    "Signature of Tobi on White's pubkey must not pass, even if White is already recorded",
+    on.pksAdd(pubkeyWhite, pubkeyTobiSig),
+    is.expectedHTTPCode(400)
+  ),
+  testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
+  
+  tester.verify(
+    "Must not accept twice the same signature",
+    on.pksAdd(pubkeyWhite, pubkeyWhiteSig),
+    is.expectedHTTPCode(400)
+  ),
+  testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
+
+  tester.verify(
+    "Must not accept if good key but bad signature",
+    on.pksAdd(pubkeyCat2, pubkeyCatSig),
+    is.expectedHTTPCode(400)
+  ),
+  testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
 ];
 
-function pksAdd (keytext, keysign, done) {
-  post('/pks/add', {
-    "keytext": keytext,
-    "keysign": keysign
-  }, done);
+function testMerkle (url, root) {
+  return tester.verify(
+    "Merkle " + url,
+    on.doGet(url),
+    is.expectedMerkle(root)
+  );
 }
 
 before(function (done) {
   console.log("Launching server...");
-  this.timeout(10000);
+  this.timeout(1000*1000); // 100 seconds
   async.waterfall([
     function (next){
       server.database.connect(config.db.database, config.db.host, config.db.port, next);

@@ -38,14 +38,65 @@ module.exports.tester = function () {
     });
   };
 
+  this.verify = function (label, task, test) {
+    return new module.exports.HTTPTestCase(label, {
+      task: task,
+      test: test
+    });
+  };
+
+  /**
+  * Test that HTTP response code matches given HTTP code.
+  **/
+  this.expectedHTTPCode = function (code) {
+    return function (res) {
+      should.exist(res.statusCode);
+      res.statusCode.should.equal(code);
+    };
+  };
+
   /**
   * Test that given result is a merkle tree matching given root value.
   * @param root The root value of Merkle tree.
   * @param leavesCount The l
   **/
-  this.expectMerkle = function (root, leavesCount) {
+  this.expectedMerkle = function (root, leavesCount) {
+    return successToJson(function (json) {
+      expectedMerkle(json, root, leavesCount);
+    });
+  };
+
+  /**
+  * Test that given result is a public key matching given fingerprint.
+  **/
+  this.expectedPubkey = function (fingerprint) {
+    return successToJson(function (json) {
+      isPubKey(json);
+      json.key.fingerprint.should.equal(fingerprint);
+    });
+  };
+
+  this.doGet = function (url) {
+    return function (next) {
+      get(url, next);
+    };
+  };
+
+  this.pksAdd = function (keytext, keysign) {
+    return function (done) {
+      post('/pks/add', {
+        "keytext": keytext,
+        "keysign": keysign
+      }, done);
+    };
+  };
+
+  this.app = function (appToSet) {
+    app = appToSet;
+  };
+
+  function successToJson (subTest) {
     return function (res) {
-      // Basic testing
       should.exist(res.statusCode);
       res.statusCode.should.equal(200);
       should.exist(res.text);
@@ -56,27 +107,9 @@ module.exports.tester = function () {
       } catch(ex) {
       }
       should.exist(json);
-      // Real test
-      expectMerkle(json, root, leavesCount);
+      subTest(json);
     };
-  };
-
-  this.doGet = function (url) {
-    return function (next) {
-      get(url, next);
-    };
-  };
-
-  this.pksAdd = function (keytext, keysign, done) {
-    post('/pks/add', {
-      "keytext": keytext,
-      "keysign": keysign
-    }, done);
-  };
-
-  this.app = function (appToSet) {
-    app = appToSet;
-  };
+  }
 
   function get (url, done) {
     request(app)
@@ -88,13 +121,13 @@ module.exports.tester = function () {
     request(app)
       .post(url)
       .send(data)
-      .end(onHttpResult(url, done));
+      .end(done);
   }
 
   return this;
 };
 
-function expectMerkle (json, root, leavesCount) {
+function expectedMerkle (json, root, leavesCount) {
   isMerkleSimpleResult(json);
   json.root.should.equal(root);
 }

@@ -229,10 +229,6 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
               created: now
             }));
           }
-          if(foundKeys[0].hash == pubkey.hash){
-            next(null);
-            return;
-          }
           if(foundKeys[0].sigDate >= pubkey.sigDate){
             next('Key update is possible only for more recent signature');
             return;

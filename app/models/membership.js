@@ -38,7 +38,7 @@ MembershipSchema.methods = {
     });
     json.sigDate = this.sigDate && this.sigDate.timestamp();
     json.raw = this.getRaw();
-    return { signature: this.signature, entry: json };
+    return { signature: this.signature, membership: json };
   },
   
   parse: function(rawMembershipRequest, callback) {

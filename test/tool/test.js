@@ -1,10 +1,11 @@
-var should    = require('should');
-var assert    = require('assert');
-var request   = require('supertest');
-var async     = require('async');
-var fs        = require('fs');
-var sha1      = require('sha1');
-var _         = require('underscore');
+var should   = require('should');
+var assert   = require('assert');
+var request  = require('supertest');
+var async    = require('async');
+var mongoose = require('mongoose');
+var fs       = require('fs');
+var sha1     = require('sha1');
+var _        = require('underscore');
 
 module.exports = {}
 
@@ -27,7 +28,7 @@ module.exports.HTTPTestCase = function (label, params) {
   return this;
 }
 
-module.exports.tester = function () {
+module.exports.tester = function (currency) {
 
   var app;
 
@@ -76,6 +77,16 @@ module.exports.tester = function () {
     });
   };
 
+  /**
+  * Test that given result is a public key matching given fingerprint.
+  **/
+  this.expectedMembership = function (fingerprint) {
+    return successToJson(function (json) {
+      isMembership(json);
+      json.membership.issuer.should.equal(fingerprint);
+    });
+  };
+
   this.doGet = function (url) {
     return function (next) {
       get(url, next);
@@ -87,6 +98,20 @@ module.exports.tester = function () {
       post('/pks/add', {
         "keytext": keytext,
         "keysign": keysign
+      }, done);
+    };
+  };
+
+  this.join = function (signatory) {
+    var Membership = mongoose.model('Membership');
+    return function (done) {
+      var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'JOIN' });
+      var raw = ms.getRaw();
+      var sig = signatory.sign(raw);
+      console.log(raw);
+      post ('/ucs/community/members', {
+        'membership': raw,
+        'signature': sig
       }, done);
     };
   };
@@ -167,6 +192,19 @@ function isPubKey (json) {
   json.key.should.have.property('email');
   json.key.should.have.property('name');
   json.key.should.have.property('fingerprint');
+  json.key.should.have.property('raw');
+  json.key.should.not.have.property('_id');
+  json.key.raw.should.not.match(/-----/g);
+}
+
+function isMembership (json) {
+  json.should.have.property('signature');
+  json.should.have.property('membership');
+  json.key.should.have.property('version');
+  json.key.should.have.property('currency');
+  json.key.should.have.property('issuer');
+  json.key.should.have.property('membership');
+  json.key.should.have.property('sigDate');
   json.key.should.have.property('raw');
   json.key.should.not.have.property('_id');
   json.key.raw.should.not.match(/-----/g);

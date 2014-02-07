@@ -47,21 +47,33 @@ AmendmentSchema.methods = {
     var json = { raw: this.getRaw() };
     [
       "version",
-      "currency",
       "number",
       "generated",
       "nextVotes",
       "dividend",
       "coinMinPower",
-      "previousHash",
-      "votersRoot",
       "votersCount",
-      "votersChanges",
-      "membersRoot",
       "membersCount",
+    ].forEach(function(field){
+      json[field] = parseInt(that[field], 10);
+    });
+    [
+      "currency",
+      "votersRoot",
+      "membersRoot",
+    ].forEach(function(field){
+      json[field] = that[field] || "";
+    });
+    [
+      "previousHash",
+    ].forEach(function(field){
+      json[field] = that[field] || null;
+    });
+    [
+      "votersChanges",
       "membersChanges"
     ].forEach(function(field){
-      json[field] = that[field];
+      json[field] = that[field] || [];
     });
     return json;
   },

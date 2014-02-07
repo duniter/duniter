@@ -144,24 +144,106 @@ var testCases = [
   /**************************
   * Membership tests
   **/
+
+  testProposedAmendment({
+    currency: 'testo',
+    number: 0,
+    membersCount: 0,
+    votersCount: 0,
+    previousHash: null
+  }),
+
   tester.verify(
-    "Joining Tobi",
+    "Tobi joining for first time",
     on.join(tobi),
     is.expectedMembership("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
+
+  testProposedAmendment({
+    currency: 'testo',
+    number: 0,
+    membersCount: 1,
+    membersRoot: '2E69197FAB029D8669EF85E82457A1587CA0ED9C',
+    votersCount: 0,
+    previousHash: null
+  }),
+
+  // Delay, otherwise tobi might send same signature
+  tester.delay(1000),
+
+  tester.verify(
+    "Tobi joining again should cancel its membership request",
+    on.join(tobi),
+    is.expectedHTTPCode(400)
+  ),
+
+  tester.verify(
+    "Tobi joining again should as already received membership",
+    on.join(tobi),
+    is.expectedHTTPCode(400)
+  ),
+
+  tester.verify(
+    "Cat actualizing should not work as it is not a member yet",
+    on.actualize(cat),
+    is.expectedHTTPCode(400)
+  ),
+
+  tester.verify(
+    "Cat leaving again should cancel its membership request",
+    on.leave(cat),
+    is.expectedHTTPCode(400)
+  ),
+
+  testProposedAmendment({
+    currency: 'testo',
+    number: 0,
+    membersCount: 0,
+    votersCount: 0,
+    previousHash: null
+  }),
+
+  tester.verify(
+    "Cat joining should work",
+    on.join(cat),
+    is.expectedMembership("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
+  ),
+
+  testProposedAmendment({
+    currency: 'testo',
+    number: 0,
+    membersCount: 1,
+    membersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersCount: 0,
+    previousHash: null
+  }),
+  // testMerkle("/ucs/community/members", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
+  // tester.verify(
+  //   "Joining Tobi",
+  //   on.join(tobi),
+  //   is.expectedMembership("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  // ),
 ];
 
 function testMerkle (url, root) {
   return tester.verify(
-    "Merkle " + url,
+    "merkle " + url,
     on.doGet(url),
     is.expectedMerkle(root)
   );
 }
 
+function testProposedAmendment (properties) {
+  return tester.verify(
+    "proposed current amendment",
+    on.doGet("/ucs/amendment"),
+    is.expectedAmendment(properties)
+  );
+}
+
 before(function (done) {
   console.log("Launching server...");
-  this.timeout(1000*1000); // 100 seconds
+  this.timeout(1000*1000); // 1000 seconds
   async.waterfall([
     function (next){
       var reset = true;
@@ -183,7 +265,7 @@ before(function (done) {
   });
 });
 
-describe('PKS: ', function(){
+describe('Testing: ', function(){
 
   testCases.forEach(function(testCase){
     it(testCase.label, function () {

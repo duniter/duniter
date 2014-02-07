@@ -3,23 +3,28 @@ var openpgp = require('../../app/lib/openpgp').openpgp;
 
 openpgp.init();
 
-module.exports = function signatory (asciiPrivateKey, password) {
+module.exports = function (asciiPrivateKey, password) {
+  return new signatory(asciiPrivateKey, password);
+};
+
+function signatory (asciiPrivateKey, password) {
 
   var privateKey = null;
   var publicKeyASCII = "";
   var certificate = null;
 
   try{
-    openpgp.keyring.importPrivateKey(asciiPrivateKey, password);
-    openpgp.write_signed_message(openpgp.keyring.privateKeys[0].obj, "test");
+    privateKey = openpgp.read_privateKey(asciiPrivateKey)[0];
+    if(!privateKey.decryptSecretMPIs(password))
+      throw new Error("Wrong private key password.");
 
-    privateKey = openpgp.keyring.privateKeys[0].obj;
+    openpgp.write_signed_message(privateKey, "test");
     publicKeyASCII = privateKey ? privateKey.extractPublicKey() : "";
     certificate = publicKeyASCII ? jpgp().certificate(publicKeyASCII) : { fingerprint: '' };
   }
   catch(ex){
     console.error(ex);
-    throw new Error("Wrong private key password.");
+    throw ex;
   }
 
   this.sign = function (message) {
@@ -29,8 +34,9 @@ module.exports = function signatory (asciiPrivateKey, password) {
   };
 
   this.fingerprint = function () {
-    return cert.fingerprint;
+    return certificate.fingerprint;
   };
 
+  console.log("new signatory " + this.fingerprint());
   return this;
 }

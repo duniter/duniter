@@ -144,11 +144,11 @@ var testCases = [
   /**************************
   * Membership tests
   **/
-  // tester.verify(
-  //   "Joining Tobi",
-  //   on.join(tobi),
-  //   is.expectedMembership("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
-  // ),
+  tester.verify(
+    "Joining Tobi",
+    on.join(tobi),
+    is.expectedMembership("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  ),
 ];
 
 function testMerkle (url, root) {

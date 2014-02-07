@@ -108,7 +108,6 @@ module.exports.tester = function (currency) {
       var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'JOIN' });
       var raw = ms.getRaw();
       var sig = signatory.sign(raw);
-      console.log(raw);
       post ('/ucs/community/members', {
         'membership': raw,
         'signature': sig
@@ -200,12 +199,12 @@ function isPubKey (json) {
 function isMembership (json) {
   json.should.have.property('signature');
   json.should.have.property('membership');
-  json.key.should.have.property('version');
-  json.key.should.have.property('currency');
-  json.key.should.have.property('issuer');
-  json.key.should.have.property('membership');
-  json.key.should.have.property('sigDate');
-  json.key.should.have.property('raw');
-  json.key.should.not.have.property('_id');
-  json.key.raw.should.not.match(/-----/g);
+  json.membership.should.have.property('version');
+  json.membership.should.have.property('currency');
+  json.membership.should.have.property('issuer');
+  json.membership.should.have.property('membership');
+  json.membership.should.have.property('sigDate');
+  json.membership.should.have.property('raw');
+  json.membership.should.not.have.property('_id');
+  json.membership.raw.should.not.match(/-----/g);
 }

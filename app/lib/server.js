@@ -1,4 +1,5 @@
 var express    = require('express');
+var http       = require('http');
 var fs         = require('fs');
 var async      = require('async');
 var path       = require('path');
@@ -44,7 +45,12 @@ module.exports.database = {
     initModels();
   },
 
-  connect: function (currency, host, port, done) {
+  connect: function (currency, host, port, reset, done) {
+    if (arguments.length == 4) {
+      done = reset;
+      reset = false;
+    }
+    var that = this;
     initModels();
     // bad parameters
     if(!host && !port && !done){
@@ -66,31 +72,40 @@ module.exports.database = {
     mongoose.connect('mongodb://' + host + (port ? ':' + port : '') + '/' + database);
     var db = mongoose.connection;
     db.on('error', console.error.bind(console, 'connection error:'));
-    db.once('open', function (err) {
-      if(!err){
-        var Configuration = mongoose.model('Configuration');
-        Configuration.find(function (err, confs) {
-          if(!err){
-            // Returns found conf or default one
-            done(null, confs[0] || new Configuration({
-              port: 8081,
-              ipv4: "localhost",
-              ipv6: null,
-              remotehost: null,
-              remoteipv4: null,
-              remoteipv6: null,
-              remoteport: null,
-              pgpkey: null,
-              pgppasswd: null,
-              kmanagement: 'ALL',
-              kaccept: 'ALL'
-            }));
-          }
-          else done(err);
-        });
-      }
-      else done(err);
-    });
+    var Configuration = mongoose.model('Configuration');
+    var confs;
+    async.waterfall([
+      function (next){
+        db.once('open', next);
+      },
+      function (next){
+        Configuration.find(next);
+      },
+      function (foundConf, next){
+        confs = foundConf;
+        if (reset) {
+          that.reset(next);
+          return;
+        }
+        next();
+      },
+      function (next){
+        // Returns found conf or default one
+        next(null, confs[0] || new Configuration({
+          port: 8081,
+          ipv4: "localhost",
+          ipv6: null,
+          remotehost: null,
+          remoteipv4: null,
+          remoteipv6: null,
+          remoteport: null,
+          pgpkey: null,
+          pgppasswd: null,
+          kmanagement: 'ALL',
+          kaccept: 'ALL'
+        }));
+      },
+    ], done);
   },
 
   reset: function(done) {
@@ -98,11 +113,21 @@ module.exports.database = {
       mongoose.model(entity).remove({}, function (err) {
         next(err);
       });
-    }, done);
+    }, function (err) {
+      if (!err) {
+        console.warn('Data successfuly reseted.');
+      }
+      done(err);
+    });
   },
 
   resetConf: function(done) {
-    mongoose.model('Configuration').remove({}, done);
+    mongoose.model('Configuration').remove({}, function (err) {
+      if (!err) {
+        console.warn('Configuration successfuly reseted.');
+      }
+      done(err);
+    });
   },
 
   disconnect: function() {
@@ -211,13 +236,23 @@ module.exports.express = {
     app.get(    '/ucs/amendment/:amendment_number/voters',        ucs.amendmentVoters);
     app.get(    '/ucs/amendment/:amendment_number/vote',          ucs.askVote);
 
-    if(!conf.remoteipv4 && !conf.remoteipv6){
-      onLoaded(null, app);
+    if(!conf.ipv4 && !conf.ipv6){
+      onLoaded("No interface to listen to. Relaunch with either --ipv4 or --ipv6 parameters.");
       return;
     }
-
+    if (!conf.remoteport) {
+      onLoaded('--remotep is mandatory');
+      return;
+    }
+    if(!conf.remoteipv4 && !conf.remoteipv6){
+      onLoaded('Either --remote4 or --remote6 must be given');
+      return;
+    }
     // If the node's peering entry does not exist or is outdated,
     // a new one is generated.
+    var PeeringService = require('../service/PeeringService').get(module.exports.pgp, currency, conf);
+    var SyncService    = require('../service/SyncService').get(module.exports.pgp, currency, conf);
+
     async.waterfall([
       function (next) {
         mongoose.model('Peer').find({ fingerprint: module.exports.fingerprint() }, next);
@@ -257,7 +292,6 @@ module.exports.express = {
             },
             function (signature, next) {
               signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
-              var PeeringService = require('../service/PeeringService').get(module.exports.pgp, currency, conf);
               PeeringService.persistPeering(raw2 + signature, module.exports.publicKey(), next);
             }
           ], function (err) {
@@ -266,6 +300,52 @@ module.exports.express = {
         } else {
           next();
         }
+      },
+      function (next) {
+        if(conf.ipv4){
+          console.log('Connecting on interface %s...', conf.ipv4);
+          http.createServer(app).listen(conf.port, conf.ipv4, function(){
+            console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
+            next();
+          });
+        }
+        else next();
+      },
+      function (next) {
+        if(conf.ipv6){
+          console.log('Connecting on interface %s...', conf.ipv6);
+          http.createServer(app).listen(conf.port, conf.ipv6, function(){
+            console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
+          });
+        }
+        else next();
+      },
+      function (next) {
+        // Initialize managed keys
+        PeeringService.initKeys(next);
+      },
+      function (next){
+        // Submit its own public key to it
+        logger.info('Submitting its own key for storage...');
+        mongoose.model('Peer').getTheOne(server.fingerprint(), next);
+      },
+      function (peer, next) {
+        mongoose.model('PublicKey').getForPeer(peer, next);
+      },
+      function (pubkey, next) {
+        logger.info('Broadcasting UP/NEW signals...');
+        PeeringService.sendUpSignal(next);
+      },
+      function (next) {
+        // Create AM0 proposal if not existing
+        mongoose.model('Amendment').getTheOneToBeVoted(0, function (err, am) {
+          if (err || !am) {
+            logger.info('Creating root AM proposal...');
+            SyncService.createNext(null, next);
+            return;
+          }
+          next();
+        });
       },
     ], function (err) {
       onLoaded(err, app);

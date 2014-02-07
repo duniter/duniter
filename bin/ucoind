@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 var server   = require('../app/lib/server');
-var http     = require('http');
 var jpgp     = require('../app/lib/jpgp');
 var fs       = require('fs');
 var async    = require('async');
@@ -96,16 +95,13 @@ program
     key = key.toUpperCase();
     async.waterfall([
       function (next) {
-        server.express.app(program.currency, conf, next);
-      },
-      function (app, next) {
         if (!key.isSha1()) {
           next("Key must match a SHA-1 hash");
           return;
         }
-        next(null, app);
+        next();
       },
-      function (app, next){
+      function (next){
         require('../app/service/KeyService').get().setKnown(key, next);
       }
     ], function (err, result) {
@@ -138,9 +134,9 @@ function handleKey (conf, key, isManaged, message) {
   key = key.toUpperCase();
   async.waterfall([
     function (next) {
-      server.express.app(program.currency, conf, next);
+      connect(next);
     },
-    function (app, next){
+    function (host, port, conf, next){
       require('../app/service/KeyService').get().handleKey(key, isManaged, next);
     }
   ], function (err, result) {
@@ -183,8 +179,6 @@ program
       server.database.reset(function (err) {
         if(err)
           console.error(err);
-        else
-          console.log('Data successfuly reseted.');
         server.database.disconnect();
       });
     }
@@ -192,8 +186,6 @@ program
       server.database.resetConf(function (err) {
         if(err)
           console.error(err);
-        else
-          console.log('Configuration successfuly reseted.');
         server.database.disconnect();
       });
     }
@@ -207,75 +199,13 @@ program
     // Launching server
     server.express.app(program.currency, conf, function (err, app) {
 
-      var PeeringService = require('../app/service/PeeringService').get(server.pgp, program.currency, conf);
-      var SyncService    = require('../app/service/SyncService').get(server.pgp, program.currency, conf);
-
-      async.waterfall([
-        function (next){
-          next(err);
-        },
-        function (next) {
-          if(!conf.ipv4 && !conf.ipv6){
-            next("No interface to listen to. Relaunch with --config and eith --ipv4 or --ipv6 parameters.");
-            return;
-          }
-          next();
-        },
-        function (next) {
-          if(conf.ipv4){
-            console.log('Connecting on interface %s...', conf.ipv4);
-            http.createServer(app).listen(conf.port, conf.ipv4, function(){
-              console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
-              next();
-            });
-          }
-          else next();
-        },
-        function (next) {
-          if(conf.ipv6){
-            console.log('Connecting on interface %s...', conf.ipv6);
-            http.createServer(app).listen(conf.port, conf.ipv6, function(){
-              console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
-            });
-          }
-          else next();
-        },
-        function (next) {
-          // Initialize managed keys
-          PeeringService.initKeys(next);
-        },
-        function (next){
-          // Submit its own public key to it
-          logger.info('Submitting its own key for storage...');
-          mongoose.model('Peer').getTheOne(server.fingerprint(), next);
-        },
-        function (peer, next) {
-          mongoose.model('PublicKey').getForPeer(peer, next);
-        },
-        function (pubkey, next) {
-          logger.info('Broadcasting UP/NEW signals...');
-          PeeringService.sendUpSignal(next);
-        },
-        function (next) {
-          // Create AM0 proposal if not existing
-          mongoose.model('Amendment').getTheOneToBeVoted(0, function (err, am) {
-            if (err || !am) {
-          logger.info('Creating root AM proposal...');
-              SyncService.createNext(null, next);
-              return;
-            }
-            next();
-          });
-        },
-      ], function (err) {
-        if(err){
-          logger.error(err);
-          server.database.disconnect();
-          process.exit();
-          return;
-        }
-        console.log('Server ready!');
-      });
+      if(err){
+        logger.error(err);
+        server.database.disconnect();
+        process.exit();
+        return;
+      }
+      console.log('Server ready!');
     });
   }));
 

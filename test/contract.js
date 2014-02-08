@@ -61,22 +61,74 @@ var conf = {
   sync: {
     votingStart: now,
     votingFrequence: 1, // Every second
-    UDFrequence: 3600, // No dividend within 1 hour
+    UDFrequence: 2, // Dividend every 5 seconds
     UD0: 10,
-    UDPercent: null,
+    UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
     VotesPercent: 2/3,
     ActualizeFrequence: 3600*24*30 // 30 days
   }
 };
 
-var AM0 = {
+var amendments = {
+  AM0: {
   currency: 'testo',
-  number: 0,
-  membersCount: 2,
-  membersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
-  votersCount: 1,
-  votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
-  previousHash: null
+    generated: conf.sync.votingStart,
+    number: 0,
+    dividend: null,
+    membersCount: 2,
+    membersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    previousHash: null
+  },
+
+  AM1: {
+    currency: 'testo',
+    generated: conf.sync.votingStart + conf.sync.votingFrequence*1,
+    number: 1,
+    dividend: null,
+    membersCount: 2,
+    membersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E'
+  },
+
+  AM2: {
+    currency: 'testo',
+    generated: conf.sync.votingStart + conf.sync.votingFrequence*2,
+    number: 2,
+    dividend: 10,
+    membersCount: 2,
+    membersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E'
+  },
+
+  AM3: {
+    currency: 'testo',
+    generated: conf.sync.votingStart + conf.sync.votingFrequence*3,
+    number: 3,
+    dividend: null,
+    membersCount: 2,
+    membersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E'
+  },
+
+  AM4: {
+    currency: 'testo',
+    generated: conf.sync.votingStart + conf.sync.votingFrequence*4,
+    number: 4,
+    dividend: 10,
+    membersCount: 2,
+    membersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E'
+  },
+
+  AM8:  { number: 8,  dividend: 15 },
+  AM10: { number: 10, dividend: 22 },
+  AM12: { number: 12, dividend: 33 }
 };
 
 var testCases = [
@@ -297,17 +349,91 @@ var testCases = [
     is.expectedHTTPCode(404)
   ),
 
+  // VOTE 0
 
   tester.verify(
     "Voting AM0 should promote AM0 as genesis amendment",
     tester.selfVote(0),
-    is.expectedSignedAmendment(AM0)
+    is.expectedSignedAmendment(amendments.AM0)
   ),
 
-  testCurrentAmendment(AM0),
-  testPromotedAmendment(AM0),
-  testPromotedAmendment(AM0, 0),
+  testCurrentAmendment(amendments.AM0),
+  testPromotedAmendment(amendments.AM0),
+  testPromotedAmendment(amendments.AM0, 0),
+
+  // VOTE 1
+
+  tester.job(function setPreviousHash (done) {
+    tester.get('/hdc/amendments/current', function (err, res) {
+      var json = JSON.parse(res.text);
+      amendments.AM1.previousHash = json.raw.hash();
+      done();
+    });
+  }),
+
+  tester.verify(
+    "Voting AM1 should promote AM1",
+    tester.selfVote(1),
+    is.expectedSignedAmendment(amendments.AM1)
+  ),
+
+  testCurrentAmendment(amendments.AM1),
+  testPromotedAmendment(amendments.AM1),
+  testPromotedAmendment(amendments.AM1, 1),
+
+  // VOTE 2
+
+  tester.job(function setPreviousHash (done) {
+    tester.get('/hdc/amendments/current', function (err, res) {
+      var json = JSON.parse(res.text);
+      amendments.AM2.previousHash = json.raw.hash();
+      done();
+    });
+  }),
+
+  tester.verify(
+    "Voting AM2 should promote AM2",
+    tester.selfVote(2),
+    is.expectedSignedAmendment(amendments.AM2)
+  ),
+
+  testCurrentAmendment(amendments.AM2),
+  testPromotedAmendment(amendments.AM2),
+  testPromotedAmendment(amendments.AM2, 2),
+
+  // VOTE 3
+
+  tester.verify(
+    "Voting AM3 should promote AM3",
+    tester.selfVote(3),
+    is.expectedSignedAmendment(amendments.AM3)
+  ),
+
+  testCurrentAmendment(amendments.AM3),
+  testPromotedAmendment(amendments.AM3),
+  testPromotedAmendment(amendments.AM3),
+  testPromotedAmendment(amendments.AM0, 0),
+  testPromotedAmendment(amendments.AM1, 1),
+  testPromotedAmendment(amendments.AM2, 2),
+  testPromotedAmendment(amendments.AM3, 3),
+
+  // VOTE 4
+
+  tester.verify(
+    "Voting AM4 should promote AM4",
+    tester.selfVote(4),
+    is.expectedSignedAmendment(amendments.AM4)
+  ),
 ];
+
+for (var i = 5; i <= 12; i++) {
+  testCases.push(tester.verify(
+    "Voting AM"+i+" should promote AM"+i,
+    tester.selfVote(i),
+    is.expectedSignedAmendment(amendments["AM"+i] ? amendments["AM"+i] : {})
+  ));
+  testCases.push(tester.delay(300));
+}
 
 function testMerkle (url, root) {
   return tester.verify(

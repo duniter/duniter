@@ -58,6 +58,17 @@ module.exports.tester = function (currency) {
     });
   };
 
+  this.job = function (jobFunc) {
+    return new module.exports.HTTPTestCase('Making some between tests task', {
+      task: function (done) {
+        jobFunc(done);
+      },
+      test: function () {
+        (true).should.be.ok;
+      }
+    });
+  };
+
   /**
   * Test that HTTP response code matches given HTTP code.
   **/
@@ -206,6 +217,10 @@ module.exports.tester = function (currency) {
 
   this.app = function (appToSet) {
     app = appToSet;
+  };
+
+  this.get = function (url, done) {
+    get(url, done);
   };
 
   function successToJson (subTest) {

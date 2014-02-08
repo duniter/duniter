@@ -90,7 +90,7 @@ module.exports.tester = function (currency) {
   };
 
   /**
-  * Test that given result is a public key matching given fingerprint.
+  * Test that given result is a membership matching given fingerprint.
   **/
   this.expectedMembership = function (fingerprint) {
     return successToJson(function (json) {
@@ -100,18 +100,34 @@ module.exports.tester = function (currency) {
   };
 
   /**
-  * Test that given result is a public key matching given fingerprint.
+  * Test that given result is a voting document matching given voting key.
+  **/
+  this.expectedVoting = function (votingKey) {
+    return successToJson(function (json) {
+      isVoting(json);
+      json.voting.votingKey.should.equal(votingKey);
+    });
+  };
+
+  /**
+  * Test that given result is an amendment matching given properties.
   **/
   this.expectedAmendment = function (properties) {
     return successToJson(function (json) {
       isAmendment(json);
-      _(properties).keys().forEach(function(key){
-        json.should.have.property(key);
-        if (properties[key] != null) 
-          json[key].should.equal(properties[key]);
-        else
-          should.not.exist(json[key]);
-      });
+      checkProperties(properties, json);
+    });
+  };
+
+  /**
+  * Test that given result is a signed amendment matching given properties.
+  **/
+  this.expectedSignedAmendment = function (properties) {
+    return successToJson(function (json) {
+      json.should.have.property('signature');
+      json.should.have.property('amendment');
+      isAmendment(json.amendment);
+      checkProperties(properties, json.amendment);
     });
   };
 
@@ -126,6 +142,19 @@ module.exports.tester = function (currency) {
       post('/pks/add', {
         "keytext": keytext,
         "keysign": keysign
+      }, done);
+    };
+  };
+
+  this.setVoter = function (signatory, fingerprint) {
+    var Voting = mongoose.model('Voting');
+    return function (done) {
+      var ms = new Voting({ version: 1, currency: currency, issuer: signatory.fingerprint(), votingKey: fingerprint || signatory.fingerprint() });
+      var raw = ms.getRaw();
+      var sig = signatory.sign(raw);
+      post ('/ucs/community/voters', {
+        'voting': raw,
+        'signature': sig
       }, done);
     };
   };
@@ -169,6 +198,12 @@ module.exports.tester = function (currency) {
     };
   };
 
+  this.selfVote = function (number) {
+    return function (done) {
+      get ('/ucs/amendment/'+ number + '/vote', done);
+    };
+  };
+
   this.app = function (appToSet) {
     app = appToSet;
   };
@@ -204,6 +239,24 @@ module.exports.tester = function (currency) {
 
   return this;
 };
+
+function checkProperties (properties, obj) {
+  _(properties).keys().forEach(function(key){
+    obj.should.have.property(key);
+    if (properties[key] != null) {
+      if (properties[key] instanceof Array) {
+        // Must be both Arrays with exact same values
+        obj[key].should.be.an.Array;
+        obj[key].should.have.length(properties[key].length);
+        obj[key].forEach(function(value, index){
+          value.should.equal(properties[key][index]);
+        });
+      }
+      else obj[key].should.equal(properties[key]);
+    }
+    else should.not.exist(obj[key]);
+  });
+}
 
 function expectedMerkle (json, root, leavesCount) {
   isMerkleSimpleResult(json);
@@ -261,6 +314,19 @@ function isMembership (json) {
   json.membership.should.have.property('raw');
   json.membership.should.not.have.property('_id');
   json.membership.raw.should.not.match(/-----/g);
+}
+
+function isVoting (json) {
+  json.should.have.property('signature');
+  json.should.have.property('voting');
+  json.voting.should.have.property('version');
+  json.voting.should.have.property('currency');
+  json.voting.should.have.property('issuer');
+  json.voting.should.have.property('votingKey');
+  json.voting.should.have.property('sigDate');
+  json.voting.should.have.property('raw');
+  json.voting.should.not.have.property('_id');
+  json.voting.raw.should.not.match(/-----/g);
 }
 
 function isAmendment (json) {

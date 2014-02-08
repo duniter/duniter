@@ -38,7 +38,7 @@ VotingSchema.methods = {
     });
     json.sigDate = this.sigDate.timestamp();
     json.raw = this.getRaw();
-    return { signature: this.signature, entry: json };
+    return { signature: this.signature, voting: json };
   },
   
   parse: function(rawVotingRequest, callback) {

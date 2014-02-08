@@ -736,6 +736,7 @@ module.exports.get = function (pgp, currency, conf) {
         updateUniversalDividend(amNext, currentAm, next);
       },
       function (next){
+        amNext.membersChanges.sort();
         amNext.membersRoot = amNext.membersRoot || "";
         amNext.votersRoot = amNext.votersRoot || "";
         amNext.hash = amNext.getRaw().hash();
@@ -795,6 +796,7 @@ module.exports.get = function (pgp, currency, conf) {
         next();
       },
       function (next){
+        amNext.votersChanges.sort();
         amNext.membersRoot = amNext.membersRoot || "";
         amNext.votersRoot = amNext.votersRoot || "";
         amNext.nextVotes = Math.ceil((amNext.votersCount || 0) * conf.sync.VotesPercent);

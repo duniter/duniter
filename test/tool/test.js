@@ -285,7 +285,7 @@ function checkProperties (properties, obj) {
           value.should.equal(properties[key][index]);
         });
       }
-      else obj[key].should.equal(properties[key]);
+      else obj.should.have.property(key, properties[key]);
     }
     else should.not.exist(obj[key]);
   });

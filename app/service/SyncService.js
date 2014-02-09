@@ -813,6 +813,15 @@ module.exports.get = function (pgp, currency, conf) {
         });
       },
       function (next){
+        // Specific case: if have to add while key is already with a "-", add become UnLeave
+        if (actions.keyToAdd) {
+          var index = amNext.votersChanges.indexOf('-' + actions.keyToAdd);
+          if (~index) {
+            amNext.votersChanges.splice(index, 1);
+            actions.keyToAdd = null;
+          }
+        }
+        //--------------------
         // Update changes
         if (actions.keyToRemove) {
           amNext.votersChanges.push('-' + actions.keyToRemove);

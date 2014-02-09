@@ -64,7 +64,7 @@ var conf = {
     UDFrequence: 2, // Dividend every 5 seconds
     UD0: 10,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
-    VotesPercent: 1/3,
+    VotesPercent: 1,
     ActualizeFrequence: 3600*24*30 // 30 days
   }
 };
@@ -75,7 +75,7 @@ var amendments = {
     generated: conf.sync.votingStart,
     number: 0,
     dividend: null,
-    nextVotes: 1,
+    nextVotes: 2,
     membersCount: 2,
     membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
     votersCount: 2,
@@ -85,8 +85,7 @@ var amendments = {
 
   AM0_voters_members: {
   currency: 'testa',
-    dividend: null,
-    nextVotes: 1,
+    nextVotes: 2,
     membersCount: 2,
     membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
     votersCount: 2,
@@ -114,6 +113,62 @@ var amendments = {
     ],
     votersCount: 1,
     votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersChanges: [
+    ]
+  },
+
+  AM4_voters_members: {
+    nextVotes: 2,
+    membersCount: 2,
+    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    membersChanges: [
+    ],
+    votersCount: 2,
+    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    votersChanges: [
+      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    ]
+  },
+
+  // TODO !
+
+  // // Cat's deciding not to vote anymore
+  // AM5_voters_members: {
+  //   nextVotes: 1,
+  //   membersCount: 2,
+  //   membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+  //   membersChanges: [
+  //   ],
+  //   votersCount: 1,
+  //   votersRoot: '2E69197FAB029D8669EF85E82457A1587CA0ED9C',
+  //   votersChanges: [
+  //     "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+  //   ]
+  // },
+
+  // // Cat's finally deciding he prefers to vote
+  // AM6_voters_members: {
+  //   nextVotes: 2,
+  //   membersCount: 2,
+  //   membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+  //   membersChanges: [
+  //   ],
+  //   votersCount: 2,
+  //   votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+  //   votersChanges: [
+  //     "+C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+  //   ]
+  // },
+
+  // Awesome: exchanging voting keys does not produce any voters changes!
+  AM5_voters_members: {
+    nextVotes: 2,
+    membersCount: 2,
+    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    membersChanges: [
+    ],
+    votersCount: 2,
+    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
     votersChanges: [
     ]
   }
@@ -214,8 +269,7 @@ var testCases = [
 
   testProposedAmendment('looks like AM0 amendment', amendments.AM0_voters_members),
 
-  // VOTE 1
-
+  //-------- VOTING : AM1 ------
   tester.verify(
     "Voting AM1 should require 2 votes",
     tester.vote(tobi),
@@ -228,7 +282,16 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM0_voters_members)
   ),
 
-  testCurrentAmendment(amendments.AM0_voters_members),
+  tester.verify(
+    "Voting AM1 should require 2 votes",
+    tester.vote(tobi),
+    is.expectedSignedAmendment(amendments.AM0_voters_members)
+  ),
+
+  testCurrentAmendment("Testing that current = AM0", amendments.AM0_voters_members),
+  //----------------------------
+
+  // Changing VOTERS
 
   tester.verify(
     "Tobi changing his voting key to same as Cat",
@@ -238,25 +301,85 @@ var testCases = [
 
   testProposedAmendment('proposed amendment with Tobi voting with same key as Cat', amendments.AM2_voters_members),
 
-  // VOTE 2
-
+  //-------- VOTING : AM2 ------
   tester.verify(
     "Voting AM2 should promote AM2 (cat & tobi have same voting key)",
     tester.selfVote(2),
     is.expectedSignedAmendment(amendments.AM2_voters_members)
   ),
+
+  tester.verify(
+    "Voting AM2 should require 2 votes",
+    tester.vote(tobi),
+    is.expectedSignedAmendment(amendments.AM2_voters_members)
+  ),
   
-  testCurrentAmendment(amendments.AM2_voters_members),
+  testCurrentAmendment("Testing that current = AM2", amendments.AM2_voters_members),
+  //----------------------------
 
-  // VOTE 3
-
+  //-------- VOTING : AM3 ------
   tester.verify(
     "Voting AM3 directly should be possible, as one signature is required",
     tester.selfVote(3),
     is.expectedSignedAmendment(amendments.AM3_voters_members)
   ),
   
-  testCurrentAmendment(amendments.AM3_voters_members),
+  testCurrentAmendment("Testing that current = AM3", amendments.AM3_voters_members),
+  //----------------------------
+
+  // Changing VOTERS AGAIN
+
+  tester.verify(
+    "Tobi changing his voting back with his own key",
+    on.setVoter(tobi, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
+    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  ),
+
+  testProposedAmendment('proposed AM4 should have same voters & members as AM0', amendments.AM4_voters_members),
+
+  //-------- VOTING : AM4 ------
+  tester.verify(
+    "Voting AM4 directly should be possible, as one signature is required",
+    tester.selfVote(4),
+    is.expectedSignedAmendment(amendments.AM4_voters_members)
+  ),
+  
+  testCurrentAmendment("Testing that current = AM4", amendments.AM4_voters_members),
+  //----------------------------
+
+  tester.verify(
+    "Tobi voting using Cat's key",
+    on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
+    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
+  ),
+
+  tester.verify(
+    "Cat voting using Tobi's key",
+    on.setVoter(cat, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
+    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  ),
+
+  // However, Cat's uses its key to vote
+  tester.verify(
+    "Cat's voting: AM5 should require 2 votes",
+    tester.vote(cat),
+    is.expectedSignedAmendment(amendments.AM5_voters_members)
+  ),
+  tester.verify(
+    "Tobi's voting: AM5 should require 2 votes",
+    tester.vote(tobi),
+    is.expectedSignedAmendment(amendments.AM5_voters_members)
+  ),
+
+  //-------- VOTING : AM5 ------
+  tester.verify(
+    "Voting AM5 directly should be possible, as one signature is required",
+    tester.selfVote(5),
+    is.expectedSignedAmendment(amendments.AM5_voters_members)
+  ),
+  
+  testCurrentAmendment("Testing that current = AM5", amendments.AM5_voters_members),
+  //----------------------------
 ];
 
 function testMerkle (url, root) {
@@ -267,9 +390,13 @@ function testMerkle (url, root) {
   );
 }
 
-function testCurrentAmendment (properties) {
+function testCurrentAmendment (label, properties) {
+  if (arguments.length == 1) {
+    properties = label;
+    label = "proposed current amendment";
+  }
   return tester.verify(
-    "proposed current amendment",
+    label,
     on.doGet("/hdc/amendments/current"),
     is.expectedAmendment(properties)
   );

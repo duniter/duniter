@@ -498,7 +498,7 @@ for (var i = 5; i <= 12; i++) {
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
-  testProposedAmendment('proposed amendment with Tobi joining & voting', {
+  testProposedAmendment('proposed amendment with Tobi joining & voting 2', {
     membersCount: 3,
     membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
     membersChanges: [

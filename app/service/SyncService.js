@@ -16,7 +16,9 @@ var Key        = mongoose.model('Key');
 var Forward    = mongoose.model('Forward');
 var Status     = require('../models/statusMessage');
 var log4js     = require('log4js');
-var logger     = log4js.getLogger('peering');
+var logger     = log4js.getLogger('sync');
+var mlogger    = log4js.getLogger('voting');
+var vlogger    = log4js.getLogger('voting');
 
 module.exports.get = function (pgp, currency, conf) {
 
@@ -405,6 +407,7 @@ module.exports.get = function (pgp, currency, conf) {
             entry.verifySignature(pubkey.raw, next);
           },
           function (verified, next){
+            vlogger.debug('⬇ %s\'s voting key -> %s', "0x" + entry.issuer.substr(32), entry.votingKey);
             if(!verified){
               next('Bad signature');
               return;
@@ -516,16 +519,6 @@ module.exports.get = function (pgp, currency, conf) {
                   // Case 1) key is arleady used, by the same issuer --> error
                   if (~index && current && current.votingKey == entry.votingKey) {
                     next('Already used as voting key');
-                    return;
-                  }
-                  // Case 2) key is arleady used, by another issuer --> error
-                  if (~index) {
-                    next('Already used by someone else as voting key');
-                    return;
-                  }
-                  // Case 3) key is not already used, because it is currently leaving
-                  if (~amNext.votersChanges.indexOf('-' + entry.votingKey)) {
-                    next('Key is currently leaving. You can use it only after voting next amendment.');
                     return;
                   }
                   // May be updated
@@ -749,6 +742,52 @@ module.exports.get = function (pgp, currency, conf) {
 
   function updateVoters(amNext, actions, done){
     async.waterfall([
+      function (next) {
+        // Check if other votings are using this key
+        async.parallel({
+          keyRemoval: function(callback){
+            if (!actions.keyToRemove) {
+              callback();
+              return;
+            }
+            Voting.getEligiblesUsingKey(actions.keyToRemove, amNext, function (err, members) {
+              // Does it stays other members using the key?
+              if (members.length > 0) {
+                actions.keyToRemove = null;
+              }
+              callback();
+            });
+          },
+          keyUnadd: function(callback){
+            if (!actions.keyToUnadd) {
+              callback();
+              return;
+            }
+            Voting.getEligiblesUsingKey(actions.keyToUnadd, amNext, function (err, members) {
+              // Does it stays other members using the key?
+              if (members.length > 0) {
+                actions.keyToUnadd = null;
+              }
+              callback();
+            });
+          },
+          keyToAdd: function(callback){
+            if (!actions.keyToAdd) {
+              callback();
+              return;
+            }
+            Voting.getEligiblesUsingKey(actions.keyToAdd, amNext, function (err, members) {
+              // How much are using this key?
+              if (members.length > 1) {
+                actions.keyToAdd = null;
+              }
+              callback();
+            });
+          }
+        }, function (err) {
+          next(err);
+        });
+      },
       function (next) {
         Merkle.votersWrittenForProposedAmendment(amNext.number, next);
       },

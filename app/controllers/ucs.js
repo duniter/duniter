@@ -157,7 +157,7 @@ module.exports = function (pgp, currency, conf) {
 
     ], function (err, recordedVoting) {
       http.answer(res, 400, err, function () {
-        vlogger.debug('✔ %s\'s voting key -> %s', recordedVoting.issuer, recordedVoting.votingKey);
+        vlogger.debug('✔ %s\'s voting key -> %s', "0x" + recordedVoting.issuer.substr(32), recordedVoting.votingKey);
         res.end(JSON.stringify(recordedVoting.json(), null, "  "));
       });
     });

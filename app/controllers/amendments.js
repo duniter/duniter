@@ -1,10 +1,12 @@
-var async      = require('async');
-var mongoose   = require('mongoose');
-var _ = require('underscore');
-var Amendment  = mongoose.model('Amendment');
-var Merkle  = mongoose.model('Merkle');
+var async             = require('async');
+var mongoose          = require('mongoose');
+var _                 = require('underscore');
+var Amendment         = mongoose.model('Amendment');
+var Merkle            = mongoose.model('Merkle');
 var ParametersService = require('../service/ParametersService');
 var MerkleService     = require('../service/MerkleService');
+var log4js            = require('log4js');
+var alogger           = log4js.getLogger('amendment');
 
 module.exports = function (pgp, currency, conf) {
 
@@ -160,11 +162,11 @@ module.exports = function (pgp, currency, conf) {
         // Promotion time
         StrategyService.tryToPromote(am, function (err) {
           if(err){
-            console.info(err);
+            alogger.log(new String(err));
           }
           // Promoted or not, vote is recorded
           res.end(JSON.stringify({
-            amendment: am.hdc(),
+            amendment: am.json(),
             signature: recordedVote.signature
           }));
           // And vote is forwarded

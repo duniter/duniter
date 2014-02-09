@@ -12,7 +12,7 @@ var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
 
 var currency = "testo";
-var tester    = is = on = test.tester(currency);
+var tester    = is = on = new test.tester(currency);
 
 console.log("Reading files & initializing...");
 
@@ -432,8 +432,87 @@ for (var i = 5; i <= 12; i++) {
     tester.selfVote(i),
     is.expectedSignedAmendment(amendments["AM"+i] ? amendments["AM"+i] : {})
   ));
-  testCases.push(tester.delay(300));
+  testCases.push(tester.delay(100));
 }
+
+[
+  tester.verify(
+    "Cat leaving",
+    on.leave(cat),
+    is.expectedMembership("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
+  ),
+
+  testProposedAmendment('proposed amendment with Cat as leaver', {
+    membersCount: 1,
+    membersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372',
+    membersChanges: [
+      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'
+    ],
+    votersCount: 0,
+    votersRoot: '',
+    votersChanges: [
+      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'
+    ]
+  }),
+
+  tester.verify(
+    "Cat actualizing to cancel",
+    on.actualize(cat),
+    is.expectedHTTPCode(400)
+  ),
+
+  tester.verify(
+    "Tobi joining",
+    on.join(tobi),
+    is.expectedMembership("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  ),
+
+  tester.verify(
+    "Tobi joining",
+    on.setVoter(tobi),
+    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  ),
+
+  testProposedAmendment('proposed amendment with Tobi joining & voting', {
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    membersChanges: [
+      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    ],
+    votersCount: 2,
+    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    votersChanges: [
+      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    ]
+  }),
+
+  tester.verify(
+    "Voting AM13 should promote AM13",
+    tester.selfVote(13),
+    is.expectedSignedAmendment({})
+  ),
+
+  tester.verify(
+    "Tobi joining",
+    on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
+    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
+  ),
+
+  testProposedAmendment('proposed amendment with Tobi joining & voting', {
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    membersChanges: [
+    ],
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersChanges: [
+      "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    ]
+  }),
+
+].forEach(function(testCase){
+  testCases.push(testCase);
+});
 
 function testMerkle (url, root) {
   return tester.verify(
@@ -484,6 +563,10 @@ before(function (done) {
       async.forEachSeries(testCases, function(testCase, callback){
         testCase.task(callback);
       }, next);
+    },
+    function (next){
+      server.database.disconnect();
+      next();
     },
   ], function (err) {
     console.log("API fed.");

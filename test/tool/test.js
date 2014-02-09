@@ -215,6 +215,24 @@ module.exports.tester = function (currency) {
     };
   };
 
+  this.vote = function (signatory) {
+    return function (done) {
+      async.waterfall([
+        function (next){
+          get ('/ucs/amendment', next);
+        },
+        function (res, next){
+          var json = JSON.parse(res.text);
+          var sig = signatory.sign(json.raw);
+          post('/hdc/amendments/votes', {
+            'amendment': json.raw,
+            'signature': sig
+          }, next);
+        },
+      ], done);
+    };
+  };
+
   this.app = function (appToSet) {
     app = appToSet;
   };

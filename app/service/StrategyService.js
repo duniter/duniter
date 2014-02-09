@@ -8,6 +8,8 @@ var Voting     = mongoose.model('Voting');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
+var log4js     = require('log4js');
+var logger     = log4js.getLogger('amendment');
 
 module.exports = function (currency, conf) {
 
@@ -24,7 +26,7 @@ module.exports = function (currency, conf) {
           am.promoted = true;
           am.save(function (err) {
             if(!err){
-              console.log("Promoted Amendment #" + am.number + " with hash " + am.hash);
+              logger.info("Promoted Amendment #" + am.number + " with hash " + am.hash);
               next(null);
             }
             else next(err);
@@ -134,7 +136,7 @@ function defaultPromotion (followingAm, decision) {
         },
         function (votesMerkle, pass) {
           if(votesMerkle.leaves().length < currentAm.nextVotes){
-            pass('Not promoted: not enough votes for this amendment (requires at least ' + followingAm.nextVotes + ' votes)');
+            pass('Not promoted: not enough votes (requires at least ' + currentAm.nextVotes + ', currently have '+votesMerkle.leaves().length+')');
             return;
           }
           pass();

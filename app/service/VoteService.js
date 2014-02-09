@@ -8,6 +8,8 @@ var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
 var Peer      = mongoose.model('Peer');
 var Vote      = mongoose.model('Vote');
+var log4js    = require('log4js');
+var logger    = log4js.getLogger('vote');
 
 module.exports = function (currency) {
 
@@ -28,6 +30,7 @@ module.exports = function (currency) {
         vote.verify(currency, next);
       },
       function (verified, next){
+        logger.debug('⬇ %s for %s-%s', "0x" + vote.issuer.substr(32), vote.amendment.number, vote.amendment.hash);
         Amendment.current(function (err, am) {
           var currNumber = am ? parseInt(am.number) : -1;
           var voteNumber = parseInt(vote.basis)

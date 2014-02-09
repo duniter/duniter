@@ -179,6 +179,58 @@ VotingSchema.statics.getCurrent = function (issuer, done) {
   });
 }
 
+VotingSchema.statics.getEligiblesUsingKey = function (key, amNext, done) {
+  
+  var that = this;
+
+  this
+    .find({ eligible: true, votingKey: key })
+    .sort({ 'sigDate': -1 })
+    .exec(function (err, votings) {
+      var seems = {};
+      votings.forEach(function(v){
+        if (!seems[v.issuer]) {
+          seems[v.issuer] = v;
+        }
+      });
+      // Filter on members
+      var usingKey = [];
+      async.forEach(_(seems).values(), function(v, callback){
+        async.waterfall([
+          function (next){
+            mongoose.model('Merkle').membersWrittenForProposedAmendment(amNext.number, next);
+          },
+          function (merkle, next){
+            if (~merkle.leaves().indexOf(v.issuer)) {
+              // Check if it really the one to be used
+              that
+                .find({ issuer: v.issuer, eligible: true })
+                .sort({ 'sigDate': -1 })
+                .limit(1)
+                .exec(function (err, vs) {
+                  var voting = vs.length == 1 ? vs[0] : null;
+                  if (!voting) {
+                    next('Integrity error: node found a voting key and no more find it thereafter');
+                    return;
+                  }
+                  if (voting && voting.sigDate <= v.sigDate) {
+                    // First found is the one used now
+                    usingKey.push(v);
+                  }
+                  // else first found was overriden by this one,
+                  // so we must not count it as using 'key'
+                  next();
+              });
+            }
+            else next();
+          },
+        ], callback);
+      }, function(err){
+        done(err, usingKey);
+      });
+  });
+}
+
 VotingSchema.statics.getHistory = function (issuer, done) {
   
   this

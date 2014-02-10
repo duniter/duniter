@@ -486,13 +486,6 @@ module.exports.get = function (pgp, currency, conf) {
             }
           },
           function (next){
-            // Saves entry
-            entry.propagated = false;
-            entry.save(function (err) {
-              next(err);
-            });
-          },
-          function (next){
             Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
           },
           function (amNext, next){
@@ -514,13 +507,20 @@ module.exports.get = function (pgp, currency, conf) {
               },
               function (votersMerkle, next){
                 merkleOfNextVoters = votersMerkle;
+                var index = merkleOfNextVoters.leaves().indexOf(entry.votingKey);
+                // Case 1) key is arleady used, by the same issuer --> error
+                if (~index && current && current.votingKey == entry.votingKey) {
+                  next('Already used as voting key');
+                  return;
+                }
+                // Saves entry
+                entry.propagated = false;
+                entry.save(function (err) {
+                  next(err);
+                });
+              },
+              function (next){
                 if (!nowIsIgnored) {
-                  var index = merkleOfNextVoters.leaves().indexOf(entry.votingKey);
-                  // Case 1) key is arleady used, by the same issuer --> error
-                  if (~index && current && current.votingKey == entry.votingKey) {
-                    next('Already used as voting key');
-                    return;
-                  }
                   // May be updated
                   deltas (entry.issuer, currentMembership, current, eligibleMembership, entry, null, function (err, res) {
                     next(err, amNext, {

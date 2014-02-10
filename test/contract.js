@@ -492,11 +492,15 @@ for (var i = 5; i <= 12; i++) {
     is.expectedSignedAmendment({})
   ),
 
+  tester.delay(1000),
+
   tester.verify(
     "Tobi joining",
     on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
+  
+  tester.delay(1000),
 
   testProposedAmendment('proposed amendment with Tobi joining & voting 2', {
     membersCount: 3,

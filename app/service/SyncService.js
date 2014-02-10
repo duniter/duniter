@@ -792,6 +792,23 @@ module.exports.get = function (pgp, currency, conf) {
         Merkle.votersWrittenForProposedAmendment(amNext.number, next);
       },
       function (merkle, next){
+        // Specific case: if have to add while key is already with a "-", add become UnLeave
+        if (actions.keyToAdd) {
+          var index = amNext.votersChanges.indexOf('-' + actions.keyToAdd);
+          if (~index) {
+            actions.keyToUnleave = actions.keyToAdd;
+            actions.keyToAdd = null;
+          }
+        }
+        // Specific case: if have to unadd while key is not present become ToRemove
+        if (actions.keyToUnadd) {
+          var index = amNext.votersChanges.indexOf('+' + actions.keyToUnadd);
+          if (index == -1) {
+            actions.keyToRemove = actions.keyToUnadd;
+            actions.keyToUnadd = null;
+          }
+        }
+        //--------------------
         // Update keys according to what is to be added/removed
         if (actions.keyToRemove) {
           merkle.remove(actions.keyToRemove);
@@ -813,15 +830,6 @@ module.exports.get = function (pgp, currency, conf) {
         });
       },
       function (next){
-        // Specific case: if have to add while key is already with a "-", add become UnLeave
-        if (actions.keyToAdd) {
-          var index = amNext.votersChanges.indexOf('-' + actions.keyToAdd);
-          if (~index) {
-            amNext.votersChanges.splice(index, 1);
-            actions.keyToAdd = null;
-          }
-        }
-        //--------------------
         // Update changes
         if (actions.keyToRemove) {
           amNext.votersChanges.push('-' + actions.keyToRemove);

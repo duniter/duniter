@@ -171,6 +171,20 @@ var amendments = {
     votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
     votersChanges: [
     ]
+  },
+
+  // Exchanging (again), then cancelling: cat & tobi are using Cat's key fingerprint
+  AM6_voters_members: {
+    nextVotes: 1,
+    membersCount: 2,
+    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    membersChanges: [
+    ],
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersChanges: [
+      "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    ]
   }
 };
 
@@ -373,12 +387,62 @@ var testCases = [
 
   //-------- VOTING : AM5 ------
   tester.verify(
-    "Voting AM5 directly should be possible, as one signature is required",
+    "Voting AM5 directly should be possible, using 2 votes",
     tester.selfVote(5),
     is.expectedSignedAmendment(amendments.AM5_voters_members)
   ),
   
   testCurrentAmendment("Testing that current = AM5", amendments.AM5_voters_members),
+  //----------------------------
+
+  tester.verify(
+    "Tobi voting using his own key (exchange again)",
+    on.setVoter(tobi),
+    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  ),
+
+  tester.delay(1000),
+
+  tester.verify(
+    "Cat voting using his own key (exchange again)",
+    on.setVoter(cat),
+    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
+  ),
+
+  tester.delay(1000),
+
+  // However, Cat's uses its key to vote
+  tester.verify(
+    "Cat's voting: AM6 should require 2 votes and be same as AM5",
+    tester.vote(cat),
+    is.expectedSignedAmendment(amendments.AM5_voters_members)
+  ),
+
+  tester.delay(1000),
+
+  tester.verify(
+    "Tobi voting using his own key - cancelling (exchange again cancelled)",
+    on.setVoter(tobi),
+    is.expectedHTTPCode(400)
+  ),
+  
+  tester.delay(1000),
+
+  //-------- VOTING : AM6 ------
+  tester.verify(
+    "Voting AM6 directly should be possible, using 2 votes",
+    tester.selfVote(6),
+    is.expectedSignedAmendment(amendments.AM6_voters_members)
+  ),
+
+  // Tobi's vote is required
+  tester.verify(
+    "Tobi's voting: AM6 should require 2 votes",
+    tester.vote(tobi),
+    is.expectedSignedAmendment(amendments.AM6_voters_members)
+  ),
+  
+  testCurrentAmendment("Testing that current = AM6", amendments.AM6_voters_members),
   //----------------------------
 ];
 

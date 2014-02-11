@@ -249,7 +249,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
       });
     },
     function (next){
-      var KeyService = require('../service/KeyService').get();
+      var KeyService = require('../service').Key;
       KeyService.setKnown(pubkey.fingerprint, next);
     },
     function (next) {

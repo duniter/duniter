@@ -1,3 +1,4 @@
+var service   = require('../service');
 var jpgp      = require('../lib/jpgp');
 var async     = require('async');
 var mongoose  = require('mongoose');
@@ -6,9 +7,10 @@ var merkle    = require('merkle');
 var PublicKey = mongoose.model('PublicKey');
 var logger    = require('../lib/logger')('pubkey');
 
-module.exports = function (currency, conf) {
+// Services
+var KeyService = service.Key;
 
-  var KeyService = require('./KeyService').get();
+module.exports.get = function (pgp, currency, conf) {
 
   /**
   * Tries to persist a public key given in ASCII-armored format.

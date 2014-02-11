@@ -5,7 +5,7 @@ var _        = require('underscore');
 var log4js   = require('log4js');
 var logger   =  log4js.getLogger('http');
 
-module.exports = function () {
+module.exports = new function () {
 
   this.answer = function(res, code, err, done) {
     if (err) {

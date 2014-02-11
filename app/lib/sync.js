@@ -12,18 +12,20 @@ var THTEntry    = mongoose.model('THTEntry');
 var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
 var logger      = require('./logger')('sync');
+var service     = require('../service');
 
 var CONST_FORCE_TX_PROCESSING = false;
 
-module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
+// Services
+var KeyService         = service.Key;
+var VoteService        = service.Vote;
+var TransactionService = service.Transactions;
+var THTService         = service.THT;
+var PeeringService     = service.Peering;
+var StrategyService    = service.Strategy;
+var ParametersService  = service.Parameters;
 
-  var KeyService         = require('../service/KeyService').get();
-  var VoteService        = require('../service/VoteService')(currency);
-  var TransactionService = require('../service/TransactionsService').get(currency);
-  var THTService         = require('../service/THTService').get(currency);
-  var PeeringService     = require('../service/PeeringService').get(pgp, currency, conf);
-  var StrategyService    = require('../service/StrategyService')();
-  var ParametersService  = require('../service/ParametersService');
+module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
   var that = this;
   
   this.remoteFingerprint = null;
@@ -431,7 +433,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                         function (pubkey, signedTx, txs, next){
                           if(txs.length == 0){
                             logger.info(transaction.sender, transaction.number);
-                            TransactionService.process(pubkey, signedTx, CONST_FORCE_TX_PROCESSING, next);
+                            TransactionService.processTx(pubkey, signedTx, CONST_FORCE_TX_PROCESSING, next);
                             return;
                           }
                           next();

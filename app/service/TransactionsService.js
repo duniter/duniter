@@ -1,19 +1,20 @@
-var jpgp        = require('../lib/jpgp');
-var async       = require('async');
-var mongoose    = require('mongoose');
-var _           = require('underscore');
-var Amendment   = mongoose.model('Amendment');
-var PublicKey   = mongoose.model('PublicKey');
-var Merkle      = mongoose.model('Merkle');
-var Coin        = mongoose.model('Coin');
-var Key         = mongoose.model('Key');
-var Transaction = mongoose.model('Transaction');
-var TxMemory    = mongoose.model('TxMemory');
-var MerkleService = require('../service/MerkleService');
+var service       = require('../service');
+var jpgp          = require('../lib/jpgp');
+var async         = require('async');
+var mongoose      = require('mongoose');
+var _             = require('underscore');
+var Amendment     = mongoose.model('Amendment');
+var PublicKey     = mongoose.model('PublicKey');
+var Merkle        = mongoose.model('Merkle');
+var Coin          = mongoose.model('Coin');
+var Key           = mongoose.model('Key');
+var Transaction   = mongoose.model('Transaction');
+var TxMemory      = mongoose.model('TxMemory');
+var MerkleService = service.Merkle;
 
-module.exports.get = function (currency) {
+module.exports.get = function (pgp, currency, conf) {
 
-  this.process = function (pubkey, signedTX, doFilter, callback) {
+  this.processTx = function (pubkey, signedTX, doFilter, callback) {
     if (arguments.length == 3) {
       callback = doFilter;
       doFilter = true;

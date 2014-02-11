@@ -11,7 +11,7 @@ var Vote      = mongoose.model('Vote');
 var log4js    = require('log4js');
 var logger    = log4js.getLogger('vote');
 
-module.exports = function (currency) {
+module.exports.get = function (pgp, currency, conf) {
 
   this.submit = function(rawVote, peerFPR, callback) {
     var that = this;

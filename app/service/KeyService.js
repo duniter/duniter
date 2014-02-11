@@ -3,7 +3,7 @@ var async      = require('async');
 var mongoose   = require('mongoose');
 var _          = require('underscore');
 
-module.exports.get = function () {
+module.exports = new function () {
 
   this.handleKey = function(key, isManaged, done) {
     key = key || "";

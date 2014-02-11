@@ -8,7 +8,7 @@ var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
 var Vote      = mongoose.model('Vote');
 
-module.exports.get = function (currency) {
+module.exports.get = function (pgp, currency, conf) {
 
   this.submit = function (signedEntry, done) {
     

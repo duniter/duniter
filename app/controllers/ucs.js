@@ -16,15 +16,17 @@ var _          = require('underscore');
 var logger     = log4js.getLogger();
 var mlogger    = log4js.getLogger('membership');
 var vlogger    = log4js.getLogger('voting');
-var http       = require('../service/HTTPService')();
+var service    = require('../service');
+
+// Services
+var http              = service.HTTP;
+var MerkleService     = service.Merkle;
+var ParametersService = service.Parameters;
+var THTService        = service.THT;
+var PeeringService    = service.Peering;
+var SyncService       = service.Sync;
 
 module.exports = function (pgp, currency, conf) {
-
-  var MerkleService = require('../service/MerkleService');
-  var ParametersService = require('../service/ParametersService');
-  var THTService = require('../service/THTService').get(currency);
-  var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
-  var SyncService = require('../service/SyncService').get(pgp, currency, conf);
 
   this.parameters = function (req, res) {
     res.end(JSON.stringify({

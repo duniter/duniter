@@ -8,13 +8,15 @@ var Merkle      = mongoose.model('Merkle');
 var Coin        = mongoose.model('Coin');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
-var MerkleService = require('../service/MerkleService');
-var ParametersService = require('../service/ParametersService');
+var service     = require('../service');
+
+// Services
+var MerkleService      = service.Merkle;
+var ParametersService  = service.Parameters;
+var TransactionService = service.Transactions;
+var PeeringService     = service.Peering;
 
 module.exports = function (pgp, currency, conf) {
-
-  var TransactionService = require('../service/TransactionsService').get(currency);
-  var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
 
   this.keys = function (req, res) {
     async.waterfall([
@@ -238,7 +240,7 @@ module.exports = function (pgp, currency, conf) {
         ParametersService.getTransaction(req, next);
       },
       function (extractedPubkey, signedTx, next) {
-        TransactionService.process(extractedPubkey, signedTx, next);
+        TransactionService.processTx(extractedPubkey, signedTx, next);
       }
     ], function (err, tx, alreadyProcessed) {
       if(err){

@@ -1,3 +1,4 @@
+var service    = require('../service');
 var jpgp       = require('../lib/jpgp');
 var async      = require('async');
 var mongoose   = require('mongoose');
@@ -11,10 +12,11 @@ var Vote       = mongoose.model('Vote');
 var log4js     = require('log4js');
 var logger     = log4js.getLogger('amendment');
 
-module.exports = function (currency, conf) {
+// Services
+var KeyService  = service.Key;
+var SyncService = service.Sync;
 
-  var KeyService = require('./KeyService').get();
-  var SyncService = require('./SyncService').get(currency, conf);
+module.exports.get = function (pgp, currency, conf) {
   
   this.tryToPromote = function (am, done) {
     async.waterfall([

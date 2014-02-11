@@ -1,21 +1,23 @@
-var fs    = require('fs'),
-util      = require('util'),
-async     = require('async'),
-mongoose  = require('mongoose'),
-PublicKey = mongoose.model('PublicKey'),
-Merkle    = mongoose.model('Merkle'),
-_         = require('underscore'),
-stream    = require('stream');
+var fs        = require('fs');
+var util      = require('util');
+var async     = require('async');
+var mongoose  = require('mongoose');
+var PublicKey = mongoose.model('PublicKey');
+var Merkle    = mongoose.model('Merkle');
+var _         = require('underscore');
+var stream    = require('stream');
 var log4js    = require('log4js');
 var logger    = log4js.getLogger();
-var MerkleService     = require('../service/MerkleService');
-var ParametersService = require('../service/ParametersService');
-var http = require('../service/HTTPService')();
+var service   = require('../service');
+
+// Services
+var MerkleService     = service.Merkle;
+var ParametersService = service.Parameters;
+var PeeringService    = service.Peering;
+var PublicKeyService  = service.PublicKey;
+var http              = service.HTTP;
 
 module.exports = function (pgp, currency, conf) {
-
-  var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
-  var PublicKeyService = require('../service/PublicKeyService')(currency, conf);
 
   this.getAll = function (req, res) {
     async.waterfall([

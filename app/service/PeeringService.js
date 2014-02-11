@@ -13,16 +13,18 @@ var Peer        = mongoose.model('Peer');
 var Key         = mongoose.model('Key');
 var Forward     = mongoose.model('Forward');
 var Status      = require('../models/statusMessage');
+var service     = require('../service');
 var log4js      = require('log4js');
 var logger      = log4js.getLogger('peering');
+
+// Services
+var ParametersService = service.Parameters;
 
 module.exports.get = function (pgp, currency, conf) {
   
   this.privateKey = pgp.keyring.privateKeys[0];
   this.ascciiPubkey = (pgp && pgp.keyring.privateKeys[0]) ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
-
-  var ParametersService = require('./ParametersService');
 
   this.submit = function(signedPR, keyID, callback){
     var peer = new Peer();

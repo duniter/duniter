@@ -1,4 +1,5 @@
 var express    = require('express');
+var request    = require('request');
 var http       = require('http');
 var fs         = require('fs');
 var async      = require('async');
@@ -7,6 +8,7 @@ var mongoose   = require('mongoose');
 var connectPgp = require('connect-pgp');
 var _          = require('underscore');
 var server     = require('../lib/server');
+var service    = require('../service');
 var openpgp    = require('./openpgp').openpgp;
 var jpgp       = require('./jpgp');
 var sha1       = require('sha1');
@@ -169,6 +171,9 @@ module.exports.express = {
       app.use(express.errorHandler());
     }
 
+    // Init ALL services
+    service.init(openpgp, currency, conf);
+
     var pks   = require('../controllers/pks')(openpgp, currency, conf);
     var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
     var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
@@ -250,8 +255,8 @@ module.exports.express = {
     }
     // If the node's peering entry does not exist or is outdated,
     // a new one is generated.
-    var PeeringService = require('../service/PeeringService').get(module.exports.pgp, currency, conf);
-    var SyncService    = require('../service/SyncService').get(module.exports.pgp, currency, conf);
+    var PeeringService = service.Peering;
+    var SyncService    = service.Sync;
 
     async.waterfall([
       function (next) {

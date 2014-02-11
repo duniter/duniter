@@ -12,18 +12,20 @@ var Key       = mongoose.model('Key');
 var log4js    = require('log4js');
 var _         = require('underscore');
 var logger    = log4js.getLogger();
-var plogger      = log4js.getLogger('peering');
-var flogger      = log4js.getLogger('forward');
-var slogger      = log4js.getLogger('status');
-var tlogger      = log4js.getLogger('tht');
-var http      = require('../service/HTTPService')();
+var plogger   = log4js.getLogger('peering');
+var flogger   = log4js.getLogger('forward');
+var slogger   = log4js.getLogger('status');
+var tlogger   = log4js.getLogger('tht');
+var service   = require('../service');
+
+// Services
+var http              = service.HTTP;
+var MerkleService     = service.Merkle;
+var ParametersService = service.Parameters;
+var THTService        = service.THT;
+var PeeringService    = service.Peering;
 
 module.exports = function (pgp, currency, conf) {
-
-  var MerkleService = require('../service/MerkleService');
-  var ParametersService = require('../service/ParametersService');
-  var THTService = require('../service/THTService').get(currency);
-  var PeeringService = require('../service/PeeringService').get(pgp, currency, conf);
 
   this.ascciiPubkey = pgp.keyring.privateKeys[0] ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };

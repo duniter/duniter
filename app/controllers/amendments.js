@@ -1,18 +1,20 @@
-var async             = require('async');
-var mongoose          = require('mongoose');
-var _                 = require('underscore');
-var Amendment         = mongoose.model('Amendment');
-var Merkle            = mongoose.model('Merkle');
-var ParametersService = require('../service/ParametersService');
-var MerkleService     = require('../service/MerkleService');
-var log4js            = require('log4js');
-var alogger           = log4js.getLogger('amendment');
+var async     = require('async');
+var mongoose  = require('mongoose');
+var _         = require('underscore');
+var Amendment = mongoose.model('Amendment');
+var Merkle    = mongoose.model('Merkle');
+var log4js    = require('log4js');
+var alogger   = log4js.getLogger('amendment');
+var service   = require('../service');
+
+// Services
+var ParametersService = service.Parameters;
+var MerkleService     = service.Merkle;
+var VoteService       = service.Vote;
+var StrategyService   = service.Strategy;
+var PeeringService    = service.Peering;
 
 module.exports = function (pgp, currency, conf) {
-
-  var VoteService     = require('../service/VoteService')(currency);
-  var StrategyService = require('../service/StrategyService')(currency, conf);
-  var PeeringService  = require('../service/PeeringService').get(pgp, currency, conf);
 
   this.promoted = function (req, res) {
     async.waterfall([

@@ -1,3 +1,4 @@
+var service    = require('../service');
 var jpgp       = require('../lib/jpgp');
 var async      = require('async');
 var request    = require('request');
@@ -20,9 +21,10 @@ var logger     = log4js.getLogger('sync');
 var mlogger    = log4js.getLogger('voting');
 var vlogger    = log4js.getLogger('voting');
 
-module.exports.get = function (pgp, currency, conf) {
+// Services
+var ParametersService = service.Parameters;
 
-  var ParametersService = require('./ParametersService');
+module.exports.get = function (pgp, currency, conf) {
 
   this.createNext = function (am, done) {
     var amNext = new Amendment();

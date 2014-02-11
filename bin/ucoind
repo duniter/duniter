@@ -8,6 +8,7 @@ var program  = require('commander');
 var mongoose = require('mongoose');
 var log4js   = require('log4js');
 var logger   = require('../app/lib/logger')('ucoind');
+var service  = require('../app/service');
 
 // log4js configuration
 log4js.replaceConsole();
@@ -68,7 +69,7 @@ program
     // Launching server
     server.express.app(program.currency, conf, function (err, app) {
 
-      var PeeringService = require('../app/service/PeeringService').get(server.pgp, program.currency, conf);
+      var PeeringService = service.Peering;
 
       async.waterfall([
         function (next) {
@@ -102,7 +103,7 @@ program
         next();
       },
       function (next){
-        require('../app/service/KeyService').get().setKnown(key, next);
+        service.Key.setKnown(key, next);
       }
     ], function (err, result) {
       if(err){
@@ -137,7 +138,7 @@ function handleKey (conf, key, isManaged, message) {
       connect(next);
     },
     function (host, port, conf, next){
-      require('../app/service/KeyService').get().handleKey(key, isManaged, next);
+      service.Key.handleKey(key, isManaged, next);
     }
   ], function (err, result) {
     if(err){

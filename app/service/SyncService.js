@@ -30,6 +30,7 @@ module.exports.get = function (pgp, currency, conf) {
     var amNext = new Amendment();
     var membersMerklePrev = [];
     var votersMerklePrev = [];
+    var promoters = [];
     async.waterfall([
       function (next){
         amNext.selfGenerated = true;
@@ -107,10 +108,36 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (leaves, next){
         votersMerklePrev = leaves;
+        var maxDate = new Date();
+        // If it turns the contract is being voted for past amendments,
+        // maxDate should be considered as NOW
+        // Otherwise, maxDate is to be set as future amendment "GeneratedOn" datetime
+        if (maxDate.timestamp() < amNext.generated) {
+          maxDate.setTime(amNext.generated*1000);
+        }
+        if (am) {
+          Vote.getForAmendment(am.number, am.hash, maxDate, next);
+        }
+        else {
+          next(null, []);
+        }
+      },
+      function (votes, next){
+        promoters = votes;
         Merkle.votersWrittenForProposedAmendment(amNext.number, next);
       },
       function (merkle, next){
-        merkle.initialize(votersMerklePrev);
+        var voters = [];
+        promoters.forEach(function(vote){
+          voters.push(vote.issuer);
+        });
+        var nonVoters = _(votersMerklePrev).difference(voters);
+        nonVoters.forEach(function(leaver){
+          amNext.votersChanges.push('-' + leaver);
+        });
+        merkle.initialize(voters);
+        amNext.votersRoot = merkle.root();
+        amNext.votersCount = voters.length;
         merkle.save(function (err) {
           next(err);
         });
@@ -127,6 +154,26 @@ module.exports.get = function (pgp, currency, conf) {
         amNext.save(function (err) {
           next(err);
         });
+      },
+    ], done);
+  };
+
+  this.takeCountOfVote = function (v, done) {
+    async.waterfall([
+      function (next){
+        Amendment.current(function (err, am) {
+          next(null, am ? am.number + 1 : 0);
+        });
+      },
+      function (amNumber, next){
+        Amendment.getTheOneToBeVoted(amNumber, next);
+      },
+      function (amNext, next){
+        if (v.amendmentHash == amNext.previousHash) {
+          updateVoters(amNext, { keyToUnleave: v.issuer }, next);
+          return;
+        }
+        else next();
       },
     ], done);
   };

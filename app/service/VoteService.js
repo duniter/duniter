@@ -41,6 +41,13 @@ module.exports.get = function (pgp, currency, conf) {
           next();
         });
       },
+      function (next){
+        if (vote.amendment.generated > vote.sigDate.timestamp()) {
+          next('Cannot vote for future amendment');
+          return;
+        }
+        next();
+      },
       // Issuer is a voter
       function (next){
         vote.issuerIsVoter(next);
@@ -123,7 +130,7 @@ module.exports.get = function (pgp, currency, conf) {
         Merkle.updateSignaturesOfAmendment(am, previousHash, vote.hash, function (err) {
           next(err, am, voteEntity);
         });
-      }
+      },
     ], function (err, am, vote) {
       callback(err, am, vote);
     });

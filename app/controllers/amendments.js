@@ -13,6 +13,7 @@ var MerkleService     = service.Merkle;
 var VoteService       = service.Vote;
 var StrategyService   = service.Strategy;
 var PeeringService    = service.Peering;
+var SyncService       = service.Sync;
 
 module.exports = function (pgp, currency, conf) {
 
@@ -161,8 +162,17 @@ module.exports = function (pgp, currency, conf) {
           console.error(err);
           return;
         }
-        // Promotion time
-        StrategyService.tryToPromote(am, function (err) {
+        async.waterfall([
+          function (next){
+            SyncService.takeCountOfVote(recordedVote, function (err) {
+              next();
+            });
+          },
+          function (next){
+            // Promotion time
+            StrategyService.tryToPromote(am, next);
+          },
+        ], function (err) {
           if(err){
             alogger.log(new String(err));
           }

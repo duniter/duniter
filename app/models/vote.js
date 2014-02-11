@@ -239,6 +239,11 @@ VoteSchema.methods = {
   }
 };
 
+VoteSchema.statics.getForAmendment = function (number, hash, maxDate, done) {
+
+  this.find({ amendmentHash: hash, basis: number, sigDate: { $lt: maxDate } }, done);
+};
+
 VoteSchema.statics.findByHashAndBasis = function (hash, basis, done) {
 
   this.find({ hash: hash, basis: basis }, function (err, votes) {

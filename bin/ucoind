@@ -275,12 +275,12 @@ function overrideConf(conf) {
   //  - Membership max. delay: 6 monthes
   conf.sync        = {
     votingStart: config.sync.votingStart || new Date().timestamp(),
-    votingFrequence: config.sync.votingFrequence || 30,
+    votingFrequence: config.sync.votingFrequence || 1,
     UDFrequence: config.sync.UDFrequence || 3600*24,
     UD0: config.sync.UD0 || 100,
     UDPercent: config.sync.UDPercent || 0.007376575,
     UDMinCoin: config.sync.UDMinCoin,
-    VotesPercent: config.sync.VotesPercent || 1/3,
+    VotesPercent: config.sync.VotesPercent || 1,
     ActualizeFrequence: config.sync.ActualizeFrequence || 2629800*6
   };
   return conf;

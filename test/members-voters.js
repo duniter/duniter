@@ -257,12 +257,17 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM0)
   ),
 
+  tester.verify(
+    "Tobi voting AM0 so he stays as a voter",
+    tester.voteCurrent(tobi),
+    is.expectedSignedAmendment(amendments.AM0)
+  ),
+
   testCurrentAmendment(amendments.AM0),
   testPromotedAmendment(amendments.AM0),
   testPromotedAmendment(amendments.AM0, 0),
 
   // Delay, otherwise tobi might send same signature
-  tester.delay(1000),
 
   tester.verify(
     "Tobi changing his voting key to same as Cat",
@@ -273,7 +278,6 @@ var testCases = [
   testProposedAmendment('proposed amendment with Tobi voting with same key as Cat', amendments.AM2_voters_members),
 
   // Delay, otherwise tobi might send same signature
-  tester.delay(1000),
 
   tester.verify(
     "Tobi cancelling his voting key to same as Cat",
@@ -313,6 +317,13 @@ var testCases = [
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
+    // Now we are with proposed AM2:
+    // votersCount: 1,
+    // votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    // votersChanges: [
+    //   "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    // ]
+
   testProposedAmendment('proposed amendment with Tobi voting with same key as Cat', amendments.AM2_voters_members),
 
   //-------- VOTING : AM2 ------
@@ -349,6 +360,13 @@ var testCases = [
     is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
 
+    // Now we are with proposed AM4:
+    // votersCount: 2,
+    // votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    // votersChanges: [
+    //   "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    // ]
+
   testProposedAmendment('proposed AM4 should have same voters & members as AM0', amendments.AM4_voters_members),
 
   //-------- VOTING : AM4 ------
@@ -361,6 +379,13 @@ var testCases = [
   testCurrentAmendment("Testing that current = AM4", amendments.AM4_voters_members),
   //----------------------------
 
+    // Right now we have, tobi hasn't voted current yet:
+    // votersCount: 1,
+    // votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    // votersChanges: [
+    //   "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    // ]
+
   tester.verify(
     "Tobi voting using Cat's key",
     on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
@@ -372,6 +397,12 @@ var testCases = [
     on.setVoter(cat, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
     is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
+
+    // Now we are with proposed AM5:
+    // votersCount: 2,
+    // votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    // votersChanges: [
+    // ]
 
   // However, Cat's uses its key to vote
   tester.verify(
@@ -401,15 +432,11 @@ var testCases = [
     is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
 
-  tester.delay(1000),
-
   tester.verify(
     "Cat voting using his own key (exchange again)",
     on.setVoter(cat),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
-
-  tester.delay(1000),
 
   // However, Cat's uses its key to vote
   tester.verify(
@@ -418,16 +445,12 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM5_voters_members)
   ),
 
-  tester.delay(1000),
-
   tester.verify(
     "Tobi voting using his own key - cancelling (exchange again cancelled)",
     on.setVoter(tobi),
     is.expectedHTTPCode(400)
   ),
   
-  tester.delay(1000),
-
   //-------- VOTING : AM6 ------
   tester.verify(
     "Voting AM6 directly should be possible, using 2 votes",

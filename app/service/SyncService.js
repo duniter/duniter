@@ -112,6 +112,7 @@ module.exports.get = function (pgp, currency, conf) {
         // If it turns the contract is being voted for past amendments,
         // maxDate should be considered as NOW
         // Otherwise, maxDate is to be set as future amendment "GeneratedOn" datetime
+        maxDate.setTime(maxDate.getTime() + 1000); // 1 sec after
         if (maxDate.timestamp() < amNext.generated) {
           maxDate.setTime(amNext.generated*1000);
         }
@@ -129,12 +130,17 @@ module.exports.get = function (pgp, currency, conf) {
       function (merkle, next){
         var voters = [];
         promoters.forEach(function(vote){
-          voters.push(vote.issuer);
+          // If voter has left, he is not to be taken in count now
+          if (am.votersChanges.indexOf('-' + vote.issuer) == -1) {
+            voters.push(vote.issuer);
+          }
         });
         var nonVoters = _(votersMerklePrev).difference(voters);
         nonVoters.forEach(function(leaver){
           amNext.votersChanges.push('-' + leaver);
         });
+        amNext.votersChanges.sort();
+        voters.sort();
         merkle.initialize(voters);
         amNext.votersRoot = merkle.root();
         amNext.votersCount = voters.length;
@@ -538,7 +544,6 @@ module.exports.get = function (pgp, currency, conf) {
             Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
           },
           function (amNext, next){
-            var merkleOfNextVoters;
             var currentMembership, eligibleMembership;
             async.waterfall([
               function (next) {
@@ -552,13 +557,10 @@ module.exports.get = function (pgp, currency, conf) {
               },
               function (ms, next){
                 eligibleMembership = ms;
-                Merkle.votersWrittenForProposedAmendment(amNext.number, next);
+                Vote.isVoter(entry.votingKey, next);
               },
-              function (votersMerkle, next){
-                merkleOfNextVoters = votersMerkle;
-                var index = merkleOfNextVoters.leaves().indexOf(entry.votingKey);
-                // Case 1) key is arleady used, by the same issuer --> error
-                if (~index && current && current.votingKey == entry.votingKey) {
+              function (isVoter, next){
+                if (isVoter && current && current.votingKey == entry.votingKey) {
                   next('Already used as voting key');
                   return;
                 }
@@ -855,6 +857,13 @@ module.exports.get = function (pgp, currency, conf) {
           if (index == -1) {
             actions.keyToRemove = actions.keyToUnadd;
             actions.keyToUnadd = null;
+          }
+        }
+        // Specific case: if have to remove while it is already removed, cancel it
+        if (actions.keyToRemove) {
+          var index = amNext.votersChanges.indexOf('-' + actions.keyToRemove);
+          if (~index) {
+            actions.keyToRemove = null;
           }
         }
         //--------------------

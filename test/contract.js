@@ -230,9 +230,6 @@ var testCases = [
     previousHash: null
   }),
 
-  // Delay, otherwise tobi might send same signature
-  tester.delay(1000),
-
   tester.verify(
     "Tobi joining again should cancel its membership request",
     on.join(tobi),
@@ -432,7 +429,6 @@ for (var i = 5; i <= 12; i++) {
     tester.selfVote(i),
     is.expectedSignedAmendment(amendments["AM"+i] ? amendments["AM"+i] : {})
   ));
-  testCases.push(tester.delay(100));
 }
 
 [
@@ -492,16 +488,12 @@ for (var i = 5; i <= 12; i++) {
     is.expectedSignedAmendment({})
   ),
 
-  tester.delay(1000),
-
   tester.verify(
     "Tobi joining",
     on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
   
-  tester.delay(1000),
-
   testProposedAmendment('proposed amendment with Tobi joining & voting 2', {
     membersCount: 3,
     membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',

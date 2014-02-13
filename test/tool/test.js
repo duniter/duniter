@@ -31,6 +31,24 @@ module.exports.HTTPTestCase = function (label, params) {
 module.exports.tester = function (currency) {
 
   var app;
+  var ttlQueue = function (minTimeInMs) {
+    var last = new Date().getTime();
+
+    return async.queue(function (task, callback) {
+      now = new Date().getTime();
+      var past = now - last;
+      var wait = past > minTimeInMs ? 0 : minTimeInMs - past;
+      // console.log("QUEUE: waiting...");
+      setTimeout(function () {
+        last = new Date().getTime();
+        // console.log("QUEUE: running task (waited " + wait + "ms/" + minTimeInMs + "ms)");
+        task(callback);
+      }, wait);
+    }, 1);
+  };
+
+  var queueOfMsVt = ttlQueue(1000);
+  var queueOfVotes = ttlQueue(1000);
 
   this.create = function (params) {
     return new module.exports.HTTPTestCase(params.label, {
@@ -160,12 +178,14 @@ module.exports.tester = function (currency) {
   this.setVoter = function (signatory, fingerprint) {
     var Voting = mongoose.model('Voting');
     return function (done) {
-      var ms = new Voting({ version: 1, currency: currency, issuer: signatory.fingerprint(), votingKey: fingerprint || signatory.fingerprint() });
-      var raw = ms.getRaw();
-      var sig = signatory.sign(raw);
-      post ('/ucs/community/voters', {
-        'voting': raw,
-        'signature': sig
+      queueOfMsVt.push(function (cb) {
+        var ms = new Voting({ version: 1, currency: currency, issuer: signatory.fingerprint(), votingKey: fingerprint || signatory.fingerprint() });
+        var raw = ms.getRaw();
+        var sig = signatory.sign(raw);
+        post ('/ucs/community/voters', {
+          'voting': raw,
+          'signature': sig
+        }, cb);
       }, done);
     };
   };
@@ -173,12 +193,14 @@ module.exports.tester = function (currency) {
   this.join = function (signatory) {
     var Membership = mongoose.model('Membership');
     return function (done) {
-      var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'JOIN' });
-      var raw = ms.getRaw();
-      var sig = signatory.sign(raw);
-      post ('/ucs/community/members', {
-        'membership': raw,
-        'signature': sig
+      queueOfMsVt.push(function (cb) {
+        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'JOIN' });
+        var raw = ms.getRaw();
+        var sig = signatory.sign(raw);
+        post ('/ucs/community/members', {
+          'membership': raw,
+          'signature': sig
+        }, cb);
       }, done);
     };
   };
@@ -186,12 +208,14 @@ module.exports.tester = function (currency) {
   this.actualize = function (signatory) {
     var Membership = mongoose.model('Membership');
     return function (done) {
-      var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'ACTUALIZE' });
-      var raw = ms.getRaw();
-      var sig = signatory.sign(raw);
-      post ('/ucs/community/members', {
-        'membership': raw,
-        'signature': sig
+      queueOfMsVt.push(function (cb) {
+        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'ACTUALIZE' });
+        var raw = ms.getRaw();
+        var sig = signatory.sign(raw);
+        post ('/ucs/community/members', {
+          'membership': raw,
+          'signature': sig
+        }, cb);
       }, done);
     };
   };
@@ -199,27 +223,51 @@ module.exports.tester = function (currency) {
   this.leave = function (signatory) {
     var Membership = mongoose.model('Membership');
     return function (done) {
-      var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'LEAVE' });
-      var raw = ms.getRaw();
-      var sig = signatory.sign(raw);
-      post ('/ucs/community/members', {
-        'membership': raw,
-        'signature': sig
+      queueOfMsVt.push(function (cb) {
+        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'LEAVE' });
+        var raw = ms.getRaw();
+        var sig = signatory.sign(raw);
+        post ('/ucs/community/members', {
+          'membership': raw,
+          'signature': sig
+        }, cb);
       }, done);
     };
   };
 
   this.selfVote = function (number) {
     return function (done) {
-      get ('/ucs/amendment/'+ number + '/vote', done);
+      queueOfVotes.push(function (cb) {
+        get ('/ucs/amendment/'+ number + '/vote', cb);
+      }, done);
     };
   };
 
   this.vote = function (signatory) {
     return function (done) {
+      queueOfVotes.push(function (cb) {
+        async.waterfall([
+          function (next){
+            get ('/ucs/amendment', next);
+          },
+          function (res, next){
+            var json = JSON.parse(res.text);
+            var sig = signatory.sign(json.raw);
+            post('/hdc/amendments/votes', {
+              'amendment': json.raw,
+              'signature': sig
+            }, next);
+          },
+        ], cb);
+      }, done);
+    };
+  };
+
+  this.voteCurrent = function (signatory) {
+    return function (done) {
       async.waterfall([
         function (next){
-          get ('/ucs/amendment', next);
+          get ('/hdc/amendments/current', next);
         },
         function (res, next){
           var json = JSON.parse(res.text);

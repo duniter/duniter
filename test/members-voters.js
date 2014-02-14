@@ -59,20 +59,20 @@ var conf = {
   remoteipv4: '127.0.0.1',
   remoteport: 9106,
   sync: {
-    votingStart: now,
-    votingFrequence: 1, // Every second
+    AMStart: now,
+    AMFreq: 1, // Every second
     UDFrequence: 2, // Dividend every 5 seconds
     UD0: 10,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
-    VotesPercent: 1,
-    ActualizeFrequence: 3600*24*30 // 30 days
+    Consensus: 1,
+    MSExpires: 3600*24*30 // 30 days
   }
 };
 
 var amendments = {
   AM0: {
   currency: 'testa',
-    generated: conf.sync.votingStart,
+    generated: conf.sync.AMStart,
     number: 0,
     dividend: null,
     nextVotes: 2,

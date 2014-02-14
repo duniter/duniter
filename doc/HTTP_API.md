@@ -2190,8 +2190,8 @@ The synchronization parameters.
     "UD0": 100,
     "UDPercent": 0.007376575,
     "UDMinCoin": null,
-    "VotesPercent": 0.6666666666666666,
-    "MembershipExpires": 15778800
+    "Consensus": 0.6666666666666666,
+    "MSExpires": 15778800
 }
 ```
 
@@ -2205,8 +2205,8 @@ UDFrequency       | Universal Dividend frequency (in seconds)
 UD0               | Universal Dividend initial value
 UDPercent         | Universal Dividend % of monetary mass growth
 UDMinCoin         | Universal Dividend minimal coin value
-VotesPercent      | Percent of voters required to valid an Amendment
-MembershipExpires | Delay by which a membership is to be considered expired
+Consensus         | Percent of voters required to valid an Amendment
+MSExpires         | Delay by which a membership is to be considered expired
 
 #### `community/members (POST)`
 

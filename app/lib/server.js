@@ -104,7 +104,8 @@ module.exports.database = {
           pgpkey: null,
           pgppasswd: null,
           kmanagement: 'ALL',
-          kaccept: 'ALL'
+          kaccept: 'ALL',
+          sync: {}
         }));
       },
     ], done);
@@ -251,6 +252,10 @@ module.exports.express = {
     }
     if(!conf.remoteipv4 && !conf.remoteipv6){
       onLoaded('Either --remote4 or --remote6 must be given');
+      return;
+    }
+    if (!conf.sync.AMStart) {
+      onLoaded('--amstart is mandatory');
       return;
     }
     // If the node's peering entry does not exist or is outdated,

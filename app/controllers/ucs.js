@@ -30,14 +30,14 @@ module.exports = function (pgp, currency, conf) {
 
   this.parameters = function (req, res) {
     res.end(JSON.stringify({
-      AMStart: conf.sync.votingStart,
-      AMFrequency: conf.sync.votingFrequence,
-      UDFrequency: conf.sync.UDFrequence,
+      AMStart: conf.sync.AMStart,
+      AMFrequency: conf.sync.AMFreq,
+      UDFrequency: conf.sync.UDFreq,
       UD0: conf.sync.UD0,
       UDPercent: conf.sync.UDPercent,
       UDMinCoin: conf.sync.UDMinCoin,
-      VotesPercent: conf.sync.VotesPercent,
-      MembershipExpires: conf.sync.ActualizeFrequence
+      Consensus: conf.sync.Consensus,
+      MSExpires: conf.sync.MSExpires
     }, null, "  "));
   };
 

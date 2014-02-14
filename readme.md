@@ -259,11 +259,11 @@ Commands:
 
   sync [host] [port]     Tries to synchronise data with remote uCoin node
   manage-keys            Update managed keys configuration and send corresponding forwards to other peers
+  allow-key [key]        Add given key to authorized keys of this node
   manage-key [key]       Add given key to stack of managed keys of this node
   forget-key [key]       Remove given key of the managed keys' stack of this node
   config                 Register configuration in database
   reset [config|data]    Reset configuration or data in database
-  update-merkles         Reset Merkle trees and computes them again according to stored data.
   start                  Start uCoin server using given --currency
 
 Options:
@@ -274,6 +274,7 @@ Options:
   -c, --currency <name>     Name of the currency managed by this node.
   --mhost <host>            MongoDB host.
   --mport <port>            MongoDB port.
+  --mdb <name>              MongoDB database name (defaults to currency name).
   --pgpkey <keyPath>        Path to the private key used for signing HTTP responses.
   --pgppasswd <password>    Password for the key provided with --httpgp-key option.
   --ipv4 <address>          IPV4 interface to listen for requests
@@ -284,6 +285,14 @@ Options:
   --remotep <port>          Remote port others may use to contact this node
   --kmanagement <ALL|KEYS>  Define key management policy
   --kaccept <ALL|KEYS>      Define key acceptance policy
+  --amstart <timestamp>     First amendment generated date
+  --amfreq <timestamp>      Amendments frequency, in seconds
+  --udfreq <timestamp>      Universal Dividend frequency, in seconds
+  --ud0 <integer>           First Universal Dividend value (a.k.a 'UD0')
+  --udpercent <float>       Percent of monetary mass growth per UD
+  --consensus <float>       Percent of voters required to accept an amendment
+  --msvalidity <timestamp>  Duration of a valid membership, in seconds
+
 ```
 
 ## Talk about/get involved in uCoin project

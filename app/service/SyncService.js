@@ -40,14 +40,14 @@ module.exports.get = function (pgp, currency, conf) {
           });
           amNext.number = am.number + 1;
           amNext.previousHash = am.hash;
-          amNext.generated = am.generated + conf.sync.votingFrequence;
+          amNext.generated = am.generated + conf.sync.AMFreq;
           amNext.membersChanges = [];
           amNext.votersChanges = [];
         } else {
           amNext.version = 1;
           amNext.currency = currency;
           amNext.number = 0;
-          amNext.generated = conf.sync.votingStart;
+          amNext.generated = conf.sync.AMStart;
           amNext.membersChanges = [];
           amNext.membersRoot = "";
           amNext.membersCount = 0;
@@ -56,7 +56,7 @@ module.exports.get = function (pgp, currency, conf) {
           amNext.votersCount = 0;
           amNext.monetaryMass = 0;
         }
-        amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.VotesPercent);
+        amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.Consensus);
         // Computes changes due to too old JOIN/ACTUALIZE
         var exclusionDate = getExclusionDate(amNext);
         Membership.getCurrentJoinOrActuOlderThan(exclusionDate, next);
@@ -693,13 +693,13 @@ module.exports.get = function (pgp, currency, conf) {
   function getExclusionDate (amNext) {
     var nextTimestamp = amNext.generated;
     var exclusionDate = new Date();
-    exclusionDate.setTime(nextTimestamp*1000 - conf.sync.ActualizeFrequence*1000);
+    exclusionDate.setTime(nextTimestamp*1000 - conf.sync.MSExpires*1000);
     return exclusionDate;
   }
 
   function updateUniversalDividend (amNext, amCurrent, done) {
     // Time for Universal Dividend
-    var delayPassedSinceRootAM = (amNext.generated - conf.sync.votingStart);
+    var delayPassedSinceRootAM = (amNext.generated - conf.sync.AMStart);
     if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFrequence == 0) {
       async.waterfall([
         function (next) {
@@ -913,7 +913,7 @@ module.exports.get = function (pgp, currency, conf) {
         amNext.votersChanges.sort();
         amNext.membersRoot = amNext.membersRoot || "";
         amNext.votersRoot = amNext.votersRoot || "";
-        amNext.nextVotes = Math.ceil((amNext.votersCount || 0) * conf.sync.VotesPercent);
+        amNext.nextVotes = Math.ceil((amNext.votersCount || 0) * conf.sync.Consensus);
         amNext.hash = amNext.getRaw().hash();
         amNext.save(function (err) {
           next(err);

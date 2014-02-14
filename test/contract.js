@@ -59,20 +59,20 @@ var conf = {
   remoteipv4: '127.0.0.1',
   remoteport: 9105,
   sync: {
-    votingStart: now,
-    votingFrequence: 1, // Every second
+    AMStart: now,
+    AMFreq: 1, // Every second
     UDFrequence: 2, // Dividend every 5 seconds
     UD0: 10,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
-    VotesPercent: 2/3,
-    ActualizeFrequence: 3600*24*30 // 30 days
+    Consensus: 2/3,
+    MSExpires: 3600*24*30 // 30 days
   }
 };
 
 var amendments = {
   AM0: {
   currency: 'testo',
-    generated: conf.sync.votingStart,
+    generated: conf.sync.AMStart,
     number: 0,
     dividend: null,
     membersCount: 2,
@@ -84,7 +84,7 @@ var amendments = {
 
   AM1: {
     currency: 'testo',
-    generated: conf.sync.votingStart + conf.sync.votingFrequence*1,
+    generated: conf.sync.AMStart + conf.sync.AMFreq*1,
     number: 1,
     dividend: null,
     membersCount: 2,
@@ -95,7 +95,7 @@ var amendments = {
 
   AM2: {
     currency: 'testo',
-    generated: conf.sync.votingStart + conf.sync.votingFrequence*2,
+    generated: conf.sync.AMStart + conf.sync.AMFreq*2,
     number: 2,
     dividend: 10,
     membersCount: 2,
@@ -106,7 +106,7 @@ var amendments = {
 
   AM3: {
     currency: 'testo',
-    generated: conf.sync.votingStart + conf.sync.votingFrequence*3,
+    generated: conf.sync.AMStart + conf.sync.AMFreq*3,
     number: 3,
     dividend: null,
     membersCount: 2,
@@ -117,7 +117,7 @@ var amendments = {
 
   AM4: {
     currency: 'testo',
-    generated: conf.sync.votingStart + conf.sync.votingFrequence*4,
+    generated: conf.sync.AMStart + conf.sync.AMFreq*4,
     number: 4,
     dividend: 10,
     membersCount: 2,

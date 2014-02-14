@@ -18,7 +18,7 @@ function keys (val) {
 }
 
 program
-  .version('0.5.1')
+  .version('0.6.0')
   .usage('--currency <name> [options] <command> [options]')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
   .option('-c, --currency <name>', 'Name of the currency managed by this node.')
@@ -35,6 +35,13 @@ program
   .option('--remotep <port>', 'Remote port others may use to contact this node')
   .option('--kmanagement <ALL|KEYS>', 'Define key management policy')
   .option('--kaccept <ALL|KEYS>', 'Define key acceptance policy')
+  .option('--amstart <timestamp>', 'First amendment generated date', parseInt)
+  .option('--amfreq <timestamp>', 'Amendments frequency, in seconds', parseInt)
+  .option('--udfreq <timestamp>', 'Universal Dividend frequency, in seconds', parseInt)
+  .option('--ud0 <integer>', 'First Universal Dividend value (a.k.a \'UD0\')', parseInt)
+  .option('--udpercent <float>', 'Percent of monetary mass growth per UD', parseFloat)
+  .option('--consensus <float>', 'Percent of voters required to accept an amendment', parseFloat)
+  .option('--msvalidity <timestamp>', 'Duration of a valid membership, in seconds', parseInt)
   ;
 
 program
@@ -240,13 +247,13 @@ function overrideConf(conf) {
       pubkeys: program.kaccept
     },
     sync: {
-      votingStart: program.amstart,
-      votingFrequence: program.amfreq,
-      UDFrequence: program.udfreq,
+      AMStart: program.amstart,
+      AMFreq: program.amfreq,
+      UDFreq: program.udfreq,
       UD0: program.ud0,
       UDPercent: program.udpercent,
-      VotesPercent: program.votespercent,
-      ActualizeFrequence: program.msfreq
+      Consensus: program.Consensus,
+      MSExpires: program.msfreq
     }
   };
 
@@ -265,23 +272,23 @@ function overrideConf(conf) {
   conf.kmanagement = config.policy.keys || conf.kmanagement;
   conf.kaccept     = config.policy.pubkeys || conf.kaccept;
   // Monetary Contract sync default parameters:
-  //  - Voting start: 01-01-2014 00:00:00
+  //  - Voting start: None (must be given)
   //  - Voting frequency: 1 day
-  //  - UD frequency: 1 month
+  //  - UD frequency: 1 month (30.4375 days/month)
   //  - UD(0): 100 unities
   //  - UD % (aka 'c'): 9.22% a year <=> 0.7376575% a month
   //  - UD Minimal Coin: none
   //  - Voting % threshold: 2/3 of votes
-  //  - Membership max. delay: 6 monthes
+  //  - Membership max. delay: 6 months
   conf.sync        = {
-    votingStart: config.sync.votingStart || new Date().timestamp(),
-    votingFrequence: config.sync.votingFrequence || 1,
-    UDFrequence: config.sync.UDFrequence || 3600*24,
-    UD0: config.sync.UD0 || 100,
-    UDPercent: config.sync.UDPercent || 0.007376575,
-    UDMinCoin: config.sync.UDMinCoin,
-    VotesPercent: config.sync.VotesPercent || 1,
-    ActualizeFrequence: config.sync.ActualizeFrequence || 2629800*6
+    AMStart: config.sync.AMStart || conf.sync.AMStart,
+    AMFreq: config.sync.AMFreq || conf.sync.AMFreq || 3600*24, // every day
+    UDFreq: config.sync.UDFreq || conf.sync.UDFreq || 3600*24*30.4375, // every month
+    UD0: config.sync.UD0 || conf.sync.UD0 || 100,
+    UDPercent: config.sync.UDPercent || conf.sync.UDPercent || 0.007376575, // 0.73%
+    UDMinCoin: config.sync.UDMinCoin || conf.sync.UDMinCoin,
+    Consensus: config.sync.Consensus || conf.sync.Consensus || 2/3,
+    MSExpires: config.sync.MSExpires || conf.sync.MSExpires || 3600*24*30.4375*6 // 6 months
   };
   return conf;
 }

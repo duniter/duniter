@@ -35,6 +35,7 @@ program
   .option('--remotep <port>', 'Remote port others may use to contact this node')
   .option('--kmanagement <ALL|KEYS>', 'Define key management policy')
   .option('--kaccept <ALL|KEYS>', 'Define key acceptance policy')
+  .option('--amdaemon <ON|OFF>', 'ucoin is launched with a specific daemon helping to get other peers\' votes')
   .option('--amstart <timestamp>', 'First amendment generated date', parseInt)
   .option('--amfreq <timestamp>', 'Amendments frequency, in seconds', parseInt)
   .option('--udfreq <timestamp>', 'Universal Dividend frequency, in seconds', parseInt)
@@ -247,12 +248,13 @@ function overrideConf(conf) {
       pubkeys: program.kaccept
     },
     sync: {
+      AMDaemon: program.amdaemon,
       AMStart: program.amstart,
       AMFreq: program.amfreq,
       UDFreq: program.udfreq,
       UD0: program.ud0,
       UDPercent: program.udpercent,
-      Consensus: program.Consensus,
+      Consensus: program.consensus,
       MSExpires: program.msfreq
     }
   };
@@ -281,6 +283,7 @@ function overrideConf(conf) {
   //  - Voting % threshold: 2/3 of votes
   //  - Membership max. delay: 6 months
   conf.sync        = {
+    AMDaemon: config.sync.AMDaemon || conf.sync.AMDaemon,
     AMStart: config.sync.AMStart || conf.sync.AMStart,
     AMFreq: config.sync.AMFreq || conf.sync.AMFreq || 3600*24, // every day
     UDFreq: config.sync.UDFreq || conf.sync.UDFreq || 3600*24*30.4375, // every month

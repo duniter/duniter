@@ -175,6 +175,10 @@ module.exports.express = {
     // Init ALL services
     service.init(openpgp, currency, conf);
 
+    // Init Daemon
+    var daemon = require('./daemon');
+    daemon.init(conf);
+
     var pks   = require('../controllers/pks')(openpgp, currency, conf);
     var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
     var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
@@ -254,8 +258,8 @@ module.exports.express = {
       onLoaded('Either --remote4 or --remote6 must be given');
       return;
     }
-    if (!conf.sync.AMStart) {
-      onLoaded('--amstart is mandatory');
+    if (conf.sync.AMDaemon == "ON" && !conf.sync.AMStart) {
+      onLoaded('--amstart is mandatory when --amdaemon is set to ON');
       return;
     }
     // If the node's peering entry does not exist or is outdated,
@@ -303,13 +307,26 @@ module.exports.express = {
             function (signature, next) {
               signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
               PeeringService.persistPeering(raw2 + signature, module.exports.publicKey(), next);
-            }
+            },
           ], function (err) {
             next(err);
           });
         } else {
           next();
         }
+      },
+      function (next){
+        // Load services contexts
+        service.load(next);
+      },
+      function (next){
+        // Set peer's statut to UP
+        PeeringService.peer().status = 'UP';
+        PeeringService.peer().save(function (err) {
+          // Update it in memory
+          PeeringService.addPeer(PeeringService.peer());
+          next(err);
+        });
       },
       function (next) {
         if(conf.ipv4){
@@ -356,6 +373,11 @@ module.exports.express = {
           }
           next();
         });
+      },
+      function (next){
+        // Start autonomous contract daemon
+        daemon.start();
+        next();
       },
     ], function (err) {
       onLoaded(err, app);

@@ -161,6 +161,12 @@ module.exports.get = function (pgp, currency, conf) {
           next(err);
         });
       },
+      function (next){
+        var now = new Date().timestamp();
+        var daemon = require('../lib/daemon');
+        daemon.nextIn((amNext.generated - now)*1000);
+        next();
+      },
     ], done);
   };
 

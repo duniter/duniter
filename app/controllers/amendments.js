@@ -14,17 +14,12 @@ var VoteService       = service.Vote;
 var StrategyService   = service.Strategy;
 var PeeringService    = service.Peering;
 var SyncService       = service.Sync;
+var ContractService   = service.Contract;
 
 module.exports = function (pgp, currency, conf) {
 
-  this.promoted = function (req, res) {
-    async.waterfall([
-      function (next){
-        Amendment.current(next);
-      }
-    ], function (err, current) {
-      showAmendment(res, current);
-    });
+  this.promoted = this.current = function (req, res) {
+    showAmendment(res, ContractService.current());
   };
 
   this.promotedNumber = function (req, res) {
@@ -66,9 +61,6 @@ module.exports = function (pgp, currency, conf) {
       MerkleService.merkleDone(req, res, json);
     });
   };
-
-  // Retro-compatibility
-  this.current = this.promoted;
 
   this.viewAM = {
 
@@ -174,7 +166,7 @@ module.exports = function (pgp, currency, conf) {
           },
         ], function (err) {
           if(err){
-            alogger.log(new String(err));
+            alogger.warn(err);
           }
           // Promoted or not, vote is recorded
           res.end(JSON.stringify({

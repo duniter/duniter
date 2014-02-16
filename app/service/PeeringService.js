@@ -26,6 +26,53 @@ module.exports.get = function (pgp, currency, conf) {
   this.ascciiPubkey = (pgp && pgp.keyring.privateKeys[0]) ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
 
+  var peer = null;
+  var peers = {};
+
+  this.peer = function (newPeer) {
+    if (newPeer) {
+      peer = newPeer;
+    }
+    return peer;
+  };
+
+  this.peers = function (newPeers) {
+    if (newPeers) {
+      peers = newPeers;
+    }
+    return peers;
+  };
+
+  this.upPeers = function () {
+    return _(peers).filter(function (p) {
+      return p.status == Peer.status.UP;
+    });
+  };
+
+  this.addPeer = function (p) {
+    peers[p.fingerprint] = p;
+  };
+
+  this.load = function (done) {
+    var that = this;
+    async.waterfall([
+      function (next){
+        Peer.find({}, next);
+      },
+      function (dbPeers, next){
+        dbPeers.forEach(function(peer){
+          that.addPeer(peer);
+        });
+        Peer.getTheOne(that.cert.fingerprint, next);
+      },
+      function (selfPeer, next){
+        peer = selfPeer;
+        logger.debug('Loaded service: Peering');
+        next();
+      },
+    ], done);
+  };
+
   this.submit = function(signedPR, keyID, callback){
     var peer = new Peer();
     var that = this;
@@ -54,6 +101,7 @@ module.exports.get = function (pgp, currency, conf) {
           next('Fingerprint in peering entry ('+pubkey.fingerprint+') does not match signatory (0x' + keyID + ')');
           return;
         }
+        that.addPeer(peer);
         next(null, pubkey.raw);
       },
       function (pubkey, next){
@@ -104,6 +152,7 @@ module.exports.get = function (pgp, currency, conf) {
         peer.statusSigDate = status.sigDate;
       }
     ], function (err) {
+      peers[peer.fingerprint].status = status;
       callback(err, status, peer, wasStatus);
     });
   }

@@ -195,18 +195,9 @@ module.exports = function (pgp, currency, conf) {
   }
 
   this.peer = function (req, res) {
-    async.waterfall([
-      function (next){
-        Peer.getTheOne(that.cert.fingerprint, next);
-      },
-    ], function (err, found) {
-      if(err){
-        res.send(500, err);
-        return;
-      }
-      res.send(200, JSON.stringify(found.json(), null, "  "));
-    });
-  }
+    var p = PeeringService.peer();
+    p ? res.send(200, JSON.stringify(p.json(), null, "  ")) : res.send(500, 'Self peering was not found.');
+  };
 
   this.peersGet = function (req, res) {
     async.waterfall([

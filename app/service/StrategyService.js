@@ -13,69 +13,78 @@ var log4js     = require('log4js');
 var logger     = log4js.getLogger('amendment');
 
 // Services
-var KeyService  = service.Key;
-var SyncService = service.Sync;
+var KeyService      = service.Key;
+var SyncService     = service.Sync;
+var ContractService = service.Contract;
 
 module.exports.get = function (pgp, currency, conf) {
   
+  var fifo = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
+
   this.tryToPromote = function (am, done) {
-    async.waterfall([
-      function (next){
-        defaultPromotion(am, next);
-      },
-      function (decision, next){
-        if(decision){
-          am.promoted = true;
-          am.save(function (err) {
-            if(!err){
-              logger.info("Promoted Amendment #" + am.number + " with hash " + am.hash);
-              next(null);
-            }
-            else next(err);
-          })
-        }
-        else next(null)
-      },
-      function (next){
-        // Set new members as known keys
-        async.forEach(am.getNewMembers(), function(leaf, callback){
-          KeyService.setKnown(leaf, callback);
-        }, next);
-      },
-      function (next){
-        // Set new voters as known keys
-        async.forEach(am.getNewVoters(), function(leaf, callback){
-          KeyService.setKnown(leaf, callback);
-        }, next);
-      },
-      function (next){
-        // Set eligible memberships as current
-        Membership.getEligibleForAmendment(am.number - 1, next);
-      },
-      function (memberships, next) {
-        async.forEach(memberships, function(ms, callback){
-          ms.current = true;
-          ms.save(function (err) {
-            callback(err);
-          });
-        }, next);
-      },
-      function (next){
-        // Set eligible memberships as current
-        Voting.getEligibleForAmendment(am.number - 1, next);
-      },
-      function (votings, next) {
-        async.forEach(votings, function(voting, callback){
-          voting.current = true;
-          voting.save(function (err) {
-            callback(err);
-          });
-        }, next);
-      },
-      function (next){
-        SyncService.createNext(am, next);
-      },
-    ], done);
+    fifo.push(function (cb) {
+      async.waterfall([
+        function (next){
+          defaultPromotion(am, next);
+        },
+        function (decision, next){
+          if(decision){
+            am.promoted = true;
+            am.save(function (err) {
+              if(!err){
+                // Sets the promoted am as current in memory
+                ContractService.current(am);
+                logger.info("Promoted Amendment #" + am.number + " with hash " + am.hash);
+                next(null);
+              }
+              else next(err);
+            })
+          }
+          else next(null)
+        },
+        function (next){
+          // Set new members as known keys
+          async.forEach(am.getNewMembers(), function(leaf, callback){
+            KeyService.setKnown(leaf, callback);
+          }, next);
+        },
+        function (next){
+          // Set new voters as known keys
+          async.forEach(am.getNewVoters(), function(leaf, callback){
+            KeyService.setKnown(leaf, callback);
+          }, next);
+        },
+        function (next){
+          // Set eligible memberships as current
+          Membership.getEligibleForAmendment(am.number - 1, next);
+        },
+        function (memberships, next) {
+          async.forEach(memberships, function(ms, callback){
+            ms.current = true;
+            ms.save(function (err) {
+              callback(err);
+            });
+          }, next);
+        },
+        function (next){
+          // Set eligible memberships as current
+          Voting.getEligibleForAmendment(am.number - 1, next);
+        },
+        function (votings, next) {
+          async.forEach(votings, function(voting, callback){
+            voting.current = true;
+            voting.save(function (err) {
+              callback(err);
+            });
+          }, next);
+        },
+        function (next){
+          SyncService.createNext(am, next);
+        },
+      ], cb);
+    }, done);
   }
 
   return this;

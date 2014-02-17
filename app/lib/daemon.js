@@ -5,6 +5,7 @@ var fs         = require('fs');
 var async      = require('async');
 var path       = require('path');
 var mongoose   = require('mongoose');
+var Amendment  = mongoose.model('Amendment');
 var connectPgp = require('connect-pgp');
 var _          = require('underscore');
 var service    = require('../service');
@@ -22,6 +23,9 @@ function Daemon () {
   var PeeringService  = service.Peering;
   var ContractService = service.Contract;
   
+  // self reference, private scope
+  var daemon = this;
+
   var AMStart, AMFreq, enabled;
   var timeoutID, frequency;
   var asked = -1;
@@ -55,7 +59,7 @@ function Daemon () {
         throw new Error("Daemon not initialized.");
       }
       logger.debug("Daemon started.");
-      this.nextIn(0);
+      daemon.nextIn(0);
     }
   };
 
@@ -85,28 +89,26 @@ function Daemon () {
       function (next){
         // Asking votes for next
         if (current && now > current.generated + AMFreq) {
-          // logger.debug("New amendment shall be promoted");
-          async.forEach(PeeringService.upPeers(), function(peer, callback){
-            async.auto({
-              connect: function (cb){
-                vucoin(peer.getIPv4(), peer.getPort(), true, cb);
-              },
-              vote: ['connect', function (cb, results) {
-                var node = results.connect;
-                async.waterfall([
-                  function (next){
-                    node.ucs.amendment.vote(current.number + 1, next);
-                  },
-                  function (json, next){
-                    var raw = json.amendment.raw;
-                    var sig = json.signature;
-                    node.hdc.amendments.votes.post(raw + sig, next);
-                  },
-                ], function (err) {
-                  cb(err);
-                });
-              }]
-            }, callback);
+          var amNext = new Amendment({ generated: current.generated + AMFreq });
+          async.auto({
+            triggerSelfVote: function(callback){
+              // Case 1: just triggers self-vote
+              if (daemon.judges.timeForVote(amNext)) {
+                askVote(current, PeeringService.peer(), callback);
+                return;
+              }
+              callback();
+            },
+            triggerPeersVote: ['triggerSelfVote', function(callback){
+              if (daemon.judges.timeForAskingVotes(amNext)) {
+                // Case 2: triggers other peers' self-vote
+                async.forEach(PeeringService.upPeers(), function(peer, callback){
+                  askVote(current, peer, callback);
+                }, next);
+                return;
+              }
+              callback();
+            }],
           }, next);
         }
         else {
@@ -125,7 +127,41 @@ function Daemon () {
     });
   }
 
+  function askVote (current, peer, done) {
+    async.auto({
+      connect: function (cb){
+        vucoin(peer.getIPv4(), peer.getPort(), true, cb);
+      },
+      vote: ['connect', function (cb, results) {
+        var node = results.connect;
+        async.waterfall([
+          function (next){
+            node.ucs.amendment.vote(current.number + 1, next);
+          },
+          function (json, next){
+            var raw = json.amendment.raw;
+            var sig = json.signature;
+            node.hdc.amendments.votes.post(raw + sig, next);
+          },
+        ], function (err) {
+          cb(err);
+        });
+      }]
+    }, done);
+  }
+
   this.stop = function () {
     clearTimeout(timeoutID);
+  };
+
+  this.judges = {
+
+    timeForVote: function (amNext) {
+      return new Date().timestamp() >= amNext.generated;
+    },
+
+    timeForAskingVotes: function (amNext) {
+      return new Date().timestamp() >= amNext.generated + 60; // 1min later
+    }
   };
 }

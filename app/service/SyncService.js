@@ -651,7 +651,8 @@ module.exports.get = function (pgp, currency, conf) {
             Amendment.getTheOneToBeVoted(amNumber, next);
           },
           function (amNext, next){
-            if (now.timestamp() >= amNext.generated) {
+            var daemon = require('../lib/daemon');
+            if (daemon.judges.timeForVote(amNext)) {
 
               var privateKey = pgp.keyring.privateKeys[0];
               var cert = jpgp().certificate(this.ascciiPubkey);

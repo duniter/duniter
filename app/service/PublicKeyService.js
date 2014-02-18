@@ -10,52 +10,50 @@ var logger    = require('../lib/logger')('pubkey');
 // Services
 var KeyService = service.Key;
 
+var queue =
+
 module.exports.get = function (pgp, currency, conf) {
+  
+  var fifo = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
 
   /**
   * Tries to persist a public key given in ASCII-armored format.
   * Returns the database stored public key.
   */
-  this.submitPubkey = function(aaPubkey, aaSignature, callback) {
-    var pubkey;
-    async.waterfall([
-      function (next){
-        PublicKey.verify(aaPubkey, aaSignature, function (err, verified) {
-          next(err);
-        });
-      },
-      function (next) {
-        pubkey = new PublicKey({ raw: aaPubkey, signature: aaSignature });
-        pubkey.construct(next);
-      },
-      function (next) {
-        logger.debug('⬇ %s', pubkey.fingerprint);
-        if (conf.kaccept == "KEYS") {
-          KeyService.isKnown(pubkey.fingerprint, next);
-        } else {
-          next(null, true);
-        }
-      },
-      function (isKnown, next) {
-        if (!isKnown) {
-          next('Unknown key - rejected');
-          return;
-        }
-        // Known key: persist
-        PublicKey.persist(pubkey, function (err) {
-          next(err);
-        });
-      },
-      function (next) {
-        // If kmanagement == ALL, mark key as handled to handle key's transactions
-        KeyService.handleKey(pubkey.fingerprint, conf && conf.kmanagement == 'ALL', next);
-      },
-      function (next){
-        PublicKey.getTheOne(pubkey.fingerprint, next);
-      },
-    ], function (err, dbPubkey) {
-      callback(err, dbPubkey);
-    });
+  this.submitPubkey = function(pubkey, callback) {
+    fifo.push(function (cb) {
+      async.waterfall([
+        function (next) {
+          logger.debug('⬇ %s', pubkey.fingerprint);
+          if (conf.kaccept == "KEYS") {
+            KeyService.isKnown(pubkey.fingerprint, next);
+          } else {
+            next(null, true);
+          }
+        },
+        function (isKnown, next) {
+          if (!isKnown) {
+            next('Unknown key - rejected');
+            return;
+          }
+          // Known key: persist
+          PublicKey.persist(pubkey, function (err) {
+            next(err);
+          });
+        },
+        function (next) {
+          // If kmanagement == ALL, mark key as handled to handle key's transactions
+          KeyService.handleKey(pubkey.fingerprint, conf && conf.kmanagement == 'ALL', next);
+        },
+        function (next){
+          PublicKey.getTheOne(pubkey.fingerprint, next);
+        },
+      ], function (err, dbPubkey) {
+        cb(err, dbPubkey);
+      });
+    }, callback);
   };
 
   return this;

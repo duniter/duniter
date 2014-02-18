@@ -1,5 +1,6 @@
-var jpgp     = require('../lib/jpgp');
-var mongoose = require('mongoose');
+var jpgp      = require('../lib/jpgp');
+var async     = require('async');
+var mongoose  = require('mongoose');
 
 module.exports = {
 
@@ -182,6 +183,18 @@ module.exports = {
       callback('Keysign does not look like a PGP message');
       return;
     }
-    callback(null, req.body.keytext, req.body.keysign);
+    var PublicKey = mongoose.model('PublicKey');
+    var pubkey = null;
+    async.series({
+      verify: function (next){
+        PublicKey.verify(req.body.keytext, req.body.keysign, next);
+      },
+      build: function (next) {
+        pubkey = new PublicKey({ raw: req.body.keytext, signature: req.body.keysign });
+        pubkey.construct(next);
+      }
+    }, function (err) {
+      callback(err, pubkey);
+    });
   }
 }

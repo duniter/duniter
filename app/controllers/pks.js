@@ -75,13 +75,10 @@ module.exports = function (pgp, currency, conf) {
 
   this.add = function (req, res) {
     async.waterfall([
-      function (next){
-        ParametersService.getPubkey(req, next);
-      },
-      function (aaPubkey, aaSignature, next){
-        PublicKeyService.submitPubkey(aaPubkey, aaSignature, next);
-      }
-    ], function (err, pubkey) {
+      async.apply(ParametersService.getPubkey, req),
+      PublicKeyService.submitPubkey.bind(PublicKeyService)
+    ],
+    function (err, pubkey) {
       http.answer(res, 400, err, function () {
         res.send(200, JSON.stringify(pubkey.json()));
         if (!pubkey.propagated) {

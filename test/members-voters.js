@@ -18,6 +18,10 @@ console.log("Reading files & initializing...");
 
 server.database.init();
 
+var PublicKey = mongoose.model('PublicKey');
+var Membership = mongoose.model('Membership');
+var Voting = mongoose.model('Voting');
+
 var now   = new Date().timestamp();
 var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat");
 var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi");
@@ -188,6 +192,94 @@ var amendments = {
   }
 };
 
+function pksAdd (raw, sig) {
+  return function (done) {
+    var PubKeyService = require('../app/service').PublicKey;
+    var pubkey = new PublicKey({ raw: raw, signature: sig });
+    async.series([
+      pubkey.construct.bind(pubkey),
+      async.apply(PubKeyService.submitPubkey, pubkey)
+    ], function (err, res) {
+      done(err, { 
+        statusCode: 200,
+        text: JSON.stringify(res[1].json())
+      });
+    });
+  };
+}
+
+function join (signatory) {
+  return memberDo("JOIN", signatory);
+}
+
+function memberDo (action, signatory) {
+  return function (done) {
+    var SyncService = require('../app/service').Sync;
+    var ms = new Membership({
+      version: 1,
+      currency: currency,
+      issuer: signatory.fingerprint(),
+      membership: action,
+      sigDate: new Date(),
+      signature: ""
+    });
+    ms.hash = sha1(ms.getRawSigned()).toUpperCase();
+    async.series([
+      async.apply(SyncService.submit, ms)
+    ], function (err, res) {
+      if (!err) {
+        done(err, { 
+          statusCode: 200,
+          text: JSON.stringify(res[0].json())
+        });
+      } else {
+        console.warn(err);
+        done(err, { 
+          statusCode: 400
+        });
+      }
+    });
+  };
+}
+
+function voter (signatory, timestamp, fingerprint) {
+  var votingKey = fingerprint || signatory.fingerprint();
+  return voterDo(signatory, timestamp, votingKey);
+}
+
+function voterDo (signatory, timestamp, votingKey) {
+  var d = new Date();
+  d.setTime(timestamp*1000);
+  return function (done) {
+    var SyncService = require('../app/service').Sync;
+    var voting = new Voting({
+      version: 1,
+      currency: currency,
+      issuer: signatory.fingerprint(),
+      votingKey: votingKey,
+      sigDate: d,
+      signature: "" + d.toLocaleString()
+    });
+    voting.hash = sha1(voting.getRawSigned()).toUpperCase();
+    console.log(voting.hash);
+    async.series([
+      async.apply(SyncService.submitVoting, voting)
+    ], function (err, res) {
+      if (!err) {
+        done(err, { 
+          statusCode: 200,
+          text: JSON.stringify(res[0].json())
+        });
+      } else {
+        console.warn(err);
+        done(err, { 
+          statusCode: 400
+        });
+      }
+    });
+  };
+}
+
 var testCases = [
 
   /**************************
@@ -196,7 +288,7 @@ var testCases = [
 
   tester.verify(
     "Tobi's PUBKEY",
-    on.pksAdd(pubkeyTobi, pubkeyTobiSig),
+    pksAdd(pubkeyTobi, pubkeyTobiSig),
     is.expectedPubkey('2E69197FAB029D8669EF85E82457A1587CA0ED9C')
   ),
 
@@ -216,7 +308,7 @@ var testCases = [
 
   tester.verify(
     "Tobi joining",
-    on.join(tobi),
+    join(tobi),
     is.expectedMembership("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
 
@@ -231,19 +323,19 @@ var testCases = [
 
   tester.verify(
     "Cat joining",
-    on.join(cat),
+    join(cat),
     is.expectedMembership("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
   tester.verify(
     "Tobi voting",
-    on.setVoter(tobi),
+    voter(tobi, now + 1),
     is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
 
   tester.verify(
     "Cat voting",
-    on.setVoter(cat),
+    voter(cat, now + 1),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
@@ -271,7 +363,7 @@ var testCases = [
 
   tester.verify(
     "Tobi changing his voting key to same as Cat",
-    on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
+    voter(tobi, now + 2, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
@@ -281,7 +373,7 @@ var testCases = [
 
   tester.verify(
     "Tobi cancelling his voting key to same as Cat",
-    on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
+    voter(tobi, now + 3, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
     is.expectedHTTPCode(400)
   ),
 
@@ -313,7 +405,7 @@ var testCases = [
 
   tester.verify(
     "Tobi changing his voting key to same as Cat",
-    on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
+    voter(tobi, now + 4, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
@@ -356,7 +448,7 @@ var testCases = [
 
   tester.verify(
     "Tobi changing his voting back with his own key",
-    on.setVoter(tobi, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
+    voter(tobi, now + 5, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
     is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
 
@@ -388,13 +480,13 @@ var testCases = [
 
   tester.verify(
     "Tobi voting using Cat's key",
-    on.setVoter(tobi, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
+    voter(tobi, now + 6, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
   tester.verify(
     "Cat voting using Tobi's key",
-    on.setVoter(cat, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
+    voter(cat, now + 7, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
     is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
 
@@ -428,13 +520,13 @@ var testCases = [
 
   tester.verify(
     "Tobi voting using his own key (exchange again)",
-    on.setVoter(tobi),
+    voter(tobi, now + 8),
     is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
   ),
 
   tester.verify(
     "Cat voting using his own key (exchange again)",
-    on.setVoter(cat),
+    voter(cat, now + 9),
     is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
   ),
 
@@ -447,7 +539,7 @@ var testCases = [
 
   tester.verify(
     "Tobi voting using his own key - cancelling (exchange again cancelled)",
-    on.setVoter(tobi),
+    voter(tobi, now + 10),
     is.expectedHTTPCode(400)
   ),
   
@@ -468,6 +560,9 @@ var testCases = [
   testCurrentAmendment("Testing that current = AM6", amendments.AM6_voters_members),
   //----------------------------
 ];
+
+var nb = 29;
+// testCases.splice(nb, testCases.length - nb);
 
 function testMerkle (url, root) {
   return tester.verify(
@@ -534,7 +629,6 @@ before(function (done) {
 });
 
 describe('Testing: ', function(){
-
   testCases.forEach(function(testCase){
     it(testCase.label, function () {
       testCase.test();

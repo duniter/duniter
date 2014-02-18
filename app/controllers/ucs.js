@@ -90,7 +90,6 @@ module.exports = function (pgp, currency, conf) {
 
     ], function (err, recordedMS) {
       http.answer(res, 400, err, function () {
-        mlogger.debug('✔ %s %s', recordedMS.issuer, recordedMS.membership);
         res.end(JSON.stringify(recordedMS.json(), null, "  "));
       });
     });

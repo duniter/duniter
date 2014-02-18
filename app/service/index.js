@@ -9,13 +9,13 @@ function Service () {
   
   // Basic service, not requiring any configuration
   this.Key        = services.Key        = require("./KeyService");
-  this.Parameters = services.Parameters = require("./ParametersService");
   this.Merkle     = services.Merkle     = require("./MerkleService");
   this.HTTP       = services.HTTP       = require("./HTTPService");
   this.Merkle     = services.Merkle     = require("./MerkleService");
 
   this.init = function (pgp, currency, conf) {
     // Services requiring configuration
+    this.Parameters   = services.Parameters   = require("./ParametersService")(currency);
     this.PublicKey    = services.PublicKey    = require("./PublicKeyService").get(pgp, currency, conf);
     this.THT          = services.THT          = require("./THTService").get(pgp, currency, conf);
     this.Sync         = services.Sync         = require("./SyncService").get(pgp, currency, conf);

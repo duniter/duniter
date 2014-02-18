@@ -18,7 +18,7 @@ var Forward    = mongoose.model('Forward');
 var Status     = require('../models/statusMessage');
 var log4js     = require('log4js');
 var logger     = log4js.getLogger('sync');
-var mlogger    = log4js.getLogger('voting');
+var mlogger    = log4js.getLogger('membership');
 var vlogger    = log4js.getLogger('voting');
 
 // Services
@@ -190,65 +190,22 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   };
 
-  this.submit = function (signedEntry, done) {
+  this.submit = function (entry, done) {
     
     async.waterfall([
 
-      function (callback) {
-        if(signedEntry.indexOf('-----BEGIN') == -1){
-          callback('Signature not found in given Membership');
-          return;
-        }
-        callback();
-      },
-
-      // Check signature's key ID
-      function(callback){
-        var sig = signedEntry.substring(signedEntry.indexOf('-----BEGIN'));
-        var keyID = jpgp().signature(sig).issuer();
-        if(!(keyID && keyID.length == 16)){
-          callback('Cannot identify signature issuer`s keyID');
-          return;
-        }
-        callback(null, keyID);
-      },
-
-      // Looking for corresponding public key
-      function(keyID, callback){
-        PublicKey.getTheOne(keyID, function (err, pubkey) {
-          callback(err, pubkey);
-        });
+      function (next){
+        PublicKey.getTheOne(entry.issuer, next);
       },
 
       // Verify signature
       function(pubkey, callback){
-        var entry = new Membership();
         var previous;
         var current = null;
         var nowIsIgnored = false;
         var merkleOfNextMembers;
         var amNext;
         async.waterfall([
-          function (next){
-            entry.parse(signedEntry, next);
-          },
-          function (entry, next){
-            entry.verify(currency, next);
-          },
-          function (valid, next){
-            entry.verifySignature(pubkey.raw, next);
-          },
-          function (verified, next){
-            if(!verified){
-              next('Bad signature');
-              return;
-            }
-            if(pubkey.fingerprint != entry.issuer){
-              next('Fingerprint in Membership (' + entry.issuer + ') does not match signatory (' + pubkey.fingerprint + ')');
-              return;
-            }
-            next();
-          },
           function (next){
             Membership.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
           },
@@ -398,6 +355,7 @@ module.exports.get = function (pgp, currency, conf) {
             ], next);
           },
           function (membersActions, votersActions, next){
+            mlogger.debug('✔ %s %s', entry.issuer, entry.membership);
             async.waterfall([
               function (next){
                 updateMembers(amNext, membersActions, next);
@@ -421,65 +379,22 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   };
 
-  this.submitVoting = function (signedEntry, done) {
+  this.submitVoting = function (entry, done) {
     
     async.waterfall([
 
-      function (callback) {
-        if(signedEntry.indexOf('-----BEGIN') == -1){
-          callback('Signature not found in given Voting');
-          return;
-        }
-        callback();
-      },
-
-      // Check signature's key ID
-      function(callback){
-        var sig = signedEntry.substring(signedEntry.indexOf('-----BEGIN'));
-        var keyID = jpgp().signature(sig).issuer();
-        if(!(keyID && keyID.length == 16)){
-          callback('Cannot identify signature issuer`s keyID');
-          return;
-        }
-        callback(null, keyID);
-      },
-
-      // Looking for corresponding public key
-      function(keyID, callback){
-        PublicKey.getTheOne(keyID, function (err, pubkey) {
-          callback(err, pubkey);
-        });
+      function (next){
+        PublicKey.getTheOne(entry.issuer, next);
       },
 
       // Verify signature
       function(pubkey, callback){
-        var entry = new Voting();
         var current = null;
         var previous = null;
         var nowIsIgnored = false;
         async.waterfall([
           function (next){
-            entry.parse(signedEntry, next);
-          },
-          function (entry, next){
-            entry.verify(currency, next);
-          },
-          function (valid, next){
-            entry.verifySignature(pubkey.raw, next);
-          },
-          function (verified, next){
             vlogger.debug('⬇ %s\'s voting key -> %s', "0x" + entry.issuer.substr(32), entry.votingKey);
-            if(!verified){
-              next('Bad signature');
-              return;
-            }
-            if(pubkey.fingerprint != entry.issuer){
-              next('Fingerprint in Voting (' + entry.issuer + ') does not match signatory (' + pubkey.fingerprint + ')');
-              return;
-            }
-            next();
-          },
-          function (next){
             Voting.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
           },
           function (entries, next){
@@ -500,6 +415,7 @@ module.exports.get = function (pgp, currency, conf) {
             if (am) {
               var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
               if (am.generated > entryTimestamp) {
+                console.warn("%s > %s", am.generated, entryTimestamp);
                 next('Too late for this voting. Retry.');
                 return;
               }

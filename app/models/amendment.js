@@ -41,6 +41,35 @@ AmendmentSchema.methods = {
     fill(am, this);
     return am;
   },
+
+  copyTo: function (amTarget) {
+    var that = this;
+    [
+      "version",
+      "currency",
+      "number",
+      "generated",
+      "dividend",
+      "coinMinPower",
+      "nextVotes",
+      "previousHash",
+      "votersRoot",
+      "votersCount",
+      "votersChanges",
+      "membersRoot",
+      "membersCount",
+      "membersChanges",
+      "promoted",
+      "monetaryMass",
+      "selfGenerated",
+      "hash",
+      "created",
+      "updated"
+      ].forEach(function (prop) {
+        amTarget[prop] = that[prop];
+      });
+      return amTarget;
+  },
   
   json: function() {
     var that = this;

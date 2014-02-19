@@ -25,6 +25,7 @@ var ParametersService = service.Parameters;
 var THTService        = service.THT;
 var PeeringService    = service.Peering;
 var SyncService       = service.Sync;
+var ContractService   = service.Contract;
 
 module.exports = function (pgp, currency, conf) {
 
@@ -42,21 +43,9 @@ module.exports = function (pgp, currency, conf) {
   };
 
   this.amendmentCurrent = function (req, res) {
-    async.waterfall([
-      function (next){
-        Amendment.current(function (err, am) {
-          next(null, am ? am.number + 1 : 0);
-        });
-      },
-      function (amNumber, next){
-        Amendment.getTheOneToBeVoted(amNumber, next);
-      },
-    ], function (err, am) {
-      http.answer(res, 404, err, function () {
-        // Render the amendment
-        res.end(JSON.stringify(am.json(), null, "  "));
-      });
-    });
+    var am = ContractService.proposed();
+    req.params.amendment_number = ((am && am.number)  || 0).toString();
+    this.amendmentNext(req, res);
   };
 
   this.amendmentNext = function (req, res) {

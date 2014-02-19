@@ -18,9 +18,11 @@ console.log("Reading files & initializing...");
 
 server.database.init();
 
-var PublicKey = mongoose.model('PublicKey');
+var PublicKey  = mongoose.model('PublicKey');
 var Membership = mongoose.model('Membership');
-var Voting = mongoose.model('Voting');
+var Voting     = mongoose.model('Voting');
+var Vote       = mongoose.model('Vote');
+var Amendment  = mongoose.model('Amendment');
 
 var now   = new Date().timestamp();
 var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat");
@@ -261,7 +263,6 @@ function voterDo (signatory, timestamp, votingKey) {
       signature: "" + d.toLocaleString()
     });
     voting.hash = sha1(voting.getRawSigned()).toUpperCase();
-    console.log(voting.hash);
     async.series([
       async.apply(SyncService.submitVoting, voting)
     ], function (err, res) {
@@ -278,6 +279,53 @@ function voterDo (signatory, timestamp, votingKey) {
       }
     });
   };
+}
+
+function voteCurrent (signatory) {
+  return function (done) {
+    var ContractService = require('../app/service').Contract;
+    var am = ContractService.current();
+    voteAm(signatory, am, done);
+  };
+}
+
+function voteProposed (signatory, delay) {
+  return function (done) {
+    var ContractService = require('../app/service').Contract;
+    var am = ContractService.proposed();
+    voteAm(signatory, am, done, delay);
+  };
+}
+
+function voteAm (signatory, am, done, delay) {
+  var generatedPlusOne = am.generated + 1 + (delay || 0);
+  var sigDate = new Date();
+  sigDate.setTime(generatedPlusOne*1000);
+  var vote = new Vote({
+    issuer: signatory.fingerprint(),
+    basis: am.number,
+    signature: signatory.fingerprint() + am.number + now,
+    amendmentHash: sha1(am.getRaw()).toUpperCase(),
+    propagated: false,
+    selfGenerated: false,
+    sigDate: sigDate,
+  });
+  vote.amendment = am;
+  vote.hash = sha1(vote.getRawSigned()).toUpperCase();
+  var VoteService = require('../app/service').Vote;
+  VoteService.submit(vote, function (err) {
+    if (!err) {
+      done(err, { 
+        statusCode: 200,
+        text: JSON.stringify(vote.json())
+      });
+    } else {
+      console.warn(err);
+      done(err, { 
+        statusCode: 400
+      });
+    }
+  });
 }
 
 var testCases = [
@@ -345,13 +393,13 @@ var testCases = [
 
   tester.verify(
     "Voting AM0 should promote AM0 as genesis amendment",
-    tester.selfVote(0),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM0)
   ),
 
   tester.verify(
     "Tobi voting AM0 so he stays as a voter",
-    tester.voteCurrent(tobi),
+    voteCurrent(tobi),
     is.expectedSignedAmendment(amendments.AM0)
   ),
 
@@ -382,19 +430,19 @@ var testCases = [
   //-------- VOTING : AM1 ------
   tester.verify(
     "Voting AM1 should require 2 votes",
-    tester.vote(tobi),
+    voteProposed(tobi),
     is.expectedSignedAmendment(amendments.AM0_voters_members)
   ),
 
   tester.verify(
     "Voting AM1 should promote AM1 indentical to genesis AM",
-    tester.selfVote(1),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM0_voters_members)
   ),
 
   tester.verify(
     "Voting AM1 should require 2 votes",
-    tester.vote(tobi),
+    voteProposed(tobi),
     is.expectedSignedAmendment(amendments.AM0_voters_members)
   ),
 
@@ -421,13 +469,13 @@ var testCases = [
   //-------- VOTING : AM2 ------
   tester.verify(
     "Voting AM2 should promote AM2 (cat & tobi have same voting key)",
-    tester.selfVote(2),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM2_voters_members)
   ),
 
   tester.verify(
     "Voting AM2 should require 2 votes",
-    tester.vote(tobi),
+    voteProposed(tobi),
     is.expectedSignedAmendment(amendments.AM2_voters_members)
   ),
   
@@ -437,7 +485,7 @@ var testCases = [
   //-------- VOTING : AM3 ------
   tester.verify(
     "Voting AM3 directly should be possible, as one signature is required",
-    tester.selfVote(3),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM3_voters_members)
   ),
   
@@ -464,7 +512,7 @@ var testCases = [
   //-------- VOTING : AM4 ------
   tester.verify(
     "Voting AM4 directly should be possible, as one signature is required",
-    tester.selfVote(4),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM4_voters_members)
   ),
   
@@ -499,19 +547,19 @@ var testCases = [
   // However, Cat's uses its key to vote
   tester.verify(
     "Cat's voting: AM5 should require 2 votes",
-    tester.vote(cat),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM5_voters_members)
   ),
   tester.verify(
     "Tobi's voting: AM5 should require 2 votes",
-    tester.vote(tobi),
+    voteProposed(tobi),
     is.expectedSignedAmendment(amendments.AM5_voters_members)
   ),
 
   //-------- VOTING : AM5 ------
   tester.verify(
     "Voting AM5 directly should be possible, using 2 votes",
-    tester.selfVote(5),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM5_voters_members)
   ),
   
@@ -533,7 +581,7 @@ var testCases = [
   // However, Cat's uses its key to vote
   tester.verify(
     "Cat's voting: AM6 should require 2 votes and be same as AM5",
-    tester.vote(cat),
+    voteProposed(cat, 1),
     is.expectedSignedAmendment(amendments.AM5_voters_members)
   ),
 
@@ -546,14 +594,14 @@ var testCases = [
   //-------- VOTING : AM6 ------
   tester.verify(
     "Voting AM6 directly should be possible, using 2 votes",
-    tester.selfVote(6),
+    voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM6_voters_members)
   ),
 
   // Tobi's vote is required
   tester.verify(
     "Tobi's voting: AM6 should require 2 votes",
-    tester.vote(tobi),
+    voteProposed(tobi),
     is.expectedSignedAmendment(amendments.AM6_voters_members)
   ),
   
@@ -561,7 +609,7 @@ var testCases = [
   //----------------------------
 ];
 
-var nb = 29;
+var nb = 15;
 // testCases.splice(nb, testCases.length - nb);
 
 function testMerkle (url, root) {

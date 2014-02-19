@@ -10,130 +10,147 @@ var Peer      = mongoose.model('Peer');
 var Vote      = mongoose.model('Vote');
 var log4js    = require('log4js');
 var logger    = log4js.getLogger('vote');
+var alogger   = log4js.getLogger('amendment');
+var service   = require('./.');
+
+// Services
+var PeeringService  = service.Peering;
+var StrategyService = service.Strategy;
+var SyncService     = service.Sync;
 
 module.exports.get = function (pgp, currency, conf) {
+  
+  var fifo = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
 
-  this.submit = function(rawVote, peerFPR, callback) {
+  this.submit = function(vote, callback) {
     var that = this;
-    if(arguments.length == 2){
-      callback = peerFPR;
-      peerFPR = undefined;
-    }
-    var vote = new Vote();
-    async.waterfall([
-      function (next){
-        // Extract data
-        vote.parse(rawVote, next);
-      },
-      function (vote, next){
-        // Verify content and signature
-        vote.verify(currency, next);
-      },
-      function (verified, next){
-        logger.debug('⬇ %s for %s-%s', "0x" + vote.issuer.substr(32), vote.amendment.number, vote.amendment.hash);
-        Amendment.current(function (err, am) {
-          var currNumber = am ? parseInt(am.number) : -1;
-          var voteNumber = parseInt(vote.basis)
-          if(voteNumber > currNumber + 1){
-            next('Previous amendment not found, cannot record vote for amendment #' + vote.basis);
+    fifo.push(function (cb) {
+      async.waterfall([
+        function (next){
+          logger.debug('⬇ %s for %s-%s', "0x" + vote.issuer.substr(32), vote.amendment.number, vote.amendment.hash);
+          Amendment.current(function (err, am) {
+            var currNumber = am ? parseInt(am.number) : -1;
+            var voteNumber = parseInt(vote.basis)
+            if(voteNumber > currNumber + 1){
+              next('Previous amendment not found, cannot record vote for amendment #' + vote.basis);
+              return;
+            }
+            next();
+          });
+        },
+        function (next){
+          if (vote.amendment.generated > vote.sigDate.timestamp()) {
+            next('Cannot vote for future amendment');
             return;
           }
           next();
-        });
-      },
-      function (next){
-        if (vote.amendment.generated > vote.sigDate.timestamp()) {
-          next('Cannot vote for future amendment');
-          return;
-        }
-        next();
-      },
-      // Issuer is a voter
-      function (next){
-        vote.issuerIsVoter(next);
-      },
-      function (isVoter, next){
-        if(!isVoter && vote.amendment.number != 0){
-          next('Only voters may vote for amendments');
-          return;
-        }
-        next();
-      },
-      function (next){
-        if(parseInt(vote.basis) > 0){
-          // Check if previous votes tree matches
-          var pendingAm;
-          async.waterfall([
-            function (next){
-              vote.getAmendment(next);
-            },
-            function (am, next){
-              pendingAm = am;
-              Merkle.signaturesOfAmendment(pendingAm.number - 1, pendingAm.previousHash, function (err, merkle) {
-                next(err, merkle);
-              });
-            },
-            function (signaturesMerkle, next){
-              next(null, signaturesMerkle.leaves());
-            }
-          ], next);
-        } else {
-          // No previous votes exists for AM0, no need to check signatures
-          next(null, []);
-        }
-      },
-      function (signaturesMerkle, next) {
-        /* Update URLs:
-            - hdc/amendments/[AMENDMENT_ID]/self
-            - hdc/amendments/[AMENDMENT_ID]/signatures */
-        vote.saveAmendment(signaturesMerkle, next);
-      },
-      function (am, next){
-        // Find preceding vote of the issuer, for this amendment
-        Vote.find({ issuer: vote.issuer, basis: vote.basis, amendmentHash: am.hash }, next);
-      },
-      function (votes, next){
-        // Save vote
-        var voteEntity = vote;
-        var previousHash = voteEntity.hash;
-        if(votes.length > 0){
-          if(votes[0].sigDate >= voteEntity.sigDate){
-            next('This vote is not more recent than already recorded');
+        },
+        // Issuer is a voter
+        function (next){
+          vote.issuerIsVoter(next);
+        },
+        function (isVoter, next){
+          if(!isVoter && vote.amendment.number != 0){
+            next('Only voters may vote for amendments');
             return;
           }
-          voteEntity = votes[0];
-          previousHash = voteEntity.hash;
-          vote.copyValues(voteEntity);
-        }
-        voteEntity.save(function (err) {
-          next(err, voteEntity, previousHash, votes.length == 0);
-        });
-      },
-      function (voteEntity, previousHash, newAm, next){
-        voteEntity.getAmendment(function (err, am) {
-          next(null, am, voteEntity, previousHash, newAm);
-        })
-      },
-      function (am, voteEntity, previousHash, newAm, next) {
-        if(newAm){
-          /* Update Merkles for URLs:
-            - hdc/amendments/[AMENDMENT_ID]/voters
-            - hdc/amendments/[AMENDMENT_ID]/members */
-          am.updateMerkles(function (err) {
-            next(err, am, voteEntity, previousHash);
+          next();
+        },
+        function (next){
+          if(parseInt(vote.basis) > 0){
+            // Check if previous votes tree matches
+            var pendingAm;
+            async.waterfall([
+              function (next){
+                vote.getAmendment(next);
+              },
+              function (am, next){
+                pendingAm = am;
+                Merkle.signaturesOfAmendment(pendingAm.number - 1, pendingAm.previousHash, function (err, merkle) {
+                  next(err, merkle);
+                });
+              },
+              function (signaturesMerkle, next){
+                next(null, signaturesMerkle.leaves());
+              }
+            ], next);
+          } else {
+            // No previous votes exists for AM0, no need to check signatures
+            next(null, []);
+          }
+        },
+        function (signaturesMerkle, next) {
+          /* Update URLs:
+              - hdc/amendments/[AMENDMENT_ID]/self
+              - hdc/amendments/[AMENDMENT_ID]/signatures */
+          vote.saveAmendment(signaturesMerkle, next);
+        },
+        function (am, next){
+          // Find preceding vote of the issuer, for this amendment
+          Vote.find({ issuer: vote.issuer, basis: vote.basis, amendmentHash: am.hash }, next);
+        },
+        function (votes, next){
+          // Save vote
+          var voteEntity = vote;
+          var previousHash = voteEntity.hash;
+          if(votes.length > 0){
+            if(votes[0].sigDate >= voteEntity.sigDate){
+              next('This vote is not more recent than already recorded');
+              return;
+            }
+            voteEntity = votes[0];
+            previousHash = voteEntity.hash;
+            vote.copyValues(voteEntity);
+          }
+          voteEntity.save(function (err) {
+            next(err, voteEntity, previousHash, votes.length == 0);
+          });
+        },
+        function (voteEntity, previousHash, newAm, next){
+          voteEntity.getAmendment(function (err, am) {
+            next(null, am, voteEntity, previousHash, newAm);
+          })
+        },
+        function (am, voteEntity, previousHash, newAm, next) {
+          if(newAm){
+            /* Update Merkles for URLs:
+              - hdc/amendments/[AMENDMENT_ID]/voters
+              - hdc/amendments/[AMENDMENT_ID]/members */
+            am.updateMerkles(function (err) {
+              next(err, am, voteEntity, previousHash);
+            });
+          }
+          else next(null, am, voteEntity, previousHash);
+        },
+        function (am, voteEntity, previousHash, next) {
+          // Update signatures (hdc/amendments/votes/[AMENDMENT_ID])
+          Merkle.updateSignaturesOfAmendment(am, previousHash, vote.hash, function (err) {
+            next(err, am, voteEntity);
+          });
+        },
+        function (am, recordedVote, next) {
+          async.waterfall([
+            function (next){
+              SyncService.takeCountOfVote(recordedVote, function (err) {
+                next();
+              });
+            },
+            function (next){
+              // Promotion time
+              StrategyService.tryToPromote(am, next);
+            },
+          ], function (err, result) {
+            next(null, am, recordedVote);
+            // And vote is forwarded
+            if (!recordedVote.propagated) {
+              PeeringService.propagateVote(am, recordedVote);
+            }
           });
         }
-        else next(null, am, voteEntity, previousHash);
-      },
-      function (am, voteEntity, previousHash, next) {
-        // Update signatures (hdc/amendments/votes/[AMENDMENT_ID])
-        Merkle.updateSignaturesOfAmendment(am, previousHash, vote.hash, function (err) {
-          next(err, am, voteEntity);
-        });
-      },
-    ], function (err, am, vote) {
-      callback(err, am, vote);
-    });
+      ], cb);
+    }, callback);
   };
 
   this.votesIndex = function (onceDone) {

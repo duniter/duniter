@@ -23,6 +23,7 @@ var vlogger    = log4js.getLogger('voting');
 
 // Services
 var ParametersService = service.Parameters;
+var ContractService   = service.Contract;
 
 module.exports.get = function (pgp, currency, conf) {
 
@@ -158,6 +159,7 @@ module.exports.get = function (pgp, currency, conf) {
         amNext.votersRoot = amNext.votersRoot || "";
         amNext.hash = amNext.getRaw().hash();
         amNext.save(function (err) {
+          ContractService.proposed(amNext);
           next(err);
         });
       },
@@ -708,6 +710,7 @@ module.exports.get = function (pgp, currency, conf) {
         amNext.votersRoot = amNext.votersRoot || "";
         amNext.hash = amNext.getRaw().hash();
         amNext.save(function (err) {
+          ContractService.proposed(amNext);
           next(err);
         });
       },
@@ -839,6 +842,7 @@ module.exports.get = function (pgp, currency, conf) {
         amNext.nextVotes = Math.ceil((amNext.votersCount || 0) * conf.sync.Consensus);
         amNext.hash = amNext.getRaw().hash();
         amNext.save(function (err) {
+          ContractService.proposed(amNext);
           next(err);
         });
       },

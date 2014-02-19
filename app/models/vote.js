@@ -57,6 +57,14 @@ VoteSchema.methods = {
     return this;
   },
 
+  json: function () {
+    var that = this;
+    return {
+      signature: that.signature,
+      amendment: that.amendment.json()
+    };
+  },
+
   issuerIsMember: function(done) {
     var that = this;
     Amendment.current(function (err, current) {
@@ -221,6 +229,10 @@ VoteSchema.methods = {
       });
     });
     return this;
+  },
+
+  getRawSigned: function() {
+    return (this.amendment.getRaw() + this.signature).unix2dos();
   }
 };
 

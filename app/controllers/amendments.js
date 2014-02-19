@@ -4,7 +4,6 @@ var _         = require('underscore');
 var Amendment = mongoose.model('Amendment');
 var Merkle    = mongoose.model('Merkle');
 var log4js    = require('log4js');
-var alogger   = log4js.getLogger('amendment');
 var service   = require('../service');
 
 // Services
@@ -143,10 +142,8 @@ module.exports = function (pgp, currency, conf) {
         function (callback){
           ParametersService.getVote(req, callback);
         },
-        function (rawVote, peer, callback){
-          peer = peer.toUpperCase();
-          peer = peer.match(/^\w{40}$/) ? peer : undefined;
-          VoteService.submit(rawVote, peer, callback);
+        function (vote, callback){
+          VoteService.submit(vote, callback);
         }
       ], function (err, am, recordedVote) {
         if(err){
@@ -154,30 +151,11 @@ module.exports = function (pgp, currency, conf) {
           console.error(err);
           return;
         }
-        async.waterfall([
-          function (next){
-            SyncService.takeCountOfVote(recordedVote, function (err) {
-              next();
-            });
-          },
-          function (next){
-            // Promotion time
-            StrategyService.tryToPromote(am, next);
-          },
-        ], function (err) {
-          if(err){
-            alogger.warn(err);
-          }
-          // Promoted or not, vote is recorded
-          res.end(JSON.stringify({
-            amendment: am.json(),
-            signature: recordedVote.signature
-          }));
-          // And vote is forwarded
-          if (!recordedVote.propagated) {
-            PeeringService.propagateVote(am, recordedVote);
-          }
-        });
+        // Promoted or not, vote is recorded
+        res.end(JSON.stringify({
+          amendment: am.json(),
+          signature: recordedVote.signature
+        }));
       });
     }
   }

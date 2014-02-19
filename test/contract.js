@@ -510,6 +510,9 @@ for (var i = 5; i <= 12; i++) {
   testCases.push(testCase);
 });
 
+var nb = 10;
+// testCases.splice(nb, testCases.length - nb);
+
 function testMerkle (url, root) {
   return tester.verify(
     "merkle " + url,

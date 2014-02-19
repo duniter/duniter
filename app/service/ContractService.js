@@ -9,6 +9,7 @@ module.exports.get = function (currency, conf) {
 
   // Reference to currently promoted amendment
   var current;
+  var proposed;
 
   this.current = function (newValue) {
     if (newValue) {
@@ -17,11 +18,24 @@ module.exports.get = function (currency, conf) {
     return current;
   };
 
+  this.proposed = function (newValue) {
+    if (newValue) {
+      proposed = newValue;
+    }
+    return proposed;
+  };
+
   this.load = function (done) {
     async.waterfall([
       function (next){
         Amendment.current(function (err, am) {
           current = am;
+          next();
+        });
+      },
+      function (next){
+        Amendment.getTheOneToBeVoted(current ? current.number + 1 : 0, function (err, am) {
+          proposed = am;
           next();
         });
       },

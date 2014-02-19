@@ -26,150 +26,164 @@ var ParametersService = service.Parameters;
 var ContractService   = service.Contract;
 
 module.exports.get = function (pgp, currency, conf) {
+  
+  var fifoCreateNextAM = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
+  
+  var fifoMembershipOrVoting = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
+  
+  var fifoSelfVote = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
 
   this.createNext = function (am, done) {
-    var amNext = new Amendment();
-    var membersMerklePrev = [];
-    var votersMerklePrev = [];
-    var promoters = [];
-    async.waterfall([
-      function (next){
-        amNext.selfGenerated = true;
-        if (am) {
-          ["version", "currency", "membersRoot", "membersCount", "votersRoot", "votersCount", "monetaryMass"].forEach(function(property){
-            amNext[property] = am[property];
-          });
-          amNext.number = am.number + 1;
-          amNext.previousHash = am.hash;
-          amNext.generated = am.generated + conf.sync.AMFreq;
-          amNext.membersChanges = [];
-          amNext.votersChanges = [];
-        } else {
-          amNext.version = 1;
-          amNext.currency = currency;
-          amNext.number = 0;
-          amNext.generated = conf.sync.AMStart;
-          amNext.membersChanges = [];
-          amNext.membersRoot = "";
-          amNext.membersCount = 0;
-          amNext.votersChanges = [];
-          amNext.votersRoot = "";
-          amNext.votersCount = 0;
-          amNext.monetaryMass = 0;
-        }
-        amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.Consensus);
-        // Computes changes due to too old JOIN/ACTUALIZE
-        var exclusionDate = getExclusionDate(amNext);
-        Membership.getCurrentJoinOrActuOlderThan(exclusionDate, next);
-      },
-      function (membershipsToExclude, next){
-        var changes = [];
-        membershipsToExclude.forEach(function(ms){
-          changes.push("-" + ms.issuer);
-        });
-        changes.sort();
-        amNext.membersChanges = changes;
-        if (am) {
-          Merkle.membersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-            next(err, (merkle && merkle.leaves()) || []);
-          });
-        } else {
-          next(null, []);
-        }
-      },
-      function (leaves, next){
-        membersMerklePrev = leaves;
-        Merkle.membersWrittenForProposedAmendment(amNext.number, next);
-      },
-      function (merkle, next){
-        var leaves = membersMerklePrev;
-        // Remove from Merkle members not actualized
-        amNext.membersChanges.forEach(function(change){
-          var issuer = change.substring(1);
-          var index = leaves.indexOf(issuer);
-          if (~index) {
-            leaves.splice(index, 1);
+    fifoCreateNextAM.push(function (cb) {
+      var amNext = new Amendment();
+      var membersMerklePrev = [];
+      var votersMerklePrev = [];
+      var promoters = [];
+      async.waterfall([
+        function (next){
+          amNext.selfGenerated = true;
+          if (am) {
+            ["version", "currency", "membersRoot", "membersCount", "votersRoot", "votersCount", "monetaryMass"].forEach(function(property){
+              amNext[property] = am[property];
+            });
+            amNext.number = am.number + 1;
+            amNext.previousHash = am.hash;
+            amNext.generated = am.generated + conf.sync.AMFreq;
+            amNext.membersChanges = [];
+            amNext.votersChanges = [];
+          } else {
+            amNext.version = 1;
+            amNext.currency = currency;
+            amNext.number = 0;
+            amNext.generated = conf.sync.AMStart;
+            amNext.membersChanges = [];
+            amNext.membersRoot = "";
+            amNext.membersCount = 0;
+            amNext.votersChanges = [];
+            amNext.votersRoot = "";
+            amNext.votersCount = 0;
+            amNext.monetaryMass = 0;
           }
-        });
-        merkle.initialize(leaves);
-        amNext.membersRoot = merkle.root();
-        amNext.membersCount = leaves.length;
-        merkle.save(function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        if (am) {
-          Merkle.votersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-            next(err, (merkle && merkle.leaves()) || []);
+          amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.Consensus);
+          // Computes changes due to too old JOIN/ACTUALIZE
+          var exclusionDate = getExclusionDate(amNext);
+          Membership.getCurrentJoinOrActuOlderThan(exclusionDate, next);
+        },
+        function (membershipsToExclude, next){
+          var changes = [];
+          membershipsToExclude.forEach(function(ms){
+            changes.push("-" + ms.issuer);
           });
-        } else {
-          next(null, []);
-        }
-      },
-      function (leaves, next){
-        votersMerklePrev = leaves;
-        var maxDate = new Date();
-        // If it turns the contract is being voted for past amendments,
-        // maxDate should be considered as NOW
-        // Otherwise, maxDate is to be set as future amendment "GeneratedOn" datetime
-        maxDate.setTime(maxDate.getTime() + 1000); // 1 sec after
-        if (maxDate.timestamp() < amNext.generated) {
-          maxDate.setTime(amNext.generated*1000);
-        }
-        if (am) {
-          Vote.getForAmendment(am.number, am.hash, maxDate, next);
-        }
-        else {
-          next(null, []);
-        }
-      },
-      function (votes, next){
-        promoters = votes;
-        Merkle.votersWrittenForProposedAmendment(amNext.number, next);
-      },
-      function (merkle, next){
-        var voters = [];
-        promoters.forEach(function(vote){
-          // If voter has left, he is not to be taken in count now
-          if (am.votersChanges.indexOf('-' + vote.issuer) == -1) {
-            voters.push(vote.issuer);
+          changes.sort();
+          amNext.membersChanges = changes;
+          if (am) {
+            Merkle.membersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+              next(err, (merkle && merkle.leaves()) || []);
+            });
+          } else {
+            next(null, []);
           }
-        });
-        var nonVoters = _(votersMerklePrev).difference(voters);
-        nonVoters.forEach(function(leaver){
-          amNext.votersChanges.push('-' + leaver);
-        });
-        amNext.votersChanges.sort();
-        voters.sort();
-        merkle.initialize(voters);
-        amNext.votersRoot = merkle.root();
-        amNext.votersCount = voters.length;
-        merkle.save(function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        // Update UD
-        updateUniversalDividend(amNext, am, next);
-      },
-      function (next){
-        // Finally save proposed amendment
-        amNext.membersRoot = amNext.membersRoot || "";
-        amNext.votersRoot = amNext.votersRoot || "";
-        amNext.hash = amNext.getRaw().hash();
-        amNext.save(function (err) {
-          ContractService.proposed(amNext);
-          next(err);
-        });
-      },
-      function (next){
-        var now = new Date().timestamp();
-        var daemon = require('../lib/daemon');
-        daemon.nextIn((amNext.generated - now)*1000);
-        next();
-      },
-    ], done);
+        },
+        function (leaves, next){
+          membersMerklePrev = leaves;
+          Merkle.membersWrittenForProposedAmendment(amNext.number, next);
+        },
+        function (merkle, next){
+          var leaves = membersMerklePrev;
+          // Remove from Merkle members not actualized
+          amNext.membersChanges.forEach(function(change){
+            var issuer = change.substring(1);
+            var index = leaves.indexOf(issuer);
+            if (~index) {
+              leaves.splice(index, 1);
+            }
+          });
+          merkle.initialize(leaves);
+          amNext.membersRoot = merkle.root();
+          amNext.membersCount = leaves.length;
+          merkle.save(function (err) {
+            next(err);
+          });
+        },
+        function (next){
+          if (am) {
+            Merkle.votersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
+              next(err, (merkle && merkle.leaves()) || []);
+            });
+          } else {
+            next(null, []);
+          }
+        },
+        function (leaves, next){
+          votersMerklePrev = leaves;
+          var maxDate = new Date();
+          // If it turns the contract is being voted for past amendments,
+          // maxDate should be considered as NOW
+          // Otherwise, maxDate is to be set as future amendment "GeneratedOn" datetime
+          maxDate.setTime(maxDate.getTime() + 1000); // 1 sec after
+          if (maxDate.timestamp() < amNext.generated) {
+            maxDate.setTime(amNext.generated*1000);
+          }
+          if (am) {
+            Vote.getForAmendment(am.number, am.hash, maxDate, next);
+          }
+          else {
+            next(null, []);
+          }
+        },
+        function (votes, next){
+          promoters = votes;
+          Merkle.votersWrittenForProposedAmendment(amNext.number, next);
+        },
+        function (merkle, next){
+          var voters = [];
+          promoters.forEach(function(vote){
+            // If voter has left, he is not to be taken in count now
+            if (am.votersChanges.indexOf('-' + vote.issuer) == -1) {
+              voters.push(vote.issuer);
+            }
+          });
+          var nonVoters = _(votersMerklePrev).difference(voters);
+          nonVoters.forEach(function(leaver){
+            amNext.votersChanges.push('-' + leaver);
+          });
+          amNext.votersChanges.sort();
+          voters.sort();
+          merkle.initialize(voters);
+          amNext.votersRoot = merkle.root();
+          amNext.votersCount = voters.length;
+          merkle.save(function (err) {
+            next(err);
+          });
+        },
+        function (next){
+          // Update UD
+          updateUniversalDividend(amNext, am, next);
+        },
+        function (next){
+          // Finally save proposed amendment
+          amNext.membersRoot = amNext.membersRoot || "";
+          amNext.votersRoot = amNext.votersRoot || "";
+          amNext.hash = amNext.getRaw().hash();
+          amNext.save(function (err) {
+            ContractService.proposed(amNext);
+            next(err);
+          });
+        },
+        function (next){
+          var now = new Date().timestamp();
+          var daemon = require('../lib/daemon');
+          daemon.nextIn((amNext.generated - now)*1000);
+          next();
+        },
+      ], cb);
+    }, done);
   };
 
   this.takeCountOfVote = function (v, done) {
@@ -193,426 +207,430 @@ module.exports.get = function (pgp, currency, conf) {
   };
 
   this.submit = function (entry, done) {
-    
-    async.waterfall([
+    fifoMembershipOrVoting.push(function (cb) {
+      async.waterfall([
 
-      function (next){
-        PublicKey.getTheOne(entry.issuer, next);
-      },
+        function (next){
+          PublicKey.getTheOne(entry.issuer, next);
+        },
 
-      // Verify signature
-      function(pubkey, callback){
-        var previous;
-        var current = null;
-        var nowIsIgnored = false;
-        var merkleOfNextMembers;
-        var amNext;
-        async.waterfall([
-          function (next){
-            Membership.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
-          },
-          function (entries, next){
-            if (entries.length > 0) {
-              next('Already received membership');
-              return;
-            }
-            next();
-          },
-          function (next){
-            // var timestampInSeconds = parseInt(entry.sigDate.getTime()/1000, 10);
-            // Amendment.findPromotedPreceding(timestampInSeconds, next);
-            Amendment.current(function (err, am) {
-              next(null, am);
-            });
-          },
-          function (am, next){
-            if (am) {
-              var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
-              if (am.generated > entryTimestamp) {
-                next('Too late for this membership. Retry.');
+        // Verify signature
+        function(pubkey, callback){
+          var previous;
+          var current = null;
+          var nowIsIgnored = false;
+          var merkleOfNextMembers;
+          var amNext;
+          async.waterfall([
+            function (next){
+              Membership.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
+            },
+            function (entries, next){
+              if (entries.length > 0) {
+                next('Already received membership');
                 return;
               }
-              entry.amNumber = am.number;
-            } else {
-              entry.amNumber = -1;
-            }
-            Membership.getCurrent(entry.issuer, next);
-          },
-          function (currentlyRecorded, next){
-            current = currentlyRecorded;
-            // Case new is JOIN
-            if (entry.membership == 'JOIN') {
-              if (current && (current.membership == 'JOIN' || current.membership == 'ACTUALIZE')) {
-                next('Already joined');
-                return;
+              next();
+            },
+            function (next){
+              // var timestampInSeconds = parseInt(entry.sigDate.getTime()/1000, 10);
+              // Amendment.findPromotedPreceding(timestampInSeconds, next);
+              Amendment.current(function (err, am) {
+                next(null, am);
+              });
+            },
+            function (am, next){
+              if (am) {
+                var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
+                if (am.generated > entryTimestamp) {
+                  next('Too late for this membership. Retry.');
+                  return;
+                }
+                entry.amNumber = am.number;
+              } else {
+                entry.amNumber = -1;
               }
-            }
-            else if (entry.membership == 'ACTUALIZE' || entry.membership == 'LEAVE') {
-              if (!current || current.membership == 'LEAVE') {
-                next('Not a member currently');
-                return;
+              Membership.getCurrent(entry.issuer, next);
+            },
+            function (currentlyRecorded, next){
+              current = currentlyRecorded;
+              // Case new is JOIN
+              if (entry.membership == 'JOIN') {
+                if (current && (current.membership == 'JOIN' || current.membership == 'ACTUALIZE')) {
+                  next('Already joined');
+                  return;
+                }
               }
-            }
-            next();
-          },
-          function (next){
-            // Get already existing Membership for same amendment
-            Membership.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
-          },
-          function (entries, next){
-            if (entries.length > 1) {
-              next('Refused: already received more than one membership for next amendment.');
-              return;
-            } else if(entries.length > 0){
-              // Already existing membership for this AM : this membership and the previous for this AM
-              // are no more to be considered
-              entry.eligible = false;
-              previous = entries[0];
-              entries[0].eligible = false;
-              entries[0].save(function (err) {
-                nowIsIgnored = true;
+              else if (entry.membership == 'ACTUALIZE' || entry.membership == 'LEAVE') {
+                if (!current || current.membership == 'LEAVE') {
+                  next('Not a member currently');
+                  return;
+                }
+              }
+              next();
+            },
+            function (next){
+              // Get already existing Membership for same amendment
+              Membership.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
+            },
+            function (entries, next){
+              if (entries.length > 1) {
+                next('Refused: already received more than one membership for next amendment.');
+                return;
+              } else if(entries.length > 0){
+                // Already existing membership for this AM : this membership and the previous for this AM
+                // are no more to be considered
+                entry.eligible = false;
+                previous = entries[0];
+                entries[0].eligible = false;
+                entries[0].save(function (err) {
+                  nowIsIgnored = true;
+                  next(err);
+                });
+              } else {
+                next();
+              }
+            },
+            function (next){
+              // Saves entry
+              entry.propagated = false;
+              entry.save(function (err) {
                 next(err);
               });
-            } else {
-              next();
-            }
-          },
-          function (next){
-            // Saves entry
-            entry.propagated = false;
-            entry.save(function (err) {
-              next(err);
-            });
-          },
-          function (next){
-            Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
-          },
-          function (amendmentNext, next){
-            amNext = amendmentNext;
-            var currentVoting, previousVoting;
-            async.waterfall([
-              function (next) {
-                Voting.getCurrent(entry.issuer, next);
-              },
-              function (voting, next){
-                currentVoting = voting;
-                Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, function (err, votings) {
-                  next(err, (votings && votings[0]) || null);
-                });
-              },
-              function (voting, next){
-                previousVoting = voting;
-                // Impacts on changes
-                if (!nowIsIgnored) {
-                  deltas (entry.issuer, current, currentVoting, entry, null, exclusionDate, function (err, res) {
-                    next(err, {
-                      keyToAdd: res.Mdeltas.keyAdd,
-                      keyToRemove: res.Mdeltas.keyRemove
-                    }, {
-                      keyToAdd: res.Vdeltas.keyAdd,
-                      keyToRemove: res.Vdeltas.keyRemove
-                    });
+            },
+            function (next){
+              Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
+            },
+            function (amendmentNext, next){
+              amNext = amendmentNext;
+              var currentVoting, previousVoting;
+              async.waterfall([
+                function (next) {
+                  Voting.getCurrent(entry.issuer, next);
+                },
+                function (voting, next){
+                  currentVoting = voting;
+                  Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, function (err, votings) {
+                    next(err, (votings && votings[0]) || null);
                   });
-                }
-                else {
-                  // Cancelling previous
-                  var membersActions = {};
-                  var votersActions = {};
-                  var exclusionDate = getExclusionDate(amNext);
-                  async.waterfall([
-                    function (next) {
-                      // Unapply last changes
-                      deltas (entry.issuer, current, currentVoting, previous, previousVoting, exclusionDate, next);
-                    },
-                    function (res, next){
-                      _(membersActions).extend({
-                        keyToUnadd: res.Mdeltas.keyAdd,
-                        keyToUnleave: res.Mdeltas.keyRemove
-                      });
-                      _(votersActions).extend({
-                        keyToUnadd: res.Vdeltas.keyAdd,
-                        keyToUnleave: res.Vdeltas.keyRemove
-                      });
-                      next();
-                    },
-                    function (next){
-                      deltas (entry.issuer, current, currentVoting, null, null, exclusionDate, next);
-                    },
-                    function (res, next){
-                      _(membersActions).extend({
+                },
+                function (voting, next){
+                  previousVoting = voting;
+                  // Impacts on changes
+                  if (!nowIsIgnored) {
+                    deltas (entry.issuer, current, currentVoting, entry, null, exclusionDate, function (err, res) {
+                      next(err, {
                         keyToAdd: res.Mdeltas.keyAdd,
                         keyToRemove: res.Mdeltas.keyRemove
-                      });
-                      _(votersActions).extend({
+                      }, {
                         keyToAdd: res.Vdeltas.keyAdd,
                         keyToRemove: res.Vdeltas.keyRemove
                       });
-                      next();
-                    },
-                  ], function (err) {
-                    next(err, membersActions, votersActions);
-                  });
-                }
-              },
-            ], next);
-          },
-          function (membersActions, votersActions, next){
-            mlogger.debug('✔ %s %s', entry.issuer, entry.membership);
-            async.waterfall([
-              function (next){
-                updateMembers(amNext, membersActions, next);
-              },
-              function (next){
-                updateVoters(amNext, votersActions, next);
-              },
-              function (next) {
-                // Impacts on reason
-                // Impacts on tree
-                if (nowIsIgnored) {
-                  next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
-                  return;
-                }
-                else next(null, entry);
-              },
-            ], next);
-          },
-        ], callback);
-      }
-    ], done);
+                    });
+                  }
+                  else {
+                    // Cancelling previous
+                    var membersActions = {};
+                    var votersActions = {};
+                    var exclusionDate = getExclusionDate(amNext);
+                    async.waterfall([
+                      function (next) {
+                        // Unapply last changes
+                        deltas (entry.issuer, current, currentVoting, previous, previousVoting, exclusionDate, next);
+                      },
+                      function (res, next){
+                        _(membersActions).extend({
+                          keyToUnadd: res.Mdeltas.keyAdd,
+                          keyToUnleave: res.Mdeltas.keyRemove
+                        });
+                        _(votersActions).extend({
+                          keyToUnadd: res.Vdeltas.keyAdd,
+                          keyToUnleave: res.Vdeltas.keyRemove
+                        });
+                        next();
+                      },
+                      function (next){
+                        deltas (entry.issuer, current, currentVoting, null, null, exclusionDate, next);
+                      },
+                      function (res, next){
+                        _(membersActions).extend({
+                          keyToAdd: res.Mdeltas.keyAdd,
+                          keyToRemove: res.Mdeltas.keyRemove
+                        });
+                        _(votersActions).extend({
+                          keyToAdd: res.Vdeltas.keyAdd,
+                          keyToRemove: res.Vdeltas.keyRemove
+                        });
+                        next();
+                      },
+                    ], function (err) {
+                      next(err, membersActions, votersActions);
+                    });
+                  }
+                },
+              ], next);
+            },
+            function (membersActions, votersActions, next){
+              mlogger.debug('✔ %s %s', entry.issuer, entry.membership);
+              async.waterfall([
+                function (next){
+                  updateMembers(amNext, membersActions, next);
+                },
+                function (next){
+                  updateVoters(amNext, votersActions, next);
+                },
+                function (next) {
+                  // Impacts on reason
+                  // Impacts on tree
+                  if (nowIsIgnored) {
+                    next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
+                    return;
+                  }
+                  else next(null, entry);
+                },
+              ], next);
+            },
+          ], callback);
+        }
+      ], cb);
+    }, done);
   };
 
   this.submitVoting = function (entry, done) {
-    
-    async.waterfall([
+    fifoMembershipOrVoting.push(function (cb) {
+      async.waterfall([
 
-      function (next){
-        PublicKey.getTheOne(entry.issuer, next);
-      },
+        function (next){
+          PublicKey.getTheOne(entry.issuer, next);
+        },
 
-      // Verify signature
-      function(pubkey, callback){
-        var current = null;
-        var previous = null;
-        var nowIsIgnored = false;
-        async.waterfall([
-          function (next){
-            vlogger.debug('⬇ %s\'s voting key -> %s', "0x" + entry.issuer.substr(32), entry.votingKey);
-            Voting.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
-          },
-          function (entries, next){
-            if (entries.length > 0) {
-              next('Already received voting');
-              return;
-            }
-            next();
-          },
-          function (next){
-            // var timestampInSeconds = parseInt(entry.sigDate.getTime()/1000, 10);
-            // Amendment.findPromotedPreceding(timestampInSeconds, next);
-            Amendment.current(function (err, am) {
-              next(null, am);
-            });
-          },
-          function (am, next){
-            if (am) {
-              var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
-              if (am.generated > entryTimestamp) {
-                console.warn("%s > %s", am.generated, entryTimestamp);
-                next('Too late for this voting. Retry.');
+        // Verify signature
+        function(pubkey, callback){
+          var current = null;
+          var previous = null;
+          var nowIsIgnored = false;
+          async.waterfall([
+            function (next){
+              vlogger.debug('⬇ %s\'s voting key -> %s', "0x" + entry.issuer.substr(32), entry.votingKey);
+              Voting.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
+            },
+            function (entries, next){
+              if (entries.length > 0) {
+                next('Already received voting');
                 return;
               }
-              entry.amNumber = am.number;
-            } else {
-              entry.amNumber = -1;
-            }
-            Voting.getCurrent(entry.issuer, next);
-          },
-          function (currentlyRecorded, next){
-            current = currentlyRecorded;
-            async.waterfall([
-              function (next){
-                Merkle.membersWrittenForProposedAmendment(entry.amNumber + 1, next);
-              },
-              function (merkle, next){
-                if (merkle.leaves().indexOf(entry.issuer) == -1) {
-                  next('Only members may be voters');
-                  return;
-                }
-                next();
-              },
-            ], next);
-          },
-          function (next){
-            // Get already existing Voting for same amendment
-            Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
-          },
-          function (entries, next){
-            if (entries.length > 1) {
-              next('Refused: already received more than one voting for next amendment.');
-              return;
-            } else if(entries.length > 0){
-              // Already existing voting for this AM : this voting and the previous for this AM
-              // are no more to be considered
-              entry.eligible = false;
-              previous = entries[0];
-              entries[0].eligible = false;
-              entries[0].save(function (err) {
-                nowIsIgnored = true;
-                next(err);
-              });
-            } else {
               next();
-            }
-          },
-          function (next){
-            Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
-          },
-          function (amNext, next){
-            var currentMembership, eligibleMembership;
-            async.waterfall([
-              function (next) {
-                Membership.getCurrent(entry.issuer, next);
-              },
-              function (ms, next){
-                currentMembership = ms;
-                Membership.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, function (err, mss) {
-                  next(err, (mss && mss[0]) || null);
-                });
-              },
-              function (ms, next){
-                eligibleMembership = ms;
-                Vote.isVoter(entry.votingKey, next);
-              },
-              function (isVoter, next){
-                if (isVoter && current && current.votingKey == entry.votingKey) {
-                  next('Already used as voting key');
+            },
+            function (next){
+              // var timestampInSeconds = parseInt(entry.sigDate.getTime()/1000, 10);
+              // Amendment.findPromotedPreceding(timestampInSeconds, next);
+              Amendment.current(function (err, am) {
+                next(null, am);
+              });
+            },
+            function (am, next){
+              if (am) {
+                var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
+                if (am.generated > entryTimestamp) {
+                  console.warn("%s > %s", am.generated, entryTimestamp);
+                  next('Too late for this voting. Retry.');
                   return;
                 }
-                // Saves entry
-                entry.propagated = false;
-                entry.save(function (err) {
+                entry.amNumber = am.number;
+              } else {
+                entry.amNumber = -1;
+              }
+              Voting.getCurrent(entry.issuer, next);
+            },
+            function (currentlyRecorded, next){
+              current = currentlyRecorded;
+              async.waterfall([
+                function (next){
+                  Merkle.membersWrittenForProposedAmendment(entry.amNumber + 1, next);
+                },
+                function (merkle, next){
+                  if (merkle.leaves().indexOf(entry.issuer) == -1) {
+                    next('Only members may be voters');
+                    return;
+                  }
+                  next();
+                },
+              ], next);
+            },
+            function (next){
+              // Get already existing Voting for same amendment
+              Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
+            },
+            function (entries, next){
+              if (entries.length > 1) {
+                next('Refused: already received more than one voting for next amendment.');
+                return;
+              } else if(entries.length > 0){
+                // Already existing voting for this AM : this voting and the previous for this AM
+                // are no more to be considered
+                entry.eligible = false;
+                previous = entries[0];
+                entries[0].eligible = false;
+                entries[0].save(function (err) {
+                  nowIsIgnored = true;
                   next(err);
                 });
-              },
-              function (next){
-                if (!nowIsIgnored) {
-                  // May be updated
-                  deltas (entry.issuer, currentMembership, current, eligibleMembership, entry, null, function (err, res) {
-                    next(err, amNext, {
-                      keyToAdd: res.Vdeltas.keyAdd,
-                      keyToRemove: res.Vdeltas.keyRemove
-                    });
+              } else {
+                next();
+              }
+            },
+            function (next){
+              Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
+            },
+            function (amNext, next){
+              var currentMembership, eligibleMembership;
+              async.waterfall([
+                function (next) {
+                  Membership.getCurrent(entry.issuer, next);
+                },
+                function (ms, next){
+                  currentMembership = ms;
+                  Membership.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, function (err, mss) {
+                    next(err, (mss && mss[0]) || null);
                   });
-                }
-                else {
-                  // Cancelling previous
-                  var votersActions = {};
-                  async.waterfall([
-                    function (next) {
-                      // Unapply last changes
-                      deltas (entry.issuer, currentMembership, current, eligibleMembership, previous, null, next);
-                    },
-                    function (res, next){
-                      _(votersActions).extend({
-                        keyToUnadd: res.Vdeltas.keyAdd,
-                        keyToUnleave: res.Vdeltas.keyRemove
-                      });
-                      next();
-                    },
-                    function (next){
-                      deltas (entry.issuer, currentMembership, current, eligibleMembership, null, null, next);
-                    },
-                    function (res, next){
-                      _(votersActions).extend({
+                },
+                function (ms, next){
+                  eligibleMembership = ms;
+                  Vote.isVoter(entry.votingKey, next);
+                },
+                function (isVoter, next){
+                  if (isVoter && current && current.votingKey == entry.votingKey) {
+                    next('Already used as voting key');
+                    return;
+                  }
+                  // Saves entry
+                  entry.propagated = false;
+                  entry.save(function (err) {
+                    next(err);
+                  });
+                },
+                function (next){
+                  if (!nowIsIgnored) {
+                    // May be updated
+                    deltas (entry.issuer, currentMembership, current, eligibleMembership, entry, null, function (err, res) {
+                      next(err, amNext, {
                         keyToAdd: res.Vdeltas.keyAdd,
                         keyToRemove: res.Vdeltas.keyRemove
                       });
-                      next();
-                    },
-                  ], function (err) {
-                    next(err, amNext, votersActions);
-                  });
-                  return;
-                }
-              },
-              function (amNext, votersActions, next){
-                updateVoters(amNext, votersActions, next);
-              },
-              function (next) {
-                if (nowIsIgnored) {
-                  next('Cancelled: a previous voting was found, thus none of your voting requests will be taken for next amendment');
-                  return;
-                }
-                else next(null, entry);
-              },
-            ], next);
-          },
-        ], callback);
-      }
-    ], done);
+                    });
+                  }
+                  else {
+                    // Cancelling previous
+                    var votersActions = {};
+                    async.waterfall([
+                      function (next) {
+                        // Unapply last changes
+                        deltas (entry.issuer, currentMembership, current, eligibleMembership, previous, null, next);
+                      },
+                      function (res, next){
+                        _(votersActions).extend({
+                          keyToUnadd: res.Vdeltas.keyAdd,
+                          keyToUnleave: res.Vdeltas.keyRemove
+                        });
+                        next();
+                      },
+                      function (next){
+                        deltas (entry.issuer, currentMembership, current, eligibleMembership, null, null, next);
+                      },
+                      function (res, next){
+                        _(votersActions).extend({
+                          keyToAdd: res.Vdeltas.keyAdd,
+                          keyToRemove: res.Vdeltas.keyRemove
+                        });
+                        next();
+                      },
+                    ], function (err) {
+                      next(err, amNext, votersActions);
+                    });
+                    return;
+                  }
+                },
+                function (amNext, votersActions, next){
+                  updateVoters(amNext, votersActions, next);
+                },
+                function (next) {
+                  if (nowIsIgnored) {
+                    next('Cancelled: a previous voting was found, thus none of your voting requests will be taken for next amendment');
+                    return;
+                  }
+                  else next(null, entry);
+                },
+              ], next);
+            },
+          ], callback);
+        }
+      ], cb);
+    }, done);
   };
 
   this.getVote = function (amNumber, done) {
-    async.waterfall([
-      function (next){
-        Vote.getSelf(amNumber, next);
-      },
-      function (vote, next){
-        if (vote){
-          next(null, vote);
-          return;
-        }
-        // Tries to vote
-        var now = new Date();
-        async.waterfall([
-          function (next){
-            Amendment.getTheOneToBeVoted(amNumber, next);
-          },
-          function (amNext, next){
-            var daemon = require('../lib/daemon');
-            if (daemon.judges.timeForVote(amNext)) {
+    fifoSelfVote.push(function (cb) {
+      async.waterfall([
+        function (next){
+          Vote.getSelf(amNumber, next);
+        },
+        function (vote, next){
+          if (vote){
+            next(null, vote);
+            return;
+          }
+          // Tries to vote
+          var now = new Date();
+          async.waterfall([
+            function (next){
+              Amendment.getTheOneToBeVoted(amNumber, next);
+            },
+            function (amNext, next){
+              var daemon = require('../lib/daemon');
+              if (daemon.judges.timeForVote(amNext)) {
 
-              var privateKey = pgp.keyring.privateKeys[0];
-              var cert = jpgp().certificate(this.ascciiPubkey);
-              var raw = amNext.getRaw();
-              async.waterfall([
-                function (next){
-                  jpgp().signsDetached(raw, privateKey, next);
-                },
-                function (signature, next){
-                  var signedAm = raw + signature;
-                  vucoin(conf.ipv6 || conf.ipv4 || conf.dns, conf.port, false, false, function (err, node) {
-                    next(null, signedAm, node);
-                  });
-                },
-                function (vote, node, next){
-                  node.hdc.amendments.votes.post(vote, next);
-                },
-                function (json, next){
-                  var am = new Amendment(json.amendment);
-                  var issuer = cert.fingerprint;
-                  var hash = json.signature.unix2dos().hash();
-                  var basis = json.amendment.number;
-                  Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
-                },
-                function (vote, next){
-                  if (!vote) {
-                    next('Self vote was not found');
-                    return;
-                  }
-                  vote.selfGenerated = true;
-                  vote.save(function  (err) {
-                    next(err, vote);
-                  });
-                },
-              ], next);
-              return;
-            }
-            next('Not yet');
-          },
-        ], next);
-      },
-    ], done);
+                var privateKey = pgp.keyring.privateKeys[0];
+                var cert = jpgp().certificate(this.ascciiPubkey);
+                var raw = amNext.getRaw();
+                async.waterfall([
+                  function (next){
+                    jpgp().signsDetached(raw, privateKey, next);
+                  },
+                  function (signature, next){
+                    var signedAm = raw + signature;
+                    vucoin(conf.ipv6 || conf.ipv4 || conf.dns, conf.port, false, false, function (err, node) {
+                      next(null, signedAm, node);
+                    });
+                  },
+                  function (vote, node, next){
+                    node.hdc.amendments.votes.post(vote, next);
+                  },
+                  function (json, next){
+                    var am = new Amendment(json.amendment);
+                    var issuer = cert.fingerprint;
+                    var hash = json.signature.unix2dos().hash();
+                    var basis = json.amendment.number;
+                    Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
+                  },
+                  function (vote, next){
+                    if (!vote) {
+                      next('Self vote was not found');
+                      return;
+                    }
+                    vote.selfGenerated = true;
+                    vote.save(function  (err) {
+                      next(err, vote);
+                    });
+                  },
+                ], next);
+                return;
+              }
+              next('Not yet');
+            },
+          ], next);
+        },
+      ], cb);
+    }, done);
   };
 
   function getExclusionDate (amNext) {

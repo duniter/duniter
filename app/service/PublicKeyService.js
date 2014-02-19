@@ -10,8 +10,6 @@ var logger    = require('../lib/logger')('pubkey');
 // Services
 var KeyService = service.Key;
 
-var queue =
-
 module.exports.get = function (pgp, currency, conf) {
   
   var fifo = async.queue(function (task, callback) {

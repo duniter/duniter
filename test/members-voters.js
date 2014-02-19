@@ -27,11 +27,11 @@ var Amendment  = mongoose.model('Amendment');
 var now   = new Date().timestamp();
 var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat");
 var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi");
-// var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow");
+var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow");
 // var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
 
-// var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-// var pubkeySnowSig  = fs.readFileSync(__dirname + '/data/snow.pub.asc', 'utf8');
+var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
+var pubkeySnowSig  = fs.readFileSync(__dirname + '/data/snow.pub.asc', 'utf8');
 var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
 // var pubkeyCat2     = fs.readFileSync(__dirname + '/data/lolcat.pub2', 'utf8');
 var pubkeyCatSig   = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
@@ -70,7 +70,7 @@ var conf = {
     UDFrequence: 2, // Dividend every 5 seconds
     UD0: 10,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
-    Consensus: 1,
+    Consensus: 2/3,
     MSExpires: 3600*24*30 // 30 days
   }
 };
@@ -136,36 +136,6 @@ var amendments = {
     ]
   },
 
-  // TODO !
-
-  // // Cat's deciding not to vote anymore
-  // AM5_voters_members: {
-  //   nextVotes: 1,
-  //   membersCount: 2,
-  //   membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-  //   membersChanges: [
-  //   ],
-  //   votersCount: 1,
-  //   votersRoot: '2E69197FAB029D8669EF85E82457A1587CA0ED9C',
-  //   votersChanges: [
-  //     "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  //   ]
-  // },
-
-  // // Cat's finally deciding he prefers to vote
-  // AM6_voters_members: {
-  //   nextVotes: 2,
-  //   membersCount: 2,
-  //   membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-  //   membersChanges: [
-  //   ],
-  //   votersCount: 2,
-  //   votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-  //   votersChanges: [
-  //     "+C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  //   ]
-  // },
-
   // Awesome: exchanging voting keys does not produce any voters changes!
   AM5_voters_members: {
     nextVotes: 2,
@@ -191,6 +161,63 @@ var amendments = {
     votersChanges: [
       "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
     ]
+  },
+
+  // Tobi coming back as a voter, and Snow is joining & voting
+  AM7_voters_members: {
+    nextVotes: 2,
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    membersChanges: [
+      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
+    ],
+    votersCount: 3,
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    votersChanges: [
+      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
+    ]
+  },
+
+  // Cat's deciding not to vote anymore
+  AM8_voters_members: {
+    nextVotes: 2,
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    membersChanges: [
+    ],
+    votersCount: 3,
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    votersChanges: [
+    ]
+  },
+
+  // Cat hasn't voted: he was ejected from voters
+  AM9_voters_members: {
+    nextVotes: 2,
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    membersChanges: [
+    ],
+    votersCount: 2,
+    votersRoot: 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F',
+    votersChanges: [
+      "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+    ]
+  },
+
+  // Cat decide to come back voting
+  AM10_voters_members: {
+    nextVotes: 2,
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    membersChanges: [
+    ],
+    votersCount: 3,
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    votersChanges: [
+      "+C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+    ]
   }
 };
 
@@ -210,11 +237,13 @@ function pksAdd (raw, sig) {
   };
 }
 
-function join (signatory) {
-  return memberDo("JOIN", signatory);
+function join (signatory, timestamp) {
+  return memberDo("JOIN", signatory, timestamp);
 }
 
-function memberDo (action, signatory) {
+function memberDo (action, signatory, timestamp) {
+  var d = new Date();
+  d.setTime((timestamp || now)*1000);
   return function (done) {
     var SyncService = require('../app/service').Sync;
     var ms = new Membership({
@@ -222,7 +251,7 @@ function memberDo (action, signatory) {
       currency: currency,
       issuer: signatory.fingerprint(),
       membership: action,
-      sigDate: new Date(),
+      sigDate: d,
       signature: ""
     });
     ms.hash = sha1(ms.getRawSigned()).toUpperCase();
@@ -607,6 +636,151 @@ var testCases = [
   
   testCurrentAmendment("Testing that current = AM6", amendments.AM6_voters_members),
   //----------------------------
+
+  /****** AM7
+  *
+  * 1. Tobi coming back as a voter
+  * 2. Snow publish its pubkey, ask for joining & voting
+  */
+
+  tester.verify(
+    "Snow's PUBKEY",
+    pksAdd(pubkeySnow, pubkeySnowSig),
+    is.expectedPubkey('33BBFC0C67078D72AF128B5BA296CC530126F372')
+  ),
+
+  testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
+
+  tester.verify(
+    "Snow joining",
+    join(snow, now + 11),
+    is.expectedMembership("33BBFC0C67078D72AF128B5BA296CC530126F372")
+  ),
+
+  tester.verify(
+    "Snow coming as a voter",
+    voter(snow, now + 11),
+    is.expectedVoting("33BBFC0C67078D72AF128B5BA296CC530126F372")
+  ),
+
+  tester.verify(
+    "Tobi coming back as a voter",
+    voter(tobi, now + 11),
+    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
+  ),
+
+  tester.verify(
+    "Voting AM7 by cat",
+    voteProposed(cat),
+    is.expectedSignedAmendment(amendments.AM7_voters_members)
+  ),
+
+  testPromotedAmendment(amendments.AM7_voters_members, 7),
+  testPromotedAmendment(amendments.AM7_voters_members),
+  testCurrentAmendment(amendments.AM7_voters_members),
+
+  tester.verify(
+    "Confirming AM7 as new voter (tobi)",
+    voteCurrent(tobi),
+    is.expectedSignedAmendment(amendments.AM7_voters_members)
+  ),
+
+  tester.verify(
+    "Confirming AM7 as new voter (snow)",
+    voteCurrent(snow),
+    is.expectedSignedAmendment(amendments.AM7_voters_members)
+  ),
+
+  /****** AM8
+  *
+  * 1. Tobi & Snow will vote without Cat
+  */
+
+  testProposedAmendment('AM8 should be calm', amendments.AM8_voters_members),
+
+  tester.verify(
+    "Voting AM8 without Cat (tobi)",
+    voteProposed(tobi),
+    is.expectedSignedAmendment(amendments.AM8_voters_members)
+  ),
+
+  testPromotedAmendment(amendments.AM7_voters_members, 7),
+  testPromotedAmendment(amendments.AM7_voters_members),
+  testCurrentAmendment(amendments.AM7_voters_members),
+
+  tester.verify(
+    "Voting AM8 without Cat (snow)",
+    voteProposed(snow),
+    is.expectedSignedAmendment(amendments.AM8_voters_members)
+  ),
+
+  testPromotedAmendment(amendments.AM8_voters_members, 8),
+  testPromotedAmendment(amendments.AM8_voters_members),
+  testCurrentAmendment(amendments.AM8_voters_members),
+
+  /****** AM9
+  *
+  * 1. Tobi & Snow has voted AM8 without Cat
+  * 2. Cat still do not vote
+  * 3. Tobi & Snow will vote AM9 causing Cat's leaving as voter
+  */
+
+  testProposedAmendment('AM9 should see Cat leaving', amendments.AM9_voters_members),
+
+  tester.verify(
+    "Voting AM9 without Cat (tobi)",
+    voteProposed(tobi),
+    is.expectedSignedAmendment(amendments.AM9_voters_members)
+  ),
+
+  testPromotedAmendment(amendments.AM8_voters_members, 8),
+  testPromotedAmendment(amendments.AM8_voters_members),
+  testCurrentAmendment(amendments.AM8_voters_members),
+
+  tester.verify(
+    "Voting AM9 without Cat (snow)",
+    voteProposed(snow),
+    is.expectedSignedAmendment(amendments.AM9_voters_members)
+  ),
+
+  testCurrentAmendment(amendments.AM9_voters_members),
+  testPromotedAmendment(amendments.AM9_voters_members),
+  testPromotedAmendment(amendments.AM9_voters_members, 9),
+
+  /****** AM10
+  *
+  * 1. Tobi & Snow has voted AM9 without Cat, which has left as voter
+  * 2. Cat will ask to be a voter
+  * 3. Tobi & Snow will vote AM10 so Cat will be voter again
+  */
+
+  tester.verify(
+    "Cat coming back as a voter",
+    voter(cat, now + 12),
+    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
+  ),
+
+  testProposedAmendment('AM10 should see Cat coming back as voter', amendments.AM10_voters_members),
+
+  tester.verify(
+    "Voting AM10 (tobi)",
+    voteProposed(tobi),
+    is.expectedSignedAmendment(amendments.AM10_voters_members)
+  ),
+
+  testPromotedAmendment(amendments.AM9_voters_members, 9),
+  testPromotedAmendment(amendments.AM9_voters_members),
+  testCurrentAmendment(amendments.AM9_voters_members),
+
+  tester.verify(
+    "Voting AM10 (snow)",
+    voteProposed(snow),
+    is.expectedSignedAmendment(amendments.AM10_voters_members)
+  ),
+
+  testCurrentAmendment(amendments.AM10_voters_members),
+  testPromotedAmendment(amendments.AM10_voters_members),
+  testPromotedAmendment(amendments.AM10_voters_members, 10),
 ];
 
 var nb = 15;
@@ -634,7 +808,7 @@ function testCurrentAmendment (label, properties) {
 
 function testPromotedAmendment (properties, number) {
   return tester.verify(
-    "proposed current amendment",
+    "proposed amendment #" + number,
     on.doGet("/hdc/amendments/promoted" + (isNaN(number) ? "" : "/" + number)),
     is.expectedAmendment(properties)
   );

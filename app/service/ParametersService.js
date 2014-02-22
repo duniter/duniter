@@ -1,10 +1,11 @@
-var jpgp       = require('../lib/jpgp');
-var async      = require('async');
-var mongoose   = require('mongoose');
-var PublicKey  = mongoose.model('PublicKey');
-var Membership = mongoose.model('Membership');
-var Voting     = mongoose.model('Voting');
-var Vote       = mongoose.model('Vote');
+var jpgp        = require('../lib/jpgp');
+var async       = require('async');
+var mongoose    = require('mongoose');
+var PublicKey   = mongoose.model('PublicKey');
+var Membership  = mongoose.model('Membership');
+var Voting      = mongoose.model('Voting');
+var Vote        = mongoose.model('Vote');
+var Transaction = mongoose.model('Transaction');
 
 module.exports.get = function (currencyName) {
 
@@ -14,7 +15,34 @@ module.exports.get = function (currencyName) {
 function ParameterNamespace (currency) {
 
   this.getTransaction = function (req, callback) {
-    this.getTransactionFromRaw(req.body && req.body.transaction, req.body && req.body.signature, callback);
+    async.waterfall([
+      function (next){
+        this.getTransactionFromRaw(req.body && req.body.transaction, req.body && req.body.signature, next);
+      },
+      function (pubkey, signedTx, next) {
+        var tx = new Transaction({});
+        async.waterfall([
+          function (next){
+            tx.parse(signedTx, next);
+          },
+          function (tx, next){
+            tx.verify(currency, next);
+          },
+          function (verified, next){
+            if(!verified){
+              next('Bad document structure');
+              return;
+            }
+            next();
+          },
+          function (next){
+            tx.verifySignature(pubkey.raw, next);
+          }
+        ], function (err, verified) {
+          next(err, tx);
+        });
+      }
+    ], callback);
   };
 
   this.getTransactionFromRaw = function (transaction, signature, callback) {

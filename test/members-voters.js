@@ -18,11 +18,12 @@ console.log("Reading files & initializing...");
 
 server.database.init();
 
-var PublicKey  = mongoose.model('PublicKey');
-var Membership = mongoose.model('Membership');
-var Voting     = mongoose.model('Voting');
-var Vote       = mongoose.model('Vote');
-var Amendment  = mongoose.model('Amendment');
+var PublicKey   = mongoose.model('PublicKey');
+var Membership  = mongoose.model('Membership');
+var Voting      = mongoose.model('Voting');
+var Vote        = mongoose.model('Vote');
+var Amendment   = mongoose.model('Amendment');
+var Transaction = mongoose.model('Transaction');
 
 var now   = new Date().timestamp();
 var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat");
@@ -64,11 +65,12 @@ var conf = {
   pgppasswd: config.server.pgp.password,
   remoteipv4: '127.0.0.1',
   remoteport: 9106,
+  kmanagement: 'ALL',
   sync: {
     AMStart: now,
     AMFreq: 1, // Every second
-    UDFrequence: 2, // Dividend every 5 seconds
-    UD0: 10,
+    UDFreq: 2, // Dividend every 2 seconds
+    UD0: 145,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
     Consensus: 2/3,
     MSExpires: 3600*24*30 // 30 days
@@ -98,6 +100,21 @@ var amendments = {
     votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
   },
 
+  AM2: {
+    number: 2,
+    dividend: 145,
+    nextVotes: 1,
+    membersCount: 2,
+    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    membersChanges: [
+    ],
+    votersCount: 1,
+    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersChanges: [
+      "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+    ]
+  },
+
   AM2_voters_members: {
     nextVotes: 1,
     membersCount: 2,
@@ -120,6 +137,21 @@ var amendments = {
     votersCount: 1,
     votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
     votersChanges: [
+    ]
+  },
+
+  AM4: {
+    number: 4,
+    dividend: 145,
+    nextVotes: 2,
+    membersCount: 2,
+    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    membersChanges: [
+    ],
+    votersCount: 2,
+    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    votersChanges: [
+      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
     ]
   },
 
@@ -357,6 +389,81 @@ function voteAm (signatory, am, done, delay) {
   });
 }
 
+var txBySignatory = {};
+[cat, tobi, snow].forEach(function(signatory){
+  txBySignatory[signatory.fingerprint()] = {
+    number: -1,
+    hash: null,
+    coinNumber: -1
+  };
+});
+
+function issue (signatory, amount, amNumber, time) {
+  return function (done) {
+    var strAmount = "" + amount;
+    var pow = strAmount.length - 1;
+    var coins = [];
+    for(var i = 0; i < strAmount.length; i++) {
+      var c = strAmount[i];
+      var coin = {
+        issuer: signatory.fingerprint(),
+        number: ++txBySignatory[signatory.fingerprint()].coinNumber,
+        base: parseInt(c, 10),
+        power: pow--
+      };
+      coins.push([coin.issuer, coin.number, coin.base, coin.power, 'A', amNumber].join("-"));
+    };
+    var sigDate = new Date();
+    sigDate.setTime(time*1000);
+    var tx = new Transaction({
+      version: 1,
+      currency: currency,
+      sender: signatory.fingerprint(),
+      number: ++txBySignatory[signatory.fingerprint()].number,
+      previousHash: txBySignatory[signatory.fingerprint()].hash,
+      recipient: signatory.fingerprint(),
+      type: "ISSUANCE",
+      coins: coins,
+      comment: "Transaction #" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint(),
+      signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
+      propagated: false,
+      sigDate: sigDate,
+    });
+    tx.hash = sha1(tx.getRawSigned()).toUpperCase();
+    sendTransaction(tx, done);
+  };
+}
+
+function sendTransaction (tx, done) {
+  // console.log("---------------------");
+  // console.log(tx.getRaw());
+  var TransactionsService = require('../app/service').Transactions;
+  TransactionsService.processTx(tx, function (err) {
+    if (!err) {
+      txBySignatory[tx.sender].hash = tx.hash;
+      done(err, { 
+        statusCode: 200,
+        text: JSON.stringify({
+          signature: tx.signature,
+          transaction: tx.json(),
+          raw: tx.getRaw()
+        })
+      });
+    } else {
+      --txBySignatory[tx.sender].number;
+      tx.coins.forEach(function(c){
+        if (!c.match(/, /)) {
+          --txBySignatory[tx.sender].coinNumber;
+        }
+      });
+      console.warn(err);
+      done(err, { 
+        statusCode: 400
+      });
+    }
+  });
+}
+
 var testCases = [
 
   /**************************
@@ -493,22 +600,22 @@ var testCases = [
     //   "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
     // ]
 
-  testProposedAmendment('proposed amendment with Tobi voting with same key as Cat', amendments.AM2_voters_members),
+  testProposedAmendment('proposed amendment with Tobi voting with same key as Cat', amendments.AM2),
 
   //-------- VOTING : AM2 ------
   tester.verify(
     "Voting AM2 should promote AM2 (cat & tobi have same voting key)",
     voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM2_voters_members)
+    is.expectedSignedAmendment(amendments.AM2)
   ),
 
   tester.verify(
     "Voting AM2 should require 2 votes",
     voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM2_voters_members)
+    is.expectedSignedAmendment(amendments.AM2)
   ),
   
-  testCurrentAmendment("Testing that current = AM2", amendments.AM2_voters_members),
+  testCurrentAmendment("Testing that current = AM2", amendments.AM2),
   //----------------------------
 
   //-------- VOTING : AM3 ------
@@ -781,6 +888,58 @@ var testCases = [
   testCurrentAmendment(amendments.AM10_voters_members),
   testPromotedAmendment(amendments.AM10_voters_members),
   testPromotedAmendment(amendments.AM10_voters_members, 10),
+
+  /****** TRANSACTIONS
+  *
+  */
+
+  tester.verify(
+    "Issuing all coins of UD[0] (<=> AM[2])",
+    issue(tobi, 145, 2, now + 13),
+    is.expectedSignedTransaction()
+  ),
+
+  tester.verify(
+    "Trying to issue more coins of UD[0]",
+    issue(tobi, 1, 2, now + 13),
+    is.expectedHTTPCode(400)
+  ),
+
+  tester.verify(
+    "Issuing some coins of UD[1] (<=> AM[4])",
+    issue(tobi, 100, 4, now + 13),
+    is.expectedSignedTransaction()
+  ),
+
+  tester.verify(
+    "Trying to issue more coins of UD[1] (<=> AM[4])",
+    issue(tobi, 30, 4, now + 13),
+    is.expectedSignedTransaction()
+  ),
+
+  tester.verify(
+    "Trying to issue more coins of UD[1] (<=> AM[4])",
+    issue(tobi, 10, 4, now + 13),
+    is.expectedSignedTransaction()
+  ),
+
+  tester.verify(
+    "Trying to issue more coins of UD[1] (<=> AM[4])",
+    issue(tobi, 4, 4, now + 13),
+    is.expectedSignedTransaction()
+  ),
+
+  tester.verify(
+    "Trying to issue more coins of UD[1] (<=> AM[4])",
+    issue(tobi, 1, 4, now + 13),
+    is.expectedSignedTransaction()
+  ),
+
+  tester.verify(
+    "Trying to issue too much coins of UD[1] (<=> AM[4])",
+    issue(tobi, 1, 4, now + 13),
+    is.expectedHTTPCode(400)
+  ),
 ];
 
 var nb = 15;

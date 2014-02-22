@@ -14,24 +14,13 @@ var MerkleService = service.Merkle;
 
 module.exports.get = function (pgp, currency, conf) {
 
-  this.processTx = function (pubkey, signedTX, doFilter, callback) {
-    if (arguments.length == 3) {
+  this.processTx = function (tx, doFilter, callback) {
+    if (arguments.length == 2) {
       callback = doFilter;
       doFilter = true;
     }
-    var tx = new Transaction({});
     async.waterfall([
-      function (next){
-        tx.parse(signedTX, next);
-      },
-      function (tx, next){
-        tx.verify(currency, next);
-      },
-      function (verified, next){
-        if(!verified){
-          next('Bad document structure');
-          return;
-        }
+      function (next) {
         if (doFilter) {
           TxMemory.getTheOne(tx.sender, tx.number, tx.hash, function (err, found) {
             if(err) {
@@ -46,25 +35,19 @@ module.exports.get = function (pgp, currency, conf) {
               });
             } else {
               tx = found;
-              next('Transaction already processed', false, true);
+              next('Transaction already processed', true);
             }
           });
         } else {
           next();
         }
-      },
-      function (next){
-        tx.verifySignature(pubkey.raw, next);
       }
-    ], function (err, verified, alreadyProcessed) {
+    ], function (err, alreadyProcessed) {
       if(err && alreadyProcessed){
         callback(err, tx, alreadyProcessed);
       }
       else if(err){
         callback(err);
-      }
-      else if(!verified){
-        callback('Transaction\'s signature does not match');
       }
       else if(tx.type == 'ISSUANCE'){
         issue(tx, callback);

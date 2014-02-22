@@ -144,7 +144,20 @@ module.exports.tester = function (currency) {
   this.expectedAmendment = function (properties) {
     return successToJson(function (json) {
       isAmendment(json);
-      checkProperties(properties, json);
+      checkProperties(properties || {}, json);
+    });
+  };
+
+  /**
+  * Test that given result is a signed transaction matching given properties.
+  **/
+  this.expectedSignedTransaction = function (properties) {
+    return successToJson(function (json) {
+      json.should.have.property('signature');
+      json.should.have.property('raw');
+      json.should.have.property('transaction');
+      isTransaction(json.transaction);
+      checkProperties(properties || {}, json.transaction);
     });
   };
 
@@ -471,5 +484,45 @@ function isAmendment (json) {
   json.votersChanges.should.be.an.Array;
   json.votersChanges.forEach(function(change){
     change.should.match(/^(\+|-)[A-Z0-9]{40}$/);
+  });
+}
+
+function isTransaction (json) {
+  var mandatories = [
+    "version",
+    "currency",
+    "sender",
+    "number",
+    "recipient",
+    "type",
+    "coins",
+    "comment"
+  ];
+  json.should.have.properties(mandatories);
+  mandatories.forEach(function(prop){
+    should.exist(json[prop]);
+  });
+  var optional = [
+    "previousHash"
+  ];
+  json.should.have.properties(optional);
+  if (json.number > 0) {
+    json.should.have.property('previousHash');
+  }
+  // Numbers
+  json.version.should.be.a.Number.and.not.be.below(1);
+  json.number.should.be.a.Number.and.not.be.below(0);
+  // Strings
+  json.currency.should.be.a.String.and.not.be.empty;
+  json.type.should.be.a.String.and.not.be.empty.and.match(/^(ISSUANCE|FUSION|DIVISION|TRANSFER)$/);
+  if (json.previousHash) {
+    json.previousHash.should.be.a.String.and.match(/^[A-Z0-9]{40}$/);
+  }
+  json.coins.should.be.an.Array;
+  json.coins.forEach(function(coin){
+    coin.should.have.property("id");
+    coin.should.have.property("transaction_id");
+    coin.id.should.match(/^([A-Z\d]{40}-\d+-\d-\d+-(A|F|D)-\d+)$/);
+    coin.transaction_id.should.match(/^([A-Z\d]{40}-\d+)?$/);
   });
 }

@@ -239,12 +239,11 @@ module.exports = function (pgp, currency, conf) {
       function (next){
         ParametersService.getTransaction(req, next);
       },
-      function (extractedPubkey, signedTx, next) {
-        TransactionService.processTx(extractedPubkey, signedTx, next);
+      function (tx, next) {
+        TransactionService.processTx(tx, next);
       }
     ], function (err, tx, alreadyProcessed) {
       if(err){
-        console.error(err);
         res.send(400, err);
       }
       else{

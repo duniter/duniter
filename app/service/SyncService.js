@@ -643,7 +643,8 @@ module.exports.get = function (pgp, currency, conf) {
   function updateUniversalDividend (amNext, amCurrent, done) {
     // Time for Universal Dividend
     var delayPassedSinceRootAM = (amNext.generated - conf.sync.AMStart);
-    if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFrequence == 0) {
+    if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFreq == 0) {
+      logger.info("Next amendment with UD");
       async.waterfall([
         function (next) {
           Amendment.getPreviouslyPromotedWithDividend(next);

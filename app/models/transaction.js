@@ -167,10 +167,10 @@ TransactionSchema.methods = {
 
   json: function() {
     var obj = {
-      version: this.version,
+      version: parseInt(this.version, 10),
       currency: this.currency,
       sender: this.sender,
-      number: this.number,
+      number: parseInt(this.number, 10),
       previousHash: this.previousHash,
       recipient: this.recipient,
       type: this.type,

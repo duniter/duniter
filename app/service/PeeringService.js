@@ -498,78 +498,68 @@ module.exports.get = function (pgp, currency, conf) {
       function (next){
         ParametersService.getTransaction(req, next);
       },
-      function (extractedPubkey, signedTX, next) {
-        var tx = new Transaction({});
+      function (tx, next) {
         async.waterfall([
           function (next){
-            tx.parse(signedTX, next);
-          },
-          function (tx, next){
-            tx.verify(currency, next);
-          },
-          function (verified, next){
-            if(verified){
-              var fingerprints = [];
-              async.waterfall([
-                function (next){
-                  Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err, dbTX) {
-                    if(!err && dbTX){
-                      tx.propagated = true;
-                      dbTX.propagated = true;
-                      dbTX.save(function (err) {
-                        next(err);
-                      });
-                    }
-                    else next();
-                  });
-                },
-                function (next){
-                  Forward.findMatchingTransaction(tx, next);
-                },
-                function (fwds, next) {
-                  fwds.forEach(function (fwd) {
-                    fingerprints.push(fwd.from);
-                  });
-                  next();
-                },
-                function (next){
-                  THTEntry.findMatchingTransaction(tx, next);
-                },
-                function (entries, next){
-                  entries.forEach(function(entry){
-                    entry.hosters.forEach(function(host){
-                      fingerprints.push(host);
+            var fingerprints = [];
+            async.waterfall([
+              function (next){
+                Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err, dbTX) {
+                  if(!err && dbTX){
+                    tx.propagated = true;
+                    dbTX.propagated = true;
+                    dbTX.save(function (err) {
+                      next(err);
                     });
+                  }
+                  else next();
+                });
+              },
+              function (next){
+                Forward.findMatchingTransaction(tx, next);
+              },
+              function (fwds, next) {
+                fwds.forEach(function (fwd) {
+                  fingerprints.push(fwd.from);
+                });
+                next();
+              },
+              function (next){
+                THTEntry.findMatchingTransaction(tx, next);
+              },
+              function (entries, next){
+                entries.forEach(function(entry){
+                  entry.hosters.forEach(function(host){
+                    fingerprints.push(host);
                   });
-                  next();
-                },
-                function (next){
-                  async.waterfall([
-                    function (next){
-                      fingerprints.sort();
-                      async.forEach(_(fingerprints).uniq(), function(fpr, callback){
-                        if(fpr == that.cert.fingerprint){
-                          callback();
-                          return;
-                        }
-                        async.waterfall([
-                          function (next){
-                            Peer.find({ fingerprint: fpr}, next);
-                          },
-                          function (peers, next){
-                            if(peers.length > 0){
-                              sendTransaction(peers[0], tx, next);
-                            }
-                            else next();
-                          },
-                        ], callback);
-                      }, next);
-                    },
-                  ], next);
-                },
-              ], next);
-            }
-            else next('Transaction cannot be propagated as it is not valid');
+                });
+                next();
+              },
+              function (next){
+                async.waterfall([
+                  function (next){
+                    fingerprints.sort();
+                    async.forEach(_(fingerprints).uniq(), function(fpr, callback){
+                      if(fpr == that.cert.fingerprint){
+                        callback();
+                        return;
+                      }
+                      async.waterfall([
+                        function (next){
+                          Peer.find({ fingerprint: fpr}, next);
+                        },
+                        function (peers, next){
+                          if(peers.length > 0){
+                            sendTransaction(peers[0], tx, next);
+                          }
+                          else next();
+                        },
+                      ], callback);
+                    }, next);
+                  },
+                ], next);
+              },
+            ], next);
           }
         ], next);
       }

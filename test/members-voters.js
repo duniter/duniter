@@ -390,13 +390,45 @@ function voteAm (signatory, am, done, delay) {
 }
 
 var txBySignatory = {};
+var coins = {};
 [cat, tobi, snow].forEach(function(signatory){
+  // Transactions state
   txBySignatory[signatory.fingerprint()] = {
     number: -1,
     hash: null,
     coinNumber: -1
   };
+  // Coins state
+  coins[signatory.fingerprint()] = {};
 });
+
+function transfer (signatory, recipient, coinNumbers, time) {
+  return function (done) {
+    var txCoins = [];
+    coinNumbers.forEach(function(cNumber){
+      var coin = coins[signatory.fingerprint()][cNumber];
+      txCoins.push(coin.coinId + ', ' + signatory.fingerprint() + '-' + coin.txNumber);
+    });
+    var sigDate = new Date();
+    sigDate.setTime(time*1000);
+    var tx = new Transaction({
+      version: 1,
+      currency: currency,
+      sender: signatory.fingerprint(),
+      number: ++txBySignatory[signatory.fingerprint()].number,
+      previousHash: txBySignatory[signatory.fingerprint()].hash,
+      recipient: recipient.fingerprint(),
+      type: "TRANSFER",
+      coins: txCoins,
+      comment: "Transaction #" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint(),
+      signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
+      propagated: false,
+      sigDate: sigDate,
+    });
+    tx.hash = sha1(tx.getRawSigned()).toUpperCase();
+    sendTransaction(tx, done);
+  };
+}
 
 function issue (signatory, amount, amNumber, time) {
   return function (done) {
@@ -444,6 +476,28 @@ function sendTransaction (tx, done) {
   TransactionsService.processTx(tx, function (err) {
     if (!err) {
       txBySignatory[tx.sender].hash = tx.hash;
+      if (tx.type == "ISSUANCE") {
+        tx.coins.forEach(function(c){
+          var matches = c.match(/([A-Z\d]{40})-(\d+)-(\d)-(\d+)/);
+          coins[tx.recipient][matches[2]] = {
+            txNumber: tx.number,
+            coinId: c,
+            value: parseInt(matches[3]) * Math.pow(10, parseInt(matches[4]))
+          };
+        });
+      }
+      if (tx.type == "TRANSFER") {
+        tx.coins.forEach(function(c){
+          var matches = c.match(/([A-Z\d]{40})-(\d+)-(\d)-(\d+)/);
+          // coins[tx.sender][matches[2]] = undefined;
+          coins[tx.recipient][matches[2]] = {
+            txNumber: tx.number,
+            coinId: c,
+            value: parseInt(matches[3]) * Math.pow(10, parseInt(matches[4]))
+          };
+        });
+      }
+      // console.log(coins);
       done(err, { 
         statusCode: 200,
         text: JSON.stringify({
@@ -896,6 +950,9 @@ var testCases = [
   *
   */
 
+  // Coin 0 : 100
+  // Coin 1 : 40
+  // Coin 2 : 5
   tester.verify(
     "Issuing all coins of UD[0] (<=> AM[2])",
     issue(tobi, 145, 2, now + 13),
@@ -908,30 +965,35 @@ var testCases = [
     is.expectedHTTPCode(400)
   ),
 
+  // Coin 3 : 100
   tester.verify(
     "Issuing some coins of UD[1] (<=> AM[4])",
     issue(tobi, 100, 4, now + 13),
     is.expectedSignedTransaction()
   ),
 
+  // Coin 4 : 30
   tester.verify(
     "Trying to issue more coins of UD[1] (<=> AM[4])",
     issue(tobi, 30, 4, now + 13),
     is.expectedSignedTransaction()
   ),
 
+  // Coin 5 : 10
   tester.verify(
     "Trying to issue more coins of UD[1] (<=> AM[4])",
     issue(tobi, 10, 4, now + 13),
     is.expectedSignedTransaction()
   ),
 
+  // Coin 6 : 4
   tester.verify(
     "Trying to issue more coins of UD[1] (<=> AM[4])",
     issue(tobi, 4, 4, now + 13),
     is.expectedSignedTransaction()
   ),
 
+  // Coin 7 : 1
   tester.verify(
     "Trying to issue more coins of UD[1] (<=> AM[4])",
     issue(tobi, 1, 4, now + 13),
@@ -947,6 +1009,18 @@ var testCases = [
   tester.verify(
     "Trying to issue value of 0",
     issue(tobi, 0, 6, now + 13),
+    is.expectedHTTPCode(400)
+  ),
+
+  tester.verify(
+    "Tobi transfering 15 to Cat",
+    transfer(tobi, cat, [5,6,7], now + 14),
+    is.expectedSignedTransaction()
+  ),
+
+  tester.verify(
+    "Tobi transfering 15 to Cat",
+    transfer(tobi, cat, [5,6,7], now + 14),
     is.expectedHTTPCode(400)
   ),
 ];

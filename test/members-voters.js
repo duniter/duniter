@@ -405,13 +405,16 @@ function issue (signatory, amount, amNumber, time) {
     var coins = [];
     for(var i = 0; i < strAmount.length; i++) {
       var c = strAmount[i];
-      var coin = {
-        issuer: signatory.fingerprint(),
-        number: ++txBySignatory[signatory.fingerprint()].coinNumber,
-        base: parseInt(c, 10),
-        power: pow--
-      };
-      coins.push([coin.issuer, coin.number, coin.base, coin.power, 'A', amNumber].join("-"));
+      var base = parseInt(c, 10);
+      if (base > 0 || strAmount.length == 1) { //strAmount to allow value == 0
+        var coin = {
+          issuer: signatory.fingerprint(),
+          number: ++txBySignatory[signatory.fingerprint()].coinNumber,
+          base: parseInt(c, 10),
+          power: pow--
+        };
+        coins.push([coin.issuer, coin.number, coin.base, coin.power, 'A', amNumber].join("-"));
+      }
     };
     var sigDate = new Date();
     sigDate.setTime(time*1000);
@@ -938,6 +941,12 @@ var testCases = [
   tester.verify(
     "Trying to issue too much coins of UD[1] (<=> AM[4])",
     issue(tobi, 1, 4, now + 13),
+    is.expectedHTTPCode(400)
+  ),
+
+  tester.verify(
+    "Trying to issue value of 0",
+    issue(tobi, 0, 6, now + 13),
     is.expectedHTTPCode(400)
   ),
 ];

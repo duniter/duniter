@@ -150,6 +150,9 @@ module.exports.get = function (pgp, currency, conf) {
           }
           var err = null;
           newCoins.forEach(function (coin) {
+            if (!err && coin.base == 0) {
+              err = 'Coin base must be a value between 1 and 9';
+            }
             if(!err && coin.number != ++lastNum){
               err = 'Bad transaction: coins do not have a good sequential numerotation';
             }
@@ -537,6 +540,9 @@ module.exports.get = function (pgp, currency, conf) {
             isDivisionCoin = isDivisionCoin && !coin.transaction;
             if (isDivisionCoin) {
               divisionCoins.push(coin);
+            }
+            if (!err && coin.base == 0) {
+              err = 'Coins base must be a value between 1 and 9';
             }
             if(!err && isDivisionCoin && coin.number != ++lastNum){
               err = 'Bad transaction: coins do not have a good sequential numerotation';

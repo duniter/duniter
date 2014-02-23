@@ -60,6 +60,13 @@ TransactionSchema.methods = {
     }
     fill(this, tx);
     this.hash = sha1(rawTX).toUpperCase();
+    if (!tx.error) {
+      this.getCoins().forEach(function(coin){
+        if (coin.base == 0) {
+          tx.error = "A coin must have a strictly positive basis";
+        }
+      });
+    }
     callback(tx.error, this);
   },
 

@@ -65,27 +65,8 @@ VoteSchema.methods = {
     };
   },
 
-  issuerIsMember: function(done) {
-    var that = this;
-    Amendment.current(function (err, current) {
-      if(err){
-        // No amendmennt, thus no member
-        done(null, false);
-        return;
-      }
-      async.waterfall([
-        function (next){
-          Merkle.membersWrittenForAmendment(current.number, current.hash, next);
-        },
-        function (membersMerkle, next){
-          next(null, ~membersMerkle.leaves().indexOf(that.issuer));
-        }
-      ], done);
-    });
-  },
-
   issuerIsVoter: function(done) {
-    Vote.isVoter(this.issuer, done);
+    Amendment.isVoter(this.issuer, this.amendment.number, done);
   },
   
   parse: function(rawVote, rawPubkey, callback) {
@@ -234,24 +215,6 @@ VoteSchema.methods = {
   getRawSigned: function() {
     return (this.amendment.getRaw() + this.signature).unix2dos();
   }
-};
-
-VoteSchema.statics.isVoter = function (key, done) {
-  Amendment.current(function (err, current) {
-    if(err){
-      // No amendmennt, thus no member
-      done(null, false);
-      return;
-    }
-    async.waterfall([
-      function (next){
-        Merkle.votersWrittenForAmendment(current.number, current.hash, next);
-      },
-      function (votersMerkle, next){
-        next(null, ~votersMerkle.leaves().indexOf(key));
-      }
-    ], done);
-  });
 };
 
 VoteSchema.statics.getForAmendment = function (number, hash, maxDate, done) {

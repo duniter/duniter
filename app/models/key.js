@@ -7,6 +7,10 @@ var KeySchema = new Schema({
   fingerprint: { type: String, unique: true },
   seen: { type: Boolean, default: false },
   managed: { type: Boolean, default: false },
+  member: { type: Boolean, default: false },
+  voter: { type: Boolean, default: false },
+  proposedMember: { type: Boolean, default: false },
+  proposedVoter: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -96,6 +100,70 @@ KeySchema.statics.isManaged = function(fingerprint, done){
     done(null, keys.length == 1);
   });
 }
+
+KeySchema.statics.getMembers = function(done){
+  Key.find({ member: true }, done);
+};
+
+KeySchema.statics.getVoters = function(done){
+  Key.find({ voter: true }, done);
+};
+
+KeySchema.statics.getProposedMembers = function(done){
+  Key.find({ proposedMember: true }, done);
+};
+
+KeySchema.statics.getProposedVoters = function(done){
+  Key.find({ proposedVoter: true }, done);
+};
+
+KeySchema.statics.addMember = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { member: true }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.addVoter = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { voter: true }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.addProposedMember = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { proposedMember: true }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.addProposedVoter = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { proposedVoter: true }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.removeMember = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { member: false }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.removeVoter = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { voter: false }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.removeProposedMember = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { proposedMember: false }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.removeProposedVoter = function(fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { proposedVoter: false }, function (err) {
+    done(err);
+  });
+};
 
 function updateSeenMerkle (key, done) {
   async.waterfall([

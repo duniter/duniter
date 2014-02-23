@@ -42,9 +42,8 @@ module.exports.get = function (pgp, currency, conf) {
   this.createNext = function (am, done) {
     fifoCreateNextAM.push(function (cb) {
       var amNext = new Amendment();
-      var membersMerklePrev = [];
-      var votersMerklePrev = [];
-      var promoters = [];
+      var leavingMembers = [];
+      var currentVoters = [];
       async.waterfall([
         function (next){
           amNext.selfGenerated = true;
@@ -82,46 +81,39 @@ module.exports.get = function (pgp, currency, conf) {
           });
           changes.sort();
           amNext.membersChanges = changes;
-          if (am) {
-            Merkle.membersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-              next(err, (merkle && merkle.leaves()) || []);
-            });
-          } else {
-            next(null, []);
-          }
+          Key.getMembers(next);
         },
-        function (leaves, next){
-          membersMerklePrev = leaves;
-          Merkle.membersWrittenForProposedAmendment(amNext.number, next);
-        },
-        function (merkle, next){
-          var leaves = membersMerklePrev;
+        function (currentMembers, next){
+          var leaves = [];
+          currentMembers.forEach(function(member){
+            leaves.push(member.fingerprint);
+          });
+          leaves.sort();
           // Remove from Merkle members not actualized
           amNext.membersChanges.forEach(function(change){
             var issuer = change.substring(1);
             var index = leaves.indexOf(issuer);
             if (~index) {
               leaves.splice(index, 1);
+              leavingMembers.push(issuer);
             }
           });
+          var merkle = new Merkle();
           merkle.initialize(leaves);
           amNext.membersRoot = merkle.root();
           amNext.membersCount = leaves.length;
-          merkle.save(function (err) {
-            next(err);
+          async.forEach(leavingMembers, function(member, callback){
+            Key.removeProposedMember(member, callback);
+          }, next);
+        },
+        function (next) {
+          Key.getVoters(next);
+        },
+        function (voters, next){
+          currentVoters = [];
+          voters.forEach(function(voter){
+            currentVoters.push(voter.fingerprint);
           });
-        },
-        function (next){
-          if (am) {
-            Merkle.votersWrittenForAmendment(am.number, am.hash, function (err, merkle) {
-              next(err, (merkle && merkle.leaves()) || []);
-            });
-          } else {
-            next(null, []);
-          }
-        },
-        function (leaves, next){
-          votersMerklePrev = leaves;
           var maxDate = new Date();
           // If it turns the contract is being voted for past amendments,
           // maxDate should be considered as NOW
@@ -138,29 +130,27 @@ module.exports.get = function (pgp, currency, conf) {
           }
         },
         function (votes, next){
-          promoters = votes;
-          Merkle.votersWrittenForProposedAmendment(amNext.number, next);
-        },
-        function (merkle, next){
           var voters = [];
-          promoters.forEach(function(vote){
+          votes.forEach(function(vote){
             // If voter has left, he is not to be taken in count now
             if (am.votersChanges.indexOf('-' + vote.issuer) == -1) {
               voters.push(vote.issuer);
             }
           });
-          var nonVoters = _(votersMerklePrev).difference(voters);
+          voters.sort();
+          var nonVoters = _(currentVoters).difference(voters);
           nonVoters.forEach(function(leaver){
             amNext.votersChanges.push('-' + leaver);
           });
           amNext.votersChanges.sort();
           voters.sort();
+          var merkle = new Merkle();
           merkle.initialize(voters);
           amNext.votersRoot = merkle.root();
           amNext.votersCount = voters.length;
-          merkle.save(function (err) {
-            next(err);
-          });
+          async.forEach(nonVoters, function(nonVoter, callback){
+            Key.removeProposedVoter(nonVoter, callback);
+          }, next);
         },
         function (next){
           // Update UD
@@ -446,10 +436,10 @@ module.exports.get = function (pgp, currency, conf) {
               current = currentlyRecorded;
               async.waterfall([
                 function (next){
-                  Merkle.membersWrittenForProposedAmendment(entry.amNumber + 1, next);
+                  Amendment.isProposedMember(entry.issuer, entry.amNumber + 1, next);
                 },
-                function (merkle, next){
-                  if (merkle.leaves().indexOf(entry.issuer) == -1) {
+                function (isMember, next){
+                  if (!isMember) {
                     next('Only members may be voters');
                     return;
                   }
@@ -496,7 +486,7 @@ module.exports.get = function (pgp, currency, conf) {
                 },
                 function (ms, next){
                   eligibleMembership = ms;
-                  Vote.isVoter(entry.votingKey, next);
+                  Amendment.isVoter(entry.votingKey, amNext.number, next);
                 },
                 function (isVoter, next){
                   if (isVoter && current && current.votingKey == entry.votingKey) {
@@ -668,10 +658,19 @@ module.exports.get = function (pgp, currency, conf) {
   function updateMembers (amNext, actions, done) {
     async.waterfall([
       function (next){
-        Merkle.membersWrittenForProposedAmendment(amNext.number, next);
+        Key.getProposedMembers(next);
       },
-      function (membersMerkle, next){
-        merkle = membersMerkle;
+      function (members, next){
+        var leaves = [];
+        members.forEach(function(member){
+          leaves.push(member.fingerprint);
+        });
+        leaves.sort();
+        var merkle = new Merkle();
+        var joining = actions.keyToAdd || actions.keyToUnleave;
+        var leaving = actions.keyToUnadd || actions.keyToRemove;
+        // TODO: VERY COSTLY !!
+        merkle.initialize(leaves);
         // Additions
         if (actions.keyToAdd) {
           merkle.push(actions.keyToAdd);
@@ -688,7 +687,22 @@ module.exports.get = function (pgp, currency, conf) {
         }
         amNext.membersRoot = merkle.root();
         amNext.membersCount = merkle.leaves().length;
-        merkle.save(function (err) {
+        async.parallel({
+          joining: function(callback){
+            if (joining) {
+              Key.addProposedMember(joining, callback);
+              return;
+            }
+            callback();
+          },
+          leaving: function(callback){
+            if (leaving) {
+              Key.removeProposedMember(leaving, callback);
+              return;
+            }
+            callback();
+          },
+        }, function(err) {
           next(err);
         });
       },
@@ -785,9 +799,14 @@ module.exports.get = function (pgp, currency, conf) {
         });
       },
       function (next) {
-        Merkle.votersWrittenForProposedAmendment(amNext.number, next);
+        Key.getProposedVoters(next);
       },
-      function (merkle, next){
+      function (voters, next){
+        var leaves = [];
+        voters.forEach(function(v){
+          leaves.push(v.fingerprint);
+        });
+        leaves.sort();
         // Specific case: if have to add while key is already with a "-", add become UnLeave
         if (actions.keyToAdd) {
           var index = amNext.votersChanges.indexOf('-' + actions.keyToAdd);
@@ -811,6 +830,11 @@ module.exports.get = function (pgp, currency, conf) {
             actions.keyToRemove = null;
           }
         }
+        var merkle = new Merkle();
+        var joining = actions.keyToAdd || actions.keyToUnleave;
+        var leaving = actions.keyToUnadd || actions.keyToRemove;
+        // TODO: VERY COSTLY !!
+        merkle.initialize(leaves);
         //--------------------
         // Update keys according to what is to be added/removed
         if (actions.keyToRemove) {
@@ -828,7 +852,22 @@ module.exports.get = function (pgp, currency, conf) {
         // Update resulting root + count
         amNext.votersRoot = merkle.root();
         amNext.votersCount = merkle.leaves().length;
-        merkle.save(function (err) {
+        async.parallel({
+          joining: function(callback){
+            if (joining) {
+              Key.addProposedVoter(joining, callback);
+              return;
+            }
+            callback();
+          },
+          leaving: function(callback){
+            if (leaving) {
+              Key.removeProposedVoter(leaving, callback);
+              return;
+            }
+            callback();
+          },
+        }, function(err) {
           next(err);
         });
       },

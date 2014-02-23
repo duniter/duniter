@@ -67,14 +67,6 @@ module.exports = function (pgp, currency, conf) {
       amendmentMerkle(req, res, Merkle.signaturesWrittenForAmendment, Merkle.mapForSignatures);
     },
 
-    members: function (req, res) {
-      amendmentMerkle(req, res, Merkle.membersWrittenForAmendment, Merkle.mapIdentical);
-    },
-
-    voters: function (req, res) {
-      amendmentMerkle(req, res, Merkle.votersWrittenForAmendment, Merkle.mapIdentical);
-    },
-
     self: function (req, res) {
       ParametersService.getAmendmentID(req, function (err, number, hash) {
         if(err){

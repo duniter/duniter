@@ -82,11 +82,10 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (amendment, next){
         am = amendment;
-        Merkle.membersWrittenForAmendment(am.number, am.hash, next);
+        Amendment.isMember(tx.sender, am.number, next);
       },
-      function (merkle, next){
-        // Verify he was a member of the AM
-        if(merkle.leaves().indexOf(tx.sender) == -1){
+      function (wasMember, next){
+        if(!wasMember){
           next('Sender was not part of the Community for this amendment');
           return;
         }

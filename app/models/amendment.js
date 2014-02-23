@@ -186,111 +186,6 @@ AmendmentSchema.methods = {
     });
   },
 
-  updateMerkles: function (done) {
-    var that = this;
-    var Merkle = mongoose.model('Merkle');
-    function build (func, funcAM, callback) {
-      async.waterfall([
-        function (next) {
-          // Computes leaves
-          funcAM.call(that, next);
-        },
-        function (leaves, next){
-          // Points to good Merkle and overwrite it
-          func.call(Merkle, that.number, that.hash, function (err, merkle) {
-            merkle.initialize(leaves);
-            next(err, merkle);
-          });
-        },
-        function (merkle, next) {
-          merkle.save(next);
-        }
-      ], callback);
-    }
-    async.parallel({
-      membersMerkle: function(callback){
-        build(Merkle.membersWrittenForAmendment, that.buildMembersMerkle, callback);
-      },
-      votersMerkle: function(callback){
-        build(Merkle.votersWrittenForAmendment, that.buildVotersMerkle, callback);
-      }
-    }, done);
-  },
-
-  /**
-  * Build Merkle of members for this amendment, according
-  * to previous amendment members Merkle and applying MembersChanges field.
-  *
-  * Result API: hdc/amendments/view/[AMENDMENT_ID]/members
-  */
-  buildMembersMerkle: function (done) {
-    var that = this;
-    this.getPrevious(function (err, previous) {
-      if(err){
-        done(err);
-        return;
-      }
-      async.waterfall([
-        function (next){
-          if(!previous){
-            next(null, []);
-            return;
-          }
-          // Get members Merkle of previous amendment
-          mongoose.model('Merkle').membersWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
-            next(err, merkle.leaves());
-          });
-        },
-        function (leaves, next) {
-          // Apply MembersChanges field
-          leaves = _(leaves).union(that.getNewMembers());
-          leaves = _(leaves).difference(that.getLeavingMembers());
-          next(null, leaves);
-        }
-      ], function (err, leaves) {
-        if(leaves) leaves.sort();
-        done(err, leaves);
-      });
-    })
-  },
-
-  /**
-  * Build Merkle of voters for this amendment, according
-  * to previous amendment voters Merkle and applying VotersChanges field.
-  *
-  * Result API: hdc/amendments/view/[AMENDMENT_ID]/voters
-  */
-  buildVotersMerkle: function (done) {
-    var that = this;
-    this.getPrevious(function (err, previous) {
-      if(err){
-        done(err);
-        return;
-      }
-      async.waterfall([
-        function (next){
-          if(!previous){
-            next(null, []);
-            return;
-          }
-          // Get voters Merkle of previous amendment
-          mongoose.model('Merkle').votersWrittenForAmendment(previous.number, previous.hash, function (err, merkle) {
-            next(err, merkle.leaves());
-          });
-        },
-        function (leaves, next) {
-          // Apply VotersChanges field
-          leaves = _(leaves).union(that.getNewVoters());
-          leaves = _(leaves).difference(that.getLeavingVoters());
-          next(null, leaves);
-        }
-      ], function (err, leaves) {
-        if(leaves) leaves.sort();
-        done(err, leaves);
-      });
-    })
-  },
-
   loadFromFile: function(file, done) {
     var obj = this;
     async.waterfall([
@@ -416,6 +311,140 @@ AmendmentSchema.statics.getTheOneToBeVoted = function (number, done) {
       done('More than one amendment found');
     }
   });
+};
+
+AmendmentSchema.statics.getLastStatusOfMember = function (member, amNumberLimit, proposedToo, done) {
+
+  if (arguments.length == 3) {
+    done = proposedToo;
+    proposedToo = undefined;
+  }
+
+  var criterias = { number: { $lte: amNumberLimit }, membersChanges: new RegExp("^(\\+|-)" + member + "$")};
+  if (proposedToo) {
+    criterias.$or = [{ promoted: true }, { selfGenerated: true }];
+  } else {
+    criterias.promoted = true;
+  }
+
+  var that = this;
+  async.waterfall([
+    function (next){
+      that
+        .find(criterias)
+        .sort({ 'number': -1 })
+        .limit(1)
+        .exec(function (err, ams) {
+          next(err, ams);
+        });
+    },
+    function (ams, next){
+      if (ams.length == 1) {
+        if (~ams[0].membersChanges.indexOf("+" + member)) {
+          // Last time, member was joining
+          next(null, 1);
+        } else {
+          // Last time, member was leaving
+          next(null, -1);
+        }
+      } else {
+        // Member has never been seen
+        next(null, 0);
+      }
+    },
+  ], done);
+};
+
+AmendmentSchema.statics.getLastStatusOfVoter = function (voter, amNumberLimit, proposedToo, done) {
+
+  if (arguments.length == 3) {
+    done = proposedToo;
+    proposedToo = undefined;
+  }
+
+  var criterias = { number: { $lte: amNumberLimit }, votersChanges: new RegExp("^(\\+|-)" + voter + "$")};
+  if (proposedToo) {
+    criterias.$or = [{ promoted: true }, { selfGenerated: true }];
+  } else {
+    criterias.promoted = true;
+  }
+
+  var that = this;
+  async.waterfall([
+    function (next){
+      that
+        .find(criterias)
+        .sort({ 'number': -1 })
+        .limit(1)
+        .exec(next);
+    },
+    function (ams, next){
+      if (ams.length == 1) {
+        if (~ams[0].votersChanges.indexOf("+" + voter)) {
+          // Last time, voter was joining
+          next(null, 1);
+        } else {
+          // Last time, voter was leaving
+          next(null, -1);
+        }
+      } else {
+        // Voter has never been seen
+        next(null, 0);
+      }
+    },
+  ], done);
+};
+
+AmendmentSchema.statics.isMember = function (member, amNumber, done) {
+
+  var that = this;
+  async.waterfall([
+    function (next){
+      that.getLastStatusOfMember(member, amNumber, next);
+    },
+    function (status, next){
+      next(null, status > 0);
+    },
+  ], done);
+};
+
+AmendmentSchema.statics.isVoter = function (voter, amNumber, done) {
+  var that = this;
+  async.waterfall([
+    function (next){
+      that.getLastStatusOfVoter(voter, amNumber, next);
+    },
+    function (status, next){
+      console.log('isVoter ? (voter %s for AM#%s = %s', voter, amNumber, status);
+      next(null, status > 0);
+    },
+  ], done);
+};
+
+AmendmentSchema.statics.isProposedMember = function (member, amNumber, done) {
+
+  var that = this;
+  async.waterfall([
+    function (next){
+      that.getLastStatusOfMember(member, amNumber, true, next);
+    },
+    function (status, next){
+      next(null, status > 0);
+    },
+  ], done);
+};
+
+AmendmentSchema.statics.isProposedVoter = function (voter, amNumber, done) {
+
+  var that = this;
+  async.waterfall([
+    function (next){
+      that.getLastStatusOfVoter(voter, amNumber, true, next);
+    },
+    function (status, next){
+      next(null, status > 0);
+    },
+  ], done);
 };
 
 var Amendment = mongoose.model('Amendment', AmendmentSchema);

@@ -110,19 +110,8 @@ module.exports.get = function (pgp, currency, conf) {
         },
         function (voteEntity, previousHash, newAm, next){
           voteEntity.getAmendment(function (err, am) {
-            next(null, am, voteEntity, previousHash, newAm);
+            next(null, am, voteEntity, previousHash);
           })
-        },
-        function (am, voteEntity, previousHash, newAm, next) {
-          if(newAm){
-            /* Update Merkles for URLs:
-              - hdc/amendments/[AMENDMENT_ID]/voters
-              - hdc/amendments/[AMENDMENT_ID]/members */
-            am.updateMerkles(function (err) {
-              next(err, am, voteEntity, previousHash);
-            });
-          }
-          else next(null, am, voteEntity, previousHash);
         },
         function (am, voteEntity, previousHash, next) {
           // Update signatures (hdc/amendments/votes/[AMENDMENT_ID])

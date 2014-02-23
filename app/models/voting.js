@@ -198,10 +198,10 @@ VotingSchema.statics.getEligiblesUsingKey = function (key, amNext, done) {
       async.forEach(_(seems).values(), function(v, callback){
         async.waterfall([
           function (next){
-            mongoose.model('Merkle').membersWrittenForProposedAmendment(amNext.number, next);
+            mongoose.model('Amendment').isProposedMember(v.issuer, amNext.number, next);
           },
-          function (merkle, next){
-            if (~merkle.leaves().indexOf(v.issuer)) {
+          function (isMember, next){
+            if (isMember) {
               // Check if it really the one to be used
               that
                 .find({ issuer: v.issuer, eligible: true })

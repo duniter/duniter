@@ -206,10 +206,8 @@ module.exports.express = {
     app.get(    '/hdc/amendments/current/votes',                  hdc.amendments.currentVotes);
     app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
     app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
-    app.get(    '/hdc/amendments/view/:amendment_id/members',     hdc.amendments.viewAM.members);
     app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
     app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
-    app.get(    '/hdc/amendments/view/:amendment_id/voters',      hdc.amendments.viewAM.voters);
     app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
     app.get(    '/hdc/amendments/votes/:amendment_id',            hdc.amendments.votes.sigs);
@@ -242,8 +240,6 @@ module.exports.express = {
     app.get(    '/ucs/community/voters/:fpr/voting/history',      ucs.votingHistory);
     app.get(    '/ucs/amendment',                                 ucs.amendmentCurrent);
     app.get(    '/ucs/amendment/:amendment_number',               ucs.amendmentNext);
-    app.get(    '/ucs/amendment/:amendment_number/members',       ucs.amendmentMembers);
-    app.get(    '/ucs/amendment/:amendment_number/voters',        ucs.amendmentVoters);
     app.get(    '/ucs/amendment/:amendment_number/vote',          ucs.askVote);
 
     if(!conf.ipv4 && !conf.ipv6){

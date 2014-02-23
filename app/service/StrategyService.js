@@ -59,53 +59,21 @@ module.exports.get = function (pgp, currency, conf) {
         },
         function (next){
           async.parallel({
-            addMembers: function(callback){
-              // Save the new members as new members
-              async.forEach(am.getNewMembers(), function(leaf, callback){
-                Key.addMember(leaf, callback);
-              }, callback);
-            },
-            addVoters: function(callback){
-              // Save the new members as new members
-              async.forEach(am.getNewVoters(), function(leaf, callback){
-                Key.addVoter(leaf, callback);
-              }, callback);
-            },
-            removeMembers: function(callback){
-              // Save the new members as new members
-              async.forEach(am.getLeavingMembers(), function(leaf, callback){
-                Key.removeMember(leaf, callback);
-              }, callback);
-            },
-            removeVoters: function(callback){
-              // Save the new members as new members
-              async.forEach(am.getLeavingVoters(), function(leaf, callback){
-                Key.removeVoter(leaf, callback);
-              }, callback);
-            },
+            addMembers:     async.apply(async.forEach, am.getNewMembers(), Key.addMember),
+            addVoters:      async.apply(async.forEach, am.getNewVoters(), Key.addVoter),
+            removeMembers:  async.apply(async.forEach, am.getLeavingMembers(), Key.removeMember),
+            removeVoters:   async.apply(async.forEach, am.getLeavingVoters(), Key.removeVoter),
           }, function (err) {
             next(err);
           });
         },
         function (next){
-          async.parallel({
-            one: function(callback){
-              // Set ALL members & voters to proposed members & voters
-              Key.update({ member: true }, { $set: { proposedMember: true }}, { multi: true }, callback);
-            },
-            two: function(callback){
-              // Set ALL members & voters to proposed members & voters
-              Key.update({ member: false }, { $set: { proposedMember: false }}, { multi: true }, callback);
-            },
-            three: function(callback){
-              // Set ALL members & voters to proposed members & voters
-              Key.update({ voter: true }, { $set: { proposedVoter: true }}, { multi: true }, callback);
-            },
-            four: function(callback){
-              // Set ALL members & voters to proposed members & voters
-              Key.update({ voter: false }, { $set: { proposedVoter: false }}, { multi: true }, callback);
-            },
-          }, function(err, results) {
+          async.parallel([
+            async.apply(Key.update.bind(Key), { member: true  }, { $set: { proposedMember: true  }}, { multi: true }),
+            async.apply(Key.update.bind(Key), { member: false }, { $set: { proposedMember: false }}, { multi: true }),
+            async.apply(Key.update.bind(Key), { voter:  true  }, { $set: { proposedVoter:  true  }}, { multi: true }),
+            async.apply(Key.update.bind(Key), { voter:  false }, { $set: { proposedVoter:  false }}, { multi: true }),
+          ], function(err, results) {
             next(err);
           });
         },

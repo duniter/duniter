@@ -5,6 +5,8 @@ var _        = require('underscore');
 var fs       = require('fs');
 var hdc      = require('../../node_modules/hdc');
 var Schema   = mongoose.Schema;
+var log4js   = require('log4js');
+var logger   = log4js.getLogger('dao amendment');
 
 var AmendmentSchema = new Schema({
   version: String,
@@ -415,7 +417,7 @@ AmendmentSchema.statics.isVoter = function (voter, amNumber, done) {
       that.getLastStatusOfVoter(voter, amNumber, next);
     },
     function (status, next){
-      console.log('isVoter ? (voter %s for AM#%s = %s', voter, amNumber, status);
+      logger.debug('isVoter ? %s for AM#%s = %s', voter, amNumber, status);
       next(null, status > 0);
     },
   ], done);

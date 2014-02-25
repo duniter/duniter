@@ -326,23 +326,6 @@ module.exports = function (pgp, currency, conf) {
     });
   }
 
-  this.managedKeys = function (req, res) {
-    async.waterfall([
-      function (next){
-        Merkle.managedKeys(next);
-      },
-      function (merkle, next){
-        MerkleService.processForURL(req, merkle, Merkle.mapIdentical, next);
-      }
-    ], function (err, json) {
-      if(err){
-        res.send(500, err);
-        return;
-      }
-      MerkleService.merkleDone(req, res, json);
-    });
-  }
-
   function givePeers (criterias, req, res) {
     var that = this;
     var watcher = criterias.from ? 'to' : 'from';

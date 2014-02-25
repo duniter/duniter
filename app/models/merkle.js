@@ -126,10 +126,6 @@ MerkleSchema.statics.peers = function (done) {
   retrieve({ type: 'peers', criteria: '{}' }, done);
 };
 
-MerkleSchema.statics.managedKeys = function (done) {
-  retrieve({ type: 'managedKeys', criteria: '{}' }, done);
-};
-
 MerkleSchema.statics.THTEntries = function (done) {
   retrieve({ type: 'thtentries', criteria: '{}' }, done);
 };

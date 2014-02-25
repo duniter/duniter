@@ -43,14 +43,9 @@ KeySchema.statics.setManaged = function(fingerprint, managed, done){
     } else {
       logger.debug("Removed key %s from managed keys", fingerprint);
     }
-    async.waterfall([
-      function (next){
-        key.save(next);
-      },
-      function (obj, code, next){
-        updateManagedMerkle(key, next);
-      }
-    ], done);
+    key.save(function (err) {
+      done(err);
+    });
   });
 }
 
@@ -127,21 +122,5 @@ KeySchema.statics.removeProposedVoter = function(fingerprint, done){
     done(err);
   });
 };
-
-function updateManagedMerkle (key, done) {
-  async.waterfall([
-    function (next){
-      mongoose.model('Merkle').managedKeys(next);
-    },
-    function (merkle, next){
-      merkle.push(key.fingerprint);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], function (err, result) {
-    done(err);
-  });
-}
 
 var Key = mongoose.model('Key', KeySchema);

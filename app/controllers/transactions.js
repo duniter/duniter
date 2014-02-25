@@ -135,10 +135,6 @@ module.exports = function (pgp, currency, conf) {
 
     amDividend: function (req, res) {
       showMerkle(Merkle.txDividendOfSenderByAmendment, null, req.params.amnum, req, res);
-    },
-
-    transfert: function (req, res) {
-      showMerkle(Merkle.txTransfertOfSender, null, null, req, res);
     }
   };
 

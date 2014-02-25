@@ -56,23 +56,6 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
-  this.all = function (req, res) {
-    async.waterfall([
-      function (next){
-        Merkle.txAll(next);
-      },
-      function (merkle, next){
-        MerkleService.processForURL(req, merkle, lambda, next);
-      }
-    ], function (err, json) {
-      if(err){
-        res.send(404, err);
-        return;
-      }
-      MerkleService.merkleDone(req, res, json);
-    });
-  }
-
   this.lastNAll = function (req, res) {
       async.waterfall([
         function (next){

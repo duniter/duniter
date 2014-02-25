@@ -114,10 +114,6 @@ MerkleSchema.statics.signaturesWrittenForAmendment = function (number, hash, don
   retrieve({ type: 'amendment_signatures', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
-MerkleSchema.statics.txAll = function (done) {
-  retrieve({ type: 'txAll', criteria: '{}' }, done);
-};
-
 MerkleSchema.statics.txOfSender = function (fingerprint, done) {
   retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
 };
@@ -246,15 +242,7 @@ MerkleSchema.statics.updateForTHTEntries= function (previousHash, newHash, done)
 
 MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
   async.waterfall([
-    function (next) {
-      // M All
-      Merkle.txAll(next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
+    function (next){
       // M1
       Merkle.txOfSender(tx.sender, next);
     },
@@ -299,15 +287,7 @@ MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
 
 MerkleSchema.statics.updateForTransfert = function (tx, done) {
   async.waterfall([
-    function (next) {
-      // M All
-      Merkle.txAll(next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
+    function (next){
       // M1
       Merkle.txOfSender(tx.sender, next);
     },
@@ -349,15 +329,7 @@ MerkleSchema.statics.updateForTransfertToRecipient = function (tx, done) {
 
 MerkleSchema.statics.updateForFusion = function (tx, done) {
   async.waterfall([
-    function (next) {
-      // M All
-      Merkle.txAll(next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
+    function (next){
       // M1
       Merkle.txOfSender(tx.sender, next);
     },
@@ -394,15 +366,7 @@ MerkleSchema.statics.updateForFusion = function (tx, done) {
 
 MerkleSchema.statics.updateForDivision = function (tx, done) {
   async.waterfall([
-    function (next) {
-      // M All
-      Merkle.txAll(next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
+    function (next){
       // M1
       Merkle.txOfSender(tx.sender, next);
     },

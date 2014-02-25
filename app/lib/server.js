@@ -215,7 +215,6 @@ module.exports.express = {
     app.get(    '/hdc/coins/:fpr/view/:coin_number',              hdc.coins.view);
     app.get(    '/hdc/coins/:fpr/view/:coin_number/history',      hdc.coins.history);
     app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
-    app.get(    '/hdc/transactions/all',                          hdc.transactions.all);
     app.get(    '/hdc/transactions/keys',                         hdc.transactions.keys);
     app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);

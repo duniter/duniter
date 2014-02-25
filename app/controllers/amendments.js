@@ -17,7 +17,7 @@ var ContractService   = service.Contract;
 
 module.exports = function (pgp, currency, conf) {
 
-  this.promoted = this.current = function (req, res) {
+  this.promoted = function (req, res) {
     showAmendment(res, ContractService.current());
   };
 

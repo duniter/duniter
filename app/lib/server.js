@@ -202,7 +202,6 @@ module.exports.express = {
     app.get(    '/ucg/tht',                                       ucg.thtGET);
     app.post(   '/ucg/tht',                                       ucg.thtPOST);
     app.get(    '/ucg/tht/:fpr',                                  ucg.thtFPR);
-    app.get(    '/hdc/amendments/current',                        hdc.amendments.current);
     app.get(    '/hdc/amendments/current/votes',                  hdc.amendments.currentVotes);
     app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
     app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);

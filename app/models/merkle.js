@@ -118,10 +118,6 @@ MerkleSchema.statics.txOfSender = function (fingerprint, done) {
   retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
 };
 
-MerkleSchema.statics.txIssuanceOfSender = function (fingerprint, done) {
-  retrieve({ type: 'txIssuanceOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
-};
-
 MerkleSchema.statics.txDividendOfSender = function (fingerprint, done) {
   retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
@@ -247,14 +243,6 @@ MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
       merkle.save(next);
     },
     function (merkle, code, next){
-      // M2
-      Merkle.txIssuanceOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
       // M3
       Merkle.txDividendOfSender(tx.sender, next);
     },
@@ -334,14 +322,6 @@ MerkleSchema.statics.updateForFusion = function (tx, done) {
       merkle.save(next);
     },
     function (merkle, code, next){
-      // M2
-      Merkle.txIssuanceOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
       // M5
       Merkle.txFusionOfSender(tx.sender, next);
     },
@@ -365,14 +345,6 @@ MerkleSchema.statics.updateForDivision = function (tx, done) {
     function (next){
       // M1
       Merkle.txOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
-      // M2
-      Merkle.txIssuanceOfSender(tx.sender, next);
     },
     function (merkle, next){
       merkle.push(tx.hash);

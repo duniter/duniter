@@ -110,27 +110,6 @@ module.exports = function (pgp, currency, conf) {
         });
         res.send(200, JSON.stringify(json, null, "  "));
       });
-    },
-
-    dividendLast: function (req, res) {
-      async.waterfall([
-        function (next){
-          ParametersService.getFingerprint(req, next);
-        },
-        function (fingerprint, next){
-          Transaction.findLastIssuance(fingerprint, next);
-        }
-      ], function (err, result) {
-        if(err){
-          res.send(404, err);
-          return;
-        }
-        res.send(200, JSON.stringify({
-          raw: result.getRaw(),
-          signature: result.signature,
-          transaction: result.json()
-        }, null, "  "));
-      });
     }
   };
 

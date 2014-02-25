@@ -208,6 +208,8 @@ module.exports.express = {
     app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
     app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
     app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
+    app.get(    '/hdc/amendments/view/:amendment_id/ismember/:fpr', notImplemented);
+    app.get(    '/hdc/amendments/view/:amendment_id/isvoter/:fpr',notImplemented);
     app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
     app.get(    '/hdc/amendments/votes/:amendment_id',            hdc.amendments.votes.sigs);
@@ -219,7 +221,8 @@ module.exports.express = {
     app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
     app.get(    '/hdc/transactions/sender/:fpr/view/:number',     hdc.transactions.viewtx);
-    app.get(    '/hdc/transactions/sender/:fpr/last/:count',      hdc.transactions.sender.lastNofSender);
+    app.get(    '/hdc/transactions/sender/:fpr/last/:count/:from',hdc.transactions.sender.lastNofSender);
+    app.get(    '/hdc/transactions/sender/:fpr/ud/:amendment_number', notImplemented);
     app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
     app.get(    '/ucs/parameters',                                ucs.parameters);
     app.post(   '/ucs/community/members',                         ucs.membershipPost);

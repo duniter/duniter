@@ -213,23 +213,6 @@ TransactionSchema.statics.getBySenderAndNumber = function (fingerprint, number, 
   });
 };
 
-TransactionSchema.statics.findLastAll = function (done) {
-
-  this.find().sort({sigDate: -1}).limit(1).exec(function (err, txs) {
-    if(txs && txs.length == 1){
-      done(err, txs[0]);
-      return;
-    }
-    if(!txs || txs.length == 0){
-      done('No transaction found');
-      return;
-    }
-    if(txs || txs.length > 1){
-      done('More than one transaction found');
-    }
-  });
-};
-
 TransactionSchema.statics.findLastOf = function (fingerprint, done) {
 
   this.find({ sender: fingerprint }).sort({number: -1}).limit(1).exec(function (err, txs) {

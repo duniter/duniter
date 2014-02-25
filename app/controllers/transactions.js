@@ -73,25 +73,6 @@ module.exports = function (pgp, currency, conf) {
     });
   }
 
-  this.lastAll = function (req, res) {
-
-    async.waterfall([
-      function (next){
-        Transaction.findLastAll(next);
-      }
-    ], function (err, result) {
-      if(err){
-        res.send(404, err);
-        return;
-      }
-      res.send(200, JSON.stringify({
-        raw: result.getRaw(),
-        signature: result.signature,
-        transaction: result.json()
-      }, null, "  "));
-    });
-  };
-
   this.lastNAll = function (req, res) {
       async.waterfall([
         function (next){

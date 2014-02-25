@@ -210,7 +210,6 @@ module.exports.express = {
     app.get(    '/hdc/amendments/view/:amendment_id/isvoter/:fpr',notImplemented);
     app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
-    app.get(    '/hdc/amendments/votes/:amendment_id',            hdc.amendments.votes.sigs);
     app.get(    '/hdc/coins/:fpr/last',                           notImplemented);
     app.get(    '/hdc/coins/:fpr/list',                           hdc.coins.list);
     app.get(    '/hdc/coins/:fpr/view/:coin_number',              hdc.coins.view);

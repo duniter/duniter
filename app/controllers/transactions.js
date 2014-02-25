@@ -133,10 +133,6 @@ module.exports = function (pgp, currency, conf) {
       });
     },
 
-    dividend: function (req, res) {
-      showMerkle(Merkle.txDividendOfSender, null, null, req, res);
-    },
-
     amDividend: function (req, res) {
       showMerkle(Merkle.txDividendOfSenderByAmendment, null, req.params.amnum, req, res);
     },

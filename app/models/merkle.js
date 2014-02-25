@@ -118,10 +118,6 @@ MerkleSchema.statics.txOfSender = function (fingerprint, done) {
   retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
 };
 
-MerkleSchema.statics.txDividendOfSenderByAmendment = function (fingerprint, amNumber, done) {
-  retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":"'+fingerprint+'",am":'+amNumber+'"}' }, done);
-};
-
 MerkleSchema.statics.txToRecipient = function (fingerprint, done) {
   retrieve({ type: 'txToRecipient', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
@@ -221,14 +217,6 @@ MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
     function (next){
       // M1
       Merkle.txOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
-      // M4
-      Merkle.txDividendOfSenderByAmendment(tx.sender, am.number, next);
     },
     function (merkle, next){
       merkle.push(tx.hash);

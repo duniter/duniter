@@ -114,10 +114,10 @@ TransactionSchema.methods = {
     return coins;
   },
 
-  getIssuanceSum: function() {
+  getIssuanceSum: function(originNumber) {
     var sum = 0;
     this.getCoins().forEach(function (coin) {
-      if(coin.originType == 'A'){
+      if(coin.originType == 'A' && (!originNumber || coin.originNumber == originNumber)){
         sum += coin.base * Math.pow(10, coin.power);
       }
     });
@@ -249,14 +249,10 @@ TransactionSchema.statics.findLastIssuance = function (fingerprint, done) {
 
 TransactionSchema.statics.findAllIssuanceOfSenderForAmendment = function (fingerprint, amNumber, done) {
 
-  async.waterfall([
-    function (next){
-      mongoose.model('Merkle').txDividendOfSenderByAmendment(fingerprint, amNumber, next);
-    },
-    function (merkle, next){
-      Transaction.find({ sender: fingerprint, hash: { $in: merkle.leaves() }}).sort({number: -1}).exec(next);
-    }
-  ], done);
+  Transaction
+    .find({ sender: fingerprint, coins: new RegExp("-A-" + amNumber + "$") })
+    .sort({number: -1})
+    .exec(done);
 };
 
 var Transaction = mongoose.model('Transaction', TransactionSchema);

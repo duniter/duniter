@@ -77,18 +77,20 @@ module.exports.get = function (pgp, currency, conf) {
           next('Issuer\'s key not managed by this node');
           return;
         }
-        // Get targeted AM
-        Amendment.findPromotedByNumber(tx.getCoins()[0].originNumber, next);
+        async.forEach(tx.getCoins(), function(coin, callback){
+          var amNumber;
+          async.waterfall([
+            async.apply(Amendment.findPromotedByNumber.bind(Amendment), coin.originNumber),
+            function (amendment, next) {
+              next(null, amNumber = amendment.number);
+            },
+            async.apply(Amendment.isMember.bind(Amendment), tx.sender)
+          ], function (err, wasMember) {
+            callback(err || (!wasMember && "Not a member for AM#" + amNumber));
+          });
+        }, next);
       },
-      function (amendment, next){
-        am = amendment;
-        Amendment.isMember(tx.sender, am.number, next);
-      },
-      function (wasMember, next){
-        if(!wasMember){
-          next('Sender was not part of the Community for this amendment');
-          return;
-        }
+      function (next){
         // Get last transaction
         Transaction.findLastOf(tx.sender, function (err, lastTX) {
           if(lastTX){
@@ -160,37 +162,53 @@ module.exports.get = function (pgp, currency, conf) {
         });
       },
       function (next){
-        // Get all for amendment AM
-        Transaction.findAllIssuanceOfSenderForAmendment(tx.sender, am.number, next);
-      },
-      function (lastTXs, next){
-        // Verify total is <= UD
-        var sum = 0;
-        lastTXs.forEach(function (txOfAM) {
-          sum += txOfAM.getIssuanceSum();
+        // Check coins sum, for each targeted AM, do not come over UD of each AM
+        var coinsByAM = {};
+        tx.getCoins().forEach(function(c){
+          coinsByAM[c.originNumber] = coinsByAM[c.originNumber] || [];
+          coinsByAM[c.originNumber].push(c);
         });
-        if(sum > am.dividend){
-          // This should NEVER happen
-          next('Integrity error: you already issued more coins than you could');
-          return;
-        }
-        if(sum == am.dividend){
-          next('You cannot create coins for this amendment anymore');
-          return;
-        }
-        if(am.dividend - sum - tx.getIssuanceSum() < 0){
-          next('You cannot create that much coins (remaining to create ' + (am.dividend - sum) + ', wish to create ' + tx.getIssuanceSum() + ')');
-          return;
-        }
-        next();
+        async.forEach(_(coinsByAM).keys(), function(amNumber, callback){
+          var am;
+          async.waterfall([
+            function (next) {
+              Amendment.findPromotedByNumber(amNumber, next);
+            },
+            function (amendment, next){
+              am = amendment;
+              next(!am.dividend ? "No Universal Dividend for AM#" + amNumber : null);
+            },
+            function (next){
+              Transaction.findAllIssuanceOfSenderForAmendment(tx.sender, amNumber, next);
+            },
+            function (txs, next){
+              // Verify total is <= UD
+              var sum = 0;
+              txs.forEach(function (txOfAM) {
+                sum += txOfAM.getIssuanceSum(amNumber);
+              });
+              if(sum > am.dividend){
+                // This should NEVER happen
+                next('Integrity error: you already issued more coins than you could');
+                return;
+              }
+              if(sum == am.dividend){
+                next('You cannot create coins for this amendment (#' + amNumber + ') anymore');
+                return;
+              }
+              if(am.dividend - sum - tx.getIssuanceSum(amNumber) < 0){
+                next('You cannot create that much coins (remaining to create ' + (am.dividend - sum) + ', wish to create ' + tx.getIssuanceSum(amNumber) + ')');
+                return;
+              }
+              next();
+            },
+          ], callback);
+        }, next);
       },
       function (next){
         tx.save(next);
       },
       function (txSaved, code, next){
-        Merkle.updateForIssuance(tx, am, next);
-      },
-      function (merkle, code, next){
         // Saves transaction's coins IDs
         async.forEach(tx.coins, function(coin, callback){
           var c = new Coin({

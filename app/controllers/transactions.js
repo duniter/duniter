@@ -139,10 +139,6 @@ module.exports = function (pgp, currency, conf) {
 
     transfert: function (req, res) {
       showMerkle(Merkle.txTransfertOfSender, null, null, req, res);
-    },
-
-    division: function (req, res) {
-      showMerkle(Merkle.txDivisionOfSender, null, null, req, res);
     }
   };
 

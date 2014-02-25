@@ -188,9 +188,6 @@ module.exports.get = function (pgp, currency, conf) {
         tx.save(next);
       },
       function (txSaved, code, next){
-        Key.setSeenTX(tx, true, next);
-      },
-      function (next){
         Merkle.updateForIssuance(tx, am, next);
       },
       function (merkle, code, next){
@@ -336,9 +333,6 @@ module.exports.get = function (pgp, currency, conf) {
         }, next);
       },
       function (next){
-        Key.setSeenTX(tx, true, next);
-      },
-      function (next){
         Merkle.updateForTransfert(tx, next);
       }
     ], function (err, result) {
@@ -450,9 +444,6 @@ module.exports.get = function (pgp, currency, conf) {
         tx.save(next);
       },
       function (txSaved, code, next){
-        Key.setSeenTX(tx, true, next);
-      },
-      function (next){
         Merkle.updateForFusion(tx, next);
       },
       function (merkle, code, next){
@@ -609,9 +600,6 @@ module.exports.get = function (pgp, currency, conf) {
         tx.save(next);
       },
       function (txSaved, code, next){
-        Key.setSeenTX(tx, true, next);
-      },
-      function (next){
         Merkle.updateForDivision(tx, next);
       },
       function (merkle, code, next){

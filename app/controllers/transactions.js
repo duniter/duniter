@@ -18,23 +18,6 @@ var PeeringService     = service.Peering;
 
 module.exports = function (pgp, currency, conf) {
 
-  this.keys = function (req, res) {
-    async.waterfall([
-      function (next){
-        Merkle.seenKeys(next);
-      },
-      function (merkle, next){
-        MerkleService.processForURL(req, merkle, Merkle.mapIdentical, next);
-      }
-    ], function (err, json) {
-      if(err){
-        res.send(404, err);
-        return;
-      }
-      MerkleService.merkleDone(req, res, json);
-    });
-  }
-
   this.viewtx = function (req, res) {
     async.waterfall([
       function (next){

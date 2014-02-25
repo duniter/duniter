@@ -217,11 +217,11 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
     app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
+    app.get(    '/hdc/transactions/sender/:fpr/view/:number',     hdc.transactions.viewtx);
     app.get(    '/hdc/transactions/sender/:fpr/last/:count',               hdc.transactions.sender.lastNofSender);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/last',             hdc.transactions.sender.dividendLast);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/dividend/:amnum',  hdc.transactions.sender.amDividend);
     app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
-    app.get(    '/hdc/transactions/view/:transaction_id',         hdc.transactions.viewtx);
     app.get(    '/ucs/parameters',                                ucs.parameters);
     app.post(   '/ucs/community/members',                         ucs.membershipPost);
     app.get(    '/ucs/community/members/:fpr/membership/current', ucs.membershipCurrent);

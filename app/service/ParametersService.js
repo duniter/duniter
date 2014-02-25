@@ -14,6 +14,8 @@ module.exports.get = function (currencyName) {
 
 function ParameterNamespace (currency) {
 
+  var that = this;
+
   this.getTransaction = function (req, callback) {
     async.waterfall([
       function (next){
@@ -106,30 +108,40 @@ function ParameterNamespace (currency) {
     callback(null, matches[1]);
   };
 
+  this.getNumber = function (req, callback){
+    if(!req.params.number){
+      callback("Number is required");
+      return;
+    }
+    var matches = req.params.number.match(/^(\d+)$/);
+    if(!matches){
+      callback("Number format is incorrect, must be a positive integer");
+      return;
+    }
+    callback(null, matches[1]);
+  };
+
   this.getCount = function (req, callback){
     if(!req.params.count){
       callback("Count is required");
       return;
     }
-    var matches2 = req.params.count.match(/^(\d+)$/);
-    if(!matches2){
-      callback("Count format is incorrect, must be an upper-cased SHA1 hash");
+    var matches = req.params.count.match(/^(\d+)$/);
+    if(!matches){
+      callback("Count format is incorrect, must be a positive integer");
       return;
     }
-    callback(null, matches2[1]);
+    callback(null, matches[1]);
   };
 
   this.getTransactionID = function (req, callback) {
-    if(!req.params.transaction_id){
-      callback("Transaction ID is required");
-      return;
-    }
-    var matches = req.params.transaction_id.match(/(\w{40})-(\d+)/);
-    if(!matches){
-      callback("Transaction ID format is incorrect, must be an upper-cased SHA1 hash");
-      return;
-    }
-    callback(null, matches[1], matches[2]);
+    async.series({
+      fprint: async.apply(that.getFingerprint, req),
+      number: async.apply(that.getNumber, req)
+    },
+    function(err, results) {
+      callback(null, results.fprint, results.number);
+    });
   };
 
   this.getVote = function (req, callback){

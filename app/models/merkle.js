@@ -122,10 +122,6 @@ MerkleSchema.statics.txDividendOfSenderByAmendment = function (fingerprint, amNu
   retrieve({ type: 'txDividendOfSender', criteria: '{"fpr":"'+fingerprint+'",am":'+amNumber+'"}' }, done);
 };
 
-MerkleSchema.statics.txFusionOfSender = function (fingerprint, done) {
-  retrieve({ type: 'txFusionOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
-};
-
 MerkleSchema.statics.txDivisionOfSender = function (fingerprint, done) {
   retrieve({ type: 'txDivisionOfSender', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
@@ -304,14 +300,6 @@ MerkleSchema.statics.updateForFusion = function (tx, done) {
     function (next){
       // M1
       Merkle.txOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
-      // M5
-      Merkle.txFusionOfSender(tx.sender, next);
     },
     function (merkle, next){
       merkle.push(tx.hash);

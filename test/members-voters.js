@@ -596,7 +596,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM0)
   ),
 
-  testCurrentAmendment(amendments.AM0),
   testPromotedAmendment(amendments.AM0),
   testPromotedAmendment(amendments.AM0, 0),
 
@@ -639,7 +638,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM0_voters_members)
   ),
 
-  testCurrentAmendment("Testing that current = AM0", amendments.AM0_voters_members),
   //----------------------------
 
   // Changing VOTERS
@@ -672,7 +670,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM2)
   ),
   
-  testCurrentAmendment("Testing that current = AM2", amendments.AM2),
   //----------------------------
 
   //-------- VOTING : AM3 ------
@@ -682,7 +679,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM3_voters_members)
   ),
   
-  testCurrentAmendment("Testing that current = AM3", amendments.AM3_voters_members),
   //----------------------------
 
   // Changing VOTERS AGAIN
@@ -709,7 +705,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM4_voters_members)
   ),
   
-  testCurrentAmendment("Testing that current = AM4", amendments.AM4_voters_members),
   //----------------------------
 
     // Right now we have, tobi hasn't voted current yet:
@@ -756,7 +751,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM5_voters_members)
   ),
   
-  testCurrentAmendment("Testing that current = AM5", amendments.AM5_voters_members),
   //----------------------------
 
   tester.verify(
@@ -798,7 +792,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM6_voters_members)
   ),
   
-  testCurrentAmendment("Testing that current = AM6", amendments.AM6_voters_members),
   //----------------------------
 
   /****** AM7
@@ -841,7 +834,6 @@ var testCases = [
 
   testPromotedAmendment(amendments.AM7_voters_members, 7),
   testPromotedAmendment(amendments.AM7_voters_members),
-  testCurrentAmendment(amendments.AM7_voters_members),
 
   tester.verify(
     "Confirming AM7 as new voter (tobi)",
@@ -870,7 +862,6 @@ var testCases = [
 
   testPromotedAmendment(amendments.AM7_voters_members, 7),
   testPromotedAmendment(amendments.AM7_voters_members),
-  testCurrentAmendment(amendments.AM7_voters_members),
 
   tester.verify(
     "Voting AM8 without Cat (snow)",
@@ -880,7 +871,6 @@ var testCases = [
 
   testPromotedAmendment(amendments.AM8_voters_members, 8),
   testPromotedAmendment(amendments.AM8_voters_members),
-  testCurrentAmendment(amendments.AM8_voters_members),
 
   /****** AM9
   *
@@ -899,7 +889,6 @@ var testCases = [
 
   testPromotedAmendment(amendments.AM8_voters_members, 8),
   testPromotedAmendment(amendments.AM8_voters_members),
-  testCurrentAmendment(amendments.AM8_voters_members),
 
   tester.verify(
     "Voting AM9 without Cat (snow)",
@@ -907,7 +896,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM9_voters_members)
   ),
 
-  testCurrentAmendment(amendments.AM9_voters_members),
   testPromotedAmendment(amendments.AM9_voters_members),
   testPromotedAmendment(amendments.AM9_voters_members, 9),
 
@@ -934,7 +922,6 @@ var testCases = [
 
   testPromotedAmendment(amendments.AM9_voters_members, 9),
   testPromotedAmendment(amendments.AM9_voters_members),
-  testCurrentAmendment(amendments.AM9_voters_members),
 
   tester.verify(
     "Voting AM10 (snow)",
@@ -942,7 +929,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM10_voters_members)
   ),
 
-  testCurrentAmendment(amendments.AM10_voters_members),
   testPromotedAmendment(amendments.AM10_voters_members),
   testPromotedAmendment(amendments.AM10_voters_members, 10),
 
@@ -1033,18 +1019,6 @@ function testMerkle (url, root) {
     "merkle " + url,
     on.doGet(url),
     is.expectedMerkle(root)
-  );
-}
-
-function testCurrentAmendment (label, properties) {
-  if (arguments.length == 1) {
-    properties = label;
-    label = "proposed current amendment";
-  }
-  return tester.verify(
-    label,
-    on.doGet("/hdc/amendments/current"),
-    is.expectedAmendment(properties)
   );
 }
 

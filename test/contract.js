@@ -329,19 +329,13 @@ var testCases = [
   }),
 
   tester.verify(
-    "Should have no currently promoted amendment (1/3)",
-    on.doGet("/hdc/amendments/current"),
-    is.expectedHTTPCode(404)
-  ),
-
-  tester.verify(
-    "Should have no currently promoted amendment (2/3)",
+    "Should have no currently promoted amendment (1/2)",
     on.doGet("/hdc/amendments/promoted"),
     is.expectedHTTPCode(404)
   ),
 
   tester.verify(
-    "Should have no currently promoted amendment (3/3)",
+    "Should have no currently promoted amendment (2/2",
     on.doGet("/hdc/amendments/promoted/0"),
     is.expectedHTTPCode(404)
   ),
@@ -354,14 +348,13 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM0)
   ),
 
-  testCurrentAmendment(amendments.AM0),
   testPromotedAmendment(amendments.AM0),
   testPromotedAmendment(amendments.AM0, 0),
 
   // VOTE 1
 
   tester.job(function setPreviousHash (done) {
-    tester.get('/hdc/amendments/current', function (err, res) {
+    tester.get('/hdc/amendments/promoted', function (err, res) {
       var json = JSON.parse(res.text);
       amendments.AM1.previousHash = json.raw.hash();
       done();
@@ -374,14 +367,13 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM1)
   ),
 
-  testCurrentAmendment(amendments.AM1),
   testPromotedAmendment(amendments.AM1),
   testPromotedAmendment(amendments.AM1, 1),
 
   // VOTE 2
 
   tester.job(function setPreviousHash (done) {
-    tester.get('/hdc/amendments/current', function (err, res) {
+    tester.get('/hdc/amendments/promoted', function (err, res) {
       var json = JSON.parse(res.text);
       amendments.AM2.previousHash = json.raw.hash();
       done();
@@ -394,7 +386,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM2)
   ),
 
-  testCurrentAmendment(amendments.AM2),
   testPromotedAmendment(amendments.AM2),
   testPromotedAmendment(amendments.AM2, 2),
 
@@ -406,8 +397,6 @@ var testCases = [
     is.expectedSignedAmendment(amendments.AM3)
   ),
 
-  testCurrentAmendment(amendments.AM3),
-  testPromotedAmendment(amendments.AM3),
   testPromotedAmendment(amendments.AM3),
   testPromotedAmendment(amendments.AM0, 0),
   testPromotedAmendment(amendments.AM1, 1),
@@ -518,14 +507,6 @@ function testMerkle (url, root) {
     "merkle " + url,
     on.doGet(url),
     is.expectedMerkle(root)
-  );
-}
-
-function testCurrentAmendment (properties) {
-  return tester.verify(
-    "proposed current amendment",
-    on.doGet("/hdc/amendments/current"),
-    is.expectedAmendment(properties)
   );
 }
 

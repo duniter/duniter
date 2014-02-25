@@ -217,7 +217,6 @@ module.exports.express = {
     app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
     app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
     app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
-    app.get(    '/hdc/transactions/sender/:fpr/last',                      hdc.transactions.sender.last);
     app.get(    '/hdc/transactions/sender/:fpr/last/:count',               hdc.transactions.sender.lastNofSender);
     app.get(    '/hdc/transactions/sender/:fpr/issuance',                  hdc.transactions.sender.issuance);
     app.get(    '/hdc/transactions/sender/:fpr/issuance/last',             hdc.transactions.sender.dividendLast);

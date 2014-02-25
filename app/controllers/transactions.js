@@ -86,27 +86,6 @@ module.exports = function (pgp, currency, conf) {
       showMerkle(Merkle.txOfSender, null, null, req, res);
     },
 
-    last: function (req, res) {
-      async.waterfall([
-        function (next){
-          ParametersService.getFingerprint(req, next);
-        },
-        function (fingerprint, next){
-          Transaction.findLastOf(fingerprint, next);
-        }
-      ], function (err, result) {
-        if(err){
-          res.send(404, err);
-          return;
-        }
-        res.send(200, JSON.stringify({
-          raw: result.getRaw(),
-          signature: result.signature,
-          transaction: result.json()
-        }, null, "  "));
-      });
-    },
-
     lastNofSender: function (req, res) {
       var count = 1;
       async.waterfall([

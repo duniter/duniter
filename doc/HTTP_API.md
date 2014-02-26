@@ -10,8 +10,6 @@
   * [ucg/](#ucg)
       * [pubkey](#ucgpubkey)
       * [peering](#ucgpeering)
-      * [peering/keys](#ucgpeeringkeys)
-      * [peering/peer](#ucgpeeringpeer)
       * [peering/peers (GET)](#ucgpeeringpeers-get)
       * [peering/peers (POST)](#ucgpeeringpeers-post)
       * [peering/peers/upstream](#ucgpeeringpeersupstream)
@@ -24,49 +22,35 @@
       * [tht (POST)](#ucgtht-post)
       * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
   * [hdc/](#hdc)
-      * [amendments/current](#amendmentscurrent)
-      * [amendments/current/votes](#amendmentscurrentvotes)
       * [amendments/promoted](#amendmentspromoted)
       * [amendments/promoted/[AMENDMENT_NUMBER]](#amendmentspromotedamendment_number)
-      * [amendments/view/[AMENDMENT_ID]/members](#amendmentsviewamendment_idmembers)
       * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
-      * [amendments/view/[AMENDMENT_ID]/voters](#amendmentsviewamendment_idvoters)
       * [amendments/view/[AMENDMENT_ID]/signatures](#amendmentsviewamendment_idsignatures)
+      * [amendments/view/[AMENDMENT_ID]/ismember/[PGP_FINGERPRINT]](#amendmentsviewamendment_idismemberpgp_fingerprint)
+      * [amendments/view/[AMENDMENT_ID]/isvoter/[PGP_FINGERPRINT]](#amendmentsviewamendment_idisvoterpgp_fingerprint)
       * [amendments/votes (GET)](#amendmentsvotes-get)
       * [amendments/votes (POST)](#amendmentsvotes-post)
-      * [amendments/votes/[AMENDMENT_ID]](#amendmentsvotesamendment_id)
+      * [coins/[PGP_FINGERPRINT]/last](#coinspgp_fingerprintlast)
       * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]](#coinspgp_fingerprintviewcoin_number)
       * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]/history](#coinspgp_fingerprintviewcoin_numberhistory)
       * [transactions/process](#transactionsprocess)
-      * [transactions/all](#transactionsall)
-      * [transactions/keys](#transactionskeys)
-      * [transactions/last](#transactionslast)
       * [transactions/last/[count]](#transactionslastcount)
       * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
-      * [transactions/sender/[PGP_FINGERPRINT]/last](#transactionssenderpgp_fingerprintlast)
-      * [transactions/sender/[PGP_FINGERPRINT]/last/[count]](#transactionssenderpgp_fingerprintlastcount)
-      * [transactions/sender/[PGP_FINGERPRINT]/issuance](#transactionssenderpgp_fingerprintissuance)
-      * [transactions/sender/[PGP_FINGERPRINT]/issuance/last](#transactionssenderpgp_fingerprintissuancelast)
-      * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend](#transactionssenderpgp_fingerprintissuancedividend)
-      * [transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]](#transactionssenderpgp_fingerprintissuancedividendam_number)
-      * [transactions/sender/[PGP_FINGERPRINT]/issuance/fusion](#transactionssenderpgp_fingerprintissuancefusion)
-      * [transactions/sender/[PGP_FINGERPRINT]/issuance/division](#transactionssenderpgp_fingerprintissuancedivision)
-      * [transactions/sender/[PGP_FINGERPRINT]/transfer](#transactionssenderpgp_fingerprinttransfer)
+      * [transactions/sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]](#transactionssenderpgp_fingerprintviewtx_number)
+      * [transactions/sender/[PGP_FINGERPRINT]/last/[count]/[from]](#transactionssenderpgp_fingerprintlastcountfrom)
+      * [transactions/sender/[PGP_FINGERPRINT]/ud/[AM_NUMBER]](#transactionssenderpgp_fingerprintudam_number)
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
-      * [transactions/view/[TRANSACTION_ID]](#transactionsviewtransaction_id)
   * [ucs/](#ucs)
       * [parameters](#parameters)
       * [community/members (POST)](#communitymembers-post)
       * [community/members/[PGP_FINGERPRINT]/membership/current](#communitymemberspgp_fingerprintmembershipcurrent)
       * [community/members/[PGP_FINGERPRINT]/membership/history](#communitymemberspgp_fingerprintmembershiphistory)
       * [community/voters (POST)](#communityvoters-post)
-      * [community/voters/[PGP_FINGERPRINT]/voting/current](#communitymemberspgp_fingerprintvotingcurrent)
-      * [community/voters/[PGP_FINGERPRINT]/voting/history](#communitymemberspgp_fingerprintvotinghistory)
+      * [community/voters/[PGP_FINGERPRINT]/voting/current](#communityvoterspgp_fingerprintvotingcurrent)
+      * [community/voters/[PGP_FINGERPRINT]/voting/history](#communityvoterspgp_fingerprintvotinghistory)
       * [amendment](#amendment)
       * [amendment/[AM_NUMBER]](#amendmentam_number)
-      * [amendment/[AM_NUMBER]/members](#amendmentam_numbermembers)
-      * [amendment/[AM_NUMBER]/voters](#amendmentam_numbervoters)
       * [amendment/[AM_NUMBER]/vote](#amendmentam_numbervote)
 
 ## Overview
@@ -81,10 +65,8 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |-- ucg/
     |   |-- pubkey
     |   |-- peering
-    |   |   |-- keys
     |   |   |-- forward
     |   |   |-- status
-    |   |   |-- peer
     |   |   `-- peers/
     |   |       |-- upstream/
     |   |       |   `-- [PGP_FINGERPRINT]
@@ -94,46 +76,40 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       `-- [PGP_FINGERPRINT]
     |-- hdc/
     |   |-- amendments/
-    |   |   |-- current/
-    |   |   |   `-- votes
     |   |   |-- promoted
     |   |   |   `-- [AMENDMENT_NUMBER]
     |   |   |-- view/
     |   |   |   `-- [AMENDMENT_ID]/
-    |   |   |       |-- members
+    |   |   |       |-- ismember/
+    |   |   |       |   `-- [PGP_FINGERPRINT]
+    |   |   |       |-- isvoter/
+    |   |   |       |   `-- [PGP_FINGERPRINT]
     |   |   |       |-- self
-    |   |   |       `-- voters
     |   |   |       `-- signatures
     |   |   `-- votes/
-    |   |   |   `-- [AMENDMENT_ID]/
-    |   |   |       `-- signatures
+    |   |   |   `-- [AMENDMENT_ID]
     |   |-- coins/
     |   |   `-- [PGP_FINGERPRINT]/
+    |   |       |-- last
     |   |       |-- list
     |   |       `-- view/
     |   |           `-- [COIN_NUMBER]/
     |   |               `-- history
     |   `-- transactions/
     |       |-- process
-    |       |-- all
-    |       |-- keys
     |       |-- last/
     |       |   `-- [count]
     |       |-- sender/
     |       |   `-- [PGP_FINGERPRINT]/
+    |       |       |-- view/
+    |       |       |   `-- [TX_NUMBER]
     |       |       |-- last/
-    |       |           `-- [count]
-    |       |       |-- transfer
-    |       |       `-- issuance/
-    |       |           |-- last
-    |       |           |-- fusion
-    |       |           |-- division
-    |       |           `-- dividend/
-    |       |               `-- [AM_NUMBER]
-    |       |-- recipient/
-    |       |   `-- [PGP_FINGERPRINT]
-    |       `-- view/
-    |           `-- [TRANSACTION_ID]
+    |       |       |   `-- [count]/
+    |       |       |       `-- [from]
+    |       |       `-- ud/
+    |       |           `-- [AM_NUMBER]
+    |       `-- recipient/
+    |           `-- [PGP_FINGERPRINT]
     `-- ucs/
         |-- parameters
         |-- community/
@@ -149,9 +125,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |               `-- current
         `-- amendment/
             `-- [AM_NUMBER]/
-                |-- vote
-                |-- members
-                `-- voters
+                `-- vote
 
 ## Merkle URLs
 
@@ -159,24 +133,9 @@ Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
 * `ucg/tht (GET)`
-* `ucg/peering/peers (GET)`
-* `ucg/peering/keys`
-* `hdc/amendments/current/votes`
-* `hdc/amendments/view/[AMENDMENT_ID]/members`
-* `hdc/amendments/view/[AMENDMENT_ID]/voters`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
-* `hdc/amendments/votes/[AMENDMENT_ID]`
-* `hdc/transactions/all`
-* `hdc/transactions/keys`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
-* `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance`
-* `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend`
-* `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]`
-* `hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`
-* `hdc/transactions/sender/[PGP_FINGERPRINT]/transfer`
 * `hdc/transactions/recipient/[PGP_FINGERPRINT]`
-* `ucs/amendment/[AM_NUMBER]/members`
-* `ucs/amendment/[AM_NUMBER]/voters`
 
 Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
@@ -279,24 +238,9 @@ Merkle URL                                                                | Leaf
 ------------------------------------------------------------------------- | ----------------------------------------| ---------------------------------------
 `pks/all`                                                                 | Fingerprint of the key                  | By fingerprint string sort, ascending.
 `ucg/tht (GET)`                                                           | Hash of the THT entry + signature       | By hash string sort, ascending.
-`ucg/peering/peers (GET)`                                                 | Hash of the peering entry + signature   | By hash string sort, ascending.
-`ucg/peering/keys`                                                        | Fingerprint of the key                  | By hash string sort, ascending.
-`hdc/amendments/current/votes`                                            | Hash of the signature                   | By hash string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/members`                              | Fingerprint of member's key fingerprint | By fingerprint string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/voters`                               | Fingerprint of voter's key fingeprint   | By fingerprint string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Hash of the signature                   | By hash string sort, ascending.
-`hdc/amendments/votes/[AMENDMENT_ID]`                                     | Hash of the signature                   | By hash string sort, ascending.
-`hdc/transactions/all`                                                    | Hash of the transaction + signature     | By hash string sort, ascending.
-`hdc/transactions/keys`                                                   | Fingerprint of the key                  | By fingerprint string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of the transaction + signature     | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance`                      | Hash of the transaction + signature     | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend`             | Hash of the transaction + signature     | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]` | Hash of the transaction + signature     | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`               | Hash of the transaction + signature     | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]/transfer`                      | Hash of the transaction + signature     | By hash string sort, ascending.
 `hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of the transaction + signature     | By hash string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/members`                                       | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`ucs/amendment/[AM_NUMBER]/voters`                                        | Fingerprint of the key                  | By fingerprint string sort, ascending.
 
 ## API
 
@@ -461,81 +405,6 @@ ZJJPb/89yrs9F7JkLi/oiAl5VpItm+hlFpLe1TE7oa6k53eZ2a+V
 #### `ucg/peering`
 **Goal**
 
-GET peering informations about a peer.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The peering entry of this node.
-
-This entry contains a sum-up of common Merkle URLs handled by this node, with their respective root value (level `0`).
-
-```json
-{
-  "currency": "CURRENCY_NAME",
-  "key": "SOME_KEY_FINGERPRINT",
-  "remote": {
-    "host": "name.example.com",
-    "ipv4": "11.11.11.11",
-    "ipv6": "",
-    "port": 8555
-  },
-  "contract": {
-    "currentNumber": 3,
-    "hash": "0BC14F62BF2876D11201D8BEBEFEAF9A8968CD15"
-  },
-  "merkles": {
-    "pks/all": {
-      "depth": 3,
-      "nodesCount": 6,
-      "leavesCount": 5,
-      "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-    },
-    "hdc/amendments/current/votes": {
-      "depth": 3,
-      "nodesCount": 6,
-      "leavesCount": 5,
-      "root": "9D5DC18A6CB3FA94B8FC3E07793D391CA1CA5BE5"
-    }
-  }
-}
-```
-
-#### `ucg/peering/keys`
-**Goal**
-
-Merkle URL referencing PGP keys' fingerprint this node manages, i.e. this node will have transactions history and follow other nodes for this history.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: key
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-}
-```
-
-#### `ucg/peering/peer`
-**Goal**
-
 GET the peering informations of this node.
 
 **Parameters**
@@ -550,10 +419,11 @@ Peering entry of the node.
   "version": "1",
   "currency": "beta_brousouf",
   "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-  "dns": "DNS_VALUE",
-  "ipv4": "IPV4_ADDRESS",
-  "ipv6": "IPV6_ADDRESS",
-  "port": "PORT",
+  "endpoints": [
+    "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+    "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+    "OTHER_PROTOCOL 88.77.66.55 9001",
+  ],
   "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
 }
 ```
@@ -587,10 +457,11 @@ Merkle URL leaf: peering entry
     "version": "1",
     "currency": "beta_brousouf",
     "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "dns": "DNS_VALUE",
-    "ipv4": "IPV4_ADDRESS",
-    "ipv6": "IPV6_ADDRESS",
-    "port": "PORT",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.55 9001"
+    ],
     "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
   }
 }
@@ -616,10 +487,11 @@ The posted entry.
   "version": "1",
   "currency": "beta_brousouf",
   "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-  "dns": "DNS_VALUE",
-  "ipv4": "IPV4_ADDRESS",
-  "ipv6": "IPV6_ADDRESS",
-  "port": "PORT",
+  "endpoints": [
+    "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+    "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+    "OTHER_PROTOCOL 88.77.66.55 9001"
+  ],
   "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
 }
 ```
@@ -639,12 +511,21 @@ The corresponding peer list.
 
 ```json
 {
-  "peers": [
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
-  ]
+  "peers": [{
+    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.55 9001"
+    ]
+  },{
+    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.44 9001"
+    ]
+  }]
 }
 ```
 
@@ -665,12 +546,21 @@ The corresponding peer list.
 
 ```json
 {
-  "peers": [
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
-  ]
+  "peers": [{
+    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.55 9001"
+    ]
+  },{
+    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.44 9001"
+    ]
+  }]
 }
 ```
 
@@ -689,12 +579,21 @@ The corresponding peer list.
 
 ```json
 {
-  "peers": [
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
-  ]
+  "peers": [{
+    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.55 9001"
+    ]
+  },{
+    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.44 9001"
+    ]
+  }]
 }
 ```
 
@@ -715,12 +614,21 @@ The corresponding peer list.
 
 ```json
 {
-  "peers": [
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8881},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8882},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8883},
-    {"key": "SOME_KEY_FINGERPRINT", "dns": "name.example.com", "ipv4": "11.11.11.11", "ipv6": "1A01:E35:2421:4BE0:CDBC:C04E:A7AB:ECF1", "port": 8884}
-  ]
+  "peers": [{
+    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.55 9001"
+    ]
+  },{
+    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
+    "endpoints": [
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
+      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
+      "OTHER_PROTOCOL 88.77.66.44 9001"
+    ]
+  }]
 }
 ```
 
@@ -896,45 +804,6 @@ This URL pattern manages all the data used by uCoin based on the PKS.
 
 In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
 
-#### `amendments/current`
-**Goal**
-
-Alias of `amendments/promoted`.
-
-#### `amendments/current/votes`
-**Goal**
-
-Merkle URL referencing the votes that legitimate the current amendment.
-
-This URL is a shortcut for `hdc/amendments/votes/[CURRENT_AMENDMENT_ID]`.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: signature
-```json
-{
-  "hash": "2D41234540938C4263CBC5E7E11564038DED2118",
-  "value": {
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
-  }
-}
-```
-
 #### `amendments/promoted`
 **Goal**
 
@@ -1005,37 +874,6 @@ The promoted amendment if it exists (otherwise return HTTP 404).
 }
 ```
 
-#### `amendments/view/[AMENDMENT_ID]/members`
-**Goal**
-
-Merkle URL refering to the members present in the Community for this amendment.
-
-**Parameters**
-
-Name           | Value                                                         | Method
--------------- | ------------------------------------------------------------- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: member
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-}
-```
-
 #### `amendments/view/[AMENDMENT_ID]/self`
 **Goal**
 
@@ -1072,10 +910,10 @@ The requested amendment.
 }
 ```
 
-#### `amendments/view/[AMENDMENT_ID]/voters`
+#### `amendments/view/[AMENDMENT_ID]/signatures`
 **Goal**
 
-Merkle URL refering to the voters listed in this amendment.
+Merkle URL referencing to the votes for a given amendment.
 
 **Parameters**
 
@@ -1095,20 +933,60 @@ Merkle URL result.
 }
 ```
 
-Merkle URL leaf: voter (also a member)
+Merkle URL leaf: signature
 ```json
 {
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+  "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
+  "value": {
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
+  }
 }
 ```
 
-#### `amendments/view/[AMENDMENT_ID]/signatures`
+#### `amendments/view/[AMENDMENT_ID]/ismember/[PGP_FINGERPRINT]`
 **Goal**
 
-Merkle URL refering to the received signatures for this amendment.
+GET wether a key was part of the Community at given amendment time.
 
-Shortcut for `hdc/amendments/votes/[PREVIOUS_AMENDEMENT_ID]`.
+**Parameters**
+
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`AMENDMENT_ID`    | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
+`PGP_FINGERPRINT` | Fingerprint of the key we want to test Community's belonging. | URL
+
+**Returns**
+
+Result saying wether key belongs to Community for this amendment.
+```json
+{
+  "key": "D13150FD106676133AD3BD816C2C7A57A3638029",
+  "member": true
+}
+```
+
+#### `amendments/view/[AMENDMENT_ID]/isvoter/[PGP_FINGERPRINT]`
+**Goal**
+
+GET wether a key was a voter at given amendment time.
+
+**Parameters**
+
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`AMENDMENT_ID`    | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
+`PGP_FINGERPRINT` | Fingerprint of the key we want to test voter's belonging.     | URL
+
+**Returns**
+
+Result saying wether key belongs to voters circle for this amendment.
+```json
+{
+  "key": "D13150FD106676133AD3BD816C2C7A57A3638029",
+  "voter": false
+}
+```
 
 #### `amendments/votes (GET)`
 **Goal**
@@ -1178,37 +1056,24 @@ The posted amendment + posted signature.
 }
 ```
 
-#### `amendments/votes/[AMENDMENT_ID]`
+#### `coins/[PGP_FINGERPRINT]/last`
 **Goal**
 
-Merkle URL referencing to the votes for a given amendment.
+GET last `[PGP_FINGERPRINT]` issued coin's informations.
 
 **Parameters**
 
-Name           | Value                                                         | Method
--------------- | ------------------------------------------------------------- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | Issuing key.                                                  | URL
 
 **Returns**
 
-Merkle URL result.
+Coin's information, or HTTP 404 if no coin was issued by this key.
 ```json
 {
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: signature
-```json
-{
-  "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
-  "value": {
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
-  }
+  "id" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0-1-1-A-2",
+  "transaction" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0"
 }
 ```
 
@@ -1366,129 +1231,6 @@ The recorded transaction and its signature.
 }
 ```
 
-#### `transactions/all`
-**Goal**
-
-Merkle URL referencing all the transactions stored by this node.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 14,
-      "recipient": "[PGP_FINGERPRINT]",
-      "type": "FUSION",
-      "coins": [
-        {
-          "id": "10-1-2-F-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Too much coins ! Making big one."
-    }
-  }
-}
-```
-
-
-
-#### `transactions/keys`
-**Goal**
-
-Merkle URL referencing PGP keys for which some transactions have been recoreded by this node (sent and received).
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: PGP key's fingerprint
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-}
-```
-
-#### `transactions/last`
-**Goal**
-
-Get the last received transaction.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The last transaction received.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 1,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "ISSUANCE",
-    "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
-        "transaction_id": ""
-      },{
-        // Other coin
-      },{
-        // ...
-      }
-    ],
-    "comment": "Universal Dividend"
-  }
-}
-```
-
 #### `transactions/last/[COUNT]`
 **Goal**
 
@@ -1496,9 +1238,9 @@ Get the last `n` received transactions.
 
 **Parameters**
 
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. | URL
+Name              | Value                                                                        | Method
+----------------- | ---------------------------------------------------------------------------- | ------
+`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. Defaults to 1. | URL
 
 **Returns**
 
@@ -1602,20 +1344,21 @@ Merkle URL leaf: transaction
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/last`
+#### `transactions/sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]`
 **Goal**
 
-Get the last received transaction of a PGP key.
+GET the transaction of given `TRANSACTION_ID`.
 
 **Parameters**
 
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction.   | URL
+Name              | Value                                                                                                                | Method
+----------------- | -------------------------------------------------------------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see transaction.                                                               | URL
+`TX_NUMBER`       | The transaction [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) number part. | URL
 
 **Returns**
 
-The last transaction of given PGP key.
+The transaction and its signature.
 ```json
 {
   "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
@@ -1625,36 +1368,39 @@ The last transaction of given PGP key.
     "version": 1,
     "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 1,
+    "number": 14,
     "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "ISSUANCE",
+    "type": "FUSION",
     "coins": [
       {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-F-14",
         "transaction_id": ""
       },{
-        // Other coin
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1",
+        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
       },{
-        // ...
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1",
+        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
       }
     ],
-    "comment": "Universal Dividend"
+    "comment": "Too much coins ! Making big one."
   }
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/last/[COUNT]`
+#### `transactions/sender/[PGP_FINGERPRINT]/last/[COUNT]/[FROM]`
 **Goal**
 
 Get the last `n` received transactions of a PGP key.
 
 **Parameters**
 
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction.   | URL
-`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. | URL
+Name              | Value                                                                                      | Method
+----------------- | ------------------------------------------------------------------------------------------ | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction.                                | URL
+`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. Defaults to 1.               | URL
+`FROM`            | Integer indicating to retrieve [COUNT] transactions starting from [FROM] number. Optional. | URL
 
 **Returns**
 
@@ -1704,40 +1450,28 @@ The last [COUNT] transactions of given PGP key.
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/transfer`
+#### `transactions/sender/[PGP_FINGERPRINT]/ud/[AM_NUMBER]`
 **Goal**
 
-Merkle URL referencing all **transfer** transactions sent by this sender and stored by this node (should contain all **transfer** transactions of the sender).
+GET all the transactions issued by `[PGP_FINGERPRINT]` whose some coins refer to given promoted amendment with number `[AM_NUMBER]`.
 
 **Parameters**
 
 Name              | Value                                                         | Method
 ----------------- | ------------------------------------------------------------- | ------
 `PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
+`AM_NUMBER`       | Amendment number we want to check issuance transactions.      | URL
 
 **Returns**
 
-Merkle URL result.
+A list of transactions for given PGP key.
 ```json
 {
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
+  "transactions": [
     {
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 2102,
+      "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "type": "TRANSFER",
@@ -1746,47 +1480,13 @@ Merkle URL leaf: transaction
           "id": "10-1-2-F-14",
           "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
         },{
-          "id": "10-1-2-A-38",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1218"
+          // Other coin
+        },{
+          // ...
         }
       ],
       "comment": "Paying LoLCat's food."
-    }
-  }
-}
-```
-
-#### `transactions/sender/[PGP_FINGERPRINT]/issuance`
-**Goal**
-
-Merkle URL referencing all **issuance** transactions (forged coins) sent by this sender and stored by this node (should contain all **issuance** transactions of the sender).
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
+    },{
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
@@ -1806,266 +1506,7 @@ Merkle URL leaf: transaction
       ],
       "comment": "Too much coins ! Making big one."
     }
-  }
-}
-```
-
-#### `transactions/sender/[PGP_FINGERPRINT]/issuance/last`
-**Goal**
-
-Get the last received *issuance* transaction of a PGP key.
-
-**Parameters**
-
-Name              | Value                                                                | Method
------------------ | -------------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last issuance transaction. | URL
-
-**Returns**
-
-The last *issuance* transaction of given PGP key.
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
-      "coins": [
-        {
-          "id": "10-1-2-F-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Too much coins ! Making big one."
-    }
-  }
-}
-```
-
-#### `transactions/sender/[PGP_FINGERPRINT]/issuance/dividend`
-**Goal**
-
-Merkle URL referencing all **dividend** transactions (issuance of new coins) sent by this sender and stored by this node (should contain all **dividend** transactions of the sender).
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 1,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "ISSUANCE",
-    "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
-        "transaction_id": ""
-      },{
-        // Other coin
-      },{
-        // ...
-      }
-    ],
-    "comment": "Universal Dividend"
-  }
-}
-```
-
-#### `transactions/sender/[PGP_FINGERPRINT]/issuance/dividend/[AM_NUMBER]`
-**Goal**
-
-Merkle URL referencing all **dividend** transactions (issuance of new coins) **for given amendment** sent by this sender and stored by this node (should contain all **dividend** transactions of the sender **for** this amendment).
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 1,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "ISSUANCE",
-    "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
-        "transaction_id": ""
-      },{
-        // Other coin
-      },{
-        // ...
-      }
-    ],
-    "comment": "Universal Dividend"
-  }
-}
-```
-
-#### `transactions/sender/[PGP_FINGERPRINT]/issuance/fusion`
-**Goal**
-
-Merkle URL referencing all **fusion** transactions sent by this sender and stored by this node (should contain all **fusion** transactions of the sender).
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
-      "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
-      "coins": [
-        {
-          "id": "10-1-2-F-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Too much coins ! Making big one."
-    }
-  }
-}
-```
-
-#### `transactions/sender/[PGP_FINGERPRINT]/issuance/division`
-**Goal**
-
-Merkle URL referencing all **division** transactions sent by this sender and stored by this node (should contain all **division** transactions of the sender).
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "transaction":
-    {
-      "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
-      "number": 15,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "DIVISION",
-      "coins": [
-        {
-          "id": "10-2-1-D-15",
-          "transaction_id": ""
-        },{
-          "id": "11-1-1-D-15",
-          "transaction_id": ""
-        },{
-          "id": "12-1-1-D-15",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Can't give only 10! Division may do it."
-    }
-  }
+  ]
 }
 ```
 
@@ -2119,50 +1560,6 @@ Merkle URL leaf: transaction
       ],
       "comment": "Too much coins ! Making big one."
     }
-  }
-}
-```
-
-#### `transactions/view/[TRANSACTION_ID]`
-**Goal**
-
-GET the transaction of given `TRANSACTION_ID`.
-
-**Parameters**
-
-Name              | Value                                                                                                    | Method
------------------ | -------------------------------------------------------------------------------------------------------- | ------
-`TRANSACTION_ID`  | The transaction [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction). | URL
-
-**Returns**
-
-The transaction and its signature.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 14,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "FUSION",
-    "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-F-14",
-        "transaction_id": ""
-      },{
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1",
-        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-      },{
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1",
-        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-      }
-    ],
-    "comment": "Too much coins ! Making big one."
   }
 }
 ```
@@ -2500,70 +1897,6 @@ Amendment to be voted by this node if voting happened.
     "+31A6302161AC8F5938969E85399EB3415C237F93"
   ],
   "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-}
-```
-
-#### `amendment/[AM_NUMBER]/members`
-
-**Goal**
-
-Merkle URL refering to the members present in the Community for this amendment.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`AM_NUMBER`       | The amendment number to be promoted.                          | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: member
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-}
-```
-
-#### `amendment/[AM_NUMBER]/voters`
-
-**Goal**
-
-Merkle URL refering to the members present in the Community for this amendment.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`AM_NUMBER`       | The amendment number to be promoted.                          | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: voter
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
 }
 ```
 

@@ -30,7 +30,7 @@ module.exports = function (pgp, currency, conf) {
         };
         var map = {};
         coins.forEach(function (coin) {
-          var matches = coin.id.match(/^([A-Z\d]{40})-(\d+-\d-\d+-(A|F|D)-\d+)$/);
+          var matches = coin.id.match(/^([A-Z\d]{40})-(\d+-\d-\d+-(A|C)-\d+)$/);
           var issuer = matches[1];
           map[issuer] = map[issuer] || [];
           map[issuer].push(matches[2]);
@@ -145,7 +145,7 @@ module.exports = function (pgp, currency, conf) {
 
 function getTransactionStack (coinString, stack, done) {
   console.log(coinString);
-  var matches = coinString.match(/([A-Z\d]{40}-\d+-\d-\d+-(A|F|D)-\d+)(, ([A-Z\d]{40})-(\d+))?/);
+  var matches = coinString.match(/([A-Z\d]{40}-\d+-\d-\d+-(A|C)-\d+)(, ([A-Z\d]{40})-(\d+))?/);
   if(!matches){
     done('Wrong coin string: ' + coinString);
     return;

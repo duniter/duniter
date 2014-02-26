@@ -94,7 +94,7 @@ TransactionSchema.methods = {
   getCoins: function() {
     var coins = [];
     for (var i = 0; i < this.coins.length; i++) {
-      var matches = this.coins[i].match(/([A-Z\d]{40})-(\d+)-(\d)-(\d+)-(A|F|D)-(\d+)(, ([A-Z\d]{40})-(\d+))?/);
+      var matches = this.coins[i].match(/([A-Z\d]{40})-(\d+)-(\d)-(\d+)-(A|C)-(\d+)(, ([A-Z\d]{40})-(\d+))?/);
       if(matches && matches.length == 10){
         coins.push({
           id: matches[0],
@@ -129,10 +129,7 @@ TransactionSchema.methods = {
       // Get last coin of the list
       var coins = this.getCoins();
       return coins[coins.length - 1];
-    } else if (this.type == 'FUSION') {
-      // Get first coin
-      return this.getCoins()[0];
-    } else if (this.type == 'DIVISION') {
+    } else if (this.type == 'CHANGE') {
       // Get last coin of the list with no TRANSACTION_ID
       var coins = this.getCoins();
       var lastCoin = null;
@@ -186,7 +183,7 @@ TransactionSchema.methods = {
       comment: this.comment
     }
     this.coins.forEach(function (coin) {
-      var matches = coin.match(/^([A-Z\d]{40}-\d+-\d-\d+-(A|F|D)-\d+)(, ([A-Z\d]{40}-\d+))?/);
+      var matches = coin.match(/^([A-Z\d]{40}-\d+-\d-\d+-(A|C)-\d+)(, ([A-Z\d]{40}-\d+))?/);
       obj.coins.push({
         id: matches[1],
         transaction_id: matches[4] ? matches[4] : ''
@@ -232,7 +229,7 @@ TransactionSchema.statics.findLastOf = function (fingerprint, done) {
 
 TransactionSchema.statics.findLastIssuance = function (fingerprint, done) {
 
-  this.find({ sender: fingerprint, type: { $in: ['ISSUANCE', 'FUSION', 'DIVISION'] } }).sort({number: -1}).limit(1).exec(function (err, txs) {
+  this.find({ sender: fingerprint, type: { $in: ['ISSUANCE', 'CHANGE'] } }).sort({number: -1}).limit(1).exec(function (err, txs) {
     if(txs && txs.length == 1){
       done(err, txs[0]);
       return;

@@ -52,8 +52,8 @@ module.exports.get = function (pgp, currency, conf) {
       else if(tx.type == 'ISSUANCE'){
         issue(tx, callback);
       }
-      else if(tx.type == 'DIVISION'){
-        division(tx, callback);
+      else if(tx.type == 'CHANGE'){
+        change(tx, callback);
       }
       else if(tx.type == 'TRANSFER'){
         transfert(tx, callback);
@@ -355,8 +355,8 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  function division(tx, callback) {
-    var divisionCoins = [];
+  function change(tx, callback) {
+    var changeCoins = [];
     async.waterfall([
       function (next){
         Key.isManaged(tx.sender, next);
@@ -410,16 +410,16 @@ module.exports.get = function (pgp, currency, conf) {
             return;
           }
           var err = null;
-          var isDivisionCoin = true;
+          var isChangeCoin = true;
           coins.forEach(function (coin) {
-            isDivisionCoin = isDivisionCoin && !coin.transaction;
-            if (isDivisionCoin) {
-              divisionCoins.push(coin);
+            isChangeCoin = isChangeCoin && !coin.transaction;
+            if (isChangeCoin) {
+              changeCoins.push(coin);
             }
             if (!err && coin.base == 0) {
               err = 'Coins base must be a value between 1 and 9';
             }
-            if(!err && isDivisionCoin && coin.number != ++lastNum){
+            if(!err && isChangeCoin && coin.number != ++lastNum){
               err = 'Bad transaction: coins do not have a good sequential numerotation';
             }
           });
@@ -432,22 +432,22 @@ module.exports.get = function (pgp, currency, conf) {
       },
       function (next){
         // Verify change coin sum
-        var divisionSum = 0;
+        var changeSum = 0;
         var materialSum = 0;
-        var isDivisionCoin = true;
+        var isChangeCoin = true;
         tx.getCoins().forEach(function (coin, index) {
-          isDivisionCoin = isDivisionCoin && !coin.transaction;
-          if (!isDivisionCoin && !coin.transaction) {
-            next('Bad coin sequence: first part must contains only division coins, second part must contain only material coins');
+          isChangeCoin = isChangeCoin && !coin.transaction;
+          if (!isChangeCoin && !coin.transaction) {
+            next('Bad coin sequence: first part must contains only change coins, second part must contain only material coins');
             return;
           }
-          if(isDivisionCoin)
-            divisionSum += coin.base * Math.pow(10, coin.power);
+          if(isChangeCoin)
+            changeSum += coin.base * Math.pow(10, coin.power);
           else
             materialSum += coin.base * Math.pow(10, coin.power);
         });
-        if(materialSum != divisionSum){
-          next('Bad division sum: division sum (' + divisionSum + ') != material sum (' + materialSum + ')');
+        if(materialSum != changeSum){
+          next('Bad change sum: change sum (' + changeSum + ') != material sum (' + materialSum + ')');
           return;
         }
         next();
@@ -459,7 +459,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (am, next) {
         var err = null;
         if (am) {
-          divisionCoins.forEach(function (coin) {
+          changeCoins.forEach(function (coin) {
             if (!err && coin.power < am.coinMinPower) {
               err = 'Coins must now have a minimum power of ' + am.coinMinPower + ', as written in amendment #' + am.number;
             }
@@ -470,7 +470,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (next){
         // Verify each coin is owned
         var coins = tx.getCoins();
-        coins = _(coins).last(coins.length - divisionCoins.length);
+        coins = _(coins).last(coins.length - changeCoins.length);
         async.forEach(coins, function(coin, callback){
           Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
             if(err || ownership.owner != tx.sender){
@@ -485,12 +485,12 @@ module.exports.get = function (pgp, currency, conf) {
         tx.save(next);
       },
       function (txSaved, code, next){
-        Merkle.updateForDivision(tx, next);
+        Merkle.updateForChange(tx, next);
       },
       function (merkle, code, next){
-        // Remove ownership of division coins
+        // Remove ownership of change coins
         var coins = tx.getCoins();
-        var materialCoins = _(coins).last(coins.length - divisionCoins.length);
+        var materialCoins = _(coins).last(coins.length - changeCoins.length);
         async.forEach(materialCoins, function(coin, callback){
           Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
             ownership.owner = '';
@@ -500,7 +500,7 @@ module.exports.get = function (pgp, currency, conf) {
         }, next);
       },
       function (next) {
-        async.forEach(divisionCoins, function(coin, callback){
+        async.forEach(changeCoins, function(coin, callback){
           var c = new Coin({
             id: coin.id,
             transaction: tx.sender + '-' + tx.number,

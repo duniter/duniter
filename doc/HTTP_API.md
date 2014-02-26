@@ -1099,7 +1099,7 @@ Coins list with their owner.
       "ids": ["1-5-2-A-1", "2-4-1-A-1"]
     },{
       "issuer": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "ids": ["10-1-2-F-14"]
+      "ids": ["10-1-2-C-14"]
     }
   ]
 }
@@ -1155,7 +1155,7 @@ Transaction chain.
       "type": "TRANSFER",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
         },{
           // Other coin
@@ -1169,10 +1169,10 @@ Transaction chain.
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
+      "type": "CHANGE",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": ""
         },{
           "id": "2-4-1-A-1",
@@ -1257,7 +1257,7 @@ The last [COUNT] transactions received.
       "type": "TRANSFER",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
         },{
           // Other coin
@@ -1271,10 +1271,10 @@ The last [COUNT] transactions received.
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
+      "type": "CHANGE",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": ""
         },{
           "id": "2-4-1-A-1",
@@ -1325,10 +1325,10 @@ Merkle URL leaf: transaction
       "sender": "[PGP_FINGERPRINT]",
       "number": 14,
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
+      "type": "CHANGE",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": ""
         },{
           "id": "2-4-1-A-1",
@@ -1371,10 +1371,10 @@ The transaction and its signature.
     "number": 14,
     "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "FUSION",
+    "type": "CHANGE",
     "coins": [
       {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-F-14",
+        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-C-14",
         "transaction_id": ""
       },{
         "id": "31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1",
@@ -1417,7 +1417,7 @@ The last [COUNT] transactions of given PGP key.
       "type": "TRANSFER",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
         },{
           // Other coin
@@ -1431,10 +1431,10 @@ The last [COUNT] transactions of given PGP key.
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
+      "type": "CHANGE",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": ""
         },{
           "id": "2-4-1-A-1",
@@ -1477,7 +1477,7 @@ A list of transactions for given PGP key.
       "type": "TRANSFER",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
         },{
           // Other coin
@@ -1491,10 +1491,10 @@ A list of transactions for given PGP key.
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "FUSION",
+      "type": "CHANGE",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": ""
         },{
           "id": "2-4-1-A-1",
@@ -1545,10 +1545,10 @@ Merkle URL leaf: transaction
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
       "recipient": "[PGP_FINGERPRINT]",
-      "type": "FUSION",
+      "type": "CHANGE",
       "coins": [
         {
-          "id": "10-1-2-F-14",
+          "id": "10-1-2-C-14",
           "transaction_id": ""
         },{
           "id": "2-4-1-A-1",

@@ -131,6 +131,11 @@ function ParameterNamespace (currency) {
       callback("Count format is incorrect, must be a positive integer");
       return;
     }
+    var count = parseInt(matches[1], 10);
+    if(count <= 0){
+      callback("Count must be a positive integer");
+      return;
+    }
     callback(null, matches[1]);
   };
 

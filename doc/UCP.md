@@ -63,7 +63,7 @@ A vote is a simple signature of an amendment, refering to [HDC Vote request](htt
 
 #### Transactions
 
-Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, fusion or transfer money. It is the final support of money and it materializes money ownership.
+Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, change or transfer money. It is the final support of money and it materializes money ownership.
 
 ### uCoin UCG data
 
@@ -387,7 +387,7 @@ If the following conditions matches:
 
 adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 
-##### Transaction type: FUSION
+##### Transaction type: CHANGE
 
 Takes a transaction and a signature of it. If the following conditions matches:
 
@@ -395,7 +395,7 @@ Takes a transaction and a signature of it. If the following conditions matches:
 * The `Sender` is handled by this node
 * The `Recipient` is handled by this node
 * The transaction chain matches
-* The transaction has a valid fusion content
+* The transaction has a valid change content
 
 adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
 

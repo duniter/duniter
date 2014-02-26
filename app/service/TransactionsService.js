@@ -52,9 +52,6 @@ module.exports.get = function (pgp, currency, conf) {
       else if(tx.type == 'ISSUANCE'){
         issue(tx, callback);
       }
-      else if(tx.type == 'FUSION'){
-        fusion(tx, callback);
-      }
       else if(tx.type == 'DIVISION'){
         division(tx, callback);
       }
@@ -358,136 +355,6 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  function fusion(tx, callback) {
-    async.waterfall([
-      function (next){
-        Key.isManaged(tx.sender, next);
-      },
-      function (verified, next){
-        if(!verified){
-          next('Issuer\'s key not managed by this node');
-          return;
-        }
-        // Get last transaction
-        Transaction.findLastOf(tx.sender, function (err, lastTX) {
-          if(lastTX){
-            // Verify tx chaining
-            if(lastTX.number != tx.number - 1){
-              next('Transaction doest not follow your last one');
-              return;
-            }
-            if(lastTX.hash != tx.previousHash) {
-              next('Transaction have wrong previousHash (given ' + tx.previousHash + ', expected ' + lastTX.hash + ')');
-              return;
-            }
-          }
-          else{
-            if(tx.number != 0){
-              next('Transaction must have number #0 as it is your first');
-              return;
-            }
-            if(tx.previousHash){
-              next('Transaction must not have a previousHash as it is your first');
-              return;
-            }
-          }
-          next();
-        });
-      },
-      function (next){
-        // Get last issuance
-        Transaction.findLastIssuance(tx.sender, function (err, lastTX) {
-          // Verify coins chaining
-          var lastNum = -1;
-          if(lastTX){
-            lastNum = lastTX.getLastIssuedCoin();
-            lastNum = lastNum && lastNum.number;
-            if (lastNum == null) {
-              lastNum = -1;
-            }
-          }
-          var newCoins = tx.getCoins();
-          if(newCoins[0].number != lastNum + 1){
-            next('Bad transaction: fusionned coin number must follow last issuance transaction');
-            return;
-          }
-          next();
-        });
-      },
-      function (next){
-        // Verify fusion coin sum
-        var fusion = 0;
-        var sum = 0;
-        tx.getCoins().forEach(function (coin, index) {
-          if(index == 0)
-            fusion = coin.base * Math.pow(10, coin.power);
-          else
-            sum += coin.base * Math.pow(10, coin.power);
-        });
-        if(sum != fusion){
-          next('Bad fusion sum');
-          return;
-        }
-        next();
-      },
-      function (next) {
-        // Check coins minimum power
-        Amendment.findClosestPreviousWithMinimalCoinPower(tx.sigDate, next);
-      },
-      function (am, next) {
-        var err = null;
-        if (am) {
-          var coin = tx.getCoins()[0];
-          if (!err && coin.power < am.coinMinPower) {
-            err = 'Coins must now have a minimum power of ' + am.coinMinPower + ', as written in amendment #' + am.number;
-          }
-        }
-        next(err);
-      },
-      function (next){
-        // Verify each coin is owned
-        var coins = tx.getCoins();
-        coins = _(coins).last(coins.length - 1);
-        async.forEach(coins, function(coin, callback){
-          Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
-            if(err || ownership.owner != tx.sender){
-              callback(err || 'You are not the owner of coin ' + coin.issuer + '-' + coin.number + ' (' + (coin.base * Math.pow(10, coin.power)) + '). Cannot send it.');
-              return;
-            }
-            callback();
-          })
-        }, next);
-      },
-      function (next){
-        tx.save(next);
-      },
-      function (txSaved, code, next){
-        Merkle.updateForFusion(tx, next);
-      },
-      function (merkle, code, next){
-        // Remove ownership of fusion coins
-        async.forEach(_(tx.getCoins()).last(tx.coins.length-1), function(coin, callback){
-          Coin.findByCoinID(coin.issuer+'-'+coin.number, function (err, ownership) {
-            ownership.owner = '';
-            ownership.transaction = tx.sender + '-' + tx.number;
-            ownership.save(callback);
-          });
-        }, next);
-      },
-      function (next) {
-        var coin = tx.coins[0];
-        var c = new Coin({
-          id: coin.match(/([A-Z\d]{40}-\d+-\d-\d+-\w-\d+)?/)[1],
-          transaction: tx.sender + '-' + tx.number,
-          owner: tx.sender
-        });
-        c.save(next);
-      }
-    ], function (err, result) {
-      callback(err, tx);
-    });
-  }
-
   function division(tx, callback) {
     var divisionCoins = [];
     async.waterfall([
@@ -564,7 +431,7 @@ module.exports.get = function (pgp, currency, conf) {
         });
       },
       function (next){
-        // Verify fusion coin sum
+        // Verify change coin sum
         var divisionSum = 0;
         var materialSum = 0;
         var isDivisionCoin = true;

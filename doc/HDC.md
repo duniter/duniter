@@ -18,8 +18,7 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
   * [Coins format](#coins-format)
   * [Issuance transaction](#issuance-transaction)
   * [Transfer transaction](#transfert-transaction)
-  * [Fusion transaction](#fusion-transaction)
-  * [Division transaction](#division-transaction)
+  * [Change transaction](#change-transaction)
   * [Money ownership](#money-ownership)
   * [Transactions chain](#transactions-chain)
 
@@ -215,10 +214,9 @@ Transactions are the last step after defining Certificates and Amendments. Trans
 
 A transaction is used either to:
 
-* Transfer *new* money
+* Issue *new* money
 * Transfer *existing* money
-* Transfer *fusionned* money
-* Transfer *divided* money
+* Change *existing* money
 
 A transaction is defined by the following format:
 
@@ -248,7 +246,7 @@ Field | Description
 `Number` | an increment number identifying this transaction among all others sender's transactions.
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous transaction (content AND signature), and is used to identify without ambiguity the previous transaction (it is an integrity mecanism).
 `Recipient` | the recipient's OpenPGP fingerprint to whom the coins are to be sent.
-`Type` | gives information on how to to interprete the coin list. Value is either `TRANSFER`, `ISSUANCE`, `FUSION` or `DIVISION`.
+`Type` | gives information on how to to interprete the coin list. Value is either `TRANSFER`, `ISSUANCE` or `CHANGE`.
 `Coins` | a list of coins that are to be sent. Each line starts with a `COIN_ID` identifying the coin, eventually followed by a comma and a `TRANSACTION_ID` justifying the ownership of the coin.
 `Comment` | comment for transaction. May be used for any future purpose. Multiline field, ends at the end of the transaction message.
 
@@ -264,7 +262,7 @@ In HDC, a Transaction structure is considered *valid* if:
 * Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
 * Fields `Version`, `Number` are zero or positive integer values.
 * Field `PreviousHash` is an upper-cased SHA-1 hash, if present.
-* Field `Type` has either `TRANSFER`, `ISSUANCE`, `FUSION` or `DIVISION` value.
+* Field `Type` has either `TRANSFER`, `ISSUANCE` or `CHANGE` value.
 * In case of `Type: TRANSFER`:
   * `Coins` must have at least one coin.
   * Each line must be **with** `TRANSACTION_ID` provided.
@@ -273,15 +271,10 @@ In HDC, a Transaction structure is considered *valid* if:
   * `Coins` must have at least one coin.
   * Each line must be **without** `TRANSACTION_ID` provided.
   * Coins must follow a sequential numbering.
-* In case of `Type: FUSION`:
-  * `Sender` equals to `Recipient`
-  * `Coins` must have its first coin, matching a `F-TRANSACTION_NUMBER` format (it is the result coin).
-  * Following coins must have lines **with** `TRANSACTION_ID` provided.
-  * Following coins sum of values **must be exactly** the same value as the first coin (result coin)
-* In case of `Type: DIVISION`:
+* In case of `Type: CHANGE`:
   * `Sender` equals to `Recipient`
   * `Coins` must have *at least* 3 coins
-  * First coins must be matching `F-TRANSACTION_NUMBER` format *without* `TRANSACTION_ID`. Such coins are known as *resulting coins*.
+  * First coins must be matching `C-TRANSACTION_NUMBER` format *without* `TRANSACTION_ID`. Such coins are known as *resulting coins*.
   * Following coins must have lines **with** `TRANSACTION_ID` provided.
   * It is required to have at least 2 *resulting coins*.
   * *Resulting coins* must follow a sequential numbering.
@@ -306,16 +299,15 @@ Field | Description
 `COIN_ORIGIN` is one of the following structure:
 
     A-AMENDMENT_NUMBER
-    F-TRANSACTION_NUMBER
-    D-TRANSACTION_NUMBER
+    C-TRANSACTION_NUMBER
 
 With the following meaning:
 
 Field | Description
 ----- | -----------
-`A, F or D` | `A` indicates the coin is issued from an amendment, `F` indicates the coin is issued by fusion of other coins, while `D` indicates the coin is issued by division of other coin(s).
+`A or C` | `A` indicates the coin is issued from an amendment, while `C` indicates the coin is issued by change of coins.
 `AMENDMENT_NUMBER` | is the unique Amendment number from which this coin is created (justifying the issuance).
-`TRANSACTION_NUMBER` | is the unique Transaction number of the individual from which this coin is created (fusion or division cases).
+`TRANSACTION_NUMBER` | is the unique Transaction number of the individual from which this coin is created (justifying the change).
 
 #### Examples
 
@@ -330,7 +322,7 @@ and his next coins would have a value of 40 and 60 respectively:
 
 if he wanted to forge coins 2 and 3 thereafter (say in his 14th transaction), the future coin id of value 100 would be:
 
-    31A6302161AC8F5938969E85399EB3415C237F93-4-1-2-F-14
+    31A6302161AC8F5938969E85399EB3415C237F93-4-1-2-C-14
 
 ### Issuance transaction
 
@@ -388,31 +380,9 @@ Thereafter, when `Recipient` wants to send those coins to someone else, he will 
     Comment:
     Here I am sending coins 500 and 200 to someone else (either an individual or organization).
 
-### Fusion transaction
+### Change transaction
 
-Fusion transaction is identified by having `Type: FUSION` value. Such a transaction allows to fusion *existing* coins into a *new* one with a value equals to the sum of the material coins.
-
-#### Example
-
-    Version: 1
-    Currency: beta_brousouf
-    Sender: 31A6302161AC8F5938969E85399EB3415C237F93
-    Number: 92
-    PreviousHash: 3121CAB678CAC26D8E2E285812719672E3430A75
-    Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
-    Type: FUSION
-    Coins:
-    31A6302161AC8F5938969E85399EB3415C237F93-9-5-1-F-92
-    31A6302161AC8F5938969E85399EB3415C237F93-6-3-1-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
-    31A6302161AC8F5938969E85399EB3415C237F93-7-1-1-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
-    31A6302161AC8F5938969E85399EB3415C237F93-8-1-1-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
-    Comment:
-    Here I am fusioning my coins 6,7,8 (of respective value 30,10,10) to make a new coin of value 50.
-    Of course, coins 6,7,8 are therefore unusable as they are no more part of monetary mass.
-
-### Division transaction
-
-Division transaction is identified by having `Type: DIVISION` value. Such a transaction allows to divide *existing* coins into *several new ones* whose sum of values equals to the sum of the material coins.
+Change transaction is identified by having `Type: CHANGE` value. Such a transaction allows to divide *existing* coins into *one or several new ones* whose sum of values equals to the sum of the material coins.
 
 #### Example
 
@@ -422,12 +392,12 @@ Division transaction is identified by having `Type: DIVISION` value. Such a tran
     Number: 93
     PreviousHash: 3121CAB678CAC26D8E2E285812719672E3430A75
     Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
-    Type: DIVISION
+    Type: CHANGE
     Coins:
-    31A6302161AC8F5938969E85399EB3415C237F93-10-2-1-D-93
-    31A6302161AC8F5938969E85399EB3415C237F93-11-2-1-D-93
-    31A6302161AC8F5938969E85399EB3415C237F93-12-1-1-D-93
-    31A6302161AC8F5938969E85399EB3415C237F93-9-5-1-F-92, 31A6302161AC8F5938969E85399EB3415C237F93-92
+    31A6302161AC8F5938969E85399EB3415C237F93-10-2-1-C-93
+    31A6302161AC8F5938969E85399EB3415C237F93-11-2-1-C-93
+    31A6302161AC8F5938969E85399EB3415C237F93-12-1-1-C-93
+    31A6302161AC8F5938969E85399EB3415C237F93-9-5-1-C-92, 31A6302161AC8F5938969E85399EB3415C237F93-92
     Comment:
     Here I am dividing my coin of value `50` to make a 3 new coins of respective value `20`, `20` and `10`.
     Coin 9 (value `50`) is therefore unusable as it is no more part of monetary mass.

@@ -171,6 +171,7 @@ TransactionSchema.methods = {
 
   json: function() {
     var obj = {
+      signature: this.signature,
       version: parseInt(this.version, 10),
       currency: this.currency,
       sender: this.sender,

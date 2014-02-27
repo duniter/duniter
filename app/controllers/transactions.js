@@ -27,13 +27,13 @@ module.exports = function (pgp, currency, conf) {
         Transaction.find({ sender: txSender, number: txNumber }, next);
       }
     ], function (err, result) {
+      res.setHeader("Content-Type", "text/plain");
       if(err || result.length == 0){
         res.send(404, err);
         return;
       }
       res.send(200, JSON.stringify({
         raw: result[0].getRaw(),
-        signature: result[0].signature,
         transaction: result[0].json()
       }, null, "  "));
     });
@@ -48,6 +48,7 @@ module.exports = function (pgp, currency, conf) {
           Transaction.find().sort({sigDate: -1}).limit(count).exec(next);
         }
       ], function (err, results) {
+        res.setHeader("Content-Type", "text/plain");
         if(err){
           res.send(404, err);
           return;
@@ -100,6 +101,7 @@ module.exports = function (pgp, currency, conf) {
           Transaction.find({ sender: fingerprint }).sort({number: -1}).limit(count).exec(next);
         }
       ], function (err, results) {
+        res.setHeader("Content-Type", "text/plain");
         if(err){
           res.send(404, err);
           return;
@@ -110,7 +112,28 @@ module.exports = function (pgp, currency, conf) {
         });
         res.send(200, JSON.stringify(json, null, "  "));
       });
-    }
+    },
+
+    ud: function (req, res) {
+      async.auto({
+        fpr: async.apply(ParametersService.getFingerprint, req),
+        num: async.apply(ParametersService.getAmendmentNumber, req),
+        transactions: ['fpr', 'num', function (done, results) {
+          Transaction.findAllIssuanceOfSenderForAmendment(results.fpr, results.num, done);
+        }]
+      }, function(err, results) {
+        res.setHeader("Content-Type", "text/plain");
+        if(err){
+          res.send(404, err);
+          return;
+        }
+        var txs = [];
+        results.transactions.forEach(function(tx){
+          txs.push(tx.json());
+        });
+        res.send(200, JSON.stringify({"transactions": txs}, null, "  "));
+      });
+    },
   };
 
   this.processTx = function (req, res) {
@@ -129,7 +152,6 @@ module.exports = function (pgp, currency, conf) {
       }
       else{
         res.send(200, JSON.stringify({
-          signature: tx.signature,
           transaction: tx.json(),
           raw: tx.getRaw()
         }, null, "  "));
@@ -179,7 +201,6 @@ function lambda(hashes, done) {
       var map = {};
       txs.forEach(function (tx){
         map[tx.hash] = {
-          signature: tx.signature,
           transaction: tx.json(),
           raw: tx.getRaw()
         };

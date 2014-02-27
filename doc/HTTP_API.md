@@ -1073,6 +1073,8 @@ Coin's information, or HTTP 404 if no coin was issued by this key.
 ```json
 {
   "id" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0-1-1-A-2",
+  "number": 0,
+  "issuer": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "transaction" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0"
 }
 ```
@@ -1147,6 +1149,7 @@ Transaction chain.
 {
   "transactions": [
     {
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1165,6 +1168,7 @@ Transaction chain.
       ],
       "comment": "Paying LoLCat's food."
     },{
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
@@ -1205,10 +1209,10 @@ Name              | Value                                                       
 The recorded transaction and its signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
   "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
     "version": 1,
     "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
@@ -1249,6 +1253,7 @@ The last [COUNT] transactions received.
 {
   "transactions": [
     {
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1267,6 +1272,7 @@ The last [COUNT] transactions received.
       ],
       "comment": "Paying LoLCat's food."
     },{
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
@@ -1318,9 +1324,9 @@ Merkle URL leaf: transaction
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
     "transaction":
     {
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "[PGP_FINGERPRINT]",
       "number": 14,
@@ -1361,10 +1367,10 @@ Name              | Value                                                       
 The transaction and its signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
   "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
     "version": 1,
     "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
@@ -1409,6 +1415,7 @@ The last [COUNT] transactions of given PGP key.
 {
   "transactions": [
     {
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1427,6 +1434,7 @@ The last [COUNT] transactions of given PGP key.
       ],
       "comment": "Paying LoLCat's food."
     },{
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
@@ -1469,6 +1477,7 @@ A list of transactions for given PGP key.
 {
   "transactions": [
     {
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1487,6 +1496,7 @@ A list of transactions for given PGP key.
       ],
       "comment": "Paying LoLCat's food."
     },{
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,
@@ -1538,9 +1548,9 @@ Merkle URL leaf: transaction
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
     "transaction":
     {
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 14,

@@ -4,8 +4,32 @@ var mongoose    = require('mongoose');
 var _           = require('underscore');
 var Coin        = mongoose.model('Coin');
 var Transaction = mongoose.model('Transaction');
+var service     = require('../service');
+
+// Services
+var ParametersService = service.Parameters;
 
 module.exports = function (pgp, currency, conf) {
+
+  this.last = function (req, res) {
+
+    async.waterfall([
+      async.apply(ParametersService.getFingerprint, req),
+      Coin.findLastOfOwner.bind(Coin)
+    ], function (err, coin) {
+      res.setHeader("Content-Type", "text/plain");
+      if (err || !coin) {
+        res.send(404, err || "No coin found");
+        return;
+      }
+      res.send(200, JSON.stringify({
+        id: coin.id,
+        number: coin.number,
+        issuer: coin.id.substring(0, 40),
+        transaction: coin.transaction
+      }, null, "  "));
+    });
+  };
 
   this.list = function (req, res) {
 
@@ -41,6 +65,7 @@ module.exports = function (pgp, currency, conf) {
         next(null, json);
       }
     ], function (err, result) {
+      res.setHeader("Content-Type", "text/plain");
       if(err){
         res.send(500, err);
         return;

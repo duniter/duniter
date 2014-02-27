@@ -9,6 +9,7 @@ var Schema   = mongoose.Schema;
 
 var CoinSchema = new Schema({
   id: { type: String, unique: true },
+  number: { type: Number },
   owner: String,
   transaction: String,
   created: { type: Date, default: Date.now },
@@ -25,7 +26,14 @@ CoinSchema.methods = {
 
 CoinSchema.statics.findByOwner = function (fingerprint, done) {
 
-  this.find({ owner: fingerprint }).sort({created: -1}).exec(done);
+  this.find({ owner: fingerprint }).sort({number: -1}).exec(done);
+};
+
+CoinSchema.statics.findLastOfOwner = function (fingerprint, done) {
+
+  this.find({ owner: fingerprint }).sort({number: -1}).limit(1).exec(function (err, coins) {
+    done(err, coins && coins[0]);
+  });
 };
 
 CoinSchema.statics.findByCoinID = function (coindID, done) {

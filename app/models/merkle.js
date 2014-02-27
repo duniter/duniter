@@ -263,28 +263,7 @@ MerkleSchema.statics.updateForTransfertToRecipient = function (tx, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateForFusion = function (tx, done) {
-  async.waterfall([
-    function (next){
-      // M1
-      Merkle.txOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
-      // M7
-      Merkle.txToRecipient(tx.recipient, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForDivision = function (tx, done) {
+MerkleSchema.statics.updateForChange = function (tx, done) {
   async.waterfall([
     function (next){
       // M1

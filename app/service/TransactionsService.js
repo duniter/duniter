@@ -208,10 +208,12 @@ module.exports.get = function (pgp, currency, conf) {
       function (txSaved, code, next){
         // Saves transaction's coins IDs
         async.forEach(tx.coins, function(coin, callback){
+          var matches = coin.match(/([A-Z\d]{40}-(\d+)-\d-\d+-\w-\d+)?/);
           var c = new Coin({
-            id: coin.match(/([A-Z\d]{40}-\d+-\d-\d+-\w-\d+)?/)[1],
+            id: matches[1],
             transaction: tx.sender + '-' + tx.number,
-            owner: tx.sender
+            owner: tx.sender,
+            number: parseInt(matches[2], 10)
           });
           c.save(callback);
         }, next);
@@ -334,6 +336,7 @@ module.exports.get = function (pgp, currency, conf) {
               // Creation
               var ownership = new Coin({
                 id: coin.id,
+                number: coin.number,
                 owner: tx.recipient,
                 transaction: tx.sender + '-' + tx.number
               });
@@ -405,8 +408,9 @@ module.exports.get = function (pgp, currency, conf) {
             }
           }
           var coins = tx.getCoins();
-          if(coins[0].number != lastNum + 1){
-            next('Bad transaction: coins number must follow last issuance transaction' + coins[0].number + ' ' + lastNum);
+          console.log(lastTX.getRaw());
+          if(parseInt(coins[0].number, 10) != lastNum + 1){
+            next('Bad transaction: coins number must follow last issuance transaction (last was #' + (lastNum + 1) + ', new first is #' + coins[0].number + ')');
             return;
           }
           var err = null;
@@ -503,6 +507,7 @@ module.exports.get = function (pgp, currency, conf) {
         async.forEach(changeCoins, function(coin, callback){
           var c = new Coin({
             id: coin.id,
+            number: coin.number,
             transaction: tx.sender + '-' + tx.number,
             owner: tx.sender
           });

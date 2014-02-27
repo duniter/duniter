@@ -204,8 +204,8 @@ module.exports.express = {
     app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
     app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
     app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
-    app.get(    '/hdc/amendments/view/:amendment_id/ismember/:fpr', notImplemented);
-    app.get(    '/hdc/amendments/view/:amendment_id/isvoter/:fpr',notImplemented);
+    app.get(    '/hdc/amendments/view/:amendment_id/ismember/:fpr', hdc.amendments.isMember);
+    app.get(    '/hdc/amendments/view/:amendment_id/isvoter/:fpr',hdc.amendments.isVoter);
     app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
     app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
     app.get(    '/hdc/coins/:fpr/last',                           notImplemented);

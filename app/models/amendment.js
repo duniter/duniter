@@ -423,6 +423,59 @@ AmendmentSchema.statics.isVoter = function (voter, amNumber, done) {
   ], done);
 };
 
+AmendmentSchema.statics.isMemberForAM = function (member, amNumber, amHash, done) {
+
+  this.searchPresence(member, amNumber, amHash, checkIsJoiningMember, checkIsLeavingMember, this.searchPresence.bind(this), done);
+};
+
+AmendmentSchema.statics.isVoterForAM = function (voter, amNumber, amHash, done) {
+
+  this.searchPresence(voter, amNumber, amHash, checkIsJoiningVoter, checkIsLeavingVoter, this.searchPresence.bind(this), done);
+};
+
+AmendmentSchema.statics.searchPresence = function (member, amNumber, amHash, isJoining, isLeaving, searchCallBack, done) {
+  var that = this;
+  async.waterfall([
+    function(next){
+      that.findByNumberAndHash(amNumber, amHash, next);
+    },
+    function (am, next) {
+      if (isJoining(am, member)) {
+        // Is a member
+        next(null, true);
+      } else if (isLeaving(am, member)) {
+        // Not a member
+        next(null, false);
+      } else if (am.number > 0) {
+        // Not present in this amendment, check previous
+        console.log("searchPresence callback %s to %s", am.number, am.number -1);
+        searchCallBack(member, am.number - 1, am.previousHash, isJoining, isLeaving, searchCallBack, next);
+      } else {
+        // No occurrence found
+        next(null, false);
+      }
+    }
+  ], done);
+};
+
+function checkIsJoiningMember (am, key) { return ~am.membersChanges.indexOf('+' + key); }
+function checkIsLeavingMember (am, key) { return ~am.membersChanges.indexOf('-' + key); }
+function checkIsJoiningVoter (am, key) { return ~am.votersChanges.indexOf('+' + key); }
+function checkIsLeavingVoter (am, key) { return ~am.votersChanges.indexOf('-' + key); }
+
+AmendmentSchema.statics.isVoter = function (voter, amNumber, done) {
+  var that = this;
+  async.waterfall([
+    function (next){
+      that.getLastStatusOfVoter(voter, amNumber, next);
+    },
+    function (status, next){
+      logger.debug('isVoter ? %s for AM#%s = %s', voter, amNumber, status);
+      next(null, status > 0);
+    },
+  ], done);
+};
+
 AmendmentSchema.statics.isProposedMember = function (member, amNumber, done) {
 
   var that = this;

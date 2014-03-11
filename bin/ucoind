@@ -222,6 +222,10 @@ var config = {};
 
 function overrideConf(conf) {
 
+  // Ensure is not null and have good structure
+  conf = conf || {};
+  conf.sync = conf.sync || {};
+
   config = {
     server: {
       port: program.port,
@@ -243,8 +247,8 @@ function overrideConf(conf) {
       port: program.mport,
       database: program.mdb,
     },
-    policy: 
-{      keys: program.kmanagement,
+    policy: {
+      keys: program.kmanagement,
       pubkeys: program.kaccept
     },
     sync: {
@@ -260,7 +264,6 @@ function overrideConf(conf) {
   };
 
   // Update conf
-  conf = conf || {};
   if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
   conf.ipv4        = config.server.ipv4address || conf.ipv4;
   conf.ipv6        = config.server.ipv6address || conf.ipv6;

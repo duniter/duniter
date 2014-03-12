@@ -1,5 +1,6 @@
-var _     = require('underscore');
-var async = require('async');
+var _         = require('underscore');
+var async     = require('async');
+var networker = require('../lib/networker');
 
 module.exports = new Service();
 
@@ -19,11 +20,14 @@ function Service () {
     this.PublicKey    = services.PublicKey    = require("./PublicKeyService").get(pgp, currency, conf);
     this.THT          = services.THT          = require("./THTService").get(pgp, currency, conf);
     this.Contract     = services.Contract     = require("./ContractService").get(currency, conf);
+    this.Peering      = services.Peering      = require("./PeeringService").get(pgp, currency, conf);
     this.Sync         = services.Sync         = require("./SyncService").get(pgp, currency, conf);
     this.Strategy     = services.Strategy     = require("./StrategyService").get(pgp, currency, conf);
     this.Transactions = services.Transactions = require("./TransactionsService").get(pgp, currency, conf);
-    this.Peering      = services.Peering      = require("./PeeringService").get(pgp, currency, conf);
     this.Vote         = services.Vote         = require("./VoteService").get(pgp, currency, conf);
+
+    // Binds Peering events to Networker
+    networker(this.Peering);
   };
 
   /**

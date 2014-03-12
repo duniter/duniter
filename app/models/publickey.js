@@ -16,7 +16,6 @@ var PublicKeySchema = new Schema({
   email: String,
   comment: String,
   hash: String,
-  propagated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -241,7 +240,6 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           foundKeys[0].sigDate = pubkey.sigDate;
           foundKeys[0].hash = pubkey.hash;
           foundKeys[0].updated = now;
-          foundKeys[0].propagated = false;
           foundKeys[0].save(function (err) {
             next(err);
           });

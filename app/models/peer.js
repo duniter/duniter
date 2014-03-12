@@ -296,7 +296,11 @@ PeerSchema.statics.getTheOne = function (fpr, done) {
       }
     },
   ], done);
-}
+};
+
+PeerSchema.statics.getList = function (fingerprints, done) {
+  Peer.find({ fingerprint: { $in: fingerprints }}, done);
+};
 
 PeerSchema.statics.status = STATUS;
 

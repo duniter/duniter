@@ -24,6 +24,7 @@ var vlogger    = log4js.getLogger('voting');
 // Services
 var ParametersService = service.Parameters;
 var ContractService   = service.Contract;
+var PeeringService    = service.Peering;
 
 module.exports.get = function (pgp, currency, conf) {
   
@@ -362,6 +363,7 @@ module.exports.get = function (pgp, currency, conf) {
             },
             function (membersActions, votersActions, next){
               mlogger.debug('✔ %s %s', entry.issuer, entry.membership);
+              PeeringService.propagateMembership(entry);
               async.waterfall([
                 function (next){
                   updateMembers(amNext, membersActions, next);

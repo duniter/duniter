@@ -81,9 +81,7 @@ module.exports = function (pgp, currency, conf) {
     function (err, pubkey) {
       http.answer(res, 400, err, function () {
         res.send(200, JSON.stringify(pubkey.json()));
-        if (!pubkey.propagated) {
-          PeeringService.propagatePubkey(pubkey);
-        }
+        PeeringService.propagatePubkey(pubkey);
       });
     });
   };

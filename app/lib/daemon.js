@@ -31,14 +31,16 @@ function Daemon () {
   var asked = -1;
   var processing = false;
   var defaultTimeout = 5*1000;
+  var selfFingerprint = "";
 
   // 20 seconds minimal waiting before asking for vote
   var voteMargin = 20*1000;
 
-  this.init = function (conf) {
+  this.init = function (conf, fingerprint) {
     AMStart = conf.sync.AMStart;
     AMFreq = conf.sync.AMFreq;
     enabled = conf.sync.AMDaemon == "ON";
+    selfFingerprint = fingerprint;
   };
 
   this.nextIn = function (timeout) {
@@ -94,7 +96,14 @@ function Daemon () {
             triggerSelfVote: function(callback){
               // Case 1: just triggers self-vote
               if (daemon.judges.timeForVote(amNext)) {
-                askVote(current, PeeringService.peer(), callback);
+                // Must be a voter to vote!
+                Amendment.isVoterForAM(selfFingerprint, current.number, current.hash, function (err, wasVoter) {
+                  if (!err && wasVoter) {
+                    askVote(current, PeeringService.peer(), callback);
+                    return;
+                  }
+                  callback();
+                });
                 return;
               }
               callback();
@@ -103,7 +112,14 @@ function Daemon () {
               if (daemon.judges.timeForAskingVotes(amNext)) {
                 // Case 2: triggers other peers' self-vote
                 async.forEach(PeeringService.upPeers(), function(peer, callback){
-                  askVote(current, peer, callback);
+                  // Must be a voter to vote!
+                  Amendment.isVoterForAM(peer.fingerprint, current.number, current.hash, function (err, wasVoter) {
+                    if (!err && wasVoter) {
+                      askVote(current, peer, callback);
+                      return;
+                    }
+                    callback();
+                  });
                 }, next);
                 return;
               }

@@ -14,6 +14,7 @@ var jpgp       = require('./jpgp');
 var sha1       = require('sha1');
 var log4js     = require('log4js');
 var logger     = require('./logger')('[HTTP]');
+var pgplogger  = require('./logger')('PGP');
 
 openpgp.init();
 
@@ -161,231 +162,266 @@ module.exports.express = {
     app.use(express.cookieParser('your secret here'));
     app.use(express.session());
 
+    // Import PGP key
+    openpgp.keyring.importPrivateKey(conf.pgpkey, conf.pgppasswd);
+    if (!module.exports.fingerprint()) {
+      pgplogger.error("Wrong PGP key password.");
+      process.exit(1);
+      return;
+    }
+
     // HTTP Signatures
-    sign(app, conf);
+    httpgp(app, conf, function (err) {
 
-    // Routing
-    app.use(app.router);
+      // HTTPGP OK?
+      if (err) {
+        pgplogger.error(err);
+        process.exit(1);
+        return;
+      }
 
-    // development only
-    if ('development' == app.get('env')) {
-      app.use(express.errorHandler());
-    }
+      // Routing
+      app.use(app.router);
 
-    // Init ALL services
-    service.init(openpgp, currency, conf);
+      // development only
+      if ('development' == app.get('env')) {
+        app.use(express.errorHandler());
+      }
 
-    // Init Daemon
-    var daemon = require('./daemon');
-    daemon.init(conf);
+      // Init ALL services
+      service.init(openpgp, currency, conf);
 
-    var pks   = require('../controllers/pks')(openpgp, currency, conf);
-    var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
-    var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
-    var ucs   = require('../controllers/ucs')(openpgp, currency, conf);
+      // Init Daemon
+      var daemon = require('./daemon');
+      daemon.init(conf);
 
-    app.get(    '/pks/all',                                       pks.getAll);
-    app.get(    '/pks/lookup',                                    pks.lookup);
-    app.post(   '/pks/add',                                       pks.add);
-    app.get(    '/ucg/pubkey',                                    ucg.pubkey);
-    app.get(    '/ucg/peering',                                   ucg.peer);
-    app.get(    '/ucg/peering/peers',                             ucg.peersGet);
-    app.post(   '/ucg/peering/peers',                             ucg.peersPost);
-    app.get(    '/ucg/peering/peers/upstream',                    ucg.upstreamAll);
-    app.get(    '/ucg/peering/peers/upstream/:fingerprint',       ucg.upstreamKey);
-    app.get(    '/ucg/peering/peers/downstream',                  ucg.downstreamAll);
-    app.get(    '/ucg/peering/peers/downstream/:fingerprint',     ucg.downstreamKey);
-    app.post(   '/ucg/peering/forward',                           ucg.forward);
-    app.post(   '/ucg/peering/status',                            ucg.statusPOST);
-    app.get(    '/ucg/tht',                                       ucg.thtGET);
-    app.post(   '/ucg/tht',                                       ucg.thtPOST);
-    app.get(    '/ucg/tht/:fpr',                                  ucg.thtFPR);
-    app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
-    app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
-    app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
-    app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
-    app.get(    '/hdc/amendments/view/:amendment_id/ismember/:fpr', hdc.amendments.isMember);
-    app.get(    '/hdc/amendments/view/:amendment_id/isvoter/:fpr',hdc.amendments.isVoter);
-    app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
-    app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
-    app.get(    '/hdc/coins/:fpr/last',                           hdc.coins.last);
-    app.get(    '/hdc/coins/:fpr/list',                           hdc.coins.list);
-    app.get(    '/hdc/coins/:fpr/view/:coin_number',              hdc.coins.view);
-    app.get(    '/hdc/coins/:fpr/view/:coin_number/history',      hdc.coins.history);
-    app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
-    app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
-    app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
-    app.get(    '/hdc/transactions/sender/:fpr/view/:number',     hdc.transactions.viewtx);
-    app.get(    '/hdc/transactions/sender/:fpr/last/:count',      hdc.transactions.sender.lastNofSender);
-    app.get(    '/hdc/transactions/sender/:fpr/last/:count/:from',hdc.transactions.sender.lastNofSender);
-    app.get(    '/hdc/transactions/sender/:fpr/ud/:amendment_number', hdc.transactions.sender.ud);
-    app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
-    app.get(    '/ucs/parameters',                                ucs.parameters);
-    app.post(   '/ucs/community/members',                         ucs.membershipPost);
-    app.get(    '/ucs/community/members/:fpr/membership/current', ucs.membershipCurrent);
-    app.get(    '/ucs/community/members/:fpr/membership/history', ucs.membershipHistory);
-    app.post(   '/ucs/community/voters',                          ucs.votingPost);
-    app.get(    '/ucs/community/voters/:fpr/voting/current',      ucs.votingCurrent);
-    app.get(    '/ucs/community/voters/:fpr/voting/history',      ucs.votingHistory);
-    app.get(    '/ucs/amendment',                                 ucs.amendmentCurrent);
-    app.get(    '/ucs/amendment/:amendment_number',               ucs.amendmentNext);
-    app.get(    '/ucs/amendment/:amendment_number/vote',          ucs.askVote);
+      var pks   = require('../controllers/pks')(openpgp, currency, conf);
+      var ucg   = require('../controllers/ucg')(openpgp, currency, conf);
+      var hdc   = require('../controllers/hdc')(openpgp, currency, conf);
+      var ucs   = require('../controllers/ucs')(openpgp, currency, conf);
 
-    if(!conf.ipv4 && !conf.ipv6){
-      onLoaded("No interface to listen to. Relaunch with either --ipv4 or --ipv6 parameters.");
-      return;
-    }
-    if (!conf.remoteport) {
-      onLoaded('--remotep is mandatory');
-      return;
-    }
-    if(!conf.remoteipv4 && !conf.remoteipv6){
-      onLoaded('Either --remote4 or --remote6 must be given');
-      return;
-    }
-    if (conf.sync.AMDaemon == "ON" && !conf.sync.AMStart) {
-      onLoaded('--amstart is mandatory when --amdaemon is set to ON');
-      return;
-    }
-    // If the node's peering entry does not exist or is outdated,
-    // a new one is generated.
-    var PeeringService = service.Peering;
-    var SyncService    = service.Sync;
+      app.get(    '/pks/all',                                       pks.getAll);
+      app.get(    '/pks/lookup',                                    pks.lookup);
+      app.post(   '/pks/add',                                       pks.add);
+      app.get(    '/ucg/pubkey',                                    ucg.pubkey);
+      app.get(    '/ucg/peering',                                   ucg.peer);
+      app.get(    '/ucg/peering/peers',                             ucg.peersGet);
+      app.post(   '/ucg/peering/peers',                             ucg.peersPost);
+      app.get(    '/ucg/peering/peers/upstream',                    ucg.upstreamAll);
+      app.get(    '/ucg/peering/peers/upstream/:fingerprint',       ucg.upstreamKey);
+      app.get(    '/ucg/peering/peers/downstream',                  ucg.downstreamAll);
+      app.get(    '/ucg/peering/peers/downstream/:fingerprint',     ucg.downstreamKey);
+      app.post(   '/ucg/peering/forward',                           ucg.forward);
+      app.post(   '/ucg/peering/status',                            ucg.statusPOST);
+      app.get(    '/ucg/tht',                                       ucg.thtGET);
+      app.post(   '/ucg/tht',                                       ucg.thtPOST);
+      app.get(    '/ucg/tht/:fpr',                                  ucg.thtFPR);
+      app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
+      app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
+      app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
+      app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
+      app.get(    '/hdc/amendments/view/:amendment_id/ismember/:fpr', hdc.amendments.isMember);
+      app.get(    '/hdc/amendments/view/:amendment_id/isvoter/:fpr',hdc.amendments.isVoter);
+      app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
+      app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
+      app.get(    '/hdc/coins/:fpr/last',                           hdc.coins.last);
+      app.get(    '/hdc/coins/:fpr/list',                           hdc.coins.list);
+      app.get(    '/hdc/coins/:fpr/view/:coin_number',              hdc.coins.view);
+      app.get(    '/hdc/coins/:fpr/view/:coin_number/history',      hdc.coins.history);
+      app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
+      app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
+      app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
+      app.get(    '/hdc/transactions/sender/:fpr/view/:number',     hdc.transactions.viewtx);
+      app.get(    '/hdc/transactions/sender/:fpr/last/:count',      hdc.transactions.sender.lastNofSender);
+      app.get(    '/hdc/transactions/sender/:fpr/last/:count/:from',hdc.transactions.sender.lastNofSender);
+      app.get(    '/hdc/transactions/sender/:fpr/ud/:amendment_number', hdc.transactions.sender.ud);
+      app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
+      app.get(    '/ucs/parameters',                                ucs.parameters);
+      app.post(   '/ucs/community/members',                         ucs.membershipPost);
+      app.get(    '/ucs/community/members/:fpr/membership/current', ucs.membershipCurrent);
+      app.get(    '/ucs/community/members/:fpr/membership/history', ucs.membershipHistory);
+      app.post(   '/ucs/community/voters',                          ucs.votingPost);
+      app.get(    '/ucs/community/voters/:fpr/voting/current',      ucs.votingCurrent);
+      app.get(    '/ucs/community/voters/:fpr/voting/history',      ucs.votingHistory);
+      app.get(    '/ucs/amendment',                                 ucs.amendmentCurrent);
+      app.get(    '/ucs/amendment/:amendment_number',               ucs.amendmentNext);
+      app.get(    '/ucs/amendment/:amendment_number/vote',          ucs.askVote);
 
-    async.waterfall([
-      function (next) {
-        mongoose.model('Peer').find({ fingerprint: module.exports.fingerprint() }, next);
-      },
-      function (peers, next) {
-        var Peer = mongoose.model('Peer');
-        var p1 = new Peer({});
-        if(peers.length != 0){
-          p1 = peers[0];
-        }
-        var endpoint = 'BASIC_MERKLED_API';
-        if (conf.remotehost) {
-          endpoint += ' ' + conf.remotehost;
-        }
-        if (conf.remoteipv4) {
-          endpoint += ' ' + conf.remoteipv4;
-        }
-        if (conf.remoteipv6) {
-          endpoint += ' ' + conf.remoteipv6;
-        }
-        if (conf.remoteport) {
-          endpoint += ' ' + conf.remoteport;
-        }
-        var p2 = new Peer({
-          version: 1,
-          currency: currency,
-          fingerprint: module.exports.fingerprint(),
-          endpoints: [endpoint]
-        });
-        var raw1 = p1.getRaw().unix2dos();
-        var raw2 = p2.getRaw().unix2dos();
-        if (raw1 != raw2) {
-          console.log('Generating server\'s peering entry...');
-          async.waterfall([
-            function (next){
-              jpgp().sign(raw2, module.exports.privateKey(), next);
-            },
-            function (signature, next) {
-              signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
-              PeeringService.persistPeering(raw2 + signature, module.exports.publicKey(), next);
-            },
-          ], function (err) {
+      if(!conf.ipv4 && !conf.ipv6){
+        onLoaded("No interface to listen to. Relaunch with either --ipv4 or --ipv6 parameters.");
+        return;
+      }
+      if (!conf.remoteport) {
+        onLoaded('--remotep is mandatory');
+        return;
+      }
+      if(!conf.remoteipv4 && !conf.remoteipv6){
+        onLoaded('Either --remote4 or --remote6 must be given');
+        return;
+      }
+      if (conf.sync.AMDaemon == "ON" && !conf.sync.AMStart) {
+        onLoaded('--amstart is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      // If the node's peering entry does not exist or is outdated,
+      // a new one is generated.
+      var PeeringService = service.Peering;
+      var SyncService    = service.Sync;
+
+      async.waterfall([
+        function (next) {
+          mongoose.model('Peer').find({ fingerprint: module.exports.fingerprint() }, next);
+        },
+        function (peers, next) {
+          var Peer = mongoose.model('Peer');
+          var p1 = new Peer({});
+          if(peers.length != 0){
+            p1 = peers[0];
+          }
+          var endpoint = 'BASIC_MERKLED_API';
+          if (conf.remotehost) {
+            endpoint += ' ' + conf.remotehost;
+          }
+          if (conf.remoteipv4) {
+            endpoint += ' ' + conf.remoteipv4;
+          }
+          if (conf.remoteipv6) {
+            endpoint += ' ' + conf.remoteipv6;
+          }
+          if (conf.remoteport) {
+            endpoint += ' ' + conf.remoteport;
+          }
+          var p2 = new Peer({
+            version: 1,
+            currency: currency,
+            fingerprint: module.exports.fingerprint(),
+            endpoints: [endpoint]
+          });
+          var raw1 = p1.getRaw().unix2dos();
+          var raw2 = p2.getRaw().unix2dos();
+          if (raw1 != raw2) {
+            console.log('Generating server\'s peering entry...');
+            async.waterfall([
+              function (next){
+                jpgp().sign(raw2, module.exports.privateKey(), next);
+              },
+              function (signature, next) {
+                signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
+                PeeringService.persistPeering(raw2 + signature, module.exports.publicKey(), next);
+              },
+            ], function (err) {
+              next(err);
+            });
+          } else {
+            next();
+          }
+        },
+        function (next){
+          // Load services contexts
+          service.load(next);
+        },
+        function (next){
+          // Set peer's statut to UP
+          PeeringService.peer().status = 'UP';
+          PeeringService.peer().save(function (err) {
+            // Update it in memory
+            PeeringService.addPeer(PeeringService.peer());
             next(err);
           });
-        } else {
-          next();
-        }
-      },
-      function (next){
-        // Load services contexts
-        service.load(next);
-      },
-      function (next){
-        // Set peer's statut to UP
-        PeeringService.peer().status = 'UP';
-        PeeringService.peer().save(function (err) {
-          // Update it in memory
-          PeeringService.addPeer(PeeringService.peer());
-          next(err);
-        });
-      },
-      function (next) {
-        if(conf.ipv4){
-          console.log('Connecting on interface %s...', conf.ipv4);
-          http.createServer(app).listen(conf.port, conf.ipv4, function(){
-            console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
+        },
+        function (next) {
+          if(conf.ipv4){
+            console.log('Connecting on interface %s...', conf.ipv4);
+            http.createServer(app).listen(conf.port, conf.ipv4, function(){
+              console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
+              next();
+            });
+          }
+          else next();
+        },
+        function (next) {
+          if(conf.ipv6){
+            console.log('Connecting on interface %s...', conf.ipv6);
+            http.createServer(app).listen(conf.port, conf.ipv6, function(){
+              console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
+            });
+          }
+          else next();
+        },
+        function (next) {
+          // Initialize managed keys
+          PeeringService.initKeys(next);
+        },
+        function (next){
+          // Submit its own public key to it
+          logger.info('Submitting its own key for storage...');
+          mongoose.model('Peer').getTheOne(server.fingerprint(), next);
+        },
+        function (peer, next) {
+          logger.info('Peer found...');
+          mongoose.model('PublicKey').getForPeer(peer, next);
+        },
+        function (pubkey, next) {
+          logger.info('Pubkey found...');
+          logger.info('Broadcasting UP/NEW signals...');
+          PeeringService.sendUpSignal(next);
+        },
+        function (next) {
+          // Create AM0 proposal if not existing
+          mongoose.model('Amendment').getTheOneToBeVoted(0, function (err, am) {
+            if (err || !am) {
+              logger.info('Creating root AM proposal...');
+              SyncService.createNext(null, next);
+              return;
+            }
             next();
           });
-        }
-        else next();
-      },
-      function (next) {
-        if(conf.ipv6){
-          console.log('Connecting on interface %s...', conf.ipv6);
-          http.createServer(app).listen(conf.port, conf.ipv6, function(){
-            console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
-          });
-        }
-        else next();
-      },
-      function (next) {
-        // Initialize managed keys
-        PeeringService.initKeys(next);
-      },
-      function (next){
-        // Submit its own public key to it
-        logger.info('Submitting its own key for storage...');
-        mongoose.model('Peer').getTheOne(server.fingerprint(), next);
-      },
-      function (peer, next) {
-        mongoose.model('PublicKey').getForPeer(peer, next);
-      },
-      function (pubkey, next) {
-        logger.info('Broadcasting UP/NEW signals...');
-        PeeringService.sendUpSignal(next);
-      },
-      function (next) {
-        // Create AM0 proposal if not existing
-        mongoose.model('Amendment').getTheOneToBeVoted(0, function (err, am) {
-          if (err || !am) {
-            logger.info('Creating root AM proposal...');
-            SyncService.createNext(null, next);
-            return;
-          }
+        },
+        function (next){
+          // Start autonomous contract daemon
+          daemon.start();
           next();
-        });
-      },
-      function (next){
-        // Start autonomous contract daemon
-        daemon.start();
-        next();
-      },
-    ], function (err) {
-      onLoaded(err, app);
+        },
+      ], function (err) {
+        onLoaded(err, app);
+      });
     });
   }
 };
 
-function sign(app, conf) {
+function httpgp(app, conf, done) {
   // PGP signature of requests
   if(conf.pgpkey){
-    try{
-      var privateKey = conf.pgpkey;
-      openpgp.keyring.importPrivateKey(privateKey, conf.pgppasswd);
-      // Try to use it...
-      openpgp.write_signed_message(openpgp.keyring.privateKeys[0].obj, "test");
-      // Success: key is able to sign
-      app.use(connectPgp(privateKey, conf.pgppasswd, 'ucoin_' + module.exports.fingerprint()));
-      console.log('Signed requests with PGP: enabled.');
-    }
-    catch(ex){
-      console.log(ex);
-      throw new Error("Wrong private key password.");
-    }
+    var privateKey = conf.pgpkey;
+    var signingFuction = null;
+    async.waterfall([
+      function (next) {
+        var keyring = 'ucoin_' + module.exports.fingerprint();
+        pgplogger.debug("Keyring = %s", keyring);
+        var gnupg = new (require('./gnupg'))(privateKey, conf.pgppasswd, keyring);
+        gnupg.init(function (err) {
+          next(err, gnupg.sign);
+        });
+      },
+      function (signFunc, next){
+        signingFuction = signFunc;
+        try{
+          signingFuction("some test", next);
+        } catch(ex){
+          next("Wrong private key password.");
+        }
+      },
+    ], function (err, signedTest) {
+      if (err) {
+        logger.error(err);
+        process.exit(1);
+        return;
+      } else {
+        app.use(connectPgp(signingFuction));
+        console.log('Signed requests with PGP: enabled.');
+        done();
+      }
+    });
   }
 }
 

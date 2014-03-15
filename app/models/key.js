@@ -1,11 +1,14 @@
 var mongoose = require('mongoose');
 var async    = require('async');
+var _        = require('underscore');
 var Schema   = mongoose.Schema;
 var logger   = require('../../app/lib/logger')('key model');
 
 var KeySchema = new Schema({
   fingerprint: { type: String, unique: true },
   managed: { type: Boolean, default: false },
+  asMember: Schema.Types.Mixed,
+  asVoter: Schema.Types.Mixed,
   member: { type: Boolean, default: false },
   voter: { type: Boolean, default: false },
   proposedMember: { type: Boolean, default: false },
@@ -13,6 +16,58 @@ var KeySchema = new Schema({
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
+
+KeySchema.pre('save', function (next) {
+  this.updated = Date.now();
+  this.asMember = this.asMember || {};
+  this.asMember.joins = this.asMember.joins || [];
+  this.asMember.leaves = this.asMember.leaves || [];
+  this.asVoter = this.asVoter || {};
+  this.asVoter.joins = this.asVoter.joins || [];
+  this.asVoter.leaves = this.asVoter.leaves || [];
+  next();
+});
+
+KeySchema.statics.memberJoin = function(amNumber, fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { $push: { "asMember.joins": amNumber }}, done);
+}
+
+KeySchema.statics.memberLeave = function(amNumber, fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { $push: { "asMember.leaves": amNumber }}, done);
+}
+
+KeySchema.statics.voterJoin = function(amNumber, fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { $push: { "asVoter.joins": amNumber }}, done);
+}
+
+KeySchema.statics.voterLeave = function(amNumber, fingerprint, done){
+  Key.update({ fingerprint: fingerprint }, { $push: { "asVoter.leaves": amNumber }}, done);
+}
+
+KeySchema.statics.wasVoter = function(fingerprint, amNumber, done){
+  Key.find({ fingerprint: fingerprint }, function (err, keys) {
+    if (err || !keys || keys.length == 0) {
+      done("Unknown key!");
+    } else {
+      var k = keys[0];
+      var previousJoins = _(k.asVoter.joins).filter(function(n) { return n <= amNumber; });
+      if (previousJoins.length > 0) {
+        var max = _(previousJoins).max();
+        var previousLeaves = _(k.asVoter.leaves).filter(function(n) { return n <= amNumber; });
+        if (previousLeaves.length == 0 || _(previousLeaves).max() < max) {
+          // Last operation at amNumber was joining
+          done(null, true);
+        } else {
+          // Last operation at amNumber was leaving
+          done(null, false);
+        }
+      } else {
+        // Has not joined yet
+        done(null, false);
+      }
+    }
+  });
+}
 
 KeySchema.statics.setKnown = function(fingerprint, done){
   Key.findOne({ fingerprint: fingerprint }, function (err, key) {

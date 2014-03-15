@@ -6,6 +6,7 @@ var fs        = require('fs');
 var PublicKey = mongoose.model('PublicKey');
 var Amendment = mongoose.model('Amendment');
 var Merkle    = mongoose.model('Merkle');
+var Key       = mongoose.model('Key');
 var Schema    = mongoose.Schema;
 
 var VoteSchema = new Schema({
@@ -66,7 +67,7 @@ VoteSchema.methods = {
   },
 
   issuerIsVoter: function(done) {
-    Amendment.isVoter(this.issuer, this.amendment.number, done);
+    Key.wasVoter(this.issuer, this.amendment.number, done);
   },
   
   parse: function(rawVote, rawPubkey, callback) {

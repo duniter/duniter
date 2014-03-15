@@ -46,28 +46,23 @@ module.exports.get = function (pgp, currency, conf) {
           else next(null)
         },
         function (next){
-          // Set new members as known keys
-          async.forEach(am.getNewMembers(), function(leaf, callback){
-            KeyService.setKnown(leaf, callback);
-          }, next);
-        },
-        function (next){
-          // Set new voters as known keys
-          async.forEach(am.getNewVoters(), function(leaf, callback){
-            KeyService.setKnown(leaf, callback);
-          }, next);
-        },
-        function (next){
           async.parallel({
-            addMembers:     async.apply(async.forEach, am.getNewMembers(), Key.addMember),
-            addVoters:      async.apply(async.forEach, am.getNewVoters(), Key.addVoter),
-            removeMembers:  async.apply(async.forEach, am.getLeavingMembers(), Key.removeMember),
-            removeVoters:   async.apply(async.forEach, am.getLeavingVoters(), Key.removeVoter),
+            memberJoins:    async.apply(async.forEach, am.getNewMembers(),      async.apply(Key.memberJoin.bind(Key), am.number)),
+            memberLeaves:   async.apply(async.forEach, am.getLeavingMembers(),  async.apply(Key.memberLeave.bind(Key), am.number)),
+            voterJoins:     async.apply(async.forEach, am.getNewVoters(),       async.apply(Key.voterJoin.bind(Key), am.number)),
+            voterLeaves:    async.apply(async.forEach, am.getLeavingVoters(),   async.apply(Key.voterLeave.bind(Key), am.number)),
+            knownMembers:   async.apply(async.forEach, am.getNewMembers(),      Key.setKnown),
+            knownVoters:    async.apply(async.forEach, am.getNewVoters(),       Key.setKnown),
+            addMembers:     async.apply(async.forEach, am.getNewMembers(),      Key.addMember),
+            addVoters:      async.apply(async.forEach, am.getNewVoters(),       Key.addVoter),
+            removeMembers:  async.apply(async.forEach, am.getLeavingMembers(),  Key.removeMember),
+            removeVoters:   async.apply(async.forEach, am.getLeavingVoters(),   Key.removeVoter),
           }, function (err) {
             next(err);
           });
         },
         function (next){
+          // Proposed member/voter => Actual member/voter
           async.parallel([
             async.apply(Key.update.bind(Key), { member: true  }, { $set: { proposedMember: true  }}, { multi: true }),
             async.apply(Key.update.bind(Key), { member: false }, { $set: { proposedMember: false }}, { multi: true }),

@@ -6,13 +6,13 @@ var async      = require('async');
 var path       = require('path');
 var mongoose   = require('mongoose');
 var Amendment  = mongoose.model('Amendment');
+var Key        = mongoose.model('Key');
 var connectPgp = require('connect-pgp');
 var _          = require('underscore');
 var service    = require('../service');
 var jpgp       = require('./jpgp');
 var sha1       = require('sha1');
 var vucoin     = require('vucoin');
-var log4js     = require('log4js');
 var logger     = require('./logger')('daemon');
 
 module.exports = new Daemon();
@@ -98,7 +98,7 @@ function Daemon () {
               if (daemon.judges.timeForVote(amNext)) {
                 // Must be a voter to vote!
                 logger.debug("Asking vote for SELF peer");
-                Amendment.isVoterForAM(selfFingerprint, current.number, current.hash, function (err, wasVoter) {
+                Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
                   if (!err && wasVoter) {
                     askVote(current, PeeringService.peer(), function (err, json) {
                       // Do nothing with result: it has been done by SyncService (self-submitted the vote)
@@ -122,7 +122,7 @@ function Daemon () {
                   }
                   logger.debug("Asking vote for peer 0x%s", peer.fingerprint.substring(32));
                   // Must be a voter to vote!
-                  Amendment.isVoterForAM(peer.fingerprint, current.number, current.hash, function (err, wasVoter) {
+                  Key.wasVoter(peer.fingerprint, current.number, function (err, wasVoter) {
                     if (!err && wasVoter) {
                       async.waterfall([
                         function (next){

@@ -1,4 +1,5 @@
 var openpgp = require('./openpgp').openpgp;
+var logger  = require('./logger')();
 
 openpgp.init();
 
@@ -68,7 +69,7 @@ function JPGP() {
       }
     }
     catch(ex){
-      console.log("Error with signature: " + ex);
+      logger.debug("Error with signature: " + ex);
     }
     return issuer;
   };
@@ -88,7 +89,7 @@ function JPGP() {
       sigDate = sig.signature.creationTime;
     }
     catch(ex){
-      console.log("Error with signature: " + ex);
+      logger.debug("Error with signature: " + ex);
     }
     return sigDate;
   };
@@ -159,22 +160,22 @@ function JPGP() {
       err = ex.toString();
     }
     // if(err && sig && sig.text){
-    //   console.error('==========================================================');
-    //   console.error(detached ? '[DETACHED] ' + err : err);
-    //   console.error('==========================================================');
-    //   console.error({ text: sig.text });
-    //   // console.error(hexstrdump(sig.text));
-    //   console.error('----------------------------------------------------------');
+    //   logger.error('==========================================================');
+    //   logger.error(detached ? '[DETACHED] ' + err : err);
+    //   logger.error('==========================================================');
+    //   logger.error({ text: sig.text });
+    //   // logger.error(hexstrdump(sig.text));
+    //   logger.error('----------------------------------------------------------');
     //   if(!detached){
-    //     console.error({ text: this.data });
-    //     // console.error(hexstrdump(this.data));
-    //     console.error('----------------------------------------------------------');
+    //     logger.error({ text: this.data });
+    //     // logger.error(hexstrdump(this.data));
+    //     logger.error('----------------------------------------------------------');
     //   }
     // }
     // Done
     var end = new Date();
     var diff = end.getTime() - start.getTime();
-    // console.log("jpgp verify", diff + " ms");
+    // logger.debug("jpgp verify", diff + " ms");
     callback(err, verified);
   };
 

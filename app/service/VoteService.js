@@ -8,9 +8,8 @@ var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
 var Peer      = mongoose.model('Peer');
 var Vote      = mongoose.model('Vote');
-var log4js    = require('log4js');
-var logger    = log4js.getLogger('vote');
-var alogger   = log4js.getLogger('amendment');
+var logger    = require('../lib/logger')('vote');
+var alogger   = require('../lib/logger')('amendment');
 var service   = require('./.');
 
 // Services

@@ -6,8 +6,7 @@ var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
 var _         = require('underscore');
 var stream    = require('stream');
-var log4js    = require('log4js');
-var logger    = log4js.getLogger();
+var logger    = require('../lib/logger')();
 var service   = require('../service');
 
 // Services

@@ -1,5 +1,6 @@
 var jpgp    = require('../../app/lib/jpgp');
 var openpgp = require('../../app/lib/openpgp').openpgp;
+var logger  = require('../../app/lib/logger')('test');
 
 openpgp.init();
 
@@ -23,7 +24,7 @@ function signatory (asciiPrivateKey, password) {
     certificate = publicKeyASCII ? jpgp().certificate(publicKeyASCII) : { fingerprint: '' };
   }
   catch(ex){
-    console.error(ex);
+    logger.error(ex);
     throw ex;
   }
 
@@ -37,6 +38,6 @@ function signatory (asciiPrivateKey, password) {
     return certificate.fingerprint;
   };
 
-  console.log("new signatory " + this.fingerprint());
+  logger.debug("new signatory " + this.fingerprint());
   return this;
 }

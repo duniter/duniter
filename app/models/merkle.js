@@ -87,7 +87,6 @@ MerkleSchema.methods = {
 };
 
 function retrieve(merkleID, done) {
-  // console.log(merkleID, done);
   async.waterfall([
     function(next){
       Merkle.findOne(merkleID, next);

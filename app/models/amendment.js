@@ -5,8 +5,7 @@ var _        = require('underscore');
 var fs       = require('fs');
 var hdc      = require('../../node_modules/hdc');
 var Schema   = mongoose.Schema;
-var log4js   = require('log4js');
-var logger   = log4js.getLogger('dao amendment');
+var logger   = require('../lib/logger')('dao amendment');
 
 var AmendmentSchema = new Schema({
   version: String,
@@ -448,7 +447,7 @@ AmendmentSchema.statics.searchPresence = function (member, amNumber, amHash, isJ
         next(null, false);
       } else if (am.number > 0) {
         // Not present in this amendment, check previous
-        console.log("searchPresence callback %s to %s", am.number, am.number -1);
+        logger.debug("searchPresence callback %s to %s", am.number, am.number -1);
         searchCallBack(member, am.number - 1, am.previousHash, isJoining, isLeaving, searchCallBack, next);
       } else {
         // No occurrence found

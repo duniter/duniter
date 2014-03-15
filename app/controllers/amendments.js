@@ -3,8 +3,8 @@ var mongoose  = require('mongoose');
 var _         = require('underscore');
 var Amendment = mongoose.model('Amendment');
 var Merkle    = mongoose.model('Merkle');
-var log4js    = require('log4js');
 var service   = require('../service');
+var logger    = require('../lib/logger')();
 
 // Services
 var ParametersService = service.Parameters;
@@ -164,7 +164,7 @@ module.exports = function (pgp, currency, conf) {
       ], function (err, am, recordedVote) {
         if(err){
           res.send(400, err);
-          console.error(err);
+          logger.error(err);
           return;
         }
         // Promoted or not, vote is recorded

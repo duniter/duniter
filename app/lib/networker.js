@@ -1,6 +1,5 @@
 var async  = require('async');
-var log4js = require('log4js');
-var logger = log4js.getLogger('networker');
+var logger = require('../lib/logger')('networker');
 
 var fifo = async.queue(function (task, callback) {
   task(callback);

@@ -5,8 +5,7 @@ var sha1     = require('sha1');
 var _        = require('underscore');
 var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
-var log4js   = require('log4js');
-var logger   = log4js.getLogger('pubkey');
+var logger   = require('../lib/logger')('pubkey');
 
 var PublicKeySchema = new Schema({
   raw: String,

@@ -7,6 +7,7 @@ var sha1     = require('sha1');
 var _        = require('underscore');
 var server   = require('../../app/lib/server');
 var mongoose = require('mongoose');
+var logger   = require('../../app/lib/logger')('test');
 
 var config = {
   server: {
@@ -49,7 +50,7 @@ before(function (done) {
       server.database.reset(next);
     },
   ], function (err) {
-    console.log("API fed.");
+    logger.debug("API fed.");
     done(err);
   });
 });

@@ -9,6 +9,7 @@ var Coin        = mongoose.model('Coin');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
 var service     = require('../service');
+var logger      = require('../lib/logger')();
 
 // Services
 var MerkleService      = service.Merkle;
@@ -159,7 +160,7 @@ module.exports = function (pgp, currency, conf) {
       if(!alreadyProcessed){
         process.nextTick(function () {
           PeeringService.propagateTransaction(req, function (err) {
-            if(err) console.error('Error during transaction\'s propagation: %s', err);
+            if(err) logger.error('Error during transaction\'s propagation: %s', err);
           });
         });
       }

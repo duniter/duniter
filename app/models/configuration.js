@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var Schema   = mongoose.Schema;
+var logger   = require('../lib/logger')();
 
 var ConfigurationSchema = new Schema({
   port: {"type": Number, "default": 0},
@@ -18,11 +19,11 @@ var ConfigurationSchema = new Schema({
 
 ConfigurationSchema.pre('save', function (next) {
   if(!this.kmanagement || !this.kmanagement.match(/^(ALL|KEYS)$/)){
-    console.error('Incorrect --kmanagement value, reset to default `KEYS` value');
+    logger.error('Incorrect --kmanagement value, reset to default `KEYS` value');
     this.kmanagement = 'KEYS';
   }
   if(!this.kaccept || !this.kaccept.match(/^(ALL|KEYS)$/)){
-    console.error('Incorrect --kaccept value, reset to default `KEYS` value');
+    logger.error('Incorrect --kaccept value, reset to default `KEYS` value');
     this.kaccept = 'KEYS';
   }
   this.updated = Date.now();

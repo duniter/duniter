@@ -16,8 +16,7 @@ var Forward     = mongoose.model('Forward');
 var Status      = require('../models/statusMessage');
 var events      = require('events');
 var service     = require('../service');
-var log4js      = require('log4js');
-var logger      = log4js.getLogger('peering');
+var logger      = require('../lib/logger')('peering');
 
 // Services
 var ParametersService = service.Parameters;
@@ -238,12 +237,12 @@ function PeeringService(pgp, currency, conf) {
       },
       function (notManaged, next) {
         async.forEachSeries(notManaged, function (key, callback) {
-          console.log('Add %s to managed keys...', key);
+          logger.debug('Add %s to managed keys...', key);
           Key.setManaged(key, true, callback);
         }, next);
       }
     ], function (err) {
-      console.log('Managed keys updated.');
+      logger.debug('Managed keys updated.');
       done();
     });
   }

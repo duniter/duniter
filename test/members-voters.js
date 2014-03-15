@@ -10,11 +10,12 @@ var server    = require('../app/lib/server');
 var mongoose  = require('mongoose');
 var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
+var logger    = require('../app/lib/logger')('test');
 
 var currency = "testa";
 var tester    = is = on = new test.tester(currency);
 
-console.log("Reading files & initializing...");
+logger.debug("Reading files & initializing...");
 
 server.database.init();
 
@@ -296,7 +297,7 @@ function memberDo (action, signatory, timestamp) {
           text: JSON.stringify(res[0].json())
         });
       } else {
-        console.warn(err);
+        logger.warn(err);
         done(err, { 
           statusCode: 400
         });
@@ -333,7 +334,7 @@ function voterDo (signatory, timestamp, votingKey) {
           text: JSON.stringify(res[0].json())
         });
       } else {
-        console.warn(err);
+        logger.warn(err);
         done(err, { 
           statusCode: 400
         });
@@ -381,7 +382,7 @@ function voteAm (signatory, am, done, delay) {
         text: JSON.stringify(vote.json())
       });
     } else {
-      console.warn(err);
+      logger.warn(err);
       done(err, { 
         statusCode: 400
       });
@@ -470,8 +471,8 @@ function issue (signatory, amount, amNumber, time) {
 }
 
 function sendTransaction (tx, done) {
-  // console.log("---------------------");
-  // console.log(tx.getRaw());
+  // logger.debug("---------------------");
+  // logger.debug(tx.getRaw());
   var TransactionsService = require('../app/service').Transactions;
   TransactionsService.processTx(tx, function (err) {
     if (!err) {
@@ -497,7 +498,7 @@ function sendTransaction (tx, done) {
           };
         });
       }
-      // console.log(coins);
+      // logger.debug(coins);
       done(err, { 
         statusCode: 200,
         text: JSON.stringify({
@@ -513,7 +514,7 @@ function sendTransaction (tx, done) {
           --txBySignatory[tx.sender].coinNumber;
         }
       });
-      console.warn(err);
+      logger.warn(err);
       done(err, { 
         statusCode: 400
       });
@@ -1039,7 +1040,7 @@ function testProposedAmendment (label, properties) {
 }
 
 before(function (done) {
-  console.log("Launching server...");
+  logger.debug("Launching server...");
   this.timeout(1000*1000); // 1000 seconds
   async.waterfall([
     function (next){
@@ -1061,7 +1062,7 @@ before(function (done) {
       next();
     },
   ], function (err) {
-    console.log("API fed.");
+    logger.debug("API fed.");
     done(err);
   });
 });

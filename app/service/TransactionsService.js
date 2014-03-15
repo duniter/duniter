@@ -11,6 +11,7 @@ var Key           = mongoose.model('Key');
 var Transaction   = mongoose.model('Transaction');
 var TxMemory      = mongoose.model('TxMemory');
 var MerkleService = service.Merkle;
+var logger        = require('../lib/logger')();
 
 module.exports.get = function (pgp, currency, conf) {
 
@@ -408,7 +409,7 @@ module.exports.get = function (pgp, currency, conf) {
             }
           }
           var coins = tx.getCoins();
-          console.log(lastTX.getRaw());
+          logger.debug(lastTX.getRaw());
           if(parseInt(coins[0].number, 10) != lastNum + 1){
             next('Bad transaction: coins number must follow last issuance transaction (last was #' + (lastNum + 1) + ', new first is #' + coins[0].number + ')');
             return;

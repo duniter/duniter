@@ -12,9 +12,9 @@ var service    = require('../service');
 var openpgp    = require('./openpgp').openpgp;
 var jpgp       = require('./jpgp');
 var sha1       = require('sha1');
-var log4js     = require('log4js');
-var logger     = require('./logger')('[HTTP]');
+var logger     = require('./logger')('http');
 var pgplogger  = require('./logger')('PGP');
+var log4js     = require('log4js');
 
 openpgp.init();
 
@@ -78,7 +78,7 @@ module.exports.database = {
     var database = currency.replace(/\r/g, '').replace(/\n/g, '').replace(/\s/g, '_');
     mongoose.connect('mongodb://' + host + (port ? ':' + port : '') + '/' + database);
     var db = mongoose.connection;
-    db.on('error', console.error.bind(console, 'connection error:'));
+    db.on('error', logger.error.bind(console, 'connection error:'));
     var Configuration = mongoose.model('Configuration');
     var confs;
     async.waterfall([
@@ -123,7 +123,7 @@ module.exports.database = {
       });
     }, function (err) {
       if (!err) {
-        console.warn('Data successfuly reseted.');
+        logger.warn('Data successfuly reseted.');
       }
       done(err);
     });
@@ -132,7 +132,7 @@ module.exports.database = {
   resetConf: function(done) {
     mongoose.model('Configuration').remove({}, function (err) {
       if (!err) {
-        console.warn('Configuration successfuly reseted.');
+        logger.warn('Configuration successfuly reseted.');
       }
       done(err);
     });
@@ -141,7 +141,7 @@ module.exports.database = {
   disconnect: function() {
     mongoose.disconnect(function (err) {
       if(err)
-        console.error(err);
+        logger.error(err);
     });
   }
 };
@@ -158,8 +158,7 @@ module.exports.express = {
     app.set('port', port);
     app.use(express.favicon(__dirname + '/../public/favicon.ico'));
     app.use(express.static(__dirname + '/../public'));
-    app.use(express.logger('dev'));
-    // app.use(log4js.connectLogger(logger, { level: log4js.levels.INFO, format: ':method :url :status :response-timems' }));
+    app.use(log4js.connectLogger(logger, { level: 'auto', format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m' }));
     app.use(express.urlencoded())
     app.use(express.json())
     app.use(express.methodOverride());
@@ -304,7 +303,7 @@ module.exports.express = {
           var raw1 = p1.getRaw().unix2dos();
           var raw2 = p2.getRaw().unix2dos();
           if (raw1 != raw2) {
-            console.log('Generating server\'s peering entry...');
+            logger.debug('Generating server\'s peering entry...');
             async.waterfall([
               function (next){
                 jpgp().sign(raw2, module.exports.privateKey(), next);
@@ -335,9 +334,9 @@ module.exports.express = {
         },
         function (next) {
           if(conf.ipv4){
-            console.log('Connecting on interface %s...', conf.ipv4);
+            logger.debug('Connecting on interface %s...', conf.ipv4);
             http.createServer(app).listen(conf.port, conf.ipv4, function(){
-              console.log('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
+              logger.debug('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
               next();
             });
           }
@@ -345,9 +344,9 @@ module.exports.express = {
         },
         function (next) {
           if(conf.ipv6){
-            console.log('Connecting on interface %s...', conf.ipv6);
+            logger.debug('Connecting on interface %s...', conf.ipv6);
             http.createServer(app).listen(conf.port, conf.ipv6, function(){
-              console.log('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
+              logger.debug('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
             });
           }
           else next();
@@ -424,7 +423,7 @@ function httpgp(app, conf, done) {
         return;
       } else {
         app.use(connectPgp(module.exports.sign));
-        console.log('Signed requests with PGP: enabled.');
+        logger.debug('Signed requests with PGP: enabled.');
         done();
       }
     });

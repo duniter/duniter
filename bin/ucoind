@@ -6,12 +6,8 @@ var async    = require('async');
 var _        = require('underscore');
 var program  = require('commander');
 var mongoose = require('mongoose');
-var log4js   = require('log4js');
 var logger   = require('../app/lib/logger')('ucoind');
 var service  = require('../app/service');
-
-// log4js configuration
-log4js.replaceConsole();
 
 function keys (val) {
   return val.split(',');
@@ -62,7 +58,7 @@ program
         },
       ], function (err) {
         if(err){
-          console.error('Error during sync:', err);
+          logger.error('Error during sync:', err);
         }
         server.database.disconnect();
       });
@@ -88,7 +84,7 @@ program
         }
       ], function (err) {
         if(err){
-          console.error('An error occured: %s', err);
+          logger.error('An error occured: %s', err);
           return;
         }
         server.database.disconnect();
@@ -115,11 +111,11 @@ program
       }
     ], function (err, result) {
       if(err){
-        console.error('Error: %s', err);
+        logger.error('Error: %s', err);
         server.database.disconnect();
         return;
       }
-      console.log("Key %s is now allowed to be stored" , key);
+      logger.debug("Key %s is now allowed to be stored" , key);
       server.database.disconnect();
     });
   }));
@@ -150,11 +146,11 @@ function handleKey (conf, key, isManaged, message) {
     }
   ], function (err, result) {
     if(err){
-      console.error('Error: %s', err);
+      logger.error('Error: %s', err);
       server.database.disconnect();
       return;
     }
-    console.log(message , key);
+    logger.debug(message , key);
     server.database.disconnect();
   });
 }
@@ -165,10 +161,10 @@ program
   .action(connect(function (conf) {
     overrideConf(conf).save(function (err) {
       if(err){
-        console.error("Configuration could not be saved: " + err);
+        logger.error("Configuration could not be saved: " + err);
       }
       else{
-        console.log("Configuration saved.");
+        logger.debug("Configuration saved.");
       }
       server.database.disconnect();
       return;
@@ -180,21 +176,21 @@ program
   .description('Reset configuration or data in database')
   .action(connect(function (type, conf) {
     if(!~['config', 'data'].indexOf(type)){
-      console.error('Bad command: usage `reset config` or `reset data`');
+      logger.error('Bad command: usage `reset config` or `reset data`');
       server.database.disconnect();
       return;
     }
     if(type == 'data'){
       server.database.reset(function (err) {
         if(err)
-          console.error(err);
+          logger.error(err);
         server.database.disconnect();
       });
     }
     if(type == 'config'){
       server.database.resetConf(function (err) {
         if(err)
-          console.error(err);
+          logger.error(err);
         server.database.disconnect();
       });
     }
@@ -214,7 +210,7 @@ program
         process.exit();
         return;
       }
-      console.log('Server ready!');
+      logger.debug('Server ready!');
     });
   }));
 
@@ -303,7 +299,7 @@ function connect(callback) {
   return function () {
     var cbArgs = arguments;
     if(!program.currency){
-      console.error('--currency parameter is mandatory.');
+      logger.error('--currency parameter is mandatory.');
       program.help();
       return;
     }
@@ -312,7 +308,7 @@ function connect(callback) {
     server.database.connect(program.mdb || program.currency, program.mhost, program.mport, function (err, conf) {
 
       if(err){
-        console.log("Error connecting to DB: " + err);
+        logger.debug("Error connecting to DB: " + err);
         server.database.disconnect();
         return;
       }

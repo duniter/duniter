@@ -6,6 +6,7 @@ var mongoose = require('mongoose');
 var fs       = require('fs');
 var sha1     = require('sha1');
 var _        = require('underscore');
+var logger   = require('../../app/lib/logger')('test');
 
 module.exports = {}
 
@@ -38,10 +39,10 @@ module.exports.tester = function (currency) {
       now = new Date().getTime();
       var past = now - last;
       var wait = past > minTimeInMs ? 0 : minTimeInMs - past;
-      // console.log("QUEUE: waiting...");
+      // logger.debug("QUEUE: waiting...");
       setTimeout(function () {
         last = new Date().getTime();
-        // console.log("QUEUE: running task (waited " + wait + "ms/" + minTimeInMs + "ms)");
+        // logger.debug("QUEUE: running task (waited " + wait + "ms/" + minTimeInMs + "ms)");
         task(callback);
       }, wait);
     }, 1);
@@ -67,7 +68,7 @@ module.exports.tester = function (currency) {
   this.delay = function (delayInMilliseconds) {
     return new module.exports.HTTPTestCase('Waiting ' + delayInMilliseconds + 'ms', {
       task: function (done) {
-        console.log('Waiting ' + delayInMilliseconds + 'ms..');
+        logger.debug('Waiting ' + delayInMilliseconds + 'ms..');
         setTimeout(done, delayInMilliseconds);
       },
       test: function () {

@@ -17,9 +17,9 @@ var Key        = mongoose.model('Key');
 var Forward    = mongoose.model('Forward');
 var Status     = require('../models/statusMessage');
 var log4js     = require('log4js');
-var logger     = log4js.getLogger('sync');
-var mlogger    = log4js.getLogger('membership');
-var vlogger    = log4js.getLogger('voting');
+var logger     = require('../lib/logger')('sync');
+var mlogger    = require('../lib/logger')('membership');
+var vlogger    = require('../lib/logger')('voting');
 
 // Services
 var ParametersService = service.Parameters;
@@ -424,7 +424,7 @@ module.exports.get = function (pgp, currency, conf) {
               if (am) {
                 var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
                 if (am.generated > entryTimestamp) {
-                  console.warn("%s > %s", am.generated, entryTimestamp);
+                  logger.warn("%s > %s", am.generated, entryTimestamp);
                   next('Too late for this voting. Retry.');
                   return;
                 }

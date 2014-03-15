@@ -5,6 +5,7 @@ var _           = require('underscore');
 var Coin        = mongoose.model('Coin');
 var Transaction = mongoose.model('Transaction');
 var service     = require('../service');
+var logger      = require('../lib/logger')();
 
 // Services
 var ParametersService = service.Parameters;
@@ -102,7 +103,7 @@ module.exports = function (pgp, currency, conf) {
 
     async.waterfall([
       function (next){
-        console.log(fingerprint+'-'+coindID);
+        logger.debug(fingerprint+'-'+coindID);
         Coin.findByCoinID(fingerprint+'-'+coindID, next);
       }
     ], function (err, coin) {
@@ -146,7 +147,7 @@ module.exports = function (pgp, currency, conf) {
 
     async.waterfall([
       function (next){
-        console.log(fingerprint+'-'+coindID);
+        logger.debug(fingerprint+'-'+coindID);
         Coin.findByCoinID(fingerprint+'-'+coindID, next);
       },
       function (coin, next){
@@ -169,7 +170,7 @@ module.exports = function (pgp, currency, conf) {
 }
 
 function getTransactionStack (coinString, stack, done) {
-  console.log(coinString);
+  logger.debug(coinString);
   var matches = coinString.match(/([A-Z\d]{40}-\d+-\d-\d+-(A|C)-\d+)(, ([A-Z\d]{40})-(\d+))?/);
   if(!matches){
     done('Wrong coin string: ' + coinString);
@@ -180,7 +181,7 @@ function getTransactionStack (coinString, stack, done) {
   var txNum = matches[5];
   Transaction.getBySenderAndNumber(txSender, txNum, function (err, tx) {
     if(err){
-      console.error(txSender, txNum);
+      logger.error(txSender, txNum);
       done(err, stack);
       return;
     }

@@ -3,7 +3,7 @@ var async    = require('async');
 var mongoose = require('mongoose');
 var _        = require('underscore');
 var log4js   = require('log4js');
-var logger   =  log4js.getLogger('http');
+var logger   =  require('../lib/logger')('http');
 
 module.exports = new function () {
 

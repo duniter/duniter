@@ -11,11 +11,10 @@ var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var THTEntry   = mongoose.model('THTEntry');
 var Key        = mongoose.model('Key');
-var log4js     = require('log4js');
 var _          = require('underscore');
-var logger     = log4js.getLogger();
-var mlogger    = log4js.getLogger('membership');
-var vlogger    = log4js.getLogger('voting');
+var logger     = require('../lib/logger')();
+var mlogger    = require('../lib/logger')('membership');
+var vlogger    = require('../lib/logger')('voting');
 var service    = require('../service');
 
 // Services

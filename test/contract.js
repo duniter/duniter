@@ -10,11 +10,12 @@ var server    = require('../app/lib/server');
 var mongoose  = require('mongoose');
 var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
+var logger    = require('../app/lib/logger')('test');
 
 var currency = "testo";
 var tester    = is = on = new test.tester(currency);
 
-console.log("Reading files & initializing...");
+logger.debug("Reading files & initializing...");
 
 server.database.init();
 
@@ -527,7 +528,7 @@ function testProposedAmendment (label, properties) {
 }
 
 before(function (done) {
-  console.log("Launching server...");
+  logger.debug("Launching server...");
   this.timeout(1000*1000); // 1000 seconds
   async.waterfall([
     function (next){
@@ -549,7 +550,7 @@ before(function (done) {
       next();
     },
   ], function (err) {
-    console.log("API fed.");
+    logger.debug("API fed.");
     done(err);
   });
 });

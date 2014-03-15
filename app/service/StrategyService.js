@@ -10,8 +10,7 @@ var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
 var Key        = mongoose.model('Key');
-var log4js     = require('log4js');
-var logger     = log4js.getLogger('amendment');
+var logger     = require('../lib/logger')('amendment');
 
 // Services
 var KeyService      = service.Key;

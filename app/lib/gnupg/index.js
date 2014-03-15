@@ -1,4 +1,5 @@
-var async = require('async');
+var async  = require('async');
+var logger = require('../logger')();
 
 module.exports = function GPG(privateKey, passphrase, keyring, done) {
   
@@ -41,9 +42,9 @@ module.exports = function GPG(privateKey, passphrase, keyring, done) {
 
       child.stderr.setEncoding('utf8');
       child.stderr.on('data', function (data) {
-        console.error(data);
+        logger.error(data);
         if (/^execvp\(\)/.test(data)) {
-          console.log('Failed to start gpg process.');
+          logger.debug('Failed to start gpg process.');
         }
       });
 

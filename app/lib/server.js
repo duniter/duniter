@@ -197,7 +197,7 @@ module.exports.express = {
 
       // Init Daemon
       var daemon = require('./daemon');
-      daemon.init(conf);
+      daemon.init(conf, module.exports.fingerprint());
 
       var pks   = require('../controllers/pks')(openpgp, currency, conf);
       var ucg   = require('../controllers/ucg')(openpgp, currency, conf);

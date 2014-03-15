@@ -97,12 +97,16 @@ function Daemon () {
               // Case 1: just triggers self-vote
               if (daemon.judges.timeForVote(amNext)) {
                 // Must be a voter to vote!
+                logger.debug("Asking vote for SELF peer");
                 Amendment.isVoterForAM(selfFingerprint, current.number, current.hash, function (err, wasVoter) {
                   if (!err && wasVoter) {
-                    askVote(current, PeeringService.peer(), callback);
+                    askVote(current, PeeringService.peer(), function (err, json) {
+                      // Do nothing with result: it has been done by SyncService (self-submitted the vote)
+                      callback(err);
+                    });
                     return;
                   }
-                  callback();
+                  callback(err);
                 });
                 return;
               }
@@ -112,13 +116,34 @@ function Daemon () {
               if (daemon.judges.timeForAskingVotes(amNext)) {
                 // Case 2: triggers other peers' self-vote
                 async.forEach(PeeringService.upPeers(), function(peer, callback){
+                  if (peer.fingerprint == selfFingerprint) {
+                    callback();
+                    return;
+                  }
+                  logger.debug("Asking vote for peer 0x%s", peer.fingerprint.substring(32));
                   // Must be a voter to vote!
                   Amendment.isVoterForAM(peer.fingerprint, current.number, current.hash, function (err, wasVoter) {
                     if (!err && wasVoter) {
-                      askVote(current, peer, callback);
+                      async.waterfall([
+                        function (next){
+                          askVote(current, peer, next);
+                        },
+                        function (json, next){
+                          vucoin(peer.getIPv4(), peer.getPort(), true, function (err, node) {
+                            next(null, json, node);
+                          });
+                        },
+                        function (json, node, next){
+                          var raw = json.amendment.raw;
+                          var sig = json.signature;
+                          node.hdc.amendments.votes.post(raw + sig, next);
+                        },
+                      ], function (err) {
+                        callback(err);
+                      });
                       return;
                     }
-                    callback();
+                    callback(err);
                   });
                 }, next);
                 return;
@@ -150,20 +175,12 @@ function Daemon () {
       },
       vote: ['connect', function (cb, results) {
         var node = results.connect;
-        async.waterfall([
-          function (next){
-            node.ucs.amendment.vote(current.number + 1, next);
-          },
-          function (json, next){
-            var raw = json.amendment.raw;
-            var sig = json.signature;
-            node.hdc.amendments.votes.post(raw + sig, next);
-          },
-        ], function (err) {
-          cb(err);
-        });
+        // Ask for peer's vote
+        node.ucs.amendment.vote(current.number + 1, cb);
       }]
-    }, done);
+    }, function (err, results) {
+      done(err, results.vote);
+    });
   }
 
   this.stop = function () {

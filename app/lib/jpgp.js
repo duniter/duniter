@@ -47,9 +47,7 @@ function JPGP() {
   }
 
   this.signsDetached = function (message, privateKey, done) {
-    var clearSignature = openpgp.write_signed_message(privateKey.obj, message);
-    var detached = clearSignature.substring(clearSignature.indexOf('-----BEGIN PGP SIGNATURE'));
-    done(null, detached);
+    require('./server').sign(message, done);
   }
 
   this.issuer = function() {

@@ -24,22 +24,26 @@ function initModels() {
   models.forEach(function (entity) {
     require(__dirname + '/../models/' + entity.toLowerCase() + '.js');
   });
-}
+};
 
 module.exports.pgp = openpgp;
 
 module.exports.privateKey = function () {
   return openpgp.keyring.privateKeys[0];
-}
+};
 
 module.exports.publicKey = function () {
   var privateKey = module.exports.privateKey();
   return (openpgp && privateKey) ? privateKey.obj.extractPublicKey() : '';
-}
+};
 
 module.exports.fingerprint = function () {
   var ascciiPubkey = module.exports.publicKey();
   return ascciiPubkey ? jpgp().certificate(ascciiPubkey).fingerprint : '';
+};
+
+module.exports.sign = function (message, done) {
+  done("Signature not implemented.");
 };
 
 module.exports.database = {
@@ -389,11 +393,13 @@ module.exports.express = {
   }
 };
 
+/**
+This stuff should be refactorized elsewhere
+**/
 function httpgp(app, conf, done) {
   // PGP signature of requests
   if(conf.pgpkey){
     var privateKey = conf.pgpkey;
-    var signingFuction = null;
     async.waterfall([
       function (next) {
         var keyring = 'ucoin_' + module.exports.fingerprint();
@@ -404,20 +410,20 @@ function httpgp(app, conf, done) {
         });
       },
       function (signFunc, next){
-        signingFuction = signFunc;
+        module.exports.sign = signFunc;
         try{
-          signingFuction("some test", next);
+          module.exports.sign("some test", next);
         } catch(ex){
           next("Wrong private key password.");
         }
       },
-    ], function (err, signedTest) {
+    ], function (err) {
       if (err) {
         logger.error(err);
         process.exit(1);
         return;
       } else {
-        app.use(connectPgp(signingFuction));
+        app.use(connectPgp(module.exports.sign));
         console.log('Signed requests with PGP: enabled.');
         done();
       }

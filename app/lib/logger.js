@@ -1,6 +1,6 @@
 var log4js = require('log4js');
 
-log4js.configure('conf/logs.json', { reloadSecs: 60 });
+log4js.configure(__dirname + '/../../conf/logs.json', { reloadSecs: 60 });
 
 /**
 * Convenience function to get logger directly

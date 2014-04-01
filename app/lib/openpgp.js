@@ -8811,7 +8811,7 @@ function openpgp_msg_message() {
 				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
 			else {
 				for (var i = 0 ; i < pubkey.length; i++) {
-          var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
+          var tohash = this.text;
 					if (this.signature.verify(tohash, pubkey[i])) {
 						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
             if(textCompare != undefined){

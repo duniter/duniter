@@ -35,7 +35,7 @@ module.exports = function GPG(privateKey, passphrase, keyring, done) {
         .replace(/\t/g, '\\t')
         .replace(/ /g, '\\s');
       var signature = '';
-      var child = spawn(gpgsh, [keyring], { env: {MESSAGE: strippedMessage }});
+      var child = spawn(gpgsh, [keyring], { env: {MESSAGE: message.unix2dos() }});
 
       child.stdin.write(passphrase);
       child.stdin.end();

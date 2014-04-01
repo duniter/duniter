@@ -26,7 +26,7 @@ function JPGP() {
       throw new Error('Multiple keys found in ASCII armored message');
     }
     var cert = readKeys[0];
-    var fpr = hexstrdump(cert.publicKeyPacket.getFingerprint()).toUpperCase();
+    var fpr = cert.publicKeyPacket.getFingerprint().hexstrdump().toUpperCase();
     var uids = [];
     cert.userIds.forEach(function (uid) {
       uids.push(uid.text);
@@ -123,8 +123,6 @@ function JPGP() {
       else if(signatures.length == 1){
         sig = signatures[0];
         sig.text = this.data;
-        // if(this.data.match(/-C73882B64B7E72237A2F460CE9CAB76D19A8651E/))
-        //   sig.text = this.data.unix2dos();
         detached = true;
       }
       else{
@@ -146,9 +144,10 @@ function JPGP() {
           }
         }
       }
+      // Verify issuer is matching pubkey
       if(verified && pubkey){
         var cert = this.certificate(pubkey);
-        var issuer = hexstrdump(sig.signature.getIssuer()).toUpperCase();
+        var issuer = sig.signature.getIssuer().hexstrdump().toUpperCase();
         verified = cert.fingerprint.toUpperCase().indexOf(issuer) != -1;
         if(!verified){
           err = "Signature does not match issuer.";
@@ -159,41 +158,7 @@ function JPGP() {
       verified = false;
       err = ex.toString();
     }
-    // if(err && sig && sig.text){
-    //   logger.error('==========================================================');
-    //   logger.error(detached ? '[DETACHED] ' + err : err);
-    //   logger.error('==========================================================');
-    //   logger.error({ text: sig.text });
-    //   // logger.error(hexstrdump(sig.text));
-    //   logger.error('----------------------------------------------------------');
-    //   if(!detached){
-    //     logger.error({ text: this.data });
-    //     // logger.error(hexstrdump(this.data));
-    //     logger.error('----------------------------------------------------------');
-    //   }
-    // }
-    // Done
-    var end = new Date();
-    var diff = end.getTime() - start.getTime();
-    // logger.debug("jpgp verify", diff + " ms");
     callback(err, verified);
-  };
-
-
-  // PRIVATE
-  function hexstrdump(str) {
-    if (str == null)
-      return "";
-    var r=[];
-    var e=str.length;
-    var c=0;
-    var h;
-    while(c<e){
-        h=str[c++].charCodeAt().toString(16);
-        while(h.length<2) h="0"+h;
-        r.push(""+h);
-    }
-    return r.join('');
   };
 }
 

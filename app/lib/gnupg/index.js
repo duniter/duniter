@@ -2,7 +2,7 @@ var async  = require('async');
 var logger = require('../logger')();
 
 module.exports = function GPG(privateKey, passphrase, keyring, done) {
-  
+
   var spawn = require('child_process').spawn;
   var fs = require('fs');
   var privateKeyName = 'key' + Date.now();
@@ -25,17 +25,16 @@ module.exports = function GPG(privateKey, passphrase, keyring, done) {
     ], done);
   };
 
-  this.sign = function (message, callback) {
+  /**
+  * Signature functions
+  */
+  this.sign      = async.apply(doSign, '-sba');
+  this.clearsign = async.apply(doSign, '--clearsign');
+
+  function doSign (options, message, callback) {
     try{
-      var strippedMessage = message
-        .replace(/\\r\\n/g, '\\\\r\\\\n')
-        .replace(/\r\n/g, '\n')
-        .replace(/\n/g, '\r\n')
-        .replace(/\r\n/g, '\\r\\n')
-        .replace(/\t/g, '\\t')
-        .replace(/ /g, '\\s');
       var signature = '';
-      var child = spawn(gpgsh, [keyring], { env: {MESSAGE: message.unix2dos() }});
+      var child = spawn(gpgsh, [keyring, options], { env: { MESSAGE: message }});
 
       child.stdin.write(passphrase);
       child.stdin.end();

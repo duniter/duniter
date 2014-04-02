@@ -63,7 +63,7 @@ function JPGP() {
       if(!sig){
         throw new Error("No signature packet found");
       }
-      issuer = hexstrdump(sig.signature.getIssuer()).toUpperCase();
+      issuer = sig.signature.getIssuer().hexstrdump().toUpperCase();
       if(!issuer){
         issuer = JSON.stringify(signatures);
       }

@@ -23,84 +23,152 @@ openpgp.keyring.importPrivateKey(catRawKey, catPasswd);
 
 var catPrivateKey = openpgp.keyring.privateKeys[0];
 
-describe('Signature:', function(){
+describe('Simple line signature:', function(){
 
   before(function (done) {
     gnupg.init(done);
   });
 
-  // it('jpgp.sign() should start with detached signature', function(done){
-
-  //   var message = "This is lolcat";
-
-  //   jpgp().sign(message, catPrivateKey, function (err, signature) {
-  //     console.log(signature);
-  //     assert.equal(signature.indexOf('-----BEGIN PGP SIGNATURE-----'), 0);
-  //     done();
-  //   });
-  // });
+  var message = "This is lolcat";
 
   it('jpgp.sign() should be verified', function(done){
-
-    var message = "This is lolcat";
-
     async.waterfall([
-      function (next){
-        jpgp().sign(message, catPrivateKey, next);
-      },
-      function (signature, next){
-        verify(message, signature, catRawPubKey, next);
-      },
-    ], function (err, verified) {
-      should.not.exist(err);
-      assert.equal(true, verified);
-      done();
-    });
+      async.apply(jpgp().sign, message, catPrivateKey),
+      async.apply(verify, message, catRawPubKey),
+    ], testVerified(true, done));
   });
 
   it('jpgp.sign() must NOT be verified with wrong data', function(done){
-
-    var message = "This is lolcat";
-
     async.waterfall([
-      function (next){
-        jpgp().sign(message, catPrivateKey, next);
-      },
-      function (signature, next){
-        verify(message + "some delta", signature, catRawPubKey, next);
-      },
-    ], function (err, verified) {
-      should.exist(err);
-      assert.equal(false, verified);
-      done();
-    });
+      async.apply(jpgp().sign, message, catPrivateKey),
+      async.apply(verify, message + "some delta", catRawPubKey),
+    ], testVerified(false, done));
+  });
+
+  //-----------------------------
+  // gnupg.js test
+
+  it('jpgp.verify() should verify gnupg.js --clearsign signature', function(done){
+    async.waterfall([
+      async.apply(gnupg.clearsign, message),
+      async.apply(verify, message, catRawPubKey),
+    ], testVerified(true, done));
+  });
+
+  it('jpgp.verify() should verify gnupg.js -sba signature', function(done){
+    async.waterfall([
+      async.apply(gnupg.sign, message),
+      async.apply(verify, message, catRawPubKey),
+    ], testVerified(true, done));
   });
 
   //-----------------------------
   // Some pre-signed stuff here
 
-  var message     = fs.readFileSync(__dirname + "/data/aa", 'utf8');
+  var message2     = fs.readFileSync(__dirname + "/data/aa", 'utf8');
   var signature   = fs.readFileSync(__dirname + "/data/aa.asc", 'utf8');
   var messageCRLF = fs.readFileSync(__dirname + "/data/aa.dos", 'utf8');
 
   it('jpgp.verify() must NOT verify external gpg signature + CRLF line ending', function(done){
-    verify(message.dos2unix(), signature, catRawPubKey, testVerified(false, done));
+    verify(message2.dos2unix(), catRawPubKey, signature, testVerified(false, done));
   });
 
   it('jpgp.verify() must verify external gpg signature + LF line ending', function(done){
-    verify(message.unix2dos(), signature, catRawPubKey, testVerified(true, done));
+    verify(message2.unix2dos(), catRawPubKey, signature, testVerified(true, done));
   });
 
   it('jpgp.verify() must verify external gpg signature + CRLF line ending file', function(done){
-    verify(messageCRLF, signature, catRawPubKey, testVerified(true, done));
+    verify(messageCRLF, catRawPubKey, signature, testVerified(true, done));
   });
 
   it('jpgp.verify() must NOT verify external gpg signature + CRLF line ending file', function(done){
-    verify(messageCRLF.dos2unix(), signature, catRawPubKey, testVerified(false, done));
+    verify(messageCRLF.dos2unix(), catRawPubKey, signature, testVerified(false, done));
   });
 
   it('jpgp.verify() must NOT pass external gpg signature + wrong data', function(done){
-    verify(message + "some delta", signature, catRawPubKey, testVerified(false, done));
+    verify(message2 + "some delta", catRawPubKey, signature, testVerified(false, done));
+  });
+});
+
+describe('Multiline message signature:', function(){
+
+  var amendment = fs.readFileSync(__dirname + "/data/amendments/BB-AM0-OK", 'utf8');
+
+  before(function (done) {
+    gnupg.init(done);
+  });
+
+  it('jpgp.sign() should be verified', function(done){
+    async.waterfall([
+      async.apply(jpgp().sign, amendment, catPrivateKey),
+      async.apply(verify, amendment, catRawPubKey),
+    ], testVerified(true, done));
+  });
+
+  it('jpgp.sign() must NOT be verified with wrong data', function(done){
+    async.waterfall([
+      async.apply(jpgp().sign, amendment, catPrivateKey),
+      async.apply(verify, amendment + "some delta", catRawPubKey),
+    ], testVerified(false, done));
+  });
+
+  //-----------------------------
+  // gnupg.js test
+
+  // TODO: this test do not pass, however it should (gpg does attest it)
+  // it('jpgp.verify() should verify gnupg.js --clearsign signature', function(done){
+  //   async.waterfall([
+  //     async.apply(gnupg.clearsign, amendment),
+  //     async.apply(verify, amendment, catRawPubKey),
+  //   ], testVerified(true, done));
+  // });
+
+  it('jpgp.verify() should verify gnupg.js -sba signature', function(done){
+    async.waterfall([
+      async.apply(gnupg.sign, amendment),
+      async.apply(verify, amendment, catRawPubKey),
+    ], testVerified(true, done));
+  });
+});
+
+describe('Public key message signature:', function(){
+
+  var amendment = fs.readFileSync(__dirname + "/data/lolcat.pub", 'utf8');
+
+  before(function (done) {
+    gnupg.init(done);
+  });
+
+  it('jpgp.sign() should NOT be verified (bug in openpgpjs lib)', function(done){
+    async.waterfall([
+      async.apply(jpgp().sign, amendment, catPrivateKey),
+      async.apply(verify, amendment, catRawPubKey),
+    ], testVerified(false, done));
+  });
+
+  it('jpgp.sign() must NOT be verified with wrong data', function(done){
+    async.waterfall([
+      async.apply(jpgp().sign, amendment, catPrivateKey),
+      async.apply(verify, amendment + "some delta", catRawPubKey),
+    ], testVerified(false, done));
+  });
+
+  //-----------------------------
+  // gnupg.js test
+
+  // TODO: this test do not pass, however it should (gpg does attest it)
+  // it('jpgp.verify() should verify gnupg.js --clearsign signature', function(done){
+  //   async.waterfall([
+  //     async.apply(gnupg.clearsign, amendment),
+  //     async.apply(verify, amendment, catRawPubKey),
+  //   ], testVerified(true, done));
+  // });
+
+  it('jpgp.verify() should verify gnupg.js -sba signature', function(done){
+    async.waterfall([
+      async.apply(gnupg.sign, amendment),
+      async.apply(verify, amendment, catRawPubKey),
+    ], testVerified(true, done));
   });
 });
 
@@ -115,11 +183,10 @@ function testVerified (isTrue, done) {
   };
 }
 
-function verify (message, signature, pubkey, done) {
+function verify (message, pubkey, signature, done) {
   jpgp()
     .publicKey(pubkey)
     .data(message)
-    .noCarriage()
     .signature(signature)
     .verify(done);
 }

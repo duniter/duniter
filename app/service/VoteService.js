@@ -130,6 +130,7 @@ module.exports.get = function (pgp, currency, conf) {
               StrategyService.tryToPromote(am, next);
             },
           ], function (err, result) {
+            if (err) logger.warn(err);
             next(null, am, recordedVote);
             // And vote is forwarded
             if (!recordedVote.propagated) {

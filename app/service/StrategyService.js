@@ -56,6 +56,9 @@ module.exports.get = function (pgp, currency, conf) {
             addVoters:      async.apply(async.forEach, am.getNewVoters(),       Key.addVoter),
             removeMembers:  async.apply(async.forEach, am.getLeavingMembers(),  Key.removeMember),
             removeVoters:   async.apply(async.forEach, am.getLeavingVoters(),   Key.removeVoter),
+
+            // Leaving voters have no more current voting document
+            currentVoting:  async.apply(async.forEach, am.getLeavingVoters(),   async.apply(Voting.removeCurrents.bind(Voting))),
           }, function (err) {
             next(err);
           });
@@ -67,6 +70,8 @@ module.exports.get = function (pgp, currency, conf) {
             async.apply(Key.update.bind(Key), { member: false }, { $set: { proposedMember: false }}, { multi: true }),
             async.apply(Key.update.bind(Key), { voter:  true  }, { $set: { proposedVoter:  true  }}, { multi: true }),
             async.apply(Key.update.bind(Key), { voter:  false }, { $set: { proposedVoter:  false }}, { multi: true }),
+            async.apply(Key.update.bind(Key), {}, { $set: { lastVotingState: 0 }}, { multi: true }),
+            async.apply(Key.update.bind(Key), {}, { $set: { lastMemberState: 0 }}, { multi: true }),
           ], function(err, results) {
             next(err);
           });

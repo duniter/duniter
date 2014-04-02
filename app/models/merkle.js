@@ -47,6 +47,22 @@ MerkleSchema.methods = {
     }
   },
 
+  removeMany: function (leaves) {
+    leaves.forEach(function(leaf){
+      // If leaf IS present
+      if(~this.levels[this.depth].indexOf(leaf)){
+        var leaves = this.leaves();
+        var index = leaves.indexOf(leaf);
+        if(~index){
+          // Replacement: remove previous hash
+          leaves.splice(index, 1);
+        }
+      }
+    });
+    leaves.sort();
+    this.initialize(leaves);
+  },
+
   push: function (leaf, previous) {
     // If leaf is not present
     if(this.levels[this.depth].indexOf(leaf) == -1){
@@ -127,6 +143,14 @@ MerkleSchema.statics.peers = function (done) {
 
 MerkleSchema.statics.THTEntries = function (done) {
   retrieve({ type: 'thtentries', criteria: '{}' }, done);
+};
+
+MerkleSchema.statics.proposedMembers = function (done) {
+  retrieve({ type: 'proposedMembers', criteria: '{}' }, done);
+};
+
+MerkleSchema.statics.proposedVoters = function (done) {
+  retrieve({ type: 'proposedVoters', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {

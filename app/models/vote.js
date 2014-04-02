@@ -43,7 +43,6 @@ VoteSchema.methods = {
         jpgp()
           .publicKey(that.pubkey.raw)
           .data(that.amendment.getRaw())
-          .noCarriage()
           .signature(that.signature)
           .verify(next);
       },
@@ -255,6 +254,16 @@ VoteSchema.statics.getByIssuerHashAndBasis = function (issuer, hash, amNumber, d
   
   this
     .find({ issuer: issuer, hash: hash, basis: amNumber })
+    .limit(1)
+    .exec(function (err, votes) {
+      done(null, votes.length == 1 ? votes[0] : null);
+  });
+};
+
+VoteSchema.statics.getByIssuerAmendmentHashAndBasis = function (issuer, hash, amNumber, done) {
+  
+  this
+    .find({ issuer: issuer, amendmentHash: hash, basis: amNumber })
     .limit(1)
     .exec(function (err, votes) {
       done(null, votes.length == 1 ? votes[0] : null);

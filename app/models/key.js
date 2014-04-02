@@ -13,6 +13,8 @@ var KeySchema = new Schema({
   voter: { type: Boolean, default: false },
   proposedMember: { type: Boolean, default: false },
   proposedVoter: { type: Boolean, default: false },
+  lastMemberState: { type: Number, default: 0 },
+  lastVotingState: { type: Number, default: 0 },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -50,10 +52,10 @@ KeySchema.statics.wasVoter = function(fingerprint, amNumber, done){
       done("Unknown key!");
     } else {
       var k = keys[0];
-      var previousJoins = _(k.asVoter.joins).filter(function(n) { return n <= amNumber; });
+      var previousJoins = _(k.asVoter.joins).filter(function(n) { return n < amNumber; });
       if (previousJoins.length > 0) {
         var max = _(previousJoins).max();
-        var previousLeaves = _(k.asVoter.leaves).filter(function(n) { return n <= amNumber; });
+        var previousLeaves = _(k.asVoter.leaves).filter(function(n) { return n < amNumber; });
         if (previousLeaves.length == 0 || _(previousLeaves).max() < max) {
           // Last operation at amNumber was joining
           done(null, true);
@@ -174,6 +176,30 @@ KeySchema.statics.removeProposedMember = function(fingerprint, done){
 
 KeySchema.statics.removeProposedVoter = function(fingerprint, done){
   Key.update({ fingerprint: fingerprint }, { proposedVoter: false }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.getLastState = function(key, done){
+  Key.find({ fingerprint: key }, function (err, keys) {
+    done(err, (err || keys.length == 0) ? 0 : keys[0].lastVotingState);
+  });
+};
+
+KeySchema.statics.getLastMSState = function(key, done){
+  Key.find({ fingerprint: key }, function (err, keys) {
+    done(err, (err || keys.length == 0) ? 0 : keys[0].lastMemberState);
+  });
+};
+
+KeySchema.statics.setLastState = function(key, state, done){
+  Key.update({ fingerprint: key }, { $set: { lastVotingState: state }}, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.setLastMSState = function(key, state, done){
+  Key.update({ fingerprint: key }, { $set: { lastMemberState: state }}, function (err) {
     done(err);
   });
 };

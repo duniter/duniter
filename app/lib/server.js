@@ -7,6 +7,7 @@ var path       = require('path');
 var mongoose   = require('mongoose');
 var connectPgp = require('connect-pgp');
 var _          = require('underscore');
+var common     = require('./common');
 var server     = require('../lib/server');
 var service    = require('../service');
 var openpgp    = require('./openpgp').openpgp;
@@ -405,13 +406,15 @@ function httpgp(app, conf, done) {
         pgplogger.debug("Keyring = %s", keyring);
         var gnupg = new (require('./gnupg'))(privateKey, conf.pgppasswd, keyring);
         gnupg.init(function (err) {
-          next(err, gnupg.sign);
+          next(err, function (message, done) {
+            gnupg.sign(message, done);
+          });
         });
       },
       function (signFunc, next){
         module.exports.sign = signFunc;
         try{
-          module.exports.sign("some test", next);
+          module.exports.sign("some test\nwith line return", next);
         } catch(ex){
           next("Wrong private key password.");
         }
@@ -434,27 +437,3 @@ function notImplemented (req, res) {
   res.send(501, "Not implemented.");
   res.end();
 }
-
-String.prototype.trim = function(){
-  return this.replace(/^\s+|\s+$/g, '');
-};
-
-String.prototype.unix2dos = function(){
-  return this.dos2unix().replace(/\n/g, '\r\n');
-};
-
-String.prototype.dos2unix = function(){
-  return this.replace(/\r\n/g, '\n');
-};
-
-String.prototype.isSha1 = function(){
-  return this.match(/^[A-Z0-9]{40}$/);
-};
-
-String.prototype.hash = function(){
-  return sha1(this).toUpperCase();
-};
-
-Date.prototype.timestamp = function(){
-  return Math.floor(this.getTime() / 1000);
-};

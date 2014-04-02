@@ -1750,7 +1750,6 @@ The posted voting request + posted signature.
     "version": "1",
     "currency": "beta_brousouf",
     "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "votingKey": "8E02FAFC90EDECB451086285DDD99C17AE19CF3F",
     "sigDate": 1390740799,
     "raw": "Version: 1\r\n...VotingKey: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
   }
@@ -1778,7 +1777,6 @@ Name              | Value                                                       
     "version": "1",
     "currency": "beta_brousouf",
     "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "votingKey": "FD17FECBAF731658EDEB60CF8700174B1D585861",
     "sigDate": 1393764799,
     "raw": "Version: 1\r\n...VotingKey: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
   }
@@ -1809,7 +1807,6 @@ A list of posted voting requests + posted signatures.
         "version": "1",
         "currency": "beta_brousouf",
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "votingKey": "FD17FECBAF731658EDEB60CF8700174B1D585861",
         "sigDate": 1393764799,
         "raw": "Version: 1\r\n...VotingKey: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
       }
@@ -1819,7 +1816,6 @@ A list of posted voting requests + posted signatures.
         "version": "1",
         "currency": "beta_brousouf",
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "votingKey": "8E02FAFC90EDECB451086285DDD99C17AE19CF3F",
         "sigDate": 1393419199,
         "raw": "Version: 1\r\n...VotingKey: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
       }
@@ -1829,7 +1825,6 @@ A list of posted voting requests + posted signatures.
         "version": "1",
         "currency": "beta_brousouf",
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "votingKey": "FD17FECBAF731658EDEB60CF8700174B1D585861",
         "sigDate": 1390740799,
         "raw": "Version: 1\r\n...VotingKey: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
       }

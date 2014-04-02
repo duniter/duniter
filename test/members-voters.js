@@ -12,6 +12,7 @@ var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
 var logger    = require('../app/lib/logger')('test');
 
+var nb = 62;
 var currency = "testa";
 var tester    = is = on = new test.tester(currency);
 
@@ -27,9 +28,9 @@ var Amendment   = mongoose.model('Amendment');
 var Transaction = mongoose.model('Transaction');
 
 var now   = new Date().timestamp();
-var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat");
-var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi");
-var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow");
+var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat", "Cat");
+var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi", "Tobi");
+var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow", "Snow");
 // var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
 
 var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
@@ -45,7 +46,7 @@ var pubkeyTobiSig  = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8')
 
 var config = {
   server: {
-    port: 8002,
+    port: 8007,
     pgp: {
       key: __dirname + "/data/lolcat.priv",
       password: "lolcat"
@@ -61,11 +62,11 @@ var config = {
 if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
 var conf = {
   ipv4: '127.0.0.1',
-  port: 9106,
+  port: 9107,
   pgpkey: config.server.pgp.key,
   pgppasswd: config.server.pgp.password,
   remoteipv4: '127.0.0.1',
-  remoteport: 9106,
+  remoteport: 9107,
   kmanagement: 'ALL',
   sync: {
     AMStart: now,
@@ -104,39 +105,28 @@ var amendments = {
   AM2: {
     number: 2,
     dividend: 145,
-    nextVotes: 1,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    nextVotes: 2,
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
     membersChanges: [
+      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
     ],
-    votersCount: 1,
-    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersCount: 3,
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
     votersChanges: [
-      "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
+      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
     ]
   },
 
-  AM2_voters_members: {
-    nextVotes: 1,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+  AM3: {
+    number: 3,
+    nextVotes: 2,
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
     membersChanges: [
     ],
-    votersCount: 1,
-    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
-    votersChanges: [
-      "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    ]
-  },
-
-  AM3_voters_members: {
-    nextVotes: 1,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    membersChanges: [
-    ],
-    votersCount: 1,
-    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersCount: 3,
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
     votersChanges: [
     ]
   },
@@ -145,111 +135,14 @@ var amendments = {
     number: 4,
     dividend: 145,
     nextVotes: 2,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
     membersChanges: [
     ],
     votersCount: 2,
-    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    votersChanges: [
-      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    ]
-  },
-
-  AM4_voters_members: {
-    nextVotes: 2,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    membersChanges: [
-    ],
-    votersCount: 2,
-    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    votersChanges: [
-      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    ]
-  },
-
-  // Awesome: exchanging voting keys does not produce any voters changes!
-  AM5_voters_members: {
-    nextVotes: 2,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    membersChanges: [
-    ],
-    votersCount: 2,
-    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    votersChanges: [
-    ]
-  },
-
-  // Exchanging (again), then cancelling: cat & tobi are using Cat's key fingerprint
-  AM6_voters_members: {
-    nextVotes: 1,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    membersChanges: [
-    ],
-    votersCount: 1,
-    votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
+    votersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
     votersChanges: [
       "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    ]
-  },
-
-  // Tobi coming back as a voter, and Snow is joining & voting
-  AM7_voters_members: {
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
-    ],
-    votersCount: 3,
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    votersChanges: [
-      "+2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
-    ]
-  },
-
-  // Cat's deciding not to vote anymore
-  AM8_voters_members: {
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-    ],
-    votersCount: 3,
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    votersChanges: [
-    ]
-  },
-
-  // Cat hasn't voted: he was ejected from voters
-  AM9_voters_members: {
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-    ],
-    votersCount: 2,
-    votersRoot: 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F',
-    votersChanges: [
-      "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-    ]
-  },
-
-  // Cat decide to come back voting
-  AM10_voters_members: {
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-    ],
-    votersCount: 3,
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    votersChanges: [
-      "+C73882B64B7E72237A2F460CE9CAB76D19A8651E"
     ]
   }
 };
@@ -271,7 +164,11 @@ function pksAdd (raw, sig) {
 }
 
 function join (signatory, timestamp) {
-  return memberDo("JOIN", signatory, timestamp);
+  return memberDo("IN", signatory, timestamp);
+}
+
+function leave (signatory, timestamp) {
+  return memberDo("OUT", signatory, timestamp);
 }
 
 function memberDo (action, signatory, timestamp) {
@@ -285,7 +182,7 @@ function memberDo (action, signatory, timestamp) {
       issuer: signatory.fingerprint(),
       membership: action,
       sigDate: d,
-      signature: ""
+      signature: d.toLocaleString()
     });
     ms.hash = sha1(ms.getRawSigned()).toUpperCase();
     async.series([
@@ -306,12 +203,11 @@ function memberDo (action, signatory, timestamp) {
   };
 }
 
-function voter (signatory, timestamp, fingerprint) {
-  var votingKey = fingerprint || signatory.fingerprint();
-  return voterDo(signatory, timestamp, votingKey);
+function voter (signatory, timestamp) {
+  return voterDo(signatory, timestamp);
 }
 
-function voterDo (signatory, timestamp, votingKey) {
+function voterDo (signatory, timestamp) {
   var d = new Date();
   d.setTime(timestamp*1000);
   return function (done) {
@@ -319,8 +215,8 @@ function voterDo (signatory, timestamp, votingKey) {
     var voting = new Voting({
       version: 1,
       currency: currency,
+      type: 'VOTING',
       issuer: signatory.fingerprint(),
-      votingKey: votingKey,
       sigDate: d,
       signature: "" + d.toLocaleString()
     });
@@ -522,6 +418,55 @@ function sendTransaction (tx, done) {
   });
 }
 
+var someTests = {
+
+  voteProposed: function (signatory, expectedAM) {
+    var expected = expectedAM || {};
+    return tester.verify(
+      signatory.name() + " vote for proposed",
+      voteProposed(signatory),
+      is.expectedSignedAmendment(expected)
+    );
+  },
+
+  voteCurrent: function (signatory, expectedAM) {
+    var expected = expectedAM || {};
+    return tester.verify(
+      signatory.name() + " vote for current",
+      voteCurrent(signatory),
+      is.expectedSignedAmendment(expected)
+    );
+  },
+
+  sendVoting: function (signatory, time) {
+    return tester.verify(
+      signatory.name() + " voting",
+      voter(signatory, time),
+      is.expectedVoting(signatory.fingerprint())
+    );
+  },
+
+  sendOptIN: function (signatory, time, errCode) {
+    return tester.verify(
+      signatory.name() + " OPT-IN",
+      join(signatory, time),
+      errCode ?
+        is.expectedHTTPCode(errCode) :
+        is.expectedMembership(signatory.fingerprint())
+    );
+  },
+
+  sendOptOUT: function (signatory, time, errCode) {
+    return tester.verify(
+      signatory.name() + " OPT-OUT",
+      leave(signatory, time),
+      errCode ?
+        is.expectedHTTPCode(errCode) :
+        is.expectedMembership(signatory.fingerprint())
+    );
+  }
+};
+
 var testCases = [
 
   /**************************
@@ -548,11 +493,7 @@ var testCases = [
     previousHash: null
   }),
 
-  tester.verify(
-    "Tobi joining",
-    join(tobi),
-    is.expectedMembership("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
-  ),
+  someTests.sendOptIN(tobi),
 
   testProposedAmendment('proposed amendment with tobi joining', {
     currency: 'testa',
@@ -563,62 +504,18 @@ var testCases = [
     previousHash: null
   }),
 
-  tester.verify(
-    "Cat joining",
-    join(cat),
-    is.expectedMembership("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
-  ),
+  someTests.sendOptIN(cat),
 
-  tester.verify(
-    "Tobi voting",
-    voter(tobi, now + 1),
-    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
-  ),
-
-  tester.verify(
-    "Cat voting",
-    voter(cat, now + 1),
-    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
-  ),
+  someTests.sendVoting(tobi, now + 1),
+  someTests.sendVoting(cat, now + 1),
 
   testProposedAmendment('proposed amendment with tobi+cat as members & voters', amendments.AM0),
 
-  // VOTE 0
-
-  tester.verify(
-    "Voting AM0 should promote AM0 as genesis amendment",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM0)
-  ),
-
-  tester.verify(
-    "Tobi voting AM0 so he stays as a voter",
-    voteCurrent(tobi),
-    is.expectedSignedAmendment(amendments.AM0)
-  ),
-
+  // VOTE AM0
+  someTests.voteProposed(cat, amendments.AM0), // Promoted
+  someTests.voteCurrent(tobi, amendments.AM0),
   testPromotedAmendment(amendments.AM0),
   testPromotedAmendment(amendments.AM0, 0),
-
-  // Delay, otherwise tobi might send same signature
-
-  tester.verify(
-    "Tobi changing his voting key to same as Cat",
-    voter(tobi, now + 2, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
-    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
-  ),
-
-  testProposedAmendment('proposed amendment with Tobi voting with same key as Cat', amendments.AM2_voters_members),
-
-  // Delay, otherwise tobi might send same signature
-
-  tester.verify(
-    "Tobi cancelling his voting key to same as Cat",
-    voter(tobi, now + 3, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
-    is.expectedHTTPCode(400)
-  ),
-
-  testProposedAmendment('looks like AM0 amendment', amendments.AM0_voters_members),
 
   //-------- VOTING : AM1 ------
   tester.verify(
@@ -628,177 +525,16 @@ var testCases = [
   ),
 
   tester.verify(
-    "Voting AM1 should promote AM1 indentical to genesis AM",
+    "Voting AM1 should promote AM1 identical to genesis AM",
     voteProposed(cat),
     is.expectedSignedAmendment(amendments.AM0_voters_members)
   ),
-
-  tester.verify(
-    "Voting AM1 should require 2 votes",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM0_voters_members)
-  ),
-
-  //----------------------------
-
-  // Changing VOTERS
-
-  tester.verify(
-    "Tobi changing his voting key to same as Cat",
-    voter(tobi, now + 4, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
-    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
-  ),
-
-    // Now we are with proposed AM2:
-    // votersCount: 1,
-    // votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
-    // votersChanges: [
-    //   "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    // ]
-
-  testProposedAmendment('proposed amendment with Tobi voting with same key as Cat', amendments.AM2),
-
-  //-------- VOTING : AM2 ------
-  tester.verify(
-    "Voting AM2 should promote AM2 (cat & tobi have same voting key)",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM2)
-  ),
-
-  tester.verify(
-    "Voting AM2 should require 2 votes",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM2)
-  ),
   
   //----------------------------
 
-  //-------- VOTING : AM3 ------
-  tester.verify(
-    "Voting AM3 directly should be possible, as one signature is required",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM3_voters_members)
-  ),
-  
-  //----------------------------
-
-  // Changing VOTERS AGAIN
-
-  tester.verify(
-    "Tobi changing his voting back with his own key",
-    voter(tobi, now + 5, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
-    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
-  ),
-
-    // Now we are with proposed AM4:
-    // votersCount: 2,
-    // votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    // votersChanges: [
-    //   "+2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    // ]
-
-  testProposedAmendment('proposed AM4 should have same voters & members as AM0', amendments.AM4_voters_members),
-
-  //-------- VOTING : AM4 ------
-  tester.verify(
-    "Voting AM4 directly should be possible, as one signature is required",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM4_voters_members)
-  ),
-  
-  //----------------------------
-
-    // Right now we have, tobi hasn't voted current yet:
-    // votersCount: 1,
-    // votersRoot: 'C73882B64B7E72237A2F460CE9CAB76D19A8651E',
-    // votersChanges: [
-    //   "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    // ]
-
-  tester.verify(
-    "Tobi voting using Cat's key",
-    voter(tobi, now + 6, "C73882B64B7E72237A2F460CE9CAB76D19A8651E"),
-    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
-  ),
-
-  tester.verify(
-    "Cat voting using Tobi's key",
-    voter(cat, now + 7, "2E69197FAB029D8669EF85E82457A1587CA0ED9C"),
-    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
-  ),
-
-    // Now we are with proposed AM5:
-    // votersCount: 2,
-    // votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    // votersChanges: [
-    // ]
-
-  // However, Cat's uses its key to vote
-  tester.verify(
-    "Cat's voting: AM5 should require 2 votes",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM5_voters_members)
-  ),
-  tester.verify(
-    "Tobi's voting: AM5 should require 2 votes",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM5_voters_members)
-  ),
-
-  //-------- VOTING : AM5 ------
-  tester.verify(
-    "Voting AM5 directly should be possible, using 2 votes",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM5_voters_members)
-  ),
-  
-  //----------------------------
-
-  tester.verify(
-    "Tobi voting using his own key (exchange again)",
-    voter(tobi, now + 8),
-    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
-  ),
-
-  tester.verify(
-    "Cat voting using his own key (exchange again)",
-    voter(cat, now + 9),
-    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
-  ),
-
-  // However, Cat's uses its key to vote
-  tester.verify(
-    "Cat's voting: AM6 should require 2 votes and be same as AM5",
-    voteProposed(cat, 1),
-    is.expectedSignedAmendment(amendments.AM5_voters_members)
-  ),
-
-  tester.verify(
-    "Tobi voting using his own key - cancelling (exchange again cancelled)",
-    voter(tobi, now + 10),
-    is.expectedHTTPCode(400)
-  ),
-  
-  //-------- VOTING : AM6 ------
-  tester.verify(
-    "Voting AM6 directly should be possible, using 2 votes",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM6_voters_members)
-  ),
-
-  // Tobi's vote is required
-  tester.verify(
-    "Tobi's voting: AM6 should require 2 votes",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM6_voters_members)
-  ),
-  
-  //----------------------------
-
-  /****** AM7
+  /****** AM2
   *
-  * 1. Tobi coming back as a voter
-  * 2. Snow publish its pubkey, ask for joining & voting
+  * Snow publish its pubkey, ask for joining & voting
   */
 
   tester.verify(
@@ -809,129 +545,112 @@ var testCases = [
 
   testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
 
-  tester.verify(
-    "Snow joining",
-    join(snow, now + 11),
-    is.expectedMembership("33BBFC0C67078D72AF128B5BA296CC530126F372")
-  ),
+  someTests.sendOptIN(snow, now + 2),
+  someTests.sendVoting(snow, now + 2),
+
+  // 1/2
+  someTests.voteProposed(cat, amendments.AM2),
+  testPromotedAmendment(amendments.AM0_voters_members, 1),
+  testPromotedAmendment(amendments.AM0_voters_members),
 
   tester.verify(
-    "Snow coming as a voter",
-    voter(snow, now + 11),
-    is.expectedVoting("33BBFC0C67078D72AF128B5BA296CC530126F372")
-  ),
-
-  tester.verify(
-    "Tobi coming back as a voter",
-    voter(tobi, now + 11),
-    is.expectedVoting("2E69197FAB029D8669EF85E82457A1587CA0ED9C")
-  ),
-
-  tester.verify(
-    "Voting AM7 by cat",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM7_voters_members)
-  ),
-
-  testPromotedAmendment(amendments.AM7_voters_members, 7),
-  testPromotedAmendment(amendments.AM7_voters_members),
-
-  tester.verify(
-    "Confirming AM7 as new voter (tobi)",
-    voteCurrent(tobi),
-    is.expectedSignedAmendment(amendments.AM7_voters_members)
-  ),
-
-  tester.verify(
-    "Confirming AM7 as new voter (snow)",
+    "Snow shouldn't be able to vote N-1 (current)",
     voteCurrent(snow),
-    is.expectedSignedAmendment(amendments.AM7_voters_members)
+    is.expectedHTTPCode(400)
   ),
 
-  /****** AM8
-  *
-  * 1. Tobi & Snow will vote without Cat
-  */
+  testPromotedAmendment(amendments.AM0_voters_members, 1),
+  testPromotedAmendment(amendments.AM0_voters_members),
 
-  testProposedAmendment('AM8 should be calm', amendments.AM8_voters_members),
+  // 2/2
+  someTests.voteProposed(tobi, amendments.AM2),
+
+  testPromotedAmendment(amendments.AM2, 2),
+  testPromotedAmendment(amendments.AM2),
 
   tester.verify(
-    "Voting AM8 without Cat (tobi)",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM8_voters_members)
+    "Snow shouldn't be able to vote N (new current)",
+    voteCurrent(snow),
+    is.expectedHTTPCode(400)
   ),
 
-  testPromotedAmendment(amendments.AM7_voters_members, 7),
-  testPromotedAmendment(amendments.AM7_voters_members),
+  /******* We have AM2:
 
-  tester.verify(
-    "Voting AM8 without Cat (snow)",
-    voteProposed(snow),
-    is.expectedSignedAmendment(amendments.AM8_voters_members)
-  ),
+    nextVotes: 2,
+    membersCount: 3,
+    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    membersChanges: [
+      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
+    ],
+    votersCount: 3,
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
+    votersChanges: [
+      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
+    ]
 
-  testPromotedAmendment(amendments.AM8_voters_members, 8),
-  testPromotedAmendment(amendments.AM8_voters_members),
-
-  /****** AM9
-  *
-  * 1. Tobi & Snow has voted AM8 without Cat
-  * 2. Cat still do not vote
-  * 3. Tobi & Snow will vote AM9 causing Cat's leaving as voter
-  */
-
-  testProposedAmendment('AM9 should see Cat leaving', amendments.AM9_voters_members),
-
-  tester.verify(
-    "Voting AM9 without Cat (tobi)",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM9_voters_members)
-  ),
-
-  testPromotedAmendment(amendments.AM8_voters_members, 8),
-  testPromotedAmendment(amendments.AM8_voters_members),
-
-  tester.verify(
-    "Voting AM9 without Cat (snow)",
-    voteProposed(snow),
-    is.expectedSignedAmendment(amendments.AM9_voters_members)
-  ),
-
-  testPromotedAmendment(amendments.AM9_voters_members),
-  testPromotedAmendment(amendments.AM9_voters_members, 9),
-
-  /****** AM10
-  *
-  * 1. Tobi & Snow has voted AM9 without Cat, which has left as voter
-  * 2. Cat will ask to be a voter
-  * 3. Tobi & Snow will vote AM10 so Cat will be voter again
+    Let's not make tobi vote, but snow + cat instead.
   */
 
   tester.verify(
-    "Cat coming back as a voter",
-    voter(cat, now + 12),
-    is.expectedVoting("C73882B64B7E72237A2F460CE9CAB76D19A8651E")
+    "Voting AM3 by cat 1v/2v",
+    voteProposed(cat),
+    is.expectedSignedAmendment(amendments.AM3)
   ),
 
-  testProposedAmendment('AM10 should see Cat coming back as voter', amendments.AM10_voters_members),
+  testPromotedAmendment(amendments.AM2, 2),
+  testPromotedAmendment(amendments.AM2),
 
   tester.verify(
-    "Voting AM10 (tobi)",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM10_voters_members)
-  ),
-
-  testPromotedAmendment(amendments.AM9_voters_members, 9),
-  testPromotedAmendment(amendments.AM9_voters_members),
-
-  tester.verify(
-    "Voting AM10 (snow)",
+    "Voting AM3 by snow 2v/2v",
     voteProposed(snow),
-    is.expectedSignedAmendment(amendments.AM10_voters_members)
+    is.expectedSignedAmendment(amendments.AM3)
   ),
 
-  testPromotedAmendment(amendments.AM10_voters_members),
-  testPromotedAmendment(amendments.AM10_voters_members, 10),
+  testPromotedAmendment(amendments.AM3, 3),
+  testPromotedAmendment(amendments.AM3),
+
+  testProposedAmendment('AM4 should see tobi no more voter', amendments.AM4),
+
+  tester.verify(
+    "Tobi voting while having not voted current should not be accepted: already a voter!",
+    voter(tobi, now + 4),
+    is.expectedHTTPCode(400)
+  ),
+
+  // Voting AM4 (ratify tobi's leaving as a voter)
+  someTests.voteProposed(cat),
+  someTests.voteProposed(snow),
+  testPromotedAmendment(amendments.AM4, 4),
+  testPromotedAmendment(amendments.AM4),
+  testProposedAmendment('AM5: no changes', { membersChanges: [], votersChanges: [] }),
+
+  // Tobi voting again
+  someTests.sendVoting(tobi, now + 5),
+  testProposedAmendment('AM6: tobi\'s coming back', {
+    membersChanges: [],
+    votersChanges: ['+2E69197FAB029D8669EF85E82457A1587CA0ED9C'],
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
+  someTests.voteProposed(cat),
+  someTests.voteProposed(snow),
+  testProposedAmendment('AM6: no changes, but tobi as voter', {
+    membersChanges: [],
+    votersChanges: [],
+    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
+
+  someTests.voteProposed(cat),
+  someTests.voteProposed(snow),
+  // Tobi has not voted yet! He is leaving for proposed next
+  testProposedAmendment('AM7: tobi is leaving as voter', { votersChanges: ['-2E69197FAB029D8669EF85E82457A1587CA0ED9C'], votersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8' }),
+  someTests.voteCurrent(tobi),
+  testProposedAmendment('AM7: tobi is finally saved', { votersChanges: [], votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
+
+
+  someTests.voteProposed(cat),
+  someTests.voteProposed(snow),
+  someTests.sendOptOUT(cat, now + 8),
+  testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: ['-C73882B64B7E72237A2F460CE9CAB76D19A8651E'], membersRoot: 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F' }),
+  someTests.sendOptIN(cat, now + 8, 400),
+  testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: [], membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
 
   /****** TRANSACTIONS
   *
@@ -1012,7 +731,6 @@ var testCases = [
   ),
 ];
 
-var nb = 15;
 // testCases.splice(nb, testCases.length - nb);
 
 function testMerkle (url, root) {
@@ -1025,7 +743,7 @@ function testMerkle (url, root) {
 
 function testPromotedAmendment (properties, number) {
   return tester.verify(
-    "proposed amendment #" + number,
+    number >= 0 ? "proposed amendment #" + number : "current amendment",
     on.doGet("/hdc/amendments/promoted" + (isNaN(number) ? "" : "/" + number)),
     is.expectedAmendment(properties)
   );
@@ -1054,6 +772,9 @@ before(function (done) {
       tester.app(appReady);
       // Execute all tasks
       async.forEachSeries(testCases, function(testCase, callback){
+        console.log('----------------------------------');
+        console.log('Test: %s', testCase.label);
+        console.log('----------------------------------');
         testCase.task(callback);
       }, next);
     },

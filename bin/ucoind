@@ -61,6 +61,7 @@ program
           logger.error('Error during sync:', err);
         }
         server.database.disconnect();
+        process.exit();
       });
     });
   }));
@@ -88,6 +89,7 @@ program
           return;
         }
         server.database.disconnect();
+        process.exit();
       });
     });
   }));
@@ -117,6 +119,7 @@ program
       }
       logger.debug("Key %s is now allowed to be stored" , key);
       server.database.disconnect();
+      process.exit();
     });
   }));
 
@@ -152,6 +155,7 @@ function handleKey (conf, key, isManaged, message) {
     }
     logger.debug(message , key);
     server.database.disconnect();
+    process.exit();
   });
 }
 
@@ -167,6 +171,7 @@ program
         logger.debug("Configuration saved.");
       }
       server.database.disconnect();
+      process.exit();
       return;
     });
   }));
@@ -185,6 +190,7 @@ program
         if(err)
           logger.error(err);
         server.database.disconnect();
+        process.exit();
       });
     }
     if(type == 'config'){
@@ -192,6 +198,7 @@ program
         if(err)
           logger.error(err);
         server.database.disconnect();
+        process.exit();
       });
     }
   }));
@@ -255,7 +262,8 @@ function overrideConf(conf) {
       UD0: program.ud0,
       UDPercent: program.udpercent,
       Consensus: program.consensus,
-      MSExpires: program.msfreq
+      MSExpires: program.msfreq,
+      UCSBlockFreq: program.ubfreq
     }
   };
 
@@ -290,7 +298,8 @@ function overrideConf(conf) {
     UDPercent: config.sync.UDPercent || conf.sync.UDPercent || 0.007376575, // 0.73%
     UDMinCoin: config.sync.UDMinCoin || conf.sync.UDMinCoin,
     Consensus: config.sync.Consensus || conf.sync.Consensus || 2/3,
-    MSExpires: config.sync.MSExpires || conf.sync.MSExpires || 3600*24*30.4375*6 // 6 months
+    MSExpires: config.sync.MSExpires || conf.sync.MSExpires || 3600*24*30.4375*6, // 6 months
+    UCSBlockFreq: config.sync.UCSBlockFreq || conf.sync.UCSBlockFreq || 3600 // hourly
   };
   return conf;
 }

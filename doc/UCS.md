@@ -1,4 +1,4 @@
-# uCoin Synchronization messages format
+# uCoin Registry messages format
 
 ## Contents
 * [Introduction](#introduction)
@@ -18,8 +18,9 @@ This step is done by issuing a the following document:
 ```bash
 Version: 1
 Currency: beta_brousouf
+Registry: MEMBERSHIP
 Issuer: 405715EC64289D1F43808F57EC51F273CBC0FA17
-Membership: JOIN
+Membership: IN
 ```
 
 ### Fields details
@@ -28,8 +29,9 @@ Field | Description
 ----- | -----------
 `Version` | Denotes the current structure version.
 `Currency` | Contains the name of the currency.
+`Registry` | Identify the type of document within Registry context.
 `Issuer` | Full PGP key fingerprint issuing this message.
-`Membership` | Membership message. Value is either `JOIN`, `ACTUALIZE` or `LEAVE` to express wether a member wishes to join, confirm its status in, or leave the community.
+`Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
 
 ## Voting
 
@@ -40,8 +42,8 @@ Thus, it is required to define who are the voters. In an automated uCoin network
 ```bash
 Version: 1
 Currency: beta_brousouf
+Registry: VOTING
 Issuer: 405715EC64289D1F43808F57EC51F273CBC0FA17
-VotingKey: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F
 ```
 
 ### Fields details
@@ -50,7 +52,7 @@ Field | Description
 ----- | -----------
 `Version` | Denotes the current structure version.
 `Currency` | Contains the name of the currency.
+`Registry` | Identify the type of document within Registry context.
 `Issuer` | Full PGP key fingerprint issuing this message.
-`VotingKey` | Defines the key to be used by `Issuer` for voting.
 
-With such message, uCoin node will be able to know that member `Issuer` *wants its votes to be considered when accepting new Amendments, and that this member will use key `VotingKey` to express its future votes.
+With such message, uCoin node will be able to know that member `Issuer` *wants* its votes to be considered when accepting new Amendments.

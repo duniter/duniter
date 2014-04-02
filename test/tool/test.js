@@ -135,7 +135,7 @@ module.exports.tester = function (currency) {
   this.expectedVoting = function (votingKey) {
     return successToJson(function (json) {
       isVoting(json);
-      json.voting.votingKey.should.equal(votingKey);
+      json.voting.issuer.should.equal(votingKey);
     });
   };
 
@@ -189,17 +189,18 @@ module.exports.tester = function (currency) {
     };
   };
 
-  this.setVoter = function (signatory, fingerprint) {
+  this.setVoter = function (signatory) {
     var Voting = mongoose.model('Voting');
     return function (done) {
       queueOfMsVt.push(function (cb) {
-        var ms = new Voting({ version: 1, currency: currency, issuer: signatory.fingerprint(), votingKey: fingerprint || signatory.fingerprint() });
+        var ms = new Voting({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'VOTING' });
         var raw = ms.getRaw();
-        var sig = signatory.sign(raw);
-        post ('/ucs/community/voters', {
-          'voting': raw,
-          'signature': sig
-        }, cb);
+        signatory.sign(raw, function (err, sig) {
+          post ('/ucs/community/voters', {
+            'voting': raw,
+            'signature': sig
+          }, cb);
+        });
       }, done);
     };
   };
@@ -208,7 +209,7 @@ module.exports.tester = function (currency) {
     var Membership = mongoose.model('Membership');
     return function (done) {
       queueOfMsVt.push(function (cb) {
-        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'JOIN' });
+        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'MEMBERSHIP', membership: 'IN' });
         var raw = ms.getRaw();
         var sig = signatory.sign(raw);
         post ('/ucs/community/members', {
@@ -223,7 +224,7 @@ module.exports.tester = function (currency) {
     var Membership = mongoose.model('Membership');
     return function (done) {
       queueOfMsVt.push(function (cb) {
-        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'ACTUALIZE' });
+        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'MEMBERSHIP', membership: 'IN' });
         var raw = ms.getRaw();
         var sig = signatory.sign(raw);
         post ('/ucs/community/members', {
@@ -238,7 +239,7 @@ module.exports.tester = function (currency) {
     var Membership = mongoose.model('Membership');
     return function (done) {
       queueOfMsVt.push(function (cb) {
-        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), membership: 'LEAVE' });
+        var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'MEMBERSHIP', membership: 'OUT' });
         var raw = ms.getRaw();
         var sig = signatory.sign(raw);
         post ('/ucs/community/members', {
@@ -417,7 +418,6 @@ function isVoting (json) {
   json.voting.should.have.property('version');
   json.voting.should.have.property('currency');
   json.voting.should.have.property('issuer');
-  json.voting.should.have.property('votingKey');
   json.voting.should.have.property('sigDate');
   json.voting.should.have.property('raw');
   json.voting.should.not.have.property('_id');

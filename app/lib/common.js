@@ -1,3 +1,5 @@
+var sha1 = require('sha1');
+
 String.prototype.trim = function(){
   return this.replace(/^\s+|\s+$/g, '');
 };

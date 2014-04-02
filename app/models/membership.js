@@ -10,6 +10,7 @@ var MembershipSchema = new Schema({
   currency: String,
   issuer: { type: String },
   membership: String,
+  type: String,
   amNumber: Number,
   eligible: { type: Boolean, default: true },
   current: { type: Boolean, default: false },
@@ -61,6 +62,7 @@ MembershipSchema.methods = {
       var captures = [
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
+        {prop: "type",              regexp: /Registry: (.*)/},
         {prop: "issuer",            regexp: /Issuer: (.*)/},
         {prop: "membership",        regexp: /Membership: (.*)/}
       ];
@@ -95,7 +97,6 @@ MembershipSchema.methods = {
     jpgp()
       .publicKey(publicKey)
       .data(this.getRaw())
-      .noCarriage()
       .signature(this.signature)
       .verify(publicKey, done);
   },
@@ -104,6 +105,7 @@ MembershipSchema.methods = {
     var raw = "";
     raw += "Version: " + this.version + "\n";
     raw += "Currency: " + this.currency + "\n";
+    raw += "Registry: " + this.type + "\n";
     raw += "Issuer: " + this.issuer + "\n";
     raw += "Membership: " + this.membership + "\n";
     return raw.unix2dos();
@@ -123,6 +125,7 @@ function verify(obj, currency) {
     'BAD_CURRENCY': 151,
     'BAD_FINGERPRINT': 152,
     'BAD_MEMBERSHIP': 153,
+    'BAD_REGISTRY_TYPE': 154
   }
   if(!err){
     // Version
@@ -135,14 +138,19 @@ function verify(obj, currency) {
       err = {code: codes['BAD_CURRENCY'], message: "Currency '"+ obj.currency +"' not managed"};
   }
   if(!err){
+    // Registry document type
+    if(!obj.type || !obj.type.match("^MEMBERSHIP$"))
+      err = {code: codes['BAD_REGISTRY_TYPE'], message: "Incorrect Registry field: must be MEMBERSHIP"};
+  }
+  if(!err){
     // Fingerprint
     if(obj.issuer && !obj.issuer.match(/^[A-Z\d]+$/))
       err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect issuer field"};
   }
   if(!err){
     // Membership
-    if(obj.membership && !obj.membership.match(/^(JOIN|ACTUALIZE|LEAVE)$/))
-      err = {code: codes['BAD_MEMBERSHIP'], message: "Incorrect Membership field: must be either JOIN, ACTUALIZE or LEAVE"};
+    if(obj.membership && !obj.membership.match(/^(IN|OUT)$/))
+      err = {code: codes['BAD_MEMBERSHIP'], message: "Incorrect Membership field: must be either IN or OUT"};
   }
   if(err){
     return { result: false, errorMessage: err.message, errorCode: err.code};
@@ -168,7 +176,7 @@ MembershipSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, 
   this.find({ issuer: issuer, amNumber: amNumber }, done);
 }
 
-MembershipSchema.statics.getCurrentJoinOrActuOlderThan = function (exclusiveLimitingDate, done) {
+MembershipSchema.statics.getCurrentInOlderThan = function (exclusiveLimitingDate, done) {
   
   this.find({ current: true, sigDate: { $lt: exclusiveLimitingDate } }, function (err, mss) {
     done(err, mss || []);
@@ -179,6 +187,17 @@ MembershipSchema.statics.getCurrent = function (issuer, done) {
   
   this
     .find({ current: true, issuer: issuer })
+    .sort({ 'sigDate': -1 })
+    .limit(1)
+    .exec(function (err, mss) {
+      done(null, mss.length == 1 ? mss[0] : null);
+  });
+}
+
+MembershipSchema.statics.getCurrentForIssuerAndAmendment = function (issuer, amendmentNumber, done) {
+  
+  this
+    .find({ current: true, issuer: issuer, amNumber: { $lt: amendmentNumber } })
     .sort({ 'sigDate': -1 })
     .limit(1)
     .exec(function (err, mss) {

@@ -98,7 +98,6 @@ THTEntrySchema.methods = {
     jpgp()
       .publicKey(publicKey)
       .data(this.getRaw())
-      .noCarriage()
       .signature(this.signature)
       .verify(publicKey, done);
   },

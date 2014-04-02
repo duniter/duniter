@@ -9,11 +9,11 @@ var VotingSchema = new Schema({
   version: String,
   currency: String,
   issuer: { type: String },
-  votingKey: String,
   amNumber: Number,
   eligible: { type: Boolean, default: true },
   current: { type: Boolean, default: false },
   signature: String,
+  type: String,
   propagated: { type: Boolean, default: false },
   hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
@@ -25,7 +25,7 @@ VotingSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "issuer", "votingKey", "hash", "signature", "sigDate"].forEach(function (key) {
+    ["version", "currency", "issuer", "hash", "signature", "sigDate"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
@@ -33,7 +33,7 @@ VotingSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "issuer", "votingKey"].forEach(function (key) {
+    ["version", "currency", "issuer"].forEach(function (key) {
       json[key] = obj[key];
     });
     json.sigDate = this.sigDate.timestamp();
@@ -61,8 +61,8 @@ VotingSchema.methods = {
       var captures = [
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
-        {prop: "issuer",            regexp: /Issuer: (.*)/},
-        {prop: "votingKey",         regexp: /VotingKey: (.*)/}
+        {prop: "type",              regexp: /Registry: (.*)/},
+        {prop: "issuer",            regexp: /Issuer: (.*)/}
       ];
       var crlfCleaned = rawMS.replace(/\r\n/g, "\n");
       if(crlfCleaned.match(/\n$/)){
@@ -95,7 +95,6 @@ VotingSchema.methods = {
     jpgp()
       .publicKey(publicKey)
       .data(this.getRaw())
-      .noCarriage()
       .signature(this.signature)
       .verify(publicKey, done);
   },
@@ -104,8 +103,8 @@ VotingSchema.methods = {
     var raw = "";
     raw += "Version: " + this.version + "\n";
     raw += "Currency: " + this.currency + "\n";
+    raw += "Registry: " + this.type + "\n";
     raw += "Issuer: " + this.issuer + "\n";
-    raw += "VotingKey: " + this.votingKey + "\n";
     return raw.unix2dos();
   },
 
@@ -123,6 +122,7 @@ function verify(obj, currency) {
     'BAD_CURRENCY': 151,
     'BAD_ISSUER': 152,
     'BAD_KEY': 153,
+    'BAD_REGISTRY_TYPE': 154
   }
   if(!err){
     // Version
@@ -135,14 +135,14 @@ function verify(obj, currency) {
       err = {code: codes['BAD_CURRENCY'], message: "Currency '"+ obj.currency +"' not managed"};
   }
   if(!err){
+    // Registry document type
+    if(!obj.type || !obj.type.match("^VOTING$"))
+      err = {code: codes['BAD_REGISTRY_TYPE'], message: "Incorrect Registry field: must be VOTING"};
+  }
+  if(!err){
     // Issuer
     if(obj.issuer && !obj.issuer.isSha1())
       err = {code: codes['BAD_ISSUER'], message: "Incorrect issuer field"};
-  }
-  if(!err){
-    // Voting Key
-    if(obj.votingKey && !obj.votingKey.isSha1())
-      err = {code: codes['BAD_KEY'], message: "Incorrect voting key field"};
   }
   if(err){
     return { result: false, errorMessage: err.message, errorCode: err.code};
@@ -160,7 +160,9 @@ function simpleLineExtraction(pr, rawMS, cap) {
 
 VotingSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, done) {
   
-  this.find({ issuer: issuer, amNumber: amNumber }, done);
+  this.find({ issuer: issuer, amNumber: amNumber }, function (err, votings) {
+      done(null, votings.length == 1 ? votings[0] : null);
+  });
 }
 
 VotingSchema.statics.getEligibleForAmendment = function (amNumber, done) {
@@ -174,60 +176,19 @@ VotingSchema.statics.getCurrent = function (issuer, done) {
     .find({ current: true, issuer: issuer })
     .sort({ 'sigDate': -1 })
     .limit(1)
-    .exec(function (err, mss) {
-      done(null, mss.length == 1 ? mss[0] : null);
+    .exec(function (err, votings) {
+      done(null, votings.length == 1 ? votings[0] : null);
   });
 }
 
-VotingSchema.statics.getEligiblesUsingKey = function (key, amNext, done) {
+VotingSchema.statics.getCurrentForIssuerAndAmendment = function (issuer, amendmentNumber, done) {
   
-  var that = this;
-
   this
-    .find({ eligible: true, votingKey: key })
+    .find({ current: true, issuer: issuer, amNumber: { $lt: amendmentNumber } })
     .sort({ 'sigDate': -1 })
+    .limit(1)
     .exec(function (err, votings) {
-      var seems = {};
-      votings.forEach(function(v){
-        if (!seems[v.issuer]) {
-          seems[v.issuer] = v;
-        }
-      });
-      // Filter on members
-      var usingKey = [];
-      async.forEach(_(seems).values(), function(v, callback){
-        async.waterfall([
-          function (next){
-            mongoose.model('Amendment').isProposedMember(v.issuer, amNext.number, next);
-          },
-          function (isMember, next){
-            if (isMember) {
-              // Check if it really the one to be used
-              that
-                .find({ issuer: v.issuer, eligible: true })
-                .sort({ 'sigDate': -1 })
-                .limit(1)
-                .exec(function (err, vs) {
-                  var voting = vs.length == 1 ? vs[0] : null;
-                  if (!voting) {
-                    next('Integrity error: node found a voting key and no more find it thereafter');
-                    return;
-                  }
-                  if (voting && voting.sigDate <= v.sigDate) {
-                    // First found is the one used now
-                    usingKey.push(v);
-                  }
-                  // else first found was overriden by this one,
-                  // so we must not count it as using 'key'
-                  next();
-              });
-            }
-            else next();
-          },
-        ], callback);
-      }, function(err){
-        done(err, usingKey);
-      });
+      done(null, votings.length == 1 ? votings[0] : null);
   });
 }
 
@@ -237,6 +198,14 @@ VotingSchema.statics.getHistory = function (issuer, done) {
     .find({ issuer: issuer })
     .sort({ 'sigDate': -1 })
     .exec(done);
+}
+
+VotingSchema.statics.removeCurrents = function (issuer, done) {
+  
+  this
+    .update({ issuer: issuer }, { $set: { current: false }}, { multi: true }, function (err) {
+      done(err);
+    });
 }
 
 var Voting = mongoose.model('Voting', VotingSchema);

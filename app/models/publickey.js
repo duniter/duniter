@@ -181,7 +181,6 @@ PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
         jpgp()
           .publicKey(asciiArmored)
           .data(asciiArmored)
-          .noCarriage()
           .signature(signature)
           .verify(next);
       }

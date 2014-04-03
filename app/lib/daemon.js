@@ -97,9 +97,9 @@ function Daemon () {
               // Case 1: just triggers self-vote
               if (daemon.judges.timeForVote(amNext)) {
                 // Must be a voter to vote!
-                logger.debug("Asking vote for SELF peer");
                 Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
                   if (!err && wasVoter) {
+                    logger.debug("Asking vote for SELF peer");
                     askVote(current, PeeringService.peer(), function (err, json) {
                       // Do nothing with result: it has been done by SyncService (self-submitted the vote)
                       callback(err);

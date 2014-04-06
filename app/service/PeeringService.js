@@ -64,10 +64,13 @@ function PeeringService(pgp, currency, conf) {
         dbPeers.forEach(function(peer){
           that.addPeer(peer);
         });
-        Peer.getTheOne(that.cert.fingerprint, next);
+        Peer.getTheOne(that.cert.fingerprint, function (err, selfPeer) {
+          if (selfPeer)
+            peer = selfPeer;
+          next();
+        });
       },
-      function (selfPeer, next){
-        peer = selfPeer;
+      function (next){
         logger.debug('Loaded service: Peering');
         next();
       },
@@ -105,7 +108,7 @@ function PeeringService(pgp, currency, conf) {
         next(null, pubkey.raw);
       },
       function (pubkey, next){
-        that.persistPeering(signedPR, pubkey, next);
+        persistPeering(signedPR, pubkey, next);
       }
     ], callback);
   }
@@ -149,14 +152,14 @@ function PeeringService(pgp, currency, conf) {
         wasStatus = peer.status;
         peer.setStatus(status.status, next);
         peer.statusSigDate = status.sigDate;
+        peers[peer.fingerprint].status = status;
       }
     ], function (err) {
-      peers[peer.fingerprint].status = status;
       callback(err, status, peer, wasStatus);
     });
   }
 
-  this.persistPeering = function (signedPR, pubkey, done) {
+  function persistPeering (signedPR, pubkey, done) {
     var peer = new Peer();
     async.waterfall([
       function (next){
@@ -679,7 +682,7 @@ function PeeringService(pgp, currency, conf) {
 
   function getForwardPeers (done) {
     async.waterfall([
-      async.apply(Forward.find.bind(Forward), { to: this.cert.fingerprint }),
+      async.apply(Forward.find.bind(Forward), { to: that.cert.fingerprint }),
       function (fwds, next) {
         var fingerprints = _(fwds).map(function(fwd){ return fwd.fingerprint; });
         Peer.getList(fingerprints, next);

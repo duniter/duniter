@@ -101,7 +101,55 @@ module.exports.get = function (pgp, currency, conf) {
           }, next);
         },
         function (next){
-          SyncService.createNext(am, next);
+          Key.getMembers(next);
+        },
+        function (members, next){
+          // Update Merkle of proposed members
+          async.waterfall([
+            function (next){
+              Merkle.proposedMembers(next);
+            },
+            function (merkle, next){
+              var fingerprints = [];
+              members.forEach(function(m){
+                fingerprints.push(m.fingerprint);
+              });
+              fingerprints.sort();
+              merkle.initialize(fingerprints);
+              merkle.save(function (err) {
+                next(err);
+              });
+            },
+          ], next);
+        },
+        function (next){
+          Key.getVoters(next);
+        },
+        function (voters, next){
+          // Update Merkle of proposed voters
+          async.waterfall([
+            function (next){
+              Merkle.proposedVoters(next);
+            },
+            function (merkle, next){
+              var fingerprints = [];
+              voters.forEach(function(v){
+                fingerprints.push(v.fingerprint);
+              });
+              fingerprints.sort();
+              merkle.initialize(fingerprints);
+              merkle.save(function (err) {
+                next(err);
+              });
+            },
+          ], next);
+        },
+        function (next){
+          if (conf.createNext) {
+            SyncService.createNext(am, next);
+          } else {
+            next();
+          }
         },
       ], cb);
     }, done);

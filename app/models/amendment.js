@@ -209,22 +209,14 @@ AmendmentSchema.statics.nextNumber = function (done) {
 
 AmendmentSchema.statics.current = function (done) {
 
-  this.find({ promoted: true }, function (err, amends) {
+  this.find({ promoted: true }).sort({ number: -1 }).limit(1).exec(function (err, amends) {
     if(amends && amends.length == 1){
       done(err, amends[0]);
       return;
     }
-    if(!amends || amends.length == 0){
+    else {
       done('No current amendment');
       return;
-    }
-    if(amends || amends.length > 1){
-      var current = undefined;
-      amends.forEach(function (am) {
-        if(!current || (current && current.number < am.number))
-          current = am;
-      });
-      done(err, current);
     }
   });
 };

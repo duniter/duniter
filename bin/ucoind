@@ -46,23 +46,28 @@ program
   .description('Tries to synchronise data with remote uCoin node')
   .action(connect(function (host, port, conf) {
 
-    // Init server
-    server.express.app(program.currency, conf, function (err, app) {
+    // Disable daemon
+    conf.sync.AMDaemon = "OFF";
 
-      // Synchronize
-      var Synchroniser = require('../app/lib/sync');
-      var remote = new Synchroniser(host, port, false, server.pgp, program.currency, conf);
-      async.waterfall([
-        function (next){
-          remote.sync(next);
-        },
-      ], function (err) {
-        if(err){
-          logger.error('Error during sync:', err);
-        }
-        server.database.disconnect();
-        process.exit();
-      });
+    async.series([
+      function (next){
+        server.openpgp.init(program.currency, conf, next);
+      },
+      function (next){
+        server.services.init(program.currency, conf, next);
+      },
+      function (next){
+        // Synchronize
+        var Synchroniser = require('../app/lib/sync');
+        var remote = new Synchroniser(host, port, false, program.currency, conf);
+        remote.sync(next);
+      },
+    ], function (err) {
+      if(err){
+        logger.error('Error during sync:', err);
+      }
+      server.database.disconnect();
+      process.exit();
     });
   }));
 
@@ -301,6 +306,9 @@ function overrideConf(conf) {
     MSExpires: config.sync.MSExpires || conf.sync.MSExpires || 3600*24*30.4375*6, // 6 months
     UCSBlockFreq: config.sync.UCSBlockFreq || conf.sync.UCSBlockFreq || 3600 // hourly
   };
+
+  // Specific internal settings
+  conf.createNext = true;
   return conf;
 }
 

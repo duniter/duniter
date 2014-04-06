@@ -7,6 +7,8 @@ var Amendment   = mongoose.model('Amendment');
 var PublicKey   = mongoose.model('PublicKey');
 var Merkle      = mongoose.model('Merkle');
 var Key         = mongoose.model('Key');
+var Membership  = mongoose.model('Membership');
+var Voting      = mongoose.model('Voting');
 var Transaction = mongoose.model('Transaction');
 var THTEntry    = mongoose.model('THTEntry');
 var Peer        = mongoose.model('Peer');
@@ -24,8 +26,9 @@ var THTService         = service.THT;
 var PeeringService     = service.Peering;
 var StrategyService    = service.Strategy;
 var ParametersService  = service.Parameters;
+var SyncService        = service.Sync;
 
-module.exports = function Synchroniser (host, port, authenticated, pgp, currency, conf) {
+module.exports = function Synchroniser (host, port, authenticated, currency, conf) {
   var that = this;
   
   this.remoteFingerprint = null;
@@ -53,7 +56,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
         // Peer
         //============
         function (next){
-          node.ucg.peering.peer(next);
+          node.ucg.peering.get(next);
         },
         function (json, next){
           remotePeer.copyValuesFrom(json);
@@ -152,13 +155,12 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
               err.split('\n').forEach(function (msg) {
                 logger.warn(msg);
               });
-              remoteCurrentNumber = -1;
-              next(null, -2);
+              next();
               return;
             }
             remoteCurrentNumber = parseInt(json.number);
             amendments[remoteCurrentNumber] = json.raw;
-            var toGetNumbers = _.range(number, remoteCurrentNumber);
+            var toGetNumbers = _.range(number, remoteCurrentNumber + 1);
             async.forEachSeries(toGetNumbers, function(amNumber, callback){
               async.waterfall([
                 function (cb){
@@ -169,45 +171,25 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                 },
                 function (am, cb){
                   amendments[amNumber] = am.raw;
-                  node.hdc.amendments.promoted(amNumber + 1, cb);
+                  node.hdc.amendments.promoted(amNumber, cb);
                 },
                 function (am, cb){
-                  amendments[amNumber + 1] = am.raw;
+                  amendments[amNumber] = am.raw;
                   cb();
                 },
                 function (cb) {
-                  node.hdc.amendments.view.signatures(amNumber + 1, sha1(amendments[amNumber + 1]).toUpperCase(), { leaves: true }, cb);
+                  node.hdc.amendments.view.signatures(amNumber, sha1(amendments[amNumber]).toUpperCase(), { leaves: true }, cb);
                 },
                 function (json, cb){
                   applyVotes(amendments, amNumber, number, json, node, cb);
-                },
-                function (nextNumber, cb) {
-                  number = nextNumber;
-                  cb();
                 }
               ], function (err, result) {
                 callback(err);
               });
             }, function(err, result){
-              next(err, number);
-            });
-          });
-        },
-        function (number, next) {
-          if(number == remoteCurrentNumber){
-            // Synchronise remote's current
-            async.waterfall([
-              function (callback){
-                node.hdc.amendments.currentVotes({ leaves: true }, callback);
-              },
-              function (json, callback) {
-                applyVotes(amendments, number, number, json, node, callback);
-              }
-            ], function (err) {
               next(err);
             });
-          }
-          else next();
+          });
         },
 
         //==============
@@ -233,9 +215,9 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
               var leavesToAdd = [];
-              node.ucg.tht.get({ extract: true }, function (err, json) {
+              node.ucg.tht.get({ leaves: true }, function (err, json) {
                 _(json.leaves).forEach(function(leaf){
-                  if(merkle.leaves().indexOf(leaf.hash) == -1){
+                  if(merkle.leaves().indexOf(leaf) == -1){
                     leavesToAdd.push(leaf);
                   }
                 });
@@ -243,7 +225,7 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                 async.forEachSeries(leavesToAdd, function(leaf, callback){
                   async.waterfall([
                     function (cb){
-                      node.ucg.tht.get({ "leaf": leaf }, next);
+                      node.ucg.tht.get({ "leaf": leaf }, cb);
                     },
                     function (json, cb){
                       var jsonEntry = json.leaf.value.entry;
@@ -252,8 +234,6 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                       ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
                         entry[key] = jsonEntry[key];
                       });
-                    },
-                    function (cb){
                       logger.info('THT entry %s', jsonEntry.fingerprint);
                       THTService.submit(entry.getRaw() + sign, cb);
                     }
@@ -278,9 +258,9 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
               var leavesToAdd = [];
-              node.ucg.peering.peers.get({ extract: true }, function (err, json) {
+              node.ucg.peering.peers.get({ leaves: true }, function (err, json) {
                 _(json.leaves).forEach(function(leaf){
-                  if(merkle.leaves().indexOf(leaf.hash) == -1){
+                  if(merkle.leaves().indexOf(leaf) == -1){
                     leavesToAdd.push(leaf);
                   }
                 });
@@ -288,17 +268,16 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
                 async.forEachSeries(leavesToAdd, function(leaf, callback){
                   async.waterfall([
                     function (cb) {
-                      node.ucg.peering.peers.get({ "leaf": leaf }, next);
+                      node.ucg.peering.peers.get({ "leaf": leaf }, cb);
                     },
                     function (json, cb) {
                       var jsonEntry = json.leaf.value;
                       var sign = json.leaf.value.signature;
                       var entry = new Peer({});
-                      ["version", "currency", "fingerprint", "dns", "ipv4", "ipv6", "port"].forEach(function (key) {
+                      ["version", "currency", "fingerprint", "endpoints"].forEach(function (key) {
                         entry[key] = jsonEntry[key];
                       });
-                    },
-                    function (cb) {
+                      entry.signature = sign;
                       ParametersService.getPeeringEntryFromRaw(entry.getRaw(), sign, cb);
                     },
                     function (rawSigned, keyID, cb){
@@ -315,6 +294,91 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
             }
             else next();
           });
+        },
+
+        //===========
+        // Registry
+        //===========
+        function (next){
+          Amendment.current(function (err, am) {
+            if (!am) {
+              next();
+              return;
+            }
+            async.waterfall([
+              function (next){
+                Key.getMembers(next);
+              },
+              function (keys, next) {
+                async.forEach(keys, function(member, callback){
+                  async.waterfall([
+                    function (next){
+                      node.ucs.community.members.current(member.fingerprint, next);
+                    },
+                    function (membership, next){
+                      logger.info('Membership of %s', member.fingerprint);
+                      var ms = new Membership({
+                        "version": membership.membership.version,
+                        "currency": membership.membership.currency,
+                        "issuer": membership.membership.issuer,
+                        "membership": membership.membership.membership,
+                        "type": "MEMBERSHIP"
+                      });
+                      ms.signature = membership.signature;
+                      ParametersService.getMembership({
+                        body: {
+                          membership: ms.getRaw(),
+                          signature: membership.signature
+                        }
+                      }, next);
+                    },
+                    function (ms, next){
+                      ms.amNumber = am.number - 1;
+                      ms.current = true;
+                      ms.save(function (err) {
+                        next(err);
+                      });
+                    },
+                  ], callback);
+                }, next);
+              },
+              function (next){
+                Key.getVoters(next);
+              },
+              function (keys, next) {
+                async.forEach(keys, function(member, callback){
+                  async.waterfall([
+                    function (next){
+                      node.ucs.community.voters.current(member.fingerprint, next);
+                    },
+                    function (voting, next){
+                      logger.info('Voting of %s', member.fingerprint);
+                      var vt = new Voting({
+                        "version": voting.voting.version,
+                        "currency": voting.voting.currency,
+                        "issuer": voting.voting.issuer,
+                        "type": "VOTING"
+                      });
+                      vt.signature = voting.signature;
+                      ParametersService.getVoting({
+                        body: {
+                          voting: vt.getRaw(),
+                          signature: voting.signature
+                        }
+                      }, next);
+                    },
+                    function (voting, next){
+                      voting.amNumber = am.number - 1;
+                      voting.current = true;
+                      voting.save(function (err) {
+                        next(err);
+                      });
+                    },
+                  ], callback);
+                }, next);
+              },
+            ], next);
+          })
         },
       ], function (err, result) {
         logger.info('Sync finished.');
@@ -372,10 +436,8 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
           return;
         }
         async.waterfall([
-          function (next){
-            remoteMerkleFunc.call(remoteMerkleFunc, keyFingerprint, { leaves: false }, next);
-          },
-          function (json, onEveryTransactionProcessed){
+          function (onEveryTransactionProcessed){
+            var json = results.remote;
             var transactions = {};
             var numbers = _.range(json.leavesCount);
             async.forEachSeries(numbers, function(number, onSentTransactionsProcessed){
@@ -451,25 +513,38 @@ module.exports = function Synchroniser (host, port, authenticated, pgp, currency
   }
 
   function applyVotes(amendments, amNumber, number, json, node, cb) {
-    // logger.info('Applying votes for amendment #%s', amNumber);
-    // logger.info("Signatures: %s", _(json.leaves).size());
+    logger.info('Applying votes for amendment #%s', amNumber);
+    logger.info("Signatures: %s", _(json.leaves).size());
     async.forEachSeries(json.leaves, function(leaf, callback){
       async.waterfall([
         function (next){
           var hash = sha1(amendments[amNumber]).toUpperCase();
-          node.hdc.amendments.votes.of(amNumber, hash, { "leaf": leaf }, next);
+          node.hdc.amendments.view.signatures(amNumber, hash, { "leaf": leaf }, next);
         },
         function (json, next){
           var vote = json.leaf;
-          VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {
-            // Promotion time
-            StrategyService.tryToPromote(am, function (err) {
-              if(!err)
-                number++;
-              next(err);
-            });
-          });
+          ParametersService.getVote({
+            body: {
+              amendment: amendments[amNumber],
+              signature: vote.value.signature
+            }
+          }, next);
         },
+        function (vote, next){
+          VoteService.submit(vote, function (err, am) {
+            if(!err)
+              number++;
+            next(err);
+          });
+          // VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {
+          //   // Promotion time
+          //   StrategyService.tryToPromote(am, function (err) {
+          //     if(!err)
+          //       number++;
+          //     next(err);
+          //   });
+          // });
+        }
       ], callback);
     }, function(err, result){
       cb(err, number);

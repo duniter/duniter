@@ -67,7 +67,8 @@ var conf = {
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
     Consensus: 2/3,
     MSExpires: 3600*24*30 // 30 days
-  }
+  },
+  createNext: true
 };
 
 var amendments = {

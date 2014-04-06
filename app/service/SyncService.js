@@ -454,9 +454,9 @@ module.exports.get = function (pgp, currency, conf) {
   }
 
   function updateUniversalDividend (amNext, amCurrent, done) {
-    // Time for Universal Dividend
+    // Time for Universal Dividend (and we have members)
     var delayPassedSinceRootAM = (amNext.generated - conf.sync.AMStart);
-    if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFreq == 0) {
+    if (delayPassedSinceRootAM > 0 && delayPassedSinceRootAM % conf.sync.UDFreq == 0 && amNext.membersCount > 0) {
       async.waterfall([
         function (next) {
           Amendment.getPreviouslyPromotedWithDividend(next);
@@ -799,11 +799,11 @@ module.exports.get = function (pgp, currency, conf) {
             var stateFunc = async.apply(whatToDo.state[lastKeyState.toString()][statusTo.toString()] || doNothingWithState, key, statusTo);
             if ((lastKeyState == 0 && statusTo == 1) || (lastKeyState == -1 && statusTo == 0)) {
               // Make positive change
-              console.log('> +%s', key);
+              mathlog.info('VT +%s', key);
               actionForVoters(merkleFunc, keysFunc, stateFunc, amNext, next);
             } else if ((lastKeyState == 1 && statusTo == 0) || (lastKeyState == 0 && statusTo == -1)) {
               // Make negative change
-              console.log('> -%s', key);
+              mathlog.info('VT -%s', key);
               actionForVoters(merkleFunc, keysFunc, stateFunc, amNext, next);
             } else {
               // Do nothing!

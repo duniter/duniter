@@ -147,6 +147,32 @@ module.exports.database = {
   }
 };
 
+module.exports.openpgp = {
+
+  init: function (currency, conf, done) {
+
+    // Import PGP key
+    openpgp.keyring.importPrivateKey(conf.pgpkey, conf.pgppasswd);
+    if (!module.exports.fingerprint()) {
+      pgplogger.error("Wrong PGP key password.");
+      process.exit(1);
+      return;
+    }
+    done();
+  }
+};
+
+function initServices (currency, conf, done) {
+  // Init ALL services
+  service.init(openpgp, currency, conf);
+  // Load services contexts
+  service.load(done);
+}
+
+module.exports.services = {
+  init: initServices
+};
+
 module.exports.express = {
 
   app: function (currency, conf, onLoaded) {
@@ -166,16 +192,19 @@ module.exports.express = {
     app.use(express.cookieParser('your secret here'));
     app.use(express.session());
 
-    // Import PGP key
-    openpgp.keyring.importPrivateKey(conf.pgpkey, conf.pgppasswd);
-    if (!module.exports.fingerprint()) {
-      pgplogger.error("Wrong PGP key password.");
-      process.exit(1);
-      return;
-    }
-
-    // HTTP Signatures
-    httpgp(app, conf, function (err) {
+    async.series([
+      function (next) {
+        // OpenPGP functions
+        module.exports.openpgp.init(currency, conf, next);
+      },
+      function (next){
+        initServices(currency, conf, next);
+      },
+      function (next){
+        // HTTP Signatures
+        httpgp(app, conf, next);
+      },
+    ], function(err) {
 
       // HTTPGP OK?
       if (err) {
@@ -191,9 +220,6 @@ module.exports.express = {
       if ('development' == app.get('env')) {
         app.use(express.errorHandler());
       }
-
-      // Init ALL services
-      service.init(openpgp, currency, conf);
 
       // Init Daemon
       var daemon = require('./daemon');
@@ -274,6 +300,25 @@ module.exports.express = {
 
       async.waterfall([
         function (next) {
+          if(conf.ipv4){
+            logger.info('Connecting on interface %s...', conf.ipv4);
+            http.createServer(app).listen(conf.port, conf.ipv4, function(){
+              logger.info('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
+              next();
+            });
+          }
+          else next();
+        },
+        function (next) {
+          if(conf.ipv6){
+            logger.info('Connecting on interface %s...', conf.ipv6);
+            http.createServer(app).listen(conf.port, conf.ipv6, function(){
+              logger.info('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
+            });
+          }
+          else next();
+        },
+        function (next) {
           mongoose.model('Peer').find({ fingerprint: module.exports.fingerprint() }, next);
         },
         function (peers, next) {
@@ -311,7 +356,7 @@ module.exports.express = {
               },
               function (signature, next) {
                 signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
-                PeeringService.persistPeering(raw2 + signature, module.exports.publicKey(), next);
+                PeeringService.submit(raw2 + signature, module.exports.fingerprint(), next);
               },
             ], function (err) {
               next(err);
@@ -321,36 +366,17 @@ module.exports.express = {
           }
         },
         function (next){
-          // Load services contexts
-          service.load(next);
+          mongoose.model('Peer').getTheOne(module.exports.fingerprint(), next);
         },
-        function (next){
+        function (peer, next){
           // Set peer's statut to UP
+          PeeringService.peer(peer);
           PeeringService.peer().status = 'UP';
           PeeringService.peer().save(function (err) {
             // Update it in memory
             PeeringService.addPeer(PeeringService.peer());
             next(err);
           });
-        },
-        function (next) {
-          if(conf.ipv4){
-            logger.debug('Connecting on interface %s...', conf.ipv4);
-            http.createServer(app).listen(conf.port, conf.ipv4, function(){
-              logger.debug('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
-              next();
-            });
-          }
-          else next();
-        },
-        function (next) {
-          if(conf.ipv6){
-            logger.debug('Connecting on interface %s...', conf.ipv6);
-            http.createServer(app).listen(conf.port, conf.ipv6, function(){
-              logger.debug('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
-            });
-          }
-          else next();
         },
         function (next) {
           // Initialize managed keys
@@ -370,12 +396,18 @@ module.exports.express = {
           logger.info('Broadcasting UP/NEW signals...');
           PeeringService.sendUpSignal(next);
         },
-        function (next) {
-          // Create AM0 proposal if not existing
-          mongoose.model('Amendment').getTheOneToBeVoted(0, function (err, am) {
+        function (next){
+          mongoose.model('Amendment').current(function (err, am) {
+            next(null, am);
+          });
+        },
+        function (currentAM, next) {
+          var nextAMNumber = currentAM && currentAM.number + 1 || 0;
+          // Create NEXT AM proposal if not existing
+          mongoose.model('Amendment').getTheOneToBeVoted(nextAMNumber, function (err, am) {
             if (err || !am) {
-              logger.info('Creating root AM proposal...');
-              SyncService.createNext(null, next);
+              logger.info('Creating next AM (#%d) proposal...', nextAMNumber);
+              SyncService.createNext(currentAM, next);
               return;
             }
             next();

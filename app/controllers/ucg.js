@@ -183,18 +183,8 @@ module.exports = function (pgp, currency, conf) {
       http.answer(res, 400, err, function () {
         plogger.debug('✔ %s %s:%s', recordedPR.fingerprint, recordedPR.getIPv4() || recordedPR.getIPv6(), recordedPR.getPort());
         res.end(JSON.stringify(recordedPR.json(), null, "  "));
-        if (!recordedPR.propagated) {
-          // Propagates peering infos
-          PeeringService.propagatePeering(recordedPR);
-          async.waterfall([
-            function (next){
-              // Send UP/NEW signal for receiving its FORWARD rules (this also send self peering infos)
-              PeeringService.sendUpSignal(next, [recordedPR.fingerprint]);
-            },
-          ], function (err) {
-            if (err) plogger.error(err);
-          });
-        }
+        PeeringService.propagatePeering(recordedPR);
+        PeeringService.helloToPeer(recordedPR);
       });
     });
   }

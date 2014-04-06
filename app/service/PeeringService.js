@@ -680,6 +680,17 @@ function PeeringService(pgp, currency, conf) {
     });
   };
 
+  this.helloToPeer = function (peer, done) {
+    async.waterfall([
+      function (next){
+        // Send UP/NEW signal for receiving its FORWARD rules (this also send self peering infos)
+        PeeringService.sendUpSignal(next, [recordedPR.fingerprint]);
+      },
+    ], function (err) {
+      if (err) plogger.error(err);
+    });
+  }
+
   function getForwardPeers (done) {
     async.waterfall([
       async.apply(Forward.find.bind(Forward), { to: that.cert.fingerprint }),

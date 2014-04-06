@@ -162,7 +162,7 @@ function sendTransaction(peer, transaction, done) {
 
 function sendTHT(peer, entry, done) {
   logger.info('POST THT entry %s to %s', entry.fingerprint, peer.fingerprint);
-  post(peer, '/ucg/tht', {
+  post(peer, '/network/tht', {
     "entry": entry.getRaw(),
     "signature": entry.signature
   }, done);
@@ -170,7 +170,7 @@ function sendTHT(peer, entry, done) {
 
 function sendPeering(toPeer, peer, done) {
   logger.info('POST peering to %s', toPeer.fingerprint);
-  post(toPeer, '/ucg/peering/peers', {
+  post(toPeer, '/network/peering/peers', {
     "entry": peer.getRaw(),
     "signature": peer.signature
   }, done);
@@ -178,7 +178,7 @@ function sendPeering(toPeer, peer, done) {
 
 function sendForward(peer, rawForward, signature, done) {
   logger.info('POST forward to %s', peer.fingerprint);
-  post(peer, '/ucg/peering/forward', {
+  post(peer, '/network/peering/forward', {
     "forward": rawForward,
     "signature": signature
   }, done);
@@ -196,7 +196,7 @@ function sendStatus(peer, status, done) {
       });
     },
     function (next){
-      post(peer, '/ucg/peering/status', {
+      post(peer, '/network/peering/status', {
         "status": status.getRaw(),
         "signature": status.signature
       }, next);

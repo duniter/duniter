@@ -15,7 +15,7 @@ This document is divided in two parts:
     * [Public keys](#pgp-public-keys)
     * [Amendments](#amendaments)
     * [Transactions](#transactions)
-  * [uCoin UCG data](#ucoin-ucg-data)
+  * [uCoin Network data](#ucoin-network-data)
     * [Peers](#peers)
     * [Forwards](#forwards)
     * [Status](#status)
@@ -28,7 +28,7 @@ This document is divided in two parts:
       * [Forward routes](#forward-routes)
 * [Data flow](#data-flow)
   * [Public keys](#public-keys)
-  * [UCG messages](#ucg-messages)
+  * [Network messages](#network-messages)
   * [HDC Amendments](#hdc-amendments)
   * [HDC Transactions](#hdc-transactions)
 
@@ -65,35 +65,35 @@ A vote is a simple signature of an amendment, refering to [HDC Vote request](htt
 
 Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, change or transfer money. It is the final support of money and it materializes money ownership.
 
-### uCoin UCG data
+### uCoin Network data
 
-UCG data is a list of messages used for uCoin peering features. This is what make a network of nodes possible.
+Network data is a list of messages used for uCoin peering features. This is what make a network of nodes possible.
 
 #### Peers
 
-uCoin network is made up of peers identified by their PGP fingerprint. In UCP, each node maintains a Peering table which is a hash table linking a PGP fingerprint to network data: IP address (v4, v6, or both), DNS name and port. This link is made through a document called [peering entry](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#peering-table) signed by the owner of the PGP key and giving peer's network informations. Peering table is a set of all peering entries.
+uCoin network is made up of peers identified by their PGP fingerprint. In UCP, each node maintains a Peering table which is a hash table linking a PGP fingerprint to network data: IP address (v4, v6, or both), DNS name and port. This link is made through a document called [peering entry](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#peering-table) signed by the owner of the PGP key and giving peer's network informations. Peering table is a set of all peering entries.
 
 #### Forwards
 
-[Forward](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#forward-request) is a document signed by a node giving rules for data forwarding. Forward can be seen a routing rule that nodes use to know where to send received data. This mecanism helps not to broadcast all transactions to the whole network each time, but only to the interested nodes.
+[Forward](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#forward-request) is a document signed by a node giving rules for data forwarding. Forward can be seen a routing rule that nodes use to know where to send received data. This mecanism helps not to broadcast all transactions to the whole network each time, but only to the interested nodes.
 
 #### Status
 
-[Status](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#status-request) messages are just notifications nodes use between them to know their state and eventually trigger exchanges of informations between them.
+[Status](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#status-request) messages are just notifications nodes use between them to know their state and eventually trigger exchanges of informations between them.
 
 #### Trust entries
 
-Trust entries are part of a hash table refering to [UCG THT format](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md#trust-hash-table) whose role is to define, for a given PGP key, the nodes by which every transaction of the key pass through and the nodes the key is likely to trust for incoming transactions. Such entries are written and signed by PGP keys managing money units.
+Trust entries are part of a hash table refering to [Network THT format](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#trust-hash-table) whose role is to define, for a given PGP key, the nodes by which every transaction of the key pass through and the nodes the key is likely to trust for incoming transactions. Such entries are written and signed by PGP keys managing money units.
 
 ### uCoin network
 
-A uCoin node is a simple unit of a uCoin network, unit by which circulate uCoin HDC data. To be able to be part of a network, uCoin units uses UCG messages to introduce each other and exchange HDC data. Below are definitions of UCG messages events and behaviors.
+A uCoin node is a simple unit of a uCoin network, unit by which circulate uCoin HDC data. To be able to be part of a network, uCoin units uses Network messages to introduce each other and exchange HDC data. Below are definitions of Network messages events and behaviors.
 
 #### Peering
 
 When a node is started, it already knows its remote peering informations, i.e. IP address and port plus its own public key PGP fingerprint. This informations are to be gathered and represent peering entry of the node. Thus, any node has its own peering entry and must display it.
 
-To be known by others peers, a node should broadcast his signed peering entry to them using `/ucg/peering/peers (POST)` interface. Of course, those peers has to be notified the node's key first so then cas verify peering entry's signature.
+To be known by others peers, a node should broadcast his signed peering entry to them using `/network/peering/peers (POST)` interface. Of course, those peers has to be notified the node's key first so then cas verify peering entry's signature.
 
 *The way the node is aware of other peers addresses to send them his peering entry is implementation specific.*
 
@@ -138,10 +138,10 @@ As a generic overview, it can be noted what are the API inputs of the protocol:
 Flow | Interfaces
 ---- | -----------
 IN   | `pks/add`
-IN   | `ucg/peering/peers (POST)`
-IN   | `ucg/peering/forward`
-IN   | `ucg/peering/status`
-IN   | `ucg/tht (POST)`
+IN   | `network/peering/peers (POST)`
+IN   | `network/peering/forward`
+IN   | `network/peering/status`
+IN   | `network/tht (POST)`
 IN   | `hdc/amendments/votes (POST)`
 IN   | `hdc/transactions/process`
 
@@ -167,7 +167,7 @@ Serves PGP public keys according to HKP protocol.
 
 Merkle URL pointing to a set of all PGP public key registered by the node. Mainly used for synchronization purposes.
 
-### UCG messages
+### Network messages
 
 #### Self
 
@@ -175,24 +175,24 @@ This API is special, as it does not deal with HTTP received data. This set of UR
 
 Flow | Interfaces
 ---- | -----------
-OUT  | `ucg/pubkey`
-OUT  | `ucg/peering`
-OUT  | `ucg/peering/keys`
-OUT  | `ucg/peering/peer`
+OUT  | `network/pubkey`
+OUT  | `network/peering`
+OUT  | `network/peering/keys`
+OUT  | `network/peering/peer`
 
-##### `ucg/pubkey`
+##### `network/pubkey`
 
 Get the public key of the node, ASCII-armored format. This key is used to authentify the node's responses by other peers.
 
-##### `ucg/peering`
+##### `network/peering`
 
 Get a sum up of node's informations, notably peering and Monetary Contract state.
 
-##### `ucg/peering/keys`
+##### `network/peering/keys`
 
 Merkle URL referencing the PGP keys' fingerprint whose transactions are stored by this node.
 
-##### `ucg/peering/peer`
+##### `network/peering/peer`
 
 Peering entry of the node.
 
@@ -202,15 +202,15 @@ Interface whose role is to network informations of peers.
 
 Flow | Interfaces
 ---- | -----------
-IN   | `ucg/peering/peers (POST)`
-OUT  | `ucg/peering/peers (GET)`
+IN   | `network/peering/peers (POST)`
+OUT  | `network/peering/peers (GET)`
 
 
-##### `ucg/peering/peers (POST)`
+##### `network/peering/peers (POST)`
 
 Receive peering entry with signature of it. Signature must match PGP fingerprint written in the entry.
 
-##### `ucg/peering/peers (GET)`
+##### `network/peering/peers (GET)`
 
 Merkle URL referencing a set of all peering entries. Used for synchronizing peering entries between peers.
 
@@ -220,29 +220,29 @@ Interface whose role is to define network rules for transactions propagation.
 
 Flow | Interfaces
 ---- | -----------
-IN   | `ucg/peering/forward`
-OUT  | `ucg/peering/peers/upstream`
-OUT  | `ucg/peering/peers/upstream/[PGP_FINGERPRINT]`
-OUT  | `ucg/peering/peers/downstream`
-OUT  | `ucg/peering/peers/downstream/[PGP_FINGERPRINT]`
+IN   | `network/peering/forward`
+OUT  | `network/peering/peers/upstream`
+OUT  | `network/peering/peers/upstream/[PGP_FINGERPRINT]`
+OUT  | `network/peering/peers/downstream`
+OUT  | `network/peering/peers/downstream/[PGP_FINGERPRINT]`
 
-##### `ucg/peering/forward`
+##### `network/peering/forward`
 
 Receive forward rule issued by a peer to be forwarded transactions of precised keys (either some, or all).
 
-##### `ucg/peering/peers/upstream`
+##### `network/peering/peers/upstream`
 
 GET a list of peering entries **of nodes who asked** to be forwarded of ALL incoming transactions.
 
-##### `ucg/peering/peers/upstream/[PGP_FINGERPRINT]`
+##### `network/peering/peers/upstream/[PGP_FINGERPRINT]`
 
 GET a list of peering entries **of nodes who asked** to be forwarded of PGP_FINGERPRINT's incoming transactions.
 
-##### `ucg/peering/peers/downstream`
+##### `network/peering/peers/downstream`
 
 GET a list of peering entries **to whom this node asked** to be forwarded of ALL incoming transactions.
 
-##### `ucg/peering/peers/downstream/[PGP_FINGERPRINT]`
+##### `network/peering/peers/downstream/[PGP_FINGERPRINT]`
 
 GET a list of peering entries **to whom this node asked** to be forwarded of PGP_FINGERPRINT's incoming transactions.
 
@@ -252,7 +252,7 @@ This interface does not provide output information. It is only here to notify th
 
 Flow | Interfaces
 ---- | -----------
-IN   | `ucg/peering/status`
+IN   | `network/peering/status`
 
 Receive a status notification from another peer.
 
@@ -262,19 +262,19 @@ Interface whose role is to gather informations of transactions storage distribut
 
 Flow | Interfaces
 ---- | -----------
-IN   | `ucg/tht (POST)`
-OUT  | `ucg/tht (GET)`
-OUT  | `ucg/tht/[PGP_FINGERPRINT]`
+IN   | `network/tht (POST)`
+OUT  | `network/tht (GET)`
+OUT  | `network/tht/[PGP_FINGERPRINT]`
 
-##### `ucg/tht (POST)`
+##### `network/tht (POST)`
 
 Receive a THT entry, issued by the owner of the key precised in the entry.
 
-##### `ucg/tht (GET)`
+##### `network/tht (GET)`
 
 Merkle URL referencing a set of ALL THT entries.
 
-##### `ucg/tht/[PGP_FINGERPRINT]`
+##### `network/tht/[PGP_FINGERPRINT]`
 
 GET the THT entry issued by key whose fingerprint is PGP_FINGERPRINT.
 

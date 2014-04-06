@@ -196,7 +196,7 @@ module.exports.tester = function (currency) {
         var ms = new Voting({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'VOTING' });
         var raw = ms.getRaw();
         signatory.sign(raw, function (err, sig) {
-          post ('/ucs/community/voters', {
+          post ('/registry/community/voters', {
             'voting': raw,
             'signature': sig
           }, cb);
@@ -212,7 +212,7 @@ module.exports.tester = function (currency) {
         var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'MEMBERSHIP', membership: 'IN' });
         var raw = ms.getRaw();
         var sig = signatory.sign(raw);
-        post ('/ucs/community/members', {
+        post ('/registry/community/members', {
           'membership': raw,
           'signature': sig
         }, cb);
@@ -227,7 +227,7 @@ module.exports.tester = function (currency) {
         var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'MEMBERSHIP', membership: 'IN' });
         var raw = ms.getRaw();
         var sig = signatory.sign(raw);
-        post ('/ucs/community/members', {
+        post ('/registry/community/members', {
           'membership': raw,
           'signature': sig
         }, cb);
@@ -242,7 +242,7 @@ module.exports.tester = function (currency) {
         var ms = new Membership({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'MEMBERSHIP', membership: 'OUT' });
         var raw = ms.getRaw();
         var sig = signatory.sign(raw);
-        post ('/ucs/community/members', {
+        post ('/registry/community/members', {
           'membership': raw,
           'signature': sig
         }, cb);
@@ -253,7 +253,7 @@ module.exports.tester = function (currency) {
   this.selfVote = function (number) {
     return function (done) {
       queueOfVotes.push(function (cb) {
-        get ('/ucs/amendment/'+ number + '/vote', cb);
+        get ('/registry/amendment/'+ number + '/vote', cb);
       }, done);
     };
   };
@@ -263,7 +263,7 @@ module.exports.tester = function (currency) {
       queueOfVotes.push(function (cb) {
         async.waterfall([
           function (next){
-            get ('/ucs/amendment', next);
+            get ('/registry/amendment', next);
           },
           function (res, next){
             var json = JSON.parse(res.text);

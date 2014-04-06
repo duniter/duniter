@@ -153,6 +153,14 @@ MerkleSchema.statics.proposedVoters = function (done) {
   retrieve({ type: 'proposedVoters', criteria: '{}' }, done);
 };
 
+MerkleSchema.statics.memberships = function (done) {
+  retrieve({ type: 'memberships', criteria: '{}' }, done);
+};
+
+MerkleSchema.statics.votings = function (done) {
+  retrieve({ type: 'votings', criteria: '{}' }, done);
+};
+
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
   async.waterfall([
     function (next) {
@@ -349,6 +357,32 @@ MerkleSchema.statics.mapForSignatures = function (hashes, done) {
 };
 
 MerkleSchema.statics.mapForTHTEntries = function (hashes, done) {
+  mongoose.model('THTEntry')
+  .find({ hash: { $in: hashes } })
+  .sort('hash')
+  .exec(function (err, entries) {
+    var map = {};
+    entries.forEach(function (entry){
+      map[entry.hash] = entry.json();
+    });
+    done(null, map);
+  });
+};
+
+MerkleSchema.statics.mapForMemberships = function (hashes, done) {
+  mongoose.model('THTEntry')
+  .find({ hash: { $in: hashes } })
+  .sort('hash')
+  .exec(function (err, entries) {
+    var map = {};
+    entries.forEach(function (entry){
+      map[entry.hash] = entry.json();
+    });
+    done(null, map);
+  });
+};
+
+MerkleSchema.statics.mapForVotings = function (hashes, done) {
   mongoose.model('THTEntry')
   .find({ hash: { $in: hashes } })
   .sort('hash')

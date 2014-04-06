@@ -1,4 +1,4 @@
-# uCoin Gossip messages format
+# uCoin Network messages format
 
 ## Contents
 * [Contents](#contents)

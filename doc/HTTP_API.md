@@ -7,27 +7,25 @@
       * [add](#pksadd)
       * [lookup](#pkslookup)
       * [all](#pksall)
-  * [ucg/](#ucg)
-      * [pubkey](#ucgpubkey)
-      * [peering](#ucgpeering)
-      * [peering/peers (GET)](#ucgpeeringpeers-get)
-      * [peering/peers (POST)](#ucgpeeringpeers-post)
-      * [peering/peers/upstream](#ucgpeeringpeersupstream)
-      * [peering/peers/upstream/[PGP_FINGERPRINT]](#ucgpeeringpeersupstreampgp_fingerprint)
-      * [peering/peers/downstream](#ucgpeeringpeersdownstream)
-      * [peering/peers/downstream/[PGP_FINGERPRINT]](#ucgpeeringpeersdownstreampgp_fingerprint)
-      * [peering/forward](#ucgpeeringforward)
-      * [peering/status](#ucgpeeringstatus)
-      * [tht (GET)](#ucgtht-get)
-      * [tht (POST)](#ucgtht-post)
-      * [tht/[PGP_FINGERPRINT]](#ucgthtpgp_fingerprint)
+  * [network/](#network)
+      * [pubkey](#networkpubkey)
+      * [peering](#networkpeering)
+      * [peering/peers (GET)](#networkpeeringpeers-get)
+      * [peering/peers (POST)](#networkpeeringpeers-post)
+      * [peering/peers/upstream](#networkpeeringpeersupstream)
+      * [peering/peers/upstream/[PGP_FINGERPRINT]](#networkpeeringpeersupstreampgp_fingerprint)
+      * [peering/peers/downstream](#networkpeeringpeersdownstream)
+      * [peering/peers/downstream/[PGP_FINGERPRINT]](#networkpeeringpeersdownstreampgp_fingerprint)
+      * [peering/forward](#networkpeeringforward)
+      * [peering/status](#networkpeeringstatus)
+      * [tht (GET)](#networktht-get)
+      * [tht (POST)](#networktht-post)
+      * [tht/[PGP_FINGERPRINT]](#networkthtpgp_fingerprint)
   * [hdc/](#hdc)
       * [amendments/promoted](#amendmentspromoted)
       * [amendments/promoted/[AMENDMENT_NUMBER]](#amendmentspromotedamendment_number)
       * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
       * [amendments/view/[AMENDMENT_ID]/signatures](#amendmentsviewamendment_idsignatures)
-      * [amendments/view/[AMENDMENT_ID]/ismember/[PGP_FINGERPRINT]](#amendmentsviewamendment_idismemberpgp_fingerprint)
-      * [amendments/view/[AMENDMENT_ID]/isvoter/[PGP_FINGERPRINT]](#amendmentsviewamendment_idisvoterpgp_fingerprint)
       * [amendments/votes (GET)](#amendmentsvotes-get)
       * [amendments/votes (POST)](#amendmentsvotes-post)
       * [coins/[PGP_FINGERPRINT]/last](#coinspgp_fingerprintlast)
@@ -41,14 +39,16 @@
       * [transactions/sender/[PGP_FINGERPRINT]/last/[count]/[from]](#transactionssenderpgp_fingerprintlastcountfrom)
       * [transactions/sender/[PGP_FINGERPRINT]/ud/[AM_NUMBER]](#transactionssenderpgp_fingerprintudam_number)
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
-  * [ucs/](#ucs)
+  * [registry/](#registry)
       * [parameters](#parameters)
+      * [community/members (GET)](#communitymembers-get)
       * [community/members (POST)](#communitymembers-post)
-      * [community/members/[PGP_FINGERPRINT]/membership/current](#communitymemberspgp_fingerprintmembershipcurrent)
-      * [community/members/[PGP_FINGERPRINT]/membership/history](#communitymemberspgp_fingerprintmembershiphistory)
+      * [community/members/[PGP_FINGERPRINT]/current](#communitymemberspgp_fingerprintcurrent)
+      * [community/members/[PGP_FINGERPRINT]/history](#communitymemberspgp_fingerprinthistory)
+      * [community/voters (GET)](#communityvoters-get)
       * [community/voters (POST)](#communityvoters-post)
-      * [community/voters/[PGP_FINGERPRINT]/voting/current](#communityvoterspgp_fingerprintvotingcurrent)
-      * [community/voters/[PGP_FINGERPRINT]/voting/history](#communityvoterspgp_fingerprintvotinghistory)
+      * [community/voters/[PGP_FINGERPRINT]/current](#communityvoterspgp_fingerprintcurrent)
+      * [community/voters/[PGP_FINGERPRINT]/history](#communityvoterspgp_fingerprinthistory)
       * [amendment](#amendment)
       * [amendment/[AM_NUMBER]](#amendmentam_number)
       * [amendment/[AM_NUMBER]/vote](#amendmentam_numbervote)
@@ -62,7 +62,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |-- add
     |   |-- all
     |   `-- lookup
-    |-- ucg/
+    |-- network/
     |   |-- pubkey
     |   |-- peering
     |   |   |-- forward
@@ -80,10 +80,6 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |   |   `-- [AMENDMENT_NUMBER]
     |   |   |-- view/
     |   |   |   `-- [AMENDMENT_ID]/
-    |   |   |       |-- ismember/
-    |   |   |       |   `-- [PGP_FINGERPRINT]
-    |   |   |       |-- isvoter/
-    |   |   |       |   `-- [PGP_FINGERPRINT]
     |   |   |       |-- self
     |   |   |       `-- signatures
     |   |   `-- votes/
@@ -110,19 +106,17 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       |           `-- [AM_NUMBER]
     |       `-- recipient/
     |           `-- [PGP_FINGERPRINT]
-    `-- ucs/
+    `-- registry/
         |-- parameters
         |-- community/
         |   |-- members/
         |   |   `-- [PGP_FINGERPRINT]/
-        |   |       `-- membership/
-        |   |           |-- history
-        |   |           `-- current
+        |   |       |-- history
+        |   |       `-- current
         |   |-- voters/
         |       `-- [PGP_FINGERPRINT]/
-        |           `-- voting/
-        |               |-- history
-        |               `-- current
+        |           |-- history
+        |           `-- current
         `-- amendment/
             `-- [AM_NUMBER]/
                 `-- vote
@@ -132,7 +126,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
-* `ucg/tht (GET)`
+* `network/tht (GET)`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
 * `hdc/transactions/recipient/[PGP_FINGERPRINT]`
@@ -237,7 +231,7 @@ Here is a summup of such rules:
 Merkle URL                                                                | Leaf                                    | Sort
 ------------------------------------------------------------------------- | ----------------------------------------| ---------------------------------------
 `pks/all`                                                                 | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`ucg/tht (GET)`                                                           | Hash of the THT entry + signature       | By hash string sort, ascending.
+`network/tht (GET)`                                                           | Hash of the THT entry + signature       | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Hash of the signature                   | By hash string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of the transaction + signature     | By hash string sort, ascending.
 `hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of the transaction + signature     | By hash string sort, ascending.
@@ -352,11 +346,11 @@ Merkle URL leaf: public key
 }
 ```
 
-### ucg/*
+### network/*
 
 This URL is used for uCoin Gossip protocol (exchanging UCG messages).
 
-#### `ucg/pubkey`
+#### `network/pubkey`
 **Goal**
 
 GET the public key of the peer.
@@ -402,7 +396,7 @@ ZJJPb/89yrs9F7JkLi/oiAl5VpItm+hlFpLe1TE7oa6k53eZ2a+V
 -----END PGP PUBLIC KEY BLOCK-----
 ```
 
-#### `ucg/peering`
+#### `network/peering`
 **Goal**
 
 GET the peering informations of this node.
@@ -428,7 +422,7 @@ Peering entry of the node.
 }
 ```
 
-#### `ucg/peering/peers (GET)`
+#### `network/peering/peers (GET)`
 **Goal**
 
 Merkle URL refering to peering entries of every node inside the currency network.
@@ -467,7 +461,7 @@ Merkle URL leaf: peering entry
 }
 ```
 
-#### `ucg/peering/peers (POST)`
+#### `network/peering/peers (POST)`
 **Goal**
 
 POST a UCG peering entry document to this node in order to alter UCG peering table.
@@ -496,7 +490,7 @@ The posted entry.
 }
 ```
 
-#### `ucg/peering/peers/upstream`
+#### `network/peering/peers/upstream`
 **Goal**
 
 GET a list of peers this node is **listening to** for ANY incoming transaction.
@@ -529,7 +523,7 @@ The corresponding peer list.
 }
 ```
 
-#### `ucg/peering/peers/upstream/[PGP_FINGERPRINT]`
+#### `network/peering/peers/upstream/[PGP_FINGERPRINT]`
 **Goal**
 
 GET a list of peers this node is **listening to** for incoming transactions of `PGP_FINGERPRINT`.
@@ -564,7 +558,7 @@ The corresponding peer list.
 }
 ```
 
-#### `ucg/peering/peers/downstream`
+#### `network/peering/peers/downstream`
 **Goal**
 
 GET a list of peers this node is **listened by** for ANY incoming transaction.
@@ -597,7 +591,7 @@ The corresponding peer list.
 }
 ```
 
-#### `ucg/peering/peers/downstream/[PGP_FINGERPRINT]`
+#### `network/peering/peers/downstream/[PGP_FINGERPRINT]`
 **Goal**
 
 GET a list of peers this node is **listened by** for incoming transactions of `PGP_FINGERPRINT`.
@@ -632,7 +626,7 @@ The corresponding peer list.
 }
 ```
 
-#### `ucg/peering/forward`
+#### `network/peering/forward`
 **Goal**
 
 POST a UCG forward document to this node in order to be sent back incoming transactions.
@@ -664,7 +658,7 @@ The posted forward.
 }
 ```
 
-#### `ucg/peering/status`
+#### `network/peering/status`
 **Goal**
 
 POST a UCG status document to this node in order notify of its status.
@@ -687,7 +681,7 @@ The posted status.
 }
 ```
 
-#### `ucg/tht (GET)`
+#### `network/tht (GET)`
 **Goal**
 
 Merkle URL refering to THT entries.
@@ -731,7 +725,7 @@ Merkle URL leaf: THT entry
 }
 ```
 
-#### `ucg/tht (POST)`
+#### `network/tht (POST)`
 **Goal**
 
 POST a THT entry.
@@ -765,7 +759,7 @@ The posted THT entry.
 }
 ```
 
-#### `ucg/tht/[PGP_FINGERPRINT]`
+#### `network/tht/[PGP_FINGERPRINT]`
 **Goal**
 
 GET a unique THT entry.
@@ -941,50 +935,6 @@ Merkle URL leaf: signature
     "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
     "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
   }
-}
-```
-
-#### `amendments/view/[AMENDMENT_ID]/ismember/[PGP_FINGERPRINT]`
-**Goal**
-
-GET wether a key was part of the Community at given amendment time.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`AMENDMENT_ID`    | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
-`PGP_FINGERPRINT` | Fingerprint of the key we want to test Community's belonging. | URL
-
-**Returns**
-
-Result saying wether key belongs to Community for this amendment.
-```json
-{
-  "key": "D13150FD106676133AD3BD816C2C7A57A3638029",
-  "member": true
-}
-```
-
-#### `amendments/view/[AMENDMENT_ID]/isvoter/[PGP_FINGERPRINT]`
-**Goal**
-
-GET wether a key was a voter at given amendment time.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`AMENDMENT_ID`    | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
-`PGP_FINGERPRINT` | Fingerprint of the key we want to test voter's belonging.     | URL
-
-**Returns**
-
-Result saying wether key belongs to voters circle for this amendment.
-```json
-{
-  "key": "D13150FD106676133AD3BD816C2C7A57A3638029",
-  "voter": false
 }
 ```
 
@@ -1574,7 +1524,7 @@ Merkle URL leaf: transaction
 }
 ```
 
-### ucs/*
+### registry/*
 
 #### `parameters`
 
@@ -1615,11 +1565,55 @@ UDMinCoin         | Universal Dividend minimal coin value
 Consensus         | Percent of voters required to valid an Amendment
 MSExpires         | Delay by which a membership is to be considered expired
 
+#### `community/members (GET)`
+
+**Goal**
+
+Merkle of pending [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) documents for next amendment.
+
+> * Memberships that are not valid are not taken in account here
+> * Memberships than are cancelled because of multiple memberships sent for next amendment are not taken in account either
+> * Only valid and single memberships per member are interpreted in this Merkle
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: membership
+```json
+{
+  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "membership": {
+      "version": "1",
+      "currency": "beta_brousouf",
+      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+      "membership": "IN",
+      "sigDate": 1390739944,
+      "raw": "Version: 1\r\n...Membership: IN\r\n"
+    }
+  }
+}
+```
+
 #### `community/members (POST)`
 
 **Goal**
 
-POST a [Membership](https://github.com/c-geek/ucoin/blob/master/doc/UCS.md#membership) document, in order to change membership status of a Public key.
+POST a [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) document, in order to change membership status of a Public key.
 
 **Parameters**
 
@@ -1638,18 +1632,18 @@ The posted membership request + posted signature.
     "version": "1",
     "currency": "beta_brousouf",
     "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "membership": "JOIN",
+    "membership": "IN",
     "sigDate": 1390739944,
-    "raw": "Version: 1\r\n...Membership: JOIN\r\n"
+    "raw": "Version: 1\r\n...Membership: IN\r\n"
   }
 }
 ```
 
-#### `community/members/[PGP_FINGERPRINT]/membership/current`
+#### `community/members/[PGP_FINGERPRINT]/current`
 
 **Goal**
 
-GET last received valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/UCS.md#membership) document.
+GET last received valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) document.
 
 **Parameters**
 
@@ -1667,18 +1661,18 @@ The posted membership request + posted signature.
     "version": "1",
     "currency": "beta_brousouf",
     "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "membership": "JOIN",
+    "membership": "IN",
     "sigDate": 1390739944,
-    "raw": "Version: 1\r\n...Membership: JOIN\r\n"
+    "raw": "Version: 1\r\n...Membership: IN\r\n"
   }
 }
 ```
 
-#### `community/members/[PGP_FINGERPRINT]/membership/history`
+#### `community/members/[PGP_FINGERPRINT]/history`
 
 **Goal**
 
-GET an history of all received and stored valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/UCS.md#membership) documents.
+GET an history of all received and stored valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) documents.
 
 **Parameters**
 
@@ -1700,7 +1694,7 @@ A list of posted membership requests + posted signatures.
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
         "membership": "ACTUALIZE",
         "sigDate": 1414327144,
-        "raw": "Version: 1\r\n...Membership: JOIN\r\n"
+        "raw": "Version: 1\r\n...Membership: IN\r\n"
       }
     },{
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
@@ -1710,7 +1704,7 @@ A list of posted membership requests + posted signatures.
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
         "membership": "ACTUALIZE",
         "sigDate": 1403782744,
-        "raw": "Version: 1\r\n...Membership: JOIN\r\n"
+        "raw": "Version: 1\r\n...Membership: IN\r\n"
       }
     },{
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
@@ -1718,12 +1712,55 @@ A list of posted membership requests + posted signatures.
         "version": "1",
         "currency": "beta_brousouf",
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "membership": "JOIN",
+        "membership": "IN",
         "sigDate": 1390739944,
-        "raw": "Version: 1\r\n...Membership: JOIN\r\n"
+        "raw": "Version: 1\r\n...Membership: IN\r\n"
       }
     }
   ]
+}
+```
+
+#### `community/voters (GET)`
+
+**Goal**
+
+Merkle of pending [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) documents for next amendment.
+
+> * Votings that are not valid are not taken in account here
+> * Votings than are cancelled because of multiple votings sent for next amendment are not taken in account either
+> * Only valid and single votings per member are interpreted in this Merkle
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: voting
+```json
+{
+  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "voting": {
+      "version": "1",
+      "currency": "beta_brousouf",
+      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+      "sigDate": 1390740799,
+      "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
+    }
+  }
 }
 ```
 
@@ -1731,7 +1768,7 @@ A list of posted membership requests + posted signatures.
 
 **Goal**
 
-POST a [Voting](https://github.com/c-geek/ucoin/blob/master/doc/UCS.md#voting) document, in order to change voting key of a Community member.
+POST a [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) document, in order to change voting key of a Community member.
 
 **Parameters**
 
@@ -1751,16 +1788,16 @@ The posted voting request + posted signature.
     "currency": "beta_brousouf",
     "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
     "sigDate": 1390740799,
-    "raw": "Version: 1\r\n...VotingKey: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
+    "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
   }
 }
 ```
 
-#### `community/voters/[PGP_FINGERPRINT]/voting/current`
+#### `community/voters/[PGP_FINGERPRINT]/current`
 
 **Goal**
 
-GET last received valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/UCS.md#voting) document.
+GET last received valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) document.
 
 **Parameters**
 
@@ -1778,16 +1815,16 @@ Name              | Value                                                       
     "currency": "beta_brousouf",
     "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
     "sigDate": 1393764799,
-    "raw": "Version: 1\r\n...VotingKey: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
+    "raw": "Version: 1\r\n...Issuer: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
   }
 }
 ```
 
-#### `community/voters/[PGP_FINGERPRINT]/voting/history`
+#### `community/voters/[PGP_FINGERPRINT]/history`
 
 **Goal**
 
-GET an history of all received and stored valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/UCS.md#voting) documents.
+GET an history of all received and stored valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) documents.
 
 **Parameters**
 
@@ -1808,7 +1845,7 @@ A list of posted voting requests + posted signatures.
         "currency": "beta_brousouf",
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
         "sigDate": 1393764799,
-        "raw": "Version: 1\r\n...VotingKey: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
+        "raw": "Version: 1\r\n...Issuer: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
       }
     },{
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
@@ -1817,7 +1854,7 @@ A list of posted voting requests + posted signatures.
         "currency": "beta_brousouf",
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
         "sigDate": 1393419199,
-        "raw": "Version: 1\r\n...VotingKey: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
+        "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
       }
     },{
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
@@ -1826,7 +1863,7 @@ A list of posted voting requests + posted signatures.
         "currency": "beta_brousouf",
         "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
         "sigDate": 1390740799,
-        "raw": "Version: 1\r\n...VotingKey: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
+        "raw": "Version: 1\r\n...Issuer: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
       }
     }
   ]

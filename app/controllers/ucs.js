@@ -63,6 +63,24 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
+  this.membershipGet = function (req, res) {
+    var that = this;
+    async.waterfall([
+      function (next){
+        Merkle.memberships(next);
+      },
+      function (merkle, next){
+        MerkleService.processForURL(req, merkle, Merkle.mapForMemberships, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      MerkleService.merkleDone(req, res, json);
+    });
+  };
+
   this.membershipPost = function (req, res) {
     var that = this;
     async.waterfall([
@@ -128,6 +146,24 @@ module.exports = function (pgp, currency, conf) {
       http.answer(res, 400, err, function () {
         res.end(JSON.stringify(list, null, "  "));
       });
+    });
+  };
+
+  this.votingGet = function (req, res) {
+    var that = this;
+    async.waterfall([
+      function (next){
+        Merkle.votings(next);
+      },
+      function (merkle, next){
+        MerkleService.processForURL(req, merkle, Merkle.mapForVotings, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      MerkleService.merkleDone(req, res, json);
     });
   };
 

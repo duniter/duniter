@@ -233,7 +233,7 @@ This is easily done with:
 $ ucoind --currency beta_brousouf sync <host_name> <port>
 ```
 
-For example, to synchronise with [ucoin.twiced.fr:9101](http://ucoin.twiced.fr:9101/ucg/peering):
+For example, to synchronise with [ucoin.twiced.fr:9101](http://ucoin.twiced.fr:9101/network/peering):
 
 ```bash
 $ ucoind --currency beta_brousouf sync ucoin.twiced.fr 9101

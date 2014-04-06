@@ -41,50 +41,6 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
-  this.isMember = function (req, res) {
-    var member = null;
-    async.auto({
-      amendmentId: async.apply(ParametersService.getAmendmentID, req),
-      fingerprint: async.apply(ParametersService.getFingerprint, req),
-      task: ['amendmentId', 'fingerprint', function (next, results) {
-        member = results.fingerprint;
-        Amendment.isMemberForAM(results.fingerprint, results.amendmentId[0], results.amendmentId[1], next);
-      }]
-    }, function (err, results) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      res.setHeader("Content-Type", "text/plain");
-      res.end(JSON.stringify({
-        "key": member,
-        "member": results.task
-      }, null, "  "));
-    });
-  };
-
-  this.isVoter = function (req, res) {
-    var voter = null;
-    async.auto({
-      amendmentId: async.apply(ParametersService.getAmendmentID, req),
-      fingerprint: async.apply(ParametersService.getFingerprint, req),
-      task: ['amendmentId', 'fingerprint', function (next, results) {
-        voter = results.fingerprint;
-        Amendment.isVoterForAM(results.fingerprint, results.amendmentId[0], results.amendmentId[1], next);
-      }]
-    }, function (err, results) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      res.setHeader("Content-Type", "text/plain");
-      res.end(JSON.stringify({
-        "key": voter,
-        "voter": results.task
-      }, null, "  "));
-    });
-  };
-
   this.viewAM = {
 
     signatures: function (req, res) {

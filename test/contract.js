@@ -465,7 +465,7 @@ function testPromotedAmendment (properties, number) {
 function testProposedAmendment (label, properties) {
   return tester.verify(
     label,
-    on.doGet("/ucs/amendment"),
+    on.doGet("/registry/amendment"),
     is.expectedAmendment(properties)
   );
 }

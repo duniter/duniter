@@ -122,7 +122,7 @@ module.exports.get = function (pgp, currency, conf) {
                   memberContext(member.fingerprint, amNext.number - 1, callback);
                 },
                 isVoter: function(callback){
-                  Key.wasVoter(member.fingerprint, amNext.number, callback);
+                  Key.wasVoter(member.fingerprint, amNext.number - 1, callback);
                 },
               }, next);
             },

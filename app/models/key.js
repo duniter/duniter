@@ -52,10 +52,10 @@ KeySchema.statics.wasVoter = function(fingerprint, amNumber, done){
       done("Unknown key!");
     } else {
       var k = keys[0];
-      var previousJoins = _(k.asVoter.joins).filter(function(n) { return n < amNumber; });
+      var previousJoins = _(k.asVoter.joins).filter(function(n) { return n <= amNumber; });
       if (previousJoins.length > 0) {
         var max = _(previousJoins).max();
-        var previousLeaves = _(k.asVoter.leaves).filter(function(n) { return n < amNumber; });
+        var previousLeaves = _(k.asVoter.leaves).filter(function(n) { return n <= amNumber; });
         if (previousLeaves.length == 0 || _(previousLeaves).max() < max) {
           // Last operation at amNumber was joining
           done(null, true);

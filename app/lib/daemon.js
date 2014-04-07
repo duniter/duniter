@@ -98,6 +98,7 @@ function Daemon () {
               if (daemon.judges.timeForVote(amNext)) {
                 // Must be a voter to vote!
                 Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
+                  console.log('Was voter %s at #%d? %s', selfFingerprint, current.number, wasVoter);
                   if (!err && wasVoter) {
                     logger.debug("Asking vote for SELF peer");
                     askVote(current, PeeringService.peer(), function (err, json) {

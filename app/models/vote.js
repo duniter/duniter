@@ -66,7 +66,7 @@ VoteSchema.methods = {
   },
 
   issuerIsVoter: function(done) {
-    Key.wasVoter(this.issuer, this.amendment.number, done);
+    Key.wasVoter(this.issuer, this.amendment.number - 1, done);
   },
   
   parse: function(rawVote, rawPubkey, callback) {

@@ -113,7 +113,7 @@ module.exports.get = function (pgp, currency, conf) {
         Key.getMembers(next);
       },
       function (members, next){
-        async.forEach(members, function(member, callback){
+        async.forEachSeries(members, function(member, callback){
           async.waterfall([
             function (next){
               async.parallel({
@@ -485,6 +485,7 @@ module.exports.get = function (pgp, currency, conf) {
         async.series({
           member: function(callback){
             mathlog.debug('ms delta for %s = %s', key, indicator.membership);
+            mathlog.debug('withVoting = %s', withVoting);
             updateMembersFromIndicator(key, indicator.membership, amNext, callback);
           },
           key: function(callback){
@@ -553,11 +554,12 @@ module.exports.get = function (pgp, currency, conf) {
     var ctx = context || { currentMembership: null, nextMemberships: [] };
     var hasIn = ctx.currentMembership && ctx.currentMembership.membership == 'IN';
     var hasOut = ctx.currentMembership && ctx.currentMembership.membership == 'OUT';
+    var hasInTooOld = (hasIn && ctx.currentMembership.sigDate < getExclusionDate(amNext));
     var ms = [
       ctx.currentMembership == null ? 1 : 0,
-      hasIn ? 1 : 0,
+      hasIn && !hasInTooOld ? 1 : 0,
       hasOut ? 1 : 0,
-      (hasIn && ctx.currentMembership.sigDate < getExclusionDate(amNext)) ? 1 : 0
+      hasInTooOld ? 1 : 0
     ];
     var hasNextIn = ctx.nextMemberships.length > 0 && ctx.nextMemberships[0].membership == 'IN';
     var hasNextInCancelled = false;
@@ -580,6 +582,8 @@ module.exports.get = function (pgp, currency, conf) {
       hasNextInCancelled ? 1 : 0,
       hasNextOutCancelled ? 1 : 0
     ];
+    mathlog.debug('ms = ', ms);
+    mathlog.debug('p = ', p);
     done(null, ms, p);
   }
 
@@ -598,7 +602,8 @@ module.exports.get = function (pgp, currency, conf) {
       memberCtx.nextVoting != null ? 1 : 0,
       memberLeaving == 1 ? 1 : 0
     ];
-    mathlog.debug(p);
+    mathlog.debug('vt = ', vt);
+    mathlog.debug('p = ', p);
     done(null, vt, p);
   }
 

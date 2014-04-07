@@ -75,7 +75,7 @@ var conf = {
     UD0: 145,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
     Consensus: 2/3,
-    MSExpires: 3600*24*30 // 30 days
+    MSExpires: 8 // seconds, so AM9 will see ]AM0;AM1] members be kicked out at AM9
   },
   createNext: true
 };
@@ -104,6 +104,7 @@ var amendments = {
   },
 
   AM2: {
+    generated: conf.sync.AMStart + 2,
     number: 2,
     dividend: 145,
     nextVotes: 2,
@@ -120,6 +121,7 @@ var amendments = {
   },
 
   AM3: {
+    generated: conf.sync.AMStart + 3,
     number: 3,
     nextVotes: 2,
     membersCount: 3,
@@ -133,6 +135,7 @@ var amendments = {
   },
 
   AM4: {
+    generated: conf.sync.AMStart + 4,
     number: 4,
     dividend: 145,
     nextVotes: 2,
@@ -507,7 +510,7 @@ var testCases = [
 
   someTests.sendOptIN(cat),
 
-  someTests.sendVoting(tobi, now + 1),
+  someTests.sendVoting(tobi, now + 1), // this should be wrong: AM0 generated = now
   someTests.sendVoting(cat, now + 1),
 
   testProposedAmendment('proposed amendment with tobi+cat as members & voters', amendments.AM0),
@@ -648,10 +651,24 @@ var testCases = [
 
   someTests.voteProposed(cat),
   someTests.voteProposed(snow),
+  someTests.voteCurrent(tobi),
   someTests.sendOptOUT(cat, now + 8),
   testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: ['-C73882B64B7E72237A2F460CE9CAB76D19A8651E'], membersRoot: 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F' }),
   someTests.sendOptIN(cat, now + 8, 400),
   testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: [], membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
+
+  someTests.voteProposed(cat),
+  someTests.voteProposed(snow),
+  // We are now at AM9: memberships received during AM0 MUST be thrown out
+  testProposedAmendment('AM9: cat & tobi are kicked out as their memberships are too old', {
+    membersChanges: [
+      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C',
+      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'],
+    membersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372',
+    votersChanges: [
+      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C',
+      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'],
+    votersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372'}),
 
   /****** TRANSACTIONS
   *

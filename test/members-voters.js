@@ -12,7 +12,7 @@ var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
 var logger    = require('../app/lib/logger')('test');
 
-var nb = 62;
+var nb = 60;
 var currency = "testa";
 var tester    = is = on = new test.tester(currency);
 
@@ -442,11 +442,13 @@ var someTests = {
     );
   },
 
-  sendVoting: function (signatory, time) {
+  sendVoting: function (signatory, time, errCode) {
     return tester.verify(
       signatory.name() + " voting",
       voter(signatory, time),
-      is.expectedVoting(signatory.fingerprint())
+      errCode ?
+        is.expectedHTTPCode(errCode) :
+        is.expectedVoting(signatory.fingerprint())
     );
   },
 
@@ -508,10 +510,25 @@ var testCases = [
     previousHash: null
   }),
 
-  someTests.sendOptIN(cat),
+  // OPT-IN must be exactly during AM0's interval
+  someTests.sendOptIN(cat, now - 1, 400),
+  someTests.sendOptIN(cat, now - 3, 400),
+  someTests.sendOptIN(cat, now - 184984, 400),
+  someTests.sendOptIN(cat, now + 1, 400),
+  someTests.sendOptIN(cat, now + 2, 400),
+  someTests.sendOptIN(cat, now + 54, 400),
+  someTests.sendOptIN(cat, now),
 
-  someTests.sendVoting(tobi, now + 1), // this should be wrong: AM0 generated = now
-  someTests.sendVoting(cat, now + 1),
+  someTests.sendVoting(tobi, now - 1, 400),
+  someTests.sendVoting(tobi, now - 2, 400),
+  someTests.sendVoting(tobi, now - 484, 400),
+  someTests.sendVoting(tobi, now + 1, 400),
+  someTests.sendVoting(tobi, now + 9, 400),
+  someTests.sendVoting(tobi, now + 9879, 400),
+  someTests.sendVoting(cat, now + 1, 400),
+
+  someTests.sendVoting(tobi, now + 0),
+  someTests.sendVoting(cat, now + 0),
 
   testProposedAmendment('proposed amendment with tobi+cat as members & voters', amendments.AM0),
 
@@ -549,8 +566,14 @@ var testCases = [
 
   testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
 
-  someTests.sendOptIN(snow, now + 2),
-  someTests.sendVoting(snow, now + 2),
+  someTests.sendOptIN(snow, now - 1, 400),
+  someTests.sendOptIN(snow, now + 0, 400),
+  someTests.sendOptIN(snow, now + 2, 400), // Indeed, AM2 is not current, but NEXT!
+  someTests.sendOptIN(snow, now + 1),
+  someTests.sendVoting(snow, now - 1, 400),
+  someTests.sendVoting(snow, now + 0, 400),
+  someTests.sendVoting(snow, now + 2, 400),
+  someTests.sendVoting(snow, now + 1),
 
   // 1/2
   someTests.voteProposed(cat, amendments.AM2),
@@ -629,7 +652,7 @@ var testCases = [
   testProposedAmendment('AM5: no changes', { membersChanges: [], votersChanges: [] }),
 
   // Tobi voting again
-  someTests.sendVoting(tobi, now + 5),
+  someTests.sendVoting(tobi, now + 4),
   testProposedAmendment('AM6: tobi\'s coming back', {
     membersChanges: [],
     votersChanges: ['+2E69197FAB029D8669EF85E82457A1587CA0ED9C'],
@@ -652,9 +675,9 @@ var testCases = [
   someTests.voteProposed(cat),
   someTests.voteProposed(snow),
   someTests.voteCurrent(tobi),
-  someTests.sendOptOUT(cat, now + 8),
+  someTests.sendOptOUT(cat, now + 7),
   testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: ['-C73882B64B7E72237A2F460CE9CAB76D19A8651E'], membersRoot: 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F' }),
-  someTests.sendOptIN(cat, now + 8, 400),
+  someTests.sendOptIN(cat, now + 7, 400),
   testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: [], membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
 
   someTests.voteProposed(cat),

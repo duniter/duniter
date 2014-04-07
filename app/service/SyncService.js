@@ -196,24 +196,18 @@ module.exports.get = function (pgp, currency, conf) {
               next();
             },
             function (next){
-              // var timestampInSeconds = parseInt(entry.sigDate.getTime()/1000, 10);
-              // Amendment.findPromotedPreceding(timestampInSeconds, next);
-              Amendment.current(function (err, am) {
-                next(null, am);
-              });
-            },
-            function (am, next){
-              if (am) {
-                var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
-                if (am.generated > entryTimestamp) {
-                  next('Too late for this membership: amendment already voted. Retry.');
-                  return;
+              dependingInterval(entry,
+                function isTooLate (entryTS, minimalTS) {
+                  next('Too late for this membership (' + entryTS + '): your membership must be at least ' + minimalTS + ', time of current amendment. Retry.');
+                },
+                function isTooEarly (entryTS, nextTS) {
+                  next('Too early for this membership (' + entryTS + '): your membership must be max ' + (nextTS - 1) + '.');
+                },
+                function isGood (am) {
+                  entry.amNumber = (am && am.number) || -1;
+                  Membership.getCurrent(entry.issuer, next);
                 }
-                entry.amNumber = am.number;
-              } else {
-                entry.amNumber = -1;
-              }
-              Membership.getCurrent(entry.issuer, next);
+              );
             },
             function (currentlyRecorded, next){
               current = currentlyRecorded;
@@ -311,23 +305,18 @@ module.exports.get = function (pgp, currency, conf) {
               next();
             },
             function (next){
-              Amendment.current(function (err, am) {
-                next(null, am);
-              });
-            },
-            function (am, next){
-              if (am) {
-                var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
-                if (am.generated > entryTimestamp) {
-                  logger.warn("%s > %s", am.generated, entryTimestamp);
-                  next('Too late for this voting. Retry.');
-                  return;
+              dependingInterval(entry,
+                function isTooLate () {
+                  next('Too late for this voting: amendment already voted. Retry.');
+                },
+                function isTooEarly () {
+                  next('Too early for this voting: retry when next amendment is voted.');
+                },
+                function isGood (am) {
+                  entry.amNumber = (am && am.number) || -1;
+                  Voting.getCurrent(entry.issuer, next);
                 }
-                entry.amNumber = am.number;
-              } else {
-                entry.amNumber = -1;
-              }
-              Voting.getCurrent(entry.issuer, next);
+              );
             },
             function (currentlyRecorded, next){
               current = currentlyRecorded;
@@ -445,6 +434,20 @@ module.exports.get = function (pgp, currency, conf) {
       ], cb);
     }, done);
   };
+
+  function dependingInterval (entry, isTooLate, isTooEarly, isGood) {
+    Amendment.current(function (err, am) {
+      var currentGenerated = am ? am.generated : conf.sync.AMStart;
+      var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
+      if (currentGenerated > entryTimestamp) {
+        isTooLate(entryTimestamp, currentGenerated);
+      } else if(entryTimestamp >= currentGenerated + conf.sync.AMFreq) {
+        isTooEarly(entryTimestamp, currentGenerated + conf.sync.AMFreq);
+      } else {
+        isGood(am);
+      }
+    });
+  }
 
   function getExclusionDate (amNext) {
     var nextTimestamp = amNext.generated;

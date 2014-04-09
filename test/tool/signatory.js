@@ -1,10 +1,8 @@
 var jpgp    = require('../../app/lib/jpgp');
-var openpgp = require('../../app/lib/openpgp').openpgp;
+var openpgp = require('openpgp');
 var logger  = require('../../app/lib/logger')('test');
 var gnupg   = require('../../app/lib/gnupg');
 var async   = require('async');
-
-openpgp.init();
 
 module.exports = function (asciiPrivateKey, password, name) {
   return new signatory(asciiPrivateKey, password, name);
@@ -17,12 +15,13 @@ function signatory (asciiPrivateKey, password, name) {
   var certificate = null;
 
   try{
-    privateKey = openpgp.read_privateKey(asciiPrivateKey)[0];
-    if(!privateKey.decryptSecretMPIs(password))
+    privateKey = openpgp.key.readArmored(asciiPrivateKey).keys[0];
+    // console.log(privateKey);
+    if(!privateKey.decrypt(password))
       throw new Error("Wrong private key password.");
 
-    openpgp.write_signed_message(privateKey, "test");
-    publicKeyASCII = privateKey ? privateKey.extractPublicKey() : "";
+    openpgp.signClearMessage(privateKey, "test");
+    publicKeyASCII = privateKey ? privateKey.toPublic().armor() : "";
     certificate = publicKeyASCII ? jpgp().certificate(publicKeyASCII) : { fingerprint: '' };
   }
   catch(ex){
@@ -31,7 +30,7 @@ function signatory (asciiPrivateKey, password, name) {
   }
 
   this.sign = function (message, done) {
-    var clearSignature = openpgp.write_signed_message(privateKey, message);
+    var clearSignature = openpgp.signClearMessage(privateKey, message);
     var detached = clearSignature.substring(clearSignature.indexOf('-----BEGIN PGP SIGNATURE'));
     if (done) {
       done(null, detached);

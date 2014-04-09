@@ -5,6 +5,7 @@ var request    = require('request');
 var mongoose   = require('mongoose');
 var vucoin     = require('vucoin');
 var _          = require('underscore');
+var openpgp    = require('openpgp');
 var THTEntry   = mongoose.model('THTEntry');
 var Amendment  = mongoose.model('Amendment');
 var PublicKey  = mongoose.model('PublicKey');
@@ -391,8 +392,10 @@ module.exports.get = function (pgp, currency, conf) {
               var daemon = require('../lib/daemon');
               if (daemon.judges.timeForVote(amNext)) {
 
-                var privateKey = pgp.keyring.privateKeys[0];
-                var cert = jpgp().certificate(this.ascciiPubkey);
+                var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+                    privateKey.decrypt(conf.pgppasswd);
+                var ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
+                var cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
                 var raw = amNext.getRaw();
                 async.waterfall([
                   function (next){

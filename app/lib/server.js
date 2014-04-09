@@ -10,14 +10,12 @@ var _          = require('underscore');
 var common     = require('./common');
 var server     = require('../lib/server');
 var service    = require('../service');
-var openpgp    = require('./openpgp').openpgp;
+var openpgp    = require('openpgp');
 var jpgp       = require('./jpgp');
 var sha1       = require('sha1');
 var logger     = require('./logger')('http');
 var pgplogger  = require('./logger')('PGP');
 var log4js     = require('log4js');
-
-openpgp.init();
 
 var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
 
@@ -29,13 +27,15 @@ function initModels() {
 
 module.exports.pgp = openpgp;
 
+var privateKey;
+
 module.exports.privateKey = function () {
-  return openpgp.keyring.privateKeys[0];
+  return privateKey;
 };
 
 module.exports.publicKey = function () {
   var privateKey = module.exports.privateKey();
-  return (openpgp && privateKey) ? privateKey.obj.extractPublicKey() : '';
+  return privateKey ? privateKey.toPublic().armor() : "";
 };
 
 module.exports.fingerprint = function () {
@@ -152,9 +152,9 @@ module.exports.openpgp = {
   init: function (currency, conf, done) {
 
     // Import PGP key
-    openpgp.keyring.importPrivateKey(conf.pgpkey, conf.pgppasswd);
-    if (!module.exports.fingerprint()) {
-      pgplogger.error("Wrong PGP key password.");
+    privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+    if(!privateKey.decrypt(conf.pgppasswd)) {
+      throw new Error("Wrong private key password.");
       process.exit(1);
       return;
     }

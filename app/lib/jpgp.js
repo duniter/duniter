@@ -1,7 +1,5 @@
-var openpgp = require('./openpgp').openpgp;
+var openpgp = require('openpgp');
 var logger  = require('./logger')();
-
-openpgp.init();
 
 function JPGP() {
 
@@ -11,30 +9,30 @@ function JPGP() {
   this.data = "";
   this.noCarriage = false;
 
+  var that = this;
+  var pubkeys = null;
+
   // PUBLIC
   this.publicKey = function(asciiArmored) {
-    openpgp.keyring.importPublicKey(asciiArmored);
+    pubkeys = openpgp.key.readArmored(asciiArmored).keys;
     return this;
   };
 
   this.certificate = function(asciiArmored) {
-    var readKeys = openpgp.read_publicKey(asciiArmored);
+    var readKeys = openpgp.key.readArmored(asciiArmored).keys;
     if(readKeys.length == 0){
       throw new Error('No key found in ASCII armored message');
     }
     if(readKeys.length > 1){
       throw new Error('Multiple keys found in ASCII armored message');
     }
-    var cert = readKeys[0];
-    var fpr = cert.publicKeyPacket.getFingerprint().hexstrdump().toUpperCase();
-    var uids = [];
-    cert.userIds.forEach(function (uid) {
-      uids.push(uid.text);
-    });
+    var key = readKeys[0];
+    var fpr = key.getKeyPacket().getFingerprint().toUpperCase();
+    var uids = key.getUserIds();
     return {
       "fingerprint": fpr,
       "uids": uids,
-      "raw": cert
+      "raw": asciiArmored
     };
   };
 
@@ -44,7 +42,9 @@ function JPGP() {
   };
 
   this.sign = function (message, privateKey, done) {
-    done(null, openpgp.write_signed_message(privateKey.obj, message));
+    openpgp.signClearMessage([privateKey], message, function (err, signature) {
+      done(err, escapeDashes(signature, message));
+    });
   }
 
   this.signsDetached = function (message, privateKey, done) {
@@ -54,19 +54,10 @@ function JPGP() {
   this.issuer = function() {
     var issuer = "";
     try{
-      var signatures = openpgp.read_message(this.signature) || [];
-      var sig = null;
-      signatures.forEach(function (siga) {
-        if(siga.messagePacket && siga.messagePacket.tagType == 2)
-          sig = siga;
-      });
-      if(!sig){
-        throw new Error("No signature packet found");
-      }
-      issuer = sig.signature.getIssuer().hexstrdump().toUpperCase();
-      if(!issuer){
-        issuer = JSON.stringify(signatures);
-      }
+      var clearTextMessage = openpgp.message.readArmored(toClearSign("", this.signature));
+      var issuers = clearTextMessage.getSigningKeyIds();
+      if (issuers && issuers.length > 0)
+        issuer = issuers[0].bytes.hexstrdump().toUpperCase();
     }
     catch(ex){
       logger.debug("Error with signature: " + ex);
@@ -75,18 +66,11 @@ function JPGP() {
   };
 
   this.signatureDate = function() {
-    var sigDate;
+    var sigDate = new Date();
     try{
-      var signatures = openpgp.read_message(this.signature) || [];
-      var sig = null;
-      signatures.forEach(function (siga) {
-        if(siga.messagePacket && siga.messagePacket.tagType == 2)
-          sig = siga;
-      });
-      if(!sig){
-        throw new Error("No signature packet found");
-      }
-      sigDate = sig.signature.creationTime;
+      var clearTextMessage = openpgp.message.readArmored(toClearSign("", this.signature));
+      var created = clearTextMessage.packets['0'].created;
+      sigDate.setTime(created.getTime());
     }
     catch(ex){
       logger.debug("Error with signature: " + ex);
@@ -116,47 +100,19 @@ function JPGP() {
     }
     // Do
     try{
-      var signatures = openpgp.read_message(this.signature);
-      if(signatures.length >= 3){
-        sig = signatures[2];
-      }
-      else if(signatures.length == 1){
-        sig = signatures[0];
-        sig.text = this.data;
-        detached = true;
-      }
-      else{
-        throw new Error('No signature found');
-      }
-      var verified = sig.verifySignature();
-      if(!verified){
-        err = "Signature does not match.";
-      }
-      if(verified){
-        if(!sig.text){
-          err = 'Signature does not contain text data';
-          verified = false;
-        }
-        else{
-          if(sig.text != this.data){
-            err = "Signature does not match signed data.";
-            verified = false;
-          }
-        }
-      }
-      // Verify issuer is matching pubkey
-      if(verified && pubkey){
-        var cert = this.certificate(pubkey);
-        var issuer = sig.signature.getIssuer().hexstrdump().toUpperCase();
-        verified = cert.fingerprint.toUpperCase().indexOf(issuer) != -1;
-        if(!verified){
-          err = "Signature does not match issuer.";
-        }
+      var clearsigned = toClearSign(that.data, that.signature);
+      var clearTextMessage = openpgp.cleartext.readArmored(clearsigned);
+      var res = openpgp.verifyClearSignedMessage(pubkeys, clearTextMessage);
+      if (res.signatures && res.signatures.length > 0) {
+        verified = res.signatures[0].valid && res.text == that.data;
+        if (!verified)
+          err = 'Signature does not match';
       }
     }
     catch(ex){
       verified = false;
       err = ex.toString();
+      console.log('INFO !!! ' + err);
     }
     callback(err, verified);
   };
@@ -164,4 +120,54 @@ function JPGP() {
 
 module.exports = function () {
   return new JPGP();
+};
+
+function escapeDashes (clearsign, data) {
+  // Escapes correctly dashes
+  return clearsign
+    .replace(/^- -----/gm, '-----')
+    .replace(data, data.replace(/^-----/gm, '- -----'));
+}
+
+function toClearSign (data, signature) {
+  if (signature.match(/-----BEGIN PGP SIGNED MESSAGE-----/))
+    return signature
+  else {
+    var msg = '-----BEGIN PGP SIGNED MESSAGE-----\r\n' +
+            'Hash: SHA1\r\n' +
+            '\r\n' +
+            data.replace(/^-----/gm, '- -----') + '\r\n' +
+            signature + '\r\n';
+
+    var signatureAlgo = findSignatureAlgorithm(msg) || 2;
+    msg = msg.replace('Hash: SHA1', 'Hash: ' + hashAlgorithms[signatureAlgo.toString()]);
+
+    return msg;
+  }
+}
+
+function findSignatureAlgorithm (msg) {
+  var signatureAlgo = null;
+  var input = openpgp.armor.decode(msg);
+  if (input.type !== openpgp.enums.armor.signed) {
+    throw new Error('No cleartext signed message.');
+  }
+  var packetlist = new openpgp.packet.List();
+  packetlist.read(input.data);
+  packetlist.forEach(function(packet){
+    if (packet.tag == openpgp.enums.packet.signature) {
+      signatureAlgo = packet.hashAlgorithm;
+    }
+  });
+  return signatureAlgo;
+}
+
+var hashAlgorithms = {
+  '1': "MD5",
+  '2': "SHA1",
+  '3': "RIPEMD160",
+  '8': "SHA256",
+  '9': "SHA384",
+  '10': "SHA512",
+  '11': "SHA224"
 };

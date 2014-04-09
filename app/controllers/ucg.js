@@ -10,6 +10,7 @@ var Merkle    = mongoose.model('Merkle');
 var THTEntry  = mongoose.model('THTEntry');
 var Key       = mongoose.model('Key');
 var _         = require('underscore');
+var openpgp   = require('openpgp');
 var logger    = require('../lib/logger');
 var plogger   = logger('peering');
 var flogger   = logger('forward');
@@ -26,7 +27,8 @@ var PeeringService    = service.Peering;
 
 module.exports = function (pgp, currency, conf) {
 
-  this.ascciiPubkey = pgp.keyring.privateKeys[0] ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
+  var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+  this.ascciiPubkey = privateKey ? privateKey.toPublic().armor() : "";
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
 
   var that = this;

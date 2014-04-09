@@ -1,4 +1,10 @@
-var sha1 = require('sha1');
+var sha1    = require('sha1');
+var openpgp = require('openpgp');
+
+openpgp.cleartext.CleartextMessage.prototype.getText = function() {
+  // normalize end of line to \n
+  return this.text;//.replace(/\r\n/g,"\n");
+};
 
 String.prototype.trim = function(){
   return this.replace(/^\s+|\s+$/g, '');

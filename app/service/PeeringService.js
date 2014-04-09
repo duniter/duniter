@@ -3,6 +3,7 @@ var jpgp        = require('../lib/jpgp');
 var async       = require('async');
 var request     = require('request');
 var mongoose    = require('mongoose');
+var openpgp     = require('openpgp');
 var _           = require('underscore');
 var THTEntry    = mongoose.model('THTEntry');
 var Amendment   = mongoose.model('Amendment');
@@ -23,8 +24,9 @@ var ParametersService = service.Parameters;
 
 function PeeringService(pgp, currency, conf) {
   
-  this.privateKey = pgp.keyring.privateKeys[0];
-  this.ascciiPubkey = (pgp && pgp.keyring.privateKeys[0]) ? pgp.keyring.privateKeys[0].obj.extractPublicKey() : '';
+  this.privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+  this.privateKey.decrypt(conf.pgppasswd);
+  this.ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
   this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
 
   var peer = null;

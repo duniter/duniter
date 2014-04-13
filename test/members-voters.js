@@ -291,7 +291,7 @@ function voteAm (signatory, am, done, delay) {
 }
 
 var txBySignatory = {};
-var coins = {};
+var available = {};
 [cat, tobi, snow].forEach(function(signatory){
   // Transactions state
   txBySignatory[signatory.fingerprint()] = {
@@ -300,15 +300,26 @@ var coins = {};
     coinNumber: -1
   };
   // Coins state
-  coins[signatory.fingerprint()] = {};
+  available[signatory.fingerprint()] = {};
 });
 
-function transfer (signatory, recipient, coinNumbers, time) {
+function transfer (signatory, recipient, amount, time) {
   return function (done) {
-    var txCoins = [];
-    coinNumbers.forEach(function(cNumber){
-      var coin = coins[signatory.fingerprint()][cNumber];
-      txCoins.push(coin.coinId + ', ' + signatory.fingerprint() + '-' + coin.txNumber);
+    var txAmounts = [];
+    var need = amount;
+    _(available[signatory.fingerprint()]).keys().forEach(function(txId){
+      if (need > 0) {
+        var amount = available[signatory.fingerprint()][txId];
+        if (amount - need >= 0) {
+          txAmounts.push(txId + ':' + need);
+          need = 0;
+        } else {
+          if (amount > 0) {
+            txAmounts.push(txId + ':' + need);
+          }
+          need = need - amount;
+        }
+      }
     });
     var sigDate = new Date();
     sigDate.setTime(time*1000);
@@ -320,7 +331,31 @@ function transfer (signatory, recipient, coinNumbers, time) {
       previousHash: txBySignatory[signatory.fingerprint()].hash,
       recipient: recipient.fingerprint(),
       type: "TRANSFER",
-      coins: txCoins,
+      amounts: txAmounts,
+      comment: "Transaction #" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint(),
+      signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
+      propagated: false,
+      sigDate: sigDate,
+    });
+    tx.hash = sha1(tx.getRawSigned()).toUpperCase();
+    sendTransaction(tx, done);
+  };
+}
+
+function transferMake (signatory, recipient, amount, source, time) {
+  return function (done) {
+    var txAmounts = [source + ':' + amount];
+    var sigDate = new Date();
+    sigDate.setTime(time*1000);
+    var tx = new Transaction({
+      version: 1,
+      currency: currency,
+      sender: signatory.fingerprint(),
+      number: ++txBySignatory[signatory.fingerprint()].number,
+      previousHash: txBySignatory[signatory.fingerprint()].hash,
+      recipient: recipient.fingerprint(),
+      type: "TRANSFER",
+      amounts: txAmounts,
       comment: "Transaction #" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint(),
       signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
       propagated: false,
@@ -333,40 +368,31 @@ function transfer (signatory, recipient, coinNumbers, time) {
 
 function issue (signatory, amount, amNumber, time) {
   return function (done) {
-    var strAmount = "" + amount;
-    var pow = strAmount.length - 1;
-    var coins = [];
-    for(var i = 0; i < strAmount.length; i++) {
-      var c = strAmount[i];
-      var base = parseInt(c, 10);
-      if (base > 0 || strAmount.length == 1) { //strAmount to allow value == 0
-        var coin = {
-          issuer: signatory.fingerprint(),
-          number: ++txBySignatory[signatory.fingerprint()].coinNumber,
-          base: parseInt(c, 10),
-          power: pow--
-        };
-        coins.push([coin.issuer, coin.number, coin.base, coin.power, 'A', amNumber].join("-"));
-      }
-    };
-    var sigDate = new Date();
-    sigDate.setTime(time*1000);
-    var tx = new Transaction({
-      version: 1,
-      currency: currency,
-      sender: signatory.fingerprint(),
-      number: ++txBySignatory[signatory.fingerprint()].number,
-      previousHash: txBySignatory[signatory.fingerprint()].hash,
-      recipient: signatory.fingerprint(),
-      type: "ISSUANCE",
-      coins: coins,
-      comment: "Transaction #" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint(),
-      signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
-      propagated: false,
-      sigDate: sigDate,
-    });
-    tx.hash = sha1(tx.getRawSigned()).toUpperCase();
-    sendTransaction(tx, done);
+    async.waterfall([
+      function (next){
+        Amendment.findPromotedByNumber(amNumber, next);
+      },
+      function (am, next){
+        var sigDate = new Date();
+        sigDate.setTime(time*1000);
+        var tx = new Transaction({
+          version: 1,
+          currency: currency,
+          sender: signatory.fingerprint(),
+          number: ++txBySignatory[signatory.fingerprint()].number,
+          previousHash: txBySignatory[signatory.fingerprint()].hash,
+          recipient: signatory.fingerprint(),
+          type: "ISSUANCE",
+          amounts: [am.hash + '-' + am.number + ':' + amount],
+          comment: "Transaction #" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint(),
+          signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
+          propagated: false,
+          sigDate: sigDate,
+        });
+        tx.hash = sha1(tx.getRawSigned()).toUpperCase();
+        sendTransaction(tx, next);
+      },
+    ], done);
   };
 }
 
@@ -378,25 +404,19 @@ function sendTransaction (tx, done) {
     if (!err) {
       txBySignatory[tx.sender].hash = tx.hash;
       if (tx.type == "ISSUANCE") {
-        tx.coins.forEach(function(c){
-          var matches = c.match(/([A-Z\d]{40})-(\d+)-(\d)-(\d+)/);
-          coins[tx.recipient][matches[2]] = {
-            txNumber: tx.number,
-            coinId: c,
-            value: parseInt(matches[3]) * Math.pow(10, parseInt(matches[4]))
-          };
+        tx.amounts.forEach(function(c){
+          var matches = c.match(/([A-Z\d]{40}-\d+):(\d+)/);
+          available[tx.recipient][tx.sender + '-' + tx.number] = parseInt(matches[2]);
         });
       }
       if (tx.type == "TRANSFER") {
-        tx.coins.forEach(function(c){
-          var matches = c.match(/([A-Z\d]{40})-(\d+)-(\d)-(\d+)/);
-          // coins[tx.sender][matches[2]] = undefined;
-          coins[tx.recipient][matches[2]] = {
-            txNumber: tx.number,
-            coinId: c,
-            value: parseInt(matches[3]) * Math.pow(10, parseInt(matches[4]))
-          };
+        // Remove amounts from balance of sender
+        tx.amounts.forEach(function(c){
+          var matches = c.match(/([A-Z\d]{40}-\d+):(\d+)/);
+          available[tx.sender][matches[1]] -= parseInt(matches[2]);
         });
+        // Add amount in balance of recipient
+        available[tx.recipient][tx.sender + '-' + tx.number] = tx.getValue();
       }
       // logger.debug(coins);
       done(err, { 
@@ -409,7 +429,7 @@ function sendTransaction (tx, done) {
       });
     } else {
       --txBySignatory[tx.sender].number;
-      tx.coins.forEach(function(c){
+      tx.amounts.forEach(function(c){
         if (!c.match(/, /)) {
           --txBySignatory[tx.sender].coinNumber;
         }
@@ -761,13 +781,13 @@ var testCases = [
 
   tester.verify(
     "Tobi transfering 15 to Cat",
-    transfer(tobi, cat, [5,6,7], now + 14),
+    transfer(tobi, cat, 15, now + 14),
     is.expectedSignedTransaction()
   ),
 
   tester.verify(
-    "Tobi transfering 15 to Cat",
-    transfer(tobi, cat, [5,6,7], now + 14),
+    "Tobi transfering 1500 to Cat (he does not have them)",
+    transferMake(tobi, cat, 1500, '2E69197FAB029D8669EF85E82457A1587CA0ED9C-3', now + 14),
     is.expectedHTTPCode(400)
   ),
 ];

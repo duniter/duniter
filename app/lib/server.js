@@ -17,7 +17,7 @@ var logger     = require('./logger')('http');
 var pgplogger  = require('./logger')('PGP');
 var log4js     = require('log4js');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
+var models = ['Amendment', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
 
 function initModels() {
   models.forEach(function (entity) {
@@ -252,10 +252,6 @@ module.exports.express = {
       app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
       app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);
       app.post(   '/hdc/amendments/votes',                          hdc.amendments.votes.post);
-      app.get(    '/hdc/coins/:fpr/last',                           hdc.coins.last);
-      app.get(    '/hdc/coins/:fpr/list',                           hdc.coins.list);
-      app.get(    '/hdc/coins/:fpr/view/:coin_number',              hdc.coins.view);
-      app.get(    '/hdc/coins/:fpr/view/:coin_number/history',      hdc.coins.history);
       app.post(   '/hdc/transactions/process',                      hdc.transactions.processTx);
       app.get(    '/hdc/transactions/last/:count',                  hdc.transactions.lastNAll);
       app.get(    '/hdc/transactions/sender/:fpr',                  hdc.transactions.sender.get);
@@ -264,6 +260,7 @@ module.exports.express = {
       app.get(    '/hdc/transactions/sender/:fpr/last/:count/:from',hdc.transactions.sender.lastNofSender);
       app.get(    '/hdc/transactions/sender/:fpr/ud/:amendment_number', hdc.transactions.sender.ud);
       app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
+      app.get(    '/hdc/transactions/refering/:fpr/:number',        hdc.transactions.refering);
       app.get(    '/registry/parameters',                           ucs.parameters);
       app.get(    '/registry/community/members',                    ucs.membershipGet);
       app.post(   '/registry/community/members',                    ucs.membershipPost);

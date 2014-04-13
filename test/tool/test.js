@@ -496,7 +496,7 @@ function isTransaction (json) {
     "number",
     "recipient",
     "type",
-    "coins",
+    "amounts",
     "comment"
   ];
   json.should.have.properties(mandatories);
@@ -515,15 +515,12 @@ function isTransaction (json) {
   json.number.should.be.a.Number.and.not.be.below(0);
   // Strings
   json.currency.should.be.a.String.and.not.be.empty;
-  json.type.should.be.a.String.and.not.be.empty.and.match(/^(ISSUANCE|CHANGE|TRANSFER)$/);
+  json.type.should.be.a.String.and.not.be.empty.and.match(/^(ISSUANCE|TRANSFER)$/);
   if (json.previousHash) {
     json.previousHash.should.be.a.String.and.match(/^[A-Z0-9]{40}$/);
   }
-  json.coins.should.be.an.Array;
-  json.coins.forEach(function(coin){
-    coin.should.have.property("id");
-    coin.should.have.property("transaction_id");
-    coin.id.should.match(/^([A-Z\d]{40}-\d+-\d-\d+-(A|C)-\d+)$/);
-    coin.transaction_id.should.match(/^([A-Z\d]{40}-\d+)?$/);
+  json.amounts.should.be.an.Array;
+  json.amounts.forEach(function(amount){
+    amount.should.match(/^[A-Z\d]{40}-\d+:\d+$/);
   });
 }

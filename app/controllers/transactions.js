@@ -5,7 +5,6 @@ var _           = require('underscore');
 var Amendment   = mongoose.model('Amendment');
 var PublicKey   = mongoose.model('PublicKey');
 var Merkle      = mongoose.model('Merkle');
-var Coin        = mongoose.model('Coin');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
 var service     = require('../service');
@@ -79,6 +78,28 @@ module.exports = function (pgp, currency, conf) {
         return;
       }
       MerkleService.merkleDone(req, res, json);
+    });
+  };
+
+  this.refering = function (req, res) {
+    async.waterfall([
+      function (next){
+        ParametersService.getTransactionID(req, next);
+      },
+      function (txSender, txNumber, next){
+        Transaction.findAllWithSource(txSender, txNumber, next);
+      },
+    ], function (err, results) {
+      res.setHeader("Content-Type", "text/plain");
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      var json = { transactions: [] };
+      results.forEach(function (tx) {
+        json.transactions.push(tx.json());
+      });
+      res.send(200, JSON.stringify(json, null, "  "));
     });
   };
 

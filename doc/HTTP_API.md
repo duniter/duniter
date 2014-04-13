@@ -28,10 +28,6 @@
       * [amendments/view/[AMENDMENT_ID]/signatures](#amendmentsviewamendment_idsignatures)
       * [amendments/votes (GET)](#amendmentsvotes-get)
       * [amendments/votes (POST)](#amendmentsvotes-post)
-      * [coins/[PGP_FINGERPRINT]/last](#coinspgp_fingerprintlast)
-      * [coins/[PGP_FINGERPRINT]/list](#coinspgp_fingerprintlist)
-      * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]](#coinspgp_fingerprintviewcoin_number)
-      * [coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]/history](#coinspgp_fingerprintviewcoin_numberhistory)
       * [transactions/process](#transactionsprocess)
       * [transactions/last/[count]](#transactionslastcount)
       * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
@@ -39,6 +35,7 @@
       * [transactions/sender/[PGP_FINGERPRINT]/last/[count]/[from]](#transactionssenderpgp_fingerprintlastcountfrom)
       * [transactions/sender/[PGP_FINGERPRINT]/ud/[AM_NUMBER]](#transactionssenderpgp_fingerprintudam_number)
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
+      * [transactions/refering/[PGP_FINGERPRINT]/[TX_NUMBER]](#transactionsreferingpgp_fingerprinttx_number)
   * [registry/](#registry)
       * [parameters](#parameters)
       * [community/members (GET)](#communitymembers-get)
@@ -83,14 +80,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |   |       |-- self
     |   |   |       `-- signatures
     |   |   `-- votes/
-    |   |   |   `-- [AMENDMENT_ID]
-    |   |-- coins/
-    |   |   `-- [PGP_FINGERPRINT]/
-    |   |       |-- last
-    |   |       |-- list
-    |   |       `-- view/
-    |   |           `-- [COIN_NUMBER]/
-    |   |               `-- history
+    |   |       `-- [AMENDMENT_ID]
     |   `-- transactions/
     |       |-- process
     |       |-- last/
@@ -104,8 +94,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       |       |       `-- [from]
     |       |       `-- ud/
     |       |           `-- [AM_NUMBER]
-    |       `-- recipient/
-    |           `-- [PGP_FINGERPRINT]
+    |       |-- recipient/
+    |       |   `-- [PGP_FINGERPRINT]
+    |       `-- refering/
+    |           `-- [PGP_FINGERPRINT]/
+    |               `-- [TX_NUMBER]
     `-- registry/
         |-- parameters
         |-- community/
@@ -1006,142 +999,6 @@ The posted amendment + posted signature.
 }
 ```
 
-#### `coins/[PGP_FINGERPRINT]/last`
-**Goal**
-
-GET last `[PGP_FINGERPRINT]` issued coin's informations.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Issuing key.                                                  | URL
-
-**Returns**
-
-Coin's information, or HTTP 404 if no coin was issued by this key.
-```json
-{
-  "id" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0-1-1-A-2",
-  "number": 0,
-  "issuer": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "transaction" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0"
-}
-```
-
-#### `coins/[PGP_FINGERPRINT]/list`
-**Goal**
-
-GET a list of coins owned by the given `[PGP_FINGERPRINT]`.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Owner of the coins.                                           | URL
-
-**Returns**
-
-Coins list with their owner.
-```json
-{
-  "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-  "coins": [{
-      "issuer": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "ids": ["1-5-2-A-1", "2-4-1-A-1"]
-    },{
-      "issuer": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "ids": ["10-1-2-C-14"]
-    }
-  ]
-}
-```
-
-#### `coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]`
-**Goal**
-
-GET the ownership state of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRINT]`.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Issuer of the coin.                                           | URL
-`COIN_NUMBER`     | Coin number in the issuer's list of issued coins              | URL
-
-**Returns**
-
-Coin ownership state.
-```json
-{
-  "id" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0-1-1-A-2",
-  "transaction" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C-0",
-  "owner" : "2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-}
-```
-
-#### `coins/[PGP_FINGERPRINT]/view/[COIN_NUMBER]/history`
-**Goal**
-
-GET a transaction history of the coin `[COIN_NUMBER]` issued by `[PGP_FINGERPRINT]`.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Issuer of the coin.                                           | URL
-`COIN_NUMBER`     | Coin number in the issuer's list of issued coins              | URL
-
-**Returns**
-
-Transaction chain.
-```json
-{
-  "transactions": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 92,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFER",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
-        },{
-          // Other coin
-        },{
-          // ...
-        }
-      ],
-      "comment": "Paying LoLCat's food."
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "CHANGE",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
-      ],
-      "comment": "Too much coins ! Making big one."
-    }
-  ]
-}
-```
-
 #### `transactions/process`
 **Goal**
 
@@ -1170,15 +1027,9 @@ The recorded transaction and its signature.
     "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
     "type": "ISSUANCE",
-    "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1",
-        "transaction_id": ""
-      },{
-        // Other coin
-      },{
-        // ...
-      }
+    "amounts": [
+      "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
+      "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
     ],
     "comment": "Universal Dividend"
   }
@@ -1210,37 +1061,25 @@ The last [COUNT] transactions received.
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "type": "TRANSFER",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
-        },{
-          // Other coin
-        },{
-          // ...
-        }
+      "amounts": [
+        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
+        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
       ],
       "comment": "Paying LoLCat's food."
     },{
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
+      "currency": "beta_brousouf",
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 14,
+      "number": 91,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "CHANGE",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
+      "type": "ISSUANCE",
+      "amounts": [
+        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
+        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
       ],
-      "comment": "Too much coins ! Making big one."
+      "comment": "Universal Dividend"
     }
   ]
 }
@@ -1372,37 +1211,25 @@ The last [COUNT] transactions of given PGP key.
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "type": "TRANSFER",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
-        },{
-          // Other coin
-        },{
-          // ...
-        }
+      "amounts": [
+        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
+        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
       ],
       "comment": "Paying LoLCat's food."
     },{
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
+      "currency": "beta_brousouf",
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 14,
+      "number": 91,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "CHANGE",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
+      "type": "ISSUANCE",
+      "amounts": [
+        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
+        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
       ],
-      "comment": "Too much coins ! Making big one."
+      "comment": "Universal Dividend"
     }
   ]
 }
@@ -1434,37 +1261,25 @@ A list of transactions for given PGP key.
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "type": "TRANSFER",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-14"
-        },{
-          // Other coin
-        },{
-          // ...
-        }
+      "amounts": [
+        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
+        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
       ],
       "comment": "Paying LoLCat's food."
     },{
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
+      "currency": "beta_brousouf",
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 14,
+      "number": 91,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "CHANGE",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
+      "type": "ISSUANCE",
+      "amounts": [
+        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
+        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
       ],
-      "comment": "Too much coins ! Making big one."
+      "comment": "Universal Dividend"
     }
   ]
 }
@@ -1503,24 +1318,67 @@ Merkle URL leaf: transaction
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 14,
-      "recipient": "[PGP_FINGERPRINT]",
-      "type": "CHANGE",
-      "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
+      "number": 92,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "type": "TRANSFER",
+      "amounts": [
+        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
+        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
       ],
-      "comment": "Too much coins ! Making big one."
+      "comment": "Paying LoLCat's food."
     }
   }
+}
+```
+
+#### `transactions/refering/[PGP_FINGERPRINT]/[TX_NUMBER]`
+**Goal**
+
+GET all the transactions refering to source transaction #`[TX_NUMBER]` issued by `[PGP_FINGERPRINT]`.
+
+**Parameters**
+
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
+`TX_NUMBER`       | Transaction number of given PGP key                           | URL
+
+**Returns**
+
+A list of transactions pointing to this source transaction.
+```json
+{
+  "transactions": [
+    {
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "version": 1,
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 92,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "type": "TRANSFER",
+      "amounts": [
+        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
+        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
+      ],
+      "comment": "Paying LoLCat's food."
+    },{
+      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "version": 1,
+      "currency": "beta_brousouf",
+      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "number": 91,
+      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
+      "type": "ISSUANCE",
+      "amounts": [
+        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
+        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
+      ],
+      "comment": "Universal Dividend"
+    }
+  ]
 }
 ```
 

@@ -18,7 +18,6 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
   * [Coins format](#coins-format)
   * [Issuance transaction](#issuance-transaction)
   * [Transfer transaction](#transfert-transaction)
-  * [Change transaction](#change-transaction)
   * [Money ownership](#money-ownership)
   * [Transactions chain](#transactions-chain)
 
@@ -216,7 +215,6 @@ A transaction is used either to:
 
 * Issue *new* money
 * Transfer *existing* money
-* Change *existing* money
 
 A transaction is defined by the following format:
 
@@ -227,10 +225,10 @@ A transaction is defined by the following format:
     PreviousHash: PREVIOUS_TRANSACTION_HASH
     Recipient: RECIPIENT_FINGERPRINT
     Type: TRANSACTION_TYPE
-    Coins:
-    COIN_ID1[, TRANSACTION_ID1]
-    COIN_ID2[, TRANSACTION_ID1]
-    COIN_ID3[, TRANSACTION_ID7]
+    Amounts:
+    ORIGIN:AMOUNT
+    ORIGIN:AMOUNT
+    ORIGIN:AMOUNT
     ...
     Comment:
     [Some multiple line
@@ -246,13 +244,20 @@ Field | Description
 `Number` | an increment number identifying this transaction among all others sender's transactions.
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous transaction (content AND signature), and is used to identify without ambiguity the previous transaction (it is an integrity mecanism).
 `Recipient` | the recipient's OpenPGP fingerprint to whom the coins are to be sent.
-`Type` | gives information on how to to interprete the coin list. Value is either `TRANSFER`, `ISSUANCE` or `CHANGE`.
-`Coins` | a list of coins that are to be sent. Each line starts with a `COIN_ID` identifying the coin, eventually followed by a comma and a `TRANSACTION_ID` justifying the ownership of the coin.
+`Type` | gives information on how to to interprete the coin list. Value is either `TRANSFER` or `ISSUANCE`.
+`Amounts` | a list of amounts to be issued or transfered. Each line starts with an `ORIGIN` field, followed by a colon and a positive integer (`AMOUNT`). For a given transaction, two lines cannot share the same `ORIGIN`. Lines are sorted by `ORIGIN`.
 `Comment` | comment for transaction. May be used for any future purpose. Multiline field, ends at the end of the transaction message.
 
-And `TRANSACTION_ID` has the following format:
+With `Amounts`'s `ORIGIN` having the following format:
 
-    SENDER_FINGERPRINT-INCREMENT
+    HASH-NUMBER
+
+Field      | Description
+---------- | -----------
+`HASH`  | in case of `ISSUANCE` transaction, uppercased SHA1 hash of amendment justifying the `AMOUNT` of the line as a share of Universal Dividend. In case of `TRANSFER` transaction, uppercased SHA1 hash of the transaction justifying the ownership of given `AMOUNT`.
+`NUMBER` | in case of `ISSUANCE` transaction, amendment number justifying the `AMOUNT` of the line as a share of Universal Dividend. In case of `TRANSFER` transaction, number of the transaction justifying the ownership of given `AMOUNT`.
+
+Using both `HASH` and `NUMBER` field allows to identify without any ambiguity the origin of a line's amount, and thus its legitimity.
 
 ### Validity
 
@@ -262,71 +267,22 @@ In HDC, a Transaction structure is considered *valid* if:
 * Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
 * Fields `Version`, `Number` are zero or positive integer values.
 * Field `PreviousHash` is an upper-cased SHA-1 hash, if present.
-* Field `Type` has either `TRANSFER`, `ISSUANCE` or `CHANGE` value.
-* In case of `Type: TRANSFER`:
-  * `Coins` must have at least one coin.
-  * Each line must be **with** `TRANSACTION_ID` provided.
-* In case of `Type: ISSUANCE`:
-  * `Sender` equals to `Recipient`
-  * `Coins` must have at least one coin.
-  * Each line must be **without** `TRANSACTION_ID` provided.
-  * Coins must follow a sequential numbering.
-* In case of `Type: CHANGE`:
-  * `Sender` equals to `Recipient`
-  * `Coins` must have *at least* 3 coins
-  * First coins must be matching `C-TRANSACTION_NUMBER` format *without* `TRANSACTION_ID`. Such coins are known as *resulting coins*.
-  * Following coins must have lines **with** `TRANSACTION_ID` provided.
-  * It is required to have at least 2 *resulting coins*.
-  * *Resulting coins* must follow a sequential numbering.
-  * *Material coins*' sum of values **must be exactly** the same value as sum of *resulting coins*.
-
-### Coins format
-
-A `COIN_ID` has the following format:
-
-    ISSUER_FINGERPRINT-COIN_NUMBER-COIN_BASE-COIN_POWER-COIN_ORIGIN
-
-Here is a description of each field:
-
-Field | Description
------ | -----------
-`ISSUER_FINGERPRINT` | is the issuer's OpenPGP fingerprint issuing this coin (not necessarily a member).
-`COIN_NUMBER` | is an increment number identifying this coin among all others issued by this individual.
-`COIN_BASE` | is a decimal number between 1 and 9 defining the base value of the coin.
-`COIN_POWER` | is a decimal number with no maximum power, but with a minimal value defined in the Monetary Contract.
-`COIN_ORIGIN` | is a special string used to identify this coin origin.
-
-`COIN_ORIGIN` is one of the following structure:
-
-    A-AMENDMENT_NUMBER
-    C-TRANSACTION_NUMBER
-
-With the following meaning:
-
-Field | Description
------ | -----------
-`A or C` | `A` indicates the coin is issued from an amendment, while `C` indicates the coin is issued by change of coins.
-`AMENDMENT_NUMBER` | is the unique Amendment number from which this coin is created (justifying the issuance).
-`TRANSACTION_NUMBER` | is the unique Transaction number of the individual from which this coin is created (justifying the change).
+* Field `Type` has either `TRANSFER` or `ISSUANCE` value.
+* Field `Amounts` must have at least one line, lines must be sorted and not have twice same `ORIGIN`. `AMOUNT` must be a positive integer.
 
 #### Examples
 
-For a *new coin* of value 500 issued by individual's key 31A6302161AC8F5938969E85399EB3415C237F93, `COIN_ID` would be:
+For a *dividend* of Amendment #44 (hash D3E19E63F41D60C01689465CECD62FA42EB87F8A) with value 500, an `Amounts` line would be:
 
-    31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1
+    D3E19E63F41D60C01689465CECD62FA42EB87F8A-44:500
 
-and his next coins would have a value of 40 and 60 respectively:
+For a *transfer* of 18 from transaction #871 of total value 500 issued by individual's key 31A6302161AC8F5938969E85399EB3415C237F93, an `Amounts` line would be:
 
-    31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1
-
-if he wanted to forge coins 2 and 3 thereafter (say in his 14th transaction), the future coin id of value 100 would be:
-
-    31A6302161AC8F5938969E85399EB3415C237F93-4-1-2-C-14
+    31A6302161AC8F5938969E85399EB3415C237F93-871:18
 
 ### Issuance transaction
 
-Such a transaction is used to *create* new money, i.e. new coins. To be a valid money issuance transaction, it MUST have the `Type: ISSUANCE` value. With this information, `Coins` field MUST be filled with coins WITHOUT `TRANSACTION_ID` besides them. Indeed, `TRANSACTION_ID` is used to justify an anterior ownership, as transactions materializes ownership. And of course, a new coin have no anterior ownership, because it is a *new* coin.
+Such a transaction is used to *create* new money, i.e. new coins. To be a valid money issuance transaction, it MUST have the `Type: ISSUANCE` value. With this information, `Amounts` lines are to be interpreted as Universal Dividend shares.
 
 #### Example
 
@@ -338,32 +294,22 @@ Such a transaction is used to *create* new money, i.e. new coins. To be a valid 
     Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
     Type: ISSUANCE
     Coins:
-    31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-2-2-2-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-3-1-2-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-4-1-2-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-5-5-1-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-6-3-1-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-7-1-1-A-1
-    31A6302161AC8F5938969E85399EB3415C237F93-8-1-1-A-1
+    1C5F94BEC2ADBCE799FBD9C61F3245B64118E1FA-1:100
+    2035C0C29784D01C74B3F3530F95A381E0E0522E-3:40
+    4001FE568F055848DEED454C1E67FD59779D21F5-2:110
+    D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-4:133
     Comment:
-    Creating 8 new coins according to Amendment 1
-    (imaginary one, with Universal Dividend 1000)
-    Coins are:
-        - 1 value 500
-        - 1 value 200
-        - 2 value 100
-        - 1 value 50
-        - 1 value 30
-        - 2 value 10
-    Note that this comment is part of transaction thus
-    il also signed.
+    Creating money from Universal Dividend of 4 amendments.
+    Lines are sorted first by the HASH, not amendment number.
+    Here, dividends are 100 AM#1, 110 AM#2, 121 AM#3, 133 AM#4. Note how
+    AM#3 dividend is not fully issued - remaining dividend could be issued another time.
+
 
 ### Transfer transaction
 
-Transfer transaction is identified by having `Type: TRANSFER` value. Such a transaction alter the ownership of one or more coins from `Sender` to `Recipient`. Ownership can be proved by the `Recipient` simply by showing this transaction.
+Transfer transaction is identified by having `Type: TRANSFER` value. Such a transaction alter the ownership of money from `Sender` to `Recipient`. Ownership can be proved by the `Recipient` simply by showing this transaction.
 
-Thereafter, when `Recipient` wants to send those coins to someone else, he will put himself as sender, put those coins in the `Coins` field, adding the previous transaction's `TRANSACTION_ID` besides the coins to justify he is the owner of the coins.
+Thereafter, when `Recipient` wants to send money to someone else, he will put himself as sender, put the amounts in the `Amounts` field, adding the previous transaction's `TRANSACTION_ID` as origin of amounts to justify he is the owner of the money.
 
 #### Example
 
@@ -375,32 +321,10 @@ Thereafter, when `Recipient` wants to send those coins to someone else, he will 
     Recipient: 86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8
     Type: TRANSFER
     Coins:
-    31A6302161AC8F5938969E85399EB3415C237F93-1-5-2-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
-    31A6302161AC8F5938969E85399EB3415C237F93-2-2-2-A-1, 31A6302161AC8F5938969E85399EB3415C237F93-1
+    31A6302161AC8F5938969E85399EB3415C237F93-1:500
+    31A6302161AC8F5938969E85399EB3415C237F93-2:200
     Comment:
     Here I am sending coins 500 and 200 to someone else (either an individual or organization).
-
-### Change transaction
-
-Change transaction is identified by having `Type: CHANGE` value. Such a transaction allows to divide *existing* coins into *one or several new ones* whose sum of values equals to the sum of the material coins.
-
-#### Example
-
-    Version: 1
-    Currency: beta_brousouf
-    Sender: 31A6302161AC8F5938969E85399EB3415C237F93
-    Number: 93
-    PreviousHash: 3121CAB678CAC26D8E2E285812719672E3430A75
-    Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
-    Type: CHANGE
-    Coins:
-    31A6302161AC8F5938969E85399EB3415C237F93-10-2-1-C-93
-    31A6302161AC8F5938969E85399EB3415C237F93-11-2-1-C-93
-    31A6302161AC8F5938969E85399EB3415C237F93-12-1-1-C-93
-    31A6302161AC8F5938969E85399EB3415C237F93-9-5-1-C-92, 31A6302161AC8F5938969E85399EB3415C237F93-92
-    Comment:
-    Here I am dividing my coin of value `50` to make a 3 new coins of respective value `20`, `20` and `10`.
-    Coin 9 (value `50`) is therefore unusable as it is no more part of monetary mass.
 
 ### Money ownership
 
@@ -408,4 +332,4 @@ Money ownership **IS NOT** limited to members of the Community. Any owner (an in
 
 ### Transactions chain
 
-It is obvious that a coin a sender does not own CAN NOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.
+It is obvious that an amount a sender does not own CAN NOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.

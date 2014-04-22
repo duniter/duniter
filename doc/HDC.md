@@ -15,9 +15,7 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
 * [Transaction](#transaction)
   * [Definition](#definition-2)
   * [Validity](#validity-2)
-  * [Coins format](#coins-format)
-  * [Issuance transaction](#issuance-transaction)
-  * [Transfer transaction](#transfert-transaction)
+  * [Example](#example)
   * [Money ownership](#money-ownership)
   * [Transactions chain](#transactions-chain)
 

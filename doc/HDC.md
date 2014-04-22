@@ -130,7 +130,8 @@ Amendments have the following structure:
     Number: INCREMENT
     GeneratedOn: TIMESTAMP
     UniversalDividend: UNIVERSAL_DIVIDEND
-    CoinMinimalPower: COIN_MINIMAL_POWER
+    CoinBase: COIN_BASE_POWER
+    CoinList: COIN_LIST
     NextRequiredVotes: REQUIRED_VOTES_COUNT
     PreviousHash: PREVIOUS_HASH
     MembersRoot: WOT_MERKLE_ROOT
@@ -154,8 +155,9 @@ Field | Description | Required
 `Currency` | contains the name of the currency. This is used to identify the target of the amendment, as several moneys may be HDC-based. | **Required**
 `Number` | references the position of the amendment in the amendment chain. Initial amendment has the value `0`. | **Required**
 `GeneratedOn` | references the generation date of the amendment. | **Required**
-`UniversalDividend` | if provided, is a positive number. It defines the amount of money each member of the community may create for **THIS** amendment. | *Not Required*
-`CoinMinimalPower` | if provided, is a zero or positive number. It restricts the newly issued coins to a minimal decimal power. For example, with a value of 2, only coins with a value starting from 100 may be created from this amendment. This field is used to avoid abuses linked to money issuance. | *Not Required*
+`UniversalDividend` | if provided, is a positive integer. It defines the amount of money each member of the community may create for **THIS** amendment. | *Not Required*
+`CoinBase` | **is mandatory if `UniversalDividend` is positive**. Gives the power value of first coin in `CoinList`. | *Not Required*
+`CoinList` | **is mandatory if `UniversalDividend` is positive**. List of integers telling how much coins are issued for a given power. First integer gives the number of coins of value 2^`CoinBase`, second gives the number of coins of value 2^(`CoinBase` + 1), and so on. | *Not Required*
 `NextRequiredVotes` | give the minimum votes count for next amendment to be considered a valid following amendment. | **Required**
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous amendment content, and is used for people to identify without ambiguity the previous amendment (`Number` field is not enough for that purpose, `PreviousHash` is an authentication mecanism to do this job). | *Not Required*
 `MembersRoot` | is the root hash of a Merkle tree listing the current members of the whole community. It is a checksum mecanism. Note that `MembersChanges` are included in the Merkle. | **Required**
@@ -178,7 +180,8 @@ In HDC, an Amendment structure is considered *valid* if:
 * Every line ends with a DOS `<CR><LN>` new line character.
 * Every required field is present, **with** consideration of fields order.
 * Every present field ends with a DOS `<CR><LN>` new line character.
-* Fields `Version`, `Number`, `GeneratedOn`, `UniversalDividend` (if present), `CoinMinimalPower` (if present), `NextRequiredVotes`, `MembersCount`, `VotersCount` are zero or positive integer values.
+* Fields `Version`, `Number`, `GeneratedOn`, `UniversalDividend` (if present), `CoinBase` (if present), `NextRequiredVotes`, `MembersCount`, `VotersCount` are zero or positive integer values.
+* Fields `CoinList` is a list of space separated integers.
 * Fields `PreviousHash`, `MembersRoot`, `VotersRoot` are upper-cased SHA-1 hashes.
 * Fields `MembersChanges` and `VotersChanges` are upper-cased SHA-1 hashes, preceded either by a `+` or `-` character. Furthermore, lists must be string sorted.
 * When `Number` field is positive, Amendment has a `PreviousHash` value.
@@ -194,6 +197,9 @@ The root Amendment is special in that it has *no previous Amendment* and invento
     Version: 1
     Currency: beta_brousouf
     Number: 0
+    UniversalDividend: 1184
+    CoinBase: 4
+    CoinList: 14 6 2 3 1
     MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
     MembersCount: 3
     MembersChanges:
@@ -205,16 +211,21 @@ The root Amendment is special in that it has *no previous Amendment* and invento
     VotersChanges:
     +2E69197FAB029D8669EF85E82457A1587CA0ED9C
 
+
+Issuing a dividend composed of:
+* 14 coins of value 2^4
+* 6 coins of value 2^5
+* 2 coins of value 2^6
+* 3 coins of value 2^7
+* 1 coin of value 2^8
+
 ## Transaction
 
 ### Definition
 
 Transactions are the last step after defining Certificates and Amendments. Transactions are the conceptual support of money inside HDC: it allows to materialize money ownership.
 
-A transaction is used either to:
-
-* Issue *new* money
-* Transfer *existing* money
+A transaction is used **only** to transfer *existing* money.
 
 A transaction is defined by the following format:
 
@@ -224,11 +235,10 @@ A transaction is defined by the following format:
     Number: INCREMENT
     PreviousHash: PREVIOUS_TRANSACTION_HASH
     Recipient: RECIPIENT_FINGERPRINT
-    Type: TRANSACTION_TYPE
-    Amounts:
-    ORIGIN:AMOUNT
-    ORIGIN:AMOUNT
-    ORIGIN:AMOUNT
+    Coins:
+    COIN_ID[:TRANSACTION_ID]
+    COIN_ID[:TRANSACTION_ID]
+    COIN_ID[:TRANSACTION_ID]
     ...
     Comment:
     [Some multiple line
@@ -244,20 +254,23 @@ Field | Description
 `Number` | an increment number identifying this transaction among all others sender's transactions.
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous transaction (content AND signature), and is used to identify without ambiguity the previous transaction (it is an integrity mecanism).
 `Recipient` | the recipient's OpenPGP fingerprint to whom the coins are to be sent.
-`Type` | gives information on how to to interprete the coin list. Value is either `TRANSFER` or `ISSUANCE`.
-`Amounts` | a list of amounts to be issued or transfered. Each line starts with an `ORIGIN` field, followed by a colon and a positive integer (`AMOUNT`). For a given transaction, two lines cannot share the same `ORIGIN`. Lines are sorted by `ORIGIN`.
+`Coins` | a list of coins to be transfered, eventually followed by a colon and a transaction ID justifying the ownership. Lines are sorted by `COIN_ID`.
 `Comment` | comment for transaction. May be used for any future purpose. Multiline field, ends at the end of the transaction message.
 
-With `Amounts`'s `ORIGIN` having the following format:
+`COIN_ID` has following format:
 
-    HASH-NUMBER
+    FINGERPRINT-AM_NUMBER-COIN_NUMBER
 
 Field      | Description
 ---------- | -----------
-`HASH`  | in case of `ISSUANCE` transaction, uppercased SHA1 hash of amendment justifying the `AMOUNT` of the line as a share of Universal Dividend. In case of `TRANSFER` transaction, uppercased SHA1 hash of the transaction justifying the ownership of given `AMOUNT`.
-`NUMBER` | in case of `ISSUANCE` transaction, amendment number justifying the `AMOUNT` of the line as a share of Universal Dividend. In case of `TRANSFER` transaction, number of the transaction justifying the ownership of given `AMOUNT`.
+`FINGERPRINT`  | uppercased SHA1 hash of the member for whom this was coin was issued in the Contract
+`AM_NUMBER` | integer identifying the amendment justifying this coin's existence
+`COIN_NUMBER` | integer identifying the coin into promoted amendment #`AM_NUMBER`
 
-Using both `HASH` and `NUMBER` field allows to identify without any ambiguity the origin of a line's amount, and thus its legitimity.
+For example, in above amendment, coin `33BBFC0C67078D72AF128B5BA296CC530126F372-0-26` is:
+* A coin issued for member `33BBFC0C67078D72AF128B5BA296CC530126F372`
+* A coin issued in amendment `#0`
+* A coin of value 2^8, as it is the 26th coin in `CoinList`
 
 ### Validity
 
@@ -267,24 +280,18 @@ In HDC, a Transaction structure is considered *valid* if:
 * Fields `Sender`, `Recipient` are upper-cased SHA-1 hashes.
 * Fields `Version`, `Number` are zero or positive integer values.
 * Field `PreviousHash` is an upper-cased SHA-1 hash, if present.
-* Field `Type` has either `TRANSFER` or `ISSUANCE` value.
-* Field `Amounts` must have at least one line, lines must be sorted and not have twice same `ORIGIN`. `AMOUNT` must be a positive integer.
+* Field `Coins` have at least one line, with lines sorted and not have twice same `COIN_ID`. Each line may be completed with a colon (':') and a transaction ID.
 
-#### Examples
+A transaction ID has following format:
 
-For a *dividend* of Amendment #44 (hash D3E19E63F41D60C01689465CECD62FA42EB87F8A) with value 500, an `Amounts` line would be:
+    ISSUER-TRANSACTION_NUMBER
 
-    D3E19E63F41D60C01689465CECD62FA42EB87F8A-44:500
+Field      | Description
+---------- | -----------
+`ISSUER`  | uppercased SHA1 hash of the member for whom this was coin was issued in the Contract
+`TRANSACTION_NUMBER` | integer identifying the transaction number of issuer `ISSUER`
 
-For a *transfer* of 18 from transaction #871 of total value 500 issued by individual's key 31A6302161AC8F5938969E85399EB3415C237F93, an `Amounts` line would be:
-
-    31A6302161AC8F5938969E85399EB3415C237F93-871:18
-
-### Issuance transaction
-
-Such a transaction is used to *create* new money, i.e. new coins. To be a valid money issuance transaction, it MUST have the `Type: ISSUANCE` value. With this information, `Amounts` lines are to be interpreted as Universal Dividend shares.
-
-#### Example
+### Example
 
     Version: 1
     Currency: beta_brousouf
@@ -292,39 +299,15 @@ Such a transaction is used to *create* new money, i.e. new coins. To be a valid 
     Number: 1
     PreviousHash: AE5780D605097BA393B4F32DC858C46D4344339D
     Recipient: 31A6302161AC8F5938969E85399EB3415C237F93
-    Type: ISSUANCE
-    Amounts:
-    1C5F94BEC2ADBCE799FBD9C61F3245B64118E1FA-1:100
-    2035C0C29784D01C74B3F3530F95A381E0E0522E-3:40
-    4001FE568F055848DEED454C1E67FD59779D21F5-2:110
-    D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-4:133
+    Coins:
+    1C5F94BEC2ADBCE799FBD9C61F3245B64118E1FA-54-4:4DEC4AC8D7A6BBE1D65E4CF3BFD99A5E2B7672A6-99
+    2035C0C29784D01C74B3F3530F95A381E0E0522E-88-20:20935EFBC0103C121EF5918714AEBAFF780CB3F9-54
+    4001FE568F055848DEED454C1E67FD59779D21F5-104-10:32A1C96E3DB2282692C2F27E366248512095BE88-11
+    31A6302161AC8F5938969E85399EB3415C237F93-67-1
     Comment:
-    Creating money from Universal Dividend of 4 amendments.
-    Lines are sorted first by the HASH, not amendment number.
-    Here, dividends are 100 AM#1, 110 AM#2, 121 AM#3, 133 AM#4. Note how
-    AM#3 dividend is not fully issued - remaining dividend could be issued another time.
-
-
-### Transfer transaction
-
-Transfer transaction is identified by having `Type: TRANSFER` value. Such a transaction alter the ownership of money from `Sender` to `Recipient`. Ownership can be proved by the `Recipient` simply by showing this transaction.
-
-Thereafter, when `Recipient` wants to send money to someone else, he will put himself as sender, put the amounts in the `Amounts` field, adding the previous transaction's `TRANSACTION_ID` as origin of amounts to justify he is the owner of the money.
-
-#### Example
-
-    Version: 1
-    Currency: beta_brousouf
-    Sender: 31A6302161AC8F5938969E85399EB3415C237F93
-    Number: 92
-    PreviousHash: 45D873050A5F63F4A801B626C0E95D1CACA6B8AF
-    Recipient: 86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8
-    Type: TRANSFER
-    Amounts:
-    31A6302161AC8F5938969E85399EB3415C237F93-1:500
-    31A6302161AC8F5938969E85399EB3415C237F93-2:200
-    Comment:
-    Here I am sending coins 500 and 200 to someone else (either an individual or organization).
+    Transfering 4 coins.
+    * First 3 coins are coins Sender received from other members.
+    * Last coin is a coin never transfered by Sender from Universal Dividend of AM#67
 
 ### Money ownership
 

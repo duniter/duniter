@@ -36,6 +36,9 @@
       * [transactions/sender/[PGP_FINGERPRINT]/ud/[AM_NUMBER]](#transactionssenderpgp_fingerprintudam_number)
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
       * [transactions/refering/[PGP_FINGERPRINT]/[TX_NUMBER]](#transactionsreferingpgp_fingerprinttx_number)
+      * [coins/list/[PGP_FINGERPRINT]](#coinslistpgp_fingerprint)
+      * [coins/view/[COIN_ID]/owner](#coinscoin_idowner)
+      * [coins/view/[COIN_ID]/history](#coinscoin_idhistory)
   * [registry/](#registry)
       * [parameters](#parameters)
       * [community/members (GET)](#communitymembers-get)
@@ -81,24 +84,31 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |   |       `-- signatures
     |   |   `-- votes/
     |   |       `-- [AMENDMENT_ID]
-    |   `-- transactions/
-    |       |-- process
-    |       |-- last/
-    |       |   `-- [count]
-    |       |-- sender/
-    |       |   `-- [PGP_FINGERPRINT]/
-    |       |       |-- view/
-    |       |       |   `-- [TX_NUMBER]
-    |       |       |-- last/
-    |       |       |   `-- [count]/
-    |       |       |       `-- [from]
-    |       |       `-- ud/
-    |       |           `-- [AM_NUMBER]
-    |       |-- recipient/
+    |   |-- transactions/
+    |   |   |-- process
+    |   |   |-- last/
+    |   |   |   `-- [count]
+    |   |   |-- sender/
+    |   |   |   `-- [PGP_FINGERPRINT]/
+    |   |   |       |-- view/
+    |   |   |       |   `-- [TX_NUMBER]
+    |   |   |       |-- last/
+    |   |   |       |   `-- [count]/
+    |   |   |       |       `-- [from]
+    |   |   |       `-- ud/
+    |   |   |           `-- [AM_NUMBER]
+    |   |   |-- recipient/
+    |   |   |   `-- [PGP_FINGERPRINT]
+    |   |   `-- refering/
+    |   |       `-- [PGP_FINGERPRINT]/
+    |   |           `-- [TX_NUMBER]
+    |   `-- coins/
+    |       |-- list/
     |       |   `-- [PGP_FINGERPRINT]
-    |       `-- refering/
-    |           `-- [PGP_FINGERPRINT]/
-    |               `-- [TX_NUMBER]
+    |       `-- view/
+    |           `-- [COIND_ID]/
+    |               |-- history
+    |               `-- owner
     `-- registry/
         |-- parameters
         |-- community/
@@ -1377,6 +1387,110 @@ A list of transactions pointing to this source transaction.
         "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
       ],
       "comment": "Universal Dividend"
+    }
+  ]
+}
+```
+
+#### `coins/list/[PGP_FINGERPRINT]`
+**Goal**
+
+GET all the coins owned by `[PGP_FINGERPRINT]`.
+
+**Parameters**
+
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent owned coins.   | URL
+
+**Returns**
+
+A list of coins owned by this key.
+```json
+{
+  "coins": [
+    "31A6302161AC8F5938969E85399EB3415C237F93-0-1",
+    "31A6302161AC8F5938969E85399EB3415C237F93-0-2",
+    "31A6302161AC8F5938969E85399EB3415C237F93-0-3",
+    "31A6302161AC8F5938969E85399EB3415C237F93-0-4",
+    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-1",
+    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-2",
+    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-3",
+    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-4",
+    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-5"
+    ...
+  ]
+}
+```
+
+#### `coins/view/[COIN_ID]/owner`
+**Goal**
+
+GET a coin owner + justifying transaction if it exists.
+
+**Parameters**
+
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`COIN_ID`         | ID of the coin to be checked.                                 | URL
+
+**Returns**
+
+A coin's ownership.
+```json
+{
+  "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66"
+  "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+  "transaction": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "version": 1,
+    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "number": 92,
+    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+    "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+    "amounts": [
+      "31A6302161AC8F5938969E85399EB3415C237F93-92-25",
+      "31A6302161AC8F5938969E85399EB3415C237F93-122-1",
+    ],
+    "comment": "Paying LoLCat's food."
+  }
+}
+```
+
+#### `coins/view/[COIN_ID]/history`
+**Goal**
+
+GET a coin owner + justifying transaction for each state a coin has gone trough.
+
+**Parameters**
+
+Name              | Value                                                         | Method
+----------------- | ------------------------------------------------------------- | ------
+`COIN_ID`         | ID of the coin to be checked.                                 | URL
+
+**Returns**
+
+A coin's list of ownerships in time.
+```json
+{
+  history: [{
+      "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66"
+      "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+      "transaction": {
+        "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+        "version": 1,
+        "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+        "number": 92,
+        "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
+        "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
+        "amounts": [
+          "31A6302161AC8F5938969E85399EB3415C237F93-92-25",
+          "31A6302161AC8F5938969E85399EB3415C237F93-122-1",
+        ],
+        "comment": "Paying LoLCat's food."
+      }
+    },{
+    ...
     }
   ]
 }

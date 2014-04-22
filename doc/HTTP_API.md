@@ -37,8 +37,8 @@
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
       * [transactions/refering/[PGP_FINGERPRINT]/[TX_NUMBER]](#transactionsreferingpgp_fingerprinttx_number)
       * [coins/list/[PGP_FINGERPRINT]](#coinslistpgp_fingerprint)
-      * [coins/view/[COIN_ID]/owner](#coinscoin_idowner)
-      * [coins/view/[COIN_ID]/history](#coinscoin_idhistory)
+      * [coins/view/[COIN_ID]/owner](#coinsviewcoin_idowner)
+      * [coins/view/[COIN_ID]/history](#coinsviewcoin_idhistory)
   * [registry/](#registry)
       * [parameters](#parameters)
       * [community/members (GET)](#communitymembers-get)
@@ -1473,7 +1473,7 @@ Name              | Value                                                       
 A coin's list of ownerships in time.
 ```json
 {
-  history: [{
+  "history": [{
       "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66"
       "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "transaction": {

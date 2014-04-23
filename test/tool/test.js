@@ -444,7 +444,6 @@ function isAmendment (json) {
   });
   var optional = [
     "dividend",
-    "coinMinPower",
     "previousHash"
   ];
   json.should.have.properties(optional);
@@ -456,10 +455,13 @@ function isAmendment (json) {
   json.generated.should.be.a.Number.and.not.be.below(0);
   json.number.should.be.a.Number.and.not.be.below(0);
   if (json.dividend) {
+    should.exist(json.dividend);
+    should.exist(json.coinBase);
+    should.exist(json.coinList);
     json.dividend.should.be.a.Number.and.be.above(0);
-  }
-  if (json.coinMinimalPower) {
-    json.coinMinimalPower.should.be.a.Number.and.be.above(0);
+    json.coinBase.should.be.a.Number.and.be.not.below(0);
+    json.coinList.should.be.an.Array;
+    json.coinList.length.should.not.be.below(1);
   }
   json.membersCount.should.be.a.Number.and.not.be.below(0);
   json.votersCount.should.be.a.Number.and.not.be.below(0);

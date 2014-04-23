@@ -717,79 +717,79 @@ var testCases = [
   *
   */
 
-  // Coin 0 : 100
-  // Coin 1 : 40
-  // Coin 2 : 5
-  tester.verify(
-    "Issuing all coins of UD[0] (<=> AM[2])",
-    issue(tobi, 145, 2, now + 13),
-    is.expectedSignedTransaction()
-  ),
+  // // Coin 0 : 100
+  // // Coin 1 : 40
+  // // Coin 2 : 5
+  // tester.verify(
+  //   "Issuing all coins of UD[0] (<=> AM[2])",
+  //   issue(tobi, 145, 2, now + 13),
+  //   is.expectedSignedTransaction()
+  // ),
 
-  tester.verify(
-    "Trying to issue more coins of UD[0]",
-    issue(tobi, 1, 2, now + 13),
-    is.expectedHTTPCode(400)
-  ),
+  // tester.verify(
+  //   "Trying to issue more coins of UD[0]",
+  //   issue(tobi, 1, 2, now + 13),
+  //   is.expectedHTTPCode(400)
+  // ),
 
-  // Coin 3 : 100
-  tester.verify(
-    "Issuing some coins of UD[1] (<=> AM[4])",
-    issue(tobi, 100, 4, now + 13),
-    is.expectedSignedTransaction()
-  ),
+  // // Coin 3 : 100
+  // tester.verify(
+  //   "Issuing some coins of UD[1] (<=> AM[4])",
+  //   issue(tobi, 100, 4, now + 13),
+  //   is.expectedSignedTransaction()
+  // ),
 
-  // Coin 4 : 30
-  tester.verify(
-    "Trying to issue more coins of UD[1] (<=> AM[4])",
-    issue(tobi, 30, 4, now + 13),
-    is.expectedSignedTransaction()
-  ),
+  // // Coin 4 : 30
+  // tester.verify(
+  //   "Trying to issue more coins of UD[1] (<=> AM[4])",
+  //   issue(tobi, 30, 4, now + 13),
+  //   is.expectedSignedTransaction()
+  // ),
 
-  // Coin 5 : 10
-  tester.verify(
-    "Trying to issue more coins of UD[1] (<=> AM[4])",
-    issue(tobi, 10, 4, now + 13),
-    is.expectedSignedTransaction()
-  ),
+  // // Coin 5 : 10
+  // tester.verify(
+  //   "Trying to issue more coins of UD[1] (<=> AM[4])",
+  //   issue(tobi, 10, 4, now + 13),
+  //   is.expectedSignedTransaction()
+  // ),
 
-  // Coin 6 : 4
-  tester.verify(
-    "Trying to issue more coins of UD[1] (<=> AM[4])",
-    issue(tobi, 4, 4, now + 13),
-    is.expectedSignedTransaction()
-  ),
+  // // Coin 6 : 4
+  // tester.verify(
+  //   "Trying to issue more coins of UD[1] (<=> AM[4])",
+  //   issue(tobi, 4, 4, now + 13),
+  //   is.expectedSignedTransaction()
+  // ),
 
-  // Coin 7 : 1
-  tester.verify(
-    "Trying to issue more coins of UD[1] (<=> AM[4])",
-    issue(tobi, 1, 4, now + 13),
-    is.expectedSignedTransaction()
-  ),
+  // // Coin 7 : 1
+  // tester.verify(
+  //   "Trying to issue more coins of UD[1] (<=> AM[4])",
+  //   issue(tobi, 1, 4, now + 13),
+  //   is.expectedSignedTransaction()
+  // ),
 
-  tester.verify(
-    "Trying to issue too much coins of UD[1] (<=> AM[4])",
-    issue(tobi, 1, 4, now + 13),
-    is.expectedHTTPCode(400)
-  ),
+  // tester.verify(
+  //   "Trying to issue too much coins of UD[1] (<=> AM[4])",
+  //   issue(tobi, 1, 4, now + 13),
+  //   is.expectedHTTPCode(400)
+  // ),
 
-  tester.verify(
-    "Trying to issue value of 0",
-    issue(tobi, 0, 6, now + 13),
-    is.expectedHTTPCode(400)
-  ),
+  // tester.verify(
+  //   "Trying to issue value of 0",
+  //   issue(tobi, 0, 6, now + 13),
+  //   is.expectedHTTPCode(400)
+  // ),
 
-  tester.verify(
-    "Tobi transfering 15 to Cat",
-    transfer(tobi, cat, 15, now + 14),
-    is.expectedSignedTransaction()
-  ),
+  // tester.verify(
+  //   "Tobi transfering 15 to Cat",
+  //   transfer(tobi, cat, 15, now + 14),
+  //   is.expectedSignedTransaction()
+  // ),
 
-  tester.verify(
-    "Tobi transfering 1500 to Cat (he does not have them)",
-    transferMake(tobi, cat, 1500, '2E69197FAB029D8669EF85E82457A1587CA0ED9C-3', now + 14),
-    is.expectedHTTPCode(400)
-  ),
+  // tester.verify(
+  //   "Tobi transfering 1500 to Cat (he does not have them)",
+  //   transferMake(tobi, cat, 1500, '2E69197FAB029D8669EF85E82457A1587CA0ED9C-3', now + 14),
+  //   is.expectedHTTPCode(400)
+  // ),
 ];
 
 // testCases.splice(nb, testCases.length - nb);

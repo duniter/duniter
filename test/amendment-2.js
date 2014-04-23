@@ -34,12 +34,12 @@ describe('Amendment', function(){
       assert.equal(amTest.number, 2);
     });
 
-    it('should have a niversal Dividend of value 110', function(){
-      assert.equal(amTest.dividend, 110);
+    it('should have a niversal Dividend of value 1184', function(){
+      assert.equal(amTest.dividend, 1184);
     });
 
-    it('should have a Minimal Coin Power of 0', function(){
-      assert.equal(amTest.coinMinPower, 0);
+    it('should have a Minimal Coin Base of 4', function(){
+      assert.equal(amTest.coinBase, 4);
     });
 
     it('should have F07D0B6DBB7EA99E5208752EABDB8B721C0010E9 previous hash', function(){
@@ -81,12 +81,12 @@ describe('Amendment', function(){
       assert.equal(amTest.votersCount, 2);
     });
 
-    it('its computed hash should be 80215E75707134B2FE9BD001025C2AB3EEDA5706', function(){
-      assert.equal(amTest.hash, '80215E75707134B2FE9BD001025C2AB3EEDA5706');
+    it('its computed hash should be EF3439524E602E2EAF3BECB9026334C77733ED08', function(){
+      assert.equal(amTest.hash, 'EF3439524E602E2EAF3BECB9026334C77733ED08');
     });
 
-    it('its manual hash should be 80215E75707134B2FE9BD001025C2AB3EEDA5706', function(){
-      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '80215E75707134B2FE9BD001025C2AB3EEDA5706');
+    it('its manual hash should be EF3439524E602E2EAF3BECB9026334C77733ED08', function(){
+      assert.equal(sha1(amTest.getRaw()).toUpperCase(), 'EF3439524E602E2EAF3BECB9026334C77733ED08');
     });
   });
 });

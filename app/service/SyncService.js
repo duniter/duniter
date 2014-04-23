@@ -473,6 +473,8 @@ module.exports.get = function (pgp, currency, conf) {
           var dividendPerMember = monetaryMassDelta / amNext.membersCount;
           var previousUD = (previousWithUD && previousWithUD.dividend) || conf.sync.UD0;
           amNext.dividend = Math.max(previousUD, Math.floor(dividendPerMember)); // Integer
+          amNext.coinBase = 0;
+          amNext.coinList = [amNext.dividend]; // Only base units
           amNext.monetaryMass += amNext.dividend * amNext.membersCount; // Integer
           next();
         },

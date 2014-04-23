@@ -13,7 +13,8 @@ var AmendmentSchema = new Schema({
   number: {"type": Number, "default": 0},
   generated: {"type": Number, "default": 0},
   dividend: Number,
-  coinMinPower: Number,
+  coinBase: Number,
+  coinList: [Number],
   nextVotes: {"type": Number, "default": 0},
   previousHash: String,
   votersRoot: String,
@@ -51,7 +52,8 @@ AmendmentSchema.methods = {
       "number",
       "generated",
       "dividend",
-      "coinMinPower",
+      "coinBase",
+      "coinList",
       "nextVotes",
       "previousHash",
       "votersRoot",
@@ -81,7 +83,7 @@ AmendmentSchema.methods = {
       "generated",
       "nextVotes",
       "dividend",
-      "coinMinPower",
+      "coinBase",
       "votersCount",
       "membersCount",
     ].forEach(function(field){
@@ -100,6 +102,7 @@ AmendmentSchema.methods = {
       json[field] = that[field] || null;
     });
     [
+      "coinList",
       "votersChanges",
       "membersChanges"
     ].forEach(function(field){
@@ -111,6 +114,12 @@ AmendmentSchema.methods = {
   parse: function(rawAmend, callback) {
     var am = new hdc.Amendment(rawAmend);
     if(!am.error){
+      if (am.coinList) {
+        am.coinList = am.coinList.split(' ');
+        am.coinList.forEach(function(cs, index){
+          am.coinList[index] = parseInt(cs);
+        });
+      }
       fill(this, am);
     }
     callback(am.error);
@@ -146,9 +155,8 @@ AmendmentSchema.methods = {
     raw += "GeneratedOn: " + this.generated + "\n";
     if(this.dividend){
       raw += "UniversalDividend: " + this.dividend + "\n";
-    }
-    if(this.coinMinPower != undefined && this.coinMinPower != null){
-      raw += "CoinMinimalPower: " + this.coinMinPower + "\n";
+      raw += "CoinBase: " + this.coinBase + "\n";
+      raw += "CoinList: " + this.coinList.join(' ') + "\n";
     }
     raw += "NextRequiredVotes: " + this.nextVotes + "\n";
     if(this.previousHash){
@@ -252,18 +260,6 @@ AmendmentSchema.statics.findPromotedByNumber = function (number, done) {
     if(amends || amends.length > 1){
       done('More than one amendment found');
     }
-  });
-};
-
-AmendmentSchema.statics.findClosestPreviousWithMinimalCoinPower = function (sigDate, done) {
-
-  var sigDateToTimestamp = parseInt(sigDate.getTime()/1000, 10);
-  this
-    .find({ coinMinPower: { $gte: 0 }, promoted: true, generated: { $lte: sigDateToTimestamp } })
-    .sort({ 'number': -1 })
-    .limit(1)
-    .exec(function (err, amends) {
-      done(err, (amends && amends.length == 1) ? amends[0] : null);
   });
 };
 
@@ -503,7 +499,8 @@ function fill (am1, am2) {
     "generated",
     "nextVotes",
     "dividend",
-    "coinMinPower",
+    "coinBase",
+    "coinList",
     "previousHash",
     "votersRoot",
     "votersCount",

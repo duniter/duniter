@@ -17,7 +17,7 @@ var logger     = require('./logger')('http');
 var pgplogger  = require('./logger')('PGP');
 var log4js     = require('log4js');
 
-var models = ['Amendment', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
 
 function initModels() {
   models.forEach(function (entity) {
@@ -258,7 +258,6 @@ module.exports.express = {
       app.get(    '/hdc/transactions/sender/:fpr/view/:number',     hdc.transactions.viewtx);
       app.get(    '/hdc/transactions/sender/:fpr/last/:count',      hdc.transactions.sender.lastNofSender);
       app.get(    '/hdc/transactions/sender/:fpr/last/:count/:from',hdc.transactions.sender.lastNofSender);
-      app.get(    '/hdc/transactions/sender/:fpr/ud/:amendment_number', hdc.transactions.sender.ud);
       app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
       app.get(    '/hdc/transactions/refering/:fpr/:number',        hdc.transactions.refering);
       app.get(    '/registry/parameters',                           ucs.parameters);
@@ -378,6 +377,10 @@ module.exports.express = {
         function (next) {
           // Initialize managed keys
           PeeringService.initKeys(next);
+        },
+        function (next){
+          // Add selfkey as managed
+          mongoose.model('Key').setManaged(server.fingerprint(), true, next);
         },
         function (next){
           // Submit its own public key to it

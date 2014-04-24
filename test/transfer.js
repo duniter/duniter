@@ -13,7 +13,7 @@ var test      = require('./tool/test');
 var logger    = require('../app/lib/logger')('test');
 
 var nb = 60;
-var currency = "testa";
+var currency = "transfertest";
 var tester    = is = on = new test.tester(currency);
 
 logger.debug("Reading files & initializing...");
@@ -62,19 +62,19 @@ var config = {
 if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
 var conf = {
   ipv4: '127.0.0.1',
-  port: 9107,
+  port: 9108,
   pgpkey: config.server.pgp.key,
   pgppasswd: config.server.pgp.password,
   remoteipv4: '127.0.0.1',
-  remoteport: 9107,
+  remoteport: 9108,
   kmanagement: 'ALL',
   sync: {
     AMStart: now,
     AMFreq: 1, // Every second
-    UDFreq: 2, // Dividend every 2 seconds
-    UD0: 145,
+    UDFreq: 1, // Dividend every seconds
+    UD0: 100,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
-    Consensus: 2/3,
+    Consensus: 1/3,
     MSExpires: 8 // seconds, so AM9 will see ]AM0;AM1] members be kicked out at AM9
   },
   createNext: true
@@ -82,72 +82,45 @@ var conf = {
 
 var amendments = {
   AM0: {
-  currency: 'testa',
+  currency: currency,
     generated: conf.sync.AMStart,
     number: 0,
+    previousHash: null,
     dividend: null,
-    nextVotes: 2,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    votersCount: 2,
-    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    previousHash: null
-  },
-
-  AM0_voters_members: {
-  currency: 'testa',
-    nextVotes: 2,
-    membersCount: 2,
-    membersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
-    votersCount: 2,
-    votersRoot: '48578F03A46B358C10468E2312A41C6BCAB19417',
+    coinBase: null,
+    coinList: []
   },
 
   AM2: {
     generated: conf.sync.AMStart + 2,
     number: 2,
-    dividend: 145,
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
-    ],
-    votersCount: 3,
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    votersChanges: [
-      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
-    ]
+    dividend: 100,
+    coinBase: 0,
+    coinList: [100]
   },
 
   AM3: {
     generated: conf.sync.AMStart + 3,
     number: 3,
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-    ],
-    votersCount: 3,
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    votersChanges: [
-    ]
+    dividend: 100,
+    coinBase: 0,
+    coinList: [100]
   },
 
   AM4: {
     generated: conf.sync.AMStart + 4,
     number: 4,
-    dividend: 145,
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-    ],
-    votersCount: 2,
-    votersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8',
-    votersChanges: [
-      "-2E69197FAB029D8669EF85E82457A1587CA0ED9C"
-    ]
+    dividend: 150,
+    coinBase: 0,
+    coinList: [150]
+  },
+
+  AM5: {
+    generated: conf.sync.AMStart + 5,
+    number: 5,
+    dividend: 225,
+    coinBase: 0,
+    coinList: [225]
   }
 };
 
@@ -290,6 +263,69 @@ function voteAm (signatory, am, done, delay) {
   });
 }
 
+var txBySignatory = {};
+
+[cat, tobi].forEach(function(guy){
+  txBySignatory[guy.fingerprint()] = {
+    number: -1
+  };
+});
+
+function transfer (signatory, recipient, coins, expectation) {
+  var label = "Transfer from " + signatory.fingerprint().substring(32) + " to " + recipient.fingerprint().substring(32);
+  coins.forEach(function(c){
+    label += "\n> " + c;
+  });
+  return tester.verify(
+    label,
+    function (done) {
+      var sigDate = new Date();
+      var tx = new Transaction({
+        version: 1,
+        currency: currency,
+        sender: signatory.fingerprint(),
+        number: ++txBySignatory[signatory.fingerprint()].number,
+        previousHash: txBySignatory[signatory.fingerprint()].hash,
+        recipient: recipient.fingerprint(),
+        coins: coins,
+        comment: "Transaction #" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint(),
+        signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
+        propagated: false,
+        sigDate: sigDate,
+      });
+      tx.hash = sha1(tx.getRawSigned()).toUpperCase();
+      sendTransaction(tx, done);
+    },
+    expectation ? expectation : is.expectedSignedTransaction()
+  );
+}
+
+function sendTransaction (tx, done) {
+  // logger.debug("---------------------");
+  // logger.debug(tx.getRaw());
+  var TransactionsService = require('../app/service').Transactions;
+  TransactionsService.processTx(tx, function (err) {
+    if (!err) {
+      txBySignatory[tx.sender].hash = tx.hash;
+      // logger.debug(coins);
+      done(err, { 
+        statusCode: 200,
+        text: JSON.stringify({
+          signature: tx.signature,
+          transaction: tx.json(),
+          raw: tx.getRaw()
+        })
+      });
+    } else {
+      --txBySignatory[tx.sender].number;
+      logger.warn(err);
+      done(err, { 
+        statusCode: 400
+      });
+    }
+  });
+}
+
 var someTests = {
 
   voteProposed: function (signatory, expectedAM) {
@@ -353,240 +389,24 @@ var testCases = [
     is.expectedPubkey('2E69197FAB029D8669EF85E82457A1587CA0ED9C')
   ),
 
-  testMerkle("/pks/all", '48578F03A46B358C10468E2312A41C6BCAB19417'),
-
-  /**************************
-  * Membership tests
-  **/
-
-  testProposedAmendment('First proposed amendment, autogenerated on ucoin start', {
-    currency: 'testa',
-    number: 0,
-    membersCount: 0,
-    votersCount: 0,
-    previousHash: null
-  }),
-
-  someTests.sendOptIN(tobi),
-
-  testProposedAmendment('proposed amendment with tobi joining', {
-    currency: 'testa',
-    number: 0,
-    membersCount: 1,
-    membersRoot: '2E69197FAB029D8669EF85E82457A1587CA0ED9C',
-    votersCount: 0,
-    previousHash: null
-  }),
-
-  // OPT-IN must be exactly during AM0's interval
-  someTests.sendOptIN(cat, now - 1, 400),
-  someTests.sendOptIN(cat, now - 3, 400),
-  someTests.sendOptIN(cat, now - 184984, 400),
-  someTests.sendOptIN(cat, now + 1, 400),
-  someTests.sendOptIN(cat, now + 2, 400),
-  someTests.sendOptIN(cat, now + 54, 400),
+  someTests.sendOptIN(tobi, now),
   someTests.sendOptIN(cat, now),
+  someTests.sendVoting(cat, now),
 
-  someTests.sendVoting(tobi, now - 1, 400),
-  someTests.sendVoting(tobi, now - 2, 400),
-  someTests.sendVoting(tobi, now - 484, 400),
-  someTests.sendVoting(tobi, now + 1, 400),
-  someTests.sendVoting(tobi, now + 9, 400),
-  someTests.sendVoting(tobi, now + 9879, 400),
-  someTests.sendVoting(cat, now + 1, 400),
-
-  someTests.sendVoting(tobi, now + 0),
-  someTests.sendVoting(cat, now + 0),
-
-  testProposedAmendment('proposed amendment with tobi+cat as members & voters', amendments.AM0),
-
-  // VOTE AM0
-  someTests.voteProposed(cat, amendments.AM0), // Promoted
-  someTests.voteCurrent(tobi, amendments.AM0),
-  testPromotedAmendment(amendments.AM0),
-  testPromotedAmendment(amendments.AM0, 0),
-
-  //-------- VOTING : AM1 ------
-  tester.verify(
-    "Voting AM1 should require 2 votes",
-    voteProposed(tobi),
-    is.expectedSignedAmendment(amendments.AM0_voters_members)
-  ),
-
-  tester.verify(
-    "Voting AM1 should promote AM1 identical to genesis AM",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM0_voters_members)
-  ),
-  
-  //----------------------------
-
-  /****** AM2
-  *
-  * Snow publish its pubkey, ask for joining & voting
-  */
-
-  tester.verify(
-    "Snow's PUBKEY",
-    pksAdd(pubkeySnow, pubkeySnowSig),
-    is.expectedPubkey('33BBFC0C67078D72AF128B5BA296CC530126F372')
-  ),
-
-  testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
-
-  someTests.sendOptIN(snow, now - 1, 400),
-  someTests.sendOptIN(snow, now + 0, 400),
-  someTests.sendOptIN(snow, now + 2, 400), // Indeed, AM2 is not current, but NEXT!
-  someTests.sendOptIN(snow, now + 1),
-  someTests.sendVoting(snow, now - 1, 400),
-  someTests.sendVoting(snow, now + 0, 400),
-  someTests.sendVoting(snow, now + 2, 400),
-  someTests.sendVoting(snow, now + 1),
-
-  // 1/2
+  // Vote amendments
+  someTests.voteProposed(cat, amendments.AM0),
+  someTests.voteProposed(cat, amendments.AM1),
   someTests.voteProposed(cat, amendments.AM2),
-  testPromotedAmendment(amendments.AM0_voters_members, 1),
-  testPromotedAmendment(amendments.AM0_voters_members),
+  someTests.voteProposed(cat, amendments.AM3),
+  someTests.voteProposed(cat, amendments.AM4),
+  someTests.voteProposed(cat, amendments.AM5),
 
-  tester.verify(
-    "Snow shouldn't be able to vote N-1 (current)",
-    voteCurrent(snow),
-    is.expectedHTTPCode(400)
-  ),
-
-  testPromotedAmendment(amendments.AM0_voters_members, 1),
-  testPromotedAmendment(amendments.AM0_voters_members),
-
-  // 2/2
-  someTests.voteProposed(tobi, amendments.AM2),
-
-  testPromotedAmendment(amendments.AM2, 2),
-  testPromotedAmendment(amendments.AM2),
-
-  tester.verify(
-    "Snow shouldn't be able to vote N (new current)",
-    voteCurrent(snow),
-    is.expectedHTTPCode(400)
-  ),
-
-  /******* We have AM2:
-
-    nextVotes: 2,
-    membersCount: 3,
-    membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    membersChanges: [
-      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
-    ],
-    votersCount: 3,
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90',
-    votersChanges: [
-      "+33BBFC0C67078D72AF128B5BA296CC530126F372"
-    ]
-
-    Let's not make tobi vote, but snow + cat instead.
-  */
-
-  tester.verify(
-    "Voting AM3 by cat 1v/2v",
-    voteProposed(cat),
-    is.expectedSignedAmendment(amendments.AM3)
-  ),
-
-  testPromotedAmendment(amendments.AM2, 2),
-  testPromotedAmendment(amendments.AM2),
-
-  tester.verify(
-    "Voting AM3 by snow 2v/2v",
-    voteProposed(snow),
-    is.expectedSignedAmendment(amendments.AM3)
-  ),
-
-  testPromotedAmendment(amendments.AM3, 3),
-  testPromotedAmendment(amendments.AM3),
-
-  testProposedAmendment('AM4 should see tobi no more voter', amendments.AM4),
-
-  tester.verify(
-    "Tobi voting while having not voted current should not be accepted: already a voter!",
-    voter(tobi, now + 4),
-    is.expectedHTTPCode(400)
-  ),
-
-  // Voting AM4 (ratify tobi's leaving as a voter)
-  someTests.voteProposed(cat),
-  someTests.voteProposed(snow),
-  testPromotedAmendment(amendments.AM4, 4),
-  testPromotedAmendment(amendments.AM4),
-  testProposedAmendment('AM5: no changes', { membersChanges: [], votersChanges: [] }),
-
-  // Tobi voting again
-  someTests.sendVoting(tobi, now + 4),
-  testProposedAmendment('AM6: tobi\'s coming back', {
-    membersChanges: [],
-    votersChanges: ['+2E69197FAB029D8669EF85E82457A1587CA0ED9C'],
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
-  someTests.voteProposed(cat),
-  someTests.voteProposed(snow),
-  testProposedAmendment('AM6: no changes, but tobi as voter', {
-    membersChanges: [],
-    votersChanges: [],
-    votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
-
-  someTests.voteProposed(cat),
-  someTests.voteProposed(snow),
-  // Tobi has not voted yet! He is leaving for proposed next
-  testProposedAmendment('AM7: tobi is leaving as voter', { votersChanges: ['-2E69197FAB029D8669EF85E82457A1587CA0ED9C'], votersRoot: '5DB500A285BD380A68890D09232475A8CA003DC8' }),
-  someTests.voteCurrent(tobi),
-  testProposedAmendment('AM7: tobi is finally saved', { votersChanges: [], votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
-
-
-  someTests.voteProposed(cat),
-  someTests.voteProposed(snow),
-  someTests.voteCurrent(tobi),
-  someTests.sendOptOUT(cat, now + 7),
-  testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: ['-C73882B64B7E72237A2F460CE9CAB76D19A8651E'], membersRoot: 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F' }),
-  someTests.sendOptIN(cat, now + 7, 400),
-  testProposedAmendment('AM8: no change for cat with its memberships cancelled', { membersChanges: [], membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
-
-  someTests.voteProposed(cat),
-  someTests.voteProposed(snow),
-  // We are now at AM9: memberships received during AM0 MUST be thrown out
-  testProposedAmendment('AM9: cat & tobi are kicked out as their memberships are too old', {
-    membersChanges: [
-      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C',
-      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'],
-    membersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372',
-    votersChanges: [
-      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C',
-      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'],
-    votersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372'})
+  transfer(tobi, cat, ["2E69197FAB029D8669EF85E82457A1587CA0ED9C-1-1"]),
+  transfer(cat, tobi, ["C73882B64B7E72237A2F460CE9CAB76D19A8651E-1-1"]),
+  transfer(cat, tobi, ["C73882B64B7E72237A2F460CE9CAB76D19A8651E-1-1"], is.expectedHTTPCode(400)), // Already spent
 ];
 
 // testCases.splice(nb, testCases.length - nb);
-
-function testMerkle (url, root) {
-  return tester.verify(
-    "merkle " + url,
-    on.doGet(url),
-    is.expectedMerkle(root)
-  );
-}
-
-function testPromotedAmendment (properties, number) {
-  return tester.verify(
-    number >= 0 ? "proposed amendment #" + number : "current amendment",
-    on.doGet("/hdc/amendments/promoted" + (isNaN(number) ? "" : "/" + number)),
-    is.expectedAmendment(properties)
-  );
-}
-
-function testProposedAmendment (label, properties) {
-  return tester.verify(
-    label,
-    on.doGet("/registry/amendment"),
-    is.expectedAmendment(properties)
-  );
-}
 
 before(function (done) {
   logger.debug("Launching server...");

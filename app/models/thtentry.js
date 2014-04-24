@@ -11,6 +11,7 @@ var THTEntrySchema = new Schema({
   fingerprint: { type: String, unique: true },
   hosters: [String],
   trusts: [String],
+  trustThreshold: Number,
   signature: String,
   propagated: { type: Boolean, default: false },
   hash: String,

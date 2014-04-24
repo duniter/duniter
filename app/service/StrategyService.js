@@ -9,6 +9,7 @@ var Voting     = mongoose.model('Voting');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
+var Coin       = mongoose.model('Coin');
 var Key        = mongoose.model('Key');
 var logger     = require('../lib/logger')('amendment');
 
@@ -143,6 +144,45 @@ module.exports.get = function (pgp, currency, conf) {
               });
             },
           ], next);
+        },
+        // Create coins
+        function (next){
+          Key.getManaged(next);
+        },
+        function (keys, next){
+          if (!am.dividend) {
+            next();
+            return;
+          }
+          async.forEach(keys, function(key, callback){
+            var power = am.coinBase;
+            async.forEach(am.coinList, function(quantity, powerSaved){
+              var i = 1;
+              async.whilst(
+                function() { return i <= quantity; },
+                function (coinSaved) {
+                  var c = new Coin();
+                  c.owner = key.fingerprint;
+                  c.issuer = key.fingerprint;
+                  c.amNumber = am.number;
+                  c.coinNumber = i;
+                  c.power = power;
+                  c.save(function (err) {
+                    i++;
+                    coinSaved(err);
+                  });
+                },
+                function (err) {
+                  power++;
+                  powerSaved(err);
+                }
+              );
+            }, function (err) {
+              if (err)
+                logger.error(err);
+              callback(err);
+            });
+          }, next);
         },
         function (next){
           if (conf.createNext) {

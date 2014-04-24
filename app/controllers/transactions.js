@@ -134,28 +134,7 @@ module.exports = function (pgp, currency, conf) {
         });
         res.send(200, JSON.stringify(json, null, "  "));
       });
-    },
-
-    ud: function (req, res) {
-      async.auto({
-        fpr: async.apply(ParametersService.getFingerprint, req),
-        num: async.apply(ParametersService.getAmendmentNumber, req),
-        transactions: ['fpr', 'num', function (done, results) {
-          Transaction.findAllIssuanceOfSenderForAmendment(results.fpr, results.num, done);
-        }]
-      }, function(err, results) {
-        res.setHeader("Content-Type", "text/plain");
-        if(err){
-          res.send(404, err);
-          return;
-        }
-        var txs = [];
-        results.transactions.forEach(function(tx){
-          txs.push(tx.json());
-        });
-        res.send(200, JSON.stringify({"transactions": txs}, null, "  "));
-      });
-    },
+    }
   };
 
   this.processTx = function (req, res) {

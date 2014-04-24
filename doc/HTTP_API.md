@@ -33,7 +33,6 @@
       * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
       * [transactions/sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]](#transactionssenderpgp_fingerprintviewtx_number)
       * [transactions/sender/[PGP_FINGERPRINT]/last/[count]/[from]](#transactionssenderpgp_fingerprintlastcountfrom)
-      * [transactions/sender/[PGP_FINGERPRINT]/ud/[AM_NUMBER]](#transactionssenderpgp_fingerprintudam_number)
       * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
       * [transactions/refering/[PGP_FINGERPRINT]/[TX_NUMBER]](#transactionsreferingpgp_fingerprinttx_number)
       * [coins/list/[PGP_FINGERPRINT]](#coinslistpgp_fingerprint)
@@ -92,11 +91,9 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |   |   `-- [PGP_FINGERPRINT]/
     |   |   |       |-- view/
     |   |   |       |   `-- [TX_NUMBER]
-    |   |   |       |-- last/
-    |   |   |       |   `-- [count]/
-    |   |   |       |       `-- [from]
-    |   |   |       `-- ud/
-    |   |   |           `-- [AM_NUMBER]
+    |   |   |       `-- last/
+    |   |   |           `-- [count]/
+    |   |   |               `-- [from]
     |   |   |-- recipient/
     |   |   |   `-- [PGP_FINGERPRINT]
     |   |   `-- refering/
@@ -1245,56 +1242,6 @@ The last [COUNT] transactions of given PGP key.
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/ud/[AM_NUMBER]`
-**Goal**
-
-GET all the transactions issued by `[PGP_FINGERPRINT]` whose some coins refer to given promoted amendment with number `[AM_NUMBER]`.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-`AM_NUMBER`       | Amendment number we want to check issuance transactions.      | URL
-
-**Returns**
-
-A list of transactions for given PGP key.
-```json
-{
-  "transactions": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 92,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFER",
-      "amounts": [
-        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
-        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
-      ],
-      "comment": "Paying LoLCat's food."
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-      "version": 1,
-      "currency": "beta_brousouf",
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 91,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "ISSUANCE",
-      "amounts": [
-        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
-        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
-      ],
-      "comment": "Universal Dividend"
-    }
-  ]
-}
-```
-
 #### `transactions/recipient/[PGP_FINGERPRINT]`
 **Goal**
 
@@ -1439,7 +1386,7 @@ Name              | Value                                                       
 A coin's ownership.
 ```json
 {
-  "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66"
+  "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66",
   "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
   "transaction": {
     "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
@@ -1474,7 +1421,7 @@ A coin's list of ownerships in time.
 ```json
 {
   "history": [{
-      "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66"
+      "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66",
       "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "transaction": {
         "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",

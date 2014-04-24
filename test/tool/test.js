@@ -497,18 +497,13 @@ function isTransaction (json) {
     "sender",
     "number",
     "recipient",
-    "type",
-    "amounts",
+    "coins",
     "comment"
   ];
   json.should.have.properties(mandatories);
   mandatories.forEach(function(prop){
     should.exist(json[prop]);
   });
-  var optional = [
-    "previousHash"
-  ];
-  json.should.have.properties(optional);
   if (json.number > 0) {
     json.should.have.property('previousHash');
   }
@@ -517,12 +512,13 @@ function isTransaction (json) {
   json.number.should.be.a.Number.and.not.be.below(0);
   // Strings
   json.currency.should.be.a.String.and.not.be.empty;
-  json.type.should.be.a.String.and.not.be.empty.and.match(/^(ISSUANCE|TRANSFER)$/);
+  should.not.exist(json.type);
+  should.not.exist(json.amounts);
   if (json.previousHash) {
     json.previousHash.should.be.a.String.and.match(/^[A-Z0-9]{40}$/);
   }
-  json.amounts.should.be.an.Array;
-  json.amounts.forEach(function(amount){
-    amount.should.match(/^[A-Z\d]{40}-\d+:\d+$/);
+  json.coins.should.be.an.Array;
+  json.coins.forEach(function(amount){
+    amount.should.match(/^[A-Z\d]{40}-\d+-\d+(:[A-Z\d]{40}-\d+)?$/);
   });
 }

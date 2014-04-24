@@ -14,8 +14,7 @@ var TransactionSchema = new Schema({
   number: Number,
   previousHash: String,
   recipient: String,
-  type: String,
-  amounts: Array,
+  coins: [String],
   comment: String,
   signature: String,
   propagated: { type: Boolean, default: false },
@@ -61,28 +60,14 @@ TransactionSchema.methods = {
     fill(this, tx);
     this.hash = sha1(rawTX).toUpperCase();
     if (!tx.error) {
-      if (this.getAmounts().length == 0) {
-        tx.error = "Transaction must carry at least one amount";
-      } else {
-        this.getAmounts().forEach(function(amount){
-          if (amount.value == 0) {
-            tx.error = "A coin must have a strictly positive basis";
-          }
-        });
-      }
+      tx.error = tx.check();
     }
     callback(tx.error, this);
   },
 
   check: function () {
-    if (this.getAmounts().length == 0) {
-      return "Transaction must carry at least one amount";
-    } else {
-      this.getAmounts().forEach(function(amount){
-        if (amount.value == 0) {
-          return "A coin must have a strictly positive basis";
-        }
-      });
+    if (this.getCoins().length == 0) {
+      return "Transaction must carry at least one coin";
     }
   },
 
@@ -106,31 +91,26 @@ TransactionSchema.methods = {
       .verify(publicKey, done);
   },
 
-  getAmounts: function() {
-    var amounts = [];
-    for (var i = 0; i < this.amounts.length; i++) {
-      var matches = this.amounts[i].match(/([A-Z\d]{40})-(\d+):(\d+)/);
-      if(matches && matches.length == 4){
-        amounts.push({
-          origin: matches[1],
-          number: parseInt(matches[2], 10),
-          value: parseInt(matches[3], 10)
+  getCoins: function() {
+    var coins = [];
+    for (var i = 0; i < this.coins.length; i++) {
+      var matches = this.coins[i].match(/([A-Z\d]{40})-(\d+)-(\d+)(:([A-Z\d]{40})-(\d+))?/);
+      if(matches && matches.length == 7){
+        coins.push({
+          issuer: matches[1],
+          amNumber: parseInt(matches[2], 10),
+          coinNumber: parseInt(matches[3], 10),
+          transaction: matches[4] && {
+            sender: matches[5],
+            number: matches[6]
+          },
+          toString: function () {
+            return this.issuer + '-' + this.amNumber + '-' + this.coinNumber;
+          }
         });
       }
     }
-    return amounts;
-  },
-
-  getValue: function() {
-    var sum = 0;
-    this.getAmounts().forEach(function (amount) {
-      sum += amount.value;
-    });
-    return sum;
-  },
-
-  getIssuanceSum: function() {
-    return this.getValue();
+    return coins;
   },
 
   getRaw: function() {
@@ -143,10 +123,9 @@ TransactionSchema.methods = {
       raw += "PreviousHash: " + this.previousHash + "\n";
     }
     raw += "Recipient: " + this.recipient + "\n";
-    raw += "Type: " + this.type + "\n";
-    raw += "Amounts:\n";
-    for(var i = 0; i < this.amounts.length; i++){
-      raw += this.amounts[i] + "\n";
+    raw += "Coins:\n";
+    for(var i = 0; i < this.coins.length; i++){
+      raw += this.coins[i] + "\n";
     }
     raw += "Comment:\n" + this.comment;
     return raw.unix2dos();
@@ -166,8 +145,7 @@ TransactionSchema.methods = {
       number: parseInt(this.number, 10),
       previousHash: this.previousHash,
       recipient: this.recipient,
-      type: this.type,
-      amounts: this.amounts,
+      coins: this.coins,
       sigDate: parseInt(this.sigDate.getTime()/1000, 10),
       comment: this.comment
     };
@@ -208,35 +186,10 @@ TransactionSchema.statics.findLastOf = function (fingerprint, done) {
   });
 };
 
-TransactionSchema.statics.findLastIssuance = function (fingerprint, done) {
-
-  this.find({ sender: fingerprint, type: { $in: ['ISSUANCE', 'CHANGE'] } }).sort({number: -1}).limit(1).exec(function (err, txs) {
-    if(txs && txs.length == 1){
-      done(err, txs[0]);
-      return;
-    }
-    if(!txs || txs.length == 0){
-      done('No transaction found');
-      return;
-    }
-    if(txs || txs.length > 1){
-      done('More than one transaction found');
-    }
-  });
-};
-
-TransactionSchema.statics.findAllIssuanceOfSenderForAmendment = function (fingerprint, amNumber, done) {
-
-  Transaction
-    .find({ sender: fingerprint, type: 'ISSUANCE', amounts: new RegExp("-" + amNumber + ":") })
-    .sort({number: -1})
-    .exec(done);
-};
-
 TransactionSchema.statics.findAllWithSource = function (issuer, number, done) {
 
   Transaction
-    .find({ amounts: new RegExp(issuer + "-" + number + ":") })
+    .find({ coins: new RegExp(issuer + "-" + number + ":") })
     .sort({number: -1})
     .exec(done);
 };
@@ -250,8 +203,7 @@ function fill (tx1, tx2) {
   tx1.number       = tx2.number;
   tx1.previousHash = tx2.previousHash;
   tx1.recipient    = tx2.recipient;
-  tx1.type         = tx2.type;
-  tx1.amounts        = tx2.amounts;
+  tx1.coins        = tx2.coins;
   tx1.comment      = tx2.comment;
   tx1.hash         = tx2.hash;
 }

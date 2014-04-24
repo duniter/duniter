@@ -691,6 +691,33 @@ function PeeringService(pgp, currency, conf) {
     ], function (err) {
       if (err) plogger.error(err);
     });
+  };
+
+  this.coinIsOwned = function (owner, coin, thtentry, done) {
+    var nbConfirmations = 0;
+    async.forEach(thtentry.trusts, function(trust, callback){
+      async.waterfall([
+        function (next){
+          Peer.getTheOne(trust, next);
+        },
+        function (peer, next){
+          peer.connect(next);
+        },
+        function (node, next){
+          next('Err: vucoin need an upgrade!');
+        },
+        function (owning) {
+          if (owning.owner == owner) {
+            nbConfirmations++;
+          }
+          next();
+        }
+      ], function (err) {
+        callback();
+      });
+    }, function(err){
+      done(null, nbConfirmations >= thtentry.trustThreshold);
+    });
   }
 
   function getForwardPeers (done) {

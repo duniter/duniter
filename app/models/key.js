@@ -116,6 +116,10 @@ KeySchema.statics.isManaged = function(fingerprint, done){
   });
 }
 
+KeySchema.statics.getManaged = function(done){
+  Key.find({ managed: true }, done);
+};
+
 KeySchema.statics.getMembers = function(done){
   Key.find({ member: true }, done);
 };

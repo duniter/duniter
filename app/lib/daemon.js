@@ -84,6 +84,8 @@ function Daemon () {
     }, timeout);
   }
 
+  var lastTried = 0;
+
   function doStuff (done) {
     var now = new Date().timestamp();
     var current = ContractService.current();
@@ -95,7 +97,8 @@ function Daemon () {
           async.auto({
             triggerSelfVote: function(callback){
               // Case 1: just triggers self-vote
-              if (daemon.judges.timeForVote(amNext)) {
+              if (daemon.judges.timeForVote(amNext) && lastTried != amNext.generated) {
+                lastTried = amNext.generated;
                 // Must be a voter to vote!
                 Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
                   if (!err && wasVoter) {

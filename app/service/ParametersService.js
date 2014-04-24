@@ -195,6 +195,19 @@ function ParameterNamespace (currency) {
     callback(null, matches[1]);
   };
 
+  this.getCoinID = function (req, callback) {
+    if(!req.params || !req.params.coin_id){
+      callback("Coin ID is required");
+      return;
+    }
+    var matches = req.params.coin_id.match(/^(\w{40})-(\d+)-(\d+)$/);
+    if(!matches){
+      callback("Coin ID format is incorrect, must be 'hash-amNumber-coinNumber'");
+      return;
+    }
+    callback(null, matches[1], matches[2], matches[3]);
+  };
+
   this.getMembership = function (req, callback) {
     if(!(req.body && req.body.membership && req.body.signature)){
       callback('Requires a membership + signature');

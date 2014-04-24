@@ -24,17 +24,21 @@ CoinSchema.pre('save', function (next) {
 });
 
 CoinSchema.methods = {
+
+  getId: function () {
+    return [this.issuer, this.amNumber, this.coinNumber].join('-');
+  }
 };
 
 CoinSchema.statics.findByOwner = function (fingerprint, done) {
 
-  this.find({ owner: fingerprint }).sort({id: -1}).exec(done);
+  Coin.find({ owner: fingerprint }).sort({id: -1}).exec(done);
 };
 
 CoinSchema.statics.findByCoinID = function (issuer, amNumber, coinNumber, done) {
 
   var coindID = [issuer, amNumber, coinNumber].join('-');
-  this.find({ issuer: issuer, amNumber: amNumber, coinNumber: coinNumber }).exec(function (err, coins) {
+  Coin.find({ issuer: issuer, amNumber: amNumber, coinNumber: coinNumber }).exec(function (err, coins) {
     if(err || coins.length == 0){
       done('Coin ' + coindID + ' not found');
       return;

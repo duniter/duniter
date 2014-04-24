@@ -1,6 +1,7 @@
 var service    = require('../service');
 var jpgp       = require('../lib/jpgp');
 var async      = require('async');
+var moment     = require('moment');
 var request    = require('request');
 var mongoose   = require('mongoose');
 var vucoin     = require('vucoin');
@@ -199,10 +200,10 @@ module.exports.get = function (pgp, currency, conf) {
             function (next){
               dependingInterval(entry,
                 function isTooLate (entryTS, minimalTS) {
-                  next('Too late for this membership (' + entryTS + '): your membership must be at least ' + minimalTS + ', time of current amendment. Retry.');
+                  next('Too late for this membership (' + toDateString(entryTS) + '): your membership must be at least ' + toDateString(minimalTS) + ', time of current amendment. Retry.');
                 },
                 function isTooEarly (entryTS, nextTS) {
-                  next('Too early for this membership (' + entryTS + '): your membership must be max ' + (nextTS - 1) + '.');
+                  next('Too early for this membership (' + toDateString(entryTS) + '): your membership must be max ' + toDateString(nextTS - 1) + ' (next AM date)');
                 },
                 function isGood (am) {
                   entry.amNumber = (am && am.number) || -1;
@@ -1023,4 +1024,13 @@ function VTNone (p) {
 
 function VTNext (p) {
   return - p[0] + p[1] - p[3];
+}
+
+/**************** Utils ***********************/
+
+function toDateString (timestamp) {
+  var intTimpestamp = parseInt(timestamp);
+  var d = new Date();
+  d.setTime(timestamp*1000);
+  return moment(d).format("GGGG-MM-DD hh:mm:ss");
 }

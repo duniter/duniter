@@ -39,7 +39,8 @@
     "underscore": "~1.5.2",
     "vucoin": "~0.13.0",
     "request": "~2.31.0",
-    "log4js": "~0.6.9"
+    "log4js": "~0.6.9",
+    "moment": "~2.6.0"
   },
   "devDependencies": {
     "mocha": "",

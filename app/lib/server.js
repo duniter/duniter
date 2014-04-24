@@ -260,6 +260,9 @@ module.exports.express = {
       app.get(    '/hdc/transactions/sender/:fpr/last/:count/:from',hdc.transactions.sender.lastNofSender);
       app.get(    '/hdc/transactions/recipient/:fpr',               hdc.transactions.recipient);
       app.get(    '/hdc/transactions/refering/:fpr/:number',        hdc.transactions.refering);
+      app.get(    '/hdc/coins/list/:fpr',                           hdc.coins.list);
+      app.get(    '/hdc/coins/view/:coin_id/owner',                 hdc.coins.view);
+      app.get(    '/hdc/coins/view/:coin_id/history',               hdc.coins.history);
       app.get(    '/registry/parameters',                           ucs.parameters);
       app.get(    '/registry/community/members',                    ucs.membershipGet);
       app.post(   '/registry/community/members',                    ucs.membershipPost);

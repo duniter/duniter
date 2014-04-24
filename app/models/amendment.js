@@ -113,6 +113,13 @@ AmendmentSchema.methods = {
   
   parse: function(rawAmend, callback) {
     var am = new hdc.Amendment(rawAmend);
+    // Test on dividend
+    if (am.dividend && !am.coinBase) {
+      am.error = "CoinBase is required with UniversalDividend";
+    }
+    if (am.dividend && !am.coinList) {
+      am.error = "CoinList is required with UniversalDividend";
+    }
     if(!am.error){
       if (am.coinList) {
         am.coinList = am.coinList.split(' ');

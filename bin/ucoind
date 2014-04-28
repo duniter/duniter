@@ -6,6 +6,7 @@ var async    = require('async');
 var _        = require('underscore');
 var program  = require('commander');
 var mongoose = require('mongoose');
+var moment   = require('moment');
 var logger   = require('../app/lib/logger')('ucoind');
 var service  = require('../app/service');
 
@@ -32,7 +33,7 @@ program
   .option('--kmanagement <ALL|KEYS>', 'Define key management policy')
   .option('--kaccept <ALL|KEYS>', 'Define key acceptance policy')
   .option('--amdaemon <ON|OFF>', 'ucoin is launched with a specific daemon helping to get other peers\' votes')
-  .option('--amstart <timestamp>', 'First amendment generated date', parseInt)
+  .option('--amstart <timestamp>', 'First amendment generated date', parseMoment)
   .option('--amfreq <timestamp>', 'Amendments frequency, in seconds', parseInt)
   .option('--udfreq <timestamp>', 'Universal Dividend frequency, in seconds', parseInt)
   .option('--ud0 <integer>', 'First Universal Dividend value (a.k.a \'UD0\')', parseInt)
@@ -334,6 +335,16 @@ function connect(callback) {
       callback.apply(this, cbArgs);
     });
   };
+}
+
+function parseMoment (d) {
+  if (d.toLowerCase() == 'now') {
+    return parseInt(moment().format("X"));
+  } else if (d.match(/\d{2}-\d{2}-\d{4}/)) {
+    return parseInt(moment(d, "DD-MM-YYYY").format("X"));
+  } else {
+    return parseInt(d);
+  }
 }
 
 program.parse(process.argv);

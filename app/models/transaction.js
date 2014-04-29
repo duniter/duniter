@@ -58,9 +58,10 @@ TransactionSchema.methods = {
       tx = new hdc.Transaction(rawTX);
     }
     fill(this, tx);
+    this.coins.sort();
     this.hash = sha1(rawTX).toUpperCase();
     if (!tx.error) {
-      tx.error = tx.check();
+      tx.error = this.check();
     }
     callback(tx.error, this);
   },
@@ -147,7 +148,8 @@ TransactionSchema.methods = {
       recipient: this.recipient,
       coins: this.coins,
       sigDate: parseInt(this.sigDate.getTime()/1000, 10),
-      comment: this.comment
+      comment: this.comment,
+      raw: this.getRaw()
     };
   }
 };

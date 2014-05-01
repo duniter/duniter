@@ -118,6 +118,10 @@ module.exports.get = function (pgp, currency, conf) {
                         next('Sender does not own coin ' + coin.toString());
                         return;
                       }
+                      if (c.transaction != (coin.transaction && [coin.transaction.sender, coin.transaction.number].join('-'))) {
+                        next('Ownership of coin ' + coin.toString() + ' is not justified by transaction ' + coin.transaction);
+                        return;
+                      }
                       next();
                     },
                   ], callback);
@@ -182,6 +186,7 @@ module.exports.get = function (pgp, currency, conf) {
               },
               function (c, next){
                 c.owner = tx.recipient;
+                c.transaction = [tx.sender, tx.number].join('-');
                 c.save(function (err) {
                   if (err)
                     logger.error(err);

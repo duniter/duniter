@@ -154,29 +154,28 @@ module.exports.get = function (pgp, currency, conf) {
             next();
             return;
           }
-          async.forEach(keys, function(key, callback){
+          async.forEachSeries(keys, function(key, callback){
+            var coins = [];
             var power = am.coinBase;
-            async.forEach(am.coinList, function(quantity, powerSaved){
-              var i = 0;
-              async.whilst(
-                function() { return i < quantity; },
-                function (coinSaved) {
-                  var c = new Coin();
-                  c.owner = key.fingerprint;
-                  c.issuer = key.fingerprint;
-                  c.amNumber = am.number;
-                  c.coinNumber = i;
-                  c.power = power;
-                  c.save(function (err) {
-                    i++;
-                    coinSaved(err);
-                  });
-                },
-                function (err) {
-                  power++;
-                  powerSaved(err);
-                }
-              );
+            var cNumber = 0;
+            am.coinList.forEach(function(quantity){
+              for (var i = cNumber; i < cNumber + quantity; i++) {
+                var c = new Coin();
+                c.owner = key.fingerprint;
+                c.issuer = key.fingerprint;
+                c.amNumber = am.number;
+                c.coinNumber = i;
+                c.power = power;
+                coins.push(c);
+              }
+              cNumber += quantity;
+              power++;
+            });
+            // console.log(coins);
+            async.forEach(coins, function(c, saved){
+              c.save(function (err) {
+                saved(err);
+              });
             }, function (err) {
               if (err)
                 logger.error(err);

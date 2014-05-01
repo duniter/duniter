@@ -18,6 +18,7 @@ var Peer       = mongoose.model('Peer');
 var Key        = mongoose.model('Key');
 var Forward    = mongoose.model('Forward');
 var Status     = require('../models/statusMessage');
+var coiner     = require('../lib/coiner');
 var log4js     = require('log4js');
 var logger     = require('../lib/logger')('sync');
 var mlogger    = require('../lib/logger')('membership');
@@ -474,8 +475,9 @@ module.exports.get = function (pgp, currency, conf) {
           var dividendPerMember = monetaryMassDelta / amNext.membersCount;
           var previousUD = (previousWithUD && previousWithUD.dividend) || conf.sync.UD0;
           amNext.dividend = Math.max(previousUD, Math.floor(dividendPerMember)); // Integer
-          amNext.coinBase = 0;
-          amNext.coinList = [amNext.dividend]; // Only base units
+          var coinage = coiner(amNext.dividend, 0, 0);
+          amNext.coinBase = coinage.coinBase;
+          amNext.coinList = coinage.coinList;
           amNext.monetaryMass += amNext.dividend * amNext.membersCount; // Integer
           next();
         },

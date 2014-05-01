@@ -91,12 +91,20 @@ var amendments = {
     coinList: []
   },
 
+  AM1: {
+    generated: conf.sync.AMStart + 1,
+    number: 1,
+    dividend: 100,
+    coinBase: 0,
+    coinList: [26,7,5,3,1]
+  },
+
   AM2: {
     generated: conf.sync.AMStart + 2,
     number: 2,
     dividend: 100,
     coinBase: 0,
-    coinList: [100]
+    coinList: [26,7,5,3,1]
   },
 
   AM3: {
@@ -104,7 +112,7 @@ var amendments = {
     number: 3,
     dividend: 100,
     coinBase: 0,
-    coinList: [100]
+    coinList: [26,7,5,3,1]
   },
 
   AM4: {
@@ -112,7 +120,7 @@ var amendments = {
     number: 4,
     dividend: 150,
     coinBase: 0,
-    coinList: [150]
+    coinList: [28,7,5,3,2,1]
   },
 
   AM5: {
@@ -120,7 +128,7 @@ var amendments = {
     number: 5,
     dividend: 225,
     coinBase: 0,
-    coinList: [225]
+    coinList: [37,12,9,6,3,1]
   }
 };
 

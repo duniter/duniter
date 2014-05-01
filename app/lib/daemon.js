@@ -34,7 +34,7 @@ function Daemon () {
   var selfFingerprint = "";
 
   // 20 seconds minimal waiting before asking for vote
-  var voteMargin = 20*1000;
+  var voteMargin = 1*1000;
 
   this.init = function (conf, fingerprint) {
     AMStart = conf.sync.AMStart;

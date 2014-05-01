@@ -157,9 +157,9 @@ module.exports.get = function (pgp, currency, conf) {
           async.forEach(keys, function(key, callback){
             var power = am.coinBase;
             async.forEach(am.coinList, function(quantity, powerSaved){
-              var i = 1;
+              var i = 0;
               async.whilst(
-                function() { return i <= quantity; },
+                function() { return i < quantity; },
                 function (coinSaved) {
                   var c = new Coin();
                   c.owner = key.fingerprint;

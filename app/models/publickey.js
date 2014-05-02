@@ -10,6 +10,7 @@ var logger   = require('../lib/logger')('pubkey');
 var PublicKeySchema = new Schema({
   raw: String,
   fingerprint: { type: String, unique: true },
+  subkeys: [String], // Array of keyId
   signature: String,
   name: String,
   email: String,
@@ -84,7 +85,7 @@ PublicKeySchema.methods = {
 PublicKeySchema.statics.getTheOne = function (keyID, done) {
   PublicKey.search("0x" + keyID, function (err, keys) {
     if(keys.length > 1){
-      done('Multiple PGP keys found for this keyID.');
+      done('Multiple PGP keys found for keyID 0x' + keyID + '.');
       return;
     }
     if(keys.length < 1){
@@ -132,7 +133,14 @@ PublicKeySchema.statics.search = function (motif, done) {
   var searchByFingerprint = {
     byFingerprint: function (callback) {
       var fpr = fprPattern ? fprPattern[1] : "";
-      obj.find({ fingerprint: new RegExp(fpr, 'i')}, function (err, keys) {
+      obj.find({ fingerprint: new RegExp(fpr + "$", 'i')}, function (err, keys) {
+        found.push(keys);
+        callback();
+      });
+    },
+    bySubkey: function (callback) {
+      var fpr = fprPattern ? fprPattern[1] : "";
+      obj.find({ subkeys: new RegExp(fpr + "$", 'i')}, function (err, keys) {
         found.push(keys);
         callback();
       });
@@ -159,6 +167,7 @@ PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
           var keyID = jpgp().signature(signature).issuer();
           var cert = jpgp().certificate(asciiArmored);
           var fpr = cert.fingerprint;
+          var keyIds = [cert.fingerprint].concat(cert.subkeys);
           if(!keyID){
             next('Cannot find issuer of signature');
             return;
@@ -167,7 +176,8 @@ PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
             next('Cannot extract fingerprint from certificate');
             return;
           }
-          if(fpr.indexOf(keyID) == -1){
+          var keyMatched = _(keyIds).some(function(aKeyFPR){ return aKeyFPR.match(new RegExp(keyID + "$")); });
+          if(!keyMatched){
             next('This certificate is not owned by the signatory');
             return;
           }

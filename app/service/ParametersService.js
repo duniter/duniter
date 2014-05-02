@@ -62,16 +62,8 @@ function ParameterNamespace (currency) {
     }
 
     // Looking for corresponding public key
-    mongoose.model('PublicKey').search("0x" + keyID, function (err, keys) {
-      if(keys.length > 1){
-        callback('Multiple PGP keys found for this keyID.');
-        return;
-      }
-      if(keys.length < 1){
-        callback('Corresponding Public Key not found.');
-        return;
-      }
-      callback(null, keys[0], transaction + signature);
+    PublicKey.getTheOne(keyID, function (err, pubkey) {
+      callback(err, pubkey, transaction + signature);
     });
   };
 

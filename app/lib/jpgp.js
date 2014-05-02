@@ -29,10 +29,15 @@ function JPGP() {
     var key = readKeys[0];
     var fpr = key.getKeyPacket().getFingerprint().toUpperCase();
     var uids = key.getUserIds();
+    var subkeys = [];
+    key.getSubkeyPackets().forEach(function(subkeyPacket){
+      subkeys.push(subkeyPacket.getFingerprint().toUpperCase());
+    });
     return {
       "fingerprint": fpr,
       "uids": uids,
-      "raw": asciiArmored
+      "raw": asciiArmored,
+      "subkeys": subkeys
     };
   };
 

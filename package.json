@@ -35,7 +35,7 @@
     "openpgp": "0.5.1",
     "merkle": "~0.1.0",
     "hdc": "~0.7.0",
-    "connect-pgp": "~0.2.1",
+    "connect-pgp": "~0.3.0",
     "underscore": "~1.5.2",
     "vucoin": "~0.13.0",
     "request": "~2.31.0",

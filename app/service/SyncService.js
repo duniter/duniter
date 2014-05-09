@@ -442,7 +442,7 @@ module.exports.get = function (pgp, currency, conf) {
   function dependingInterval (entry, isTooLate, isTooEarly, isGood) {
     Amendment.current(function (err, am) {
       var currentGenerated = am ? am.generated : conf.sync.AMStart;
-      var entryTimestamp = parseInt(entry.sigDate.getTime()/1000, 10);
+      var entryTimestamp = parseInt(entry.date.getTime()/1000, 10);
       if (currentGenerated > entryTimestamp) {
         isTooLate(entryTimestamp, currentGenerated);
       } else if(entryTimestamp >= currentGenerated + conf.sync.AMFreq) {
@@ -564,7 +564,7 @@ module.exports.get = function (pgp, currency, conf) {
     var ctx = context || { currentMembership: null, nextMemberships: [] };
     var hasIn = ctx.currentMembership && ctx.currentMembership.membership == 'IN';
     var hasOut = ctx.currentMembership && ctx.currentMembership.membership == 'OUT';
-    var hasInTooOld = (hasIn && ctx.currentMembership.sigDate < getExclusionDate(amNext));
+    var hasInTooOld = (hasIn && ctx.currentMembership.date < getExclusionDate(amNext));
     var ms = [
       ctx.currentMembership == null ? 1 : 0,
       hasIn && !hasInTooOld ? 1 : 0,

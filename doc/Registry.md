@@ -20,6 +20,7 @@ Version: 1
 Currency: beta_brousouf
 Registry: MEMBERSHIP
 Issuer: 405715EC64289D1F43808F57EC51F273CBC0FA17
+Date: TIMESTAMP
 Membership: IN
 ```
 
@@ -31,6 +32,7 @@ Field | Description
 `Currency` | Contains the name of the currency.
 `Registry` | Identify the type of document within Registry context.
 `Issuer` | Full PGP key fingerprint issuing this message.
+`Date` | Creation date of this message. Timestamp. This date may be different from signature's date.
 `Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
 
 ## Voting
@@ -44,6 +46,7 @@ Version: 1
 Currency: beta_brousouf
 Registry: VOTING
 Issuer: 405715EC64289D1F43808F57EC51F273CBC0FA17
+Date: TIMESTAMP
 ```
 
 ### Fields details
@@ -54,5 +57,6 @@ Field | Description
 `Currency` | Contains the name of the currency.
 `Registry` | Identify the type of document within Registry context.
 `Issuer` | Full PGP key fingerprint issuing this message.
+`Date` | Creation date of this message. Timestamp. This date may be different from signature's date.
 
 With such message, uCoin node will be able to know that member `Issuer` *wants* its votes to be considered when accepting new Amendments.

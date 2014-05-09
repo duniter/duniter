@@ -141,6 +141,7 @@ A Wallet format is the following:
 Version: VERSION
 Currency: CURRENCY_NAME
 Key: KEY_FINGERPRINT
+Date: TIMESTAMP
 RequiredTrusts: NUMBER_OF_TRUSTS
 Hosters:
 C139D011FAC7E3AA8E54619F7729F0179526FA54
@@ -154,6 +155,10 @@ A5ED399E2E411BF4B09132EFA2CC5E0CA49B835E
 and is followed by signature of `KEY_FINGERPRINT`'s owner.
 
 ### Wallet's fields signification
+
+#### Date
+
+The `Date` field is to be understood as the date of creation - and thus validity - of this Wallet message. This field may be different from signature's date. The aim is to clearly express the date of validity, instead of relying on the computer datetime.
 
 #### Hosters
 

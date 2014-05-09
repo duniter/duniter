@@ -15,6 +15,7 @@ var MembershipSchema = new Schema({
   eligible: { type: Boolean, default: true },
   current: { type: Boolean, default: false },
   signature: String,
+  date: { type: Date },
   propagated: { type: Boolean, default: false },
   hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
@@ -64,7 +65,8 @@ MembershipSchema.methods = {
         {prop: "currency",          regexp: /Currency: (.*)/},
         {prop: "type",              regexp: /Registry: (.*)/},
         {prop: "issuer",            regexp: /Issuer: (.*)/},
-        {prop: "membership",        regexp: /Membership: (.*)/}
+        {prop: "membership",        regexp: /Membership: (.*)/},
+        {prop: "date",              regexp: /Date: (.*)/}
       ];
       var crlfCleaned = rawMS.replace(/\r\n/g, "\n");
       if(crlfCleaned.match(/\n$/)){
@@ -125,7 +127,8 @@ function verify(obj, currency) {
     'BAD_CURRENCY': 151,
     'BAD_FINGERPRINT': 152,
     'BAD_MEMBERSHIP': 153,
-    'BAD_REGISTRY_TYPE': 154
+    'BAD_REGISTRY_TYPE': 154,
+    'BAD_DATE': 155,
   }
   if(!err){
     // Version
@@ -151,6 +154,11 @@ function verify(obj, currency) {
     // Membership
     if(obj.membership && !obj.membership.match(/^(IN|OUT)$/))
       err = {code: codes['BAD_MEMBERSHIP'], message: "Incorrect Membership field: must be either IN or OUT"};
+  }
+  if(!err){
+    // Date
+    if(obj.date && !obj.date.match(/^\d+$/))
+      err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
   }
   if(err){
     return { result: false, errorMessage: err.message, errorCode: err.code};

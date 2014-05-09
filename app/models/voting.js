@@ -14,6 +14,7 @@ var VotingSchema = new Schema({
   current: { type: Boolean, default: false },
   signature: String,
   type: String,
+  date: { type: Date },
   propagated: { type: Boolean, default: false },
   hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
@@ -62,7 +63,8 @@ VotingSchema.methods = {
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
         {prop: "type",              regexp: /Registry: (.*)/},
-        {prop: "issuer",            regexp: /Issuer: (.*)/}
+        {prop: "issuer",            regexp: /Issuer: (.*)/},
+        {prop: "date",              regexp: /Date: (.*)/}
       ];
       var crlfCleaned = rawMS.replace(/\r\n/g, "\n");
       if(crlfCleaned.match(/\n$/)){
@@ -122,7 +124,8 @@ function verify(obj, currency) {
     'BAD_CURRENCY': 151,
     'BAD_ISSUER': 152,
     'BAD_KEY': 153,
-    'BAD_REGISTRY_TYPE': 154
+    'BAD_REGISTRY_TYPE': 154,
+    'BAD_DATE': 155,
   }
   if(!err){
     // Version
@@ -143,6 +146,11 @@ function verify(obj, currency) {
     // Issuer
     if(obj.issuer && !obj.issuer.isSha1())
       err = {code: codes['BAD_ISSUER'], message: "Incorrect issuer field"};
+  }
+  if(!err){
+    // Date
+    if(obj.date && !obj.date.match(/^\d+$/))
+      err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
   }
   if(err){
     return { result: false, errorMessage: err.message, errorCode: err.code};

@@ -13,6 +13,7 @@ var WalletSchema = new Schema({
   trusts: [String],
   requiredTrusts: Number,
   signature: String,
+  date: { type: Date },
   propagated: { type: Boolean, default: false },
   hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
@@ -59,6 +60,7 @@ WalletSchema.methods = {
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
         {prop: "fingerprint",       regexp: /Key: (.*)/},
+        {prop: "date",              regexp: /Date: (.*)/},
         {prop: "requiredTrusts",    regexp: /RequiredTrusts: (.*)/},
         {prop: "hosters",           regexp: /Hosters:\n([\s\S]*)Trusts/},
         {prop: "trusts",            regexp: /Trusts:\n([\s\S]*)/}
@@ -109,6 +111,8 @@ WalletSchema.methods = {
     raw += "Version: " + this.version + "\n";
     raw += "Currency: " + this.currency + "\n";
     raw += "Key: " + this.fingerprint + "\n";
+    raw += "Date: " + this.date.timestamp() + "\n";
+    raw += "RequiredTrusts: " + this.requiredTrusts + "\n";
     raw += "Hosters:\n";
     this.hosters.forEach(function (fingerprint) {
       raw += fingerprint + "\n";
@@ -134,6 +138,7 @@ function verify(obj, currency) {
     'BAD_CURRENCY': 151,
     'BAD_FINGERPRINT': 152,
     'BAD_THRESHOLD': 153,
+    'BAD_DATE': 154,
   }
   if(!err){
     // Version
@@ -149,6 +154,11 @@ function verify(obj, currency) {
     // Fingerprint
     if(obj.fingerprint && !obj.fingerprint.match(/^[A-Z\d]+$/))
       err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect fingerprint field"};
+  }
+  if(!err){
+    // Date
+    if(obj.date && !obj.date.match(/^\d+$/))
+      err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
   }
   if(!err){
     // RequiredTrusts

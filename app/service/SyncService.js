@@ -7,7 +7,6 @@ var mongoose   = require('mongoose');
 var vucoin     = require('vucoin');
 var _          = require('underscore');
 var openpgp    = require('openpgp');
-var THTEntry   = mongoose.model('THTEntry');
 var Amendment  = mongoose.model('Amendment');
 var PublicKey  = mongoose.model('PublicKey');
 var Membership = mongoose.model('Membership');

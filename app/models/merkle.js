@@ -141,7 +141,7 @@ MerkleSchema.statics.peers = function (done) {
   retrieve({ type: 'peers', criteria: '{}' }, done);
 };
 
-MerkleSchema.statics.THTEntries = function (done) {
+MerkleSchema.statics.WalletEntries = function (done) {
   retrieve({ type: 'thtentries', criteria: '{}' }, done);
 };
 
@@ -223,10 +223,10 @@ MerkleSchema.statics.updateSignaturesOfAmendment = function (am, previousHash, n
   ], done);
 };
 
-MerkleSchema.statics.updateForTHTEntries= function (previousHash, newHash, done) {
+MerkleSchema.statics.updateForWalletEntries= function (previousHash, newHash, done) {
   async.waterfall([
     function (next) {
-      Merkle.THTEntries(function (err, merkle) {
+      Merkle.WalletEntries(function (err, merkle) {
         next(err, merkle);
       });
     },
@@ -356,8 +356,8 @@ MerkleSchema.statics.mapForSignatures = function (hashes, done) {
   });
 };
 
-MerkleSchema.statics.mapForTHTEntries = function (hashes, done) {
-  mongoose.model('THTEntry')
+MerkleSchema.statics.mapForWalletEntries = function (hashes, done) {
+  mongoose.model('Wallet')
   .find({ hash: { $in: hashes } })
   .sort('hash')
   .exec(function (err, entries) {
@@ -370,7 +370,7 @@ MerkleSchema.statics.mapForTHTEntries = function (hashes, done) {
 };
 
 MerkleSchema.statics.mapForMemberships = function (hashes, done) {
-  mongoose.model('THTEntry')
+  mongoose.model('Wallet')
   .find({ hash: { $in: hashes } })
   .sort('hash')
   .exec(function (err, entries) {
@@ -383,7 +383,7 @@ MerkleSchema.statics.mapForMemberships = function (hashes, done) {
 };
 
 MerkleSchema.statics.mapForVotings = function (hashes, done) {
-  mongoose.model('THTEntry')
+  mongoose.model('Wallet')
   .find({ hash: { $in: hashes } })
   .sort('hash')
   .exec(function (err, entries) {

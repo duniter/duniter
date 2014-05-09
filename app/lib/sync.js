@@ -10,7 +10,7 @@ var Key         = mongoose.model('Key');
 var Membership  = mongoose.model('Membership');
 var Voting      = mongoose.model('Voting');
 var Transaction = mongoose.model('Transaction');
-var THTEntry    = mongoose.model('THTEntry');
+var Wallet      = mongoose.model('Wallet');
 var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
 var logger      = require('./logger')('sync');
@@ -22,7 +22,7 @@ var CONST_FORCE_TX_PROCESSING = false;
 var KeyService         = service.Key;
 var VoteService        = service.Vote;
 var TransactionService = service.Transactions;
-var THTService         = service.THT;
+var WalletService         = service.Wallet;
 var PeeringService     = service.Peering;
 var StrategyService    = service.Strategy;
 var ParametersService  = service.Parameters;
@@ -208,7 +208,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
         // Trust Hash Table
         //==================
         function (next){
-          Merkle.THTEntries(next);
+          Merkle.WalletEntries(next);
         },
         function (merkle, next) {
           node.ucg.tht.get({}, function (err, json) {
@@ -230,12 +230,12 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                     function (json, cb){
                       var jsonEntry = json.leaf.value.entry;
                       var sign = json.leaf.value.signature;
-                      var entry = new THTEntry({});
+                      var entry = new Wallet({});
                       ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
                         entry[key] = jsonEntry[key];
                       });
-                      logger.info('THT entry %s', jsonEntry.fingerprint);
-                      THTService.submit(entry.getRaw() + sign, cb);
+                      logger.info('Wallet entry %s', jsonEntry.fingerprint);
+                      WalletService.submit(entry.getRaw() + sign, cb);
                     }
                   ], callback);
                 }, function(err, result){

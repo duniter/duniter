@@ -7,7 +7,7 @@ var Forward   = mongoose.model('Forward');
 var Amendment = mongoose.model('Amendment');
 var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
-var THTEntry  = mongoose.model('THTEntry');
+var Wallet    = mongoose.model('Wallet');
 var Key       = mongoose.model('Key');
 var _         = require('underscore');
 var openpgp   = require('openpgp');
@@ -22,7 +22,7 @@ var service   = require('../service');
 var http              = service.HTTP;
 var MerkleService     = service.Merkle;
 var ParametersService = service.Parameters;
-var THTService        = service.THT;
+var WalletService        = service.Wallet;
 var PeeringService    = service.Peering;
 
 module.exports = function (pgp, currency, conf) {
@@ -231,10 +231,10 @@ module.exports = function (pgp, currency, conf) {
     var that = this;
     async.waterfall([
       function (callback) {
-        ParametersService.getTHTEntry(req, callback);
+        ParametersService.getWallet(req, callback);
       },
       function(entry, callback){
-        THTService.submit(entry, callback);
+        WalletService.submit(entry, callback);
       }
     ], function (err, entry) {
       if(err){
@@ -249,7 +249,7 @@ module.exports = function (pgp, currency, conf) {
           manageKey: function(callback){
             var all = conf.kmanagement == 'ALL';
             if(all){
-              // THT entry new/changed: if kmanagement == ALL, manage it
+              // Wallet entry new/changed: if kmanagement == ALL, manage it
               Key.setManaged(entry.fingerprint, true, callback);
               return;
             }
@@ -257,7 +257,7 @@ module.exports = function (pgp, currency, conf) {
             callback();
           },
           propagates: function(callback){
-            PeeringService.propagateTHT(entry, function (err, propagated) {
+            PeeringService.propagateWallet(entry, function (err, propagated) {
               if(err && !propagated){
                 tlogger.error('Not propagated: %s', err);
               }
@@ -268,12 +268,12 @@ module.exports = function (pgp, currency, conf) {
             });
           },
           initForwards: function (callback) {
-            // Eventually renegociate FWD rules according to new THT entry
+            // Eventually renegociate FWD rules according to new Wallet entry
             PeeringService.initForwards(callback);
           }
         },
         function(err) {
-          if(err) tlogger.error('Error during THT POST: ' + err);
+          if(err) tlogger.error('Error during Wallet POST: ' + err);
         });
       }
     });
@@ -282,10 +282,10 @@ module.exports = function (pgp, currency, conf) {
   this.thtGET = function(req, res) {
     async.waterfall([
       function (next){
-        Merkle.THTEntries(next);
+        Merkle.WalletEntries(next);
       },
       function (merkle, next){
-        MerkleService.processForURL(req, merkle, Merkle.mapForTHTEntries, next);
+        MerkleService.processForURL(req, merkle, Merkle.mapForWalletEntries, next);
       }
     ], function (err, json) {
       if(err){
@@ -306,7 +306,7 @@ module.exports = function (pgp, currency, conf) {
         });
       },
       function (fingerprint, next){
-        THTEntry.getTheOne(fingerprint, next);
+        Wallet.getTheOne(fingerprint, next);
       }
     ], function (err, entry) {
       if(err){

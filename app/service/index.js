@@ -18,7 +18,7 @@ function Service () {
     // Services requiring configuration
     this.Parameters   = services.Parameters   = require("./ParametersService").get(currency);
     this.PublicKey    = services.PublicKey    = require("./PublicKeyService").get(pgp, currency, conf);
-    this.THT          = services.THT          = require("./THTService").get(pgp, currency, conf);
+    this.Wallet       = services.Wallet       = require("./WalletService").get(pgp, currency, conf);
     this.Contract     = services.Contract     = require("./ContractService").get(currency, conf);
     this.Peering      = services.Peering      = require("./PeeringService").get(pgp, currency, conf);
     this.Sync         = services.Sync         = require("./SyncService").get(pgp, currency, conf);

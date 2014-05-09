@@ -2,7 +2,7 @@ var jpgp      = require('../lib/jpgp');
 var async     = require('async');
 var mongoose  = require('mongoose');
 var _         = require('underscore');
-var THTEntry  = mongoose.model('THTEntry');
+var Wallet    = mongoose.model('Wallet');
 var Amendment = mongoose.model('Amendment');
 var PublicKey = mongoose.model('PublicKey');
 var Merkle    = mongoose.model('Merkle');
@@ -16,7 +16,7 @@ module.exports.get = function (pgp, currency, conf) {
 
       function (callback) {
         if(signedEntry.indexOf('-----BEGIN') == -1){
-          callback('Signature not found in given THT entry');
+          callback('Signature not found in given Wallet');
           return;
         }
         callback();
@@ -42,7 +42,7 @@ module.exports.get = function (pgp, currency, conf) {
 
       // Verify signature
       function(pubkey, callback){
-        var entry = new THTEntry();
+        var entry = new Wallet();
         async.waterfall([
           function (next){
             entry.parse(signedEntry, next);
@@ -59,21 +59,21 @@ module.exports.get = function (pgp, currency, conf) {
               return;
             }
             if(pubkey.fingerprint != entry.fingerprint){
-              next('Fingerprint in THT entry (' + entry.fingerprint + ') does not match signatory (' + pubkey.fingerprint + ')');
+              next('Fingerprint in Wallet (' + entry.fingerprint + ') does not match signatory (' + pubkey.fingerprint + ')');
               return;
             }
             next();
           },
           function (next){
-            THTEntry.find({ fingerprint: pubkey.fingerprint }, next);
+            Wallet.find({ fingerprint: pubkey.fingerprint }, next);
           },
           function (entries, next){
             var entryEntity = entry;
             var previousHash = entryEntity.hash;
             if(entries.length > 0){
-              // Already existing THT entry
+              // Already existing Wallet
               if(entries[0].sigDate >= entryEntity.sigDate){
-                next('Cannot record a previous THT entry');
+                next('Cannot record a previous Wallet');
                 return;
               }
               entryEntity = entries[0];
@@ -87,7 +87,7 @@ module.exports.get = function (pgp, currency, conf) {
             });
           },
           function (entry, previousHash, next) {
-            Merkle.updateForTHTEntries(previousHash, entry.hash, function (err) {
+            Merkle.updateForWalletEntries(previousHash, entry.hash, function (err) {
               next(err, entry);
             });
           }

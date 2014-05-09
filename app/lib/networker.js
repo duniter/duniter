@@ -44,11 +44,11 @@ module.exports = function (peeringService) {
   });
   
   peeringService.on('tht', function(thtentry, peers) {
-    logger.debug('new THT entry to be sent to %s peers', peers.length);
+    logger.debug('new Wallet entry to be sent to %s peers', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating THT entry from %s to peer %s', thtentry.issuer, peer.fingerprint);
+        logger.debug('Propagating Wallet entry from %s to peer %s', thtentry.issuer, peer.fingerprint);
         // Sent!
         sent();
       });
@@ -160,8 +160,8 @@ function sendTransaction(peer, transaction, done) {
   }, done);
 }
 
-function sendTHT(peer, entry, done) {
-  logger.info('POST THT entry %s to %s', entry.fingerprint, peer.fingerprint);
+function sendWallet(peer, entry, done) {
+  logger.info('POST Wallet entry %s to %s', entry.fingerprint, peer.fingerprint);
   post(peer, '/network/tht', {
     "entry": entry.getRaw(),
     "signature": entry.signature

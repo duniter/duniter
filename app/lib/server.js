@@ -17,7 +17,7 @@ var logger     = require('./logger')('http');
 var pgplogger  = require('./logger')('PGP');
 var log4js     = require('log4js');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'THTEntry', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
 
 function initModels() {
   models.forEach(function (entity) {

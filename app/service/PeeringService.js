@@ -5,7 +5,7 @@ var request     = require('request');
 var mongoose    = require('mongoose');
 var openpgp     = require('openpgp');
 var _           = require('underscore');
-var THTEntry    = mongoose.model('THTEntry');
+var Wallet      = mongoose.model('Wallet');
 var Amendment   = mongoose.model('Amendment');
 var PublicKey   = mongoose.model('PublicKey');
 var Transaction = mongoose.model('Transaction');
@@ -227,7 +227,7 @@ function PeeringService(pgp, currency, conf) {
         next();
       },
       function (next) {
-        THTEntry.find({}, next);
+        Wallet.find({}, next);
       },
       function (entries, next) {
         entries.forEach(function (e) {
@@ -236,7 +236,7 @@ function PeeringService(pgp, currency, conf) {
         next();
       },
       function (next) {
-        // Entries from THT not present in managedKeys
+        // Entries from Wallet not present in managedKeys
         var notManaged = _(thtKeys).difference(managedKeys) || [];
         next(null, notManaged);
       },
@@ -253,7 +253,7 @@ function PeeringService(pgp, currency, conf) {
   }
 
   /**
-  * initForwards : look THT entries to deduce the forward rules of the node.
+  * initForwards : look Wallet entries to deduce the forward rules of the node.
   * Two cases:
   *
   *   - keys: send forwards containing the keys managed by the node
@@ -353,7 +353,7 @@ function PeeringService(pgp, currency, conf) {
       },
       function (keys, next) {
         async.forEachSeries(keys, function (k, callback) {
-          THTEntry.getTheOne(k.fingerprint, function (err, entry) {
+          Wallet.getTheOne(k.fingerprint, function (err, entry) {
             if(err){
               callback();
               return;
@@ -457,11 +457,11 @@ function PeeringService(pgp, currency, conf) {
     });
   }
 
-  this.propagateTHT = function (entry, done) {
+  this.propagateWallet = function (entry, done) {
     async.waterfall([
       function (next) {
         if(entry.propagated){
-          next('THT entry for ' + entry.fingerprint + ' already propagated', true);
+          next('Wallet entry for ' + entry.fingerprint + ' already propagated', true);
           return;
         }
         next();
@@ -510,7 +510,7 @@ function PeeringService(pgp, currency, conf) {
                 next();
               },
               function (next){
-                THTEntry.findMatchingTransaction(tx, next);
+                Wallet.findMatchingTransaction(tx, next);
               },
               function (entries, next){
                 entries.forEach(function(entry){

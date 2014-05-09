@@ -5,10 +5,10 @@
 * [Peering](#peering-entry)
 * [Forward](#forward-request)
 * [Status](#status-request)
-* [Trust Hash Table (THT)](#trust-hash-table)
-  * [Structure](#tht-structure)
-  * [Signification](#tht-signification)
-  * [Protection](#tht-protections)
+* [Wallets Hash Table (WHT)](#wallets-hash-table)
+  * [Structure](#wallet-message-structure)
+  * [Signification](#wallets-fields-signification)
+  * [Protection](#wallet-protections)
 
 ## Peering entry
 
@@ -117,28 +117,31 @@ Currency: CURRENCY_NAME
 Status: NEW|UP|DOWN
 ```
 
-## Trust Hash Table
+## Wallets Hash Table
 
-uCoin introduces a new data structure called *Trust Hash Table* (THT).
+uCoin also manages, like most of crypto-currency systems, a "wallet" concept. Wallets are described through a *Wallet* message. The aggregation of **all** Wallet messages constitute the *WHT* for *Wallets Hash Table* and containing **all** informations about **any** Wallet in a uCoin network.
 
-Such a structure is a simple Hash Table whose entries are OpenPGP key fingerprint, and values are two arrays describing respectively:
+> Note: by convention, "Wallet" (uppercased `W`) will refer to uCoin message, and "wallet" (lowercased `W`) refer to the more general wallet concept.
 
-* which are the nodes **hosting this key's transactions**
-* which are the nodes this key would rather trust *for others' key hosting*
+WHT is a simple Hash Table whose entries are OpenPGP key fingerprint, and values are Wallet messages. The goal of WHT is to know, for a given wallet:
+
+* which are the nodes **hosting this wallet's transactions**
+* which are the nodes this wallet agrees to trust *for receiving transaction of other wallets*
 
 This is a very important feature for two points:
 
-* it makes possible the repartition of the whole transactions database (a random individual's computer can't handle a humanity scale transactions database)
+* it makes possible the distribution of the whole transactions database (a random individual's computer can't handle a humanity scale transactions database)
 * it aims at preventing double-spending issue
 
-### THT Structure
+### Wallet message Structure
 
-A THT entry format is the following:
+A Wallet format is the following:
 
 ```plain
 Version: VERSION
 Currency: CURRENCY_NAME
 Key: KEY_FINGERPRINT
+RequiredTrusts: NUMBER_OF_TRUSTS
 Hosters:
 C139D011FAC7E3AA8E54619F7729F0179526FA54
 14808C7325B28B38CBC62CF9CCEE37CD1AA03408
@@ -149,20 +152,25 @@ A5ED399E2E411BF4B09132EFA2CC5E0CA49B835E
 25AC706AF69E60A0334B2A072F4B802C3242B159
 ```
 and is followed by signature of `KEY_FINGERPRINT`'s owner.
-### THT Signification
 
-#### hosters
+### Wallet's fields signification
 
-The `hosters` field is a list of *nodes* a given key declares as the ones that **officialy manages this key's transactions**. That is, which are the nodes by which **every transactions of this key pass** trough.
+#### Hosters
 
-#### trusts
+The `Hosters` field is a list of *nodes* a given wallet declares as the ones that **officialy manages this wallet's transactions**. That is, which are the nodes by which **every transactions of this wallet pass trough**.
 
-The `trusts` field is a list of *nodes* a given key does trust for receiving transactions. This means, for a given `Recipient`, that he would rather accept transactions from `Sender` if the sender's transactions are managed by one of the trusted nodes of `Recipient`.
+#### Trusts
 
-> Indeed, if the owner of a key is not an honest man/organization and wants to cheat, he probably will declare a corrupted node *he controls* for his transactions managment. Thus, he would be able to declare wrong transactions and steal people he trades with.
+The `Trusts` field is a list of *nodes* a given wallet does trust for receiving transactions. This means, for a given `Recipient`, that this wallet considers transactions from `Sender` as valid only if the sender's transactions are managed by one of the trusted nodes of `Recipient` (this wallet).
 
-> If the owner of a key declares a node he *trusts* is not subject to corruption as trading node, it will be more difficult for a dishonest man to cheat against him as he does not control the trusted node.
+> Indeed, if the owner of a wallet is not an honest man/organization and wants to cheat, he probably will declare a corrupted node *he controls* for his wallet's transactions management. Thus, he would be able to declare wrong transactions and steal people he trades with.
 
-### THT Protections
+> If the owner of a wallet declares a node he *trusts* is not subject to corruption as trading node, it will be more difficult for a dishonest man to cheat against him as he does not control the trusted node.
 
-Of course, a THT entry is a critical data. Thus, **it has to be signed** by the owner of the key. If an entry is not signed by the owner of the key, it should not be considered as trustworthy information.
+#### RequiredTrusts
+
+This field, combined with `Trusts`, gives the threshold a sending wallet needs to reach for a recipient's wallet to consider a transaction as valid.
+
+### Wallet Protections
+
+Of course, a Wallet is a critical data. Thus, **it has to be signed** by the owner of the wallet. If an entry is not signed by the owner of the wallet, it should not be considered as trustworthy information.

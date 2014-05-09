@@ -7,9 +7,9 @@ var mongoose = require('mongoose');
 var server   = require('../app/lib/server');
 
 server.database.init();
-var THTEntry = mongoose.model('THTEntry');
+var Wallet = mongoose.model('Wallet');
 
-describe('THTEntry', function(){
+describe('Wallet', function(){
 
   describe('KEYS signed by cat', function(){
 
@@ -17,7 +17,7 @@ describe('THTEntry', function(){
 
     // Loads entry with its data
     before(function(done) {
-      entry = new THTEntry();
+      entry = new Wallet();
       loadFromFile(entry, __dirname + "/data/tht/cat.entry", done);
     });
 

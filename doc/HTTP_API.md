@@ -18,9 +18,9 @@
       * [peering/peers/downstream/[PGP_FINGERPRINT]](#networkpeeringpeersdownstreampgp_fingerprint)
       * [peering/forward](#networkpeeringforward)
       * [peering/status](#networkpeeringstatus)
-      * [tht (GET)](#networktht-get)
-      * [tht (POST)](#networktht-post)
-      * [tht/[PGP_FINGERPRINT]](#networkthtpgp_fingerprint)
+      * [wallet (GET)](#networkwallet-get)
+      * [wallet (POST)](#networkwallet-post)
+      * [wallet/[PGP_FINGERPRINT]](#networkwalletpgp_fingerprint)
   * [hdc/](#hdc)
       * [amendments/promoted](#amendmentspromoted)
       * [amendments/promoted/[AMENDMENT_NUMBER]](#amendmentspromotedamendment_number)
@@ -71,7 +71,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |       |   `-- [PGP_FINGERPRINT]
     |   |       `-- downstream/
     |   |           `-- [PGP_FINGERPRINT]
-    |   `-- tht/
+    |   `-- wallet/
     |       `-- [PGP_FINGERPRINT]
     |-- hdc/
     |   |-- amendments/
@@ -126,7 +126,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
-* `network/tht (GET)`
+* `network/wallet (GET)`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
 * `hdc/transactions/recipient/[PGP_FINGERPRINT]`
@@ -231,7 +231,7 @@ Here is a summup of such rules:
 Merkle URL                                                                | Leaf                                    | Sort
 ------------------------------------------------------------------------- | ----------------------------------------| ---------------------------------------
 `pks/all`                                                                 | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`network/tht (GET)`                                                           | Hash of the THT entry + signature       | By hash string sort, ascending.
+`network/wallet (GET)`                                                    | Hash of the Wallet + signature          | By hash string sort, ascending.
 `hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Hash of the signature                   | By hash string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of the transaction + signature     | By hash string sort, ascending.
 `hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of the transaction + signature     | By hash string sort, ascending.
@@ -681,10 +681,10 @@ The posted status.
 }
 ```
 
-#### `network/tht (GET)`
+#### `network/wallet (GET)`
 **Goal**
 
-Merkle URL refering to THT entries.
+Merkle URL refering to WHT (Wallets Hash Table).
 
 **Parameters**
 
@@ -702,7 +702,7 @@ Merkle URL result.
 }
 ```
 
-Merkle URL leaf: THT entry
+Merkle URL leaf: Wallet
 ```json
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
@@ -725,21 +725,21 @@ Merkle URL leaf: THT entry
 }
 ```
 
-#### `network/tht (POST)`
+#### `network/wallet (POST)`
 **Goal**
 
-POST a THT entry.
+POST a Wallet.
 
 **Parameters**
 
 Name        | Value                                  | Method
 ----------- | -------------------------------------- | ------
 `entry`     | Entry data.                            | POST
-`signature` | Signature of the THT entry value.      | POST
+`signature` | Signature of the Wallet value.         | POST
 
 **Returns**
 
-The posted THT entry.
+The posted Wallet.
 ```json
 {
   "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
@@ -759,10 +759,10 @@ The posted THT entry.
 }
 ```
 
-#### `network/tht/[PGP_FINGERPRINT]`
+#### `network/wallet/[PGP_FINGERPRINT]`
 **Goal**
 
-GET a unique THT entry.
+GET a unique Wallet.
 
 **Parameters**
 
@@ -772,7 +772,7 @@ Name              | Value                                           | Method
 
 **Returns**
 
-The requested THT entry.
+The requested Wallet.
 ```json
 {
   "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",

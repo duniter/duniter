@@ -5,13 +5,13 @@ var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
 var Schema   = mongoose.Schema;
 
-var THTEntrySchema = new Schema({
+var WalletSchema = new Schema({
   version: String,
   currency: String,
   fingerprint: { type: String, unique: true },
   hosters: [String],
   trusts: [String],
-  trustThreshold: Number,
+  requiredTrusts: Number,
   signature: String,
   propagated: { type: Boolean, default: false },
   hash: String,
@@ -20,7 +20,7 @@ var THTEntrySchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
-THTEntrySchema.methods = {
+WalletSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
@@ -50,7 +50,7 @@ THTEntrySchema.methods = {
       catch(ex){}
     }
     if(!rawEntry){
-      callback("No THT entry given");
+      callback("No Wallet entry given");
       return false;
     }
     else{
@@ -59,6 +59,7 @@ THTEntrySchema.methods = {
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
         {prop: "fingerprint",       regexp: /Key: (.*)/},
+        {prop: "requiredTrusts",    regexp: /RequiredTrusts: (.*)/},
         {prop: "hosters",           regexp: /Hosters:\n([\s\S]*)Trusts/},
         {prop: "trusts",            regexp: /Trusts:\n([\s\S]*)/}
       ];
@@ -132,6 +133,7 @@ function verify(obj, currency) {
     'BAD_VERSION': 150,
     'BAD_CURRENCY': 151,
     'BAD_FINGERPRINT': 152,
+    'BAD_THRESHOLD': 153,
   }
   if(!err){
     // Version
@@ -147,6 +149,11 @@ function verify(obj, currency) {
     // Fingerprint
     if(obj.fingerprint && !obj.fingerprint.match(/^[A-Z\d]+$/))
       err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect fingerprint field"};
+  }
+  if(!err){
+    // RequiredTrusts
+    if(obj.requiredTrusts && !obj.requiredTrusts.match(/^\d+$/))
+      err = {code: codes['BAD_THRESHOLD'], message: "Incorrect RequiredTrusts field: must be a positive or zero integer"};
   }
   if(err){
     return { result: false, errorMessage: err.message, errorCode: err.code};
@@ -184,26 +191,26 @@ function multipleLinesExtraction(entry, rawEntry, cap) {
   return;
 }
 
-THTEntrySchema.statics.getTheOne = function (fingerprint, done) {
+WalletSchema.statics.getTheOne = function (fingerprint, done) {
   this.find({ fingerprint: fingerprint }, function (err, entries) {
     if(entries && entries.length == 1){
       done(err, entries[0]);
       return;
     }
     if(!entries || entries.length == 0){
-      done('No THT entry found');
+      done('No Wallet entry found');
       return;
     }
     if(entries || entries.length > 1){
-      done('More than one THT entry found');
+      done('More than one Wallet entry found');
     }
   });
 }
 
-THTEntrySchema.statics.findMatchingTransaction = function (tx, done) {
-  THTEntry.find({
+WalletSchema.statics.findMatchingTransaction = function (tx, done) {
+  Wallet.find({
     fingerprint: { $in: [tx.sender, tx.recipient ]}
   }, done);
 }
 
-var THTEntry = mongoose.model('THTEntry', THTEntrySchema);
+var Wallet = mongoose.model('Wallet', WalletSchema);

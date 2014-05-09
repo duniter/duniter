@@ -314,9 +314,9 @@ function ParameterNamespace (currency) {
     ], callback);
   };
 
-  this.getTHTEntry = function (req, callback) {
+  this.getWallet = function (req, callback) {
     if(!(req.body && req.body.entry && req.body.signature)){
-      callback('Requires a THT entry + signature');
+      callback('Requires a Wallet entry + signature');
       return;
     }
     callback(null, req.body.entry + req.body.signature);

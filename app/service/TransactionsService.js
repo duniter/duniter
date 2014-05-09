@@ -9,7 +9,7 @@ var Merkle        = mongoose.model('Merkle');
 var Coin          = mongoose.model('Coin');
 var Key           = mongoose.model('Key');
 var Transaction   = mongoose.model('Transaction');
-var THTEntry      = mongoose.model('THTEntry');
+var Wallet        = mongoose.model('Wallet');
 var TxMemory      = mongoose.model('TxMemory');
 var MerkleService = service.Merkle;
 var logger        = require('../lib/logger')();
@@ -177,7 +177,7 @@ module.exports.get = function (pgp, currency, conf) {
       function (senderManaged, recipientManaged, next) {
         // Change coins ownership
         // * case sender managed: always process TX changes
-        // * case recipient managed: do only if network's state matches THT requirements --> for now, accept whatever happens
+        // * case recipient managed: do only if network's state matches Wallet requirements --> for now, accept whatever happens
         if (senderManaged) {
           async.forEach(tx.getCoins(), function(coin, callback){
             async.waterfall([
@@ -199,7 +199,7 @@ module.exports.get = function (pgp, currency, conf) {
           async.forEach(tx.getCoins(), function(coin, callback){
             async.waterfall([
               function (next){
-                THTEntry.getTheOne(tx.recipient, next);
+                Wallet.getTheOne(tx.recipient, next);
               },
               function (thtentry, next){
                 PeeringService.coinIsOwned(tx.sender, coin, thtentry, next);

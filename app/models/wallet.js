@@ -60,7 +60,7 @@ WalletSchema.methods = {
         {prop: "version",           regexp: /Version: (.*)/},
         {prop: "currency",          regexp: /Currency: (.*)/},
         {prop: "fingerprint",       regexp: /Key: (.*)/},
-        {prop: "date",              regexp: /Date: (.*)/},
+        {prop: "date",              regexp: /Date: (.*)/, parser: parseDateFromTimestamp},
         {prop: "requiredTrusts",    regexp: /RequiredTrusts: (.*)/},
         {prop: "hosters",           regexp: /Hosters:\n([\s\S]*)Trusts/},
         {prop: "trusts",            regexp: /Trusts:\n([\s\S]*)/}
@@ -130,6 +130,10 @@ WalletSchema.methods = {
   }
 }
 
+function parseDateFromTimestamp (value) {
+  return new Date(parseInt(value)*1000);
+}
+
 function verify(obj, currency) {
   var err = null;
   var code = 150;
@@ -157,12 +161,12 @@ function verify(obj, currency) {
   }
   if(!err){
     // Date
-    if(obj.date && !obj.date.match(/^\d+$/))
+    if(obj.date && (typeof obj == 'string' ? !obj.date.match(/^\d+$/) : obj.date.timestamp() <= 0))
       err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
   }
   if(!err){
     // RequiredTrusts
-    if(obj.requiredTrusts && !obj.requiredTrusts.match(/^\d+$/))
+    if(obj.requiredTrusts && (typeof obj == 'string' ? !obj.requiredTrusts.match(/^\d+$/) : obj.requiredTrusts < 0))
       err = {code: codes['BAD_THRESHOLD'], message: "Incorrect RequiredTrusts field: must be a positive or zero integer"};
   }
   if(err){
@@ -171,10 +175,10 @@ function verify(obj, currency) {
   return { result: true };
 }
 
-function simpleLineExtraction(pr, rawEntry, cap) {
+function simpleLineExtraction(pr, rawEntry, cap, parser) {
   var fieldValue = rawEntry.match(cap.regexp);
   if(fieldValue && fieldValue.length === 2){
-    pr[cap.prop] = fieldValue[1];
+    pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1]) : fieldValue[1];
   }
   return;
 }

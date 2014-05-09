@@ -18,7 +18,7 @@ describe('Wallet', function(){
     // Loads entry with its data
     before(function(done) {
       entry = new Wallet();
-      loadFromFile(entry, __dirname + "/data/tht/cat.entry", done);
+      loadFromFile(entry, __dirname + "/data/wallets/cat.entry", done);
     });
 
     it('should be version 1', function(){
@@ -33,6 +33,14 @@ describe('Wallet', function(){
       assert.equal(entry.fingerprint, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
     });
 
+    it('should have date', function(){
+      should.exist(entry.date);
+    });
+
+    it('should have number of required trusts', function(){
+      should.exist(entry.requiredTrusts);
+    });
+
     it('should have 2 hosters, 2 trusts', function(){
       assert.equal(entry.hosters.length, 2);
       assert.equal(entry.trusts.length, 2);
@@ -42,16 +50,16 @@ describe('Wallet', function(){
       assert.equal(entry.trusts[1], "D049002A6724D35F867F64CC087BA351C0AEB6DF");
     });
 
-    it('its computed hash should be ACFCBC2327524C8363418D49E50169BB558641B3', function(){
-      assert.equal(entry.hash, 'ACFCBC2327524C8363418D49E50169BB558641B3');
+    it('its computed hash should be 28D5C1BFC7EDC6F7C8D3A3306778413ABF2C5D19', function(){
+      assert.equal(entry.hash, '28D5C1BFC7EDC6F7C8D3A3306778413ABF2C5D19');
     });
 
-    it('its manual hash should be B9D8E564EFB29B7F632D32037E619AD293473E4C', function(){
-      assert.equal(sha1(entry.getRaw()).toUpperCase(), 'B9D8E564EFB29B7F632D32037E619AD293473E4C');
+    it('its manual hash should be 26F7B78AABB198D66F0CFB3F526E9C02B6B6F521', function(){
+      assert.equal(sha1(entry.getRaw()).toUpperCase(), '26F7B78AABB198D66F0CFB3F526E9C02B6B6F521');
     });
 
-    it('its manual signed hash should be ACFCBC2327524C8363418D49E50169BB558641B3', function(){
-      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), 'ACFCBC2327524C8363418D49E50169BB558641B3');
+    it('its manual signed hash should be 28D5C1BFC7EDC6F7C8D3A3306778413ABF2C5D19', function(){
+      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), '28D5C1BFC7EDC6F7C8D3A3306778413ABF2C5D19');
     });
   });
 });

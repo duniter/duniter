@@ -166,6 +166,7 @@ function memberDo (action, signatory, timestamp) {
       currency: currency,
       issuer: signatory.fingerprint(),
       membership: action,
+      date: d,
       sigDate: d,
       signature: d.toLocaleString()
     });
@@ -202,6 +203,7 @@ function voterDo (signatory, timestamp) {
       currency: currency,
       type: 'VOTING',
       issuer: signatory.fingerprint(),
+      date: d,
       sigDate: d,
       signature: "" + d.toLocaleString()
     });

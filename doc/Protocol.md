@@ -1,49 +1,46 @@
 # UCP - uCoin Protocol
 
-As a mean to build new currencies based on individuals and Universal Dividend, *uCoin defines its own protocol called UCP* which defines messages, interpretation of them and structuration rules *allowing to build a uCoin distributed data network*.
+As a mean to build new currencies based on individuals and Universal Dividend, **uCoin defines its own protocol** called *UCP* which defines messages, interpretation of them and structuration rules *allowing to build a uCoin distributed data network*.
 
 This document is divided in two parts:
 
-* [Definitions](#definitions), which describes uCoin actors (human, machines) and data, and their mutual behaviors.
-* [Data flow](#data-flow), which is an overview of [uCoin HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md) - a guide to understand API purposes detailing each method's responsability.
+* [Definitions](#definitions), which describes uCoin actors and data
+* [Data flow](#data-flow), which defines few rules and recommandations on how manage uCoin data.
 
 ## Contents
 
 * [Contents](#contents)
 * [Definitions](#definitions)
-  * [uCoin HDC data](#ucoin-hdc-data)
+  * [HDC data](#hdc-data)
     * [Public keys](#pgp-public-keys)
     * [Amendments](#amendaments)
     * [Transactions](#transactions)
-  * [uCoin Network data](#ucoin-network-data)
+  * [Network data](#network-data)
     * [Peers](#peers)
     * [Forwards](#forwards)
     * [Status](#status)
     * [Trust entries](#trust-entries)
-  * [uCoin network](#ucoin-network)
-    * [Peering](#peering)
-    * [Status](#status-1)
-    * [Data routing](#data-routing)
-      * [General case](#general-case)
-      * [Forward routes](#forward-routes)
 * [Data flow](#data-flow)
-  * [Public keys](#public-keys)
-  * [Network messages](#network-messages)
-  * [HDC Amendments](#hdc-amendments)
-  * [HDC Transactions](#hdc-transactions)
+  * [Definitions](#definitions2)
+  * [APIs](#apis)
+  * [General behaviours](#general-behaviors)
+      * [Public keys reponsability](#public-keys-reponsability)
+      * [Wallet content](#wallet-content)
+  * [Particular behaviours](#particular-behaviors)
+      * [Peers discovering](#peers-discovering)
 
 ## Definitions
 
 uCoin (upper-cased *C*) word is the generic name covering uCoin project, whose goal is to build a P2P crypto-currency system. In its technical details, uCoin can be divided in two parts:
 
-1. uCoin node: a unit running a uCoin software on personal or company servers listening for and storing uCoin data
-2. uCoin network: a network of uCoin nodes, sharing data between them and displaying this data to whoever wants to check it
+1. uCoin node: a unit running uCoin software on personal or company server listening for and storing uCoin data
+2. uCoin network: a network of uCoin nodes, or peers, sharing data between them and displaying this data to whoever wants to check it
 
-UCP defines what should be a uCoin node and its behavior according to uCoin messages over the network. A network of such nodes holding uCoin data can *then* be seen as a *Distributed uCoin Transactions Database*.
+UCP defines what should be a uCoin node and how it should behave to spread uCoin messages over the network, in order to create a uCoin based currency.
 
-### uCoin HDC data
+### HDC data
 
-The whole point of a uCoin node is to build a database of [HDC data](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md). For that purpose, a node will listen to incoming data over the network an store it according to UCP rules.
+The whole point of a uCoin node is to build a database of [HDC data](./HDC.md), which is a structure to describe a Universal Dividend currency. For that purpose, a node will listen to incoming data over the network an store it according to UCP rules.
 
 #### PGP public keys
 
@@ -51,374 +48,112 @@ PGP public keys are the foundation of uCoin data. In uCoin, any data is signed u
 
 A key represents an actor, which may be either an individual or an organization, or even a robot under their control. PGP keys are uniquely identified by their PGP fingerprint and are used under their ASCII-armored format.
 
+> Note: it is well known that fingerprint should not be considered as unique. UCP answers this below in the protocol under the title [Public keys reponsability](./#public-keys-reponsability)
+
 #### Amendments
 
 Amendments are inner parts of a document called the *Monetary Contract*. In uCoin, the Monetary Contract is the main document defining currency name, Community members, voters and monetary unities. Amendments are just the parts which, placed end-to-end, *constitue* the Monetary Contract.
 
-Amendments are collectively signed documents refering to [HDC Amendment format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#amendment) allowing to define a currency, members or voters joining or leaving, and periodical Universal Dividend.
+Amendments are collectively signed documents refering to [HDC Amendment format](./HDC.md#amendment) allowing to define a currency, members, voters and periodical Universal Dividend.
 
 ##### Votes
 
-A vote is a simple signature of an amendment, refering to [HDC Vote request](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#vote-request). When a voter signs an amendment and submit the signatures to a node, it expresses the will of this voter (if he can legitimately do it, i.e. if he is part of voters written in Monetary Contract) to promote the signed amendment.
+A vote is a simple signature of an amendment, and is then submitted to the network. When a voter signs an amendment and submit the signatures to a node, it expresses the will of this voter to promote the signed amendment.
+
+> A vote is not to be taken in account if the voter does not belong to voters, whose composition is given by the Contract
 
 #### Transactions
 
-Transaction is a document refering to [HDC Transaction format](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) whose role is either to create, change or transfer money. It is the final support of money and it materializes money ownership.
+Transaction is a document refering to [HDC Transaction format](./HDC.md#transaction) whose role is transfer coins from one wallet to another. It is the final support of money and it materializes money ownership.
 
-### uCoin Network data
+### Network data
 
 Network data is a list of messages used for uCoin peering features. This is what make a network of nodes possible.
 
 #### Peers
 
-uCoin network is made up of peers identified by their PGP fingerprint. In UCP, each node maintains a Peering table which is a hash table linking a PGP fingerprint to network data: IP address (v4, v6, or both), DNS name and port. This link is made through a document called [peering entry](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#peering-table) signed by the owner of the PGP key and giving peer's network informations. Peering table is a set of all peering entries.
+uCoin network is made up of peers identified by their PGP fingerprint. In UCP, each node maintains a Peering table which is a hash table linking a PGP fingerprint to one or several network protocols. This link is made through a document called [Peering entry](./Network.md#peering-table) signed by the owner of the PGP key and giving peer's network informations. Peering table is a set of all peering entries.
 
 #### Forwards
 
-[Forward](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#forward-request) is a document signed by a node giving rules for data forwarding. Forward can be seen a routing rule that nodes use to know where to send received data. This mecanism helps not to broadcast all transactions to the whole network each time, but only to the interested nodes.
+[Forward](./Network.md#forward-request) is a document signed by a node giving rules for data forwarding. Forward can be seen as a routing rule nodes use to find where to send received data. This is a multicast mecanism.
 
 #### Status
 
-[Status](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#status-request) messages are just notifications nodes use between them to know their state and eventually trigger exchanges of informations between them.
+[Status](./Network.md#status-request) messages are notifications nodes exchanges to introduce them to other nodes, notify their state and eventually trigger exchanges of informations between them.
 
-#### Trust entries
+#### Wallets
 
-Trust entries are part of a hash table refering to [Network THT format](https://github.com/c-geek/ucoin/blob/master/doc/Network.md#trust-hash-table) whose role is to define, for a given PGP key, the nodes by which every transaction of the key pass through and the nodes the key is likely to trust for incoming transactions. Such entries are written and signed by PGP keys managing money units.
+[Wallet](./Network.md#wallet-message-structure) is a document whose role is to define a wallet, a uCoin entity used for storing coins. A Wallet notably defines: 
+* its key for managing the coins
+* the nodes storing this wallet
+* the nodes the key requires validatin for incoming transactions
 
-### uCoin network
-
-A uCoin node is a simple unit of a uCoin network, unit by which circulate uCoin HDC data. To be able to be part of a network, uCoin units uses Network messages to introduce each other and exchange HDC data. Below are definitions of Network messages events and behaviors.
-
-#### Peering
-
-When a node is started, it already knows its remote peering informations, i.e. IP address and port plus its own public key PGP fingerprint. This informations are to be gathered and represent peering entry of the node. Thus, any node has its own peering entry and must display it.
-
-To be known by others peers, a node should broadcast his signed peering entry to them using `/network/peering/peers (POST)` interface. Of course, those peers has to be notified the node's key first so then cas verify peering entry's signature.
-
-*The way the node is aware of other peers addresses to send them his peering entry is implementation specific.*
-
-#### Status
-
-Each node may send Status requests. Such requests send either status:
-
-* `NEW` to say the node consider itself as new to requested node
-* `UP` to say the node consider itself as waking up to requested node (i.e. a `NEW` request was already sent before)
-* `DOWN` to say the node consider itself as waking down to requested node (i.e. an `UP` request was already sent before)
-
-*The way other nodes may react asynchronously to such requests is implementation specific.*
-
-#### Data routing
-
-When receiving new data such as Public key or Transaction, a uCoin node should forward it to other known peers. However, uCoin recommend 2 different behavior according to the following rules.
-
-##### General case
-
-For any data that is not either:
-
-* Transaction related
-* Forward related
-
-then data should be broadcasted to all other known peers. Note that a data passing two times through a node should be broadcasted only once.
-
-##### Forward routes
-
-For Transaction or Forward case, data should be smartly forwarded. That is:
-
-* if a Transaction matches Forward rules for its issuer or recipient, then it should forward this transaction to the peer pointed by the `From` field of a Forward document.
-* if a Forward document is received, then it should be forwarded to the peer pointed by the `To` field of the Forward. Indeed, this document is destinated to pointed peer and should be given to it.
+Wallets are the conceptual container of transactions, which are themselves the conceptual support of money ownership.
 
 ## Data flow
 
 ### Definition
 
-To feed a node and synchronise it with other nodes, UCP defines an [HTTP API](https://github.com/c-geek/ucoin/blob/master/doc/HTTP_API.md) used either to receive or send messages.
+Data flow in uCoin refers to the circulation of data inside a uCoin network. Indeed, a uCoin network is made up of uCoin nodes, represented by their own public key, and displaying their own and unique monetary point of view for a given currency.
 
-As a generic overview, it can be noted what are the API inputs of the protocol:
+> It is important to note that nodes **MAY NOT** share the exactly same point of view, i.e. storing different data on one hand, and/or storing data with same name but different content. Thus, an implementation **SHOULD NOT** consider a given identified data to be the same on different nodes.
 
-Flow | Interfaces
----- | -----------
-IN   | `pks/add`
-IN   | `network/peering/peers (POST)`
-IN   | `network/peering/forward`
-IN   | `network/peering/status`
-IN   | `network/tht (POST)`
-IN   | `hdc/amendments/votes (POST)`
-IN   | `hdc/transactions/process`
+The sum of each nodes' point of view is to be seen as the *network* point of view.
 
-All remainging URLs only have consultation purposes, used for verification and synchronization with other clients or peers.
+**The goal of a uCoin network is to do its best to share a common point of view of monetary data.**
 
-### Public keys
+### APIs
 
-Flow | Interfaces
----- | -----------
-IN   | `pks/add`
-OUT  | `pks/lookup`
-OUT  | `pks/all`
+APIs are left to uCoin implementations. Such implementations are described in each peer's [record](./Network.md#peering-entry). Any node may have any number of available APIs.
 
-#### `pks/add`
+Obviously, a node with no API at all is a non-sense.
 
-Takes a PGP public key and a signature of the whole key (ascii-armored format). If the signature matches (key was sent by its owner), adds the key to the PGP public keys database.
+To be valid, any API **MUST** provide ways to:
+* Submit HDC Data
+* Submit Network Data
+* Display the node's public key
+* Display the node's peering entry
+* Access to stored public keys
+* Access to stored HDC data
+* Access to stored Network data
 
-#### `pks/lookup`
+### General behaviours
 
-Serves PGP public keys according to HKP protocol.
+Any uCoin node **SHOULD BE** considered as a passive entity of the network. Nodes can be seen as witnesses of the monetary activity: public keys, contract and transactions, and do not particularly need to talk with each other.
 
-#### `pks/all`
+However, this behavior is to balanced with the need to collaborate in order to share a common point of view. That is why at least 2 exceptions exist:
+* when receiving data, nodes **SHOULD** try spread the network of this data using multicast rules. This behavior is left to implementations' will.
+* to build a network, nodes need to introduce themselves to know each other. Futhermore, nodes **SHOULD** try to build routes for transactions' multicasting. This behavior **MUST** be implemented, and is described below.
 
-Merkle URL pointing to a set of all PGP public key registered by the node. Mainly used for synchronization purposes.
+#### Public keys reponsability
 
-### Network messages
+As a consequence of the preceding assumption that "nodes may not share the exactly same point of view", public keys may not be the same from a node to another. **This has a huge impact**: fr a given KeyID (key fingerprint), 2 nodes may refer to 2 different keys, if such keys exist.
 
-#### Self
+In uCoin protocol, **nodes are considered responsible in the way they accept public keys** and are not told how to handle it. Such ways are implementation specific. Obviously, if it was wanted to make a uCoin network, nodes of such network should agree on a common way to accept/reject keys.
 
-This API is special, as it does not deal with HTTP received data. This set of URLs gives peering informations according to *a node's configuration*.
+#### Wallet content
 
-Flow | Interfaces
----- | -----------
-OUT  | `network/pubkey`
-OUT  | `network/peering`
-OUT  | `network/peering/keys`
-OUT  | `network/peering/peer`
+Just like the above paragraph about Public keys, wallet content is purely relative point of view to nodes handling the wallet. An implementation **SHOULD** consider the content of a wallet in coins following the below rule of Wallet message:
 
-##### `network/pubkey`
+> A node should consider a transaction as valid for a wallet either if:
+> * the sending wallet is handled by the node
+> * or the recepient wallet is handled by the node **AND** the number of nodes confirming the transaction, among those trusted by the recipient wallet, reach at least the minimum number or confirmations asked by it
 
-Get the public key of the node, ASCII-armored format. This key is used to authentify the node's responses by other peers.
+### Particular behaviors
 
-##### `network/peering`
+The general behavior of a node as a passive entity is balanced with the following behavior about networking purpopses.
 
-Get a sum up of node's informations, notably peering and Monetary Contract state.
+#### Peers discovering
 
-##### `network/peering/keys`
+The network needs to be able to discover new peers inside it. For that purpose [Status](./#status) messages are used to introduce nodes to each other, and keep a state of them allowing data propagation.
 
-Merkle URL referencing the PGP keys' fingerprint whose transactions are stored by this node.
+Protocol is the following: for a given node, receives `Receives` message, it should apply `Impacts` rules and MUST answer using `Answers` status type.
 
-##### `network/peering/peer`
-
-Peering entry of the node.
-
-#### Peers
-
-Interface whose role is to network informations of peers.
-
-Flow | Interfaces
----- | -----------
-IN   | `network/peering/peers (POST)`
-OUT  | `network/peering/peers (GET)`
-
-
-##### `network/peering/peers (POST)`
-
-Receive peering entry with signature of it. Signature must match PGP fingerprint written in the entry.
-
-##### `network/peering/peers (GET)`
-
-Merkle URL referencing a set of all peering entries. Used for synchronizing peering entries between peers.
-
-#### Forwarding
-
-Interface whose role is to define network rules for transactions propagation.
-
-Flow | Interfaces
----- | -----------
-IN   | `network/peering/forward`
-OUT  | `network/peering/peers/upstream`
-OUT  | `network/peering/peers/upstream/[PGP_FINGERPRINT]`
-OUT  | `network/peering/peers/downstream`
-OUT  | `network/peering/peers/downstream/[PGP_FINGERPRINT]`
-
-##### `network/peering/forward`
-
-Receive forward rule issued by a peer to be forwarded transactions of precised keys (either some, or all).
-
-##### `network/peering/peers/upstream`
-
-GET a list of peering entries **of nodes who asked** to be forwarded of ALL incoming transactions.
-
-##### `network/peering/peers/upstream/[PGP_FINGERPRINT]`
-
-GET a list of peering entries **of nodes who asked** to be forwarded of PGP_FINGERPRINT's incoming transactions.
-
-##### `network/peering/peers/downstream`
-
-GET a list of peering entries **to whom this node asked** to be forwarded of ALL incoming transactions.
-
-##### `network/peering/peers/downstream/[PGP_FINGERPRINT]`
-
-GET a list of peering entries **to whom this node asked** to be forwarded of PGP_FINGERPRINT's incoming transactions.
-
-#### Status
-
-This interface does not provide output information. It is only here to notify the status of a node.
-
-Flow | Interfaces
----- | -----------
-IN   | `network/peering/status`
-
-Receive a status notification from another peer.
-
-#### Trust Hash Table (THT)
-
-Interface whose role is to gather informations of transactions storage distribution troughout peers network.
-
-Flow | Interfaces
----- | -----------
-IN   | `network/tht (POST)`
-OUT  | `network/tht (GET)`
-OUT  | `network/tht/[PGP_FINGERPRINT]`
-
-##### `network/tht (POST)`
-
-Receive a THT entry, issued by the owner of the key precised in the entry.
-
-##### `network/tht (GET)`
-
-Merkle URL referencing a set of ALL THT entries.
-
-##### `network/tht/[PGP_FINGERPRINT]`
-
-GET the THT entry issued by key whose fingerprint is PGP_FINGERPRINT.
-
-### HDC Amendments
-
-Interface whose role is to handle Monetary Contract amendments.
-
-Flow | Interfaces
----- | -----------
-IN   | `hdc/amendments/votes (POST)`
-OUT  | `hdc/amendments/votes (GET)`
-OUT  | `hdc/amendments/votes/[AMENDMENT_ID]`
-OUT  | `hdc/amendments/current`
-OUT  | `hdc/amendments/current/votes`
-OUT  | `hdc/amendments/promoted`
-OUT  | `hdc/amendments/promoted/[AMENDMENT_NUMBER]`
-OUT  | `hdc/amendments/view/[AMENDMENT_ID]/self`
-OUT  | `hdc/amendments/view/[AMENDMENT_ID]/members`
-OUT  | `hdc/amendments/view/[AMENDMENT_ID]/voters`
-OUT  | `hdc/amendments/view/[AMENDMENT_ID]/signatures`
-
-#### `hdc/amendments/votes (POST)`
-
-Takes an amendment and a signature of it. If the following conditions matches:
-
-* The signature matches the amendment content
-* The signing key is a member eligible to voting
-* The amendment voting chain is either 1) already recorded on the node or 2) available to download on another node, and can be verified (i.e, can be authenticated)
-
-add the amendment to pending amendment database with the signature attached.
-
-If the resulting pending amendment have enough votes (this requirement is implementation specific), then the amendment has to be promoted to `hdc/amendments/current`.
-
-#### `hdc/amendments/votes (GET)`
-
-GET an index containing all received amendments (through voting), and number of votes for each amendment (amendment is represented by a number and hash).
-
-#### `hdc/amendments/votes/[AMENDMENT_ID]`
-
-Merkle URL referencing a set of ALL votes received by this node for amendment AMENDMENT_ID.
-
-#### `hdc/amendments/current`
-
-Serves the currently promoted amendment.
-
-#### `hdc/amendments/current/votes`
-
-Same as `hdc/amendments/votes/[AMENDMENT_ID]`, but for currently promoted amendment.
-
-#### `hdc/amendments/promoted`
-
-Same as `hdc/amendments/current`.
-
-#### `hdc/amendments/promoted/[AMENDMENT_NUMBER]`
-
-Serves an amendment is the promoted chain whose number is AMENDMENT_NUMBER.
-
-#### `hdc/amendments/view/[AMENDMENT_ID]/self`
-
-Serves amendment with given identifier.
-
-#### `hdc/amendments/view/[AMENDMENT_ID]/members`
-
-Merkle URL referencing a set of PGP public keys fingerprints considered as the members of the monetary community for amendment AMENDMENT_ID.
-
-#### `hdc/amendments/view/[AMENDMENT_ID]/voters`
-
-Merkle URL referencing a set of PGP public keys fingerprints considered as the voters of the monetary community for amendment AMENDMENT_ID.
-
-#### `hdc/amendments/view/[AMENDMENT_ID]/signatures`
-
-Merkle URL referencing a set of signatures recognized as votes of the previous amendment, and whose Merkle root matches `PreviousVotesRoot` of the amendment AMENDMENT_ID.
-
-### HDC Transactions
-
-Flow | Interfaces
----- | -----------
-IN   | `hdc/transactions/process`
-OUT  | `hdc/transactions/all`
-OUT  | `hdc/transactions/sender/[PGP_FINGERPRINT]`
-OUT  | `hdc/transactions/recipient/[PGP_FINGERPRINT]`
-OUT  | `hdc/transactions/view/[TRANSACTION_ID]`
-OUT  | `hdc/coins/[PGP_FINGERPRINT]/list`
-OUT  | `hdc/coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
-
-#### `hdc/transactions/process`
-
-Takes a transaction and a signature of it.
-
-##### Transaction type: ISSUANCE
-
-If the following conditions matches:
-
-* The signature matches the transaction content
-* The `Sender` is handled by this node
-* The `Recipient` is handled by this node
-* The creation is justified by an amendment
-* The creation is justified according to transactions history (money was not already created)
-
-adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
-
-##### Transaction type: TRANSFER
-
-If the following conditions matches:
-
-* The signature matches the transaction content
-* The `Sender` is handled by this node
-* The `Recipient` is handled by this node
-* The transaction chain matches (may need to ask many nodes for transaction history)
-
-adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
-
-##### Transaction type: CHANGE
-
-Takes a transaction and a signature of it. If the following conditions matches:
-
-* The signature matches the transaction content
-* The `Sender` is handled by this node
-* The `Recipient` is handled by this node
-* The transaction chain matches
-* The transaction has a valid change content
-
-adds the transaction to the transactions' database, and send it to others concerned nodes (through the THT) to validate the transaction and mark it as processed.
-
-#### `hdc/transactions/all`
-
-Serves a Merkle tree containing all the transactions stored by this node.
-
-#### `hdc/transactions/sender/[PGP_FINGERPRINT]`
-
-Serves a Merkle tree containing all the transactions stored by this node, filtered for a given `Sender`.
-
-#### `hdc/transactions/recipient/[PGP_FINGERPRINT]`
-
-Serves a Merkle tree containing all the transactions stored by this node, filtered for a given `Recipient`.
-
-#### `hdc/transactions/view/[TRANSACTION_ID]`
-
-Serves a transaction content by its ID.
-
-#### `hdc/coins/[PGP_FINGERPRINT]/list`
-
-Serves a list of coins considered as owned by the given `PGP_FINGERPRINT`.
-
-#### `hdc/coins/[PGP_FINGERPRINT]/view/[COIN_ID]`
-
-Serves a transaction chain (may not be complete, i.e. long enough to reach issuance transaction) justifying money ownership.
+Receives   | Answers    | Impacts
+--------   | -------    | --------
+`ASK`      |            | Answer the estimated status of the node toward asking node. Answer can be any status other than `ASK`.
+`NEW`      | `NEW_BACK` | Remove any existing route for transactions form emitting node. Consider the node as able to receive data. Send `NEW_BACK` as a response. May also send new `Forward` rule.
+`NEW_BACK` |            | Remove any existing route for transactions form emitting node. Consider the node as able to receive data.
+`UP`       |            | Consider the node as able to receive data.
+`DOWN`     |            | Consider the node as *no more* able to receive data.

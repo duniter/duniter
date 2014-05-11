@@ -45,7 +45,7 @@ Such a contract is actually a chained list of amendments, each amendement defini
 
 ### Coins
 
-Coins are issued directly by WoT members, in accordance with the Monetary Contract specifications. uCoin uses a divisionary money system divided in 9 decimal unities (1..9) completed with a power 10 parameter. When issuing money, each individual may create the unities he desires, in the limits established by the Monetary Contract.
+Coins are issued directly by WoT members, in accordance with the Monetary Contract specifications. uCoin does not use any particular divisionary money system nor requires to use base 10 for coins value. This is implementation specific, and will probably vary from one currency to another.
 
 ### Transactions
 

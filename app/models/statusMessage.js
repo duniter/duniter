@@ -20,8 +20,16 @@ module.exports = function StatusMessage (values) {
     return obj;
   }
 
+  this.isAsk = function () {
+    return this.status == 'ASK';
+  }
+
   this.isNew = function () {
     return this.status == 'NEW';
+  }
+
+  this.isNewBack = function () {
+    return this.status == 'NEW_BACK';
   }
 
   this.isUp = function () {
@@ -125,8 +133,8 @@ module.exports = function StatusMessage (values) {
     }
     if(!err){
       // Status
-      if(obj.status && !(obj.status + "").match(/^(NEW|UP|DOWN)$/))
-        err = {code: codes['BAD_STATUS'], message: "Status must be provided and match either NEW, UP or DOWN"};
+      if(obj.status && !(obj.status + "").match(/^(ASK|NEW|NEW_BACK|UP|DOWN)$/))
+        err = {code: codes['BAD_STATUS'], message: "Status must be provided and match either ASK, NEW, NEW_BACK, UP or DOWN"};
     }
     if(err){
       return { result: false, errorMessage: err.message, errorCode: err.code};

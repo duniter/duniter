@@ -50,8 +50,16 @@ describe('Peer', function(){
       assert.equal(pr.getPort(), 9101);
     });
 
-    it('its computed hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){
-      assert.equal(pr.hash, 'D031ECEB784DA346239DB7AF1F5389361E6F1988');
+    // it('its computed hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){
+    //   assert.equal(pr.hash, 'D031ECEB784DA346239DB7AF1F5389361E6F1988');
+    // });
+
+    // it('its manual hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){
+    //   assert.equal(sha1(pr.getRaw()).toUpperCase(), 'D031ECEB784DA346239DB7AF1F5389361E6F1988');
+    // });
+
+    it('its computed hash should equal his fingerprint', function(){
+      assert.equal(pr.hash, 'D049002A6724D35F867F64CC087BA351C0AEB6DF');
     });
 
     it('its manual hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){

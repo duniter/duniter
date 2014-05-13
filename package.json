@@ -1,6 +1,6 @@
 {
   "name": "ucoin",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": false,
   "description": "Crypto-currency software using Node.js",
   "main": "bin/ucoin",

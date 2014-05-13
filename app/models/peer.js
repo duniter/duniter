@@ -7,7 +7,9 @@ var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
 
 var STATUS = {
+  ASK: "ASK",
   NEW: "NEW",
+  NEW_BACK: "NEW_BACK",
   UP: "UP",
   DOWN: "DOWN",
   NOTHING: "NOTHING"
@@ -23,7 +25,6 @@ var PeerSchema = new Schema({
   hash: String,
   status: { type: String, default: STATUS.NOTHING },
   statusSent: { type: String, default: STATUS.NOTHING },
-  statusSentPending: { type: Boolean, default: false },
   statusSigDate: { type: Date, default: function(){ return new Date(0); } },
   propagated: { type: Boolean, default: false },
   sigDate: { type: Date, default: function(){ return new Date(0); } },
@@ -32,6 +33,10 @@ var PeerSchema = new Schema({
 });
 
 PeerSchema.methods = {
+
+  keyID: function () {
+    return this.fingerprint && this.fingerprint.length > 24 ? "0x" + this.fingerprint.substring(24) : "0x?";
+  },
 
   setStatus: function (newStatus, done) {
     if(this.status != newStatus){
@@ -299,6 +304,10 @@ PeerSchema.statics.getTheOne = function (fpr, done) {
 
 PeerSchema.statics.getList = function (fingerprints, done) {
   Peer.find({ fingerprint: { $in: fingerprints }}, done);
+};
+
+PeerSchema.statics.allBut = function (fingerprint, done) {
+  Peer.find({ fingerprint: { $ne: fingerprint } }, done);
 };
 
 PeerSchema.statics.status = STATUS;

@@ -1,5 +1,6 @@
-var async  = require('async');
-var logger = require('../lib/logger')('networker');
+var async   = require('async');
+var request = require('request');
+var logger  = require('../lib/logger')('networker');
 
 var fifo = async.queue(function (task, callback) {
   task(callback);
@@ -12,7 +13,7 @@ module.exports = function (peeringService) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating key %s to peer %s', pubkey.fingerprint, peer.fingerprint);
+        logger.debug('Propagating key %s to peer %s', pubkey.fingerprint, peer.keyID());
         // Sent!
         sent();
       });
@@ -24,7 +25,7 @@ module.exports = function (peeringService) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating vote from %s to peer %s', vote.issuer, peer.fingerprint);
+        logger.debug('Propagating vote from %s to peer %s', vote.issuer, peer.keyID());
         // Sent!
         sent();
       });
@@ -36,7 +37,7 @@ module.exports = function (peeringService) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating transaction from %s to peer %s', transaction.issuer, peer.fingerprint);
+        logger.debug('Propagating transaction from %s to peer %s', transaction.issuer, peer.keyID());
         // Sent!
         sent();
       });
@@ -48,33 +49,51 @@ module.exports = function (peeringService) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating Wallet entry from %s to peer %s', thtentry.issuer, peer.fingerprint);
+        logger.debug('Propagating Wallet entry from %s to peer %s', thtentry.issuer, peer.keyID());
         // Sent!
         sent();
       });
     });
   });
   
-  peeringService.on('peer', function(peering, peers) {
-    logger.debug('new peer to be sent to %s peers', peers.length);
+  peeringService.on('peer', function(peering, peers, done) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating peering of peer %s to peer %s', peering.fingerprint, peer.fingerprint);
-        // Sent!
-        sent();
+        logger.debug('sending peering of %s to peer %s', peering.keyID(), peer.keyID());
+        post(peer, "/network/peering/peers", {
+          entry: peer.getRaw(),
+          signature: peer.signature
+        }, function (err, res, body) {
+          // Sent!
+          sent();
+          if (typeof done == 'function') {
+            done(err, res, body);
+          }
+        });
       });
     });
   });
   
-  peeringService.on('status', function(status, peers) {
-    logger.debug('new status to be sent to %s peers', peers.length);
+  peeringService.on('status', function(status, peers, internal) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating status of peer %s to peer %s', status.fingerprint, peer.fingerprint);
-        // Sent!
-        sent();
+        logger.debug('sending %s status to peer %s', status.status, peer.keyID());
+        post(peer, "/network/peering/status", {
+          status: status.getRaw(),
+          signature: status.signature
+        }, function (err, res, body) {
+          if (!err && res && res.statusCode == 400 && !internal) {
+            logger.debug('sending self peering to peer %s', peer.keyID());
+            peeringService.emit('peer', peeringService.peer(), [peer], function (err, res, body) {
+              peeringService.emit('status', status, [peer], true);
+            });
+          } else {
+            // Sent!
+            sent(err);
+          }
+        });
       });
     });
   });
@@ -84,7 +103,7 @@ module.exports = function (peeringService) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating membership of peer %s to peer %s', membership.fingerprint, peer.fingerprint);
+        logger.debug('Propagating membership of peer %s to peer %s', membership.fingerprint, peer.keyID());
         // Sent!
         sent();
       });
@@ -96,48 +115,38 @@ module.exports = function (peeringService) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('Propagating voting of peer %s to peer %s', voting.fingerprint, peer.fingerprint);
+        logger.debug('Propagating voting of peer %s to peer %s', voting.fingerprint, peer.keyID());
         // Sent!
+        sent();
+      });
+    });
+  });
+  
+  peeringService.on('forward', function(forward, peers, done) {
+    fifo.push(function (sent) {
+      async.forEach(peers, function(peer, callback){
+        // Do propagating
+        logger.debug('sending %s forward to peer %s', forward.forward, peer.keyID());
+        post(peer, "/network/peering/forward", {
+          forward: forward.getRaw(),
+          signature: forward.signature
+        }, function (err, res, body) {
+          // Sent!
+          sent();
+          if (typeof done == 'function') {
+            done(err, res, body);
+          }
+        });
+      }, function(err){
+        done(err);
         sent();
       });
     });
   });
 };
 
-// this.propagateToFingerprint = function (fpr, obj, sendMethod, done) {
-//   async.waterfall([
-//     function (next){
-//       Peer.find({ fingerprint: fpr }, next);
-//     },
-//     function (peers, next){
-//       if(peers.length > 0){
-//         var remote = peers[0];
-//         async.waterfall([
-//           function (next){
-//             if (remote.status == "NOTHING" && remote.statusSent == "NOTHING") {
-//               // Send peering entry
-//               logger.debug("NEVER KNOWN peer %s, send self peering", remote.fingerprint);
-//               that.submitSelfPeering(remote, function (err) {
-//                 next(err);
-//               });
-//             } else {
-//               next();
-//             }
-//           },
-//           function (next){
-//             sendMethod.call(sendMethod, remote, obj, next);
-//           }
-//         ], next);
-//       }
-//       else next();
-//     },
-//   ], function (err) {
-//     done();
-//   });
-// };
-
 function sendPubkey(peer, pubkey, done) {
-  logger.info('POST pubkey to %s', peer.fingerprint);
+  logger.info('POST pubkey to %s', peer.keyID());
   post(peer, '/pks/add', {
     "keytext": pubkey.getRaw(),
     "keysign": pubkey.signature
@@ -145,7 +154,7 @@ function sendPubkey(peer, pubkey, done) {
 }
 
 function sendVote(peer, vote, done) {
-  logger.info('POST vote to %s', peer.fingerprint);
+  logger.info('POST vote to %s', peer.keyID());
   post(peer, '/hdc/amendments/votes', {
     "amendment": vote.getRaw(),
     "signature": vote.signature
@@ -153,7 +162,7 @@ function sendVote(peer, vote, done) {
 }
 
 function sendTransaction(peer, transaction, done) {
-  logger.info('POST transaction to %s', peer.fingerprint);
+  logger.info('POST transaction to %s', peer.keyID());
   post(peer, '/hdc/transactions/process', {
     "transaction": transaction.getRaw(),
     "signature": transaction.signature
@@ -161,7 +170,7 @@ function sendTransaction(peer, transaction, done) {
 }
 
 function sendWallet(peer, entry, done) {
-  logger.info('POST Wallet entry %s to %s', entry.fingerprint, peer.fingerprint);
+  logger.info('POST Wallet entry %s to %s', entry.fingerprint, peer.keyID());
   post(peer, '/network/tht', {
     "entry": entry.getRaw(),
     "signature": entry.signature
@@ -177,39 +186,11 @@ function sendPeering(toPeer, peer, done) {
 }
 
 function sendForward(peer, rawForward, signature, done) {
-  logger.info('POST forward to %s', peer.fingerprint);
+  logger.info('POST forward to %s', peer.keyID());
   post(peer, '/network/peering/forward', {
     "forward": rawForward,
     "signature": signature
   }, done);
-}
-
-function sendStatus(peer, status, done) {
-  logger.info('POST status %s to %s', status.status, peer.fingerprint);
-  var previouslySent = peer.statusSent;
-  async.waterfall([
-    function (next) {
-      peer.statusSent = status.status;
-      peer.statusSentPending = true;
-      peer.save(function (err) {
-        next(err);
-      });
-    },
-    function (next){
-      post(peer, '/network/peering/status', {
-        "status": status.getRaw(),
-        "signature": status.signature
-      }, next);
-    }
-  ], function (err){
-    peer.statusSentPending = false;
-    if (err) {
-      peer.statusSent = previouslySent;
-    }
-    peer.save(function (err2) {
-      done(err || err2);
-    });
-  });
 }
 
 function post(peer, url, data, done) {

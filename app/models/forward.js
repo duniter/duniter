@@ -18,6 +18,14 @@ var ForwardSchema = new Schema({
 });
 
 ForwardSchema.methods = {
+
+  fromKeyID: function () {
+    return this.from && this.from.length > 24 ? "0x" + this.from.substring(24) : "0x?";
+  },
+
+  toKeyID: function () {
+    return this.to && this.to.length > 24 ? "0x" + this.to.substring(24) : "0x?";
+  },
   
   copyValues: function(to) {
     var obj = this;
@@ -193,6 +201,12 @@ ForwardSchema.statics.getTheOne = function (from, to, done) {
   Forward.findOne({ from: from, to: to }, function (err, fwd) {
     fwd = fwd || new Forward({ from: from, to: to, forward: 'KEYS', keys: [] });
     done(null, fwd);
+  });
+}
+
+ForwardSchema.statics.removeTheOne = function (from, to, done) {
+  Forward.remove({ from: from, to: to }, function (err) {
+    done(err);
   });
 }
 

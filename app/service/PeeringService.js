@@ -152,12 +152,42 @@ function PeeringService(pgp, currency, conf) {
           return;
         }
         wasStatus = peer.status;
-        peer.setStatus(status.status, next);
         peer.statusSigDate = status.sigDate;
         peers[peer.fingerprint].status = status;
-      }
+        peer.setStatus(status.status, next);
+      },
     ], function (err) {
       callback(err, status, peer, wasStatus);
+      async.parallel({
+        statusBack: function(callback){
+          if (status.status == 'NEW') {
+            that.helloToPeer(peer, function (err) {
+              callback();
+            });
+          }
+          else callback();
+        },
+        forwardBack: function(callback){
+          // If good status, negociate Forward
+          if (~['NEW', 'NEW_BACK'].indexOf(peer.status)){
+            // Send forward request if not done yet
+            async.waterfall([
+              function (next){
+                // Any previous forward must be removed and resent by each other
+                Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
+                  next(err);
+                });
+              },
+              function (next){
+                that.negociateForward(peer, next);
+              },
+            ], function (err, needForward) {
+              if(err) slogger.error(err);
+            });
+          }
+          callback();
+        },
+      });
     });
   }
 
@@ -208,249 +238,57 @@ function PeeringService(pgp, currency, conf) {
     ], done);
   }
 
-  this.initKeys = function (done) {
-    var manual = conf.kmanagement == 'KEYS';
-    if(manual){
-      done();
-      return;
-    }
-    var thtKeys = [];
-    var managedKeys = [];
+  this.negociateForward = function (peer, done) {
+    var forward;
     async.waterfall([
-      function (next){
-        Key.find({ managed: true }, next);
-      },
-      function (keys, next) {
-        keys.forEach(function (k) {
-          managedKeys.push(k.fingerprint);
-        });
+      function (next) {
+        if(peer.fingerprint == that.cert.fingerprint){
+          next('Cannot negociate Forward with self node');
+          return;
+        }
         next();
       },
       function (next) {
-        Wallet.find({}, next);
-      },
-      function (entries, next) {
-        entries.forEach(function (e) {
-          thtKeys.push(e.fingerprint);
-        });
-        next();
+        Forward.removeTheOne(this.cert.fingerprint, peer.fingerprint, next);
       },
       function (next) {
-        // Entries from Wallet not present in managedKeys
-        var notManaged = _(thtKeys).difference(managedKeys) || [];
-        next(null, notManaged);
+        forward = new Forward({
+          version: 1,
+          currency: currency,
+          from: that.cert.fingerprint,
+          to: peer.fingerprint,
+          forward: 'ALL'
+        });
+        if(conf.kmanagement == 'KEYS'){
+          Key.getManaged(function (err, keys) {
+            var theKeys = keys || [];
+            theKeys.sort();
+            forward.forward = 'KEYS';
+            forward.keys = theKeys;
+            next();
+          });
+        } else {
+          next();
+        }
       },
-      function (notManaged, next) {
-        async.forEachSeries(notManaged, function (key, callback) {
-          logger.debug('Add %s to managed keys...', key);
-          Key.setManaged(key, true, callback);
-        }, next);
+      function (next) {
+        jpgp().sign(forward.getRaw(), that.privateKey, next);
+      },
+      function (signature, next) {
+        forward.signature = signature;
+        that.sendForward(peer, forward, next);
+      },
+      function (next) {
+        forward.save(next);
       }
     ], function (err) {
-      logger.debug('Managed keys updated.');
       done();
     });
   }
 
-  /**
-  * initForwards : look Wallet entries to deduce the forward rules of the node.
-  * Two cases:
-  *
-  *   - keys: send forwards containing the keys managed by the node
-  *   - all : send forwards asking to be forwarded ALL transactions
-  **/
-  this.initForwards = function (done, filterKeys) {
-    if(conf.kmanagement == 'KEYS'){
-      that.initForKeys(done, filterKeys);
-    }
-    else{
-      that.initForAll(done, filterKeys);
-    }
-  }
-
-  this.initForAll = function (done, filterKeys) {
-    /**
-    * Forward: ALL
-    * Send simple ALL forward to every known peer
-    */
-    async.waterfall([
-      function (next){
-        // Look for registered peers
-        if(filterKeys)
-          Peer.find({ fingerprint: { $in: filterKeys }}, next);
-        else
-          Peer.find({}, next);
-      },
-      function (peers, next) {
-        // For each peer
-        async.forEachSeries(peers, function(peer, callback){
-          var forward;
-          async.waterfall([
-            function (next) {
-              if(peer.fingerprint == that.cert.fingerprint){
-                next('Peer ' + peer.fingerprint + ' : self');
-                return;
-              }
-              next();
-            },
-            function (next) {
-              // Check wether it has already sent FWD rule
-              Forward.getTheOne(this.cert.fingerprint, peer.fingerprint, next);
-            },
-            function (fwd, next) {
-              // Already sent: skip FWD regnegociation for this peer
-              if(fwd.forward == 'ALL'){
-                next('Peer ' + peer.fingerprint + ' : forward already sent');
-                return;
-              }
-              // Not sent yet: FWD regnegociation
-              if(fwd._id){
-                fwd.remove(function (err) {
-                  next(err);
-                });
-                return;
-              }
-              next();
-            },
-            function (next) {
-              forward = new Forward({
-                version: 1,
-                currency: currency,
-                from: that.cert.fingerprint,
-                to: peer.fingerprint,
-                forward: 'ALL'
-              });
-              jpgp().sign(forward.getRaw(), that.privateKey, function (err, signature) {
-                next(err, peer, forward.getRaw(), signature);
-              });
-            },
-            function (peer, rawForward, signature, next) {
-              that.initKeysSendForward(peer, rawForward, signature, next);
-            },
-            function (next) {
-              forward.save(next);
-            }
-          ], function (err) {
-            callback();
-          });
-        }, next);
-      }
-    ], done);
-  }
-
-  this.initForKeys = function (done, filterKeys) {
-    /**
-    * Forward: KEYS
-    * Send forwards only to concerned hosts
-    */
-    var keysByPeer = {};
-    async.waterfall([
-      function (next){
-        if(filterKeys)
-          Key.find({ managed: true, fingerprint: { $in: filterKeys } }, next);
-        else
-          Key.find({ managed: true }, next);
-      },
-      function (keys, next) {
-        async.forEachSeries(keys, function (k, callback) {
-          Wallet.getTheOne(k.fingerprint, function (err, entry) {
-            if(err){
-              callback();
-              return;
-            }
-            entry.hosters.forEach(function (peer) {
-              keysByPeer[peer] = keysByPeer[peer] || [];
-              keysByPeer[peer].push(k.fingerprint);
-            });
-            callback();
-          });
-        }, function (err) {
-          async.forEach(_(keysByPeer).keys(), function(peerFPR, callback){
-            var forward, peer;
-            async.waterfall([
-              function (next) {
-                if(peerFPR == that.cert.fingerprint){
-                  next('Peer ' + peerFPR + ' : self');
-                  return;
-                }
-                next();
-              },
-              function (next){
-                Peer.find({ fingerprint: peerFPR }, next);
-              },
-              function (peers, next) {
-                if(peers.length < 1){
-                  next('Peer ' + peerFPR + ' : unknow yet');
-                  return;
-                }
-                peer = peers[0];
-                next();
-              },
-              function (next) {
-                Forward.getTheOne(this.cert.fingerprint, peerFPR, next);
-              },
-              function (fwd, next) {
-                if(fwd.forward == 'KEYS' && _(keysByPeer[peerFPR]).difference(fwd.keys).length == 0){
-                  next('Peer ' + peerFPR + ' : forward already sent');
-                  return;
-                }
-                if(fwd._id){
-                  fwd.remove(function (err) {
-                    next(err);
-                  });
-                  return;
-                }
-                next();
-              },
-              function (next) {
-                forward = new Forward({
-                  version: 1,
-                  currency: currency,
-                  from: that.cert.fingerprint,
-                  to: peer.fingerprint,
-                  forward: 'KEYS',
-                  keys: keysByPeer[peerFPR]
-                });
-                jpgp().sign(forward.getRaw(), that.privateKey, function (err, signature) {
-                  next(err, peer, forward.getRaw(), signature);
-                });
-              },
-              function (peer, rawForward, signature, next) {
-                that.initKeysSendForward(peer, rawForward, signature, next);
-              },
-              function (next) {
-                forward.save(next);
-              },
-            ], function (err) {
-              callback();
-            });
-          }, next);
-        });
-      }
-    ], done);
-  }
-
-  this.initKeysSendForward = function (peer, rawForward, signature, done) {
-    sendForward(peer, rawForward, signature, function (err, res, body) {
-      if(!err && res && res.statusCode && res.statusCode == 404){
-        async.waterfall([
-          function (next){
-            Peer.find({ fingerprint: that.cert.fingerprint }, next);
-          },
-          function (peers, next) {
-            if(peers.length == 0){
-              next('Cannot send self-peering request: does not exist');
-              return;
-            }
-            sendPeering(peer, peers[0], next);
-          },
-          function (res, body, next) {
-            sendForward(peer, rawForward, signature, function (err, res, body) {
-              next(err);
-            });
-          }
-        ], done);
-      }
+  this.sendForward = function (peer, forward, done) {
+    that.propagateForward(forward, peer, function (err, res, body) {
+      if(!err && res && res.statusCode && res.statusCode == 404) done('This node is unknown to peer ' + peer.fingerprint);
       else if(!res) done('No HTTP result');
       else if(!res.statusCode) done('No HTTP result code');
       else done(err);
@@ -551,68 +389,45 @@ function PeeringService(pgp, currency, conf) {
   }
 
   /**
-  * Send UP or NEW signal to gvien peers' fingerprints according to wether a
-  * Forward was received (UP) or not (NEW).
-  *
-  */
-  this.sendUpSignal = function (done, toFingerprints) {
+  * Send status to a peer according to his last sent status to us
+  **/
+  this.helloToPeer = function (peer, done) {
+    var actionForReceived = {
+      'NOTHING':  'NEW',
+      'NEW':      'NEW_BACK',
+      'NEW_BACK': 'UP',
+      'UP':       'UP',
+      'DOWN':     'UP',
+      'ASK':      peer.statusSent == 'NOTHING' ? 'NEW' : peer.statusSent || 'NEW'
+    };
     async.waterfall([
       function (next){
-        // Get two list of peers: the ones which already sent FWD, and those which did not
-        that.getKnownPeersBySentStatus(toFingerprints, next);
+        var statusToSend = actionForReceived[peer.status] || 'NEW';
+        that.sendStatusTo(statusToSend, [peer.fingerprint], next);
       },
-      function (sentNothingPeers, sentNewPeers, sentUpPeers, next) {
-        async.parallel({
-          newPeers: function(callback){
-            that.sendStatusTo('NEW', sentNothingPeers, callback);
-          },
-          knownPeers: function(callback){
-            that.sendStatusTo('UP', _.union(sentNewPeers, sentUpPeers), callback);
-          }
-        }, function(err, results) {
+    ], function (err) {
+      if (err) plogger.error(err);
+      done();
+    });
+  };
+
+  /**
+  * Send status to ALL known peers, for UP event
+  */
+  this.sendUpSignal = function (done) {
+    async.waterfall([
+      function (next){
+        Peer.allBut(that.cert.fingerprint, next);
+      },
+      function (allPeers, next) {
+        async.forEachSeries(allPeers, function(peer, callback){
+          that.helloToPeer(peer, function(err){
+            if (err) logger.warn(err);
+            callback();
+          });
+        }, function(err){
           done(err);
         });
-      }
-    ], done);
-  }
-
-  this.getKnownPeersBySentStatus = function (toFingerprints, done) {
-    if (arguments.length == 1) {
-      done = toFingerprints;
-      toFingerprints = undefined;
-    }
-    var newPeers = [];
-    var upPeers = [];
-    async.waterfall([
-      function (next){
-        if (toFingerprints) {
-          Peer.find({
-            statusSentPending: false,
-            "fingerprint": { $ne: that.cert.fingerprint },
-            $in: {
-              "fingerprint": toFingerprints
-            }
-          }, next);
-        } else {
-          Peer.find({
-            statusSentPending: false,
-            "fingerprint": { $ne: that.cert.fingerprint }
-          }, next);
-        }
-      },
-      function (peers, next){
-        var peersSent = {};
-        _(Peer.status).keys().forEach(function(item){
-          peersSent[item] = [];
-        });
-        peers.forEach(function(peer){
-          peersSent[peer.statusSent].push(peer.fingerprint);
-        });
-        next(
-          null,
-          peersSent[Peer.status.NOTHING],
-          peersSent[Peer.status.NEW],
-          peersSent[Peer.status.UP]);
       }
     ], done);
   }
@@ -638,7 +453,16 @@ function PeeringService(pgp, currency, conf) {
         async.waterfall([
           async.apply(Peer.getList.bind(Peer), fingerprints),
           function (peers) {
-            that.emit('status', status, peers || []);
+            that.emit('status', status, peers || [], false, function (err) {
+              async.forEach(peers, function(peer, callback){
+                peer.statusSent = status.status;
+                peer.statusSigDate = status.sigDate;
+                peer.save(function (err) {
+                  if (err) logger.error(err);
+                  callback();
+                });
+              });
+            });
             next();
           }
         ], next);
@@ -647,50 +471,37 @@ function PeeringService(pgp, currency, conf) {
   }
 
   this.propagatePubkey = function (pubkey) {
-    getForwardPeers(function (err, peers) {
+    getAllPeers(function (err, peers) {
       that.emit('pubkey', pubkey, peers || []);
     });
   };
 
   this.propagateVote = function (amendment, vote) {
-    getForwardPeers(function (err, peers) {
+    getAllPeers(function (err, peers) {
       that.emit('vote', vote, peers || []);
     });
   };
 
   this.propagatePeering = function (peering, done) {
-    getForwardPeers(function (err, peers) {
+    getAllPeers(function (err, peers) {
       that.emit('peer', peering, peers || []);
     });
   };
 
-  this.propagateStatus = function (status, done) {
-    getForwardPeers(function (err, peers) {
-      that.emit('status', status, peers || []);
-    });
-  };
-
   this.propagateMembership = function (membership, done) {
-    getForwardPeers(function (err, peers) {
+    getAllPeers(function (err, peers) {
       that.emit('membership', membership, peers || []);
     });
   };
 
   this.propagateVoting = function (voting, done) {
-    getForwardPeers(function (err, peers) {
+    getAllPeers(function (err, peers) {
       that.emit('voting', voting, peers || []);
     });
   };
 
-  this.helloToPeer = function (peer, done) {
-    async.waterfall([
-      function (next){
-        // Send UP/NEW signal for receiving its FORWARD rules (this also send self peering infos)
-        PeeringService.sendUpSignal(next, [recordedPR.fingerprint]);
-      },
-    ], function (err) {
-      if (err) plogger.error(err);
-    });
+  this.propagateForward = function (forward, peer, done) {
+    that.emit('forward', forward, [peer], done);
   };
 
   this.coinIsOwned = function (owner, coin, thtentry, done) {
@@ -719,6 +530,10 @@ function PeeringService(pgp, currency, conf) {
       done(null, nbConfirmations >= thtentry.trustThreshold);
     });
   }
+
+  function getAllPeers (done) {
+    Peer.find({}, done);
+  };
 
   function getForwardPeers (done) {
     async.waterfall([

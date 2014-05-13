@@ -266,10 +266,6 @@ module.exports = function (pgp, currency, conf) {
               }
               callback();
             });
-          },
-          initForwards: function (callback) {
-            // Eventually renegociate FWD rules according to new Wallet entry
-            PeeringService.initForwards(callback);
           }
         },
         function(err) {
@@ -371,108 +367,9 @@ module.exports = function (pgp, currency, conf) {
     ], function (err, status, peer, wasStatus) {
       http.answer(res, 400, err, function () {
         slogger.debug('⬇ %s status %s', peer.fingerprint, status.status);
-        // Answers
-        process.nextTick(function () {
-          res.end(JSON.stringify(status.json()));
-        });
-        // Send forward request if not done yet
-        async.waterfall([
-          function (next){
-            if(status.isNew()){
-              // Any previous forward must be removed and resent by each other
-              Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
-                next(err, true);
-              });
-              return;
-            }
-            next(null, false);
-          },
-        ], function (err, needForward) {
-          if(err) slogger.error(err);
-          async.waterfall([
-            function (next){
-              if(needForward){
-                PeeringService.initForwards(next, peer ? [ peer.fingerprint ] : null);
-              }
-            },
-            function (next){
-              var newStatus = status.status;
-              var answerStatus = chooseActionForIncomingStatusAndPeer(wasStatus, newStatus, peer);
-              answerStatus(peer, next);
-            },
-          ], function (err) {
-            if (err) slogger.error(err);
-          });
-        });
+        res.end(JSON.stringify(status.json()));
       })
     });
-  }
-
-  // 3D associative array
-  // Dim. 1: sent status
-  // Dim. 2: received status
-  // Dim. 3: incoming status
-  var actionMatrix = {};
-  _(Peer.status).keys().forEach(function(sentSt){
-    actionMatrix[sentSt] = {};
-    _(Peer.status).keys().forEach(function(receivedSt){
-      actionMatrix[sentSt][receivedSt] = {};
-      _(Peer.status).keys().forEach(function(incomingSt){
-        actionMatrix[sentSt][receivedSt][incomingSt] = doNothing;
-      });
-    });
-  });
-  _(Peer.status).keys().forEach(function(receivedSt){
-    _(Peer.status).keys().forEach(function(incomingSt){
-      actionMatrix["NOTHING"][receivedSt][incomingSt] = sendNewStatus;
-    });
-  });
-  _(Peer.status).keys().forEach(function(sentSt){
-    _(Peer.status).keys().forEach(function(receivedSt){
-      if (sentSt != 'NOTHING') {
-        actionMatrix[sentSt][receivedSt]["NEW"] = resetAndSendNewStatus;
-      }
-    });
-  });
-  // Avoid NEW infinite loop
-  actionMatrix["NEW"]["NOTHING"]["NEW"]   = doNothing;
-  // Other reset cases
-  actionMatrix["NEW"]["NOTHING"]["UP"]    = resetAndSendNewStatus;
-  actionMatrix["NEW"]["NOTHING"]["DOWN"]  = resetAndSendNewStatus;
-  actionMatrix["UP"]["NOTHING"]["UP"]     = resetAndSendNewStatus;
-  actionMatrix["UP"]["NOTHING"]["DOWN"]   = resetAndSendNewStatus;
-  actionMatrix["DOWN"]["NOTHING"]["UP"]   = resetAndSendNewStatus;
-  actionMatrix["DOWN"]["NOTHING"]["DOWN"] = resetAndSendNewStatus;
-
-  function chooseActionForIncomingStatusAndPeer (wasStatus , newStatus, peer) {
-    slogger.debug("Choose action for %s %s %s", peer.statusSent, wasStatus, newStatus);
-    return actionMatrix[peer.statusSent][wasStatus][newStatus];
-  }
-
-  function sendNewStatus (peer, done) {
-    slogger.debug("Send NEW status to %s", peer.fingerprint);
-    PeeringService.sendStatusTo(Peer.status.NEW, [ peer.fingerprint ], done);
-  }
-
-  function resetAndSendNewStatus (peer, done) {
-    slogger.debug("RESET and send NEW status to %s", peer.fingerprint);
-    async.waterfall([
-      function (next){
-        peer.status = Peer.status.NOTHING;
-        peer.statusSent = Peer.status.NOTHING;
-        peer.statusSentPending = false;
-        peer.save(function (err){
-          next(err);
-        });
-      },
-      function (next){
-        PeeringService.sendStatusTo(Peer.status.NEW, [ peer.fingerprint ], next);
-      },
-    ], done);
-  }
-
-  function doNothing (peer, done) {
-    done();
   }
   
   return this;

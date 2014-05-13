@@ -73,34 +73,6 @@ program
   }));
 
 program
-  .command('manage-keys')
-  .description('Update managed keys configuration and send corresponding forwards to other peers')
-  .action(connect(function (conf) {
-
-    // Launching server
-    server.express.app(program.currency, conf, function (err, app) {
-
-      var PeeringService = service.Peering;
-
-      async.waterfall([
-        function (next) {
-          PeeringService.initKeys(next);
-        },
-        function (next) {
-          PeeringService.initForwards(next);
-        }
-      ], function (err) {
-        if(err){
-          logger.error('An error occured: %s', err);
-          return;
-        }
-        server.database.disconnect();
-        process.exit();
-      });
-    });
-  }));
-
-program
   .command('allow-key [key]')
   .description('Add given key to authorized keys of this node')
   .action(connect(function (key, conf) {

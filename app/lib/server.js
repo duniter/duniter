@@ -377,10 +377,6 @@ module.exports.express = {
             next(err);
           });
         },
-        function (next) {
-          // Initialize managed keys
-          PeeringService.initKeys(next);
-        },
         function (next){
           // Add selfkey as managed
           mongoose.model('Key').setManaged(server.fingerprint(), true, next);

@@ -668,6 +668,7 @@ Merkle URL leaf: Wallet
       "version": "1",
       "currency": "beta_brousouf",
       "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "requiredTrusts": 3,
       "hosters": [
         "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
         "D049002A6724D35F867F64CC087BA351C0AEB6DF"
@@ -703,6 +704,7 @@ The posted Wallet.
     "version": "1",
     "currency": "beta_brousouf",
     "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "requiredTrusts": 3,
     "hosters": [
       "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
       "D049002A6724D35F867F64CC087BA351C0AEB6DF"
@@ -736,6 +738,7 @@ The requested Wallet.
     "version": "1",
     "currency": "beta_brousouf",
     "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "requiredTrusts": 3,
     "hosters": [
       "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
       "D049002A6724D35F867F64CC087BA351C0AEB6DF"
@@ -988,13 +991,12 @@ The recorded transaction and its signature.
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
     "number": 1,
     "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "ISSUANCE",
+    "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
     "amounts": [
       "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
       "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
     ],
-    "comment": "Universal Dividend"
+    "comment": "Buying something"
   }
 }
 ```
@@ -1023,7 +1025,6 @@ The last [COUNT] transactions received.
       "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFER",
       "amounts": [
         "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
         "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
@@ -1036,13 +1037,12 @@ The last [COUNT] transactions received.
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 91,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "ISSUANCE",
+      "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
       "amounts": [
         "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
         "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
       ],
-      "comment": "Universal Dividend"
+      "comment": "Buying something"
     }
   ]
 }
@@ -1080,23 +1080,15 @@ Merkle URL leaf: transaction
     {
       "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
       "version": 1,
-      "sender": "[PGP_FINGERPRINT]",
+      "sender": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
       "number": 14,
       "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "CHANGE",
       "coins": [
-        {
-          "id": "10-1-2-C-14",
-          "transaction_id": ""
-        },{
-          "id": "2-4-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        },{
-          "id": "3-6-1-A-1",
-          "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-        }
+        "2E69197FAB029D8669EF85E82457A1587CA0ED9C-10-1",
+        "2E69197FAB029D8669EF85E82457A1587CA0ED9C-2-4:31A6302161AC8F5938969E85399EB3415C237F93-1",
+        "2E69197FAB029D8669EF85E82457A1587CA0ED9C-3-6:31A6302161AC8F5938969E85399EB3415C237F93-1",
       ],
-      "comment": "Too much coins ! Making big one."
+      "comment": "Giving back some coins"
     }
   }
 }
@@ -1124,25 +1116,15 @@ The transaction and its signature.
   {
     "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
     "version": 1,
-    "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
+    "sender": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
     "number": 14,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
     "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "type": "CHANGE",
     "coins": [
-      {
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-10-1-2-C-14",
-        "transaction_id": ""
-      },{
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-2-4-1-A-1",
-        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-      },{
-        "id": "31A6302161AC8F5938969E85399EB3415C237F93-3-6-1-A-1",
-        "transaction_id": "31A6302161AC8F5938969E85399EB3415C237F93-1"
-      }
+      "2E69197FAB029D8669EF85E82457A1587CA0ED9C-10-1",
+      "2E69197FAB029D8669EF85E82457A1587CA0ED9C-2-4:31A6302161AC8F5938969E85399EB3415C237F93-1",
+      "2E69197FAB029D8669EF85E82457A1587CA0ED9C-3-6:31A6302161AC8F5938969E85399EB3415C237F93-1",
     ],
-    "comment": "Too much coins ! Making big one."
+    "comment": "Giving back some coins"
   }
 }
 ```
@@ -1173,7 +1155,6 @@ The last [COUNT] transactions of given PGP key.
       "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFER",
       "amounts": [
         "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
         "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
@@ -1186,13 +1167,12 @@ The last [COUNT] transactions of given PGP key.
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 91,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "ISSUANCE",
+      "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
       "amounts": [
         "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
         "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
       ],
-      "comment": "Universal Dividend"
+      "comment": "Buying something"
     }
   ]
 }
@@ -1234,7 +1214,6 @@ Merkle URL leaf: transaction
       "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFER",
       "amounts": [
         "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
         "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
@@ -1270,7 +1249,6 @@ A list of transactions pointing to this source transaction.
       "number": 92,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
       "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "type": "TRANSFER",
       "amounts": [
         "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
         "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
@@ -1283,13 +1261,12 @@ A list of transactions pointing to this source transaction.
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 91,
       "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "type": "ISSUANCE",
+      "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
       "amounts": [
         "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
         "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
       ],
-      "comment": "Universal Dividend"
+      "comment": "Buying something"
     }
   ]
 }
@@ -1421,9 +1398,10 @@ The synchronization parameters.
     "UDFrequency": 2629800,
     "UD0": 100,
     "UDPercent": 0.007376575,
-    "UDMinCoin": null,
+    "CoinAlgo": "Base2Draft",
     "Consensus": 0.6666666666666666,
-    "MSExpires": 15778800
+    "MSExpires": 15778800,
+    "VTExpires": 15778800
 }
 ```
 
@@ -1436,9 +1414,10 @@ AMFrequency       | Amendment frequency (in seconds)
 UDFrequency       | Universal Dividend frequency (in seconds)
 UD0               | Universal Dividend initial value
 UDPercent         | Universal Dividend % of monetary mass growth
-UDMinCoin         | Universal Dividend minimal coin value
+CoinAlgo          | Algorithm used for generating coins (this also gives interpretation of coins' value in each amendment)
 Consensus         | Percent of voters required to valid an Amendment
 MSExpires         | Delay by which a membership is to be considered expired
+VTExpires         | Delay by which a voting is to be considered expired
 
 #### `community/members (GET)`
 
@@ -1518,7 +1497,7 @@ The posted membership request + posted signature.
 
 **Goal**
 
-GET last received valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) document.
+GET last received valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) document, which has been used for for current contract.
 
 **Parameters**
 
@@ -1547,7 +1526,7 @@ The posted membership request + posted signature.
 
 **Goal**
 
-GET an history of all received and stored valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) documents.
+GET an history of all received and stored valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) documents, which has been used for for current contract.
 
 **Parameters**
 
@@ -1672,7 +1651,7 @@ The posted voting request + posted signature.
 
 **Goal**
 
-GET last received valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) document.
+GET last received valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) document, which has been used for for current contract.
 
 **Parameters**
 
@@ -1699,7 +1678,7 @@ Name              | Value                                                       
 
 **Goal**
 
-GET an history of all received and stored valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) documents.
+GET an history of all received and stored valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) documents, which has been used for for current contract.
 
 **Parameters**
 

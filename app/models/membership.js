@@ -97,7 +97,6 @@ MembershipSchema.methods = {
   },
 
   verifySignature: function (publicKey, done) {
-    console.log(this.getRaw());
     jpgp()
       .publicKey(publicKey)
       .data(this.getRaw())

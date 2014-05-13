@@ -315,20 +315,21 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                     function (next){
                       node.ucs.community.members.current(member.fingerprint, next);
                     },
-                    function (membership, next){
+                    function (jsonMS, next){
                       logger.info('Membership of %s', member.fingerprint);
                       var ms = new Membership({
-                        "version": membership.membership.version,
-                        "currency": membership.membership.currency,
-                        "issuer": membership.membership.issuer,
-                        "membership": membership.membership.membership,
+                        "version": jsonMS.membership.version,
+                        "currency": jsonMS.membership.currency,
+                        "issuer": jsonMS.membership.issuer,
+                        "membership": jsonMS.membership.membership,
+                        "date": new Date(jsonMS.membership.date*1000),
                         "type": "MEMBERSHIP"
                       });
-                      ms.signature = membership.signature;
+                      ms.signature = jsonMS.signature;
                       ParametersService.getMembership({
                         body: {
                           membership: ms.getRaw(),
-                          signature: membership.signature
+                          signature: jsonMS.signature
                         }
                       }, next);
                     },
@@ -351,19 +352,20 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                     function (next){
                       node.ucs.community.voters.current(member.fingerprint, next);
                     },
-                    function (voting, next){
+                    function (jsonVT, next){
                       logger.info('Voting of %s', member.fingerprint);
                       var vt = new Voting({
-                        "version": voting.voting.version,
-                        "currency": voting.voting.currency,
-                        "issuer": voting.voting.issuer,
+                        "version": jsonVT.voting.version,
+                        "currency": jsonVT.voting.currency,
+                        "issuer": jsonVT.voting.issuer,
+                        "date": new Date(jsonVT.voting.date*1000),
                         "type": "VOTING"
                       });
-                      vt.signature = voting.signature;
+                      vt.signature = jsonVT.signature;
                       ParametersService.getVoting({
                         body: {
                           voting: vt.getRaw(),
-                          signature: voting.signature
+                          signature: jsonVT.signature
                         }
                       }, next);
                     },

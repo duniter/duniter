@@ -38,6 +38,7 @@ MembershipSchema.methods = {
     ["version", "currency", "issuer", "membership"].forEach(function (key) {
       json[key] = obj[key];
     });
+    json.date = this.date && this.date.timestamp();
     json.sigDate = this.sigDate && this.sigDate.timestamp();
     json.raw = this.getRaw();
     return { signature: this.signature, membership: json };
@@ -66,7 +67,7 @@ MembershipSchema.methods = {
         {prop: "type",              regexp: /Registry: (.*)/},
         {prop: "issuer",            regexp: /Issuer: (.*)/},
         {prop: "membership",        regexp: /Membership: (.*)/},
-        {prop: "date",              regexp: /Date: (.*)/}
+        {prop: "date",              regexp: /Date: (.*)/, parser: parseDateFromTimestamp}
       ];
       var crlfCleaned = rawMS.replace(/\r\n/g, "\n");
       if(crlfCleaned.match(/\n$/)){
@@ -96,6 +97,7 @@ MembershipSchema.methods = {
   },
 
   verifySignature: function (publicKey, done) {
+    console.log(this.getRaw());
     jpgp()
       .publicKey(publicKey)
       .data(this.getRaw())
@@ -109,6 +111,7 @@ MembershipSchema.methods = {
     raw += "Currency: " + this.currency + "\n";
     raw += "Registry: " + this.type + "\n";
     raw += "Issuer: " + this.issuer + "\n";
+    raw += "Date: " + this.date.timestamp() + "\n";
     raw += "Membership: " + this.membership + "\n";
     return raw.unix2dos();
   },
@@ -157,7 +160,7 @@ function verify(obj, currency) {
   }
   if(!err){
     // Date
-    if(obj.date && !obj.date.match(/^\d+$/))
+    if(obj.date && (typeof obj == 'string' ? !obj.date.match(/^\d+$/) : obj.date.timestamp() <= 0))
       err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
   }
   if(err){
@@ -169,9 +172,13 @@ function verify(obj, currency) {
 function simpleLineExtraction(pr, rawMS, cap) {
   var fieldValue = rawMS.match(cap.regexp);
   if(fieldValue && fieldValue.length === 2){
-    pr[cap.prop] = fieldValue[1];
+    pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1]) : fieldValue[1];
   }
   return;
+}
+
+function parseDateFromTimestamp (value) {
+  return new Date(parseInt(value)*1000);
 }
 
 MembershipSchema.statics.getEligibleForAmendment = function (amNumber, done) {

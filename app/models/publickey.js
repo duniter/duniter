@@ -299,7 +299,7 @@ PublicKeySchema.statics.getForPeer = function (peer, done) {
             vucoin(peer.getIPv6() || peer.getIPv4() || peer.getDns(), peer.getPort(), true, true, next);
           },
           function (node, next){
-            node.ucg.pubkey(next);
+            node.network.pubkey(next);
           },
           function (rawPubkey, signature, next){
             var cert = jpgp().certificate(rawPubkey);

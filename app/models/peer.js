@@ -113,7 +113,7 @@ PeerSchema.methods = {
         return false;
       }
     }
-    this.hash = sha1(rawPeeringReq).toUpperCase();
+    this.hash = this.fingerprint;
     callback(null, this);
   },
 
@@ -306,8 +306,8 @@ PeerSchema.statics.getList = function (fingerprints, done) {
   Peer.find({ fingerprint: { $in: fingerprints }}, done);
 };
 
-PeerSchema.statics.allBut = function (fingerprint, done) {
-  Peer.find({ fingerprint: { $ne: fingerprint } }, done);
+PeerSchema.statics.allBut = function (fingerprints, done) {
+  Peer.find({ fingerprint: { $nin: fingerprints } }, done);
 };
 
 PeerSchema.statics.status = STATUS;

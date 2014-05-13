@@ -62,8 +62,8 @@ module.exports = function (peeringService) {
         // Do propagating
         logger.debug('sending peering of %s to peer %s', peering.keyID(), peer.keyID());
         post(peer, "/network/peering/peers", {
-          entry: peer.getRaw(),
-          signature: peer.signature
+          entry: peering.getRaw(),
+          signature: peering.signature
         }, function (err, res, body) {
           // Sent!
           sent();
@@ -84,15 +84,15 @@ module.exports = function (peeringService) {
           status: status.getRaw(),
           signature: status.signature
         }, function (err, res, body) {
+          // Sent!
+          sent(err);
           if (!err && res && res.statusCode == 400 && !internal) {
             logger.debug('sending self peering to peer %s', peer.keyID());
+            console.log(peeringService.peer());
             peeringService.emit('peer', peeringService.peer(), [peer], function (err, res, body) {
               peeringService.emit('status', status, [peer], true);
             });
-          } else {
-            // Sent!
-            sent(err);
-          }
+          } 
         });
       });
     });

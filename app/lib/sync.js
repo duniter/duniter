@@ -56,7 +56,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
         // Peer
         //============
         function (next){
-          node.ucg.peering.get(next);
+          node.network.peering.get(next);
         },
         function (json, next){
           remotePeer.copyValuesFrom(json);
@@ -211,11 +211,11 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
           Merkle.WalletEntries(next);
         },
         function (merkle, next) {
-          node.ucg.tht.get({}, function (err, json) {
+          node.network.wallet.get({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
               var leavesToAdd = [];
-              node.ucg.tht.get({ leaves: true }, function (err, json) {
+              node.network.wallet.get({ leaves: true }, function (err, json) {
                 _(json.leaves).forEach(function(leaf){
                   if(merkle.leaves().indexOf(leaf) == -1){
                     leavesToAdd.push(leaf);
@@ -225,7 +225,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                 async.forEachSeries(leavesToAdd, function(leaf, callback){
                   async.waterfall([
                     function (cb){
-                      node.ucg.tht.get({ "leaf": leaf }, cb);
+                      node.network.wallet.get({ "leaf": leaf }, cb);
                     },
                     function (json, cb){
                       var jsonEntry = json.leaf.value.entry;
@@ -254,11 +254,11 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
           Merkle.peers(next);
         },
         function (merkle, next) {
-          node.ucg.peering.peers.get({}, function (err, json) {
+          node.network.peering.peers.get({}, function (err, json) {
             var rm = new NodesMerkle(json);
             if(rm.root() != merkle.root()){
               var leavesToAdd = [];
-              node.ucg.peering.peers.get({ leaves: true }, function (err, json) {
+              node.network.peering.peers.get({ leaves: true }, function (err, json) {
                 _(json.leaves).forEach(function(leaf){
                   if(merkle.leaves().indexOf(leaf) == -1){
                     leavesToAdd.push(leaf);
@@ -268,7 +268,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                 async.forEachSeries(leavesToAdd, function(leaf, callback){
                   async.waterfall([
                     function (cb) {
-                      node.ucg.peering.peers.get({ "leaf": leaf }, cb);
+                      node.network.peering.peers.get({ "leaf": leaf }, cb);
                     },
                     function (json, cb) {
                       var jsonEntry = json.leaf.value;
@@ -313,7 +313,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                 async.forEach(keys, function(member, callback){
                   async.waterfall([
                     function (next){
-                      node.ucs.community.members.current(member.fingerprint, next);
+                      node.registry.community.members.current(member.fingerprint, next);
                     },
                     function (jsonMS, next){
                       logger.info('Membership of %s', member.fingerprint);
@@ -350,7 +350,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                 async.forEach(keys, function(member, callback){
                   async.waterfall([
                     function (next){
-                      node.ucs.community.voters.current(member.fingerprint, next);
+                      node.registry.community.voters.current(member.fingerprint, next);
                     },
                     function (jsonVT, next){
                       logger.info('Voting of %s', member.fingerprint);

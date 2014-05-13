@@ -243,9 +243,9 @@ module.exports.express = {
       app.get(    '/network/peering/peers/downstream/:fingerprint', net.downstreamKey);
       app.post(   '/network/peering/forward',                       net.forward);
       app.post(   '/network/peering/status',                        net.statusPOST);
-      app.get(    '/network/tht',                                   net.thtGET);
-      app.post(   '/network/tht',                                   net.thtPOST);
-      app.get(    '/network/tht/:fpr',                              net.thtFPR);
+      app.get(    '/network/wallet',                                net.walletGET);
+      app.post(   '/network/wallet',                                net.walletPOST);
+      app.get(    '/network/wallet/:fpr',                           net.walletFPR);
       app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
       app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
       app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);

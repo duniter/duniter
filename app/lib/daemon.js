@@ -179,7 +179,7 @@ function Daemon () {
       vote: ['connect', function (cb, results) {
         var node = results.connect;
         // Ask for peer's vote
-        node.ucs.amendment.vote(current.number + 1, cb);
+        node.registry.amendment.vote(current.number + 1, cb);
       }]
     }, function (err, results) {
       done(err, results.vote);

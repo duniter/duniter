@@ -158,36 +158,38 @@ function PeeringService(pgp, currency, conf) {
       },
     ], function (err) {
       callback(err, status, peer, wasStatus);
-      async.parallel({
-        statusBack: function(callback){
-          if (status.status == 'NEW') {
-            that.helloToPeer(peer, function (err) {
-              callback();
-            });
-          }
-          else callback();
-        },
-        forwardBack: function(callback){
-          // If good status, negociate Forward
-          if (~['NEW', 'NEW_BACK'].indexOf(peer.status)){
-            // Send forward request if not done yet
-            async.waterfall([
-              function (next){
-                // Any previous forward must be removed and resent by each other
-                Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
-                  next(err);
-                });
-              },
-              function (next){
-                that.negociateForward(peer, next);
-              },
-            ], function (err, needForward) {
-              if(err) slogger.error(err);
-            });
-          }
-          callback();
-        },
-      });
+      if (!err) {
+        async.parallel({
+          statusBack: function(callback){
+            if (status.status == 'NEW') {
+              that.helloToPeer(peer, function (err) {
+                callback();
+              });
+            }
+            else callback();
+          },
+          forwardBack: function(callback){
+            // If good status, negociate Forward
+            if (~['NEW', 'NEW_BACK'].indexOf(peer.status)){
+              // Send forward request if not done yet
+              async.waterfall([
+                function (next){
+                  // Any previous forward must be removed and resent by each other
+                  Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
+                    next(err);
+                  });
+                },
+                function (next){
+                  that.negociateForward(peer, next);
+                },
+              ], function (err, needForward) {
+                if(err) slogger.error(err);
+              });
+            }
+            callback();
+          },
+        });
+      }
     });
   }
 
@@ -417,7 +419,7 @@ function PeeringService(pgp, currency, conf) {
   this.sendUpSignal = function (done) {
     async.waterfall([
       function (next){
-        Peer.allBut(that.cert.fingerprint, next);
+        Peer.allBut([that.cert.fingerprint], next);
       },
       function (allPeers, next) {
         async.forEachSeries(allPeers, function(peer, callback){
@@ -483,7 +485,7 @@ function PeeringService(pgp, currency, conf) {
   };
 
   this.propagatePeering = function (peering, done) {
-    getAllPeers(function (err, peers) {
+    getAllPeersButSelfAnd(peering.fingerprint, function (err, peers) {
       that.emit('peer', peering, peers || []);
     });
   };
@@ -531,8 +533,12 @@ function PeeringService(pgp, currency, conf) {
     });
   }
 
+  function getAllPeersButSelfAnd (fingerprint, done) {
+    Peer.allBut([that.cert.fingerprint, fingerprint], done);
+  };
+
   function getAllPeers (done) {
-    Peer.find({}, done);
+    Peer.allBut([that.cert.fingerprint], done);
   };
 
   function getForwardPeers (done) {

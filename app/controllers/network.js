@@ -15,7 +15,7 @@ var logger    = require('../lib/logger');
 var plogger   = logger('peering');
 var flogger   = logger('forward');
 var slogger   = logger('status');
-var tlogger   = logger('tht');
+var tlogger   = logger('wallet');
 var service   = require('../service');
 
 // Services
@@ -186,7 +186,6 @@ module.exports = function (pgp, currency, conf) {
         plogger.debug('✔ %s %s:%s', recordedPR.fingerprint, recordedPR.getIPv4() || recordedPR.getIPv6(), recordedPR.getPort());
         res.end(JSON.stringify(recordedPR.json(), null, "  "));
         PeeringService.propagatePeering(recordedPR);
-        PeeringService.helloToPeer(recordedPR);
       });
     });
   }
@@ -227,7 +226,7 @@ module.exports = function (pgp, currency, conf) {
     givePeers({ forward: "KEYS", to: this.cert.fingerprint, keys: { $in: [matches[1]] } }, req, res);
   },
 
-  this.thtPOST = function(req, res) {
+  this.walletPOST = function(req, res) {
     var that = this;
     async.waterfall([
       function (callback) {
@@ -275,7 +274,7 @@ module.exports = function (pgp, currency, conf) {
     });
   },
 
-  this.thtGET = function(req, res) {
+  this.walletGET = function(req, res) {
     async.waterfall([
       function (next){
         Merkle.WalletEntries(next);
@@ -292,7 +291,7 @@ module.exports = function (pgp, currency, conf) {
     });
   },
 
-  this.thtFPR = function(req, res) {
+  this.walletFPR = function(req, res) {
     var errCode = 404;
     async.waterfall([
       function (next){

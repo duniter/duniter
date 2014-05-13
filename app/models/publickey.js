@@ -240,6 +240,8 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
             next('Key update is possible only for more recent signature');
             return;
           }
+          var cert = jpgp().certificate(pubkey.raw);
+          foundKeys[0].subkeys = cert.subkeys;
           foundKeys[0].raw = pubkey.raw;
           foundKeys[0].signature = pubkey.signature;
           foundKeys[0].email = pubkey.email;

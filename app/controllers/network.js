@@ -333,12 +333,7 @@ module.exports = function (pgp, currency, conf) {
                 cb();
                 return;
               }
-              var peer = peers[0];
-              p['dns'] = peer.getDns() || "";
-              p['ipv4'] = peer.getIPv4() || "";
-              p['ipv6'] = peer.getIPv6() || "";
-              p['port'] = peer.getPort() || "";
-              json.peers.push(p);
+              json.peers.push(p.fingerprint);
               cb();
             }
           ], callback);

@@ -501,25 +501,14 @@ GET a list of peers this node is **listening to** for ANY incoming transaction.
 
 **Returns**
 
-The corresponding peer list.
+The corresponding peer list's fingerprints.
 
 ```json
 {
-  "peers": [{
-    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.55 9001"
-    ]
-  },{
-    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.44 9001"
-    ]
-  }]
+  "peers": [
+    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
+  ]
 }
 ```
 
@@ -540,21 +529,10 @@ The corresponding peer list.
 
 ```json
 {
-  "peers": [{
-    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.55 9001"
-    ]
-  },{
-    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.44 9001"
-    ]
-  }]
+  "peers": [
+    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
+  ]
 }
 ```
 
@@ -573,21 +551,10 @@ The corresponding peer list.
 
 ```json
 {
-  "peers": [{
-    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.55 9001"
-    ]
-  },{
-    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.44 9001"
-    ]
-  }]
+  "peers": [
+    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
+  ]
 }
 ```
 
@@ -608,21 +575,10 @@ The corresponding peer list.
 
 ```json
 {
-  "peers": [{
-    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.55 9001"
-    ]
-  },{
-    "fingerprint": "B356F8A6AD4A0431AF047AA204511A9F8A51ED37",
-    "endpoints": [
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
-      "BASIC_MERKLED_API some.dns.name 88.77.66.44 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.44 9001"
-    ]
-  }]
+  "peers": [
+    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
+  ]
 }
 ```
 

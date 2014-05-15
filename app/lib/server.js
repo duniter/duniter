@@ -49,6 +49,8 @@ module.exports.sign = function (message, done) {
 
 module.exports.database = {
 
+  databaseName: '',
+
   init: function () {
     initModels();
   },
@@ -76,10 +78,12 @@ module.exports.database = {
       port = undefined;
     }
     host = host ? host : 'localhost';
-    var database = currency.replace(/\r/g, '').replace(/\n/g, '').replace(/\s/g, '_');
-    mongoose.connect('mongodb://' + host + (port ? ':' + port : '') + '/' + database);
+    databaseName = currency.replace(/\r/g, '').replace(/\n/g, '').replace(/\s/g, '_');
+    mongoose.connect('mongodb://' + host + (port ? ':' + port : '') + '/' + databaseName);
     var db = mongoose.connection;
-    db.on('error', logger.error.bind(console, 'connection error:'));
+    db.on('error', function (err) {
+      logger.error('connection error:', err);
+    });
     var Configuration = mongoose.model('Configuration');
     var confs;
     async.waterfall([
@@ -118,9 +122,23 @@ module.exports.database = {
   },
 
   reset: function(done) {
-    async.forEachSeries(_(models).without('Configuration'), function(entity, next){
-      mongoose.model(entity).remove({}, function (err) {
-        next(err);
+    var deletableCollections = [
+      'amendments',
+      'coins',
+      'forwards',
+      'keys',
+      'merkles',
+      'peers',
+      'publickeys',
+      'wallets',
+      'transactions',
+      'votes',
+      'txmemories',
+      'memberships',
+      'votings'];
+    async.forEachSeries(deletableCollections, function(collection, next){
+      mongoose.connection.collections[collection].drop(function (err) {
+        next();
       });
     }, function (err) {
       if (!err) {

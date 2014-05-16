@@ -16,7 +16,7 @@ var catPasswd = "lolcat";
 var cat = signatory(catRawKey, catPasswd);
 // var catPrivateKey = openpgp.read_privateKey(catRawKey, catPasswd)[0];
 
-var gnupg = new gnupg(catRawKey, catPasswd, "testring");
+var gnupg = new gnupg(catRawKey, catPasswd, "C73882B64B7E72237A2F460CE9CAB76D19A8651E", "testring");
 
 var catPrivateKey = openpgp.key.readArmored(catRawKey).keys[0];
 catPrivateKey.decrypt(catPasswd);

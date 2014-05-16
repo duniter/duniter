@@ -1,7 +1,7 @@
 var async  = require('async');
 var logger = require('../logger')();
 
-module.exports = function GPG(privateKey, passphrase, keyring, done) {
+module.exports = function GPG(privateKey, passphrase, fingerprint, keyring, done) {
 
   var spawn = require('child_process').spawn;
   var fs = require('fs');
@@ -34,7 +34,7 @@ module.exports = function GPG(privateKey, passphrase, keyring, done) {
   function doSign (options, message, callback) {
     try{
       var signature = '';
-      var child = spawn(gpgsh, [keyring, options], { env: { MESSAGE: message }});
+      var child = spawn(gpgsh, [keyring, fingerprint, options], { env: { MESSAGE: message }});
 
       child.stdin.write(passphrase);
       child.stdin.end();

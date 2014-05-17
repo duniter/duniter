@@ -453,7 +453,7 @@ function httpgp(app, conf, done) {
       function (next) {
         var keyring = 'ucoin_' + module.exports.fingerprint();
         pgplogger.debug("Keyring = %s", keyring);
-        var gnupg = new (require('./gnupg'))(privateKey, conf.pgppasswd, keyring);
+        var gnupg = new (require('./gnupg'))(privateKey, conf.pgppasswd, module.exports.fingerprint(), keyring);
         gnupg.init(function (err) {
           next(err, function (message, done) {
             gnupg.sign(message, done);

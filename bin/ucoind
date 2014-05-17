@@ -114,10 +114,7 @@ function handleKey (conf, key, isManaged, message) {
   key = key || "";
   key = key.toUpperCase();
   async.waterfall([
-    function (next) {
-      connect(next);
-    },
-    function (host, port, conf, next){
+    function (next){
       service.Key.handleKey(key, isManaged, next);
     }
   ], function (err, result) {

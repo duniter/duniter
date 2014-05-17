@@ -140,10 +140,12 @@ module.exports.database = {
     });
   },
 
-  disconnect: function() {
+  disconnect: function(done) {
     mongoose.disconnect(function (err) {
       if(err)
         logger.error(err);
+      if (typeof done == 'function')
+        done(err);
     });
   }
 };

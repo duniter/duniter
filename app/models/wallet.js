@@ -29,7 +29,7 @@ WalletSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature", "sigDate", "date"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature", "sigDate", "date", "requiredTrusts"].forEach(function (key) {
       to[key] = obj[key];
     });
   },

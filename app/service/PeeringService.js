@@ -505,9 +505,9 @@ function PeeringService(pgp, currency, conf) {
     that.emit('forward', forward, [peer], done);
   };
 
-  this.coinIsOwned = function (owner, coin, thtentry, done) {
+  this.coinIsOwned = function (owner, coin, tx, wallet, done) {
     var nbConfirmations = 0;
-    async.forEach(thtentry.trusts, function(trust, callback){
+    async.forEach(wallet.trusts, function(trust, callback){
       async.waterfall([
         function (next){
           Peer.getTheOne(trust, next);
@@ -516,19 +516,35 @@ function PeeringService(pgp, currency, conf) {
           peer.connect(next);
         },
         function (node, next){
-          next('Err: vucoin need an upgrade!');
-        },
-        function (owning) {
-          if (owning.owner == owner) {
-            nbConfirmations++;
-          }
-          next();
+          async.waterfall([
+            function (next){
+              node.hdc.coins.owner(coin.issuer, coin.amNumber, coin.coinNumber, next);
+            },
+            function (owning, next) {
+              if (owning.owner != owner) {
+                next('Pretended owner is not');
+                return;
+              }
+              if (!owning.transaction) {
+                next('Coin matches owner, but has no owning transaction while it should');
+              } else if (owning.transaction != [tx.sender, tx.number].join('-')) {
+                next('Coin matches owner, but has not good owning transaction');
+              } else {
+                nbConfirmations++;
+                next();
+              }
+            },
+          ], next);
         }
       ], function (err) {
+        if (err)
+          logger.warn(err);
         callback();
       });
     }, function(err){
-      done(null, nbConfirmations >= thtentry.trustThreshold);
+      if (err)
+        logger.error(err);
+      done(null, nbConfirmations >= wallet.requiredTrusts);
     });
   }
 

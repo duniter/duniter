@@ -201,11 +201,11 @@ module.exports.get = function (pgp, currency, conf) {
               function (next){
                 Wallet.getTheOne(tx.recipient, next);
               },
-              function (thtentry, next){
-                PeeringService.coinIsOwned(tx.sender, coin, thtentry, next);
+              function (wallet, next){
+                PeeringService.coinIsOwned(tx.recipient, coin, tx, wallet, next);
               },
               function (owned, next){
-                var err = !owned ? 'Coin ' + coin.toString() + ' does not appear to be owned be sender, according to network' : null;
+                var err = !owned ? 'Coin ' + coin.toString() + ' does not appear to be owned by sender, according to network' : null;
                 next(err);
               },
             ], callback);

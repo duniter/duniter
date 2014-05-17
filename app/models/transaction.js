@@ -107,11 +107,21 @@ TransactionSchema.methods = {
           },
           toString: function () {
             return this.issuer + '-' + this.amNumber + '-' + this.coinNumber;
+          },
+          getID: function () {
+            return this.issuer + '-' + this.amNumber + '-' + this.coinNumber;
           }
         });
       }
     }
     return coins;
+  },
+
+  getHash: function() {
+    if (!this.hash) {
+      this.hash = sha1(rawTX).toUpperCase();
+    }
+    return this.hash;
   },
 
   getRaw: function() {

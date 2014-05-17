@@ -49,13 +49,11 @@ module.exports.sign = function (message, done) {
 
 module.exports.database = {
 
-  databaseName: '',
-
   init: function () {
     initModels();
   },
 
-  connect: function (currency, host, port, reset, done) {
+  connect: function (databaseName, host, port, reset, done) {
     if (arguments.length == 4) {
       done = reset;
       reset = false;
@@ -78,7 +76,6 @@ module.exports.database = {
       port = undefined;
     }
     host = host ? host : 'localhost';
-    databaseName = currency.replace(/\r/g, '').replace(/\n/g, '').replace(/\s/g, '_');
     mongoose.connect('mongodb://' + host + (port ? ':' + port : '') + '/' + databaseName);
     var db = mongoose.connection;
     db.on('error', function (err) {
@@ -102,21 +99,7 @@ module.exports.database = {
         next();
       },
       function (next){
-        // Returns found conf or default one
-        next(null, confs[0] || new Configuration({
-          port: 8081,
-          ipv4: "localhost",
-          ipv6: null,
-          remotehost: null,
-          remoteipv4: null,
-          remoteipv6: null,
-          remoteport: null,
-          pgpkey: null,
-          pgppasswd: null,
-          kmanagement: 'ALL',
-          kaccept: 'ALL',
-          sync: {}
-        }));
+        next(null, confs[0]);
       },
     ], done);
   },
@@ -165,24 +148,9 @@ module.exports.database = {
   }
 };
 
-module.exports.openpgp = {
-
-  init: function (currency, conf, done) {
-
-    // Import PGP key
-    privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-    if(!privateKey.decrypt(conf.pgppasswd)) {
-      throw new Error("Wrong private key password.");
-      process.exit(1);
-      return;
-    }
-    done();
-  }
-};
-
-function initServices (currency, conf, done) {
+function initServices (currency, conf, withoutNetworker, done) {
   // Init ALL services
-  service.init(openpgp, currency, conf);
+  service.init(openpgp, currency, conf, withoutNetworker);
   // Load services contexts
   service.load(done);
 }
@@ -193,10 +161,77 @@ module.exports.services = {
 
 module.exports.express = {
 
-  app: function (currency, conf, onLoaded) {
+  app: function (conf, onLoaded) {
 
     var app = express();
     var port = process.env.PORT || conf.port;
+    var currency = conf.currency;
+
+    // Checking configuration
+    privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+    if (!privateKey) {
+      onLoaded('A private key for this node is mandatory. Relaunch with --pgpkey <pathToKey>.');
+      return;
+    }
+    try {
+      if(!privateKey.decrypt(conf.pgppasswd)) {
+        onLoaded('Wrong private key password. Relaunch with --pgppasswd <password>.');
+        return;
+      }
+    } catch(ex) {
+      onLoaded('Not a valid private key, message was: "' + ex.message + '"');
+      return;
+    }
+    if (!conf.currency) {
+      onLoaded('No currency name was given. Relaunch with --currency <currencyName> parameter.');
+      return;
+    }
+    if(!conf.ipv4 && !conf.ipv6){
+      onLoaded("No interface to listen to. Relaunch with either --ipv4 or --ipv6 parameters.");
+      return;
+    }
+    if(!conf.remoteipv4 && !conf.remoteipv6){
+      onLoaded('Either --remote4 or --remote6 must be given');
+      return;
+    }
+    if (!conf.remoteport) {
+      onLoaded('--remotep is mandatory');
+      return;
+    }
+    if (conf.sync.AMDaemon == "ON") {
+      if (!conf.sync.AMStart) {
+        onLoaded('--amstart is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      if (!conf.sync.AMFreq) {
+        onLoaded('--amfreq is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      if (!conf.sync.UDFreq) {
+        onLoaded('--udfreq is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      if (!conf.sync.UD0) {
+        onLoaded('--ud0 is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      if (!conf.sync.UDPercent) {
+        onLoaded('--udpercent is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      if (!conf.sync.Consensus) {
+        onLoaded('--consensus is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      if (!conf.sync.MSExpires) {
+        onLoaded('--msexpires is mandatory when --amdaemon is set to ON');
+        return;
+      }
+      if (!conf.sync.VTExpires) {
+        onLoaded('--vtexpires is mandatory when --amdaemon is set to ON');
+        return;
+      }
+    }
 
     // all environments
     app.set('conf', conf);
@@ -211,12 +246,8 @@ module.exports.express = {
     app.use(express.session());
 
     async.series([
-      function (next) {
-        // OpenPGP functions
-        module.exports.openpgp.init(currency, conf, next);
-      },
       function (next){
-        initServices(currency, conf, next);
+        initServices(currency, conf, false, next);
       },
       function (next){
         // HTTP Signatures
@@ -294,22 +325,6 @@ module.exports.express = {
       app.get(    '/registry/amendment/:amendment_number',          reg.amendmentNext);
       app.get(    '/registry/amendment/:amendment_number/vote',     reg.askVote);
 
-      if(!conf.ipv4 && !conf.ipv6){
-        onLoaded("No interface to listen to. Relaunch with either --ipv4 or --ipv6 parameters.");
-        return;
-      }
-      if (!conf.remoteport) {
-        onLoaded('--remotep is mandatory');
-        return;
-      }
-      if(!conf.remoteipv4 && !conf.remoteipv6){
-        onLoaded('Either --remote4 or --remote6 must be given');
-        return;
-      }
-      if (conf.sync.AMDaemon == "ON" && !conf.sync.AMStart) {
-        onLoaded('--amstart is mandatory when --amdaemon is set to ON');
-        return;
-      }
       // If the node's peering entry does not exist or is outdated,
       // a new one is generated.
       var PeeringService = service.Peering;

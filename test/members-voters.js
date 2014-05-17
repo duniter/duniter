@@ -61,6 +61,7 @@ var config = {
 // Update conf
 if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
 var conf = {
+  currency: currency,
   ipv4: '127.0.0.1',
   port: 9107,
   pgpkey: config.server.pgp.key,
@@ -599,7 +600,7 @@ before(function (done) {
       server.database.connect(config.db.database, config.db.host, config.db.port, reset, next);
     },
     function (dbconf, next){
-      server.express.app(config.db.database, conf, next);
+      server.express.app(conf, next);
     },
     function (appReady, next){
       tester.app(appReady);

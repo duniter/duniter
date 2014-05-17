@@ -43,7 +43,7 @@ before(function (done) {
       server.database.connect(config.db.database, config.db.host, config.db.port, next);
     },
     function (dbconf, next){
-      server.express.app(config.db.database, conf, next);
+      server.express.app(conf, next);
     },
     function (appReady, next){
       app = appReady;

@@ -13,22 +13,23 @@ var Transaction = mongoose.model('Transaction');
 var Wallet      = mongoose.model('Wallet');
 var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
+var jpgp        = require('./jpgp');
 var logger      = require('./logger')('sync');
 var service     = require('../service');
 
 var CONST_FORCE_TX_PROCESSING = false;
 
 // Services
-var KeyService         = service.Key;
-var VoteService        = service.Vote;
-var TransactionService = service.Transactions;
-var WalletService         = service.Wallet;
-var PeeringService     = service.Peering;
-var StrategyService    = service.Strategy;
-var ParametersService  = service.Parameters;
-var SyncService        = service.Sync;
+var KeyService         = null;
+var VoteService        = null;
+var TransactionService = null;
+var WalletService      = null;
+var PeeringService     = null;
+var StrategyService    = null;
+var ParametersService  = null;
+var SyncService        = null;
 
-module.exports = function Synchroniser (host, port, authenticated, currency, conf) {
+module.exports = function Synchroniser (server, host, port, authenticated, conf) {
   var that = this;
   
   this.remoteFingerprint = null;
@@ -60,11 +61,43 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
         },
         function (json, next){
           remotePeer.copyValuesFrom(json);
-          ParametersService.getPeeringEntryFromRaw(remotePeer.getRaw(), remotePeer.signature, next);
+          var entry = remotePeer.getRaw();
+          var signature = remotePeer.signature;
+          // Parameters
+          if(!(entry && signature)){
+            callback('Requires a peering entry + signature');
+            return;
+          }
+
+          // Check signature's key ID
+          var keyID = jpgp().signature(signature).issuer();
+          if(!(keyID && keyID.length == 16)){
+            callback('Cannot identify signature issuer`s keyID');
+            return;
+          }
+          next(null, entry + signature, keyID);
         },
-        function (signedPR, pubkey, next) {
+        function (signedPR, keyID, next) {
+          var peer = new Peer();
           async.waterfall([
             function (next){
+              peer.parse(signedPR, next);
+            },
+            function (peer, next){
+              peer.verify(peer.currency, next);
+            },
+            function (verified, next) {
+              server.services.init(peer.currency, conf, true, next);
+            },
+            function (next){
+              KeyService         = service.Key;
+              VoteService        = service.Vote;
+              TransactionService = service.Transactions;
+              WalletService      = service.Wallet;
+              PeeringService     = service.Peering;
+              StrategyService    = service.Strategy;
+              ParametersService  = service.Parameters;
+              SyncService        = service.Sync;
               Peer.find({ fingerprint: remotePeer.fingerprint, hash: sha1(signedPR).toUpperCase() }, next);
             },
             function (peers, next){
@@ -75,7 +108,7 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
               next();
             },
             function (next){
-              PeeringService.submit(signedPR, pubkey, next);
+              PeeringService.submit(signedPR, keyID, next);
             },
           ], function (err, peer) {
             if(err && !peer){

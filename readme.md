@@ -93,44 +93,33 @@ $ git clone git@github.com:ucoin-io/ucoin.git
 $ sudo npm install ./ucoin -g
 ```
 
-## Get uCoin run
-
-Launch it using the following command:
-
-```bash
-$ ucoind --currency beta_brousouf start
-
-uCoin server listening on localhost port 8081
-```
-
-Ok, this is cool, but several features may be turned on. Let's configure uCoin.
-
-## Get uCoin configured
+## Configure uCoin (required)
 
 All uCoin configuration is stored in its database, i.e. MongoDB.
-The database name is the currency name given to uCoin when started.
 
-Thus, when using:
-
-```bash
-$ ucoind --currency beta_brousouf start
-```
-... the targeted database is "beta_brousouf".
-
-To configure "beta_brousouf" database, just run uCoin with the `config` command, instead of `start` parameter:
+To add configuration parameters to uCoin, use `config` command:
 
 ```bash
-$ ucoind --currency beta_brousouf config
+$ ucoind config
 ```
 
-All the parameters given after this will be stored in the database.
+The default database name is "ucoin_default". Thus, when using above command, the targeted database is "ucoin_default".
+
+To deal with another database, just add `--mdb` parameter:
+
+```bash
+$ ucoind --mdb mycurrency config
+```
+This will alter `mycurrency` database *only*.
+
+Any parameter given to this command will be stored in the database.
 
 ### Network parameters
 
-By default, ucoin runs on port 8081. You may change it using the --port parameter:
+By default, ucoin runs on port 8033. You may change it using the --port parameter:
 
 ```bash
-$ ucoind --currency beta_brousouf config --port 80
+$ ucoind config --port 80
 ```
 
 (may require root access to launch on port 80)
@@ -138,25 +127,25 @@ $ ucoind --currency beta_brousouf config --port 80
 It is also possible to specify the IPv4 interface:
 
 ```bash
-$ ucoind --currency beta_brousouf config -p 8888 --ipv4 127.0.0.1
+$ ucoind config -p 8888 --ipv4 127.0.0.1
 ```
 
 Or IPv6 interface:
 
 ```bash
-$ ucoind --currency beta_brousouf config -p 8888 --ipv6 ::1
+$ ucoind config -p 8888 --ipv6 ::1
 ```
 
 Or both:
 
 ```bash
-$ ucoind --currency beta_brousouf config -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
+$ ucoind config -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
 ```
 
-Launching uCoin will results:
+Launching uCoin (when completely configured) will results:
 
 ```bash
-$ ucoind --currency beta_brousouf start
+$ ucoind start
 
 uCoin server listening on 127.0.0.1 port 8888
 uCoin server listening on ::1 port 8888
@@ -168,7 +157,7 @@ Note too that listening to multiple interfaces doesn't imply mutiple program ins
 
 #### Peering informations
 
-uCoin protocol uses peering mecanisms, hence needs to any ucoin node to be reachable through the network.
+uCoin protocol uses peering mecanisms, hence needs any ucoin node to be reachable through the network.
 
 As the server may be behind a reverse proxy, or because hosts may change of address, remote informations are likely to be different from listening host and port parameters. ucoin software defines 4 remote parameters you need to precise for your ucoin instance to be working:
 
@@ -180,29 +169,29 @@ As the server may be behind a reverse proxy, or because hosts may change of addr
 You must define at least `--remote4` and `--remotep` not to have any error. Here is an example:
 
 ```bash
-$ ucoind --currency beta_brousouf config --remoteh "some.remote.url" --remotep "8844" --remote4 "11.11.11.11" --remote6 "::1"
+$ ucoind config --remoteh "some.remote.url" --remotep "8844" --remote4 "11.11.11.11" --remote6 "::1"
 ```
 
 Note that this is not required and may be removed in the future, as uCoin protocol already include peering mecanisms giving network informations.
 
 #### Authentication
 
-uCoin protocol requires your responses to be signed in order to be interpreted. Such a feature is very important to authenticate nodes messages. To use this feature, just configure uCoin using `--pgpkey` parameter:
+uCoin protocol requires your responses to be signed in order to be interpreted. Such a feature is very important to authenticate nodes' messages. To use this feature, just configure uCoin using `--pgpkey` parameter:
 
 ```bash
-$ ucoind --currency beta_brousouf config --pgpkey /path/to/private/key
+$ ucoind config --pgpkey /path/to/private/key
 ```
 
 Eventually, you might need to give a password, otherwise uCoin will crash:
 
 ```bash
-$ ucoind --currency beta_brousouf config --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
+$ ucoind config --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
 ```
 
 Resulting in:
 
 ```bash
-$ ucoind --currency beta_brousouf start
+$ ucoind start
 
 Signed requests with PGP: enabled.
 uCoin server listening on 127.0.0.1 port 8888
@@ -230,13 +219,13 @@ In this cas, you need to synchronize with existing peers to fetch existing:
 This is easily done with:
 
 ```bash
-$ ucoind --currency beta_brousouf sync <host_name> <port>
+$ ucoind sync <host_name> <port>
 ```
 
 For example, to synchronise with [ucoin.twiced.fr:9101](http://ucoin.twiced.fr:9101/network/peering):
 
 ```bash
-$ ucoind --currency beta_brousouf sync ucoin.twiced.fr 9101
+$ ucoind sync ucoin.twiced.fr 9101
 [2014-01-07 23:21:52.571] [INFO] sync - Sync started.
 ...
 [2014-01-07 23:21:52.997] [INFO] sync - Sync finished.
@@ -253,12 +242,11 @@ For more more details on the ucoin command, run:
 Which displays:
 
 ```
-Usage: ucoind --currency <name> [options] <command> [options]
+Usage: ucoind <command> [options]
 
 Commands:
 
   sync [host] [port]     Tries to synchronise data with remote uCoin node
-  manage-keys            Update managed keys configuration and send corresponding forwards to other peers
   allow-key [key]        Add given key to authorized keys of this node
   manage-key [key]       Add given key to stack of managed keys of this node
   forget-key [key]       Remove given key of the managed keys' stack of this node
@@ -274,7 +262,7 @@ Options:
   -c, --currency <name>     Name of the currency managed by this node.
   --mhost <host>            MongoDB host.
   --mport <port>            MongoDB port.
-  --mdb <name>              MongoDB database name (defaults to currency name).
+  -d, --mdb <name>          MongoDB database name (defaults to "ucoin_default").
   --pgpkey <keyPath>        Path to the private key used for signing HTTP responses.
   --pgppasswd <password>    Password for the key provided with --httpgp-key option.
   --ipv4 <address>          IPV4 interface to listen for requests
@@ -285,6 +273,7 @@ Options:
   --remotep <port>          Remote port others may use to contact this node
   --kmanagement <ALL|KEYS>  Define key management policy
   --kaccept <ALL|KEYS>      Define key acceptance policy
+  --amdaemon <ON|OFF>       ucoin is launched with a specific daemon helping to get other peers' votes
   --amstart <timestamp>     First amendment generated date
   --amfreq <timestamp>      Amendments frequency, in seconds
   --udfreq <timestamp>      Universal Dividend frequency, in seconds
@@ -292,6 +281,8 @@ Options:
   --udpercent <float>       Percent of monetary mass growth per UD
   --consensus <float>       Percent of voters required to accept an amendment
   --msvalidity <timestamp>  Duration of a valid membership, in seconds
+  --vtvalidity <timestamp>  Duration of a valid voter, in seconds
+
 
 ```
 

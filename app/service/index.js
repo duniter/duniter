@@ -14,7 +14,7 @@ function Service () {
   this.HTTP       = services.HTTP       = require("./HTTPService");
   this.Merkle     = services.Merkle     = require("./MerkleService");
 
-  this.init = function (pgp, currency, conf) {
+  this.init = function (pgp, currency, conf, withoutNetworker) {
     // Services requiring configuration
     this.Parameters   = services.Parameters   = require("./ParametersService").get(currency);
     this.PublicKey    = services.PublicKey    = require("./PublicKeyService").get(pgp, currency, conf);
@@ -27,7 +27,7 @@ function Service () {
     this.Vote         = services.Vote         = require("./VoteService").get(pgp, currency, conf);
 
     // Binds Peering events to Networker
-    networker(this.Peering);
+    !withoutNetworker && networker(this.Peering);
   };
 
   /**

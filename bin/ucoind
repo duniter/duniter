@@ -16,12 +16,12 @@ function keys (val) {
 
 program
   .version('0.5.3')
-  .usage('--currency <name> [options] <command> [options]')
+  .usage('<command> [options]')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
   .option('-c, --currency <name>', 'Name of the currency managed by this node.')
   .option('--mhost <host>', 'MongoDB host.')
   .option('--mport <port>', 'MongoDB port.')
-  .option('--mdb <name>', 'MongoDB database name (defaults to currency name).')
+  .option('-d, --mdb <name>', 'MongoDB database name (defaults to "ucoin_default").')
   .option('--pgpkey <keyPath>', 'Path to the private key used for signing HTTP responses.')
   .option('--pgppasswd <password>', 'Password for the key provided with --httpgp-key option.')
   .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
@@ -40,6 +40,7 @@ program
   .option('--udpercent <float>', 'Percent of monetary mass growth per UD', parseFloat)
   .option('--consensus <float>', 'Percent of voters required to accept an amendment', parseFloat)
   .option('--msvalidity <timestamp>', 'Duration of a valid membership, in seconds', parseInt)
+  .option('--vtvalidity <timestamp>', 'Duration of a valid voter, in seconds', parseInt)
   ;
 
 program
@@ -52,15 +53,9 @@ program
 
     async.series([
       function (next){
-        server.openpgp.init(program.currency, conf, next);
-      },
-      function (next){
-        server.services.init(program.currency, conf, next);
-      },
-      function (next){
         // Synchronize
         var Synchroniser = require('../app/lib/sync');
-        var remote = new Synchroniser(host, port, false, program.currency, conf);
+        var remote = new Synchroniser(server, host, port, false, conf);
         remote.sync(next);
       },
     ], function (err) {
@@ -187,10 +182,10 @@ program
   .action(connect(function (conf) {
 
     // Launching server
-    server.express.app(program.currency, conf, function (err, app) {
+    server.express.app(conf, function (err, app) {
 
       if(err){
-        logger.error(err);
+        console.error(err);
         server.database.disconnect();
         process.exit();
         return;
@@ -204,10 +199,11 @@ var config = {};
 function overrideConf(conf) {
 
   // Ensure is not null and have good structure
-  conf = conf || {};
-  conf.sync = conf.sync || {};
+  var Configuration = mongoose.model('Configuration');
+  conf = conf || new Configuration();
 
-  config = {
+  cli = {
+    currency: program.currency,
     server: {
       port: program.port,
       ipv4address: program.ipv4,
@@ -241,43 +237,34 @@ function overrideConf(conf) {
       UDPercent: program.udpercent,
       Consensus: program.consensus,
       MSExpires: program.msfreq,
-      UCSBlockFreq: program.ubfreq
+      VTExpires: program.vtfreq
     }
   };
 
   // Update conf
-  if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
-  conf.ipv4        = config.server.ipv4address || conf.ipv4;
-  conf.ipv6        = config.server.ipv6address || conf.ipv6;
-  conf.port        = config.server.port || conf.port;
-  conf.pgpkey      = config.server.pgp.key || conf.pgpkey;
-  conf.pgppasswd   = config.server.pgp.password || conf.pgppasswd;
-  conf.remotehost  = config.server.remote.host != undefined ? config.server.remote.host : conf.remotehost;
-  conf.remoteipv4  = config.server.remote.ipv4 != undefined ? config.server.remote.ipv4 : conf.remoteipv4;
-  conf.remoteipv6  = config.server.remote.ipv6 != undefined ? config.server.remote.ipv6 : conf.remoteipv6;
-  conf.remoteport  = config.server.remote.port != undefined ? config.server.remote.port : conf.remoteport;
-  conf.kmanagement = config.policy.keys || conf.kmanagement;
-  conf.kaccept     = config.policy.pubkeys || conf.kaccept;
-  // Monetary Contract sync default parameters:
-  //  - Voting start: None (must be given)
-  //  - Voting frequency: 1 day
-  //  - UD frequency: 1 month (30.4375 days/month)
-  //  - UD(0): 100 unities
-  //  - UD % (aka 'c'): 9.22% a year <=> 0.7376575% a month
-  //  - UD Minimal Coin: none
-  //  - Voting % threshold: 2/3 of votes
-  //  - Membership max. delay: 6 months
+  if(cli.server.pgp.key) cli.server.pgp.key = fs.readFileSync(cli.server.pgp.key, 'utf8');
+  conf.currency    = cli.currency || conf.currency;
+  conf.ipv4        = cli.server.ipv4address || conf.ipv4;
+  conf.ipv6        = cli.server.ipv6address || conf.ipv6;
+  conf.port        = cli.server.port || conf.port;
+  conf.pgpkey      = cli.server.pgp.key || conf.pgpkey;
+  conf.pgppasswd   = cli.server.pgp.password || conf.pgppasswd;
+  conf.remotehost  = cli.server.remote.host != undefined ? cli.server.remote.host : (conf.remotehost || conf.host);
+  conf.remoteipv4  = cli.server.remote.ipv4 != undefined ? cli.server.remote.ipv4 : (conf.remoteipv4 || conf.ipv4);
+  conf.remoteipv6  = cli.server.remote.ipv6 != undefined ? cli.server.remote.ipv6 : (conf.remoteipv6 || conf.ipv6);
+  conf.remoteport  = cli.server.remote.port != undefined ? cli.server.remote.port : (conf.remoteport || conf.port);
+  conf.kmanagement = cli.policy.keys || conf.kmanagement;
+  conf.kaccept     = cli.policy.pubkeys || conf.kaccept;
   conf.sync        = {
-    AMDaemon: config.sync.AMDaemon || conf.sync.AMDaemon,
-    AMStart: config.sync.AMStart || conf.sync.AMStart,
-    AMFreq: config.sync.AMFreq || conf.sync.AMFreq || 3600*24, // every day
-    UDFreq: config.sync.UDFreq || conf.sync.UDFreq || 3600*24*30.4375, // every month
-    UD0: config.sync.UD0 || conf.sync.UD0 || 100,
-    UDPercent: config.sync.UDPercent || conf.sync.UDPercent || 0.007376575, // 0.73%
-    UDMinCoin: config.sync.UDMinCoin || conf.sync.UDMinCoin,
-    Consensus: config.sync.Consensus || conf.sync.Consensus || 2/3,
-    MSExpires: config.sync.MSExpires || conf.sync.MSExpires || 3600*24*30.4375*6, // 6 months
-    UCSBlockFreq: config.sync.UCSBlockFreq || conf.sync.UCSBlockFreq || 3600 // hourly
+    AMDaemon: cli.sync.AMDaemon || conf.sync.AMDaemon,
+    AMStart: cli.sync.AMStart || conf.sync.AMStart,
+    AMFreq: cli.sync.AMFreq || conf.sync.AMFreq,
+    UDFreq: cli.sync.UDFreq || conf.sync.UDFreq,
+    UD0: cli.sync.UD0 || conf.sync.UD0,
+    UDPercent: cli.sync.UDPercent || conf.sync.UDPercent,
+    Consensus: cli.sync.Consensus || conf.sync.Consensus,
+    MSExpires: cli.sync.MSExpires || conf.sync.MSExpires,
+    VTExpires: cli.sync.VTExpires || conf.sync.VTExpires
   };
 
   // Specific internal settings
@@ -288,14 +275,10 @@ function overrideConf(conf) {
 function connect(callback) {
   return function () {
     var cbArgs = arguments;
-    if(!program.currency){
-      logger.error('--currency parameter is mandatory.');
-      program.help();
-      return;
-    }
+    var dbName = program.mdb || "ucoin_default";
 
     // Connecting to DB
-    server.database.connect(program.mdb || program.currency, program.mhost, program.mport, function (err, conf) {
+    server.database.connect(dbName, program.mhost, program.mport, function (err, conf) {
 
       if(err){
         logger.debug("Error connecting to DB: " + err);

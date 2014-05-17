@@ -438,38 +438,41 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
           return;
         }
         async.waterfall([
-          function (onEveryTransactionProcessed){
-            var json = results.remote;
+          function (next) {
+            remoteMerkleFunc(keyFingerprint, { leaves: true }, next);
+          },
+          function (json, onEveryTransactionProcessed){
             var transactions = {};
-            var numbers = _.range(json.leavesCount);
-            async.forEachSeries(numbers, function(number, onSentTransactionsProcessed){
+            async.forEachSeries(json.leaves, function(leaf, onSentTransactionsProcessed){
               var transaction;
               var signature;
               var raw;
               var i;
               async.waterfall([
                 function (next){
-                  node.hdc.transactions.view(keyFingerprint, number, next);
+                  remoteMerkleFunc(keyFingerprint, { leaf: leaf }, next);
                 },
                 function (json, next){
-                  transaction = json.transaction;
-                  signature = json.signature;
-                  raw = json.raw;
+                  transaction = new Transaction(json.leaf.value.transaction);
+                  signature = json.leaf.value.transaction.signature;
+                  raw = json.leaf.value.transaction.raw;
                   i = 0;
                   next();
                 },
                 function (next){
                   async.whilst(
-                    function (){ return transaction.type != 'ISSUANCE' && i < transaction.coins.length; },
+                    function (){ return i < transaction.coins.length; },
                     function (callback){
                       var coin = transaction.coins[i];
-                      var txIssuer = coin.transaction_id.substring(0, 40);
+                      var parts = coin.split(':');
+                      var txIssuer = parts[1] && parts[1].substring(0, 40);
                       async.waterfall([
                         function (next){
-                          if(txIssuer == keyFingerprint){
+                          if(!txIssuer || txIssuer == keyFingerprint){
                             next(null, false);
                             return;
                           }
+                          // Transaction of another key
                           Key.isManaged(txIssuer, next);
                         },
                         function  (isOtherManagedKey, next) {
@@ -494,10 +497,16 @@ module.exports = function Synchroniser (host, port, authenticated, currency, con
                             next(err, pubkey, signedTx, txs);
                           });
                         },
-                        function (pubkey, signedTx, txs, next){
+                        function (pubkey, signedTx, txs, next) {
+                          var tx = new Transaction();
+                          tx.parse(signedTx, function (err, tx) {
+                            next(err, pubkey, tx, txs);
+                          });
+                        },
+                        function (pubkey, tx, txs, next){
                           if(txs.length == 0){
-                            logger.info(transaction.sender, transaction.number);
-                            TransactionService.processTx(pubkey, signedTx, CONST_FORCE_TX_PROCESSING, next);
+                            logger.info(tx.sender + '#' + tx.number);
+                            TransactionService.processTx(tx, CONST_FORCE_TX_PROCESSING, next);
                             return;
                           }
                           next();

@@ -24,6 +24,10 @@ var MembershipSchema = new Schema({
 });
 
 MembershipSchema.methods = {
+
+  keyID: function () {
+    return this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
+  },
   
   copyValues: function(to) {
     var obj = this;

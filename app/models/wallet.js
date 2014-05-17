@@ -22,10 +22,14 @@ var WalletSchema = new Schema({
 });
 
 WalletSchema.methods = {
+
+  keyID: function () {
+    return this.fingerprint && this.fingerprint.length > 24 ? "0x" + this.fingerprint.substring(24) : "0x?";
+  },
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature", "sigDate"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature", "sigDate", "date"].forEach(function (key) {
       to[key] = obj[key];
     });
   },

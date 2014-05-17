@@ -212,6 +212,10 @@ VoteSchema.methods = {
     return this;
   },
 
+  getRaw: function() {
+    return this.amendment.getRaw();
+  },
+
   getRawSigned: function() {
     return (this.amendment.getRaw() + this.signature).unix2dos();
   }

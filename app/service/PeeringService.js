@@ -307,12 +307,11 @@ function PeeringService(pgp, currency, conf) {
         next();
       },
       function (next) {
-        Peer.find({}, next);
+        getAllPeers(function (err, peers) {
+          that.emit('wallet', entry, peers || []);
+          next(null, true);
+        });
       },
-      function (peers, next) {
-        that.emit('tht', entry, peers);
-        next(null, true);
-      }
     ], done);
   }
 
@@ -479,7 +478,7 @@ function PeeringService(pgp, currency, conf) {
   };
 
   this.propagateVote = function (amendment, vote) {
-    getAllPeers(function (err, peers) {
+    getVotingPeers(function (err, peers) {
       that.emit('vote', vote, peers || []);
     });
   };

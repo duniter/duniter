@@ -540,6 +540,11 @@ function PeeringService(pgp, currency, conf) {
     Peer.allBut([that.cert.fingerprint], done);
   };
 
+  // TODO
+  function getVotingPeers (done) {
+    getAllPeers(done);
+  };
+
   function getForwardPeers (done) {
     async.waterfall([
       async.apply(Forward.find.bind(Forward), { to: that.cert.fingerprint }),

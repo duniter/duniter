@@ -226,11 +226,11 @@ module.exports.express = {
         return;
       }
       if (!conf.sync.MSExpires) {
-        onLoaded('--msexpires is mandatory when --amdaemon is set to ON');
+        onLoaded('--msvalidity is mandatory when --amdaemon is set to ON');
         return;
       }
       if (!conf.sync.VTExpires) {
-        onLoaded('--vtexpires is mandatory when --amdaemon is set to ON');
+        onLoaded('--vtvalidity is mandatory when --amdaemon is set to ON');
         return;
       }
     }

@@ -233,8 +233,8 @@ function overrideConf(conf) {
       UD0: program.ud0,
       UDPercent: program.udpercent,
       Consensus: program.consensus,
-      MSExpires: program.msfreq,
-      VTExpires: program.vtfreq
+      MSExpires: program.msvalidity,
+      VTExpires: program.vtvalidity
     }
   };
 

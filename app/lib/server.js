@@ -171,6 +171,9 @@ module.exports.express = {
 
     // Checking configuration
     privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+    if (conf.pgppasswd == null) {
+      conf.pgppasswd = "";
+    }
     if (!privateKey) {
       onLoaded('A private key for this node is mandatory. Relaunch with --pgpkey <pathToKey>.');
       return;
@@ -468,7 +471,7 @@ function httpgp(app, conf, done) {
     var privateKey = conf.pgpkey;
     async.waterfall([
       function (next) {
-        var keyring = 'ucoin_' + module.exports.fingerprint();
+        var keyring = '~/.gnupg/ucoin_' + module.exports.fingerprint();
         pgplogger.debug("Keyring = %s", keyring);
         var gnupg = new (require('./gnupg'))(privateKey, conf.pgppasswd, module.exports.fingerprint(), keyring);
         gnupg.init(function (err) {

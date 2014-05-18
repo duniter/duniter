@@ -1,2 +1,3 @@
 #!/bin/bash
-gpg --batch --no-default-keyring --secret-keyring $1 --import $2 > /dev/null 2> /dev/null
+gpg --batch --no-default-keyring --secret-keyring $1 --delete-secret-key $3
+gpg --batch --no-default-keyring --secret-keyring $1 --import $2

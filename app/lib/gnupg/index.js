@@ -7,7 +7,7 @@ module.exports = function GPG(privateKey, passphrase, fingerprint, keyring, done
   var fs = require('fs');
   var privateKeyName = 'key' + Date.now();
   var gpgimport = __dirname + '/gpg-import.sh ';
-  var gpgsh = __dirname + '/gpg.sh';
+  var gpgsh = passphrase ? __dirname + '/gpg.sh' : __dirname + '/gpg-nopasswd.sh';
 
   this.init = function (done) {
     async.waterfall([
@@ -16,7 +16,13 @@ module.exports = function GPG(privateKey, passphrase, fingerprint, keyring, done
       },
       function (next){
         var exec = require('child_process').exec;
-        exec(gpgimport + keyring + ' ' + privateKeyName, function (error, stdout, stderr) {
+        exec(gpgimport + [keyring, privateKeyName, fingerprint].join(' '), function (error, stdout, stderr) {
+          if (stdout) {
+            logger.trace(stdout);
+          }
+          if (stderr) {
+            logger.trace(stderr);
+          }
           fs.unlink(privateKeyName, function (errUnlink) {
             next(errUnlink);
           });
@@ -36,7 +42,9 @@ module.exports = function GPG(privateKey, passphrase, fingerprint, keyring, done
       var signature = '';
       var child = spawn(gpgsh, [keyring, fingerprint, options], { env: { MESSAGE: message }});
 
-      child.stdin.write(passphrase);
+      if (passphrase) {
+        child.stdin.write(passphrase);
+      }
       child.stdin.end();
 
       child.stderr.setEncoding('utf8');

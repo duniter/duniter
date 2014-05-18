@@ -114,6 +114,17 @@ This will alter `mycurrency` database *only*.
 
 Any parameter given to this command will be stored in the database.
 
+### Currency
+
+First of all, tell uCoin which currency to be used through command:
+
+```bash
+$ ucoind config --currency mycurrency
+```
+
+Replace `mycurrency` by the name of the currency you want to manage.
+> This is **crucial** data. Be careful on the case and **do not change it** thereafter otherwise your node will have incoherent data & behaviors.
+
 ### Network parameters
 
 By default, ucoin runs on port 8033. You may change it using the --port parameter:

@@ -178,9 +178,7 @@ function parseDateFromTimestamp (value) {
 
 VotingSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, done) {
   
-  this.find({ issuer: issuer, amNumber: amNumber }, function (err, votings) {
-      done(null, votings.length == 1 ? votings[0] : null);
-  });
+  this.find({ issuer: issuer, amNumber: amNumber }, done);
 }
 
 VotingSchema.statics.getEligibleForAmendment = function (amNumber, done) {

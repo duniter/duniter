@@ -341,13 +341,28 @@ module.exports.get = function (pgp, currency, conf) {
             function (amNext, next){
               async.waterfall([
                 function (next) {
-                  Amendment.isVoter(entry.issuer, entry.amNumber, next);
+                  // Get already existing Membership for same amendment
+                  Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
                 },
-                function (isVoter, next){
-                  if (isVoter) {
-                    next('Already a voter currently');
+                function (entries, next){
+                  if (entries.length > 1) {
+                    next('Refused: already received more than one voting for next amendment.');
                     return;
+                  } else if(entries.length > 0){
+                    // Already existing voting for this AM : this voting and the previous for this AM
+                    // are no more to be considered
+                    entry.eligible = false;
+                    previous = entries[0];
+                    entries[0].eligible = false;
+                    entries[0].save(function (err) {
+                      nowIsIgnored = true;
+                      next(err);
+                    });
+                  } else {
+                    next();
                   }
+                },
+                function (next){
                   // Saves entry
                   entry.propagated = false;
                   entry.save(function (err) {
@@ -453,10 +468,17 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  function getExclusionDate (amNext) {
+  function getMSExclusionDate (amNext) {
     var nextTimestamp = amNext.generated;
     var exclusionDate = new Date();
     exclusionDate.setTime(nextTimestamp*1000 - conf.sync.MSExpires*1000);
+    return exclusionDate;
+  }
+
+  function getVTExclusionDate (amNext) {
+    var nextTimestamp = amNext.generated;
+    var exclusionDate = new Date();
+    exclusionDate.setTime(nextTimestamp*1000 - conf.sync.VTExpires*1000);
     return exclusionDate;
   }
 
@@ -542,7 +564,7 @@ module.exports.get = function (pgp, currency, conf) {
       async.apply(Computing.Membership.Delta),
       function (msIndicator, next){
         res.membership = msIndicator;
-        voterContext2AnalyticalParameters(ctx, msIndicator == -1, next);
+        voterContext2AnalyticalParameters(ctx, amNext, msIndicator == -1, next);
       },
       async.apply(Computing.Voting),
       function (vtIndicator, next) {
@@ -562,14 +584,12 @@ module.exports.get = function (pgp, currency, conf) {
   */
   function memberContext2AnalyticalParameters (context, amNext, done) {
     var ctx = context || { currentMembership: null, nextMemberships: [] };
-    var hasIn = ctx.currentMembership && ctx.currentMembership.membership == 'IN';
-    var hasOut = ctx.currentMembership && ctx.currentMembership.membership == 'OUT';
-    var hasInTooOld = (hasIn && ctx.currentMembership.date < getExclusionDate(amNext));
+    var isMember = ctx.currentMembership && ctx.currentMembership.membership == 'IN';
+    var isMemberTooOld = (isMember && ctx.currentMembership.date < getMSExclusionDate(amNext));
     var ms = [
-      ctx.currentMembership == null ? 1 : 0,
-      hasIn && !hasInTooOld ? 1 : 0,
-      hasOut ? 1 : 0,
-      hasInTooOld ? 1 : 0
+      isMember && !isMemberTooOld ? 1 : 0,
+      !isMember ? 1 : 0,
+      isMemberTooOld ? 1 : 0
     ];
     var hasNextIn = ctx.nextMemberships.length > 0 && ctx.nextMemberships[0].membership == 'IN';
     var hasNextInCancelled = false;
@@ -600,16 +620,21 @@ module.exports.get = function (pgp, currency, conf) {
   /**
   * Converts voter context vars to analytical expression parameters (for Computing functions' namespace)
   */
-  function voterContext2AnalyticalParameters (context, memberLeaving, done) {
-    var memberCtx = context || { currentVote: null, nextVoting: null };
+  function voterContext2AnalyticalParameters (context, amNext, memberLeaving, done) {
+    var ctx = context || { currentVoting: null, nextVoting: null };
+    var isVoter = ctx.currentVoting;
+    var isTooOldVT = (isVoter && ctx.currentVoting.date < getVTExclusionDate(amNext));
     var vt = [
-      memberCtx.currentVoting ? 0 : 1,
-      memberCtx.currentVoting ? 1 : 0
+      isVoter ? 0 : 1,
+      isVoter ? 1 : 0,
+      isTooOldVT ? 1 : 0
     ];
+    var hasNextVoting = ctx.nextVotings.length > 0;
+    var hasNextVotingCancelled = ctx.nextVotings.length > 1;
     var p = [
-      memberCtx.amNumber > 0 ? 1 : 0,
-      memberCtx.amNumber > 0 && memberCtx.currentVote != null ? 1 : 0,
-      memberCtx.nextVoting != null ? 1 : 0,
+      1,
+      hasNextVoting ? 1 : 0,
+      hasNextVotingCancelled ? 1 : 0,
       memberLeaving == 1 ? 1 : 0
     ];
     mathlog.debug('vt = ', vt);
@@ -628,48 +653,22 @@ module.exports.get = function (pgp, currency, conf) {
           callback(null, err ? [] : records);
         });
       },
+      currentVoting: function (callback){
+        // Get lastly emitted & confirmed voting BEFORE amNumber
+        Voting.getCurrentForIssuerAndAmendment(member, amNumber, function (err, obj) {
+          callback(null, err ? null : obj);
+        });
+      },
       nextMemberships: function (callback){
         // Get lastly emitted & valid (not confirmed) memberships FOR amNumber
         Membership.getForAmendmentAndIssuer(amNumber, member, function (err, records) {
           callback(null, err ? [] : records);
         });
       },
-      currentVoting: function (callback){
-        // Get lastly emitted & confirmed voting at N-2 (meaning has voting UNDER N-1)
-        Voting.getCurrentForIssuerAndAmendment(member, amNumber - 1, function (err, obj) {
-          callback(null, err ? null : obj);
-        });
-      },
-      nextVoting: function (callback){
+      nextVotings: function (callback){
         // Get lastly emitted & valid (not confirmed) votings FOR amNumber
-        Voting.getForAmendmentAndIssuer(amNumber, member, function (err, obj) {
-          callback(null, err ? null : obj);
-        });
-      },
-      currentVote: function (callback) {
-        var voting = null;
-        async.waterfall([
-          function (next){
-            // Get lastly emitted & confirmed voting at N-2 (meaning has voting UNDER N-1)
-            Voting.getCurrentForIssuerAndAmendment(member, amNumber - 1, function (err, obj) {
-              if (err || obj == null) {
-                next('No voting for this key');
-                return;
-              }
-              voting = obj;
-              next();
-            });
-          },
-          function (next){
-            // Get THIS promoted amendment
-            Amendment.findPromotedByNumber(amNumber, next);
-          },
-          function (am, next){
-            // Get emitted vote for promoted amNumber
-            Vote.getByIssuerAmendmentHashAndBasis(voting.issuer, am.hash, am.number, next);
-          }
-        ], function (err, v) {
-          callback(null, v);
+        Voting.getForAmendmentAndIssuer(amNumber, member, function (err, votings) {
+          callback(null, err ? null : votings);
         });
       }
     }, function (err, ctx) {
@@ -957,18 +956,10 @@ Computing.Membership.Delta = function (ms, p, done) {
 
   /**
   * Computes changes for a key given changes with and initial state
-  * @param p array of changes
-  */
-  function MSNone (p) {
-    return p[1] - p[3];
-  }
-
-  /**
-  * Computes changes for a key given changes with and initial state
   * @param m 1 if initial state is no membership, 0 otherwise
   * @param p array of changes
   */
-  function MSIn (p) {
+  function IsMember (p) {
     return - p[2] + p[4];
   }
 
@@ -977,7 +968,7 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param m 1 if initial state is no membership, 0 otherwise
   * @param p array of changes
   */
-  function MSOut (p) {
+  function IsNotMember (p) {
     return p[1] - p[3];
   }
 
@@ -986,15 +977,15 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param m 1 if initial state is no membership, 0 otherwise
   * @param p array of changes
   */
-  function MSInx (p) {
+  function IsMemberTooOld (p) {
     return - p[0] + p[1] - p[3];
   }
 
   // console.log('params = ', ms, p);
-  // console.log('partial res = ', MSNone(p), MSIn(p), MSOut(p), MSInx(p));
-  // console.log('real = %s', ms[0]*MSNone(p) + ms[1]*MSIn(p) + ms[2]*MSOut(p) + ms[3]*MSInx(p));
+  // console.log('partial res = ', MSNone(p), IsMember(p), IsNotMember(p), IsMemberTooOld(p));
+  // console.log('real = %s', ms[0]*MSNone(p) + ms[1]*IsMember(p) + ms[2]*IsNotMember(p) + ms[3]*IsMemberTooOld(p));
   // console.log('-----');
-  done(null, ms[0]*MSNone(p) + ms[1]*MSIn(p) + ms[2]*MSOut(p) + ms[3]*MSInx(p));
+  done(null, ms[0]*IsMember(p) + ms[1]*IsNotMember(p) + ms[2]*IsMemberTooOld(p));
 }
 
 /**
@@ -1014,17 +1005,21 @@ Computing.Membership.Delta = function (ms, p, done) {
 */
 Computing.Voting = function (vt, p, done) {
 
-  mathlog.debug(vt[0]*VTNone(p), vt[1]*VTNext(p));
-  mathlog.debug(vt[0]*VTNone(p) + vt[1]*VTNext(p));
-  done(null, vt[0]*VTNone(p) + vt[1]*VTNext(p));
+  mathlog.debug(vt[0]*IsNotVoter(p), vt[1]*IsVoter(p), vt[2]*IsVoterTooOld(p));
+  mathlog.debug(vt[0]*IsNotVoter(p) + vt[1]*IsVoter(p) + vt[2]*IsVoterTooOld(p));
+  done(null, vt[0]*IsNotVoter(p) + vt[1]*IsVoter(p) + vt[2]*IsVoterTooOld(p));
 }
 
-function VTNone (p) {
-  return p[2] - p[3];
+function IsNotVoter (p) {
+  return p[1] - p[2] - p[3];
 }
 
-function VTNext (p) {
-  return - p[0] + p[1] - p[3];
+function IsVoter (p) {
+  return - p[3];
+}
+
+function IsVoterTooOld (p) {
+  return - p[0] + p[1] - p[2] - p[3];
 }
 
 /**************** Utils ***********************/

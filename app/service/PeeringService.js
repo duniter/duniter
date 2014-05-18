@@ -161,7 +161,7 @@ function PeeringService(pgp, currency, conf) {
       if (!err) {
         async.parallel({
           statusBack: function(callback){
-            if (status.status == 'NEW') {
+            if (~['NEW', 'NEW_BACK'].indexOf(status.status)) {
               that.helloToPeer(peer, function (err) {
                 callback();
               });

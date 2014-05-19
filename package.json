@@ -40,7 +40,8 @@
     "vucoin": "~0.17.0",
     "request": "~2.31.0",
     "log4js": "~0.6.9",
-    "moment": "~2.6.0"
+    "moment": "~2.6.0",
+    "inquirer": "~0.5.0"
   },
   "devDependencies": {
     "mocha": "",

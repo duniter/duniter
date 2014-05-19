@@ -29,7 +29,10 @@ module.exports.pgp = openpgp;
 
 var privateKey;
 
-module.exports.privateKey = function () {
+module.exports.privateKey = function (pvKey) {
+  if (pvKey) {
+    privateKey = pvKey;
+  }
   return privateKey;
 };
 
@@ -38,9 +41,14 @@ module.exports.publicKey = function () {
   return privateKey ? privateKey.toPublic().armor() : "";
 };
 
-module.exports.fingerprint = function () {
+module.exports.cert = function () {
   var ascciiPubkey = module.exports.publicKey();
-  return ascciiPubkey ? jpgp().certificate(ascciiPubkey).fingerprint : '';
+  return ascciiPubkey ? jpgp().certificate(ascciiPubkey) : null;
+};
+
+module.exports.fingerprint = function () {
+  var cert = module.exports.cert();
+  return cert ? cert.fingerprint : '';
 };
 
 module.exports.sign = function (message, done) {
@@ -161,6 +169,68 @@ module.exports.services = {
   init: initServices
 };
 
+module.exports.checkConf = function (conf, loggingMethod) {
+
+  var errors = [];
+  var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+
+  if (conf.pgppasswd == null) {
+    conf.pgppasswd = "";
+  }
+  if (!privateKey) {
+    errors.push('This node requires a private key to work.');
+  }
+  try {
+    if(privateKey && !privateKey.decrypt(conf.pgppasswd)) {
+      errors.push('Wrong private key password.');
+    }
+  } catch(ex) {
+    errors.push('Not a valid private key, message was: "' + ex.message + '"');
+  }
+  if (!conf.currency) {
+    errors.push('No currency name was given.');
+  }
+  if(!conf.ipv4 && !conf.ipv6){
+    errors.push("No interface to listen to.");
+  }
+  if(!conf.remoteipv4 && !conf.remoteipv6){
+    errors.push('No interface for remote contact.');
+  }
+  if (!conf.remoteport) {
+    errors.push('No port for remote contact.');
+  }
+  if (conf.sync.AMDaemon == "ON") {
+    if (!conf.sync.AMStart) {
+      errors.push('Autovoting enabled but starting date not given');
+    }
+    if (!conf.sync.AMFreq) {
+      errors.push('Autovoting enabled but amendment frequency not given');
+    }
+    if (!conf.sync.UDFreq) {
+      errors.push('Autovoting enabled but dividend frequency not given');
+    }
+    if (!conf.sync.UD0) {
+      errors.push('Autovoting enabled but initial dividend not given');
+    }
+    if (!conf.sync.UDPercent) {
+      errors.push('Autovoting enabled but %dividend not given');
+    }
+    if (!conf.sync.Consensus) {
+      errors.push('Autovoting enabled but %required votes not given');
+    }
+    if (!conf.sync.MSExpires) {
+      errors.push('Autovoting enabled but membership validity not given');
+    }
+    if (!conf.sync.VTExpires) {
+      errors.push('Autovoting enabled but voting validity not given');
+    }
+  }
+  if (typeof loggingMethod == 'function') {
+    errors.forEach(loggingMethod);
+  }
+  return errors;
+}
+
 module.exports.express = {
 
   app: function (conf, onLoaded) {
@@ -170,73 +240,15 @@ module.exports.express = {
     var currency = conf.currency;
 
     // Checking configuration
+    var confErrors = module.exports.checkConf(conf);
+    if (confErrors.length > 0) {
+      onLoaded(confErrors[0]);
+      return;
+    }
+
+    // Private key extraction
     privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-    if (conf.pgppasswd == null) {
-      conf.pgppasswd = "";
-    }
-    if (!privateKey) {
-      onLoaded('A private key for this node is mandatory. Relaunch with --pgpkey <pathToKey>.');
-      return;
-    }
-    try {
-      if(!privateKey.decrypt(conf.pgppasswd)) {
-        onLoaded('Wrong private key password. Relaunch with --pgppasswd <password>.');
-        return;
-      }
-    } catch(ex) {
-      onLoaded('Not a valid private key, message was: "' + ex.message + '"');
-      return;
-    }
-    if (!conf.currency) {
-      onLoaded('No currency name was given. Relaunch with --currency <currencyName> parameter.');
-      return;
-    }
-    if(!conf.ipv4 && !conf.ipv6){
-      onLoaded("No interface to listen to. Relaunch with either --ipv4 or --ipv6 parameters.");
-      return;
-    }
-    if(!conf.remoteipv4 && !conf.remoteipv6){
-      onLoaded('Either --remote4 or --remote6 must be given');
-      return;
-    }
-    if (!conf.remoteport) {
-      onLoaded('--remotep is mandatory');
-      return;
-    }
-    if (conf.sync.AMDaemon == "ON") {
-      if (!conf.sync.AMStart) {
-        onLoaded('--amstart is mandatory when --amdaemon is set to ON');
-        return;
-      }
-      if (!conf.sync.AMFreq) {
-        onLoaded('--amfreq is mandatory when --amdaemon is set to ON');
-        return;
-      }
-      if (!conf.sync.UDFreq) {
-        onLoaded('--udfreq is mandatory when --amdaemon is set to ON');
-        return;
-      }
-      if (!conf.sync.UD0) {
-        onLoaded('--ud0 is mandatory when --amdaemon is set to ON');
-        return;
-      }
-      if (!conf.sync.UDPercent) {
-        onLoaded('--udpercent is mandatory when --amdaemon is set to ON');
-        return;
-      }
-      if (!conf.sync.Consensus) {
-        onLoaded('--consensus is mandatory when --amdaemon is set to ON');
-        return;
-      }
-      if (!conf.sync.MSExpires) {
-        onLoaded('--msvalidity is mandatory when --amdaemon is set to ON');
-        return;
-      }
-      if (!conf.sync.VTExpires) {
-        onLoaded('--vtvalidity is mandatory when --amdaemon is set to ON');
-        return;
-      }
-    }
+    privateKey.decrypt(conf.pgppasswd);
 
     // all environments
     app.set('conf', conf);
@@ -351,6 +363,7 @@ module.exports.express = {
             logger.info('Connecting on interface %s...', conf.ipv6);
             http.createServer(app).listen(conf.port, conf.ipv6, function(){
               logger.info('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
+              next();
             });
           }
           else next();

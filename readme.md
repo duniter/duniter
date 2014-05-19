@@ -97,117 +97,77 @@ $ sudo npm install ./ucoin -g
 
 All uCoin configuration is stored in its database, i.e. MongoDB.
 
-To add configuration parameters to uCoin, use `config` command:
+To start configuring your node, use following command:
 
 ```bash
-$ ucoind config
+ucoind wizard
 ```
 
-The default database name is "ucoin_default". Thus, when using above command, the targeted database is "ucoin_default".
+This will start a command prompt asking for parameters value & validate all of them at the end. Thus, you won't forget one:
+
+```bash
+$ ucoind wizard
+[?] Currency name: beta_brousouf
+[?] IPv4 interface: wlan1 192.168.1.14
+[?] IPv6 interface: wlan1 2a01:e35:8a37:f2b0:dd48:5620:5d3c:ce2c
+[?] Port: 8080
+[?] Remote IPv4 88.163.127.43
+[?] Remote IPv6 None
+[?] Remote port: 9101
+[?] Private key: cgeek (ubot1;udid2;c;MOREAU;CEDRIC;1988-04-29;e+47.47-000.56;0) <cgeek@yopmail.com>
+[?] Key's passphrase: ************************
+[?] Autovoting: Yes
+[?] Amendment start: 1398895200
+[?] Amendment frequency: 86400
+[?] Dividend frequency: 172800
+[?] Consensus %required: 0.67
+[?] Initial dividend: 3
+[?] Universal Dividend %growth: 0.007376575
+[?] Membership validity duration: 15778800
+[?] Voting request validity duration: 2629800
+[2014-05-19 17:29:21.139] [DEBUG] ucoind - Configuration saved.
+```
+
+### Target only few wizard's steps
+
+Wizard is composed of 4 steps: `currency`, `network`, `key`, `autovote`. By adding one of those words to `wizard` command, you will only do the attached steps:
+
+```bash
+$ ucoind wizard network
+[?] IPv4 interface: wlan1 192.168.1.14
+[?] IPv6 interface: wlan1 2a01:e35:8a37:f2b0:dd48:5620:5d3c:ce2c
+[?] Port: 8080
+[?] Remote IPv4 88.163.127.43
+[?] Remote IPv6 None
+[?] Remote port: 9101
+[2014-05-19 17:32:46.799] [DEBUG] ucoind - Configuration saved.
+```
+
+### Launching the node
+
+Finally, you just need to use `start` command to launch the node:
+
+```bash
+$ ucoind start
+[2014-05-19 17:42:33.494] [DEBUG] service - Loaded service: Contract
+...
+[2014-05-19 17:42:33.613] [DEBUG] ucoind - Server ready!
+```
+
+### Change of database
+
+The default database name is "ucoin_default". Thus, when using any command, the targeted database is "ucoin_default".
 
 To deal with another database, just add `--mdb` parameter:
 
 ```bash
-$ ucoind --mdb mycurrency config
+$ ucoind --mdb mycurrency wizard
 ```
-This will alter `mycurrency` database *only*.
+This will launch wizard on `mycurrency` database *only*.
 
-Any parameter given to this command will be stored in the database.
+### Manual configuration
 
-### Currency
-
-First of all, tell uCoin which currency to be used through command:
-
-```bash
-$ ucoind config --currency mycurrency
-```
-
-Replace `mycurrency` by the name of the currency you want to manage.
-> This is **crucial** data. Be careful on the case and **do not change it** thereafter otherwise your node will have incoherent data & behaviors.
-
-### Network parameters
-
-By default, ucoin runs on port 8033. You may change it using the --port parameter:
-
-```bash
-$ ucoind config --port 80
-```
-
-(may require root access to launch on port 80)
-
-It is also possible to specify the IPv4 interface:
-
-```bash
-$ ucoind config -p 8888 --ipv4 127.0.0.1
-```
-
-Or IPv6 interface:
-
-```bash
-$ ucoind config -p 8888 --ipv6 ::1
-```
-
-Or both:
-
-```bash
-$ ucoind config -p 8888 --ipv4 127.0.0.1 --ipv6 ::1
-```
-
-Launching uCoin (when completely configured) will results:
-
-```bash
-$ ucoind start
-
-uCoin server listening on 127.0.0.1 port 8888
-uCoin server listening on ::1 port 8888
-```
-
-Note too that listening to multiple interfaces doesn't imply mutiple program instances: only *one* is running on multiple interfaces.
-
-### Remote parameters
-
-#### Peering informations
-
-uCoin protocol uses peering mecanisms, hence needs any ucoin node to be reachable through the network.
-
-As the server may be behind a reverse proxy, or because hosts may change of address, remote informations are likely to be different from listening host and port parameters. ucoin software defines 4 remote parameters you need to precise for your ucoin instance to be working:
-
-* `--remoteh`
-* `--remote4`
-* `--remote6`
-* `--remotep`
-
-You must define at least `--remote4` and `--remotep` not to have any error. Here is an example:
-
-```bash
-$ ucoind config --remoteh "some.remote.url" --remotep "8844" --remote4 "11.11.11.11" --remote6 "::1"
-```
-
-Note that this is not required and may be removed in the future, as uCoin protocol already include peering mecanisms giving network informations.
-
-#### Authentication
-
-uCoin protocol requires your responses to be signed in order to be interpreted. Such a feature is very important to authenticate nodes' messages. To use this feature, just configure uCoin using `--pgpkey` parameter:
-
-```bash
-$ ucoind config --pgpkey /path/to/private/key
-```
-
-Eventually, you might need to give a password, otherwise uCoin will crash:
-
-```bash
-$ ucoind config --pgppasswd "ultr[A]!%HiGhly-s3cuR3-p4ssw0d"
-```
-
-Resulting in:
-
-```bash
-$ ucoind start
-
-Signed requests with PGP: enabled.
-uCoin server listening on 127.0.0.1 port 8888
-uCoin server listening on ::1 port 8888
-```
+You might also want to do your configuration manually, using CLI options. [Here is a document](./doc/manual-config.md) on how to achieve this.
 
 ### Initial data
 

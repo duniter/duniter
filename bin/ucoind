@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 var server   = require('../app/lib/server');
 var jpgp     = require('../app/lib/jpgp');
+var wizard   = require('../app/lib/wizard');
 var fs       = require('fs');
+var os       = require('os');
 var async    = require('async');
 var _        = require('underscore');
 var program  = require('commander');
 var mongoose = require('mongoose');
 var moment   = require('moment');
+var inquirer = require('inquirer');
+var openpgp  = require('openpgp');
 var logger   = require('../app/lib/logger')('ucoind');
 var service  = require('../app/service');
 
@@ -42,6 +46,41 @@ program
   .option('--msvalidity <timestamp>', 'Duration of a valid membership, in seconds', parseInt)
   .option('--vtvalidity <timestamp>', 'Duration of a valid voter, in seconds', parseInt)
   ;
+
+program
+  .command('wizard [step]')
+  .description('Launch the configuration Wizard')
+  .action(connect(function (step, conf) {
+    var wiz = wizard();
+    var task = {
+      'currency': wiz.configCurrency,
+      'network': wiz.configNetwork,
+      'key': wiz.configKey,
+      'autovote': wiz.configAutovote
+    };
+    var wizDo = task[step] || wiz.configAll;
+    async.waterfall([
+      function (next){
+        wizDo(conf, next);
+      },
+      function (next){
+        conf.save(function (err) {
+          !err && logger.debug("Configuration saved.");
+          next(err);
+        });
+      },
+      function (next) {
+        server.checkConf(conf, function (err) {
+          logger.warn(err);
+        });
+        next();
+      }
+    ], function (err, result) {
+      err && logger.error(err);
+      server.database.disconnect();
+      process.exit();
+    });
+  }));
 
 program
   .command('sync [host] [port]')
@@ -128,6 +167,18 @@ function handleKey (conf, key, isManaged, message) {
     process.exit();
   });
 }
+
+program
+  .command('check-config')
+  .description('Checks the node\'s configuration')
+  .action(connect(function (conf) {
+    server.checkConf(conf, function (err) {
+      logger.warn(err);
+    });
+    server.database.disconnect();
+    process.exit();
+    return;
+  }));
 
 program
   .command('config')
@@ -246,10 +297,10 @@ function overrideConf(conf) {
   conf.port        = cli.server.port || conf.port;
   conf.pgpkey      = cli.server.pgp.key || conf.pgpkey;
   conf.pgppasswd   = cli.server.pgp.password != undefined ? cli.server.pgp.password : conf.pgppasswd;
-  conf.remotehost  = cli.server.remote.host != undefined ? cli.server.remote.host : (conf.remotehost || conf.host);
-  conf.remoteipv4  = cli.server.remote.ipv4 != undefined ? cli.server.remote.ipv4 : (conf.remoteipv4 || conf.ipv4);
-  conf.remoteipv6  = cli.server.remote.ipv6 != undefined ? cli.server.remote.ipv6 : (conf.remoteipv6 || conf.ipv6);
-  conf.remoteport  = cli.server.remote.port != undefined ? cli.server.remote.port : (conf.remoteport || conf.port);
+  conf.remotehost  = cli.server.remote.host != undefined ? cli.server.remote.host : conf.remotehost;
+  conf.remoteipv4  = cli.server.remote.ipv4 != undefined ? cli.server.remote.ipv4 : conf.remoteipv4;
+  conf.remoteipv6  = cli.server.remote.ipv6 != undefined ? cli.server.remote.ipv6 : conf.remoteipv6;
+  conf.remoteport  = cli.server.remote.port != undefined ? cli.server.remote.port : conf.remoteport;
   conf.kmanagement = cli.policy.keys || conf.kmanagement;
   conf.kaccept     = cli.policy.pubkeys || conf.kaccept;
   conf.sync        = {

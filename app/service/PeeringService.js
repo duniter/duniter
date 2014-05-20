@@ -263,7 +263,10 @@ function PeeringService(pgp, currency, conf) {
         });
         if(conf.kmanagement == 'KEYS'){
           Key.getManaged(function (err, keys) {
-            var theKeys = keys || [];
+            var theKeys = [];
+            keys.forEach(function(key){
+              theKeys.push(key.fingerprint);
+            });
             theKeys.sort();
             forward.forward = 'KEYS';
             forward.keys = theKeys;

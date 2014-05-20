@@ -43,7 +43,10 @@ module.exports.get = function (pgp, currency, conf) {
         },
         function (next) {
           // If kmanagement == ALL, mark key as handled to handle key's transactions
-          KeyService.handleKey(pubkey.fingerprint, conf && conf.kmanagement == 'ALL', next);
+          if (conf && conf.kmanagement == 'ALL')
+            KeyService.handleKey(pubkey.fingerprint, next);
+          else
+            next();
         },
         function (next){
           PublicKey.getTheOne(pubkey.fingerprint, next);

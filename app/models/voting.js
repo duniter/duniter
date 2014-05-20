@@ -82,6 +82,9 @@ VotingSchema.methods = {
         return false;
       }
     }
+    if (!this.date) {
+      this.date = new Date();
+    }
     this.hash = sha1(rawVotingRequest).toUpperCase();
     callback(null, this);
   },

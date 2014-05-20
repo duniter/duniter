@@ -86,6 +86,9 @@ WalletSchema.methods = {
         return false;
       }
     }
+    if (!this.date) {
+      this.date = new Date();
+    }
     this.hash = sha1(rawEntryReq).toUpperCase();
     callback(null, this);
   },
@@ -135,7 +138,10 @@ WalletSchema.methods = {
 }
 
 function parseDateFromTimestamp (value) {
-  return new Date(parseInt(value)*1000);
+  if (value && value.match(/^\d+$/))
+    return new Date(parseInt(value)*1000);
+  else
+    return new Date();
 }
 
 function verify(obj, currency) {

@@ -84,6 +84,9 @@ MembershipSchema.methods = {
         return false;
       }
     }
+    if (!this.date) {
+      this.date = new Date();
+    }
     this.hash = sha1(rawMembershipRequest).toUpperCase();
     callback(null, this);
   },

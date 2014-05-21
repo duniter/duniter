@@ -8,7 +8,7 @@ var Merkle      = mongoose.model('Merkle');
 var Key         = mongoose.model('Key');
 var Transaction = mongoose.model('Transaction');
 var service     = require('../service');
-var logger      = require('../lib/logger')();
+var logger      = require('../lib/logger')('transaction');
 
 // Services
 var MerkleService      = service.Merkle;
@@ -150,6 +150,8 @@ module.exports = function (pgp, currency, conf) {
     ], function (err, tx, alreadyProcessed) {
       if(err){
         res.send(400, err);
+        if (err)
+          logger.debug(err);
       }
       else{
         res.send(200, JSON.stringify({

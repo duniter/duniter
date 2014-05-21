@@ -209,6 +209,9 @@ module.exports.checkConf = function (conf, loggingMethod) {
     if (!conf.sync.UDFreq) {
       errors.push('Autovoting enabled but dividend frequency not given');
     }
+    if (conf.sync.UDFreq % conf.sync.AMFreq != 0) {
+      errors.push('UD frequency must be a multiple of Amendment frequency');
+    }
     if (!conf.sync.UD0) {
       errors.push('Autovoting enabled but initial dividend not given');
     }

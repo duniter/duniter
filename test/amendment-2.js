@@ -81,12 +81,12 @@ describe('Amendment', function(){
       assert.equal(amTest.votersCount, 2);
     });
 
-    it('its computed hash should be EF3439524E602E2EAF3BECB9026334C77733ED08', function(){
-      assert.equal(amTest.hash, 'EF3439524E602E2EAF3BECB9026334C77733ED08');
+    it('its computed hash should be 5234E02254151A232197BD629FA0A52DE35FE780', function(){
+      assert.equal(amTest.hash, '5234E02254151A232197BD629FA0A52DE35FE780');
     });
 
-    it('its manual hash should be EF3439524E602E2EAF3BECB9026334C77733ED08', function(){
-      assert.equal(sha1(amTest.getRaw()).toUpperCase(), 'EF3439524E602E2EAF3BECB9026334C77733ED08');
+    it('its manual hash should be 5234E02254151A232197BD629FA0A52DE35FE780', function(){
+      assert.equal(sha1(amTest.getRaw()).toUpperCase(), '5234E02254151A232197BD629FA0A52DE35FE780');
     });
   });
 });

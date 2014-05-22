@@ -13,6 +13,7 @@ var AmendmentSchema = new Schema({
   number: {"type": Number, "default": 0},
   generated: {"type": Number, "default": 0},
   dividend: Number,
+  coinAlgo: String,
   coinBase: Number,
   coinList: [Number],
   nextVotes: {"type": Number, "default": 0},
@@ -52,6 +53,7 @@ AmendmentSchema.methods = {
       "number",
       "generated",
       "dividend",
+      "coinAlgo",
       "coinBase",
       "coinList",
       "nextVotes",
@@ -93,6 +95,7 @@ AmendmentSchema.methods = {
       "currency",
       "votersRoot",
       "membersRoot",
+      "coinAlgo",
     ].forEach(function(field){
       json[field] = that[field] || "";
     });
@@ -114,6 +117,9 @@ AmendmentSchema.methods = {
   parse: function(rawAmend, callback) {
     var am = new hdc.Amendment(rawAmend);
     // Test on dividend
+    if (am.dividend && !am.coinAlgo) {
+      am.error = "CoinAlgo is required with UniversalDividend";
+    }
     if (am.dividend && !am.coinBase) {
       am.error = "CoinBase is required with UniversalDividend";
     }
@@ -162,6 +168,7 @@ AmendmentSchema.methods = {
     raw += "GeneratedOn: " + this.generated + "\n";
     if(this.dividend){
       raw += "UniversalDividend: " + this.dividend + "\n";
+      raw += "CoinAlgo: " + this.coinAlgo + "\n";
       raw += "CoinBase: " + this.coinBase + "\n";
       raw += "CoinList: " + this.coinList.join(' ') + "\n";
     }
@@ -506,6 +513,7 @@ function fill (am1, am2) {
     "generated",
     "nextVotes",
     "dividend",
+    "coinAlgo",
     "coinBase",
     "coinList",
     "previousHash",

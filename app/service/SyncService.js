@@ -79,6 +79,7 @@ module.exports.get = function (pgp, currency, conf) {
             amNext.votersCount = 0;
             amNext.monetaryMass = 0;
           }
+          amNext.coinAlgo = "Base2Draft";
           amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.Consensus);
           // Update UD
           updateUniversalDividend(amNext, am, next);

@@ -774,9 +774,9 @@ The current amendment.
   "version": "1",
   "currency": "beta_brousouf",
   "number": "2",
+  "generated": 1400588975,
   "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
   "dividend": "100",
-  "coinMinimalPower": "0",
   "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
   "votersCount": "2",
   "votersChanges": [
@@ -794,7 +794,7 @@ The current amendment.
 #### `amendments/promoted/[AMENDMENT_NUMBER]`
 **Goal**
 
-GET the current promoted amendment (amendment which received enough votes to be accepted).
+GET the promoted amendment with number `AMENDMENT_NUMBER` (amendment which received enough votes to be accepted).
 
 **Parameters**
 
@@ -810,9 +810,9 @@ The promoted amendment if it exists (otherwise return HTTP 404).
   "version": "1",
   "currency": "beta_brousouf",
   "number": "2",
+  "generated": 1400588975,
   "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
   "dividend": "100",
-  "coinMinimalPower": "0",
   "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
   "votersCount": "2",
   "votersChanges": [
@@ -846,9 +846,9 @@ The requested amendment.
   "version": "1",
   "currency": "beta_brousouf",
   "number": "2",
+  "generated": 1400588975,
   "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
   "dividend": "100",
-  "coinMinimalPower": "0",
   "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
   "votersCount": "2",
   "votersChanges": [
@@ -949,7 +949,6 @@ The posted amendment + posted signature.
     "number": "2",
     "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
     "dividend": "100",
-    "coinMinimalPower": "0",
     "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
     "votersCount": "2",
     "votersChanges": [
@@ -1742,9 +1741,9 @@ Amendment to be voted by this node if voting happened.
   "version": "1",
   "currency": "beta_brousouf",
   "number": "2",
+  "generated": 1400588975,
   "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
   "dividend": "100",
-  "coinMinimalPower": "0",
   "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
   "votersCount": "2",
   "votersChanges": [
@@ -1779,9 +1778,9 @@ Amendment to be voted by this node if voting happened.
   "version": "1",
   "currency": "beta_brousouf",
   "number": "2",
+  "generated": 1400588975,
   "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
   "dividend": "100",
-  "coinMinimalPower": "0",
   "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
   "votersCount": "2",
   "votersChanges": [
@@ -1821,7 +1820,6 @@ Current node's voting amendment + signature, or HTTP 404 if not available yet.
     "number": "2",
     "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
     "dividend": "100",
-    "coinMinimalPower": "0",
     "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
     "votersCount": "2",
     "votersChanges": [

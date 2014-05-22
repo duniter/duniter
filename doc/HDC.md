@@ -128,6 +128,7 @@ Amendments have the following structure:
     Number: INCREMENT
     GeneratedOn: TIMESTAMP
     UniversalDividend: UNIVERSAL_DIVIDEND
+    CoinAlgo: COIN_ALGORITHM
     CoinBase: COIN_BASE_POWER
     CoinList: COIN_LIST
     NextRequiredVotes: REQUIRED_VOTES_COUNT
@@ -154,6 +155,7 @@ Field | Description | Required
 `Number` | references the position of the amendment in the amendment chain. Initial amendment has the value `0`. | **Required**
 `GeneratedOn` | references the generation date of the amendment. | **Required**
 `UniversalDividend` | if provided, is a positive integer. It defines the amount of money each member of the community may create for **THIS** amendment. | *Not Required*
+`CoinAlgo` | **is mandatory if `UniversalDividend` is positive**. Gives the algorithm used to fill in `CoinBase` and `CoinList` fields. Allows to deduce coins value too. | *Not Required*
 `CoinBase` | **is mandatory if `UniversalDividend` is positive**. Gives the power value of first coin in `CoinList`. | *Not Required*
 `CoinList` | **is mandatory if `UniversalDividend` is positive**. List of integers telling how much coins are issued for a given power. First integer gives the number of coins of value 2^`CoinBase`, second gives the number of coins of value 2^(`CoinBase` + 1), and so on. | *Not Required*
 `NextRequiredVotes` | give the minimum votes count for next amendment to be considered a valid following amendment. | **Required**
@@ -194,10 +196,13 @@ The root Amendment is special in that it has *no previous Amendment* and invento
 
     Version: 1
     Currency: beta_brousouf
-    Number: 0
+    Number: 2
     UniversalDividend: 1184
+    CoinAlgo: Base2Draft
     CoinBase: 4
     CoinList: 14 6 2 3 1
+    NextRequiredVotes: 3
+    PreviousHash: 20947518DD947A25E6EDB16C620909891058C532
     MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90
     MembersCount: 3
     MembersChanges:
@@ -216,6 +221,8 @@ Issuing a dividend composed of:
 * 2 coins of value 2^6
 * 3 coins of value 2^7
 * 1 coin of value 2^8
+
+Here, values can be understood because of `Base2Draft` [algorithm name](./CoinAlgorithms.md), which gives rules on how to interprete coins.
 
 ## Transaction
 

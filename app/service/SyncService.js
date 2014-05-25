@@ -492,15 +492,16 @@ module.exports.get = function (pgp, currency, conf) {
           Amendment.getPreviouslyPromotedWithDividend(next);
         },
         function (previousWithUD, next){
-          var currentMass = (amCurrent && amCurrent.monetaryMass) || 0;
-          var monetaryMassDelta = currentMass * conf.sync.UDPercent;
-          var dividendPerMember = monetaryMassDelta / amNext.membersCount;
-          var previousUD = (previousWithUD && previousWithUD.dividend) || conf.sync.UD0;
-          amNext.dividend = Math.max(previousUD, Math.floor(dividendPerMember)); // Integer
+          var prevM = (previousWithUD && previousWithUD.monetaryMass) || 0;
+          var prevUD = (previousWithUD && previousWithUD.dividend) || conf.sync.UD0;
+          var prevN = (previousWithUD && previousWithUD.membersCount) || 0;
+          amNext.monetaryMass = prevM + prevUD*prevN;
+          var c = conf.sync.UDPercent;
+          var UD = Math.floor(c*amNext.monetaryMass/amNext.membersCount);
+          amNext.dividend = Math.max(prevUD, UD); // Integer
           var coinage = coiner(amNext.dividend, 0, 0);
           amNext.coinBase = coinage.coinBase;
           amNext.coinList = coinage.coinList;
-          amNext.monetaryMass += amNext.dividend * amNext.membersCount; // Integer
           next();
         },
       ], done);

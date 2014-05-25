@@ -167,10 +167,10 @@ VoteSchema.methods = {
         });
       },
       function (previous, next){
-        var massBefore = (previous && previous.monetaryMass) || 0;
-        var dividend = am.dividend || 0;
-        var massAfter = massBefore + (dividend * am.membersCount);
-        am.monetaryMass = massAfter;
+        var prevM = (previous && previous.monetaryMass) || 0;
+        var prevUD = (previous && previous.dividend) || 0;
+        var prevN = (previous && previous.membersCount) || 0;
+        am.monetaryMass = prevM + prevUD*prevN;
         next();
       },
       function (next){

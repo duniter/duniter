@@ -108,6 +108,7 @@ This will start a command prompt asking for parameters value & validate all of t
 ```bash
 $ ucoind wizard
 [?] Currency name: beta_brousouf
+[?] Which OpenPGP implementation to use: gpg - Fast but must be installed on your system
 [?] IPv4 interface: wlan1 192.168.1.14
 [?] IPv6 interface: wlan1 2a01:e35:8a37:f2b0:dd48:5620:5d3c:ce2c
 [?] Port: 8080
@@ -130,7 +131,7 @@ $ ucoind wizard
 
 ### Target only few wizard's steps
 
-Wizard is composed of 4 steps: `currency`, `network`, `key`, `autovote`. By adding one of those words to `wizard` command, you will only do the attached steps:
+Wizard is composed of 4 steps: `currency`, `openpgp`, `network`, `key`, `autovote`. By adding one of those words to `wizard` command, you will only do the attached steps:
 
 ```bash
 $ ucoind wizard network

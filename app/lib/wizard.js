@@ -17,11 +17,15 @@ var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}
 function Wizard () {
 
   this.configAll = function (conf, done) {
-    doTasks(['currency', 'network', 'key', 'autovote'], conf, done);
+    doTasks(['currency', 'openpgp', 'network', 'key', 'autovote'], conf, done);
   };
 
   this.configCurrency = function (conf, done) {
     doTasks(['currency'], conf, done);
+  };
+
+  this.configOpenpgp = function (conf, done) {
+    doTasks(['openpgp'], conf, done);
   };
 
   this.configNetwork = function (conf, done) {
@@ -56,6 +60,25 @@ var tasks = {
       }
     }], function (answers) {
       conf.currency = answers.currency;
+      done();
+    });
+  },
+
+  openpgp: function (conf, done) {
+    inquirer.prompt([{
+      type: "list",
+      name: "openpgp",
+      message: "Which OpenPGP implementation to use",
+      default: conf.openpgpjs != undefined ? (conf.openpgpjs ? 'embedded' : 'system') : 'system',
+      choices: [{
+        name: 'openpgp.js - Slow but multiplatform',
+        value: 'embedded'
+      },{
+        name: 'gpg - Fast but must be installed on your system',
+        value: 'system'
+      }]
+    }], function (answers) {
+      conf.openpgpjs = answers.openpgp == 'embedded';
       done();
     });
   },

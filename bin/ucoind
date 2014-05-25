@@ -45,6 +45,7 @@ program
   .option('--consensus <float>', 'Percent of voters required to accept an amendment', parseFloat)
   .option('--msvalidity <timestamp>', 'Duration of a valid membership, in seconds', parseInt)
   .option('--vtvalidity <timestamp>', 'Duration of a valid voter, in seconds', parseInt)
+  .option('--openpgpjs', 'Prefer using embedded Openpgpjs implementation for signing requests')
   ;
 
 program
@@ -54,6 +55,7 @@ program
     var wiz = wizard();
     var task = {
       'currency': wiz.configCurrency,
+      'openpgp': wiz.configOpenpgp,
       'network': wiz.configNetwork,
       'key': wiz.configKey,
       'autovote': wiz.configAutovote
@@ -265,7 +267,8 @@ function overrideConf(conf) {
         ipv4: program.remote4,
         ipv6: program.remote6,
         port: program.remotep
-      }
+      },
+      openpgpjs: program.openpgpjs
     },
     db: {
       host: program.mhost,
@@ -292,6 +295,7 @@ function overrideConf(conf) {
   // Update conf
   if(cli.server.pgp.key) cli.server.pgp.key = fs.readFileSync(cli.server.pgp.key, 'utf8');
   conf.currency    = cli.currency || conf.currency;
+  conf.openpgpjs   = cli.server.openpgpjs != undefined ? cli.server.openpgpjs : conf.openpgpjs;
   conf.ipv4        = cli.server.ipv4address || conf.ipv4;
   conf.ipv6        = cli.server.ipv6address || conf.ipv6;
   conf.port        = cli.server.port || conf.port;

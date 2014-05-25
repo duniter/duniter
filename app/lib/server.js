@@ -484,17 +484,27 @@ This stuff should be refactorized elsewhere
 function httpgp(app, conf, done) {
   // PGP signature of requests
   if(conf.pgpkey){
-    var privateKey = conf.pgpkey;
     async.waterfall([
       function (next) {
-        var keyring = '~/.gnupg/ucoin_' + module.exports.fingerprint();
-        pgplogger.debug("Keyring = %s", keyring);
-        var gnupg = new (require('./gnupg'))(privateKey, conf.pgppasswd, module.exports.fingerprint(), keyring);
-        gnupg.init(function (err) {
-          next(err, function (message, done) {
-            gnupg.sign(message, done);
+        if (conf.openpgpjs) {
+          var pgp = jpgp();
+          var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+          privateKey.decrypt(conf.pgppasswd);
+          var signingFunc = async.apply(pgp.sign.bind(pgp.sign), privateKey);
+          next(null, function (message, done) {
+            jpgp().sign(message, privateKey, done);
           });
-        });
+        } else {
+          var asciiPrivateKey = conf.pgpkey;
+          var keyring = '~/.gnupg/ucoin_' + module.exports.fingerprint();
+          pgplogger.debug("Keyring = %s", keyring);
+          var gnupg = new (require('./gnupg'))(asciiPrivateKey, conf.pgppasswd, module.exports.fingerprint(), keyring);
+          gnupg.init(function (err) {
+            next(err, function (message, done) {
+              gnupg.sign(message, done);
+            });
+          });
+        }
       },
       function (signFunc, next){
         module.exports.sign = signFunc;

@@ -16,6 +16,7 @@ var ConfigurationSchema = new Schema({
   pgppasswd:   {"type": String, "default": null},
   kmanagement: {"type": String, "default": "ALL"},
   kaccept:     {"type": String, "default": "ALL"},
+  upInterval:  {"type": Number, "default": 3600*1000},
   sync:        {"type": Object, "default": {
     AMDaemon:  "OFF", // No deamon by default
     AMFreq:    3600*24, // every day

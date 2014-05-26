@@ -481,6 +481,21 @@ function PeeringService(pgp, currency, conf) {
     ], done);
   }
 
+  var statusUpfifo = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
+  var statusUpInterval = null;
+  this.regularUpSignal = function (done) {
+    if (statusUpInterval)
+      clearInterval(statusUpInterval);
+    statusUpInterval = setInterval(function () {
+      statusUpfifo.push(function (callback) {
+        that.sendUpSignal(callback);
+      });
+    }, conf.upSignalInterval || 3600*1000);
+    done();
+  };
+
   /**
   * Send given status to a list of peers.
   * @param statusStr Status string to send

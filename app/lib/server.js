@@ -450,6 +450,9 @@ module.exports.express = {
           PeeringService.sendUpSignal(next);
         },
         function (next){
+          PeeringService.regularUpSignal(next);
+        },
+        function (next){
           logger.info('Updating forwards...');
           PeeringService.updateForwards(next);
         },

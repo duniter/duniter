@@ -319,6 +319,30 @@ PeerSchema.statics.allBut = function (fingerprints, done) {
   Peer.find({ fingerprint: { $nin: fingerprints } }, done);
 };
 
+/**
+* Look for 10 last updated peers, and choose randomly 4 peers in it
+*/
+PeerSchema.statics.getRandomlyWithout = function (fingerprints, done) {
+  async.waterfall([
+    function (next){
+      Peer.find({ fingerprint: { $nin: fingerprints }, status: { $in: ['NEW_BACK', 'UP'] } })
+      .sort({ 'updated': -1 })
+      .limit(10)
+      .exec(next);
+    },
+    function (records, next){
+      var peers = [];
+      var recordsLength = records.length;
+      for (var i = 0; i < Math.min(recordsLength, 4); i++) {
+        var randIndex = Math.max(Math.floor(Math.random()*10) - (10 - recordsLength) - i, 0);
+        peers.push(records[randIndex]);
+        records.splice(randIndex, 1);
+      }
+      next(null, peers);
+    },
+  ], done);
+};
+
 PeerSchema.statics.status = STATUS;
 
 var Peer = mongoose.model('Peer', PeerSchema);

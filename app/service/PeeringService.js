@@ -355,7 +355,7 @@ function PeeringService(pgp, currency, conf) {
         next();
       },
       function (next) {
-        getAllPeers(function (err, peers) {
+        getRandomInAllPeers(function (err, peers) {
           that.emit('wallet', entry, peers || []);
           next(null, true);
         });
@@ -520,14 +520,8 @@ function PeeringService(pgp, currency, conf) {
   }
 
   this.propagatePubkey = function (pubkey) {
-    getAllPeers(function (err, peers) {
+    getRandomInAllPeers(function (err, peers) {
       that.emit('pubkey', pubkey, peers || []);
-    });
-  };
-
-  this.propagateVote = function (amendment, vote) {
-    getVotingPeers(function (err, peers) {
-      that.emit('vote', vote, peers || []);
     });
   };
 
@@ -537,20 +531,26 @@ function PeeringService(pgp, currency, conf) {
     });
   };
 
+  this.propagateForward = function (forward, peer, done) {
+    that.emit('forward', forward, [peer], done);
+  };
+
+  this.propagateVote = function (amendment, vote) {
+    getVotingPeers(function (err, peers) {
+      that.emit('vote', vote, peers || []);
+    });
+  };
+
   this.propagateMembership = function (membership, done) {
-    getAllPeers(function (err, peers) {
+    getRandomInAllPeers(function (err, peers) {
       that.emit('membership', membership, peers || []);
     });
   };
 
   this.propagateVoting = function (voting, done) {
-    getAllPeers(function (err, peers) {
+    getRandomInAllPeers(function (err, peers) {
       that.emit('voting', voting, peers || []);
     });
-  };
-
-  this.propagateForward = function (forward, peer, done) {
-    that.emit('forward', forward, [peer], done);
   };
 
   this.coinIsOwned = function (owner, coin, tx, wallet, done) {
@@ -600,13 +600,13 @@ function PeeringService(pgp, currency, conf) {
     Peer.allBut([that.cert.fingerprint, fingerprint], done);
   };
 
-  function getAllPeers (done) {
-    Peer.allBut([that.cert.fingerprint], done);
+  function getRandomInAllPeers (done) {
+    Peer.getRandomlyWithout([that.cert.fingerprint], done);
   };
 
   // TODO
   function getVotingPeers (done) {
-    getAllPeers(done);
+    getRandomInAllPeers(done);
   };
 
   function getForwardPeers (done) {

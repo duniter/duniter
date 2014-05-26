@@ -219,6 +219,10 @@ PeerSchema.methods = {
     var WITH_SIGNATURE_PARAM = false;
     vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), true, WITH_SIGNATURE_PARAM, done);
   },
+
+  isReachable: function () {
+    return this.getURL() ? true : false;
+  }
 }
 
 function verify(obj, currency) {

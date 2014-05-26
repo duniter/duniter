@@ -212,18 +212,31 @@ function success (done) {
 }
 
 function post(peer, url, data, done) {
-  var postReq = request.post('http://' + peer.getURL() + url, function (err, res, body) {
-    done(err, res, body);
-    // peer.setStatus((err && Peer.status.DOWN) || Peer.status.UP, function (err) {
-    //   done(err, res, body);
-    // });
-  });
-  postReq.form(data);
+  reach(peer, function(){
+    var postReq = request.post('http://' + peer.getURL() + url, function (err, res, body) {
+      if (err) {
+        logger.debug('Error while connecting to %s: %s', peer.keyID(), err.toString());
+        done(err, res, body);
+      }
+    });
+    postReq.form(data);
+  }, done);
 }
 
 function get(peer, url, done) {
-  logger.debug('GET http://' + peer.getURL() + url);
-  request
-  .get('http://' + peer.getURL() + url)
-  .end(done);
+  reach(peer, function(){
+    logger.debug('GET http://' + peer.getURL() + url);
+    request
+    .get('http://' + peer.getURL() + url)
+    .end(done);
+  }, done);
+}
+
+function reach (peer, onSuccess, done) {
+  if (!peer.isReachable()) {
+    logger.debug('Host is not reachable through HTTP API');
+    done();
+  } else {
+    onSuccess();
+  }
 }

@@ -23,6 +23,11 @@ var MembershipSchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
+MembershipSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
+});
+
 MembershipSchema.methods = {
 
   keyID: function () {

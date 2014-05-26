@@ -21,6 +21,11 @@ var WalletSchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
+WalletSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
+});
+
 WalletSchema.methods = {
 
   keyID: function () {

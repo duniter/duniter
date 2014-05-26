@@ -22,6 +22,11 @@ var VotingSchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
+VotingSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
+});
+
 VotingSchema.methods = {
 
   keyID: function () {

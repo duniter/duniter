@@ -32,6 +32,11 @@ var PeerSchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
+PeerSchema.pre('save', function (next) {
+  this.updated = Date.now();
+  next();
+});
+
 PeerSchema.methods = {
 
   keyID: function () {

@@ -240,25 +240,47 @@ function PeeringService(pgp, currency, conf) {
     ], done);
   }
 
-  this.negociateForward = function (peer, done) {
-    var forward;
+  this.updateForwards = function (done) {
     async.waterfall([
-      function (next) {
-        if(peer.fingerprint == that.cert.fingerprint){
-          next('Cannot negociate Forward with self node');
-          return;
-        }
-        next();
+      function (next){
+        that.generateForward(next);
       },
-      function (next) {
-        Forward.removeTheOne(this.cert.fingerprint, peer.fingerprint, next);
+      function (forward, next){
+        Forward.findDifferingOf(that.cert.fingerprint, forward.getHashBasis(), next);
       },
+      function (fwds, next){
+        async.forEach(fwds, function(fwd, callback){
+          async.waterfall([
+            function (next){
+              Peer.getTheOne(fwd.to, next);
+            },function (peer, next){
+              that.negociateForward(peer, next);
+            },
+          ], function (err) {
+            err && logger.warn(err);
+            callback();
+          });
+        }, next);
+      },
+    ], done);
+  };
+
+  /**
+  * Generate the general forward this node should send to peers
+  **/
+  this.generateForward = function (peer, done) {
+    if (arguments.length == 1) {
+      done = peer;
+      peer = undefined;
+    }
+    var forward = null;
+    async.waterfall([
       function (next) {
         forward = new Forward({
           version: 1,
           currency: currency,
           from: that.cert.fingerprint,
-          to: peer.fingerprint,
+          to: peer ? peer.fingerprint : that.cert.fingerprint,
           forward: 'ALL'
         });
         if(conf.kmanagement == 'KEYS'){
@@ -281,6 +303,29 @@ function PeeringService(pgp, currency, conf) {
       },
       function (signature, next) {
         forward.signature = signature;
+        next(null, forward);
+      }
+    ], done);
+  };
+
+  this.negociateForward = function (peer, done) {
+    var forward = null;
+    async.waterfall([
+      function (next) {
+        if(peer.fingerprint == that.cert.fingerprint){
+          next('Cannot negociate Forward with self node');
+          return;
+        }
+        next();
+      },
+      function (next) {
+        Forward.removeTheOne(that.cert.fingerprint, peer.fingerprint, next);
+      },
+      function (next) {
+        that.generateForward(peer, next);
+      },
+      function (fwd, next) {
+        forward = fwd;
         that.sendForward(peer, forward, next);
       },
       function (next) {

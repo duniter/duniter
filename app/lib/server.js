@@ -450,6 +450,10 @@ module.exports.express = {
           PeeringService.sendUpSignal(next);
         },
         function (next){
+          logger.info('Updating forwards...');
+          PeeringService.updateForwards(next);
+        },
+        function (next){
           mongoose.model('Amendment').current(function (err, am) {
             next(null, am);
           });

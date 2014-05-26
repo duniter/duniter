@@ -12,9 +12,16 @@ var ForwardSchema = new Schema({
   to: String,
   forward: String,
   keys: [String],
+  hashBasis: String,
   upstream: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
+});
+
+ForwardSchema.pre('save', function (next) {
+  this.hashBasis = this.getHashBasis();
+  this.updated = Date.now();
+  next();
 });
 
 ForwardSchema.methods = {
@@ -104,6 +111,21 @@ ForwardSchema.methods = {
       .verify(publicKey, done);
   },
 
+  getRawBasis: function() {
+    var raw = "";
+    raw += "Version: " + this.version + "\n";
+    raw += "Currency: " + this.currency + "\n";
+    raw += "From: " + this.from + "\n";
+      raw += "Forward: " + this.forward + "\n";
+    if(this.keys.length > 0){
+      raw += "Keys:\n";
+      for(var i = 0; i < this.keys.length; i++){
+        raw += this.keys[i] + "\n";
+      }
+    }
+    return raw.unix2dos();
+  },
+
   getRaw: function() {
     var raw = "";
     raw += "Version: " + this.version + "\n";
@@ -123,6 +145,12 @@ ForwardSchema.methods = {
   getRawSigned: function() {
     var raw = this.getRaw() + this.signature;
     return raw;
+  },
+
+  getHashBasis: function () {
+    if (!this.hashBasis)
+      this.hashBasis = sha1(this.getRawBasis()).toUpperCase();
+    return this.hashBasis;
   }
 }
 
@@ -217,6 +245,10 @@ ForwardSchema.statics.findMatchingTransaction = function (tx, done) {
       { forward: 'KEYS', keys: { $in: [tx.sender, tx.recipient ]} }
     ]
   }, done);
+}
+
+ForwardSchema.statics.findDifferingOf = function (fingerprint, hashBasis, done) {
+  Forward.find({ from: fingerprint, hashBasis: { $ne: hashBasis } }, done);
 }
 
 var Forward = mongoose.model('Forward', ForwardSchema);

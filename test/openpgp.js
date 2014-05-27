@@ -10,8 +10,12 @@ var jpgp      = require('../app/lib/jpgp');
 var async     = require('async');
 var common    = require('../app/lib/common');
 
-var catRawKey = fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8');
-var catRawPubKey = fs.readFileSync(__dirname + "/data/lolcat.pub", 'utf8');
+var catRawKey           = fs.readFileSync(__dirname + "/data/lolcat.priv",               'utf8');
+var catRawPubKey        = fs.readFileSync(__dirname + "/data/lolcat.pub",                'utf8');
+var catRawRevokedPubKey = fs.readFileSync(__dirname + "/data/lolcat.pub.revoked",        'utf8');
+var catRawRevokedSubKey = fs.readFileSync(__dirname + "/data/lolcat.pub.revoked.subkey", 'utf8');
+var catSubkeySignedMess = fs.readFileSync(__dirname + "/data/openpgp/message.txt",       'utf8');
+var catSubkeySignedSign = fs.readFileSync(__dirname + "/data/openpgp/message.txt.asc",   'utf8');
 var catPasswd = "lolcat";
 var cat = signatory(catRawKey, catPasswd);
 // var catPrivateKey = openpgp.read_privateKey(catRawKey, catPasswd)[0];
@@ -57,6 +61,20 @@ describe('Simple line signature:', function(){
       },
     ], done);
   });
+
+  it('but not with revoked pubkey', function(done){
+    async.waterfall([
+      async.apply(jpgp().sign, message, catPrivateKey),
+      async.apply(verify, message, catRawRevokedPubKey),
+    ], testVerified(false, 'Key has been revoked', done));
+  });
+
+  it('but not with revoked subkey', function(done){
+    async.waterfall([
+      async.apply(verify, catSubkeySignedMess, catRawRevokedSubKey, catSubkeySignedSign),
+    ], testVerified(false, 'SubKey has been revoked', done));
+  });
+
 
   it('jpgp.sign() should be verified', function(done){
     async.waterfall([
@@ -199,10 +217,17 @@ describe('Public key message signature:', function(){
   });
 });
 
-function testVerified (isTrue, done) {
+function testVerified (isTrue, errString, done) {
+  if (arguments.length == 2) {
+    done = errString;
+    errString = undefined;
+  }
   return function (err, verified) {
     isTrue ? verified.should.be.true : verified.should.be.false;
     isTrue ? should.not.exist(err) : should.exist(err);
+    if (errString) {
+      err.toString().should.equal(errString);
+    }
     done();
   };
 }

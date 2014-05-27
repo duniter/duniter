@@ -10,11 +10,11 @@ function JPGP() {
   this.noCarriage = false;
 
   var that = this;
-  var pubkeys = null;
+  var publicKey = null;
 
   // PUBLIC
   this.publicKey = function(asciiArmored) {
-    pubkeys = openpgp.key.readArmored(asciiArmored).keys;
+    publicKey = openpgp.key.readArmored(asciiArmored).keys[0];
     return this;
   };
 
@@ -105,19 +105,38 @@ function JPGP() {
     }
     // Do
     try{
-      var clearsigned = toClearSign(that.data, that.signature);
-      var clearTextMessage = openpgp.cleartext.readArmored(clearsigned);
-      var res = openpgp.verifyClearSignedMessage(pubkeys, clearTextMessage);
-      if (res.signatures && res.signatures.length > 0) {
-        verified = res.signatures[0].valid && res.text == that.data;
-        if (!verified)
-          err = 'Signature does not match';
+
+      var issuerRegexp = new RegExp(this.issuer() + "$");
+      var pkStatus = publicKey.verifyPrimaryKey();
+      if (pkStatus == openpgp.enums.keyStatus.revoked) {
+        err = 'Key has been revoked';
+      } else {
+        if (!publicKey.getKeyPacket().getFingerprint().toUpperCase().match(issuerRegexp)) {
+          // Signature was done using subkey
+          publicKey.subKeys.forEach(function(subKey){
+            if (subKey.subKey.getFingerprint().toUpperCase().match(issuerRegexp)) {
+              if (subKey.verify(publicKey.primaryKey) == openpgp.enums.keyStatus.revoked) {
+                err = 'SubKey has been revoked';
+              }
+            }
+          });
+        }
+        if (!err) {
+          var clearsigned = toClearSign(that.data, that.signature);
+          var clearTextMessage = openpgp.cleartext.readArmored(clearsigned);
+          var res = openpgp.verifyClearSignedMessage([publicKey], clearTextMessage);
+          if (res.signatures && res.signatures.length > 0) {
+            verified = res.signatures[0].valid && res.text == that.data;
+            if (!verified)
+              err = 'Signature does not match';
+          }
+        }
       }
     }
     catch(ex){
       verified = false;
       err = ex.toString();
-      console.log('INFO !!! ' + err);
+      console.log('Exception during signature verification: ' + err);
     }
     callback(err, verified);
   };

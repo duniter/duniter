@@ -80,10 +80,12 @@ module.exports = function (pgp, currency, conf) {
           ParametersService.getAmendmentID(req, next);
         },
         function (number, hash, next){
-          Merkle.signaturesOfAmendment(number, hash, next);
+          Merkle.signaturesOfAmendment(number, hash, function (err, merkle) {
+            next(err, merkle, number);
+          });
         },
-        function (merkle, next){
-          MerkleService.processForURL(req, merkle, Merkle.mapForSignatures, next);
+        function (merkle, number, next){
+          MerkleService.processForURL(req, merkle, async.apply(Merkle.mapForSignatures.bind(Merkle), number), next);
         }
       ], function (err, json) {
         if(err){

@@ -167,7 +167,7 @@ MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
       Merkle.peers(next);
     },
     function (merkle, next) {
-      merkle.push(peer.hash, previousHash);
+      merkle.push(peer.fingerprint, previousHash);
       merkle.save(function (err) {
         next(err);
       });
@@ -207,7 +207,7 @@ MerkleSchema.statics.removePublicKey = function (fingerprint, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateSignaturesOfAmendment = function (am, previousHash, newHash, done) {
+MerkleSchema.statics.updateSignaturesOfAmendment = function (am, vote, done) {
   async.waterfall([
     function (next) {
       Merkle.signaturesOfAmendment(am.number, am.hash, function (err, merkle) {
@@ -215,7 +215,7 @@ MerkleSchema.statics.updateSignaturesOfAmendment = function (am, previousHash, n
       });
     },
     function (merkle, next) {
-      merkle.push(newHash, previousHash);
+      merkle.push(vote.issuer);
       merkle.save(function (err) {
         next(err);
       });
@@ -239,31 +239,9 @@ MerkleSchema.statics.updateForWalletEntries= function (previousHash, newHash, do
   ], done);
 };
 
-MerkleSchema.statics.updateForIssuance = function (tx, am, done) {
-  async.waterfall([
-    function (next){
-      // M1
-      Merkle.txOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
-      // M7
-      Merkle.txToRecipient(tx.recipient, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    }
-  ], done);
-};
-
 MerkleSchema.statics.updateForTransfert = function (tx, done) {
   async.waterfall([
     function (next){
-      // M1
       Merkle.txOfSender(tx.sender, next);
     },
     function (merkle, next){
@@ -271,41 +249,6 @@ MerkleSchema.statics.updateForTransfert = function (tx, done) {
       merkle.save(next);
     },
     function (merkle, code, next){
-      // M7
-      Merkle.txToRecipient(tx.recipient, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForTransfertToRecipient = function (tx, done) {
-  async.waterfall([
-    function (merkle, code, next){
-      // M7
-      Merkle.txToRecipient(tx.recipient, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForChange = function (tx, done) {
-  async.waterfall([
-    function (next){
-      // M1
-      Merkle.txOfSender(tx.sender, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
-      // M7
       Merkle.txToRecipient(tx.recipient, next);
     },
     function (merkle, next){
@@ -340,14 +283,14 @@ MerkleSchema.statics.mapForPublicKeys = function (hashes, done) {
   });
 }
 
-MerkleSchema.statics.mapForSignatures = function (hashes, done) {
+MerkleSchema.statics.mapForSignatures = function (amNumber, hashes, done) {
   mongoose.model('Vote')
-  .find({ hash: { $in: hashes } })
-  .sort('hash')
+  .find({ basis: amNumber, issuer: { $in: hashes } })
+  .sort('issuer')
   .exec(function (err, votes) {
     var map = {};
     votes.forEach(function (vote){
-      map[vote.hash] = {
+      map[vote.issuer] = {
         issuer: vote.issuer,
         signature: vote.signature
       };
@@ -358,38 +301,38 @@ MerkleSchema.statics.mapForSignatures = function (hashes, done) {
 
 MerkleSchema.statics.mapForWalletEntries = function (hashes, done) {
   mongoose.model('Wallet')
-  .find({ hash: { $in: hashes } })
-  .sort('hash')
+  .find({ fingerprint: { $in: hashes } })
+  .sort('fingerprint')
   .exec(function (err, entries) {
     var map = {};
     entries.forEach(function (entry){
-      map[entry.hash] = entry.json();
+      map[entry.fingerprint] = entry.json();
     });
     done(null, map);
   });
 };
 
 MerkleSchema.statics.mapForMemberships = function (hashes, done) {
-  mongoose.model('Wallet')
-  .find({ hash: { $in: hashes } })
-  .sort('hash')
+  mongoose.model('Membership')
+  .find({ issuer: { $in: hashes } })
+  .sort('issuer')
   .exec(function (err, entries) {
     var map = {};
     entries.forEach(function (entry){
-      map[entry.hash] = entry.json();
+      map[entry.issuer] = entry.json();
     });
     done(null, map);
   });
 };
 
 MerkleSchema.statics.mapForVotings = function (hashes, done) {
-  mongoose.model('Wallet')
-  .find({ hash: { $in: hashes } })
-  .sort('hash')
+  mongoose.model('Voting')
+  .find({ issuer: { $in: hashes } })
+  .sort('issuer')
   .exec(function (err, entries) {
     var map = {};
     entries.forEach(function (entry){
-      map[entry.hash] = entry.json();
+      map[entry.issuer] = entry.json();
     });
     done(null, map);
   });

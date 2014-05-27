@@ -126,6 +126,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
+* `network/peers (GET)`
 * `network/wallet (GET)`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
@@ -231,10 +232,17 @@ Here is a summup of such rules:
 Merkle URL                                                                | Leaf                                    | Sort
 ------------------------------------------------------------------------- | ----------------------------------------| ---------------------------------------
 `pks/all`                                                                 | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`network/wallet (GET)`                                                    | Hash of the Wallet + signature          | By hash string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Hash of the signature                   | By hash string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of the transaction + signature     | By hash string sort, ascending.
-`hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of the transaction + signature     | By hash string sort, ascending.
+`network/peers (GET)`                                                     | Fingerprint of the peer                 | By fingerprint string sort, ascending.
+`network/wallet (GET)`                                                    | Fingerprint of the wallet               | By fingerprint string sort, ascending.
+`hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Fingerprint of the voter                | By fingerprint string sort, ascending.
+`hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of (transaction + signature)       | By hash string sort, ascending.
+`hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of (transaction + signature)       | By hash string sort, ascending.
+
+#### Unicity
+
+It has to be noted that the first four Merkle URLs, there is **no possible conflict** for leaves, as every leaf is represents a OpenPGP key whose fingerprint is unique according to [uCoin protocol](./Protocol.md). Indeed: *nodes are responsible for the concrete key stored under a fingerprint*.
+
+However for the 2 last URLs, conflicts are possible even if largely improbable. Such conflicts would not be a huge problem however: it would lead to hide one of the conflicted transactions, but those 2 URLs are not here for exhaustive inventory of transactions, only for quick synchronization checking. So the goal is still reached.
 
 ## API
 

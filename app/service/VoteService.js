@@ -92,30 +92,23 @@ module.exports.get = function (pgp, currency, conf) {
         },
         function (votes, next){
           // Save vote
-          var voteEntity = vote;
-          var previousHash = voteEntity.hash;
           if(votes.length > 0){
-            if(votes[0].sigDate >= voteEntity.sigDate){
-              next('This vote is not more recent than already recorded');
-              return;
-            }
-            voteEntity = votes[0];
-            previousHash = voteEntity.hash;
-            vote.copyValues(voteEntity);
+            next('Vote already received');
+            return;
           }
-          voteEntity.save(function (err) {
-            next(err, voteEntity, previousHash, votes.length == 0);
+          vote.save(function (err) {
+            next(err, votes.length == 0);
           });
         },
-        function (voteEntity, previousHash, newAm, next){
-          voteEntity.getAmendment(function (err, am) {
-            next(null, am, voteEntity, previousHash);
+        function (newAm, next){
+          vote.getAmendment(function (err, am) {
+            next(null, am);
           })
         },
-        function (am, voteEntity, previousHash, next) {
+        function (am, next) {
           // Update signatures (hdc/amendments/votes/[AMENDMENT_ID])
-          Merkle.updateSignaturesOfAmendment(am, previousHash, vote.hash, function (err) {
-            next(err, am, voteEntity);
+          Merkle.updateSignaturesOfAmendment(am, vote, function (err) {
+            next(err, am, vote);
           });
         },
         function (am, recordedVote, next) {

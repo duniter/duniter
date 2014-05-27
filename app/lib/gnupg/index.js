@@ -40,11 +40,9 @@ module.exports = function GPG(privateKey, passphrase, fingerprint, keyring, done
   function doSign (options, message, callback) {
     try{
       var signature = '';
-      var child = spawn(gpgsh, [keyring, fingerprint, options], { env: { MESSAGE: message }});
+      var child = spawn(gpgsh, [keyring, fingerprint, options, passphrase ? '--passphrase ' + passphrase : '']);
 
-      if (passphrase) {
-        child.stdin.write(passphrase);
-      }
+      child.stdin.write(message);
       child.stdin.end();
 
       child.stderr.setEncoding('utf8');

@@ -11,18 +11,21 @@ var PublicKeySchema = new Schema({
   raw: String,
   fingerprint: { type: String, unique: true },
   subkeys: [String], // Array of keyId
-  signature: String,
+  hashes: [String], // Array of ASCII armor representation fingerprints
   name: String,
   email: String,
   comment: String,
   hash: String,
-  sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
 
 PublicKeySchema.pre('save', function (next) {
   this.updated = Date.now();
+  if (this.hashes.indexOf(this.hash) == -1) {
+    // Remembering incoming hash
+    this.hashes.push(this.hash);
+  }
   next();
 });
 
@@ -66,14 +69,11 @@ PublicKeySchema.methods = {
     var raw = this.raw.replace('-----BEGIN PGP PUBLIC KEY BLOCK-----', 'BEGIN PGP PUBLIC KEY BLOCK');
     raw = raw.replace('-----END PGP PUBLIC KEY BLOCK-----', 'END PGP PUBLIC KEY BLOCK');
     return {
-      "signature": this.signature,
-      "key": {
-        "email": this.email,
-        "name": this.name,
-        "fingerprint": this.fingerprint,
-        "comment": this.comment,
-        "raw": raw
-      }
+      "email": this.email,
+      "name": this.name,
+      "fingerprint": this.fingerprint,
+      "comment": this.comment,
+      "raw": raw
     };
   },
 
@@ -159,48 +159,8 @@ PublicKeySchema.statics.search = function (motif, done) {
   });
 };
 
-PublicKeySchema.statics.verify = function (asciiArmored, signature, done) {
-  if(signature){
-    async.waterfall([
-      function (next){
-        try{
-          var keyID = jpgp().signature(signature).issuer();
-          var cert = jpgp().certificate(asciiArmored);
-          var fpr = cert.fingerprint;
-          var keyIds = [cert.fingerprint].concat(cert.subkeys);
-          if(!keyID){
-            next('Cannot find issuer of signature');
-            return;
-          }
-          if(!fpr){
-            next('Cannot extract fingerprint from certificate');
-            return;
-          }
-          var keyMatched = _(keyIds).some(function(aKeyFPR){ return aKeyFPR.match(new RegExp(keyID + "$")); });
-          if(!keyMatched){
-            next('This certificate is not owned by the signatory');
-            return;
-          }
-          next();
-        }
-        catch(ex){
-          next(ex.toString());
-        }
-      },
-      function (next){
-        jpgp()
-          .publicKey(asciiArmored)
-          .data(asciiArmored)
-          .signature(signature)
-          .verify(next);
-      }
-    ], done);
-  }
-  else done('Signature is empty', false);
-};
-
-PublicKeySchema.statics.persistFromRaw = function (rawPubkey, rawSignature, done) {
-  var pubkey = new PublicKey({ raw: rawPubkey, signature: rawSignature });
+PublicKeySchema.statics.persistFromRaw = function (rawPubkey, done) {
+  var pubkey = new PublicKey({ raw: rawPubkey });
   async.waterfall([
     function (next){
       pubkey.construct(next);
@@ -219,37 +179,40 @@ var persistQueue = async.queue(function (fingerprint, persistTask) {
 
 PublicKeySchema.statics.persist = function (pubkey, done) {
   async.waterfall([
-    function (next){
-      try{
-        pubkey.sigDate = jpgp().signature(pubkey.signature).signatureDate();
-      }
-      catch(ex){}
-      next();
-    },
     function (next) {
       persistQueue.push(pubkey.fingerprint, function(){
         var now = new Date();
+        var comingKey = jpgp().certificate(pubkey.raw).key;
         PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
+          var comingArmored = comingKey.armor();
+          var comingHash = comingArmored.hash();
+          // Create if not exists
           if (foundKeys.length == 0) {
             foundKeys.push(new PublicKey({
+              raw: comingArmored,
               fingerprint: pubkey.fingerprint,
-              created: now
+              created: now,
+              hashes: []
             }));
           }
-          if(foundKeys[0].sigDate >= pubkey.sigDate){
-            next('Key update is possible only for more recent signature');
+          // If already treated this ASCII armored value
+          if (~foundKeys[0].hashes.indexOf(comingHash)) {
+            next('Key already up-to-date');
             return;
+          } else {
+            // Remembering incoming hash
+            foundKeys[0].hashes.push(comingHash);
           }
-          var cert = jpgp().certificate(pubkey.raw);
-          foundKeys[0].subkeys = cert.subkeys;
-          foundKeys[0].raw = pubkey.raw;
-          foundKeys[0].signature = pubkey.signature;
+          var storedKey = jpgp().certificate(foundKeys[0].raw).key;
+          // Merges packets
+          storedKey.update(comingKey);
+          var mergedCert = jpgp().certificate(storedKey.armor());
+          foundKeys[0].subkeys = mergedCert.subkeys;
+          foundKeys[0].raw = storedKey.armor();
           foundKeys[0].email = pubkey.email;
           foundKeys[0].name = pubkey.name;
           foundKeys[0].comment = pubkey.comment;
-          foundKeys[0].sigDate = pubkey.sigDate;
-          foundKeys[0].hash = pubkey.hash;
-          foundKeys[0].updated = now;
+          foundKeys[0].hash = storedKey.armor().hash();
           foundKeys[0].save(function (err) {
             next(err);
           });
@@ -261,18 +224,8 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
       KeyService.setKnown(pubkey.fingerprint, next);
     },
     function (next) {
-      PublicKey.verify(pubkey.raw, pubkey.signature, function (err, verified) {
-        // Update Merkle
-        if(!err && verified){
-          mongoose.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
-            next(err);
-          });
-        }
-        else{
-          mongoose.model('Merkle').removePublicKey(pubkey.fingerprint, function (err) {
-            next(err);
-          });
-        }
+      mongoose.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
+        next(err);
       });
     }
   ], function (err) {
@@ -307,7 +260,7 @@ PublicKeySchema.statics.getForPeer = function (peer, done) {
               next('Peer\'s public key ('+cert.fingerprint+') does not match peering (' + peer.fingerprint + ')');
               return;
             }
-            PublicKey.persistFromRaw(rawPubkey, signature, function (err) {
+            PublicKey.persistFromRaw(rawPubkey, function (err) {
               next();
             });
           },

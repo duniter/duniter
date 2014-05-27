@@ -34,15 +34,10 @@ var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "s
 // var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
 
 var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-var pubkeySnowSig  = fs.readFileSync(__dirname + '/data/snow.pub.asc', 'utf8');
 var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
 // var pubkeyCat2     = fs.readFileSync(__dirname + '/data/lolcat.pub2', 'utf8');
-var pubkeyCatSig   = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
 var pubkeyTobi     = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
-var pubkeyTobiSig  = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
-// var pubkeyTobiSig2 = fs.readFileSync(__dirname + '/data/uchiha.pub.asc2', 'utf8');
 // var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
-// var pubkeyWhiteSig = fs.readFileSync(__dirname + '/data/white.pub.asc', 'utf8');
 
 var config = {
   server: {
@@ -396,7 +391,7 @@ var testCases = [
 
   tester.verify(
     "Tobi's PUBKEY",
-    pksAdd(pubkeyTobi, pubkeyTobiSig),
+    pksAdd(pubkeyTobi),
     is.expectedPubkey('2E69197FAB029D8669EF85E82457A1587CA0ED9C')
   ),
 

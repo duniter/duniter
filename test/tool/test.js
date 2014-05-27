@@ -115,7 +115,7 @@ module.exports.tester = function (currency) {
   this.expectedPubkey = function (fingerprint) {
     return successToJson(function (json) {
       isPubKey(json);
-      json.key.fingerprint.should.equal(fingerprint);
+      json.fingerprint.should.equal(fingerprint);
     });
   };
 
@@ -180,11 +180,10 @@ module.exports.tester = function (currency) {
     };
   };
 
-  this.pksAdd = function (keytext, keysign) {
+  this.pksAdd = function (keytext) {
     return function (done) {
       post('/pks/add', {
-        "keytext": keytext,
-        "keysign": keysign
+        "keytext": keytext
       }, done);
     };
   };
@@ -389,14 +388,12 @@ function isMerkleResult (json) {
 }
 
 function isPubKey (json) {
-  json.should.have.property('signature');
-  json.should.have.property('key');
-  json.key.should.have.property('email');
-  json.key.should.have.property('name');
-  json.key.should.have.property('fingerprint');
-  json.key.should.have.property('raw');
-  json.key.should.not.have.property('_id');
-  json.key.raw.should.not.match(/-----/g);
+  json.should.have.property('email');
+  json.should.have.property('name');
+  json.should.have.property('fingerprint');
+  json.should.have.property('raw');
+  json.should.not.have.property('_id');
+  json.raw.should.not.match(/-----/g);
 }
 
 function isMembership (json) {

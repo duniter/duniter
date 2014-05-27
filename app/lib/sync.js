@@ -144,23 +144,13 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                 var hashes = [];
                 async.forEachSeries(leavesToAdd, function(leaf, callback){
                   logger.info('Importing public key %s...', leaf);
-                  var keytext, keysign;
                   async.waterfall([
                     function (cb){
                       node.pks.all({ "leaf": leaf}, cb);
                     },
                     function (json, cb){
-                      keytext = json.leaf.value.pubkey;
-                      keysign = json.leaf.value.signature;
-                      PublicKey.verify(keytext, keysign, cb);
-                    },
-                    function (verified, cb){
-                      if(!verified){
-                        cb('Key was not verified by its signature');
-                        return;
-                      }
                       hashes.push(leaf);
-                      PublicKey.persistFromRaw(keytext, keysign, cb);
+                      PublicKey.persistFromRaw(json.leaf.value.pubkey, cb);
                     },
                     function (next) {
                       KeyService.handleKey(leaf, conf && conf.kmanagement == 'ALL', next);

@@ -26,15 +26,9 @@ var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "s
 var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
 
 var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-var pubkeySnowSig  = fs.readFileSync(__dirname + '/data/snow.pub.asc', 'utf8');
 var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-var pubkeyCat2     = fs.readFileSync(__dirname + '/data/lolcat.pub2', 'utf8');
-var pubkeyCatSig   = fs.readFileSync(__dirname + '/data/lolcat.pub.asc', 'utf8');
 var pubkeyTobi     = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
-var pubkeyTobiSig  = fs.readFileSync(__dirname + '/data/uchiha.pub.asc', 'utf8');
-var pubkeyTobiSig2 = fs.readFileSync(__dirname + '/data/uchiha.pub.asc2', 'utf8');
 var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
-var pubkeyWhiteSig = fs.readFileSync(__dirname + '/data/white.pub.asc', 'utf8');
 
 var config = {
   server: {
@@ -82,64 +76,36 @@ var testCases = [
 
   tester.verify(
     "Snow giving his key for first time must pass",
-    on.pksAdd(pubkeySnow, pubkeySnowSig),
+    on.pksAdd(pubkeySnow),
     is.expectedPubkey('33BBFC0C67078D72AF128B5BA296CC530126F372')
   ),
   testMerkle("/pks/all", '5DB500A285BD380A68890D09232475A8CA003DC8'),
 
   tester.verify(
     "Cat has already given his key",
-    on.pksAdd(pubkeyCat, pubkeyCatSig),
+    on.pksAdd(pubkeyCat),
     is.expectedHTTPCode(400)
   ),
   testMerkle("/pks/all", '5DB500A285BD380A68890D09232475A8CA003DC8'),
 
   tester.verify(
     "Tobi giving his key for first time must pass",
-    on.pksAdd(pubkeyTobi, pubkeyTobiSig2),
+    on.pksAdd(pubkeyTobi),
     is.expectedPubkey('2E69197FAB029D8669EF85E82457A1587CA0ED9C')
   ),
   testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
 
   tester.verify(
-    "Tobi giving older signature must not pass",
-    on.pksAdd(pubkeyTobi, pubkeyTobiSig),
-    is.expectedHTTPCode(400)
-  ),
-  testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
-
-  tester.verify(
-    "White signed by Tobi must not pass",
-    on.pksAdd(pubkeyWhite, pubkeyTobiSig),
+    "Tobi giving again same key",
+    on.pksAdd(pubkeyTobi),
     is.expectedHTTPCode(400)
   ),
   testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
 
   tester.verify(
     "White giving his key must pass",
-    on.pksAdd(pubkeyWhite, pubkeyWhiteSig),
+    on.pksAdd(pubkeyWhite),
     is.expectedPubkey('B6AE93DDE390B1E11FA97EEF78B494F99025C77E')
-  ),
-  testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
-
-  tester.verify(
-    "Signature of Tobi on White's pubkey must not pass, even if White is already recorded",
-    on.pksAdd(pubkeyWhite, pubkeyTobiSig),
-    is.expectedHTTPCode(400)
-  ),
-  testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
-  
-  tester.verify(
-    "Must not accept twice the same signature",
-    on.pksAdd(pubkeyWhite, pubkeyWhiteSig),
-    is.expectedHTTPCode(400)
-  ),
-  testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
-
-  tester.verify(
-    "Must not accept if good key but bad signature",
-    on.pksAdd(pubkeyCat2, pubkeyCatSig),
-    is.expectedHTTPCode(400)
   ),
   testMerkle("/pks/all", '7B66992FD748579B0774EDFAD7AB84143357F7BC'),
 

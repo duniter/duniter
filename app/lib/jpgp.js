@@ -34,6 +34,7 @@ function JPGP() {
       subkeys.push(subkeyPacket.getFingerprint().toUpperCase());
     });
     return {
+      "key": key,
       "fingerprint": fpr,
       "uids": uids,
       "raw": asciiArmored,

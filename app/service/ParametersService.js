@@ -331,37 +331,17 @@ function ParameterNamespace (currency) {
   };
 
   this.getPubkey = function (req, callback) {
-    if(!req.body){
-      callback('Parameters `keytext` and `keysign` are required');
-      return;
-    }
-    if(!req.body.keytext){
-      callback('Key is required');
-      return;
-    }
-    if(!req.body.keysign){
-      callback('Key signature is required');
+    if(!req.body || !req.body.keytext){
+      callback('Parameter `keytext` is required');
       return;
     }
     if(!req.body.keytext.match(/BEGIN PGP PUBLIC KEY/) || !req.body.keytext.match(/END PGP PUBLIC KEY/)){
       callback('Keytext does not look like a public key message');
       return;
     }
-    if(!req.body.keysign.match(/BEGIN PGP/) || !req.body.keysign.match(/END PGP/)){
-      callback('Keysign does not look like a PGP message');
-      return;
-    }
     var PublicKey = mongoose.model('PublicKey');
-    var pubkey = null;
-    async.series({
-      verify: function (next){
-        PublicKey.verify(req.body.keytext, req.body.keysign, next);
-      },
-      build: function (next) {
-        pubkey = new PublicKey({ raw: req.body.keytext, signature: req.body.keysign });
-        pubkey.construct(next);
-      }
-    }, function (err) {
+    var pubkey = new PublicKey({ raw: req.body.keytext });
+    pubkey.construct(function (err) {
       callback(err, pubkey);
     });
   };

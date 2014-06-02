@@ -559,21 +559,21 @@ var testCases = [
   someTests.voteCurrent(tobi),
   someTests.sendOptOUT(cat, now + 7),
   testProposedAmendment('AM8: Cat is leaving?', { membersChanges: ['-C73882B64B7E72237A2F460CE9CAB76D19A8651E'], membersRoot: 'DC7A9229DFDABFB9769789B7BFAE08048BCB856F' }),
-  someTests.sendOptIN(cat, now + 7, 400),
+  someTests.sendOptOUT(cat, now + 7, 400),
+  someTests.sendOptOUT(cat, now + 7, 400),
   someTests.sendVoting(tobi, now + 7),
-  testProposedAmendment('AM8: no change for Cat with its memberships cancelled', { membersChanges: [], membersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),
+  someTests.sendVoting(tobi, now + 7, 400),
+  someTests.sendVoting(tobi, now + 7, 400),
 
   someTests.voteProposed(cat),
   someTests.voteProposed(snow),
   // We are now at AM9: memberships received during AM0 MUST be thrown out
   testProposedAmendment('AM9: cat & snow are kicked out as their memberships are too old', {
     membersChanges: [
-      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C',
-      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'],
+      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C'],
     membersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372',
     votersChanges: [
-      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C',
-      '-C73882B64B7E72237A2F460CE9CAB76D19A8651E'],
+      '-2E69197FAB029D8669EF85E82457A1587CA0ED9C'],
     votersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372'})
 ];
 

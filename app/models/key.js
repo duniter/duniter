@@ -38,6 +38,31 @@ KeySchema.statics.memberLeave = function(amNumber, fingerprint, done){
   Key.update({ fingerprint: fingerprint }, { $push: { "asMember.leaves": amNumber }}, done);
 }
 
+KeySchema.statics.wasMember = function(fingerprint, amNumber, done){
+  Key.find({ fingerprint: fingerprint }, function (err, keys) {
+    if (err || !keys || keys.length == 0) {
+      done("Unknown key!");
+    } else {
+      var k = keys[0];
+      var previousJoins = _(k.asMember.joins).filter(function(n) { return n <= amNumber; });
+      if (previousJoins.length > 0) {
+        var max = _(previousJoins).max();
+        var previousLeaves = _(k.asMember.leaves).filter(function(n) { return n <= amNumber; });
+        if (previousLeaves.length == 0 || _(previousLeaves).max() < max) {
+          // Last operation at amNumber was joining
+          done(null, true);
+        } else {
+          // Last operation at amNumber was leaving
+          done(null, false);
+        }
+      } else {
+        // Has not joined yet
+        done(null, false);
+      }
+    }
+  });
+}
+
 KeySchema.statics.voterJoin = function(amNumber, fingerprint, done){
   Key.update({ fingerprint: fingerprint }, { $push: { "asVoter.joins": amNumber }}, done);
 }

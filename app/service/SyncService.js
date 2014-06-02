@@ -189,16 +189,6 @@ module.exports.get = function (pgp, currency, conf) {
           async.waterfall([
             function (next){
               mlogger.debug('⬇ %s %s', entry.issuer, entry.membership);
-              Membership.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
-            },
-            function (entries, next){
-              if (entries.length > 0) {
-                next('Already received membership');
-                return;
-              }
-              next();
-            },
-            function (next){
               dependingInterval(entry,
                 function isTooLate (entryTS, minimalTS) {
                   next('Too late for this membership (' + toDateString(entryTS) + '): your membership must be at least ' + toDateString(minimalTS) + ', time of current amendment. Retry.');
@@ -208,45 +198,28 @@ module.exports.get = function (pgp, currency, conf) {
                 },
                 function isGood (am) {
                   entry.amNumber = (am && am.number) || -1;
-                  Membership.getCurrent(entry.issuer, next);
+                  Key.wasMember(entry.issuer, entry.amNumber, next);
                 }
               );
             },
-            function (currentlyRecorded, next){
-              current = currentlyRecorded;
-              // Case new is OUT
-              if (entry.membership == 'OUT') {
-                if (!current) {
-                  next('Have not opted-in yet');
-                  return;
-                } else if (current.membership == 'OUT') {
-                  next('Already opted-out');
-                  return;
-                }
+            function (isMember, next){
+              if (!isMember && entry.membership == 'OUT') {
+                next('You can only opt-in right now');
+              } else if (isMember && entry.membership == 'IN') {
+                next('You can only opt-out right now');
+              } else {
+                next();
               }
-              next();
             },
             function (next){
               // Get already existing Membership for same amendment
               Membership.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
             },
             function (entries, next){
-              if (entries.length > 1) {
-                next('Refused: already received more than one membership for next amendment.');
-                return;
-              } else if(entries.length > 0){
-                // Already existing membership for this AM : this membership and the previous for this AM
-                // are no more to be considered
-                entry.eligible = false;
-                previous = entries[0];
-                entries[0].eligible = false;
-                entries[0].save(function (err) {
-                  nowIsIgnored = true;
-                  next(err);
-                });
-              } else {
-                next();
+              if (entries.length > 0) {
+                next('Already received membership');
               }
+              else next();
             },
             function (next){
               // Saves entry
@@ -269,15 +242,7 @@ module.exports.get = function (pgp, currency, conf) {
             function (next){
               mlogger.debug('✔ %s %s', entry.issuer, entry.membership);
               PeeringService.propagateMembership(entry);
-              async.waterfall([
-                function (next) {
-                  if (nowIsIgnored) {
-                    next('Cancelled: a previous membership was found, thus none of your memberships will be taken for next amendment');
-                    return;
-                  }
-                  else next(null, entry);
-                }
-              ], next);
+              next(null, entry);
             }
           ], callback);
         }
@@ -298,16 +263,6 @@ module.exports.get = function (pgp, currency, conf) {
           async.waterfall([
             function (next){
               vlogger.debug('⬇ %s\'s voting', "0x" + entry.issuer.substr(32));
-              Voting.find({ issuer: pubkey.fingerprint, hash: entry.hash }, next);
-            },
-            function (entries, next){
-              if (entries.length > 0) {
-                next('Already received voting');
-                return;
-              }
-              next();
-            },
-            function (next){
               dependingInterval(entry,
                 function isTooLate () {
                   next('Too late for this voting: amendment already voted. Retry.');
@@ -317,24 +272,16 @@ module.exports.get = function (pgp, currency, conf) {
                 },
                 function isGood (am) {
                   entry.amNumber = (am && am.number) || -1;
-                  Voting.getCurrent(entry.issuer, next);
+                  Amendment.isProposedMember(entry.issuer, entry.amNumber + 1, next);
                 }
               );
             },
-            function (currentlyRecorded, next){
-              current = currentlyRecorded;
-              async.waterfall([
-                function (next){
-                  Amendment.isProposedMember(entry.issuer, entry.amNumber + 1, next);
-                },
-                function (isMember, next){
-                  if (!isMember) {
-                    next('Only members may be voters');
-                    return;
-                  }
-                  next();
-                },
-              ], next);
+            function (isMember, next){
+              if (!isMember) {
+                next('Only members may be voters');
+                return;
+              }
+              next();
             },
             function (next){
               Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
@@ -346,22 +293,10 @@ module.exports.get = function (pgp, currency, conf) {
                   Voting.getForAmendmentAndIssuer(entry.amNumber, entry.issuer, next);
                 },
                 function (entries, next){
-                  if (entries.length > 1) {
-                    next('Refused: already received more than one voting for next amendment.');
+                  if (entries.length > 0) {
+                    next('Refused: already received.');
                     return;
-                  } else if(entries.length > 0){
-                    // Already existing voting for this AM : this voting and the previous for this AM
-                    // are no more to be considered
-                    entry.eligible = false;
-                    previous = entries[0];
-                    entries[0].eligible = false;
-                    entries[0].save(function (err) {
-                      nowIsIgnored = true;
-                      next(err);
-                    });
-                  } else {
-                    next();
-                  }
+                  } else next();
                 },
                 function (next){
                   // Saves entry
@@ -594,25 +529,11 @@ module.exports.get = function (pgp, currency, conf) {
       isMemberTooOld ? 1 : 0
     ];
     var hasNextIn = ctx.nextMemberships.length > 0 && ctx.nextMemberships[0].membership == 'IN';
-    var hasNextInCancelled = false;
-    if (ctx.nextMemberships.length > 1) {
-      hasNextInCancelled = ctx.nextMemberships[0].created < ctx.nextMemberships[1].created ?
-        ctx.nextMemberships[0].membership == 'IN' :
-        ctx.nextMemberships[1].membership == 'IN';
-    }
     var hasNextOut = ctx.nextMemberships.length > 0 && ctx.nextMemberships[0].membership == 'OUT';
-    var hasNextOutCancelled = false;
-    if (ctx.nextMemberships.length > 1) {
-      hasNextOutCancelled = ctx.nextMemberships[0].created < ctx.nextMemberships[1].created ?
-        ctx.nextMemberships[0].membership == 'OUT' :
-        ctx.nextMemberships[1].membership == 'OUT';
-    }
     var p = [
       1,
       hasNextIn ? 1 : 0,
       hasNextOut ? 1 : 0,
-      hasNextInCancelled ? 1 : 0,
-      hasNextOutCancelled ? 1 : 0
     ];
     mathlog.debug('ms = ', ms);
     mathlog.debug('p = ', p);
@@ -632,11 +553,9 @@ module.exports.get = function (pgp, currency, conf) {
       isTooOldVT ? 1 : 0
     ];
     var hasNextVoting = ctx.nextVotings.length > 0;
-    var hasNextVotingCancelled = ctx.nextVotings.length > 1;
     var p = [
       1,
       hasNextVoting ? 1 : 0,
-      hasNextVotingCancelled ? 1 : 0,
       memberLeaving == 1 ? 1 : 0
     ];
     mathlog.debug('vt = ', vt);
@@ -962,7 +881,7 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param p array of changes
   */
   function IsMember (p) {
-    return - p[2] + p[4];
+    return - p[2];
   }
 
   /**
@@ -971,7 +890,7 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param p array of changes
   */
   function IsNotMember (p) {
-    return p[1] - p[3];
+    return p[1];
   }
 
   /**
@@ -980,7 +899,7 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param p array of changes
   */
   function IsMemberTooOld (p) {
-    return - p[0] + p[1] - p[3];
+    return - p[0] + p[1];
   }
 
   // console.log('params = ', ms, p);
@@ -1013,15 +932,15 @@ Computing.Voting = function (vt, p, done) {
 }
 
 function IsNotVoter (p) {
-  return p[1] - p[2] - p[3];
+  return p[1] - p[2];
 }
 
 function IsVoter (p) {
-  return - p[3];
+  return - p[2];
 }
 
 function IsVoterTooOld (p) {
-  return - p[0] + p[1] - p[2] - p[3];
+  return - p[0] + p[1] - p[2];
 }
 
 /**************** Utils ***********************/

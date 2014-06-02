@@ -333,16 +333,18 @@ module.exports.express = {
       app.get(    '/hdc/coins/view/:coin_id/owner',                 hdc.coins.view);
       app.get(    '/hdc/coins/view/:coin_id/history',               hdc.coins.history);
       app.get(    '/registry/parameters',                           reg.parameters);
-      app.get(    '/registry/community/members',                    reg.membershipGet);
       app.post(   '/registry/community/members',                    reg.membershipPost);
       app.get(    '/registry/community/members/:fpr/current',       reg.membershipCurrent);
       app.get(    '/registry/community/members/:fpr/history',       reg.membershipHistory);
-      app.get(    '/registry/community/voters',                     reg.votingGet);
       app.post(   '/registry/community/voters',                     reg.votingPost);
       app.get(    '/registry/community/voters/:fpr/current',        reg.votingCurrent);
       app.get(    '/registry/community/voters/:fpr/history',        reg.votingHistory);
       app.get(    '/registry/amendment',                            reg.amendmentCurrent);
       app.get(    '/registry/amendment/:amendment_number',          reg.amendmentNext);
+      app.get(    '/registry/amendment/:amendment_number/members/in', reg.membersIn);
+      app.get(    '/registry/amendment/:amendment_number/members/out',reg.membersOut);
+      app.get(    '/registry/amendment/:amendment_number/voters/in',  reg.votersIn);
+      app.get(    '/registry/amendment/:amendment_number/voters/out', reg.votersOut);
       app.get(    '/registry/amendment/:amendment_number/vote',     reg.askVote);
 
       // If the node's peering entry does not exist or is outdated,

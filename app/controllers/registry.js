@@ -61,24 +61,6 @@ module.exports = function (pgp, currency, conf) {
     });
   };
 
-  this.membershipGet = function (req, res) {
-    var that = this;
-    async.waterfall([
-      function (next){
-        Merkle.memberships(next);
-      },
-      function (merkle, next){
-        MerkleService.processForURL(req, merkle, Merkle.mapForMemberships, next);
-      }
-    ], function (err, json) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      MerkleService.merkleDone(req, res, json);
-    });
-  };
-
   this.membershipPost = function (req, res) {
     var that = this;
     async.waterfall([
@@ -144,24 +126,6 @@ module.exports = function (pgp, currency, conf) {
       http.answer(res, 400, err, function () {
         res.end(JSON.stringify(list, null, "  "));
       });
-    });
-  };
-
-  this.votingGet = function (req, res) {
-    var that = this;
-    async.waterfall([
-      function (next){
-        Merkle.votings(next);
-      },
-      function (merkle, next){
-        MerkleService.processForURL(req, merkle, Merkle.mapForVotings, next);
-      }
-    ], function (err, json) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      MerkleService.merkleDone(req, res, json);
     });
   };
 
@@ -233,6 +197,43 @@ module.exports = function (pgp, currency, conf) {
       });
     });
   };
+
+  this.membersIn = function (req, res) {
+    processMerkle(Merkle.membersIn, Merkle.mapForMemberships, req, res);
+  };
+
+  this.membersOut = function (req, res) {
+    processMerkle(Merkle.membersOut, Merkle.mapForMemberships, req, res);
+  };
+
+  this.votersIn = function (req, res) {
+    processMerkle(Merkle.votersIn, Merkle.mapForVotings, req, res);
+  };
+
+  this.votersOut = function (req, res) {
+    processMerkle(Merkle.votersOut, Merkle.mapForVotings, req, res);
+  };
+
+  function processMerkle (getMerkle, mapMerkle, req, res) {
+    var that = this;
+    async.waterfall([
+      function (next) {
+        ParametersService.getAmendmentNumber(req, next);
+      },
+      function (number, next){
+        getMerkle(number, next);
+      },
+      function (merkle, next){
+        MerkleService.processForURL(req, merkle, mapMerkle, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      MerkleService.merkleDone(req, res, json);
+    });
+  }
 
   this.askVote = function (req, res) {
     var that = this;

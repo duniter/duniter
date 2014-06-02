@@ -153,12 +153,20 @@ MerkleSchema.statics.proposedVoters = function (done) {
   retrieve({ type: 'proposedVoters', criteria: '{}' }, done);
 };
 
-MerkleSchema.statics.memberships = function (done) {
-  retrieve({ type: 'memberships', criteria: '{}' }, done);
+MerkleSchema.statics.membersIn = function (number, done) {
+  retrieve({ type: 'membersIn', criteria: '{"number":'+number+'}' }, done);
 };
 
-MerkleSchema.statics.votings = function (done) {
-  retrieve({ type: 'votings', criteria: '{}' }, done);
+MerkleSchema.statics.membersOut = function (number, done) {
+  retrieve({ type: 'membersOut', criteria: '{"number":'+number+'}' }, done);
+};
+
+MerkleSchema.statics.votersIn = function (number, done) {
+  retrieve({ type: 'votersIn', criteria: '{"number":'+number+'}' }, done);
+};
+
+MerkleSchema.statics.votersOut = function (number, done) {
+  retrieve({ type: 'votersOut', criteria: '{"number":'+number+'}' }, done);
 };
 
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
@@ -253,6 +261,55 @@ MerkleSchema.statics.updateForTransfert = function (tx, done) {
     },
     function (merkle, next){
       merkle.push(tx.hash);
+      merkle.save(next);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForMembership = function (amNumber, ms, done) {
+  var merkleGet = ms.membership == "IN" ? Merkle.membersIn : Merkle.membersOut;
+  async.waterfall([
+    function (next){
+      merkleGet(amNumber, next);
+    },
+    function (merkle, next){
+      merkle.push(ms.issuer);
+      merkle.save(next);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForVoting = function (amNumber, vt, done) {
+  async.waterfall([
+    function (next){
+      Merkle.votersIn(amNumber, next);
+    },
+    function (merkle, next){
+      merkle.push(vt.issuer);
+      merkle.save(next);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForOutdatedKey = function (amNumber, fpr, done) {
+  async.waterfall([
+    function (next){
+      Merkle.membersOut(amNumber, next);
+    },
+    function (merkle, next){
+      merkle.push(fpr);
+      merkle.save(next);
+    }
+  ], done);
+};
+
+MerkleSchema.statics.updateForOutdatedVoting = function (amNumber, fpr, done) {
+  async.waterfall([
+    function (next){
+      Merkle.votersOut(amNumber, next);
+    },
+    function (merkle, next){
+      merkle.push(fpr);
       merkle.save(next);
     }
   ], done);

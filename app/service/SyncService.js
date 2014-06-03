@@ -609,9 +609,11 @@ module.exports.get = function (pgp, currency, conf) {
 
   function updateMembersFromIndicator (member, statusTo, amNext, done) {
     var whatToDo = {
-      changes: { "0": {}, "1" :{}, "-1": {}},
-      merkle: { "0": {}, "1" :{}, "-1": {}},
-      state: { "0": {}, "1" :{}, "-1": {}}
+      changes:   { "0": {}, "1" :{}, "-1": {}},
+      merkle:    { "0": {}, "1" :{}, "-1": {}},
+      state:     { "0": {}, "1" :{}, "-1": {}},
+      merkleIn:  { "0": {}, "1" :{}, "-1": {}},
+      merkleOut: { "0": {}, "1" :{}, "-1": {}}
     };
     whatToDo.changes["0"]["1"] = function (k, changes, done) {
       mathlog.info('MS +%s', k);
@@ -638,11 +640,29 @@ module.exports.get = function (pgp, currency, conf) {
     whatToDo.state["0"]["-1"] = Key.setLastMSState;
     whatToDo.state["-1"]["0"] = Key.setLastMSState;
 
+    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.membersIn, amNext.number));
+    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersIn, amNext.number));
+    whatToDo.merkleIn["0"]["-1"] = doNothingWithMerkleInOut;
+    whatToDo.merkleIn["-1"]["0"] = doNothingWithMerkleInOut;
+
+    whatToDo.merkleOut["0"]["1"] = doNothingWithMerkleInOut;
+    whatToDo.merkleOut["1"]["0"] = doNothingWithMerkleInOut;
+    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.membersOut, amNext.number));
+    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersOut, amNext.number));
+
     function doNothing (k, changes, done) {
       done();
     }
 
     function doNothingWithState (k, state, done) {
+      done();
+    }
+
+    function doNothingWithMerkle (k, merkle, done) {
+      done(null, merkle);
+    }
+
+    function doNothingWithMerkleInOut (m, done) {
       done();
     }
 
@@ -662,9 +682,7 @@ module.exports.get = function (pgp, currency, conf) {
                 Merkle.proposedMembers(next);
               },
               function (merkle, next){
-                var f = whatToDo.merkle[statusFrom.toString()][statusTo.toString()] || function (k, merkle, done) {
-                  done(null, merkle);
-                };
+                var f = whatToDo.merkle[statusFrom.toString()][statusTo.toString()] || doNothingWithMerkle;
                 f(member, merkle, next);
               },
               function (merkle, next){
@@ -674,7 +692,15 @@ module.exports.get = function (pgp, currency, conf) {
               },
             ], callback);
           },
-          saveAmendmentChanges: ['updateMembersChanges', 'updateMembersMerkle', function (callback, res) {
+          updateMembersIn: function(callback){
+            var f = whatToDo.merkleIn[statusFrom.toString()][statusTo.toString()] || doNothingWithMerkleInOut;
+            f(member, callback);
+          },
+          updateMembersOut: function(callback){
+            var f = whatToDo.merkleOut[statusFrom.toString()][statusTo.toString()] || doNothingWithMerkleInOut;
+            f(member, callback);
+          },
+          saveAmendmentChanges: ['updateMembersChanges', 'updateMembersMerkle', 'updateMembersIn', 'updateMembersOut', function (callback, res) {
             amNext.membersCount = res.updateMembersMerkle.leaves.length;
             amNext.membersRoot = res.updateMembersMerkle.root;
             amNext.hash = amNext.getRaw().hash();
@@ -689,14 +715,32 @@ module.exports.get = function (pgp, currency, conf) {
 
   function updateVotersFromIndicator (key, statusTo, amNext, done) {
     var whatToDo = {
-      changes: { "0": {}, "1" :{}, "-1": {}},
-      merkle: { "0": {}, "1" :{}, "-1": {}},
-      state: { "0": {}, "1" :{}, "-1": {}}
+      changes:   { "0": {}, "1" :{}, "-1": {}},
+      merkle:    { "0": {}, "1" :{}, "-1": {}},
+      state:     { "0": {}, "1" :{}, "-1": {}},
+      merkleIn:  { "0": {}, "1" :{}, "-1": {}},
+      merkleOut: { "0": {}, "1" :{}, "-1": {}}
     };
-    whatToDo.changes["0"]["1"] = keyAdd;
-    whatToDo.changes["1"]["0"] = keyUndoAdd;
-    whatToDo.changes["0"]["-1"] = keyRemove;
-    whatToDo.changes["-1"]["0"] = keyUndoRemove;
+    // whatToDo.changes["0"]["1"] = keyAdd;
+    // whatToDo.changes["1"]["0"] = keyUndoAdd;
+    // whatToDo.changes["0"]["-1"] = keyRemove;
+    // whatToDo.changes["-1"]["0"] = keyUndoRemove;
+    whatToDo.changes["0"]["1"] = function (k, changes, done) {
+      mathlog.info('VT +%s', k);
+      keyAdd(k, changes, done);
+    };
+    whatToDo.changes["1"]["0"] = function (k, changes, done) {
+      mathlog.info('VT CANCEL -%s', k);
+      keyUndoAdd(k, changes, done);
+    };
+    whatToDo.changes["0"]["-1"] = function (k, changes, done) {
+      mathlog.info('VT -%s', k);
+      keyRemove(k, changes, done);
+    };
+    whatToDo.changes["-1"]["0"] = function (k, changes, done) {
+      mathlog.info('VT CANCEL -%s', k);
+      keyUndoRemove(k, changes, done);
+    };
     whatToDo.merkle["0"]["1"] = addInVoterMerkle;
     whatToDo.merkle["1"]["0"] = removeFromVoterMerkle;
     whatToDo.merkle["0"]["-1"] = removeFromVoterMerkle;
@@ -705,6 +749,16 @@ module.exports.get = function (pgp, currency, conf) {
     whatToDo.state["1"]["0"] = Key.setLastState;
     whatToDo.state["0"]["-1"] = Key.setLastState;
     whatToDo.state["-1"]["0"] = Key.setLastState;
+
+    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.votersIn, amNext.number));
+    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersIn, amNext.number));
+    whatToDo.merkleIn["0"]["-1"] = doNothingWithMerkleInOut;
+    whatToDo.merkleIn["-1"]["0"] = doNothingWithMerkleInOut;
+
+    whatToDo.merkleOut["0"]["1"] = doNothingWithMerkleInOut;
+    whatToDo.merkleOut["1"]["0"] = doNothingWithMerkleInOut;
+    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.votersOut, amNext.number));
+    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersOut, amNext.number));
 
     function doNothingWithKey (k, changes, done) {
       done();
@@ -715,6 +769,10 @@ module.exports.get = function (pgp, currency, conf) {
     }
 
     function doNothingWithState (k, state, done) {
+      done();
+    }
+
+    function doNothingWithMerkleInOut (m, done) {
       done();
     }
 
@@ -740,14 +798,14 @@ module.exports.get = function (pgp, currency, conf) {
             var merkleFunc = async.apply(whatToDo.merkle[lastKeyState.toString()][statusTo.toString()] || doNothingWithMerkle, key);
             var keysFunc  = async.apply(whatToDo.changes[lastKeyState.toString()][statusTo.toString()] || doNothingWithKey, key, amNext.votersChanges);
             var stateFunc = async.apply(whatToDo.state[lastKeyState.toString()][statusTo.toString()] || doNothingWithState, key, statusTo);
+            var votersInFunc = async.apply(whatToDo.merkleIn[lastKeyState.toString()][statusTo.toString()] || doNothingWithMerkleInOut, key);
+            var votersOutFunc = async.apply(whatToDo.merkleOut[lastKeyState.toString()][statusTo.toString()] || doNothingWithMerkleInOut, key);
             if ((lastKeyState == 0 && statusTo == 1) || (lastKeyState == -1 && statusTo == 0)) {
               // Make positive change
-              mathlog.info('VT +%s', key);
-              actionForVoters(merkleFunc, keysFunc, stateFunc, amNext, next);
+              actionForVoters(merkleFunc, keysFunc, stateFunc, votersInFunc, votersOutFunc, amNext, next);
             } else if ((lastKeyState == 1 && statusTo == 0) || (lastKeyState == 0 && statusTo == -1)) {
               // Make negative change
-              mathlog.info('VT -%s', key);
-              actionForVoters(merkleFunc, keysFunc, stateFunc, amNext, next);
+              actionForVoters(merkleFunc, keysFunc, stateFunc, votersInFunc, votersOutFunc, amNext, next);
             } else {
               // Do nothing!
               next();
@@ -760,7 +818,7 @@ module.exports.get = function (pgp, currency, conf) {
     });
   }
 
-  function actionForVoters (merkleFunc, votersFunc, stateFunc, amNext, done) {
+  function actionForVoters (merkleFunc, votersFunc, stateFunc, votersInFunc, votersOutFunc, amNext, done) {
     async.auto({
       updateStat: stateFunc,
       updateVotersChanges: votersFunc,
@@ -779,7 +837,13 @@ module.exports.get = function (pgp, currency, conf) {
           },
         ], callback);
       },
-      saveAmendmentChanges: ['updateVotersChanges', 'updateVotersMerkle', function (callback, res) {
+      updateVotersIn: function(callback){
+        votersInFunc(callback);
+      },
+      updateVotersOut: function(callback){
+        votersOutFunc(callback);
+      },
+      saveAmendmentChanges: ['updateVotersChanges', 'updateVotersMerkle', 'updateVotersIn', 'updateVotersOut', function (callback, res) {
         amNext.votersCount = res.updateVotersMerkle.leaves().length;
         amNext.votersRoot = res.updateVotersMerkle.root();
         amNext.hash = amNext.getRaw().hash();
@@ -852,6 +916,34 @@ module.exports.get = function (pgp, currency, conf) {
       merkle.remove(key);
       done(null, merkle);
     });
+  }
+
+  function addInMerkle (merkleGet, key, done) {
+    async.waterfall([
+      function (next) {
+        merkleGet(next);
+      },
+      function (merkle, next) {
+        merkle.push(key);
+        merkle.save(function (err) {
+          next(err);
+        });
+      }
+    ], done);
+  }
+
+  function removeFromMerkle (merkleGet, key, done) {
+    async.waterfall([
+      function (next) {
+        merkleGet(next);
+      },
+      function (merkle, next) {
+        merkle.remove(key);
+        merkle.save(function (err) {
+          next(err);
+        });
+      }
+    ], done);
   }
 
   return this;

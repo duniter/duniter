@@ -529,7 +529,7 @@ var testCases = [
 
   // Tobi voting again
   someTests.sendVoting(tobi, now + 4),
-  testProposedAmendment('AM6: tobi\'s coming back', {
+  testProposedAmendment('AM5: tobi\'s coming back', {
     membersChanges: [],
     votersChanges: ['+2E69197FAB029D8669EF85E82457A1587CA0ED9C'],
     votersRoot: 'F5ACFD67FC908D28C0CFDAD886249AC260515C90' }),

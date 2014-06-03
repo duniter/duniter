@@ -266,55 +266,6 @@ MerkleSchema.statics.updateForTransfert = function (tx, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateForMembership = function (amNumber, ms, done) {
-  var merkleGet = ms.membership == "IN" ? Merkle.membersIn : Merkle.membersOut;
-  async.waterfall([
-    function (next){
-      merkleGet(amNumber, next);
-    },
-    function (merkle, next){
-      merkle.push(ms.issuer);
-      merkle.save(next);
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForVoting = function (amNumber, vt, done) {
-  async.waterfall([
-    function (next){
-      Merkle.votersIn(amNumber, next);
-    },
-    function (merkle, next){
-      merkle.push(vt.issuer);
-      merkle.save(next);
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForOutdatedKey = function (amNumber, fpr, done) {
-  async.waterfall([
-    function (next){
-      Merkle.membersOut(amNumber, next);
-    },
-    function (merkle, next){
-      merkle.push(fpr);
-      merkle.save(next);
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForOutdatedVoting = function (amNumber, fpr, done) {
-  async.waterfall([
-    function (next){
-      Merkle.votersOut(amNumber, next);
-    },
-    function (merkle, next){
-      merkle.push(fpr);
-      merkle.save(next);
-    }
-  ], done);
-};
-
 MerkleSchema.statics.mapIdentical = function (hashes, done) {
   var map = {};
   hashes.forEach(function (leaf) {

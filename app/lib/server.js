@@ -17,7 +17,7 @@ var logger     = require('./logger')('http');
 var pgplogger  = require('./logger')('PGP');
 var log4js     = require('log4js');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting', 'CommunityFlow'];
 
 function initModels() {
   models.forEach(function (entity) {
@@ -126,7 +126,8 @@ module.exports.database = {
       'votes',
       'txmemories',
       'memberships',
-      'votings'];
+      'votings',
+      'communityflows'];
     async.forEachSeries(deletableCollections, function(collection, next){
       mongoose.connection.collections[collection].drop(function (err) {
         next();

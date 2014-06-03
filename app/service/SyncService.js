@@ -36,6 +36,11 @@ var WITH_VOTING    = true;
 var WITHOUT_VOTING = false;
 
 module.exports.get = function (pgp, currency, conf) {
+
+  // Function to override according to chosen algorithm for pubkey validity
+  var isValidPubkey = conf.isValidPubkey || function (pubkey, am) {
+    return true;
+  }
   
   var fifoCreateNextAM = async.queue(function (task, callback) {
     task(callback);
@@ -522,16 +527,15 @@ module.exports.get = function (pgp, currency, conf) {
   function memberContext2AnalyticalParameters (context, amNext, done) {
     var ctx = context || { currentMembership: null, nextMemberships: [] };
     var isMember = ctx.currentMembership && ctx.currentMembership.membership == 'IN';
-    var isMemberTooOld = (isMember && ctx.currentMembership.date < getMSExclusionDate(amNext));
     var ms = [
-      isMember && !isMemberTooOld ? 1 : 0,
+      isMember ? 1 : 0,
       !isMember ? 1 : 0,
-      isMemberTooOld ? 1 : 0
     ];
+    var hasInvalidKey = !isValidPubkey(ctx.pubkey, amNext);
     var hasNextIn = ctx.nextMemberships.length > 0 && ctx.nextMemberships[0].membership == 'IN';
     var hasNextOut = ctx.nextMemberships.length > 0 && ctx.nextMemberships[0].membership == 'OUT';
     var p = [
-      1,
+      hasInvalidKey ? 1 : 0,
       hasNextIn ? 1 : 0,
       hasNextOut ? 1 : 0,
     ];
@@ -591,6 +595,10 @@ module.exports.get = function (pgp, currency, conf) {
         Voting.getForAmendmentAndIssuer(amNumber, member, function (err, votings) {
           callback(null, err ? null : votings);
         });
+      },
+      pubkey: function (callback){
+        // Get lastly emitted & valid (not confirmed) votings FOR amNumber
+        PublicKey.getTheOne(member, callback);
       }
     }, function (err, ctx) {
       // Add amendment number
@@ -881,7 +889,7 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param p array of changes
   */
   function IsMember (p) {
-    return - p[2];
+    return - p[0] - p[2];
   }
 
   /**
@@ -890,23 +898,14 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param p array of changes
   */
   function IsNotMember (p) {
-    return p[1];
-  }
-
-  /**
-  * Computes changes for a key given changes with and initial state
-  * @param m 1 if initial state is no membership, 0 otherwise
-  * @param p array of changes
-  */
-  function IsMemberTooOld (p) {
     return - p[0] + p[1];
   }
 
   // console.log('params = ', ms, p);
-  // console.log('partial res = ', MSNone(p), IsMember(p), IsNotMember(p), IsMemberTooOld(p));
-  // console.log('real = %s', ms[0]*MSNone(p) + ms[1]*IsMember(p) + ms[2]*IsNotMember(p) + ms[3]*IsMemberTooOld(p));
+  // console.log('partial res = ', MSNone(p), IsMember(p), IsNotMember(p));
+  // console.log('real = %s', ms[0]*MSNone(p) + ms[1]*IsMember(p) + ms[2]*IsNotMember(p));
   // console.log('-----');
-  done(null, ms[0]*IsMember(p) + ms[1]*IsNotMember(p) + ms[2]*IsMemberTooOld(p));
+  done(null, ms[0]*IsMember(p) + ms[1]*IsNotMember(p));
 }
 
 /**

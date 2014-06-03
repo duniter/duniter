@@ -74,7 +74,11 @@ var conf = {
     MSExpires: 8, // seconds, so AM9 will see ]AM0;AM1] members be kicked out at AM9
     VTExpires: 3 // seconds, so AM4 will see not-actualized voters kicked out
   },
-  createNext: true
+  createNext: true,
+  isValidPubkey: function (pubkey, am) {
+    // Here we say that a key is no more valid if it is Tobi's & AM9
+    return !(pubkey.fingerprint == '2E69197FAB029D8669EF85E82457A1587CA0ED9C' && am.number == 9);
+  }
 };
 
 var amendments = {
@@ -568,7 +572,7 @@ var testCases = [
   someTests.voteProposed(cat),
   someTests.voteProposed(snow),
   // We are now at AM9: memberships received during AM0 MUST be thrown out
-  testProposedAmendment('AM9: cat & snow are kicked out as their memberships are too old', {
+  testProposedAmendment('AM9: Tobi is kicked out as its key is no more valid', {
     membersChanges: [
       '-2E69197FAB029D8669EF85E82457A1587CA0ED9C'],
     membersRoot: '33BBFC0C67078D72AF128B5BA296CC530126F372',

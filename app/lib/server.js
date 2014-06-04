@@ -318,7 +318,7 @@ module.exports.express = {
       app.post(   '/network/wallet',                                net.walletPOST);
       app.get(    '/network/wallet/:fpr',                           net.walletFPR);
       app.get(    '/hdc/amendments/promoted',                       hdc.amendments.promoted);
-      app.get(    '/hdc/amendments/promoted/:amendment_number',     hdc.amendments.promotedNumber);
+      app.get(    '/hdc/amendments/promoted/:am_number',            hdc.amendments.promotedNumber);
       app.get(    '/hdc/amendments/view/:amendment_id/self',        hdc.amendments.viewAM.self);
       app.get(    '/hdc/amendments/view/:amendment_id/signatures',  hdc.amendments.votes.sigs);
       app.get(    '/hdc/amendments/votes',                          hdc.amendments.votes.get);

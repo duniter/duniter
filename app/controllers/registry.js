@@ -41,7 +41,7 @@ module.exports = function (pgp, currency, conf) {
 
   this.amendmentCurrent = function (req, res) {
     var am = ContractService.proposed();
-    req.params.amendment_number = ((am && am.number)  || 0).toString();
+    req.params.am_number = ((am && am.number)  || 0).toString();
     this.amendmentNext(req, res);
   };
 

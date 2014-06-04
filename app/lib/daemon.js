@@ -26,7 +26,7 @@ function Daemon () {
   // self reference, private scope
   var daemon = this;
 
-  var AMStart, AMFreq, enabled;
+  var AMStart, AMFreq, Algorithm, enabled;
   var timeoutID, frequency;
   var asked = -1;
   var processing = false;
@@ -39,6 +39,7 @@ function Daemon () {
   this.init = function (conf, fingerprint) {
     AMStart = conf.sync.AMStart;
     AMFreq = conf.sync.AMFreq;
+    Algorithm = conf.sync.Algorithm;
     enabled = conf.sync.AMDaemon == "ON";
     selfFingerprint = fingerprint;
   };
@@ -95,84 +96,26 @@ function Daemon () {
         if (current && now > current.generated + AMFreq) {
           var amNext = new Amendment({ generated: current.generated + AMFreq });
           async.auto({
-            // triggerSelfCFlow: function(callback){
-            //   // Case 1: just triggers self-vote
-            //   if (daemon.judges.timeForVote(amNext) && lastTried != amNext.generated) {
-            //     lastTried = amNext.generated;
-            //     // Must be a voter to vote!
-            //     Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
-            //       if (!err && wasVoter) {
-            //         logger.debug("Asking CF for SELF peer");
-            //         askCF(current, PeeringService.peer(), function (err, json) {
-            //           // Do nothing with result: it has been done by SyncService (self-submitted the vote)
-            //           callback(err);
-            //         });
-            //         return;
-            //       }
-            //       callback(err);
-            //     });
-            //     return;
-            //   }
-            //   callback();
-            // },
-            // triggerSelfVote: function(callback){
-            //   // Case 1: just triggers self-vote
-            //   if (daemon.judges.timeForVote(amNext) && lastTried != amNext.generated) {
-            //     lastTried = amNext.generated;
-            //     // Must be a voter to vote!
-            //     Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
-            //       if (!err && wasVoter) {
-            //         logger.debug("Asking vote for SELF peer");
-            //         askVote(current, PeeringService.peer(), function (err, json) {
-            //           // Do nothing with result: it has been done by SyncService (self-submitted the vote)
-            //           callback(err);
-            //         });
-            //         return;
-            //       }
-            //       callback(err);
-            //     });
-            //     return;
-            //   }
-            //   callback();
-            // },
-            // triggerPeersVote: ['triggerSelfVote', function(callback){
-            //   if (daemon.judges.timeForAskingVotes(amNext)) {
-            //     // Case 2: triggers other peers' self-vote
-            //     async.forEach(PeeringService.upPeers(), function(peer, callback){
-            //       if (peer.fingerprint == selfFingerprint) {
-            //         callback();
-            //         return;
-            //       }
-            //       logger.debug("Asking vote for peer 0x%s", peer.fingerprint.substring(32));
-            //       // Must be a voter to vote!
-            //       Key.wasVoter(peer.fingerprint, current.number, function (err, wasVoter) {
-            //         if (!err && wasVoter) {
-            //           async.waterfall([
-            //             function (next){
-            //               askVote(current, peer, next);
-            //             },
-            //             function (json, next){
-            //               vucoin(peer.getIPv4(), peer.getPort(), true, function (err, node) {
-            //                 next(null, json, node);
-            //               });
-            //             },
-            //             function (json, node, next){
-            //               var raw = json.amendment.raw;
-            //               var sig = json.signature;
-            //               node.hdc.amendments.votes.post(raw + sig, next);
-            //             },
-            //           ], function (err) {
-            //             callback(err);
-            //           });
-            //           return;
-            //         }
-            //         callback(err);
-            //       });
-            //     }, next);
-            //     return;
-            //   }
-            //   callback();
-            // }],
+            triggerSelfCFlow: function(callback){
+              // Case 1: just triggers self-vote
+              if (daemon.judges.timeForVote(amNext) && lastTried != amNext.generated) {
+                lastTried = amNext.generated;
+                // Must be a voter to vote!
+                Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
+                  if (!err && wasVoter) {
+                    logger.debug("Asking CF for SELF peer");
+                    askCF(current, PeeringService.peer(), function (err, json) {
+                      // Do nothing with result: it has been done by SyncService (self-submitted the vote)
+                      callback(err);
+                    });
+                    return;
+                  }
+                  callback(err);
+                });
+                return;
+              }
+              callback();
+            },
           }, next);
         }
         else {
@@ -191,21 +134,6 @@ function Daemon () {
     });
   }
 
-  function askVote (current, peer, done) {
-    async.auto({
-      connect: function (cb){
-        vucoin(peer.getIPv4(), peer.getPort(), true, cb);
-      },
-      vote: ['connect', function (cb, results) {
-        var node = results.connect;
-        // Ask for peer's vote
-        node.registry.amendment.vote(current.number + 1, cb);
-      }]
-    }, function (err, results) {
-      done(err, results.vote);
-    });
-  }
-
   function askCF (current, peer, done) {
     async.auto({
       connect: function (cb){
@@ -214,7 +142,7 @@ function Daemon () {
       vote: ['connect', function (cb, results) {
         var node = results.connect;
         // Ask for peer's vote
-        node.registry.amendment.vote(current.number + 1, cb);
+        node.registry.amendment.flow(current.number + 1, Algorithm, cb);
       }]
     }, function (err, results) {
       done(err, results.vote);

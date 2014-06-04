@@ -218,10 +218,10 @@ module.exports = function (pgp, currency, conf) {
     var that = this;
     async.waterfall([
       function (next) {
-        ParametersService.getAmendmentNumber(req, next);
+        ParametersService.getAmendmentNumberAndAlgo(req, next);
       },
-      function (number, next){
-        getMerkle(number, next);
+      function (number, algo, next){
+        getMerkle(number, algo, next);
       },
       function (merkle, next){
         MerkleService.processForURL(req, merkle, mapMerkle, next);

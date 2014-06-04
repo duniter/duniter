@@ -37,7 +37,7 @@
     "hdc": "~0.8.0",
     "connect-pgp": "~0.3.0",
     "underscore": "~1.5.2",
-    "vucoin": "~0.17.0",
+    "vucoin": "~0.18.0",
     "request": "~2.31.0",
     "log4js": "~0.6.9",
     "moment": "~2.6.0",

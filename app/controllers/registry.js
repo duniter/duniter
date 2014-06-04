@@ -51,7 +51,7 @@ module.exports = function (pgp, currency, conf) {
         ParametersService.getAmendmentNumber(req, next);
       },
       function (amNumber, next){
-        Amendment.getTheOneToBeVoted(amNumber, next);
+        Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
       },
     ], function (err, am) {
       http.answer(res, 404, err, function () {
@@ -235,17 +235,40 @@ module.exports = function (pgp, currency, conf) {
     });
   }
 
+  this.askFlow = function (req, res) {
+    var that = this;
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        ParametersService.getAmendmentNumberAndAlgo(req, next);
+      },
+
+      function (amNumber, algo, next) {
+        SyncService.getFlow(parseInt(amNumber), algo, next)
+      },
+
+    ], function (err, cf, am) {
+
+      http.answer(res, 404, err, function () {
+        res.end(JSON.stringify({
+          "communityflow": cf.json()
+        }, null, "  "));
+      });
+    });
+  };
+
   this.askVote = function (req, res) {
     var that = this;
     async.waterfall([
 
       // Parameters
       function(next){
-        ParametersService.getAmendmentNumber(req, next);
+        ParametersService.getAmendmentNumberAndAlgo(req, next);
       },
 
-      function (amNumber, next) {
-        SyncService.getVote(amNumber, next)
+      function (amNumber, algo, next) {
+        SyncService.getVote(amNumber, algo, next);
       },
 
       function (vote, next){
@@ -265,39 +288,6 @@ module.exports = function (pgp, currency, conf) {
       });
     });
   };
-
-  function amendmentMerkle (req, res, merkleSource, merkleMap) {
-    ParametersService.getAmendmentNumber(req, function (err, number) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      async.waterfall([
-        function (next){
-          Amendment.getTheOneToBeVoted(number, next);
-        },
-      ], function (err, am) {
-        if(err){
-          res.send(404, err);
-          return;
-        }
-        async.waterfall([
-          function (next){
-            merkleSource.call(merkleSource, am.number, next);
-          },
-          function (merkle, next){
-            MerkleService.processForURL(req, merkle, merkleMap, next);
-          }
-        ], function (err, json) {
-          if(err){
-            res.send(400, err);
-            return;
-          }
-          MerkleService.merkleDone(req, res, json);
-        });
-      });
-    });
-  }
 
   return this;
 }

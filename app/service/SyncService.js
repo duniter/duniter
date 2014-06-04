@@ -1,28 +1,30 @@
-var service    = require('../service');
-var jpgp       = require('../lib/jpgp');
-var async      = require('async');
-var moment     = require('moment');
-var request    = require('request');
-var mongoose   = require('mongoose');
-var vucoin     = require('vucoin');
-var _          = require('underscore');
-var openpgp    = require('openpgp');
-var Amendment  = mongoose.model('Amendment');
-var PublicKey  = mongoose.model('PublicKey');
-var Membership = mongoose.model('Membership');
-var Voting     = mongoose.model('Voting');
-var Merkle     = mongoose.model('Merkle');
-var Vote       = mongoose.model('Vote');
-var Peer       = mongoose.model('Peer');
-var Key        = mongoose.model('Key');
-var Forward    = mongoose.model('Forward');
-var Status     = require('../models/statusMessage');
-var coiner     = require('../lib/coiner');
-var log4js     = require('log4js');
-var logger     = require('../lib/logger')('sync');
-var mlogger    = require('../lib/logger')('membership');
-var vlogger    = require('../lib/logger')('voting');
-var mathlog    = require('../lib/logger')('registryp');
+var service       = require('../service');
+var jpgp          = require('../lib/jpgp');
+var async         = require('async');
+var moment        = require('moment');
+var request       = require('request');
+var mongoose      = require('mongoose');
+var vucoin        = require('vucoin');
+var _             = require('underscore');
+var openpgp       = require('openpgp');
+var Amendment     = mongoose.model('Amendment');
+var PublicKey     = mongoose.model('PublicKey');
+var Membership    = mongoose.model('Membership');
+var Voting        = mongoose.model('Voting');
+var Merkle        = mongoose.model('Merkle');
+var Vote          = mongoose.model('Vote');
+var CKey          = mongoose.model('CKey');
+var CommunityFlow = mongoose.model('CommunityFlow');
+var Peer          = mongoose.model('Peer');
+var Key           = mongoose.model('Key');
+var Forward       = mongoose.model('Forward');
+var Status        = require('../models/statusMessage');
+var coiner        = require('../lib/coiner');
+var log4js        = require('log4js');
+var logger        = require('../lib/logger')('sync');
+var mlogger       = require('../lib/logger')('membership');
+var vlogger       = require('../lib/logger')('voting');
+var mathlog       = require('../lib/logger')('registryp');
 
 mathlog.setLevel('INFO');
 
@@ -37,6 +39,8 @@ var WITHOUT_VOTING = false;
 
 module.exports.get = function (pgp, currency, conf) {
 
+  var that = this;
+
   // Function to override according to chosen algorithm for pubkey validity
   var isValidPubkey = conf.isValidPubkey || function (pubkey, am) {
     return true;
@@ -50,7 +54,15 @@ module.exports.get = function (pgp, currency, conf) {
     task(callback);
   }, 1);
   
+  var fifoCF = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
+  
   var fifoSelfVote = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
+  
+  var fifoSelfCommunityFlow = async.queue(function (task, callback) {
     task(callback);
   }, 1);
 
@@ -85,6 +97,7 @@ module.exports.get = function (pgp, currency, conf) {
             amNext.monetaryMass = 0;
           }
           amNext.coinAlgo = "Base2Draft";
+          amNext.algo = conf.sync.Algorithm;
           amNext.nextVotes = Math.ceil(((am && am.votersCount) || 0) * conf.sync.Consensus);
           // Update UD
           updateUniversalDividend(amNext, am, next);
@@ -152,7 +165,7 @@ module.exports.get = function (pgp, currency, conf) {
           });
         },
         function (amNumber, next){
-          Amendment.getTheOneToBeVoted(amNumber, next);
+          Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
         },
         function (amNext, next){
           if (v.amendmentHash == amNext.previousHash) {
@@ -202,7 +215,7 @@ module.exports.get = function (pgp, currency, conf) {
                   next('Too early for this membership (' + toDateString(entryTS) + '): your membership must be max ' + toDateString(nextTS - 1) + ' (next AM date)');
                 },
                 function isGood (am) {
-                  entry.amNumber = (am && am.number) || -1;
+                  entry.amNumber = am && am.number >= 0 ? am.number : -1;
                   Key.wasMember(entry.issuer, entry.amNumber, next);
                 }
               );
@@ -238,7 +251,7 @@ module.exports.get = function (pgp, currency, conf) {
             },
             function (ctx, next){
               newContext = ctx;
-              Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
+              Amendment.getTheOneToBeVoted(entry.amNumber + 1, conf.sync.Algorithm, next);
             },
             function (amendmentNext, next){
               amNext = amendmentNext;
@@ -276,7 +289,7 @@ module.exports.get = function (pgp, currency, conf) {
                   next('Too early for this voting: retry when next amendment is voted.');
                 },
                 function isGood (am) {
-                  entry.amNumber = (am && am.number) || -1;
+                  entry.amNumber = am && am.number >= 0 ? am.number : -1;
                   Amendment.isProposedMember(entry.issuer, entry.amNumber + 1, next);
                 }
               );
@@ -289,7 +302,7 @@ module.exports.get = function (pgp, currency, conf) {
               next();
             },
             function (next){
-              Amendment.getTheOneToBeVoted(entry.amNumber + 1, next);
+              Amendment.getTheOneToBeVoted(entry.amNumber + 1, conf.sync.Algorithm, next);
             },
             function (amNext, next){
               async.waterfall([
@@ -328,11 +341,245 @@ module.exports.get = function (pgp, currency, conf) {
     }, done);
   };
 
-  this.getVote = function (amNumber, done) {
+  this.submitCF = function (entry, done) {
+    fifoCF.push(function (cb) {
+      async.waterfall([
+        function (next) {
+          if (['AnyKey', '1Sig'].indexOf(entry.algorithm) == -1) {
+            next('Algorithm must be either AnyKey or 1Sig');
+            return;
+          }
+          // OK
+          if (entry.selfGenerated) {
+            // Check Merkles & create ckeys
+            async.parallel({
+              membersJoining: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersIn,  entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', true),
+              membersLeaving: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersOut, entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', true),
+              votersJoining:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersIn,   entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', false),
+              votersLeaving:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersOut,  entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', false),
+            }, next);
+          } else {
+            // Increment count of witnesses
+            async.parallel({
+              membersJoining: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersIn',  '+', 'AnyKey', true),
+              membersLeaving: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersOut', '-', 'AnyKey', true),
+              votersJoining:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersIn',   '+', 'AnyKey', false),
+              votersLeaving:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersOut',  '-', 'AnyKey', false),
+            }, next);
+          }
+        },
+        function (res, next){
+          entry.save(function (err) {
+            next(err);
+          });
+        },
+        function (next){
+          that.tryToVote(entry.amendmentNumber + 1, entry.algorithm, function (err) {
+            if (err) logger.warn(err);
+            next(null, entry);
+          });
+        },
+      ], cb);
+    }, done);
+  };
+
+  that.tryToVote = function (amNumber, algo, done) {
+    // Tries to vote
+    var now = new Date();
+    var amCurrent = null;
+    async.waterfall([
+      function (next){
+        Amendment.current(next);
+      },
+      function (current, next) {
+        amCurrent = current;
+        CommunityFlow.getForAmendmentAndAlgo(amNumber -1, algo, next);
+      },
+      function (cfs, next){
+        logger.debug("%s flows / %s voters = %s%", cfs.length, amCurrent.votersCount, cfs.length/amCurrent.votersCount)
+        if (cfs.length/amCurrent.votersCount < 0.6) {
+          next('Not voting yet, waiting for >= 60% voters');
+          return;
+        } else {
+          next();
+        }
+      },
+      function (next){
+        Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
+      },
+      function (amNext, next){
+        var daemon = require('../lib/daemon');
+        if (daemon.judges.timeForVote(amNext)) {
+
+          var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+              privateKey.decrypt(conf.pgppasswd);
+          var ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
+          var cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
+          var amReal = amNext;
+          var raw = "";
+          async.waterfall([
+            function (next){
+              // Prepare AM
+              if (algo != amNext.algo) {
+                amReal = new Amendment();
+                amNext.copyTo(amReal);
+                console.log(amReal);
+                raw = amReal.getRaw();
+                async.waterfall([
+                  function (next){
+                    async.parallel({
+                      membersJoining: async.apply(lookForCKeys, '+', algo, true),
+                      membersLeaving: async.apply(lookForCKeys, '-', algo, true),
+                      votersJoining:  async.apply(lookForCKeys, '+', algo, false),
+                      votersLeaving:  async.apply(lookForCKeys, '-', algo, false),
+                      members:        async.apply(Key.getMembers.bind(Key)),
+                      voters:         async.apply(Key.getVoters.bind(Key)),
+                    }, next);
+                  },
+                  function (res, next){
+                    // Update Merkle of proposed members
+                    var members = [];
+                    var voters = [];
+                    res.members.forEach(function(m){
+                      members.push(m.fingerprint);
+                    });
+                    res.voters.forEach(function(m){
+                      voters.push(m.fingerprint);
+                    });
+                    amReal.membersChanges = [];
+                    amReal.votersChanges = [];
+                    res.membersJoining.leaves().forEach(function(fpr){
+                      amReal.membersChanges.push('+' + fpr);
+                      members.push(fpr);
+                    });
+                    res.membersLeaving.leaves().forEach(function(fpr){
+                      amReal.membersChanges.push('-' + fpr);
+                      var index = members.indexOf(fpr);
+                      if (~index) {
+                        members.splice(index, 1);
+                      }
+                    });
+                    res.votersJoining.leaves().forEach(function(fpr){
+                      amReal.votersChanges.push('+' + fpr);
+                      voters.push(fpr);
+                    });
+                    res.votersLeaving.leaves().forEach(function(fpr){
+                      amReal.votersChanges.push('-' + fpr);
+                      var index = voters.indexOf(fpr);
+                      if (~index) {
+                        voters.splice(index, 1);
+                      }
+                    });
+                    var merkleMembers = new Merkle();
+                    var merkleVoters = new Merkle();
+                    members.sort();
+                    voters.sort();
+                    merkleMembers.initialize(members);
+                    merkleVoters.initialize(voters);
+                    amReal.membersChanges.sort();
+                    amReal.membersCount = members.length;
+                    amReal.membersRoot = merkleMembers.root();
+                    amReal.votersChanges.sort();
+                    amReal.votersCount = voters.length;
+                    amReal.votersRoot = merkleVoters.root();
+                    amReal.save(function (err2) {
+                      raw = amReal.getRaw();
+                      next(err || err2);
+                    });
+                  }
+                ], next);
+              } else {
+                raw = amReal.getRaw();
+                next();
+              }
+            },
+            function (next){
+              jpgp().signsDetached(raw, privateKey, next);
+            },
+            function (signature, next){
+              var signedAm = raw + signature;
+              vucoin(conf.ipv6 || conf.ipv4 || conf.dns, conf.port, false, false, function (err, node) {
+                next(null, signedAm, node);
+              });
+            },
+            function (vote, node, next){
+              node.hdc.amendments.votes.post(vote, next);
+            },
+            function (json, next){
+              var am = new Amendment(json.amendment);
+              var issuer = cert.fingerprint;
+              var hash = json.signature.unix2dos().hash();
+              var basis = json.amendment.number;
+              Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
+            },
+            function (vote, next){
+              if (!vote) {
+                next('Self vote was not found');
+                return;
+              }
+              vote.selfGenerated = true;
+              vote.save(function  (err) {
+                next(err, vote);
+              });
+            },
+          ], next);
+          return;
+        }
+        next('Not yet');
+      },
+    ], done);
+  };
+
+  function updateCKeysFromRemoteMerkle (peerFPR, amNumber, method, op, algo, isMember, done) {
+    async.waterfall([
+      function (next){
+        Peer.getTheOne(peerFPR, next);
+      },
+      function (peer, next){
+        peer.connect(next);
+      },
+      function (node, next){
+        var f = eval(method);
+        f(amNumber, algo, { leaves: true }, next);
+      },
+      function (json, next){
+        async.forEach(json.leaves, function(leaf, callback){
+          CKey.increment(leaf, op, algo, isMember, callback);
+        }, next);
+      },
+    ], done);
+  }
+
+  function createCKeysFromLocalMerkle (merkleGet, op, algo, isMember, done) {
+    async.waterfall([
+      function (next){
+        merkleGet(next);
+      },
+      function (merkle, next){
+        createCKeys(merkle.leaves(), op, algo, isMember, next);
+      },
+    ], done);
+  }
+
+  function createCKeys (leaves, op, algo, isMember, done) {
+    async.forEach(leaves, function(leaf, callback){
+      var ck = new CKey();
+      ck.fingerprint = leaf;
+      ck.operation = op;
+      ck.algorithm = algo;
+      ck.member = isMember;
+      ck.count = 1;
+      ck.save(function (err) {
+        callback(null, ck);
+      });
+    }, done);
+  }
+
+  this.getVote = function (amNumber, algo, done) {
     fifoSelfVote.push(function (cb) {
       async.waterfall([
         function (next){
-          Vote.getSelf(amNumber, next);
+          Vote.getSelfForAlgo(amNumber, algo, next);
         },
         function (vote, next){
           if (vote){
@@ -343,7 +590,7 @@ module.exports.get = function (pgp, currency, conf) {
           var now = new Date();
           async.waterfall([
             function (next){
-              Amendment.getTheOneToBeVoted(amNumber, next);
+              Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
             },
             function (amNext, next){
               var daemon = require('../lib/daemon');
@@ -353,8 +600,84 @@ module.exports.get = function (pgp, currency, conf) {
                     privateKey.decrypt(conf.pgppasswd);
                 var ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
                 var cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
-                var raw = amNext.getRaw();
+                var amReal = amNext;
+                var raw = "";
                 async.waterfall([
+                  function (next){
+                    // Prepare AM
+                    if (algo != amNext.algo) {
+                      amReal = new Amendment();
+                      amNext.copyTo(amReal);
+                      console.log(amReal);
+                      raw = amReal.getRaw();
+                      async.waterfall([
+                        function (next){
+                          async.parallel({
+                            membersJoining: async.apply(lookForCKeys, '+', algo, true),
+                            membersLeaving: async.apply(lookForCKeys, '-', algo, true),
+                            votersJoining:  async.apply(lookForCKeys, '+', algo, false),
+                            votersLeaving:  async.apply(lookForCKeys, '-', algo, false),
+                            members:        async.apply(Key.getMembers.bind(Key)),
+                            voters:         async.apply(Key.getVoters.bind(Key)),
+                          }, next);
+                        },
+                        function (res, next){
+                          // Update Merkle of proposed members
+                          var members = [];
+                          var voters = [];
+                          res.members.forEach(function(m){
+                            members.push(m.fingerprint);
+                          });
+                          res.voters.forEach(function(m){
+                            voters.push(m.fingerprint);
+                          });
+                          amReal.membersChanges = [];
+                          amReal.votersChanges = [];
+                          res.membersJoining.leaves().forEach(function(fpr){
+                            amReal.membersChanges.push('+' + fpr);
+                            members.push(fpr);
+                          });
+                          res.membersLeaving.leaves().forEach(function(fpr){
+                            amReal.membersChanges.push('-' + fpr);
+                            var index = members.indexOf(fpr);
+                            if (~index) {
+                              members.splice(index, 1);
+                            }
+                          });
+                          res.votersJoining.leaves().forEach(function(fpr){
+                            amReal.votersChanges.push('+' + fpr);
+                            voters.push(fpr);
+                          });
+                          res.votersLeaving.leaves().forEach(function(fpr){
+                            amReal.votersChanges.push('-' + fpr);
+                            var index = voters.indexOf(fpr);
+                            if (~index) {
+                              voters.splice(index, 1);
+                            }
+                          });
+                          var merkleMembers = new Merkle();
+                          var merkleVoters = new Merkle();
+                          members.sort();
+                          voters.sort();
+                          merkleMembers.initialize(members);
+                          merkleVoters.initialize(voters);
+                          amReal.membersChanges.sort();
+                          amReal.membersCount = members.length;
+                          amReal.membersRoot = merkleMembers.root();
+                          amReal.votersChanges.sort();
+                          amReal.votersCount = voters.length;
+                          amReal.votersRoot = merkleVoters.root();
+                          amReal.save(function (err2) {
+                            raw = amReal.getRaw();
+                            next(err || err2);
+                          });
+                        }
+                      ], next);
+                    } else {
+                      raw = amReal.getRaw();
+                      next();
+                    }
+                  },
                   function (next){
                     jpgp().signsDetached(raw, privateKey, next);
                   },
@@ -383,6 +706,128 @@ module.exports.get = function (pgp, currency, conf) {
                     vote.save(function  (err) {
                       next(err, vote);
                     });
+                  },
+                ], next);
+                return;
+              }
+              next('Not yet');
+            },
+          ], next);
+        },
+      ], cb);
+    }, done);
+  };
+
+  function lookForCKeys (op, algo, areMembers, done) {
+    async.waterfall([
+      function (next){
+        CKey.findThose(op, algo, areMembers, next);
+      },
+      function (ckeys, next){
+        // Take all keys between AVG and +/- STDVAR
+        var total = 0;
+        ckeys.forEach(function(ck){
+          total += ck.count;
+        });
+        if (total > 0) {
+          var avg = total / ckeys.length;
+          var variance = 0;
+          ckeys.forEach(function(ck){
+            variance += (ck.count - avg)*(ck.count - avg);
+          });
+          variance /= ckeys.length;
+          var stdvar = Math.sqrt(variance);
+          var min = avg - stdvar;
+          var max = avg + stdvar;
+          var keys = [];
+          ckeys.forEach(function(ck){
+            if (ck.count >= min || ck.count <= max)
+              keys.push(ck.fingerprint);
+          });
+          next(null, keys);
+        } else {
+          // No keys
+          next(null, []);
+        }
+      },
+    ], done);
+  }
+
+  this.getFlow = function (amNumber, algo, done) {
+    if (amNumber == 0) {
+      done('Not available for AM#0');
+      return;
+    }
+    fifoSelfCommunityFlow.push(function (cb) {
+      async.waterfall([
+        function (next){
+          CommunityFlow.getSelf(amNumber - 1, algo, function (err, flow) {
+            next(null, flow);
+          });
+        },
+        function (cf, next){
+          if (cf){
+            next(null, cf);
+            return;
+          }
+          // Tries to create CF
+          var now = new Date();
+          async.waterfall([
+            function (next){
+              Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
+            },
+            function (amNext, next){
+              var daemon = require('../lib/daemon');
+              if (daemon.judges.timeForVote(amNext)) {
+
+                var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+                    privateKey.decrypt(conf.pgppasswd);
+                var ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
+                var cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
+                var cf = new CommunityFlow();
+                cf.version = "1";
+                cf.currency = currency;
+                cf.algorithm = algo;
+                cf.date = new Date();
+                cf.issuer = cert.fingerprint;
+                cf.amendmentNumber = amNext.number - 1;
+                cf.amendmentHash = amNext.previousHash;
+                var raw = "";
+                async.waterfall([
+                  function (next) {
+                    async.parallel({
+                      merkleMembersJoining: async.apply(Merkle.membersIn,  amNext.number, algo),
+                      merkleMembersLeaving: async.apply(Merkle.membersOut, amNext.number, algo),
+                      merkleVotersJoining:  async.apply(Merkle.votersIn,   amNext.number, algo),
+                      merkleVotersLeaving:  async.apply(Merkle.votersOut,  amNext.number, algo),
+                    }, next);
+                  },
+                  function (merkles, next){
+                    cf.membersJoiningCount = merkles.merkleMembersJoining.count();
+                    cf.membersLeavingCount = merkles.merkleMembersLeaving.count();
+                    cf.votersJoiningCount =  merkles.merkleVotersJoining.count();
+                    cf.votersLeavingCount =  merkles.merkleVotersLeaving.count();
+                    cf.membersJoiningRoot = merkles.merkleMembersJoining.root();
+                    cf.membersLeavingRoot = merkles.merkleMembersLeaving.root();
+                    cf.votersJoiningRoot =  merkles.merkleVotersJoining.root();
+                    cf.votersLeavingRoot =  merkles.merkleVotersLeaving.root();
+                    raw = cf.getRaw();
+                    jpgp().signsDetached(raw, privateKey, next);
+                  },
+                  function (signature, next){
+                    cf.signature = signature;
+                    cf.selfGenerated = true;
+                    that.submitCF(cf, next);
+                  },
+                  function (submitted, next){
+                    CommunityFlow.getTheOne(submitted.amendmentNumber, submitted.issuer, algo, next);
+                  },
+                  function (cf, next){
+                    if (!cf) {
+                      next('Self CommunityFlow was not found');
+                      return;
+                    }
+                    next(null, cf);
                   },
                 ], next);
                 return;
@@ -640,15 +1085,15 @@ module.exports.get = function (pgp, currency, conf) {
     whatToDo.state["0"]["-1"] = Key.setLastMSState;
     whatToDo.state["-1"]["0"] = Key.setLastMSState;
 
-    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.membersIn, amNext.number));
-    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersIn, amNext.number));
+    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.membersIn, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersIn, amNext.number, conf.sync.Algorithm));
     whatToDo.merkleIn["0"]["-1"] = doNothingWithMerkleInOut;
     whatToDo.merkleIn["-1"]["0"] = doNothingWithMerkleInOut;
 
     whatToDo.merkleOut["0"]["1"] = doNothingWithMerkleInOut;
     whatToDo.merkleOut["1"]["0"] = doNothingWithMerkleInOut;
-    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.membersOut, amNext.number));
-    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersOut, amNext.number));
+    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.membersOut, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersOut, amNext.number, conf.sync.Algorithm));
 
     function doNothing (k, changes, done) {
       done();
@@ -750,15 +1195,15 @@ module.exports.get = function (pgp, currency, conf) {
     whatToDo.state["0"]["-1"] = Key.setLastState;
     whatToDo.state["-1"]["0"] = Key.setLastState;
 
-    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.votersIn, amNext.number));
-    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersIn, amNext.number));
+    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.votersIn, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersIn, amNext.number, conf.sync.Algorithm));
     whatToDo.merkleIn["0"]["-1"] = doNothingWithMerkleInOut;
     whatToDo.merkleIn["-1"]["0"] = doNothingWithMerkleInOut;
 
     whatToDo.merkleOut["0"]["1"] = doNothingWithMerkleInOut;
     whatToDo.merkleOut["1"]["0"] = doNothingWithMerkleInOut;
-    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.votersOut, amNext.number));
-    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersOut, amNext.number));
+    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.votersOut, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersOut, amNext.number, conf.sync.Algorithm));
 
     function doNothingWithKey (k, changes, done) {
       done();

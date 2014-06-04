@@ -254,6 +254,17 @@ VoteSchema.statics.getSelf = function (amNumber, done) {
   });
 };
 
+VoteSchema.statics.getSelfForAlgo = function (amNumber, algo, done) {
+  
+  this
+    .find({ selfGenerated: true, algo: algo, basis: amNumber })
+    .sort({ 'sigDate': -1 })
+    .limit(1)
+    .exec(function (err, votes) {
+      done(null, votes.length == 1 ? votes[0] : null);
+  });
+};
+
 VoteSchema.statics.getByIssuerHashAndBasis = function (issuer, hash, amNumber, done) {
   
   this

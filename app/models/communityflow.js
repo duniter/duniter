@@ -8,10 +8,11 @@ var Schema   = mongoose.Schema;
 var CommunityFlowSchema = new Schema({
   version: String,
   currency: String,
-  issuer: { type: String, unique: true },
+  issuer: { type: String },
   date: { type: Date },
   amendmentNumber: Number,
   amendmentHash: String,
+  algorithm: String,
   membersJoiningCount: Number,
   membersJoiningRoot: String,
   membersLeavingCount: Number,
@@ -22,6 +23,7 @@ var CommunityFlowSchema = new Schema({
   votersLeavingRoot: String,
   signature: String,
   propagated: { type: Boolean, default: false },
+  selfGenerated: { type: Boolean, default: false },
   hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
@@ -37,6 +39,35 @@ CommunityFlowSchema.methods = {
 
   keyID: function () {
     return this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
+  },
+  
+  json: function() {
+    var that = this;
+    var json = { raw: this.getRaw() };
+    [
+      "version",
+      "amendmentNumber",
+      "membersJoiningCount",
+      "membersLeavingCount",
+      "votersJoiningCount",
+      "votersLeavingCount",
+    ].forEach(function(field){
+      json[field] = parseInt(that[field], 10);
+    });
+    [
+      "currency",
+      "amendmentHash",
+      "algorithm",
+      "membersJoiningRoot",
+      "membersLeavingRoot",
+      "votersJoiningRoot",
+      "votersLeavingRoot",
+      "issuer",
+    ].forEach(function(field){
+      json[field] = that[field] || "";
+    });
+    json.date = this.date && this.date.timestamp();
+    return json;
   },
   
   parse: function(rawEntryReq, callback) {
@@ -61,6 +92,7 @@ CommunityFlowSchema.methods = {
         {prop: "currency",            regexp: /Currency: (.*)/},
         {prop: "amendmentNumber",     regexp: /Amendment: (.*)/, parser: parseAmendmentNumber},
         {prop: "amendmentHash",       regexp: /Amendment: (.*)/, parser: parseAmendmentHash},
+        {prop: "algorithm",           regexp: /Algorithm: (.*)/},
         {prop: "membersJoiningCount", regexp: /MembersJoining: (.*)/, parser: parseMerkleNumber},
         {prop: "membersJoiningRoot",  regexp: /MembersJoining: (.*)/, parser: parseMerkleRoot},
         {prop: "membersLeavingCount", regexp: /MembersLeaving: (.*)/, parser: parseMerkleNumber},
@@ -117,10 +149,15 @@ CommunityFlowSchema.methods = {
     raw += "Amendment: " + [this.amendmentNumber, this.amendmentHash].join('-') + "\n";
     raw += "Issuer: " + this.issuer + "\n";
     raw += "Date: " + this.date.timestamp() + "\n";
-    raw += "MembersJoining: " + [this.membersJoiningCount, this.membersJoiningRoot].join('-') + "\n";
-    raw += "MembersLeaving: " + [this.membersLeavingCount, this.membersLeavingRoot].join('-') + "\n";
-    raw += "VotersJoining: " + [this.votersJoiningCount, this.votersJoiningRoot].join('-') + "\n";
-    raw += "VotersLeaving: " + [this.votersLeavingCount, this.votersLeavingRoot].join('-') + "\n";
+    raw += "Algorithm: " + this.algorithm + "\n";
+    if (this.membersJoiningRoot)
+      raw += "MembersJoining: " + [this.membersJoiningCount, this.membersJoiningRoot].join('-') + "\n";
+    if (this.membersLeavingRoot)
+      raw += "MembersLeaving: " + [this.membersLeavingCount, this.membersLeavingRoot].join('-') + "\n";
+    if (this.votersJoiningRoot)
+      raw += "VotersJoining: " + [this.votersJoiningCount, this.votersJoiningRoot].join('-') + "\n";
+    if (this.votersLeavingRoot)
+      raw += "VotersLeaving: " + [this.votersLeavingCount, this.votersLeavingRoot].join('-') + "\n";
     return raw.unix2dos();
   },
 
@@ -211,8 +248,8 @@ function simpleLineExtraction(pr, rawEntry, cap, parser) {
   return;
 }
 
-CommunityFlowSchema.statics.getTheOne = function (amNumber, amHash, done) {
-  this.find({ amNumber: amNumber, amHash: amHash }, function (err, entries) {
+CommunityFlowSchema.statics.getTheOne = function (amNumber, issuer, algo, done) {
+  this.find({ amendmentNumber: amNumber, issuer: issuer, algorithm: algo }, function (err, entries) {
     if(entries && entries.length == 1){
       done(err, entries[0]);
       return;
@@ -225,6 +262,26 @@ CommunityFlowSchema.statics.getTheOne = function (amNumber, amHash, done) {
       done('More than one CommunityFlow entry found');
     }
   });
+}
+
+CommunityFlowSchema.statics.getSelf = function (amNumber, algo, done) {
+  this.find({ amendmentNumber: amNumber, algorithm: algo, selfGenerated: true }, function (err, entries) {
+    if(entries && entries.length == 1){
+      done(err, entries[0]);
+      return;
+    }
+    if(!entries || entries.length == 0){
+      done('No CommunityFlow entry found');
+      return;
+    }
+    if(entries || entries.length > 1){
+      done('More than one CommunityFlow entry found');
+    }
+  });
+}
+
+CommunityFlowSchema.statics.getForAmendmentAndAlgo = function (amNumber, algo, done) {
+  this.find({ amendmentNumber: amNumber, algorithm: algo }, done);
 }
 
 var CommunityFlow = mongoose.model('CommunityFlow', CommunityFlowSchema);

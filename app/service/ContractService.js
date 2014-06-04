@@ -34,7 +34,7 @@ module.exports.get = function (currency, conf) {
         });
       },
       function (next){
-        Amendment.getTheOneToBeVoted(current ? current.number + 1 : 0, function (err, am) {
+        Amendment.getTheOneToBeVoted(current ? current.number + 1 : 0, conf.sync.Algorithm, function (err, am) {
           proposed = am;
           next();
         });

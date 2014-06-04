@@ -46,6 +46,7 @@ program
   .option('--msvalidity <timestamp>', 'Duration of a valid membership, in seconds', parseInt)
   .option('--vtvalidity <timestamp>', 'Duration of a valid voter, in seconds', parseInt)
   .option('--openpgpjs', 'Prefer using embedded Openpgpjs implementation for signing requests')
+  .option('--algorithm <AnyKey|1Sig>', 'Algorithm to use for membership')
   ;
 
 program
@@ -288,7 +289,8 @@ function overrideConf(conf) {
       UDPercent: program.udpercent,
       Consensus: program.consensus,
       MSExpires: program.msvalidity,
-      VTExpires: program.vtvalidity
+      VTExpires: program.vtvalidity,
+      Algorithm: program.algorithm
     }
   };
 
@@ -316,7 +318,8 @@ function overrideConf(conf) {
     UDPercent: cli.sync.UDPercent || conf.sync.UDPercent,
     Consensus: cli.sync.Consensus || conf.sync.Consensus,
     MSExpires: cli.sync.MSExpires || conf.sync.MSExpires,
-    VTExpires: cli.sync.VTExpires || conf.sync.VTExpires
+    VTExpires: cli.sync.VTExpires || conf.sync.VTExpires,
+    Algorithm: cli.sync.Algorithm || conf.sync.Algorithm
   };
 
   // Specific internal settings

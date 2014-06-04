@@ -37,16 +37,16 @@ describe('Community flow', function(){
       should.exist(entry.date);
     });
 
-    it('its computed hash should be E698B2D774C53DE05C58288D97B580BBB67F0D76', function(){
-      assert.equal(entry.hash, 'E698B2D774C53DE05C58288D97B580BBB67F0D76');
+    it('its computed hash should be A3EDCD9434938A0745C08DBD13FE436BE32053FB', function(){
+      assert.equal(entry.hash, 'A3EDCD9434938A0745C08DBD13FE436BE32053FB');
     });
 
-    it('its manual hash should be E698B2D774C53DE05C58288D97B580BBB67F0D76', function(){
-      assert.equal(sha1(entry.getRaw()).toUpperCase(), 'E698B2D774C53DE05C58288D97B580BBB67F0D76');
+    it('its manual hash should be A3EDCD9434938A0745C08DBD13FE436BE32053FB', function(){
+      assert.equal(sha1(entry.getRaw()).toUpperCase(), 'A3EDCD9434938A0745C08DBD13FE436BE32053FB');
     });
 
-    it('its manual signed hash should be 3F920BF9F432DEDED58565E2AF180642968A02B0', function(){
-      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), '3F920BF9F432DEDED58565E2AF180642968A02B0');
+    it('its manual signed hash should be 2C92ED61AACE5D805D4EF56F508FAB59207F6D83', function(){
+      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), '2C92ED61AACE5D805D4EF56F508FAB59207F6D83');
     });
   });
 });

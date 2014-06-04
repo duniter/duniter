@@ -26,7 +26,8 @@ var ConfigurationSchema = new Schema({
     UDPercent: 0.007376575, // 0.73%
     Consensus: 2/3,
     MSExpires: 3600*24*30.4375*6, // 6 months
-    VTExpires: 3600*24*30.4375*1 // 1 months
+    VTExpires: 3600*24*30.4375*1, // 1 months
+    Algorithm: 'AnyKey' 
   }}
 });
 

@@ -12,6 +12,7 @@ var AmendmentSchema = new Schema({
   currency: String,
   number: {"type": Number, "default": 0},
   generated: {"type": Number, "default": 0},
+  algo: String,
   dividend: Number,
   coinAlgo: String,
   coinBase: Number,
@@ -52,6 +53,7 @@ AmendmentSchema.methods = {
       "currency",
       "number",
       "generated",
+      "algo",
       "dividend",
       "coinAlgo",
       "coinBase",
@@ -299,9 +301,9 @@ AmendmentSchema.statics.getPreviouslyPromotedWithDividend = function (done) {
   });
 };
 
-AmendmentSchema.statics.getTheOneToBeVoted = function (number, done) {
+AmendmentSchema.statics.getTheOneToBeVoted = function (number, algo, done) {
 
-  this.find({ number: number, selfGenerated: true }, function (err, amends) {
+  this.find({ number: number, algo: algo, selfGenerated: true }, function (err, amends) {
     if(amends && amends.length == 1){
       done(err, amends[0]);
       return;

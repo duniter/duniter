@@ -175,16 +175,38 @@ function ParameterNamespace (currency) {
   };
 
   this.getAmendmentNumber = function (req, callback) {
-    if(!req.params || !req.params.amendment_number){
+    if(!req.params || !req.params.am_number){
       callback("Amendment number is required");
       return;
     }
-    var matches = req.params.amendment_number.match(/^(\d+)$/);
+    var matches = req.params.am_number.match(/^(\d+)$/);
     if(!matches){
       callback("Amendment number format is incorrect, must be an integer value");
       return;
     }
     callback(null, matches[1]);
+  };
+
+  this.getAmendmentNumberAndAlgo = function (req, callback) {
+    if(!req.params || !req.params.am_number){
+      callback("Amendment number is required");
+      return;
+    }
+    if(!req.params || !req.params.algo){
+      callback("Algorithm is required");
+      return;
+    }
+    var matchAMNumber = req.params.am_number.match(/^(\d+)$/);
+    if(!matchAMNumber){
+      callback("Amendment number format is incorrect, must be an integer value");
+      return;
+    }
+    var matchAlgo = req.params.algo.match(/^(AnyKey|1Sig)$/);
+    if(!matchAlgo){
+      callback("Algorithm is incorrect, must be either AnyKey or 1Sig");
+      return;
+    }
+    callback(null, matchAMNumber[1], matchAlgo[1]);
   };
 
   this.getCoinID = function (req, callback) {

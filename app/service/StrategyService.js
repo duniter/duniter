@@ -9,6 +9,7 @@ var Voting     = mongoose.model('Voting');
 var PublicKey  = mongoose.model('PublicKey');
 var Merkle     = mongoose.model('Merkle');
 var Vote       = mongoose.model('Vote');
+var CKey       = mongoose.model('CKey');
 var Coin       = mongoose.model('Coin');
 var Key        = mongoose.model('Key');
 var logger     = require('../lib/logger')('amendment');
@@ -57,6 +58,7 @@ module.exports.get = function (pgp, currency, conf) {
             addVoters:      async.apply(async.forEach, am.getNewVoters(),       Key.addVoter),
             removeMembers:  async.apply(async.forEach, am.getLeavingMembers(),  Key.removeMember),
             removeVoters:   async.apply(async.forEach, am.getLeavingVoters(),   Key.removeVoter),
+            removeCKeys:    async.apply(CKey.remove.bind(CKey), {}),
 
             // Leaving voters have no more current voting document
             currentVoting:  async.apply(async.forEach, am.getLeavingVoters(),   async.apply(Voting.removeCurrents.bind(Voting))),

@@ -77,6 +77,7 @@ Currency: beta_brousouf
 Amendment: 54-7F64036BF4ED24027865F0BC17861E23D9CE4CA8
 Issuer: 405715EC64289D1F43808F57EC51F273CBC0FA17
 Date: 1401798895
+Algorithm: AnyKey
 MembersJoining: 90-8518C1F053B6F5BB9D27ED37F4061AE5CC083511
 MembersLeaving: 2-5A0CEE18613AEEBBBE39B1CDBE627D879CD357EB
 VotersJoining: 8-B91D119FE7A22013190B89614BC4A409AC51D149
@@ -96,6 +97,7 @@ Field            | Description
 `Amendment`      | Identify current amendment this node is based upon, thus on which members & voters changes are based.
 `Issuer`         | Full PGP key fingerprint issuing this message.
 `Date`           | Creation date of this message. Timestamp. This date may be different from signature's date.
+`Algorithm`      | Algorithm used for membership acceptation. May be either `AnyKey` or `1Sig`.
 `MembersJoining` | [Merkle summary](#merkle_summary) of members potentially joining
 `MembersLeaving` | [Merkle summary](#merkle_summary) of members potentially leaving
 `VotersJoining`  | [Merkle summary](#merkle_summary) of voters potentially joining
@@ -112,5 +114,17 @@ Format: `LEAVES_COUNT-ROOT_HASH`.
 ###### Example
 
 Value `90-8518C1F053B6F5BB9D27ED37F4061AE5CC083511` is a Merkle summary of a Merkle resource holding `90` leaves and whose root hash is `8518C1F053B6F5BB9D27ED37F4061AE5CC083511`.
+
+##### Membership algorithms
+
+Such algorithms defines the rules for a member `IN` request's interpretation, leading to integrate the member in the community if it fits the algorithm's rules.
+
+###### `AnyKey`
+
+This algorithms *accepts* any key as valid for a membership. Thus, a key asking for joining will always be accepted in the community, without checking any signature on the key.
+
+###### `1Sig`
+
+This algorithm *accepts* any key that have *at least* 1 signature from an existing member in the community. Others are simply refused.
 
 ## Rules

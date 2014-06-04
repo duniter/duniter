@@ -99,6 +99,10 @@ MerkleSchema.methods = {
 
   leaves: function () {
     return this.levels[this.depth];
+  },
+
+  count: function () {
+    return this.leaves().length;
   }
 };
 
@@ -153,20 +157,20 @@ MerkleSchema.statics.proposedVoters = function (done) {
   retrieve({ type: 'proposedVoters', criteria: '{}' }, done);
 };
 
-MerkleSchema.statics.membersIn = function (number, done) {
-  retrieve({ type: 'membersIn', criteria: '{"number":'+number+'}' }, done);
+MerkleSchema.statics.membersIn = function (number, algo, done) {
+  retrieve({ type: 'membersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
-MerkleSchema.statics.membersOut = function (number, done) {
-  retrieve({ type: 'membersOut', criteria: '{"number":'+number+'}' }, done);
+MerkleSchema.statics.membersOut = function (number, algo, done) {
+  retrieve({ type: 'membersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
-MerkleSchema.statics.votersIn = function (number, done) {
-  retrieve({ type: 'votersIn', criteria: '{"number":'+number+'}' }, done);
+MerkleSchema.statics.votersIn = function (number, algo, done) {
+  retrieve({ type: 'votersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
-MerkleSchema.statics.votersOut = function (number, done) {
-  retrieve({ type: 'votersOut', criteria: '{"number":'+number+'}' }, done);
+MerkleSchema.statics.votersOut = function (number, algo, done) {
+  retrieve({ type: 'votersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {

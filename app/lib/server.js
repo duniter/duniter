@@ -17,7 +17,7 @@ var logger     = require('./logger')('http');
 var pgplogger  = require('./logger')('PGP');
 var log4js     = require('log4js');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting', 'CommunityFlow'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting', 'CommunityFlow'];
 
 function initModels() {
   models.forEach(function (entity) {
@@ -118,6 +118,7 @@ module.exports.database = {
       'coins',
       'forwards',
       'keys',
+      'ckeys',
       'merkles',
       'peers',
       'publickeys',
@@ -341,12 +342,13 @@ module.exports.express = {
       app.get(    '/registry/community/voters/:fpr/current',        reg.votingCurrent);
       app.get(    '/registry/community/voters/:fpr/history',        reg.votingHistory);
       app.get(    '/registry/amendment',                            reg.amendmentCurrent);
-      app.get(    '/registry/amendment/:amendment_number',          reg.amendmentNext);
-      app.get(    '/registry/amendment/:amendment_number/members/in', reg.membersIn);
-      app.get(    '/registry/amendment/:amendment_number/members/out',reg.membersOut);
-      app.get(    '/registry/amendment/:amendment_number/voters/in',  reg.votersIn);
-      app.get(    '/registry/amendment/:amendment_number/voters/out', reg.votersOut);
-      app.get(    '/registry/amendment/:amendment_number/vote',     reg.askVote);
+      app.get(    '/registry/amendment/:am_number',                  reg.amendmentNext);
+      app.get(    '/registry/amendment/:am_number/:algo/members/in', reg.membersIn);
+      app.get(    '/registry/amendment/:am_number/:algo/members/out',reg.membersOut);
+      app.get(    '/registry/amendment/:am_number/:algo/voters/in',  reg.votersIn);
+      app.get(    '/registry/amendment/:am_number/:algo/voters/out', reg.votersOut);
+      app.get(    '/registry/amendment/:am_number/:algo/flow',       reg.askFlow);
+      app.get(    '/registry/amendment/:am_number/:algo/vote',       reg.askVote);
 
       // If the node's peering entry does not exist or is outdated,
       // a new one is generated.
@@ -467,7 +469,7 @@ module.exports.express = {
         function (currentAM, next) {
           var nextAMNumber = currentAM && currentAM.number + 1 || 0;
           // Create NEXT AM proposal if not existing
-          mongoose.model('Amendment').getTheOneToBeVoted(nextAMNumber, function (err, am) {
+          mongoose.model('Amendment').getTheOneToBeVoted(nextAMNumber, conf.sync.Algorithm, function (err, am) {
             if (err || !am) {
               logger.info('Creating next AM (#%d) proposal...', nextAMNumber);
               SyncService.createNext(currentAM, next);

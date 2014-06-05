@@ -40,17 +40,20 @@
       * [coins/view/[COIN_ID]/history](#coinsviewcoin_idhistory)
   * [registry/](#registry)
       * [parameters](#parameters)
-      * [community/members (GET)](#communitymembers-get)
       * [community/members (POST)](#communitymembers-post)
       * [community/members/[PGP_FINGERPRINT]/current](#communitymemberspgp_fingerprintcurrent)
       * [community/members/[PGP_FINGERPRINT]/history](#communitymemberspgp_fingerprinthistory)
-      * [community/voters (GET)](#communityvoters-get)
       * [community/voters (POST)](#communityvoters-post)
       * [community/voters/[PGP_FINGERPRINT]/current](#communityvoterspgp_fingerprintcurrent)
       * [community/voters/[PGP_FINGERPRINT]/history](#communityvoterspgp_fingerprinthistory)
       * [amendment](#amendment)
       * [amendment/[AM_NUMBER]](#amendmentam_number)
-      * [amendment/[AM_NUMBER]/vote](#amendmentam_numbervote)
+      * [amendment/[AM_NUMBER]/[ALGO]/members/in](#amendmentam_numberalgomembersin)
+      * [amendment/[AM_NUMBER]/[ALGO]/members/out](#amendmentam_numberalgomembersout)
+      * [amendment/[AM_NUMBER]/[ALGO]/voters/in](#amendmentam_numberalgovotersin)
+      * [amendment/[AM_NUMBER]/[ALGO]/voters/out](#amendmentam_numberalgovotersout)
+      * [amendment/[AM_NUMBER]/[ALGO]/flow](#amendmentam_numberalgoflow)
+      * [amendment/[AM_NUMBER]/[ALGO]/vote](#amendmentam_numberalgovote)
 
 ## Overview
 
@@ -119,7 +122,15 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |           `-- current
         `-- amendment/
             `-- [AM_NUMBER]/
-                `-- vote
+                `-- [ALGO]
+                    |-- members
+                    |   |-- in
+                    |   `-- out
+                    |-- voters
+                    |   |-- in
+                    |   `-- out
+                    |-- flow
+                    `-- vote
 
 ## Merkle URLs
 
@@ -131,6 +142,10 @@ Merkle URL is a special kind of URL applicable for resources:
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
 * `hdc/transactions/recipient/[PGP_FINGERPRINT]`
+* `registry/amendment/[AM_NUMBER]/[ALGO]/members/in`
+* `registry/amendment/[AM_NUMBER]/[ALGO]/members/out`
+* `registry/amendment/[AM_NUMBER]/[ALGO]/voters/in`
+* `registry/amendment/[AM_NUMBER]/[ALGO]/voters/out`
 
 Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
@@ -237,6 +252,10 @@ Merkle URL                                                                | Leaf
 `hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Fingerprint of the voter                | By fingerprint string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of (transaction + signature)       | By hash string sort, ascending.
 `hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of (transaction + signature)       | By hash string sort, ascending.
+`registry/amendment/[AM_NUMBER]/[ALGO]/members/in`                        | Fingerprint of the key                  | By fingerprint string sort, ascending.
+`registry/amendment/[AM_NUMBER]/[ALGO]/members/out`                       | Fingerprint of the key                  | By fingerprint string sort, ascending.
+`registry/amendment/[AM_NUMBER]/[ALGO]/voters/in`                         | Fingerprint of the key                  | By fingerprint string sort, ascending.
+`registry/amendment/[AM_NUMBER]/[ALGO]/voters/out`                        | Fingerprint of the key                  | By fingerprint string sort, ascending.
 
 #### Unicity
 
@@ -1421,50 +1440,6 @@ Consensus         | Percent of voters required to valid an Amendment
 MSExpires         | Delay by which a membership is to be considered expired
 VTExpires         | Delay by which a voting is to be considered expired
 
-#### `community/members (GET)`
-
-**Goal**
-
-Merkle of pending [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) documents for next amendment.
-
-> * Memberships that are not valid are not taken in account here
-> * Memberships than are cancelled because of multiple memberships sent for next amendment are not taken in account either
-> * Only valid and single memberships per member are interpreted in this Merkle
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: membership
-```json
-{
-  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "membership": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-      "membership": "IN",
-      "sigDate": 1390739944,
-      "raw": "Version: 1\r\n...Membership: IN\r\n"
-    }
-  }
-}
-```
-
 #### `community/members (POST)`
 
 **Goal**
@@ -1574,49 +1549,6 @@ A list of posted membership requests + posted signatures.
       }
     }
   ]
-}
-```
-
-#### `community/voters (GET)`
-
-**Goal**
-
-Merkle of pending [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) documents for next amendment.
-
-> * Votings that are not valid are not taken in account here
-> * Votings than are cancelled because of multiple votings sent for next amendment are not taken in account either
-> * Only valid and single votings per member are interpreted in this Merkle
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: voting
-```json
-{
-  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
-    "voting": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-      "sigDate": 1390740799,
-      "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
-    }
-  }
 }
 ```
 
@@ -1798,18 +1730,232 @@ Amendment to be voted by this node if voting happened.
 }
 ```
 
-#### `amendment/[AM_NUMBER]/vote`
+#### `amendment/[AM_NUMBER]/[ALGO]/members/in`
+
+**Goal**
+
+Merkle URL referencing members who are joining in community.
+
+**Parameters**
+
+Name              | Value                                                                    | Method
+----------------- | -------------------------------------------------------------            | ------
+`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
+`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: membership
+```json
+{
+  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "membership": {
+      "version": "1",
+      "currency": "beta_brousouf",
+      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+      "membership": "IN",
+      "sigDate": 1390739944,
+      "raw": "Version: 1\r\n...Membership: IN\r\n"
+    }
+  }
+}
+```
+
+#### `amendment/[AM_NUMBER]/[ALGO]/members/out`
+
+**Goal**
+
+Merkle URL referencing members who are leaving out community.
+
+**Parameters**
+
+Name              | Value                                                                    | Method
+----------------- | -------------------------------------------------------------            | ------
+`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
+`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: membership or empty string.
+```json
+{
+  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "membership": {
+      "version": "1",
+      "currency": "beta_brousouf",
+      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+      "membership": "OUT",
+      "sigDate": 1390749944,
+      "raw": "Version: 1\r\n...Membership: IN\r\n"
+    }
+  }
+}
+```
+> Note: as a member may leave community for other reasons than having asked to, "value" may not contain an object but just an empty string.
+
+#### `amendment/[AM_NUMBER]/[ALGO]/voters/in`
+
+**Goal**
+
+Merkle URL referencing voters who are joining in voters.
+
+**Parameters**
+
+Name              | Value                                                                    | Method
+----------------- | -------------------------------------------------------------            | ------
+`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
+`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: voting
+```json
+{
+  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "voting": {
+      "version": "1",
+      "currency": "beta_brousouf",
+      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+      "sigDate": 1390740799,
+      "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
+    }
+  }
+}
+```
+
+#### `amendment/[AM_NUMBER]/[ALGO]/voters/out`
+
+**Goal**
+
+Merkle URL referencing voters who are leaving out community.
+
+**Parameters**
+
+Name              | Value                                                                    | Method
+----------------- | -------------------------------------------------------------            | ------
+`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
+`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
+
+**Returns**
+
+Merkle URL result.
+```json
+{
+  "depth": 3,
+  "nodesCount": 6,
+  "leavesCount": 5,
+  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
+}
+```
+
+Merkle URL leaf: voting or empty string.
+```json
+{
+  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
+  "value": {
+    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "voting": {
+      "version": "1",
+      "currency": "beta_brousouf",
+      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+      "sigDate": 1390740799,
+      "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
+    }
+  }
+}
+```
+> Note: as a member may leave community for other reasons than having asked to, "value" may not contain an object but just an empty string.
+
+#### `amendment/[AM_NUMBER]/[ALGO]/flow`
+
+**Goal**
+
+GET the [Community Flow](./Registry.md#community-flow) document associated to an amendment for a given membership algorithm.
+
+**Parameters**
+
+Name              | Value                                                                    | Method
+----------------- | -------------------------------------------------------------            | ------
+`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
+`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
+
+**Returns**
+
+Current node's voting amendment + signature, or HTTP 404 if not available yet.
+```json
+{
+  "communityflow": {
+    "raw": "Version: 1\r\nCurrency: beta_brousouf\r\nAmendment: 1-58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7\r\nIssuer: C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\nDate: 1401894350\r\nAlgorithm: AnyKey\r\n",
+    "version": 1,
+    "amendmentNumber": 1,
+    "membersJoiningCount": 0,
+    "membersLeavingCount": 0,
+    "votersJoiningCount": 0,
+    "votersLeavingCount": 0,
+    "currency": "beta_brousouf",
+    "amendmentHash": "58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7",
+    "algorithm": "AnyKey",
+    "membersJoiningRoot": "",
+    "membersLeavingRoot": "",
+    "votersJoiningRoot": "",
+    "votersLeavingRoot": "",
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "date": 1401894350
+  }
+}
+```
+
+#### `amendment/[AM_NUMBER]/[ALGO]/vote`
 
 
 **Goal**
 
 GET the vote of current node for given amendment number (both amendment + signature). Such vote may be used by any node to broadcast the whole network.
 
+As for a given amendment number it can exist several ways to accept members, the `ALGO` parameters is used to differenciate such amendments. Thus, amendments `#1-AnyKey` is likely to not have the same members changes than `#1-1Sig`, leading to 2 different amendments.
+
 **Parameters**
 
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`AM_NUMBER`       | The amendment number to be promoted.                          | URL
+Name              | Value                                                                    | Method
+----------------- | -------------------------------------------------------------            | ------
+`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
+`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
 
 **Returns**
 

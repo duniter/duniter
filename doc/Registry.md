@@ -128,3 +128,132 @@ This algorithms *accepts* any key as valid for a membership. Thus, a key asking 
 This algorithm *accepts* any key that have *at least* 1 signature from an existing member in the community. Others are simply refused.
 
 ## Rules
+
+### Membership
+
+#### Validity
+
+A [Membership](#membership) is to be considered valid if:
+* `Issuer` matches signature's key ID
+* `Date` is in interval [ CURRENT_AM_GENERATED_ON ; NEXT_AM_GENERATED_ON [
+* `Membership` matches either `IN` or `OUT` value
+
+#### Impacts
+
+When receiving a valid [Membership](#membership), node MUST interprete it for each [membership algorithm](#membership-algorithms) it handles. This impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the afferent [Merkle summary](#merkle-summary)) : `MembersJoining` for `IN` membership, and `MembersLeaving` for `OUT` membership.
+
+### Voting
+
+#### Validity
+
+A [Voting](#voting) is to be considered valid if:
+* `Issuer` matches signature's key ID
+* `Date` is in interval [ CURRENT_AM_GENERATED_ON ; NEXT_AM_GENERATED_ON [
+
+#### Impacts
+
+When receiving a valid [Voting](#voting), node MUST interprete it. This impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the `VotersJoining` [Merkle summary](#merkle-summary)).
+
+### Community flow computing rules
+
+Here are 2 tables on how to compute analitically members & voters changes:
+
+#### Membership computing
+
+        | PKx | IN | OUT
+------  | --- | -- | ---
+Member  | -1  |  0 | -1
+!Member | -1  | +1 |  0
+
+Where:
+* `Member` has value `1` if the computed key is currently a member, otherwise `0`.
+* `!Member` has value `1` if the computed key is NOT currently a member, otherwise `0`.
+* `PKx` has value `1` if the public key of the member is no more valid, otherwise `0`.
+* `IN` has value `1` if a membership `IN` document was received, otherwise `0`.
+* `OUT` has value `1` if a membership `OUT` document was received, otherwise `0`.
+
+Resulting formula giving the variation of the member is:
+```
+Mvar = Member*(-PKx -OUT) + !Member*(-PKx +IN)
+```
+To also limit the variation, the formula MUST be bounded between [-1;1]:
+```
+Mvar = MAX[-1, MIN[1, Member*(-PKx -OUT) + !Member*(-PKx +IN)]]
+```
+
+Using this formula, it can be known at any moment how to apply variation of the member for next amendment.
+
+> N.B.: `PKx` parameter **is membership algorithm dependant**, so its interpretation varies. For ex., `AnyKey` and `1Sig` algorithms consider `PKx = 0`, at any time. This leads to algorithms where members joins & leaves ONLY by asking for it and are never automatically ejected by expiration of their key.
+
+> N.B.: `Member` and `!Member` fields are exclusive, so at any time `Member + !Member = 1`.
+
+#### Voting computing
+
+        |     | VT | ML
+------  | --- | -- | ---
+!Voter  |  0  | +1 | -1
+Voter   |  0  |  0 | -1
+Voterx  | -1  | +1 | -1
+
+Where:
+* `Voter` has value `1` if the computed key is currently a voter, otherwise `0`.
+* `!Voter` has value `1` if the computed key is NOT currently a voter, otherwise `0`.
+* `Voterx` has value `1` if the voter's eligibility has expired, otherwise `0`.
+* `VT` has value `1` if a voting document was received, otherwise `0`.
+* `ML` has value `1` if the voter is currently leaving as a member, otherwise `0`.
+
+Resulting formula giving the variation of the member is:
+```
+Vvar = !Voter*(+VT -ML) + Voter*(-ML) + Voterx*(-1 +VT -ML)
+```
+To also limit the variation, the formula MUST be bounded between [-1;1]:
+```
+Vvar = MAX[-1, MIN[1, !Voter*(+VT -ML) + Voter*(-ML) + Voterx*(-1 +VT -ML)]]
+```
+
+Using this formula, it can be known at any moment how to apply variation of the voter for next amendment.
+
+> N.B.: `Voterx` parameter: voter is considered **eligibile** if his last voting document's date does not exceeds a certain duration `vtvalidity` which is a local parameter of each node. Obviously, a network of node should agree on this parameter to have the same rule on when to eject a voter.
+
+> N.B.: `Voter`, `!Voter` and `Voterx` fields are exclusive, so at any time `Voter + !Voter + Voterx = 1`.
+
+#### Impacts on members & voters changes
+
+The above formulas are utilities allowing us, for each key, the changes to apply to [Merkle summary](#merkle-summary) fields of [CommunityFlow](#community-flow) document.
+
+Below are the rules on how to interprete `Mvar` and `Vvar` for such fields:
+
+Value | Changes
+----- | -------
+ 0    | No changes for the key
+-1    | Key is leaving
+ 1    | Key is joining
+
+ For example, if `Mvar = 1` for key `2E69197FAB029D8669EF85E82457A1587CA0ED9C` is joining, this will lead this key to be present under `MembersJoining` of the community flow. If `Mvar = -1`, the key will be present under `MembersLeaving`. If `Mvar = 0` however, nothing happens.
+
+### Community flow impacts & voting
+
+Community flows may be seen as a "pre-vote" process for nodes to agree on changes about members & voters, which are data that may vary a lot depending on how the data was correctly submitted (or not) to all the nodes.
+
+Here is how a node should process while receiving community flows:
+
+###### 1. Compare Merkle summary fields
+
+During this step, the node checks wether the Merkle summary fields **matches** local summaries. That is, wether are not the 2 nodes agrees on the same data about which member is joining or leaving, which voter is joining or leaving.
+
+###### 2. Eventually retrieve complete data of remote node
+
+If some Merkle summaries do not match, local node will have to retrieve remote node's leaves behind each non-matching Merkle summary.
+
+###### 3. Increment count of nodes agreeing
+
+For each leave behind each Merkle summary, increment by `1` the value of how many nodes agree with this leave.
+
+###### 4. Eventually vote by selecting common agreement
+
+If local node estimates enough CommunityFlows were received to have a common agreement, then:
+
+a. Compute the average number of witnesses for each key (note: a special key named "nokey" also exists for empty Merkle summaries): AVG
+b. Compute the standard variation of witnesses for each key: STDVAR
+c. Picks the keys having witnesses count [AVG - STDVAR ; AVG + STDVAR]
+d. Vote for next amendment using those keys

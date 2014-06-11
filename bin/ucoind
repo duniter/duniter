@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-var server   = require('../app/lib/server');
 var jpgp     = require('../app/lib/jpgp');
 var wizard   = require('../app/lib/wizard');
 var fs       = require('fs');
@@ -12,7 +11,7 @@ var moment   = require('moment');
 var inquirer = require('inquirer');
 var openpgp  = require('openpgp');
 var logger   = require('../app/lib/logger')('ucoind');
-var service  = require('../app/service');
+var ucoin    = require('./..');
 
 function keys (val) {
   return val.split(',');
@@ -52,8 +51,8 @@ program
 program
   .command('wizard [step]')
   .description('Launch the configuration Wizard')
-  .action(connect(function (step, conf) {
-    var wiz = wizard();
+  .action(connect(function (step, server, conf) {
+    var wiz = wizard(server);
     var task = {
       'currency': wiz.configCurrency,
       'openpgp': wiz.configOpenpgp,
@@ -73,14 +72,14 @@ program
         });
       },
       function (next) {
-        server.checkConf(conf, function (err) {
+        server.checkConfig(conf, function (err) {
           logger.warn(err);
         });
         next();
       }
     ], function (err, result) {
       err && logger.error(err);
-      server.database.disconnect();
+      server.disconnect();
       process.exit();
     });
   }));
@@ -88,10 +87,11 @@ program
 program
   .command('sync [host] [port]')
   .description('Tries to synchronise data with remote uCoin node')
-  .action(connect(function (host, port, conf) {
+  .action(connect(function (host, port, server, conf) {
 
     // Disable daemon
     conf.sync.AMDaemon = "OFF";
+    conf.createNext = false;
 
     async.series([
       function (next){
@@ -104,7 +104,7 @@ program
       if(err){
         logger.error('Error during sync:', err);
       }
-      server.database.disconnect();
+      server.disconnect();
       process.exit();
     });
   }));
@@ -112,10 +112,13 @@ program
 program
   .command('allow-key [key]')
   .description('Add given key to authorized keys of this node')
-  .action(connect(function (key, conf) {
+  .action(connect(ucoin.createHDCServer, function (key, server, conf) {
     key = key || "";
     key = key.toUpperCase();
     async.waterfall([
+      function (next){
+        server.initServer(next);
+      },
       function (next) {
         if (!key.isSha1()) {
           next("Key must match a SHA-1 hash");
@@ -124,16 +127,17 @@ program
         next();
       },
       function (next){
-        service.Key.setKnown(key, next);
+        server.KeyService.setKnown(key, next);
       }
     ], function (err, result) {
       if(err){
         logger.error('Error: %s', err);
-        server.database.disconnect();
+        server.disconnect();
+        process.exit();
         return;
       }
       logger.debug("Key %s is now allowed to be stored" , key);
-      server.database.disconnect();
+      server.disconnect();
       process.exit();
     });
   }));
@@ -141,32 +145,35 @@ program
 program
   .command('manage-key [key]')
   .description('Add given key to stack of managed keys of this node')
-  .action(connect(function (key, conf) {
-    handleKey(conf, key, true, 'Key %s is now managed');
+  .action(connect(ucoin.createHDCServer, function (key, server, conf) {
+    handleKey(server, key, true, 'Key %s is now managed');
   }));
 
 program
   .command('forget-key [key]')
   .description('Remove given key of the managed keys\' stack of this node')
-  .action(connect(function (key, conf) {
-    handleKey(conf, key, false, 'Key %s no more managed from now');
+  .action(connect(ucoin.createHDCServer, function (key, server, conf) {
+    handleKey(server, key, false, 'Key %s no more managed from now');
   }));
 
-function handleKey (conf, key, isManaged, message) {
+function handleKey (server, key, isManaged, message) {
   key = key || "";
   key = key.toUpperCase();
   async.waterfall([
     function (next){
-      service.Key.handleKey(key, isManaged, next);
+      server.initServices(next);
+    },
+    function (next){
+      server.KeyService.handleKey(key, isManaged, next);
     }
   ], function (err, result) {
     if(err){
       logger.error('Error: %s', err);
-      server.database.disconnect();
+      server.disconnect();
       return;
     }
     logger.debug(message , key);
-    server.database.disconnect();
+    server.disconnect();
     process.exit();
   });
 }
@@ -174,27 +181,30 @@ function handleKey (conf, key, isManaged, message) {
 program
   .command('check-config')
   .description('Checks the node\'s configuration')
-  .action(connect(function (conf) {
-    server.checkConf(conf, function (err) {
-      logger.warn(err);
+  .action(connect(function (server, conf) {
+    server.checkConfig(function (err) {
+      if (err)
+        logger.warn(err);
+      else
+        logger.warn('Configuration seems correct.');
+      server.disconnect();
+      process.exit();
     });
-    server.database.disconnect();
-    process.exit();
     return;
   }));
 
 program
   .command('config')
   .description('Register configuration in database')
-  .action(connect(function (conf) {
-    overrideConf(conf).save(function (err) {
+  .action(connect(function (server, conf) {
+    conf.save(function (err) {
       if(err){
         logger.error("Configuration could not be saved: " + err);
       }
       else{
         logger.debug("Configuration saved.");
       }
-      server.database.disconnect();
+      server.disconnect();
       process.exit();
       return;
     });
@@ -203,25 +213,29 @@ program
 program
   .command('reset [config|data]')
   .description('Reset configuration or data in database')
-  .action(connect(function (type, conf) {
+  .action(connect(function (type, server, conf) {
     if(!~['config', 'data'].indexOf(type)){
       logger.error('Bad command: usage `reset config` or `reset data`');
-      server.database.disconnect();
+      server.disconnect();
       return;
     }
     if(type == 'data'){
-      server.database.reset(function (err) {
+      server.reset(function (err) {
         if(err)
           logger.error(err);
-        server.database.disconnect();
+        else
+          logger.warn('Data successfuly reseted.');
+        server.disconnect();
         process.exit();
       });
     }
     if(type == 'config'){
-      server.database.resetConf(function (err) {
+      server.resetConf(function (err) {
         if(err)
           logger.error(err);
-        server.database.disconnect();
+        else
+          logger.warn('Configuration successfuly reseted.');
+        server.disconnect();
         process.exit();
       });
     }
@@ -230,14 +244,13 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(connect(function (conf) {
+  .action(connect(function (server, conf) {
 
     // Launching server
-    server.express.app(conf, function (err, app) {
-
+    server.listenBMA(function (err, app) {
       if(err){
         console.error(err);
-        server.database.disconnect();
+        this.disconnect();
         process.exit();
         return;
       }
@@ -247,10 +260,10 @@ program
 
 var config = {};
 
-function overrideConf(conf) {
+function overrideConf(conn, conf) {
 
   // Ensure is not null and have good structure
-  var Configuration = mongoose.model('Configuration');
+  var Configuration = conn.model('Configuration');
   conf = conf || new Configuration();
 
   cli = {
@@ -327,21 +340,32 @@ function overrideConf(conf) {
   return conf;
 }
 
-function connect(callback) {
+function connect(serverFactory, callback) {
+  if (arguments.length == 1) {
+    callback = serverFactory;
+    serverFactory = ucoin.createRegistryServer;
+  }
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
+    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport });
+
     // Connecting to DB
-    server.database.connect(dbName, program.mhost, program.mport, function (err, conf) {
+    server.connect(function (err) {
 
       if(err){
-        logger.debug("Error connecting to DB: " + err);
-        server.database.disconnect();
+        logger.warn(err);
+        server.disconnect();
+        process.exit(1);
         return;
       }
+
+      server.conf = overrideConf(server.conn, server.conf);
+
       cbArgs.length--;
-      cbArgs[cbArgs.length++] = overrideConf(conf);
+      cbArgs[cbArgs.length++] = server;
+      cbArgs[cbArgs.length++] = server.conf;
       callback.apply(this, cbArgs);
     });
   };

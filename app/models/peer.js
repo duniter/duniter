@@ -295,9 +295,10 @@ function simpleLineExtraction(pr, rawPR, cap) {
 }
 
 PeerSchema.statics.getTheOne = function (fpr, done) {
+  var that = this;
   async.waterfall([
     function (next){
-      Peer.find({ fingerprint: fpr }, next);
+      that.find({ fingerprint: fpr }, next);
     },
     function (peers, next){
       if(peers.length == 0){
@@ -312,20 +313,21 @@ PeerSchema.statics.getTheOne = function (fpr, done) {
 };
 
 PeerSchema.statics.getList = function (fingerprints, done) {
-  Peer.find({ fingerprint: { $in: fingerprints }}, done);
+  this.find({ fingerprint: { $in: fingerprints }}, done);
 };
 
 PeerSchema.statics.allBut = function (fingerprints, done) {
-  Peer.find({ fingerprint: { $nin: fingerprints } }, done);
+  this.find({ fingerprint: { $nin: fingerprints } }, done);
 };
 
 /**
 * Look for 10 last updated peers, and choose randomly 4 peers in it
 */
 PeerSchema.statics.getRandomlyWithout = function (fingerprints, done) {
+  var that = this;
   async.waterfall([
     function (next){
-      Peer.find({ fingerprint: { $nin: fingerprints }, status: { $in: ['NEW_BACK', 'UP'] } })
+      that.find({ fingerprint: { $nin: fingerprints }, status: { $in: ['NEW_BACK', 'UP'] } })
       .sort({ 'updated': -1 })
       .limit(10)
       .exec(next);
@@ -345,4 +347,4 @@ PeerSchema.statics.getRandomlyWithout = function (fingerprints, done) {
 
 PeerSchema.statics.status = STATUS;
 
-var Peer = mongoose.model('Peer', PeerSchema);
+module.exports = PeerSchema;

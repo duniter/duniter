@@ -1,14 +1,6 @@
 var jpgp      = require('../lib/jpgp');
 var async     = require('async');
 var vucoin    = require('vucoin');
-var mongoose  = require('mongoose');
-var Peer      = mongoose.model('Peer');
-var Forward   = mongoose.model('Forward');
-var Amendment = mongoose.model('Amendment');
-var PublicKey = mongoose.model('PublicKey');
-var Merkle    = mongoose.model('Merkle');
-var Wallet    = mongoose.model('Wallet');
-var Key       = mongoose.model('Key');
 var _         = require('underscore');
 var openpgp   = require('openpgp');
 var logger    = require('../lib/logger');
@@ -16,119 +8,49 @@ var plogger   = logger('peering');
 var flogger   = logger('forward');
 var slogger   = logger('status');
 var tlogger   = logger('wallet');
-var service   = require('../service');
 
-// Services
-var http              = service.HTTP;
-var MerkleService     = service.Merkle;
-var ParametersService = service.Parameters;
-var WalletService        = service.Wallet;
-var PeeringService    = service.Peering;
+module.exports = function (peerServer, conf) {
+  return new NetworkBinding(peerServer, conf);
+};
 
-module.exports = function (pgp, currency, conf) {
+function NetworkBinding (peerServer, conf) {
 
-  var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-  this.ascciiPubkey = privateKey ? privateKey.toPublic().armor() : "";
-  this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
+  // Services
+  var http              = peerServer.HTTPService;
+  var MerkleService     = peerServer.MerkleService;
+  var ParametersService = peerServer.ParametersService;
+  var WalletService     = peerServer.WalletService;
+  var PeeringService    = peerServer.PeeringService;
+
+  // Models
+  var Peer      = peerServer.conn.model('Peer');
+  var Forward   = peerServer.conn.model('Forward');
+  var Amendment = peerServer.conn.model('Amendment');
+  var PublicKey = peerServer.conn.model('PublicKey');
+  var Merkle    = peerServer.conn.model('Merkle');
+  var Wallet    = peerServer.conn.model('Wallet');
+  var Key       = peerServer.conn.model('Key');
+
+  this.cert = PeeringService.cert;
 
   var that = this;
 
   this.pubkey = function (req, res) {
-    res.send(200, this.ascciiPubkey);
+    res.send(200, PeeringService.ascciiPubkey);
   },
 
   this.forward = function (req, res) {
-    var errCode = 400;
     async.waterfall([
-
       // Parameters
-      function(callback){
-        if(!(req.body && req.body.forward && req.body.signature)){
-          callback('Requires a peering forward + signature');
-          return;
-        }
-        callback(null, req.body.forward, req.body.signature);
+      function(next){
+        ParametersService.getForward(req, next);
       },
-
-      // Check signature's key ID
-      function(pr, sig, callback){
-        PublicKey.getFromSignature(sig, function (err, pubkey) {
-          callback(null, new Forward(), pr + sig, pubkey);
-        });
-      },
-
-      // Verify signature
-      function(fwd, signedPR, pubkey, callback){
-
-        async.waterfall([
-          function (next){
-            fwd.parse(signedPR, next);
-          },
-          function (fwd, next){
-            fwd.verify(currency, next);
-          },
-          function(valid, next){
-            if(!valid){
-              next('Not a valid peering request');
-              return;
-            }
-            flogger.debug('⬇ %s type %s', fwd.from, fwd.forward);
-            next();
-          },
-          function (next) {
-            Peer.find({ fingerprint: fwd.from }, next);
-          },
-          function (peers, next) {
-            if(peers.length == 0){
-              errCode = 404;
-              next('Peer ' + fwd.from + ' not found, POST at ucg/peering/peers first');
-              return;
-            }
-            next();
-          },
-          function (next){
-            if(!pubkey){
-              next('Public key not found, POST at ucg/peering/peers to make the node retrieve it');
-              return;
-            }
-            next();
-          },
-          function (next){
-            if(!fwd.to.match(new RegExp("^" + cert.fingerprint + "$", "g"))){
-              next('Node\'s fingerprint ('+cert.fingerprint+') is not concerned by this forwarding (' + fwd.to + ')');
-              return;
-            }
-            if(!fwd.from.match(new RegExp("^" + pubkey.fingerprint + "$", "g"))){
-              next('Forwarder\'s fingerprint ('+fwd.from+') does not match signatory (' + pubkey.fingerprint + ')');
-              return;
-            }
-            fwd.verifySignature(pubkey.raw, next);
-          },
-          function (verified, next){
-            if(!verified){
-              next('Signature does not match');
-              return;
-            }
-            next();
-          },
-          function (next){
-            Forward.find({ from: fwd.from, to: this.cert.fingerprint }, next);
-          },
-          function (fwds, next){
-            var fwdEntity = fwd;
-            if(fwds.length > 0){
-              // Already existing fwd
-              fwdEntity = fwds[0];
-              fwd.copyValues(fwdEntity);
-            }
-            fwdEntity.save(function (err) {
-              next(err, fwdEntity);
-            });
-          }
-        ], callback);
+      function(fwd, next){
+        flogger.debug('⬇ %s type %s', fwd.from, fwd.forward);
+        PeeringService.submitForward(fwd, next);
       }
     ], function (err, recordedFWD) {
-      http.answer(res, errCode, err, function () {
+      http.answer(res, 400, err, function () {
         flogger.debug('✔ %s type %s', recordedFWD.from, recordedFWD.forward);
         res.end(JSON.stringify(recordedFWD.json(), null, "  "));
       });
@@ -355,8 +277,8 @@ module.exports = function (pgp, currency, conf) {
       function (callback) {
         ParametersService.getStatus(req, callback);
       },
-      function(signedStatus, callback){
-        PeeringService.submitStatus(signedStatus, callback);
+      function(statusObj, callback){
+        PeeringService.submitStatus(statusObj, callback);
       }
     ], function (err, status, peer, wasStatus) {
       http.answer(res, 400, err, function () {
@@ -365,6 +287,4 @@ module.exports = function (pgp, currency, conf) {
       })
     });
   }
-  
-  return this;
 }

@@ -1,29 +1,26 @@
 var jpgp      = require('../lib/jpgp');
 var async     = require('async');
-var mongoose  = require('mongoose');
 var _         = require('underscore');
 var merkle    = require('merkle');
-var Amendment = mongoose.model('Amendment');
-var PublicKey = mongoose.model('PublicKey');
-var Merkle    = mongoose.model('Merkle');
-var Peer      = mongoose.model('Peer');
-var Vote      = mongoose.model('Vote');
 var logger    = require('../lib/logger')('vote');
 var alogger   = require('../lib/logger')('amendment');
-var service   = require('./.');
 
-// Services
-var PeeringService  = service.Peering;
-var StrategyService = service.Strategy;
-var SyncService     = service.Sync;
+module.exports.get = function (conn, StrategyService) {
 
-module.exports.get = function (pgp, currency, conf) {
+  var Amendment = conn.model('Amendment');
+  var PublicKey = conn.model('PublicKey');
+  var Merkle    = conn.model('Merkle');
+  var Vote      = conn.model('Vote');
+  var Key       = conn.model('Key');
   
   var fifo = async.queue(function (task, callback) {
     task(callback);
   }, 1);
 
-  this.submit = function(vote, callback) {
+  this.submit = function(jsonVote, callback) {
+    var vote = new Vote(jsonVote);
+    vote.amendment = new Amendment(jsonVote.amendment);
+    var hash = vote.amendment.getHash();
     var that = this;
     fifo.push(function (cb) {
       async.waterfall([
@@ -48,7 +45,7 @@ module.exports.get = function (pgp, currency, conf) {
         },
         // Issuer is a voter
         function (next){
-          vote.issuerIsVoter(next);
+          Key.wasVoter(vote.issuer, vote.amendment.number - 1, next);
         },
         function (isVoter, next){
           if(!isVoter && vote.amendment.number != 0){
@@ -84,9 +81,10 @@ module.exports.get = function (pgp, currency, conf) {
           /* Update URLs:
               - hdc/amendments/[AMENDMENT_ID]/self
               - hdc/amendments/[AMENDMENT_ID]/signatures */
-          vote.saveAmendment(signaturesMerkle, next);
+          that.saveAmendmentOfVote(vote, vote.amendment, signaturesMerkle, next);
         },
         function (am, next){
+          vote.amendment = am;
           // Find preceding vote of the issuer, for this amendment
           Vote.find({ issuer: vote.issuer, basis: vote.basis, amendmentHash: am.hash }, next);
         },
@@ -97,42 +95,68 @@ module.exports.get = function (pgp, currency, conf) {
             return;
           }
           vote.save(function (err) {
-            next(err, votes.length == 0);
+            next(err);
           });
         },
-        function (newAm, next){
-          vote.getAmendment(function (err, am) {
-            next(null, am);
-          })
-        },
-        function (am, next) {
+        function ( next){
           // Update signatures (hdc/amendments/votes/[AMENDMENT_ID])
-          Merkle.updateSignaturesOfAmendment(am, vote, function (err) {
-            next(err, am, vote);
+          Merkle.updateSignaturesOfAmendment(vote.amendment, vote, function (err) {
+            next(err, vote.amendment, vote);
           });
         },
         function (am, recordedVote, next) {
-          async.waterfall([
-            function (next){
-              SyncService.takeCountOfVote(recordedVote, function (err) {
-                next();
-              });
-            },
-            function (next){
-              // Promotion time
-              StrategyService.tryToPromote(am, next);
-            },
-          ], function (err, result) {
+          // Promotion time
+          StrategyService.tryToPromote(am, function (err, result) {
             if (err) logger.warn(err);
             next(null, am, recordedVote);
-            // And vote is forwarded
-            if (!recordedVote.propagated) {
-              PeeringService.propagateVote(am, recordedVote);
-            }
           });
         }
       ], cb);
     }, callback);
+  };
+
+  this.saveAmendmentOfVote = function (vote, amendment, signaturesLeaves, done) {
+    var am;
+    async.waterfall([
+      function (next) {
+        Amendment.find({ number: amendment.number, hash: amendment.hash }, next);
+      },
+      function (ams, next){
+        am = (ams && ams[0]) || amendment;
+        // Donne le Merkle des signatures (hdc/amendments/[AMENDMENT_ID]/signatures)
+        Merkle.signaturesWrittenForAmendment(am.number, am.hash, next);
+      },
+      function (merkle, next){
+        // Met à jour le Merkle
+        merkle.initialize(signaturesLeaves);
+        merkle.save(function (err){
+          next(err);
+        });
+      },
+      function (next){
+        // Met à jour la Masse Monétaire
+        am.getPrevious(function (err, previous) {
+          next(null, previous);
+        });
+      },
+      function (previous, next){
+        var prevM = (previous && previous.monetaryMass) || 0;
+        var prevUD = (previous && previous.dividend) || 0;
+        var prevN = (previous && previous.membersCount) || 0;
+        am.monetaryMass = prevM + prevUD*prevN;
+        next();
+      },
+      function (next){
+        // Termine la sauvegarde
+        am.save(function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        vote._amendment = am._id;
+        next(null, am);
+      }
+    ], done);
   };
 
   this.votesIndex = function (onceDone) {

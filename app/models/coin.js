@@ -32,13 +32,13 @@ CoinSchema.methods = {
 
 CoinSchema.statics.findByOwner = function (fingerprint, done) {
 
-  Coin.find({ owner: fingerprint }).sort({id: -1}).exec(done);
+  this.find({ owner: fingerprint }).sort({id: -1}).exec(done);
 };
 
 CoinSchema.statics.findByCoinID = function (issuer, amNumber, coinNumber, done) {
 
   var coindID = [issuer, amNumber, coinNumber].join('-');
-  Coin.find({ issuer: issuer, amNumber: amNumber, coinNumber: coinNumber }).exec(function (err, coins) {
+  this.find({ issuer: issuer, amNumber: amNumber, coinNumber: coinNumber }).exec(function (err, coins) {
     if(err || coins.length == 0){
       done('Coin ' + coindID + ' not found');
       return;
@@ -51,4 +51,4 @@ CoinSchema.statics.findByCoinID = function (issuer, amNumber, coinNumber, done) 
   });
 };
 
-var Coin = mongoose.model('Coin', CoinSchema);
+module.exports = CoinSchema;

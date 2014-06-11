@@ -1,22 +1,26 @@
 var jpgp        = require('../lib/jpgp');
 var async       = require('async');
-var mongoose    = require('mongoose');
 var _           = require('underscore');
-var Amendment   = mongoose.model('Amendment');
-var PublicKey   = mongoose.model('PublicKey');
-var Merkle      = mongoose.model('Merkle');
-var Key         = mongoose.model('Key');
-var Transaction = mongoose.model('Transaction');
-var service     = require('../service');
 var logger      = require('../lib/logger')('transaction');
 
-// Services
-var MerkleService      = service.Merkle;
-var ParametersService  = service.Parameters;
-var TransactionService = service.Transactions;
-var PeeringService     = service.Peering;
+module.exports = function (hdcServer) {
+  return new TransactionBinding(hdcServer);
+};
 
-module.exports = function (pgp, currency, conf) {
+function TransactionBinding(hdcServer) {
+
+  // Services
+  var MerkleService      = hdcServer.MerkleService;
+  var ParametersService  = hdcServer.ParametersService;
+  var TransactionService = hdcServer.TransactionsService;
+  var PeeringService     = hdcServer.PeeringService;
+
+  // Models
+  var Amendment   = hdcServer.conn.model('Amendment');
+  var PublicKey   = hdcServer.conn.model('PublicKey');
+  var Merkle      = hdcServer.conn.model('Merkle');
+  var Key         = hdcServer.conn.model('Key');
+  var Transaction = hdcServer.conn.model('Transaction');
 
   this.viewtx = function (req, res) {
     async.waterfall([

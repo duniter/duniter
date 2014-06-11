@@ -239,4 +239,4 @@ MembershipSchema.statics.getHistory = function (issuer, done) {
     .exec(done);
 }
 
-var Membership = mongoose.model('Membership', MembershipSchema);
+module.exports = MembershipSchema;

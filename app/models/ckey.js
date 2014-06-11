@@ -20,11 +20,11 @@ CKeySchema.pre('save', function (next) {
 });
 
 CKeySchema.statics.increment = function(leaf, op, algo, isMember, done) {
-  CKey.update({ fingerprint: leaf, operation: op, algorithm: algo, member: isMember }, { $inc: { count: 1 }}, done);
+  this.update({ fingerprint: leaf, operation: op, algorithm: algo, member: isMember }, { $inc: { count: 1 }}, done);
 }
 
 CKeySchema.statics.findThose = function(op, algo, isMember, done) {
-  CKey.find({ operation: op, algorithm: algo, member: isMember }, done);
+  this.find({ operation: op, algorithm: algo, member: isMember }, done);
 }
 
-var CKey = mongoose.model('CKey', CKeySchema);
+module.exports = CKeySchema;

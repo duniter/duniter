@@ -1,23 +1,10 @@
-var service       = require('../service');
 var jpgp          = require('../lib/jpgp');
 var async         = require('async');
 var moment        = require('moment');
 var request       = require('request');
-var mongoose      = require('mongoose');
 var vucoin        = require('vucoin');
 var _             = require('underscore');
 var openpgp       = require('openpgp');
-var Amendment     = mongoose.model('Amendment');
-var PublicKey     = mongoose.model('PublicKey');
-var Membership    = mongoose.model('Membership');
-var Voting        = mongoose.model('Voting');
-var Merkle        = mongoose.model('Merkle');
-var Vote          = mongoose.model('Vote');
-var CKey          = mongoose.model('CKey');
-var CommunityFlow = mongoose.model('CommunityFlow');
-var Peer          = mongoose.model('Peer');
-var Key           = mongoose.model('Key');
-var Forward       = mongoose.model('Forward');
 var Status        = require('../models/statusMessage');
 var coiner        = require('../lib/coiner');
 var log4js        = require('log4js');
@@ -28,18 +15,26 @@ var mathlog       = require('../lib/logger')('registryp');
 
 mathlog.setLevel('INFO');
 
-// Services
-var ParametersService = service.Parameters;
-var ContractService   = service.Contract;
-var PeeringService    = service.Peering;
-
 // Constants
 var WITH_VOTING    = true;
 var WITHOUT_VOTING = false;
 
-module.exports.get = function (pgp, currency, conf) {
+module.exports.get = function (conn, conf, signsDetached, ContractService, PeeringService, alertDeamon, daemonJudgesTimeForVote) {
 
   var that = this;
+  var currency = conf.currency;
+
+  var Amendment     = conn.model('Amendment');
+  var PublicKey     = conn.model('PublicKey');
+  var Membership    = conn.model('Membership');
+  var Voting        = conn.model('Voting');
+  var Merkle        = conn.model('Merkle');
+  var Vote          = conn.model('Vote');
+  var CKey          = conn.model('CKey');
+  var CommunityFlow = conn.model('CommunityFlow');
+  var Peer          = conn.model('Peer');
+  var Key           = conn.model('Key');
+  var Forward       = conn.model('Forward');
 
   // Function to override according to chosen algorithm for pubkey validity
   var isValidPubkey = conf.isValidPubkey || function (pubkey, am) {
@@ -68,6 +63,7 @@ module.exports.get = function (pgp, currency, conf) {
 
   this.createNext = function (am, done) {
     fifoCreateNextAM.push(function (cb) {
+      logger.info('Creating next AM (#%d) proposal...', (am && am.number + 1 || 0));
       var amNext = new Amendment();
       var leavingMembers = [];
       var currentVoters = [];
@@ -121,7 +117,7 @@ module.exports.get = function (pgp, currency, conf) {
         },
         function (next){
           var now = new Date().timestamp();
-          require('../lib/daemon').nextIn((amNext.generated - now)*1000);
+          alertDeamon((amNext.generated - now)*1000);
           next();
         },
       ], cb);
@@ -156,39 +152,8 @@ module.exports.get = function (pgp, currency, conf) {
     ], done);
   }
 
-  this.takeCountOfVote = function (v, done) {
-    if (v.basis > 0) {
-      async.waterfall([
-        function (next){
-          Amendment.current(function (err, am) {
-            next(null, am ? am.number + 1 : 0);
-          });
-        },
-        function (amNumber, next){
-          Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
-        },
-        function (amNext, next){
-          if (v.amendmentHash == amNext.previousHash) {
-            async.waterfall([
-              function (next){
-                memberContext(v.issuer, amNext.number - 1, next);
-              },
-              function (ctx, next){
-                computeSingleMemberChanges(v.issuer, ctx, amNext, WITH_VOTING, next);
-              },
-            ], next);
-            return;
-          }
-          else next();
-        },
-      ], done);
-    } else {
-      // Vote of AM0 has not to be taken in account for voters leaving purposes
-      done();
-    }
-  };
-
-  this.submit = function (entry, done) {
+  this.submit = function (obj, done) {
+    var entry = new Membership(obj);
     fifoMembershipOrVoting.push(function (cb) {
       async.waterfall([
 
@@ -268,7 +233,8 @@ module.exports.get = function (pgp, currency, conf) {
     }, done);
   };
 
-  this.submitVoting = function (entry, done) {
+  this.submitVoting = function (obj, done) {
+    var entry = new Voting(obj);
     fifoMembershipOrVoting.push(function (cb) {
       async.waterfall([
 
@@ -341,7 +307,8 @@ module.exports.get = function (pgp, currency, conf) {
     }, done);
   };
 
-  this.submitCF = function (entry, done) {
+  this.submitCF = function (obj, done) {
+    var entry = new CommunityFlow(obj);
     fifoCF.push(function (cb) {
       async.waterfall([
         function (next) {
@@ -353,10 +320,10 @@ module.exports.get = function (pgp, currency, conf) {
           if (entry.selfGenerated) {
             // Check Merkles & create ckeys
             async.parallel({
-              membersJoining: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersIn,  entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', true),
-              membersLeaving: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersOut, entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', true),
-              votersJoining:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersIn,   entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', false),
-              votersLeaving:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersOut,  entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', false),
+              membersJoining: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersIn.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', true),
+              membersLeaving: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersOut.bind(Merkle), entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', true),
+              votersJoining:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersIn.bind(Merkle),   entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', false),
+              votersLeaving:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersOut.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', false),
             }, next);
           } else {
             // Increment count of witnesses
@@ -396,7 +363,7 @@ module.exports.get = function (pgp, currency, conf) {
         CommunityFlow.getForAmendmentAndAlgo(amNumber -1, algo, next);
       },
       function (cfs, next){
-        logger.debug("%s flows / %s voters = %s%", cfs.length, amCurrent.votersCount, cfs.length/amCurrent.votersCount)
+        logger.debug("%s flows / %s voters = %s%", cfs.length, amCurrent.votersCount, cfs.length/amCurrent.votersCount*100)
         if (cfs.length/amCurrent.votersCount < 0.6) {
           next('Not voting yet, waiting for >= 60% voters');
           return;
@@ -408,13 +375,8 @@ module.exports.get = function (pgp, currency, conf) {
         Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
       },
       function (amNext, next){
-        var daemon = require('../lib/daemon');
-        if (daemon.judges.timeForVote(amNext)) {
+        if (daemonJudgesTimeForVote(amNext)) {
 
-          var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-              privateKey.decrypt(conf.pgppasswd);
-          var ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
-          var cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
           var amReal = amNext;
           var raw = "";
           async.waterfall([
@@ -423,7 +385,6 @@ module.exports.get = function (pgp, currency, conf) {
               if (algo != amNext.algo) {
                 amReal = new Amendment();
                 amNext.copyTo(amReal);
-                console.log(amReal);
                 raw = amReal.getRaw();
                 async.waterfall([
                   function (next){
@@ -448,22 +409,22 @@ module.exports.get = function (pgp, currency, conf) {
                     });
                     amReal.membersChanges = [];
                     amReal.votersChanges = [];
-                    res.membersJoining.leaves().forEach(function(fpr){
+                    res.membersJoining.forEach(function(fpr){
                       amReal.membersChanges.push('+' + fpr);
                       members.push(fpr);
                     });
-                    res.membersLeaving.leaves().forEach(function(fpr){
+                    res.membersLeaving.forEach(function(fpr){
                       amReal.membersChanges.push('-' + fpr);
                       var index = members.indexOf(fpr);
                       if (~index) {
                         members.splice(index, 1);
                       }
                     });
-                    res.votersJoining.leaves().forEach(function(fpr){
+                    res.votersJoining.forEach(function(fpr){
                       amReal.votersChanges.push('+' + fpr);
                       voters.push(fpr);
                     });
-                    res.votersLeaving.leaves().forEach(function(fpr){
+                    res.votersLeaving.forEach(function(fpr){
                       amReal.votersChanges.push('-' + fpr);
                       var index = voters.indexOf(fpr);
                       if (~index) {
@@ -482,9 +443,9 @@ module.exports.get = function (pgp, currency, conf) {
                     amReal.votersChanges.sort();
                     amReal.votersCount = voters.length;
                     amReal.votersRoot = merkleVoters.root();
-                    amReal.save(function (err2) {
+                    amReal.save(function (err) {
                       raw = amReal.getRaw();
-                      next(err || err2);
+                      next(err);
                     });
                   }
                 ], next);
@@ -494,9 +455,10 @@ module.exports.get = function (pgp, currency, conf) {
               }
             },
             function (next){
-              jpgp().signsDetached(raw, privateKey, next);
+              signsDetached(raw, next);
             },
             function (signature, next){
+              // TODO: à remplacer par _write
               var signedAm = raw + signature;
               vucoin(conf.ipv6 || conf.ipv4 || conf.dns, conf.port, false, false, function (err, node) {
                 next(null, signedAm, node);
@@ -507,14 +469,14 @@ module.exports.get = function (pgp, currency, conf) {
             },
             function (json, next){
               var am = new Amendment(json.amendment);
-              var issuer = cert.fingerprint;
+              var issuer = PeeringService.cert.fingerprint;
               var hash = json.signature.unix2dos().hash();
               var basis = json.amendment.number;
               Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
             },
             function (vote, next){
               if (!vote) {
-                next('Self vote was not found');
+                next('Strange! self vote was not found ... not recorded?');
                 return;
               }
               vote.selfGenerated = true;
@@ -593,13 +555,8 @@ module.exports.get = function (pgp, currency, conf) {
               Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
             },
             function (amNext, next){
-              var daemon = require('../lib/daemon');
-              if (daemon.judges.timeForVote(amNext)) {
+              if (daemonJudgesTimeForVote(amNext)) {
 
-                var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-                    privateKey.decrypt(conf.pgppasswd);
-                var ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
-                var cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
                 var amReal = amNext;
                 var raw = "";
                 async.waterfall([
@@ -633,22 +590,22 @@ module.exports.get = function (pgp, currency, conf) {
                           });
                           amReal.membersChanges = [];
                           amReal.votersChanges = [];
-                          res.membersJoining.leaves().forEach(function(fpr){
+                          res.membersJoining.forEach(function(fpr){
                             amReal.membersChanges.push('+' + fpr);
                             members.push(fpr);
                           });
-                          res.membersLeaving.leaves().forEach(function(fpr){
+                          res.membersLeaving.forEach(function(fpr){
                             amReal.membersChanges.push('-' + fpr);
                             var index = members.indexOf(fpr);
                             if (~index) {
                               members.splice(index, 1);
                             }
                           });
-                          res.votersJoining.leaves().forEach(function(fpr){
+                          res.votersJoining.forEach(function(fpr){
                             amReal.votersChanges.push('+' + fpr);
                             voters.push(fpr);
                           });
-                          res.votersLeaving.leaves().forEach(function(fpr){
+                          res.votersLeaving.forEach(function(fpr){
                             amReal.votersChanges.push('-' + fpr);
                             var index = voters.indexOf(fpr);
                             if (~index) {
@@ -679,7 +636,7 @@ module.exports.get = function (pgp, currency, conf) {
                     }
                   },
                   function (next){
-                    jpgp().signsDetached(raw, privateKey, next);
+                    signsDetached(raw, next);
                   },
                   function (signature, next){
                     var signedAm = raw + signature;
@@ -692,7 +649,7 @@ module.exports.get = function (pgp, currency, conf) {
                   },
                   function (json, next){
                     var am = new Amendment(json.amendment);
-                    var issuer = cert.fingerprint;
+                    var issuer = PeeringService.cert.fingerprint;
                     var hash = json.signature.unix2dos().hash();
                     var basis = json.amendment.number;
                     Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
@@ -777,8 +734,7 @@ module.exports.get = function (pgp, currency, conf) {
               Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
             },
             function (amNext, next){
-              var daemon = require('../lib/daemon');
-              if (daemon.judges.timeForVote(amNext)) {
+              if (daemonJudgesTimeForVote(amNext)) {
 
                 var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
                     privateKey.decrypt(conf.pgppasswd);
@@ -796,10 +752,10 @@ module.exports.get = function (pgp, currency, conf) {
                 async.waterfall([
                   function (next) {
                     async.parallel({
-                      merkleMembersJoining: async.apply(Merkle.membersIn,  amNext.number, algo),
-                      merkleMembersLeaving: async.apply(Merkle.membersOut, amNext.number, algo),
-                      merkleVotersJoining:  async.apply(Merkle.votersIn,   amNext.number, algo),
-                      merkleVotersLeaving:  async.apply(Merkle.votersOut,  amNext.number, algo),
+                      merkleMembersJoining: async.apply(Merkle.membersIn.bind(Merkle),  amNext.number, algo),
+                      merkleMembersLeaving: async.apply(Merkle.membersOut.bind(Merkle), amNext.number, algo),
+                      merkleVotersJoining:  async.apply(Merkle.votersIn.bind(Merkle),   amNext.number, algo),
+                      merkleVotersLeaving:  async.apply(Merkle.votersOut.bind(Merkle),  amNext.number, algo),
                     }, next);
                   },
                   function (merkles, next){
@@ -812,7 +768,7 @@ module.exports.get = function (pgp, currency, conf) {
                     cf.votersJoiningRoot =  merkles.merkleVotersJoining.root();
                     cf.votersLeavingRoot =  merkles.merkleVotersLeaving.root();
                     raw = cf.getRaw();
-                    jpgp().signsDetached(raw, privateKey, next);
+                    signsDetached(raw, next);
                   },
                   function (signature, next){
                     cf.signature = signature;
@@ -1080,20 +1036,20 @@ module.exports.get = function (pgp, currency, conf) {
     whatToDo.merkle["1"]["0"] = removeFromMemberMerkle;
     whatToDo.merkle["0"]["-1"] = removeFromMemberMerkle;
     whatToDo.merkle["-1"]["0"] = addInMemberMerkle;
-    whatToDo.state["0"]["1"] = Key.setLastMSState;
-    whatToDo.state["1"]["0"] = Key.setLastMSState;
-    whatToDo.state["0"]["-1"] = Key.setLastMSState;
-    whatToDo.state["-1"]["0"] = Key.setLastMSState;
+    whatToDo.state["0"]["1"] = Key.setLastMSState.bind(Key);
+    whatToDo.state["1"]["0"] = Key.setLastMSState.bind(Key);
+    whatToDo.state["0"]["-1"] = Key.setLastMSState.bind(Key);
+    whatToDo.state["-1"]["0"] = Key.setLastMSState.bind(Key);
 
-    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.membersIn, amNext.number, conf.sync.Algorithm));
-    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersIn, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.membersIn.bind(Merkle), amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersIn.bind(Merkle), amNext.number, conf.sync.Algorithm));
     whatToDo.merkleIn["0"]["-1"] = doNothingWithMerkleInOut;
     whatToDo.merkleIn["-1"]["0"] = doNothingWithMerkleInOut;
 
     whatToDo.merkleOut["0"]["1"] = doNothingWithMerkleInOut;
     whatToDo.merkleOut["1"]["0"] = doNothingWithMerkleInOut;
-    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.membersOut, amNext.number, conf.sync.Algorithm));
-    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersOut, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.membersOut.bind(Merkle), amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.membersOut.bind(Merkle), amNext.number, conf.sync.Algorithm));
 
     function doNothing (k, changes, done) {
       done();
@@ -1190,20 +1146,20 @@ module.exports.get = function (pgp, currency, conf) {
     whatToDo.merkle["1"]["0"] = removeFromVoterMerkle;
     whatToDo.merkle["0"]["-1"] = removeFromVoterMerkle;
     whatToDo.merkle["-1"]["0"] = addInVoterMerkle;
-    whatToDo.state["0"]["1"] = Key.setLastState;
-    whatToDo.state["1"]["0"] = Key.setLastState;
-    whatToDo.state["0"]["-1"] = Key.setLastState;
-    whatToDo.state["-1"]["0"] = Key.setLastState;
+    whatToDo.state["0"]["1"] = Key.setLastState.bind(Key);
+    whatToDo.state["1"]["0"] = Key.setLastState.bind(Key);
+    whatToDo.state["0"]["-1"] = Key.setLastState.bind(Key);
+    whatToDo.state["-1"]["0"] = Key.setLastState.bind(Key);
 
-    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.votersIn, amNext.number, conf.sync.Algorithm));
-    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersIn, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleIn["0"]["1"] = async.apply(addInMerkle, async.apply(Merkle.votersIn.bind(Merkle), amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleIn["1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersIn.bind(Merkle), amNext.number, conf.sync.Algorithm));
     whatToDo.merkleIn["0"]["-1"] = doNothingWithMerkleInOut;
     whatToDo.merkleIn["-1"]["0"] = doNothingWithMerkleInOut;
 
     whatToDo.merkleOut["0"]["1"] = doNothingWithMerkleInOut;
     whatToDo.merkleOut["1"]["0"] = doNothingWithMerkleInOut;
-    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.votersOut, amNext.number, conf.sync.Algorithm));
-    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersOut, amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleOut["0"]["-1"] = async.apply(addInMerkle, async.apply(Merkle.votersOut.bind(Merkle), amNext.number, conf.sync.Algorithm));
+    whatToDo.merkleOut["-1"]["0"] = async.apply(removeFromMerkle, async.apply(Merkle.votersOut.bind(Merkle), amNext.number, conf.sync.Algorithm));
 
     function doNothingWithKey (k, changes, done) {
       done();
@@ -1224,7 +1180,7 @@ module.exports.get = function (pgp, currency, conf) {
     async.waterfall([
       function (next){
         async.parallel({
-          state: async.apply(Key.getLastState, key)
+          state: async.apply(Key.getLastState.bind(Key), key)
         }, next);
       },
       function (res, next){

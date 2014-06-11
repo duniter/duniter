@@ -1,36 +1,36 @@
 var async       = require('async');
-var mongoose    = require('mongoose');
 var _           = require('underscore');
 var sha1        = require('sha1');
 var merkle      = require('merkle');
-var Amendment   = mongoose.model('Amendment');
-var PublicKey   = mongoose.model('PublicKey');
-var Merkle      = mongoose.model('Merkle');
-var Key         = mongoose.model('Key');
-var Membership  = mongoose.model('Membership');
-var Voting      = mongoose.model('Voting');
-var Transaction = mongoose.model('Transaction');
-var Wallet      = mongoose.model('Wallet');
-var Peer        = mongoose.model('Peer');
 var vucoin      = require('vucoin');
 var jpgp        = require('./jpgp');
 var logger      = require('./logger')('sync');
-var service     = require('../service');
 
 var CONST_FORCE_TX_PROCESSING = false;
 
-// Services
-var KeyService         = null;
-var VoteService        = null;
-var TransactionService = null;
-var WalletService      = null;
-var PeeringService     = null;
-var StrategyService    = null;
-var ParametersService  = null;
-var SyncService        = null;
-
 module.exports = function Synchroniser (server, host, port, authenticated, conf) {
   var that = this;
+
+  // Services
+  var KeyService         = null;
+  var VoteService        = null;
+  var TransactionService = null;
+  var WalletService      = null;
+  var PeeringService     = null;
+  var StrategyService    = null;
+  var ParametersService  = null;
+  var SyncService        = null;
+
+  // Models
+  var Amendment   = server.conn.model('Amendment');
+  var PublicKey   = server.conn.model('PublicKey');
+  var Merkle      = server.conn.model('Merkle');
+  var Key         = server.conn.model('Key');
+  var Membership  = server.conn.model('Membership');
+  var Voting      = server.conn.model('Voting');
+  var Transaction = server.conn.model('Transaction');
+  var Wallet      = server.conn.model('Wallet');
+  var Peer        = server.conn.model('Peer');
   
   this.remoteFingerprint = null;
 
@@ -87,34 +87,20 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
               peer.verify(peer.currency, next);
             },
             function (verified, next) {
-              server.services.init(peer.currency, conf, true, next);
+              server.initServer(next);
             },
             function (next){
-              KeyService         = service.Key;
-              VoteService        = service.Vote;
-              TransactionService = service.Transactions;
-              WalletService      = service.Wallet;
-              PeeringService     = service.Peering;
-              StrategyService    = service.Strategy;
-              ParametersService  = service.Parameters;
-              SyncService        = service.Sync;
-              Peer.find({ fingerprint: remotePeer.fingerprint, hash: sha1(signedPR).toUpperCase() }, next);
+              KeyService         = server.KeyService;
+              VoteService        = server.VoteService;
+              TransactionService = server.TransactionsService;
+              WalletService      = server.WalletService;
+              PeeringService     = server.PeeringService;
+              StrategyService    = server.StrategyService;
+              ParametersService  = server.ParametersService;
+              SyncService        = server.SyncService;
+              PeeringService.submit(peer, keyID, next);
             },
-            function (peers, next){
-              if(peers.length > 0){
-                next('Peer already saved', peers[0]);
-                return;
-              }
-              next();
-            },
-            function (next){
-              PeeringService.submit(signedPR, keyID, next);
-            },
-          ], function (err, peer) {
-            if(err && !peer){
-              next(err);
-              return;
-            }
+          ], function (err) {
             next(null, peer);
           });
         },
@@ -150,7 +136,9 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                     },
                     function (json, cb){
                       hashes.push(leaf);
-                      PublicKey.persistFromRaw(json.leaf.value.pubkey, cb);
+                      PublicKey.persistFromRaw(json.leaf.value.pubkey, function (err) {
+                        cb();
+                      });
                     },
                     function (next) {
                       KeyService.handleKey(leaf, conf && conf.kmanagement == 'ALL', next);
@@ -183,7 +171,7 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
             }
             remoteCurrentNumber = parseInt(json.number);
             amendments[remoteCurrentNumber] = json.raw;
-            var toGetNumbers = _.range(number, remoteCurrentNumber + 1);
+            var toGetNumbers = _.range(number, 22 + 1);
             async.forEachSeries(toGetNumbers, function(amNumber, callback){
               async.waterfall([
                 function (cb){
@@ -227,9 +215,9 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
           }, next);
         },
 
-        //==================
-        // Trust Hash Table
-        //==================
+        //=========
+        // Wallets
+        //=========
         function (next){
           Merkle.WalletEntries(next);
         },
@@ -246,19 +234,24 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                 });
                 var hashes = [];
                 async.forEachSeries(leavesToAdd, function(leaf, callback){
+                  logger.info('Wallet entry %s', leaf);
                   async.waterfall([
                     function (cb){
                       node.network.wallet.get({ "leaf": leaf }, cb);
                     },
                     function (json, cb){
                       var jsonEntry = json.leaf.value.entry;
+                      if (!jsonEntry.fingerprint) {
+                        cb();
+                        return;
+                      }
                       var sign = json.leaf.value.signature;
                       var entry = new Wallet({});
                       ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
                         entry[key] = jsonEntry[key];
                       });
-                      logger.info('Wallet entry %s', jsonEntry.fingerprint);
-                      WalletService.submit(entry.getRaw() + sign, cb);
+                      entry.signature = sign;
+                      WalletService.submit(entry, cb);
                     }
                   ], callback);
                 }, function(err, result){
@@ -303,9 +296,9 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                       entry.signature = sign;
                       ParametersService.getPeeringEntryFromRaw(entry.getRaw(), sign, cb);
                     },
-                    function (rawSigned, keyID, cb){
+                    function (peer, keyID, cb){
                       logger.info('Peer 0x' + keyID);
-                      PeeringService.submit(rawSigned, keyID, function (err) {
+                      PeeringService.submit(peer, keyID, function (err) {
                         cb();
                       });
                     }
@@ -426,14 +419,14 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
       // Sent TXs
       //==============
       function (next){
-        syncTransactionTrees(node, keyFingerprint, Merkle.txOfSender, node.hdc.transactions.sender.get, next);
+        syncTransactionTrees(node, keyFingerprint, Merkle.txOfSender.bind(Merkle), node.hdc.transactions.sender.get, next);
       },
 
       //==============
       // Received TXs
       //==============
       function (next){
-        syncTransactionTrees(node, keyFingerprint, Merkle.txToRecipient, node.hdc.transactions.recipient, next);
+        syncTransactionTrees(node, keyFingerprint, Merkle.txToRecipient.bind(Merkle), node.hdc.transactions.recipient, next);
       }
     ], function (err) {
       // Avoid to loop on already synced keys

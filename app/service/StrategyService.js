@@ -1,25 +1,19 @@
-var service    = require('../service');
 var jpgp       = require('../lib/jpgp');
 var async      = require('async');
-var mongoose   = require('mongoose');
 var _          = require('underscore');
-var Amendment  = mongoose.model('Amendment');
-var Membership = mongoose.model('Membership');
-var Voting     = mongoose.model('Voting');
-var PublicKey  = mongoose.model('PublicKey');
-var Merkle     = mongoose.model('Merkle');
-var Vote       = mongoose.model('Vote');
-var CKey       = mongoose.model('CKey');
-var Coin       = mongoose.model('Coin');
-var Key        = mongoose.model('Key');
 var logger     = require('../lib/logger')('amendment');
 
-// Services
-var KeyService      = service.Key;
-var SyncService     = service.Sync;
-var ContractService = service.Contract;
+module.exports.get = function (conn, conf, ContractService, SyncService) {
 
-module.exports.get = function (pgp, currency, conf) {
+  var Amendment  = conn.model('Amendment');
+  var Membership = conn.model('Membership');
+  var Voting     = conn.model('Voting');
+  var PublicKey  = conn.model('PublicKey');
+  var Merkle     = conn.model('Merkle');
+  var Vote       = conn.model('Vote');
+  var CKey       = conn.model('CKey');
+  var Coin       = conn.model('Coin');
+  var Key        = conn.model('Key');
   
   var fifo = async.queue(function (task, callback) {
     task(callback);
@@ -52,12 +46,12 @@ module.exports.get = function (pgp, currency, conf) {
             memberLeaves:   async.apply(async.forEach, am.getLeavingMembers(),  async.apply(Key.memberLeave.bind(Key), am.number)),
             voterJoins:     async.apply(async.forEach, am.getNewVoters(),       async.apply(Key.voterJoin.bind(Key), am.number)),
             voterLeaves:    async.apply(async.forEach, am.getLeavingVoters(),   async.apply(Key.voterLeave.bind(Key), am.number)),
-            knownMembers:   async.apply(async.forEach, am.getNewMembers(),      Key.setKnown),
-            knownVoters:    async.apply(async.forEach, am.getNewVoters(),       Key.setKnown),
-            addMembers:     async.apply(async.forEach, am.getNewMembers(),      Key.addMember),
-            addVoters:      async.apply(async.forEach, am.getNewVoters(),       Key.addVoter),
-            removeMembers:  async.apply(async.forEach, am.getLeavingMembers(),  Key.removeMember),
-            removeVoters:   async.apply(async.forEach, am.getLeavingVoters(),   Key.removeVoter),
+            knownMembers:   async.apply(async.forEach, am.getNewMembers(),      Key.setKnown.bind(Key)),
+            knownVoters:    async.apply(async.forEach, am.getNewVoters(),       Key.setKnown.bind(Key)),
+            addMembers:     async.apply(async.forEach, am.getNewMembers(),      Key.addMember.bind(Key)),
+            addVoters:      async.apply(async.forEach, am.getNewVoters(),       Key.addVoter.bind(Key)),
+            removeMembers:  async.apply(async.forEach, am.getLeavingMembers(),  Key.removeMember.bind(Key)),
+            removeVoters:   async.apply(async.forEach, am.getLeavingVoters(),   Key.removeVoter.bind(Key)),
             removeCKeys:    async.apply(CKey.remove.bind(CKey), {}),
 
             // Leaving voters have no more current voting document
@@ -186,7 +180,7 @@ module.exports.get = function (pgp, currency, conf) {
           }, next);
         },
         function (next){
-          if (conf.createNext) {
+          if (SyncService && conf.createNext) {
             SyncService.createNext(am, next);
           } else {
             next();
@@ -196,74 +190,74 @@ module.exports.get = function (pgp, currency, conf) {
     }, done);
   }
 
-  return this;
-}
-
-
-function defaultPromotion (followingAm, decision) {
-  async.waterfall([
-    function (next) {
-      if(!followingAm){
-        next('No new amendment for promotion');
-        return;
-      }
-      next();
-    },
-    function (next){
-      Amendment.current(function (err, am) {
-        next(null, am);
-      });
-    },
-    function (currentAm, next){
-      if(!next){
-        next = currentAm;
-        currentAm = null;
-      }
-      // Root amendment does not require votes
-      if(!currentAm && followingAm.number == 0){
-        next(null, true);
-        return;
-      }
-      if(!currentAm && followingAm.number != 0){
-        next('Not promoted: need root amendment first');
-        return;
-      }
-      // Vote for currently promoted: does not require promotion anymore
-      if(currentAm && currentAm.number == followingAm.number && currentAm.hash == followingAm.hash){
-        next('Stacked vote of currently promoted');
-        return;
-      }
-      // The amendment may be promoted
-      async.waterfall([
-        function (pass){
-          if(followingAm.number != currentAm.number + 1){
-            pass('Not promoted: bad number: not a follower of current amendment (#' + followingAm.number + ' does not follow #' + currentAm.number + ')');
-            return;
-          }
-          pass();
-        },
-        function (pass){
-          if(currentAm.hash != followingAm.previousHash){
-            pass('Not promoted: bad previous hash: this amendment does not have current amendment as previous');
-            return;
-          }
-          pass();
-        },
-        function (pass){
-          Merkle.signaturesOfAmendment(followingAm.number, followingAm.hash, function (err, merkle) {
-            pass(err, merkle);
-          });
-        },
-        function (votesMerkle, pass) {
-          if(votesMerkle.leaves().length < currentAm.nextVotes){
-            pass('Not promoted: not enough votes (requires at least ' + currentAm.nextVotes + ', currently have '+votesMerkle.leaves().length+')');
-            return;
-          }
-          pass();
+  function defaultPromotion (followingAm, decision) {
+    async.waterfall([
+      function (next) {
+        if(!followingAm){
+          next('No new amendment for promotion');
+          return;
         }
-      ], next);
-    }
-  ], function (err) {
-    decision(err, err ? false : true);
-  });
+        next();
+      },
+      function (next){
+        Amendment.current(function (err, am) {
+          next(null, am);
+        });
+      },
+      function (currentAm, next){
+        if(!next){
+          next = currentAm;
+          currentAm = null;
+        }
+        // Root amendment does not require votes
+        if(!currentAm && followingAm.number == 0){
+          next(null, true);
+          return;
+        }
+        if(!currentAm && followingAm.number != 0){
+          next('Not promoted: need root amendment first');
+          return;
+        }
+        // Vote for currently promoted: does not require promotion anymore
+        if(currentAm && currentAm.number == followingAm.number && currentAm.hash == followingAm.hash){
+          next('Stacked vote of currently promoted');
+          return;
+        }
+        // The amendment may be promoted
+        async.waterfall([
+          function (pass){
+            if(followingAm.number != currentAm.number + 1){
+              pass('Not promoted: bad number: not a follower of current amendment (#' + followingAm.number + ' does not follow #' + currentAm.number + ')');
+              return;
+            }
+            pass();
+          },
+          function (pass){
+            if(currentAm.hash != followingAm.previousHash){
+              pass('Not promoted: bad previous hash: this amendment does not have current amendment as previous');
+              return;
+            }
+            pass();
+          },
+          function (pass){
+            Merkle.signaturesOfAmendment(followingAm.number, followingAm.hash, function (err, merkle) {
+              pass(err, merkle);
+            });
+          },
+          function (votesMerkle, pass) {
+            if(votesMerkle.leaves().length < currentAm.nextVotes){
+              pass('Not promoted: not enough votes (requires at least ' + currentAm.nextVotes + ', currently have '+votesMerkle.leaves().length+')');
+              return;
+            }
+            pass();
+          }
+        ], next);
+      }
+    ], function (err) {
+      decision(err, err ? false : true);
+    });
+  }
+
+
+  return this;
 }

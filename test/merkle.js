@@ -3,10 +3,9 @@ var assert   = require('assert');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var mongoose = require('mongoose');
-var server   = require('../app/lib/server');
+var ucoin    = require('./..');
 
-server.database.init();
-var Merkle = mongoose.model('Merkle');
+var Merkle = mongoose.model('Merkle', require('../app/models/merkle'));
 
 describe("Merkle ['a', 'b', 'c', 'd', 'e']", function(){
 

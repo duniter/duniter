@@ -226,20 +226,21 @@ function extractKeys(pr, rawPR, cap) {
 }
 
 ForwardSchema.statics.getTheOne = function (from, to, done) {
-  Forward.findOne({ from: from, to: to }, function (err, fwd) {
+  var Forward = this.model('Forward');
+  this.findOne({ from: from, to: to }, function (err, fwd) {
     fwd = fwd || new Forward({ from: from, to: to, forward: 'KEYS', keys: [] });
     done(null, fwd);
   });
 }
 
 ForwardSchema.statics.removeTheOne = function (from, to, done) {
-  Forward.remove({ from: from, to: to }, function (err) {
+  this.remove({ from: from, to: to }, function (err) {
     done(err);
   });
 }
 
 ForwardSchema.statics.findMatchingTransaction = function (tx, done) {
-  Forward.find({
+  this.find({
     $or: [
       { forward: "ALL" },
       { forward: 'KEYS', keys: { $in: [tx.sender, tx.recipient ]} }
@@ -248,7 +249,7 @@ ForwardSchema.statics.findMatchingTransaction = function (tx, done) {
 }
 
 ForwardSchema.statics.findDifferingOf = function (fingerprint, hashBasis, done) {
-  Forward.find({ from: fingerprint, hashBasis: { $ne: hashBasis } }, done);
+  this.find({ from: fingerprint, hashBasis: { $ne: hashBasis } }, done);
 }
 
-var Forward = mongoose.model('Forward', ForwardSchema);
+module.exports = ForwardSchema;

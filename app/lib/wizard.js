@@ -1,4 +1,3 @@
-var server   = require('./server');
 var jpgp     = require('./jpgp');
 var wizard   = require('./wizard');
 var os       = require('os');
@@ -7,49 +6,56 @@ var _        = require('underscore');
 var inquirer = require('inquirer');
 var openpgp  = require('openpgp');
 
-module.exports = function () {
-  return new Wizard();
+module.exports = function (regServer) {
+  return new Wizard(regServer);
 }
 
 var IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
-function Wizard () {
+function Wizard (regServer) {
 
   this.configAll = function (conf, done) {
-    doTasks(['currency', 'openpgp', 'network', 'key', 'autovote'], conf, done);
+    doTasks(['currency', 'openpgp', 'network', 'key', 'autovote'], regServer, conf, done);
   };
 
   this.configCurrency = function (conf, done) {
-    doTasks(['currency'], conf, done);
+    doTasks(['currency'], regServer, conf, done);
   };
 
   this.configOpenpgp = function (conf, done) {
-    doTasks(['openpgp'], conf, done);
+    doTasks(['openpgp'], regServer, conf, done);
   };
 
   this.configNetwork = function (conf, done) {
-    doTasks(['network'], conf, done);
+    doTasks(['network'], regServer, conf, done);
   };
 
   this.configKey = function (conf, done) {
-    doTasks(['key'], conf, done);
+    doTasks(['key'], regServer, conf, done);
   };
 
   this.configAutovote = function (conf, done) {
-    doTasks(['autovote'], conf, done);
+    doTasks(['autovote'], regServer, conf, done);
   };
 }
 
-function doTasks (todos, conf, done) {
+function doTasks (todos, server, conf, done) {
   async.forEachSeries(todos, function(task, callback){
-    tasks[task] && tasks[task](conf, callback);
+    async.waterfall([
+      function (next){
+        server.initServices(next);
+      },
+      function (next){
+        tasks[task] && tasks[task](server, conf, next);
+      },
+    ], callback);
   }, done);
 }
 
 var tasks = {
 
-  currency: function (conf, done) {
+  currency: function (server, conf, done) {
     inquirer.prompt([{
       type: "input",
       name: "currency",
@@ -64,7 +70,7 @@ var tasks = {
     });
   },
 
-  openpgp: function (conf, done) {
+  openpgp: function (server, conf, done) {
     inquirer.prompt([{
       type: "list",
       name: "openpgp",
@@ -83,7 +89,7 @@ var tasks = {
     });
   },
 
-  network: function (conf, done) {
+  network: function (server, conf, done) {
     var noInterfaceListened = true;
     if (conf.ipv4 || conf.ipv6) {
       noInterfaceListened = false;
@@ -208,9 +214,8 @@ var tasks = {
     ], done);
   },
 
-  key: function (conf, done) {
-    var privateKey = conf.pgpkey && openpgp.key.readArmored(conf.pgpkey).keys[0]
-    var fingerprint = server.privateKey(privateKey) && server.fingerprint();
+  key: function (regServer, conf, done) {
+    var fingerprint = regServer.PeeringService.cert.fingerprint;
     var privateKeys = [];
     async.waterfall([
       function (next){
@@ -287,7 +292,7 @@ var tasks = {
     ], done);
   },
 
-  autovote: function (conf, done) {
+  autovote: function (server, conf, done) {
     choose("Autovoting", conf.sync.AMDaemon ? conf.sync.AMDaemon == "ON" : false,
       function enabled () {
         conf.sync.AMDaemon = "ON";

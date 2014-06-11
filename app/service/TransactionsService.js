@@ -1,29 +1,25 @@
-var service       = require('../service');
 var jpgp          = require('../lib/jpgp');
 var async         = require('async');
-var mongoose      = require('mongoose');
 var _             = require('underscore');
-var Amendment     = mongoose.model('Amendment');
-var PublicKey     = mongoose.model('PublicKey');
-var Merkle        = mongoose.model('Merkle');
-var Coin          = mongoose.model('Coin');
-var Key           = mongoose.model('Key');
-var Transaction   = mongoose.model('Transaction');
-var Wallet        = mongoose.model('Wallet');
-var TxMemory      = mongoose.model('TxMemory');
-var MerkleService = service.Merkle;
 var logger        = require('../lib/logger')();
 
-// Services
-var PeeringService = service.Peering;
+module.exports.get = function (conn, MerkleService, PeeringService) {
 
-module.exports.get = function (pgp, currency, conf) {
+  var Amendment     = conn.model('Amendment');
+  var PublicKey     = conn.model('PublicKey');
+  var Merkle        = conn.model('Merkle');
+  var Coin          = conn.model('Coin');
+  var Key           = conn.model('Key');
+  var Transaction   = conn.model('Transaction');
+  var Wallet        = conn.model('Wallet');
+  var TxMemory      = conn.model('TxMemory');
 
-  this.processTx = function (tx, doFilter, callback) {
+  this.processTx = function (txObj, doFilter, callback) {
     if (arguments.length == 2) {
       callback = doFilter;
       doFilter = true;
     }
+    var tx = new Transaction(txObj);
     async.waterfall([
       function (next) {
         if (doFilter) {
@@ -202,7 +198,10 @@ module.exports.get = function (pgp, currency, conf) {
                 Wallet.getTheOne(tx.recipient, next);
               },
               function (wallet, next){
-                PeeringService.coinIsOwned(tx.recipient, coin, tx, wallet, next);
+                if (PeeringService)
+                  PeeringService.coinIsOwned(tx.recipient, coin, tx, wallet, next);
+                else
+                  next(null, false);
               },
               function (owned, next){
                 var err = !owned ? 'Coin ' + coin.toString() + ' does not appear to be owned by sender, according to network' : null;

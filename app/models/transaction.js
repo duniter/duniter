@@ -25,10 +25,11 @@ var TransactionSchema = new Schema({
 });
 
 TransactionSchema.pre('save', function (next) {
+  var that = this;
   this.updated = Date.now();
   async.waterfall([
     function (next){
-      mongoose.model('TxMemory').deleteOverNumber(this.sender, this.number, next);
+      that.model('TxMemory').deleteOverNumber(this.sender, this.number, next);
     }
   ], next);
 });
@@ -200,13 +201,13 @@ TransactionSchema.statics.findLastOf = function (fingerprint, done) {
 
 TransactionSchema.statics.findAllWithSource = function (issuer, number, done) {
 
-  Transaction
+  this
     .find({ coins: new RegExp(issuer + "-" + number + ":") })
     .sort({number: -1})
     .exec(done);
 };
 
-var Transaction = mongoose.model('Transaction', TransactionSchema);
+module.exports = TransactionSchema;
 
 function fill (tx1, tx2) {
   tx1.version      = tx2.version;

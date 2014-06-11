@@ -4,10 +4,9 @@ var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var mongoose = require('mongoose');
-var server   = require('../app/lib/server');
+var ucoin    = require('./..');
 
-server.database.init();
-var CommunityFlow = mongoose.model('CommunityFlow');
+var CommunityFlow = mongoose.model('CommunityFlow', require('../app/models/communityflow'));
 
 describe('Community flow', function(){
 

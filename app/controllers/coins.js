@@ -1,16 +1,20 @@
 var jpgp        = require('../lib/jpgp');
 var async       = require('async');
-var mongoose    = require('mongoose');
 var _           = require('underscore');
-var Coin        = mongoose.model('Coin');
-var Transaction = mongoose.model('Transaction');
-var service     = require('../service');
 var logger      = require('../lib/logger')();
 
-// Services
-var ParametersService = service.Parameters;
+module.exports = function (hdcServer) {
+  return new CoinBinding(hdcServer);
+};
 
-module.exports = function (pgp, currency, conf) {
+function CoinBinding(hdcServer) {
+
+  // Services
+  var ParametersService = hdcServer.ParametersService;
+
+  // Models
+  var Coin        = hdcServer.conn.model('Coin');
+  var Transaction = hdcServer.conn.model('Transaction');
 
   this.list = function (req, res) {
 

@@ -42,4 +42,4 @@ TxMemorySchema.statics.deleteOverNumber = function (sender, number, done) {
   this.remove({ "sender": sender, "number": { $gt: start }}, done);
 };
 
-var TxMemory = mongoose.model('TxMemory', TxMemorySchema);
+module.exports = TxMemorySchema;

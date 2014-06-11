@@ -232,4 +232,4 @@ VotingSchema.statics.removeCurrents = function (issuer, done) {
     });
 }
 
-var Voting = mongoose.model('Voting', VotingSchema);
+module.exports = VotingSchema;

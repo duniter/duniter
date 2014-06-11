@@ -106,7 +106,8 @@ MerkleSchema.methods = {
   }
 };
 
-function retrieve(merkleID, done) {
+MerkleSchema.statics.retrieve = function(merkleID, done) {
+  var Merkle = this.model('Merkle');
   async.waterfall([
     function(next){
       Merkle.findOne(merkleID, next);
@@ -122,58 +123,59 @@ function retrieve(merkleID, done) {
 }
 
 MerkleSchema.statics.forPublicKeys = function (done) {
-  retrieve({ type: 'pubkeys' }, done);
+  this.retrieve({ type: 'pubkeys' }, done);
 };
 
 MerkleSchema.statics.signaturesOfAmendment = function (number, hash, done) {
-  retrieve({ type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
+  this.retrieve({ type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
 MerkleSchema.statics.signaturesWrittenForAmendment = function (number, hash, done) {
-  retrieve({ type: 'amendment_signatures', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
+  this.retrieve({ type: 'amendment_signatures', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
 MerkleSchema.statics.txOfSender = function (fingerprint, done) {
-  retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
+  this.retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
 };
 
 MerkleSchema.statics.txToRecipient = function (fingerprint, done) {
-  retrieve({ type: 'txToRecipient', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
+  this.retrieve({ type: 'txToRecipient', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
 };
 
 MerkleSchema.statics.peers = function (done) {
-  retrieve({ type: 'peers', criteria: '{}' }, done);
+  this.retrieve({ type: 'peers', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.WalletEntries = function (done) {
-  retrieve({ type: 'thtentries', criteria: '{}' }, done);
+  this.retrieve({ type: 'thtentries', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.proposedMembers = function (done) {
-  retrieve({ type: 'proposedMembers', criteria: '{}' }, done);
+  this.retrieve({ type: 'proposedMembers', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.proposedVoters = function (done) {
-  retrieve({ type: 'proposedVoters', criteria: '{}' }, done);
+  this.retrieve({ type: 'proposedVoters', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.membersIn = function (number, algo, done) {
-  retrieve({ type: 'membersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
+  this.retrieve({ type: 'membersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.membersOut = function (number, algo, done) {
-  retrieve({ type: 'membersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
+  this.retrieve({ type: 'membersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.votersIn = function (number, algo, done) {
-  retrieve({ type: 'votersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
+  this.retrieve({ type: 'votersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.votersOut = function (number, algo, done) {
-  retrieve({ type: 'votersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
+  this.retrieve({ type: 'votersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
+  var Merkle = this.model('Merkle');
   async.waterfall([
     function (next) {
       Merkle.peers(next);
@@ -188,6 +190,7 @@ MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
 };
 
 MerkleSchema.statics.addPublicKey = function (fingerprint, done) {
+  var Merkle = this.model('Merkle');
   async.waterfall([
     function (next) {
       Merkle.forPublicKeys(function (err, merkle) {
@@ -204,6 +207,7 @@ MerkleSchema.statics.addPublicKey = function (fingerprint, done) {
 };
 
 MerkleSchema.statics.removePublicKey = function (fingerprint, done) {
+  var Merkle = this.model('Merkle');
   async.waterfall([
     function (next) {
       Merkle.forPublicKeys(function (err, merkle) {
@@ -220,6 +224,7 @@ MerkleSchema.statics.removePublicKey = function (fingerprint, done) {
 };
 
 MerkleSchema.statics.updateSignaturesOfAmendment = function (am, vote, done) {
+  var Merkle = this.model('Merkle');
   async.waterfall([
     function (next) {
       Merkle.signaturesOfAmendment(am.number, am.hash, function (err, merkle) {
@@ -236,6 +241,7 @@ MerkleSchema.statics.updateSignaturesOfAmendment = function (am, vote, done) {
 };
 
 MerkleSchema.statics.updateForWalletEntries= function (previousHash, newHash, done) {
+  var Merkle = this.model('Merkle');
   async.waterfall([
     function (next) {
       Merkle.WalletEntries(function (err, merkle) {
@@ -252,6 +258,7 @@ MerkleSchema.statics.updateForWalletEntries= function (previousHash, newHash, do
 };
 
 MerkleSchema.statics.updateForTransfert = function (tx, done) {
+  var Merkle = this.model('Merkle');
   async.waterfall([
     function (next){
       Merkle.txOfSender(tx.sender, next);
@@ -350,4 +357,4 @@ MerkleSchema.statics.mapForVotings = function (hashes, done) {
   });
 };
 
-var Merkle = mongoose.model('Merkle', MerkleSchema);
+module.exports = MerkleSchema;

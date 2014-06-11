@@ -1,11 +1,11 @@
-var async       = require('async');
-var mongoose    = require('mongoose');
-var _           = require('underscore');
-var Amendment   = mongoose.model('Amendment');
-var log4js      = require('log4js');
-var logger      = require('../lib/logger')('service');
+var async    = require('async');
+var _        = require('underscore');
+var log4js   = require('log4js');
+var logger   = require('../lib/logger')('service');
 
-module.exports.get = function (currency, conf) {
+module.exports.get = function (conn, conf) {
+
+  var Amendment = conn.model('Amendment');
 
   // Reference to currently promoted amendment
   var current;

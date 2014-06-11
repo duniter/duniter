@@ -1,20 +1,22 @@
-var jpgp        = require('../lib/jpgp');
-var async       = require('async');
-var mongoose    = require('mongoose');
-var PublicKey   = mongoose.model('PublicKey');
-var Membership  = mongoose.model('Membership');
-var Voting      = mongoose.model('Voting');
-var Vote        = mongoose.model('Vote');
-var Transaction = mongoose.model('Transaction');
+var jpgp   = require('../lib/jpgp');
+var async  = require('async');
+var status = require('../models/statusMessage');
 
-module.exports.get = function (currencyName) {
+module.exports.get = function (conn, currencyName) {
 
-  return ParameterNamespace(currencyName);
+  return ParameterNamespace(conn, currencyName);
 };
 
-function ParameterNamespace (currency) {
+function ParameterNamespace (conn, currency) {
 
   var that = this;
+  var PublicKey   = conn.model('PublicKey');
+  var Membership  = conn.model('Membership');
+  var Voting      = conn.model('Voting');
+  var Vote        = conn.model('Vote');
+  var Peer        = conn.model('Peer');
+  var Transaction = conn.model('Transaction');
+  var Forward     = conn.model('Forward');
 
   this.getTransaction = function (req, callback) {
     async.waterfall([
@@ -84,7 +86,20 @@ function ParameterNamespace (currency) {
       callback('Cannot identify signature issuer`s keyID');
       return;
     }
-    callback(null, entry + signature, keyID);
+
+    var peer = new Peer();
+
+    async.waterfall([
+      function (next){
+        peer.parse(signedPR, next);
+      },
+      function (peer, next){
+        peer.verify(currency, next);
+      },
+      function (verified, next){
+        next(null, peer, keyID);
+      },
+    ], callback);
   };
 
   this.getFingerprint = function (req, callback){
@@ -341,7 +356,99 @@ function ParameterNamespace (currency) {
       callback('Requires a Wallet entry + signature');
       return;
     }
-    callback(null, req.body.entry + req.body.signature);
+
+    var entry = new Wallet();
+    
+    async.waterfall([
+
+      function (next) {
+        if(signedEntry.indexOf('-----BEGIN') == -1){
+          next('Signature not found in given Wallet');
+          return;
+        }
+        next();
+      },
+
+      // Check signature's key ID
+      function(next){
+        var sig = signedEntry.substring(signedEntry.indexOf('-----BEGIN'));
+        var keyID = jpgp().signature(sig).issuer();
+        if(!(keyID && keyID.length == 16)){
+          next('Cannot identify signature issuer`s keyID');
+          return;
+        }
+        next(null, keyID);
+      },
+
+      // Looking for corresponding public key
+      function(keyID, next){
+        PublicKey.getTheOne(keyID, function (err, pubkey) {
+          next(err, pubkey);
+        });
+      },
+
+      // Verify signature
+      function(pubkey, next){
+        var entry = new Wallet();
+      },
+      function (next){
+        entry.parse(signedEntry, next);
+      },
+      function (entry, next){
+        entry.verify(currency, next);
+      },
+      function (valid, next){
+        entry.verifySignature(pubkey.raw, next);
+      },
+      function (verified, next){
+        if(!verified){
+          next('Bad signature');
+          return;
+        }
+        next(null, entry);
+      }
+    ], callback);
+  };
+
+  this.getForward = function (req, callback) {
+    async.waterfall([
+
+      // Parameters
+      function(next){
+        if(!(req.body && req.body.forward && req.body.signature)){
+          next('Requires a peering forward + signature');
+          return;
+        }
+        next(null, req.body.forward, req.body.signature);
+      },
+
+      // Check signature's key ID
+      function(pr, sig, next){
+        PublicKey.getFromSignature(sig, function (err, pubkey) {
+          next(null, new Forward(), pr + sig, pubkey);
+        });
+      },
+
+      // Verify signature
+      function(fwd, signedPR, pubkey, next){
+
+        async.waterfall([
+          function (next){
+            fwd.parse(signedPR, next);
+          },
+          function (fwd, next){
+            fwd.verify(currency, next);
+          },
+          function(valid, next){
+            if(!valid){
+              next('Not a valid peering request');
+              return;
+            }
+            next(null, fwd);
+          }
+        ], next);
+      }
+    ], callback);
   };
 
   this.getStatus = function (req, callback) {
@@ -349,10 +456,39 @@ function ParameterNamespace (currency) {
       callback('Requires a status + signature');
       return;
     }
-    callback(null, req.body.status + req.body.signature);
+    var status = new Status();
+    var pubkey;
+    async.waterfall([
+      function (next){
+        status.parse(signedSR, next);
+      },
+      function (status, next){
+        status.verify(currency, next);
+      },
+      // Looking for corresponding public key
+      function (verified, next){
+        if (!verified) {
+          next('Wrong status structure');
+          return;
+        }
+        PublicKey.getFromSignature(status.signature, next);
+      },
+      function (pk, next){
+        pubkey = pk;
+        status.verifySignature(pubkey.raw, next);
+      },
+      function (verified, next){
+        if (!verified) {
+          next('Wrong signature');
+          return;
+        }
+        next(null, status);
+      },
+    ], callback);
   };
 
   this.getPubkey = function (req, callback) {
+    console.log(req.body);
     if(!req.body || !req.body.keytext){
       callback('Parameter `keytext` is required');
       return;
@@ -361,7 +497,7 @@ function ParameterNamespace (currency) {
       callback('Keytext does not look like a public key message');
       return;
     }
-    var PublicKey = mongoose.model('PublicKey');
+    var PublicKey = conn.model('PublicKey');
     var pubkey = new PublicKey({ raw: req.body.keytext });
     pubkey.construct(function (err) {
       callback(err, pubkey);

@@ -1,16 +1,14 @@
-var service   = require('../service');
-var jpgp      = require('../lib/jpgp');
-var async     = require('async');
-var mongoose  = require('mongoose');
-var _         = require('underscore');
-var merkle    = require('merkle');
-var PublicKey = mongoose.model('PublicKey');
-var logger    = require('../lib/logger')('pubkey');
+var jpgp   = require('../lib/jpgp');
+var async  = require('async');
+var _      = require('underscore');
+var merkle = require('merkle');
+var vucoin = require('vucoin');
+var logger = require('../lib/logger')('pubkey');
 
-// Services
-var KeyService = service.Key;
+module.exports.get = function (conn, conf, KeyService) {
 
-module.exports.get = function (pgp, currency, conf) {
+  var PublicKey = conn.model('PublicKey');
+  var Key = conn.model('Key');
   
   var fifo = async.queue(function (task, callback) {
     task(callback);
@@ -37,9 +35,23 @@ module.exports.get = function (pgp, currency, conf) {
             return;
           }
           // Known key: persist
-          PublicKey.persist(pubkey, function (err) {
-            next(err);
-          });
+          async.waterfall([
+            function (next){
+              PublicKey.persist(pubkey, next);
+            },
+            function (next){
+              KeyService.setKnown(pubkey.fingerprint, next);
+            },
+            function (next) {
+              conn.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
+                next(err);
+              });
+            },
+            function (next){
+              logger.debug('✔ %s', pubkey.fingerprint);
+              next();
+            },
+          ], next);
         },
         function (next) {
           // If kmanagement == ALL, mark key as handled to handle key's transactions
@@ -55,6 +67,40 @@ module.exports.get = function (pgp, currency, conf) {
         cb(err, dbPubkey);
       });
     }, callback);
+  };
+
+  this.getForPeer = function (peer, done) {
+    PublicKey.getTheOne(peer.fingerprint, function (err, pubkey) {
+      if (!err) {
+        done(null, pubkey);
+      } else {
+        async.waterfall([
+          function (next){
+            logger.debug("⟳ Retrieving peer %s public key", peer.fingerprint);
+            vucoin(peer.getIPv6() || peer.getIPv4() || peer.getDns(), peer.getPort(), true, true, next);
+          },
+          function (node, next){
+            node.network.pubkey(next);
+          },
+          function (rawPubkey, signature, next){
+            var cert = jpgp().certificate(rawPubkey);
+            if(!cert.fingerprint.match(new RegExp("^" + peer.fingerprint + "$", "g"))){
+              next('Peer\'s public key ('+cert.fingerprint+') does not match peering (' + peer.fingerprint + ')');
+              return;
+            }
+            PublicKey.persistFromRaw(rawPubkey, function (err) {
+              next();
+            });
+          },
+          function (next){
+            PublicKey.find({ fingerprint: peer.fingerprint }, function (err, pubkeys) {
+              if(pubkeys.length > 0) next(null, pubkeys[0]);
+              else if(pubkeys.length == 0) next('Error getting public key for peer ' + peer.getURL());
+            });
+          },
+        ], done);
+      }
+    });
   };
 
   return this;

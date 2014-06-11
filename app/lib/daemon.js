@@ -9,19 +9,16 @@ var Amendment  = mongoose.model('Amendment');
 var Key        = mongoose.model('Key');
 var connectPgp = require('connect-pgp');
 var _          = require('underscore');
-var service    = require('../service');
 var jpgp       = require('./jpgp');
 var sha1       = require('sha1');
 var vucoin     = require('vucoin');
 var logger     = require('./logger')('daemon');
 
-module.exports = new Daemon();
+module.exports = function (PeeringService, ContractService) {
+  return new Daemon(PeeringService, ContractService);
+};
 
-function Daemon () {
-
-  // Services
-  var PeeringService  = service.Peering;
-  var ContractService = service.Contract;
+function Daemon (PeeringService, ContractService) {
   
   // self reference, private scope
   var daemon = this;

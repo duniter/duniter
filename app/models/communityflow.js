@@ -284,4 +284,4 @@ CommunityFlowSchema.statics.getForAmendmentAndAlgo = function (amNumber, algo, d
   this.find({ amendmentNumber: amNumber, algorithm: algo }, done);
 }
 
-var CommunityFlow = mongoose.model('CommunityFlow', CommunityFlowSchema);
+module.exports = CommunityFlowSchema;

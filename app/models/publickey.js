@@ -3,7 +3,6 @@ var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
-var vucoin   = require('vucoin');
 var Schema   = mongoose.Schema;
 var logger   = require('../lib/logger')('pubkey');
 
@@ -83,7 +82,7 @@ PublicKeySchema.methods = {
 };
 
 PublicKeySchema.statics.getTheOne = function (keyID, done) {
-  PublicKey.search("0x" + keyID, function (err, keys) {
+  this.search("0x" + keyID, function (err, keys) {
     if(keys.length > 1){
       done('Multiple PGP keys found for keyID 0x' + keyID + '.');
       return;
@@ -160,6 +159,8 @@ PublicKeySchema.statics.search = function (motif, done) {
 };
 
 PublicKeySchema.statics.persistFromRaw = function (rawPubkey, done) {
+  var that = this;
+  var PublicKey = that.model('PublicKey');
   var pubkey = new PublicKey({ raw: rawPubkey });
   async.waterfall([
     function (next){
@@ -178,12 +179,14 @@ var persistQueue = async.queue(function (fingerprint, persistTask) {
 }, 1);
 
 PublicKeySchema.statics.persist = function (pubkey, done) {
+  var that = this;
+  var PublicKey = that.model('PublicKey');
   async.waterfall([
     function (next) {
       persistQueue.push(pubkey.fingerprint, function(){
         var now = new Date();
         var comingKey = jpgp().certificate(pubkey.raw).key;
-        PublicKey.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
+        that.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
           var comingArmored = comingKey.armor();
           var comingHash = comingArmored.hash();
           // Create if not exists
@@ -218,62 +221,8 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           });
         });
       });
-    },
-    function (next){
-      var KeyService = require('../service').Key;
-      KeyService.setKnown(pubkey.fingerprint, next);
-    },
-    function (next) {
-      mongoose.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
-        next(err);
-      });
     }
-  ], function (err) {
-    if (!err) {
-      logger.debug('✔ %s', pubkey.fingerprint);
-    }
-    done(err);
-  });
+  ], done);
 };
 
-PublicKeySchema.statics.getForPeer = function (peer, done) {
-  async.waterfall([
-    function (next){
-      PublicKey.find({ fingerprint: peer.fingerprint }, next);
-    },
-    function (keys, next){
-      if(keys.length > 0){
-        next(null, keys[0]);
-      }
-      else{
-        async.waterfall([
-          function (next){
-            logger.debug("⟳ Retrieving peer %s public key", peer.fingerprint);
-            vucoin(peer.getIPv6() || peer.getIPv4() || peer.getDns(), peer.getPort(), true, true, next);
-          },
-          function (node, next){
-            node.network.pubkey(next);
-          },
-          function (rawPubkey, signature, next){
-            var cert = jpgp().certificate(rawPubkey);
-            if(!cert.fingerprint.match(new RegExp("^" + peer.fingerprint + "$", "g"))){
-              next('Peer\'s public key ('+cert.fingerprint+') does not match peering (' + peer.fingerprint + ')');
-              return;
-            }
-            PublicKey.persistFromRaw(rawPubkey, function (err) {
-              next();
-            });
-          },
-          function (next){
-            PublicKey.find({ fingerprint: peer.fingerprint }, function (err, pubkeys) {
-              if(pubkeys.length > 0) next(null, pubkeys[0]);
-              else if(pubkeys.length == 0) next('Error getting public key for peer ' + peer.getURL());
-            });
-          },
-        ], next);
-      }
-    },
-  ], done);
-}
-
-var PublicKey = mongoose.model('PublicKey', PublicKeySchema);
+module.exports = PublicKeySchema;

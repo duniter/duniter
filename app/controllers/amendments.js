@@ -1,21 +1,25 @@
 var async     = require('async');
-var mongoose  = require('mongoose');
 var _         = require('underscore');
-var Amendment = mongoose.model('Amendment');
-var Merkle    = mongoose.model('Merkle');
-var service   = require('../service');
 var logger    = require('../lib/logger')();
 
-// Services
-var ParametersService = service.Parameters;
-var MerkleService     = service.Merkle;
-var VoteService       = service.Vote;
-var StrategyService   = service.Strategy;
-var PeeringService    = service.Peering;
-var SyncService       = service.Sync;
-var ContractService   = service.Contract;
+module.exports = function (hdcServer) {
+  return new AmendmentBinding(hdcServer);
+};
 
-module.exports = function (pgp, currency, conf) {
+function AmendmentBinding (hdcServer) {
+
+  // Services
+  var ParametersService = hdcServer.ParametersService;
+  var MerkleService     = hdcServer.MerkleService;
+  var VoteService       = hdcServer.VoteService;
+  var StrategyService   = hdcServer.StrategyService;
+  var PeeringService    = hdcServer.PeeringService;
+  var SyncService       = hdcServer.SyncService;
+  var ContractService   = hdcServer.ContractService;
+
+  // Models
+  var Amendment = hdcServer.conn.model('Amendment');
+  var Merkle    = hdcServer.conn.model('Merkle');
 
   this.promoted = function (req, res) {
     showAmendment(res, ContractService.current());
@@ -133,8 +137,6 @@ module.exports = function (pgp, currency, conf) {
       });
     }
   }
-  
-  return this;
 }
 
 function amendmentMerkle (req, res, merkleSource, merkleMap) {

@@ -1,30 +1,36 @@
 var jpgp       = require('../lib/jpgp');
 var async      = require('async');
 var vucoin     = require('vucoin');
-var mongoose   = require('mongoose');
-var Peer       = mongoose.model('Peer');
-var Forward    = mongoose.model('Forward');
-var Amendment  = mongoose.model('Amendment');
-var Membership = mongoose.model('Membership');
-var Voting     = mongoose.model('Voting');
-var PublicKey  = mongoose.model('PublicKey');
-var Merkle     = mongoose.model('Merkle');
-var Key        = mongoose.model('Key');
 var _          = require('underscore');
 var logger     = require('../lib/logger')();
 var mlogger    = require('../lib/logger')('membership');
 var vlogger    = require('../lib/logger')('voting');
-var service    = require('../service');
 
-// Services
-var http              = service.HTTP;
-var MerkleService     = service.Merkle;
-var ParametersService = service.Parameters;
-var PeeringService    = service.Peering;
-var SyncService       = service.Sync;
-var ContractService   = service.Contract;
+module.exports = function (registryServer, conf) {
+  return new RegistryBinding(registryServer, conf);
+};
 
-module.exports = function (pgp, currency, conf) {
+function RegistryBinding (registryServer, conf) {
+
+  var that = this;
+
+  // Services
+  var http              = registryServer.HTTPService;
+  var MerkleService     = registryServer.MerkleService;
+  var ParametersService = registryServer.ParametersService;
+  var PeeringService    = registryServer.PeeringService;
+  var SyncService       = registryServer.SyncService;
+  var ContractService   = registryServer.ContractService;
+
+  // Models
+  var Peer       = registryServer.conn.model('Peer');
+  var Forward    = registryServer.conn.model('Forward');
+  var Amendment  = registryServer.conn.model('Amendment');
+  var Membership = registryServer.conn.model('Membership');
+  var Voting     = registryServer.conn.model('Voting');
+  var PublicKey  = registryServer.conn.model('PublicKey');
+  var Merkle     = registryServer.conn.model('Merkle');
+  var Key        = registryServer.conn.model('Key');
 
   this.parameters = function (req, res) {
     res.end(JSON.stringify({
@@ -42,7 +48,7 @@ module.exports = function (pgp, currency, conf) {
   this.amendmentCurrent = function (req, res) {
     var am = ContractService.proposed();
     req.params.am_number = ((am && am.number)  || 0).toString();
-    this.amendmentNext(req, res);
+    that.amendmentNext(req, res);
   };
 
   this.amendmentNext = function (req, res) {
@@ -288,6 +294,4 @@ module.exports = function (pgp, currency, conf) {
       });
     });
   };
-
-  return this;
 }

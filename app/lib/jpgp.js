@@ -53,10 +53,6 @@ function JPGP() {
     });
   }
 
-  this.signsDetached = function (message, privateKey, done) {
-    require('./server').sign(message, done);
-  }
-
   this.issuer = function() {
     var issuer = "";
     try{

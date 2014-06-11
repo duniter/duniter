@@ -1,9 +1,8 @@
 var jpgp       = require('../lib/jpgp');
 var async      = require('async');
-var mongoose   = require('mongoose');
 var _          = require('underscore');
 
-module.exports = new function () {
+module.exports.get = function (conn) {
 
   this.handleKey = function(key, isManaged, done) {
     key = key || "";
@@ -18,7 +17,7 @@ module.exports = new function () {
         next();
       },
       function (next) {
-        mongoose.model('Key').setManaged(key, isManaged, next);
+        conn.model('Key').setManaged(key, isManaged, next);
       }
     ], done);
   }
@@ -29,7 +28,7 @@ module.exports = new function () {
   this.isKnown = function(keyFingerprint, done) {
     async.waterfall([
       function (next) {
-        mongoose.model('Key').find({ fingerprint: keyFingerprint }, next);
+        conn.model('Key').find({ fingerprint: keyFingerprint }, next);
       },
       function (keys, next){
         next(null, keys.length == 1);
@@ -41,7 +40,7 @@ module.exports = new function () {
   * Persist a key
   */
   this.setKnown = function(keyFingerprint, done) {
-    mongoose.model('Key').setKnown(keyFingerprint, done);
+    conn.model('Key').setKnown(keyFingerprint, done);
   }
 
   return this;

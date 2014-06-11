@@ -7,60 +7,19 @@ var sha1      = require('sha1');
 var _         = require('underscore');
 var jpgp      = require('../app/lib/jpgp');
 var server    = require('../app/lib/server');
-var mongoose  = require('mongoose');
 var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
+var ucoin     = require('./..');
 var logger    = require('../app/lib/logger')('test');
 
-var nb = 60;
 var currency = "transfertest";
-var tester    = is = on = new test.tester(currency);
-
-logger.debug("Reading files & initializing...");
-
-server.database.init();
-
-var PublicKey   = mongoose.model('PublicKey');
-var Membership  = mongoose.model('Membership');
-var Voting      = mongoose.model('Voting');
-var Vote        = mongoose.model('Vote');
-var Amendment   = mongoose.model('Amendment');
-var Transaction = mongoose.model('Transaction');
-
-var now   = new Date().timestamp();
-var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat", "Cat");
-var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi", "Tobi");
-var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow", "Snow");
-// var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
-
-var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-// var pubkeyCat2     = fs.readFileSync(__dirname + '/data/lolcat.pub2', 'utf8');
-var pubkeyTobi     = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
-// var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
-
-var config = {
-  server: {
-    port: 8007,
-    pgp: {
-      key: __dirname + "/data/lolcat.priv",
-      password: "lolcat"
-    },
-  },
-  db: {
-    database : currency,
-    host: "localhost"
-  }
-};
-
-// Update conf
-if(config.server.pgp.key) config.server.pgp.key = fs.readFileSync(config.server.pgp.key, 'utf8');
+var now = new Date().timestamp();
 var conf = {
   currency: currency,
+  pgpkey: fs.readFileSync(__dirname + "/data/lolcat.priv"),
+  pgppasswd: 'lolcat',
   ipv4: '127.0.0.1',
   port: 9108,
-  pgpkey: config.server.pgp.key,
-  pgppasswd: config.server.pgp.password,
   remoteipv4: '127.0.0.1',
   remoteport: 9108,
   kmanagement: 'ALL',
@@ -75,6 +34,29 @@ var conf = {
   },
   createNext: true
 };
+var server = ucoin.createRegistryServer({ name: currency }, conf);
+var nb = 60;
+var tester    = is = on = new test.tester(currency);
+
+logger.debug("Reading files & initializing...");
+
+var PublicKey   = null;
+var Membership  = null;
+var Voting      = null;
+var Vote        = null;
+var Amendment   = null;
+var Transaction = null;
+
+var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat", "Cat");
+var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi", "Tobi");
+var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow", "Snow");
+// var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
+
+var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
+var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
+// var pubkeyCat2     = fs.readFileSync(__dirname + '/data/lolcat.pub2', 'utf8');
+var pubkeyTobi     = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
+// var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
 
 var amendments = {
   AM0: {
@@ -130,7 +112,7 @@ var amendments = {
 
 function pksAdd (raw, sig) {
   return function (done) {
-    var PubKeyService = require('../app/service').PublicKey;
+    var PubKeyService = server.PublicKeyService;
     var pubkey = new PublicKey({ raw: raw, signature: sig });
     async.series([
       pubkey.construct.bind(pubkey),
@@ -156,7 +138,7 @@ function memberDo (action, signatory, timestamp) {
   var d = new Date();
   d.setTime((timestamp || now)*1000);
   return function (done) {
-    var SyncService = require('../app/service').Sync;
+    var SyncService = server.SyncService;
     var ms = new Membership({
       version: 1,
       currency: currency,
@@ -193,7 +175,7 @@ function voterDo (signatory, timestamp) {
   var d = new Date();
   d.setTime(timestamp*1000);
   return function (done) {
-    var SyncService = require('../app/service').Sync;
+    var SyncService = server.SyncService;
     var voting = new Voting({
       version: 1,
       currency: currency,
@@ -224,7 +206,7 @@ function voterDo (signatory, timestamp) {
 
 function voteCurrent (signatory) {
   return function (done) {
-    var ContractService = require('../app/service').Contract;
+    var ContractService = server.ContractService;
     var am = ContractService.current();
     voteAm(signatory, am, done);
   };
@@ -232,7 +214,7 @@ function voteCurrent (signatory) {
 
 function voteProposed (signatory, delay) {
   return function (done) {
-    var ContractService = require('../app/service').Contract;
+    var ContractService = server.ContractService;
     var am = ContractService.proposed();
     voteAm(signatory, am, done, delay);
   };
@@ -253,7 +235,7 @@ function voteAm (signatory, am, done, delay) {
   });
   vote.amendment = am;
   vote.hash = sha1(vote.getRawSigned()).toUpperCase();
-  var VoteService = require('../app/service').Vote;
+  var VoteService = server.VoteService;
   VoteService.submit(vote, function (err) {
     if (!err) {
       done(err, { 
@@ -309,7 +291,7 @@ function transfer (signatory, recipient, coins, expectation) {
 function sendTransaction (tx, done) {
   // logger.debug("---------------------");
   // logger.debug(tx.getRaw());
-  var TransactionsService = require('../app/service').Transactions;
+  var TransactionsService = server.TransactionsService;
   TransactionsService.processTx(tx, function (err) {
     if (!err) {
       txBySignatory[tx.sender].hash = tx.hash;
@@ -419,11 +401,19 @@ before(function (done) {
   this.timeout(1000*1000); // 1000 seconds
   async.waterfall([
     function (next){
-      var reset = true;
-      server.database.connect(config.db.database, config.db.host, config.db.port, reset, next);
+      server.connect(next);
     },
-    function (dbconf, next){
-      server.express.app(conf, next);
+    function (next){
+      PublicKey   = server.conn.model('PublicKey');
+      Membership  = server.conn.model('Membership');
+      Voting      = server.conn.model('Voting');
+      Vote        = server.conn.model('Vote');
+      Amendment   = server.conn.model('Amendment');
+      Transaction = server.conn.model('Transaction');
+      server.reset(next);
+    },
+    function (next){
+      server.listenBMA(next);
     },
     function (appReady, next){
       tester.app(appReady);
@@ -436,8 +426,7 @@ before(function (done) {
       }, next);
     },
     function (next){
-      server.database.disconnect();
-      next();
+      server.disconnect(next);
     },
   ], function (err) {
     logger.debug("API fed.");

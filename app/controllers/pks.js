@@ -1,22 +1,26 @@
 var fs        = require('fs');
 var util      = require('util');
 var async     = require('async');
-var mongoose  = require('mongoose');
-var PublicKey = mongoose.model('PublicKey');
-var Merkle    = mongoose.model('Merkle');
 var _         = require('underscore');
 var stream    = require('stream');
 var logger    = require('../lib/logger')();
-var service   = require('../service');
 
-// Services
-var MerkleService     = service.Merkle;
-var ParametersService = service.Parameters;
-var PeeringService    = service.Peering;
-var PublicKeyService  = service.PublicKey;
-var http              = service.HTTP;
+module.exports = function (pksServer) {
+  return new PKSBinding(pksServer);
+}
 
-module.exports = function (pgp, currency, conf) {
+function PKSBinding (pksServer) {
+
+  var conn = pksServer.conn;
+
+  var MerkleService     = pksServer.MerkleService;
+  var ParametersService = pksServer.ParametersService;
+  var PeeringService    = pksServer.PeeringService;
+  var PublicKeyService  = pksServer.PublicKeyService;
+  var http              = pksServer.HTTPService;
+
+  var PublicKey = conn.model('PublicKey');
+  var Merkle    = conn.model('Merkle');
 
   this.getAll = function (req, res) {
     async.waterfall([
@@ -84,6 +88,4 @@ module.exports = function (pgp, currency, conf) {
       });
     });
   };
-
-  return this;
 };

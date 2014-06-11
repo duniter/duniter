@@ -162,6 +162,13 @@ AmendmentSchema.methods = {
     return this.hdc().getLeavingVoters();
   },
 
+  getHash: function() {
+    if (!this.hash) {
+      this.hash = sha1(this.getRaw()).toUpperCase();
+    }
+    return this.hash;
+  },
+
   getRaw: function() {
     var raw = "";
     raw += "Version: " + this.version + "\n";
@@ -198,7 +205,7 @@ AmendmentSchema.methods = {
       done();
       return;
     }
-    Amendment.find({ number: this.number - 1, hash: this.previousHash }, function (err, ams) {
+    this.model('Amendment').find({ number: this.number - 1, hash: this.previousHash }, function (err, ams) {
       if(ams.length == 0){
         done('Previous amendment not found');
         return;
@@ -225,7 +232,7 @@ AmendmentSchema.methods = {
 };
 
 AmendmentSchema.statics.nextNumber = function (done) {
-  Amendment.current(function (err, am) {
+  this.current(function (err, am) {
     var number = err ? -1 : am.number;
     done(null, number + 1);
   });
@@ -505,7 +512,7 @@ AmendmentSchema.statics.isProposedVoter = function (voter, amNumber, done) {
   ], done);
 };
 
-var Amendment = mongoose.model('Amendment', AmendmentSchema);
+module.exports = AmendmentSchema;
 
 function fill (am1, am2) {
   [

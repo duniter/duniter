@@ -54,4 +54,4 @@ ConfigurationSchema.pre('save', function (next) {
   next();
 });
 
-var Configuration = mongoose.model('Configuration', ConfigurationSchema);
+module.exports = ConfigurationSchema;

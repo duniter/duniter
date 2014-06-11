@@ -242,4 +242,4 @@ WalletSchema.statics.findMatchingTransaction = function (tx, done) {
   }, done);
 }
 
-var Wallet = mongoose.model('Wallet', WalletSchema);
+module.exports = WalletSchema;

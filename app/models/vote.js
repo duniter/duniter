@@ -1,13 +1,9 @@
-var sha1      = require('sha1');
-var async     = require('async');
-var jpgp      = require('../lib/jpgp');
-var mongoose  = require('mongoose');
-var fs        = require('fs');
-var PublicKey = mongoose.model('PublicKey');
-var Amendment = mongoose.model('Amendment');
-var Merkle    = mongoose.model('Merkle');
-var Key       = mongoose.model('Key');
-var Schema    = mongoose.Schema;
+var sha1     = require('sha1');
+var async    = require('async');
+var jpgp     = require('../lib/jpgp');
+var fs       = require('fs');
+var mongoose = require('mongoose');
+var Schema   = mongoose.Schema;
 
 var VoteSchema = new Schema({
   issuer: String,
@@ -66,10 +62,13 @@ VoteSchema.methods = {
   },
 
   issuerIsVoter: function(done) {
+    var Key       = this.model('Key');
     Key.wasVoter(this.issuer, this.amendment.number - 1, done);
   },
   
   parse: function(rawVote, rawPubkey, callback) {
+    var PublicKey = this.model('PublicKey');
+    var Amendment = this.model('Amendment');
     if(!callback && rawPubkey){
       callback = rawPubkey;
       rawPubkey = null;
@@ -128,6 +127,7 @@ VoteSchema.methods = {
   },
 
   getAmendment: function (done) {
+    var Amendment = this.model('Amendment');
     var that = this;
     if(!this.amendment){
       Amendment.findById(this._amendment, function (err, am) {
@@ -139,6 +139,7 @@ VoteSchema.methods = {
   },
 
   saveAmendment: function (signaturesLeaves, done) {
+    var Merkle    = this.model('Merkle');
     var that = this;
     var am;
     async.waterfall([
@@ -194,6 +195,7 @@ VoteSchema.methods = {
   },
 
   loadFromFiles: function(voteFile, amendFile, pubkeyFile, done) {
+    var Amendment = this.model('Amendment');
     var obj = this;
     var voteData = fs.readFileSync(voteFile, 'utf8');
     var amendData = fs.readFileSync(amendFile, 'utf8');
@@ -285,4 +287,4 @@ VoteSchema.statics.getByIssuerAmendmentHashAndBasis = function (issuer, hash, am
   });
 };
 
-var Vote = mongoose.model('Vote', VoteSchema);
+module.exports = VoteSchema;

@@ -31,14 +31,17 @@ KeySchema.pre('save', function (next) {
 });
 
 KeySchema.statics.memberJoin = function(amNumber, fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { $push: { "asMember.joins": amNumber }}, done);
 }
 
 KeySchema.statics.memberLeave = function(amNumber, fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { $push: { "asMember.leaves": amNumber }}, done);
 }
 
 KeySchema.statics.wasMember = function(fingerprint, amNumber, done){
+  var Key = this.model('Key');
   Key.find({ fingerprint: fingerprint }, function (err, keys) {
     if (err || !keys || keys.length == 0) {
       done("Unknown key!");
@@ -64,14 +67,17 @@ KeySchema.statics.wasMember = function(fingerprint, amNumber, done){
 }
 
 KeySchema.statics.voterJoin = function(amNumber, fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { $push: { "asVoter.joins": amNumber }}, done);
 }
 
 KeySchema.statics.voterLeave = function(amNumber, fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { $push: { "asVoter.leaves": amNumber }}, done);
 }
 
 KeySchema.statics.wasVoter = function(fingerprint, amNumber, done){
+  var Key = this.model('Key');
   Key.find({ fingerprint: fingerprint }, function (err, keys) {
     if (err || !keys || keys.length == 0) {
       done("Unknown key!");
@@ -97,6 +103,7 @@ KeySchema.statics.wasVoter = function(fingerprint, amNumber, done){
 }
 
 KeySchema.statics.setKnown = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.findOne({ fingerprint: fingerprint }, function (err, key) {
     var newKey = key == null;
     key = key || new Key({ fingerprint: fingerprint });
@@ -112,6 +119,7 @@ KeySchema.statics.setKnown = function(fingerprint, done){
 }
 
 KeySchema.statics.setManaged = function(fingerprint, managed, done){
+  var Key = this.model('Key');
   Key.findOne({ fingerprint: fingerprint }, function (err, key) {
     key = key || new Key({ fingerprint: fingerprint });
     if(key.managed == managed && key._id){
@@ -132,6 +140,7 @@ KeySchema.statics.setManaged = function(fingerprint, managed, done){
 }
 
 KeySchema.statics.isManaged = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.find({ fingerprint: fingerprint, managed: true }, function (err, keys) {
     if(keys.length > 1){
       done('More than one key managed with fingerprint ' + fingerprint);
@@ -142,95 +151,112 @@ KeySchema.statics.isManaged = function(fingerprint, done){
 }
 
 KeySchema.statics.getManaged = function(done){
+  var Key = this.model('Key');
   Key.find({ managed: true }, done);
 };
 
 KeySchema.statics.getMembers = function(done){
+  var Key = this.model('Key');
   Key.find({ member: true }, done);
 };
 
 KeySchema.statics.getVoters = function(done){
+  var Key = this.model('Key');
   Key.find({ voter: true }, done);
 };
 
 KeySchema.statics.getProposedMembers = function(done){
+  var Key = this.model('Key');
   Key.find({ proposedMember: true }, done);
 };
 
 KeySchema.statics.getProposedVoters = function(done){
+  var Key = this.model('Key');
   Key.find({ proposedVoter: true }, done);
 };
 
 KeySchema.statics.addMember = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { member: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.addVoter = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { voter: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.addProposedMember = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { proposedMember: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.addProposedVoter = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { proposedVoter: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.removeMember = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { member: false }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.removeVoter = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { voter: false }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.removeProposedMember = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { proposedMember: false }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.removeProposedVoter = function(fingerprint, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { proposedVoter: false }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.getLastState = function(key, done){
+  var Key = this.model('Key');
   Key.find({ fingerprint: key }, function (err, keys) {
     done(err, (err || keys.length == 0) ? 0 : keys[0].lastVotingState);
   });
 };
 
 KeySchema.statics.getLastMSState = function(key, done){
+  var Key = this.model('Key');
   Key.find({ fingerprint: key }, function (err, keys) {
     done(err, (err || keys.length == 0) ? 0 : keys[0].lastMemberState);
   });
 };
 
 KeySchema.statics.setLastState = function(key, state, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: key }, { $set: { lastVotingState: state }}, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.setLastMSState = function(key, state, done){
+  var Key = this.model('Key');
   Key.update({ fingerprint: key }, { $set: { lastMemberState: state }}, function (err) {
     done(err);
   });
 };
 
-var Key = mongoose.model('Key', KeySchema);
+module.exports = KeySchema;

@@ -160,10 +160,10 @@ Here are 2 tables on how to compute analitically members & voters changes:
 
 #### Membership computing
 
-        | PKx | IN | OUT
-------  | --- | -- | ---
-Member  | -1  |  0 | -1
-!Member | -1  | +1 |  0
+        |  PKx  |  IN  |   OUT
+------  | ----- | ---- | -----
+Member  |  -1   |   0  |  -1
+!Member |  -1   |  +1  |   0
 
 Where:
 * `Member` has value `1` if the computed key is currently a member, otherwise `0`.
@@ -189,11 +189,11 @@ Using this formula, it can be known at any moment how to apply variation of the 
 
 #### Voting computing
 
-        |     | VT | ML
-------  | --- | -- | ---
-!Voter  |  0  | +1 | -1
-Voter   |  0  |  0 | -1
-Voterx  | -1  | +1 | -1
+        |     | VT  | ML
+------  | --- | --- | ---
+!Voter  |  0  | +1  | -1
+Voter   |  0  |  0  | -1
+Voterx  | -1  | +1  | -1
 
 Where:
 * `Voter` has value `1` if the computed key is currently a voter, otherwise `0`.

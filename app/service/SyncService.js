@@ -12,6 +12,7 @@ var logger        = require('../lib/logger')('sync');
 var mlogger       = require('../lib/logger')('membership');
 var vlogger       = require('../lib/logger')('voting');
 var mathlog       = require('../lib/logger')('registryp');
+var cflowlog      = require('../lib/logger')('cflow');
 
 mathlog.setLevel('INFO');
 
@@ -312,6 +313,7 @@ module.exports.get = function (conn, conf, signsDetached, ContractService, Peeri
     fifoCF.push(function (cb) {
       async.waterfall([
         function (next) {
+          cflowlog.debug('⬇ CF from %s', entry.issuer);
           if (['AnyKey', '1Sig'].indexOf(entry.algorithm) == -1) {
             next('Algorithm must be either AnyKey or 1Sig');
             return;
@@ -341,6 +343,7 @@ module.exports.get = function (conn, conf, signsDetached, ContractService, Peeri
           });
         },
         function (next){
+          cflowlog.debug('✔ CF from %s', entry.issuer);
           that.tryToVote(entry.amendmentNumber + 1, entry.algorithm, function (err) {
             if (err) logger.warn(err);
             next(null, entry);
@@ -548,128 +551,129 @@ module.exports.get = function (conn, conf, signsDetached, ContractService, Peeri
             next(null, vote);
             return;
           }
-          // Tries to vote
-          var now = new Date();
-          async.waterfall([
-            function (next){
-              Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
-            },
-            function (amNext, next){
-              if (daemonJudgesTimeForVote(amNext)) {
+          next('Vote unavailable for now');
+          // // Tries to vote
+          // var now = new Date();
+          // async.waterfall([
+          //   function (next){
+          //     Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
+          //   },
+          //   function (amNext, next){
+          //     if (daemonJudgesTimeForVote(amNext)) {
 
-                var amReal = amNext;
-                var raw = "";
-                async.waterfall([
-                  function (next){
-                    // Prepare AM
-                    if (algo != amNext.algo) {
-                      amReal = new Amendment();
-                      amNext.copyTo(amReal);
-                      console.log(amReal);
-                      raw = amReal.getRaw();
-                      async.waterfall([
-                        function (next){
-                          async.parallel({
-                            membersJoining: async.apply(lookForCKeys, '+', algo, true),
-                            membersLeaving: async.apply(lookForCKeys, '-', algo, true),
-                            votersJoining:  async.apply(lookForCKeys, '+', algo, false),
-                            votersLeaving:  async.apply(lookForCKeys, '-', algo, false),
-                            members:        async.apply(Key.getMembers.bind(Key)),
-                            voters:         async.apply(Key.getVoters.bind(Key)),
-                          }, next);
-                        },
-                        function (res, next){
-                          // Update Merkle of proposed members
-                          var members = [];
-                          var voters = [];
-                          res.members.forEach(function(m){
-                            members.push(m.fingerprint);
-                          });
-                          res.voters.forEach(function(m){
-                            voters.push(m.fingerprint);
-                          });
-                          amReal.membersChanges = [];
-                          amReal.votersChanges = [];
-                          res.membersJoining.forEach(function(fpr){
-                            amReal.membersChanges.push('+' + fpr);
-                            members.push(fpr);
-                          });
-                          res.membersLeaving.forEach(function(fpr){
-                            amReal.membersChanges.push('-' + fpr);
-                            var index = members.indexOf(fpr);
-                            if (~index) {
-                              members.splice(index, 1);
-                            }
-                          });
-                          res.votersJoining.forEach(function(fpr){
-                            amReal.votersChanges.push('+' + fpr);
-                            voters.push(fpr);
-                          });
-                          res.votersLeaving.forEach(function(fpr){
-                            amReal.votersChanges.push('-' + fpr);
-                            var index = voters.indexOf(fpr);
-                            if (~index) {
-                              voters.splice(index, 1);
-                            }
-                          });
-                          var merkleMembers = new Merkle();
-                          var merkleVoters = new Merkle();
-                          members.sort();
-                          voters.sort();
-                          merkleMembers.initialize(members);
-                          merkleVoters.initialize(voters);
-                          amReal.membersChanges.sort();
-                          amReal.membersCount = members.length;
-                          amReal.membersRoot = merkleMembers.root();
-                          amReal.votersChanges.sort();
-                          amReal.votersCount = voters.length;
-                          amReal.votersRoot = merkleVoters.root();
-                          amReal.save(function (err2) {
-                            raw = amReal.getRaw();
-                            next(err || err2);
-                          });
-                        }
-                      ], next);
-                    } else {
-                      raw = amReal.getRaw();
-                      next();
-                    }
-                  },
-                  function (next){
-                    signsDetached(raw, next);
-                  },
-                  function (signature, next){
-                    var signedAm = raw + signature;
-                    vucoin(conf.ipv6 || conf.ipv4 || conf.dns, conf.port, false, false, function (err, node) {
-                      next(null, signedAm, node);
-                    });
-                  },
-                  function (vote, node, next){
-                    node.hdc.amendments.votes.post(vote, next);
-                  },
-                  function (json, next){
-                    var am = new Amendment(json.amendment);
-                    var issuer = PeeringService.cert.fingerprint;
-                    var hash = json.signature.unix2dos().hash();
-                    var basis = json.amendment.number;
-                    Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
-                  },
-                  function (vote, next){
-                    if (!vote) {
-                      next('Self vote was not found');
-                      return;
-                    }
-                    vote.selfGenerated = true;
-                    vote.save(function  (err) {
-                      next(err, vote);
-                    });
-                  },
-                ], next);
-                return;
-              }
-              next('Not yet');
-            },
-          ], next);
+          //       var amReal = amNext;
+          //       var raw = "";
+          //       async.waterfall([
+          //         function (next){
+          //           // Prepare AM
+          //           if (algo != amNext.algo) {
+          //             amReal = new Amendment();
+          //             amNext.copyTo(amReal);
+          //             console.log(amReal);
+          //             raw = amReal.getRaw();
+          //             async.waterfall([
+          //               function (next){
+          //                 async.parallel({
+          //                   membersJoining: async.apply(lookForCKeys, '+', algo, true),
+          //                   membersLeaving: async.apply(lookForCKeys, '-', algo, true),
+          //                   votersJoining:  async.apply(lookForCKeys, '+', algo, false),
+          //                   votersLeaving:  async.apply(lookForCKeys, '-', algo, false),
+          //                   members:        async.apply(Key.getMembers.bind(Key)),
+          //                   voters:         async.apply(Key.getVoters.bind(Key)),
+          //                 }, next);
+          //               },
+          //               function (res, next){
+          //                 // Update Merkle of proposed members
+          //                 var members = [];
+          //                 var voters = [];
+          //                 res.members.forEach(function(m){
+          //                   members.push(m.fingerprint);
+          //                 });
+          //                 res.voters.forEach(function(m){
+          //                   voters.push(m.fingerprint);
+          //                 });
+          //                 amReal.membersChanges = [];
+          //                 amReal.votersChanges = [];
+          //                 res.membersJoining.forEach(function(fpr){
+          //                   amReal.membersChanges.push('+' + fpr);
+          //                   members.push(fpr);
+          //                 });
+          //                 res.membersLeaving.forEach(function(fpr){
+          //                   amReal.membersChanges.push('-' + fpr);
+          //                   var index = members.indexOf(fpr);
+          //                   if (~index) {
+          //                     members.splice(index, 1);
+          //                   }
+          //                 });
+          //                 res.votersJoining.forEach(function(fpr){
+          //                   amReal.votersChanges.push('+' + fpr);
+          //                   voters.push(fpr);
+          //                 });
+          //                 res.votersLeaving.forEach(function(fpr){
+          //                   amReal.votersChanges.push('-' + fpr);
+          //                   var index = voters.indexOf(fpr);
+          //                   if (~index) {
+          //                     voters.splice(index, 1);
+          //                   }
+          //                 });
+          //                 var merkleMembers = new Merkle();
+          //                 var merkleVoters = new Merkle();
+          //                 members.sort();
+          //                 voters.sort();
+          //                 merkleMembers.initialize(members);
+          //                 merkleVoters.initialize(voters);
+          //                 amReal.membersChanges.sort();
+          //                 amReal.membersCount = members.length;
+          //                 amReal.membersRoot = merkleMembers.root();
+          //                 amReal.votersChanges.sort();
+          //                 amReal.votersCount = voters.length;
+          //                 amReal.votersRoot = merkleVoters.root();
+          //                 amReal.save(function (err2) {
+          //                   raw = amReal.getRaw();
+          //                   next(err || err2);
+          //                 });
+          //               }
+          //             ], next);
+          //           } else {
+          //             raw = amReal.getRaw();
+          //             next();
+          //           }
+          //         },
+          //         function (next){
+          //           signsDetached(raw, next);
+          //         },
+          //         function (signature, next){
+          //           var signedAm = raw + signature;
+          //           vucoin(conf.ipv6 || conf.ipv4 || conf.dns, conf.port, false, false, function (err, node) {
+          //             next(null, signedAm, node);
+          //           });
+          //         },
+          //         function (vote, node, next){
+          //           node.hdc.amendments.votes.post(vote, next);
+          //         },
+          //         function (json, next){
+          //           var am = new Amendment(json.amendment);
+          //           var issuer = PeeringService.cert.fingerprint;
+          //           var hash = json.signature.unix2dos().hash();
+          //           var basis = json.amendment.number;
+          //           Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
+          //         },
+          //         function (vote, next){
+          //           if (!vote) {
+          //             next('Self vote was not found');
+          //             return;
+          //           }
+          //           vote.selfGenerated = true;
+          //           vote.save(function  (err) {
+          //             next(err, vote);
+          //           });
+          //         },
+          //       ], next);
+          //       return;
+          //     }
+          //     next('Not yet');
+          //   },
+          // ], next);
         },
       ], cb);
     }, done);
@@ -736,10 +740,7 @@ module.exports.get = function (conn, conf, signsDetached, ContractService, Peeri
             function (amNext, next){
               if (daemonJudgesTimeForVote(amNext)) {
 
-                var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-                    privateKey.decrypt(conf.pgppasswd);
-                var ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
-                var cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
+                var cert = PeeringService.cert;
                 var cf = new CommunityFlow();
                 cf.version = "1";
                 cf.currency = currency;

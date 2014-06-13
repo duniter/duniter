@@ -3,7 +3,6 @@ var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
 var fs       = require('fs');
-var hdc      = require('../../node_modules/hdc');
 var Schema   = mongoose.Schema;
 var logger   = require('../lib/logger')('dao amendment');
 
@@ -39,12 +38,6 @@ AmendmentSchema.pre('save', function (next) {
 });
 
 AmendmentSchema.methods = {
-  
-  hdc: function() {
-    var am = new hdc.Amendment(this.getRaw());
-    fill(am, this);
-    return am;
-  },
 
   copyTo: function (amTarget) {
     var that = this;
@@ -115,51 +108,49 @@ AmendmentSchema.methods = {
     });
     return json;
   },
-  
-  parse: function(rawAmend, callback) {
-    var am = new hdc.Amendment(rawAmend);
-    // Test on dividend
-    if (am.dividend && !am.coinAlgo) {
-      am.error = "CoinAlgo is required with UniversalDividend";
-    }
-    if (am.dividend && !am.coinBase) {
-      am.error = "CoinBase is required with UniversalDividend";
-    }
-    if (am.dividend && !am.coinList) {
-      am.error = "CoinList is required with UniversalDividend";
-    }
-    if(!am.error){
-      if (am.coinList) {
-        am.coinList = am.coinList.split(' ');
-        am.coinList.forEach(function(cs, index){
-          am.coinList[index] = parseInt(cs);
-        });
-      }
-      fill(this, am);
-    }
-    callback(am.error);
-  },
-
-  verify: function(currency, done){
-    var am = new hdc.Amendment(this.getRaw());
-    am.verify(currency);
-    done(am.error, am.errorCode);
-  },
 
   getNewMembers: function() {
-    return this.hdc().getNewMembers();
-  },
-
-  getNewVoters: function() {
-    return this.hdc().getNewVoters();
+    var members = [];
+    for (var i = 0; i < this.membersChanges.length; i++) {
+      var matches = this.membersChanges[i].match(/^\+([\w\d]{40})$/);
+      if(matches){
+        members.push(matches[1]);
+      }
+    }
+    return members;
   },
 
   getLeavingMembers: function() {
-    return this.hdc().getLeavingMembers();
+    var members = [];
+    for (var i = 0; i < this.membersChanges.length; i++) {
+      var matches = this.membersChanges[i].match(/^\-([\w\d]{40})$/);
+      if(matches){
+        members.push(matches[1]);
+      }
+    }
+    return members;
+  },
+
+  getNewVoters: function() {
+    var voters = [];
+    for (var i = 0; i < this.votersChanges.length; i++) {
+      var matches = this.votersChanges[i].match(/^\+([\w\d]{40})$/);
+      if(matches){
+        voters.push(matches[1]);
+      }
+    }
+    return voters;
   },
 
   getLeavingVoters: function() {
-    return this.hdc().getLeavingVoters();
+    var voters = [];
+    for (var i = 0; i < this.votersChanges.length; i++) {
+      var matches = this.votersChanges[i].match(/^\-([\w\d]{40})$/);
+      if(matches){
+        voters.push(matches[1]);
+      }
+    }
+    return voters;
   },
 
   getHash: function() {
@@ -170,34 +161,7 @@ AmendmentSchema.methods = {
   },
 
   getRaw: function() {
-    var raw = "";
-    raw += "Version: " + this.version + "\n";
-    raw += "Currency: " + this.currency + "\n";
-    raw += "Number: " + this.number + "\n";
-    raw += "GeneratedOn: " + this.generated + "\n";
-    if(this.dividend){
-      raw += "UniversalDividend: " + this.dividend + "\n";
-      raw += "CoinAlgo: " + this.coinAlgo + "\n";
-      raw += "CoinBase: " + this.coinBase + "\n";
-      raw += "CoinList: " + this.coinList.join(' ') + "\n";
-    }
-    raw += "NextRequiredVotes: " + this.nextVotes + "\n";
-    if(this.previousHash){
-      raw += "PreviousHash: " + this.previousHash + "\n";
-    }
-    raw += "MembersRoot: " + this.membersRoot + "\n";
-    raw += "MembersCount: " + this.membersCount + "\n";
-    raw += "MembersChanges:\n";
-    for(var i = 0; i < this.membersChanges.length; i++){
-      raw += this.membersChanges[i] + "\n";
-    }
-    raw += "VotersRoot: " + this.votersRoot + "\n";
-    raw += "VotersCount: " + this.votersCount + "\n";
-    raw += "VotersChanges:\n";
-    for(var j = 0; j < this.votersChanges.length; j++){
-      raw += this.votersChanges[j] + "\n";
-    }
-    return raw.unix2dos();
+    return require('../lib/rawer').getAmendment(this);
   },
 
   getPrevious: function (done) {
@@ -216,18 +180,6 @@ AmendmentSchema.methods = {
       }
       done(null, ams[0]);
     });
-  },
-
-  loadFromFile: function(file, done) {
-    var obj = this;
-    async.waterfall([
-      function (next){
-        fs.readFile(file, {encoding: "utf8"}, next);
-      },
-      function (data, next){
-        obj.parse(data, next);
-      },
-    ], done);
   }
 };
 

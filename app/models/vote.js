@@ -4,12 +4,12 @@ var jpgp     = require('../lib/jpgp');
 var fs       = require('fs');
 var mongoose = require('mongoose');
 var Schema   = mongoose.Schema;
+var parsers  = require('../lib/streams/parsers/doc');
 
 var VoteSchema = new Schema({
   issuer: String,
   basis: {"type": Number, "default": 0},
   signature: String,
-  _amendment: Schema.Types.ObjectId,
   hash: String,
   amendmentHash: String,
   propagated: { type: Boolean, default: false },
@@ -24,18 +24,20 @@ VoteSchema.pre('save', function (next) {
   next();
 });
 
+VoteSchema.virtual('amendment').get(function () {
+  return this._amendment;
+});
+
+VoteSchema.virtual('amendment').set(function (am) {
+  this._amendment = am;
+});
+
 VoteSchema.methods = {
 
   verify: function (currency, done) {
     var that = this;
     async.waterfall([
       function (next){
-        that.getAmendment(next);
-      },
-      function (am, next){
-        am.verify(currency, next);
-      },
-      function (verified, next){
         jpgp()
           .publicKey(that.pubkey.raw)
           .data(that.amendment.getRaw())
@@ -105,19 +107,24 @@ VoteSchema.methods = {
           });
         },
         amendment: function(done){
-          var am = new Amendment();
-          am.parse(rawAmendment, function (err) {
-            if(err){
-              done(err, am);
-              return;
-            }
-            that.basis = am.number;
-            that.amendmentHash = am.hash;
-            Amendment.find({ number: am.number, hash: am.hash }, function (err, ams) {
-              that.amendment = ams.length > 0 ? ams[0] : am;
-              done(err, that.amendment);
-            });
+          var parser = parsers.parseAmendment(function (err) {
+            if(err)
+              done(err);
           });
+          parser.end(rawAmendment);
+          parser.on('readable', function () {
+            var parsed = parser.read();
+            if (parsed) {
+              var am = new Amendment(parsed);
+              that.basis = am.number;
+              that.amendmentHash = am.hash;
+              Amendment.find({ number: am.number, hash: am.hash }, function (err, ams) {
+                that.amendment = ams.length > 0 ? ams[0] : am;
+                done(err, that.amendment);
+              });
+            }
+          });
+
         }
       }, function (err, results) {
         callback(err, that);
@@ -130,7 +137,7 @@ VoteSchema.methods = {
     var Amendment = this.model('Amendment');
     var that = this;
     if(!this.amendment){
-      Amendment.findById(this._amendment, function (err, am) {
+      Amendment.findByNumberAndHash(this.basis, this.amendmentHash, function (err, am) {
         that.amendment = am;
         done(err, that.amendment);
       });
@@ -177,13 +184,11 @@ VoteSchema.methods = {
       function (next){
         // Termine la sauvegarde
         am.save(function (err) {
+          that.amendmentHash = am.hash;
+          that.basis = am.number;
           next(err);
         });
       },
-      function (next){
-        that._amendment = am._id;
-        next(null, am);
-      }
     ], done);
   },
 
@@ -191,7 +196,8 @@ VoteSchema.methods = {
     to.issuer = this.issuer;
     to.hash = this.hash;
     to.signature = this.signature;
-    to._amendment = this._amendment;
+    to.amendmentHash = this.amendmentHash;
+    to.basis = this.basis;
   },
 
   loadFromFiles: function(voteFile, amendFile, pubkeyFile, done) {

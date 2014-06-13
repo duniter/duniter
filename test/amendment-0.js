@@ -2,10 +2,29 @@ var should   = require('should');
 var assert   = require('assert');
 var mongoose = require('mongoose');
 var sha1     = require('sha1');
-var ucoin    = require('./..');
+var parsers  = require('../app/lib/streams/parsers/doc');
+var fs       = require('fs');
 
+var AM0 = "" +
+ "Version: 1\r\n" +
+ "Currency: beta_brousouf\r\n" +
+ "Number: 0\r\n" +
+ "GeneratedOn: 1380397288\r\n" +
+ "NextRequiredVotes: 2\r\n" +
+ "MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90\r\n" +
+ "MembersCount: 3\r\n" +
+ "MembersChanges:\r\n" +
+ "+2E69197FAB029D8669EF85E82457A1587CA0ED9C\r\n" +
+ "+33BBFC0C67078D72AF128B5BA296CC530126F372\r\n" +
+ "+C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\n" +
+ "VotersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90\r\n" +
+ "VotersCount: 3\r\n" +
+ "VotersChanges:\r\n" +
+ "+2E69197FAB029D8669EF85E82457A1587CA0ED9C\r\n" +
+ "+33BBFC0C67078D72AF128B5BA296CC530126F372\r\n" +
+ "+C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\n";
+ 
 var Amendment = mongoose.model('Amendment', require('../app/models/amendment'));
-
 var amTest;
 
 describe('Amendment', function(){
@@ -14,8 +33,11 @@ describe('Amendment', function(){
 
     // Loads amTest with its data
     before(function(done) {
-      amTest = new Amendment();
-      amTest.loadFromFile(__dirname + "/data/amendments/BB-AM0-OK", function () {
+      var parser = parsers.parseAmendment();
+      parser.end(AM0);
+      parser.on('readable', function () {
+        var parsed = parser.read();
+        amTest = new Amendment(parsed);
         done();
       });
     });

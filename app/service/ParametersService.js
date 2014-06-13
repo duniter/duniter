@@ -488,7 +488,6 @@ function ParameterNamespace (conn, currency) {
   };
 
   this.getPubkey = function (req, callback) {
-    console.log(req.body);
     if(!req.body || !req.body.keytext){
       callback('Parameter `keytext` is required');
       return;

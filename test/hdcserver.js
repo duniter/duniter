@@ -8,6 +8,8 @@ var pubkeyUbot1 = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
 
 describe('A server', function () {
 
+  this.timeout(1000*20);
+
   var hdcServer;
   beforeEach(function (done) {
     if (hdcServer) {

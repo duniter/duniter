@@ -9,6 +9,8 @@ var privkeyUbot1 = fs.readFileSync(__dirname + '/data/ubot1.priv', 'utf8');
 
 describe('A server', function () {
 
+  this.timeout(1000*20);
+
   var peerServer;
   beforeEach(function (done) {
     peerServer = ucoin.createPeerServer({ name: 'hdc2' }, {

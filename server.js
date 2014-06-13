@@ -232,6 +232,21 @@ function Server (dbConf, overrideConf) {
     app.get(  '/pks/lookup', pks.lookup);
     app.post( '/pks/add',    pks.add);
   };
+
+  this.singleWriteStream = function () {
+    return new TempStream(that);
+  };
+
+  function TempStream (parentStream) {
+
+    stream.Duplex.call(this, { objectMode : true });
+
+    this._write = function (obj, enc, done) {
+      parentStream._write(obj, enc, done);
+    };
+  }
+
+  util.inherits(TempStream, stream.Duplex);
 }
 
 util.inherits(Server, stream.Duplex);

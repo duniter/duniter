@@ -33,6 +33,15 @@ describe('A server', function () {
     hdcServer.write({ pubkey: pubkeyCat });
   });
   
+  it('HDC should allow both simple & multiple writings', function (done) {
+    async.parallel([
+      until(hdcServer, 'pubkey', 2)
+    ], done);
+    hdcServer.singleWriteStream().write({ pubkey: pubkeyUbot1 });
+    hdcServer.singleWriteStream().end();
+    hdcServer.write({ pubkey: pubkeyCat });
+  });
+  
   it('HDC should accept votes', function (done) {
     async.parallel([
       until(hdcServer, 'vote', 1)

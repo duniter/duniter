@@ -33,7 +33,8 @@ describe('A server', function () {
         "Consensus": 0.33,
         "MSExpires": 15778800,
         "VTExpires": 15778800,
-        "AMDaemon" : "ON"
+        "AMDaemon" : "OFF",
+        "Algorithm" : "AnyKey"
       }
     });
     async.waterfall([

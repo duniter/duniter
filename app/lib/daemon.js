@@ -4,9 +4,6 @@ var http       = require('http');
 var fs         = require('fs');
 var async      = require('async');
 var path       = require('path');
-var mongoose   = require('mongoose');
-var Amendment  = mongoose.model('Amendment');
-var Key        = mongoose.model('Key');
 var connectPgp = require('connect-pgp');
 var _          = require('underscore');
 var jpgp       = require('./jpgp');
@@ -14,12 +11,15 @@ var sha1       = require('sha1');
 var vucoin     = require('vucoin');
 var logger     = require('./logger')('daemon');
 
-module.exports = function (PeeringService, ContractService) {
-  return new Daemon(PeeringService, ContractService);
+module.exports = function (conn, PeeringService, ContractService) {
+  return new Daemon(conn, PeeringService, ContractService);
 };
 
-function Daemon (PeeringService, ContractService) {
-  
+function Daemon (conn, PeeringService, ContractService) {
+
+  var Amendment = conn.model('Amendment');
+  var Key       = conn.model('Key');
+
   // self reference, private scope
   var daemon = this;
 

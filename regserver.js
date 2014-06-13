@@ -222,7 +222,7 @@ function RegistryServer (dbConf, overrideConf) {
     async.waterfall([
       function (next){
         // Init Daemon
-        that.daemon = require('./app/lib/daemon')(that.PeeringService, that.ContractService);
+        that.daemon = require('./app/lib/daemon')(that.conn, that.PeeringService, that.ContractService);
         that.daemon.init(conf, that.PeeringService.cert.fingerprint);
         // Init first amendment
         conn.model('Amendment').current(function (err, am) {

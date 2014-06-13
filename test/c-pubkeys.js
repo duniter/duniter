@@ -102,7 +102,7 @@ function testMerkle (url, root) {
 
 before(function (done) {
   logger.debug("Launching server...");
-  this.timeout(1000*2); // In seconds
+  this.timeout(1000*60); // In seconds
   async.waterfall([
     function (next){
       server.connect(next);

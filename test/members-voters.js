@@ -602,7 +602,7 @@ function testProposedAmendment (label, properties) {
 
 before(function (done) {
   logger.debug("Launching server...");
-  this.timeout(1000*10); // In seconds
+  this.timeout(1000*60); // In seconds
   async.waterfall([
     function (next){
       server.connect(next);

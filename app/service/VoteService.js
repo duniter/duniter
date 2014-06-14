@@ -149,13 +149,9 @@ module.exports.get = function (conn, StrategyService) {
       function (next){
         // Termine la sauvegarde
         am.save(function (err) {
-          next(err);
+          next(err, am);
         });
       },
-      function (next){
-        vote._amendment = am._id;
-        next(null, am);
-      }
     ], done);
   };
 
@@ -167,28 +163,15 @@ module.exports.get = function (conn, StrategyService) {
       function (votes, next){
         var map = {};
         votes.forEach(function (v) {
-          map[v._amendment] = map[v._amendment] ? map[v._amendment] + 1 : 1;
+          var id = [v.basis, v.amendmentHash].join('-');
+          map[id] = map[id] ? map[id] + 1 : 1;
         });
         var tab = [];
         for(var id in map){
-          tab.push({ id: id, count: map[id] });
+          var sp = id.split('-');
+          tab.push({ number: sp[0], hash: sp[1], count: map[id] });
         }
         next(null, tab);
-      },
-      function (tab, next) {
-        var stats = [];
-        async.forEach(tab, function (entry, done) {
-          Amendment.findById(entry.id, function (err, amendment) {
-            stats.push({
-              number: amendment.number,
-              hash: amendment.hash,
-              count: entry.count
-            });
-            done(err);
-          });
-        }, function (err) {
-          next(err, stats);
-        });
       },
       function (stats, next) {
         var result = {};

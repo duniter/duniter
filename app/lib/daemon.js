@@ -64,7 +64,7 @@ function Daemon (conn, PeeringService, ContractService) {
   };
 
   function process (timeout, done) {
-    // logger.debug("Daemon will process in %ss", timeout/1000);
+    logger.debug("Daemon will process in %ss", timeout/1000);
     clearTimeout(timeoutID);
     processing = false;
     timeoutID = setTimeout(function () {
@@ -113,7 +113,10 @@ function Daemon (conn, PeeringService, ContractService) {
               }
               callback();
             },
-          }, next);
+          }, function (err) {
+            // Retry in 10 min
+            next(err, 10*60*1000);
+          });
         }
         else {
           if (current) {

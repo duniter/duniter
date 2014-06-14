@@ -286,7 +286,7 @@ MerkleSchema.statics.mapIdentical = function (hashes, done) {
 };
 
 MerkleSchema.statics.mapForPublicKeys = function (hashes, done) {
-  mongoose.model('PublicKey')
+  this.model('PublicKey')
   .find({ fingerprint: { $in: hashes } })
   .sort('fingerprint')
   .exec(function (err, pubkeys) {
@@ -303,7 +303,7 @@ MerkleSchema.statics.mapForPublicKeys = function (hashes, done) {
 }
 
 MerkleSchema.statics.mapForSignatures = function (amNumber, hashes, done) {
-  mongoose.model('Vote')
+  this.model('Vote')
   .find({ basis: amNumber, issuer: { $in: hashes } })
   .sort('issuer')
   .exec(function (err, votes) {
@@ -319,7 +319,7 @@ MerkleSchema.statics.mapForSignatures = function (amNumber, hashes, done) {
 };
 
 MerkleSchema.statics.mapForWalletEntries = function (hashes, done) {
-  mongoose.model('Wallet')
+  this.model('Wallet')
   .find({ fingerprint: { $in: hashes } })
   .sort('fingerprint')
   .exec(function (err, entries) {
@@ -332,7 +332,7 @@ MerkleSchema.statics.mapForWalletEntries = function (hashes, done) {
 };
 
 MerkleSchema.statics.mapForMemberships = function (hashes, done) {
-  mongoose.model('Membership')
+  this.model('Membership')
   .find({ issuer: { $in: hashes } })
   .sort('issuer')
   .exec(function (err, entries) {
@@ -345,7 +345,7 @@ MerkleSchema.statics.mapForMemberships = function (hashes, done) {
 };
 
 MerkleSchema.statics.mapForVotings = function (hashes, done) {
-  mongoose.model('Voting')
+  this.model('Voting')
   .find({ issuer: { $in: hashes } })
   .sort('issuer')
   .exec(function (err, entries) {

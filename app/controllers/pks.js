@@ -28,7 +28,7 @@ function PKSBinding (pksServer) {
         Merkle.forPublicKeys(next);
       },
       function (merkle, next){
-        MerkleService.processForURL(req, merkle, Merkle.mapForPublicKeys, next);
+        MerkleService.processForURL(req, merkle, Merkle.mapForPublicKeys.bind(Merkle), next);
       }
     ], function (err, json) {
       if(err){

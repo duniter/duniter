@@ -17,6 +17,7 @@ function ParameterNamespace (conn, currency) {
   var Peer        = conn.model('Peer');
   var Transaction = conn.model('Transaction');
   var Forward     = conn.model('Forward');
+  var Wallet      = conn.model('Wallet');
 
   this.getTransaction = function (req, callback) {
     async.waterfall([
@@ -358,6 +359,8 @@ function ParameterNamespace (conn, currency) {
     }
 
     var entry = new Wallet();
+    var pubkey;
+    var signedEntry = req.body.entry.unix2dos() + req.body.signature.unix2dos();
     
     async.waterfall([
 
@@ -382,16 +385,14 @@ function ParameterNamespace (conn, currency) {
 
       // Looking for corresponding public key
       function(keyID, next){
-        PublicKey.getTheOne(keyID, function (err, pubkey) {
-          next(err, pubkey);
+        PublicKey.getTheOne(keyID, function (err, pk) {
+          pubkey = pk;
+          next(err);
         });
       },
 
       // Verify signature
-      function(pubkey, next){
-        var entry = new Wallet();
-      },
-      function (next){
+      function(next){
         entry.parse(signedEntry, next);
       },
       function (entry, next){
@@ -405,7 +406,9 @@ function ParameterNamespace (conn, currency) {
           next('Bad signature');
           return;
         }
-        next(null, entry);
+        var obj = {};
+        entry.copyValues(obj);
+        next(null, obj);
       }
     ], callback);
   };

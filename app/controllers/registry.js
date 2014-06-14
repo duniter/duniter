@@ -205,19 +205,19 @@ function RegistryBinding (registryServer, conf) {
   };
 
   this.membersIn = function (req, res) {
-    processMerkle(Merkle.membersIn, Merkle.mapForMemberships, req, res);
+    processMerkle(Merkle.membersIn.bind(Merkle), Merkle.mapForMemberships.bind(Merkle), req, res);
   };
 
   this.membersOut = function (req, res) {
-    processMerkle(Merkle.membersOut, Merkle.mapForMemberships, req, res);
+    processMerkle(Merkle.membersOut.bind(Merkle), Merkle.mapForMemberships.bind(Merkle), req, res);
   };
 
   this.votersIn = function (req, res) {
-    processMerkle(Merkle.votersIn, Merkle.mapForVotings, req, res);
+    processMerkle(Merkle.votersIn.bind(Merkle), Merkle.mapForVotings.bind(Merkle), req, res);
   };
 
   this.votersOut = function (req, res) {
-    processMerkle(Merkle.votersOut, Merkle.mapForVotings, req, res);
+    processMerkle(Merkle.votersOut.bind(Merkle), Merkle.mapForVotings.bind(Merkle), req, res);
   };
 
   function processMerkle (getMerkle, mapMerkle, req, res) {

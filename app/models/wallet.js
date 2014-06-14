@@ -37,6 +37,7 @@ WalletSchema.methods = {
     ["version", "currency", "fingerprint", "hosters", "trusts", "hash", "signature", "sigDate", "date", "requiredTrusts"].forEach(function (key) {
       to[key] = obj[key];
     });
+    to.keyID = obj.keyID().replace('0x', '');
   },
   
   json: function() {

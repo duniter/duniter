@@ -26,7 +26,7 @@ function AmendmentParser (onError) {
     {prop: "votersChanges",     regexp: /VotersChanges:\n([\s\S]*)/, parser: split("\n")},
   ];
   var multilineFields = ["membersChanges", "votersChanges"];
-  GenericParser.call(this, {}, captures, multilineFields, rawer.getAmendment, onError);
+  GenericParser.call(this, captures, multilineFields, rawer.getAmendment, onError);
 
   this._clean = function (obj) {
     obj.membersChanges.splice(obj.membersChanges.length - 1, 1);

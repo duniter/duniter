@@ -1,10 +1,30 @@
-var ucoin  = require('./..');
-var should = require('should');
-var fs     = require('fs');
-var async  = require('async');
+var ucoin   = require('./..');
+var should  = require('should');
+var fs      = require('fs');
+var async   = require('async');
+var parsers = require('../app/lib/streams/parsers/doc');
 
-var pubkeyCat = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-var pubkeyUbot1 = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
+var pubkeyCatRaw = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
+var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
+
+var pubkeyCat, pubkeyUbot1;
+
+before(function (done) {
+  async.parallel({
+    cat: function(callback){
+      parsers.parsePubkey().asyncWrite(pubkeyCatRaw, function (err, obj) {
+        pubkeyCat = obj;
+        callback(err);
+      });
+    },
+    ubot1: function(callback){
+      parsers.parsePubkey().asyncWrite(pubkeyUbot1Raw, function (err, obj) {
+        pubkeyUbot1 = obj;
+        callback(err);
+      });
+    },
+  }, done);
+})
 
 describe('A server', function () {
 
@@ -32,23 +52,23 @@ describe('A server', function () {
       should.exist(pubkey);
       done();
     });
-    hdcServer.write({ pubkey: pubkeyCat });
+    hdcServer.write(pubkeyCat);
   });
   
   it('HDC should allow both simple & multiple writings', function (done) {
     async.parallel([
       until(hdcServer, 'pubkey', 2)
     ], done);
-    hdcServer.singleWriteStream().write({ pubkey: pubkeyUbot1 });
+    hdcServer.singleWriteStream().write(pubkeyUbot1);
     hdcServer.singleWriteStream().end();
-    hdcServer.write({ pubkey: pubkeyCat });
+    hdcServer.write(pubkeyCat);
   });
   
   it('HDC should accept votes', function (done) {
     async.parallel([
       until(hdcServer, 'vote', 1)
     ], done);
-    hdcServer.write({ pubkey: pubkeyUbot1 });
+    hdcServer.write(pubkeyUbot1);
     hdcServer.write({
       amendment: {
         "version": 1,
@@ -83,7 +103,7 @@ describe('A server', function () {
     async.parallel([
       until(hdcServer, 'transaction', 1)
     ], done);
-    hdcServer.write({ pubkey: pubkeyUbot1 });
+    hdcServer.write(pubkeyUbot1);
     hdcServer.write({
       amendment: {
         "version": 1,

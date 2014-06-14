@@ -88,12 +88,11 @@ VoteSchema.methods = {
       async.parallel({
         pubkey: function(done){
           if(rawPubkey){
-            var k = new PublicKey({ raw: rawPubkey });
-            k.construct(function () {
-              that.pubkey = k;
-              that.issuer = k.fingerprint;
+            parsers.parsePubkey().asyncWrite(rawPubkey, function (err, obj) {
+              that.pubkey = new PublicKey(obj);
+              that.issuer = that.pubkey.fingerprint;
               done(null, that);
-            });
+            })
             return;
           }
           PublicKey.getFromSignature(that.signature, function (err, publicKey) {

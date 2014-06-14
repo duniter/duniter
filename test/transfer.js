@@ -10,6 +10,7 @@ var server    = require('../app/lib/server');
 var signatory = require('./tool/signatory');
 var test      = require('./tool/test');
 var ucoin     = require('./..');
+var parsers   = require('../app/lib/streams/parsers/doc');
 var logger    = require('../app/lib/logger')('test');
 
 var currency = "transfertest";
@@ -113,14 +114,13 @@ var amendments = {
 function pksAdd (raw, sig) {
   return function (done) {
     var PubKeyService = server.PublicKeyService;
-    var pubkey = new PublicKey({ raw: raw, signature: sig });
-    async.series([
-      pubkey.construct.bind(pubkey),
-      async.apply(PubKeyService.submitPubkey, pubkey)
-    ], function (err, res) {
+    async.waterfall([
+      async.apply(parsers.parsePubkey().asyncWrite, raw),
+      async.apply(PubKeyService.submitPubkey)
+    ], function (err, pubkey) {
       done(err, { 
         statusCode: 200,
-        text: JSON.stringify(res[1].json())
+        text: JSON.stringify(pubkey.json())
       });
     });
   };

@@ -1,6 +1,7 @@
-var jpgp   = require('../lib/jpgp');
-var async  = require('async');
-var status = require('../models/statusMessage');
+var jpgp    = require('../lib/jpgp');
+var async   = require('async');
+var status  = require('../models/statusMessage');
+var parsers = require('../lib/streams/parsers/doc');
 
 module.exports.get = function (conn, currencyName) {
 
@@ -499,11 +500,7 @@ function ParameterNamespace (conn, currency) {
       callback('Keytext does not look like a public key message');
       return;
     }
-    var PublicKey = conn.model('PublicKey');
-    var pubkey = new PublicKey({ raw: req.body.keytext });
-    pubkey.construct(function (err) {
-      callback(err, pubkey);
-    });
+    parsers.parsePubkey().asyncWrite(req.body.keytext, callback);
   };
 
   return this;

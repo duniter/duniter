@@ -7,35 +7,48 @@ var multipleLinesExtract = require('../../../multipleLinesExtract');
 
 module.exports = GenericParser;
 
-function GenericParser (obj, captures, multipleLinesFields, rawerFunc, onError) {
+function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
 
   stream.Transform.call(this, { decodeStrings: false, objectMode: true });
 
+  var that = this;
   this.rawerFunc = rawerFunc;
 
-  var error = "";
-
+  // Stream way
   this._write = function (str, enc, done) {
-    this.parse(str, obj);
-    this._clean(obj);
+    doJob(str, function (err, obj) {
+      if (!err) {
+        // Readable object for piped streams
+        that.push(obj);
+      } else {
+        // Error callback
+        if (typeof onError == 'function')
+          onError(err);
+        that.push(null);
+      }
+      done();
+    });
+  };
+
+  // Async way
+  this.asyncWrite = function (str, done) {
+    doJob(str, done);
+  };
+
+  function doJob (str, done) {
+    var error;
+    var obj = {};
+    that.parse(str, obj);
+    that._clean(obj);
     if (!error) {
-      error = this.verify(obj);
+      error = that.verify(obj);
     }
-    if (!error && sha1(str) != sha1(this.rawerFunc(obj))) {
-      // console.log(str, rawerFunc(obj));
+    var raw = that.rawerFunc(obj);
+    if (!error && sha1(unix2dos(str)) != sha1(unix2dos(raw))) {
       error = 'Document has unkown fields or wrong format';
     }
-    if (!error) {
-      // Reable object for piped streams
-      this.push(obj);
-      this.push(null);
-    } else {
-      // Error callback
-      if (typeof onError == 'function')
-        onError(error);
-      this.push(null);
-    }
-  };
+    done(error, obj);
+  }
 
   this._clean = function (obj) {
     // To override

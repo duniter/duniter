@@ -18,11 +18,11 @@ module.exports.get = function (conn, conf, KeyService) {
   * Tries to persist a public key given in ASCII-armored format.
   * Returns the database stored public key.
   */
-  this.submitPubkey = function(pubkey, callback) {
+  this.submitPubkey = function(obj, callback) {
+    var pubkey = new PublicKey(obj);
     fifo.push(function (cb) {
       async.waterfall([
         function (next) {
-          logger.debug('⬇ %s', pubkey.fingerprint);
           if (conf.kaccept == "KEYS") {
             KeyService.isKnown(pubkey.fingerprint, next);
           } else {
@@ -46,10 +46,6 @@ module.exports.get = function (conn, conf, KeyService) {
               conn.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
                 next(err);
               });
-            },
-            function (next){
-              logger.debug('✔ %s', pubkey.fingerprint);
-              next();
             },
           ], next);
         },

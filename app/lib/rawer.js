@@ -42,4 +42,8 @@ module.exports = new function() {
     raw += json.signature;
     return unix2dos(raw);
   };
+
+  this.getPubkey = function (json) {
+    return unix2dos(json.raw);
+  };
 }

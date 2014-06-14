@@ -1,11 +1,31 @@
-var ucoin  = require('./..');
-var async  = require('async');
-var should = require('should');
-var fs     = require('fs');
+var ucoin   = require('./..');
+var async   = require('async');
+var should  = require('should');
+var fs      = require('fs');
+var parsers = require('../app/lib/streams/parsers/doc');
 
-var pubkeyCat = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-var pubkeyUbot1 = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
-var privkeyUbot1 = fs.readFileSync(__dirname + '/data/ubot1.priv', 'utf8');
+var pubkeyCatRaw = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
+var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
+var privkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.priv', 'utf8');
+
+var pubkeyCat, pubkeyUbot1;
+
+before(function (done) {
+  async.parallel({
+    cat: function(callback){
+      parsers.parsePubkey().asyncWrite(pubkeyCatRaw, function (err, obj) {
+        pubkeyCat = obj;
+        callback(err);
+      });
+    },
+    ubot1: function(callback){
+      parsers.parsePubkey().asyncWrite(pubkeyUbot1Raw, function (err, obj) {
+        pubkeyUbot1 = obj;
+        callback(err);
+      });
+    },
+  }, done);
+})
 
 describe('A server', function () {
 
@@ -14,7 +34,7 @@ describe('A server', function () {
   var peerServer;
   beforeEach(function (done) {
     peerServer = ucoin.createPeerServer({ name: 'hdc2' }, {
-      pgpkey: privkeyUbot1,
+      pgpkey: privkeyUbot1Raw,
       pgppasswd: 'ubot1',
       currency: 'beta_brousouf',
       ipv4: '127.0.0.1',
@@ -42,7 +62,7 @@ describe('A server', function () {
       should.exist(pubkey);
       done();
     });
-    peerServer.write({ pubkey: pubkeyCat });
+    peerServer.write(pubkeyCat);
   });
   
   it('Peer should accept forwards & status', function (done) {
@@ -51,7 +71,7 @@ describe('A server', function () {
       status:  until(peerServer, 'status'),
       wallet:  until(peerServer, 'wallet'),
     }, done);
-    peerServer.write({ pubkey: pubkeyCat });
+    peerServer.write(pubkeyCat);
     peerServer.write({
       "version": "1",
       "currency": "beta_brousouf",
@@ -100,7 +120,7 @@ describe('A server', function () {
       should.exist(peer);
       done();
     });
-    peerServer.write({ pubkey: pubkeyCat });
+    peerServer.write(pubkeyCat);
     peerServer.write({
       "version": "1",
       "currency": "beta_brousouf",
@@ -118,7 +138,7 @@ describe('A server', function () {
       should.exist(transaction);
       done();
     });
-    peerServer.write({ pubkey: pubkeyUbot1 });
+    peerServer.write(pubkeyUbot1);
     peerServer.write({
       amendment: {
         "version": 1,

@@ -25,7 +25,6 @@ module.exports.get = function (conn, StrategyService) {
     fifo.push(function (cb) {
       async.waterfall([
         function (next){
-          logger.debug('⬇ %s for %s-%s', "0x" + vote.issuer.substr(32), vote.amendment.number, vote.amendment.hash);
           Amendment.current(function (err, am) {
             var currNumber = am ? parseInt(am.number) : -1;
             var voteNumber = parseInt(vote.basis)

@@ -3,149 +3,65 @@ var util       = require('util');
 var logger     = require('./app/lib/logger')('regserver');
 var PeerServer = require('./peerserver');
 
-function RegistryServer (dbConf, overrideConf) {
+function RegistryServer (dbConf, overrideConf, interceptors) {
 
-  PeerServer.call(this, dbConf, overrideConf);
+  var selfInterceptors = [
+    {
+      // Membership
+      matches: function (obj) {
+        return obj.registry && obj.registry == "MEMBERSHIP" ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.SyncService.submit(obj, next);
+          },
+          function (ms, next){
+            that.emit('membership', ms);
+            next();
+          },
+        ], next);
+      }
+    },{
+      // Voting
+      matches: function (obj) {
+        return obj.registry && obj.registry == "VOTING" ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.SyncService.submitVoting(obj, next);
+          },
+          function (vt, next){
+            that.emit('voting', vt);
+            next();
+          },
+        ], next);
+      }
+    },{
+      // CommunityFlow
+      matches: function (obj) {
+        return obj.algorithm ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.SyncService.submitCF(obj, next);
+          },
+          function (cf, next){
+            that.emit('communityflow', cf);
+            next();
+          },
+        ], next);
+      }
+    }
+  ];
+
+  PeerServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []));
 
   var that = this;
-  var queue = [];
 
   this._read = function (size) {
-  };
-
-  this._write = function (obj, enc, done) {
-    async.waterfall([
-      async.apply(that.initServer.bind(that)),
-      function (next){
-        if (obj.pubkey) {
-          // Pubkey
-          async.waterfall([
-            function (next){
-              var PublicKey = that.conn.model('PublicKey');
-              var pubkey = new PublicKey({ raw: obj.pubkey });
-              pubkey.construct(function (err) {
-                next(err, pubkey);
-              });
-            },
-            function (pubkey, next){
-              that.PublicKeyService.submitPubkey(pubkey, next);
-            },
-            function (pubkey, next){
-              that.emit('pubkey', pubkey);
-              next();
-            },
-          ], next);
-        } else if (obj.amendment) {
-          // Vote
-          async.waterfall([
-            function (next){
-              that.VoteService.submit(obj, next);
-            },
-            function (am, vote, next){
-              that.emit('vote', vote);
-              next();
-            },
-          ], next);
-        } else if (obj.recipient) {
-          // Transaction
-          async.waterfall([
-            function (next){
-              that.TransactionsService.processTx(obj, next);
-            },
-            function (tx, next){
-              that.emit('transaction', tx);
-              next();
-            },
-          ], next);
-        } else if (obj.endpoints) {
-          // Peer
-          async.waterfall([
-            function (next){
-              that.PeeringService.submit(obj, obj.keyID, next);
-            },
-            function (peer, next){
-              that.emit('peer', peer);
-              next();
-            },
-          ], next);
-        } else if (obj.forward) {
-          // Forward
-          async.waterfall([
-            function (next){
-              that.PeeringService.submitForward(obj, next);
-            },
-            function (fwd, next){
-              that.emit('forward', fwd);
-              next();
-            },
-          ], next);
-        } else if (obj.status) {
-          // Status
-          async.waterfall([
-            function (next){
-              that.PeeringService.submitStatus(obj, next);
-            },
-            function (status, peer, wasStatus, next){
-              that.emit('status', status);
-              next();
-            },
-          ], next);
-        } else if (obj.requiredTrusts) {
-          // Wallet
-          async.waterfall([
-            function (next){
-              that.WalletService.submit(obj, next);
-            },
-            function (wallet, next){
-              that.emit('wallet', wallet);
-              next();
-            },
-          ], next);
-        } else if (obj.registry && obj.registry == "MEMBERSHIP") {
-          // Membership
-          async.waterfall([
-            function (next){
-              that.SyncService.submit(obj, next);
-            },
-            function (ms, next){
-              that.emit('membership', ms);
-              next();
-            },
-          ], next);
-        } else if (obj.registry && obj.registry == "VOTING") {
-          // Voting
-          async.waterfall([
-            function (next){
-              that.SyncService.submitVoting(obj, next);
-            },
-            function (vt, next){
-              that.emit('voting', vt);
-              next();
-            },
-          ], next);
-        } else if (obj.algorithm) {
-          // CommunityFlow
-          async.waterfall([
-            function (next){
-              that.SyncService.submitCF(obj, next);
-            },
-            function (cf, next){
-              that.emit('communityflow', cf);
-              next();
-            },
-          ], next);
-        } else {
-          var err = 'Unknown document type';
-          that.emit('error', Error(err));
-          next(err);
-        }
-      },
-    ], function (err) {
-      if (err){
-        logger.debug(err);
-      }
-      done();
-    });
   };
 
   this._initServices = function(conn, done) {

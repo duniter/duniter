@@ -4,6 +4,7 @@ var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
 var Schema   = mongoose.Schema;
+var parsers  = require('../lib/streams/parsers/doc');
 var logger   = require('../lib/logger')('pubkey');
 
 var PublicKeySchema = new Schema({
@@ -29,40 +30,6 @@ PublicKeySchema.pre('save', function (next) {
 });
 
 PublicKeySchema.methods = {
-  
-  construct: function(done) {
-    var obj = this;
-    var k = jpgp().certificate(obj.raw);
-    obj.fingerprint = k.fingerprint;
-    obj.hash = sha1(obj.raw).toUpperCase();
-    var uid = k.uids[0];
-    var extract = uid.match(/([\s\S]*) \(([\s\S]*)\) <([\s\S]*)>/);
-    if(extract && extract.length === 4){
-      obj.name = extract[1];
-      obj.comment = extract[2];
-      obj.email = extract[3];
-    }
-    else{
-      extract = uid.match(/([\s\S]*) <([\s\S]*)>/);
-      if(extract && extract.length === 3){
-        obj.name = extract[1];
-        obj.comment = '';
-        obj.email = extract[2];
-      } else {
-        extract = uid.match(/([\s\S]*) \(([\s\S]*)\)/);
-        if(extract && extract.length === 3) {
-        obj.name = extract[1];
-          obj.comment = extract[2];
-          obj.email = "";
-        } else {
-          obj.name = "";
-          obj.comment = "";
-          obj.email = "";
-        }
-      }
-    }
-    done();
-  },
 
   json: function () {
     var raw = this.raw.replace('-----BEGIN PGP PUBLIC KEY BLOCK-----', 'BEGIN PGP PUBLIC KEY BLOCK');
@@ -160,13 +127,13 @@ PublicKeySchema.statics.search = function (motif, done) {
 
 PublicKeySchema.statics.persistFromRaw = function (rawPubkey, done) {
   var that = this;
-  var PublicKey = that.model('PublicKey');
-  var pubkey = new PublicKey({ raw: rawPubkey });
   async.waterfall([
     function (next){
-      pubkey.construct(next);
+      doc.parsePubkey(next).asyncWrite(rawPubkey, next);
     },
-    function (next){
+    function (obj, next){
+      var PublicKey = that.model('PublicKey');
+      var pubkey = new PublicKey(obj);
       PublicKey.persist(pubkey, next);
     }
   ], done);

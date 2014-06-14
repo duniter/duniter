@@ -3,72 +3,68 @@ var util   = require('util');
 var logger = require('./app/lib/logger')('hdcserver');
 var Server = require('./server');
 
-function HDCServer (dbConf, overrideConf) {
+function HDCServer (dbConf, overrideConf, interceptors) {
 
-  Server.call(this, dbConf, overrideConf);
+  var selfInterceptors = [
+    {
+      // Pubkey
+      matches: function (obj) {
+        return typeof obj.email != "undefined";
+      },
+      treatment: function (server, obj, next) {
+        logger.debug('⬇ %s', obj.fingerprint);
+        async.waterfall([
+          function (next){
+            server.PublicKeyService.submitPubkey(obj, next);
+          },
+          function (pubkey, next){
+            logger.debug('✔ %s', pubkey.fingerprint);
+            server.emit('pubkey', pubkey);
+            next();
+          },
+        ], next);
+      }
+    },{
+      // Vote
+      matches: function (obj) {
+        return obj.amendment ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        logger.debug('⬇ %s for %s-%s', "0x" + obj.issuer.substr(32), obj.amendment.number, obj.amendment.hash);
+        async.waterfall([
+          function (next){
+            server.VoteService.submit(obj, next);
+          },
+          function (am, vote, next){
+            server.emit('vote', vote);
+            next();
+          },
+        ], next);
+      }
+    },{
+      // Transaction
+      matches: function (obj) {
+        return obj.recipient ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            server.TransactionsService.processTx(obj, next);
+          },
+          function (tx, next){
+            server.emit('transaction', tx);
+            next();
+          },
+        ], next);
+      }
+    }
+  ];
+
+  Server.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []));
 
   var that = this;
-  var queue = [];
 
   this._read = function (size) {
-  };
-
-  this._write = function (obj, enc, done) {
-    async.waterfall([
-      async.apply(that.initServer.bind(that)),
-      function (next){
-        if (obj.pubkey) {
-          // Pubkey
-          async.waterfall([
-            function (next){
-              var PublicKey = that.conn.model('PublicKey');
-              var pubkey = new PublicKey({ raw: obj.pubkey });
-              pubkey.construct(function (err) {
-                next(err, pubkey);
-              });
-            },
-            function (pubkey, next){
-              that.PublicKeyService.submitPubkey(pubkey, next);
-            },
-            function (pubkey, next){
-              that.emit('pubkey', pubkey);
-              next();
-            },
-          ], next);
-        } else if (obj.amendment) {
-          // Vote
-          async.waterfall([
-            function (next){
-              that.VoteService.submit(obj, next);
-            },
-            function (am, vote, next){
-              that.emit('vote', vote);
-              next();
-            },
-          ], next);
-        } else if (obj.recipient) {
-          // Transaction
-          async.waterfall([
-            function (next){
-              that.TransactionsService.processTx(obj, next);
-            },
-            function (tx, next){
-              that.emit('transaction', tx);
-              next();
-            },
-          ], next);
-        } else {
-          var err = 'Unknown document type';
-          that.emit('error', Error(err));
-          next(err);
-        }
-      },
-    ], function (err) {
-      if (err){
-        logger.debug(err);
-      }
-      done();
-    });
   };
 
   this.initServer = function (done) {

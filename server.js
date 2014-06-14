@@ -13,13 +13,42 @@ var logger     = require('./app/lib/logger')('server');
 
 var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting', 'CommunityFlow'];
 
-function Server (dbConf, overrideConf) {
+function Server (dbConf, overrideConf, interceptors) {
 
   stream.Duplex.call(this, { objectMode : true });
 
   var that = this;
   that.conn = null;
   that.conf = null;
+
+  this._write = function (obj, enc, done) {
+    async.waterfall([
+      async.apply(that.initServer.bind(that)),
+      function (next){
+        var i = 0;
+        var treatment = null;
+        while (i < interceptors.length && !treatment) {
+          if (interceptors[i].matches(obj)) {
+            treatment = interceptors[i].treatment;
+          }
+          i++;
+        }
+        if (typeof treatment == 'function') {
+          // Handle the incoming object
+          treatment(that, obj, next);
+        } else {
+          var err = 'Unknown document type ' + JSON.stringify(obj);
+          that.emit('error', Error(err));
+          next(err);
+        }
+      },
+    ], function (err) {
+      if (err){
+        logger.debug(err);
+      }
+      done();
+    });
+  };
 
   this.connect = function (reset, done) {
     var databaseName = dbConf.name || "ucoin_default";
@@ -47,6 +76,7 @@ function Server (dbConf, overrideConf) {
         port = undefined;
       }
       host = host ? host : 'localhost';
+      logger.debug('Connecting to database %s', databaseName);
       var conn = that.conn = mongoose.createConnection('mongodb://' + host + (port ? ':' + port : '') + '/' + databaseName);
       conn.on('error', function (err) {
         logger.error('connection error:', err);

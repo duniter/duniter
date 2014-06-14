@@ -48,7 +48,7 @@ function AmendmentBinding (hdcServer) {
   this.viewAM = {
 
     signatures: function (req, res) {
-      amendmentMerkle(req, res, Merkle.signaturesWrittenForAmendment, Merkle.mapForSignatures);
+      amendmentMerkle(req, res, Merkle.signaturesWrittenForAmendment.bind(Merkle), Merkle.mapForSignatures.bind(Merkle));
     },
 
     self: function (req, res) {

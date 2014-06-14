@@ -33,7 +33,8 @@ describe('Amendment', function(){
 
     // Loads amTest with its data
     before(function(done) {
-      var parser = parsers.parseAmendment();
+      var parser = parsers.parseAmendment(function (err) {
+      });
       parser.end(AM0);
       parser.on('readable', function () {
         var parsed = parser.read();

@@ -14,7 +14,7 @@ function PubkeyParser (onError) {
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getPubkey, onError);
 
-  this.parse = function (str, obj) {
+  this._parse = function (str, obj) {
     obj.raw = str;
     obj.hash = sha1(str).toUpperCase();
     // Extracting email, name and comment
@@ -49,7 +49,7 @@ function PubkeyParser (onError) {
     }
   };
 
-  this.verify = function (obj) {
+  this._verify = function (obj) {
   };
 }
 

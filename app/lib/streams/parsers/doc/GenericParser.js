@@ -38,10 +38,10 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
   function doJob (str, done) {
     var error;
     var obj = {};
-    that.parse(str, obj);
+    that._parse(str, obj);
     that._clean(obj);
     if (!error) {
-      error = that.verify(obj);
+      error = that._verify(obj);
     }
     var raw = that.rawerFunc(obj);
     if (!error && sha1(unix2dos(str)) != sha1(unix2dos(raw))) {
@@ -54,20 +54,32 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     // To override
   };
 
-  this.parse = function (toParse, obj) {
+  this._verify = function (obj) {
+    // To override
+    return null;
+  };
+
+  this._parse = function (toParse, obj) {
     var str = unix2dos(toParse);
     if(!str){
       error = "No document given";
     } else {
       error = "";
       obj.hash = sha1(str).toUpperCase();
-      var crlfCleaned = str.replace(/\r\n/g, "\n");
-      if(crlfCleaned.match(/\n$/)){
+      // Divide in 2 parts: document & signature
+      var sigIndex = str.lastIndexOf('-----BEGIN PGP SIGNATURE-----');
+      if (~sigIndex) {
+        obj.signature = str.substring(sigIndex);
+      }
+      obj.hash = sha1(str).toUpperCase();
+      var documentPart = ~sigIndex ? str.substring(0, sigIndex) : str;
+      var docLF = documentPart.replace(/\r\n/g, "\n");
+      if(docLF.match(/\n$/)){
         captures.forEach(function (cap) {
           if(~multipleLinesFields.indexOf(multipleLinesFields))
-            error = multipleLinesExtract(obj, crlfCleaned, cap);
+            error = multipleLinesExtract(obj, docLF, cap);
           else
-            simpleLineExtract(obj, crlfCleaned, cap);
+            simpleLineExtract(obj, docLF, cap);
         });
       }
       else{

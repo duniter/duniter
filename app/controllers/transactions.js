@@ -110,7 +110,7 @@ function TransactionBinding(hdcServer) {
   this.sender = {
 
     get: function (req, res) {
-      showMerkle(Merkle.txOfSender, null, null, req, res);
+      showMerkle(Merkle.txOfSender.bind(Merkle), null, null, req, res);
     },
 
     lastNofSender: function (req, res) {
@@ -172,47 +172,47 @@ function TransactionBinding(hdcServer) {
       }
     });
   };
+
+  function showMerkle (merkleGetFunc, merkleHashFunc, amNumber, req, res) {
+    async.waterfall([
+      function (next){
+        ParametersService.getFingerprint(req, next);
+      },
+      function (fingerprint, next){
+        if(amNumber)
+          merkleGetFunc.call(merkleGetFunc, fingerprint, amNumber, next);
+        else
+          merkleGetFunc.call(merkleGetFunc, fingerprint, next);
+      },
+      function (merkle, next){
+        MerkleService.processForURL(req, merkle, merkleHashFunc || lambda, next);
+      }
+    ], function (err, json) {
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      MerkleService.merkleDone(req, res, json);
+    });
+  }
+
+  function lambda(hashes, done) {
+    async.waterfall([
+      function (next){
+        Transaction.find({ hash: { $in: hashes } }, next);
+      },
+      function (txs, next){
+        var map = {};
+        txs.forEach(function (tx){
+          map[tx.hash] = {
+            transaction: tx.json(),
+            raw: tx.getRaw()
+          };
+        });
+        next(null, map);
+      }
+    ], done);
+  }
   
   return this;
-}
-
-function showMerkle (merkleGetFunc, merkleHashFunc, amNumber, req, res) {
-  async.waterfall([
-    function (next){
-      ParametersService.getFingerprint(req, next);
-    },
-    function (fingerprint, next){
-      if(amNumber)
-        merkleGetFunc.call(merkleGetFunc, fingerprint, amNumber, next);
-      else
-        merkleGetFunc.call(merkleGetFunc, fingerprint, next);
-    },
-    function (merkle, next){
-      MerkleService.processForURL(req, merkle, merkleHashFunc || lambda, next);
-    }
-  ], function (err, json) {
-    if(err){
-      res.send(404, err);
-      return;
-    }
-    MerkleService.merkleDone(req, res, json);
-  });
-}
-
-function lambda(hashes, done) {
-  async.waterfall([
-    function (next){
-      Transaction.find({ hash: { $in: hashes } }, next);
-    },
-    function (txs, next){
-      var map = {};
-      txs.forEach(function (tx){
-        map[tx.hash] = {
-          transaction: tx.json(),
-          raw: tx.getRaw()
-        };
-      });
-      next(null, map);
-    }
-  ], done);
 }

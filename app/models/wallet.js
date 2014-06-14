@@ -238,7 +238,7 @@ WalletSchema.statics.getTheOne = function (fingerprint, done) {
 }
 
 WalletSchema.statics.findMatchingTransaction = function (tx, done) {
-  Wallet.find({
+  this.find({
     fingerprint: { $in: [tx.sender, tx.recipient ]}
   }, done);
 }

@@ -55,7 +55,7 @@ function CoinBinding(hdcServer) {
       function (next) {
         ParametersService.getCoinID(req, next);
       },
-      Coin.findByCoinID
+      Coin.findByCoinID.bind(Coin)
     ], function (err, coin) {
       if(err){
         res.send(500, err);

@@ -171,7 +171,7 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
             }
             remoteCurrentNumber = parseInt(json.number);
             amendments[remoteCurrentNumber] = json.raw;
-            var toGetNumbers = _.range(number, 22 + 1);
+            var toGetNumbers = _.range(number, remoteCurrentNumber + 1);
             async.forEachSeries(toGetNumbers, function(amNumber, callback){
               async.waterfall([
                 function (cb){

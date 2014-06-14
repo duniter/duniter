@@ -27,7 +27,7 @@ function Daemon (conn, PeeringService, ContractService) {
   var timeoutID, frequency;
   var asked = -1;
   var processing = false;
-  var defaultTimeout = 5*1000;
+  var defaultTimeout = 10*60*1000;
   var selfFingerprint = "";
 
   // 20 seconds minimal waiting before asking for vote
@@ -114,8 +114,7 @@ function Daemon (conn, PeeringService, ContractService) {
               callback();
             },
           }, function (err) {
-            // Retry in 10 min
-            next(err, 10*60*1000);
+            next(err);
           });
         }
         else {

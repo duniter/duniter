@@ -80,17 +80,14 @@ function ParameterNamespace (conn, currency) {
       return;
     }
 
-    var peer = new Peer();
+    var peer;
 
     async.waterfall([
       function (next){
-        peer.parse(signedPR, next);
+        parsers.parsePeer(next).asyncWrite(entry + signature, next);
       },
-      function (peer, next){
-        peer.verify(currency, next);
-      },
-      function (verified, next){
-        next(null, peer, keyID);
+      function (obj, next){
+        next(null, new Peer(obj), keyID);
       },
     ], callback);
   };

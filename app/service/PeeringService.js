@@ -98,7 +98,7 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
         next(null, pubkey.raw);
       },
       function (pubkey, next){
-        persistPeering(peer.getRawSigned(), pubkey, next);
+        persistPeer(peer, pubkey, next);
       }
     ], callback);
   }
@@ -202,16 +202,9 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
     ], done);
   }
 
-  function persistPeering (signedPR, pubkey, done) {
-    var peer = new Peer();
+  function persistPeer (peer, pubkey, done) {
     async.waterfall([
-      function (next){
-        peer.parse(signedPR, next);
-      },
-      function (peer, next){
-        peer.verify(currency, next);
-      },
-      function (verified, next) {
+      function (next) {
         peer.verifySignature(pubkey, next);
       },
       function (verified, next){

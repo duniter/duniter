@@ -68,9 +68,28 @@ module.exports = new function() {
   };
 
   this.getTransaction = function (json) {
-    var raw = that.getTransactionWithoutSignature(json);
-    if (json.signature)
-      raw += json.signature;
+    return unix2dos(signed(that.getTransactionWithoutSignature(json), json));
+  };
+
+  this.getPeerWithoutSignature = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Fingerprint: " + json.fingerprint + "\n";
+    raw += "Endpoints:" + "\n";
+    json.endpoints.forEach(function(ep){
+      raw += ep + "\n";
+    });
     return unix2dos(raw);
   };
+
+  this.getPeer = function (json) {
+    return unix2dos(signed(that.getPeerWithoutSignature(json), json));
+  };
+
+  function signed (raw, json) {
+    if (json.signature)
+      raw += json.signature;
+    return raw;
+  }
 }

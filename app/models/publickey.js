@@ -129,7 +129,7 @@ PublicKeySchema.statics.persistFromRaw = function (rawPubkey, done) {
   var that = this;
   async.waterfall([
     function (next){
-      doc.parsePubkey(next).asyncWrite(rawPubkey, next);
+      parsers.parsePubkey(next).asyncWrite(rawPubkey, next);
     },
     function (obj, next){
       var PublicKey = that.model('PublicKey');

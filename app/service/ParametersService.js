@@ -417,27 +417,25 @@ function ParameterNamespace (conn, currency) {
       // Check signature's key ID
       function(pr, sig, next){
         PublicKey.getFromSignature(sig, function (err, pubkey) {
-          next(null, new Forward(), pr + sig, pubkey);
+          next(null, pr + sig, pubkey);
         });
       },
 
       // Verify signature
-      function(fwd, signedPR, pubkey, next){
+      function(signedPR, pubkey, next){
 
+        var fwd;
         async.waterfall([
           function (next){
-            fwd.parse(signedPR, next);
+            parsers.parseForward(next).asyncWrite(signedPR, next);
           },
-          function (fwd, next){
-            fwd.verify(currency, next);
+          function (obj, next){
+            fwd = new Forward(obj);
+            fwd.verifySignature(pubkey, next);
           },
-          function(valid, next){
-            if(!valid){
-              next('Not a valid peering request');
-              return;
-            }
+          function (verified, next){
             next(null, fwd);
-          }
+          },
         ], next);
       }
     ], callback);

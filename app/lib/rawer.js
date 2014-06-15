@@ -87,6 +87,26 @@ module.exports = new function() {
     return unix2dos(signed(that.getPeerWithoutSignature(json), json));
   };
 
+  this.getForwardWithoutSignature = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "From: " + json.from + "\n";
+    raw += "To: " + json.to + "\n";
+      raw += "Forward: " + json.forward + "\n";
+    if(json.keys && json.keys.length > 0){
+      raw += "Keys:\n";
+      for(var i = 0; i < json.keys.length; i++){
+        raw += json.keys[i] + "\n";
+      }
+    }
+    return unix2dos(raw);
+  };
+
+  this.getForward = function (json) {
+    return unix2dos(signed(that.getForwardWithoutSignature(json), json));
+  };
+
   function signed (raw, json) {
     if (json.signature)
       raw += json.signature;

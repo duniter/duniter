@@ -4,6 +4,7 @@ module.exports = {
   parsePubkey:      instanciate.bind(instanciate, require('./pubkey')),
   parseTransaction: instanciate.bind(instanciate, require('./transaction')),
   parsePeer:        instanciate.bind(instanciate, require('./peer')),
+  parseForward:     instanciate.bind(instanciate, require('./forward')),
 };
 
 function instanciate (constructorFunc, onError) {

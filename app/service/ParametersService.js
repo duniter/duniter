@@ -315,12 +315,10 @@ function ParameterNamespace (conn, currency) {
         var entry = new Voting();
         async.waterfall([
           function (next){
-            entry.parse(req.body.voting + req.body.signature, next);
+            parsers.parseVoting(next).asyncWrite(req.body.voting + req.body.signature, next);
           },
-          function (entry, next){
-            entry.verify(currency, next);
-          },
-          function (valid, next){
+          function (obj, next){
+            entry = new Voting(obj);
             entry.verifySignature(pubkey.raw, next);
           },
           function (verified, next){

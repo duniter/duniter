@@ -156,6 +156,20 @@ module.exports = new function() {
     return unix2dos(signed(that.getMembershipWithoutSignature(json), json));
   };
 
+  this.getVotingWithoutSignature = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Registry: " + json.type + "\n";
+    raw += "Issuer: " + json.issuer + "\n";
+    raw += "Date: " + json.date.timestamp() + "\n";
+    return unix2dos(raw);
+  };
+
+  this.getVoting = function (json) {
+    return unix2dos(signed(that.getVotingWithoutSignature(json), json));
+  };
+
   function signed (raw, json) {
     if (json.signature)
       raw += json.signature;

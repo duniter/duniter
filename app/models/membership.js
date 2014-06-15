@@ -3,6 +3,7 @@ var async    = require('async');
 var sha1     = require('sha1');
 var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
+var rawer    = require('../lib/rawer');
 var Schema   = mongoose.Schema;
 
 var MembershipSchema = new Schema({
@@ -52,61 +53,6 @@ MembershipSchema.methods = {
     json.raw = this.getRaw();
     return { signature: this.signature, membership: json };
   },
-  
-  parse: function(rawMembershipRequest, callback) {
-    var rawMS = rawMembershipRequest;
-    var sigIndex = rawMembershipRequest.lastIndexOf("-----BEGIN");
-    if(~sigIndex){
-      this.signature = rawMembershipRequest.substring(sigIndex);
-      rawMS = rawMembershipRequest.substring(0, sigIndex);
-      try{
-        this.sigDate = jpgp().signature(this.signature).signatureDate();
-      }
-      catch(ex){}
-    }
-    if(!rawMS){
-      callback("No Membership entry given");
-      return false;
-    }
-    else{
-      var obj = this;
-      var captures = [
-        {prop: "version",           regexp: /Version: (.*)/},
-        {prop: "currency",          regexp: /Currency: (.*)/},
-        {prop: "type",              regexp: /Registry: (.*)/},
-        {prop: "issuer",            regexp: /Issuer: (.*)/},
-        {prop: "membership",        regexp: /Membership: (.*)/},
-        {prop: "date",              regexp: /Date: (.*)/, parser: parseDateFromTimestamp}
-      ];
-      var crlfCleaned = rawMS.replace(/\r\n/g, "\n");
-      if(crlfCleaned.match(/\n$/)){
-        captures.forEach(function (cap) {
-          simpleLineExtraction(obj, crlfCleaned, cap);
-        });
-      }
-      else{
-        callback("Bad document structure: no new line character at the end of the document.");
-        return false;
-      }
-    }
-    if (!this.date) {
-      this.date = new Date();
-    }
-    this.hash = sha1(rawMembershipRequest).toUpperCase();
-    callback(null, this);
-  },
-
-  verify: function (currency, done) {
-    var firstVerif = verify(this, currency);
-    var valid = firstVerif.result;
-    if(!valid && done){
-      done(firstVerif.errorMessage, valid);
-    }
-    if(valid && done){
-      done(null, valid);
-    }
-    return valid;
-  },
 
   verifySignature: function (publicKey, done) {
     jpgp()
@@ -117,79 +63,12 @@ MembershipSchema.methods = {
   },
 
   getRaw: function() {
-    var raw = "";
-    raw += "Version: " + this.version + "\n";
-    raw += "Currency: " + this.currency + "\n";
-    raw += "Registry: " + this.type + "\n";
-    raw += "Issuer: " + this.issuer + "\n";
-    raw += "Date: " + this.date.timestamp() + "\n";
-    raw += "Membership: " + this.membership + "\n";
-    return raw.unix2dos();
+    return rawer.getMembershipWithoutSignature(this);
   },
 
   getRawSigned: function() {
-    var raw = this.getRaw() + this.signature;
-    return raw;
+    return rawer.getMembership(this);
   }
-}
-
-function verify(obj, currency) {
-  var err = null;
-  var code = 150;
-  var codes = {
-    'BAD_VERSION': 150,
-    'BAD_CURRENCY': 151,
-    'BAD_FINGERPRINT': 152,
-    'BAD_MEMBERSHIP': 153,
-    'BAD_REGISTRY_TYPE': 154,
-    'BAD_DATE': 155,
-  }
-  if(!err){
-    // Version
-    if(!obj.version || !obj.version.match(/^1$/))
-      err = {code: codes['BAD_VERSION'], message: "Version unknown"};
-  }
-  if(!err){
-    // Currency
-    if(!obj.currency || !obj.currency.match("^"+ currency + "$"))
-      err = {code: codes['BAD_CURRENCY'], message: "Currency '"+ obj.currency +"' not managed"};
-  }
-  if(!err){
-    // Registry document type
-    if(!obj.type || !obj.type.match("^MEMBERSHIP$"))
-      err = {code: codes['BAD_REGISTRY_TYPE'], message: "Incorrect Registry field: must be MEMBERSHIP"};
-  }
-  if(!err){
-    // Fingerprint
-    if(obj.issuer && !obj.issuer.match(/^[A-Z\d]+$/))
-      err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect issuer field"};
-  }
-  if(!err){
-    // Membership
-    if(obj.membership && !obj.membership.match(/^(IN|OUT)$/))
-      err = {code: codes['BAD_MEMBERSHIP'], message: "Incorrect Membership field: must be either IN or OUT"};
-  }
-  if(!err){
-    // Date
-    if(obj.date && (typeof obj == 'string' ? !obj.date.match(/^\d+$/) : obj.date.timestamp() <= 0))
-      err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
-  }
-  if(err){
-    return { result: false, errorMessage: err.message, errorCode: err.code};
-  }
-  return { result: true };
-}
-
-function simpleLineExtraction(pr, rawMS, cap) {
-  var fieldValue = rawMS.match(cap.regexp);
-  if(fieldValue && fieldValue.length === 2){
-    pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1]) : fieldValue[1];
-  }
-  return;
-}
-
-function parseDateFromTimestamp (value) {
-  return new Date(parseInt(value)*1000);
 }
 
 MembershipSchema.statics.getEligibleForAmendment = function (amNumber, done) {

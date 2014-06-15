@@ -256,12 +256,10 @@ function ParameterNamespace (conn, currency) {
         var entry = new Membership();
         async.waterfall([
           function (next){
-            entry.parse(req.body.membership + req.body.signature, next);
+            parsers.parseMembership(next).asyncWrite(req.body.membership + req.body.signature, next);
           },
-          function (entry, next){
-            entry.verify(currency, next);
-          },
-          function (valid, next){
+          function (obj, next){
+            entry = new Membership(obj);
             entry.verifySignature(pubkey.raw, next);
           },
           function (verified, next){

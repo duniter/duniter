@@ -16,7 +16,8 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
 
   // Stream way
   this._write = function (str, enc, done) {
-    doJob(str, function (err, obj) {
+    console.log('RAW -> RES');
+    doJob(str.toString(), function (err, obj) {
       if (!err) {
         // Readable object for piped streams
         that.push(obj);
@@ -43,9 +44,10 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     if (!error) {
       error = that._verify(obj);
     }
-    var raw = that.rawerFunc(obj);
-    if (!error && sha1(unix2dos(str)) != sha1(unix2dos(raw))) {
-      error = 'Document has unkown fields or wrong format';
+    if (!error) {
+      var raw = that.rawerFunc(obj);
+      if (sha1(unix2dos(str)) != sha1(unix2dos(raw)))
+        error = 'Document has unkown fields or wrong format';
     }
     done(error, obj);
   }

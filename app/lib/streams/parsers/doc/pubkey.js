@@ -19,37 +19,42 @@ function PubkeyParser (onError) {
     obj.hash = sha1(str).toUpperCase();
     // Extracting email, name and comment
     var k = jpgp().certificate(obj.raw);
-    obj.fingerprint = k.fingerprint;
-    obj.hash = sha1(obj.raw).toUpperCase();
-    var uid = k.uids[0];
-    var extract = uid.match(/([\s\S]*) \(([\s\S]*)\) <([\s\S]*)>/);
-    if(extract && extract.length === 4){
-      obj.name = extract[1];
-      obj.comment = extract[2];
-      obj.email = extract[3];
-    }
-    else{
-      extract = uid.match(/([\s\S]*) <([\s\S]*)>/);
-      if(extract && extract.length === 3){
+    if (k.fingerprint) {
+      obj.fingerprint = k.fingerprint;
+      obj.hash = sha1(obj.raw).toUpperCase();
+      var uid = k.uids[0];
+      var extract = uid.match(/([\s\S]*) \(([\s\S]*)\) <([\s\S]*)>/);
+      if(extract && extract.length === 4){
         obj.name = extract[1];
-        obj.comment = '';
-        obj.email = extract[2];
-      } else {
-        extract = uid.match(/([\s\S]*) \(([\s\S]*)\)/);
-        if(extract && extract.length === 3) {
-        obj.name = extract[1];
-          obj.comment = extract[2];
-          obj.email = "";
+        obj.comment = extract[2];
+        obj.email = extract[3];
+      }
+      else{
+        extract = uid.match(/([\s\S]*) <([\s\S]*)>/);
+        if(extract && extract.length === 3){
+          obj.name = extract[1];
+          obj.comment = '';
+          obj.email = extract[2];
         } else {
-          obj.name = "";
-          obj.comment = "";
-          obj.email = "";
+          extract = uid.match(/([\s\S]*) \(([\s\S]*)\)/);
+          if(extract && extract.length === 3) {
+          obj.name = extract[1];
+            obj.comment = extract[2];
+            obj.email = "";
+          } else {
+            obj.name = "";
+            obj.comment = "";
+            obj.email = "";
+          }
         }
       }
     }
   };
 
   this._verify = function (obj) {
+    if (!obj.fingerprint) {
+      return "Data does not seem to be a key";
+    }
   };
 }
 

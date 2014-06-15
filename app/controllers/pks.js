@@ -1,9 +1,12 @@
-var fs        = require('fs');
-var util      = require('util');
-var async     = require('async');
-var _         = require('underscore');
-var stream    = require('stream');
-var logger    = require('../lib/logger')();
+var fs       = require('fs');
+var util     = require('util');
+var async    = require('async');
+var _        = require('underscore');
+var stream   = require('stream');
+var http2raw = require('../lib/streams/parsers/http2raw');
+var parsers  = require('../lib/streams/parsers/doc');
+var es       = require('event-stream');
+var logger   = require('../lib/logger')();
 
 module.exports = function (pksServer) {
   return new PKSBinding(pksServer);
@@ -77,15 +80,17 @@ function PKSBinding (pksServer) {
   };
 
   this.add = function (req, res) {
-    async.waterfall([
-      async.apply(ParametersService.getPubkey, req),
-      PublicKeyService.submitPubkey.bind(PublicKeyService)
-    ],
-    function (err, pubkey) {
-      http.answer(res, 400, err, function () {
-        res.send(200, JSON.stringify(pubkey.json()));
-        PeeringService.propagatePubkey(pubkey);
-      });
-    });
+    http2raw.pubkey(req, http400(res))
+      .pipe(parsers.parsePubkey(http400(res)))
+      .pipe(pksServer.singleWriteStream())
+      .pipe(es.stringify())
+      .pipe(res);
   };
 };
+
+function http400 (res) {
+  return function (err) {
+    logger.warn(err);
+    res.send(400, err);
+  };
+}

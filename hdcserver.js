@@ -12,15 +12,15 @@ function HDCServer (dbConf, overrideConf, interceptors) {
         return typeof obj.email != "undefined";
       },
       treatment: function (server, obj, next) {
-        logger.debug('⬇ %s', obj.fingerprint);
+        logger.debug('⬇ PUBKEY %s', obj.fingerprint);
         async.waterfall([
           function (next){
             server.PublicKeyService.submitPubkey(obj, next);
           },
           function (pubkey, next){
-            logger.debug('✔ %s', pubkey.fingerprint);
+            logger.debug('✔ PUBKEY %s', pubkey.fingerprint);
             server.emit('pubkey', pubkey);
-            next();
+            next(null, pubkey.json());
           },
         ], next);
       }
@@ -30,7 +30,7 @@ function HDCServer (dbConf, overrideConf, interceptors) {
         return obj.amendment ? true : false;
       },
       treatment: function (server, obj, next) {
-        logger.debug('⬇ %s for %s-%s', "0x" + obj.issuer.substr(32), obj.amendment.number, obj.amendment.hash);
+        logger.debug('⬇ VOTE of %s for %s-%s', "0x" + obj.issuer.substr(32), obj.amendment.number, obj.amendment.hash);
         async.waterfall([
           function (next){
             server.VoteService.submit(obj, next);

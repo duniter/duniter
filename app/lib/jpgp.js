@@ -20,11 +20,8 @@ function JPGP() {
 
   this.certificate = function(asciiArmored) {
     var readKeys = openpgp.key.readArmored(asciiArmored).keys;
-    if(readKeys.length == 0){
-      throw new Error('No key found in ASCII armored message');
-    }
-    if(readKeys.length > 1){
-      throw new Error('Multiple keys found in ASCII armored message');
+    if(readKeys.length == 0 || readKeys.length > 1){
+      return {};
     }
     var key = readKeys[0];
     var fpr = key.getKeyPacket().getFingerprint().toUpperCase();

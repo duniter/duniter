@@ -463,17 +463,5 @@ function ParameterNamespace (conn, currency) {
     ], callback);
   };
 
-  this.getPubkey = function (req, callback) {
-    if(!req.body || !req.body.keytext){
-      callback('Parameter `keytext` is required');
-      return;
-    }
-    if(!req.body.keytext.match(/BEGIN PGP PUBLIC KEY/) || !req.body.keytext.match(/END PGP PUBLIC KEY/)){
-      callback('Keytext does not look like a public key message');
-      return;
-    }
-    parsers.parsePubkey().asyncWrite(req.body.keytext, callback);
-  };
-
   return this;
 };

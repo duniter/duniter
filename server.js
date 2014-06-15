@@ -12,6 +12,7 @@ var connectPgp = require('connect-pgp');
 var logger     = require('./app/lib/logger')('server');
 
 var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting', 'CommunityFlow'];
+var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors) {
 
@@ -21,7 +22,7 @@ function Server (dbConf, overrideConf, interceptors) {
   that.conn = null;
   that.conf = null;
 
-  this._write = function (obj, enc, done) {
+  this._write = function (obj, enc, done, isInnerWrite) {
     async.waterfall([
       async.apply(that.initServer.bind(that)),
       function (next){
@@ -42,11 +43,18 @@ function Server (dbConf, overrideConf, interceptors) {
           next(err);
         }
       },
-    ], function (err) {
+    ], function (err, res) {
       if (err){
         logger.debug(err);
       }
-      done();
+      if (res != null && res != undefined) {
+        that.push(res);
+      }
+      if (isInnerWrite) {
+        done(null, res);
+      } else {
+        done();
+      }
     });
   };
 
@@ -271,9 +279,16 @@ function Server (dbConf, overrideConf, interceptors) {
 
     stream.Duplex.call(this, { objectMode : true });
 
+    var self = this;
     this._write = function (obj, enc, done) {
-      parentStream._write(obj, enc, done);
+      parentStream._write(obj, enc, function (err, res) {
+        if (res) self.push(res);
+        self.push(null);
+        done();
+      }, INNER_WRITE);
     };
+    this._read = function () {
+    }
   }
 
   util.inherits(TempStream, stream.Duplex);

@@ -382,12 +382,10 @@ function ParameterNamespace (conn, currency) {
 
       // Verify signature
       function(next){
-        entry.parse(signedEntry, next);
+        parsers.parseWallet(next).asyncWrite(signedEntry, next);
       },
-      function (entry, next){
-        entry.verify(currency, next);
-      },
-      function (valid, next){
+      function (obj, next){
+        entry = new Wallet(obj);
         entry.verifySignature(pubkey.raw, next);
       },
       function (verified, next){

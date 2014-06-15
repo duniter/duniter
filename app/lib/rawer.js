@@ -119,6 +119,28 @@ module.exports = new function() {
     return unix2dos(signed(that.getStatusWithoutSignature(json), json));
   };
 
+  this.getWalletWithoutSignature = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Key: " + json.fingerprint + "\n";
+    raw += "Date: " + json.date.timestamp() + "\n";
+    raw += "RequiredTrusts: " + json.requiredTrusts + "\n";
+    raw += "Hosters:\n";
+    json.hosters.forEach(function (fingerprint) {
+      raw += fingerprint + "\n";
+    });
+    raw += "Trusts:\n";
+    json.trusts.forEach(function (fingerprint) {
+      raw += fingerprint + "\n";
+    });
+    return unix2dos(raw);
+  };
+
+  this.getWallet = function (json) {
+    return unix2dos(signed(that.getWalletWithoutSignature(json), json));
+  };
+
   function signed (raw, json) {
     if (json.signature)
       raw += json.signature;

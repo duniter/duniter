@@ -53,20 +53,3 @@ describe('Community flow', function(){
     });
   });
 });
-
-function loadFromFile(entry, file, done) {
-  fs.readFile(file, {encoding: "utf8"}, function (err, data) {
-    if(fs.existsSync(file + ".asc")){
-      data += fs.readFileSync(file + '.asc', 'utf8');
-    }
-    // data = data.unix2dos();
-    async.waterfall([
-      function (next){
-        entry.parse(data, next);
-      },
-      function (entry, next){
-        entry.verify('beta_brousouf', next);
-      }
-    ], done);
-  });
-}

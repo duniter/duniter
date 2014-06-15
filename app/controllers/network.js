@@ -202,7 +202,6 @@ function NetworkBinding (peerServer, conf) {
         Merkle.WalletEntries(next);
       },
       function (merkle, next){
-        console.log(Merkle);
         MerkleService.processForURL(req, merkle, Merkle.mapForWalletEntries.bind(Merkle), next);
       }
     ], function (err, json) {

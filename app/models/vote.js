@@ -199,26 +199,6 @@ VoteSchema.methods = {
     to.basis = this.basis;
   },
 
-  loadFromFiles: function(voteFile, amendFile, pubkeyFile, done) {
-    var Amendment = this.model('Amendment');
-    var obj = this;
-    var voteData = fs.readFileSync(voteFile, 'utf8');
-    var amendData = fs.readFileSync(amendFile, 'utf8');
-    var pubkey = fs.readFileSync(pubkeyFile, 'utf8');
-    obj.parse(amendData + voteData, pubkey, function (err) {
-      if(err){
-        done(err);
-        return;
-      }
-      var am = new Amendment();
-      am.parse(amendData, function (err) {
-        obj.amendment = am;
-        done(err);
-      });
-    });
-    return this;
-  },
-
   getRaw: function() {
     return this.amendment.getRaw();
   },

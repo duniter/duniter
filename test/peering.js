@@ -84,16 +84,3 @@ describe('Peer', function(){
     });
   });
 });
-
-function loadFromFile(pr, file, done) {
-  fs.readFile(file, {encoding: "utf8"}, function (err, data) {
-    async.waterfall([
-      function (next){
-        pr.parse(data, next);
-      },
-      function (pr, next){
-        pr.verify('beta_brousouf', next);
-      }
-    ], done);
-  });
-}

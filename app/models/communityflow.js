@@ -3,6 +3,7 @@ var async    = require('async');
 var sha1     = require('sha1');
 var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
+var rawer    = require('../lib/rawer');
 var Schema   = mongoose.Schema;
 
 var CommunityFlowSchema = new Schema({
@@ -69,70 +70,6 @@ CommunityFlowSchema.methods = {
     json.date = this.date && this.date.timestamp();
     return json;
   },
-  
-  parse: function(rawEntryReq, callback) {
-    var rawEntry = rawEntryReq;
-    var sigIndex = rawEntryReq.lastIndexOf("-----BEGIN");
-    if(~sigIndex){
-      this.signature = rawEntryReq.substring(sigIndex);
-      rawEntry = rawEntryReq.substring(0, sigIndex);
-      try{
-        this.sigDate = jpgp().signature(this.signature).signatureDate();
-      }
-      catch(ex){}
-    }
-    if(!rawEntry){
-      callback("No CommunityFlow entry given");
-      return false;
-    }
-    else{
-      var obj = this;
-      var captures = [
-        {prop: "version",             regexp: /Version: (.*)/},
-        {prop: "currency",            regexp: /Currency: (.*)/},
-        {prop: "amendmentNumber",     regexp: /Amendment: (.*)/, parser: parseAmendmentNumber},
-        {prop: "amendmentHash",       regexp: /Amendment: (.*)/, parser: parseAmendmentHash},
-        {prop: "algorithm",           regexp: /Algorithm: (.*)/},
-        {prop: "membersJoiningCount", regexp: /MembersJoining: (.*)/, parser: parseMerkleNumber},
-        {prop: "membersJoiningRoot",  regexp: /MembersJoining: (.*)/, parser: parseMerkleRoot},
-        {prop: "membersLeavingCount", regexp: /MembersLeaving: (.*)/, parser: parseMerkleNumber},
-        {prop: "membersLeavingRoot",  regexp: /MembersLeaving: (.*)/, parser: parseMerkleRoot},
-        {prop: "votersJoiningCount",  regexp: /VotersJoining: (.*)/, parser: parseMerkleNumber},
-        {prop: "votersJoiningRoot",   regexp: /VotersJoining: (.*)/, parser: parseMerkleRoot},
-        {prop: "votersLeavingCount",  regexp: /VotersLeaving: (.*)/, parser: parseMerkleNumber},
-        {prop: "votersLeavingRoot",   regexp: /VotersLeaving: (.*)/, parser: parseMerkleRoot},
-        {prop: "issuer",              regexp: /Issuer: (.*)/},
-        {prop: "date",                regexp: /Date: (.*)/, parser: parseDateFromTimestamp}
-      ];
-      var crlfCleaned = rawEntry.replace(/\r\n/g, "\n");
-      if(crlfCleaned.match(/\n$/)){
-        captures.forEach(function (cap) {
-          simpleLineExtraction(obj, crlfCleaned, cap);
-        });
-      }
-      else{
-        callback("Bad document structure: no new line character at the end of the document.");
-        return false;
-      }
-    }
-    if (!this.date) {
-      this.date = new Date();
-    }
-    this.hash = sha1(rawEntry).toUpperCase();
-    callback(null, this);
-  },
-
-  verify: function (currency, done) {
-    var firstVerif = verify(this, currency);
-    var valid = firstVerif.result;
-    if(!valid && done){
-      done(firstVerif.errorMessage, valid);
-    }
-    if(valid && done){
-      done(null, valid);
-    }
-    return valid;
-  },
 
   verifySignature: function (publicKey, done) {
     jpgp()
@@ -143,109 +80,12 @@ CommunityFlowSchema.methods = {
   },
 
   getRaw: function() {
-    var raw = "";
-    raw += "Version: " + this.version + "\n";
-    raw += "Currency: " + this.currency + "\n";
-    raw += "Amendment: " + [this.amendmentNumber, this.amendmentHash].join('-') + "\n";
-    raw += "Issuer: " + this.issuer + "\n";
-    raw += "Date: " + this.date.timestamp() + "\n";
-    raw += "Algorithm: " + this.algorithm + "\n";
-    if (this.membersJoiningRoot)
-      raw += "MembersJoining: " + [this.membersJoiningCount, this.membersJoiningRoot].join('-') + "\n";
-    if (this.membersLeavingRoot)
-      raw += "MembersLeaving: " + [this.membersLeavingCount, this.membersLeavingRoot].join('-') + "\n";
-    if (this.votersJoiningRoot)
-      raw += "VotersJoining: " + [this.votersJoiningCount, this.votersJoiningRoot].join('-') + "\n";
-    if (this.votersLeavingRoot)
-      raw += "VotersLeaving: " + [this.votersLeavingCount, this.votersLeavingRoot].join('-') + "\n";
-    return raw.unix2dos();
+    return rawer.getCommunityFlowWithoutSignature(this);
   },
 
   getRawSigned: function() {
-    var raw = this.getRaw() + this.signature;
-    return raw;
+    return rawer.getCommunityFlow(this);
   }
-}
-
-function parseDateFromTimestamp (value) {
-  if (value && value.match(/^\d+$/))
-    return new Date(parseInt(value)*1000);
-  else
-    return new Date();
-}
-
-function parseAmendmentNumber (value) {
-  var m = value.match(/^(\d+)-([A-Z\d]+)$/);
-  if (m)
-    return m[1];
-  else
-    return 0;
-}
-
-function parseAmendmentHash (value) {
-  var m = value.match(/^(\d+)-([A-Z\d]+)$/);
-  if (m)
-    return m[2];
-  else
-    return "";
-}
-
-var parseMerkleNumber = parseAmendmentNumber;
-var parseMerkleRoot = parseAmendmentHash;
-
-function verify(obj, currency) {
-  var err = null;
-  var code = 150;
-  var codes = {
-    'BAD_VERSION': 150,
-    'BAD_CURRENCY': 151,
-    'BAD_FINGERPRINT': 152,
-    'BAD_THRESHOLD': 153,
-    'BAD_AM_NUMBER': 154,
-    'BAD_AM_HASH': 155,
-    'BAD_MERKLE_SUMMARY': 156,
-  }
-  if(!err){
-    // Version
-    if(!obj.version || !obj.version.match(/^1$/))
-      err = {code: codes['BAD_VERSION'], message: "Version unknown"};
-  }
-  if(!err){
-    // Currency
-    if(!obj.currency || !obj.currency.match("^"+ currency + "$"))
-      err = {code: codes['BAD_CURRENCY'], message: "Currency '"+ obj.currency +"' not managed"};
-  }
-  if(!err){
-    // Fingerprint
-    if(obj.issuer && !obj.issuer.match(/^[A-Z\d]+$/))
-      err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect issuer field"};
-  }
-  if(!err){
-    // Date
-    if(obj.date && (typeof obj == 'string' ? !obj.date.match(/^\d+$/) : obj.date.timestamp() <= 0))
-      err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
-  }
-  if(!err){
-    // Amendment
-    if(!err && !obj.amendmentHash.match(/^[A-Z\d]+$/))
-      err = {code: codes['BAD_FIELD'], message: "Incorrect amendment field: must be contain an amendment"};
-  }
-  ['membersJoiningRoot', 'membersLeavingRoot', 'votersJoiningRoot', 'votersLeavingRoot'].forEach(function(field){
-    if(!err && !obj[field].match(/^[A-Z\d]+$/))
-      err = {code: codes['BAD_MERKLE_SUMMARY'], message: "Incorrect " + field + " field: must be a SHA-1 uppercased hash"};
-  });
-  if(err){
-    return { result: false, errorMessage: err.message, errorCode: err.code};
-  }
-  return { result: true };
-}
-
-function simpleLineExtraction(pr, rawEntry, cap, parser) {
-  var fieldValue = rawEntry.match(cap.regexp);
-  if(fieldValue && fieldValue.length === 2){
-    pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1]) : fieldValue[1];
-  }
-  return;
 }
 
 CommunityFlowSchema.statics.getTheOne = function (amNumber, issuer, algo, done) {

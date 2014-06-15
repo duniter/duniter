@@ -4,9 +4,12 @@ var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var mongoose = require('mongoose');
+var parsers  = require('../app/lib/streams/parsers/doc');
 var ucoin    = require('./..');
 
 var CommunityFlow = mongoose.model('CommunityFlow', require('../app/models/communityflow'));
+var rawCF = fs.readFileSync(__dirname + "/data/communityflows/cat.flow", "utf8") +
+            fs.readFileSync(__dirname + "/data/communityflows/cat.flow.asc", "utf8");
 
 describe('Community flow', function(){
 
@@ -14,10 +17,11 @@ describe('Community flow', function(){
 
     var entry;
 
-    // Loads entry with its data
     before(function(done) {
-      entry = new CommunityFlow();
-      loadFromFile(entry, __dirname + "/data/communityflows/cat.flow", done);
+      var parser = parsers.parseCommunityFlow().asyncWrite(rawCF, function (err, obj) {
+        entry = new CommunityFlow(obj);
+        done(err);
+      });
     });
 
     it('should be version 1', function(){
@@ -36,16 +40,16 @@ describe('Community flow', function(){
       should.exist(entry.date);
     });
 
-    it('its computed hash should be A3EDCD9434938A0745C08DBD13FE436BE32053FB', function(){
-      assert.equal(entry.hash, 'A3EDCD9434938A0745C08DBD13FE436BE32053FB');
+    it('its computed hash should be FEDBD536DC987968D36C2C69F7A3CC6698BFBADF', function(){
+      assert.equal(entry.hash, 'FEDBD536DC987968D36C2C69F7A3CC6698BFBADF');
     });
 
     it('its manual hash should be A3EDCD9434938A0745C08DBD13FE436BE32053FB', function(){
       assert.equal(sha1(entry.getRaw()).toUpperCase(), 'A3EDCD9434938A0745C08DBD13FE436BE32053FB');
     });
 
-    it('its manual signed hash should be 2C92ED61AACE5D805D4EF56F508FAB59207F6D83', function(){
-      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), '2C92ED61AACE5D805D4EF56F508FAB59207F6D83');
+    it('its manual signed hash should be FEDBD536DC987968D36C2C69F7A3CC6698BFBADF', function(){
+      assert.equal(sha1(entry.getRawSigned()).toUpperCase(), 'FEDBD536DC987968D36C2C69F7A3CC6698BFBADF');
     });
   });
 });

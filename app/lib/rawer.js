@@ -170,6 +170,29 @@ module.exports = new function() {
     return unix2dos(signed(that.getVotingWithoutSignature(json), json));
   };
 
+  this.getCommunityFlowWithoutSignature = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Amendment: " + [json.amendmentNumber, json.amendmentHash].join('-') + "\n";
+    raw += "Issuer: " + json.issuer + "\n";
+    raw += "Date: " + json.date.timestamp() + "\n";
+    raw += "Algorithm: " + json.algorithm + "\n";
+    if (json.membersJoiningRoot)
+      raw += "MembersJoining: " + [json.membersJoiningCount, json.membersJoiningRoot].join('-') + "\n";
+    if (json.membersLeavingRoot)
+      raw += "MembersLeaving: " + [json.membersLeavingCount, json.membersLeavingRoot].join('-') + "\n";
+    if (json.votersJoiningRoot)
+      raw += "VotersJoining: " + [json.votersJoiningCount, json.votersJoiningRoot].join('-') + "\n";
+    if (json.votersLeavingRoot)
+      raw += "VotersLeaving: " + [json.votersLeavingCount, json.votersLeavingRoot].join('-') + "\n";
+    return unix2dos(raw);
+  };
+
+  this.getCommunityFlow = function (json) {
+    return unix2dos(signed(that.getCommunityFlowWithoutSignature(json), json));
+  };
+
   function signed (raw, json) {
     if (json.signature)
       raw += json.signature;

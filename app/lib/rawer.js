@@ -46,4 +46,31 @@ module.exports = new function() {
   this.getPubkey = function (json) {
     return unix2dos(json.raw);
   };
+
+  this.getTransactionWithoutSignature = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Sender: " + json.sender + "\n";
+    raw += "Number: " + json.number + "\n";
+    if(json.previousHash){
+      raw += "PreviousHash: " + json.previousHash + "\n";
+    }
+    raw += "Recipient: " + json.recipient + "\n";
+    raw += "Coins:\n";
+    for(var i = 0; i < json.coins.length; i++){
+      raw += json.coins[i] + "\n";
+    }
+    raw += "Comment:\n" + json.comment;
+    if (!raw.match(/\n$/))
+      raw += '\n';
+    return unix2dos(raw);
+  };
+
+  this.getTransaction = function (json) {
+    var raw = that.getTransactionWithoutSignature(json);
+    if (json.signature)
+      raw += json.signature;
+    return unix2dos(raw);
+  };
 }

@@ -193,6 +193,33 @@ describe('Multiline message signature:', function(){
       async.apply(verify, amendment, catRawPubKey),
     ], testVerified(true, done));
   });
+
+  //-----------------------------
+  // Some pre-signed stuff here
+
+  var message     = fs.readFileSync(__dirname + "/data/transaction/cat.tx", 'utf8');
+  var signature   = fs.readFileSync(__dirname + "/data/transaction/cat.tx.asc", 'utf8');
+  var messageCRLF = fs.readFileSync(__dirname + "/data/transaction/cat.tx.dos", 'utf8');
+
+  it('jpgp.verify() must NOT verify external gpg signature + LF line ending', function(done){
+    verify(message.dos2unix(), catRawPubKey, signature, testVerified(false, done));
+  });
+
+  it('jpgp.verify() must verify external gpg signature + CRLF line ending', function(done){
+    verify(message.unix2dos(), catRawPubKey, signature, testVerified(true, done));
+  });
+
+  it('jpgp.verify() must verify external gpg signature + CRLF line ending file', function(done){
+    verify(messageCRLF, catRawPubKey, signature, testVerified(true, done));
+  });
+
+  it('jpgp.verify() must NOT verify external gpg signature + CRLF line ending file', function(done){
+    verify(messageCRLF.dos2unix(), catRawPubKey, signature, testVerified(false, done));
+  });
+
+  it('jpgp.verify() must NOT pass external gpg signature + wrong data', function(done){
+    verify(message + "some delta", catRawPubKey, signature, testVerified(false, done));
+  });
 });
 
 describe('Public key message signature:', function(){

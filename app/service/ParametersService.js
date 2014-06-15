@@ -26,22 +26,13 @@ function ParameterNamespace (conn, currency) {
         this.getTransactionFromRaw(req.body && req.body.transaction, req.body && req.body.signature, next);
       },
       function (pubkey, signedTx, next) {
-        var tx = new Transaction({});
+        var tx;
         async.waterfall([
           function (next){
-            tx.parse(signedTx, next);
+            parsers.parseTransaction(next).asyncWrite(signedTx, next);
           },
-          function (tx, next){
-            tx.verify(currency, next);
-          },
-          function (verified, next){
-            if(!verified){
-              next('Bad document structure');
-              return;
-            }
-            next();
-          },
-          function (next){
+          function (obj, next){
+            tx = new Transaction(obj);
             tx.verifySignature(pubkey.raw, next);
           }
         ], function (err, verified) {

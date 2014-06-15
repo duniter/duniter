@@ -4,7 +4,7 @@ var sha1     = require('sha1');
 var _        = require('underscore');
 var jpgp     = require('../lib/jpgp');
 var fs       = require('fs');
-var hdc      = require('../../node_modules/hdc');
+var rawer    = require('../lib/rawer');
 var Schema   = mongoose.Schema;
 
 var TransactionSchema = new Schema({
@@ -35,55 +35,6 @@ TransactionSchema.pre('save', function (next) {
 });
 
 TransactionSchema.methods = {
-  
-  hdc: function() {
-    var tx = new hdc.Transaction(this.getRaw());
-    fill(tx, this);
-    tx.number = this.number + "";
-    return tx;
-  },
-  
-  parse: function(rawTX, callback) {
-    rawTX = rawTX.unix2dos();
-    var tx = null;
-    var sigIndex = rawTX.lastIndexOf("-----BEGIN");
-    if(~sigIndex){
-      this.signature = rawTX.substring(sigIndex);
-      tx = new hdc.Transaction(rawTX.substring(0, sigIndex));
-      try{
-        this.sigDate = jpgp().signature(this.signature).signatureDate();
-      }
-      catch(ex){}
-    }
-    else{
-      tx = new hdc.Transaction(rawTX);
-    }
-    fill(this, tx);
-    this.coins.sort();
-    this.hash = sha1(rawTX).toUpperCase();
-    if (!tx.error) {
-      tx.error = this.check();
-    }
-    callback(tx.error, this);
-  },
-
-  check: function () {
-    if (this.getCoins().length == 0) {
-      return "Transaction must carry at least one coin";
-    }
-  },
-
-  verify: function (currency, done) {
-    var hdcTX = this.hdc();
-    var valid = hdcTX.verify(currency);
-    if(!valid && done){
-      done(hdcTX.error, valid);
-    }
-    if(valid && done){
-      done(null, valid);
-    }
-    return valid;
-  },
 
   verifySignature: function (publicKey, done) {
     jpgp()
@@ -126,26 +77,11 @@ TransactionSchema.methods = {
   },
 
   getRaw: function() {
-    var raw = "";
-    raw += "Version: " + this.version + "\n";
-    raw += "Currency: " + this.currency + "\n";
-    raw += "Sender: " + this.sender + "\n";
-    raw += "Number: " + this.number + "\n";
-    if(this.previousHash){
-      raw += "PreviousHash: " + this.previousHash + "\n";
-    }
-    raw += "Recipient: " + this.recipient + "\n";
-    raw += "Coins:\n";
-    for(var i = 0; i < this.coins.length; i++){
-      raw += this.coins[i] + "\n";
-    }
-    raw += "Comment:\n" + this.comment;
-    return raw.unix2dos();
+    return rawer.getTransactionWithoutSignature(this);
   },
 
   getRawSigned: function() {
-    var raw = this.getRaw() + this.signature;
-    return raw;
+    return rawer.getTransaction(this);
   },
 
   json: function() {
@@ -208,15 +144,3 @@ TransactionSchema.statics.findAllWithSource = function (issuer, number, done) {
 };
 
 module.exports = TransactionSchema;
-
-function fill (tx1, tx2) {
-  tx1.version      = tx2.version;
-  tx1.currency     = tx2.currency;
-  tx1.sender       = tx2.sender;
-  tx1.number       = tx2.number;
-  tx1.previousHash = tx2.previousHash;
-  tx1.recipient    = tx2.recipient;
-  tx1.coins        = tx2.coins;
-  tx1.comment      = tx2.comment;
-  tx1.hash         = tx2.hash;
-}

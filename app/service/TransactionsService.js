@@ -44,10 +44,7 @@ module.exports.get = function (conn, MerkleService, PeeringService) {
         }
       }
     ], function (err, alreadyProcessed) {
-      if (!err && !alreadyProcessed) {
-        err = tx.check();
-      }
-      if(err && alreadyProcessed){
+      if(alreadyProcessed){
         callback(err, tx, alreadyProcessed);
       }
       else if(err){

@@ -1,10 +1,11 @@
-var async       = require('async');
-var _           = require('underscore');
-var sha1        = require('sha1');
-var merkle      = require('merkle');
-var vucoin      = require('vucoin');
-var jpgp        = require('./jpgp');
-var logger      = require('./logger')('sync');
+var async   = require('async');
+var _       = require('underscore');
+var sha1    = require('sha1');
+var merkle  = require('merkle');
+var vucoin  = require('vucoin');
+var jpgp    = require('./jpgp');
+var parsers = require('./streams/parsers/doc');
+var logger  = require('./logger')('sync');
 
 var CONST_FORCE_TX_PROCESSING = false;
 
@@ -78,18 +79,18 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
           next(null, entry + signature, keyID);
         },
         function (signedPR, keyID, next) {
-          var peer = new Peer();
+          var peer;
           async.waterfall([
             function (next){
-              peer.parse(signedPR, next);
+              parsers.parsePeer(next).asyncWrite(signedPR, next);
             },
-            function (peer, next){
-              peer.verify(peer.currency, next);
-            },
-            function (verified, next) {
+            function (obj, next) {
+              peer = new Peer(obj);
               server.initServer(next);
             },
             function (next){
+              // Temporarily manage ALL keys for sync
+              server.conf.kmanagement = "ALL";
               KeyService         = server.KeyService;
               VoteService        = server.VoteService;
               TransactionService = server.TransactionsService;
@@ -514,8 +515,8 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                           });
                         },
                         function (pubkey, signedTx, txs, next) {
-                          var tx = new Transaction();
-                          tx.parse(signedTx, function (err, tx) {
+                          parsers.parseTransaction(next).asyncWrite(signedTx, function (err, obj) {
+                            var tx = new Transaction(obj || {});
                             next(err, pubkey, tx, txs);
                           });
                         },

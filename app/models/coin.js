@@ -4,7 +4,6 @@ var sha1     = require('sha1');
 var _        = require('underscore');
 var jpgp     = require('../lib/jpgp');
 var fs       = require('fs');
-var hdc      = require('../../node_modules/hdc');
 var Schema   = mongoose.Schema;
 
 var CoinSchema = new Schema({

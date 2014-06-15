@@ -446,21 +446,13 @@ function ParameterNamespace (conn, currency) {
       callback('Requires a status + signature');
       return;
     }
-    var status = new Status();
-    var pubkey;
+    var status, pubkey;
     async.waterfall([
       function (next){
-        status.parse(signedSR, next);
+        parsers.parseStatus(next).asyncWrite(req.body.status + req.status.signature, next);
       },
-      function (status, next){
-        status.verify(currency, next);
-      },
-      // Looking for corresponding public key
-      function (verified, next){
-        if (!verified) {
-          next('Wrong status structure');
-          return;
-        }
+      function (obj, next){
+        status = new Status(obj);
         PublicKey.getFromSignature(status.signature, next);
       },
       function (pk, next){

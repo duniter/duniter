@@ -107,6 +107,18 @@ module.exports = new function() {
     return unix2dos(signed(that.getForwardWithoutSignature(json), json));
   };
 
+  this.getStatusWithoutSignature = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Status: " + json.status + "\n";
+    return unix2dos(raw);
+  };
+
+  this.getStatus = function (json) {
+    return unix2dos(signed(that.getStatusWithoutSignature(json), json));
+  };
+
   function signed (raw, json) {
     if (json.signature)
       raw += json.signature;

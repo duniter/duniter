@@ -1,14 +1,13 @@
-var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
 var jpgp     = require('../lib/jpgp');
+var rawer    = require('../lib/rawer');
 var _        = require('underscore');
 
 module.exports = function StatusMessage (values) {
 
   var that = this;
-
-  ['version', 'currency', 'status'].forEach(function(field){
+  ['version', 'currency', 'status', 'hash'].forEach(function(field){
     that[field] = values && values[field] || '';
   });
 
@@ -80,18 +79,6 @@ module.exports = function StatusMessage (values) {
     callback(null, this);
   }
 
-  this.verify = function (currency, done) {
-    var firstVerif = this.verifyStruct(this, currency);
-    var valid = firstVerif.result;
-    if(!valid && done){
-      done(firstVerif.errorMessage, valid);
-    }
-    if(valid && done){
-      done(null, valid);
-    }
-    return valid;
-  }
-
   this.verifySignature = function (publicKey, done) {
     jpgp()
       .publicKey(publicKey)
@@ -101,44 +88,10 @@ module.exports = function StatusMessage (values) {
   }
 
   this.getRaw = function() {
-    var raw = "";
-    raw += "Version: " + this.version + "\n";
-    raw += "Currency: " + this.currency + "\n";
-    raw += "Status: " + this.status + "\n";
-    return raw.unix2dos();
+    return rawer.getStatusWithoutSignature(this);
   },
 
   this.getRawSigned = function() {
-    var raw = this.getRaw() + this.signature;
-    return raw;
-  }
-
-  this.verifyStruct = function(obj, currency) {
-    var err = null;
-    var code = 150;
-    var codes = {
-      'BAD_VERSION': 150,
-      'BAD_CURRENCY': 151,
-      'BAD_STATUS': 152
-    }
-    if(!err){
-      // Version
-      if(!obj.version || !obj.version.match(/^1$/))
-        err = {code: codes['BAD_VERSION'], message: "Version unknown"};
-    }
-    if(!err){
-      // Currency
-      if(!obj.currency || !obj.currency.match("^"+ currency + "$"))
-        err = {code: codes['BAD_CURRENCY'], message: "Currency '"+ obj.currency +"' not managed"};
-    }
-    if(!err){
-      // Status
-      if(obj.status && !(obj.status + "").match(/^(ASK|NEW|NEW_BACK|UP|DOWN)$/))
-        err = {code: codes['BAD_STATUS'], message: "Status must be provided and match either ASK, NEW, NEW_BACK, UP or DOWN"};
-    }
-    if(err){
-      return { result: false, errorMessage: err.message, errorCode: err.code};
-    }
-    return { result: true };
+    return rawer.getStatus(this);
   }
 }

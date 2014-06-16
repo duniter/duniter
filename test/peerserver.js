@@ -80,7 +80,8 @@ describe('A server', function () {
         "BASIC_MERKLED_API 127.0.0.1 8080"
       ],
       "keyID": "E9CAB76D19A8651E",
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: http://openpgpjs.org\r\n\r\nwsBcBAEBCAAQBQJTlsmOCRDpyrdtGahlHgAAGPoIANAv8Q6PtaLuCzD9aDH+\nue9G10QNsXBCOIErj7wocmct3Y9yeYBwyAfth+ia0K/YDgygOY+n1yKid6QD\nlEOaDSENcdONZlYO/zAHDu6vQR/zsAPyztRCp0TSOCxQcQV2xSFkSvUSF8g2\noNI8RETgpLIlbKE8sS3F4v5OcxSa6wkhgngqRL6ZmqYqTPzgsAXlguA/Tq48\nNwRUQZBeP/TnMvnhhaZeww5qgxMNKWAMIjv7RUvMoP+YMMwSpgIKD3QYOhFK\nZLfYnxhiS/1jtJ+GTVdPLr5MNjLnNAc195aBT7OGi2frIsr7Qhz6TdMQnh0b\n39ohs+qaacQFbPS8qyVbhsM=\r\n=0nGP\r\n-----END PGP SIGNATURE-----\r\n"
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: http://openpgpjs.org\r\n\r\nwsBcBAEBCAAQBQJTlsmOCRDpyrdtGahlHgAAGPoIANAv8Q6PtaLuCzD9aDH+\nue9G10QNsXBCOIErj7wocmct3Y9yeYBwyAfth+ia0K/YDgygOY+n1yKid6QD\nlEOaDSENcdONZlYO/zAHDu6vQR/zsAPyztRCp0TSOCxQcQV2xSFkSvUSF8g2\noNI8RETgpLIlbKE8sS3F4v5OcxSa6wkhgngqRL6ZmqYqTPzgsAXlguA/Tq48\nNwRUQZBeP/TnMvnhhaZeww5qgxMNKWAMIjv7RUvMoP+YMMwSpgIKD3QYOhFK\nZLfYnxhiS/1jtJ+GTVdPLr5MNjLnNAc195aBT7OGi2frIsr7Qhz6TdMQnh0b\n39ohs+qaacQFbPS8qyVbhsM=\r\n=0nGP\r\n-----END PGP SIGNATURE-----\r\n",
+      "pubkey": { fingerprint: "C73882B64B7E72237A2F460CE9CAB76D19A8651E" }
     });
     peerServer.write({
       "version": "1",
@@ -129,7 +130,8 @@ describe('A server', function () {
       "endpoints": [
         "BASIC_MERKLED_API 127.0.0.1 8090"
       ],
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: http://openpgpjs.org\r\n\r\nwsBcBAEBCAAQBQJTmIfQCRDpyrdtGahlHgAAPboIAIILjXEgODUmkq0shKi+\n+BsOnZNSQ6dzmUYtqjsN83VyqsDIDZSKqQz3khXgDqcAVBXQcaL3oSrZOv70\n53E7oCKh+dOnAuOGrmWUUc2T0lkxppiwINQ9o8JqzDp9qpH8fSlFQu0HWuq/\noYar5B64Tp+dRoUY6iP3qqOpKKRLVj3z8vKJFyRXULNbawQPtrWem5OLatP2\nJw16pK04+IuMdA1+6+t/aeiqIoS/KRT2XlqrJe9nV5YXPC7KlXI80kd0sCEy\nuc7h/WIxkOlTfeXLuSRnQD+JMUKagMvoL7DbjvIgRlPhHp1xk1VjWkqBzBof\ntsf7xfAms830g9nsYnkvy30=\r\n=1kYK\r\n-----END PGP SIGNATURE-----\r\n"
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: http://openpgpjs.org\r\n\r\nwsBcBAEBCAAQBQJTmIfQCRDpyrdtGahlHgAAPboIAIILjXEgODUmkq0shKi+\n+BsOnZNSQ6dzmUYtqjsN83VyqsDIDZSKqQz3khXgDqcAVBXQcaL3oSrZOv70\n53E7oCKh+dOnAuOGrmWUUc2T0lkxppiwINQ9o8JqzDp9qpH8fSlFQu0HWuq/\noYar5B64Tp+dRoUY6iP3qqOpKKRLVj3z8vKJFyRXULNbawQPtrWem5OLatP2\nJw16pK04+IuMdA1+6+t/aeiqIoS/KRT2XlqrJe9nV5YXPC7KlXI80kd0sCEy\nuc7h/WIxkOlTfeXLuSRnQD+JMUKagMvoL7DbjvIgRlPhHp1xk1VjWkqBzBof\ntsf7xfAms830g9nsYnkvy30=\r\n=1kYK\r\n-----END PGP SIGNATURE-----\r\n",
+      "pubkey": { fingerprint: "C73882B64B7E72237A2F460CE9CAB76D19A8651E" }
     });
   });
   

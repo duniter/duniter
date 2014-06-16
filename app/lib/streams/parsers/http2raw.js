@@ -5,7 +5,7 @@ module.exports = {
   vote:          instanciate.bind(null, Http2RawVote),
   pubkey:        instanciate.bind(null, Http2RawPubkey),
   transaction:   instanciate.bind(null, Http2RawTransaction),
-  // peer:          instanciate.bind(null, Peer),
+  peer:          instanciate.bind(null, Http2RawPeer),
   // forward:       instanciate.bind(null, Forward),
   // status:        instanciate.bind(null, Status),
   // wallet:        instanciate.bind(null, Wallet),
@@ -56,7 +56,7 @@ function Http2RawTransaction (req, onError) {
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!(req.body.transaction && req.body.signature)){
+    if(!(req.body && req.body.transaction && req.body.signature)){
       onError('Requires a transaction + signature');
     }
     else {
@@ -66,6 +66,22 @@ function Http2RawTransaction (req, onError) {
   }
 }
 
+function Http2RawPeer (req, onError) {
+  
+  stream.Readable.call(this);
+
+  this._read = function () {
+    if(!(req.body && req.body.entry && req.body.signature)){
+      onError('Requires a peering entry + signature');
+    }
+    else {
+      this.push(req.body.entry + req.body.signature);
+    }
+    this.push(null);
+  }
+}
+
 util.inherits(Http2RawPubkey,      stream.Readable);
 util.inherits(Http2RawVote,        stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
+util.inherits(Http2RawPeer,        stream.Readable);

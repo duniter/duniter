@@ -1,13 +1,20 @@
-var jpgp      = require('../lib/jpgp');
-var async     = require('async');
-var vucoin    = require('vucoin');
-var _         = require('underscore');
-var openpgp   = require('openpgp');
-var logger    = require('../lib/logger');
-var plogger   = logger('peering');
-var flogger   = logger('forward');
-var slogger   = logger('status');
-var tlogger   = logger('wallet');
+var jpgp             = require('../lib/jpgp');
+var async            = require('async');
+var vucoin           = require('vucoin');
+var _                = require('underscore');
+var openpgp          = require('openpgp');
+var es               = require('event-stream');
+var http2raw         = require('../lib/streams/parsers/http2raw');
+var http400          = require('../lib/http/http400');
+var parsers          = require('../lib/streams/parsers/doc');
+var link2pubkey      = require('../lib/streams/link2pubkey');
+var extractSignature = require('../lib/streams/extractSignature');
+var verifySignature  = require('../lib/streams/verifySignature');
+var logger           = require('../lib/logger');
+var plogger          = logger('peering');
+var flogger          = logger('forward');
+var slogger          = logger('status');
+var tlogger          = logger('wallet');
 
 module.exports = function (peerServer, conf) {
   return new NetworkBinding(peerServer, conf);
@@ -91,25 +98,15 @@ function NetworkBinding (peerServer, conf) {
   }
 
   this.peersPost = function (req, res) {
-    var that = this;
-    async.waterfall([
-
-      // Parameters
-      function(next){
-        ParametersService.getPeeringEntry(req, next);
-      },
-
-      function (signedPR, pubkey, next) {
-        PeeringService.submit(signedPR, pubkey, next);
-      }
-
-    ], function (err, recordedPR) {
-      http.answer(res, 400, err, function () {
-        plogger.debug('✔ %s %s:%s', recordedPR.fingerprint, recordedPR.getIPv4() || recordedPR.getIPv6(), recordedPR.getPort());
-        res.end(JSON.stringify(recordedPR.json(), null, "  "));
-        PeeringService.propagatePeering(recordedPR);
-      });
-    });
+    var onError = http400(res);
+    http2raw.peer(req, onError)
+      .pipe(parsers.parsePeer(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(peerServer.singleWriteStream(onError))
+      .pipe(es.stringify())
+      .pipe(res);
   }
 
   this.upstreamAll = function (req, res) {

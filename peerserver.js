@@ -3,6 +3,7 @@ var util      = require('util');
 var jpgp      = require('./app/lib/jpgp');
 var openpgp   = require('openpgp');
 var logger    = require('./app/lib/logger')('peerserver');
+var plogger   = require('./app/lib/logger')('peer');
 var HDCServer = require('./hdcserver');
 var parsers   = require('./app/lib/streams/parsers/doc');
 
@@ -15,13 +16,15 @@ function PeerServer (dbConf, overrideConf, interceptors) {
         return obj.endpoints ? true : false;
       },
       treatment: function (server, obj, next) {
+        plogger.debug('⬇ PEER %s', obj.pubkey.fingerprint);
         async.waterfall([
           function (next){
-            that.PeeringService.submit(obj, obj.keyID, next);
+            that.PeeringService.submit(obj, next);
           },
           function (peer, next){
+            plogger.debug('✔ PEER %s %s:%s', peer.fingerprint, peer.getIPv4() || peer.getIPv6(), peer.getPort());
             that.emit('peer', peer);
-            next();
+            next(null, peer.json());
           },
         ], next);
       }
@@ -35,9 +38,9 @@ function PeerServer (dbConf, overrideConf, interceptors) {
           function (next){
             that.PeeringService.submitForward(obj, next);
           },
-          function (fwd, next){
-            that.emit('forward', fwd);
-            next();
+          function (forward, next){
+            that.emit('forward', forward);
+            next(null, forward.json());
           },
         ], next);
       }
@@ -53,7 +56,7 @@ function PeerServer (dbConf, overrideConf, interceptors) {
           },
           function (status, peer, wasStatus, next){
             that.emit('status', status);
-            next();
+            next(null, status.json());
           },
         ], next);
       }
@@ -69,7 +72,7 @@ function PeerServer (dbConf, overrideConf, interceptors) {
           },
           function (wallet, next){
             that.emit('wallet', wallet);
-            next();
+            next(null, wallet.json());
           },
         ], next);
       }
@@ -276,14 +279,14 @@ function PeerServer (dbConf, overrideConf, interceptors) {
         if (conf.remoteport) {
           endpoint += ' ' + conf.remoteport;
         }
-        var p2 = new Peer({
+        var p2 = {
           version: 1,
           currency: currency,
           fingerprint: that.PeeringService.cert.fingerprint,
           endpoints: [endpoint]
-        });
+        };
         var raw1 = p1.getRaw().unix2dos();
-        var raw2 = p2.getRaw().unix2dos();
+        var raw2 = new Peer(p2).getRaw().unix2dos();
         if (raw1 != raw2) {
           logger.debug('Generating server\'s peering entry...');
           async.waterfall([
@@ -293,7 +296,8 @@ function PeerServer (dbConf, overrideConf, interceptors) {
             function (signature, next) {
               signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
               p2.signature = signature;
-              that.PeeringService.submit(p2, that.PeeringService.cert.fingerprint, next);
+              p2.pubkey = { fingerprint: that.PeeringService.cert.fingerprint };
+              that.PeeringService.submit(p2, next);
             },
           ], function (err) {
             next(err);

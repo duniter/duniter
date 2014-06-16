@@ -77,28 +77,22 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
     ], done);
   };
 
-  this.submit = function(peering, keyID, callback){
+  this.submit = function(peering, callback){
     var peer = new Peer(peering);
+    var pubkey = peer.pubkey;
+    var fpr = pubkey.fingerprint;
     async.waterfall([
       // Looking for corresponding public key
       function(next){
-        logger.debug('⬇ %s %s:%s', peer.fingerprint, peer.getIPv4() || peer.getIPv6(), peer.getPort());
-        PublicKeyService.getForPeer(peer, next);
-      },
-      function (pubkey, next){
-        if(!pubkey.fingerprint.match(new RegExp(keyID + "$", "g"))){
-          next('Peer\'s public key ('+pubkey.fingerprint+') does not match signatory (0x' + keyID + ')');
-          return;
-        }
-        if(!peer.fingerprint.match(new RegExp(keyID + "$", "g"))){
-          next('Fingerprint in peering entry ('+pubkey.fingerprint+') does not match signatory (0x' + keyID + ')');
+        if(!peer.fingerprint.match(new RegExp(fpr + "$", "g"))){
+          next('Fingerprint in peering entry ('+pubkey.fingerprint+') does not match signatory (' + fpr + ')');
           return;
         }
         that.addPeer(peer);
-        next(null, pubkey.raw);
+        next();
       },
-      function (pubkey, next){
-        persistPeer(peer, pubkey, next);
+      function (next){
+        persistPeer(peer, next);
       }
     ], callback);
   }
@@ -202,18 +196,8 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
     ], done);
   }
 
-  function persistPeer (peer, pubkey, done) {
+  function persistPeer (peer, done) {
     async.waterfall([
-      function (next) {
-        peer.verifySignature(pubkey, next);
-      },
-      function (verified, next){
-        if(!verified){
-          next('Signature does not match');
-          return;
-        }
-        next();
-      },
       function (next){
         Peer.find({ fingerprint: peer.fingerprint }, next);
       },

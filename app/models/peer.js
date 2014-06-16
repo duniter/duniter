@@ -38,6 +38,14 @@ PeerSchema.pre('save', function (next) {
   next();
 });
 
+PeerSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+PeerSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 PeerSchema.methods = {
 
   keyID: function () {

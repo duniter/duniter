@@ -16,9 +16,9 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
           function (next){
             that.SyncService.submit(obj, next);
           },
-          function (ms, next){
-            that.emit('membership', ms);
-            next();
+          function (membership, next){
+            that.emit('membership', membership);
+            next(null, membership.json());
           },
         ], next);
       }
@@ -32,9 +32,9 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
           function (next){
             that.SyncService.submitVoting(obj, next);
           },
-          function (vt, next){
-            that.emit('voting', vt);
-            next();
+          function (voting, next){
+            that.emit('voting', voting);
+            next(null, voting.json());
           },
         ], next);
       }
@@ -48,9 +48,9 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
           function (next){
             that.SyncService.submitCF(obj, next);
           },
-          function (cf, next){
-            that.emit('communityflow', cf);
-            next();
+          function (communityflow, next){
+            that.emit('communityflow', communityflow);
+            next(null, communityflow.json());
           },
         ], next);
       }

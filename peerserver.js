@@ -5,6 +5,7 @@ var openpgp   = require('openpgp');
 var logger    = require('./app/lib/logger')('peerserver');
 var plogger   = require('./app/lib/logger')('peer');
 var flogger   = require('./app/lib/logger')('forward');
+var slogger   = require('./app/lib/logger')('status');
 var HDCServer = require('./hdcserver');
 var parsers   = require('./app/lib/streams/parsers/doc');
 
@@ -53,11 +54,13 @@ function PeerServer (dbConf, overrideConf, interceptors) {
         return obj.status ? true : false;
       },
       treatment: function (server, obj, next) {
+        slogger.debug('⬇ STATUS %s %s', obj.pubkey.fingerprint, obj.status);
         async.waterfall([
           function (next){
             that.PeeringService.submitStatus(obj, next);
           },
           function (status, peer, wasStatus, next){
+            slogger.debug('✔ STATUS %s %s', status.pubkey.fingerprint, status.status);
             that.emit('status', status);
             next(null, status.json());
           },

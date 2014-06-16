@@ -7,7 +7,7 @@ var _        = require('underscore');
 module.exports = function StatusMessage (values) {
 
   var that = this;
-  ['version', 'currency', 'status', 'hash'].forEach(function(field){
+  ['version', 'currency', 'status', 'hash', 'pubkey'].forEach(function(field){
     that[field] = values && values[field] || '';
   });
 

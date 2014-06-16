@@ -96,7 +96,8 @@ describe('A server', function () {
       "version": "1",
       "currency": "beta_brousouf",
       "status": "UP",
-      "keyID": "E9CAB76D19A8651E"
+      "keyID": "E9CAB76D19A8651E",
+      "pubkey": { fingerprint: "C73882B64B7E72237A2F460CE9CAB76D19A8651E" }
     });
     peerServer.write({
       "version": "1",

@@ -7,7 +7,7 @@ module.exports = {
   transaction:   instanciate.bind(null, Http2RawTransaction),
   peer:          instanciate.bind(null, Http2RawPeer),
   forward:       instanciate.bind(null, Http2RawForward),
-  // status:        instanciate.bind(null, Status),
+  status:        instanciate.bind(null, Http2RawStatus),
   // wallet:        instanciate.bind(null, Wallet),
   // membership:    instanciate.bind(null, Membership),
   // voting:        instanciate.bind(null, Http2RawVoting),
@@ -96,8 +96,24 @@ function Http2RawForward (req, onError) {
   }
 }
 
+function Http2RawStatus (req, onError) {
+  
+  stream.Readable.call(this);
+
+  this._read = function () {
+    if(!(req.body && req.body.status && req.body.signature)){
+      onError('Requires a status + signature');
+    }
+    else {
+      this.push(req.body.status + req.body.signature);
+    }
+    this.push(null);
+  }
+}
+
 util.inherits(Http2RawPubkey,      stream.Readable);
 util.inherits(Http2RawVote,        stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
 util.inherits(Http2RawPeer,        stream.Readable);
 util.inherits(Http2RawForward,     stream.Readable);
+util.inherits(Http2RawStatus,      stream.Readable);

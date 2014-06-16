@@ -263,19 +263,14 @@ function NetworkBinding (peerServer, conf) {
   }
 
   this.statusPOST = function(req, res) {
-    var that = this;
-    async.waterfall([
-      function (callback) {
-        ParametersService.getStatus(req, callback);
-      },
-      function(statusObj, callback){
-        PeeringService.submitStatus(statusObj, callback);
-      }
-    ], function (err, status, peer, wasStatus) {
-      http.answer(res, 400, err, function () {
-        slogger.debug('⬇ %s status %s', peer.fingerprint, status.status);
-        res.end(JSON.stringify(status.json()));
-      })
-    });
+    var onError = http400(res);
+    http2raw.status(req, onError)
+      .pipe(parsers.parseStatus(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(peerServer.singleWriteStream(onError))
+      .pipe(es.stringify())
+      .pipe(res);
   }
 }

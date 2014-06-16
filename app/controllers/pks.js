@@ -6,6 +6,7 @@ var stream   = require('stream');
 var http2raw = require('../lib/streams/parsers/http2raw');
 var parsers  = require('../lib/streams/parsers/doc');
 var es       = require('event-stream');
+var http400  = require('../lib/http/http400');
 var logger   = require('../lib/logger')();
 
 module.exports = function (pksServer) {
@@ -80,17 +81,11 @@ function PKSBinding (pksServer) {
   };
 
   this.add = function (req, res) {
-    http2raw.pubkey(req, http400(res))
-      .pipe(parsers.parsePubkey(http400(res)))
-      .pipe(pksServer.singleWriteStream())
+    var onError = http400(res);
+    http2raw.pubkey(req, onError)
+      .pipe(parsers.parsePubkey(onError))
+      .pipe(pksServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);
   };
 };
-
-function http400 (res) {
-  return function (err) {
-    logger.warn(err);
-    res.send(400, err);
-  };
-}

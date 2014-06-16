@@ -22,7 +22,9 @@ function PeerParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getPeer, onError);
 
   this._clean = function (obj) {
-    obj.endpoints.splice(obj.endpoints.length - 1, 1);
+    obj.endpoints = obj.endpoints || [];
+    if (obj.endpoints.length > 0)
+      obj.endpoints.splice(obj.endpoints.length - 1, 1);
     obj.getBMA = function() {
       var bma = null;
       obj.endpoints.forEach(function(ep){

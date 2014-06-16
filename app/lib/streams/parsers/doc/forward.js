@@ -22,7 +22,8 @@ function ForwardParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getForward, onError);
 
   this._clean = function (obj) {
-    if (obj.keys && obj.keys.length > 0)
+    obj.keys = obj.keys || [];
+    if (obj.keys.length > 0)
       obj.keys.splice(obj.keys.length - 1, 1);
   };
 

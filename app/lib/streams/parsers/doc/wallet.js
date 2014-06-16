@@ -23,8 +23,12 @@ function WalletParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getWallet, onError);
 
   this._clean = function (obj) {
-    obj.hosters.splice(obj.hosters.length - 1, 1);
-    obj.trusts.splice(obj.trusts.length - 1, 1);
+    obj.hosters = obj.hosters || [];
+    if (obj.hosters.length > 0)
+      obj.hosters.splice(obj.hosters.length - 1, 1);
+    obj.trusts = obj.trusts || [];
+    if (obj.trusts.length > 0)
+      obj.trusts.splice(obj.trusts.length - 1, 1);
   };
 
   this._verify = function(obj){

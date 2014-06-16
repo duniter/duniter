@@ -37,8 +37,12 @@ function VoteParser (onError) {
   };
 
   this.cleanAmendment = function (am) {
-    am.membersChanges.splice(am.membersChanges.length - 1, 1);
-    am.votersChanges.splice(am.votersChanges.length - 1, 1);
+    am.membersChanges = am.membersChanges || [];
+    if (am.membersChanges.length > 0)
+      am.membersChanges.splice(am.membersChanges.length - 1, 1);
+    am.votersChanges = am.votersChanges || [];
+    if (am.votersChanges.length > 0)
+      am.votersChanges.splice(am.votersChanges.length - 1, 1);
     if (am.coinList) {
       am.coinList = am.coinList.split(' ');
       am.coinList.forEach(function(cs, index){

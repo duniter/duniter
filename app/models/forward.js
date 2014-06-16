@@ -26,6 +26,14 @@ ForwardSchema.pre('save', function (next) {
   next();
 });
 
+ForwardSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+ForwardSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 ForwardSchema.methods = {
 
   fromKeyID: function () {

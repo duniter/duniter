@@ -47,21 +47,15 @@ function NetworkBinding (peerServer, conf) {
   },
 
   this.forward = function (req, res) {
-    async.waterfall([
-      // Parameters
-      function(next){
-        ParametersService.getForward(req, next);
-      },
-      function(fwd, next){
-        flogger.debug('⬇ %s type %s', fwd.from, fwd.forward);
-        PeeringService.submitForward(fwd, next);
-      }
-    ], function (err, recordedFWD) {
-      http.answer(res, 400, err, function () {
-        flogger.debug('✔ %s type %s', recordedFWD.from, recordedFWD.forward);
-        res.end(JSON.stringify(recordedFWD.json(), null, "  "));
-      });
-    });
+    var onError = http400(res);
+    http2raw.forward(req, onError)
+      .pipe(parsers.parseForward(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(peerServer.singleWriteStream(onError))
+      .pipe(es.stringify())
+      .pipe(res);
   }
 
   this.peer = function (req, res) {

@@ -135,24 +135,15 @@ function RegistryBinding (registryServer, conf) {
   };
 
   this.votingPost = function (req, res) {
-    var that = this;
-    async.waterfall([
-
-      // Parameters
-      function(next){
-        ParametersService.getVoting(req, next);
-      },
-
-      function (signedVoting, pubkey, next) {
-        SyncService.submitVoting(signedVoting, pubkey, next);
-      }
-
-    ], function (err, recordedVoting) {
-      http.answer(res, 400, err, function () {
-        vlogger.debug('✔ %s\'s voting key', "0x" + recordedVoting.issuer.substr(32));
-        res.end(JSON.stringify(recordedVoting.json(), null, "  "));
-      });
-    });
+    var onError = http400(res);
+    http2raw.voting(req, onError)
+      .pipe(parsers.parseVoting(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(registryServer.PublicKeyService, onError))
+      .pipe(verifySignature(registryServer.PublicKeyService, onError))
+      .pipe(registryServer.singleWriteStream(onError))
+      .pipe(es.stringify())
+      .pipe(res);
   };
 
   this.votingCurrent = function (req, res) {

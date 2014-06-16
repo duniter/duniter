@@ -28,6 +28,14 @@ VotingSchema.pre('save', function (next) {
   next();
 });
 
+VotingSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+VotingSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 VotingSchema.methods = {
 
   keyID: function () {

@@ -6,6 +6,7 @@ var logger    = require('./app/lib/logger')('peerserver');
 var plogger   = require('./app/lib/logger')('peer');
 var flogger   = require('./app/lib/logger')('forward');
 var slogger   = require('./app/lib/logger')('status');
+var wlogger   = require('./app/lib/logger')('wallet');
 var HDCServer = require('./hdcserver');
 var parsers   = require('./app/lib/streams/parsers/doc');
 
@@ -72,11 +73,13 @@ function PeerServer (dbConf, overrideConf, interceptors) {
         return obj.requiredTrusts ? true : false;
       },
       treatment: function (server, obj, next) {
+        slogger.debug('⬇ WALLET %s', obj.pubkey.fingerprint);
         async.waterfall([
           function (next){
             that.WalletService.submit(obj, next);
           },
           function (wallet, next){
+            wlogger.debug('✔ WALLET %s', obj.pubkey.fingerprint);
             that.emit('wallet', wallet);
             next(null, wallet.json());
           },

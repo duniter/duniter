@@ -140,51 +140,15 @@ function NetworkBinding (peerServer, conf) {
   },
 
   this.walletPOST = function(req, res) {
-    var that = this;
-    async.waterfall([
-      function (callback) {
-        ParametersService.getWallet(req, callback);
-      },
-      function(entry, callback){
-        WalletService.submit(entry, callback);
-      }
-    ], function (err, entry) {
-      if(err){
-        res.send(400, err);
-      }
-      else{
-        async.series({
-          answers: function(callback){
-            res.end(JSON.stringify(entry.json()));
-            callback();
-          },
-          manageKey: function(callback){
-            var all = conf.kmanagement == 'ALL';
-            if(all){
-              // Wallet entry new/changed: if kmanagement == ALL, manage it
-              Key.setManaged(entry.fingerprint, true, callback);
-              return;
-            }
-            // If kmanagement == KEYS, then it should have been set manually earlier, or can be later
-            callback();
-          },
-          propagates: function(callback){
-            PeeringService.propagateWallet(entry, function (err, propagated) {
-              if(err && !propagated){
-                tlogger.error('Not propagated: %s', err);
-              }
-              else if(!propagated){
-                tlogger.error('Unknown error during propagation');
-              }
-              callback();
-            });
-          }
-        },
-        function(err) {
-          if(err) tlogger.error('Error during Wallet POST: ' + err);
-        });
-      }
-    });
+    var onError = http400(res);
+    http2raw.wallet(req, onError)
+      .pipe(parsers.parseWallet(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(peerServer.singleWriteStream(onError))
+      .pipe(es.stringify())
+      .pipe(res);
   },
 
   this.walletGET = function(req, res) {

@@ -27,6 +27,14 @@ WalletSchema.pre('save', function (next) {
   next();
 });
 
+WalletSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+WalletSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 WalletSchema.methods = {
 
   keyID: function () {

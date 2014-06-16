@@ -14,6 +14,7 @@ var ucoin     = require('./..');
 var parsers   = require('../app/lib/streams/parsers/doc');
 var logger    = require('../app/lib/logger')('test');
 
+var server;
 var currency = "testa";
 var now   = new Date().timestamp();
 var conf = {
@@ -41,7 +42,6 @@ var conf = {
     return !(pubkey.fingerprint == '2E69197FAB029D8669EF85E82457A1587CA0ED9C' && am.number == 9);
   }
 };
-var server = ucoin.createRegistryServer({ name: currency }, conf);
 var nb = 100;
 var tester    = is = on = new test.tester(currency);
 
@@ -603,38 +603,33 @@ function testProposedAmendment (label, properties) {
 before(function (done) {
   logger.debug("Launching server...");
   this.timeout(1000*60); // In seconds
-  async.waterfall([
-    function (next){
-      server.connect(next);
-    },
-    function (next){
-      PublicKey   = server.conn.model('PublicKey');
-      Membership  = server.conn.model('Membership');
-      Voting      = server.conn.model('Voting');
-      Vote        = server.conn.model('Vote');
-      Amendment   = server.conn.model('Amendment');
-      Transaction = server.conn.model('Transaction');
-      server.reset(next);
-    },
-    function (next){
-      server.listenBMA(next);
-    },
-    function (appReady, next){
-      tester.app(appReady);
-      // Execute all tasks
-      async.forEachSeries(testCases, function(testCase, callback){
-        console.log('----------------------------------');
-        console.log('Test: %s', testCase.label);
-        console.log('----------------------------------');
-        testCase.task(callback);
-      }, next);
-    },
-    function (next){
-      server.disconnect(next);
-    },
-  ], function (err) {
-    logger.debug("API fed.");
-    done(err);
+  server = ucoin.createRegistryServer({ name: currency, listenBMA: true, resetData: true }, conf);
+  server.on('BMALoaded', function (err, appReady) {
+    async.waterfall([
+      function (next){
+        PublicKey   = server.conn.model('PublicKey');
+        Membership  = server.conn.model('Membership');
+        Voting      = server.conn.model('Voting');
+        Vote        = server.conn.model('Vote');
+        Amendment   = server.conn.model('Amendment');
+        Transaction = server.conn.model('Transaction');
+        tester.app(appReady);
+        // Execute all tasks
+        async.forEachSeries(testCases, function(testCase, callback){
+          console.log('----------------------------------');
+          console.log('Test: %s', testCase.label);
+          console.log('----------------------------------');
+          testCase.task(callback);
+        }, next);
+      },
+      function (next){
+        server.disconnect();
+        next();
+      },
+    ], function (err) {
+      logger.debug("API fed.");
+      done(err);
+    });
   });
 });
 

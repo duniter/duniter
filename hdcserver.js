@@ -1,9 +1,11 @@
-var async  = require('async');
-var util   = require('util');
-var logger = require('./app/lib/logger')('hdcserver');
-var Server = require('./server');
+var async   = require('async');
+var util    = require('util');
+var parsers = require('./app/lib/streams/parsers/doc');
+var Server  = require('./server');
 
-function HDCServer (dbConf, overrideConf, interceptors) {
+function HDCServer (dbConf, overrideConf, interceptors, onInit) {
+
+  var logger  = require('./app/lib/logger')(dbConf.name);
 
   var selfInterceptors = [
     {
@@ -13,6 +15,7 @@ function HDCServer (dbConf, overrideConf, interceptors) {
       },
       treatment: function (server, obj, next) {
         logger.debug('⬇ PUBKEY %s', obj.fingerprint);
+        // console.log(obj);
         async.waterfall([
           function (next){
             server.PublicKeyService.submitPubkey(obj, next);
@@ -61,27 +64,18 @@ function HDCServer (dbConf, overrideConf, interceptors) {
     }
   ];
 
-  Server.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []));
+  Server.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
 
   var that = this;
 
   this._read = function (size) {
   };
 
-  this.initServer = function (done) {
-    if (!that.peerInited) {
-      that.peerInited = true;
-      async.waterfall([
-        function (next){
-          that.connect(next);
-        },
-        function (next){
-          that.initServices(next);
-        },
-      ], done);
-    } else {
-      done();
-    }
+  this.writeRawPubkey = function (raw) {
+    var source = parsers.parsePubkey();
+    var dest = that.singleWriteStream();
+    source.pipe(dest);
+    source.end(raw);
   };
 
   this._initServices = function(conn, done) {
@@ -111,7 +105,7 @@ function HDCServer (dbConf, overrideConf, interceptors) {
   };
 
   this.listenHDC = function (app) {
-    var hdc = require('./app/controllers/hdc')(this);
+    var hdc = require('./app/controllers/hdc')(that);
     app.get(    '/hdc/amendments/promoted',                        hdc.amendments.promoted);
     app.get(    '/hdc/amendments/promoted/:am_number',             hdc.amendments.promotedNumber);
     app.get(    '/hdc/amendments/view/:amendment_id/self',         hdc.amendments.viewAM.self);

@@ -13,24 +13,6 @@ var ucoin     = require('./..');
 var logger    = require('../app/lib/logger')('test');
 
 var currency = "testo";
-var server = ucoin.createRegistryServer({ name: currency }, {
-  currency: currency,
-  pgpkey: fs.readFileSync(__dirname + "/data/lolcat.priv"),
-  pgppasswd: 'lolcat',
-  ipv4: '127.0.0.1',
-  port: 9106,
-  remoteipv4: '127.0.0.1',
-  remoteport: 9106,
-  sync: {
-    AMStart: now,
-    AMFreq: 1, // Every second
-    UDFreq: 2, // Dividend every 5 seconds
-    UD0: 10,
-    UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
-    Consensus: 2/3,
-    MSExpires: 3600*24*30 // 30 days
-  }
-});
 var tester    = is = on = new test.tester(currency);
 
 logger.debug("Reading files & initializing...");
@@ -103,33 +85,44 @@ function testMerkle (url, root) {
 before(function (done) {
   logger.debug("Launching server...");
   this.timeout(1000*60); // In seconds
-  async.waterfall([
-    function (next){
-      server.connect(next);
-    },
-    function (next){
-      server.reset(next);
-    },
-    function (next){
-      server.listenBMA(next);
-    },
-    function (appReady, next){
-      tester.app(appReady);
-      // Execute all tasks
-      async.forEachSeries(testCases, function(testCase, callback){
-        console.log('----------------------------------');
-        console.log('Test: %s', testCase.label);
-        console.log('----------------------------------');
-        testCase.task(callback);
-      }, next);
-    },
-    function (next){
-      server.disconnect();
-      next();
-    },
-  ], function (err) {
-    logger.debug("API fed.");
-    done(err);
+  var server = ucoin.createRegistryServer({ name: currency, listenBMA: true, resetData: true }, {
+    currency: currency,
+    pgpkey: fs.readFileSync(__dirname + "/data/lolcat.priv"),
+    pgppasswd: 'lolcat',
+    ipv4: '127.0.0.1',
+    port: 9106,
+    remoteipv4: '127.0.0.1',
+    remoteport: 9106,
+    sync: {
+      AMStart: now,
+      AMFreq: 1, // Every second
+      UDFreq: 2, // Dividend every 5 seconds
+      UD0: 10,
+      UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
+      Consensus: 2/3,
+      MSExpires: 3600*24*30 // 30 days
+    }
+  });
+  server.on('BMALoaded', function (err, appReady) {
+    async.waterfall([
+      function (next){
+        tester.app(appReady);
+        // Execute all tasks
+        async.forEachSeries(testCases, function(testCase, callback){
+          console.log('----------------------------------');
+          console.log('Test: %s', testCase.label);
+          console.log('----------------------------------');
+          testCase.task(callback);
+        }, next);
+      },
+      function (next){
+        server.disconnect();
+        next();
+      },
+    ], function (err) {
+      logger.debug("API fed.");
+      done(err);
+    });
   });
 });
 

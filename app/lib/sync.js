@@ -89,9 +89,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
             function (obj, next) {
               obj.pubkey = { fingerprint: obj.fingerprint };
               peer = obj;
-              server.initServer(next);
-            },
-            function (next){
               // Temporarily manage ALL keys for sync
               server.conf.kmanagement = "ALL";
               KeyService         = server.KeyService;

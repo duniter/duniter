@@ -10,7 +10,7 @@ var wlogger   = require('./app/lib/logger')('wallet');
 var HDCServer = require('./hdcserver');
 var parsers   = require('./app/lib/streams/parsers/doc');
 
-function PeerServer (dbConf, overrideConf, interceptors) {
+function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   var selfInterceptors = [
     {
@@ -88,7 +88,13 @@ function PeerServer (dbConf, overrideConf, interceptors) {
     }
   ];
 
-  HDCServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []));
+  var initFunctions = [
+    function (done) {
+      that.initPeer(that.conn, that.conf, done);
+    }
+  ].concat(onInit || []);
+
+  HDCServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
 
   var that = this;
 
@@ -126,25 +132,6 @@ function PeerServer (dbConf, overrideConf, interceptors) {
         that.createSignFunction(that.conf, next);
       }
     ], done);
-  };
-
-  this.initServer = function (done) {
-    if (!that.peerInited) {
-      that.peerInited = true;
-      async.waterfall([
-        function (next){
-          that.connect(next);
-        },
-        function (next){
-          that.initServices(next);
-        },
-        function (next){
-          that.initPeer(that.conn, that.conf, next);
-        },
-      ], done);
-    } else {
-      done();
-    }
   };
 
   this.checkConfig = function (done) {
@@ -259,7 +246,7 @@ function PeerServer (dbConf, overrideConf, interceptors) {
     parser.end(that.PeeringService.cert.raw);
     parser.on('readable', function () {
       var parsed = parser.read();
-      that._write(parsed, null, done);
+      that.submit(parsed, false, done);
     });
   };
 
@@ -306,7 +293,7 @@ function PeerServer (dbConf, overrideConf, interceptors) {
               signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
               p2.signature = signature;
               p2.pubkey = { fingerprint: that.PeeringService.cert.fingerprint };
-              that.PeeringService.submit(p2, next);
+              that.submit(p2, false, next);
             },
           ], function (err) {
             next(err);

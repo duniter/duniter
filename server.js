@@ -9,22 +9,73 @@ var request    = require('request');
 var http       = require('http');
 var log4js     = require('log4js');
 var connectPgp = require('connect-pgp');
-var logger     = require('./app/lib/logger')('server');
 
 var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting', 'CommunityFlow'];
 var INNER_WRITE = true;
 
-function Server (dbConf, overrideConf, interceptors) {
+function Server (dbConf, overrideConf, interceptors, onInit) {
 
   stream.Duplex.call(this, { objectMode : true });
 
+  var logger  = require('./app/lib/logger')(dbConf.name);
   var that = this;
   that.conn = null;
   that.conf = null;
 
-  this._write = function (obj, enc, done, isInnerWrite) {
+  var queue = that.queue = async.queue(function (task, pushDone) {
+    task(function (err) {
+      pushDone(err);
+    });
+  }, 1);
+
+  var initFunctions = [
+    function (done) {
+      that.connect(function (err) {
+        that.emit('connected', err);
+        done(err);
+      });
+    },
+    function (done) {
+      that.initServices(function (err) {
+        that.emit('services', err);
+        done(err);
+      });
+    }
+  ];
+
+  initFunctions.concat(onInit).forEach(function(f){
+    queue.push(f);
+  });
+
+  if (dbConf.listenBMA) {
+    queue.push(function (done) {
+      listenBMA(function (err, app) {
+        that.emit('BMALoaded', err, app);
+        done(err);
+      });
+    });
+  }
+
+  queue.push(function (done) {
+    queue.concurrency = 1;
+    done();
+  });
+
+  this._write = function (obj, enc, writeDone, isInnerWrite) {
+    queue.push(function (done) {
+      that.submit(obj, isInnerWrite, function (err, res) {
+        if (isInnerWrite) {
+          writeDone(err, res);
+        } else {
+          writeDone();
+        }
+        done();
+      });
+    });
+  };
+
+  this.submit = function (obj, isInnerWrite, done) {
     async.waterfall([
-      async.apply(that.initServer.bind(that)),
       function (next){
         var i = 0;
         var treatment = null;
@@ -56,7 +107,7 @@ function Server (dbConf, overrideConf, interceptors) {
         done();
       }
     });
-  };
+  }
 
   this.connect = function (reset, done) {
     var databaseName = dbConf.name || "ucoin_default";
@@ -64,7 +115,7 @@ function Server (dbConf, overrideConf, interceptors) {
     var port = dbConf.port;
     if (arguments.length == 1) {
       done = reset;
-      reset = false;
+      reset = dbConf.resetData;
     }
     // Init connection
     if (!that.conn) {
@@ -84,7 +135,7 @@ function Server (dbConf, overrideConf, interceptors) {
         port = undefined;
       }
       host = host ? host : 'localhost';
-      logger.debug('Connecting to database %s', databaseName);
+      // logger.debug('Connecting to database `%s`', databaseName);
       var conn = that.conn = mongoose.createConnection('mongodb://' + host + (port ? ':' + port : '') + '/' + databaseName);
       conn.on('error', function (err) {
         logger.error('connection error:', err);
@@ -103,9 +154,14 @@ function Server (dbConf, overrideConf, interceptors) {
           var Configuration = conn.model('Configuration');
           that.conf = foundConf[0] || new Configuration();
           if (overrideConf) {
-            _(overrideConf).keys().forEach(function(k){
+            _(_(overrideConf).keys()).without('sync').forEach(function(k){
               that.conf[k] = overrideConf[k];
             });
+            if (overrideConf.sync) {
+              _(overrideConf.sync).keys().forEach(function(k){
+                that.conf.sync[k] = overrideConf.sync[k];
+              });
+            }
           }
           if (reset) {
             that.reset(next);
@@ -182,10 +238,10 @@ function Server (dbConf, overrideConf, interceptors) {
   this.initServices = function(done) {
     if (!that.servicesInited) {
       that.servicesInited = true;
-      this.HTTPService      = require("./app/service/HTTPService");
-      this.MerkleService    = require("./app/service/MerkleService");
-      this.ParametersService = require("./app/service/ParametersService").get(that.conn, that.conf.currency);
-      this._initServices(that.conn, done);
+      that.HTTPService      = require("./app/service/HTTPService");
+      that.MerkleService    = require("./app/service/MerkleService");
+      that.ParametersService = require("./app/service/ParametersService").get(that.conn, that.conf.currency);
+      that._initServices(that.conn, done);
     } else {
       done();
     }
@@ -195,7 +251,7 @@ function Server (dbConf, overrideConf, interceptors) {
     // To override in child classes
   };
 
-  this.listenBMA = function (overConf, onLoaded) {
+  function listenBMA (overConf, onLoaded) {
     if (arguments.length == 1) {
       onLoaded = overConf;
       overConf = undefined;
@@ -211,9 +267,6 @@ function Server (dbConf, overrideConf, interceptors) {
     app.use(express.urlencoded());
     app.use(express.json());
     async.waterfall([
-      function (next) {
-        that.initServer(next);
-      },
       function (next){
 
         // HTTP Signatures

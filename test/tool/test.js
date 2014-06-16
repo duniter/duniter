@@ -393,7 +393,7 @@ function isPubKey (json) {
   json.should.have.property('fingerprint');
   json.should.have.property('raw');
   json.should.not.have.property('_id');
-  json.raw.should.not.match(/-----/g);
+  json.raw.should.match(/-----/g);
 }
 
 function isMembership (json) {

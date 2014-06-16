@@ -17,6 +17,10 @@ function keys (val) {
   return val.split(',');
 }
 
+// Constants
+var LISTEN_HTTP = true;
+var DO_NOT_LISTEN_HTTP = false;
+
 program
   .version('0.5.6')
   .usage('<command> [options]')
@@ -51,7 +55,7 @@ program
 program
   .command('wizard [step]')
   .description('Launch the configuration Wizard')
-  .action(connect(function (step, server, conf) {
+  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (step, server, conf) {
     var wiz = wizard(server);
     var task = {
       'currency': wiz.configCurrency,
@@ -112,13 +116,10 @@ program
 program
   .command('allow-key [key]')
   .description('Add given key to authorized keys of this node')
-  .action(connect(ucoin.createHDCServer, function (key, server, conf) {
+  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
     key = key || "";
     key = key.toUpperCase();
     async.waterfall([
-      function (next){
-        server.initServer(next);
-      },
       function (next) {
         if (!key.isSha1()) {
           next("Key must match a SHA-1 hash");
@@ -145,14 +146,14 @@ program
 program
   .command('manage-key [key]')
   .description('Add given key to stack of managed keys of this node')
-  .action(connect(ucoin.createHDCServer, function (key, server, conf) {
+  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
     handleKey(server, key, true, 'Key %s is now managed');
   }));
 
 program
   .command('forget-key [key]')
   .description('Remove given key of the managed keys\' stack of this node')
-  .action(connect(ucoin.createHDCServer, function (key, server, conf) {
+  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
     handleKey(server, key, false, 'Key %s no more managed from now');
   }));
 
@@ -196,7 +197,7 @@ program
 program
   .command('config')
   .description('Register configuration in database')
-  .action(connect(function (server, conf) {
+  .action(connect(false, function (server, conf) {
     conf.save(function (err) {
       if(err){
         logger.error("Configuration could not be saved: " + err);
@@ -244,10 +245,10 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(connect(function (server, conf) {
+  .action(connect(LISTEN_HTTP, ucoin.createRegistryServer, function (server, conf) {
 
     // Launching server
-    server.listenBMA(function (err, app) {
+    server.on('BMALoaded', function (err, app) {
       if(err){
         console.error(err);
         this.disconnect();
@@ -258,15 +259,10 @@ program
     });
   }));
 
-var config = {};
+function overrideConf(conf) {
 
-function overrideConf(conn, conf) {
-
-  // Ensure is not null and have good structure
-  var Configuration = conn.model('Configuration');
-  conf = conf || new Configuration();
-
-  cli = {
+  conf.sync = conf.sync || {};
+  var cli = {
     currency: program.currency,
     server: {
       port: program.port,
@@ -307,52 +303,55 @@ function overrideConf(conn, conf) {
     }
   };
 
-  // Update conf
   if(cli.server.pgp.key) cli.server.pgp.key = fs.readFileSync(cli.server.pgp.key, 'utf8');
-  conf.currency    = cli.currency || conf.currency;
-  conf.openpgpjs   = cli.server.openpgpjs != undefined ? cli.server.openpgpjs : conf.openpgpjs;
-  conf.ipv4        = cli.server.ipv4address || conf.ipv4;
-  conf.ipv6        = cli.server.ipv6address || conf.ipv6;
-  conf.port        = cli.server.port || conf.port;
-  conf.pgpkey      = cli.server.pgp.key || conf.pgpkey;
-  conf.pgppasswd   = cli.server.pgp.password != undefined ? cli.server.pgp.password : conf.pgppasswd;
-  conf.remotehost  = cli.server.remote.host != undefined ? cli.server.remote.host : conf.remotehost;
-  conf.remoteipv4  = cli.server.remote.ipv4 != undefined ? cli.server.remote.ipv4 : conf.remoteipv4;
-  conf.remoteipv6  = cli.server.remote.ipv6 != undefined ? cli.server.remote.ipv6 : conf.remoteipv6;
-  conf.remoteport  = cli.server.remote.port != undefined ? cli.server.remote.port : conf.remoteport;
-  conf.kmanagement = cli.policy.keys || conf.kmanagement;
-  conf.kaccept     = cli.policy.pubkeys || conf.kaccept;
-  conf.sync        = {
-    AMDaemon: cli.sync.AMDaemon || conf.sync.AMDaemon,
-    AMStart: cli.sync.AMStart || conf.sync.AMStart,
-    AMFreq: cli.sync.AMFreq || conf.sync.AMFreq,
-    UDFreq: cli.sync.UDFreq || conf.sync.UDFreq,
-    UD0: cli.sync.UD0 || conf.sync.UD0,
-    UDPercent: cli.sync.UDPercent || conf.sync.UDPercent,
-    Consensus: cli.sync.Consensus || conf.sync.Consensus,
-    MSExpires: cli.sync.MSExpires || conf.sync.MSExpires,
-    VTExpires: cli.sync.VTExpires || conf.sync.VTExpires,
-    Algorithm: cli.sync.Algorithm || conf.sync.Algorithm
-  };
+
+  // Update conf
+  if (cli.currency)                         conf.currency       = cli.currency;
+  if (cli.server.ipv4address)               conf.ipv4           = cli.server.ipv4address;
+  if (cli.server.ipv6address)               conf.ipv6           = cli.server.ipv6address;
+  if (cli.server.port)                      conf.port           = cli.server.port;
+  if (cli.server.openpgpjs != undefined)    conf.openpgpjs      = cli.server.openpgpjs;
+  if (cli.server.pgp.key)                   conf.pgpkey         = cli.server.pgp.key;
+  if (cli.server.pgp.password != undefined) conf.pgppasswd      = cli.server.pgp.password;
+  if (cli.server.remote.host != undefined)  conf.remotehost     = cli.server.remote.host;
+  if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4     = cli.server.remote.ipv4;
+  if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6     = cli.server.remote.ipv6;
+  if (cli.server.remote.port != undefined)  conf.remoteport     = cli.server.remote.port;
+  if (cli.policy.keys)                      conf.kmanagement    = cli.policy.keys;
+  if (cli.policy.pubkeys)                   conf.kaccept        = cli.policy.pubkeys;
+  if (cli.sync.AMDaemon)                    conf.sync.AMDaemon  = cli.sync.AMDaemon;
+  if (cli.sync.AMStart)                     conf.sync.AMStart   = cli.sync.AMStart;
+  if (cli.sync.AMFreq)                      conf.sync.AMFreq    = cli.sync.AMFreq;
+  if (cli.sync.UDFreq)                      conf.sync.UDFreq    = cli.sync.UDFreq;
+  if (cli.sync.UD0)                         conf.sync.UD0       = cli.sync.UD0;
+  if (cli.sync.UDPercent)                   conf.sync.UDPercent = cli.sync.UDPercent;
+  if (cli.sync.Consensus)                   conf.sync.Consensus = cli.sync.Consensus;
+  if (cli.sync.MSExpires)                   conf.sync.MSExpires = cli.sync.MSExpires;
+  if (cli.sync.VTExpires)                   conf.sync.VTExpires = cli.sync.VTExpires;
+  if (cli.sync.Algorithm)                   conf.sync.Algorithm = cli.sync.Algorithm;
 
   // Specific internal settings
   conf.createNext = true;
   return conf;
 }
 
-function connect(serverFactory, callback) {
+function connect(listenHTTP, serverFactory, callback) {
   if (arguments.length == 1) {
+    callback = listenHTTP;
+    listenHTTP = false;
+    serverFactory = ucoin.createHDCServer;
+  } else if (arguments.length == 2) {
     callback = serverFactory;
-    serverFactory = ucoin.createRegistryServer;
+    serverFactory = ucoin.createHDCServer;
   }
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport });
+    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport, listenBMA: listenHTTP }, overrideConf({}));
 
     // Connecting to DB
-    server.connect(function (err) {
+    server.on('services', function (err) {
 
       if(err){
         logger.warn(err);
@@ -360,8 +359,6 @@ function connect(serverFactory, callback) {
         process.exit(1);
         return;
       }
-
-      server.conf = overrideConf(server.conn, server.conf);
 
       cbArgs.length--;
       cbArgs[cbArgs.length++] = server;

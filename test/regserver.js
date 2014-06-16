@@ -29,14 +29,14 @@ before(function (done) {
 
 describe('A server', function () {
 
-  this.timeout(1000*20);
+  this.timeout(1000*2);
 
   var regServer;
   beforeEach(function (done) {
     if (regServer) {
       regServer.disconnect();
     }
-    regServer = ucoin.createRegistryServer({ name: 'hdc3' }, {
+    regServer = ucoin.createRegistryServer({ name: 'hdc3', listenBMA: false, resetData: true }, {
       pgpkey: privkeyUbot1Raw,
       pgppasswd: 'ubot1',
       currency: 'beta_brousouf',
@@ -59,14 +59,7 @@ describe('A server', function () {
         "Algorithm" : "AnyKey"
       }
     });
-    async.waterfall([
-      function (next){
-        regServer.reset(next);
-      },
-      function (next){
-        regServer.listenBMA({}, next);
-      },
-    ], done);
+    regServer.reset(done);
   })
   
   // it('Peer should emit error on wrong data type', function (done) {

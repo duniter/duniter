@@ -57,7 +57,13 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
     }
   ];
 
-  PeerServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []));
+  var initFunctions = [
+    function (done) {
+      that.initRegistry(that.conn, that.conf, done);
+    }
+  ];
+
+  PeerServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
 
   var that = this;
 
@@ -108,30 +114,6 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
         that.checkDaemonConf(that.conf, next);
       }
     ], done);
-  };
-
-  this.initServer = function (done) {
-    if (!that.peerInited) {
-      that.peerInited = true;
-      async.waterfall([
-        function (next){
-          that.connect(next);
-        },
-        function (next){
-          that.initServices(next);
-        },
-        function (next){
-          that.initPeer(that.conn, that.conf, next);
-        },
-        function (next){
-          that.initRegistry(that.conn, that.conf, next);
-        },
-      ], function (err) {
-        done(err);
-      });
-    } else {
-      done();
-    }
   };
 
   this.initRegistry = function (conn, conf, done) {

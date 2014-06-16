@@ -5,16 +5,23 @@ var fs      = require('fs');
 var parsers = require('../app/lib/streams/parsers/doc');
 
 var pubkeyCatRaw = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
+var pubkeySnowRaw = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
 var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
 var privkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.priv', 'utf8');
 
-var pubkeyCat, pubkeyUbot1;
+var pubkeyCat, pubkeySnow, pubkeyUbot1;
 
 before(function (done) {
   async.parallel({
     cat: function(callback){
       parsers.parsePubkey().asyncWrite(pubkeyCatRaw, function (err, obj) {
         pubkeyCat = obj;
+        callback(err);
+      });
+    },
+    snow: function(callback){
+      parsers.parsePubkey().asyncWrite(pubkeySnowRaw, function (err, obj) {
+        pubkeySnow = obj;
         callback(err);
       });
     },
@@ -29,11 +36,11 @@ before(function (done) {
 
 describe('A server', function () {
 
-  this.timeout(1000*20);
+  this.timeout(1000*2);
 
   var peerServer;
   beforeEach(function (done) {
-    peerServer = ucoin.createPeerServer({ name: 'hdc2' }, {
+    peerServer = ucoin.createPeerServer({ name: 'hdc2', listenBMA: false, resetData: true }, {
       pgpkey: privkeyUbot1Raw,
       pgppasswd: 'ubot1',
       currency: 'beta_brousouf',

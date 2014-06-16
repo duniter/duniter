@@ -31,6 +31,14 @@ var ConfigurationSchema = new Schema({
   }}
 });
 
+ConfigurationSchema.virtual('createNext').get(function () {
+  return this._createNext;
+});
+
+ConfigurationSchema.virtual('createNext').set(function (create) {
+  this._createNext = create;
+});
+
 // Automatic Monetary Contract default parameters:
 //  - Voting start: None (must be given)
 //  - Voting frequency: 1 day

@@ -32,14 +32,13 @@ PublicKeySchema.pre('save', function (next) {
 PublicKeySchema.methods = {
 
   json: function () {
-    var raw = this.raw.replace('-----BEGIN PGP PUBLIC KEY BLOCK-----', 'BEGIN PGP PUBLIC KEY BLOCK');
-    raw = raw.replace('-----END PGP PUBLIC KEY BLOCK-----', 'END PGP PUBLIC KEY BLOCK');
     return {
       "email": this.email,
       "name": this.name,
+      "hash": this.hash,
       "fingerprint": this.fingerprint,
       "comment": this.comment,
-      "raw": raw
+      "raw": this.raw
     };
   },
 

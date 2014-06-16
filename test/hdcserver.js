@@ -5,15 +5,22 @@ var async   = require('async');
 var parsers = require('../app/lib/streams/parsers/doc');
 
 var pubkeyCatRaw = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
+var pubkeySnowRaw = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
 var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
 
-var pubkeyCat, pubkeyUbot1;
+var pubkeyCat, pubkeySnow, pubkeyUbot1;
 
 before(function (done) {
   async.parallel({
     cat: function(callback){
       parsers.parsePubkey().asyncWrite(pubkeyCatRaw, function (err, obj) {
         pubkeyCat = obj;
+        callback(err);
+      });
+    },
+    snow: function(callback){
+      parsers.parsePubkey().asyncWrite(pubkeySnowRaw, function (err, obj) {
+        pubkeySnow = obj;
         callback(err);
       });
     },
@@ -28,14 +35,14 @@ before(function (done) {
 
 describe('A server', function () {
 
-  this.timeout(1000*20);
+  this.timeout(1000*2);
 
   var hdcServer;
   beforeEach(function (done) {
     if (hdcServer) {
       hdcServer.disconnect();
     }
-    hdcServer = ucoin.createHDCServer({ name: 'hdc1' });
+    hdcServer = ucoin.createHDCServer({ name: 'hdc1', resetData: true });
     hdcServer.reset(done);
   })
   
@@ -52,7 +59,7 @@ describe('A server', function () {
       should.exist(pubkey);
       done();
     });
-    hdcServer.write(pubkeyCat);
+    hdcServer.write(pubkeySnow);
   });
   
   it('HDC should allow both simple & multiple writings', function (done) {
@@ -61,7 +68,7 @@ describe('A server', function () {
     ], done);
     hdcServer.singleWriteStream().write(pubkeyUbot1);
     hdcServer.singleWriteStream().end();
-    hdcServer.write(pubkeyCat);
+    hdcServer.write(pubkeySnow);
   });
   
   it('HDC should accept votes', function (done) {

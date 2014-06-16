@@ -249,23 +249,23 @@ function voteAm (signatory, am, done, delay) {
   var generatedPlusOne = am.generated + 1 + (delay || 0);
   var sigDate = new Date();
   sigDate.setTime(generatedPlusOne*1000);
-  var vote = new Vote({
-    issuer: signatory.fingerprint(),
+  var vote = {
     basis: am.number,
     signature: signatory.fingerprint() + am.number + now,
     amendmentHash: sha1(am.getRaw()).toUpperCase(),
     propagated: false,
     selfGenerated: false,
     sigDate: sigDate,
-  });
+    pubkey: { fingerprint: signatory.fingerprint() }
+  };
   vote.amendment = am;
-  vote.hash = sha1(vote.getRawSigned()).toUpperCase();
+  vote.hash = sha1(new Vote(vote).getRawSigned()).toUpperCase();
   var VoteService = server.VoteService;
   VoteService.submit(vote, function (err) {
     if (!err) {
       done(err, { 
         statusCode: 200,
-        text: JSON.stringify(vote.json())
+        text: JSON.stringify(new Vote(vote).json())
       });
     } else {
       logger.warn(err);

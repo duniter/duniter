@@ -164,7 +164,7 @@ describe('A server', function () {
           "+D049002A6724D35F867F64CC087BA351C0AEB6DF"
         ]
       },
-      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "sigDate": new Date()
     });
     peerServer.write({
@@ -186,7 +186,7 @@ describe('A server', function () {
         "votersChanges": [],
         "membersChanges": []
       },
-      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "sigDate": new Date()
     });
     peerServer.write({
@@ -214,7 +214,7 @@ describe('A server', function () {
         "votersChanges": [],
         "membersChanges": []
       },
-      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "sigDate": new Date()
     });
     peerServer.write({

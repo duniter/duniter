@@ -30,14 +30,15 @@ function HDCServer (dbConf, overrideConf, interceptors) {
         return obj.amendment ? true : false;
       },
       treatment: function (server, obj, next) {
-        logger.debug('⬇ VOTE of %s for %s-%s', "0x" + obj.issuer.substr(32), obj.amendment.number, obj.amendment.hash);
+        logger.debug('⬇ VOTE of %s for %s-%s', "0x" + obj.keyID, obj.amendment.number, obj.amendment.hash);
         async.waterfall([
           function (next){
             server.VoteService.submit(obj, next);
           },
           function (am, vote, next){
+            logger.debug('✔ VOTE of %s for %s-%s', "0x" + obj.keyID, obj.amendment.number, obj.amendment.hash);
             server.emit('vote', vote);
-            next();
+            next(null, vote.json());
           },
         ], next);
       }

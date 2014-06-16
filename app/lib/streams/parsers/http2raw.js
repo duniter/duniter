@@ -2,8 +2,7 @@ var stream = require('stream');
 var util   = require('util');
 
 module.exports = {
-  // amendment:     instanciate.bind(null, Amendment),
-  // vote:          instanciate.bind(null, Vote),
+  vote:          instanciate.bind(null, Http2RawVote),
   pubkey:        instanciate.bind(null, Http2RawPubkey),
   // transaction:   instanciate.bind(null, Transaction),
   // peer:          instanciate.bind(null, Peer),
@@ -11,7 +10,7 @@ module.exports = {
   // status:        instanciate.bind(null, Status),
   // wallet:        instanciate.bind(null, Wallet),
   // membership:    instanciate.bind(null, Membership),
-  // voting:        instanciate.bind(null, Voting),
+  // voting:        instanciate.bind(null, Http2RawVoting),
   // communityFlow: instanciate.bind(null, Communityflow),
 };
 
@@ -24,7 +23,6 @@ function Http2RawPubkey (req, onError) {
   stream.Readable.call(this);
 
   this._read = function () {
-    console.log('HTTP -> RAW');
     if(!req.body || !req.body.keytext){
       onError('Parameter `keytext` is required');
     }
@@ -38,4 +36,20 @@ function Http2RawPubkey (req, onError) {
   }
 }
 
+function Http2RawVote (req, onError) {
+  
+  stream.Readable.call(this);
+
+  this._read = function () {
+    if(!(req.body && req.body.amendment && req.body.signature)){
+      onError('Requires an amendment + signature');
+    }
+    else {
+      this.push(req.body.amendment + req.body.signature);
+    }
+    this.push(null);
+  }
+}
+
+util.inherits(Http2RawVote,   stream.Readable);
 util.inherits(Http2RawPubkey, stream.Readable);

@@ -65,10 +65,11 @@ function JPGP() {
   };
 
   this.signatureDate = function() {
-    var sigDate = new Date();
+    var sigDate = null;
     try{
       var clearTextMessage = openpgp.message.readArmored(toClearSign("", this.signature));
       var created = clearTextMessage.packets['0'].created;
+      sigDate = new Date();
       sigDate.setTime(created.getTime());
     }
     catch(ex){

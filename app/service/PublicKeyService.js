@@ -14,6 +14,10 @@ module.exports.get = function (conn, conf, KeyService) {
     task(callback);
   }, 1);
 
+  this.getTheOne = function (keyID, done) {
+    PublicKey.getTheOne(keyID, done);
+  };
+
   /**
   * Tries to persist a public key given in ASCII-armored format.
   * Returns the database stored public key.

@@ -44,7 +44,7 @@ module.exports.get = function (conn, StrategyService) {
         },
         // Issuer is a voter
         function (next){
-          Key.wasVoter(vote.issuer, vote.amendment.number - 1, next);
+          Key.wasVoter(vote.pubkey.fingerprint, vote.amendment.number - 1, next);
         },
         function (isVoter, next){
           if(!isVoter && vote.amendment.number != 0){
@@ -85,7 +85,7 @@ module.exports.get = function (conn, StrategyService) {
         function (am, next){
           vote.amendment = am;
           // Find preceding vote of the issuer, for this amendment
-          Vote.find({ issuer: vote.issuer, basis: vote.basis, amendmentHash: am.hash }, next);
+          Vote.find({ issuer: vote.pubkey.fingerprint, basis: vote.basis, amendmentHash: am.hash }, next);
         },
         function (votes, next){
           // Save vote

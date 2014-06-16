@@ -1,6 +1,13 @@
-var async     = require('async');
-var _         = require('underscore');
-var logger    = require('../lib/logger')();
+var async            = require('async');
+var _                = require('underscore');
+var es               = require('event-stream');
+var http2raw         = require('../lib/streams/parsers/http2raw');
+var http400          = require('../lib/http/http400');
+var parsers          = require('../lib/streams/parsers/doc');
+var link2pubkey      = require('../lib/streams/link2pubkey');
+var extractSignature = require('../lib/streams/extractSignature');
+var verifySignature  = require('../lib/streams/verifySignature');
+var logger           = require('../lib/logger')();
 
 module.exports = function (hdcServer) {
   return new AmendmentBinding(hdcServer);
@@ -115,26 +122,15 @@ function AmendmentBinding (hdcServer) {
     },
 
     post: function (req, res) {
-
-      async.waterfall([
-        function (callback){
-          ParametersService.getVote(req, callback);
-        },
-        function (vote, callback){
-          VoteService.submit(vote, callback);
-        }
-      ], function (err, am, recordedVote) {
-        if(err){
-          res.send(400, err);
-          logger.error(err);
-          return;
-        }
-        // Promoted or not, vote is recorded
-        res.end(JSON.stringify({
-          amendment: am.json(),
-          signature: recordedVote.signature
-        }));
-      });
+      var onError = http400(res);
+      http2raw.vote(req, onError)
+        .pipe(parsers.parseVote(onError))
+        .pipe(extractSignature(onError))
+        .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
+        .pipe(verifySignature(hdcServer.PublicKeyService, onError))
+        .pipe(hdcServer.singleWriteStream(onError))
+        .pipe(es.stringify())
+        .pipe(res);
     }
   }
 }

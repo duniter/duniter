@@ -16,7 +16,6 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
 
   // Stream way
   this._write = function (str, enc, done) {
-    console.log('RAW -> RES');
     doJob(str.toString(), function (err, obj) {
       if (!err) {
         // Readable object for piped streams
@@ -74,8 +73,8 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
         obj.signature = str.substring(sigIndex);
       }
       obj.hash = sha1(str).toUpperCase();
-      var documentPart = ~sigIndex ? str.substring(0, sigIndex) : str;
-      var docLF = documentPart.replace(/\r\n/g, "\n");
+      obj.raw = ~sigIndex ? str.substring(0, sigIndex) : str;
+      var docLF = obj.raw.replace(/\r\n/g, "\n");
       if(docLF.match(/\n$/)){
         captures.forEach(function (cap) {
           if(~multipleLinesFields.indexOf(multipleLinesFields))

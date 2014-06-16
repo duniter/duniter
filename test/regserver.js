@@ -208,7 +208,7 @@ describe('A server', function () {
           "+D049002A6724D35F867F64CC087BA351C0AEB6DF"
         ]
       },
-      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "sigDate": new Date()
     });
     regServer.write({
@@ -230,7 +230,7 @@ describe('A server', function () {
         "votersChanges": [],
         "membersChanges": []
       },
-      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "sigDate": new Date()
     });
     regServer.write({
@@ -258,7 +258,7 @@ describe('A server', function () {
         "votersChanges": [],
         "membersChanges": []
       },
-      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "sigDate": new Date()
     });
     regServer.write({
@@ -282,7 +282,7 @@ describe('A server', function () {
       "currency": "beta_brousouf",
       "amendmentNumber": 2,
       "amendmentHash": "2694D9AEA40866A0D6F01C719607007ABC075E84",
-      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "date": new Date(),
       "algorithm": "AnyKey",
       "sigDate": new Date(),

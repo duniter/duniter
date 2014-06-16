@@ -51,7 +51,7 @@ function Server (dbConf, overrideConf, interceptors) {
         that.push(res);
       }
       if (isInnerWrite) {
-        done(null, res);
+        done(err, res);
       } else {
         done();
       }
@@ -271,17 +271,18 @@ function Server (dbConf, overrideConf, interceptors) {
     app.post( '/pks/add',    pks.add);
   };
 
-  this.singleWriteStream = function () {
-    return new TempStream(that);
+  this.singleWriteStream = function (onError) {
+    return new TempStream(that, onError);
   };
 
-  function TempStream (parentStream) {
+  function TempStream (parentStream, onError) {
 
     stream.Duplex.call(this, { objectMode : true });
 
     var self = this;
     this._write = function (obj, enc, done) {
       parentStream._write(obj, enc, function (err, res) {
+        if (err && typeof onError == 'function') onError(err);
         if (res) self.push(res);
         self.push(null);
         done();

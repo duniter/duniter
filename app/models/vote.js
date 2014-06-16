@@ -32,6 +32,14 @@ VoteSchema.virtual('amendment').set(function (am) {
   this._amendment = am;
 });
 
+VoteSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+VoteSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 VoteSchema.methods = {
 
   verify: function (currency, done) {
@@ -66,70 +74,6 @@ VoteSchema.methods = {
   issuerIsVoter: function(done) {
     var Key       = this.model('Key');
     Key.wasVoter(this.issuer, this.amendment.number - 1, done);
-  },
-  
-  parse: function(rawVote, rawPubkey, callback) {
-    var PublicKey = this.model('PublicKey');
-    var Amendment = this.model('Amendment');
-    if(!callback && rawPubkey){
-      callback = rawPubkey;
-      rawPubkey = null;
-    }
-    var that = this;
-    var sigIndex = rawVote.indexOf("-----BEGIN");
-    if(~sigIndex){
-      var rawAmendment = rawVote.substring(0, sigIndex);
-      this.signature = rawVote.substring(sigIndex);
-      this.hash = sha1(this.signature).toUpperCase();
-      try{
-        this.sigDate = jpgp().signature(this.signature).signatureDate();
-      }
-      catch(ex){}
-      async.parallel({
-        pubkey: function(done){
-          if(rawPubkey){
-            parsers.parsePubkey().asyncWrite(rawPubkey, function (err, obj) {
-              that.pubkey = new PublicKey(obj);
-              that.issuer = that.pubkey.fingerprint;
-              done(null, that);
-            })
-            return;
-          }
-          PublicKey.getFromSignature(that.signature, function (err, publicKey) {
-            if(err){
-              done(err);
-              return;
-            }
-            that.pubkey = publicKey;
-            that.issuer = publicKey.fingerprint;
-            done(null, that);
-          });
-        },
-        amendment: function(done){
-          var parser = parsers.parseAmendment(function (err) {
-            if(err)
-              done(err);
-          });
-          parser.end(rawAmendment);
-          parser.on('readable', function () {
-            var parsed = parser.read();
-            if (parsed) {
-              var am = new Amendment(parsed);
-              that.basis = am.number;
-              that.amendmentHash = am.hash;
-              Amendment.find({ number: am.number, hash: am.hash }, function (err, ams) {
-                that.amendment = ams.length > 0 ? ams[0] : am;
-                done(err, that.amendment);
-              });
-            }
-          });
-
-        }
-      }, function (err, results) {
-        callback(err, that);
-      });
-    }
-    else callback("Amendment could not be parsed in the vote");
   },
 
   getAmendment: function (done) {

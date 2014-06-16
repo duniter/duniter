@@ -1,7 +1,14 @@
-var jpgp        = require('../lib/jpgp');
-var async       = require('async');
-var _           = require('underscore');
-var logger      = require('../lib/logger')('transaction');
+var jpgp             = require('../lib/jpgp');
+var async            = require('async');
+var _                = require('underscore');
+var es               = require('event-stream');
+var http2raw         = require('../lib/streams/parsers/http2raw');
+var http400          = require('../lib/http/http400');
+var parsers          = require('../lib/streams/parsers/doc');
+var link2pubkey      = require('../lib/streams/link2pubkey');
+var extractSignature = require('../lib/streams/extractSignature');
+var verifySignature  = require('../lib/streams/verifySignature');
+var logger           = require('../lib/logger')('transaction');
 
 module.exports = function (hdcServer) {
   return new TransactionBinding(hdcServer);
@@ -142,35 +149,21 @@ function TransactionBinding(hdcServer) {
   };
 
   this.processTx = function (req, res) {
-    var am = null;
-    var pubkey = null;
-    async.waterfall([
-      function (next){
-        ParametersService.getTransaction(req, next);
-      },
-      function (tx, next) {
-        TransactionService.processTx(tx, next);
-      }
-    ], function (err, tx, alreadyProcessed) {
-      if(err){
-        res.send(400, err);
-        if (err)
-          logger.debug(err);
-      }
-      else{
-        res.send(200, JSON.stringify({
-          transaction: tx.json(),
-          raw: tx.getRaw()
-        }, null, "  "));
-      }
-      if(!alreadyProcessed){
-        process.nextTick(function () {
-          PeeringService.propagateTransaction(req, function (err) {
-            if(err) logger.error('Error during transaction\'s propagation: %s', err);
-          });
+    var onError = http400(res);
+    http2raw.transaction(req, onError)
+      .pipe(parsers.parseTransaction(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
+      .pipe(verifySignature(hdcServer.PublicKeyService, onError))
+      .pipe(hdcServer.singleWriteStream(onError))
+      .pipe(es.map(function (tx, callback) {
+        callback(null, {
+          raw: tx.raw,
+          transaction: tx
         });
-      }
-    });
+      }))
+      .pipe(es.stringify())
+      .pipe(res);
   };
 
   function showMerkle (merkleGetFunc, merkleHashFunc, amNumber, req, res) {

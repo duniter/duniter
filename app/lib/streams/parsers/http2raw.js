@@ -4,7 +4,7 @@ var util   = require('util');
 module.exports = {
   vote:          instanciate.bind(null, Http2RawVote),
   pubkey:        instanciate.bind(null, Http2RawPubkey),
-  // transaction:   instanciate.bind(null, Transaction),
+  transaction:   instanciate.bind(null, Http2RawTransaction),
   // peer:          instanciate.bind(null, Peer),
   // forward:       instanciate.bind(null, Forward),
   // status:        instanciate.bind(null, Status),
@@ -51,5 +51,21 @@ function Http2RawVote (req, onError) {
   }
 }
 
-util.inherits(Http2RawVote,   stream.Readable);
-util.inherits(Http2RawPubkey, stream.Readable);
+function Http2RawTransaction (req, onError) {
+  
+  stream.Readable.call(this);
+
+  this._read = function () {
+    if(!(req.body.transaction && req.body.signature)){
+      onError('Requires a transaction + signature');
+    }
+    else {
+      this.push(req.body.transaction + req.body.signature);
+    }
+    this.push(null);
+  }
+}
+
+util.inherits(Http2RawPubkey,      stream.Readable);
+util.inherits(Http2RawVote,        stream.Readable);
+util.inherits(Http2RawTransaction, stream.Readable);

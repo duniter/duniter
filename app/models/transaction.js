@@ -34,6 +34,14 @@ TransactionSchema.pre('save', function (next) {
   ], next);
 });
 
+TransactionSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+TransactionSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 TransactionSchema.methods = {
 
   verifySignature: function (publicKey, done) {

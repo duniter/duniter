@@ -54,7 +54,7 @@ function HDCServer (dbConf, overrideConf, interceptors) {
           },
           function (tx, next){
             server.emit('transaction', tx);
-            next();
+            next(null, tx.json());
           },
         ], next);
       }

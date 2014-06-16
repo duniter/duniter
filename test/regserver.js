@@ -275,6 +275,7 @@ describe('A server', function () {
       ],
       "sigDate": new Date(),
       "comment": "",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
     });
     regServer.write({
       "signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: GnuPG v1.4.15 (GNU/Linux)\r\n\r\niQEcBAABAgAGBQJThe/DAAoJEDwCajRJsiQWeaUH/iAtPE1yph+7+1SxmCvJ1NaT\r\ngyyI5t86b72NmgslAoexC5xsPUnwwZPBUjMCR0xLO4x1FOEwYoMYyKCvNRKdKbKe\r\nDQ1z+chCMP+sHMl/4PG7di4PT+OE5Oqgrbi8Gq1HRA4l5iamyxOoInNUoSCjxe2g\r\n4HFLPN40Hv9ovWKDlKx14hTVbN2xlnAwf3LlCOiCQsC+YWCvawAbwWL1PBvNJmF8\r\ntAW3fjFKbMlzkTLMgAWUUviozZUedScgVQ443TMxJdvnh+SCDoLqNI573I7lRy41\r\n3DzGp913OU4iTFcgHCK6XnvNw3ycqYpdIW22rniWJewartHJJQfFWX1VAMSfhIc=\r\n=QxTg\r\n-----END PGP SIGNATURE-----\r\n",

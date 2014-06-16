@@ -22,6 +22,10 @@ module.exports.get = function (conn, MerkleService, PeeringService) {
     var tx = new Transaction(txObj);
     async.waterfall([
       function (next) {
+        if (tx.pubkey.fingerprint != tx.sender) {
+          next('Sender does not match signatory');
+          return;
+        }
         if (doFilter) {
           TxMemory.getTheOne(tx.sender, tx.number, tx.hash, function (err, found) {
             if(err) {
@@ -42,7 +46,7 @@ module.exports.get = function (conn, MerkleService, PeeringService) {
         } else {
           next();
         }
-      }
+      },
     ], function (err, alreadyProcessed) {
       if(alreadyProcessed){
         callback(err, tx, alreadyProcessed);

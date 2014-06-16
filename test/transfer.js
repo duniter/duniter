@@ -268,7 +268,7 @@ function transfer (signatory, recipient, coins, expectation) {
     label,
     function (done) {
       var sigDate = new Date();
-      var tx = new Transaction({
+      var tx = {
         version: 1,
         currency: currency,
         sender: signatory.fingerprint(),
@@ -280,8 +280,9 @@ function transfer (signatory, recipient, coins, expectation) {
         signature: "#" + txBySignatory[signatory.fingerprint()].number + " of " + signatory.fingerprint() + " on " + sigDate.timestamp(),
         propagated: false,
         sigDate: sigDate,
-      });
-      tx.hash = sha1(tx.getRawSigned()).toUpperCase();
+      };
+      tx.hash = sha1(new Transaction(tx).getRawSigned()).toUpperCase();
+      tx.pubkey = { fingerprint: tx.sender };
       sendTransaction(tx, done);
     },
     expectation ? expectation : is.expectedSignedTransaction()
@@ -300,8 +301,8 @@ function sendTransaction (tx, done) {
         statusCode: 200,
         text: JSON.stringify({
           signature: tx.signature,
-          transaction: tx.json(),
-          raw: tx.getRaw()
+          transaction: new Transaction(tx).json(),
+          raw: new Transaction(tx).getRaw()
         })
       });
     } else {

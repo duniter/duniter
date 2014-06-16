@@ -196,6 +196,7 @@ describe('A server', function () {
       ],
       "sigDate": new Date(),
       "comment": "",
+      "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
     });
   });
 })

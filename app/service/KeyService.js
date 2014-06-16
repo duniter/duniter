@@ -3,6 +3,10 @@ var async      = require('async');
 var _          = require('underscore');
 
 module.exports.get = function (conn) {
+  return new KeyService(conn);
+};
+
+function KeyService (conn) {
 
   this.handleKey = function(key, isManaged, done) {
     key = key || "";
@@ -42,6 +46,4 @@ module.exports.get = function (conn) {
   this.setKnown = function(keyFingerprint, done) {
     conn.model('Key').setKnown(keyFingerprint, done);
   }
-
-  return this;
 }

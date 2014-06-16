@@ -4,8 +4,7 @@ var status  = require('../models/statusMessage');
 var parsers = require('../lib/streams/parsers/doc');
 
 module.exports.get = function (conn, currencyName) {
-
-  return ParameterNamespace(conn, currencyName);
+  return new ParameterNamespace(conn, currencyName);
 };
 
 function ParameterNamespace (conn, currency) {
@@ -412,6 +411,4 @@ function ParameterNamespace (conn, currency) {
       },
     ], callback);
   };
-
-  return this;
-};
+}

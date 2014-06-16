@@ -21,6 +21,10 @@ var WITH_VOTING    = true;
 var WITHOUT_VOTING = false;
 
 module.exports.get = function (conn, conf, signsDetached, ContractService, PeeringService, alertDeamon, daemonJudgesTimeForVote) {
+  return new SyncService(conn, conf, signsDetached, ContractService, PeeringService, alertDeamon, daemonJudgesTimeForVote);
+};
+
+function SyncService (conn, conf, signsDetached, ContractService, PeeringService, alertDeamon, daemonJudgesTimeForVote) {
 
   var that = this;
   var currency = conf.currency;
@@ -1347,9 +1351,7 @@ module.exports.get = function (conn, conf, signsDetached, ContractService, Peeri
       }
     ], done);
   }
-
-  return this;
-}
+};
 
 var Computing = { Membership: {}, Voting: {} };
 

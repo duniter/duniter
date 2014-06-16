@@ -520,12 +520,6 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
     ], done);
   }
 
-  this.propagatePubkey = function (pubkey) {
-    getRandomInAllPeers(function (err, peers) {
-      that.emit('pubkey', pubkey, peers || []);
-    });
-  };
-
   this.propagatePeering = function (peering, done) {
     getAllPeersButSelfAnd(peering.fingerprint, function (err, peers) {
       that.emit('peer', peering, peers || []);

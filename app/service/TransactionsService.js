@@ -4,6 +4,10 @@ var _             = require('underscore');
 var logger        = require('../lib/logger')();
 
 module.exports.get = function (conn, MerkleService, PeeringService) {
+  return new TransactionService(conn, MerkleService, PeeringService);
+};
+
+function TransactionService (conn, MerkleService, PeeringService) {
 
   var Amendment     = conn.model('Amendment');
   var PublicKey     = conn.model('PublicKey');
@@ -222,6 +226,4 @@ module.exports.get = function (conn, MerkleService, PeeringService) {
       callback(err, tx);
     });
   }
-
-  return this;
-}
+};

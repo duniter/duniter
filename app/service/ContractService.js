@@ -4,6 +4,10 @@ var log4js   = require('log4js');
 var logger   = require('../lib/logger')('service');
 
 module.exports.get = function (conn, conf) {
+  return new ContractService(conn, conf);
+};
+
+function ContractService (conn, conf) {
 
   var Amendment = conn.model('Amendment');
 
@@ -45,6 +49,4 @@ module.exports.get = function (conn, conf) {
       },
     ], done);
   };
-
-  return this;
-};
+}

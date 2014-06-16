@@ -3,6 +3,10 @@ var async     = require('async');
 var _         = require('underscore');
 
 module.exports.get = function (conn) {
+  return new WalletService(conn);
+}
+
+function WalletService (conn) {
 
   var Wallet    = conn.model('Wallet');
   var Amendment = conn.model('Amendment');
@@ -52,6 +56,4 @@ module.exports.get = function (conn) {
       }
     ], done);
   }
-
-  return this;
 }

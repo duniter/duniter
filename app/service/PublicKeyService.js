@@ -6,6 +6,10 @@ var vucoin = require('vucoin');
 var logger = require('../lib/logger')('pubkey');
 
 module.exports.get = function (conn, conf, KeyService) {
+  return new PublicKeyService(conn, conf, KeyService);
+};
+
+function PublicKeyService (conn, conf, KeyService) {
 
   var PublicKey = conn.model('PublicKey');
   var Key = conn.model('Key');
@@ -102,6 +106,4 @@ module.exports.get = function (conn, conf, KeyService) {
       }
     });
   };
-
-  return this;
 }

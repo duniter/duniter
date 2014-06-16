@@ -6,6 +6,10 @@ var logger    = require('../lib/logger')('vote');
 var alogger   = require('../lib/logger')('amendment');
 
 module.exports.get = function (conn, StrategyService) {
+  return new VoteService(conn, StrategyService);
+};
+
+function VoteService (conn, StrategyService) {
 
   var Amendment = conn.model('Amendment');
   var PublicKey = conn.model('PublicKey');
@@ -197,6 +201,4 @@ module.exports.get = function (conn, StrategyService) {
       }
     ], onceDone);
   }
-
-  return this;
 }

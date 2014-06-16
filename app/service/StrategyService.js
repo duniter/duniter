@@ -4,6 +4,10 @@ var _          = require('underscore');
 var logger     = require('../lib/logger')('amendment');
 
 module.exports.get = function (conn, conf, ContractService, SyncService) {
+  return new StrategyService(conn, conf, ContractService, SyncService);
+};
+
+function StrategyService (conn, conf, ContractService, SyncService) {
 
   var Amendment  = conn.model('Amendment');
   var Membership = conn.model('Membership');
@@ -257,7 +261,4 @@ module.exports.get = function (conn, conf, ContractService, SyncService) {
       decision(err, err ? false : true);
     });
   }
-
-
-  return this;
 }

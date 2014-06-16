@@ -62,36 +62,6 @@ function ParameterNamespace (conn, currency) {
     });
   };
 
-  this.getPeeringEntry = function (req, callback) {
-    this.getPeeringEntryFromRaw(req.body && req.body.entry, req.body && req.body.signature, callback);
-  };
-
-  this.getPeeringEntryFromRaw = function (entry, signature, callback) {
-    // Parameters
-    if(!(entry && signature)){
-      callback('Requires a peering entry + signature');
-      return;
-    }
-
-    // Check signature's key ID
-    var keyID = jpgp().signature(signature).issuer();
-    if(!(keyID && keyID.length == 16)){
-      callback('Cannot identify signature issuer`s keyID');
-      return;
-    }
-
-    var peer;
-
-    async.waterfall([
-      function (next){
-        parsers.parsePeer(next).asyncWrite(entry + signature, next);
-      },
-      function (obj, next){
-        next(null, new Peer(obj), keyID);
-      },
-    ], callback);
-  };
-
   this.getFingerprint = function (req, callback){
     if(!req.params.fpr){
       callback("Fingerprint is required");
@@ -143,26 +113,6 @@ function ParameterNamespace (conn, currency) {
     },
     function(err, results) {
       callback(null, results.fprint, results.number);
-    });
-  };
-
-  this.getVote = function (req, callback){
-    if(!(req.body && req.body.amendment && req.body.signature)){
-      callback('Requires an amendment + signature');
-      return;
-    }
-    var vote = new Vote();
-    async.waterfall([
-      function (next){
-        // Extract data
-        vote.parse(req.body.amendment.unix2dos() + req.body.signature.unix2dos(), next);
-      },
-      function (vote, next){
-        // Verify content and signature
-        vote.verify(currency, next);
-      },
-    ], function (err, verified) {
-      callback(err, vote);
     });
   };
 

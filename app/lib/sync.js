@@ -1,11 +1,13 @@
-var async   = require('async');
-var _       = require('underscore');
-var sha1    = require('sha1');
-var merkle  = require('merkle');
-var vucoin  = require('vucoin');
-var jpgp    = require('./jpgp');
-var parsers = require('./streams/parsers/doc');
-var logger  = require('./logger')('sync');
+var async            = require('async');
+var _                = require('underscore');
+var sha1             = require('sha1');
+var merkle           = require('merkle');
+var vucoin           = require('vucoin');
+var jpgp             = require('./jpgp');
+var parsers          = require('./streams/parsers/doc');
+var eventStream      = require('event-stream');
+var extractSignature = require('./streams/extractSignature');
+var logger           = require('./logger')('sync');
 
 var CONST_FORCE_TX_PROCESSING = false;
 
@@ -85,7 +87,8 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
               parsers.parsePeer(next).asyncWrite(signedPR, next);
             },
             function (obj, next) {
-              peer = new Peer(obj);
+              obj.pubkey = { fingerprint: obj.fingerprint };
+              peer = obj;
               server.initServer(next);
             },
             function (next){
@@ -99,7 +102,7 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
               StrategyService    = server.StrategyService;
               ParametersService  = server.ParametersService;
               SyncService        = server.SyncService;
-              PeeringService.submit(peer, keyID, next);
+              PeeringService.submit(peer, next);
             },
           ], function (err) {
             next(null, peer);
@@ -247,11 +250,12 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                         return;
                       }
                       var sign = json.leaf.value.signature;
-                      var entry = new Wallet({});
+                      var entry = {};
                       ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
                         entry[key] = jsonEntry[key];
                       });
                       entry.signature = sign;
+                      entry.pubkey = { fingerprint: entry.fingerprint };
                       WalletService.submit(entry, cb);
                     }
                   ], callback);
@@ -290,16 +294,14 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                     function (json, cb) {
                       var jsonEntry = json.leaf.value;
                       var sign = json.leaf.value.signature;
-                      var entry = new Peer({});
+                      var entry = {};
                       ["version", "currency", "fingerprint", "endpoints"].forEach(function (key) {
                         entry[key] = jsonEntry[key];
                       });
                       entry.signature = sign;
-                      ParametersService.getPeeringEntryFromRaw(entry.getRaw(), sign, cb);
-                    },
-                    function (peer, keyID, cb){
-                      logger.info('Peer 0x' + keyID);
-                      PeeringService.submit(peer, keyID, function (err) {
+                      entry.pubkey = { fingerprint: entry.fingerprint };
+                      logger.info('Peer 0x' + peer.fingerprint);
+                      PeeringService.submit(peer, function (err) {
                         cb();
                       });
                     }
@@ -516,7 +518,8 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                         },
                         function (pubkey, signedTx, txs, next) {
                           parsers.parseTransaction(next).asyncWrite(signedTx, function (err, obj) {
-                            var tx = new Transaction(obj || {});
+                            var tx = obj || {};
+                            tx.pubkey = { fingerprint: tx.sender };
                             next(err, pubkey, tx, txs);
                           });
                         },
@@ -550,28 +553,20 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
           node.hdc.amendments.view.signatures(amNumber, hash, { "leaf": leaf }, next);
         },
         function (json, next){
-          var vote = json.leaf;
-          ParametersService.getVote({
-            body: {
-              amendment: amendments[amNumber],
-              signature: vote.value.signature
-            }
-          }, next);
+          var parser = parsers.parseVote(next);
+          parser.pipe(extractSignature(next)).pipe(eventStream.map(function (obj, callback) {
+            next(null, obj);
+            callback();
+          }));
+          parser.end(amendments[amNumber] + json.leaf.value.signature);
         },
         function (vote, next){
+          vote.pubkey = { fingerprint: leaf };
           VoteService.submit(vote, function (err, am) {
             if(!err)
               number++;
             next(err);
           });
-          // VoteService.submit(amendments[amNumber] + vote.value.signature, function (err, am) {
-          //   // Promotion time
-          //   StrategyService.tryToPromote(am, function (err) {
-          //     if(!err)
-          //       number++;
-          //     next(err);
-          //   });
-          // });
         }
       ], callback);
     }, function(err, result){

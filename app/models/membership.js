@@ -29,6 +29,14 @@ MembershipSchema.pre('save', function (next) {
   next();
 });
 
+MembershipSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+MembershipSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 MembershipSchema.methods = {
 
   keyID: function () {

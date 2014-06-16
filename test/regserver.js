@@ -167,7 +167,7 @@ describe('A server', function () {
     regServer.write({
       "version": "1",
       "currency": "beta_brousouf",
-      "registry": "MEMBERSHIP",
+      "type": "MEMBERSHIP",
       "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
       "membership": "IN",
       "date": new Date(1398906000*1000),
@@ -177,7 +177,7 @@ describe('A server', function () {
     regServer.write({
       "version": "1",
       "currency": "beta_brousouf",
-      "registry": "VOTING",
+      "type": "VOTING",
       "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
       "date": new Date(1398906000*1000),
       "sigDate": new Date(1401209571*1000),

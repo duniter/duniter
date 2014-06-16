@@ -1,10 +1,17 @@
-var jpgp       = require('../lib/jpgp');
-var async      = require('async');
-var vucoin     = require('vucoin');
-var _          = require('underscore');
-var logger     = require('../lib/logger')();
-var mlogger    = require('../lib/logger')('membership');
-var vlogger    = require('../lib/logger')('voting');
+var jpgp             = require('../lib/jpgp');
+var async            = require('async');
+var vucoin           = require('vucoin');
+var _                = require('underscore');
+var es               = require('event-stream');
+var http2raw         = require('../lib/streams/parsers/http2raw');
+var http400          = require('../lib/http/http400');
+var parsers          = require('../lib/streams/parsers/doc');
+var link2pubkey      = require('../lib/streams/link2pubkey');
+var extractSignature = require('../lib/streams/extractSignature');
+var verifySignature  = require('../lib/streams/verifySignature');
+var logger           = require('../lib/logger')();
+var mlogger          = require('../lib/logger')('membership');
+var vlogger          = require('../lib/logger')('voting');
 
 module.exports = function (registryServer, conf) {
   return new RegistryBinding(registryServer, conf);
@@ -68,23 +75,15 @@ function RegistryBinding (registryServer, conf) {
   };
 
   this.membershipPost = function (req, res) {
-    var that = this;
-    async.waterfall([
-
-      // Parameters
-      function(next){
-        ParametersService.getMembership(req, next);
-      },
-
-      function (signedMS, pubkey, next) {
-        SyncService.submit(signedMS, pubkey, next);
-      }
-
-    ], function (err, recordedMS) {
-      http.answer(res, 400, err, function () {
-        res.end(JSON.stringify(recordedMS.json(), null, "  "));
-      });
-    });
+    var onError = http400(res);
+    http2raw.membership(req, onError)
+      .pipe(parsers.parseMembership(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(registryServer.PublicKeyService, onError))
+      .pipe(verifySignature(registryServer.PublicKeyService, onError))
+      .pipe(registryServer.singleWriteStream(onError))
+      .pipe(es.stringify())
+      .pipe(res);
   };
 
   this.membershipCurrent = function (req, res) {

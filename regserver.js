@@ -9,7 +9,7 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
     {
       // Membership
       matches: function (obj) {
-        return obj.registry && obj.registry == "MEMBERSHIP" ? true : false;
+        return obj.type && obj.type == "MEMBERSHIP" ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([
@@ -25,7 +25,7 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
     },{
       // Voting
       matches: function (obj) {
-        return obj.registry && obj.registry == "VOTING" ? true : false;
+        return obj.type && obj.type == "VOTING" ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([

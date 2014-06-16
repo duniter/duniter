@@ -9,7 +9,7 @@ module.exports = {
   forward:       instanciate.bind(null, Http2RawForward),
   status:        instanciate.bind(null, Http2RawStatus),
   wallet:        instanciate.bind(null, Http2RawWallet),
-  // membership:    instanciate.bind(null, Membership),
+  membership:    instanciate.bind(null, Http2RawMembership),
   // voting:        instanciate.bind(null, Http2RawVoting),
   // communityFlow: instanciate.bind(null, Communityflow),
 };
@@ -126,6 +126,21 @@ function Http2RawWallet (req, onError) {
   }
 }
 
+function Http2RawMembership (req, onError) {
+  
+  stream.Readable.call(this);
+
+  this._read = function () {
+    if(!(req.body && req.body.membership && req.body.signature)){
+      onError('Requires a membership + signature');
+    }
+    else {
+      this.push(req.body.membership + req.body.signature);
+    }
+    this.push(null);
+  }
+}
+
 util.inherits(Http2RawPubkey,      stream.Readable);
 util.inherits(Http2RawVote,        stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
@@ -133,3 +148,4 @@ util.inherits(Http2RawPeer,        stream.Readable);
 util.inherits(Http2RawForward,     stream.Readable);
 util.inherits(Http2RawStatus,      stream.Readable);
 util.inherits(Http2RawWallet,      stream.Readable);
+util.inherits(Http2RawMembership,  stream.Readable);

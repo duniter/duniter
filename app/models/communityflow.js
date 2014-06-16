@@ -36,6 +36,14 @@ CommunityFlowSchema.pre('save', function (next) {
   next();
 });
 
+CommunityFlowSchema.virtual('pubkey').get(function () {
+  return this._pubkey;
+});
+
+CommunityFlowSchema.virtual('pubkey').set(function (am) {
+  this._pubkey = am;
+});
+
 CommunityFlowSchema.methods = {
 
   keyID: function () {

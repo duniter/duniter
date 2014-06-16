@@ -210,6 +210,18 @@ function RegistryBinding (registryServer, conf) {
     processMerkle(Merkle.votersOut.bind(Merkle), Merkle.mapForVotings.bind(Merkle), req, res);
   };
 
+  this.communityFlowPost = function (req, res) {
+    var onError = http400(res);
+    http2raw.communityFlow(req, onError)
+      .pipe(parsers.parseCommunityFlow(onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(registryServer.PublicKeyService, onError))
+      .pipe(verifySignature(registryServer.PublicKeyService, onError))
+      .pipe(registryServer.singleWriteStream(onError))
+      .pipe(es.stringify())
+      .pipe(res);
+  };
+
   function processMerkle (getMerkle, mapMerkle, req, res) {
     var that = this;
     async.waterfall([

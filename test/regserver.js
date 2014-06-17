@@ -29,7 +29,7 @@ before(function (done) {
 
 describe('A server', function () {
 
-  this.timeout(1000*2);
+  this.timeout(1000*5);
 
   var regServer;
   beforeEach(function (done) {

@@ -55,38 +55,47 @@ program
 program
   .command('wizard [step]')
   .description('Launch the configuration Wizard')
-  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (step, server, conf) {
-    var wiz = wizard(server);
-    var task = {
-      'currency': wiz.configCurrency,
-      'openpgp': wiz.configOpenpgp,
-      'network': wiz.configNetwork,
-      'key': wiz.configKey,
-      'autovote': wiz.configAutovote
-    };
-    var wizDo = task[step] || wiz.configAll;
-    async.waterfall([
-      function (next){
-        wizDo(conf, next);
-      },
-      function (next){
-        conf.save(function (err) {
-          !err && logger.debug("Configuration saved.");
-          next(err);
-        });
-      },
-      function (next) {
-        server.checkConfig(conf, function (err) {
-          logger.warn(err);
-        });
-        next();
-      }
-    ], function (err, result) {
-      err && logger.error(err);
-      server.disconnect();
-      process.exit();
+  .action(function (step) {
+    // Only show message "Saved"
+    require('log4js').configure({
+      "appenders": [{
+        category: "ucoind",
+        type: "console"
+      }]
     });
-  }));
+    connect(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (step, server, conf) {
+      var wiz = wizard(server);
+      var task = {
+        'currency': wiz.configCurrency,
+        'openpgp': wiz.configOpenpgp,
+        'network': wiz.configNetwork,
+        'key': wiz.configKey,
+        'autovote': wiz.configAutovote
+      };
+      var wizDo = task[step] || wiz.configAll;
+      async.waterfall([
+        function (next){
+          wizDo(conf, next);
+        },
+        function (next){
+          conf.save(function (err) {
+            !err && logger.debug("Configuration saved.");
+            next(err);
+          });
+        },
+        function (next) {
+          server.checkConfig(conf, function (err) {
+            logger.warn(err);
+          });
+          next();
+        }
+      ], function (err, result) {
+        err && logger.error(err);
+        server.disconnect();
+        process.exit();
+      });
+    })(step, null);
+  });
 
 program
   .command('sync [host] [port]')

@@ -33,7 +33,8 @@ var conf = {
     UD0: 100,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
     Consensus: 1/3,
-    MSExpires: 8 // seconds, so AM9 will see ]AM0;AM1] members be kicked out at AM9
+    MSExpires: 8, // seconds, so AM9 will see ]AM0;AM1] members be kicked out at AM9
+    VTExpires: 8 // seconds, so AM9 will see ]AM0;AM1] voters be kicked out at AM9
   },
   createNext: true
 };

@@ -43,10 +43,6 @@ function ContractService (conn, conf) {
           next();
         });
       },
-      function (next){
-        logger.debug('Loaded service: Contract');
-        next();
-      },
     ], done);
   };
 }

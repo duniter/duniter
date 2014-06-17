@@ -70,10 +70,6 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
           next();
         });
       },
-      function (next){
-        logger.debug('Loaded service: Peering');
-        next();
-      },
     ], done);
   };
 

@@ -3,6 +3,7 @@ var async   = require('async');
 var should  = require('should');
 var fs      = require('fs');
 var parsers = require('../app/lib/streams/parsers/doc');
+var logger  = require('../app/lib/logger')('[regserver]');
 
 var pubkeyCatRaw = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
 var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
@@ -287,7 +288,7 @@ function until (server, eventName, count) {
   var max = count == undefined ? 1 : count;
   return function (callback) {
     server.on(eventName, function (obj) {
-      console.log('event = %s', eventName);
+      logger.trace('event = %s', eventName);
       should.exist(obj);
       counted++;
       if (counted == max)

@@ -41,8 +41,6 @@ var conf = {
 var nb = 60;
 var tester    = is = on = new test.tester(currency);
 
-logger.debug("Reading files & initializing...");
-
 var PublicKey   = null;
 var Membership  = null;
 var Voting      = null;
@@ -415,9 +413,9 @@ before(function (done) {
         tester.app(appReady);
         // Execute all tasks
         async.forEachSeries(testCases, function(testCase, callback){
-          console.log('----------------------------------');
-          console.log('Test: %s', testCase.label);
-          console.log('----------------------------------');
+          logger.trace('----------------------------------');
+          logger.trace('Test: %s', testCase.label);
+          logger.trace('----------------------------------');
           testCase.task(callback);
         }, next);
       },

@@ -52,8 +52,6 @@ var Vote        = null;
 var Amendment   = null;
 var Transaction = null;
 
-logger.debug("Reading files & initializing...");
-
 var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat", "Cat");
 var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi", "Tobi");
 var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow", "Snow");
@@ -616,9 +614,9 @@ before(function (done) {
         tester.app(appReady);
         // Execute all tasks
         async.forEachSeries(testCases, function(testCase, callback){
-          console.log('----------------------------------');
-          console.log('Test: %s', testCase.label);
-          console.log('----------------------------------');
+          logger.trace('----------------------------------');
+          logger.trace('Test: %s', testCase.label);
+          logger.trace('----------------------------------');
           testCase.task(callback);
         }, next);
       },

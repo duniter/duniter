@@ -61,6 +61,5 @@ function signatory (asciiPrivateKey, password, name) {
     return name;
   };
 
-  logger.debug("new signatory " + this.fingerprint());
   return this;
 }

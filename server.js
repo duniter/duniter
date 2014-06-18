@@ -22,12 +22,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   that.conn = null;
   that.conf = null;
 
-  var queue = that.queue = async.queue(function (task, pushDone) {
-    task(function (err) {
-      pushDone(err);
-    });
-  }, 1);
-
   var initFunctions = [
     function (done) {
       that.connect(function (err) {
@@ -43,34 +37,24 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     }
   ];
 
-  initFunctions.concat(onInit).forEach(function(f){
-    queue.push(f);
-  });
-
-  if (dbConf.listenBMA) {
-    queue.push(function (done) {
-      listenBMA(function (err, app) {
-        that.emit('BMALoaded', err, app);
-        done(err);
-      });
-    });
-  }
-
-  queue.push(function (done) {
-    queue.concurrency = 1;
-    done();
-  });
+  var todoOnInit = initFunctions.concat(onInit).concat([
+    function (done) {
+      if (dbConf.listenBMA) {
+        listenBMA(function (err, app) {
+          that.emit('BMALoaded', err, app);
+          done();
+        });
+      } else done();
+    }
+  ]);
 
   this._write = function (obj, enc, writeDone, isInnerWrite) {
-    queue.push(function (done) {
-      that.submit(obj, isInnerWrite, function (err, res) {
-        if (isInnerWrite) {
-          writeDone(err, res);
-        } else {
-          writeDone();
-        }
-        done();
-      });
+    that.submit(obj, isInnerWrite, function (err, res) {
+      if (isInnerWrite) {
+        writeDone(err, res);
+      } else {
+        writeDone();
+      }
     });
   };
 
@@ -346,6 +330,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   }
 
   util.inherits(TempStream, stream.Duplex);
+
+  // Launches the server
+  async.forEachSeries(todoOnInit, function(f, cb){
+    f(cb);
+  });
 }
 
 util.inherits(Server, stream.Duplex);

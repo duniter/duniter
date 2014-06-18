@@ -32,11 +32,8 @@ describe('A server', function () {
   this.timeout(1000*5);
 
   var regServer;
-  beforeEach(function (done) {
-    if (regServer) {
-      regServer.disconnect();
-    }
-    regServer = ucoin.createRegistryServer({ name: 'hdc3', listenBMA: false, resetData: true }, {
+  before(function (done) {
+    regServer = ucoin.createRegistryServer({ name: 'hdc3', listenBMA: true, resetData: true }, {
       pgpkey: privkeyUbot1Raw,
       pgppasswd: 'ubot1',
       currency: 'beta_brousouf',
@@ -59,10 +56,10 @@ describe('A server', function () {
         "Algorithm" : "AnyKey"
       }
     });
-    regServer.reset(done);
+    regServer.on('BMALoaded', done);
   })
   
-  // it('Peer should emit error on wrong data type', function (done) {
+  // it('Registry should emit error on wrong data type', function (done) {
   //   regServer.on('error', function (err) {
   //     should.exist(err);
   //     done();
@@ -70,7 +67,7 @@ describe('A server', function () {
   //   regServer.write({ some: 'data' });
   // });
   
-  // it('Peer should accept pubkeys', function (done) {
+  // it('Registry should accept pubkeys', function (done) {
   //   regServer.on('pubkey', function (pubkey) {
   //     should.exist(pubkey);
   //     done();
@@ -78,7 +75,7 @@ describe('A server', function () {
   //   regServer.write(pubkeyCat);
   // });
   
-  // it('Peer should accept forwards & status', function (done) {
+  // it('Registry should accept forwards & status', function (done) {
   //   async.parallel({
   //     forward: until(regServer, 'forward'),
   //     status:  until(regServer, 'status'),
@@ -128,7 +125,7 @@ describe('A server', function () {
   //   });
   // });
   
-  // it('Peer should accept peerings', function (done) {
+  // it('Registry should accept peerings', function (done) {
   //   regServer.on('peer', function (peer) {
   //     should.exist(peer);
   //     done();
@@ -146,7 +143,7 @@ describe('A server', function () {
   //   });
   // });
   
-  it('Peer should accept transactions', function (done) {
+  it('Registry should accept transactions', function (done) {
     async.parallel([
       until(regServer, 'pubkey'),
       until(regServer, 'vote', 3),

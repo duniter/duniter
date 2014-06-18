@@ -10,6 +10,7 @@ var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
 var privkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.priv', 'utf8');
 
 var pubkeyCat, pubkeySnow, pubkeyUbot1;
+var peerServer;
 
 before(function (done) {
   async.parallel({
@@ -31,6 +32,18 @@ before(function (done) {
         callback(err);
       });
     },
+    server: function (callback) {
+      peerServer = ucoin.createPeerServer({ name: 'hdc2', listenBMA: false, resetData: true }, {
+        pgpkey: privkeyUbot1Raw,
+        pgppasswd: 'ubot1',
+        currency: 'beta_brousouf',
+        ipv4: '127.0.0.1',
+        port: 8080,
+        remoteipv4: '127.0.0.1',
+        remoteport: 8080
+      });
+      peerServer.on('services', callback);
+    }
   }, done);
 })
 
@@ -38,23 +51,13 @@ describe('A server', function () {
 
   this.timeout(1000*5);
 
-  var peerServer;
   beforeEach(function (done) {
-    peerServer = ucoin.createPeerServer({ name: 'hdc2', listenBMA: false, resetData: true }, {
-      pgpkey: privkeyUbot1Raw,
-      pgppasswd: 'ubot1',
-      currency: 'beta_brousouf',
-      ipv4: '127.0.0.1',
-      port: 8080,
-      remoteipv4: '127.0.0.1',
-      remoteport: 8080
-    });
     peerServer.reset(done);
   })
 
-  afterEach(function (done) {
-    peerServer.disconnect(done);
-  })
+  // afterEach(function (done) {
+  //   peerServer.disconnect(done);
+  // })
   
   it('Peer should emit error on wrong data type', function (done) {
     peerServer.on('error', function (err) {
@@ -65,10 +68,9 @@ describe('A server', function () {
   });
   
   it('Peer should accept pubkeys', function (done) {
-    peerServer.on('pubkey', function (pubkey) {
-      should.exist(pubkey);
-      done();
-    });
+    async.parallel({
+      pubkey: until(peerServer, 'pubkey'),
+    }, done);
     peerServer.write(pubkeyCat);
   });
   
@@ -126,10 +128,9 @@ describe('A server', function () {
   });
   
   it('Peer should accept peerings', function (done) {
-    peerServer.on('peer', function (peer) {
-      should.exist(peer);
-      done();
-    });
+    async.parallel({
+      peer: until(peerServer, 'peer'),
+    }, done);
     peerServer.write(pubkeyCat);
     peerServer.write({
       "version": "1",
@@ -145,10 +146,9 @@ describe('A server', function () {
   });
   
   it('Peer should accept transactions', function (done) {
-    peerServer.on('transaction', function (transaction) {
-      should.exist(transaction);
-      done();
-    });
+    async.parallel({
+      transaction: until(peerServer, 'transaction'),
+    }, done);
     peerServer.write(pubkeyUbot1);
     peerServer.write({
       amendment: {

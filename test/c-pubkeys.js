@@ -84,7 +84,7 @@ function testMerkle (url, root) {
 
 before(function (done) {
   logger.debug("Launching server...");
-  this.timeout(1000*60); // In seconds
+  this.timeout(1000*3); // In seconds
   var server = ucoin.createRegistryServer({ name: currency, listenBMA: true, resetData: true }, {
     currency: currency,
     pgpkey: fs.readFileSync(__dirname + "/data/lolcat.priv"),

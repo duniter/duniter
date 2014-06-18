@@ -1,6 +1,8 @@
 var async            = require('async');
 var _                = require('underscore');
 var es               = require('event-stream');
+var versionFilter    = require('../lib/streams/versionFilter');
+var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
@@ -14,6 +16,8 @@ module.exports = function (hdcServer) {
 };
 
 function AmendmentBinding (hdcServer) {
+
+  var conf = hdcServer.conf;
 
   // Services
   var ParametersService = hdcServer.ParametersService;
@@ -125,6 +129,8 @@ function AmendmentBinding (hdcServer) {
       var onError = http400(res);
       http2raw.vote(req, onError)
         .pipe(parsers.parseVote(onError))
+        .pipe(versionFilter(onError))
+        .pipe(currencyFilter(conf.currency, onError))
         .pipe(extractSignature(onError))
         .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
         .pipe(verifySignature(hdcServer.PublicKeyService, onError))

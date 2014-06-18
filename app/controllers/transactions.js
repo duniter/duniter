@@ -2,6 +2,8 @@ var jpgp             = require('../lib/jpgp');
 var async            = require('async');
 var _                = require('underscore');
 var es               = require('event-stream');
+var versionFilter    = require('../lib/streams/versionFilter');
+var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
@@ -15,6 +17,8 @@ module.exports = function (hdcServer) {
 };
 
 function TransactionBinding(hdcServer) {
+
+  var conf = hdcServer.conf;
 
   // Services
   var MerkleService      = hdcServer.MerkleService;
@@ -152,6 +156,8 @@ function TransactionBinding(hdcServer) {
     var onError = http400(res);
     http2raw.transaction(req, onError)
       .pipe(parsers.parseTransaction(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
       .pipe(verifySignature(hdcServer.PublicKeyService, onError))

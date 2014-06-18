@@ -54,10 +54,12 @@ function VoteParser (onError) {
   function restructurate (obj) {
     // Move structure into obj.amendment, BUT the signature & hash
     obj.amendment = {};
-    _(_(obj).keys()).without('amendment', 'signature', 'hash', 'raw').forEach(function(k){
+    _(_(obj).keys()).without('amendment', 'signature', 'hash', 'raw', 'version', 'currency').forEach(function(k){
       obj.amendment[k] = obj[k];
       delete obj[k];
     });
+    obj.amendment.version = obj.version;
+    obj.amendment.currency = obj.currency;
     obj.amendment.raw = obj.raw;
     obj.amendment.hash = sha1(rawer.getAmendment(obj.amendment)).toUpperCase();
     obj.amendmentHash = obj.amendment.hash;

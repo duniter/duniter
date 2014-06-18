@@ -4,6 +4,8 @@ var vucoin           = require('vucoin');
 var _                = require('underscore');
 var openpgp          = require('openpgp');
 var es               = require('event-stream');
+var versionFilter    = require('../lib/streams/versionFilter');
+var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
@@ -50,6 +52,8 @@ function NetworkBinding (peerServer, conf) {
     var onError = http400(res);
     http2raw.forward(req, onError)
       .pipe(parsers.parseForward(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
       .pipe(verifySignature(peerServer.PublicKeyService, onError))
@@ -95,6 +99,8 @@ function NetworkBinding (peerServer, conf) {
     var onError = http400(res);
     http2raw.peer(req, onError)
       .pipe(parsers.parsePeer(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
       .pipe(verifySignature(peerServer.PublicKeyService, onError))
@@ -143,6 +149,8 @@ function NetworkBinding (peerServer, conf) {
     var onError = http400(res);
     http2raw.wallet(req, onError)
       .pipe(parsers.parseWallet(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
       .pipe(verifySignature(peerServer.PublicKeyService, onError))
@@ -230,6 +238,8 @@ function NetworkBinding (peerServer, conf) {
     var onError = http400(res);
     http2raw.status(req, onError)
       .pipe(parsers.parseStatus(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
       .pipe(verifySignature(peerServer.PublicKeyService, onError))

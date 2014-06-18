@@ -3,6 +3,8 @@ var async            = require('async');
 var vucoin           = require('vucoin');
 var _                = require('underscore');
 var es               = require('event-stream');
+var versionFilter    = require('../lib/streams/versionFilter');
+var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
@@ -78,6 +80,8 @@ function RegistryBinding (registryServer, conf) {
     var onError = http400(res);
     http2raw.membership(req, onError)
       .pipe(parsers.parseMembership(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(registryServer.PublicKeyService, onError))
       .pipe(verifySignature(registryServer.PublicKeyService, onError))
@@ -138,6 +142,8 @@ function RegistryBinding (registryServer, conf) {
     var onError = http400(res);
     http2raw.voting(req, onError)
       .pipe(parsers.parseVoting(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(registryServer.PublicKeyService, onError))
       .pipe(verifySignature(registryServer.PublicKeyService, onError))
@@ -214,6 +220,8 @@ function RegistryBinding (registryServer, conf) {
     var onError = http400(res);
     http2raw.communityFlow(req, onError)
       .pipe(parsers.parseCommunityFlow(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(registryServer.PublicKeyService, onError))
       .pipe(verifySignature(registryServer.PublicKeyService, onError))

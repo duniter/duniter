@@ -2,8 +2,8 @@ var should   = require('should');
 var assert   = require('assert');
 var mongoose = require('mongoose');
 var sha1     = require('sha1');
-var common   = require('../app/lib/common');
-var parsers  = require('../app/lib/streams/parsers/doc');
+var common   = require('../../app/lib/common');
+var parsers  = require('../../app/lib/streams/parsers/doc');
 var fs       = require('fs');
 
 var AM0 = "" +
@@ -34,8 +34,8 @@ var AM0 = "" +
   "=GqZy\r\n" +
   "-----END PGP SIGNATURE-----\r\n";
  
-var Vote = mongoose.model('Vote', require('../app/models/vote'));
-var Amendment = mongoose.model('Amendment', require('../app/models/amendment'));
+var Vote = mongoose.model('Vote', require('../../app/models/vote'));
+var Amendment = mongoose.model('Amendment', require('../../app/models/amendment'));
 var v;
 
 describe('Vote', function(){

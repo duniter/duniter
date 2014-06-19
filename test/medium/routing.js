@@ -1,14 +1,14 @@
-var ucoin   = require('./..');
+var ucoin   = require('./../..');
 var should  = require('should');
 var fs      = require('fs');
 var async   = require('async');
-var parsers = require('../app/lib/streams/parsers/doc');
-var logger  = require('../app/lib/logger')('[routing]');
+var parsers = require('../../app/lib/streams/parsers/doc');
+var logger  = require('../../app/lib/logger')('[routing]');
 
-var pubkeyCatRaw = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-var pubkeySnowRaw = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-var pubkeyWhiteRaw = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
-var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
+var pubkeyCatRaw = fs.readFileSync(__dirname + '/../data/lolcat.pub', 'utf8');
+var pubkeySnowRaw = fs.readFileSync(__dirname + '/../data/snow.pub', 'utf8');
+var pubkeyWhiteRaw = fs.readFileSync(__dirname + '/../data/white.pub', 'utf8');
+var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/../data/ubot1.pub', 'utf8');
 
 // Only show new data events
 require('log4js').configure({});

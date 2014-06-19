@@ -4,8 +4,8 @@ var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var mongoose = require('mongoose');
-var parsers  = require('../app/lib/streams/parsers/doc');
-var ucoin    = require('./..');
+var parsers  = require('../../app/lib/streams/parsers/doc');
+var ucoin    = require('../..');
 
 var rawPeer = "" +
   "Version: 1\r\n" +
@@ -15,7 +15,7 @@ var rawPeer = "" +
   "BASIC_MERKLED_API ucoin.twiced.fr 88.163.127.43 9101\r\n" +
   "OTHER_PROTOCOL 88.163.127.43 9102\r\n";
 
-var Peer = mongoose.model('Peer', require('../app/models/peer'));
+var Peer = mongoose.model('Peer', require('../../app/models/peer'));
 
 describe('Peer', function(){
 

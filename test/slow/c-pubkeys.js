@@ -5,26 +5,26 @@ var request   = require('supertest');
 var fs        = require('fs');
 var sha1      = require('sha1');
 var _         = require('underscore');
-var jpgp      = require('../app/lib/jpgp');
-var server    = require('../app/lib/server');
-var signatory = require('./tool/signatory');
-var test      = require('./tool/test');
-var ucoin     = require('./..');
-var logger    = require('../app/lib/logger')('test');
+var jpgp      = require('../../app/lib/jpgp');
+var server    = require('../../app/lib/server');
+var signatory = require('./../tool/signatory');
+var test      = require('./../tool/test');
+var ucoin     = require('./../..');
+var logger    = require('../../app/lib/logger')('test');
 
 var currency = "testo";
 var tester    = is = on = new test.tester(currency);
 
 var now   = new Date().timestamp();
-var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat");
-var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi");
-var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow");
-var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
+var cat   = signatory(fs.readFileSync(__dirname + "/../data/lolcat.priv", 'utf8'), "lolcat");
+var tobi  = signatory(fs.readFileSync(__dirname + "/../data/uchiha.priv", 'utf8'), "tobi");
+var snow  = signatory(fs.readFileSync(__dirname + "/../data/snow.priv", 'utf8'), "snow");
+var white = signatory(fs.readFileSync(__dirname + "/../data/white.priv", 'utf8'), "white");
 
-var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-var pubkeyTobi     = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
-var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
+var pubkeySnow     = fs.readFileSync(__dirname + '/../data/snow.pub', 'utf8');
+var pubkeyCat      = fs.readFileSync(__dirname + '/../data/lolcat.pub', 'utf8');
+var pubkeyTobi     = fs.readFileSync(__dirname + '/../data/uchiha.pub', 'utf8');
+var pubkeyWhite    = fs.readFileSync(__dirname + '/../data/white.pub', 'utf8');
 
 var testCases = [
 
@@ -85,7 +85,7 @@ before(function (done) {
   this.timeout(1000*3); // In seconds
   var server = ucoin.createRegistryServer({ name: currency, listenBMA: true, resetData: true }, {
     currency: currency,
-    pgpkey: fs.readFileSync(__dirname + "/data/lolcat.priv"),
+    pgpkey: fs.readFileSync(__dirname + "/../data/lolcat.priv"),
     pgppasswd: 'lolcat',
     ipv4: '127.0.0.1',
     port: 9106,

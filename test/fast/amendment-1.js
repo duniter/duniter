@@ -2,7 +2,7 @@ var should   = require('should');
 var assert   = require('assert');
 var mongoose = require('mongoose');
 var sha1     = require('sha1');
-var parsers  = require('../app/lib/streams/parsers/doc');
+var parsers  = require('../../app/lib/streams/parsers/doc');
 
 var AM1 = "" +
   "Version: 1\r\n" +
@@ -18,7 +18,7 @@ var AM1 = "" +
   "VotersCount: 3\r\n" +
   "VotersChanges:\r\n";
 
-var Amendment = mongoose.model('Amendment', require('../app/models/amendment'));
+var Amendment = mongoose.model('Amendment', require('../../app/models/amendment'));
 var amTest;
 
 describe('Amendment', function(){

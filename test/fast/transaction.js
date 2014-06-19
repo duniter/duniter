@@ -2,7 +2,7 @@ var should   = require('should');
 var assert   = require('assert');
 var mongoose = require('mongoose');
 var sha1     = require('sha1');
-var parsers  = require('../app/lib/streams/parsers/doc');
+var parsers  = require('../../app/lib/streams/parsers/doc');
 var fs       = require('fs');
 
 var tx1;
@@ -20,7 +20,7 @@ var tx1Raw = "" +
   "Here I am sending 2 coins to someone else (either an individual or organization).\r\n";
 
 
-var Transaction = mongoose.model('Transaction', require('../app/models/transaction'));
+var Transaction = mongoose.model('Transaction', require('../../app/models/transaction'));
 
 describe('Transaction', function(){
 

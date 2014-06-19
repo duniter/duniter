@@ -4,12 +4,12 @@ var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var mongoose = require('mongoose');
-var parsers  = require('../app/lib/streams/parsers/doc');
-var ucoin    = require('./..');
+var parsers  = require('../../app/lib/streams/parsers/doc');
+var ucoin    = require('../..');
 
-var Wallet = mongoose.model('Wallet', require('../app/models/wallet'));
-var rawWallet = fs.readFileSync(__dirname + "/data/wallets/cat.entry", "utf8")
-           + fs.readFileSync(__dirname + "/data/wallets/cat.entry.asc", "utf8");
+var Wallet = mongoose.model('Wallet', require('../../app/models/wallet'));
+var rawWallet = fs.readFileSync(__dirname + "/../data/wallets/cat.entry", "utf8")
+           + fs.readFileSync(__dirname + "/../data/wallets/cat.entry.asc", "utf8");
 
 describe('Wallet', function(){
 

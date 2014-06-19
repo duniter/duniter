@@ -2,20 +2,20 @@ var should    = require('should');
 var assert    = require('assert');
 var mongoose  = require('mongoose');
 var sha1      = require('sha1');
-var signatory = require('./tool/signatory');
+var signatory = require('./../tool/signatory');
 var openpgp   = require('openpgp');
 var fs        = require('fs');
-var gnupg     = require('../app/lib/gnupg');
-var jpgp      = require('../app/lib/jpgp');
+var gnupg     = require('../../app/lib/gnupg');
+var jpgp      = require('../../app/lib/jpgp');
 var async     = require('async');
-var common    = require('../app/lib/common');
+var common    = require('../../app/lib/common');
 
-var catRawKey           = fs.readFileSync(__dirname + "/data/lolcat.priv",               'utf8');
-var catRawPubKey        = fs.readFileSync(__dirname + "/data/lolcat.pub",                'utf8');
-var catRawRevokedPubKey = fs.readFileSync(__dirname + "/data/lolcat.pub.revoked",        'utf8');
-var catRawRevokedSubKey = fs.readFileSync(__dirname + "/data/lolcat.pub.revoked.subkey", 'utf8');
-var catSubkeySignedMess = fs.readFileSync(__dirname + "/data/openpgp/message.txt",       'utf8');
-var catSubkeySignedSign = fs.readFileSync(__dirname + "/data/openpgp/message.txt.asc",   'utf8');
+var catRawKey           = fs.readFileSync(__dirname + "/../data/lolcat.priv",               'utf8');
+var catRawPubKey        = fs.readFileSync(__dirname + "/../data/lolcat.pub",                'utf8');
+var catRawRevokedPubKey = fs.readFileSync(__dirname + "/../data/lolcat.pub.revoked",        'utf8');
+var catRawRevokedSubKey = fs.readFileSync(__dirname + "/../data/lolcat.pub.revoked.subkey", 'utf8');
+var catSubkeySignedMess = fs.readFileSync(__dirname + "/../data/openpgp/message.txt",       'utf8');
+var catSubkeySignedSign = fs.readFileSync(__dirname + "/../data/openpgp/message.txt.asc",   'utf8');
 var catPasswd = "lolcat";
 var cat = signatory(catRawKey, catPasswd);
 // var catPrivateKey = openpgp.read_privateKey(catRawKey, catPasswd)[0];
@@ -110,9 +110,9 @@ describe('Simple line signature:', function(){
   //-----------------------------
   // Some pre-signed stuff here
 
-  var message2     = fs.readFileSync(__dirname + "/data/aa", 'utf8');
-  var signature   = fs.readFileSync(__dirname + "/data/aa.asc", 'utf8');
-  var messageCRLF = fs.readFileSync(__dirname + "/data/aa.dos", 'utf8');
+  var message2     = fs.readFileSync(__dirname + "/../data/aa", 'utf8');
+  var signature   = fs.readFileSync(__dirname + "/../data/aa.asc", 'utf8');
+  var messageCRLF = fs.readFileSync(__dirname + "/../data/aa.dos", 'utf8');
 
   it('jpgp.verify() must NOT verify external gpg signature + LF line ending', function(done){
     verify(message2.dos2unix(), catRawPubKey, signature, testVerified(false, done));
@@ -197,9 +197,9 @@ describe('Multiline message signature:', function(){
   //-----------------------------
   // Some pre-signed stuff here
 
-  var message     = fs.readFileSync(__dirname + "/data/transaction/cat.tx", 'utf8');
-  var signature   = fs.readFileSync(__dirname + "/data/transaction/cat.tx.asc", 'utf8');
-  var messageCRLF = fs.readFileSync(__dirname + "/data/transaction/cat.tx.dos", 'utf8');
+  var message     = fs.readFileSync(__dirname + "/../data/transaction/cat.tx", 'utf8');
+  var signature   = fs.readFileSync(__dirname + "/../data/transaction/cat.tx.asc", 'utf8');
+  var messageCRLF = fs.readFileSync(__dirname + "/../data/transaction/cat.tx.dos", 'utf8');
 
   it('jpgp.verify() must NOT verify external gpg signature + LF line ending', function(done){
     verify(message.dos2unix(), catRawPubKey, signature, testVerified(false, done));
@@ -224,7 +224,7 @@ describe('Multiline message signature:', function(){
 
 describe('Public key message signature:', function(){
 
-  var asciiPubkey = fs.readFileSync(__dirname + "/data/lolcat.pub", 'utf8');
+  var asciiPubkey = fs.readFileSync(__dirname + "/../data/lolcat.pub", 'utf8');
 
   before(function (done) {
     gnupg.init(done);

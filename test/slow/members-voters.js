@@ -5,21 +5,21 @@ var request   = require('supertest');
 var fs        = require('fs');
 var sha1      = require('sha1');
 var _         = require('underscore');
-var jpgp      = require('../app/lib/jpgp');
-var server    = require('../app/lib/server');
+var jpgp      = require('../../app/lib/jpgp');
+var server    = require('../../app/lib/server');
 var mongoose  = require('mongoose');
-var signatory = require('./tool/signatory');
-var test      = require('./tool/test');
-var ucoin     = require('./..');
-var parsers   = require('../app/lib/streams/parsers/doc');
-var logger    = require('../app/lib/logger')('test');
+var signatory = require('./../tool/signatory');
+var test      = require('./../tool/test');
+var ucoin     = require('./../..');
+var parsers   = require('../../app/lib/streams/parsers/doc');
+var logger    = require('../../app/lib/logger')('test');
 
 var server;
 var currency = "testa";
 var now   = new Date().timestamp();
 var conf = {
   currency: currency,
-  pgpkey: fs.readFileSync(__dirname + "/data/lolcat.priv"),
+  pgpkey: fs.readFileSync(__dirname + "/../data/lolcat.priv"),
   pgppasswd: 'lolcat',
   ipv4: '127.0.0.1',
   port: 9107,
@@ -52,16 +52,16 @@ var Vote        = null;
 var Amendment   = null;
 var Transaction = null;
 
-var cat   = signatory(fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8'), "lolcat", "Cat");
-var tobi  = signatory(fs.readFileSync(__dirname + "/data/uchiha.priv", 'utf8'), "tobi", "Tobi");
-var snow  = signatory(fs.readFileSync(__dirname + "/data/snow.priv", 'utf8'), "snow", "Snow");
-// var white = signatory(fs.readFileSync(__dirname + "/data/white.priv", 'utf8'), "white");
+var cat   = signatory(fs.readFileSync(__dirname + "/../data/lolcat.priv", 'utf8'), "lolcat", "Cat");
+var tobi  = signatory(fs.readFileSync(__dirname + "/../data/uchiha.priv", 'utf8'), "tobi", "Tobi");
+var snow  = signatory(fs.readFileSync(__dirname + "/../data/snow.priv", 'utf8'), "snow", "Snow");
+// var white = signatory(fs.readFileSync(__dirname + "/../data/white.priv", 'utf8'), "white");
 
-var pubkeySnow     = fs.readFileSync(__dirname + '/data/snow.pub', 'utf8');
-var pubkeyCat      = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-// var pubkeyCat2     = fs.readFileSync(__dirname + '/data/lolcat.pub2', 'utf8');
-var pubkeyTobi     = fs.readFileSync(__dirname + '/data/uchiha.pub', 'utf8');
-// var pubkeyWhite    = fs.readFileSync(__dirname + '/data/white.pub', 'utf8');
+var pubkeySnow     = fs.readFileSync(__dirname + '/../data/snow.pub', 'utf8');
+var pubkeyCat      = fs.readFileSync(__dirname + '/../data/lolcat.pub', 'utf8');
+// var pubkeyCat2     = fs.readFileSync(__dirname + '/../data/lolcat.pub2', 'utf8');
+var pubkeyTobi     = fs.readFileSync(__dirname + '/../data/uchiha.pub', 'utf8');
+// var pubkeyWhite    = fs.readFileSync(__dirname + '/../data/white.pub', 'utf8');
 
 var amendments = {
   AM0: {

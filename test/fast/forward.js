@@ -4,12 +4,12 @@ var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var mongoose = require('mongoose');
-var parsers  = require('../app/lib/streams/parsers/doc');
-var ucoin    = require('./..');
+var parsers  = require('../../app/lib/streams/parsers/doc');
+var ucoin    = require('../..');
 
-var Forward = mongoose.model('Forward', require('../app/models/forward'));
-var rawFwd = fs.readFileSync(__dirname + "/data/peering/ubot1.keys", "utf8");
-var rawFwd2 = fs.readFileSync(__dirname + "/data/peering/snow.all", "utf8");
+var Forward = mongoose.model('Forward', require('../../app/models/forward'));
+var rawFwd = fs.readFileSync(__dirname + "/../data/peering/ubot1.keys", "utf8");
+var rawFwd2 = fs.readFileSync(__dirname + "/../data/peering/snow.all", "utf8");
 
 describe('Forward', function(){
 

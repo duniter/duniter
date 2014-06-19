@@ -3,10 +3,10 @@ var assert   = require('assert');
 var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
-var parsers  = require('../app/lib/streams/parsers/doc');
-var ucoin    = require('./..');
+var parsers  = require('../../app/lib/streams/parsers/doc');
+var ucoin    = require('../..');
 
-var Status = require('../app/models/statusMessage');
+var Status = require('../../app/models/statusMessage');
 var rawStatus = "" +
   "Version: 1\r\n" +
   "Currency: beta_brousouf\r\n" +

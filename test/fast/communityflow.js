@@ -4,12 +4,12 @@ var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var mongoose = require('mongoose');
-var parsers  = require('../app/lib/streams/parsers/doc');
-var ucoin    = require('./..');
+var parsers  = require('../../app/lib/streams/parsers/doc');
+var ucoin    = require('../..');
 
-var CommunityFlow = mongoose.model('CommunityFlow', require('../app/models/communityflow'));
-var rawCF = fs.readFileSync(__dirname + "/data/communityflows/cat.flow", "utf8") +
-            fs.readFileSync(__dirname + "/data/communityflows/cat.flow.asc", "utf8");
+var CommunityFlow = mongoose.model('CommunityFlow', require('../../app/models/communityflow'));
+var rawCF = fs.readFileSync(__dirname + "/../data/communityflows/cat.flow", "utf8") +
+            fs.readFileSync(__dirname + "/../data/communityflows/cat.flow.asc", "utf8");
 
 describe('Community flow', function(){
 

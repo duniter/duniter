@@ -4,10 +4,10 @@ var assert   = require('assert');
 var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
-var parsers  = require('../app/lib/streams/parsers/doc');
-var ucoin    = require('./..');
+var parsers  = require('../../app/lib/streams/parsers/doc');
+var ucoin    = require('../..');
 
-var Voting = mongoose.model('Voting', require('../app/models/voting'));
+var Voting = mongoose.model('Voting', require('../../app/models/voting'));
 var rawVoting = "" +
   "Version: 1\r\n" +
   "Currency: beta_brousouf\r\n" +

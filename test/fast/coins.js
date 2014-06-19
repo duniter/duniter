@@ -3,7 +3,7 @@ var assert = require('assert');
 var async  = require('async');
 var sha1   = require('sha1');
 var fs     = require('fs');
-var coiner = require('../app/lib/coiner');
+var coiner = require('../../app/lib/coiner');
 var log4js = require('log4js');
 var logger = log4js.getLogger('test coins');
 

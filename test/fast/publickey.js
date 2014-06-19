@@ -2,18 +2,18 @@ var should    = require('should');
 var assert    = require('assert');
 var mongoose  = require('mongoose');
 var sha1      = require('sha1');
-var signatory = require('./tool/signatory');
+var signatory = require('./../tool/signatory');
 var openpgp   = require('openpgp');
 var fs        = require('fs');
-var jpgp      = require('../app/lib/jpgp');
+var jpgp      = require('../../app/lib/jpgp');
 var async     = require('async');
-var common    = require('../app/lib/common');
-var parsers   = require('../app/lib/streams/parsers/doc');
+var common    = require('../../app/lib/common');
+var parsers   = require('../../app/lib/streams/parsers/doc');
 
-var PublicKey = mongoose.model('PublicKey', require('../app/models/publickey'));
+var PublicKey = mongoose.model('PublicKey', require('../../app/models/publickey'));
 
-var catRawPrivateKey = fs.readFileSync(__dirname + "/data/lolcat.priv", 'utf8');
-var catRawPublicKey = fs.readFileSync(__dirname + "/data/lolcat.pub", 'utf8');
+var catRawPrivateKey = fs.readFileSync(__dirname + "/../data/lolcat.priv", 'utf8');
+var catRawPublicKey = fs.readFileSync(__dirname + "/../data/lolcat.pub", 'utf8');
 var catPasswd = "lolcat";
 var cat = signatory(catRawPrivateKey, catPasswd);
 // var catPrivateKey = openpgp.read_privateKey(catRawPrivateKey, catPasswd)[0];

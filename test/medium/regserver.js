@@ -1,13 +1,13 @@
-var ucoin   = require('./..');
+var ucoin   = require('./../..');
 var async   = require('async');
 var should  = require('should');
 var fs      = require('fs');
-var parsers = require('../app/lib/streams/parsers/doc');
-var logger  = require('../app/lib/logger')('[regserver]');
+var parsers = require('../../app/lib/streams/parsers/doc');
+var logger  = require('../../app/lib/logger')('[regserver]');
 
-var pubkeyCatRaw = fs.readFileSync(__dirname + '/data/lolcat.pub', 'utf8');
-var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.pub', 'utf8');
-var privkeyUbot1Raw = fs.readFileSync(__dirname + '/data/ubot1.priv', 'utf8');
+var pubkeyCatRaw = fs.readFileSync(__dirname + '/../data/lolcat.pub', 'utf8');
+var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/../data/ubot1.pub', 'utf8');
+var privkeyUbot1Raw = fs.readFileSync(__dirname + '/../data/ubot1.priv', 'utf8');
 
 var pubkeyCat, pubkeyUbot1;
 

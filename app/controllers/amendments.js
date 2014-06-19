@@ -103,7 +103,6 @@ function AmendmentBinding (hdcServer) {
           MerkleService.processForURL(req, merkle, async.apply(Merkle.mapForSignatures.bind(Merkle), number), next);
         }
       ], function (err, json) {
-        console.log(json);
         if(err){
           res.send(400, err);
           return;

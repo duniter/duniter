@@ -54,7 +54,7 @@ describe('In a unidirectional 2 servers network,', function () {
 
 describe('In a bidirectionnal 2 servers network,', function () {
 
-  this.timeout(3000);
+  this.timeout(5000);
 
   var serverA, serverB;
 
@@ -91,7 +91,7 @@ describe('In an oriented 5 servers network,', function () {
 
   var serverA, serverB, serverC, serverD, serverE;
 
-  this.timeout(3000);
+  this.timeout(5000);
 
   before(function (done) {
 

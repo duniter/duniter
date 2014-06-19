@@ -130,10 +130,6 @@ MerkleSchema.statics.signaturesOfAmendment = function (number, hash, done) {
   this.retrieve({ type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
 };
 
-MerkleSchema.statics.signaturesWrittenForAmendment = function (number, hash, done) {
-  this.retrieve({ type: 'amendment_signatures', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
-};
-
 MerkleSchema.statics.txOfSender = function (fingerprint, done) {
   this.retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
 };
@@ -223,7 +219,7 @@ MerkleSchema.statics.removePublicKey = function (fingerprint, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateSignaturesOfAmendment = function (am, vote, done) {
+MerkleSchema.statics.updateSignaturesOfAmendment = function (am, hash, done) {
   var Merkle = this.model('Merkle');
   async.waterfall([
     function (next) {
@@ -232,7 +228,7 @@ MerkleSchema.statics.updateSignaturesOfAmendment = function (am, vote, done) {
       });
     },
     function (merkle, next) {
-      merkle.push(vote.issuer);
+      merkle.push(hash);
       merkle.save(function (err) {
         next(err);
       });
@@ -305,7 +301,6 @@ MerkleSchema.statics.mapForPublicKeys = function (hashes, done) {
 MerkleSchema.statics.mapForSignatures = function (amNumber, hashes, done) {
   this.model('Vote')
   .find({ basis: amNumber, issuer: { $in: hashes } })
-  .sort('issuer')
   .exec(function (err, votes) {
     var map = {};
     votes.forEach(function (vote){

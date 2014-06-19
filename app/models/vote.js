@@ -102,7 +102,7 @@ VoteSchema.methods = {
       },
       function (next){
         // Donne le Merkle des signatures (hdc/amendments/[AMENDMENT_ID]/signatures)
-        Merkle.signaturesWrittenForAmendment(am.number, am.hash, next);
+        Merkle.signaturesOfAmendment(am.number, am.hash, next);
       },
       function (merkle, next){
         // Met à jour le Merkle

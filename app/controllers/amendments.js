@@ -59,7 +59,7 @@ function AmendmentBinding (hdcServer) {
   this.viewAM = {
 
     signatures: function (req, res) {
-      amendmentMerkle(req, res, Merkle.signaturesWrittenForAmendment.bind(Merkle), Merkle.mapForSignatures.bind(Merkle));
+      amendmentMerkle(req, res, Merkle.signaturesOfAmendment.bind(Merkle), Merkle.mapForSignatures.bind(Merkle));
     },
 
     self: function (req, res) {
@@ -103,6 +103,7 @@ function AmendmentBinding (hdcServer) {
           MerkleService.processForURL(req, merkle, async.apply(Merkle.mapForSignatures.bind(Merkle), number), next);
         }
       ], function (err, json) {
+        console.log(json);
         if(err){
           res.send(400, err);
           return;

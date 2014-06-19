@@ -23,6 +23,7 @@ function VoteService (conn, StrategyService) {
 
   this.submit = function(jsonVote, callback) {
     var vote = new Vote(jsonVote);
+    vote.issuer = jsonVote.pubkey.fingerprint;
     vote.amendment = new Amendment(jsonVote.amendment);
     var hash = vote.amendment.getHash();
     var that = this;
@@ -103,7 +104,7 @@ function VoteService (conn, StrategyService) {
         },
         function ( next){
           // Update signatures (hdc/amendments/votes/[AMENDMENT_ID])
-          Merkle.updateSignaturesOfAmendment(vote.amendment, vote, function (err) {
+          Merkle.updateSignaturesOfAmendment(vote.amendment, jsonVote.pubkey.fingerprint, function (err) {
             next(err, vote.amendment, vote);
           });
         },
@@ -127,7 +128,7 @@ function VoteService (conn, StrategyService) {
       function (ams, next){
         am = (ams && ams[0]) || amendment;
         // Donne le Merkle des signatures (hdc/amendments/[AMENDMENT_ID]/signatures)
-        Merkle.signaturesWrittenForAmendment(am.number, am.hash, next);
+        Merkle.signaturesOfAmendment(am.number, am.hash, next);
       },
       function (merkle, next){
         // Met à jour le Merkle

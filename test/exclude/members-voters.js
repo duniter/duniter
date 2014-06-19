@@ -27,6 +27,7 @@ var conf = {
   remoteport: 9107,
   kmanagement: 'ALL',
   sync: {
+    AMDaemon: "OFF",
     AMStart: now,
     AMFreq: 1, // Every second
     UDFreq: 2, // Dividend every 2 seconds
@@ -614,9 +615,9 @@ before(function (done) {
         tester.app(appReady);
         // Execute all tasks
         async.forEachSeries(testCases, function(testCase, callback){
-          logger.trace('----------------------------------');
-          logger.trace('Test: %s', testCase.label);
-          logger.trace('----------------------------------');
+          logger.debug('----------------------------------');
+          logger.debug('Test: %s', testCase.label);
+          logger.debug('----------------------------------');
           testCase.task(callback);
         }, next);
       },

@@ -6,7 +6,11 @@
     * [Membership](#membership)
     * [Voting](#voting)
     * [Community flow](#community_flow)
-* [Rules](#rules)
+* [Algorithms](#algorithms)
+  * [AnyKey](#anyey)
+  * [1Sig](#1sig)
+  * [Common rules](#common_rules)
+  * [Computing community flows](#computing_community_flows)
 
 ## Introduction
 
@@ -38,6 +42,12 @@ Field | Description
 `Date` | Creation date of this message. Timestamp. This date may be different from signature's date.
 `Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
 
+#### Validity
+
+A [Membership](#membership) is to be considered valid if:
+* `Issuer` matches signature's key ID
+* `Membership` matches either `IN` or `OUT` value
+
 ### Voting
 
 Added to membership, a notion of *voting* is handled by uCoin nodes: uCoin nodes will accept Amendments of Monetary Contract only if it gathers enough votes of the Community voters.
@@ -64,6 +74,11 @@ Field | Description
 
 With such message, uCoin node will be able to know that member `Issuer` *wants* its votes to be considered when accepting new Amendments.
 
+#### Validity
+
+A [Voting](#voting) is to be considered valid if:
+* `Issuer` matches signature's key ID
+* `Registry` matches `VOTING` value
 
 ### Community flow
 
@@ -97,13 +112,13 @@ Field            | Description
 `Amendment`      | Identify current amendment this node is based upon, thus on which members & voters changes are based.
 `Issuer`         | Full PGP key fingerprint issuing this message.
 `Date`           | Creation date of this message. Timestamp. This date may be different from signature's date.
-`Algorithm`      | Algorithm used for membership acceptation. May be either `AnyKey` or `1Sig`.
+`Algorithm`      | Algorithm used for computing community changes. May be either `AnyKey` or `1Sig`.
 `MembersJoining` | [Merkle summary](#merkle_summary) of members potentially joining
 `MembersLeaving` | [Merkle summary](#merkle_summary) of members potentially leaving
 `VotersJoining`  | [Merkle summary](#merkle_summary) of voters potentially joining
 `VotersLeaving`  | [Merkle summary](#merkle_summary) of voters potentially leaving
 
-Note that for Merkle summaries, the reasons why a Merkle summary has some leave or not *is not defined here*, but the Merkles should follow [Registry rules](#rules).
+Note that for Merkle summaries, the reasons why a Merkle summary has some leave or not *is directly linked by `Algorithm` field*. Indeed, `Algorithm` identifying the rules to follow for computing community changes.
 
 ##### Merkle summary
 
@@ -115,46 +130,35 @@ Format: `LEAVES_COUNT-ROOT_HASH`.
 
 Value `90-8518C1F053B6F5BB9D27ED37F4061AE5CC083511` is a Merkle summary of a Merkle resource holding `90` leaves and whose root hash is `8518C1F053B6F5BB9D27ED37F4061AE5CC083511`.
 
-##### Membership algorithms
+## Algorithms
 
-Such algorithms defines the rules for a member `IN` request's interpretation, leading to integrate the member in the community if it fits the algorithm's rules.
+Algorithms are sets of rules defining how to settle community variations: joins and leaves of members & voters. In this document, 2 algorithms will be described: `1Sig` and `AnyKey` which are rather simple and more "testing" algorithms to understand the principles. Those algos share the same common pattern, and only differs in the acceptance of the members' public key signatures.
 
-###### `AnyKey`
+### `AnyKey`
 
-This algorithms *accepts* any key as valid for a membership. Thus, a key asking for joining will always be accepted in the community, without checking any signature on the key.
+This algorithms accepts **any key** as valid for a membership. Thus, a key asking for joining will always be accepted in the community, without checking any signature on the key. Furthermore, the key will always be valid while key hasn't been revoked.
 
-###### `1Sig`
+> Once a key has been accepted, this algorithm will never exclude it
 
-This algorithm *accepts* any key that have *at least* 1 signature from an existing member in the community. Others are simply refused.
+### `1Sig`
 
-## Rules
+This algorithm *accepts* any key that have *at least* 1 signature from an existing member in the community. Others are simply refused. Furthermore, the key will always be valid while key hasn't been revoked.
 
-### Membership
+### Common rules
 
-#### Validity
+`1Sig` and `AnyKey` algorithms relies on Membership & Voting documents.
 
-A [Membership](#membership) is to be considered valid if:
-* `Issuer` matches signature's key ID
-* `Date` is in interval [ CURRENT_AM_GENERATED_ON ; NEXT_AM_GENERATED_ON [
-* `Membership` matches either `IN` or `OUT` value
+Both algorithms **only accepts** keys with an [OpenUDC udid2](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164) in it. For `1Sig` algorithm, checked signatures are those on `udid2` user ID.
 
-#### Impacts
+#### Membership computing
 
-When receiving a valid [Membership](#membership), node MUST interprete it for each [membership algorithm](#membership-algorithms) it handles. This impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the afferent [Merkle summary](#merkle-summary)) : `MembersJoining` for `IN` membership, and `MembersLeaving` for `OUT` membership.
+When receiving a valid [Membership](#membership), node SHOULD interprete it for each [membership algorithm](#membership-algorithms) it handles, *if this membership's `Date` is in interval [ CURRENT_AM_GENERATED_ON ; NEXT_AM_GENERATED_ON [*. If it does so, the impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the afferent [Merkle summary](#merkle-summary)): `MembersJoining` for `IN` membership, and `MembersLeaving` for `OUT` membership.
 
-### Voting
+#### Voting computing
 
-#### Validity
+When receiving a valid [Voting](#voting), node SHOULD interprete it. The impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the `VotersJoining` [Merkle summary](#merkle-summary)).
 
-A [Voting](#voting) is to be considered valid if:
-* `Issuer` matches signature's key ID
-* `Date` is in interval [ CURRENT_AM_GENERATED_ON ; NEXT_AM_GENERATED_ON [
-
-#### Impacts
-
-When receiving a valid [Voting](#voting), node MUST interprete it. This impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the `VotersJoining` [Merkle summary](#merkle-summary)).
-
-### Community flow computing rules
+### Computing community flows
 
 Here are 2 tables on how to compute analitically members & voters changes:
 
@@ -162,8 +166,8 @@ Here are 2 tables on how to compute analitically members & voters changes:
 
         |  PKx  |  IN  |   OUT
 ------  | ----- | ---- | -----
-Member  |  -1   |   0  |  -1
-!Member |  -1   |  +1  |   0
+Member  |  -2   |   0  |  -1
+!Member |  -2   |  +1  |   0
 
 Where:
 * `Member` has value `1` if the computed key is currently a member, otherwise `0`.
@@ -191,9 +195,9 @@ Using this formula, it can be known at any moment how to apply variation of the 
 
         |     | VT  | ML
 ------  | --- | --- | ---
-!Voter  |  0  | +1  | -1
-Voter   |  0  |  0  | -1
-Voterx  | -1  | +1  | -1
+!Voter  |  0  | +1  | -2
+Voter   |  0  |  0  | -2
+Voterx  | -1  | +1  | -2
 
 Where:
 * `Voter` has value `1` if the computed key is currently a voter, otherwise `0`.
@@ -213,7 +217,7 @@ Vvar = MAX[-1, MIN[1, !Voter*(+VT -ML) + Voter*(-ML) + Voterx*(-1 +VT -ML)]]
 
 Using this formula, it can be known at any moment how to apply variation of the voter for next amendment.
 
-> N.B.: `Voterx` parameter: voter is considered **eligibile** if his last voting document's date does not exceeds a certain duration `vtvalidity` which is a local parameter of each node. Obviously, a network of node should agree on this parameter to have the same rule on when to eject a voter.
+> N.B.: `Voterx` parameter: voter is considered **eligibile** if his last voting document's date does not exceeds a certain duration `vtvalidity` which is algorithm dependent. For `AnyKey` and `1Sig`, this value is **3 months**, inclusive.
 
 > N.B.: `Voter`, `!Voter` and `Voterx` fields are exclusive, so at any time `Voter + !Voter + Voterx = 1`.
 

@@ -54,28 +54,6 @@ function RegistryBinding (registryServer, conf) {
     }, null, "  "));
   };
 
-  this.amendmentCurrent = function (req, res) {
-    var am = ContractService.proposed();
-    req.params.am_number = ((am && am.number)  || 0).toString();
-    that.amendmentNext(req, res);
-  };
-
-  this.amendmentNext = function (req, res) {
-    async.waterfall([
-      function (next){
-        ParametersService.getAmendmentNumber(req, next);
-      },
-      function (amNumber, next){
-        Amendment.getTheOneToBeVoted(amNumber, conf.sync.Algorithm, next);
-      },
-    ], function (err, am) {
-      http.answer(res, 404, err, function () {
-        // Render the amendment
-        res.end(JSON.stringify(am.json(), null, "  "));
-      });
-    });
-  };
-
   this.membershipPost = function (req, res) {
     var onError = http400(res);
     http2raw.membership(req, onError)
@@ -250,6 +228,27 @@ function RegistryBinding (registryServer, conf) {
       MerkleService.merkleDone(req, res, json);
     });
   }
+
+  this.askSelf = function (req, res) {
+    async.waterfall([
+
+      function (next){
+        ParametersService.getAmendmentNumberAndAlgo(req, next);
+      },
+      function (amNumber, algo, next){
+        if (amNumber == 0)
+          SyncService.getOrCreateAM0(algo, next);
+        else
+          Amendment.getTheOneToBeVoted(amNumber, algo, next);
+      },
+
+    ], function (err, am) {
+      http.answer(res, 404, err, function () {
+        // Render the amendment
+        res.end(JSON.stringify(am.json(), null, "  "));
+      });
+    });
+  };
 
   this.askFlow = function (req, res) {
     var that = this;

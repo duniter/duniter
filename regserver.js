@@ -86,8 +86,8 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
         that.createSignFunction(that.conf, next);
       },
       function (next){
-        that.SyncService         = require('./app/service/SyncService').get(conn, that.conf, that.sign, that.ContractService, that.PeeringService, that.alertDaemon, that.daemonJudgesTimeForVote);
-        that.StrategyService     = require('./app/service/StrategyService').get(conn, that.conf, that.ContractService, that.SyncService);
+        that.SyncService         = require('./app/service/SyncService').get(conn, that.conf, that.sign, that.ContractService, that.PeeringService, that.daemonJudgesTimeForVote);
+        that.StrategyService     = require('./app/service/StrategyService').get(conn, that.conf, that.ContractService, that.SyncService, that.alertDaemon);
         that.VoteService         = require('./app/service/VoteService').get(conn, that.StrategyService);
         that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.MerkleService, that.PeeringService);
         that.WalletService       = require('./app/service/WalletService').get(conn);
@@ -122,23 +122,6 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
         // Init Daemon
         that.daemon = require('./app/lib/daemon')(that.conn, that.PeeringService, that.ContractService);
         that.daemon.init(conf, that.PeeringService.cert.fingerprint);
-        // Init first amendment
-        conn.model('Amendment').current(function (err, am) {
-          next(null, am);
-        });
-      },
-      function (currentAM, next) {
-        var nextAMNumber = currentAM && currentAM.number + 1 || 0;
-        // Create NEXT AM proposal if not existing
-        conn.model('Amendment').getTheOneToBeVoted(nextAMNumber, conf.sync.Algorithm, function (err, am) {
-          if (err || !am) {
-            that.SyncService.createNext(currentAM, next);
-            return;
-          }
-          next();
-        });
-      },
-      function (next){
         // Start autonomous contract daemon
         that.daemon.start();
         next();
@@ -204,12 +187,11 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
     app.post(   '/registry/community/voters',                       reg.votingPost);
     app.get(    '/registry/community/voters/:fpr/current',          reg.votingCurrent);
     app.get(    '/registry/community/voters/:fpr/history',          reg.votingHistory);
-    app.get(    '/registry/amendment',                              reg.amendmentCurrent);
-    app.get(    '/registry/amendment/:am_number',                   reg.amendmentNext);
     app.get(    '/registry/amendment/:am_number/:algo/members/in',  reg.membersIn);
     app.get(    '/registry/amendment/:am_number/:algo/members/out', reg.membersOut);
     app.get(    '/registry/amendment/:am_number/:algo/voters/in',   reg.votersIn);
     app.get(    '/registry/amendment/:am_number/:algo/voters/out',  reg.votersOut);
+    app.get(    '/registry/amendment/:am_number/:algo/self',        reg.askSelf);
     app.get(    '/registry/amendment/:am_number/:algo/flow',        reg.askFlow);
     app.get(    '/registry/amendment/:am_number/:algo/vote',        reg.askVote);
   }

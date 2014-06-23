@@ -43,9 +43,9 @@ var testCases = [
   testMerkle("/pks/all", '5DB500A285BD380A68890D09232475A8CA003DC8'),
 
   tester.verify(
-    "Cat has already given his key",
+    "Cat has already given his key, but without the same signatures (this one is laking some signatures)",
     on.pksAdd(pubkeyCat),
-    is.expectedHTTPCode(400)
+    is.expectedPubkey('C73882B64B7E72237A2F460CE9CAB76D19A8651E')
   ),
   testMerkle("/pks/all", '5DB500A285BD380A68890D09232475A8CA003DC8'),
 

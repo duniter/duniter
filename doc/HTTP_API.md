@@ -46,12 +46,11 @@
       * [community/voters (POST)](#communityvoters-post)
       * [community/voters/[PGP_FINGERPRINT]/current](#communityvoterspgp_fingerprintcurrent)
       * [community/voters/[PGP_FINGERPRINT]/history](#communityvoterspgp_fingerprinthistory)
-      * [amendment](#amendment)
-      * [amendment/[AM_NUMBER]](#amendmentam_number)
       * [amendment/[AM_NUMBER]/[ALGO]/members/in](#amendmentam_numberalgomembersin)
       * [amendment/[AM_NUMBER]/[ALGO]/members/out](#amendmentam_numberalgomembersout)
       * [amendment/[AM_NUMBER]/[ALGO]/voters/in](#amendmentam_numberalgovotersin)
       * [amendment/[AM_NUMBER]/[ALGO]/voters/out](#amendmentam_numberalgovotersout)
+      * [amendment/[AM_NUMBER]/[ALGO]/self](#amendmentam_numberalgoself)
       * [amendment/[AM_NUMBER]/[ALGO]/flow](#amendmentam_numberalgoflow)
       * [amendment/[AM_NUMBER]/[ALGO]/vote](#amendmentam_numberalgovote)
 
@@ -116,7 +115,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |   |   `-- [PGP_FINGERPRINT]/
         |   |       |-- history
         |   |       `-- current
-        |   |-- voters/
+        |   `-- voters/
         |       `-- [PGP_FINGERPRINT]/
         |           |-- history
         |           `-- current
@@ -129,6 +128,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
                     |-- voters
                     |   |-- in
                     |   `-- out
+                    |-- self
                     |-- flow
                     `-- vote
 
@@ -137,7 +137,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 Merkle URL is a special kind of URL applicable for resources:
 
 * `pks/all`
-* `network/peers (GET)`
+* `network/peering/peers (GET)`
 * `network/wallet (GET)`
 * `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
@@ -1658,78 +1658,6 @@ A list of posted voting requests + posted signatures.
 }
 ```
 
-#### `amendment`
-
-**Goal**
-
-GET the next amendment *this node* would vote for when time has come.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Amendment to be voted by this node if voting happened.
-```json
-{
-  "version": "1",
-  "currency": "beta_brousouf",
-  "number": "2",
-  "generated": 1400588975,
-  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-  "dividend": "100",
-  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-  "votersCount": "2",
-  "votersChanges": [
-    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  ],
-  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-  "membersCount": "4",
-  "membersChanges": [
-    "+31A6302161AC8F5938969E85399EB3415C237F93"
-  ],
-  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-}
-```
-
-#### `amendment/[AM_NUMBER]`
-
-**Goal**
-
-GET the next amendment *this node* would vote for when time has come with given AM number.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`AM_NUMBER`       | The amendment number to be promoted.                          | URL
-
-**Returns**
-
-Amendment to be voted by this node if voting happened.
-```json
-{
-  "version": "1",
-  "currency": "beta_brousouf",
-  "number": "2",
-  "generated": 1400588975,
-  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-  "dividend": "100",
-  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-  "votersCount": "2",
-  "votersChanges": [
-    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  ],
-  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-  "membersCount": "4",
-  "membersChanges": [
-    "+31A6302161AC8F5938969E85399EB3415C237F93"
-  ],
-  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-}
-```
-
 #### `amendment/[AM_NUMBER]/[ALGO]/members/in`
 
 **Goal**
@@ -1938,6 +1866,44 @@ Current node's voting amendment + signature, or HTTP 404 if not available yet.
     "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
     "date": 1401894350
   }
+}
+```
+
+#### `amendment/[AM_NUMBER]/[ALGO]/self`
+
+**Goal**
+
+GET the proposed amendment of this node for a given number & membership algorithm.
+
+**Parameters**
+
+Name              | Value                                                                    | Method
+----------------- | -------------------------------------------------------------            | ------
+`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
+`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
+
+**Returns**
+
+Amendment to be voted by this node if voting happened.
+```json
+{
+  "version": "1",
+  "currency": "beta_brousouf",
+  "number": "2",
+  "generated": 1400588975,
+  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
+  "dividend": "100",
+  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
+  "votersCount": "2",
+  "votersChanges": [
+    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
+  ],
+  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
+  "membersCount": "4",
+  "membersChanges": [
+    "+31A6302161AC8F5938969E85399EB3415C237F93"
+  ],
+  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
 }
 ```
 

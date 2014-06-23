@@ -29,6 +29,38 @@ PublicKeySchema.pre('save', function (next) {
   next();
 });
 
+PublicKeySchema.virtual('nbVerifiedSigs').get(function () {
+  return this._nbVerifiedSigs;
+});
+
+PublicKeySchema.virtual('nbVerifiedSigs').set(function (nbVerifiedSigs) {
+  this._nbVerifiedSigs = nbVerifiedSigs;
+});
+
+PublicKeySchema.virtual('udid2').get(function () {
+  return this._udid2;
+});
+
+PublicKeySchema.virtual('udid2').set(function (udid2) {
+  this._udid2 = udid2;
+});
+
+PublicKeySchema.virtual('udid2s').get(function () {
+  return this._udid2s;
+});
+
+PublicKeySchema.virtual('udid2s').set(function (udid2s) {
+  this._udid2s = udid2s;
+});
+
+PublicKeySchema.virtual('udid2sigs').get(function () {
+  return this._udid2sigs || [];
+});
+
+PublicKeySchema.virtual('udid2sigs').set(function (sigs) {
+  this._udid2sigs = (sigs && sigs.length) || [sigs];
+});
+
 PublicKeySchema.methods = {
 
   json: function () {

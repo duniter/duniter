@@ -66,6 +66,24 @@ KeySchema.statics.wasMember = function(fingerprint, amNumber, done){
   });
 }
 
+KeySchema.statics.getMembersOn = function(amNumber, done){
+  var Key = this.model('Key');
+  Key.find({ "asMember.joins": { $lte: amNumber }, $where: memberHasNotLeftSince }, done);
+}
+
+KeySchema.statics.getVotersOn = function(amNumber, done){
+  var Key = this.model('Key');
+  Key.find({ "asVoter.joins": { $lte: amNumber }, $where: voterHasNotLeftSince }, done);
+}
+
+function memberHasNotLeftSince() {
+  return this.asMember.leaves.length == 0 || _(this.asMember.leaves).max() < _(this.asMember.joins).max();
+}
+
+function voterHasNotLeftSince() {
+  return this.asVoter.leaves.length == 0 || _(this.asVoter.leaves).max() < _(this.asVoter.joins).max();
+}
+
 KeySchema.statics.voterJoin = function(amNumber, fingerprint, done){
   var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { $push: { "asVoter.joins": amNumber }}, done);

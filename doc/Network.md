@@ -114,7 +114,7 @@ Such a document informs a node on current node's status, either connected, up, o
 ```plain
 Version: VERSION
 Currency: CURRENCY_NAME
-Status: NEW|UP|DOWN
+Status: NEW|NEW_BACK|UP|UP_BACK|DOWN
 ```
 
 ## Wallets Hash Table

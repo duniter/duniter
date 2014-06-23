@@ -100,7 +100,7 @@ program
 program
   .command('sync [host] [port]')
   .description('Tries to synchronise data with remote uCoin node')
-  .action(connect(function (host, port, server, conf) {
+  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (host, port, server, conf) {
 
     // Disable daemon
     conf.sync.AMDaemon = "OFF";

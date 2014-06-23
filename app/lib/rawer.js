@@ -38,9 +38,7 @@ module.exports = new function() {
   };
 
   this.getVote = function (json) {
-    var raw = that.getAmendment(json.amendment);
-    raw += json.signature;
-    return unix2dos(raw);
+    return unix2dos(signed(that.getAmendment(json.amendment), json));
   };
 
   this.getPubkey = function (json) {

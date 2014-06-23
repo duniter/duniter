@@ -6,9 +6,9 @@ var fifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 
-module.exports = function (peeringService) {
+module.exports = function (eventEmitter) {
   
-  peeringService.on('pubkey', function(pubkey, peers) {
+  eventEmitter.on('pubkey', function(pubkey, peers) {
     logger.debug('new pubkey to be sent to %s peers', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
@@ -19,7 +19,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('vote', function(vote, peers) {
+  eventEmitter.on('vote', function(vote, peers) {
     logger.debug('new vote to be sent to %s peers', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
@@ -30,7 +30,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('transaction', function(transaction, peers) {
+  eventEmitter.on('transaction', function(transaction, peers) {
     logger.debug('new transaction to be sent to %s peers', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
@@ -41,7 +41,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('wallet', function(wallet, peers) {
+  eventEmitter.on('wallet', function(wallet, peers) {
     logger.debug('new Wallet to be sent to %s peers', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
@@ -52,7 +52,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('peer', function(peering, peers, done) {
+  eventEmitter.on('peer', function(peering, peers, done) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
@@ -71,7 +71,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('status', function(status, peers, internal) {
+  eventEmitter.on('status', function(status, peers, internal) {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
@@ -84,8 +84,8 @@ module.exports = function (peeringService) {
           sent(err);
           if (!err && res && res.statusCode == 400 && !internal) {
             logger.debug('sending self peering to peer %s', peer.keyID());
-            peeringService.emit('peer', peeringService.peer(), [peer], function (err, res, body) {
-              peeringService.emit('status', status, [peer], true);
+            eventEmitter.emit('peer', eventEmitter.peer(), [peer], function (err, res, body) {
+              eventEmitter.emit('status', status, [peer], true);
             });
           } 
         });
@@ -93,7 +93,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('membership', function(membership, peers) {
+  eventEmitter.on('membership', function(membership, peers) {
     logger.debug('new membership to be sent to %s peers', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
@@ -104,7 +104,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('voting', function(voting, peers) {
+  eventEmitter.on('voting', function(voting, peers) {
     logger.debug('new voting to be sent to %s peers', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
@@ -115,7 +115,7 @@ module.exports = function (peeringService) {
     });
   });
   
-  peeringService.on('forward', function(forward, peers, done) {
+  eventEmitter.on('forward', function(forward, peers, done) {
     fifo.push(function (sent) {
       async.forEach(peers, function(peer, callback){
         // Do propagating

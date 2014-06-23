@@ -11,11 +11,11 @@ var sha1       = require('sha1');
 var vucoin     = require('vucoin');
 var logger     = require('./logger')('daemon');
 
-module.exports = function (conn, PeeringService, ContractService) {
-  return new Daemon(conn, PeeringService, ContractService);
+module.exports = function (conn, PeeringService, ContractService, SyncService) {
+  return new Daemon(conn, PeeringService, ContractService, SyncService);
 };
 
-function Daemon (conn, PeeringService, ContractService) {
+function Daemon (conn, PeeringService, ContractService, SyncService) {
 
   var Amendment = conn.model('Amendment');
   var Key       = conn.model('Key');
@@ -101,7 +101,7 @@ function Daemon (conn, PeeringService, ContractService) {
                 Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
                   if (!err && wasVoter) {
                     logger.debug("Asking CF for SELF peer");
-                    askCF(current, PeeringService.peer(), function (err, json) {
+                    SyncService.getFlow(current.number + 1, Algorithm, function (err, json) {
                       // Do nothing with result: it has been done by SyncService (self-submitted the vote)
                       callback(err);
                     });

@@ -132,4 +132,8 @@ CommunityFlowSchema.statics.getForAmendmentAndAlgo = function (amNumber, algo, d
   this.find({ amendmentNumber: amNumber, algorithm: algo }, done);
 }
 
+CommunityFlowSchema.statics.getByIssuerAlgoAmendmentHashAndNumber = function (issuer, algo, amHash, amNumber, done) {
+  this.find({ amendmentNumber: amNumber, amendmentHash: amHash, issuer: issuer, algorithm: algo }, done);
+}
+
 module.exports = CommunityFlowSchema;

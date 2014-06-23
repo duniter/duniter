@@ -192,6 +192,20 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
             next('Algorithm must be either AnyKey or 1Sig');
             return;
           }
+          CommunityFlow.getByIssuerAlgoAmendmentHashAndNumber(entry.issuer, entry.algorithm, entry.amendmentHash, entry.amendmentNumber, next);
+        },
+        function (cf, next) {
+          if (cf && cf.length > 0) {
+            next('Already received');
+            return;
+          }
+          Amendment.findPromotedByNumber(entry.amendmentNumber, next);
+        },
+        function (promoted, next) {
+          if (promoted.hash != entry.amendmentHash) {
+            next('CommunityFlow rejected: based on a non-promoted amendment');
+            return;
+          }
           // OK
           if (entry.selfGenerated) {
             // Check Merkles & create ckeys
@@ -347,13 +361,15 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
             function (json, next){
               var am = new Amendment(json.amendment);
               var issuer = PeeringService.cert.fingerprint;
-              var hash = json.signature.unix2dos().hash();
+              var hash = (am.getRaw() + json.signature).unix2dos().hash();
               var basis = json.amendment.number;
-              Vote.getByIssuerHashAndBasis(issuer, hash, basis, next);
+              Vote.getByIssuerHashAndBasis(issuer, hash, basis, function (err, vote) {
+                next(err, vote, hash, basis);
+              });
             },
-            function (vote, next){
+            function (vote, hash, basis, next){
               if (!vote) {
-                next('Strange! self vote was not found ... not recorded?');
+                next('Strange! self vote was not found for #' + basis + '-' + hash + '... not recorded?');
                 return;
               }
               vote.selfGenerated = true;

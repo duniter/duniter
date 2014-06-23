@@ -120,7 +120,7 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
     async.waterfall([
       function (next){
         // Init Daemon
-        that.daemon = require('./app/lib/daemon')(that.conn, that.PeeringService, that.ContractService);
+        that.daemon = require('./app/lib/daemon')(that.conn, that.PeeringService, that.ContractService, that.SyncService);
         that.daemon.init(conf, that.PeeringService.cert.fingerprint);
         // Start autonomous contract daemon
         that.daemon.start();

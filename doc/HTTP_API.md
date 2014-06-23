@@ -40,6 +40,7 @@
       * [coins/view/[COIN_ID]/history](#coinsviewcoin_idhistory)
   * [registry/](#registry)
       * [parameters](#parameters)
+      * [flow](#flow)
       * [community/members (POST)](#communitymembers-post)
       * [community/members/[PGP_FINGERPRINT]/current](#communitymemberspgp_fingerprintcurrent)
       * [community/members/[PGP_FINGERPRINT]/history](#communitymemberspgp_fingerprinthistory)
@@ -110,6 +111,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |               `-- owner
     `-- registry/
         |-- parameters
+        |-- flow
         |-- community/
         |   |-- members/
         |   |   `-- [PGP_FINGERPRINT]/
@@ -1440,6 +1442,45 @@ Consensus         | Percent of voters required to valid an Amendment
 MSExpires         | Delay by which a membership is to be considered expired
 VTExpires         | Delay by which a voting is to be considered expired
 
+#### `flow`
+
+**Goal**
+
+POST a [Community flow](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#community_flow) document, in order to notify of a node's computed community changes.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`document` | The raw community flow document. | POST
+`signature` | The signature of the `document` parameter. | POST
+
+**Returns**
+
+Posted document, json format.
+```json
+{
+  "communityflow": {
+    "raw": "Version: 1\r\nCurrency: beta_brousouf\r\nAmendment: 1-58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7\r\nIssuer: C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\nDate: 1401894350\r\nAlgorithm: AnyKey\r\n",
+    "version": 1,
+    "amendmentNumber": 1,
+    "membersJoiningCount": 0,
+    "membersLeavingCount": 0,
+    "votersJoiningCount": 0,
+    "votersLeavingCount": 0,
+    "currency": "beta_brousouf",
+    "amendmentHash": "58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7",
+    "algorithm": "AnyKey",
+    "membersJoiningRoot": "",
+    "membersLeavingRoot": "",
+    "votersJoiningRoot": "",
+    "votersLeavingRoot": "",
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "date": 1401894350
+  }
+}
+```
+
 #### `community/members (POST)`
 
 **Goal**
@@ -1845,7 +1886,7 @@ Name              | Value                                                       
 
 **Returns**
 
-Current node's voting amendment + signature, or HTTP 404 if not available yet.
+Current node's community flow, or HTTP 404 if not available yet.
 ```json
 {
   "communityflow": {

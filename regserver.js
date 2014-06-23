@@ -181,6 +181,7 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
   this.listenREG = function (app) {
     var reg = require('./app/controllers/registry')(that, that.conf);
     app.get(    '/registry/parameters',                             reg.parameters);
+    app.get(    '/registry/flow',                                   reg.communityFlowPost);
     app.post(   '/registry/community/members',                      reg.membershipPost);
     app.get(    '/registry/community/members/:fpr/current',         reg.membershipCurrent);
     app.get(    '/registry/community/members/:fpr/history',         reg.membershipHistory);

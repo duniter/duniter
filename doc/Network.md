@@ -98,14 +98,14 @@ Keys:
 8EFD86FB78A56A5145ED7739DCB00C78581C5375
 95CB0BFD2977C761298D9624E4B4D4C72A39974A
 ```
-Field | Description
------ | -----------
-`Version` | denotes the current structure version.
+Field      | Description
+-----      | -----------
+`Version`  | denotes the current structure version.
 `Currency` | contains the name of the currency.
-`From` | PGP key identifier asking for this forwarding request.
-`To` | PGP key identifier targeted by this forwarding request.
-`Forward` | the forwarding rule, either `ALL` to forward ANY incoming transaction or `KEYS` to forward only transactions whose sender or recipient belongs to values of `Keys`.
-`Keys` | if `Forward: KEYS`, tells the keys whose transaction shall be forwarded. Must not be present if `Forward: ALL`.
+`From`     | PGP key identifier asking for this forwarding request.
+`To`       | PGP key identifier targeted by this forwarding request.
+`Forward`  | the forwarding rule, either `ALL` to forward ANY incoming transaction or `KEYS` to forward only transactions whose sender or recipient belongs to values of `Keys`.
+`Keys`     | if `Forward: KEYS`, tells the keys whose transaction shall be forwarded. Must not be present if `Forward: ALL`.
 
 ## Status request
 
@@ -115,7 +115,17 @@ Such a document informs a node on current node's status, either connected, up, o
 Version: VERSION
 Currency: CURRENCY_NAME
 Status: NEW|NEW_BACK|UP|UP_BACK|DOWN
+From: SENDER_PGP_FINGERPRINT
+To: RECIPIENT_PGP_FINGERPRINT
 ```
+
+Field      | Description
+-----      | -----------
+`Version`  | denotes the current structure version.
+`Currency` | contains the name of the currency.
+`Status    | Status type to be sent.
+`From`     | Issuer's fingerprint of the message.
+`To`       | Recipient's fingerprint for this message.
 
 ## Wallets Hash Table
 

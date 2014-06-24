@@ -236,7 +236,7 @@ MerkleSchema.statics.updateSignaturesOfAmendment = function (am, hash, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateForWalletEntries= function (previousHash, newHash, done) {
+MerkleSchema.statics.updateForWalletEntries= function (newHash, done) {
   var Merkle = this.model('Merkle');
   async.waterfall([
     function (next) {
@@ -245,7 +245,7 @@ MerkleSchema.statics.updateForWalletEntries= function (previousHash, newHash, do
       });
     },
     function (merkle, next) {
-      merkle.push(newHash, previousHash);
+      merkle.push(newHash);
       merkle.save(function (err) {
         next(err);
       });

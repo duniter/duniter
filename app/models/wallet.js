@@ -52,9 +52,12 @@ WalletSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
+    ["version", "currency", "fingerprint", "hosters", "trusts", "requiredTrusts"].forEach(function (key) {
       json[key] = obj[key];
     });
+    json.date = this.date && this.date.timestamp();
+    json.sigDate = this.sigDate && this.sigDate.timestamp();
+    json.raw = this.getRaw();
     return { signature: this.signature, entry: json };
   },
 

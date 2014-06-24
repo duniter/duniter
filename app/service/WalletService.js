@@ -50,7 +50,7 @@ function WalletService (conn) {
         });
       },
       function (entry, previousHash, next) {
-        Merkle.updateForWalletEntries(previousHash, entry.hash, function (err) {
+        Merkle.updateForWalletEntries(entry.fingerprint, function (err) {
           next(err, entry);
         });
       }

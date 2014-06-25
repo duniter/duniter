@@ -219,6 +219,11 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
             next('CommunityFlow rejected: based on a non-promoted amendment');
             return;
           }
+          entry.save(function (err) {
+            next(err);
+          });
+        },
+        function (next) {
           // OK
           if (entry.selfGenerated) {
             // Check Merkles & create ckeys
@@ -239,11 +244,6 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           }
         },
         function (res, next){
-          entry.save(function (err) {
-            next(err);
-          });
-        },
-        function (next){
           cflowlog.debug('✔ CF from %s', entry.issuer);
           that.tryToVote(entry.amendmentNumber + 1, entry.algorithm, function (err) {
             if (err) logger.warn(err);

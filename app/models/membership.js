@@ -37,6 +37,14 @@ MembershipSchema.virtual('pubkey').set(function (am) {
   this._pubkey = am;
 });
 
+MembershipSchema.virtual('amHash').get(function () {
+  return this._amHash;
+});
+
+MembershipSchema.virtual('amHash').set(function (am) {
+  this._amHash = am;
+});
+
 MembershipSchema.methods = {
 
   keyID: function () {

@@ -110,6 +110,8 @@ module.exports = new function() {
     raw += "Version: " + json.version + "\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Status: " + json.status + "\n";
+    raw += "From: " + json.from + "\n";
+    raw += "To: " + json.to + "\n";
     return unix2dos(raw);
   };
 
@@ -147,6 +149,8 @@ module.exports = new function() {
     raw += "Issuer: " + json.issuer + "\n";
     raw += "Date: " + json.date.timestamp() + "\n";
     raw += "Membership: " + json.membership + "\n";
+    raw += "AmendmentNumber: " + json.amNumber + "\n";
+    raw += "AmendmentHash: " + json.amHash + "\n";
     return unix2dos(raw);
   };
 
@@ -161,6 +165,8 @@ module.exports = new function() {
     raw += "Registry: " + json.type + "\n";
     raw += "Issuer: " + json.issuer + "\n";
     raw += "Date: " + json.date.timestamp() + "\n";
+    raw += "AmendmentNumber: " + json.amNumber + "\n";
+    raw += "AmendmentHash: " + json.amHash + "\n";
     return unix2dos(raw);
   };
 

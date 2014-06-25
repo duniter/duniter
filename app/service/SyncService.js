@@ -78,6 +78,14 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           async.waterfall([
             function (next){
               mlogger.debug('⬇ %s %s', entry.issuer, entry.membership);
+              if (ContractService.current().number != entry.amNumber) {
+                next('Wrong amendment number: should be \'' + ContractService.current().number + '\' but was \'' + entry.amNumber + '\'');
+                return;
+              }
+              if (ContractService.current().hash != entry.amHash) {
+                next('Wrong amendment hash: should be \'' + ContractService.current().hash + '\' but was \'' + entry.amHash + '\'');
+                return;
+              }
               dependingInterval(entry,
                 function isTooLate (entryTS, minimalTS) {
                   next('Too late for this membership (' + toDateString(entryTS) + '): your membership must be at least ' + toDateString(minimalTS) + ', time of current amendment. Retry.');
@@ -85,8 +93,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                 function isTooEarly (entryTS, nextTS) {
                   next('Too early for this membership (' + toDateString(entryTS) + '): your membership must be max ' + toDateString(nextTS - 1) + ' (next AM date)');
                 },
-                function isGood (am) {
-                  entry.amNumber = am && am.number >= 0 ? am.number : -1;
+                function isGood () {
                   Key.wasMember(entry.issuer, entry.amNumber, next);
                 }
               );
@@ -141,6 +148,14 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           async.waterfall([
             function (next){
               vlogger.debug('⬇ %s\'s voting', "0x" + entry.issuer.substr(32));
+              if (ContractService.current().number != entry.amNumber) {
+                next('Wrong amendment number: should be \'' + ContractService.current().number + '\' but was \'' + entry.amNumber + '\'');
+                return;
+              }
+              if (ContractService.current().hash != entry.amHash) {
+                next('Wrong amendment hash: should be \'' + ContractService.current().hash + '\' but was \'' + entry.amHash + '\'');
+                return;
+              }
               dependingInterval(entry,
                 function isTooLate () {
                   next('Too late for this voting: amendment already voted. Retry.');
@@ -148,8 +163,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                 function isTooEarly () {
                   next('Too early for this voting: retry when next amendment is voted.');
                 },
-                function isGood (am) {
-                  entry.amNumber = am && am.number >= 0 ? am.number : -1;
+                function isGood () {
                   async.waterfall([
                     function (next) {
                       // Get already existing Membership for same amendment

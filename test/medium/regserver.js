@@ -149,31 +149,11 @@ describe('A server', function () {
       until(regServer, 'pubkey'),
       until(regServer, 'vote', 3),
       until(regServer, 'transaction'),
-      until(regServer, 'membership'),
       until(regServer, 'voting'),
       until(regServer, 'communityflow'),
     ], done);
     // regServer.write(pubkeyUbot1);
     regServer.write(pubkeyCat);
-    regServer.write({
-      "version": "1",
-      "currency": "beta_brousouf",
-      "type": "MEMBERSHIP",
-      "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "membership": "IN",
-      "date": new Date(1398906000*1000),
-      "sigDate": new Date(1401209569*1000),
-      "signature": "-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\niQEcBAABCAAGBQJThMLhAAoJED0ZtAvOQO313bIH/jKZYnD0MBHlOPSRmojVuH33\n6EHbuK3JBJgPL6RtHW0OAXYRHN+7sLKcAIF3SxhoKapFcjO+JaJj8GtlyzvEhAEn\nqgJvDirMEJWiTZSf7YDyj1B6125eW8qMtvK+UnngZPHHI6+lQJVUOLdMoAo6aCad\n4hpsjYn5jQRxBCA2BqkyGccSfS2uH2kYRxZOM0H3/jMwCy9ieJ6SMLhV8ez4R+n+\nIyOuzuSCC4vqT6RFzThp9BhqxJoTRDxvMipqW2rKPaBscPAqmieYhwSaWaYDW0ec\ndV8kjDbVEhkWNrG30njkxLKbcLggVhXdTUoPwzzwu4G7WDwcniJKuFW6mzPD5b8=\n=QveX\n-----END PGP SIGNATURE-----\n",
-    });
-    regServer.write({
-      "version": "1",
-      "currency": "beta_brousouf",
-      "type": "VOTING",
-      "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "date": new Date(1398906000*1000),
-      "sigDate": new Date(1401209571*1000),
-      "signature": "-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\niQEcBAABCAAGBQJThMLjAAoJEAh7o1HArrbf3EMH/jB1W0RJahpQzf653zu79GOe\nSuolSa9LNe5dCmoAlQ5ilCcf6amQDrZ5JmY/8DC7q2IkNMaOaUQ/sQbtAbXjzBhI\nM3zDBiUzX6J9IZ+DjuMPR98AoCORG6+1SA/ed6Je6j/hmSVx/F14PD2NjId7My9H\ne5eg74RdziqmerDfA0AENPxRWc418ah+MZi8NdXHl6r/oPuQX2oucFuAawtKFEL5\n53yLcEI3iXRCfnx724O6D5oh2iD/09sfUFv7Mqd3EmUAB0VCDH6VhZ6QSDeDHmu4\nQhPoJVTtb4YzHeAHVQI7bpgboLpwWKEuXAQPvTHRt2LsB5Vmjl5f55WMldwo3BM=\n=qtq7\n-----END PGP SIGNATURE-----\n",
-    });
     regServer.write({
       amendment: {
         "version": 1,
@@ -201,6 +181,17 @@ describe('A server', function () {
       },
       "pubkey": { fingerprint: "D049002A6724D35F867F64CC087BA351C0AEB6DF" },
       "sigDate": new Date()
+    });
+    regServer.write({
+      "version": "1",
+      "currency": "beta_brousouf",
+      "type": "VOTING",
+      "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "date": new Date(1398895200*1000),
+      "sigDate": new Date(1401209571*1000),
+      "amNumber": 0,
+      "amHash": "65A55999086155BF6D3E4EB5D475E46E4E2307D2",
+      "signature": "-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\niQEcBAABCAAGBQJThMLjAAoJEAh7o1HArrbf3EMH/jB1W0RJahpQzf653zu79GOe\nSuolSa9LNe5dCmoAlQ5ilCcf6amQDrZ5JmY/8DC7q2IkNMaOaUQ/sQbtAbXjzBhI\nM3zDBiUzX6J9IZ+DjuMPR98AoCORG6+1SA/ed6Je6j/hmSVx/F14PD2NjId7My9H\ne5eg74RdziqmerDfA0AENPxRWc418ah+MZi8NdXHl6r/oPuQX2oucFuAawtKFEL5\n53yLcEI3iXRCfnx724O6D5oh2iD/09sfUFv7Mqd3EmUAB0VCDH6VhZ6QSDeDHmu4\nQhPoJVTtb4YzHeAHVQI7bpgboLpwWKEuXAQPvTHRt2LsB5Vmjl5f55WMldwo3BM=\n=qtq7\n-----END PGP SIGNATURE-----\n",
     });
     regServer.write({
       amendment: {

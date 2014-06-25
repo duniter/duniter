@@ -10,7 +10,9 @@ var Status = require('../../app/models/statusMessage');
 var rawStatus = "" +
   "Version: 1\r\n" +
   "Currency: beta_brousouf\r\n" +
-  "Status: UP\r\n";
+  "Status: UP\r\n" +
+  "From: 630FF0BE40FAC3C0801620D9734C4575ED412D68\r\n" +
+  "To: 5E2BB6D1377695BEAF1EA9BFF34399A4FAB40813\r\n";
 
 describe('Status', function(){
 
@@ -37,12 +39,12 @@ describe('Status', function(){
       assert.equal(st.status, 'UP');
     });
 
-    it('its computed hash should be 9512566C8EE0994C2D11D09459984362243AF260', function(){
-      assert.equal(st.hash, '9512566C8EE0994C2D11D09459984362243AF260');
+    it('its computed hash should be 06A5E9B84D2E7865549CDB5C8C958E35F166B513', function(){
+      assert.equal(st.hash, '06A5E9B84D2E7865549CDB5C8C958E35F166B513');
     });
 
-    it('its manual hash should be 9512566C8EE0994C2D11D09459984362243AF260', function(){
-      assert.equal(sha1(st.getRaw()).toUpperCase(), '9512566C8EE0994C2D11D09459984362243AF260');
+    it('its manual hash should be 06A5E9B84D2E7865549CDB5C8C958E35F166B513', function(){
+      assert.equal(sha1(st.getRaw()).toUpperCase(), '06A5E9B84D2E7865549CDB5C8C958E35F166B513');
     });
   });
 });

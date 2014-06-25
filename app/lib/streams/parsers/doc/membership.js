@@ -15,6 +15,8 @@ function MembershipParser (onError) {
     {prop: "currency",          regexp: /Currency: (.*)/},
     {prop: "type",              regexp: /Registry: (.*)/},
     {prop: "issuer",            regexp: /Issuer: (.*)/},
+    {prop: "amNumber",          regexp: /AmendmentNumber: (.*)/},
+    {prop: "amHash",            regexp: /AmendmentHash: (.*)/},
     {prop: "membership",        regexp: /Membership: (.*)/},
     {prop: "date",              regexp: /Date: (.*)/, parser: parseDateFromTimestamp}
   ];
@@ -34,6 +36,8 @@ function MembershipParser (onError) {
       'BAD_MEMBERSHIP': 153,
       'BAD_REGISTRY_TYPE': 154,
       'BAD_DATE': 155,
+      'BAD_AM_NUMBER': 156,
+      'BAD_AM_HASH': 157,
     }
     if(!err){
       // Version
@@ -49,6 +53,16 @@ function MembershipParser (onError) {
       // Fingerprint
       if(obj.issuer && !obj.issuer.match(/^[A-Z\d]+$/))
         err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect issuer field"};
+    }
+    if(!err){
+      // AmendmentNumber
+      if(!obj.amNumber || !obj.amNumber.match(/^\d+$/))
+        err = {code: codes['BAD_AM_NUMBER'], message: "Incorrect AmendmentNumber field"};
+    }
+    if(!err){
+      // AmendmentHash
+      if(obj.amHash && !obj.amHash.match(/^[A-Z\d]+$/))
+        err = {code: codes['BAD_AM_HASH'], message: "Incorrect AmendmentHash field"};
     }
     if(!err){
       // Membership

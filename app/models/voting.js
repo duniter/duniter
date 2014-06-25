@@ -36,6 +36,14 @@ VotingSchema.virtual('pubkey').set(function (am) {
   this._pubkey = am;
 });
 
+VotingSchema.virtual('amHash').get(function () {
+  return this._amHash;
+});
+
+VotingSchema.virtual('amHash').set(function (am) {
+  this._amHash = am;
+});
+
 VotingSchema.methods = {
 
   keyID: function () {

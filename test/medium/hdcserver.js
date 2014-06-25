@@ -40,11 +40,12 @@ describe('A server', function () {
 
   var hdcServer;
   beforeEach(function (done) {
-    if (hdcServer) {
-      hdcServer.disconnect();
-    }
     hdcServer = ucoin.createHDCServer({ name: 'hdc1', resetData: true });
     hdcServer.on('services', done);
+  })
+
+  afterEach(function (done) {
+    hdcServer.disconnect(done);
   })
   
   it('HDC should emit error on wrong data type', function (done) {

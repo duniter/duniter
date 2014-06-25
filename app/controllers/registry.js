@@ -236,10 +236,7 @@ function RegistryBinding (registryServer, conf) {
         ParametersService.getAmendmentNumberAndAlgo(req, next);
       },
       function (amNumber, algo, next){
-        if (amNumber == 0)
-          SyncService.getOrCreateAM0(algo, next);
-        else
-          Amendment.getTheOneToBeVoted(amNumber, algo, next);
+        Amendment.getTheOneToBeVoted(amNumber, algo, next);
       },
 
     ], function (err, am) {

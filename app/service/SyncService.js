@@ -18,8 +18,7 @@ var cflowlog = require('../lib/logger')('cflow');
 mathlog.setLevel('INFO');
 
 // Constants
-var WITH_VOTING    = true;
-var WITHOUT_VOTING = false;
+var NO_CHANGES = "NO_CHANGES";
 
 module.exports.get = function (conn, conf, signsDetached, ContractService, PeeringService, daemonJudgesTimeForVote) {
   return new SyncService(conn, conf, signsDetached, ContractService, PeeringService, daemonJudgesTimeForVote);
@@ -224,18 +223,18 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           if (entry.selfGenerated) {
             // Check Merkles & create ckeys
             async.parallel({
-              membersJoining: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersIn.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', true),
-              membersLeaving: async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.membersOut.bind(Merkle), entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', true),
-              votersJoining:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersIn.bind(Merkle),   entry.amendmentNumber + 1, entry.algorithm), '+', 'AnyKey', false),
-              votersLeaving:  async.apply(createCKeysFromLocalMerkle, async.apply(Merkle.votersOut.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '-', 'AnyKey', false),
+              membersJoining: async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.membersIn.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '+', entry.algorithm, true),
+              membersLeaving: async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.membersOut.bind(Merkle), entry.amendmentNumber + 1, entry.algorithm), '-', entry.algorithm, true),
+              votersJoining:  async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.votersIn.bind(Merkle),   entry.amendmentNumber + 1, entry.algorithm), '+', entry.algorithm, false),
+              votersLeaving:  async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.votersOut.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '-', entry.algorithm, false),
             }, next);
           } else {
             // Increment count of witnesses
             async.parallel({
-              membersJoining: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersIn',  '+', 'AnyKey', true),
-              membersLeaving: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersOut', '-', 'AnyKey', true),
-              votersJoining:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersIn',   '+', 'AnyKey', false),
-              votersLeaving:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersOut',  '-', 'AnyKey', false),
+              membersJoining: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersIn',  '+', entry.algorithm, true),
+              membersLeaving: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersOut', '-', entry.algorithm, true),
+              votersJoining:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersIn',   '+', entry.algorithm, false),
+              votersLeaving:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersOut',  '-', entry.algorithm, false),
             }, next);
           }
         },
@@ -277,87 +276,82 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
         }
       },
       function (next){
-        getOrCreateAmendment(amNumber, conf.sync.Algorithm, next);
+        getOrCreateAmendment(amNumber, algo, next);
       },
       function (amNext, next){
         if (daemonJudgesTimeForVote(amNext)) {
 
-          var amReal = amNext;
           var raw = "";
           async.waterfall([
             function (next){
               // Prepare AM
-              if (algo != amNext.algo) {
-                amReal = new Amendment();
-                amNext.copyTo(amReal);
-                raw = amReal.getRaw();
-                async.waterfall([
-                  function (next){
-                    async.parallel({
-                      membersJoining: async.apply(lookForCKeys, '+', algo, true),
-                      membersLeaving: async.apply(lookForCKeys, '-', algo, true),
-                      votersJoining:  async.apply(lookForCKeys, '+', algo, false),
-                      votersLeaving:  async.apply(lookForCKeys, '-', algo, false),
-                      members:        async.apply(Key.getMembers.bind(Key)),
-                      voters:         async.apply(Key.getVoters.bind(Key)),
-                    }, next);
-                  },
-                  function (res, next){
-                    // Update Merkle of proposed members
-                    var members = [];
-                    var voters = [];
-                    res.members.forEach(function(m){
-                      members.push(m.fingerprint);
-                    });
-                    res.voters.forEach(function(m){
-                      voters.push(m.fingerprint);
-                    });
-                    amReal.membersChanges = [];
-                    amReal.votersChanges = [];
-                    res.membersJoining.forEach(function(fpr){
-                      amReal.membersChanges.push('+' + fpr);
-                      members.push(fpr);
-                    });
-                    res.membersLeaving.forEach(function(fpr){
-                      amReal.membersChanges.push('-' + fpr);
-                      var index = members.indexOf(fpr);
-                      if (~index) {
-                        members.splice(index, 1);
-                      }
-                    });
-                    res.votersJoining.forEach(function(fpr){
-                      amReal.votersChanges.push('+' + fpr);
-                      voters.push(fpr);
-                    });
-                    res.votersLeaving.forEach(function(fpr){
-                      amReal.votersChanges.push('-' + fpr);
-                      var index = voters.indexOf(fpr);
-                      if (~index) {
-                        voters.splice(index, 1);
-                      }
-                    });
-                    var merkleMembers = new Merkle();
-                    var merkleVoters = new Merkle();
-                    members.sort();
-                    voters.sort();
-                    merkleMembers.initialize(members);
-                    merkleVoters.initialize(voters);
-                    amReal.membersChanges.sort();
-                    amReal.membersCount = members.length;
-                    amReal.membersRoot = merkleMembers.root();
-                    amReal.votersChanges.sort();
-                    amReal.votersCount = voters.length;
-                    amReal.votersRoot = merkleVoters.root();
-                    amReal.save(function (err) {
-                      raw = amReal.getRaw();
-                      next(err);
-                    });
-                  }
-                ], next);
-              } else {
-                raw = amReal.getRaw();
-                next();
-              }
+              async.waterfall([
+                function (next){
+                  async.parallel({
+                    membersJoining: async.apply(lookForCKeys, '+', algo, true),
+                    membersLeaving: async.apply(lookForCKeys, '-', algo, true),
+                    votersJoining:  async.apply(lookForCKeys, '+', algo, false),
+                    votersLeaving:  async.apply(lookForCKeys, '-', algo, false),
+                    members:        async.apply(Key.getMembers.bind(Key)),
+                    voters:         async.apply(Key.getVoters.bind(Key)),
+                  }, next);
+                },
+                function (res, next){
+                  // Update Merkle of proposed members
+                  var members = [];
+                  var voters = [];
+                  if (~res.membersJoining.indexOf(NO_CHANGES)) res.membersJoining = [];
+                  if (~res.membersLeaving.indexOf(NO_CHANGES)) res.membersLeaving = [];
+                  if (~res.votersJoining.indexOf(NO_CHANGES)) res.votersJoining = [];
+                  if (~res.votersLeaving.indexOf(NO_CHANGES)) res.votersLeaving = [];
+                  res.members.forEach(function(m){
+                    members.push(m.fingerprint);
+                  });
+                  res.voters.forEach(function(m){
+                    voters.push(m.fingerprint);
+                  });
+                  amNext.membersChanges = [];
+                  amNext.votersChanges = [];
+                  res.membersJoining.forEach(function(fpr){
+                    amNext.membersChanges.push('+' + fpr);
+                    members.push(fpr);
+                  });
+                  res.membersLeaving.forEach(function(fpr){
+                    amNext.membersChanges.push('-' + fpr);
+                    var index = members.indexOf(fpr);
+                    if (~index) {
+                      members.splice(index, 1);
+                    }
+                  });
+                  res.votersJoining.forEach(function(fpr){
+                    amNext.votersChanges.push('+' + fpr);
+                    voters.push(fpr);
+                  });
+                  res.votersLeaving.forEach(function(fpr){
+                    amNext.votersChanges.push('-' + fpr);
+                    var index = voters.indexOf(fpr);
+                    if (~index) {
+                      voters.splice(index, 1);
+                    }
+                  });
+                  var merkleMembers = new Merkle();
+                  var merkleVoters = new Merkle();
+                  members.sort();
+                  voters.sort();
+                  merkleMembers.initialize(members);
+                  merkleVoters.initialize(voters);
+                  amNext.membersChanges.sort();
+                  amNext.membersCount = members.length;
+                  amNext.membersRoot = merkleMembers.root();
+                  amNext.votersChanges.sort();
+                  amNext.votersCount = voters.length;
+                  amNext.votersRoot = merkleVoters.root();
+                  amNext.save(function (err) {
+                    raw = amNext.getRaw();
+                    next(err);
+                  });
+                }
+              ], next);
             },
             function (next){
               signsDetached(raw, next);
@@ -412,36 +406,33 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
         f(amNumber, algo, { leaves: true }, next);
       },
       function (json, next){
-        async.forEach(json.leaves, function(leaf, callback){
-          CKey.increment(leaf, op, algo, isMember, callback);
-        }, next);
+        incrementForKeys(json.leaves, op, algo, isMember, done);
       },
     ], done);
   }
 
-  function createCKeysFromLocalMerkle (merkleGet, op, algo, isMember, done) {
+  function updateCKeysFromLocalMerkle (merkleGet, op, algo, isMember, done) {
     async.waterfall([
       function (next){
         merkleGet(next);
       },
       function (merkle, next){
-        createCKeys(merkle.leaves(), op, algo, isMember, next);
+        incrementForKeys(merkle.leaves(), op, algo, isMember, done);
       },
     ], done);
   }
 
-  function createCKeys (leaves, op, algo, isMember, done) {
-    async.forEach(leaves, function(leaf, callback){
-      var ck = new CKey();
-      ck.fingerprint = leaf;
-      ck.operation = op;
-      ck.algorithm = algo;
-      ck.member = isMember;
-      ck.count = 1;
-      ck.save(function (err) {
-        callback(null, ck);
+  function incrementForKeys (keys, op, algo, isMember, done) {
+    if (keys.length == 0) {
+      CKey.increment(NO_CHANGES, op, algo, isMember, function (err) {
+        done(err);
       });
-    }, done);
+    }
+    else {
+      async.forEach(keys, function(leaf, callback){
+        CKey.increment(leaf, op, algo, isMember, callback);
+      }, done);
+    }
   }
 
   this.getVote = function (amNumber, algo, done) {
@@ -592,10 +583,6 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
     });
   }
 
-  this.getOrCreateAM0 = function (algo, done) {
-    getOrCreateAmendment(0, algo, done);
-  }
-
   function getOrCreateAmendment (amNumber, algo, done) {
     Amendment.getTheOneToBeVoted(amNumber, algo, function (err, am) {
       if (am) done(null, am);
@@ -636,43 +623,6 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           amNext.monetaryMass = 0;
           amNext.generated = conf.sync.AMStart;
         }
-        computeLocalMSandVTChanges(basis, algo, next);
-      },
-      function (membersJoining, membersLeaving, votersJoining, votersLeaving, members, voters, next){
-        membersJoining.forEach(function (fpr) {
-          members.push(fpr);
-        });
-        votersJoining.forEach(function (fpr) {
-          voters.push(fpr);
-        });
-        membersLeaving.forEach(function(fpr){
-          var index = members.indexOf(fpr);
-          if (~index) members.splice(index, 1);
-        });
-        votersLeaving.forEach(function(fpr){
-          var index = voters.indexOf(fpr);
-          if (~index) voters.splice(index, 1);
-        });
-        members.sort();
-        voters.sort();
-        var treeMembers = merkle(members, 'sha1').process();
-        var treeVoters = merkle(voters, 'sha1').process();
-        amNext.membersCount = members.length;
-        amNext.membersRoot = treeMembers.root();
-        membersJoining.forEach(function (fpr) {
-          amNext.membersChanges.push('+' + fpr);
-        });
-        membersLeaving.forEach(function (fpr) {
-          amNext.membersChanges.push('-' + fpr);
-        });
-        amNext.votersCount = voters.length;
-        amNext.votersRoot = treeVoters.root();
-        votersJoining.forEach(function (fpr) {
-          amNext.votersChanges.push('+' + fpr);
-        });
-        votersLeaving.forEach(function (fpr) {
-          amNext.votersChanges.push('-' + fpr);
-        });
         amNext.save(function (err) {
           next(err);
         });

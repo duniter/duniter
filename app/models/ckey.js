@@ -20,7 +20,25 @@ CKeySchema.pre('save', function (next) {
 });
 
 CKeySchema.statics.increment = function(leaf, op, algo, isMember, done) {
-  this.update({ fingerprint: leaf, operation: op, algorithm: algo, member: isMember }, { $inc: { count: 1 }}, done);
+  var CKey = this;
+  async.waterfall([
+    function (next){
+      CKey.find({ fingerprint: leaf, operation: op, algorithm: algo, member: isMember }, next);
+    },
+    function (ckeys, next){
+      var ckey = ckeys[0] || new CKey({
+        fingerprint: leaf,
+        operation: op,
+        algorithm: algo,
+        member: isMember,
+        count: 0
+      });
+      ckey.count++;
+      ckey.save(function (err) {
+        next(err, ckey);
+      })
+    },
+  ], done);
 }
 
 CKeySchema.statics.findThose = function(op, algo, isMember, done) {

@@ -51,8 +51,6 @@ describe('A server', function () {
         "UD0": 100,
         "UDPercent": 0.1,
         "Consensus": 0.33,
-        "MSExpires": 15778800,
-        "VTExpires": 15778800,
         "AMDaemon" : "OFF",
         "Algorithm" : "AnyKey"
       }

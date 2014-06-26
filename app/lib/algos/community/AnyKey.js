@@ -4,7 +4,7 @@ module.exports = function (pubkey, ctx, amNext, done) {
   common.computeIndicators(pubkey, ctx, amNext, context2AnalyticalMembership, context2AnalyticalVoting, done);
 }
 
-var VTExpires = 3600*24*90; // Every 90 days
+var VTExpires = 3600*24*14; // Every 14 days
 
 
 /**

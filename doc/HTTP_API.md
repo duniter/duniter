@@ -1422,9 +1422,7 @@ The synchronization parameters.
     "UD0": 100,
     "UDPercent": 0.007376575,
     "CoinAlgo": "Base2Draft",
-    "Consensus": 0.6666666666666666,
-    "MSExpires": 15778800,
-    "VTExpires": 15778800
+    "Consensus": 0.6666666666666666
 }
 ```
 
@@ -1439,8 +1437,6 @@ UD0               | Universal Dividend initial value
 UDPercent         | Universal Dividend % of monetary mass growth
 CoinAlgo          | Algorithm used for generating coins (this also gives interpretation of coins' value in each amendment)
 Consensus         | Percent of voters required to valid an Amendment
-MSExpires         | Delay by which a membership is to be considered expired
-VTExpires         | Delay by which a voting is to be considered expired
 
 #### `flow`
 

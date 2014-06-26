@@ -306,8 +306,6 @@ function overrideConf(conf) {
       UD0: program.ud0,
       UDPercent: program.udpercent,
       Consensus: program.consensus,
-      MSExpires: program.msvalidity,
-      VTExpires: program.vtvalidity,
       Algorithm: program.algorithm
     }
   };
@@ -335,8 +333,6 @@ function overrideConf(conf) {
   if (cli.sync.UD0)                         conf.sync.UD0       = cli.sync.UD0;
   if (cli.sync.UDPercent)                   conf.sync.UDPercent = cli.sync.UDPercent;
   if (cli.sync.Consensus)                   conf.sync.Consensus = cli.sync.Consensus;
-  if (cli.sync.MSExpires)                   conf.sync.MSExpires = cli.sync.MSExpires;
-  if (cli.sync.VTExpires)                   conf.sync.VTExpires = cli.sync.VTExpires;
   if (cli.sync.Algorithm)                   conf.sync.Algorithm = cli.sync.Algorithm;
 
   // Specific internal settings

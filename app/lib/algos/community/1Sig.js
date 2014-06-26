@@ -51,7 +51,7 @@ module.exports = function (isMemberFunc, getPubkeyFunc) {
   };
 }
 
-var VTExpires = 3600*24*90; // Every 90 days
+var VTExpires = 3600*24*14; // Every 14 days
 
 
 /**

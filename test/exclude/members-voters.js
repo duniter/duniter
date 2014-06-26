@@ -33,9 +33,7 @@ var conf = {
     UDFreq: 2, // Dividend every 2 seconds
     UD0: 145,
     UDPercent: 0.5, // So it can be tested under 4 UD - this ultra high value of UD growth
-    Consensus: 2/3,
-    MSExpires: 8, // seconds, so AM9 will see ]AM0;AM1] members be kicked out at AM9
-    VTExpires: 3 // seconds, so AM4 will see not-actualized voters kicked out
+    Consensus: 2/3
   },
   createNext: true,
   isValidPubkey: function (pubkey, am) {

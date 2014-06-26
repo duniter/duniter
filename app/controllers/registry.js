@@ -49,8 +49,7 @@ function RegistryBinding (registryServer, conf) {
       UD0: conf.sync.UD0,
       UDPercent: conf.sync.UDPercent,
       UDMinCoin: conf.sync.UDMinCoin,
-      Consensus: conf.sync.Consensus,
-      MSExpires: conf.sync.MSExpires
+      Consensus: conf.sync.Consensus
     }, null, "  "));
   };
 

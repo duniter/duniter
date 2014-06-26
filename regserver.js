@@ -161,12 +161,6 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
       if (!conf.sync.Consensus) {
         errors.push('Autovoting enabled but %required votes not given');
       }
-      if (!conf.sync.MSExpires) {
-        errors.push('Autovoting enabled but membership validity not given');
-      }
-      if (!conf.sync.VTExpires) {
-        errors.push('Autovoting enabled but voting validity not given');
-      }
     }
     done(errors[0]);
   };

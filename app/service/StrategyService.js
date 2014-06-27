@@ -188,7 +188,7 @@ function StrategyService (conn, conf, ContractService, SyncService, alertDeamon)
             var now = new Date().timestamp();
             alertDeamon((am.generated + conf.sync.AMFreq - now)*1000);
           }
-          next();
+          next(null, true);
         },
       ], cb);
     }, done);

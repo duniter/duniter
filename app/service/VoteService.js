@@ -110,9 +110,9 @@ function VoteService (conn, StrategyService) {
         },
         function (am, recordedVote, next) {
           // Promotion time
-          StrategyService.tryToPromote(am, function (err, result) {
+          StrategyService.tryToPromote(am, function (err, wasPromoted) {
             if (err) logger.warn(err);
-            next(null, am, recordedVote);
+            next(null, am, recordedVote, wasPromoted ? true : false);
           });
         }
       ], cb);

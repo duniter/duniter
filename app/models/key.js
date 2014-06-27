@@ -76,6 +76,22 @@ KeySchema.statics.getVotersOn = function(amNumber, done){
   Key.find({ "asVoter.joins": { $lte: amNumber }, $where: voterHasNotLeftSince }, done);
 }
 
+KeySchema.statics.getLastVotingAmNumber = function(fpr, done){
+  var Key = this.model('Key');
+  async.waterfall([
+    function (next){
+      Key.find({ fingerprint: fpr }, next);
+    },
+    function (keys, next){
+      if (keys.length == 0) {
+        next('Key not found');
+        return;
+      }
+      next(null, keys[0].asVoter.joins.length == 0 ? null : _(keys[0].asVoter.joins).max());
+    },
+  ], done);
+}
+
 function memberHasNotLeftSince() {
   return this.asMember.leaves.length == 0 || _(this.asMember.leaves).max() < _(this.asMember.joins).max();
 }

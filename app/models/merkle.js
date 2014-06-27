@@ -31,6 +31,7 @@ MerkleSchema.methods = {
     for (var i = 0; i < tree.levels(); i++) {
       this.levels[i] = tree.level(i);
     }
+    return this;
   },
 
   remove: function (leaf) {

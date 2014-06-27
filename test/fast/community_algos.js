@@ -47,56 +47,56 @@ var NO_CHANGES = 0;
 var doingNothing = {
   currentMembership: null,
   nextMembership:    null,
-  currentVoting:     null,
+  voterOn:           null,
   nextVoting:        null,
 };
 
 var justJoining = {
   currentMembership: null,
   nextMembership:    { membership: 'IN', date: theDay },
-  currentVoting:     null,
+  voterOn:           null,
   nextVoting:        null,
 };
 
 var justLeaving = {
   currentMembership: { membership: 'IN' },
   nextMembership:    { membership: 'OUT', date: theDay },
-  currentVoting:     null,
+  voterOn:           null,
   nextVoting:        null,
 };
 
 var askingToVote = {
   currentMembership: { membership: 'IN' },
   nextMembership:    null,
-  currentVoting:     null,
+  voterOn:           null,
   nextVoting:        { date: theDay },
 };
 
 var askingToVoteFutureMember = {
   currentMembership: null,
   nextMembership:    { membership: 'IN', date: theDay },
-  currentVoting:     null,
+  voterOn:           null,
   nextVoting:        { date: theDay },
 };
 
 var askingToLeave = {
   currentMembership: { membership: 'IN' },
   nextMembership:    { membership: 'OUT', date: theDay },
-  currentVoting:     { date: theDay },
+  voterOn:           amGenerated,
   nextVoting:        null,
 };
 
 var aStaticOldVoter = {
   currentMembership: { membership: 'IN' },
   nextMembership:    null,
-  currentVoting:     { date: theDayAYearBefore },
+  voterOn:           amGenerated - 3600*24*15,
   nextVoting:        null,
 };
 
 var aStaticOldMember = {
   currentMembership: { membership: 'IN', date: theDayAYearBefore },
   nextMembership:    null,
-  currentVoting:     null,
+  voterOn:           null,
   nextVoting:        null,
 };
 

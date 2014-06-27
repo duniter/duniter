@@ -79,12 +79,12 @@ function context2AnalyticalMembership (pubkey, context, done) {
 * Converts voter context vars to analytical expression parameters (for computing functions' namespace)
 */
 function context2AnalyticalVoting (context, amNext, memberLeaving, done) {
-  var ctx = context || { currentVoting: null, nextVoting: null };
-  var isVoter = ctx.currentVoting;
-  var isTooOldVT = (isVoter && ctx.currentVoting.date < getVTExclusionDate(amNext));
+  var ctx = context || { voterOn: null, nextVoting: null };
+  var isVoter = ctx.voterOn > 0;
+  var isTooOldVT = isVoter && ctx.voterOn + VTExpires < amNext.generated;
   var vt = [
-    isVoter ? 0 : 1,
-    isVoter ? 1 : 0,
+    !isTooOldVT && !isVoter ? 1 : 0,
+    !isTooOldVT && isVoter ? 1 : 0,
     isTooOldVT ? 1 : 0
   ];
   var hasNextVoting = ctx.nextVoting;
@@ -94,11 +94,4 @@ function context2AnalyticalVoting (context, amNext, memberLeaving, done) {
     memberLeaving == 1 ? 1 : 0
   ];
   done(null, vt, p);
-}
-
-function getVTExclusionDate (amNext) {
-  var nextTimestamp = amNext.generated;
-  var exclusionDate = new Date();
-  exclusionDate.setTime(nextTimestamp*1000 - VTExpires*1000);
-  return exclusionDate;
 }

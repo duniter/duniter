@@ -38,9 +38,12 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
           function (next){
             server.VoteService.submit(obj, next);
           },
-          function (am, vote, next){
+          function (am, vote, wasPromoted, next){
             logger.debug('✔ VOTE of %s for %s-%s', "0x" + obj.keyID, obj.amendment.number, obj.amendment.hash);
             server.emit('vote', vote);
+            if (wasPromoted) {
+              server.emit('promoted', vote.amendment);
+            }
             next(null, vote.json());
           },
         ], next);

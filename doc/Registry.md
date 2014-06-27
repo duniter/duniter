@@ -225,7 +225,7 @@ Vvar = MAX[-1, MIN[1, !Voter*(+VT -ML) + Voter*(-ML) + Voterx*(-1 +VT -ML)]]
 
 Using this formula, it can be known at any moment how to apply variation of the voter for next amendment.
 
-> N.B.: `Voterx` parameter: voter is considered **eligibile** if his last voting document's date does not exceeds a certain duration `vtvalidity` which is algorithm dependent. For `AnyKey` and `1Sig`, this value is **14 days**, inclusive.
+> N.B.: `Voterx` parameter: voter is considered **eligibile** if his last appearance's date according to the Contract does not exceeds a certain duration `vtvalidity` which is algorithm dependent. For `AnyKey` and `1Sig`, this value is **14 days**, inclusive.
 
 > N.B.: `Voter`, `!Voter` and `Voterx` fields are exclusive, so at any time `Voter + !Voter + Voterx = 1`.
 

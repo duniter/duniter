@@ -267,6 +267,7 @@ describe('A server', function () {
       "date": new Date(),
       "algorithm": "AnyKey",
       "sigDate": new Date(),
+      "issuer": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
       "selfGenerated": true
     });
   });

@@ -347,6 +347,10 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                   amNext.votersChanges.sort();
                   amNext.votersCount = voters.length;
                   amNext.votersRoot = merkleVoters.root();
+                  // Update UniversalDividend
+                  updateUniversalDividend(amNext, next);
+                },
+                function (next) {
                   amNext.save(function (err) {
                     raw = amNext.getRaw();
                     next(err);

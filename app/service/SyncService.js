@@ -782,11 +782,10 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
             },
             function (indicators, next){
               var isMember = ~members.indexOf(fpr);
-              var isBecoming = indicators.membership == 1;
-              if (!isMember && isBecoming)                         membersJoining.push(fpr);
-              if (isMember && indicators.membership == -1)         membersLeaving.push(fpr);
-              if ((isMember || isBecoming) && indicators.key == 1) votersJoining.push(fpr);
-              if (isMember && indicators.key == -1)                votersLeaving.push(fpr);
+              if (indicators.membership == 1)  membersJoining.push(fpr);
+              if (indicators.membership == -1) membersLeaving.push(fpr);
+              if (isMember && indicators.key == 1)  votersJoining.push(fpr);
+              if (isMember && indicators.key == -1) votersLeaving.push(fpr);
               next();
             },
           ], cb);

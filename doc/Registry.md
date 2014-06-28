@@ -174,8 +174,8 @@ Here are 2 tables on how to compute analitically members & voters changes:
 
         |  PKx  |  IN  |   OUT
 ------  | ----- | ---- | -----
-Member  |  -2   |   0  |  -1
-!Member |  -2   |  +1  |   0
+Member  |  -1   |   0  |  -1
+!Member |  -1   |  +1  |   0
 
 Where:
 * `Member` has value `1` if the computed key is currently a member, otherwise `0`.

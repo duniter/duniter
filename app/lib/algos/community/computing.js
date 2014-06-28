@@ -30,7 +30,7 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param p array of changes
   */
   function IsMember (p) {
-    return - 2*p[0] - p[2];
+    return - p[0] - p[2];
   }
 
   /**
@@ -39,7 +39,7 @@ Computing.Membership.Delta = function (ms, p, done) {
   * @param p array of changes
   */
   function IsNotMember (p) {
-    return - 2*p[0] + p[1];
+    return - p[0] + p[1];
   }
 
   done(null, ms[0]*IsMember(p) + ms[1]*IsNotMember(p));

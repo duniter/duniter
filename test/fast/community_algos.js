@@ -224,12 +224,12 @@ describe('1Sig (with non-eligible pubkey):', function(){
 
   var wrongPubkey = { raw: pubkeySnowRaw };
 
-  it('a non-member doing nothing', function (done) {
-    OneSig(wrongPubkey, doingNothing, { generated: amGenerated },              expect(NEGATIVE, NEGATIVE, done));
+  it('a non-member doing nothing (should not happen in real)', function (done) {
+    OneSig(wrongPubkey, doingNothing, { generated: amGenerated },             expect(NEGATIVE, NEGATIVE, done));
   });
 
   it('a non-member wants to join', function (done) {
-    OneSig(wrongPubkey, justJoining, { generated: amGenerated },              expect(NEGATIVE, NEGATIVE, done));
+    OneSig(wrongPubkey, justJoining, { generated: amGenerated },              expect(NO_CHANGES, NO_CHANGES, done));
   });
 
   it('a member wants to leave', function (done) {
@@ -240,8 +240,8 @@ describe('1Sig (with non-eligible pubkey):', function(){
     OneSig(wrongPubkey, askingToVote, { generated: amGenerated },             expect(NEGATIVE, NEGATIVE, done));
   });
 
-  it('a future member wants to vote', function (done) {
-    OneSig(wrongPubkey, askingToVoteFutureMember, { generated: amGenerated }, expect(NEGATIVE, NEGATIVE, done));
+  it('a future member wants to vote (should not happen, since he can\'t be a future member', function (done) {
+    OneSig(wrongPubkey, askingToVoteFutureMember, { generated: amGenerated }, expect(NO_CHANGES, POSITIVE, done));
   });
 
   it('a voter wants to leave as a member', function (done) {

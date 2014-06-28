@@ -49,6 +49,7 @@ Field | Description
 #### Validity
 
 A [Membership](#membership) is to be considered valid if:
+
 * `Issuer` matches signature's key ID
 * `Membership` matches either `IN` or `OUT` value
 
@@ -140,39 +141,41 @@ Value `90-8518C1F053B6F5BB9D27ED37F4061AE5CC083511` is a Merkle summary of a Mer
 
 ## Algorithms
 
-Algorithms are sets of rules defining how to settle community variations: joins and leaves of members & voters. In this document, 2 algorithms will be described: `1Sig` and `AnyKey` which are rather simple and more "testing" algorithms to understand the principles. Those algos share the same common pattern, and only differs in the acceptance of the members' public key signatures.
+Algorithms are sets of rules defining how to settle community variations: i.e. joins and leaves of members & voters. In this document, 2 algorithms will be described: `1Sig` and `AnyKey` which are rather simple and more "testing" algorithms to understand the principles. Those algos share the same common pattern, and only differs in the acceptance of members' public key signatures.
 
 ### `AnyKey`
 
-This algorithms accepts **any key** as valid for a membership. Thus, a key asking for joining will always be accepted in the community, without checking any signature on the key. Furthermore, the key will always be valid while key hasn't been revoked.
+This algorithms accepts **any key** as valid for a membership: it does not require any signature from other key. Thus, a key asking for joining will always be accepted in the community, without checking any signature on the key. Furthermore, the key will always be valid while key hasn't been revoked.
 
-> Once a key has been accepted, this algorithm will never exclude it
+> Once a key has been accepted, this algorithm will never exclude it.
 
 ### `1Sig`
 
 This algorithm *accepts* any key that have *at least* 1 signature from an existing member in the community. Others are simply refused. Furthermore, the key will always be valid while key hasn't been revoked.
 
+> Once a key has been accepted, this algorithm will never exclude it.
+
 ### Common rules
 
 `1Sig` and `AnyKey` algorithms relies on Membership & Voting documents.
 
+#### UserID
+
 Both algorithms **only accepts** keys with an [OpenUDC udid2](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164) in it. For `1Sig` algorithm, checked signatures are those on `udid2` user ID.
 
-#### Membership computing
+> If a key contains several udid2, the one with most verified members' signatures count will be used.
 
-When receiving a valid [Membership](#membership), node SHOULD interprete it for each [membership algorithm](#membership-algorithms) it handles, *if this membership's `Date` is in interval [ CURRENT_AM_GENERATED_ON ; NEXT_AM_GENERATED_ON [*. If it does so, the impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the afferent [Merkle summary](#merkle-summary)): `MembersJoining` for `IN` membership, and `MembersLeaving` for `OUT` membership.
+#### Voters
 
-#### Voting computing
-
-When receiving a valid [Voting](#voting), node SHOULD interprete it. The impact MUST be visible under [CommunityFlow](#community-flow) document thereafter (no directly, but present behind the `VotersJoining` [Merkle summary](#merkle-summary)).
+For both algorithms, **only members may be voters**.
 
 ### Computing community flows
 
-Here are 2 tables on how to compute analitically members & voters changes:
+Here are 2 tables on how to compute analytically members & voters changes:
 
 #### Membership computing
 
-        |  PKx  |  IN  |   OUT
+State   |  PKx  |  IN  |   OUT
 ------  | ----- | ---- | -----
 Member  |  -1   |   0  |  -1
 !Member |  -1   |  +1  |   0
@@ -201,7 +204,7 @@ Using this formula, it can be known at any moment how to apply variation of the 
 
 #### Voting computing
 
-        |     | VT  | ML
+State   |     | VT  | ML
 ------  | --- | --- | ---
 !Voter  |  0  | +2  | -3
 Voter   |  0  | +2  | -3
@@ -265,7 +268,7 @@ For each leave behind each Merkle summary, increment by `1` the value of how man
 
 If local node estimates enough CommunityFlows were received to have a common agreement, then:
 
-a. Compute the average number of witnesses for each key (note: a special key named "nokey" also exists for empty Merkle summaries): AVG
-b. Compute the standard variation of witnesses for each key: STDVAR
-c. Picks the keys having witnesses count [AVG - STDVAR ; AVG + STDVAR]
-d. Vote for next amendment using those keys
+  1. Compute the average number of witnesses for each key (note: a special key named "nokey" also exists for empty Merkle summaries): `AVG`
+  2. Compute the standard variation of witnesses for each key: `STDVAR`
+  3. Picks the keys having witnesses count `[AVG - STDVAR ; AVG + STDVAR]`
+  4. Vote for next amendment using those keys

@@ -15,7 +15,6 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
       },
       treatment: function (server, obj, next) {
         logger.debug('⬇ PUBKEY %s', obj.fingerprint);
-        // console.log(obj);
         async.waterfall([
           function (next){
             server.PublicKeyService.submitPubkey(obj, next);

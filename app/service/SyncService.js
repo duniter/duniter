@@ -146,7 +146,6 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           var current = null;
           async.waterfall([
             function (next){
-              vlogger.debug('⬇ %s\'s voting', "0x" + entry.issuer.substr(32));
               if (ContractService.current().number != entry.amNumber) {
                 next('Wrong amendment number: should be \'' + ContractService.current().number + '\' but was \'' + entry.amNumber + '\'');
                 return;
@@ -156,8 +155,8 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                 return;
               }
               dependingInterval(entry,
-                function isTooLate () {
-                  next('Too late for this voting: amendment already voted. Retry.');
+                function isTooLate (entryTS, minimalTS) {
+                  next('Too late for this voting(' + toDateString(entryTS) + '): amendment already voted. Retry.');
                 },
                 function isTooEarly () {
                   next('Too early for this voting: retry when next amendment is voted.');
@@ -228,18 +227,18 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           if (false && entry.selfGenerated) {
             // Check Merkles & create ckeys
             async.parallel({
-              membersJoining: async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.membersIn.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '+', entry.algorithm, true),
-              membersLeaving: async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.membersOut.bind(Merkle), entry.amendmentNumber + 1, entry.algorithm), '-', entry.algorithm, true),
-              votersJoining:  async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.votersIn.bind(Merkle),   entry.amendmentNumber + 1, entry.algorithm), '+', entry.algorithm, false),
-              votersLeaving:  async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.votersOut.bind(Merkle),  entry.amendmentNumber + 1, entry.algorithm), '-', entry.algorithm, false),
+              membersJoining: async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.membersIn.bind(Merkle),  entry.amendmentNumber, entry.algorithm), '+', entry.algorithm, true),
+              membersLeaving: async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.membersOut.bind(Merkle), entry.amendmentNumber, entry.algorithm), '-', entry.algorithm, true),
+              votersJoining:  async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.votersIn.bind(Merkle),   entry.amendmentNumber, entry.algorithm), '+', entry.algorithm, false),
+              votersLeaving:  async.apply(updateCKeysFromLocalMerkle, async.apply(Merkle.votersOut.bind(Merkle),  entry.amendmentNumber, entry.algorithm), '-', entry.algorithm, false),
             }, next);
           } else {
             // Increment count of witnesses
             async.parallel({
-              membersJoining: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersIn',  '+', entry.algorithm, true),
-              membersLeaving: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.membersOut', '-', entry.algorithm, true),
-              votersJoining:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersIn',   '+', entry.algorithm, false),
-              votersLeaving:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber + 1, 'node.registry.amendment.votersOut',  '-', entry.algorithm, false),
+              membersJoining: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber, 'node.registry.amendment.membersIn',  '+', entry.algorithm, true),
+              membersLeaving: async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber, 'node.registry.amendment.membersOut', '-', entry.algorithm, true),
+              votersJoining:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber, 'node.registry.amendment.votersIn',   '+', entry.algorithm, false),
+              votersLeaving:  async.apply(updateCKeysFromRemoteMerkle, entry.issuer, entry.amendmentNumber, 'node.registry.amendment.votersOut',  '-', entry.algorithm, false),
             }, next);
           }
         },
@@ -293,7 +292,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                     votersJoining:  async.apply(lookForCKeys, '+', algo, false),
                     votersLeaving:  async.apply(lookForCKeys, '-', algo, false),
                     members:        async.apply(Key.getMembers.bind(Key)),
-                    voters:         async.apply(Key.getVoters.bind(Key)),
+                    voters:         async.apply(Key.getVoters.bind(Key))
                   }, next);
                 },
                 function (res, next){
@@ -314,7 +313,8 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                   amNext.votersChanges = [];
                   res.membersJoining.forEach(function(fpr){
                     amNext.membersChanges.push('+' + fpr);
-                    members.push(fpr);
+                    if (members.indexOf(fpr) == -1)
+                      members.push(fpr);
                   });
                   res.membersLeaving.forEach(function(fpr){
                     amNext.membersChanges.push('-' + fpr);
@@ -325,7 +325,8 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                   });
                   res.votersJoining.forEach(function(fpr){
                     amNext.votersChanges.push('+' + fpr);
-                    voters.push(fpr);
+                    if (voters.indexOf(fpr) == -1)
+                      voters.push(fpr);
                   });
                   res.votersLeaving.forEach(function(fpr){
                     amNext.votersChanges.push('-' + fpr);
@@ -492,10 +493,11 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
       done('Not available for AM#0');
       return;
     }
+    var basis = amNumber - 1;
     fifoSelfCommunityFlow.push(function (cb) {
       async.waterfall([
         function (next){
-          CommunityFlow.getSelf(amNumber - 1, algo, function (err, flow) {
+          CommunityFlow.getSelf(basis, algo, function (err, flow) {
             next(null, flow);
           });
         },
@@ -508,7 +510,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           var now = new Date();
           async.waterfall([
             function (next){
-              Amendment.findPromotedByNumber(amNumber - 1, next);
+              Amendment.findPromotedByNumber(basis, next);
             },
             function (amPrevious, next){
               if (daemonJudgesTimeForVote({ generated: amPrevious.generated + conf.sync.AMFreq })) {
@@ -525,14 +527,14 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                 var raw = "";
                 async.waterfall([
                   function (next) {
-                    computeLocalMSandVTChanges(amNumber, algo, next);
+                    computeLocalMSandVTChanges(basis, algo, next);
                   },
                   function (membersJoining, membersLeaving, votersJoining, votersLeaving, members, voters, next){
                     raw = cf.getRaw();
                     async.parallel({
                       membersJoining: function(cb) {
                         async.waterfall([
-                          async.apply(Merkle.membersIn.bind(Merkle), amNumber, algo),
+                          async.apply(Merkle.membersIn.bind(Merkle), basis, algo),
                           function (merkle, next) {
                             merkle.initialize(membersJoining);
                             merkle.save(function(err){
@@ -547,7 +549,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                       },
                       membersLeaving: function(cb) {
                         async.waterfall([
-                          async.apply(Merkle.membersOut.bind(Merkle), amNumber, algo),
+                          async.apply(Merkle.membersOut.bind(Merkle), basis, algo),
                           function (merkle, next) {
                             merkle.initialize(membersLeaving);
                             merkle.save(function(err){
@@ -562,7 +564,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                       },
                       votersJoining:  function(cb) {
                         async.waterfall([
-                          async.apply(Merkle.votersIn.bind(Merkle), amNumber, algo),
+                          async.apply(Merkle.votersIn.bind(Merkle), basis, algo),
                           function (merkle, next) {
                             merkle.initialize(votersJoining);
                             merkle.save(function(err){
@@ -577,7 +579,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                       },
                       votersLeaving:  function(cb) {
                         async.waterfall([
-                          async.apply(Merkle.votersOut.bind(Merkle), amNumber, algo),
+                          async.apply(Merkle.votersOut.bind(Merkle), basis, algo),
                           function (merkle, next) {
                             merkle.initialize(votersLeaving);
                             merkle.save(function(err){
@@ -618,6 +620,52 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
       ], cb);
     }, done);
   };
+
+  this.createSelfVoting = function (promoted, done) {
+    var vt = new Voting({
+      version: 1,
+      currency: currency,
+      type: "VOTING",
+      issuer: PeeringService.cert.fingerprint,
+      date: new Date(promoted.generated*1000),
+      amNumber: promoted.number,
+      amHash: promoted.hash
+    });
+    async.waterfall([
+      function (next){
+        signsDetached(vt.getRaw(), next);
+      },
+      function (signature, next){
+        vt.signature = signature;
+        PublicKey.getTheOne(PeeringService.cert.fingerprint, next);
+      },
+      function (pubkey, next) {
+        next(null, vt, pubkey);
+      },
+    ], done);
+  }
+
+  this.getLastVoterOn = function (fpr, done) {
+    // Get last presence timestamp as a voter
+    async.waterfall([
+      function (next){
+        Key.getLastVotingAmNumber(fpr, next);
+      },
+      function (amNumber, next){
+        if (amNumber == null) {
+          next('Key has never been a voter', null);
+          return;
+        } else {
+          Amendment.findPromotedByNumber(amNumber, next);
+        }
+      },
+      function (am, next){
+        next(null, am.generated);
+      },
+    ], function (err, voterOn) {
+      done(null, voterOn);
+    });
+  }
 
   function dependingInterval (entry, isTooLate, isTooEarly, isGood) {
     Amendment.current(function (err, am) {
@@ -758,25 +806,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
   function memberContext (member, amNumber, done) {
     async.parallel({
       voterOn: function (callback){
-        // Get last presence timestamp as a voter
-        async.waterfall([
-          function (next){
-            Key.getLastVotingAmNumber(member, next);
-          },
-          function (amNumber, next){
-            if (amNumber == null) {
-              next('Key has never been a voter', null);
-              return;
-            } else {
-              Amendment.findPromotedByNumber(amNumber, next);
-            }
-          },
-          function (am, next){
-            next(null, am.generated);
-          },
-        ], function (err, voterOn) {
-          callback(null, voterOn);
-        });
+        that.getLastVoterOn(member, callback);
       },
       nextMembership: function (callback){
         // Get lastly emitted & valid (not confirmed) membership FOR amNumber

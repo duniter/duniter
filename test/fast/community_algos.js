@@ -100,6 +100,13 @@ var aStaticOldMember = {
   nextVoting:        null,
 };
 
+var aVoterActualizing = {
+  currentMembership: { membership: 'IN' },
+  nextMembership:    null,
+  voterOn:           amGenerated - 1,
+  nextVoting:        { date: theDay },
+};
+
 describe('AnyKey:', function(){
 
   var pubkey = { raw: pubkeyCatRaw };
@@ -130,6 +137,10 @@ describe('AnyKey:', function(){
 
   it('a too old voter should be kicked from voters', function (done) {
     AnyKey(pubkey, aStaticOldVoter, { generated: amGenerated },          expect(NO_CHANGES, NEGATIVE, done));
+  });
+
+  it('a voter actualizing himself should be shown as "+"', function (done) {
+    AnyKey(pubkey, aVoterActualizing, { generated: amGenerated },        expect(NO_CHANGES, POSITIVE, done));
   });
 
   it('no too old member exist in AnyKey algorithm', function (done) {
@@ -188,6 +199,13 @@ describe('1Sig:', function(){
     async.series([
       function(cb) { OneSig(pubkey1Sig, aStaticOldVoter, { generated: amGenerated },           expect(NO_CHANGES, NEGATIVE, cb)) },
       function(cb) { OneSig(pubkeyNSig, aStaticOldVoter, { generated: amGenerated },           expect(NO_CHANGES, NEGATIVE, cb)) },
+    ], done);
+  });
+
+  it('a voter actualizing himself should be shown as "+"', function (done) {
+    async.series([
+      function(cb) { OneSig(pubkey1Sig, aVoterActualizing, { generated: amGenerated },         expect(NO_CHANGES, POSITIVE, cb)) },
+      function(cb) { OneSig(pubkeyNSig, aVoterActualizing, { generated: amGenerated },         expect(NO_CHANGES, POSITIVE, cb)) },
     ], done);
   });
 

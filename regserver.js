@@ -30,9 +30,11 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
+            logger.debug('⬇ %s\'s voting', "0x" + obj.issuer.substr(32));
             that.SyncService.submitVoting(obj, next);
           },
           function (voting, next){
+            logger.debug('✔ %s\'s voting', "0x" + obj.issuer.substr(32));
             that.emit('voting', voting);
             next(null, voting.json());
           },
@@ -87,7 +89,7 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
       },
       function (next){
         that.SyncService         = require('./app/service/SyncService').get(conn, that.conf, that.sign, that.ContractService, that.PeeringService, that.daemonJudgesTimeForVote);
-        that.StrategyService     = require('./app/service/StrategyService').get(conn, that.conf, that.ContractService, that.SyncService, that.alertDaemon);
+        that.StrategyService     = require('./app/service/StrategyService').get(conn, that.conf, that.ContractService, that.SyncService);
         that.VoteService         = require('./app/service/VoteService').get(conn, that.StrategyService);
         that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.MerkleService, that.PeeringService);
         that.WalletService       = require('./app/service/WalletService').get(conn);
@@ -127,10 +129,6 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
         next();
       },
     ], done);
-  };
-
-  this.alertDaemon = function (delay) {
-    that.daemon.nextIn(delay);
   };
 
   this.daemonJudgesTimeForVote = function (amNext) {
@@ -189,6 +187,45 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
     app.get(    '/registry/amendment/:am_number/:algo/self',        reg.askSelf);
     app.get(    '/registry/amendment/:am_number/:algo/flow',        reg.askFlow);
     app.get(    '/registry/amendment/:am_number/:algo/vote',        reg.askVote);
+  }
+
+  var SELF_ACTUALIZATION_FREQUENCY = 3600*24*10;
+
+  this.on('promoted', function (amendment) {
+    var nextTimestamp = amendment.generated + that.conf.sync.AMFreq;
+    async.waterfall([
+      function (next){
+        that.SyncService.getLastVoterOn(that.PeeringService.cert.fingerprint, next);
+      },
+      function (voterOn, next){
+        if (!voterOn || (voterOn + SELF_ACTUALIZATION_FREQUENCY - nextTimestamp <= 0)) {
+          actualizeVoting(amendment, next);
+        }
+        else next();
+      },
+    ], function (err, vt) {
+      if (err) logger.error(err);
+      var now = new Date().timestamp();
+      that.daemon.nextIn((nextTimestamp - now)*1000);
+    });
+  });
+
+  function actualizeVoting (amendmentBasis, done) {
+    async.waterfall([
+      function (next){
+        that.SyncService.createSelfVoting(amendmentBasis, next);
+      },
+      function (vt, pubkey, next){
+        var json = vt.json();
+        var obj = json.voting;
+        obj.type = obj.registry;
+        obj.signature = json.signature;
+        obj.pubkey = pubkey;
+        obj.date = new Date(obj.date*1000);
+        obj.sigDate = new Date();
+        that.singleWriteStream(next)._write(obj, null, next);
+      },
+    ], done);
   }
 }
 

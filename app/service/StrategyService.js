@@ -3,11 +3,11 @@ var async      = require('async');
 var _          = require('underscore');
 var logger     = require('../lib/logger')('amendment');
 
-module.exports.get = function (conn, conf, ContractService, SyncService, alertDeamon) {
-  return new StrategyService(conn, conf, ContractService, SyncService, alertDeamon);
+module.exports.get = function (conn, conf, ContractService, SyncService) {
+  return new StrategyService(conn, conf, ContractService, SyncService);
 };
 
-function StrategyService (conn, conf, ContractService, SyncService, alertDeamon) {
+function StrategyService (conn, conf, ContractService, SyncService) {
 
   var Amendment  = conn.model('Amendment');
   var Membership = conn.model('Membership');
@@ -171,7 +171,6 @@ function StrategyService (conn, conf, ContractService, SyncService, alertDeamon)
               cNumber += quantity;
               power++;
             });
-            // console.log(coins);
             async.forEach(coins, function(c, saved){
               c.save(function (err) {
                 saved(err);
@@ -184,10 +183,7 @@ function StrategyService (conn, conf, ContractService, SyncService, alertDeamon)
           }, next);
         },
         function (next){
-          if (alertDeamon) {
-            var now = new Date().timestamp();
-            alertDeamon((am.generated + conf.sync.AMFreq - now)*1000);
-          }
+          // Say amendment was promoted
           next(null, true);
         },
       ], cb);

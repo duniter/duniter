@@ -203,9 +203,9 @@ Using this formula, it can be known at any moment how to apply variation of the 
 
         |     | VT  | ML
 ------  | --- | --- | ---
-!Voter  |  0  | +1  | -2
-Voter   |  0  |  0  | -2
-Voterx  | -1  | +1  | -2
+!Voter  |  0  | +2  | -3
+Voter   |  0  | +2  | -3
+Voterx  | -1  | +2  | -3
 
 Where:
 * `Voter` has value `1` if the computed key is currently a voter, otherwise `0`.
@@ -216,11 +216,11 @@ Where:
 
 Resulting formula giving the variation of the member is:
 ```
-Vvar = !Voter*(+VT -ML) + Voter*(-ML) + Voterx*(-1 +VT -ML)
+Vvar = (!Voter + Voter)*(+2VT -3ML) + Voterx*(-1 +2VT -3ML)
 ```
 To also limit the variation, the formula MUST be bounded between [-1;1]:
 ```
-Vvar = MAX[-1, MIN[1, !Voter*(+VT -ML) + Voter*(-ML) + Voterx*(-1 +VT -ML)]]
+Vvar = MAX[-1, MIN[1, (!Voter + Voter)*(+2VT -3ML) + Voterx*(-1 +2VT -3ML)]]
 ```
 
 Using this formula, it can be known at any moment how to apply variation of the voter for next amendment.

@@ -66,15 +66,15 @@ Computing.Voting = function (vt, p, done) {
 }
 
 function IsNotVoter (p) {
-  return p[1] - 2*p[2];
+  return 2*p[1] - 3*p[2];
 }
 
 function IsVoter (p) {
-  return - 2*p[2];
+  return 2*p[1] - 3*p[2];
 }
 
 function IsVoterTooOld (p) {
-  return - p[0] + p[1] - 2*p[2];
+  return - p[0] + 2*p[1] - 3*p[2];
 }
 
 module.exports = Computing;

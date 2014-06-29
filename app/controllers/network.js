@@ -4,6 +4,7 @@ var vucoin           = require('vucoin');
 var _                = require('underscore');
 var openpgp          = require('openpgp');
 var es               = require('event-stream');
+var unix2dos         = require('../lib/unix2dos');
 var versionFilter    = require('../lib/streams/versionFilter');
 var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
@@ -51,6 +52,7 @@ function NetworkBinding (peerServer, conf) {
   this.forward = function (req, res) {
     var onError = http400(res);
     http2raw.forward(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parseForward(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
@@ -98,6 +100,7 @@ function NetworkBinding (peerServer, conf) {
   this.peersPost = function (req, res) {
     var onError = http400(res);
     http2raw.peer(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parsePeer(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
@@ -148,6 +151,7 @@ function NetworkBinding (peerServer, conf) {
   this.walletPOST = function(req, res) {
     var onError = http400(res);
     http2raw.wallet(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parseWallet(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
@@ -237,6 +241,7 @@ function NetworkBinding (peerServer, conf) {
   this.statusPOST = function(req, res) {
     var onError = http400(res);
     http2raw.status(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parseStatus(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))

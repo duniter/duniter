@@ -1,7 +1,8 @@
 var async     = require('async');
 var util      = require('util');
-var jpgp      = require('./app/lib/jpgp');
 var openpgp   = require('openpgp');
+var jpgp      = require('./app/lib/jpgp');
+var unix2dos  = require('./app/lib/unix2dos');
 var logger    = require('./app/lib/logger')('peerserver');
 var plogger   = require('./app/lib/logger')('peer');
 var flogger   = require('./app/lib/logger')('forward');
@@ -243,7 +244,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.initPubkey = function (conn, conf, done) {
     var parser = parsers.parsePubkey();
-    parser.end(that.PeeringService.cert.raw);
+    parser.end(unix2dos(that.PeeringService.cert.raw));
     parser.on('readable', function () {
       var parsed = parser.read();
       that.submit(parsed, false, done);

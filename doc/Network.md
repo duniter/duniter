@@ -2,6 +2,7 @@
 
 ## Contents
 * [Contents](#contents)
+* [Conventions](#conventions)
 * [Peering](#peering-entry)
 * [Forward](#forward-request)
 * [Status](#status-request)
@@ -9,6 +10,10 @@
   * [Structure](#wallet-message-structure)
   * [Signification](#wallets-fields-signification)
   * [Protection](#wallet-protections)
+
+## Conventions
+
+Network messages format follows conventions of [HDC format](./HDC.md#conventions) about documents and signatures.
 
 ## Peering entry
 

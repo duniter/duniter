@@ -2,6 +2,7 @@
 
 ## Contents
 * [Introduction](#introduction)
+* [Conventions](#conventions)
 * [Messages](#messages)
     * [Membership](#membership)
     * [Voting](#voting)
@@ -15,6 +16,10 @@
 ## Introduction
 
 uCoin already defines several messages describing a currency ([HDC messages](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md)) and its network ([UCG messages](https://github.com/c-geek/ucoin/blob/master/doc/UCG.md)). As it also aims at building an autonomous network regarding Monetary Contract evolution, it requires to define few more messages to handle members and voters changes.
+
+## Conventions
+
+Registry messages format follows conventions of [HDC format](./HDC.md#conventions) about documents and signatures.
 
 ### Membership
 

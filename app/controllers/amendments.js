@@ -1,6 +1,7 @@
 var async            = require('async');
 var _                = require('underscore');
 var es               = require('event-stream');
+var unix2dos         = require('../lib/unix2dos');
 var versionFilter    = require('../lib/streams/versionFilter');
 var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
@@ -128,6 +129,7 @@ function AmendmentBinding (hdcServer) {
     post: function (req, res) {
       var onError = http400(res);
       http2raw.vote(req, onError)
+        .pipe(unix2dos())
         .pipe(parsers.parseVote(onError))
         .pipe(versionFilter(onError))
         .pipe(currencyFilter(conf.currency, onError))

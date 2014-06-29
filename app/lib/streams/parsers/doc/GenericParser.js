@@ -1,11 +1,12 @@
 var sha1                 = require('sha1');
 var util                 = require('util');
 var stream               = require('stream');
-var unix2dos             = require('../../../unix2dos');
 var simpleLineExtract    = require('../../../simpleLineExtract');
 var multipleLinesExtract = require('../../../multipleLinesExtract');
 
 module.exports = GenericParser;
+
+var SIGNATURE_END_LENGTH = '-----END PGP SIGNATURE-----\r\n'.length;
 
 function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
 
@@ -45,8 +46,8 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     }
     if (!error) {
       var raw = that.rawerFunc(obj);
-      if (sha1(unix2dos(str)) != sha1(unix2dos(raw)))
-        error = 'Document has unkown fields or wrong format';
+      if (sha1(str) != sha1(raw))
+        error = 'Document has unkown fields or wrong line ending format';
     }
     done(error, obj);
   }
@@ -60,17 +61,17 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     return null;
   };
 
-  this._parse = function (toParse, obj) {
-    var str = unix2dos(toParse);
+  this._parse = function (str, obj) {
     if(!str){
       error = "No document given";
     } else {
       error = "";
       obj.hash = sha1(str).toUpperCase();
       // Divide in 2 parts: document & signature
-      var sigIndex = str.lastIndexOf('-----BEGIN PGP SIGNATURE-----');
-      if (~sigIndex) {
-        obj.signature = str.substring(sigIndex);
+      var sigIndex = str.lastIndexOf('-----BEGIN PGP SIGNATURE-----\r\n');
+      var endIndex = str.lastIndexOf('-----END PGP SIGNATURE-----\r\n');
+      if (~sigIndex && ~endIndex) {
+        obj.signature = str.substring(sigIndex, endIndex + SIGNATURE_END_LENGTH);
       }
       obj.hash = sha1(str).toUpperCase();
       obj.raw = ~sigIndex ? str.substring(0, sigIndex) : str;

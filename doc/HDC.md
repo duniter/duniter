@@ -5,6 +5,9 @@ HDC is an acronym for Human Dividend Currency. HDC aims at defining messages and
 ## Contents
 * [Contents](#contents)
 * [Vocabluary](#vocabulary)
+* [Conventions](#conventions)
+  * [Documents](#documents)
+  * [Signatures](#signatures)
 * [Public key](#public-key)
   * [Definition](#definition)
   * [Validity](#validity)
@@ -29,17 +32,41 @@ Monetary Contract | A document gathering the informations defining the community
 
 ## Conventions
 
-### HDC Data
+### Documents
 
 #### Line endings
 
-Please not **very carefully** that every HDC document's line **ENDS with a newline character Windows-style**, that is to say **<CR><LF>**.
+Please note **very carefully** that every HDC document's line **ENDS with a newline character**, *Windows-style*, that is to say `<CR><LF>`.
 
 This is a *very important information* as every document is subject to hashes, and Unix-style endings won't produce the expected hashes.
 
 #### Numbering
 
 For [Amendments](#amendment) and [Transactions](#transaction), number starts from `0`. That is, first amendments is `AM#0`, and first transaction of a node is `TX#0`.
+
+### Signatures
+
+#### Format
+
+A signature format follows [OpenPGP RFC4880's ASCII Armor definition](http://tools.ietf.org/html/rfc4880#section-6.2).
+
+Here is an [example](http://tools.ietf.org/html/rfc4880#section-6.6) of the expected structure:
+
+    -----BEGIN PGP MESSAGE-----
+    Version: OpenPrivacy 0.99
+    
+    yDgBO22WxBHv7O8X7O/jygAEzol56iUKiXmV+XmpCtmpqQUKiQrFqclFqUDBovzS
+    vBSFjNSiVHsuAA==
+    =njUN
+    -----END PGP MESSAGE-----
+
+#### Line endings
+
+Please note **very carefully** that every signature's line **ENDS with a newline character**, *Windows-style*, that is to say `<CR><LF>`.
+
+#### Delimitation
+
+As a consequence, any signature starts with `-----BEGIN PGP MESSAGE-----<CR><LF>` and ends with `-----END PGP MESSAGE-----<CR><LF>`.
 
 ## Public key
 

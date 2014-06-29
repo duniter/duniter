@@ -3,6 +3,7 @@ var util     = require('util');
 var async    = require('async');
 var _        = require('underscore');
 var stream   = require('stream');
+var unix2dos = require('../lib/unix2dos');
 var http2raw = require('../lib/streams/parsers/http2raw');
 var parsers  = require('../lib/streams/parsers/doc');
 var es       = require('event-stream');
@@ -83,6 +84,7 @@ function PKSBinding (pksServer) {
   this.add = function (req, res) {
     var onError = http400(res);
     http2raw.pubkey(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parsePubkey(onError))
       .pipe(pksServer.singleWriteStream(onError))
       .pipe(es.stringify())

@@ -3,6 +3,7 @@ var async            = require('async');
 var vucoin           = require('vucoin');
 var _                = require('underscore');
 var es               = require('event-stream');
+var unix2dos         = require('../lib/unix2dos');
 var versionFilter    = require('../lib/streams/versionFilter');
 var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
@@ -56,6 +57,7 @@ function RegistryBinding (registryServer, conf) {
   this.membershipPost = function (req, res) {
     var onError = http400(res);
     http2raw.membership(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parseMembership(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
@@ -118,6 +120,7 @@ function RegistryBinding (registryServer, conf) {
   this.votingPost = function (req, res) {
     var onError = http400(res);
     http2raw.voting(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parseVoting(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
@@ -196,6 +199,7 @@ function RegistryBinding (registryServer, conf) {
   this.communityFlowPost = function (req, res) {
     var onError = http400(res);
     http2raw.communityFlow(req, onError)
+      .pipe(unix2dos())
       .pipe(parsers.parseCommunityFlow(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))

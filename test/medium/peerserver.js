@@ -1,14 +1,15 @@
-var ucoin   = require('./../..');
-var async   = require('async');
-var should  = require('should');
-var fs      = require('fs');
-var parsers = require('../../app/lib/streams/parsers/doc');
-var logger  = require('../../app/lib/logger')('[peerserver]');
+var ucoin    = require('./../..');
+var async    = require('async');
+var should   = require('should');
+var fs       = require('fs');
+var unix2dos = require('../../app/lib/unix2dos');
+var parsers  = require('../../app/lib/streams/parsers/doc');
+var logger   = require('../../app/lib/logger')('[peerserver]');
 
-var pubkeyCatRaw = fs.readFileSync(__dirname + '/../data/lolcat.pub', 'utf8');
-var pubkeySnowRaw = fs.readFileSync(__dirname + '/../data/snow.pub', 'utf8');
-var pubkeyUbot1Raw = fs.readFileSync(__dirname + '/../data/ubot1.pub', 'utf8');
-var privkeyUbot1Raw = fs.readFileSync(__dirname + '/../data/ubot1.priv', 'utf8');
+var pubkeyCatRaw = unix2dos(fs.readFileSync(__dirname + '/../data/lolcat.pub', 'utf8'));
+var pubkeySnowRaw = unix2dos(fs.readFileSync(__dirname + '/../data/snow.pub', 'utf8'));
+var pubkeyUbot1Raw = unix2dos(fs.readFileSync(__dirname + '/../data/ubot1.pub', 'utf8'));
+var privkeyUbot1Raw = unix2dos(fs.readFileSync(__dirname + '/../data/ubot1.priv', 'utf8'));
 
 var pubkeyCat, pubkeySnow, pubkeyUbot1;
 var peerServer;

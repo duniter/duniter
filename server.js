@@ -301,13 +301,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     this.listenPKS(app);
   };
 
-  this.listenPKS = function (app) {
-    var pks = require('./app/controllers/pks')(this);
-    app.get(  '/pks/all',    pks.getAll);
-    app.get(  '/pks/lookup', pks.lookup);
-    app.post( '/pks/add',    pks.add);
-  };
-
   this.singleWriteStream = function (onError) {
     return new TempStream(that, onError);
   };

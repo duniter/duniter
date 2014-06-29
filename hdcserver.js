@@ -1,7 +1,7 @@
 var async   = require('async');
 var util    = require('util');
 var parsers = require('./app/lib/streams/parsers/doc');
-var Server  = require('./server');
+var PKSServer  = require('./pksserver');
 
 function HDCServer (dbConf, overrideConf, interceptors, onInit) {
 
@@ -9,24 +9,6 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
 
   var selfInterceptors = [
     {
-      // Pubkey
-      matches: function (obj) {
-        return typeof obj.email != "undefined";
-      },
-      treatment: function (server, obj, next) {
-        logger.debug('⬇ PUBKEY %s', obj.fingerprint);
-        async.waterfall([
-          function (next){
-            server.PublicKeyService.submitPubkey(obj, next);
-          },
-          function (pubkey, next){
-            logger.debug('✔ PUBKEY %s', pubkey.fingerprint);
-            server.emit('pubkey', pubkey);
-            next(null, pubkey.json());
-          },
-        ], next);
-      }
-    },{
       // Vote
       matches: function (obj) {
         return obj.amendment ? true : false;
@@ -66,18 +48,11 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
     }
   ];
 
-  Server.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
+  PKSServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
 
   var that = this;
 
   this._read = function (size) {
-  };
-
-  this.writeRawPubkey = function (raw) {
-    var source = parsers.parsePubkey();
-    var dest = that.singleWriteStream();
-    source.pipe(dest);
-    source.end(raw);
   };
 
   this._initServices = function(conn, done) {
@@ -128,6 +103,6 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
   };
 }
 
-util.inherits(HDCServer, Server);
+util.inherits(HDCServer, PKSServer);
 
 module.exports = HDCServer;

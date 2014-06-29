@@ -63,7 +63,7 @@ function RegistryBinding (registryServer, conf) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(registryServer.PublicKeyService, onError))
-      .pipe(verifySignature(registryServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(registryServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);
@@ -126,7 +126,7 @@ function RegistryBinding (registryServer, conf) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(registryServer.PublicKeyService, onError))
-      .pipe(verifySignature(registryServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(registryServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);
@@ -205,7 +205,7 @@ function RegistryBinding (registryServer, conf) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(registryServer.PublicKeyService, onError))
-      .pipe(verifySignature(registryServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(registryServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);

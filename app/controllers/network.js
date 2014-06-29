@@ -58,7 +58,7 @@ function NetworkBinding (peerServer, conf) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
-      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(peerServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);
@@ -106,7 +106,7 @@ function NetworkBinding (peerServer, conf) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
-      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(peerServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);
@@ -157,7 +157,7 @@ function NetworkBinding (peerServer, conf) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
-      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(peerServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);
@@ -247,7 +247,7 @@ function NetworkBinding (peerServer, conf) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(peerServer.PublicKeyService, onError))
-      .pipe(verifySignature(peerServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(peerServer.singleWriteStream(onError))
       .pipe(es.stringify())
       .pipe(res);

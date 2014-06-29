@@ -31,7 +31,7 @@ function VerifySignature (onError) {
         that.push(json);
         next();
       }
-    ], function (err, result) {
+    ], function (err) {
       if (err && typeof onError == 'function')
         onError(err);
       that.push(null);

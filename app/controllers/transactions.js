@@ -162,7 +162,7 @@ function TransactionBinding(hdcServer) {
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
       .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
-      .pipe(verifySignature(hdcServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
       .pipe(hdcServer.singleWriteStream(onError))
       .pipe(es.map(function (tx, callback) {
         callback(null, {

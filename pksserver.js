@@ -22,7 +22,7 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
           function (pubkey, next){
             logger.debug('✔ PUBKEY %s', pubkey.fingerprint);
             server.emit('pubkey', pubkey);
-            next(null, pubkey.json());
+            next(null, pubkey);
           },
         ], next);
       }

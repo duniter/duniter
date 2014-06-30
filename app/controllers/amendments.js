@@ -5,6 +5,7 @@ var unix2dos         = require('../lib/unix2dos');
 var versionFilter    = require('../lib/streams/versionFilter');
 var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
+var jsoner           = require('../lib/streams/jsoner');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
 var link2pubkey      = require('../lib/streams/link2pubkey');
@@ -137,6 +138,7 @@ function AmendmentBinding (hdcServer) {
         .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
         .pipe(verifySignature(onError))
         .pipe(hdcServer.singleWriteStream(onError))
+        .pipe(jsoner())
         .pipe(es.stringify())
         .pipe(res);
     }

@@ -25,7 +25,7 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
             if (wasPromoted) {
               server.emit('promoted', vote.amendment);
             }
-            next(null, vote.json());
+            next(null, vote);
           },
         ], next);
       }
@@ -41,7 +41,7 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
           },
           function (tx, next){
             server.emit('transaction', tx);
-            next(null, tx.json());
+            next(null, tx);
           },
         ], next);
       }

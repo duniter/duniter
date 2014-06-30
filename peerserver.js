@@ -28,7 +28,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           function (peer, next){
             plogger.debug('✔ PEER %s %s:%s', peer.fingerprint, peer.getIPv4() || peer.getIPv6(), peer.getPort());
             that.emit('peer', peer);
-            next(null, peer.json());
+            next(null, peer);
           },
         ], next);
       }
@@ -46,7 +46,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           function (forward, next){
             flogger.debug('✔ FWD %s type %s', forward.from, forward.forward);
             that.emit('forward', forward);
-            next(null, forward.json());
+            next(null, forward);
           },
         ], next);
       }
@@ -64,7 +64,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           function (status, peer, wasStatus, next){
             slogger.debug('✔ STATUS %s %s', status.pubkey.fingerprint, status.status);
             that.emit('status', status);
-            next(null, status.json());
+            next(null, status);
           },
         ], next);
       }
@@ -82,7 +82,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           function (wallet, next){
             wlogger.debug('✔ WALLET %s', obj.pubkey.fingerprint);
             that.emit('wallet', wallet);
-            next(null, wallet.json());
+            next(null, wallet);
           },
         ], next);
       }
@@ -227,6 +227,14 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next){
         logger.info('Broadcasting UP/NEW signals...');
+        that.PeeringService.on('status', function (status) {
+          // Readable status to be multicasted
+          that.push(status);
+        });
+        that.PeeringService.on('forward', function (forward) {
+          // Readable forward to be multicasted
+          that.push(forward);
+        });
         that.PeeringService.sendUpSignal(next);
       },
       function (next){
@@ -300,6 +308,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
             next(err);
           });
         } else {
+          that.push(p1);
           next();
         }
       },

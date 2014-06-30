@@ -5,6 +5,7 @@ var _        = require('underscore');
 var stream   = require('stream');
 var unix2dos = require('../lib/unix2dos');
 var http2raw = require('../lib/streams/parsers/http2raw');
+var jsoner   = require('../lib/streams/jsoner');
 var parsers  = require('../lib/streams/parsers/doc');
 var es       = require('event-stream');
 var http400  = require('../lib/http/http400');
@@ -87,6 +88,7 @@ function PKSBinding (pksServer) {
       .pipe(unix2dos())
       .pipe(parsers.parsePubkey(onError))
       .pipe(pksServer.singleWriteStream(onError))
+      .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
   };

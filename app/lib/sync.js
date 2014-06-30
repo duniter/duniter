@@ -3,9 +3,10 @@ var _                = require('underscore');
 var sha1             = require('sha1');
 var merkle           = require('merkle');
 var vucoin           = require('vucoin');
-var jpgp             = require('./jpgp');
-var parsers          = require('./streams/parsers/doc');
 var eventStream      = require('event-stream');
+var jpgp             = require('./jpgp');
+var unix2dos         = require('./unix2dos');
+var parsers          = require('./streams/parsers/doc');
 var extractSignature = require('./streams/extractSignature');
 var logger           = require('./logger')('sync');
 
@@ -15,14 +16,15 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
   var that = this;
 
   // Services
-  var KeyService         = null;
-  var VoteService        = null;
-  var TransactionService = null;
-  var WalletService      = null;
-  var PeeringService     = null;
-  var StrategyService    = null;
-  var ParametersService  = null;
-  var SyncService        = null;
+            var PublicKeyService         = server.PublicKeyService;
+            var KeyService         = server.KeyService;
+            var VoteService        = server.VoteService;
+            var TransactionService = server.TransactionsService;
+            var WalletService      = server.WalletService;
+            var PeeringService     = server.PeeringService;
+            var StrategyService    = server.StrategyService;
+            var ParametersService  = server.ParametersService;
+            var SyncService        = server.SyncService;
 
   // Models
   var Amendment   = server.conn.model('Amendment');
@@ -49,6 +51,7 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
       var remotePeer = new Peer({});
       var amendments = {};
       var remoteCurrentNumber;
+      var remotePubkey;
 
       async.waterfall([
         function (next){
@@ -57,15 +60,31 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         },
 
         //============
-        // Peer
+        // Pubkey
         //============
         function (next){
+          node.network.pubkey(next);
+        },
+        function (pubkey, next){
+          var parser = parsers.parsePubkey();
+          parser.end(unix2dos(pubkey));
+          parser.on('readable', function () {
+            var parsed = parser.read();
+            PublicKeyService.submitPubkey(parsed, next);
+          });
+        },
+
+        //============
+        // Peer
+        //============
+        function (pubkey, next){
+          remotePubkey = pubkey;
           node.network.peering.get(next);
         },
         function (json, next){
           remotePeer.copyValuesFrom(json);
           var entry = remotePeer.getRaw();
-          var signature = remotePeer.signature;
+          var signature = unix2dos(remotePeer.signature);
           // Parameters
           if(!(entry && signature)){
             callback('Requires a peering entry + signature');
@@ -87,22 +106,14 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
               parsers.parsePeer(next).asyncWrite(signedPR, next);
             },
             function (obj, next) {
-              obj.pubkey = { fingerprint: obj.fingerprint };
+              obj.pubkey = remotePubkey;
               peer = obj;
               // Temporarily manage ALL keys for sync
               server.conf.kmanagement = "ALL";
-              KeyService         = server.KeyService;
-              VoteService        = server.VoteService;
-              TransactionService = server.TransactionsService;
-              WalletService      = server.WalletService;
-              PeeringService     = server.PeeringService;
-              StrategyService    = server.StrategyService;
-              ParametersService  = server.ParametersService;
-              SyncService        = server.SyncService;
               PeeringService.submit(peer, next);
             },
           ], function (err) {
-            next(null, peer);
+            next(err, peer);
           });
         },
         function (recordedPR, next){

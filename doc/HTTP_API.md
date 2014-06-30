@@ -1,5 +1,8 @@
 # uCoin HTTP API
 
+## Contents
+
+* [Contents](#contents)
 * [Overview](#overview)
 * [Merkle URLs](#merkle-urls)
 * [API](#api)
@@ -315,7 +318,7 @@ A list of matching PGP keys in json format if `op=index`, a single ASCII-armored
 {
   "keys": [
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "key":
       {
         "email":"cem.moreau@gmail.com",
@@ -325,7 +328,7 @@ A list of matching PGP keys in json format if `op=index`, a single ASCII-armored
         "raw":"-----BEGIN PGP PUBLIC KEY BLOCK----- ... -----END PGP PUBLIC KEY BLOCK-----\r\n"
       }
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "key":
       {
         "email":"cem.moreau@gmail.com",
@@ -442,7 +445,7 @@ Peering entry of the node.
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
     "OTHER_PROTOCOL 88.77.66.55 9001",
   ],
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
 }
 ```
 
@@ -480,7 +483,7 @@ Merkle URL leaf: peering entry
       "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
       "OTHER_PROTOCOL 88.77.66.55 9001"
     ],
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
   }
 }
 ```
@@ -510,7 +513,7 @@ The posted entry.
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
     "OTHER_PROTOCOL 88.77.66.55 9001"
   ],
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
 }
 ```
 
@@ -687,7 +690,7 @@ Merkle URL leaf: Wallet
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "entry": {
       "version": "1",
       "currency": "beta_brousouf",
@@ -723,7 +726,7 @@ Name        | Value                                  | Method
 The posted Wallet.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
   "entry": {
     "version": "1",
     "currency": "beta_brousouf",
@@ -757,7 +760,7 @@ Name              | Value                                           | Method
 The requested Wallet.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
   "entry": {
     "version": "1",
     "currency": "beta_brousouf",
@@ -916,7 +919,7 @@ Merkle URL leaf: signature
   "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
   "value": {
     "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
   }
 }
 ```
@@ -966,7 +969,7 @@ Name           | Value                                                          
 The posted amendment + posted signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
   "amendment": {
     "version": "1",
     "currency": "beta_brousouf",
@@ -1008,7 +1011,7 @@ The recorded transaction and its signature.
   "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "version": 1,
     "currency": "beta_brousouf",
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
@@ -1042,7 +1045,7 @@ The last [COUNT] transactions received.
 {
   "transactions": [
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1054,7 +1057,7 @@ The last [COUNT] transactions received.
       ],
       "comment": "Paying LoLCat's food."
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "currency": "beta_brousouf",
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
@@ -1101,7 +1104,7 @@ Merkle URL leaf: transaction
   "value": {
     "transaction":
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "sender": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
       "number": 14,
@@ -1137,7 +1140,7 @@ The transaction and its signature.
   "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "version": 1,
     "sender": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
     "number": 14,
@@ -1172,7 +1175,7 @@ The last [COUNT] transactions of given PGP key.
 {
   "transactions": [
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1184,7 +1187,7 @@ The last [COUNT] transactions of given PGP key.
       ],
       "comment": "Paying LoLCat's food."
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "currency": "beta_brousouf",
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
@@ -1231,7 +1234,7 @@ Merkle URL leaf: transaction
   "value": {
     "transaction":
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1266,7 +1269,7 @@ A list of transactions pointing to this source transaction.
 {
   "transactions": [
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
       "number": 92,
@@ -1278,7 +1281,7 @@ A list of transactions pointing to this source transaction.
       ],
       "comment": "Paying LoLCat's food."
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "version": 1,
       "currency": "beta_brousouf",
       "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
@@ -1345,7 +1348,7 @@ A coin's ownership.
   "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66",
   "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
   "transaction": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "version": 1,
     "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
     "number": 92,
@@ -1380,7 +1383,7 @@ A coin's list of ownerships in time.
       "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66",
       "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
       "transaction": {
-        "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+        "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
         "version": 1,
         "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
         "number": 92,
@@ -1495,7 +1498,7 @@ Name | Value | Method
 The posted membership request + posted signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
   "membership": {
     "version": "1",
     "currency": "beta_brousouf",
@@ -1524,7 +1527,7 @@ Name              | Value                                                       
 The posted membership request + posted signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
   "membership": {
     "version": "1",
     "currency": "beta_brousouf",
@@ -1555,7 +1558,7 @@ A list of posted membership requests + posted signatures.
 {
   "memberships": [
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "membership": {
         "version": "1",
         "currency": "beta_brousouf",
@@ -1565,7 +1568,7 @@ A list of posted membership requests + posted signatures.
         "raw": "Version: 1\r\n...Membership: IN\r\n"
       }
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "membership": {
         "version": "1",
         "currency": "beta_brousouf",
@@ -1575,7 +1578,7 @@ A list of posted membership requests + posted signatures.
         "raw": "Version: 1\r\n...Membership: IN\r\n"
       }
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "membership": {
         "version": "1",
         "currency": "beta_brousouf",
@@ -1607,7 +1610,7 @@ Name              | Value                                                       
 The posted voting request + posted signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
   "voting": {
     "version": "1",
     "currency": "beta_brousouf",
@@ -1634,7 +1637,7 @@ Name              | Value                                                       
 
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
   "voting": {
     "version": "1",
     "currency": "beta_brousouf",
@@ -1664,7 +1667,7 @@ A list of posted voting requests + posted signatures.
 {
   "votings": [
     {
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "voting": {
         "version": "1",
         "currency": "beta_brousouf",
@@ -1673,7 +1676,7 @@ A list of posted voting requests + posted signatures.
         "raw": "Version: 1\r\n...Issuer: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
       }
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "voting": {
         "version": "1",
         "currency": "beta_brousouf",
@@ -1682,7 +1685,7 @@ A list of posted voting requests + posted signatures.
         "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
       }
     },{
-      "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
       "voting": {
         "version": "1",
         "currency": "beta_brousouf",
@@ -1725,7 +1728,7 @@ Merkle URL leaf: membership
 {
   "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "membership": {
       "version": "1",
       "currency": "beta_brousouf",
@@ -1768,7 +1771,7 @@ Merkle URL leaf: membership or empty string.
 {
   "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "membership": {
       "version": "1",
       "currency": "beta_brousouf",
@@ -1812,7 +1815,7 @@ Merkle URL leaf: voting
 {
   "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "voting": {
       "version": "1",
       "currency": "beta_brousouf",
@@ -1854,7 +1857,7 @@ Merkle URL leaf: voting or empty string.
 {
   "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
   "value": {
-    "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----",
+    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
     "voting": {
       "version": "1",
       "currency": "beta_brousouf",
@@ -1984,6 +1987,6 @@ Current node's voting amendment + signature, or HTTP 404 if not available yet.
     ],
     "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
   },
-  "signature": "-----BEGIN PGP SIGNATURE----- ... -----END PGP SIGNATURE-----"
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
 }
 ```

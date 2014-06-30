@@ -284,7 +284,7 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
         jpgp().sign(forward.getRaw(), that.privateKey, next);
       },
       function (signature, next) {
-        forward.signature = signature;
+        forward.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));;
         next(null, forward);
       }
     ], done);
@@ -484,34 +484,34 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   * @param fingerprints List of peers' fingerprints to which status is to be sent
   */
   this.sendStatusTo = function (statusStr, fingerprints, done) {
-    var status = new Status({
-      version: 1,
-      currency: currency,
-      status: statusStr
-    });
-    var raw = status.getRaw().unix2dos();
     async.waterfall([
-      function (next){
-        jpgp().sign(raw, that.privateKey, next);
-      },
-      function (signature, next) {
-        status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
-        async.waterfall([
-          async.apply(Peer.getList.bind(Peer), fingerprints),
-          function (peers) {
-            that.emit('status', status, peers || [], false, function (err) {
-              async.forEach(peers, function(peer, callback){
-                peer.statusSent = status.status;
-                peer.statusSigDate = status.sigDate;
-                peer.save(function (err) {
-                  if (err) logger.error(err);
-                  callback();
-                });
+      async.apply(Peer.getList.bind(Peer), fingerprints),
+      function (peers, next) {
+        async.forEach(peers, function(peer, callback){
+          var status = new Status({
+            version: 1,
+            currency: currency,
+            status: statusStr,
+            from: that.cert.fingerprint,
+            to: peer.fingerprint
+          });
+          async.waterfall([
+            function (next){
+              jpgp().sign(status.getRaw(), that.privateKey, next);
+            },
+            function (signature, next) {
+              status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
+              status.sigDate = new Date();
+              that.emit('status', status);
+              peer.statusSent = status.status;
+              peer.statusSigDate = status.sigDate;
+              peer.save(function (err) {
+                if (err) logger.error(err);
+                next();
               });
-            });
-            next();
-          }
-        ], next);
+            },
+          ], callback);
+        }, next);
       },
     ], done);
   }
@@ -592,7 +592,7 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   };
 
   function getRandomInAllPeers (done) {
-    Peer.getRandomlyWithout([that.cert.fingerprint], done);
+    Peer.getRandomlyUPsWithout([that.cert.fingerprint], done);
   };
 
   // TODO

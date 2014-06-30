@@ -1,15 +1,30 @@
-var async   = require('async');
+var stream  = require('stream');
+var util    = require('util');
 var request = require('request');
-var logger  = require('../lib/logger')('networker');
+var async   = require('async');
+var logger  = require('../../lib/logger')('multicaster');
 
 var fifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 
-module.exports = function (eventEmitter) {
+module.exports = function () {
+  return new Multicaster();
+}
+
+function Multicaster () {
+
+  stream.Transform.call(this, { objectMode: true });
+
+  var that = this;
+
+  this._write = function (obj, enc, done) {
+    that.emit(obj.type, obj.obj, obj.peers);
+    done();
+  }
   
-  eventEmitter.on('pubkey', function(pubkey, peers) {
-    logger.debug('new pubkey to be sent to %s peers', peers.length);
+  that.on('pubkey', function(pubkey, peers) {
+    logger.debug('--> new Pubkey to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendPubkey(peer, pubkey, success(function (err) {
@@ -19,8 +34,8 @@ module.exports = function (eventEmitter) {
     });
   });
   
-  eventEmitter.on('vote', function(vote, peers) {
-    logger.debug('new vote to be sent to %s peers', peers.length);
+  that.on('vote', function(vote, peers) {
+    logger.debug('--> new Vote to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendVote(peer, vote, success(function (err) {
@@ -30,8 +45,8 @@ module.exports = function (eventEmitter) {
     });
   });
   
-  eventEmitter.on('transaction', function(transaction, peers) {
-    logger.debug('new transaction to be sent to %s peers', peers.length);
+  that.on('transaction', function(transaction, peers) {
+    logger.debug('--> new Transaction to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendTransaction(peer, transaction, success(function (err) {
@@ -41,8 +56,8 @@ module.exports = function (eventEmitter) {
     });
   });
   
-  eventEmitter.on('wallet', function(wallet, peers) {
-    logger.debug('new Wallet to be sent to %s peers', peers.length);
+  that.on('wallet', function(wallet, peers) {
+    logger.debug('--> new Wallet to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendWallet(peer, wallet, success(function (err) {
@@ -52,7 +67,8 @@ module.exports = function (eventEmitter) {
     });
   });
   
-  eventEmitter.on('peer', function(peering, peers, done) {
+  that.on('peer', function(peering, peers, done) {
+    logger.debug('--> new Peer to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
@@ -71,7 +87,8 @@ module.exports = function (eventEmitter) {
     });
   });
   
-  eventEmitter.on('status', function(status, peers, internal) {
+  that.on('status', function(status, peers) {
+    logger.debug('--> new Status to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
@@ -82,19 +99,13 @@ module.exports = function (eventEmitter) {
         }, function (err, res, body) {
           // Sent!
           sent(err);
-          if (!err && res && res.statusCode == 400 && !internal) {
-            logger.debug('sending self peering to peer %s', peer.keyID());
-            eventEmitter.emit('peer', eventEmitter.peer(), [peer], function (err, res, body) {
-              eventEmitter.emit('status', status, [peer], true);
-            });
-          } 
         });
       });
     });
   });
   
-  eventEmitter.on('membership', function(membership, peers) {
-    logger.debug('new membership to be sent to %s peers', peers.length);
+  that.on('membership', function(membership, peers) {
+    logger.debug('--> new Membership to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendMembership(peer, membership, success(function (err) {
@@ -104,8 +115,8 @@ module.exports = function (eventEmitter) {
     });
   });
   
-  eventEmitter.on('voting', function(voting, peers) {
-    logger.debug('new voting to be sent to %s peers', peers.length);
+  that.on('voting', function(voting, peers) {
+    logger.debug('--> new Voting to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendVoting(peer, voting, success(function (err) {
@@ -115,7 +126,8 @@ module.exports = function (eventEmitter) {
     });
   });
   
-  eventEmitter.on('forward', function(forward, peers, done) {
+  that.on('forward', function(forward, peers, done) {
+    logger.debug('--> new Forward to be sent to %s peer(s)', peers.length);
     fifo.push(function (sent) {
       async.forEach(peers, function(peer, callback){
         // Do propagating
@@ -131,12 +143,16 @@ module.exports = function (eventEmitter) {
           }
         });
       }, function(err){
-        done(err);
+        if (typeof done == 'function') {
+          done(err);
+        }
         sent();
       });
     });
   });
-};
+}
+
+util.inherits(Multicaster, stream.Transform);
 
 function sendPubkey(peer, pubkey, done) {
   logger.info('POST pubkey to %s', peer.keyID());

@@ -15,6 +15,7 @@ var ForwardSchema = new Schema({
   keys: [String],
   hash: String,
   hashBasis: String,
+  signature: String,
   upstream: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -46,7 +47,7 @@ ForwardSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "from", "to", "forward", "keys", "upstream"].forEach(function (key) {
+    ["version", "currency", "from", "to", "forward", "keys", "upstream", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
@@ -57,6 +58,7 @@ ForwardSchema.methods = {
     ["version", "currency", "from", "to", "forward", "keys"].forEach(function (key) {
       json[key] = obj[key];
     });
+    json.raw = this.getRaw();
     return json;
   },
 

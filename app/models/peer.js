@@ -83,6 +83,7 @@ PeerSchema.methods = {
     ["version", "currency", "fingerprint", "endpoints", "status", "signature"].forEach(function (key) {
       json[key] = obj[key];
     });
+    json.raw = this.getRaw();
     return json;
   },
 
@@ -201,23 +202,41 @@ PeerSchema.statics.getRandomlyWithout = function (fingerprints, done) {
   var that = this;
   async.waterfall([
     function (next){
+      that.find({ fingerprint: { $nin: fingerprints } })
+      .sort({ 'updated': -1 })
+      .limit(10)
+      .exec(next);
+    },
+    choose4in
+  ], done);
+};
+
+/**
+* Look for 10 last updated peers, and choose randomly 4 peers in it
+*/
+PeerSchema.statics.getRandomlyUPsWithout = function (fingerprints, done) {
+  var that = this;
+  async.waterfall([
+    function (next){
       that.find({ fingerprint: { $nin: fingerprints }, status: { $in: ['NEW_BACK', 'UP'] } })
       .sort({ 'updated': -1 })
       .limit(10)
       .exec(next);
     },
-    function (records, next){
-      var peers = [];
-      var recordsLength = records.length;
-      for (var i = 0; i < Math.min(recordsLength, 4); i++) {
-        var randIndex = Math.max(Math.floor(Math.random()*10) - (10 - recordsLength) - i, 0);
-        peers.push(records[randIndex]);
-        records.splice(randIndex, 1);
-      }
-      next(null, peers);
-    },
+    choose4in
   ], done);
 };
+
+function choose4in (peers, done) {
+  var chosen = [];
+  var nbPeers = peers.length;
+  for (var i = 0; i < Math.min(nbPeers, 4); i++) {
+    var randIndex = Math.max(Math.floor(Math.random()*10) - (10 - nbPeers) - i, 0);
+    chosen.push(peers[randIndex]);
+    peers.splice(randIndex, 1);
+  }
+  done(null, chosen);
+}
 
 PeerSchema.statics.status = STATUS;
 

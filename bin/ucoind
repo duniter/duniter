@@ -1,17 +1,19 @@
 #!/usr/bin/env node
-var jpgp     = require('../app/lib/jpgp');
-var wizard   = require('../app/lib/wizard');
-var fs       = require('fs');
-var os       = require('os');
-var async    = require('async');
-var _        = require('underscore');
-var program  = require('commander');
-var mongoose = require('mongoose');
-var moment   = require('moment');
-var inquirer = require('inquirer');
-var openpgp  = require('openpgp');
-var logger   = require('../app/lib/logger')('ucoind');
-var ucoin    = require('./..');
+var fs          = require('fs');
+var os          = require('os');
+var async       = require('async');
+var _           = require('underscore');
+var program     = require('commander');
+var mongoose    = require('mongoose');
+var moment      = require('moment');
+var inquirer    = require('inquirer');
+var openpgp     = require('openpgp');
+var jpgp        = require('../app/lib/jpgp');
+var wizard      = require('../app/lib/wizard');
+var router      = require('../app/lib/streams/router');
+var multicaster = require('../app/lib/streams/multicaster');
+var logger      = require('../app/lib/logger')('ucoind');
+var ucoin       = require('./..');
 
 function keys (val) {
   return val.split(',');
@@ -255,6 +257,10 @@ program
   .command('start')
   .description('Start uCoin server using given --currency')
   .action(connect(LISTEN_HTTP, ucoin.createRegistryServer, function (server, conf) {
+
+    server
+      .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
+      .pipe(multicaster());
 
     // Launching server
     server.on('BMALoaded', function (err, app) {

@@ -16,6 +16,8 @@ module.exports = function StatusMessage (values) {
     ['version', 'currency', 'status', 'from', 'to'].forEach(function(field){
       obj[field] = that[field] || '';
     });
+    obj.raw = this.getRaw();
+    obj.signature = this.signature;
     return obj;
   }
 

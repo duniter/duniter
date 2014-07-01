@@ -423,8 +423,10 @@ function connect(listenHTTP, serverFactory, callback) {
 function parseMoment (d) {
   if (d.toLowerCase() == 'now') {
     return parseInt(moment().format("X"));
-  } else if (d.match(/\d{2}-\d{2}-\d{4}/)) {
+  } else if (d.match(/^\d{2}-\d{2}-\d{4}$/)) {
     return parseInt(moment(d, "DD-MM-YYYY").format("X"));
+  } else if (d.match(/^\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}$/)) {
+    return parseInt(moment(d, "DD-MM-YYYY hh:mm:ss").format("X"));
   } else {
     return parseInt(d);
   }

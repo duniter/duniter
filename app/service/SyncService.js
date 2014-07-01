@@ -13,7 +13,6 @@ var logger   = require('../lib/logger')('sync');
 var mlogger  = require('../lib/logger')('membership');
 var vlogger  = require('../lib/logger')('voting');
 var mathlog  = require('../lib/logger')('registryp');
-var cflowlog = require('../lib/logger')('cflow');
 
 mathlog.setLevel('INFO');
 
@@ -36,7 +35,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
   var Merkle        = conn.model('Merkle');
   var Vote          = conn.model('Vote');
   var CKey          = conn.model('CKey');
-  var CommunityFlow = conn.model('CommunityFlow');
+  var Statement = conn.model('Statement');
   var Peer          = conn.model('Peer');
   var Key           = conn.model('Key');
   var Forward       = conn.model('Forward');
@@ -45,7 +44,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
     task(callback);
   }, 1);
   
-  var fifoCF = async.queue(function (task, callback) {
+  var fifoStatement = async.queue(function (task, callback) {
     task(callback);
   }, 1);
   
@@ -53,7 +52,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
     task(callback);
   }, 1);
   
-  var fifoSelfCommunityFlow = async.queue(function (task, callback) {
+  var fifoSelfStatement = async.queue(function (task, callback) {
     task(callback);
   }, 1);
 
@@ -194,17 +193,16 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
     }, done);
   };
 
-  this.submitCF = function (obj, done) {
-    var entry = new CommunityFlow(obj);
-    fifoCF.push(function (cb) {
+  this.submitStatement = function (obj, done) {
+    var entry = new Statement(obj);
+    fifoStatement.push(function (cb) {
       async.waterfall([
         function (next) {
-          cflowlog.debug('⬇ CF from %s', entry.issuer);
           if (['AnyKey', '1Sig'].indexOf(entry.algorithm) == -1) {
             next('Algorithm must be either AnyKey or 1Sig');
             return;
           }
-          CommunityFlow.getByIssuerAlgoAmendmentHashAndNumber(entry.issuer, entry.algorithm, entry.amendmentHash, entry.amendmentNumber, next);
+          Statement.getByIssuerAlgoAmendmentHashAndNumber(entry.issuer, entry.algorithm, entry.amendmentHash, entry.amendmentNumber, next);
         },
         function (cf, next) {
           if (cf && cf.length > 0) {
@@ -215,7 +213,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
         },
         function (promoted, next) {
           if (promoted.hash != entry.amendmentHash) {
-            next('CommunityFlow rejected: based on a non-promoted amendment');
+            next('Statement rejected: based on a non-promoted amendment');
             return;
           }
           entry.save(function (err) {
@@ -243,7 +241,6 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           }
         },
         function (res, next){
-          cflowlog.debug('✔ CF from %s', entry.issuer);
           that.tryToVote(entry.amendmentNumber + 1, entry.algorithm, function (err) {
             if (err) logger.warn(err);
             next(null, entry);
@@ -263,10 +260,10 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
       },
       function (current, next) {
         amCurrent = current;
-        CommunityFlow.getForAmendmentAndAlgo(amNumber -1, algo, next);
+        Statement.getForAmendmentAndAlgo(amNumber -1, algo, next);
       },
       function (cfs, next){
-        logger.debug("%s flows / %s voters = %s%", cfs.length, amCurrent.votersCount, cfs.length/amCurrent.votersCount*100)
+        logger.debug("%s statements / %s voters = %s%", cfs.length, amCurrent.votersCount, cfs.length/amCurrent.votersCount*100)
         if (cfs.length/amCurrent.votersCount < 0.6) {
           next('Not voting yet, waiting for >= 60% voters');
           return;
@@ -413,7 +410,10 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
       function (json, next){
         incrementForKeys(json.leaves, op, algo, isMember, done);
       },
-    ], done);
+    ], function (err) {
+      if (err) logger.warn(err);
+      done(err);
+    });
   }
 
   function updateCKeysFromLocalMerkle (merkleGet, op, algo, isMember, done) {
@@ -492,25 +492,25 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
     ], done);
   }
 
-  this.getFlow = function (amNumber, algo, done) {
+  this.getStatement = function (amNumber, algo, done) {
     if (amNumber == 0) {
       done('Not available for AM#0');
       return;
     }
     var basis = amNumber - 1;
-    fifoSelfCommunityFlow.push(function (cb) {
+    fifoSelfStatement.push(function (cb) {
       async.waterfall([
         function (next){
-          CommunityFlow.getSelf(basis, algo, function (err, flow) {
-            next(null, flow);
+          Statement.getSelf(basis, algo, function (err, statement) {
+            next(null, statement);
           });
         },
-        function (cf, next){
-          if (cf){
-            next(null, cf);
+        function (st, next){
+          if (st){
+            next(null, st);
             return;
           }
-          // Tries to create CF
+          // Tries to create Statement
           var now = new Date();
           async.waterfall([
             function (next){
@@ -520,21 +520,19 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
               if (daemonJudgesTimeForVote({ generated: amPrevious.generated + conf.sync.AMFreq })) {
 
                 var cert = PeeringService.cert;
-                var cf = new CommunityFlow();
-                cf.version = "1";
-                cf.currency = currency;
-                cf.algorithm = algo;
-                cf.date = new Date();
-                cf.issuer = cert.fingerprint;
-                cf.amendmentNumber = amPrevious.number;
-                cf.amendmentHash = amPrevious.hash;
-                var raw = "";
+                var st = new Statement();
+                st.version = "1";
+                st.currency = currency;
+                st.algorithm = algo;
+                st.date = new Date();
+                st.issuer = cert.fingerprint;
+                st.amendmentNumber = amPrevious.number;
+                st.amendmentHash = amPrevious.hash;
                 async.waterfall([
                   function (next) {
                     computeLocalMSandVTChanges(basis, algo, next);
                   },
                   function (membersJoining, membersLeaving, votersJoining, votersLeaving, members, voters, next){
-                    raw = cf.getRaw();
                     async.parallel({
                       membersJoining: function(cb) {
                         async.waterfall([
@@ -546,8 +544,9 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                             });
                           },
                           function (merkle, next) {
-                            cf.membersJoiningRoot = merkle.root();
-                            cf.membersJoiningCount = membersJoining.length;
+                            st.membersJoiningRoot = merkle.root();
+                            st.membersJoiningCount = membersJoining.length;
+                            next();
                           }
                         ], cb);
                       },
@@ -561,8 +560,9 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                             });
                           },
                           function (merkle, next) {
-                            cf.membersLeavingRoot = merkle.root();
-                            cf.membersLeavingCount = membersLeaving.length;
+                            st.membersLeavingRoot = merkle.root();
+                            st.membersLeavingCount = membersLeaving.length;
+                            next();
                           }
                         ], cb);
                       },
@@ -576,8 +576,9 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                             });
                           },
                           function (merkle, next) {
-                            cf.votersJoiningRoot = merkle.root();
-                            cf.votersJoiningCount = votersJoining.length;
+                            st.votersJoiningRoot = merkle.root();
+                            st.votersJoiningCount = votersJoining.length;
+                            next();
                           }
                         ], cb);
                       },
@@ -591,28 +592,23 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                             });
                           },
                           function (merkle, next) {
-                            cf.votersLeavingRoot = merkle.root();
-                            cf.votersLeavingCount = votersLeaving.length;
+                            st.votersLeavingRoot = merkle.root();
+                            st.votersLeavingCount = votersLeaving.length;
+                            next();
                           }
                         ], cb);
                       },
-                    }, next);
-                    signsDetached(raw, next);
+                    }, function (err) {
+                      next(err);
+                    });
+                  },
+                  function (next) {
+                    signsDetached(st.getRaw(), next);
                   },
                   function (signature, next){
-                    cf.signature = signature;
-                    cf.selfGenerated = true;
-                    that.submitCF(cf, next);
-                  },
-                  function (submitted, next){
-                    CommunityFlow.getTheOne(submitted.amendmentNumber, submitted.issuer, algo, next);
-                  },
-                  function (cf, next){
-                    if (!cf) {
-                      next('Self CommunityFlow was not found');
-                      return;
-                    }
-                    next(null, cf);
+                    st.signature = signature;
+                    st.selfGenerated = true;
+                    next(null, st);
                   },
                 ], next);
                 return;

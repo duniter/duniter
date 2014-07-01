@@ -6,9 +6,9 @@ var split         = require('../../../split');
 var unix2dos      = require('../../../unix2dos');
 var _             = require('underscore');
 
-module.exports = CommunityFlowParser;
+module.exports = StatementParser;
 
-function CommunityFlowParser (onError) {
+function StatementParser (onError) {
   
   var captures = [
     {prop: "version",             regexp: /Version: (.*)/},
@@ -28,7 +28,7 @@ function CommunityFlowParser (onError) {
     {prop: "date",                regexp: /Date: (.*)/, parser: parseDateFromTimestamp}
   ];
   var multilineFields = [];
-  GenericParser.call(this, captures, multilineFields, rawer.getCommunityFlow, onError);
+  GenericParser.call(this, captures, multilineFields, rawer.getStatement, onError);
 
   this._clean = function (obj) {
   };
@@ -66,7 +66,7 @@ function CommunityFlowParser (onError) {
         err = {code: codes['BAD_FIELD'], message: "Incorrect amendment field: must be contain an amendment"};
     }
     ['membersJoiningRoot', 'membersLeavingRoot', 'votersJoiningRoot', 'votersLeavingRoot'].forEach(function(field){
-      if(!err && !obj[field].match(/^[A-Z\d]+$/))
+      if(!err && obj[field] && !obj[field].match(/^[A-Z\d]+$/))
         err = {code: codes['BAD_MERKLE_SUMMARY'], message: "Incorrect " + field + " field: must be a SHA-1 uppercased hash"};
     });
     return err && err.message;
@@ -99,4 +99,4 @@ function parseAmendmentHash (value) {
 var parseMerkleNumber = parseAmendmentNumber;
 var parseMerkleRoot = parseAmendmentHash;
 
-util.inherits(CommunityFlowParser, GenericParser);
+util.inherits(StatementParser, GenericParser);

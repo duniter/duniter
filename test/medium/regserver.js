@@ -149,7 +149,7 @@ describe('A server', function () {
       until(regServer, 'vote', 3),
       until(regServer, 'transaction'),
       until(regServer, 'voting'),
-      until(regServer, 'communityflow'),
+      until(regServer, 'statement'),
     ], done);
     // regServer.write(pubkeyUbot1);
     regServer.write(pubkeyCat);

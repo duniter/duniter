@@ -43,19 +43,19 @@
       * [coins/view/[COIN_ID]/history](#coinsviewcoin_idhistory)
   * [registry/](#registry)
       * [parameters](#parameters)
-      * [flow](#flow)
       * [community/members (POST)](#communitymembers-post)
       * [community/members/[PGP_FINGERPRINT]/current](#communitymemberspgp_fingerprintcurrent)
       * [community/members/[PGP_FINGERPRINT]/history](#communitymemberspgp_fingerprinthistory)
       * [community/voters (POST)](#communityvoters-post)
       * [community/voters/[PGP_FINGERPRINT]/current](#communityvoterspgp_fingerprintcurrent)
       * [community/voters/[PGP_FINGERPRINT]/history](#communityvoterspgp_fingerprinthistory)
+      * [amendment/statement](#amendmentstatement)
       * [amendment/[AM_NUMBER]/[ALGO]/members/in](#amendmentam_numberalgomembersin)
       * [amendment/[AM_NUMBER]/[ALGO]/members/out](#amendmentam_numberalgomembersout)
       * [amendment/[AM_NUMBER]/[ALGO]/voters/in](#amendmentam_numberalgovotersin)
       * [amendment/[AM_NUMBER]/[ALGO]/voters/out](#amendmentam_numberalgovotersout)
       * [amendment/[AM_NUMBER]/[ALGO]/self](#amendmentam_numberalgoself)
-      * [amendment/[AM_NUMBER]/[ALGO]/flow](#amendmentam_numberalgoflow)
+      * [amendment/[AM_NUMBER]/[ALGO]/statement](#amendmentam_numberalgostatement)
       * [amendment/[AM_NUMBER]/[ALGO]/vote](#amendmentam_numberalgovote)
 
 ## Overview
@@ -114,7 +114,6 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |               `-- owner
     `-- registry/
         |-- parameters
-        |-- flow
         |-- community/
         |   |-- members/
         |   |   `-- [PGP_FINGERPRINT]/
@@ -125,6 +124,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
         |           |-- history
         |           `-- current
         `-- amendment/
+            |-- statement
             `-- [AM_NUMBER]/
                 `-- [ALGO]
                     |-- members
@@ -134,7 +134,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
                     |   |-- in
                     |   `-- out
                     |-- self
-                    |-- flow
+                    |-- statement
                     `-- vote
 
 ## Merkle URLs
@@ -1441,45 +1441,6 @@ UDPercent         | Universal Dividend % of monetary mass growth
 CoinAlgo          | Algorithm used for generating coins (this also gives interpretation of coins' value in each amendment)
 Consensus         | Percent of voters required to valid an Amendment
 
-#### `flow`
-
-**Goal**
-
-POST a [Community flow](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#community_flow) document, in order to notify of a node's computed community changes.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`document` | The raw community flow document. | POST
-`signature` | The signature of the `document` parameter. | POST
-
-**Returns**
-
-Posted document, json format.
-```json
-{
-  "communityflow": {
-    "raw": "Version: 1\r\nCurrency: beta_brousouf\r\nAmendment: 1-58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7\r\nIssuer: C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\nDate: 1401894350\r\nAlgorithm: AnyKey\r\n",
-    "version": 1,
-    "amendmentNumber": 1,
-    "membersJoiningCount": 0,
-    "membersLeavingCount": 0,
-    "votersJoiningCount": 0,
-    "votersLeavingCount": 0,
-    "currency": "beta_brousouf",
-    "amendmentHash": "58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7",
-    "algorithm": "AnyKey",
-    "membersJoiningRoot": "",
-    "membersLeavingRoot": "",
-    "votersJoiningRoot": "",
-    "votersLeavingRoot": "",
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "date": 1401894350
-  }
-}
-```
-
 #### `community/members (POST)`
 
 **Goal**
@@ -1698,6 +1659,45 @@ A list of posted voting requests + posted signatures.
 }
 ```
 
+#### `amendment/statement`
+
+**Goal**
+
+POST a [Statement](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#statement) document, in order to notify of a node's computed community changes.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`document` | The raw statement document. | POST
+`signature` | The signature of the `document` parameter. | POST
+
+**Returns**
+
+Posted document, json format.
+```json
+{
+  "statement": {
+    "raw": "Version: 1\r\nCurrency: beta_brousouf\r\nAmendment: 1-58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7\r\nIssuer: C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\nDate: 1401894350\r\nAlgorithm: AnyKey\r\n",
+    "version": 1,
+    "amendmentNumber": 1,
+    "membersJoiningCount": 0,
+    "membersLeavingCount": 0,
+    "votersJoiningCount": 0,
+    "votersLeavingCount": 0,
+    "currency": "beta_brousouf",
+    "amendmentHash": "58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7",
+    "algorithm": "AnyKey",
+    "membersJoiningRoot": "",
+    "membersLeavingRoot": "",
+    "votersJoiningRoot": "",
+    "votersLeavingRoot": "",
+    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+    "date": 1401894350
+  }
+}
+```
+
 #### `amendment/[AM_NUMBER]/[ALGO]/members/in`
 
 **Goal**
@@ -1870,11 +1870,11 @@ Merkle URL leaf: voting or empty string.
 ```
 > Note: as a member may leave community for other reasons than having asked to, "value" may not contain an object but just an empty string.
 
-#### `amendment/[AM_NUMBER]/[ALGO]/flow`
+#### `amendment/[AM_NUMBER]/[ALGO]/statement`
 
 **Goal**
 
-GET the [Community Flow](./Registry.md#community-flow) document associated to an amendment for a given membership algorithm.
+GET the [Statement](./Registry.md#statement) document associated to an amendment for a given membership algorithm.
 
 **Parameters**
 
@@ -1885,10 +1885,10 @@ Name              | Value                                                       
 
 **Returns**
 
-Current node's community flow, or HTTP 404 if not available yet.
+Current node's statement, or HTTP 404 if not available yet.
 ```json
 {
-  "communityflow": {
+  "statement": {
     "raw": "Version: 1\r\nCurrency: beta_brousouf\r\nAmendment: 1-58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7\r\nIssuer: C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\nDate: 1401894350\r\nAlgorithm: AnyKey\r\n",
     "version": 1,
     "amendmentNumber": 1,

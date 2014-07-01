@@ -199,11 +199,11 @@ function RegistryBinding (registryServer, conf) {
     processMerkle(Merkle.votersOut.bind(Merkle), Merkle.mapForVotings.bind(Merkle), req, res);
   };
 
-  this.communityFlowPost = function (req, res) {
+  this.statementPost = function (req, res) {
     var onError = http400(res);
     http2raw.communityFlow(req, onError)
       .pipe(unix2dos())
-      .pipe(parsers.parseCommunityFlow(onError))
+      .pipe(parsers.parseStatement(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
       .pipe(extractSignature(onError))
@@ -254,7 +254,7 @@ function RegistryBinding (registryServer, conf) {
     });
   };
 
-  this.askFlow = function (req, res) {
+  this.askStatement = function (req, res) {
     var that = this;
     async.waterfall([
 
@@ -264,14 +264,14 @@ function RegistryBinding (registryServer, conf) {
       },
 
       function (amNumber, algo, next) {
-        SyncService.getFlow(parseInt(amNumber), algo, next)
+        SyncService.getStatement(parseInt(amNumber), algo, next)
       },
 
     ], function (err, cf, am) {
 
       http.answer(res, 404, err, function () {
         res.end(JSON.stringify({
-          "communityflow": cf.json()
+          "statement": cf.json()
         }, null, "  "));
       });
     });

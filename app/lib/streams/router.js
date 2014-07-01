@@ -33,7 +33,7 @@ function Router (serverFPR, conn) {
     else if (obj.requiredTrusts ? true : false) {                    route('wallet',      obj, getRandomInUPPeers,                          done); }
     else if (obj.type && obj.type == "MEMBERSHIP" ? true : false) {  route('membership',  obj, getRandomInUPPeers,                          done); }
     else if (obj.type && obj.type == "VOTING" ? true : false) {      route('voting',      obj, getRandomInUPPeers,                          done); }
-    else if (obj.algorithm ? true : false) {                         route('flow',        obj, getRandomInUPPeers,                          done); }
+    else if (obj.algorithm ? true : false) {                         route('statement',   obj, getRandomInUPPeers,                          done); }
     else {
       done();
     }

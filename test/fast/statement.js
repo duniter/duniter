@@ -7,19 +7,19 @@ var mongoose = require('mongoose');
 var parsers  = require('../../app/lib/streams/parsers/doc');
 var ucoin    = require('../..');
 
-var CommunityFlow = mongoose.model('CommunityFlow', require('../../app/models/communityflow'));
-var rawCF = fs.readFileSync(__dirname + "/../data/communityflows/cat.flow", "utf8") +
-            fs.readFileSync(__dirname + "/../data/communityflows/cat.flow.asc", "utf8");
+var Statement = mongoose.model('Statement', require('../../app/models/statement'));
+var rawCF = fs.readFileSync(__dirname + "/../data/statements/cat.flow", "utf8") +
+            fs.readFileSync(__dirname + "/../data/statements/cat.flow.asc", "utf8");
 
-describe('Community flow', function(){
+describe('Statement', function(){
 
   describe('signed by cat', function(){
 
     var entry;
 
     before(function(done) {
-      var parser = parsers.parseCommunityFlow().asyncWrite(rawCF, function (err, obj) {
-        entry = new CommunityFlow(obj);
+      var parser = parsers.parseStatement().asyncWrite(rawCF, function (err, obj) {
+        entry = new Statement(obj);
         done(err);
       });
     });

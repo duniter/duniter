@@ -11,14 +11,18 @@ var sha1       = require('sha1');
 var vucoin     = require('vucoin');
 var logger     = require('./logger')('daemon');
 
-module.exports = function (conn, PeeringService, ContractService, SyncService) {
-  return new Daemon(conn, PeeringService, ContractService, SyncService);
+module.exports = function (regServer) {
+  return new Daemon(regServer);
 };
 
-function Daemon (conn, PeeringService, ContractService, SyncService) {
+function Daemon (regServer) {
 
-  var Amendment = conn.model('Amendment');
-  var Key       = conn.model('Key');
+  var conn            = regServer.conn;
+  var PeeringService  = regServer.PeeringService;
+  var ContractService = regServer.ContractService;
+  var SyncService     = regServer.SyncService;
+  var Amendment       = conn.model('Amendment');
+  var Key             = conn.model('Key');
 
   // self reference, private scope
   var daemon = this;
@@ -100,11 +104,15 @@ function Daemon (conn, PeeringService, ContractService, SyncService) {
                 // Must be a voter to vote!
                 Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
                   if (!err && wasVoter) {
-                    logger.debug("Asking CF for SELF peer");
-                    SyncService.getFlow(current.number + 1, Algorithm, function (err, json) {
-                      // Do nothing with result: it has been done by SyncService (self-submitted the vote)
-                      callback(err);
-                    });
+                    logger.debug("Asking Statement for SELF peer");
+                    async.waterfall([
+                      function (next){
+                        SyncService.getStatement(current.number + 1, Algorithm, next);
+                      },
+                      function (statement, next){
+                        regServer.submit(statement, false, next);
+                      },
+                    ], callback);
                     return;
                   }
                   callback(err);
@@ -141,7 +149,7 @@ function Daemon (conn, PeeringService, ContractService, SyncService) {
       vote: ['connect', function (cb, results) {
         var node = results.connect;
         // Ask for peer's vote
-        node.registry.amendment.flow(current.number + 1, Algorithm, cb);
+        node.registry.amendment.statement(current.number + 1, Algorithm, cb);
       }]
     }, function (err, results) {
       done(err, results.vote);

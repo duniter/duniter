@@ -6,12 +6,12 @@
 * [Messages](#messages)
     * [Membership](#membership)
     * [Voting](#voting)
-    * [Community flow](#community_flow)
+    * [Statement](#statement)
 * [Algorithms](#algorithms)
   * [AnyKey](#anyey)
   * [1Sig](#1sig)
   * [Common rules](#common_rules)
-  * [Computing community flows](#computing_community_flows)
+  * [Computing statements](#computing_statements)
 
 ## Introduction
 
@@ -94,11 +94,11 @@ A [Voting](#voting) is to be considered valid if:
 * `Issuer` matches signature's key ID
 * `Registry` matches `VOTING` value
 
-### Community flow
+### Statement
 
 Message whose role is to sum up, for a given node, the variations of members & voters to impact for next amendment. Such variations are resulting from [Membership](#membership), [Voting](#voting) and [Public Key](./HDC.md#public-key) documents received for next amendment.
 
-Here is an example of Community Flow:
+Here is an example of Statement:
 
 ```bash
 Version: 1
@@ -174,7 +174,7 @@ Both algorithms **only accepts** keys with an [OpenUDC udid2](https://github.com
 
 For both algorithms, **only members may be voters**.
 
-### Computing community flows
+### Computing statements
 
 Here are 2 tables on how to compute analytically members & voters changes:
 
@@ -239,7 +239,7 @@ Using this formula, it can be known at any moment how to apply variation of the 
 
 #### Impacts on members & voters changes
 
-The above formulas are utilities allowing us, for each key, the changes to apply to [Merkle summary](#merkle-summary) fields of [CommunityFlow](#community-flow) document.
+The above formulas are utilities allowing us, for each key, the changes to apply to [Merkle summary](#merkle-summary) fields of [Statement](#statement) document.
 
 Below are the rules on how to interprete `Mvar` and `Vvar` for such fields:
 
@@ -249,13 +249,13 @@ Value | Changes
 -1    | Key is leaving
  1    | Key is joining
 
- For example, if `Mvar = 1` for key `2E69197FAB029D8669EF85E82457A1587CA0ED9C` is joining, this will lead this key to be present under `MembersJoining` of the community flow. If `Mvar = -1`, the key will be present under `MembersLeaving`. If `Mvar = 0` however, nothing happens.
+ For example, if `Mvar = 1` for key `2E69197FAB029D8669EF85E82457A1587CA0ED9C` is joining, this will lead this key to be present under `MembersJoining` of the statement. If `Mvar = -1`, the key will be present under `MembersLeaving`. If `Mvar = 0` however, nothing happens.
 
-### Community flow impacts & voting
+### Statement impacts & voting
 
-Community flows may be seen as a "pre-vote" process for nodes to agree on changes about members & voters, which are data that may vary a lot depending on how the data was correctly submitted (or not) to all the nodes.
+Statements may be seen as a "pre-vote" process for nodes to agree on changes about members & voters, which are data that may vary a lot depending on how the data was correctly submitted (or not) to all the nodes.
 
-Here is how a node should process while receiving community flows:
+Here is how a node should process while receiving statements:
 
 ###### 1. Compare Merkle summary fields
 
@@ -271,7 +271,7 @@ For each leave behind each Merkle summary, increment by `1` the value of how man
 
 ###### 4. Eventually vote by selecting common agreement
 
-If local node estimates enough CommunityFlows were received to have a common agreement, then:
+If local node estimates enough Statements were received to have a common agreement, then:
 
   1. Compute the average number of witnesses for each key (note: a special key named "nokey" also exists for empty Merkle summaries): `AVG`
   2. Compute the standard variation of witnesses for each key: `STDVAR`

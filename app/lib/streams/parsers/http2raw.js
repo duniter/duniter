@@ -11,7 +11,7 @@ module.exports = {
   wallet:        instanciate.bind(null, Http2RawWallet),
   membership:    instanciate.bind(null, Http2RawMembership),
   voting:        instanciate.bind(null, Http2RawVoting),
-  communityFlow: instanciate.bind(null, Http2RawCommunityFlow),
+  communityFlow: instanciate.bind(null, Http2RawStatement),
 };
 
 function instanciate (constructorFunc, req, onError) {
@@ -156,16 +156,16 @@ function Http2RawVoting (req, onError) {
   }
 }
 
-function Http2RawCommunityFlow (req, onError) {
+function Http2RawStatement (req, onError) {
   
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!(req.body && req.body.flow && req.body.signature)){
-      onError('Requires a flow + signature');
+    if(!(req.body && req.body.statement && req.body.signature)){
+      onError('Requires a statement + signature');
     }
     else {
-      this.push(req.body.flow + req.body.signature);
+      this.push(req.body.statement + req.body.signature);
     }
     this.push(null);
   }
@@ -180,4 +180,4 @@ util.inherits(Http2RawStatus,      stream.Readable);
 util.inherits(Http2RawWallet,      stream.Readable);
 util.inherits(Http2RawMembership,  stream.Readable);
 util.inherits(Http2RawVoting,      stream.Readable);
-util.inherits(Http2RawCommunityFlow, stream.Readable);
+util.inherits(Http2RawStatement, stream.Readable);

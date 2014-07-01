@@ -126,6 +126,19 @@ function Multicaster () {
     });
   });
   
+  that.on('statement', function(statement, peers) {
+    logger.debug('--> new Statement to be sent to %s peer(s)', peers.length);
+    peers.forEach(function(peer){
+      fifo.push(function (sent) {
+        // Do propagating
+        logger.debug('sending %s\'s statement to peer %s', statement.keyID(), peer.keyID());
+        sendStatement(peer, statement, success(function (err) {
+          sent();
+        }));
+      });
+    });
+  });
+  
   that.on('forward', function(forward, peers, done) {
     logger.debug('--> new Forward to be sent to %s peer(s)', peers.length);
     fifo.push(function (sent) {
@@ -150,12 +163,15 @@ function Multicaster () {
       });
     });
   });
+
+  this.sendPubkey = sendPubkey;
 }
 
 util.inherits(Multicaster, stream.Transform);
 
 function sendPubkey(peer, pubkey, done) {
-  logger.info('POST pubkey to %s', peer.keyID());
+  var keyID = peer.keyID();
+  logger.info('POST pubkey to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
   post(peer, '/pks/add', {
     "keytext": pubkey.getRaw(),
     "keysign": pubkey.signature
@@ -215,6 +231,14 @@ function sendVoting(peer, voting, done) {
   post(peer, '/registry/community/voters', {
     "voting": voting.getRaw(),
     "signature": voting.signature
+  }, done);
+}
+
+function sendStatement(peer, statement, done) {
+  logger.info('POST statement to %s', peer.keyID());
+  post(peer, '/registry/amendment/statement', {
+    "statement": statement.getRaw(),
+    "signature": statement.signature
   }, done);
 }
 

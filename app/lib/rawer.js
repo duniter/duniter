@@ -174,7 +174,7 @@ module.exports = new function() {
     return unix2dos(signed(that.getVotingWithoutSignature(json), json));
   };
 
-  this.getCommunityFlowWithoutSignature = function (json) {
+  this.getStatementWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Currency: " + json.currency + "\n";
@@ -193,8 +193,8 @@ module.exports = new function() {
     return unix2dos(raw);
   };
 
-  this.getCommunityFlow = function (json) {
-    return unix2dos(signed(that.getCommunityFlowWithoutSignature(json), json));
+  this.getStatement = function (json) {
+    return unix2dos(signed(that.getStatementWithoutSignature(json), json));
   };
 
   function signed (raw, json) {

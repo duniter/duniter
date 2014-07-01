@@ -6,7 +6,7 @@ var _        = require('underscore');
 var rawer    = require('../lib/rawer');
 var Schema   = mongoose.Schema;
 
-var CommunityFlowSchema = new Schema({
+var StatementSchema = new Schema({
   version: String,
   currency: String,
   issuer: { type: String },
@@ -31,20 +31,20 @@ var CommunityFlowSchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
-CommunityFlowSchema.pre('save', function (next) {
+StatementSchema.pre('save', function (next) {
   this.updated = Date.now();
   next();
 });
 
-CommunityFlowSchema.virtual('pubkey').get(function () {
+StatementSchema.virtual('pubkey').get(function () {
   return this._pubkey;
 });
 
-CommunityFlowSchema.virtual('pubkey').set(function (am) {
+StatementSchema.virtual('pubkey').set(function (am) {
   this._pubkey = am;
 });
 
-CommunityFlowSchema.methods = {
+StatementSchema.methods = {
 
   keyID: function () {
     return this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
@@ -88,52 +88,52 @@ CommunityFlowSchema.methods = {
   },
 
   getRaw: function() {
-    return rawer.getCommunityFlowWithoutSignature(this);
+    return rawer.getStatementWithoutSignature(this);
   },
 
   getRawSigned: function() {
-    return rawer.getCommunityFlow(this);
+    return rawer.getStatement(this);
   }
 }
 
-CommunityFlowSchema.statics.getTheOne = function (amNumber, issuer, algo, done) {
+StatementSchema.statics.getTheOne = function (amNumber, issuer, algo, done) {
   this.find({ amendmentNumber: amNumber, issuer: issuer, algorithm: algo }, function (err, entries) {
     if(entries && entries.length == 1){
       done(err, entries[0]);
       return;
     }
     if(!entries || entries.length == 0){
-      done('No CommunityFlow entry found');
+      done('No Statement entry found');
       return;
     }
     if(entries || entries.length > 1){
-      done('More than one CommunityFlow entry found');
+      done('More than one Statement entry found');
     }
   });
 }
 
-CommunityFlowSchema.statics.getSelf = function (amNumber, algo, done) {
+StatementSchema.statics.getSelf = function (amNumber, algo, done) {
   this.find({ amendmentNumber: amNumber, algorithm: algo, selfGenerated: true }, function (err, entries) {
     if(entries && entries.length == 1){
       done(err, entries[0]);
       return;
     }
     if(!entries || entries.length == 0){
-      done('No CommunityFlow entry found');
+      done('No Statement entry found');
       return;
     }
     if(entries || entries.length > 1){
-      done('More than one CommunityFlow entry found');
+      done('More than one Statement entry found');
     }
   });
 }
 
-CommunityFlowSchema.statics.getForAmendmentAndAlgo = function (amNumber, algo, done) {
+StatementSchema.statics.getForAmendmentAndAlgo = function (amNumber, algo, done) {
   this.find({ amendmentNumber: amNumber, algorithm: algo }, done);
 }
 
-CommunityFlowSchema.statics.getByIssuerAlgoAmendmentHashAndNumber = function (issuer, algo, amHash, amNumber, done) {
+StatementSchema.statics.getByIssuerAlgoAmendmentHashAndNumber = function (issuer, algo, amHash, amNumber, done) {
   this.find({ amendmentNumber: amNumber, amendmentHash: amHash, issuer: issuer, algorithm: algo }, done);
 }
 
-module.exports = CommunityFlowSchema;
+module.exports = StatementSchema;

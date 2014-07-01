@@ -92,6 +92,10 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   var initFunctions = [
     function (done) {
       that.initPeer(that.conn, that.conf, done);
+    },
+    function (done) {
+      that.emit('peerInited');
+      done();
     }
   ].concat(onInit || []);
 

@@ -41,18 +41,20 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
         ], next);
       }
     },{
-      // CommunityFlow
+      // Statement
       matches: function (obj) {
         return obj.algorithm ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
-            that.SyncService.submitCF(obj, next);
+            logger.debug('⬇ Statement based on AM#%s from %s', obj.amendmentNumber, obj.issuer);
+            that.SyncService.submitStatement(obj, next);
           },
-          function (communityflow, next){
-            that.emit('communityflow', communityflow);
-            next(null, communityflow);
+          function (statement, next){
+            logger.debug('✔ Statement based on AM#%s from %s', obj.amendmentNumber, obj.issuer);
+            that.emit('statement', statement);
+            next(null, statement);
           },
         ], next);
       }
@@ -122,7 +124,7 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
     async.waterfall([
       function (next){
         // Init Daemon
-        that.daemon = require('./app/lib/daemon')(that.conn, that.PeeringService, that.ContractService, that.SyncService);
+        that.daemon = require('./app/lib/daemon')(that);
         that.daemon.init(conf, that.PeeringService.cert.fingerprint);
         // Start autonomous contract daemon
         that.daemon.start();
@@ -173,19 +175,19 @@ function RegistryServer (dbConf, overrideConf, interceptors) {
   this.listenREG = function (app) {
     var reg = require('./app/controllers/registry')(that, that.conf);
     app.get(    '/registry/parameters',                             reg.parameters);
-    app.get(    '/registry/flow',                                   reg.communityFlowPost);
     app.post(   '/registry/community/members',                      reg.membershipPost);
     app.get(    '/registry/community/members/:fpr/current',         reg.membershipCurrent);
     app.get(    '/registry/community/members/:fpr/history',         reg.membershipHistory);
     app.post(   '/registry/community/voters',                       reg.votingPost);
     app.get(    '/registry/community/voters/:fpr/current',          reg.votingCurrent);
     app.get(    '/registry/community/voters/:fpr/history',          reg.votingHistory);
+    app.post(   '/registry/amendment/statement',                    reg.statementPost);
     app.get(    '/registry/amendment/:am_number/:algo/members/in',  reg.membersIn);
     app.get(    '/registry/amendment/:am_number/:algo/members/out', reg.membersOut);
     app.get(    '/registry/amendment/:am_number/:algo/voters/in',   reg.votersIn);
     app.get(    '/registry/amendment/:am_number/:algo/voters/out',  reg.votersOut);
     app.get(    '/registry/amendment/:am_number/:algo/self',        reg.askSelf);
-    app.get(    '/registry/amendment/:am_number/:algo/flow',        reg.askFlow);
+    app.get(    '/registry/amendment/:am_number/:algo/statement',   reg.askStatement);
     app.get(    '/registry/amendment/:am_number/:algo/vote',        reg.askVote);
   }
 

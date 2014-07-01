@@ -9,7 +9,7 @@ module.exports = {
   parseWallet:      instanciate.bind(instanciate, require('./wallet')),
   parseMembership:  instanciate.bind(instanciate, require('./membership')),
   parseVoting:      instanciate.bind(instanciate, require('./voting')),
-  parseCommunityFlow: instanciate.bind(instanciate, require('./communityflow')),
+  parseStatement: instanciate.bind(instanciate, require('./statement')),
 };
 
 function instanciate (constructorFunc, onError) {

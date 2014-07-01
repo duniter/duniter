@@ -20,7 +20,6 @@ var ConfigurationSchema = new Schema({
   sync:        {"type": Object, "default": {
     AMDaemon:  "OFF", // No deamon by default
     AMFreq:    3600*24, // every day
-    AMFreq:    3600*24, // every day
     UDFreq:    3600*24*30.4375, // every month
     UD0:       100,
     UDPercent: 0.007376575, // 0.73%

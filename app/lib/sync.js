@@ -27,15 +27,16 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
             var SyncService        = server.SyncService;
 
   // Models
-  var Amendment   = server.conn.model('Amendment');
-  var PublicKey   = server.conn.model('PublicKey');
-  var Merkle      = server.conn.model('Merkle');
-  var Key         = server.conn.model('Key');
-  var Membership  = server.conn.model('Membership');
-  var Voting      = server.conn.model('Voting');
-  var Transaction = server.conn.model('Transaction');
-  var Wallet      = server.conn.model('Wallet');
-  var Peer        = server.conn.model('Peer');
+  var Amendment     = server.conn.model('Amendment');
+  var PublicKey     = server.conn.model('PublicKey');
+  var Merkle        = server.conn.model('Merkle');
+  var Key           = server.conn.model('Key');
+  var Membership    = server.conn.model('Membership');
+  var Voting        = server.conn.model('Voting');
+  var Transaction   = server.conn.model('Transaction');
+  var Wallet        = server.conn.model('Wallet');
+  var Peer          = server.conn.model('Peer');
+  var Configuration = server.conn.model('Configuration');
   
   this.remoteFingerprint = null;
 
@@ -119,6 +120,34 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         function (recordedPR, next){
           that.remoteFingerprint = recordedPR.fingerprint;
           next();
+        },
+
+        //============
+        // Parameters
+        //============
+        function (next){
+          node.registry.parameters(next);
+        },
+        function (params, next){
+          async.waterfall([
+            function (next){
+              Configuration.find({}, next);
+            },
+            function (confs, next){
+              var config = confs[0] || new Configuration();
+              var sync = _({}).extend(config.sync);
+              sync.AMStart   = params.AMStart;
+              sync.AMFreq    = params.AMFrequency;
+              sync.UDFreq    = params.UDFrequency;
+              sync.UD0       = params.UD0;
+              sync.UDPercent = params.UDPercent;
+              sync.Consensus = params.Consensus;
+              config.sync = sync;
+              config.save(function (err) {
+                next(err);
+              });
+            },
+          ], next);
         },
 
         //============

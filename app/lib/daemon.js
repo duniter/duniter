@@ -163,11 +163,11 @@ function Daemon (regServer) {
   this.judges = {
 
     timeForVote: function (amNext) {
-      return new Date().timestamp() >= amNext.generated;
+      return new Date().utc().timestamp() >= amNext.generated;
     },
 
     timeForAskingVotes: function (amNext) {
-      return new Date().timestamp() >= amNext.generated + 60; // 1min later
+      return new Date().utc().timestamp() >= amNext.generated + 60; // 1min later
     }
   };
 }

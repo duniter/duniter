@@ -41,6 +41,10 @@ String.prototype.hexstrdump = function() {
   return r.join('');
 };
 
+Date.prototype.utc = function(){
+  return new Date(this.getTime() + this.getTimezoneOffset()*60*1000);
+};
+
 Date.prototype.timestamp = function(){
   return Math.floor(this.getTime() / 1000);
 };

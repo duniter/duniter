@@ -524,7 +524,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
                 st.version = "1";
                 st.currency = currency;
                 st.algorithm = algo;
-                st.date = new Date();
+                st.date = new Date().utc();
                 st.issuer = cert.fingerprint;
                 st.amendmentNumber = amPrevious.number;
                 st.amendmentHash = amPrevious.hash;

@@ -44,6 +44,10 @@ This is a *very important information* as every document is subject to hashes, a
 
 For [Amendments](#amendment) and [Transactions](#transaction), number starts from `0`. That is, first amendments is `AM#0`, and first transaction of a node is `TX#0`.
 
+#### Dates
+
+For any document using a date field, targeted date is to be understood as **UTC+0** reference.
+
 ### Signatures
 
 #### Format

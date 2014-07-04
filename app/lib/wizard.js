@@ -302,7 +302,19 @@ var tasks = {
           async.apply(simpleInteger, "Dividend frequency",               "UDFreq",    conf.sync),
           async.apply(simpleFloat,   "Consensus %required",              "Consensus", conf.sync),
           async.apply(simpleInteger, "Initial dividend",                 "UD0",       conf.sync),
-          async.apply(simpleFloat,   "Universal Dividend %growth",       "UDPercent", conf.sync)
+          async.apply(simpleFloat,   "Universal Dividend %growth",       "UDPercent", conf.sync),
+          function (next) {
+            inquirer.prompt([{
+              type: "checkbox",
+              name: "Algorithm",
+              message: "Community you want to vote for",
+              choices: ["AnyKey", "1Sig"],
+              default: conf.sync.Algorithm,
+            }], function (answers) {
+              conf.sync.Algorithm = answers.Algorithm;
+              done();
+            });
+          }
         ], done);
       },
       function disabled () {

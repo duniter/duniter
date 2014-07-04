@@ -105,14 +105,18 @@ function Daemon (regServer) {
                 Key.wasVoter(selfFingerprint, current.number, function (err, wasVoter) {
                   if (!err && wasVoter) {
                     logger.debug("Asking Statement for SELF peer");
-                    async.waterfall([
-                      function (next){
-                        SyncService.getStatement(current.number + 1, Algorithm, next);
-                      },
-                      function (statement, next){
-                        regServer.submit(statement, false, next);
-                      },
-                    ], callback);
+                    async.forEach(Algorithm, function(algo, callback){
+                      async.waterfall([
+                        function (next){
+                          SyncService.getStatement(current.number + 1, algo, next);
+                        },
+                        function (statement, next){
+                          regServer.submit(statement, false, next);
+                        },
+                      ], callback);
+                    }, function(err){
+                      next(err);
+                    });
                     return;
                   }
                   callback(err);
@@ -138,21 +142,6 @@ function Daemon (regServer) {
       },
     ], function (err, waiting) {
       done(err, waiting || defaultTimeout);
-    });
-  }
-
-  function askCF (current, peer, done) {
-    async.auto({
-      connect: function (cb){
-        vucoin(peer.getIPv4(), peer.getPort(), true, cb);
-      },
-      vote: ['connect', function (cb, results) {
-        var node = results.connect;
-        // Ask for peer's vote
-        node.registry.amendment.statement(current.number + 1, Algorithm, cb);
-      }]
-    }, function (err, results) {
-      done(err, results.vote);
     });
   }
 

@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var _        = require('underscore');
 var Schema   = mongoose.Schema;
 var logger   = require('../lib/logger')();
 
@@ -24,7 +25,7 @@ var ConfigurationSchema = new Schema({
     UD0:       100,
     UDPercent: 0.007376575, // 0.73%
     Consensus: 2/3,
-    Algorithm: 'AnyKey' 
+    Algorithm: ['AnyKey', '1Sig'],
   }}
 });
 
@@ -43,10 +44,14 @@ ConfigurationSchema.virtual('createNext').set(function (create) {
 //  - UD(0): 100 unities
 //  - UD % (aka 'c'): 9.22% a year <=> 0.7376575% a month
 //  - UD Minimal Coin: none
-//  - Voting % threshold: 2/3 of votes
-//  - Membership max. delay: 6 months
 
 ConfigurationSchema.pre('save', function (next) {
+
+  // Force sync saving
+  var sync = _({}).extend(this.sync);
+  this.sync = {};
+  this.sync = sync;
+
   if(!this.kmanagement || !this.kmanagement.match(/^(ALL|KEYS)$/)){
     logger.error('Incorrect --kmanagement value, reset to default `KEYS` value');
     this.kmanagement = 'KEYS';

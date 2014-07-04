@@ -4,6 +4,7 @@ var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
 var Schema   = mongoose.Schema;
+var unix2dos = require('../lib/unix2dos');
 var parsers  = require('../lib/streams/parsers/doc');
 var logger   = require('../lib/logger')('pubkey');
 
@@ -185,7 +186,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
         var now = new Date();
         var comingKey = jpgp().certificate(pubkey.raw).key;
         that.find({ fingerprint: pubkey.fingerprint }, function (err, foundKeys) {
-          var comingArmored = comingKey.armor();
+          var comingArmored = unix2dos(comingKey.armor());
           var comingHash = comingArmored.hash();
           // Create if not exists
           if (foundKeys.length == 0) {
@@ -208,12 +209,13 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           // Merges packets
           storedKey.update(comingKey);
           var mergedCert = jpgp().certificate(storedKey.armor());
+          var raw = unix2dos(storedKey.armor());
           foundKeys[0].subkeys = mergedCert.subkeys;
-          foundKeys[0].raw = storedKey.armor();
+          foundKeys[0].raw = raw;
           foundKeys[0].email = pubkey.email;
           foundKeys[0].name = pubkey.name;
           foundKeys[0].comment = pubkey.comment;
-          foundKeys[0].hash = storedKey.armor().hash();
+          foundKeys[0].hash = raw.hash();
           foundKeys[0].save(function (err) {
             next(err);
           });

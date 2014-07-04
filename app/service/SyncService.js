@@ -198,8 +198,8 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
     fifoStatement.push(function (cb) {
       async.waterfall([
         function (next) {
-          if (['AnyKey', '1Sig'].indexOf(entry.algorithm) == -1) {
-            next('Algorithm must be either AnyKey or 1Sig');
+          if (conf.sync.Algorithm.indexOf(entry.algorithm) == -1) {
+            next('Algorithm not managed by this node');
             return;
           }
           Statement.getByIssuerAlgoAmendmentHashAndNumber(entry.issuer, entry.algorithm, entry.amendmentHash, entry.amendmentNumber, next);
@@ -731,8 +731,6 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
   }
 
   function computeLocalMSandVTChanges (basis, algo, done) {
-    if (['1Sig', 'AnyKey'].indexOf(algo) == -1)
-      done('Algorithm \'' + algo + '\' not managed');
     var isMember = function (fpr, done) {
       if (basis == -1)
         done(null, true);
@@ -740,7 +738,16 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
         Key.wasMember(fpr, basis, done);
     };
     var getPubkey = PublicKey.getTheOne.bind(PublicKey);
-    var algoFunc = algo == "1Sig" ? require('../lib/algos/community/1Sig')(isMember, getPubkey) : require('../lib/algos/community/AnyKey');
+    var algos = {
+      "1Sig": require('../lib/algos/community/1Sig')(isMember, getPubkey),
+      "AnyKey": require('../lib/algos/community/AnyKey')
+    };
+    var algoFunc = algos[algo];
+    if (!algoFunc) {
+      var err = "Unsupported algo '" + algo + "'";
+      done(new Error(err));
+      return;
+    }
     var members = [];
     var voters = [];
     var membersJoining = [];

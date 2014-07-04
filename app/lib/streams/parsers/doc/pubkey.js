@@ -17,8 +17,9 @@ function PubkeyParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getPubkey, onError);
 
   this._parse = function (str, obj) {
-    obj.raw = str;
-    obj.hash = sha1(str).toUpperCase();
+    var dosStr = unix2dos(str);
+    obj.raw = dosStr;
+    obj.hash = sha1(dosStr).toUpperCase();
     var k = jpgp().certificate(obj.raw);
     // Extract udid2
     obj.udid2s = getSignedUdid2s(k.key);

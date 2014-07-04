@@ -7,7 +7,7 @@ var merkle   = require('merkle');
 var _        = require('underscore');
 var openpgp  = require('openpgp');
 var Status   = require('../models/statusMessage');
-var coiner   = require('../lib/coiner');
+var coiner   = require('../lib/algos/coins/coiner');
 var log4js   = require('log4js');
 var logger   = require('../lib/logger')('sync');
 var mlogger  = require('../lib/logger')('membership');
@@ -848,7 +848,7 @@ function SyncService (conn, conf, signsDetached, ContractService, PeeringService
           var c = conf.sync.UDPercent;
           var UD = Math.ceil(c*amNext.monetaryMass/amNext.membersCount);
           amNext.dividend = Math.max(prevUD, UD); // Integer
-          var coinage = coiner(amNext.dividend, 0, 0);
+          var coinage = coiner.Base2Draft(amNext.dividend, 0, 0);
           amNext.coinBase = coinage.coinBase;
           amNext.coinList = coinage.coinList;
           next();

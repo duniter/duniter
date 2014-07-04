@@ -3,7 +3,7 @@ var assert = require('assert');
 var async  = require('async');
 var sha1   = require('sha1');
 var fs     = require('fs');
-var coiner = require('../../app/lib/coiner');
+var coiner = require('../../app/lib/algos/coins/coiner');
 var log4js = require('log4js');
 var logger = log4js.getLogger('test coins');
 
@@ -49,7 +49,7 @@ function testCoinerFor2Power (value, sum) {
   it('coins for value 2^' + value + ' = ' + sum, function(){
   logger.info('-----------');
     var computed = 0;
-    coiner(value, 0).coins.forEach(function(Pn){
+    coiner.Base2Draft(value, 0).coins.forEach(function(Pn){
       logger.info(Pn);
       Pn.forEach(function(coinPower){
         computed += Math.pow(2, coinPower);
@@ -63,7 +63,7 @@ function testCoinerForNon2Power (value, p) {
   it('coins for value ' + value, function(){
   logger.info('-----------');
     var computed = 0;
-    coiner(value, p).coins.forEach(function(Pn){
+    coiner.Base2Draft(value, p).coins.forEach(function(Pn){
       logger.info(Pn);
       Pn.forEach(function(coinPower){
         computed += Math.pow(2, coinPower);
@@ -75,7 +75,7 @@ function testCoinerForNon2Power (value, p) {
 
 function testCoinsForDividend (dividend, p, expectedArray) {
   it('coins for dividend ' + dividend + ' should be ' + JSON.stringify(expectedArray), function(){
-    var res = coiner(dividend, p);
+    var res = coiner.Base2Draft(dividend, p);
     assert.deepEqual(res.coinList, expectedArray);
   });
 }

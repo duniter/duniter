@@ -28,28 +28,28 @@ describe('Testing coin distribution algo, we should have ', function(){
   testCoinerForNon2Power(2300300, 3, 25);
   testCoinerForNon2Power(1073741824, 23, 25);
 
-  testCoinsForDividend(1, 0, 0, [1]);
-  testCoinsForDividend(2, 0, 0, [2]);
-  testCoinsForDividend(3, 0, 0, [3]);
-  testCoinsForDividend(4, 0, 0, [4]);
-  testCoinsForDividend(5, 0, 0, [5]);
-  testCoinsForDividend(6, 0, 0, [6]);
-  testCoinsForDividend(7, 0, 0, [7]);
-  testCoinsForDividend(8, 0, 0, [6,1]);
-  testCoinsForDividend(9, 0, 0, [7,1]);
-  testCoinsForDividend(12, 0, 0, [10,1]);
-  testCoinsForDividend(16, 0, 0, [8,2,1]);
-  testCoinsForDividend(32, 0, 0, [10,3,2,1]);
-  testCoinsForDividend(100, 0, 0, [26,7,5,3,1]);
-  testCoinsForDividend(150, 0, 0, [28,7,5,3,2,1]);
-  testCoinsForDividend(225, 0, 0, [37,12,9,6,3,1]);
+  testCoinsForDividend(1, 0, [1]);
+  testCoinsForDividend(2, 0, [2]);
+  testCoinsForDividend(3, 0, [3]);
+  testCoinsForDividend(4, 0, [4]);
+  testCoinsForDividend(5, 0, [5]);
+  testCoinsForDividend(6, 0, [6]);
+  testCoinsForDividend(7, 0, [7]);
+  testCoinsForDividend(8, 0, [6,1]);
+  testCoinsForDividend(9, 0, [7,1]);
+  testCoinsForDividend(12, 0, [10,1]);
+  testCoinsForDividend(16, 0, [8,2,1]);
+  testCoinsForDividend(32, 0, [10,3,2,1]);
+  testCoinsForDividend(100, 0, [26,7,5,3,1]);
+  testCoinsForDividend(150, 0, [28,7,5,3,2,1]);
+  testCoinsForDividend(225, 0, [37,12,9,6,3,1]);
 });
 
-function testCoinerFor2Power (value, l, sum) {
-  it('coins for value 2^' + value + ' = ' + sum + ', limit ' + l, function(){
+function testCoinerFor2Power (value, sum) {
+  it('coins for value 2^' + value + ' = ' + sum, function(){
   logger.info('-----------');
     var computed = 0;
-    coiner(value, l).coins.forEach(function(Pn){
+    coiner(value, 0).coins.forEach(function(Pn){
       logger.info(Pn);
       Pn.forEach(function(coinPower){
         computed += Math.pow(2, coinPower);
@@ -59,11 +59,11 @@ function testCoinerFor2Power (value, l, sum) {
   });
 }
 
-function testCoinerForNon2Power (value, l, p) {
-  it('coins for value ' + value + ', limit ' + l, function(){
+function testCoinerForNon2Power (value, p) {
+  it('coins for value ' + value, function(){
   logger.info('-----------');
     var computed = 0;
-    coiner(value, l, p).coins.forEach(function(Pn){
+    coiner(value, p).coins.forEach(function(Pn){
       logger.info(Pn);
       Pn.forEach(function(coinPower){
         computed += Math.pow(2, coinPower);
@@ -73,9 +73,9 @@ function testCoinerForNon2Power (value, l, p) {
   });
 }
 
-function testCoinsForDividend (dividend, l, p, expectedArray) {
+function testCoinsForDividend (dividend, p, expectedArray) {
   it('coins for dividend ' + dividend + ' should be ' + JSON.stringify(expectedArray), function(){
-    var res = coiner(dividend, l, p);
+    var res = coiner(dividend, p);
     assert.deepEqual(res.coinList, expectedArray);
   });
 }

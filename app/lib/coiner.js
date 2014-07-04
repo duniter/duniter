@@ -1,13 +1,13 @@
 
 module.exports = coinsForValue;
 
-function coinsForValue (value, l, p) {
+function coinsForValue (value, p) {
   var coins = [];
   var rest = value;
   do {
     var power = findClosestLower2Power(rest);
     rest -= Math.pow(2, power);
-    coins = coins.concat(L(power, l, p || 0));
+    coins = coins.concat(L(power, p || 0));
   } while (rest > 0);
   var base = coinBase(coins);
   var list = coinList(coins, base);
@@ -26,20 +26,20 @@ function findClosestLower2Power (number) {
   return --power;
 }
 
+function L (n, p) {
+  var values = [];
+  for (var i = n-1; i >= 0; i--) {
+    values.push(P(i, p));
+  }
+  values.push(P(Math.min(n, 0), p));
+  return values;
+}
+
 function P (n, p) {
   var values = [Math.min(n, p)];
   for (var i = Math.min(n, p); i < n; i++) {
     values.push(i);
   }
-  return values;
-}
-
-function L (n, l, p) {
-  var values = [];
-  for (var i = n-1; i >= l; i--) {
-    values.push(P(i, p));
-  }
-  values.push(P(Math.min(n, l), p));
   return values;
 }
 

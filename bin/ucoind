@@ -24,7 +24,7 @@ var LISTEN_HTTP = true;
 var DO_NOT_LISTEN_HTTP = false;
 
 program
-  .version('0.6.0')
+  .version('0.6.1')
   .usage('<command> [options]')
   .option('-p, --port <port>', 'Port to listen for requests', parseInt)
   .option('-c, --currency <name>', 'Name of the currency managed by this node.')

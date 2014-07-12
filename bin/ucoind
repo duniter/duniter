@@ -65,7 +65,7 @@ program
         type: "console"
       }]
     });
-    connect(DO_NOT_LISTEN_HTTP, ucoin.createPeerServer, function (server, conf) {
+    service(DO_NOT_LISTEN_HTTP, ucoin.createPeerServer, function (server, conf) {
       // Only show message "Saved"
       require('log4js').configure({
         "appenders": [{
@@ -106,7 +106,7 @@ program
         type: "console"
       }]
     });
-    connect(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (step, server, conf) {
+    connect(function (step, server, conf) {
       var wiz = wizard(server);
       var task = {
         'currency': wiz.configCurrency,
@@ -127,10 +127,10 @@ program
           });
         },
         function (next) {
-          server.checkConfig(conf, function (err) {
-            logger.warn(err);
-          });
-          next();
+          // Check config
+          service(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (key, server, conf) {
+            next();
+          })(null, null);
         }
       ], function (err, result) {
         err && logger.error(err);
@@ -143,7 +143,7 @@ program
 program
   .command('sync [host] [port]')
   .description('Tries to synchronise data with remote uCoin node')
-  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (host, port, server, conf) {
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (host, port, server, conf) {
 
     // Disable daemon
     conf.sync.AMDaemon = "OFF";
@@ -168,7 +168,7 @@ program
 program
   .command('allow-key [key]')
   .description('Add given key to authorized keys of this node')
-  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
     key = key || "";
     key = key.toUpperCase();
     async.waterfall([
@@ -198,14 +198,14 @@ program
 program
   .command('manage-key [key]')
   .description('Add given key to stack of managed keys of this node')
-  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
     handleKey(server, key, true, 'Key %s is now managed');
   }));
 
 program
   .command('forget-key [key]')
   .description('Remove given key of the managed keys\' stack of this node')
-  .action(connect(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
     handleKey(server, key, false, 'Key %s no more managed from now');
   }));
 
@@ -234,7 +234,7 @@ function handleKey (server, key, isManaged, message) {
 program
   .command('check-config')
   .description('Checks the node\'s configuration')
-  .action(connect(function (server, conf) {
+  .action(service(function (server, conf) {
     server.checkConfig(function (err) {
       if (err)
         logger.warn(err);
@@ -249,7 +249,7 @@ program
 program
   .command('config')
   .description('Register configuration in database')
-  .action(connect(false, function (server, conf) {
+  .action(service(false, function (server, conf) {
     conf.save(function (err) {
       if(err){
         logger.error("Configuration could not be saved: " + err);
@@ -266,7 +266,7 @@ program
 program
   .command('reset [config|data]')
   .description('Reset configuration or data in database')
-  .action(connect(function (type, server, conf) {
+  .action(service(function (type, server, conf) {
     if(!~['config', 'data'].indexOf(type)){
       logger.error('Bad command: usage `reset config` or `reset data`');
       server.disconnect();
@@ -297,7 +297,7 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(connect(LISTEN_HTTP, ucoin.createRegistryServer, function (server, conf) {
+  .action(service(LISTEN_HTTP, ucoin.createRegistryServer, function (server, conf) {
 
     server
       .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
@@ -387,7 +387,32 @@ function overrideConf(conf) {
   return conf;
 }
 
-function connect(listenHTTP, serverFactory, callback) {
+function connect(callback) {
+  return function () {
+    var cbArgs = arguments;
+    var dbName = program.mdb || "ucoin_default";
+
+    var server = ucoin.connect({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
+
+    // Connecting to DB
+    server.on('connected', function (err) {
+
+      if(err){
+        logger.warn(err);
+        server.disconnect();
+        process.exit(1);
+        return;
+      }
+
+      cbArgs.length--;
+      cbArgs[cbArgs.length++] = server;
+      cbArgs[cbArgs.length++] = server.conf;
+      callback.apply(this, cbArgs);
+    });
+  };
+}
+
+function service(listenHTTP, serverFactory, callback) {
   if (arguments.length == 1) {
     callback = listenHTTP;
     listenHTTP = false;

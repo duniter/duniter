@@ -6,56 +6,49 @@ var _        = require('underscore');
 var inquirer = require('inquirer');
 var openpgp  = require('openpgp');
 
-module.exports = function (regServer) {
-  return new Wizard(regServer);
+module.exports = function () {
+  return new Wizard();
 }
 
 var IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
-function Wizard (regServer) {
+function Wizard () {
 
   this.configAll = function (conf, done) {
-    doTasks(['currency', 'openpgp', 'network', 'key', 'autovote'], regServer, conf, done);
+    doTasks(['currency', 'openpgp', 'network', 'key', 'autovote'], conf, done);
   };
 
   this.configCurrency = function (conf, done) {
-    doTasks(['currency'], regServer, conf, done);
+    doTasks(['currency'], conf, done);
   };
 
   this.configOpenpgp = function (conf, done) {
-    doTasks(['openpgp'], regServer, conf, done);
+    doTasks(['openpgp'], conf, done);
   };
 
   this.configNetwork = function (conf, done) {
-    doTasks(['network'], regServer, conf, done);
+    doTasks(['network'], conf, done);
   };
 
   this.configKey = function (conf, done) {
-    doTasks(['key'], regServer, conf, done);
+    doTasks(['key'], conf, done);
   };
 
   this.configAutovote = function (conf, done) {
-    doTasks(['autovote'], regServer, conf, done);
+    doTasks(['autovote'], conf, done);
   };
 }
 
-function doTasks (todos, server, conf, done) {
+function doTasks (todos, conf, done) {
   async.forEachSeries(todos, function(task, callback){
-    async.waterfall([
-      function (next){
-        server.initServices(next);
-      },
-      function (next){
-        tasks[task] && tasks[task](server, conf, next);
-      },
-    ], callback);
+    tasks[task] && tasks[task](conf, callback);
   }, done);
 }
 
 var tasks = {
 
-  currency: function (server, conf, done) {
+  currency: function (conf, done) {
     inquirer.prompt([{
       type: "input",
       name: "currency",
@@ -70,7 +63,7 @@ var tasks = {
     });
   },
 
-  openpgp: function (server, conf, done) {
+  openpgp: function (conf, done) {
     inquirer.prompt([{
       type: "list",
       name: "openpgp",
@@ -89,7 +82,7 @@ var tasks = {
     });
   },
 
-  network: function (server, conf, done) {
+  network: function (conf, done) {
     var noInterfaceListened = true;
     if (conf.ipv4 || conf.ipv6) {
       noInterfaceListened = false;
@@ -214,8 +207,8 @@ var tasks = {
     ], done);
   },
 
-  key: function (regServer, conf, done) {
-    var fingerprint = regServer.PeeringService.cert.fingerprint;
+  key: function (conf, done) {
+    var fingerprint = jpgp().certificate(conf.pgpkey).fingerprint;
     var privateKeys = [];
     async.waterfall([
       function (next){
@@ -292,7 +285,7 @@ var tasks = {
     ], done);
   },
 
-  autovote: function (server, conf, done) {
+  autovote: function (conf, done) {
     choose("Autovoting", conf.sync.AMDaemon ? conf.sync.AMDaemon == "ON" : false,
       function enabled () {
         conf.sync.AMDaemon = "ON";

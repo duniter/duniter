@@ -10,6 +10,10 @@
       * [add](#pksadd)
       * [lookup](#pkslookup)
       * [all](#pksall)
+  * [keychain/](#keychain)
+      * [membership](#keychainmembership)
+      * [keyblock](#keychainkeyblock)
+      * [current](#keychaincurrent)
   * [network/](#network)
       * [pubkey](#networkpubkey)
       * [peering](#networkpeering)
@@ -24,39 +28,20 @@
       * [wallet (GET)](#networkwallet-get)
       * [wallet (POST)](#networkwallet-post)
       * [wallet/[PGP_FINGERPRINT]](#networkwalletpgp_fingerprint)
-  * [hdc/](#hdc)
-      * [amendments/promoted](#amendmentspromoted)
-      * [amendments/promoted/[AMENDMENT_NUMBER]](#amendmentspromotedamendment_number)
-      * [amendments/view/[AMENDMENT_ID]/self](#amendmentsviewamendment_idself)
-      * [amendments/view/[AMENDMENT_ID]/signatures](#amendmentsviewamendment_idsignatures)
-      * [amendments/votes (GET)](#amendmentsvotes-get)
-      * [amendments/votes (POST)](#amendmentsvotes-post)
-      * [transactions/process](#transactionsprocess)
-      * [transactions/last/[count]](#transactionslastcount)
-      * [transactions/sender/[PGP_FINGERPRINT]](#transactionssenderpgp_fingerprint)
-      * [transactions/sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]](#transactionssenderpgp_fingerprintviewtx_number)
-      * [transactions/sender/[PGP_FINGERPRINT]/last/[count]/[from]](#transactionssenderpgp_fingerprintlastcountfrom)
-      * [transactions/recipient/[PGP_FINGERPRINT]](#transactionsrecipientpgp_fingerprint)
-      * [transactions/refering/[PGP_FINGERPRINT]/[TX_NUMBER]](#transactionsreferingpgp_fingerprinttx_number)
+  * [contract/](#contract)
+      * [parameters](#parameters)
+      * [am/[AMENDMENT_NUMBER]](#amamendment_number)
+  * [tx/](#tx)
+      * [process](#process)
+      * [last/[count]](#lastcount)
+      * [sender/[PGP_FINGERPRINT]](#senderpgp_fingerprint)
+      * [sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]](#senderpgp_fingerprintviewtx_number)
+      * [sender/[PGP_FINGERPRINT]/last/[count]/[from]](#senderpgp_fingerprintlastcountfrom)
+      * [recipient/[PGP_FINGERPRINT]](#recipientpgp_fingerprint)
+      * [refering/[PGP_FINGERPRINT]/[TX_NUMBER]](#referingpgp_fingerprinttx_number)
       * [coins/list/[PGP_FINGERPRINT]](#coinslistpgp_fingerprint)
       * [coins/view/[COIN_ID]/owner](#coinsviewcoin_idowner)
       * [coins/view/[COIN_ID]/history](#coinsviewcoin_idhistory)
-  * [registry/](#registry)
-      * [parameters](#parameters)
-      * [community/members (POST)](#communitymembers-post)
-      * [community/members/[PGP_FINGERPRINT]/current](#communitymemberspgp_fingerprintcurrent)
-      * [community/members/[PGP_FINGERPRINT]/history](#communitymemberspgp_fingerprinthistory)
-      * [community/voters (POST)](#communityvoters-post)
-      * [community/voters/[PGP_FINGERPRINT]/current](#communityvoterspgp_fingerprintcurrent)
-      * [community/voters/[PGP_FINGERPRINT]/history](#communityvoterspgp_fingerprinthistory)
-      * [amendment/statement](#amendmentstatement)
-      * [amendment/[AM_NUMBER]/[ALGO]/members/in](#amendmentam_numberalgomembersin)
-      * [amendment/[AM_NUMBER]/[ALGO]/members/out](#amendmentam_numberalgomembersout)
-      * [amendment/[AM_NUMBER]/[ALGO]/voters/in](#amendmentam_numberalgovotersin)
-      * [amendment/[AM_NUMBER]/[ALGO]/voters/out](#amendmentam_numberalgovotersout)
-      * [amendment/[AM_NUMBER]/[ALGO]/self](#amendmentam_numberalgoself)
-      * [amendment/[AM_NUMBER]/[ALGO]/statement](#amendmentam_numberalgostatement)
-      * [amendment/[AM_NUMBER]/[ALGO]/vote](#amendmentam_numberalgovote)
 
 ## Overview
 
@@ -67,6 +52,10 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |-- add
     |   |-- all
     |   `-- lookup
+    |-- keychain/
+    |   |-- membership
+    |   |-- keyblock
+    |   `-- current
     |-- network/
     |   |-- pubkey
     |   |-- peering
@@ -79,63 +68,34 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |           `-- [PGP_FINGERPRINT]
     |   `-- wallet/
     |       `-- [PGP_FINGERPRINT]
-    |-- hdc/
-    |   |-- amendments/
-    |   |   |-- promoted
-    |   |   |   `-- [AMENDMENT_NUMBER]
-    |   |   |-- view/
-    |   |   |   `-- [AMENDMENT_ID]/
-    |   |   |       |-- self
-    |   |   |       `-- signatures
-    |   |   `-- votes/
-    |   |       `-- [AMENDMENT_ID]
-    |   |-- transactions/
-    |   |   |-- process
-    |   |   |-- last/
-    |   |   |   `-- [count]
-    |   |   |-- sender/
-    |   |   |   `-- [PGP_FINGERPRINT]/
-    |   |   |       |-- view/
-    |   |   |       |   `-- [TX_NUMBER]
-    |   |   |       `-- last/
-    |   |   |           `-- [count]/
-    |   |   |               `-- [from]
-    |   |   |-- recipient/
-    |   |   |   `-- [PGP_FINGERPRINT]
-    |   |   `-- refering/
-    |   |       `-- [PGP_FINGERPRINT]/
-    |   |           `-- [TX_NUMBER]
-    |   `-- coins/
-    |       |-- list/
-    |       |   `-- [PGP_FINGERPRINT]
-    |       `-- view/
-    |           `-- [COIND_ID]/
-    |               |-- history
-    |               `-- owner
-    `-- registry/
-        |-- parameters
-        |-- community/
-        |   |-- members/
-        |   |   `-- [PGP_FINGERPRINT]/
-        |   |       |-- history
-        |   |       `-- current
-        |   `-- voters/
-        |       `-- [PGP_FINGERPRINT]/
-        |           |-- history
-        |           `-- current
-        `-- amendment/
-            |-- statement
-            `-- [AM_NUMBER]/
-                `-- [ALGO]
-                    |-- members
-                    |   |-- in
-                    |   `-- out
-                    |-- voters
-                    |   |-- in
-                    |   `-- out
-                    |-- self
-                    |-- statement
-                    `-- vote
+    |-- contract/
+    |   |-- parameters
+    |   `-- amendments/
+    |       `-- am/
+    |           `-- [AMENDMENT_NUMBER]
+    `-- tx/
+        |-- process
+        |-- last/
+        |   `-- [count]
+        |-- sender/
+        |   `-- [PGP_FINGERPRINT]/
+        |       |-- view/
+        |       |   `-- [TX_NUMBER]
+        |       `-- last/
+        |           `-- [count]/
+        |               `-- [from]
+        |-- recipient/
+        |   `-- [PGP_FINGERPRINT]
+        |-- refering/    
+        |   `-- [PGP_FINGERPRINT]/
+        |       `-- [TX_NUMBER]
+        `-- coins/
+            |-- list/
+            |   `-- [PGP_FINGERPRINT]
+            `-- view/
+                `-- [COIND_ID]/
+                    |-- history
+                    `-- owner
 
 ## Merkle URLs
 
@@ -144,15 +104,10 @@ Merkle URL is a special kind of URL applicable for resources:
 * `pks/all`
 * `network/peering/peers (GET)`
 * `network/wallet (GET)`
-* `hdc/amendments/view/[AMENDMENT_ID]/signatures`
 * `hdc/transactions/sender/[PGP_FINGERPRINT]`
 * `hdc/transactions/recipient/[PGP_FINGERPRINT]`
-* `registry/amendment/[AM_NUMBER]/[ALGO]/members/in`
-* `registry/amendment/[AM_NUMBER]/[ALGO]/members/out`
-* `registry/amendment/[AM_NUMBER]/[ALGO]/voters/in`
-* `registry/amendment/[AM_NUMBER]/[ALGO]/voters/out`
 
-Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `hdc/amendments/view/[AMENDMENT_ID]/members` is a Merkle tree whose leaves are hashes of members key fingerprint sorted ascending way. Thus, if any new key is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
+Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `network/peers` is a Merkle tree whose leaves are peers' key fingerprint sorted ascending way. Thus, if any new peer is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
 For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. uCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
 
@@ -254,13 +209,8 @@ Merkle URL                                                                | Leaf
 `pks/all`                                                                 | Fingerprint of the key                  | By fingerprint string sort, ascending.
 `network/peers (GET)`                                                     | Fingerprint of the peer                 | By fingerprint string sort, ascending.
 `network/wallet (GET)`                                                    | Fingerprint of the wallet               | By fingerprint string sort, ascending.
-`hdc/amendments/view/[AMENDMENT_ID]/signatures`                           | Fingerprint of the voter                | By fingerprint string sort, ascending.
 `hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of (transaction + signature)       | By hash string sort, ascending.
 `hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of (transaction + signature)       | By hash string sort, ascending.
-`registry/amendment/[AM_NUMBER]/[ALGO]/members/in`                        | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`registry/amendment/[AM_NUMBER]/[ALGO]/members/out`                       | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`registry/amendment/[AM_NUMBER]/[ALGO]/voters/in`                         | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`registry/amendment/[AM_NUMBER]/[ALGO]/voters/out`                        | Fingerprint of the key                  | By fingerprint string sort, ascending.
 
 #### Unicity
 
@@ -372,6 +322,20 @@ Merkle URL leaf: public key
   }
 }
 ```
+
+### keychain/*
+
+#### `keychain/membership`
+
+> TODO
+
+#### `keychain/keyblock`
+
+> TODO
+
+#### `keychain/current`
+
+> TODO
 
 ### network/*
 
@@ -778,16 +742,19 @@ The requested Wallet.
 }
 ```
 
-### hdc/*
+### contract/*
 
 This URL pattern manages all the data used by uCoin based on the PKS.
 
 In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
 
-#### `amendments/promoted`
+#### `parameters`
+
+> TODO: rewrite this method
+
 **Goal**
 
-GET the current promoted amendment (amendment which received enough votes to be accepted).
+GET the synchronization parameters used by this node.
 
 **Parameters**
 
@@ -795,30 +762,32 @@ GET the current promoted amendment (amendment which received enough votes to be 
 
 **Returns**
 
-The current amendment.
+The synchronization parameters.
 ```json
 {
-  "version": "1",
-  "currency": "beta_brousouf",
-  "number": "2",
-  "generated": 1400588975,
-  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-  "dividend": "100",
-  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-  "votersCount": "2",
-  "votersChanges": [
-    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  ],
-  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-  "membersCount": "4",
-  "membersChanges": [
-    "+31A6302161AC8F5938969E85399EB3415C237F93"
-  ],
-  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
+    "AMStart": 1388530800,
+    "AMFrequency": 86400,
+    "UDFrequency": 2629800,
+    "UD0": 100,
+    "UDPercent": 0.007376575,
+    "CoinAlgo": "Base2Draft",
+    "Consensus": 0.6666666666666666
 }
 ```
 
-#### `amendments/promoted/[AMENDMENT_NUMBER]`
+Below are parameters meaning:
+
+Parameter         | Meaning
+----------------- | ------------
+AMStart           | Root amendment starting timestamp (in seconds)
+AMFrequency       | Amendment frequency (in seconds)
+UDFrequency       | Universal Dividend frequency (in seconds)
+UD0               | Universal Dividend initial value
+UDPercent         | Universal Dividend % of monetary mass growth
+CoinAlgo          | Algorithm used for generating coins (this also gives interpretation of coins' value in each amendment)
+Consensus         | Percent of voters required to valid an Amendment
+
+#### `am/[AMENDMENT_NUMBER]`
 **Goal**
 
 GET the promoted amendment with number `AMENDMENT_NUMBER` (amendment which received enough votes to be accepted).
@@ -854,144 +823,9 @@ The promoted amendment if it exists (otherwise return HTTP 404).
 }
 ```
 
-#### `amendments/view/[AMENDMENT_ID]/self`
-**Goal**
+### tx/*
 
-Shows the raw data of the amendment `[AMENDMENT_ID]`.
-
-**Parameters**
-
-Name           | Value                                                         | Method
--------------- | ------------------------------------------------------------- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
-
-**Returns**
-
-The requested amendment.
-```json
-{
-  "version": "1",
-  "currency": "beta_brousouf",
-  "number": "2",
-  "generated": 1400588975,
-  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-  "dividend": "100",
-  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-  "votersCount": "2",
-  "votersChanges": [
-    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  ],
-  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-  "membersCount": "4",
-  "membersChanges": [
-    "+31A6302161AC8F5938969E85399EB3415C237F93"
-  ],
-  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-}
-```
-
-#### `amendments/view/[AMENDMENT_ID]/signatures`
-**Goal**
-
-Merkle URL referencing to the votes for a given amendment.
-
-**Parameters**
-
-Name           | Value                                                         | Method
--------------- | ------------------------------------------------------------- | ------
-`AMENDMENT_ID` | The amendment id (`AMENDMENT_HASH-AMENDMENT_NUMBER`).         | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: signature
-```json
-{
-  "hash": "2D4224A240938C4263CBC5E7E11564038DED2118",
-  "value": {
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
-  }
-}
-```
-
-#### `amendments/votes (GET)`
-**Goal**
-
-GET an index of votes received by this node.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-A list detailing for each amendment number, statistics of votes (grouped by amendment hash).
-```json
-{
-  "amendments": {
-    "0": {
-      "376C5A6126A4688B18D95043261B2D59867D4047": 3,
-      "0035C75B49BD5FBB3D01D63B4C9BF2CC0E20B763": 1
-    },
-    "1": {
-      "0A9575937587C4E68F89AA4F0CCD3E6E41A07D8C": 3
-    },
-    ...
-  }
-}
-```
-
-#### `amendments/votes (POST)`
-**Goal**
-
-POST an amendment signed by a Community member, considering it as a vote for this amendment.
-
-**Parameters**
-
-Name           | Value                                                                                                    | Method
--------------- | -------------------------------------------------------------------------------------------------------- | ------
-`amendment`    | The raw amendment structure.                                                                             | POST
-`signature`    | The signature of the `amendment`.                                                                        | POST
-`peer`         | **Not mandatory**. A peer's fingerprint where to check and download `amendment`'s signatures Merkle tree | POST
-
-**Returns**
-
-The posted amendment + posted signature.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-  "amendment": {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "number": "2",
-    "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-    "dividend": "100",
-    "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-    "votersCount": "2",
-    "votersChanges": [
-      "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-    ],
-    "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-    "membersCount": "4",
-    "membersChanges": [
-      "+31A6302161AC8F5938969E85399EB3415C237F93"
-    ],
-    "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-  }
-}
-```
-
-#### `transactions/process`
+#### `tx/process`
 **Goal**
 
 POST a transaction.
@@ -1027,7 +861,7 @@ The recorded transaction and its signature.
 }
 ```
 
-#### `transactions/last/[COUNT]`
+#### `tx/last/[COUNT]`
 **Goal**
 
 Get the last `n` received transactions.
@@ -1074,7 +908,7 @@ The last [COUNT] transactions received.
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]`
+#### `tx/sender/[PGP_FINGERPRINT]`
 **Goal**
 
 Merkle URL referencing all the transactions sent by this sender and stored by this node (should contain all transactions of the sender).
@@ -1120,7 +954,7 @@ Merkle URL leaf: transaction
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]`
+#### `tx/sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]`
 **Goal**
 
 GET the transaction of given `TRANSACTION_ID`.
@@ -1155,7 +989,7 @@ The transaction and its signature.
 }
 ```
 
-#### `transactions/sender/[PGP_FINGERPRINT]/last/[COUNT]/[FROM]`
+#### `tx/sender/[PGP_FINGERPRINT]/last/[COUNT]/[FROM]`
 **Goal**
 
 Get the last `n` received transactions of a PGP key.
@@ -1204,7 +1038,7 @@ The last [COUNT] transactions of given PGP key.
 }
 ```
 
-#### `transactions/recipient/[PGP_FINGERPRINT]`
+#### `tx/recipient/[PGP_FINGERPRINT]`
 **Goal**
 
 Merkle URL referencing all the transactions received for this recipient stored by this node.
@@ -1250,7 +1084,7 @@ Merkle URL leaf: transaction
 }
 ```
 
-#### `transactions/refering/[PGP_FINGERPRINT]/[TX_NUMBER]`
+#### `tx/refering/[PGP_FINGERPRINT]/[TX_NUMBER]`
 **Goal**
 
 GET all the transactions refering to source transaction #`[TX_NUMBER]` issued by `[PGP_FINGERPRINT]`.
@@ -1399,594 +1233,5 @@ A coin's list of ownerships in time.
     ...
     }
   ]
-}
-```
-
-### registry/*
-
-#### `parameters`
-
-**Goal**
-
-GET the synchronization parameters used by this node.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The synchronization parameters.
-```json
-{
-    "AMStart": 1388530800,
-    "AMFrequency": 86400,
-    "UDFrequency": 2629800,
-    "UD0": 100,
-    "UDPercent": 0.007376575,
-    "CoinAlgo": "Base2Draft",
-    "Consensus": 0.6666666666666666
-}
-```
-
-Below are parameters meaning:
-
-Parameter         | Meaning
------------------ | ------------
-AMStart           | Root amendment starting timestamp (in seconds)
-AMFrequency       | Amendment frequency (in seconds)
-UDFrequency       | Universal Dividend frequency (in seconds)
-UD0               | Universal Dividend initial value
-UDPercent         | Universal Dividend % of monetary mass growth
-CoinAlgo          | Algorithm used for generating coins (this also gives interpretation of coins' value in each amendment)
-Consensus         | Percent of voters required to valid an Amendment
-
-#### `community/members (POST)`
-
-**Goal**
-
-POST a [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) document, in order to change membership status of a Public key.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`membership` | The raw membership structure. | POST
-`signature` | The signature of the `membership` parameter. | POST
-
-**Returns**
-
-The posted membership request + posted signature.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-  "membership": {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "membership": "IN",
-    "sigDate": 1390739944,
-    "raw": "Version: 1\r\n...Membership: IN\r\n"
-  }
-}
-```
-
-#### `community/members/[PGP_FINGERPRINT]/current`
-
-**Goal**
-
-GET last received valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) document, which has been used for for current contract.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
-
-**Returns**
-
-The posted membership request + posted signature.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-  "membership": {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "membership": "IN",
-    "sigDate": 1390739944,
-    "raw": "Version: 1\r\n...Membership: IN\r\n"
-  }
-}
-```
-
-#### `community/members/[PGP_FINGERPRINT]/history`
-
-**Goal**
-
-GET an history of all received and stored valid [Membership](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#membership) documents, which has been used for for current contract.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
-
-**Returns**
-
-A list of posted membership requests + posted signatures.
-```json
-{
-  "memberships": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "membership": {
-        "version": "1",
-        "currency": "beta_brousouf",
-        "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "membership": "ACTUALIZE",
-        "sigDate": 1414327144,
-        "raw": "Version: 1\r\n...Membership: IN\r\n"
-      }
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "membership": {
-        "version": "1",
-        "currency": "beta_brousouf",
-        "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "membership": "ACTUALIZE",
-        "sigDate": 1403782744,
-        "raw": "Version: 1\r\n...Membership: IN\r\n"
-      }
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "membership": {
-        "version": "1",
-        "currency": "beta_brousouf",
-        "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "membership": "IN",
-        "sigDate": 1390739944,
-        "raw": "Version: 1\r\n...Membership: IN\r\n"
-      }
-    }
-  ]
-}
-```
-
-#### `community/voters (POST)`
-
-**Goal**
-
-POST a [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) document, in order to change voting key of a Community member.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`voting`          | The raw voting structure.                                     | POST
-`signature`       | The signature of the `voting` parameter.                      | POST
-
-**Returns**
-
-The posted voting request + posted signature.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-  "voting": {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "sigDate": 1390740799,
-    "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
-  }
-}
-```
-
-#### `community/voters/[PGP_FINGERPRINT]/current`
-
-**Goal**
-
-GET last received valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) document, which has been used for for current contract.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
-
-**Returns**
-
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-  "voting": {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-    "sigDate": 1393764799,
-    "raw": "Version: 1\r\n...Issuer: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
-  }
-}
-```
-
-#### `community/voters/[PGP_FINGERPRINT]/history`
-
-**Goal**
-
-GET an history of all received and stored valid [Voting](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#voting) documents, which has been used for for current contract.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | Public key's fingerprint to check.                            | URL
-
-**Returns**
-
-A list of posted voting requests + posted signatures.
-```json
-{
-  "votings": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "voting": {
-        "version": "1",
-        "currency": "beta_brousouf",
-        "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "sigDate": 1393764799,
-        "raw": "Version: 1\r\n...Issuer: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
-      }
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "voting": {
-        "version": "1",
-        "currency": "beta_brousouf",
-        "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "sigDate": 1393419199,
-        "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
-      }
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "voting": {
-        "version": "1",
-        "currency": "beta_brousouf",
-        "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-        "sigDate": 1390740799,
-        "raw": "Version: 1\r\n...Issuer: FD17FECBAF731658EDEB60CF8700174B1D585861\r\n"
-      }
-    }
-  ]
-}
-```
-
-#### `amendment/statement`
-
-**Goal**
-
-POST a [Statement](https://github.com/c-geek/ucoin/blob/master/doc/Registry.md#statement) document, in order to notify of a node's computed community changes.
-
-**Parameters**
-
-Name | Value | Method
----- | ----- | ------
-`document` | The raw statement document. | POST
-`signature` | The signature of the `document` parameter. | POST
-
-**Returns**
-
-Posted document, json format.
-```json
-{
-  "statement": {
-    "raw": "Version: 1\r\nCurrency: beta_brousouf\r\nAmendment: 1-58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7\r\nIssuer: C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\nDate: 1401894350\r\nAlgorithm: AnyKey\r\n",
-    "version": 1,
-    "amendmentNumber": 1,
-    "membersJoiningCount": 0,
-    "membersLeavingCount": 0,
-    "votersJoiningCount": 0,
-    "votersLeavingCount": 0,
-    "currency": "beta_brousouf",
-    "amendmentHash": "58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7",
-    "algorithm": "AnyKey",
-    "membersJoiningRoot": "",
-    "membersLeavingRoot": "",
-    "votersJoiningRoot": "",
-    "votersLeavingRoot": "",
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "date": 1401894350
-  }
-}
-```
-
-#### `amendment/[AM_NUMBER]/[ALGO]/members/in`
-
-**Goal**
-
-Merkle URL referencing members who are joining in community.
-
-**Parameters**
-
-Name              | Value                                                                    | Method
------------------ | -------------------------------------------------------------            | ------
-`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
-`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: membership
-```json
-{
-  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-    "membership": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-      "membership": "IN",
-      "sigDate": 1390739944,
-      "raw": "Version: 1\r\n...Membership: IN\r\n"
-    }
-  }
-}
-```
-
-#### `amendment/[AM_NUMBER]/[ALGO]/members/out`
-
-**Goal**
-
-Merkle URL referencing members who are leaving out community.
-
-**Parameters**
-
-Name              | Value                                                                    | Method
------------------ | -------------------------------------------------------------            | ------
-`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
-`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: membership or empty string.
-```json
-{
-  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-    "membership": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-      "membership": "OUT",
-      "sigDate": 1390749944,
-      "raw": "Version: 1\r\n...Membership: IN\r\n"
-    }
-  }
-}
-```
-> Note: as a member may leave community for other reasons than having asked to, "value" may not contain an object but just an empty string.
-
-#### `amendment/[AM_NUMBER]/[ALGO]/voters/in`
-
-**Goal**
-
-Merkle URL referencing voters who are joining in voters.
-
-**Parameters**
-
-Name              | Value                                                                    | Method
------------------ | -------------------------------------------------------------            | ------
-`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
-`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: voting
-```json
-{
-  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-    "voting": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-      "sigDate": 1390740799,
-      "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
-    }
-  }
-}
-```
-
-#### `amendment/[AM_NUMBER]/[ALGO]/voters/out`
-
-**Goal**
-
-Merkle URL referencing voters who are leaving out community.
-
-**Parameters**
-
-Name              | Value                                                                    | Method
------------------ | -------------------------------------------------------------            | ------
-`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
-`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: voting or empty string.
-```json
-{
-  "hash": "B93E45A8EC8C3F1B5EC5E1065F279A44CA3D04FF",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-    "voting": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
-      "sigDate": 1390740799,
-      "raw": "Version: 1\r\n...Issuer: 8E02FAFC90EDECB451086285DDD99C17AE19CF3F\r\n"
-    }
-  }
-}
-```
-> Note: as a member may leave community for other reasons than having asked to, "value" may not contain an object but just an empty string.
-
-#### `amendment/[AM_NUMBER]/[ALGO]/statement`
-
-**Goal**
-
-GET the [Statement](./Registry.md#statement) document associated to an amendment for a given membership algorithm.
-
-**Parameters**
-
-Name              | Value                                                                    | Method
------------------ | -------------------------------------------------------------            | ------
-`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
-`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
-
-**Returns**
-
-Current node's statement, or HTTP 404 if not available yet.
-```json
-{
-  "statement": {
-    "raw": "Version: 1\r\nCurrency: beta_brousouf\r\nAmendment: 1-58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7\r\nIssuer: C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\nDate: 1401894350\r\nAlgorithm: AnyKey\r\n",
-    "version": 1,
-    "amendmentNumber": 1,
-    "membersJoiningCount": 0,
-    "membersLeavingCount": 0,
-    "votersJoiningCount": 0,
-    "votersLeavingCount": 0,
-    "currency": "beta_brousouf",
-    "amendmentHash": "58C3E52B78D1D545B4BA41AEB048BB2B7E3CE0C7",
-    "algorithm": "AnyKey",
-    "membersJoiningRoot": "",
-    "membersLeavingRoot": "",
-    "votersJoiningRoot": "",
-    "votersLeavingRoot": "",
-    "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "date": 1401894350
-  }
-}
-```
-
-#### `amendment/[AM_NUMBER]/[ALGO]/self`
-
-**Goal**
-
-GET the proposed amendment of this node for a given number & membership algorithm.
-
-**Parameters**
-
-Name              | Value                                                                    | Method
------------------ | -------------------------------------------------------------            | ------
-`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
-`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
-
-**Returns**
-
-Amendment to be voted by this node if voting happened.
-```json
-{
-  "version": "1",
-  "currency": "beta_brousouf",
-  "number": "2",
-  "generated": 1400588975,
-  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-  "dividend": "100",
-  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-  "votersCount": "2",
-  "votersChanges": [
-    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  ],
-  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-  "membersCount": "4",
-  "membersChanges": [
-    "+31A6302161AC8F5938969E85399EB3415C237F93"
-  ],
-  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-}
-```
-
-#### `amendment/[AM_NUMBER]/[ALGO]/vote`
-
-
-**Goal**
-
-GET the vote of current node for given amendment number (both amendment + signature). Such vote may be used by any node to broadcast the whole network.
-
-As for a given amendment number it can exist several ways to accept members, the `ALGO` parameters is used to differenciate such amendments. Thus, amendments `#1-AnyKey` is likely to not have the same members changes than `#1-1Sig`, leading to 2 different amendments.
-
-**Parameters**
-
-Name              | Value                                                                    | Method
------------------ | -------------------------------------------------------------            | ------
-`AM_NUMBER`       | The amendment number to be promoted.                                     | URL
-`ALGO`            | The algorithm used for membership acceptation. Either `AnyKey` or `1Sig` | URL
-
-**Returns**
-
-Current node's voting amendment + signature, or HTTP 404 if not available yet.
-```json
-{
-  "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-  "amendment": {
-    "version": "1",
-    "currency": "beta_brousoufs",
-    "number": "2",
-    "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-    "dividend": "100",
-    "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-    "votersCount": "2",
-    "votersChanges": [
-      "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-    ],
-    "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-    "membersCount": "4",
-    "membersChanges": [
-      "+31A6302161AC8F5938969E85399EB3415C237F93"
-    ],
-    "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-  },
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
 }
 ```

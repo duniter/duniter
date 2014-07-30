@@ -6,24 +6,31 @@
 
 * [Contents](#contents)
 * [Vocabluary](#vocabulary)
+* [Environment](#environment)
 * [Conventions](#conventions)
   * [Documents](#documents)
   * [Signatures](#signatures)
 * [Formats](#formats)
   * [Public key](#public-key)
   * [Keyblock](#keyblock)
-  * [Keychain](#keychain)
   * [Amendment](#amendment)
   * [Transaction](#transaction)
   * [Peer](#peer)
-  * [Forward](#forward)
   * [Status](#status)
+  * [Forward](#forward)
   * [Wallet](#wallet)
 * [Variables](#variables)
   * [Protocol parameters](#protocol-parameters)
   * [Computed variables](#computed-variables)
 * [Processing](#processing)
+  * [Neutral documents](#neutral-documents)
   * [Keyblock](#keyblock-1)
+  * [Status](#status-1)
+  * [Forward](#forward-1)
+* [Implementations](#implementations)
+  * [Requirements](#requirements)
+  * [APIs](#apis)
+* [References](#references)
 
 ## Vocabulary
 
@@ -32,6 +39,10 @@ Word | Description
 Universal Dividend | Money issuance **directly** and **exclusively** on community members.
 Community | A groupment of individuals linked together trought a Monetary Contract.
 Monetary Contract | A document gathering the informations defining the community members, voters and monetary mass inside it.
+
+## Environment
+
+> TODO
 
 ## Conventions
 
@@ -249,10 +260,9 @@ The document must be ended with a `BOTTOM_SIGNATURE`, which is an OpenPGP armore
 * If `Number` equals `0`, `PreviousHash` and `PreviousIssuer` must not be provided
 * If `Number` is over `0`, `PreviousHash` and `PreviousIssuer` must be provided
 
-### Keychain
+#### Keychain
 A Keychain is a chaining of Keyblock. Such a document describes a WoT over the time.
 
-#### Data
 Each keyblock, other than the keyblock#0 must follow the following rules:
 
 * Its `Number` field has the same value as preceding keyblock + 1
@@ -514,6 +524,25 @@ Field | Description
   BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002
   OTHER_PROTOCOL 88.77.66.55 9001
 
+### Status
+
+Such a document informs a node on current node's status, either connected, up, or disconnected.
+
+  Version: VERSION
+  Currency: CURRENCY_NAME
+  Status: NEW|NEW_BACK|UP|UP_BACK|DOWN
+  From: SENDER_PGP_FINGERPRINT
+  To: RECIPIENT_PGP_FINGERPRINT
+
+
+Field      | Description
+-----      | -----------
+`Version`  | denotes the current structure version.
+`Currency` | contains the name of the currency.
+`Status    | Status type to be sent.
+`From`     | Issuer's fingerprint of the message.
+`To`       | Recipient's fingerprint for this message.
+
 ### Forward
 
 In addition to peering table, which only allows to know the address of each peer, *Forward* is a document allowing peers to ask each other to be forwarded of specific transactions when received.
@@ -542,25 +571,6 @@ Field      | Description
 `To`       | PGP key identifier targeted by this forwarding request.
 `Forward`  | the forwarding rule, either `ALL` to forward ANY incoming transaction or `KEYS` to forward only transactions whose sender or recipient belongs to values of `Keys`.
 `Keys`     | if `Forward: KEYS`, tells the keys whose transaction shall be forwarded. Must not be present if `Forward: ALL`.
-
-### Status
-
-Such a document informs a node on current node's status, either connected, up, or disconnected.
-
-  Version: VERSION
-  Currency: CURRENCY_NAME
-  Status: NEW|NEW_BACK|UP|UP_BACK|DOWN
-  From: SENDER_PGP_FINGERPRINT
-  To: RECIPIENT_PGP_FINGERPRINT
-
-
-Field      | Description
------      | -----------
-`Version`  | denotes the current structure version.
-`Currency` | contains the name of the currency.
-`Status    | Status type to be sent.
-`From`     | Issuer's fingerprint of the message.
-`To`       | Recipient's fingerprint for this message.
 
 ### Wallet
 
@@ -649,6 +659,10 @@ members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)`, `keychain(t
 
 ## Processing
 
+### Neutral documents
+
+> TODO
+
 ### Keyblock
 A Keyblock can be accepted only if it respects the following rules.
 
@@ -705,3 +719,27 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 * A zero must be added at the beginning for each keyblock emitted by the key during the last `[powRetro]` days
 
 > Those 2 rules, and notably the second, ensures a specific member won't keep the control too long
+
+### Status
+
+> TODO
+
+### Forward
+
+> TODO
+
+## Implementations
+
+> TODO
+
+### Requirements
+
+> TODO
+
+### APIs
+
+> TODO
+
+## References
+
+> TODO

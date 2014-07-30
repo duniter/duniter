@@ -5,8 +5,7 @@
 ## Contents
 
 * [Contents](#contents)
-* [Vocabluary](#vocabulary)
-* [Environment](#environment)
+* [Introduction](#introduction)
 * [Conventions](#conventions)
   * [Documents](#documents)
   * [Signatures](#signatures)
@@ -40,7 +39,7 @@ Universal Dividend | Money issuance **directly** and **exclusively** on communit
 Community | A groupment of individuals linked together trought a Monetary Contract.
 Monetary Contract | A document gathering the informations defining the community members, voters and monetary mass inside it.
 
-## Environment
+## Introduction
 
 > TODO
 

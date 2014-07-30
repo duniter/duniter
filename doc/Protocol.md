@@ -8,6 +8,9 @@
 * [Formats](#formats)
   * [Keyblock](#keyblock)
   * [Keychain](#keychain)
+* [Variables](#variables)
+  * [Protocol parameters](#protocol-parameters)
+  * [Computed variables](#computed-variables)
 * [Processing](#processing)
   * [Keyblock](#keyblock-1)
 
@@ -106,20 +109,82 @@ Each keyblock, other than the keyblock#0 must follow the following rules:
 * Its `PreviousIssuer` field match the key fingerprint of the previous block's signatory
 * Its `MembersCount` field is the sum of all `+` count minus the sum of all `-` count from `MembersChanges` field since keyblock#0, this block included
 
+## Variables
+
+### Protocol parameters
+
+Parameter   | Goal
+----------- | ----
+c           | The %growth of the UD every `[dt]` period
+dt          | Time period between two UD
+ud0         | UD(0), i.e. initial Universal Dividend
+sigDelay    | Time to wait between two certifications of a same UserID by a same key
+sigValidity | Maximum age of a valid signature
+sigQty      | Minimum quantity of signatures to join/stay in the keychain
+stepMax     | Maximum step between the WoT and individual and a newcomer
+powZeroMin  | Minimum number of zeros for a Proof-of-Work
+powRetro    | Number of days to look back in the keychain for PoW strengh
+
+### Computed variables
+
+Variable  | Meaning
+--------- | ----
+members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)`, `keychain(t)` targeting the keys whose last status is `+` in the keychain.
+
 ## Processing
 
 ### Keyblock
 A Keyblock can be accepted only if it respects the following rules.
 
-#### Public key
-> TODO: a new public key can be added only if it has a valid joining membership.
+#### Newcomers
 
-#### Members exclusion
-`MembersChanges` field may contain `-KEY` without corresponding membership **only if** the `KEY` no more match [signatures requirements](#signature-requirements).
+`MembersChanges` field may contain `+KEY` only if:
 
-#### Signature requirements
-A public key cannot be accepted
-> TODO: required WoT signatures (quantity & quality) to join in/stay within the community
+* The targeted public key is either present in the keychain or the current keyblock
+* The targeted public key matches [signatures requirements](#signature-requirements) with the current keyblock
+* The targeted public key has a [valid membership](#valid-membership) in the current keyblock
 
-#### Block's hash
-> TODO
+#### Leavers
+* `MembersChanges` field may contain `-KEY` if it receives a [valid leaving membership](#valid-membership)
+* `MembersChanges` field may contain `-KEY` without corresponding membership **only if** the `KEY` no more matches [signatures requirements](#signature-requirements).
+* `MembersChanges` field **must** contain `-KEY` without corresponding membership if a `KEY` no more matches [signatures requirements](#signature-requirements).
+
+#### Public key add
+
+* A new public key can be added to a keyblock only for [newcomers](#newcomers)
+* A public key must contain a UserID packet with the exact same UserID as in the [membership](#valid-membership)
+
+#### Certifications
+
+##### Self-certification
+* Only *one* self-certification of a UserID can be added in the whole keychain.
+* A public key must have a self-certification of its UserID
+
+##### Tiers-certifications
+* Only members' certifications can be added in a keyblock
+* A same certification (same UserID by a given key) cannot happen twice in a `[sigDelay]` duration interval
+
+#### Valid membership
+A membership is to be considered valid if matching the following rules:
+
+* The membership must be [well formated](#membership)
+* The membership `UserId` field matches [udid2 format](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164)
+* A joining membership cannot follow a `+KEY` in keychain changes for this key
+* A leaving membership can only follow a `+KEY` in keychain changes for this key
+
+#### Certification validity
+A signature (certification)  is considered valid if its age is less or equal to `[sigValidity]` months.
+
+#### Certification requirements
+A public key can join/stay in the community only if its [certifications](#certifications) matches the following rules:
+
+* The number of valid certifications must be at least `[sigQty]`
+* The maximum step between the key and the whole WoT (each member) must be `[stepMax]`
+
+#### Block fingerprint
+To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules are the following:
+
+* A PoW fingerprint must start with at least `[powZeroMin]` zeros
+* A zero must be added at the beginning for each keyblock emitted by the key during the last `[powRetro]` days
+
+> Those 2 rules, and notably the second, ensures a specific member won't keep the control too long

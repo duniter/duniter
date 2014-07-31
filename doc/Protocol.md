@@ -41,7 +41,9 @@ Monetary Contract | A document gathering the informations defining the community
 
 ## Introduction
 
-> TODO
+UCP aims at defining a data format, interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it does not defined all of the currency parameters' value but only the rules over it.
+
+This document is describing UCP in a bottom-up logic, so you will find first the details (data format) of the protocol to end with general protocol requirements.
 
 ## Conventions
 
@@ -49,7 +51,7 @@ Monetary Contract | A document gathering the informations defining the community
 
 #### Line endings
 
-Please note **very carefully** that every HDC document's line **ENDS with a newline character**, *Windows-style*, that is to say `<CR><LF>`.
+Please note **very carefully** that every document's line **ENDS with a newline character**, *Windows-style*, that is to say `<CR><LF>`.
 
 This is a *very important information* as every document is subject to hashes, and Unix-style endings won't produce the expected hashes.
 
@@ -306,7 +308,7 @@ Here is the interpretation of each field:
 Field | Description | Required
 ----- | ----------- | --------
 `Version` | denotes the current structure version. | **Required**
-`Currency` | contains the name of the currency. This is used to identify the target of the amendment, as several moneys may be HDC-based. | **Required**
+`Currency` | contains the name of the currency. This is used to identify the target of the amendment, as several moneys may be UCP-based. | **Required**
 `Number` | references the position of the amendment in the amendment chain. Initial amendment has the value `0`. | **Required**
 `GeneratedOn` | references the generation date of the amendment. | **Required**
 `UniversalDividend` | if provided, is a positive integer. It defines the amount of money each member of the community may create for **THIS** amendment. | *Not Required*
@@ -326,7 +328,7 @@ Where `AMENDMENT_NUMBER` is the `Number`, and `AMENDMENT_HASH` is the computed h
 
 #### Validity
 
-In HDC, an Amendment structure is considered *valid* if:
+In UCP, an Amendment structure is considered *valid* if:
 
 * Every line ends with a DOS `<CR><LN>` new line character.
 * Every required field is present, **with** consideration of fields order.
@@ -394,7 +396,7 @@ Here is a description of each field:
 Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
-`Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be HDC-based.
+`Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be UCP-based.
 `Sender` | the current owner's OpenPGP fingerprint of the coins to be sent.
 `Number` | an increment number identifying this transaction among all others sender's transactions.
 `PreviousHash` | **is mandatory if `Number` is positive**. It is a hash of the previous transaction (content AND signature), and is used to identify without ambiguity the previous transaction (it is an integrity mecanism).

@@ -93,7 +93,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
             |-- list/
             |   `-- [PGP_FINGERPRINT]
             `-- view/
-                `-- [COIND_ID]/
+                `-- [COIN_ID]/
                     |-- history
                     `-- owner
 

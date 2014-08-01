@@ -26,9 +26,8 @@
   * [Keyblock](#keyblock-1)
   * [Status](#status-1)
   * [Forward](#forward-1)
+  * [Transaction](#transaction-1)
 * [Implementations](#implementations)
-  * [Requirements](#requirements)
-  * [APIs](#apis)
 * [References](#references)
 
 ## Vocabulary
@@ -43,7 +42,7 @@ Monetary Contract | A document gathering the informations defining the community
 
 UCP aims at defining a data format, interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it does not defined all of the currency parameters' value but only the rules over it.
 
-This document is describing UCP in a bottom-up logic, so you will find first the details (data format) of the protocol to end with general protocol requirements.
+This document is describing UCP in a bottom-up logic, so you will find first the details of the protocol (data format) to end with general protocol requirements.
 
 ## Conventions
 
@@ -474,15 +473,15 @@ For that purpose, UCP defines a peering table containing, for a given node PGP k
 * a list of endpoints to contact the node
 
 This link is made through a document called *Peer* whose format is:
-
-  Version: VERSION
-  Currency: CURRENCY_NAME
-  Fingerprint: NODE_FINGERPRINT
-  Endpoints:
-  END_POINT_1
-  END_POINT_2
-  END_POINT_3
-  [...]
+  
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Fingerprint: NODE_FINGERPRINT
+    Endpoints:
+    END_POINT_1
+    END_POINT_2
+    END_POINT_3
+    [...]
 
 With the signature attached, this document certifies that this fingerprint's key is owned by host at given network endpoints.
 
@@ -499,12 +498,12 @@ Field | Description
 
 `Endpoints` has a particular structure: it is made up of at least one line with each line following format:
 
-  PROTOCOL_NAME[ OPTIONS]
-  [...]
+    PROTOCOL_NAME[ OPTIONS]
+    [...]
 
 For example, the first written uCoin peering protocol is BASIC_MERKLED_API, which defines an HTTP API. An endpoint of such protocol would look like:
 
-  BASIC_MERKLED_API[ DNS][ IPv4][ IPv6] PORT
+    BASIC_MERKLED_API[ DNS][ IPv4][ IPv6] PORT
 
 Where :
 
@@ -517,23 +516,23 @@ Field | Description
 
 #### Example
 
-  Version: 1
-  Currency: beta_brousouf
-  Fingerprint: A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468
-  Endpoints:
-  BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001
-  BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002
-  OTHER_PROTOCOL 88.77.66.55 9001
+    Version: 1
+    Currency: beta_brousouf
+    Fingerprint: A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468
+    Endpoints:
+    BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001
+    BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002
+    OTHER_PROTOCOL 88.77.66.55 9001
 
 ### Status
 
 Such a document informs a node on current node's status, either connected, up, or disconnected.
 
-  Version: VERSION
-  Currency: CURRENCY_NAME
-  Status: NEW|NEW_BACK|UP|UP_BACK|DOWN
-  From: SENDER_PGP_FINGERPRINT
-  To: RECIPIENT_PGP_FINGERPRINT
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Status: NEW|NEW_BACK|UP|UP_BACK|DOWN
+    From: SENDER_PGP_FINGERPRINT
+    To: RECIPIENT_PGP_FINGERPRINT
 
 
 Field      | Description
@@ -552,17 +551,17 @@ A *Forward table*, the gathering of several *Forward*, can be directly compared 
 
 Forward format is the following:
 
-  Version: VERSION
-  Currency: CURRENCY_NAME
-  From: FORWARDED_TO_FINGERPRINT
-  To: FORWARDED_BY_FINGERPRINT
-  Forward: ALL|KEYS
-  Keys:
-  395DF8F7C51F007019CB30201C49E884B46B92FA
-  58E6B3A414A1E090DFC6029ADD0F3555CCBA127F
-  4DC7C9EC434ED06502767136789763EC11D2C4B7
-  8EFD86FB78A56A5145ED7739DCB00C78581C5375
-  95CB0BFD2977C761298D9624E4B4D4C72A39974A
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    From: FORWARDED_TO_FINGERPRINT
+    To: FORWARDED_BY_FINGERPRINT
+    Forward: ALL|KEYS
+    Keys:
+    395DF8F7C51F007019CB30201C49E884B46B92FA
+    58E6B3A414A1E090DFC6029ADD0F3555CCBA127F
+    4DC7C9EC434ED06502767136789763EC11D2C4B7
+    8EFD86FB78A56A5145ED7739DCB00C78581C5375
+    95CB0BFD2977C761298D9624E4B4D4C72A39974A
 
 Field      | Description
 -----      | -----------
@@ -593,19 +592,19 @@ This is a very important feature for two points:
 
 A Wallet format is the following:
 
-  Version: VERSION
-  Currency: CURRENCY_NAME
-  Key: KEY_FINGERPRINT
-  Date: TIMESTAMP
-  RequiredTrusts: NUMBER_OF_TRUSTS
-  Hosters:
-  C139D011FAC7E3AA8E54619F7729F0179526FA54
-  14808C7325B28B38CBC62CF9CCEE37CD1AA03408
-  516B9783FCA517EECBD1D064DA2D165310B19759
-  0499A0A3F2F4DA8697632D5B7AF66EC607B06D99
-  Trusts:
-  A5ED399E2E411BF4B09132EFA2CC5E0CA49B835E
-  25AC706AF69E60A0334B2A072F4B802C3242B159
+    Version: VERSION
+    Currency: CURRENCY_NAME
+    Key: KEY_FINGERPRINT
+    Date: TIMESTAMP
+    RequiredTrusts: NUMBER_OF_TRUSTS
+    Hosters:
+    C139D011FAC7E3AA8E54619F7729F0179526FA54
+    14808C7325B28B38CBC62CF9CCEE37CD1AA03408
+    516B9783FCA517EECBD1D064DA2D165310B19759
+    0499A0A3F2F4DA8697632D5B7AF66EC607B06D99
+    Trusts:
+    A5ED399E2E411BF4B09132EFA2CC5E0CA49B835E
+    25AC706AF69E60A0334B2A072F4B802C3242B159
 
 and is followed by signature of `KEY_FINGERPRINT`'s owner.
 
@@ -662,7 +661,16 @@ members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)`, `keychain(t
 
 ### Neutral documents
 
-> TODO
+Some documents are to be considered *neutral*, i.e. they do not have specific rules of interpretation nor rules impact. If a P2P node receives such document, it is free on how to handle it.
+
+Here is the list of neutral documents:
+
+* Public Key
+* Amendment (not an exchanged document)
+* Peer
+* Wallet
+
+Other documents are all subject to interpretation and described in the following paragraphs.
 
 ### Keyblock
 A Keyblock can be accepted only if it respects the following rules.
@@ -722,25 +730,46 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 > Those 2 rules, and notably the second, ensures a specific member won't keep the control too long
 
 ### Status
+The network needs to be able to discover new peers inside it and eventually know their state to efficiently send data to them. For that purpose [Status](./#status) messages are used to introduce nodes to each other and keep a bilateral state of the connection.
 
-> TODO
+Protocol is the following: for a given node receiving `Receives` message, it should answer `Answers` status type and apply `Impacts` rules.
+
+Receives   | Answers    | Impacts
+--------   | -------    | --------
+`ASK`      |            | Answer the estimated status of the node toward asking node. Answer can be any status other than `ASK`.
+`NEW`      | `NEW_BACK` | Remove any existing route for transactions to node emitting the `NEW` message. Consider the emitter as able to receive data. Send `NEW_BACK` as a response. May also send new `Forward` rule.
+`NEW_BACK` |            | Remove any existing route for transactions to node emitting the `NEW_BACK` message. Consider the emitter as able to receive data.
+`UP`       |            | Consider the node as able to receive data.
+`DOWN`     |            | Consider the node as *no more* able to receive data.
 
 ### Forward
 
-> TODO
+The network also need *multicast* features for efficiently distributing transactions over the network (which can be numerous). Rules is the following.
+
+#### Authenticity
+When receiving a Forward from another peer, receiving peer *SHOULD* verify forward authenticity (using his local public key store).
+
+If document cannot be authentified, receiving peer *SHOULD NOT* interprete the document.
+
+#### Interpretation
+
+If `To` field matches the receiving peer, message *SHOULD* be interpreted. Otherwise, it *SHOULD NOT* be interpreted.
+
+A forward document asks `From` peer to be forwarded any transaction concerning a set of keys. This set is either all keys (`Forward: ALL`) or a set of known keys using (`Forward: KEYS`, plus `Keys:` list).
+
+So if a transaction is received thereafter, and either `Sender` or `Recipient` field of the transaction matches the set of keys, then the transaction *SHOULD* be forwarded to `From` peer.
+
+### Transaction
 
 ## Implementations
 
-> TODO
-
-### Requirements
-
-> TODO
-
 ### APIs
 
-> TODO
+UCP does not imposes a particular API to deal with UCP data. Instead, UCP prefers to allow for any API definition using [Peer](#peer) document, and then leting peers deal themselves with the API(s) they prefer.
+
+At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is known as a valid UCP API.
 
 ## References
 
-> TODO
+* [Relative Money Theory](http://fr.wikipedia.org/wiki/Th%C3%A9orie_relative_de_la_monnaie), the theoretical reference behind Universal Dividend
+* [OpenUDC](www.openudc.org), the inspiration project of uCoin

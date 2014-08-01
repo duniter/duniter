@@ -131,7 +131,7 @@ $ ucoind wizard
 
 ### Target only few wizard's steps
 
-Wizard is composed of 4 steps: `currency`, `openpgp`, `network`, `key`, `autovote`. By adding one of those words to `wizard` command, you will only do the attached steps:
+Wizard is composed of 4 steps: `currency`, `openpgp`, `network`, `key`. By adding one of those words to `wizard` command, you will only do the attached steps:
 
 ```bash
 $ ucoind wizard network
@@ -245,16 +245,6 @@ Options:
   --remotep <port>          Remote port others may use to contact this node
   --kmanagement <ALL|KEYS>  Define key management policy
   --kaccept <ALL|KEYS>      Define key acceptance policy
-  --amdaemon <ON|OFF>       ucoin is launched with a specific daemon helping to get other peers' votes
-  --amstart <timestamp>     First amendment generated date
-  --amfreq <timestamp>      Amendments frequency, in seconds
-  --udfreq <timestamp>      Universal Dividend frequency, in seconds
-  --ud0 <integer>           First Universal Dividend value (a.k.a 'UD0')
-  --udpercent <float>       Percent of monetary mass growth per UD
-  --consensus <float>       Percent of voters required to accept an amendment
-  --msvalidity <timestamp>  Duration of a valid membership, in seconds
-  --vtvalidity <timestamp>  Duration of a valid voter, in seconds
-
 
 ```
 

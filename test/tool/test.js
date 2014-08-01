@@ -49,7 +49,6 @@ module.exports.tester = function (currency) {
   };
 
   var queueOfMsVt = ttlQueue(1000);
-  var queueOfVotes = ttlQueue(1000);
 
   this.create = function (params) {
     return new module.exports.HTTPTestCase(params.label, {
@@ -188,22 +187,6 @@ module.exports.tester = function (currency) {
     };
   };
 
-  this.setVoter = function (signatory) {
-    var Voting = mongoose.model('Voting');
-    return function (done) {
-      queueOfMsVt.push(function (cb) {
-        var ms = new Voting({ version: 1, currency: currency, issuer: signatory.fingerprint(), type: 'VOTING' });
-        var raw = ms.getRaw();
-        signatory.sign(raw, function (err, sig) {
-          post ('/registry/community/voters', {
-            'voting': raw,
-            'signature': sig
-          }, cb);
-        });
-      }, done);
-    };
-  };
-
   this.join = function (signatory) {
     var Membership = mongoose.model('Membership');
     return function (done) {
@@ -246,52 +229,6 @@ module.exports.tester = function (currency) {
           'signature': sig
         }, cb);
       }, done);
-    };
-  };
-
-  this.selfVote = function (number) {
-    return function (done) {
-      queueOfVotes.push(function (cb) {
-        get ('/registry/amendment/'+ number + '/vote', cb);
-      }, done);
-    };
-  };
-
-  this.vote = function (signatory) {
-    return function (done) {
-      queueOfVotes.push(function (cb) {
-        async.waterfall([
-          function (next){
-            get ('/registry/amendment', next);
-          },
-          function (res, next){
-            var json = JSON.parse(res.text);
-            var sig = signatory.sign(json.raw);
-            post('/hdc/amendments/votes', {
-              'amendment': json.raw,
-              'signature': sig
-            }, next);
-          },
-        ], cb);
-      }, done);
-    };
-  };
-
-  this.voteCurrent = function (signatory) {
-    return function (done) {
-      async.waterfall([
-        function (next){
-          get ('/hdc/amendments/current', next);
-        },
-        function (res, next){
-          var json = JSON.parse(res.text);
-          var sig = signatory.sign(json.raw);
-          post('/hdc/amendments/votes', {
-            'amendment': json.raw,
-            'signature': sig
-          }, next);
-        },
-      ], done);
     };
   };
 
@@ -427,9 +364,6 @@ function isAmendment (json) {
     "currency",
     "generated",
     "number",
-    "votersRoot",
-    "votersCount",
-    "votersChanges",
     "membersRoot",
     "membersCount",
     "membersChanges",
@@ -461,7 +395,6 @@ function isAmendment (json) {
     json.coinList.length.should.not.be.below(1);
   }
   json.membersCount.should.be.a.Number.and.not.be.below(0);
-  json.votersCount.should.be.a.Number.and.not.be.below(0);
   // Strings
   json.currency.should.be.a.String.and.not.be.empty;
   if (json.previousHash) {
@@ -472,17 +405,8 @@ function isAmendment (json) {
   } else {
     json.membersRoot.should.be.a.String.and.be.empty;
   }
-  if (json.votersCount > 0) {
-    json.votersRoot.should.be.a.String.and.match(/^[A-Z0-9]{40}$/);
-  } else {
-    json.votersRoot.should.be.a.String.and.be.empty;
-  }
   json.membersChanges.should.be.an.Array;
   json.membersChanges.forEach(function(change){
-    change.should.match(/^(\+|-)[A-Z0-9]{40}$/);
-  });
-  json.votersChanges.should.be.an.Array;
-  json.votersChanges.forEach(function(change){
     change.should.match(/^(\+|-)[A-Z0-9]{40}$/);
   });
 }

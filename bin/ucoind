@@ -41,17 +41,7 @@ program
   .option('--remotep <port>', 'Remote port others may use to contact this node')
   .option('--kmanagement <ALL|KEYS>', 'Define key management policy')
   .option('--kaccept <ALL|KEYS>', 'Define key acceptance policy')
-  .option('--amdaemon <ON|OFF>', 'ucoin is launched with a specific daemon helping to get other peers\' votes')
-  .option('--amstart <timestamp>', 'First amendment generated date', parseMoment)
-  .option('--amfreq <timestamp>', 'Amendments frequency, in seconds', parseInt)
-  .option('--udfreq <timestamp>', 'Universal Dividend frequency, in seconds', parseInt)
-  .option('--ud0 <integer>', 'First Universal Dividend value (a.k.a \'UD0\')', parseInt)
-  .option('--udpercent <float>', 'Percent of monetary mass growth per UD', parseFloat)
-  .option('--consensus <float>', 'Percent of voters required to accept an amendment', parseFloat)
-  .option('--msvalidity <timestamp>', 'Duration of a valid membership, in seconds', parseInt)
-  .option('--vtvalidity <timestamp>', 'Duration of a valid voter, in seconds', parseInt)
   .option('--openpgpjs', 'Prefer using embedded Openpgpjs implementation for signing requests')
-  .option('--algorithm <AnyKey:1Sig>', 'Algorithms to use for community changes. Use \':\' to give multiple values', splitColon)
   ;
 
 program
@@ -112,8 +102,7 @@ program
         'currency': wiz.configCurrency,
         'openpgp': wiz.configOpenpgp,
         'network': wiz.configNetwork,
-        'key': wiz.configKey,
-        'autovote': wiz.configAutovote
+        'key': wiz.configKey
       };
       var wizDo = task[step] || wiz.configAll;
       async.waterfall([
@@ -128,7 +117,7 @@ program
         },
         function (next) {
           // Check config
-          service(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (key, server, conf) {
+          service(DO_NOT_LISTEN_HTTP, ucoin.createPeerServer, function (key, server, conf) {
             next();
           })(null, null);
         }
@@ -297,11 +286,11 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(service(LISTEN_HTTP, ucoin.createRegistryServer, function (server, conf) {
+  .action(service(LISTEN_HTTP, ucoin.createPKSServer, function (server, conf) {
 
-    server
-      .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
-      .pipe(multicaster());
+    // server
+    //   .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
+    //   .pipe(multicaster());
 
     // Launching server
     server.on('BMALoaded', function (err, app) {
@@ -344,16 +333,6 @@ function overrideConf(conf) {
     policy: {
       keys: program.kmanagement,
       pubkeys: program.kaccept
-    },
-    sync: {
-      AMDaemon: program.amdaemon,
-      AMStart: program.amstart,
-      AMFreq: program.amfreq,
-      UDFreq: program.udfreq,
-      UD0: program.ud0,
-      UDPercent: program.udpercent,
-      Consensus: program.consensus,
-      Algorithm: program.algorithm
     }
   };
 
@@ -373,14 +352,6 @@ function overrideConf(conf) {
   if (cli.server.remote.port != undefined)  conf.remoteport     = cli.server.remote.port;
   if (cli.policy.keys)                      conf.kmanagement    = cli.policy.keys;
   if (cli.policy.pubkeys)                   conf.kaccept        = cli.policy.pubkeys;
-  if (cli.sync.AMDaemon)                    conf.sync.AMDaemon  = cli.sync.AMDaemon;
-  if (cli.sync.AMStart)                     conf.sync.AMStart   = cli.sync.AMStart;
-  if (cli.sync.AMFreq)                      conf.sync.AMFreq    = cli.sync.AMFreq;
-  if (cli.sync.UDFreq)                      conf.sync.UDFreq    = cli.sync.UDFreq;
-  if (cli.sync.UD0)                         conf.sync.UD0       = cli.sync.UD0;
-  if (cli.sync.UDPercent)                   conf.sync.UDPercent = cli.sync.UDPercent;
-  if (cli.sync.Consensus)                   conf.sync.Consensus = cli.sync.Consensus;
-  if (cli.sync.Algorithm)                   conf.sync.Algorithm = cli.sync.Algorithm;
 
   // Specific internal settings
   conf.createNext = true;
@@ -416,7 +387,7 @@ function service(listenHTTP, serverFactory, callback) {
   if (arguments.length == 1) {
     callback = listenHTTP;
     listenHTTP = false;
-    serverFactory = ucoin.createHDCServer;
+    serverFactory = ucoin.createWOTServer;
   } else if (arguments.length == 2) {
     callback = serverFactory;
     serverFactory = ucoin.createHDCServer;

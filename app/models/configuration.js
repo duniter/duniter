@@ -18,15 +18,6 @@ var ConfigurationSchema = new Schema({
   kmanagement: {"type": String, "default": "ALL"},
   kaccept:     {"type": String, "default": "ALL"},
   upInterval:  {"type": Number, "default": 3600*1000},
-  sync:        {"type": Object, "default": {
-    AMDaemon:  "OFF", // No deamon by default
-    AMFreq:    3600*24, // every day
-    UDFreq:    3600*24*30.4375, // every month
-    UD0:       100,
-    UDPercent: 0.007376575, // 0.73%
-    Consensus: 2/3,
-    Algorithm: ['AnyKey', '1Sig'],
-  }}
 });
 
 ConfigurationSchema.virtual('createNext').get(function () {

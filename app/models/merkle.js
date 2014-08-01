@@ -127,10 +127,6 @@ MerkleSchema.statics.forPublicKeys = function (done) {
   this.retrieve({ type: 'pubkeys' }, done);
 };
 
-MerkleSchema.statics.signaturesOfAmendment = function (number, hash, done) {
-  this.retrieve({ type: 'amendment', criteria: '{"number":'+number+',"hash": "'+hash+'"}' }, done);
-};
-
 MerkleSchema.statics.txOfSender = function (fingerprint, done) {
   this.retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
 };
@@ -147,28 +143,12 @@ MerkleSchema.statics.WalletEntries = function (done) {
   this.retrieve({ type: 'thtentries', criteria: '{}' }, done);
 };
 
-MerkleSchema.statics.proposedMembers = function (done) {
-  this.retrieve({ type: 'proposedMembers', criteria: '{}' }, done);
-};
-
-MerkleSchema.statics.proposedVoters = function (done) {
-  this.retrieve({ type: 'proposedVoters', criteria: '{}' }, done);
-};
-
 MerkleSchema.statics.membersIn = function (number, algo, done) {
   this.retrieve({ type: 'membersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.membersOut = function (number, algo, done) {
   this.retrieve({ type: 'membersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
-};
-
-MerkleSchema.statics.votersIn = function (number, algo, done) {
-  this.retrieve({ type: 'votersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
-};
-
-MerkleSchema.statics.votersOut = function (number, algo, done) {
-  this.retrieve({ type: 'votersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
@@ -299,21 +279,6 @@ MerkleSchema.statics.mapForPublicKeys = function (hashes, done) {
   });
 }
 
-MerkleSchema.statics.mapForSignatures = function (amNumber, hashes, done) {
-  this.model('Vote')
-  .find({ basis: amNumber, issuer: { $in: hashes } })
-  .exec(function (err, votes) {
-    var map = {};
-    votes.forEach(function (vote){
-      map[vote.issuer] = {
-        issuer: vote.issuer,
-        signature: vote.signature
-      };
-    });
-    done(null, map);
-  });
-};
-
 MerkleSchema.statics.mapForWalletEntries = function (hashes, done) {
   this.model('Wallet')
   .find({ fingerprint: { $in: hashes } })
@@ -329,19 +294,6 @@ MerkleSchema.statics.mapForWalletEntries = function (hashes, done) {
 
 MerkleSchema.statics.mapForMemberships = function (hashes, done) {
   this.model('Membership')
-  .find({ issuer: { $in: hashes } })
-  .sort('issuer')
-  .exec(function (err, entries) {
-    var map = {};
-    entries.forEach(function (entry){
-      map[entry.issuer] = entry.json();
-    });
-    done(null, map);
-  });
-};
-
-MerkleSchema.statics.mapForVotings = function (hashes, done) {
-  this.model('Voting')
   .find({ issuer: { $in: hashes } })
   .sort('issuer')
   .exec(function (err, entries) {

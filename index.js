@@ -1,9 +1,9 @@
 
-var Server         = require('./server');
-var PKSServer      = require('./pksserver');
-var HDCServer      = require('./hdcserver');
-var PeerServer     = require('./peerserver');
-var RegistryServer = require('./regserver');
+var Server     = require('./server');
+var PKSServer  = require('./pksserver');
+var WOTServer  = require('./wotserver');
+var PeerServer = require('./peerserver');
+var TxServer   = require('./txserver');
 
 module.exports = {
   connect: function (dbConf, overConf) {
@@ -12,13 +12,13 @@ module.exports = {
   createPKSServer: function (dbConf, overConf) {
     return new PKSServer(dbConf, overConf);
   },
-  createHDCServer: function (dbConf, overConf) {
-    return new HDCServer(dbConf, overConf);
+  createWOTServer: function (dbConf, overConf) {
+    return new WOTServer(dbConf, overConf);
   },
   createPeerServer: function (dbConf, overConf) {
     return new PeerServer(dbConf, overConf);
   },
-  createRegistryServer: function (dbConf, overConf) {
-    return new RegistryServer(dbConf, overConf);
+  createTxServer: function (dbConf, overConf) {
+    return new TxServer(dbConf, overConf);
   }
 }

@@ -41,7 +41,7 @@ describe('A PKS server', function () {
 
   var pksServer;
   beforeEach(function (done) {
-    pksServer = ucoin.createHDCServer({ name: 'hdc1', resetData: true });
+    pksServer = ucoin.createPKSServer({ name: 'hdc1', resetData: true });
     pksServer.on('services', done);
   })
 

@@ -34,17 +34,6 @@ function Multicaster () {
     });
   });
   
-  that.on('vote', function(vote, peers) {
-    logger.debug('--> new Vote to be sent to %s peer(s)', peers.length);
-    peers.forEach(function(peer){
-      fifo.push(function (sent) {
-        sendVote(peer, vote, success(function (err) {
-          sent();
-        }));
-      });
-    });
-  });
-  
   that.on('transaction', function(transaction, peers) {
     logger.debug('--> new Transaction to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
@@ -115,30 +104,6 @@ function Multicaster () {
     });
   });
   
-  that.on('voting', function(voting, peers) {
-    logger.debug('--> new Voting to be sent to %s peer(s)', peers.length);
-    peers.forEach(function(peer){
-      fifo.push(function (sent) {
-        sendVoting(peer, voting, success(function (err) {
-          sent();
-        }));
-      });
-    });
-  });
-  
-  that.on('statement', function(statement, peers) {
-    logger.debug('--> new Statement to be sent to %s peer(s)', peers.length);
-    peers.forEach(function(peer){
-      fifo.push(function (sent) {
-        // Do propagating
-        logger.debug('sending %s\'s statement to peer %s', statement.keyID(), peer.keyID());
-        sendStatement(peer, statement, success(function (err) {
-          sent();
-        }));
-      });
-    });
-  });
-  
   that.on('forward', function(forward, peers, done) {
     logger.debug('--> new Forward to be sent to %s peer(s)', peers.length);
     fifo.push(function (sent) {
@@ -175,14 +140,6 @@ function sendPubkey(peer, pubkey, done) {
   post(peer, '/pks/add', {
     "keytext": pubkey.getRaw(),
     "keysign": pubkey.signature
-  }, done);
-}
-
-function sendVote(peer, vote, done) {
-  logger.info('POST vote to %s', peer.keyID());
-  post(peer, '/hdc/amendments/votes', {
-    "amendment": vote.getRaw(),
-    "signature": vote.signature
   }, done);
 }
 
@@ -223,22 +180,6 @@ function sendMembership(peer, membership, done) {
   post(peer, '/registry/community/members', {
     "membership": membership.getRaw(),
     "signature": membership.signature
-  }, done);
-}
-
-function sendVoting(peer, voting, done) {
-  logger.info('POST voting to %s', peer.keyID());
-  post(peer, '/registry/community/voters', {
-    "voting": voting.getRaw(),
-    "signature": voting.signature
-  }, done);
-}
-
-function sendStatement(peer, statement, done) {
-  logger.info('POST statement to %s', peer.keyID());
-  post(peer, '/registry/amendment/statement', {
-    "statement": statement.getRaw(),
-    "signature": statement.signature
   }, done);
 }
 

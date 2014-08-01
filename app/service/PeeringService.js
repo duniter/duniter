@@ -17,7 +17,6 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   var PublicKey   = conn.model('PublicKey');
   var Transaction = conn.model('Transaction');
   var Merkle      = conn.model('Merkle');
-  var Vote        = conn.model('Vote');
   var Peer        = conn.model('Peer');
   var Key         = conn.model('Key');
   var Forward     = conn.model('Forward');
@@ -526,21 +525,9 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
     that.emit('forward', forward, [peer], done);
   };
 
-  this.propagateVote = function (amendment, vote) {
-    getVotingPeers(function (err, peers) {
-      that.emit('vote', vote, peers || []);
-    });
-  };
-
   this.propagateMembership = function (membership, done) {
     getRandomInAllPeers(function (err, peers) {
       that.emit('membership', membership, peers || []);
-    });
-  };
-
-  this.propagateVoting = function (voting, done) {
-    getRandomInAllPeers(function (err, peers) {
-      that.emit('voting', voting, peers || []);
     });
   };
 

@@ -12,8 +12,6 @@ function ParameterNamespace (conn, currency) {
   var that = this;
   var PublicKey   = conn.model('PublicKey');
   var Membership  = conn.model('Membership');
-  var Voting      = conn.model('Voting');
-  var Vote        = conn.model('Vote');
   var Peer        = conn.model('Peer');
   var Transaction = conn.model('Transaction');
   var Forward     = conn.model('Forward');
@@ -218,65 +216,6 @@ function ParameterNamespace (conn, currency) {
             }
             if(pubkey.fingerprint != entry.issuer){
               next('Fingerprint in Membership (' + entry.issuer + ') does not match signatory (' + pubkey.fingerprint + ')');
-              return;
-            }
-            next(null, entry);
-          },
-        ], next);
-      },
-    ], callback);
-  };
-
-  this.getVoting = function (req, callback) {
-    if(!(req.body && req.body.voting && req.body.signature)){
-      callback('Requires a voting + signature');
-      return;
-    }
-    async.waterfall([
-
-      function (callback) {
-        if(req.body.signature.indexOf('-----BEGIN') == -1){
-          callback('Signature does not seem to be valid');
-          return;
-        }
-        callback();
-      },
-
-      // Check signature's key ID
-      function(callback){
-        var sig = req.body.signature;
-        var keyID = jpgp().signature(sig).issuer();
-        if(!(keyID && keyID.length == 16)){
-          callback('Cannot identify signature issuer`s keyID');
-          return;
-        }
-        callback(null, keyID);
-      },
-
-      // Looking for corresponding public key
-      function(keyID, callback){
-        PublicKey.getTheOne(keyID, function (err, pubkey) {
-          callback(err, pubkey);
-        });
-      },
-
-      function (pubkey, next){
-        var entry = new Voting();
-        async.waterfall([
-          function (next){
-            parsers.parseVoting(next).asyncWrite(req.body.voting + req.body.signature, next);
-          },
-          function (obj, next){
-            entry = new Voting(obj);
-            entry.verifySignature(pubkey.raw, next);
-          },
-          function (verified, next){
-            if(!verified){
-              next('Bad signature');
-              return;
-            }
-            if(pubkey.fingerprint != entry.issuer){
-              next('Fingerprint in Voting (' + entry.issuer + ') does not match signatory (' + pubkey.fingerprint + ')');
               return;
             }
             next(null, entry);

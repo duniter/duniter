@@ -33,17 +33,17 @@ var testCases = [
   **/
 
   // Cat is used by server
-  testMerkle("/pks/all", 'C73882B64B7E72237A2F460CE9CAB76D19A8651E'),
+  testMerkle("/pks/all", ''),
 
   tester.verify(
     "Snow giving his key for first time must pass",
     on.pksAdd(pubkeySnow),
     is.expectedPubkey('33BBFC0C67078D72AF128B5BA296CC530126F372')
   ),
-  testMerkle("/pks/all", '5DB500A285BD380A68890D09232475A8CA003DC8'),
+  testMerkle("/pks/all", '33BBFC0C67078D72AF128B5BA296CC530126F372'),
 
   tester.verify(
-    "Cat has already given his key, but without the same signatures (this one is laking some signatures)",
+    "Cat's pubkey'",
     on.pksAdd(pubkeyCat),
     is.expectedPubkey('C73882B64B7E72237A2F460CE9CAB76D19A8651E')
   ),
@@ -83,7 +83,7 @@ function testMerkle (url, root) {
 before(function (done) {
   logger.debug("Launching server...");
   this.timeout(1000*3); // In seconds
-  var server = ucoin.createRegistryServer({ name: currency, listenBMA: true, resetData: true }, {
+  var server = ucoin.createPKSServer({ name: currency, listenBMA: true, resetData: true }, {
     currency: currency,
     pgpkey: fs.readFileSync(__dirname + "/../data/lolcat.priv"),
     pgppasswd: 'lolcat',

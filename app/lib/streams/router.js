@@ -13,7 +13,6 @@ function Router (serverFPR, conn) {
   var Key         = conn.model('Key');
   var PublicKey   = conn.model('PublicKey');
   var Amendment   = conn.model('Amendment');
-  var Vote        = conn.model('Vote');
   var Transaction = conn.model('Transaction');
   var Peer        = conn.model('Peer');
   var Forward     = conn.model('Forward');
@@ -25,15 +24,12 @@ function Router (serverFPR, conn) {
 
   this._write = function (obj, enc, done) {
     if (typeof obj.email != 'undefined') {                           route('pubkey',      obj, getRandomInUPPeers,                          done); }
-    else if (obj.amendment ? true : false) {                         route('vote',        obj, getRandomInUPPeers,                          done); }
     else if (obj.recipient ? true : false) {                         route('transaction', obj, getTargetedButSelf(obj.recipient),           done); }
     else if (obj.endpoints ? true : false) {                         route('peer',        obj, getRandomInAllPeersButPeer(obj.fingerprint), done); }
     else if (obj.forward ? true : false) {                           route('forward',     obj, getTargetedButSelf(obj.to),                  done); }
     else if (obj.status ? true : false) {                            route('status',      obj, getTargetedButSelf(obj.to),                  done); }
     else if (obj.requiredTrusts ? true : false) {                    route('wallet',      obj, getRandomInUPPeers,                          done); }
     else if (obj.type && obj.type == "MEMBERSHIP" ? true : false) {  route('membership',  obj, getRandomInUPPeers,                          done); }
-    else if (obj.type && obj.type == "VOTING" ? true : false) {      route('voting',      obj, getRandomInUPPeers,                          done); }
-    else if (obj.algorithm ? true : false) {                         route('statement',   obj, getRandomInUPPeers,                          done); }
     else {
       done();
     }

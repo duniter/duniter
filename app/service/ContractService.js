@@ -37,12 +37,6 @@ function ContractService (conn, conf) {
           next();
         });
       },
-      function (next){
-        Amendment.getTheOneToBeVoted(current ? current.number + 1 : 0, conf.sync.Algorithm, function (err, am) {
-          proposed = am;
-          next();
-        });
-      },
     ], done);
   };
 }

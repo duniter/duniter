@@ -12,7 +12,6 @@ function WalletService (conn) {
   var Amendment = conn.model('Amendment');
   var PublicKey = conn.model('PublicKey');
   var Merkle    = conn.model('Merkle');
-  var Vote      = conn.model('Vote');
 
   this.submit = function (obj, done) {
 

@@ -16,7 +16,7 @@ var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}
 function Wizard () {
 
   this.configAll = function (conf, done) {
-    doTasks(['currency', 'openpgp', 'network', 'key', 'autovote'], conf, done);
+    doTasks(['currency', 'openpgp', 'network', 'key'], conf, done);
   };
 
   this.configCurrency = function (conf, done) {
@@ -33,10 +33,6 @@ function Wizard () {
 
   this.configKey = function (conf, done) {
     doTasks(['key'], conf, done);
-  };
-
-  this.configAutovote = function (conf, done) {
-    doTasks(['autovote'], conf, done);
   };
 }
 
@@ -283,37 +279,6 @@ var tasks = {
         }
       }
     ], done);
-  },
-
-  autovote: function (conf, done) {
-    choose("Autovoting", conf.sync.AMDaemon ? conf.sync.AMDaemon == "ON" : false,
-      function enabled () {
-        conf.sync.AMDaemon = "ON";
-        async.waterfall([
-          async.apply(simpleInteger, "Amendment start",                  "AMStart",   conf.sync),
-          async.apply(simpleInteger, "Amendment frequency",              "AMFreq",    conf.sync),
-          async.apply(simpleInteger, "Dividend frequency",               "UDFreq",    conf.sync),
-          async.apply(simpleFloat,   "Consensus %required",              "Consensus", conf.sync),
-          async.apply(simpleInteger, "Initial dividend",                 "UD0",       conf.sync),
-          async.apply(simpleFloat,   "Universal Dividend %growth",       "UDPercent", conf.sync),
-          function (next) {
-            inquirer.prompt([{
-              type: "checkbox",
-              name: "Algorithm",
-              message: "Community you want to vote for",
-              choices: ["AnyKey", "1Sig"],
-              default: conf.sync.Algorithm,
-            }], function (answers) {
-              conf.sync.Algorithm = answers.Algorithm;
-              done();
-            });
-          }
-        ], done);
-      },
-      function disabled () {
-        conf.sync.AMDaemon = "OFF";
-        done();
-      });
   }
 };
 

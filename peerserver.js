@@ -8,7 +8,7 @@ var plogger   = require('./app/lib/logger')('peer');
 var flogger   = require('./app/lib/logger')('forward');
 var slogger   = require('./app/lib/logger')('status');
 var wlogger   = require('./app/lib/logger')('wallet');
-var HDCServer = require('./hdcserver');
+var WOT = require('./wotserver');
 var parsers   = require('./app/lib/streams/parsers/doc');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
@@ -99,7 +99,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     }
   ].concat(onInit || []);
 
-  HDCServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
+  WOT.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
 
   var that = this;
 
@@ -114,8 +114,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.KeyService          = require('./app/service/KeyService').get(conn);
         that.PublicKeyService    = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
         that.ContractService     = require('./app/service/ContractService').get(conn, that.conf);
-        that.StrategyService     = require('./app/service/StrategyService').get(conn, that.conf, that.ContractService);
-        that.VoteService         = require('./app/service/VoteService').get(conn, that.StrategyService);
         that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, that.PublicKeyService, that.ParametersService);
         that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.MerkleService, that.PeeringService);
         that.WalletService       = require('./app/service/WalletService').get(conn);
@@ -356,6 +354,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   }
 }
 
-util.inherits(PeerServer, HDCServer);
+util.inherits(PeerServer, WOT);
 
 module.exports = PeerServer;

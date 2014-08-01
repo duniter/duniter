@@ -790,7 +790,7 @@ Consensus         | Percent of voters required to valid an Amendment
 #### `am/[AMENDMENT_NUMBER]`
 **Goal**
 
-GET the promoted amendment with number `AMENDMENT_NUMBER` (amendment which received enough votes to be accepted).
+GET the promoted amendment with number `AMENDMENT_NUMBER`.
 
 **Parameters**
 
@@ -809,11 +809,6 @@ The promoted amendment if it exists (otherwise return HTTP 404).
   "generated": 1400588975,
   "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
   "dividend": "100",
-  "votersRoot": "DC7A9229DFDABFB9769789B7BFAE08048BCB856F",
-  "votersCount": "2",
-  "votersChanges": [
-    "-C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-  ],
   "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
   "membersCount": "4",
   "membersChanges": [

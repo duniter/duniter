@@ -3,7 +3,7 @@ var util    = require('util');
 var parsers = require('./app/lib/streams/parsers/doc');
 var Server  = require('./server');
 
-function HDCServer (dbConf, overrideConf, interceptors, onInit) {
+function PKSServer (dbConf, overrideConf, interceptors, onInit) {
 
   var logger  = require('./app/lib/logger')(dbConf.name);
 
@@ -46,6 +46,7 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
   this._initServices = function(conn, done) {
     this.KeyService         = require('./app/service/KeyService').get(conn);
     this.PublicKeyService   = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
+    done();
   };
 
   this._listenBMA = function (app) {
@@ -60,6 +61,6 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
   };
 }
 
-util.inherits(HDCServer, Server);
+util.inherits(PKSServer, Server);
 
-module.exports = HDCServer;
+module.exports = PKSServer;

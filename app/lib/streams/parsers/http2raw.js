@@ -2,7 +2,6 @@ var stream = require('stream');
 var util   = require('util');
 
 module.exports = {
-  vote:          instanciate.bind(null, Http2RawVote),
   pubkey:        instanciate.bind(null, Http2RawPubkey),
   transaction:   instanciate.bind(null, Http2RawTransaction),
   peer:          instanciate.bind(null, Http2RawPeer),
@@ -10,8 +9,6 @@ module.exports = {
   status:        instanciate.bind(null, Http2RawStatus),
   wallet:        instanciate.bind(null, Http2RawWallet),
   membership:    instanciate.bind(null, Http2RawMembership),
-  voting:        instanciate.bind(null, Http2RawVoting),
-  communityFlow: instanciate.bind(null, Http2RawStatement),
 };
 
 function instanciate (constructorFunc, req, onError) {
@@ -31,21 +28,6 @@ function Http2RawPubkey (req, onError) {
     }
     else {
       this.push(req.body.keytext);
-    }
-    this.push(null);
-  }
-}
-
-function Http2RawVote (req, onError) {
-  
-  stream.Readable.call(this);
-
-  this._read = function () {
-    if(!(req.body && req.body.amendment && req.body.signature)){
-      onError('Requires an amendment + signature');
-    }
-    else {
-      this.push(req.body.amendment + req.body.signature);
     }
     this.push(null);
   }
@@ -141,43 +123,10 @@ function Http2RawMembership (req, onError) {
   }
 }
 
-function Http2RawVoting (req, onError) {
-  
-  stream.Readable.call(this);
-
-  this._read = function () {
-    if(!(req.body && req.body.voting && req.body.signature)){
-      onError('Requires a voting + signature');
-    }
-    else {
-      this.push(req.body.voting + req.body.signature);
-    }
-    this.push(null);
-  }
-}
-
-function Http2RawStatement (req, onError) {
-  
-  stream.Readable.call(this);
-
-  this._read = function () {
-    if(!(req.body && req.body.statement && req.body.signature)){
-      onError('Requires a statement + signature');
-    }
-    else {
-      this.push(req.body.statement + req.body.signature);
-    }
-    this.push(null);
-  }
-}
-
 util.inherits(Http2RawPubkey,      stream.Readable);
-util.inherits(Http2RawVote,        stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
 util.inherits(Http2RawPeer,        stream.Readable);
 util.inherits(Http2RawForward,     stream.Readable);
 util.inherits(Http2RawStatus,      stream.Readable);
 util.inherits(Http2RawWallet,      stream.Readable);
 util.inherits(Http2RawMembership,  stream.Readable);
-util.inherits(Http2RawVoting,      stream.Readable);
-util.inherits(Http2RawStatement, stream.Readable);

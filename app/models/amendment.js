@@ -16,11 +16,7 @@ var AmendmentSchema = new Schema({
   coinAlgo: String,
   coinBase: Number,
   coinList: [Number],
-  nextVotes: {"type": Number, "default": 0},
   previousHash: String,
-  votersRoot: String,
-  votersCount: {"type": Number, "default": 0},
-  votersChanges: Array,
   membersRoot: String,
   membersCount: {"type": Number, "default": 0},
   membersChanges: Array,
@@ -51,11 +47,7 @@ AmendmentSchema.methods = {
       "coinAlgo",
       "coinBase",
       "coinList",
-      "nextVotes",
       "previousHash",
-      "votersRoot",
-      "votersCount",
-      "votersChanges",
       "membersRoot",
       "membersCount",
       "membersChanges",
@@ -78,17 +70,14 @@ AmendmentSchema.methods = {
       "version",
       "number",
       "generated",
-      "nextVotes",
       "dividend",
       "coinBase",
-      "votersCount",
       "membersCount",
     ].forEach(function(field){
       json[field] = parseInt(that[field], 10);
     });
     [
       "currency",
-      "votersRoot",
       "membersRoot",
       "coinAlgo",
     ].forEach(function(field){
@@ -101,7 +90,6 @@ AmendmentSchema.methods = {
     });
     [
       "coinList",
-      "votersChanges",
       "membersChanges"
     ].forEach(function(field){
       json[field] = that[field] || [];
@@ -129,28 +117,6 @@ AmendmentSchema.methods = {
       }
     }
     return members;
-  },
-
-  getNewVoters: function() {
-    var voters = [];
-    for (var i = 0; i < this.votersChanges.length; i++) {
-      var matches = this.votersChanges[i].match(/^\+([\w\d]{40})$/);
-      if(matches){
-        voters.push(matches[1]);
-      }
-    }
-    return voters;
-  },
-
-  getLeavingVoters: function() {
-    var voters = [];
-    for (var i = 0; i < this.votersChanges.length; i++) {
-      var matches = this.votersChanges[i].match(/^\-([\w\d]{40})$/);
-      if(matches){
-        voters.push(matches[1]);
-      }
-    }
-    return voters;
   },
 
   getHash: function() {
@@ -319,46 +285,6 @@ AmendmentSchema.statics.getLastStatusOfMember = function (member, amNumberLimit,
   ], done);
 };
 
-AmendmentSchema.statics.getLastStatusOfVoter = function (voter, amNumberLimit, proposedToo, done) {
-
-  if (arguments.length == 3) {
-    done = proposedToo;
-    proposedToo = undefined;
-  }
-
-  var criterias = { number: { $lte: amNumberLimit }, votersChanges: new RegExp("^(\\+|-)" + voter + "$")};
-  if (proposedToo) {
-    criterias.$or = [{ promoted: true }, { selfGenerated: true }];
-  } else {
-    criterias.promoted = true;
-  }
-
-  var that = this;
-  async.waterfall([
-    function (next){
-      that
-        .find(criterias)
-        .sort({ 'number': -1 })
-        .limit(1)
-        .exec(next);
-    },
-    function (ams, next){
-      if (ams.length == 1) {
-        if (~ams[0].votersChanges.indexOf("+" + voter)) {
-          // Last time, voter was joining
-          next(null, 1);
-        } else {
-          // Last time, voter was leaving
-          next(null, -1);
-        }
-      } else {
-        // Voter has never been seen
-        next(null, 0);
-      }
-    },
-  ], done);
-};
-
 AmendmentSchema.statics.isMember = function (member, amNumber, done) {
 
   var that = this;
@@ -372,27 +298,9 @@ AmendmentSchema.statics.isMember = function (member, amNumber, done) {
   ], done);
 };
 
-AmendmentSchema.statics.isVoter = function (voter, amNumber, done) {
-  var that = this;
-  async.waterfall([
-    function (next){
-      that.getLastStatusOfVoter(voter, amNumber, next);
-    },
-    function (status, next){
-      logger.debug('isVoter ? %s for AM#%s = %s', voter, amNumber, status);
-      next(null, status > 0);
-    },
-  ], done);
-};
-
 AmendmentSchema.statics.isMemberForAM = function (member, amNumber, amHash, done) {
 
   this.searchPresence(member, amNumber, amHash, checkIsJoiningMember, checkIsLeavingMember, this.searchPresence.bind(this), done);
-};
-
-AmendmentSchema.statics.isVoterForAM = function (voter, amNumber, amHash, done) {
-
-  this.searchPresence(voter, amNumber, amHash, checkIsJoiningVoter, checkIsLeavingVoter, this.searchPresence.bind(this), done);
 };
 
 AmendmentSchema.statics.searchPresence = function (member, amNumber, amHash, isJoining, isLeaving, searchCallBack, done) {
@@ -422,21 +330,6 @@ AmendmentSchema.statics.searchPresence = function (member, amNumber, amHash, isJ
 
 function checkIsJoiningMember (am, key) { return ~am.membersChanges.indexOf('+' + key); }
 function checkIsLeavingMember (am, key) { return ~am.membersChanges.indexOf('-' + key); }
-function checkIsJoiningVoter (am, key) { return ~am.votersChanges.indexOf('+' + key); }
-function checkIsLeavingVoter (am, key) { return ~am.votersChanges.indexOf('-' + key); }
-
-AmendmentSchema.statics.isVoter = function (voter, amNumber, done) {
-  var that = this;
-  async.waterfall([
-    function (next){
-      that.getLastStatusOfVoter(voter, amNumber, next);
-    },
-    function (status, next){
-      logger.debug('isVoter ? %s for AM#%s = %s', voter, amNumber, status);
-      next(null, status > 0);
-    },
-  ], done);
-};
 
 AmendmentSchema.statics.isProposedMember = function (member, amNumber, done) {
 
@@ -444,19 +337,6 @@ AmendmentSchema.statics.isProposedMember = function (member, amNumber, done) {
   async.waterfall([
     function (next){
       that.getLastStatusOfMember(member, amNumber, true, next);
-    },
-    function (status, next){
-      next(null, status > 0);
-    },
-  ], done);
-};
-
-AmendmentSchema.statics.isProposedVoter = function (voter, amNumber, done) {
-
-  var that = this;
-  async.waterfall([
-    function (next){
-      that.getLastStatusOfVoter(voter, amNumber, true, next);
     },
     function (status, next){
       next(null, status > 0);
@@ -472,15 +352,11 @@ function fill (am1, am2) {
     "currency",
     "number",
     "generated",
-    "nextVotes",
     "dividend",
     "coinAlgo",
     "coinBase",
     "coinList",
     "previousHash",
-    "votersRoot",
-    "votersCount",
-    "votersChanges",
     "membersRoot",
     "membersCount",
     "membersChanges",

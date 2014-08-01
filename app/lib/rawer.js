@@ -16,7 +16,6 @@ module.exports = new function() {
       raw += "CoinBase: " + json.coinBase + "\n";
       raw += "CoinList: " + json.coinList.join(' ') + "\n";
     }
-    raw += "NextRequiredVotes: " + json.nextVotes + "\n";
     if(json.previousHash){
       raw += "PreviousHash: " + json.previousHash + "\n";
     }
@@ -28,17 +27,7 @@ module.exports = new function() {
         raw += json.membersChanges[i] + "\n";
       }
     }
-    raw += "VotersRoot: " + json.votersRoot + "\n";
-    raw += "VotersCount: " + json.votersCount + "\n";
-    raw += "VotersChanges:\n";
-    for(var j = 0; j < json.votersChanges.length; j++){
-      raw += json.votersChanges[j] + "\n";
-    }
     return unix2dos(raw);
-  };
-
-  this.getVote = function (json) {
-    return unix2dos(signed(that.getAmendment(json.amendment), json));
   };
 
   this.getPubkey = function (json) {
@@ -168,33 +157,6 @@ module.exports = new function() {
     raw += "AmendmentNumber: " + json.amNumber + "\n";
     raw += "AmendmentHash: " + json.amHash + "\n";
     return unix2dos(raw);
-  };
-
-  this.getVoting = function (json) {
-    return unix2dos(signed(that.getVotingWithoutSignature(json), json));
-  };
-
-  this.getStatementWithoutSignature = function (json) {
-    var raw = "";
-    raw += "Version: " + json.version + "\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "Amendment: " + [json.amendmentNumber, json.amendmentHash].join('-') + "\n";
-    raw += "Issuer: " + json.issuer + "\n";
-    raw += "Date: " + json.date.timestamp() + "\n";
-    raw += "Algorithm: " + json.algorithm + "\n";
-    if (json.membersJoiningRoot)
-      raw += "MembersJoining: " + [json.membersJoiningCount, json.membersJoiningRoot].join('-') + "\n";
-    if (json.membersLeavingRoot)
-      raw += "MembersLeaving: " + [json.membersLeavingCount, json.membersLeavingRoot].join('-') + "\n";
-    if (json.votersJoiningRoot)
-      raw += "VotersJoining: " + [json.votersJoiningCount, json.votersJoiningRoot].join('-') + "\n";
-    if (json.votersLeavingRoot)
-      raw += "VotersLeaving: " + [json.votersLeavingCount, json.votersLeavingRoot].join('-') + "\n";
-    return unix2dos(raw);
-  };
-
-  this.getStatement = function (json) {
-    return unix2dos(signed(that.getStatementWithoutSignature(json), json));
   };
 
   function signed (raw, json) {

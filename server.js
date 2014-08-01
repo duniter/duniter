@@ -10,7 +10,7 @@ var http       = require('http');
 var log4js     = require('log4js');
 var connectPgp = require('connect-pgp');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'Vote', 'TxMemory', 'Membership', 'Voting', 'Statement'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -138,14 +138,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           var Configuration = conn.model('Configuration');
           that.conf = foundConf[0] || new Configuration();
           if (overrideConf) {
-            _(_(overrideConf).keys()).without('sync').forEach(function(k){
+            _(overrideConf).keys().forEach(function(k){
               that.conf[k] = overrideConf[k];
             });
-            if (overrideConf.sync) {
-              _(overrideConf.sync).keys().forEach(function(k){
-                that.conf.sync[k] = overrideConf.sync[k];
-              });
-            }
           }
           if (reset) {
             that.reset(next);
@@ -177,11 +172,8 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           'publickeys',
           'wallets',
           'transactions',
-          'votes',
           'txmemories',
-          'memberships',
-          'votings',
-          'statements'];
+          'memberships'];
         async.forEachSeries(deletableCollections, function(collection, next){
           if (that.conn.collections[collection]) {
             that.conn.collections[collection].drop(function (err) {
@@ -235,6 +227,8 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     // To override in child classes
   };
 
+  this._sign = null;
+
   function listenBMA (overConf, onLoaded) {
     if (arguments.length == 1) {
       onLoaded = overConf;
@@ -253,9 +247,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     async.waterfall([
       function (next){
 
-        // HTTP Signatures
-        app.use(connectPgp(that.sign));
-        logger.debug('Signed requests with PGP: enabled.');
+        if (that._sign) {
+          // HTTP Signatures
+          app.use(connectPgp(that.sign));
+          logger.debug('Signed requests with PGP: enabled.');
+        }
 
         // Routing
         app.use(app.router);

@@ -27,8 +27,8 @@ describe('In a unidirectional 2 servers network,', function () {
   var serverA, serverB;
 
   beforeEach(function (done) {
-    serverA = ucoin.createHDCServer({ name: 'hdcA', resetData: true });
-    serverB = ucoin.createHDCServer({ name: 'hdcB', resetData: true });
+    serverA = ucoin.createWOTServer({ name: 'hdcA', resetData: true });
+    serverB = ucoin.createWOTServer({ name: 'hdcB', resetData: true });
     serverA.pipe(serverB);
     resetServers(serverA, serverB)(done);
   });
@@ -60,8 +60,8 @@ describe('In a bidirectionnal 2 servers network,', function () {
   var serverA, serverB;
 
   beforeEach(function (done) {
-    serverA = ucoin.createHDCServer({ name: 'hdcC', resetData: true });
-    serverB = ucoin.createHDCServer({ name: 'hdcD', resetData: true });
+    serverA = ucoin.createWOTServer({ name: 'hdcC', resetData: true });
+    serverB = ucoin.createWOTServer({ name: 'hdcD', resetData: true });
     serverA.pipe(serverB);
     serverB.pipe(serverA);
     resetServers(serverA, serverB)(done);
@@ -96,11 +96,11 @@ describe('In an oriented 5 servers network,', function () {
 
   before(function (done) {
 
-    serverA = ucoin.createHDCServer({ name: 'test_A', resetData: true });
-    serverB = ucoin.createHDCServer({ name: 'test_B', resetData: true });
-    serverC = ucoin.createHDCServer({ name: 'test_C', resetData: true });
-    serverD = ucoin.createHDCServer({ name: 'test_D', resetData: true });
-    serverE = ucoin.createHDCServer({ name: 'test_E', resetData: true });
+    serverA = ucoin.createWOTServer({ name: 'test_A', resetData: true });
+    serverB = ucoin.createWOTServer({ name: 'test_B', resetData: true });
+    serverC = ucoin.createWOTServer({ name: 'test_C', resetData: true });
+    serverD = ucoin.createWOTServer({ name: 'test_D', resetData: true });
+    serverE = ucoin.createWOTServer({ name: 'test_E', resetData: true });
 
     serverA.pipe(serverB).pipe(serverA); // A ◀--▶ B
     serverB.pipe(serverC).pipe(serverB); // B ◀--▶ C

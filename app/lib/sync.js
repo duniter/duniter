@@ -18,13 +18,10 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
   // Services
             var PublicKeyService         = server.PublicKeyService;
             var KeyService         = server.KeyService;
-            var VoteService        = server.VoteService;
             var TransactionService = server.TransactionsService;
             var WalletService      = server.WalletService;
             var PeeringService     = server.PeeringService;
-            var StrategyService    = server.StrategyService;
             var ParametersService  = server.ParametersService;
-            var SyncService        = server.SyncService;
 
   // Models
   var Amendment     = server.conn.model('Amendment');
@@ -351,93 +348,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
             else next();
           });
         },
-
-        //===========
-        // Registry
-        //===========
-        function (next){
-          Amendment.current(function (err, am) {
-            if (!am) {
-              next();
-              return;
-            }
-            async.waterfall([
-              function (next){
-                Key.getMembers(next);
-              },
-              function (keys, next) {
-                async.forEach(keys, function(member, callback){
-                  async.waterfall([
-                    function (next){
-                      node.registry.community.members.current(member.fingerprint, next);
-                    },
-                    function (jsonMS, next){
-                      logger.info('Membership of %s', member.fingerprint);
-                      var ms = new Membership({
-                        "version": jsonMS.membership.version,
-                        "currency": jsonMS.membership.currency,
-                        "issuer": jsonMS.membership.issuer,
-                        "membership": jsonMS.membership.membership,
-                        "date": new Date(jsonMS.membership.date*1000),
-                        "type": "MEMBERSHIP"
-                      });
-                      ms.signature = jsonMS.signature;
-                      ParametersService.getMembership({
-                        body: {
-                          membership: ms.getRaw(),
-                          signature: jsonMS.signature
-                        }
-                      }, next);
-                    },
-                    function (ms, next){
-                      ms.amNumber = am.number - 1;
-                      ms.current = true;
-                      ms.save(function (err) {
-                        next(err);
-                      });
-                    },
-                  ], callback);
-                }, next);
-              },
-              function (next){
-                Key.getVoters(next);
-              },
-              function (keys, next) {
-                async.forEach(keys, function(member, callback){
-                  async.waterfall([
-                    function (next){
-                      node.registry.community.voters.current(member.fingerprint, next);
-                    },
-                    function (jsonVT, next){
-                      logger.info('Voting of %s', member.fingerprint);
-                      var vt = new Voting({
-                        "version": jsonVT.voting.version,
-                        "currency": jsonVT.voting.currency,
-                        "issuer": jsonVT.voting.issuer,
-                        "date": new Date(jsonVT.voting.date*1000),
-                        "type": "VOTING"
-                      });
-                      vt.signature = jsonVT.signature;
-                      ParametersService.getVoting({
-                        body: {
-                          voting: vt.getRaw(),
-                          signature: jsonVT.signature
-                        }
-                      }, next);
-                    },
-                    function (voting, next){
-                      voting.amNumber = am.number - 1;
-                      voting.current = true;
-                      voting.save(function (err) {
-                        next(err);
-                      });
-                    },
-                  ], callback);
-                }, next);
-              },
-            ], next);
-          })
-        },
       ], function (err, result) {
         logger.info('Sync finished.');
         done(err);
@@ -578,37 +488,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         ], onKeySentTransactionFinished);
       }
     ], onceSyncFinished);
-  }
-
-  function applyVotes(amendments, amNumber, number, json, node, cb) {
-    logger.info('Applying votes for amendment #%s', amNumber);
-    logger.info("Signatures: %s", _(json.leaves).size());
-    async.forEachSeries(json.leaves, function(leaf, callback){
-      async.waterfall([
-        function (next){
-          var hash = sha1(amendments[amNumber]).toUpperCase();
-          node.hdc.amendments.view.signatures(amNumber, hash, { "leaf": leaf }, next);
-        },
-        function (json, next){
-          var parser = parsers.parseVote(next);
-          parser.pipe(extractSignature(next)).pipe(eventStream.map(function (obj, callback) {
-            next(null, obj);
-            callback();
-          }));
-          parser.end(amendments[amNumber] + json.leaf.value.signature);
-        },
-        function (vote, next){
-          vote.pubkey = { fingerprint: leaf };
-          VoteService.submit(vote, function (err, am) {
-            if(!err)
-              number++;
-            next(err);
-          });
-        }
-      ], callback);
-    }, function(err, result){
-      cb(err, number);
-    });
   }
 }
 

@@ -142,16 +142,9 @@ describe('Multiline message signature:', function(){
    "Currency: beta_brousouf\r\n" +
    "Number: 0\r\n" +
    "GeneratedOn: 1380397288\r\n" +
-   "NextRequiredVotes: 2\r\n" +
    "MembersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90\r\n" +
    "MembersCount: 3\r\n" +
    "MembersChanges:\r\n" +
-   "+2E69197FAB029D8669EF85E82457A1587CA0ED9C\r\n" +
-   "+33BBFC0C67078D72AF128B5BA296CC530126F372\r\n" +
-   "+C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\n" +
-   "VotersRoot: F5ACFD67FC908D28C0CFDAD886249AC260515C90\r\n" +
-   "VotersCount: 3\r\n" +
-   "VotersChanges:\r\n" +
    "+2E69197FAB029D8669EF85E82457A1587CA0ED9C\r\n" +
    "+33BBFC0C67078D72AF128B5BA296CC530126F372\r\n" +
    "+C73882B64B7E72237A2F460CE9CAB76D19A8651E\r\n" +

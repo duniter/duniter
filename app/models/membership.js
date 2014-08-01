@@ -134,4 +134,12 @@ MembershipSchema.statics.getHistory = function (issuer, done) {
     .exec(done);
 }
 
+MembershipSchema.statics.getForHashAndIssuer = function (hash, issuer, done) {
+  
+  this
+    .find({ issuer: issuer, hash: hash })
+    .sort({ 'sigDate': -1 })
+    .exec(done);
+}
+
 module.exports = MembershipSchema;

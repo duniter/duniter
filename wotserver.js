@@ -16,7 +16,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
-            that.KeychainService.submit(obj, next);
+            that.KeychainService.submitMembership(obj, next);
           },
           function (membership, next){
             that.emit('membership', membership);

@@ -13,11 +13,9 @@ function MembershipParser (onError) {
   var captures = [
     {prop: "version",           regexp: /Version: (.*)/},
     {prop: "currency",          regexp: /Currency: (.*)/},
-    {prop: "type",              regexp: /Registry: (.*)/},
     {prop: "issuer",            regexp: /Issuer: (.*)/},
-    {prop: "amNumber",          regexp: /AmendmentNumber: (.*)/},
-    {prop: "amHash",            regexp: /AmendmentHash: (.*)/},
     {prop: "membership",        regexp: /Membership: (.*)/},
+    {prop: "userid",            regexp: /UserID: (.*)/},
     {prop: "date",              regexp: /Date: (.*)/, parser: parseDateFromTimestamp}
   ];
   var multilineFields = [];
@@ -36,8 +34,7 @@ function MembershipParser (onError) {
       'BAD_MEMBERSHIP': 153,
       'BAD_REGISTRY_TYPE': 154,
       'BAD_DATE': 155,
-      'BAD_AM_NUMBER': 156,
-      'BAD_AM_HASH': 157,
+      'BAD_USERID': 156,
     }
     if(!err){
       // Version
@@ -45,24 +42,9 @@ function MembershipParser (onError) {
         err = {code: codes['BAD_VERSION'], message: "Version unknown"};
     }
     if(!err){
-      // Registry document type
-      if(!obj.type || !obj.type.match("^MEMBERSHIP$"))
-        err = {code: codes['BAD_REGISTRY_TYPE'], message: "Incorrect Registry field: must be MEMBERSHIP"};
-    }
-    if(!err){
       // Fingerprint
       if(obj.issuer && !obj.issuer.match(/^[A-Z\d]+$/))
         err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect issuer field"};
-    }
-    if(!err){
-      // AmendmentNumber
-      if(!obj.amNumber || !obj.amNumber.match(/^\d+$/))
-        err = {code: codes['BAD_AM_NUMBER'], message: "Incorrect AmendmentNumber field"};
-    }
-    if(!err){
-      // AmendmentHash
-      if(obj.amHash && !obj.amHash.match(/^[A-Z\d]+$/))
-        err = {code: codes['BAD_AM_HASH'], message: "Incorrect AmendmentHash field"};
     }
     if(!err){
       // Membership
@@ -73,6 +55,11 @@ function MembershipParser (onError) {
       // Date
       if(obj.date && (typeof obj == 'string' ? !obj.date.match(/^\d+$/) : obj.date.timestamp() <= 0))
         err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
+    }
+    if(!err){
+      // UserID
+      if(!obj.userid || !obj.userid.match(/udid2/))
+        err = {code: codes['BAD_USERID'], message: "UserID must match udid2 format"};
     }
     return err && err.message;
   };

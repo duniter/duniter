@@ -134,12 +134,10 @@ module.exports = new function() {
     var raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Currency: " + json.currency + "\n";
-    raw += "Registry: " + json.type + "\n";
     raw += "Issuer: " + json.issuer + "\n";
     raw += "Date: " + json.date.timestamp() + "\n";
     raw += "Membership: " + json.membership + "\n";
-    raw += "AmendmentNumber: " + json.amNumber + "\n";
-    raw += "AmendmentHash: " + json.amHash + "\n";
+    raw += "UserID: " + json.userid + "\n";
     return unix2dos(raw);
   };
 

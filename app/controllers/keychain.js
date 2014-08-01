@@ -23,6 +23,7 @@ module.exports = function (wotServer) {
 function KeychainBinding (wotServer) {
 
   var that = this;
+  var conf = wotServer.conf;
 
   // Services
   var http              = wotServer.HTTPService;

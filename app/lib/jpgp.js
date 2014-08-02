@@ -135,6 +135,8 @@ function JPGP() {
     }
     callback(err, verified);
   };
+
+  this.toClearSign = toClearSign;
 }
 
 module.exports = function () {

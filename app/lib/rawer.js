@@ -145,16 +145,43 @@ module.exports = new function() {
     return unix2dos(signed(that.getMembershipWithoutSignature(json), json));
   };
 
-  this.getVotingWithoutSignature = function (json) {
+  this.getKeyblockWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
+    raw += "Type: KeyBlock\n";
     raw += "Currency: " + json.currency + "\n";
-    raw += "Registry: " + json.type + "\n";
-    raw += "Issuer: " + json.issuer + "\n";
-    raw += "Date: " + json.date.timestamp() + "\n";
-    raw += "AmendmentNumber: " + json.amNumber + "\n";
-    raw += "AmendmentHash: " + json.amHash + "\n";
+    raw += "Nonce: " + json.nonce + "\n";
+    raw += "Number: " + json.number + "\n";
+    raw += "Timestamp: " + json.timestamp + "\n";
+    if(json.number > 0){
+      raw += "PreviousHash: " + json.previousHash + "\n";
+      raw += "PreviousIssuer: " + json.previousIssuer + "\n";
+    }
+    raw += "MembersCount: " + json.membersCount + "\n";
+    raw += "MembersRoot: " + json.membersRoot + "\n";
+    raw += "MembersChanges:\n";
+    for(var i = 0; i < json.membersChanges.length; i++){
+      raw += json.membersChanges[i] + "\n";
+    }
+    raw += "PublicKeys:\n";
+    for(var i = 0; i < json.publicKeys.length; i++){
+      raw += '#' + json.publicKeys[i].fingerprint + '\n';
+      raw += json.publicKeys[i].packets;
+    }
+    raw += "Memberships:\n";
+    for(var i = 0; i < json.memberships.length; i++){
+      raw += json.memberships[i] + "\n";
+    }
+    raw += "MembershipsSignatures:\n";
+    for(var i = 0; i < json.membershipsSigs.length; i++){
+      raw += '#' + json.membershipsSigs[i].fingerprint + '\n';
+      raw += json.membershipsSigs[i].packets;
+    }
     return unix2dos(raw);
+  };
+
+  this.getKeyblock = function (json) {
+    return unix2dos(signed(that.getKeyblockWithoutSignature(json), json));
   };
 
   function signed (raw, json) {

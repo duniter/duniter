@@ -4,6 +4,7 @@ var async   = require('async');
 var fs      = require('fs');
 var openpgp = require('openpgp');
 var base64  = require('../../app/lib/base64');
+var jpgp    = require('../../app/lib/jpgp');
 
 var asciiCatPubkey = fs.readFileSync(__dirname + "/../data/lolcat.pub", 'utf8');
 
@@ -48,6 +49,33 @@ describe('Recomposing', function(){
       assert.equal(packets.length, 8);
     });
 
+    it('keep only pubkey, uid and certifications', function(){
+      var packets = new openpgp.packet.List();
+      var packetsFinal = new openpgp.packet.List();
+      var base64decoded = base64.decode(base64packetList);
+      var base64recoded = base64.encode(base64decoded);
+      packets.read(base64decoded);
+      packets = packets.filterByTag(
+        openpgp.enums.packet.publicKey,
+        openpgp.enums.packet.userid,
+        openpgp.enums.packet.signature);
+      packets.forEach(function(p){
+        if (p.tag == openpgp.enums.packet.signature) {
+          var signaturesToKeep = [
+            openpgp.enums.signature.cert_generic,
+            openpgp.enums.signature.cert_persona,
+            openpgp.enums.signature.cert_casual,
+            openpgp.enums.signature.cert_positive
+          ];
+          if (~signaturesToKeep.indexOf(p.signatureType))
+            packetsFinal.push(p);
+        }
+        else packetsFinal.push(p);
+      });
+      assert.equal(base64recoded, base64packetList);
+      assert.equal(packetsFinal.length, 4);
+    });
+
     it('should give same fingerprint', function(){
       var packets = new openpgp.packet.List();
       var base64decoded = base64.decode(base64packetList);
@@ -55,6 +83,31 @@ describe('Recomposing', function(){
       var key = new openpgp.key.Key(packets);
       var fingerprint = key.getKeyPacket().getFingerprint().toUpperCase();
       assert.equal("C73882B64B7E72237A2F460CE9CAB76D19A8651E", fingerprint);
+    });
+  });
+});
+
+describe('Extracting', function(){
+
+  describe('signature of Cat\'s membership', function(){
+
+    it('with base64 encoded should give a 8 packets list', function(){
+      var clearsigned = jpgp().toClearSign(catMSBody, catMSSignature);
+      var clearTextMessage = openpgp.cleartext.readArmored(clearsigned);
+      var packets = clearTextMessage.packets;
+      assert.equal(packets.length, 1);
+    });
+
+    it('encoding/recoding is OK', function(){
+      var clearsigned = jpgp().toClearSign(catMSBody, catMSSignature);
+      var clearTextMessage = openpgp.cleartext.readArmored(clearsigned);
+      var packets = clearTextMessage.packets;
+      var base64encoded = base64.encode(packets.write());
+      var base64decoded = base64.decode(base64encoded);
+      var base64recoded = base64.encode(base64decoded);
+      assert.equal(packets.write(), base64decoded);
+      assert.equal(base64encoded, base64recoded);
+      assert.equal(packets.length, 1);
     });
   });
 });
@@ -113,3 +166,25 @@ var base64packetList = "" +
   "65I0SzzpI9KSuxnNs+T5E/Qz60Z1rDs7cJbuxBQAo8Ye3kGV0UYvofDikxY2\n" +
   "Duhu9y7le2y+RUSCazS3k8U0Ab/YlMb49yJyyt/8R076j0bczbPQvgUXEiSu\n" +
   "aqunJxSx9P+AgyUWj4TKDNBLHCQKv5XYeCEEPFmqavRNjLU=";
+
+var catMSBody = "" + 
+  "Version: 1\r\n" +
+  "Currency: beta_brousouf\r\n" +
+  "Issuer: 405715EC64289D1F43808F57EC51F273CBC0FA17\r\n" +
+  "Date: 1406918607\r\n" +
+  "Membership: IN\r\n" +
+  "UserID: LoL Cat (udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;) <cem.moreau@gmail.com>\r\n";
+
+
+var catMSSignature = "" + 
+  "-----BEGIN PGP SIGNATURE-----\r\n" +
+  "Version: GnuPG v1\r\n" +
+  "\r\n" +
+  "iQEcBAABCAAGBQJT3BgPAAoJED0ZtAvOQO31VGwIAMU+8aMR/9kiJXNAbbKriQeM\r\n" +
+  "+K7X+adQWQl3VHeNKhTkGcavGe6v/DhI/f/Kgt2rXaSbzOIoHMqhRtfxWrA/Oo5t\r\n" +
+  "fTtkPFW4aGFgcqA0naN8CaRc1yK8zYOEzzZ3lxEh4/DnwBOb+MYVdZXFmTaLuwiM\r\n" +
+  "UXc6gCUyTgqddp1875G8K410XRl8/OMs8UkAH52E7MHjd6bm/LsRh1o9d2mnGXMp\r\n" +
+  "YX7a81vRJJdzwQNWvtpbvXHGn0NGYysze2zwCls7O38+3M5fRNLr3s8c7dXsn8og\r\n" +
+  "CpZ572wX4Wey1vYrJmGQFRxPz9LgGZWiGMF6oGeHfeTTiclXT+zkGE30CSxHaQM=\r\n" +
+  "=33P8\r\n" +
+  "-----END PGP SIGNATURE-----\r\n";

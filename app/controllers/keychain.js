@@ -58,7 +58,19 @@ function KeychainBinding (wotServer) {
   };
 
   this.parseKeyblock = function (req, res) {
-    res.end(503);
+    var onError = http400(res);
+    http2raw.keyblock(req, onError)
+      .pipe(unix2dos())
+      .pipe(parsers.parseKeyblock(onError))
+      .pipe(versionFilter(onError))
+      .pipe(currencyFilter(conf.currency, onError))
+      .pipe(extractSignature(onError))
+      .pipe(link2pubkey(wotServer.PublicKeyService, onError))
+      .pipe(verifySignature(onError))
+      .pipe(wotServer.singleWriteStream(onError))
+      .pipe(jsoner())
+      .pipe(es.stringify())
+      .pipe(res);
   }
 
   this.current = function (req, res) {

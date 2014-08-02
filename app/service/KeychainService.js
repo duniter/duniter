@@ -8,8 +8,9 @@ module.exports.get = function (conn, conf) {
 };
 
 function KeyService (conn, conf) {
-  
-  var Membership    = conn.model('Membership');
+
+  var Membership = conn.model('Membership');
+  var KeyBlock   = conn.model('KeyBlock');
 
   this.load = function (done) {
     done();
@@ -41,4 +42,9 @@ function KeyService (conn, conf) {
       }
     ], done);
   };
+
+  this.submitKeyBlock = function (kb, done) {
+    var block = new KeyBlock(kb);
+    done(null, block);
+  }
 }

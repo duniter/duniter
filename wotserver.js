@@ -25,14 +25,14 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
         ], next);
       }
     },{
-      // Transaction
+      // KeyBlock
       matches: function (obj) {
-        return obj.recipient ? true : false;
+        return obj.type && obj.type == 'KeyBlock' ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
-            server.TransactionsService.processTx(obj, next);
+            server.KeychainService.submitKeyBlock(obj, next);
           },
           function (tx, next){
             server.emit('transaction', tx);

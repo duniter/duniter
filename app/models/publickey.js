@@ -16,6 +16,7 @@ var PublicKeySchema = new Schema({
   name: String,
   email: String,
   comment: String,
+  keychain: String, // Raw packets recorded in the keychain
   hash: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -199,8 +200,8 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           }
           // If already treated this ASCII armored value
           if (~foundKeys[0].hashes.indexOf(comingHash)) {
-            next('Key already up-to-date');
-            return;
+            // next('Key already up-to-date');
+            // return;
           } else {
             // Remembering incoming hash
             foundKeys[0].hashes.push(comingHash);
@@ -215,6 +216,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           foundKeys[0].email = pubkey.email;
           foundKeys[0].name = pubkey.name;
           foundKeys[0].comment = pubkey.comment;
+          foundKeys[0].keychain = pubkey.keychain;
           foundKeys[0].hash = raw.hash();
           foundKeys[0].save(function (err) {
             next(err);

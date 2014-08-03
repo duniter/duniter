@@ -53,7 +53,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
   this._initServices = function(conn, done) {
     this.KeyService         = require('./app/service/KeyService').get(conn);
     this.PublicKeyService   = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
-    this.KeychainService    = require('./app/service/KeychainService').get(conn, that.conf);
+    this.KeychainService    = require('./app/service/KeychainService').get(conn, that.conf, that.PublicKeyService);
     async.parallel({
       contract: function(callback){
         that.KeychainService.load(callback);

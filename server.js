@@ -10,7 +10,7 @@ var http       = require('http');
 var log4js     = require('log4js');
 var connectPgp = require('connect-pgp');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'KeyBlock'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'KeyBlock'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -165,7 +165,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           'amendments',
           'coins',
           'forwards',
+          'links',
           'keys',
+          'keyblocks',
           'ckeys',
           'merkles',
           'peers',

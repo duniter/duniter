@@ -33,6 +33,7 @@ function JPGP() {
     return {
       "key": key,
       "fingerprint": fpr,
+      "userid": uids && uids.length > 0 && uids[0],
       "uids": uids,
       "raw": asciiArmored,
       "subkeys": subkeys
@@ -108,7 +109,7 @@ function JPGP() {
       } else {
         if (!publicKey.getKeyPacket().getFingerprint().toUpperCase().match(issuerRegexp)) {
           // Signature was done using subkey
-          publicKey.subKeys.forEach(function(subKey){
+          (publicKey.subKeys || []).forEach(function(subKey){
             if (subKey.subKey.getFingerprint().toUpperCase().match(issuerRegexp)) {
               if (subKey.verify(publicKey.primaryKey) == openpgp.enums.keyStatus.revoked) {
                 err = 'SubKey has been revoked';

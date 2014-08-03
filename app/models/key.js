@@ -8,6 +8,7 @@ var KeySchema = new Schema({
   fingerprint: { type: String, unique: true },
   managed: { type: Boolean, default: false },
   member: { type: Boolean, default: false },
+  kick: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -16,6 +17,33 @@ KeySchema.pre('save', function (next) {
   this.updated = Date.now();
   next();
 });
+
+KeySchema.statics.getToBeKicked = function(done){
+  var Key = this.model('Key');
+  Key.find({ kick: true }, done);
+}
+
+KeySchema.statics.isStayingMember = function(keyID, done){
+  var Key = this.model('Key');
+  Key.find({ fingerprint: new RegExp(keyID + '$'), member: true, kick: false }, function (err, keys) {
+    if(keys.length > 1){
+      done('More than one key managed with keyID ' + keyID);
+      return;
+    }
+    done(null, keys.length == 1);
+  });
+}
+
+KeySchema.statics.isMember = function(keyID, done){
+  var Key = this.model('Key');
+  Key.find({ fingerprint: new RegExp(keyID + '$'), member: true }, function (err, keys) {
+    if(keys.length > 1){
+      done('More than one key managed with keyID ' + keyID);
+      return;
+    }
+    done(null, keys.length == 1);
+  });
+}
 
 KeySchema.statics.setKnown = function(fingerprint, done){
   var Key = this.model('Key');
@@ -85,6 +113,20 @@ KeySchema.statics.addMember = function(fingerprint, done){
 KeySchema.statics.removeMember = function(fingerprint, done){
   var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { member: false }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.setKicked = function(fingerprint, done){
+  var Key = this.model('Key');
+  Key.update({ fingerprint: fingerprint }, { kick: true }, function (err) {
+    done(err);
+  });
+};
+
+KeySchema.statics.removeKicked = function(fingerprint, done){
+  var Key = this.model('Key');
+  Key.update({ fingerprint: fingerprint }, { kick: false }, function (err) {
     done(err);
   });
 };

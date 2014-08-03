@@ -4,6 +4,8 @@ var sha1     = require('sha1');
 var _        = require('underscore');
 var fs       = require('fs');
 var Schema   = mongoose.Schema;
+var base64   = require('../lib/base64');
+var openpgp  = require('openpgp');
 var logger   = require('../lib/logger')('dao keyblock');
 
 var KeyBlockSchema = new Schema({
@@ -68,6 +70,162 @@ KeyBlockSchema.methods = {
       json[field] = that[field] || [];
     });
     return json;
+  },
+
+  getPublicKeysPackets: function() {
+    var pubkeys = [];
+    this.publicKeys.forEach(function(obj){
+      var packets = new openpgp.packet.List();
+      var base64decoded = base64.decode(obj.packets);
+      packets.read(base64decoded);
+      packets = packets.filterByTag(openpgp.enums.packet.publicKey);
+      if (packets.length == 1) {
+        pubkeys.push(packets[0]);
+      }
+    });
+    return pubkeys;
+  },
+
+  getTierCertificationPackets: function() {
+    var certifications = [];
+    this.publicKeys.forEach(function(obj){
+      var fingerprint = obj.fingerprint;
+      var packets = new openpgp.packet.List();
+      var base64decoded = base64.decode(obj.packets);
+      packets.read(base64decoded);
+      packets = packets.filterByTag(openpgp.enums.packet.signature);
+      packets.forEach(function(p){
+        if (p.tag == openpgp.enums.packet.signature) {
+          var signaturesToKeep = [
+            openpgp.enums.signature.cert_generic,
+            openpgp.enums.signature.cert_persona,
+            openpgp.enums.signature.cert_casual,
+            openpgp.enums.signature.cert_positive
+          ];
+          var selfSig = fingerprint.match(new RegExp(p.issuerKeyId.toHex().toUpperCase() + '$'));
+          if (~signaturesToKeep.indexOf(p.signatureType) && !selfSig)
+            certifications.push(p);
+        }
+      });
+    });
+    return certifications;
+  },
+
+  getTierCertificationPacketsFor: function(fingerprint) {
+    var certifications = [];
+    this.publicKeys.forEach(function(obj){
+      if (obj.fingerprint == fingerprint) {
+        var fingerprint = obj.fingerprint;
+        var packets = new openpgp.packet.List();
+        var base64decoded = base64.decode(obj.packets);
+        packets.read(base64decoded);
+        packets = packets.filterByTag(openpgp.enums.packet.signature);
+        packets.forEach(function(p){
+          if (p.tag == openpgp.enums.packet.signature) {
+            var signaturesToKeep = [
+              openpgp.enums.signature.cert_generic,
+              openpgp.enums.signature.cert_persona,
+              openpgp.enums.signature.cert_casual,
+              openpgp.enums.signature.cert_positive
+            ];
+            var selfSig = fingerprint.match(new RegExp(p.issuerKeyId.toHex().toUpperCase() + '$'));
+            p.target = fingerprint;
+            if (~signaturesToKeep.indexOf(p.signatureType) && !selfSig)
+              certifications.push(p);
+          }
+        });
+      }
+    });
+    return certifications;
+  },
+
+  getBasicPublicKeys: function() {
+    var pubkeys = [];
+    this.publicKeys.forEach(function(obj){
+      var packets = new openpgp.packet.List();
+      var packetsTemp = new openpgp.packet.List();
+      var packetsFinal = new openpgp.packet.List();
+      var base64decoded = base64.decode(obj.packets);
+      packets.read(base64decoded);
+      packets = packets.filterByTag(
+        openpgp.enums.packet.publicKey,
+        openpgp.enums.packet.publicSubkey,
+        openpgp.enums.packet.userid,
+        openpgp.enums.packet.signature);
+      // 1st pass (to keep pubk, userid and certifications)
+      var fingerprint = "";
+      packets.forEach(function(p){
+        if (p.tag == openpgp.enums.packet.signature) {
+          var signaturesToKeep = [
+            openpgp.enums.signature.cert_generic,
+            openpgp.enums.signature.cert_persona,
+            openpgp.enums.signature.cert_casual,
+            openpgp.enums.signature.cert_positive,
+            openpgp.enums.signature.subkey_binding
+          ];
+          if (~signaturesToKeep.indexOf(p.signatureType))
+            packetsTemp.push(p);
+        }
+        else if (p.tag == openpgp.enums.packet.publicKey) {
+          fingerprint = p.getFingerprint().toUpperCase();
+          packetsTemp.push(p);
+        }
+        else packetsTemp.push(p);
+      });
+      // 2nd pass (to slice tier-signatures)
+      packets = packets.filterByTag(
+        openpgp.enums.packet.publicKey,
+        openpgp.enums.packet.userid,
+        openpgp.enums.packet.signature);
+      packetsTemp.forEach(function(p){
+        if (p.tag == openpgp.enums.packet.signature) {
+          var signaturesToKeep = [
+            openpgp.enums.signature.cert_generic,
+            openpgp.enums.signature.cert_persona,
+            openpgp.enums.signature.cert_casual,
+            openpgp.enums.signature.cert_positive,
+            openpgp.enums.signature.subkey_binding
+          ];
+          if (fingerprint.match(new RegExp(p.issuerKeyId.toHex().toUpperCase() + '$')))
+            packetsFinal.push(p);
+        }
+        else packetsFinal.push(p);
+      });
+      pubkeys.push(new openpgp.key.Key(packetsFinal));
+    });
+    return pubkeys;
+  },
+
+  getMemberships: function() {
+    var notFoundMembership = 0;
+    var mss = {};
+    this.memberships.forEach(function(shortMS){
+      var sp = shortMS.split(':');
+      var ms = {
+        version: sp[0],
+        keyID: sp[1].substring(24),
+        fingerprint: sp[1],
+        membership: sp[2],
+        date: new Date(parseInt(sp[3])*1000),
+        userid: sp[4],
+      };
+      mss[ms.keyID] = ms;
+    });
+    this.membershipsSigs.forEach(function(msSig){
+      var keyID = msSig.fingerprint.substring(24);
+      if (mss[keyID]) {
+        var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
+        signature += msSig.packets;
+        signature += '-----END PGP SIGNATURE-----\n';
+        mss[keyID].signature = signature;
+        mss[keyID].issuer = msSig.fingerprint;
+      }
+      else notFoundMembership++;
+    });
+    return {
+      'notFoundMembership': notFoundMembership,
+      'mss': mss
+    };
   },
 
   getNewMembers: function() {

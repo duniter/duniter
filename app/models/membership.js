@@ -12,7 +12,7 @@ var MembershipSchema = new Schema({
   issuer: { type: String },
   membership: String,
   type: String,
-  amNumber: Number,
+  userid: String,
   eligible: { type: Boolean, default: true },
   current: { type: Boolean, default: false },
   signature: String,

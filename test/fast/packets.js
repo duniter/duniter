@@ -1,10 +1,10 @@
-var should  = require('should');
-var assert  = require('assert');
-var async   = require('async');
-var fs      = require('fs');
-var openpgp = require('openpgp');
-var base64  = require('../../app/lib/base64');
-var jpgp    = require('../../app/lib/jpgp');
+var should   = require('should');
+var assert   = require('assert');
+var async    = require('async');
+var fs       = require('fs');
+var openpgp  = require('openpgp');
+var base64   = require('../../app/lib/base64');
+var jpgp     = require('../../app/lib/jpgp');
 
 var asciiCatPubkey = fs.readFileSync(__dirname + "/../data/lolcat.pub", 'utf8');
 
@@ -49,7 +49,7 @@ describe('Recomposing', function(){
       assert.equal(packets.length, 8);
     });
 
-    it('keep only pubkey, uid and certifications', function(){
+    it('keep only pubkey, subkeys, uid and certifications', function(){
       var packets = new openpgp.packet.List();
       var packetsFinal = new openpgp.packet.List();
       var base64decoded = base64.decode(base64packetList);
@@ -57,6 +57,7 @@ describe('Recomposing', function(){
       packets.read(base64decoded);
       packets = packets.filterByTag(
         openpgp.enums.packet.publicKey,
+        openpgp.enums.packet.publicSubkey,
         openpgp.enums.packet.userid,
         openpgp.enums.packet.signature);
       packets.forEach(function(p){
@@ -65,15 +66,48 @@ describe('Recomposing', function(){
             openpgp.enums.signature.cert_generic,
             openpgp.enums.signature.cert_persona,
             openpgp.enums.signature.cert_casual,
-            openpgp.enums.signature.cert_positive
+            openpgp.enums.signature.cert_positive,
+            openpgp.enums.signature.subkey_binding
           ];
           if (~signaturesToKeep.indexOf(p.signatureType))
             packetsFinal.push(p);
         }
         else packetsFinal.push(p);
       });
+      // console.log(base64.encode(packetsFinal.write()));
       assert.equal(base64recoded, base64packetList);
-      assert.equal(packetsFinal.length, 4);
+      assert.equal(packetsFinal.length, 8);
+    });
+
+    it('keep only pubkey, subkeys, uid and SELF-certifications', function(){
+      var fingerprint = 'C73882B64B7E72237A2F460CE9CAB76D19A8651E';
+      var packets = new openpgp.packet.List();
+      var packetsFinal = new openpgp.packet.List();
+      var base64decoded = base64.decode(base64packetList);
+      var base64recoded = base64.encode(base64decoded);
+      packets.read(base64decoded);
+      packets = packets.filterByTag(
+        openpgp.enums.packet.publicKey,
+        openpgp.enums.packet.publicSubkey,
+        openpgp.enums.packet.userid,
+        openpgp.enums.packet.signature);
+      packets.forEach(function(p){
+        if (p.tag == openpgp.enums.packet.signature) {
+          var signaturesToKeep = [
+            openpgp.enums.signature.cert_generic,
+            openpgp.enums.signature.cert_persona,
+            openpgp.enums.signature.cert_casual,
+            openpgp.enums.signature.cert_positive,
+            openpgp.enums.signature.subkey_binding
+          ];
+          if (~signaturesToKeep.indexOf(p.signatureType) && fingerprint.match(new RegExp(p.issuerKeyId.toHex().toUpperCase() + '$')))
+            packetsFinal.push(p);
+        }
+        else packetsFinal.push(p);
+      });
+      // console.log(base64.encode(packetsFinal.write()));
+      assert.equal(base64recoded, base64packetList);
+      assert.equal(packetsFinal.length, 7);
     });
 
     it('should give same fingerprint', function(){
@@ -103,6 +137,7 @@ describe('Extracting', function(){
       var clearTextMessage = openpgp.cleartext.readArmored(clearsigned);
       var packets = clearTextMessage.packets;
       var base64encoded = base64.encode(packets.write());
+      // console.log(clearTextMessage.armor());
       var base64decoded = base64.decode(base64encoded);
       var base64recoded = base64.encode(base64decoded);
       assert.equal(packets.write(), base64decoded);
@@ -180,11 +215,11 @@ var catMSSignature = "" +
   "-----BEGIN PGP SIGNATURE-----\r\n" +
   "Version: GnuPG v1\r\n" +
   "\r\n" +
-  "iQEcBAABCAAGBQJT3BgPAAoJED0ZtAvOQO31VGwIAMU+8aMR/9kiJXNAbbKriQeM\r\n" +
-  "+K7X+adQWQl3VHeNKhTkGcavGe6v/DhI/f/Kgt2rXaSbzOIoHMqhRtfxWrA/Oo5t\r\n" +
-  "fTtkPFW4aGFgcqA0naN8CaRc1yK8zYOEzzZ3lxEh4/DnwBOb+MYVdZXFmTaLuwiM\r\n" +
-  "UXc6gCUyTgqddp1875G8K410XRl8/OMs8UkAH52E7MHjd6bm/LsRh1o9d2mnGXMp\r\n" +
-  "YX7a81vRJJdzwQNWvtpbvXHGn0NGYysze2zwCls7O38+3M5fRNLr3s8c7dXsn8og\r\n" +
-  "CpZ572wX4Wey1vYrJmGQFRxPz9LgGZWiGMF6oGeHfeTTiclXT+zkGE30CSxHaQM=\r\n" +
-  "=33P8\r\n" +
+  "iQEcBAABCAAGBQJT3WuoAAoJED0ZtAvOQO31XFsH/176LaUfmN7S1TIdbFtRMLm8\r\n" +
+  "URXW7Tyfh8fYYMMtMjV8F5SBzly6o3bkXv16gJ5q/EkebxBgCKP4IuLHLP1k4wcP\r\n" +
+  "XHM8bjXKnzr731V2KvRevlBQhsjMppS5/KPpN/w0JujGQ36UMYMR+8zskq1mkcjX\r\n" +
+  "0PE4b9y0cdQRmz+nJ90fSynH98RkbswgOp/DZg+OgNsuwS5wPFeXfxNnPY9HTjIj\r\n" +
+  "IEbrjy9Zitlahkm1LVm6zgQAX0eTc8tWOR6AHzsf1Bz4y5ZPbIa6cbaOUf0GUNWb\r\n" +
+  "zpmn8aPRRxX7QWBlIh9MCExS5jduwZmJ4uFLroATeJUnTXjVkQ68wJaBFrif1+U=\r\n" +
+  "=P+eB\r\n" +
   "-----END PGP SIGNATURE-----\r\n";

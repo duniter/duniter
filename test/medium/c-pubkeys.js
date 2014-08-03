@@ -59,7 +59,7 @@ var testCases = [
   tester.verify(
     "Tobi giving again same key",
     on.pksAdd(pubkeyTobi),
-    is.expectedHTTPCode(400)
+    is.expectedHTTPCode(200)
   ),
   testMerkle("/pks/all", 'F5ACFD67FC908D28C0CFDAD886249AC260515C90'),
 

@@ -2,10 +2,13 @@ var jpgp     = require('../lib/jpgp');
 var async    = require('async');
 var _        = require('underscore');
 var openpgp  = require('openpgp');
+var merkle   = require('merkle');
 var base64   = require('../lib/base64');
 var unix2dos = require('../lib/unix2dos');
+var dos2unix = require('../lib/dos2unix');
 var parsers  = require('../lib/streams/parsers/doc');
-var mlogger = require('../lib/logger')('membership');
+var logger   = require('../lib/logger')('membership');
+var moment   = require('moment');
 
 module.exports.get = function (conn, conf, PublicKeyService) {
   return new KeyService(conn, conf, PublicKeyService);
@@ -34,7 +37,7 @@ function KeyService (conn, conf, PublicKeyService) {
     var entry = new Membership(ms);
     async.waterfall([
       function (next){
-        mlogger.debug('⬇ %s %s', entry.issuer, entry.membership);
+        logger.debug('⬇ %s %s', entry.issuer, entry.membership);
         // Get already existing Membership with same parameters
         Membership.getForHashAndIssuer(entry.hash, entry.issuer, next);
       },
@@ -51,7 +54,7 @@ function KeyService (conn, conf, PublicKeyService) {
         });
       },
       function (next){
-        mlogger.debug('✔ %s %s', entry.issuer, entry.membership);
+        logger.debug('✔ %s %s', entry.issuer, entry.membership);
         next(null, entry);
       }
     ], done);
@@ -581,6 +584,37 @@ function KeyService (conn, conf, PublicKeyService) {
       return certifs;
     };
 
+    this.getPurePubkey = function () {
+      return new openpgp.key.Key(this.getPurePackets());
+    };
+
+    // Get signatories' certification packet of the userid (not checked yet)
+    this.getPurePackets = function () {
+      var purePackets = [];
+      var packets = this.packets.filterByTag(
+        openpgp.enums.packet.publicKey,
+        openpgp.enums.packet.publicSubkey,
+        openpgp.enums.packet.userid,
+        openpgp.enums.packet.signature);
+      packets.forEach(function(packet){
+        var signaturesToKeep = [
+          openpgp.enums.signature.cert_generic,
+          openpgp.enums.signature.cert_persona,
+          openpgp.enums.signature.cert_casual,
+          openpgp.enums.signature.cert_positive,
+          openpgp.enums.signature.subkey_binding
+        ];
+        if (~signaturesToKeep.indexOf(packet.signatureType)) {
+          var issuerKeyId = packet.issuerKeyId.toHex().toUpperCase();
+          var isSelfSig = fingerprint.match(new RegExp(issuerKeyId + '$'));
+          if (isSelfSig) {
+            purePackets.push(packet);
+          }
+        }
+      });
+      return purePackets;
+    };
+
     this.getPubKey = function () {
       return new openpgp.key.Key(this.packets);
     };
@@ -595,4 +629,127 @@ function KeyService (conn, conf, PublicKeyService) {
       return armor;
     }
   }
+
+  this.current = function (done) {
+    KeyBlock.current(function (err, kb) {
+      done(err, kb || null);
+    })
+  }
+
+  this.generateRoot = function (uids, done) {
+    var joinData = {};
+    var fingerprints = [];
+    async.forEach(uids, function(uid, callback){
+      var join = { pubkey: null, ms: null };
+      async.waterfall([
+        function (next){
+          Membership.find({ userid: uid }, next);
+        },
+        function (mss, next){
+          if (mss.length == 0) {
+            next('Membership not found?!')
+            return;
+          }
+          else if (mss.length > 1) {
+            next('Multiple membership found! Stopping.')
+            return;
+          }
+          else {
+            join.ms = mss[0];
+            fingerprints.push(join.ms.issuer);
+            PublicKey.getTheOne(join.ms.issuer, next);
+          }
+        },
+        function (pubk, next){
+          join.pubkey = pubk;
+          joinData[join.pubkey.fingerprint] = join;
+          next();
+        },
+      ], callback);
+    }, function(err){
+      var block = new KeyBlock();
+      block.version = 1;
+      block.currency = joinData[fingerprints[0]].ms.currency;
+      block.number = 0;
+      // Members merkle
+      fingerprints.sort();
+      var tree = merkle(fingerprints, 'sha1').process();
+      block.membersCount = fingerprints.length;
+      block.membersRoot = tree.root();
+      block.membersChanges = [];
+      fingerprints.forEach(function(fpr){
+        block.membersChanges.push('+' + fpr);
+      });
+      // Public keys
+      block.publicKeys = [];
+      _(joinData).values().forEach(function(join){
+        var key = openpgp.key.readArmored(join.pubkey.raw).keys[0];
+        var pkData = {
+          fingerprint: join.pubkey.fingerprint,
+          packets: base64.encode(key.toPacketlist().write())
+        };
+        block.publicKeys.push(pkData);
+      });
+      // Memberships
+      block.memberships = [];
+      _(joinData).values().forEach(function(join){
+        var ms = join.ms;
+        var shortMS = [1, join.pubkey.fingerprint, 'IN', ms.date.timestamp(), ms.userid].join(':');
+        block.memberships.push(shortMS);
+      });
+      // Memberships signatures
+      block.membershipsSigs = [];
+      _(joinData).values().forEach(function(join){
+        var ms = join.ms;
+        var splits = dos2unix(ms.signature).split('\n');
+        var signature = "";
+        var keep = false;
+        splits.forEach(function(line){
+          if (keep && !line.match('-----END PGP') && line != '') signature += line + '\n';
+          if (line == "") keep = true;
+        });
+        block.membershipsSigs.push({
+          fingerprint: join.pubkey.fingerprint,
+          packets: signature
+        });
+      });
+      done(null, block);
+    });
+  };
+
+  this.prove = function (block, sigFunc, nbZeros, done) {
+    var powRegexp = new RegExp('^0{' + nbZeros + '}');
+    var pow = "", sig = "", raw = "";
+    var start = new Date().timestamp();
+    var testsCount = 0;
+    logger.debug('Generating proof-of-work...');
+    async.whilst(
+      function(){ return !pow.match(powRegexp); },
+      function (next) {
+        var newTS = new Date().timestamp();
+        if (newTS == block.timestamp) {
+          block.nonce++;
+        } else {
+          block.nonce = 0;
+          block.timestamp = newTS;
+        }
+        raw = block.getRaw();
+        sigFunc(raw, function (err, sigResult) {
+          sig = unix2dos(sigResult);
+          var full = raw + sig;
+          pow = full.hash();
+          testsCount++;
+          if (testsCount % 100 == 0) process.stdout.write('.');
+          next();
+        });
+      }, function (err) {
+        console.log(raw);
+        block.signature = sig;
+        var end = new Date().timestamp();
+        var duration = moment.duration((end - start)) + 's';
+        var testsPerSecond = (testsCount / (end - start)).toFixed(2);
+        logger.debug('Done: ' + pow + ' in ' + duration + ' (~' + testsPerSecond + ' tests/s)');
+        done(err, block);
+      });
+  };
 }

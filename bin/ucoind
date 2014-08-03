@@ -13,6 +13,7 @@ var wizard      = require('../app/lib/wizard');
 var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
 var logger      = require('../app/lib/logger')('ucoind');
+var signature   = require('../app/lib/signature');
 var ucoin       = require('./..');
 
 function keys (val) {
@@ -219,6 +220,86 @@ function handleKey (server, key, isManaged, message) {
     process.exit();
   });
 }
+
+program
+  .command('gen-root [host] [port] [difficulty]')
+  .description('Tries to generate the root keyblock of the keychain using already received keys & memberships')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (host, port, difficulty, server, conf) {
+    var Membership = server.conn.model('Membership');
+    var KeychainService = server.KeychainService;
+    async.waterfall([
+      function (next){
+        if (!host || !port) {
+          next('usage: gen-root [host] [port]');
+          return;
+        }
+        KeychainService.current(function (err, current) {
+          if (current) {
+            next('Local keychain is already started.');
+            return;
+          }
+          else next();
+        })
+      },
+      function (next){
+        Membership.find({}, next);
+      },
+      function (mss, next){
+        var uids = [];
+        mss.forEach(function(ms){
+          uids.push(ms.userid);
+        });
+        inquirer.prompt([{
+          type: "checkbox",
+          name: "uids",
+          message: "Initial members of the Web of Trust",
+          choices: uids,
+          default: uids[0]
+        }], function (answers) {
+          next(null, answers.uids);
+        });
+      },
+      function (uids, next){
+        if (uids.length == 0) {
+          next('You must select at least 1 user');
+          return;
+        }
+        KeychainService.generateRoot(uids, next);
+      },
+      function (root, next){
+        var wiz = wizard(server);
+        async.waterfall([
+          function (next){
+            wiz.configOpenpgp(conf, next);
+          },
+          function (next){
+            wiz.configKey(conf, next);
+          },
+          function (next){
+            signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, next);
+          },
+          function (sigFunc, next){
+            KeychainService.prove(root, sigFunc, difficulty, next);
+          },
+          function (block, next){
+            var Peer = server.conn.model('Peer');
+            var peer = new Peer({
+              endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
+            });
+            // console.log(block.getRaw());
+            // console.log(block.signature);
+            multicaster().sendKeyblock(peer, block, next);
+          },
+        ], next);
+      },
+    ], function (err) {
+      if (err) {
+        logger.error(err);
+      }
+      server.disconnect();
+      process.exit();
+    });
+  }));
 
 program
   .command('check-config')

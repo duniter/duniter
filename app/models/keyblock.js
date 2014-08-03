@@ -258,6 +258,10 @@ KeyBlockSchema.methods = {
   },
 
   getRaw: function() {
+    return require('../lib/rawer').getKeyblockWithoutSignature(this);
+  },
+
+  getRawSigned: function() {
     return require('../lib/rawer').getKeyblock(this);
   },
 

@@ -8,7 +8,8 @@ var plogger   = require('./app/lib/logger')('peer');
 var flogger   = require('./app/lib/logger')('forward');
 var slogger   = require('./app/lib/logger')('status');
 var wlogger   = require('./app/lib/logger')('wallet');
-var WOT = require('./wotserver');
+var WOT       = require('./wotserver');
+var signature = require('./app/lib/signature');
 var parsers   = require('./app/lib/streams/parsers/doc');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
@@ -178,37 +179,8 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.createSignFunction = function (conf, done) {
-    async.waterfall([
-      function (next) {
-        if (conf.openpgpjs) {
-          var pgp = jpgp();
-          var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-          privateKey.decrypt(conf.pgppasswd);
-          var signingFunc = async.apply(pgp.sign.bind(pgp.sign), privateKey);
-          next(null, function (message, done) {
-            jpgp().sign(message, privateKey, done);
-          });
-        } else {
-          var asciiPrivateKey = conf.pgpkey;
-          var keyring = '~/.gnupg/ucoin_' + that.PeeringService.cert.fingerprint;
-          logger.debug("Keyring = %s", keyring);
-          var gnupg = new (require('./app/lib/gnupg'))(asciiPrivateKey, conf.pgppasswd, that.PeeringService.cert.fingerprint, keyring);
-          gnupg.init(function (err) {
-            next(err, function (message, done) {
-              gnupg.sign(message, done);
-            });
-          });
-        }
-      },
-      function (signFunc, next){
-        that.sign = signFunc;
-        try{
-          that.sign("some test\nwith line return", next);
-        } catch(ex){
-          next("Wrong private key password.");
-        }
-      },
-    ], function (err) {
+    signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, function (err, sigFunc) {
+      that.sign = sigFunc;
       done(err);
     });
   }

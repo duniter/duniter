@@ -130,6 +130,7 @@ function Multicaster () {
   });
 
   this.sendPubkey = sendPubkey;
+  this.sendKeyblock = sendKeyblock;
 }
 
 util.inherits(Multicaster, stream.Transform);
@@ -140,6 +141,15 @@ function sendPubkey(peer, pubkey, done) {
   post(peer, '/pks/add', {
     "keytext": pubkey.getRaw(),
     "keysign": pubkey.signature
+  }, done);
+}
+
+function sendKeyblock(peer, keyblock, done) {
+  var keyID = peer.keyID();
+  logger.info('POST keyblock to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
+  post(peer, '/keychain/keyblock', {
+    "keyblock": keyblock.getRaw(),
+    "signature": keyblock.signature
   }, done);
 }
 

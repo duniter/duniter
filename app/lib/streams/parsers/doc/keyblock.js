@@ -114,11 +114,11 @@ function extractFingerprintSeparatedPackets(raw) {
   var lines = raw.split(/\n/);
   var nbKeys = 0;
   lines.forEach(function(line){
-    if (line.match(/^#[A-Z0-9]{40}$/)) {
+    if (line.match(/^#####-----[A-Z0-9]{40}-----#####$/)) {
       // New key block
       packetsByFPR.push({
         number: nbKeys++,
-        fingerprint: line.substring(1),
+        fingerprint: line.substring(10, 50),
         packets: ""
       });
     } else if (line.match(/^[A-Za-z0-9\/+=]{1,64}$/) && nbKeys > 0) {

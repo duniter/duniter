@@ -11,6 +11,7 @@
   * [Signatures](#signatures)
 * [Formats](#formats)
   * [Public key](#public-key)
+  * [Membership](#membership)
   * [Keyblock](#keyblock)
   * [Amendment](#amendment)
   * [Transaction](#transaction)
@@ -36,7 +37,7 @@ Word | Description
 ---- | -------------
 Universal Dividend | Money issuance **directly** and **exclusively** on community members.
 Community | A groupment of individuals linked together trought a Monetary Contract.
-Monetary Contract | A document gathering the informations defining the community members and monetary mass inside it.
+Monetary Contract | A document gathering the informations defining the community members, voters and monetary mass inside it.
 
 ## Introduction
 
@@ -191,6 +192,7 @@ A Keyblock is a document gathering public key informations in order to build a W
     Currency: CURRENCY
     Nonce: NONCE
     Number: BLOCK_NUMBER
+    Timestamp: GENERATED_ON
     PreviousHash: PREVIOUS_HASH
     PreviousIssuer: ISSUER_FPR
     MembersCount: WOT_MEM_COUNT
@@ -201,12 +203,13 @@ A Keyblock is a document gathering public key informations in order to build a W
     -MEMBER_OUT_KEY_FINGERPRINT
     ...
     PublicKeys:
-    #PUBLIC_KEY_FINGERPRINT
+    #####-----PUBLIC_KEY_FINGERPRINT-----#####
     [packets]
     ...
     Memberships:
-    VERSION:KEY_ID:TYPE:TIMESTAMP
+    VERSION:FINGERPRINT:TYPE:TIMESTAMP:USER_ID
     MembershipsSignatures:
+    #####-----PUBLIC_KEY_FINGERPRINT-----#####
     [signature_packet]
     ...
     BOTTOM_SIGNATURE
@@ -218,6 +221,7 @@ Type                  | The document type
 Currency              | The currency name
 Nonce                 | A arbitrary nonce value
 Number                | The keyblock number
+Timestamp             | Timestamp of generation
 PreviousHash          | Previous keyblock fingerprint
 PreviousIssuer        | Previous keyblock issuer's fingerprint
 MembersCount          | Number of members in the WoT
@@ -239,12 +243,16 @@ To be a valid keyblock document, a keyblock must match the following rules:
 * `PublicKeys` is a multiline field whose lines are divided in blocks composed by:
   * A first line with `#PUBLIC_KEY_FINGERPRINT`, where `PUBLIC_KEY_FINGERPRINT` is an SHA-1 hash
   * A bunch of lines under Base64 format, representing OpenPGP public key, user ID and certification packets
+  * It cannot be found two lines with same `#PUBLIC_KEY_FINGERPRINT`
+ * `PublicKeys` is sorted by `PUBLIC_KEY_FINGERPRINT`, ascending
 * `Memberships` is a multiline field whose lines follow the `VERSION:KEY_ID:TYPE:TIMESTAMP` pattern:
   * `VERSION` is a membership version field
-  * `KEY_ID` is a membership signing key ID
+  * `FINGERPRINT` is a membership signing key fingerprint
   * `TYPE` is either `IN` or `OUT` value
   * `TIMESTAMP` is a timestamp value
-* `MembershipsSignatures` is a multiline field composed of Base64 lines
+  * `USER_ID` is a string targeting an existing UserID of the attached key
+* `Memberships` is `FINGERPRINT` sorted, ascending
+* `MembershipsSignatures` is a multiline field composed of Base64 lines, sorted by `PUBLIC_KEY_FINGERPRINT`, ascending
 
 The document must be ended with a `BOTTOM_SIGNATURE`, which is an OpenPGP armored signature.
 
@@ -269,7 +277,9 @@ Each keyblock, other than the keyblock#0 must follow the following rules:
 * Its `Currency` field has exactly the same value as preceding keyblock
 * Its `PreviousHash` field match the uppercased SHA-1 fingerprint of the whole previous block
 * Its `PreviousIssuer` field match the key fingerprint of the previous block's signatory
-* Its `MembersCount` field is the sum of all `+` count minus the sum of all `-` count from `MembersChanges` field since keyblock#0, this block included
+* Its `MembersCount` field is either equal to:
+  * the sum of all `+` count minus the sum of all `-` count from `MembersChanges` field since keyblock#0, this block included
+  * previous block `MembersCount` + the sum of all `+` count minus the sum of all `-` count from `MembersChanges` of this keyblock
 
 ### Amendment
 
@@ -649,7 +659,7 @@ sigValidity | Maximum age of a valid signature
 sigQty      | Minimum quantity of signatures to join/stay in the keychain
 stepMax     | Maximum step between the WoT and individual and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
-powRetro    | Number of days to look back in the keychain for PoW strengh
+powPeriod   | Number of written blocks to wait to lower the PoW difficulty by 1
 
 ### Computed variables
 
@@ -708,6 +718,7 @@ A Keyblock can be accepted only if it respects the following rules.
 A membership is to be considered valid if matching the following rules:
 
 * The membership must be [well formated](#membership)
+* The membership must be signed by its issuer
 * The membership `UserId` field matches [udid2 format](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164)
 * A joining membership cannot follow a `+KEY` in keychain changes for this key
 * A leaving membership can only follow a `+KEY` in keychain changes for this key
@@ -721,13 +732,21 @@ A public key can join/stay in the community only if its [certifications](#certif
 * The number of valid certifications must be at least `[sigQty]`
 * The maximum step between the key and the whole WoT (each member) must be `[stepMax]`
 
+#### Members summary fields
+
+* `MembersCount` field must match the number of members in the community with this keyblock applyed
+* `MembersRoot` must match the merkle tree root hash of all current members' fingerprint (leaves are members' fingerprint, ascending sorted)
+
 #### Block fingerprint
-To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules are the following:
+To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
-* A PoW fingerprint must start with at least `[powZeroMin]` zeros
-* A zero must be added at the beginning for each keyblock emitted by the key during the last `[powRetro]` days
+    NB_ZEROS = MAX [ powZeroMin ; powZeroMin + lastBlockPenality - nbWaitedPeriods ]
 
-> Those 2 rules, and notably the second, ensures a specific member won't keep the control too long
+Where:
+* `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`. If no block has been written by the member, `[lastBlockPenality] = 0`.
+* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member, divided by `[powPeriod]`.
+
+> Those 2 rules, and notably the second, ensures a shared control of the keychain writing
 
 ### Status
 The network needs to be able to discover new peers inside it and eventually know their state to efficiently send data to them. For that purpose [Status](./#status) messages are used to introduce nodes to each other and keep a bilateral state of the connection.

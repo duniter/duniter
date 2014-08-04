@@ -4,6 +4,10 @@ var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
 var Schema   = mongoose.Schema;
+var openpgp  = require('openpgp');
+var KHelper  = require('../lib/keyhelper');
+var base64   = require('../lib/base64');
+var md5      = require('../lib/md5');
 var unix2dos = require('../lib/unix2dos');
 var parsers  = require('../lib/streams/parsers/doc');
 var logger   = require('../lib/logger')('pubkey');
@@ -13,6 +17,8 @@ var PublicKeySchema = new Schema({
   fingerprint: { type: String, unique: true },
   subkeys: [String], // Array of keyId
   hashes: [String], // Array of ASCII armor representation fingerprints
+  registered: [String], // Array of md5 hashes of the known packets (base64 encoded)
+  eligible: [String], // Array of md5 hashes of the unknown packets (base64 encoded)
   name: String,
   email: String,
   comment: String,
@@ -209,6 +215,25 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           var storedKey = jpgp().certificate(foundKeys[0].raw).key;
           // Merges packets
           storedKey.update(comingKey);
+          var kh = KHelper.fromPackets(storedKey.toPacketlist());
+          var potentials = [];
+          if (kh.hasValidUdid2()) {
+            potentials.push(kh.getBase64publicKey());
+            potentials.push(kh.getBase64primaryUser());
+            kh.getBase64primaryUserOtherCertifications().forEach(function(base64SubKey){
+              potentials.push(base64SubKey);
+            });
+            kh.getBase64subkeys().forEach(function(base64SubKey){
+              potentials.push(base64SubKey);
+            });
+          }
+          potentials.forEach(function(encoded){
+            var md5ed = md5(encoded);
+            if (foundKeys[0].registered.indexOf(md5ed) == -1 && foundKeys[0].eligible.indexOf(md5ed) == -1)  {
+              foundKeys[0].eligible.push(md5ed);
+            }
+          });
+          // Check for unknown packets
           var mergedCert = jpgp().certificate(storedKey.armor());
           var raw = unix2dos(storedKey.armor());
           foundKeys[0].subkeys = mergedCert.subkeys;

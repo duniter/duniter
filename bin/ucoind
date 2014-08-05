@@ -244,21 +244,22 @@ program
         mss.forEach(function(ms){
           uids.push(ms.userid);
         });
-        inquirer.prompt([{
-          type: "checkbox",
-          name: "uids",
-          message: "Initial members of the Web of Trust",
-          choices: uids,
-          default: uids[0]
-        }], function (answers) {
-          next(null, answers.uids);
-        });
+        if (mss.length > 0) {
+          inquirer.prompt([{
+            type: "checkbox",
+            name: "uids",
+            message: "Initial members of the Web of Trust",
+            choices: uids,
+            default: uids[0]
+          }], function (answers) {
+            next(null, answers.uids);
+          });
+        } else {
+          logger.info('No membership were found, trying to write an empty block');
+          next(null, []);
+        }
       },
       function (uids, next){
-        if (uids.length == 0) {
-          next('You must select at least 1 user');
-          return;
-        }
         KeychainService.generateRoot(uids, next);
       },
       function (root, next){

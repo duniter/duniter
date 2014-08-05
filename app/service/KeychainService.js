@@ -716,52 +716,65 @@ function KeyService (conn, conf, PublicKeyService) {
         },
       ], callback);
     }, function(err){
-      var block = new KeyBlock();
-      block.version = 1;
-      block.currency = joinData[fingerprints[0]].ms.currency;
-      block.number = 0;
-      // Members merkle
-      fingerprints.sort();
-      var tree = merkle(fingerprints, 'sha1').process();
-      block.membersCount = fingerprints.length;
-      block.membersRoot = tree.root();
-      block.membersChanges = [];
-      fingerprints.forEach(function(fpr){
-        block.membersChanges.push('+' + fpr);
-      });
-      // Public keys
-      block.publicKeys = [];
-      _(joinData).values().forEach(function(join){
-        var pkData = {
-          fingerprint: join.pubkey.fingerprint,
-          packets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write())
-        };
-        block.publicKeys.push(pkData);
-      });
-      // Memberships
-      block.memberships = [];
-      _(joinData).values().forEach(function(join){
-        var ms = join.ms;
-        var shortMS = [1, join.pubkey.fingerprint, 'IN', ms.date.timestamp(), ms.userid].join(':');
-        block.memberships.push(shortMS);
-      });
-      // Memberships signatures
-      block.membershipsSigs = [];
-      _(joinData).values().forEach(function(join){
-        var ms = join.ms;
-        var splits = dos2unix(ms.signature).split('\n');
-        var signature = "";
-        var keep = false;
-        splits.forEach(function(line){
-          if (keep && !line.match('-----END PGP') && line != '') signature += line + '\n';
-          if (line == "") keep = true;
-        });
-        block.membershipsSigs.push({
-          fingerprint: join.pubkey.fingerprint,
-          packets: signature
-        });
-      });
-      done(null, block);
+      async.waterfall([
+        function (next){
+          KeyBlock.current(function (err, current){
+            if (!current && uids.length == 0) {
+              next('Cannot create root block without members');
+              return;
+            }
+            else next();
+          });
+        },
+        function (next){
+          var block = new KeyBlock();
+          block.version = 1;
+          block.currency = joinData[fingerprints[0]].ms.currency;
+          block.number = 0;
+          // Members merkle
+          fingerprints.sort();
+          var tree = merkle(fingerprints, 'sha1').process();
+          block.membersCount = fingerprints.length;
+          block.membersRoot = tree.root();
+          block.membersChanges = [];
+          fingerprints.forEach(function(fpr){
+            block.membersChanges.push('+' + fpr);
+          });
+          // Public keys
+          block.publicKeys = [];
+          _(joinData).values().forEach(function(join){
+            var pkData = {
+              fingerprint: join.pubkey.fingerprint,
+              packets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write())
+            };
+            block.publicKeys.push(pkData);
+          });
+          // Memberships
+          block.memberships = [];
+          _(joinData).values().forEach(function(join){
+            var ms = join.ms;
+            var shortMS = [1, join.pubkey.fingerprint, 'IN', ms.date.timestamp(), ms.userid].join(':');
+            block.memberships.push(shortMS);
+          });
+          // Memberships signatures
+          block.membershipsSigs = [];
+          _(joinData).values().forEach(function(join){
+            var ms = join.ms;
+            var splits = dos2unix(ms.signature).split('\n');
+            var signature = "";
+            var keep = false;
+            splits.forEach(function(line){
+              if (keep && !line.match('-----END PGP') && line != '') signature += line + '\n';
+              if (line == "") keep = true;
+            });
+            block.membershipsSigs.push({
+              fingerprint: join.pubkey.fingerprint,
+              packets: signature
+            });
+            next(null, block);
+          });
+        },
+      ], done);
     });
   };
 

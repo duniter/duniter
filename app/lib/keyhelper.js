@@ -37,7 +37,10 @@ function KeyHelper (packetList) {
   };
 
   this.getBase64publicKey = function (){
-    return key.getKeyPacket() && base64.encode(key.getKeyPacket().write());
+    var packets = new PacketList();
+    if (key.getKeyPacket())
+      packets.push(key.getKeyPacket());
+    return base64.encode(packets.write());
   };
 
   this.getBase64primaryUser = function (){
@@ -66,7 +69,7 @@ function KeyHelper (packetList) {
   this.getBase64subkeys = function (){
     var bSubkeys = [];
     (key.subKeys || []).forEach(function(subkeyWrapper){
-      if (subkeyWrapper.isValidSigningKey(key) || subkeyWrapper.isValidEncryptionKey(key)) {
+      if (subkeyWrapper.isValidSigningKey(key.primaryKey) || subkeyWrapper.isValidEncryptionKey(key.primaryKey)) {
         var packets = new PacketList();
         packets.push(subkeyWrapper.subKey);
         packets.push(subkeyWrapper.bindingSignature);
@@ -74,5 +77,20 @@ function KeyHelper (packetList) {
       }
     });
     return bSubkeys;
+  };
+
+  this.getPotentials = function (){
+    var potentials = [];
+    if (that.hasValidUdid2()) {
+      potentials.push(that.getBase64publicKey());
+      potentials.push(that.getBase64primaryUser());
+      that.getBase64primaryUserOtherCertifications().forEach(function(base64SubKey){
+        potentials.push(base64SubKey);
+      });
+      that.getBase64subkeys().forEach(function(base64SubKey){
+        potentials.push(base64SubKey);
+      });
+    }
+    return potentials;
   };
 }

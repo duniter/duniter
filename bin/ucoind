@@ -233,18 +233,13 @@ program
           next('usage: gen-root [host] [port]');
           return;
         }
-        KeychainService.current(function (err, current) {
-          if (current) {
-            next('Local keychain is already started.');
-            return;
-          }
-          else next();
-        })
-      },
-      function (next){
-        Membership.find({}, next);
+        Membership.find({ eligible: true }, next);
       },
       function (mss, next){
+        if (mss.length == 0) {
+          next('No membership was received, no changes to add.');
+          return;
+        }
         var uids = [];
         mss.forEach(function(ms){
           uids.push(ms.userid);

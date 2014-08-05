@@ -84,7 +84,30 @@ PublicKeySchema.methods = {
 
   getRaw: function () {
     return this.raw;
-  }
+  },
+
+  getWritablePacketsWithoutOtherCertifications: function (){
+    var wrappedKey = KHelper.fromArmored(this.raw);
+    var packets = new openpgp.packet.List();
+    var potentials = wrappedKey.getPotentials();
+    var pubkeyPkt = wrappedKey.getBase64publicKey();
+    // Pubkey packet
+    if (~potentials.indexOf(pubkeyPkt)) {
+      packets.read(base64.decode(pubkeyPkt));
+    }
+    // UserID packets
+    var userIDPkt = wrappedKey.getBase64primaryUser();
+    if (~potentials.indexOf(userIDPkt)) {
+      packets.read(base64.decode(userIDPkt));
+    }
+    // SubKey packets
+    wrappedKey.getBase64subkeys().forEach(function(subKPkt){
+      if (~potentials.indexOf(subKPkt)) {
+        packets.read(base64.decode(subKPkt));
+      }
+    });
+    return packets;
+  },
 };
 
 PublicKeySchema.statics.getTheOne = function (keyID, done) {
@@ -216,17 +239,7 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           // Merges packets
           storedKey.update(comingKey);
           var kh = KHelper.fromPackets(storedKey.toPacketlist());
-          var potentials = [];
-          if (kh.hasValidUdid2()) {
-            potentials.push(kh.getBase64publicKey());
-            potentials.push(kh.getBase64primaryUser());
-            kh.getBase64primaryUserOtherCertifications().forEach(function(base64SubKey){
-              potentials.push(base64SubKey);
-            });
-            kh.getBase64subkeys().forEach(function(base64SubKey){
-              potentials.push(base64SubKey);
-            });
-          }
+          var potentials = kh.getPotentials();
           potentials.forEach(function(encoded){
             var md5ed = md5(encoded);
             if (foundKeys[0].registered.indexOf(md5ed) == -1 && foundKeys[0].eligible.indexOf(md5ed) == -1)  {

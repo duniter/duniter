@@ -1,14 +1,15 @@
-var jpgp     = require('../lib/jpgp');
-var async    = require('async');
-var _        = require('underscore');
-var openpgp  = require('openpgp');
-var merkle   = require('merkle');
-var base64   = require('../lib/base64');
-var unix2dos = require('../lib/unix2dos');
-var dos2unix = require('../lib/dos2unix');
-var parsers  = require('../lib/streams/parsers/doc');
-var logger   = require('../lib/logger')('membership');
-var moment   = require('moment');
+var jpgp      = require('../lib/jpgp');
+var async     = require('async');
+var _         = require('underscore');
+var openpgp   = require('openpgp');
+var merkle    = require('merkle');
+var base64    = require('../lib/base64');
+var unix2dos  = require('../lib/unix2dos');
+var dos2unix  = require('../lib/dos2unix');
+var parsers   = require('../lib/streams/parsers/doc');
+var keyhelper = require('../lib/keyhelper');
+var logger    = require('../lib/logger')('membership');
+var moment    = require('moment');
 
 module.exports.get = function (conn, conf, PublicKeyService) {
   return new KeyService(conn, conf, PublicKeyService);
@@ -91,7 +92,7 @@ function KeyService (conn, conf, PublicKeyService) {
           next(null, true); // Key is already in the chain
         else {
           // Key is not in the keychain: valid if it has a valid udid2 (implying pubkey + self certificatio)
-          var wrappedKey = require('../lib/keyhelper').fromArmored(pubkey.raw);
+          var wrappedKey = keyhelper.fromArmored(pubkey.raw);
           next(null, wrappedKey.hasValidUdid2());
         }
       },
@@ -681,15 +682,15 @@ function KeyService (conn, conf, PublicKeyService) {
       var join = { pubkey: null, ms: null };
       async.waterfall([
         function (next){
-          Membership.find({ userid: uid }, next);
+          Membership.find({ userid: uid, eligible: true }, next);
         },
         function (mss, next){
           if (mss.length == 0) {
-            next('Membership not found?!')
+            next('Membership of ' + uid + ' not found');
             return;
           }
           else if (mss.length > 1) {
-            next('Multiple membership found! Stopping.')
+            next('Multiple memberships for same user found! Stopping.')
             return;
           }
           else {
@@ -700,8 +701,18 @@ function KeyService (conn, conf, PublicKeyService) {
         },
         function (pubk, next){
           join.pubkey = pubk;
-          joinData[join.pubkey.fingerprint] = join;
-          next();
+          if (!pubk.keychain && pubk.eligible.length > 0) {
+            // Not in the keychain, with eligible packets, potential new member
+            var wrappedKey = keyhelper.fromArmored(pubk.raw);
+            // Just require a good udid2
+            if (!wrappedKey.hasValidUdid2()) {
+              next('User ' + uid + ' does not have a valid udid2');
+              return;
+            }
+            joinData[join.pubkey.fingerprint] = join;
+            next();
+          }
+          else next('Already in the keychain, or no eligible packet');
         },
       ], callback);
     }, function(err){
@@ -721,10 +732,9 @@ function KeyService (conn, conf, PublicKeyService) {
       // Public keys
       block.publicKeys = [];
       _(joinData).values().forEach(function(join){
-        var key = openpgp.key.readArmored(join.pubkey.raw).keys[0];
         var pkData = {
           fingerprint: join.pubkey.fingerprint,
-          packets: base64.encode(key.toPacketlist().write())
+          packets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write())
         };
         block.publicKeys.push(pkData);
       });

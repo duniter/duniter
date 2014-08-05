@@ -9,10 +9,10 @@ module.exports = {
   },
 
   fromArmored: function (armored){
-    var readKeys = openpgp.key.readArmored(asciiArmored).keys;
+    var readKeys = openpgp.key.readArmored(armored).keys;
     var packets = new PacketList();
     if(readKeys.length == 1){
-      packets = readKeys[0].toPacketList();
+      packets = readKeys[0].toPacketlist();
     }
     return new KeyHelper(packets);
   }

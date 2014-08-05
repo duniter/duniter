@@ -142,4 +142,11 @@ MembershipSchema.statics.getForHashAndIssuer = function (hash, issuer, done) {
     .exec(done);
 }
 
+MembershipSchema.statics.removeEligible = function (issuer, done) {
+  
+  this
+    .find({ issuer: issuer, eligible: true })
+    .remove(done);
+}
+
 module.exports = MembershipSchema;

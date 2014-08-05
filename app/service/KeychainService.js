@@ -42,12 +42,33 @@ function KeyService (conn, conf, PublicKeyService) {
         Membership.getForHashAndIssuer(entry.hash, entry.issuer, next);
       },
       function (entries, next){
-        if (entries.length > 0) {
+        if (entries.length > 0 && entries[0].date > entry.date) {
           next('Already received membership');
         }
-        else next();
+        else Key.isMember(entry.issuer, next);
       },
-      function (next){
+      function (isMember, next){
+        var isJoin = entry.membership == 'IN';
+        if (!isMember && isJoin) {
+          hasEligiblePubkey(entry.issuer, next);
+        }
+        else if (isMember && !isJoin) {
+          next(null, true);
+        } else {
+          if (isJoin)
+            next('A member cannot join in.');
+          else 
+            next('A non-member cannot leave.');
+        }
+      },
+      function (isClean, next){
+        if (!isClean) {
+          next('Needs an eligible public key (with udid2)');
+          return;
+        }
+        Membership.removeEligible(entry.issuer, next);
+      },
+      function (nbDeleted, next) {
         // Saves entry
         entry.save(function (err) {
           next(err);
@@ -59,6 +80,23 @@ function KeyService (conn, conf, PublicKeyService) {
       }
     ], done);
   };
+
+  function hasEligiblePubkey (fpr, done) {
+    async.waterfall([
+      function (next){
+        PublicKey.getTheOne(fpr, next);
+      },
+      function (pubkey, next){
+        if (pubkey.keychain)
+          next(null, true); // Key is already in the chain
+        else {
+          // Key is not in the keychain: valid if it has a valid udid2 (implying pubkey + self certificatio)
+          var wrappedKey = require('../lib/keyhelper').fromArmored(pubkey.raw);
+          next(null, wrappedKey.hasValidUdid2());
+        }
+      },
+    ], done);
+  }
 
   this.submitKeyBlock = function (kb, done) {
     var block = new KeyBlock(kb);
@@ -743,7 +781,6 @@ function KeyService (conn, conf, PublicKeyService) {
           next();
         });
       }, function (err) {
-        console.log(raw);
         block.signature = sig;
         var end = new Date().timestamp();
         var duration = moment.duration((end - start)) + 's';

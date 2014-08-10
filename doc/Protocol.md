@@ -12,6 +12,7 @@
 * [Formats](#formats)
   * [Public key](#public-key)
   * [Membership](#membership)
+  * [Keychange](#keychange)
   * [Keyblock](#keyblock)
   * [Amendment](#amendment)
   * [Transaction](#transaction)
@@ -182,8 +183,51 @@ A [Membership](#membership) is to be considered valid if:
 * `Issuer` matches signature's key ID
 * `Membership` matches either `IN` or `OUT` value
 
+### Keychange
+
+A keychange is a document describing changes to be applied  to a [Public key](#public-key) for its components (OpenPGP key material) and membership state.
+
+#### Structure
+
+    #####----T:PUBLIC_KEY_FINGERPRINT----#####
+    KeyPackets:
+    [packets]
+    CertificationPackets:
+    [packets]
+    Membership:
+    VERSION:FINGERPRINT:TYPE:TIMESTAMP:USER_ID
+    [base64_signature]
+
+Field                 | Data
+--------------------- | ------------------------------------------
+T                     | Type of change: either `F`,`N`,`U`,`L` or `B` for respectively `FOUNDER`,`NEWCOMER`,`UPDATE`,`LEAVER` and `BACK` meaning.
+KeyPackets            | OpenPGP key material field. Value is an OpenPGP packet list base64 encoded. Allowed packets are public key, user ID, self-certification, subkey and subkey binding packets.
+CertificationPackets  | OpenPGP key material field. Value is an OpenPGP packet list base64 encoded. Allowed packets are other keys' certification packets.
+Membership            | Field for writing [Membership](#membership) document data.
+
+#### Coherence
+
+Depending the provided `T` type, fields have different format requirements. Below is a table summing up the rules about it:
+
+Type        | Field                | Requirement
+----------- | ---------------------|----------------------------
+`FOUNDER`   | KeyPackets           | Must contain a single public key, plus a single user ID and self-certification packet. May contain subkeys and subkey bindings.
+`FOUNDER`   | CertificationPackets | Must NOT be provided.
+`FOUNDER`   | Membership           | Must contain an `IN` membership with a `USER_ID` field matching exactly `KeyPackets` user ID.
+`NEWCOMER`  | KeyPackets           | Same rule as `FOUNDER`.
+`NEWCOMER`  | CertificationPackets | May contain any number of other keys' certification packets.
+`NEWCOMER`  | Membership           | Must contain an `IN` membership with a `USER_ID` field matching exactly `KeyPackets` user ID.
+`UPDATE`    | KeyPackets           | May only contain subkeys and subkey bindings packets.
+`UPDATE`    | CertificationPackets | May contain any number of other keys' certification packets.
+`UPDATE`    | Membership           | Must NOT be provided.
+`LEAVER`    | KeyPackets           | Must NOT be provided.
+`LEAVER`    | CertificationPackets | Must NOT be provided.
+`LEAVER`    | Membership           | Must contain an `OUT` membership without 
+`BACK`      | KeyPackets           | May only contain subkeys and subkey bindings packets.
+`BACK`      | CertificationPackets | May contain any number of other keys' certification packets.
+`BACK`      | Membership           | Must contain an `IN` membership without `USER_ID` field.
 ### Keyblock
-A Keyblock is a document gathering public key informations in order to build a Web Of Trust (WoT) representation.
+A Keyblock is a document gathering [keychanges](#keychange) in order to build a Web Of Trust (WoT) representation.
 
 #### Structure
 
@@ -202,15 +246,8 @@ A Keyblock is a document gathering public key informations in order to build a W
     ...
     -MEMBER_OUT_KEY_FINGERPRINT
     ...
-    PublicKeys:
-    #####-----PUBLIC_KEY_FINGERPRINT-----#####
-    [packets]
-    ...
-    Memberships:
-    VERSION:FINGERPRINT:TYPE:TIMESTAMP:USER_ID
-    MembershipsSignatures:
-    #####-----PUBLIC_KEY_FINGERPRINT-----#####
-    [signature_packet]
+    KeysChanges:
+    [keychange]
     ...
     BOTTOM_SIGNATURE
 
@@ -226,10 +263,7 @@ PreviousHash          | Previous keyblock fingerprint
 PreviousIssuer        | Previous keyblock issuer's fingerprint
 MembersCount          | Number of members in the WoT
 MembersChanges        | Public keys' fingerprint: with a `+` for joining or with a `-` for leaving
-PublicKeys            | Public keys' packets. Packets are grouped by their target key fingerprint.
-Memberships           | Membership entries, under shorthand format
-MembershipsSignatures | Signatures attached to `Memberships`.
-
+KeysChanges           | List of [keychanges](#keychange)
 #### Coherence
 To be a valid keyblock document, a keyblock must match the following rules:
 
@@ -240,19 +274,7 @@ To be a valid keyblock document, a keyblock must match the following rules:
 * `MembersChanges` is a multiline field whose lines are either:
   * `+` followed by an SHA-1 hash
   * `-` followed by an SHA-1 hash
-* `PublicKeys` is a multiline field whose lines are divided in blocks composed by:
-  * A first line with `#PUBLIC_KEY_FINGERPRINT`, where `PUBLIC_KEY_FINGERPRINT` is an SHA-1 hash
-  * A bunch of lines under Base64 format, representing OpenPGP public key, user ID and certification packets
-  * It cannot be found two lines with same `#PUBLIC_KEY_FINGERPRINT`
- * `PublicKeys` is sorted by `PUBLIC_KEY_FINGERPRINT`, ascending
-* `Memberships` is a multiline field whose lines follow the `VERSION:KEY_ID:TYPE:TIMESTAMP` pattern:
-  * `VERSION` is a membership version field
-  * `FINGERPRINT` is a membership signing key fingerprint
-  * `TYPE` is either `IN` or `OUT` value
-  * `TIMESTAMP` is a timestamp value
-  * `USER_ID` is a string targeting an existing UserID of the attached key
-* `Memberships` is `FINGERPRINT` sorted, ascending
-* `MembershipsSignatures` is a multiline field composed of Base64 lines, sorted by `PUBLIC_KEY_FINGERPRINT`, ascending
+* `KeysChanges` is a multiline field of [keychanges](#keychange)
 
 The document must be ended with a `BOTTOM_SIGNATURE`, which is an OpenPGP armored signature.
 
@@ -263,6 +285,7 @@ The document must be ended with a `BOTTOM_SIGNATURE`, which is an OpenPGP armore
 * `MembersChanges` must contain `-KEY` for all memberships of the block with `TYPE = OUT`
 * `MembersChanges` may contain `-KEY` without a corresponding `TYPE = OUT` membership
 * `MembersChanges` must *not* contain `+KEY` if the corresponding `TYPE = IN` membership is not present in the block
+* It cannot be found two keychange with same `PUBLIC_KEY_FINGERPRINT`
 
 ##### Specific rules
 * If `Number` equals `0`, `PreviousHash` and `PreviousIssuer` must not be provided
@@ -271,7 +294,7 @@ The document must be ended with a `BOTTOM_SIGNATURE`, which is an OpenPGP armore
 #### Keychain
 A Keychain is a chaining of Keyblock. Such a document describes a WoT over the time.
 
-Each keyblock, other than the keyblock#0 must follow the following rules:
+Each keyblock, other than the keyblock#0 must follow these rules:
 
 * Its `Number` field has the same value as preceding keyblock + 1
 * Its `Currency` field has exactly the same value as preceding keyblock
@@ -280,6 +303,13 @@ Each keyblock, other than the keyblock#0 must follow the following rules:
 * Its `MembersCount` field is either equal to:
   * the sum of all `+` count minus the sum of all `-` count from `MembersChanges` field since keyblock#0, this block included
   * previous block `MembersCount` + the sum of all `+` count minus the sum of all `-` count from `MembersChanges` of this keyblock
+* `FOUNDER` type can be present **only** for keyblock#0
+* For a given `PUBLIC_KEY_FINGERPRINT`:
+  * First keychange must be either `FOUNDER` or `NEWCOMER`
+  * `NEWCOMER` type can be present only 1 time and cannot follow a keychange
+  * `UPDATE` type cannot follow `LEAVE` type and must follow a keychange
+  * `LEAVE` type cannot follow `LEAVE` type and must follow a keychange
+  * `BACK` type must follow `LEAVE` type
 
 ### Amendment
 

@@ -7,6 +7,7 @@ module.exports = {
   parseWallet:      instanciate.bind(instanciate, require('./wallet')),
   parseMembership:  instanciate.bind(instanciate, require('./membership')),
   parseKeyblock:    instanciate.bind(instanciate, require('./keyblock')),
+  parseKeychange:   instanciate.bind(instanciate, require('./keychange')),
 };
 
 function instanciate (constructorFunc, onError) {

@@ -145,8 +145,8 @@ module.exports = new function() {
     return unix2dos(signed(that.getMembershipWithoutSignature(json), json));
   };
 
-  var KEYBLOCK_PUBK_PREFIX = "#####-----"
-  var KEYBLOCK_PUBK_SUFFIX = "-----#####"
+  var KEYBLOCK_PUBK_PREFIX = "#####----";
+  var KEYBLOCK_PUBK_SUFFIX = "----#####";
 
   this.getKeyblockWithoutSignature = function (json) {
     var raw = "";
@@ -191,6 +191,27 @@ module.exports = new function() {
 
   this.getKeyblock = function (json) {
     return unix2dos(signed(that.getKeyblockWithoutSignature(json), json));
+  };
+
+  var KEYCHANGE_PREFIX = "#####----";
+  var KEYCHANGE_SUFFIX = "----#####";
+
+  this.getKeychangeWithoutSignature = function (json) {
+    var raw = KEYCHANGE_PREFIX + json.type + ":" + json.fingerprint + KEYCHANGE_SUFFIX + "\n";
+    if (json.keypackets)
+      raw += "KeyPackets:\n" + json.keypackets;
+    if (json.certpackets)
+      raw += "CertificationPackets:\n" + json.certpackets;
+    if (json.membership.membership) {
+      raw += "Membership:\n";
+      raw += json.membership.membership + "\n";
+      raw += json.membership.signature;
+    }
+    return unix2dos(raw);
+  };
+
+  this.getKeychange = function (json) {
+    return unix2dos(signed(that.getKeychangeWithoutSignature(json), json));
   };
 
   function signed (raw, json) {

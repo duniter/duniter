@@ -238,15 +238,6 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           var storedKey = jpgp().certificate(foundKeys[0].raw).key;
           // Merges packets
           storedKey.update(comingKey);
-          var kh = KHelper.fromPackets(storedKey.toPacketlist());
-          var potentials = kh.getPotentials();
-          potentials.forEach(function(encoded){
-            var md5ed = md5(encoded);
-            if (foundKeys[0].registered.indexOf(md5ed) == -1 && foundKeys[0].eligible.indexOf(md5ed) == -1)  {
-              foundKeys[0].eligible.push(md5ed);
-            }
-          });
-          // Check for unknown packets
           var mergedCert = jpgp().certificate(storedKey.armor());
           var raw = unix2dos(storedKey.armor());
           foundKeys[0].subkeys = mergedCert.subkeys;

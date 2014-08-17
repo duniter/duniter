@@ -1,5 +1,6 @@
 var openpgp    = require('openpgp');
 var base64     = require('./base64');
+var md5        = require('./md5');
 var PacketList = openpgp.packet.List;
 
 module.exports = {
@@ -104,7 +105,7 @@ function KeyHelper (packetList) {
     var certifs = [];
     if (primaryUser) {
       (primaryUser.user.otherCertifications || []).forEach(function(oCert){
-        certifs.push(base64.encode(oCert.write()));
+        certifs.push(base64.encode(writePacket(oCert)));
         // oCert.verify(key, { userid: primaryUser.user.userId, key: key }))) {
       });
     }
@@ -139,4 +140,29 @@ function KeyHelper (packetList) {
     }
     return potentials;
   };
+
+  this.getHashedSubkeyPackets = function (){
+    var subkeys = this.getBase64subkeys(); // Array of 2 packets lists (subkey + binding)
+    return this.getHashedPackets(subkeys);
+  };
+
+  this.getHashedCertifPackets = function (){
+    var certifs = this.getBase64primaryUserOtherCertifications(); // Array of 1 packet lists (signature)
+    return this.getHashedPackets(certifs);
+  };
+
+  this.getHashedPackets = function (encodedPacketListArray){
+    var hash = {};
+    encodedPacketListArray.forEach(function(encodedPacketList){
+      var md5ed = md5(encodedPacketList);
+      hash[md5ed] = encodedPacketList;
+    });
+    return hash;
+  };
+
+  function writePacket (packet) {
+    var list = new PacketList();
+    list.push(packet);
+    return list.write();
+  }
 }

@@ -1,9 +1,10 @@
-var jpgp   = require('../lib/jpgp');
-var async  = require('async');
-var _      = require('underscore');
-var merkle = require('merkle');
-var vucoin = require('vucoin');
-var logger = require('../lib/logger')('pubkey');
+var jpgp      = require('../lib/jpgp');
+var async     = require('async');
+var _         = require('underscore');
+var merkle    = require('merkle');
+var vucoin    = require('vucoin');
+var keyhelper = require('../lib/keyhelper');
+var logger    = require('../lib/logger')('pubkey');
 
 module.exports.get = function (conn, conf, KeyService) {
   return new PublicKeyService(conn, conf, KeyService);
@@ -11,8 +12,9 @@ module.exports.get = function (conn, conf, KeyService) {
 
 function PublicKeyService (conn, conf, KeyService) {
 
-  var PublicKey = conn.model('PublicKey');
-  var Key = conn.model('Key');
+  var PublicKey  = conn.model('PublicKey');
+  var TrustedKey = conn.model('TrustedKey');
+  var Key        = conn.model('Key');
   
   var fifo = async.queue(function (task, callback) {
     task(callback);
@@ -52,6 +54,42 @@ function PublicKeyService (conn, conf, KeyService) {
             },
             function (next) {
               conn.model('Merkle').addPublicKey(pubkey.fingerprint, function (err) {
+                next(err);
+              });
+            },
+            function (next) {
+              async.parallel({
+                pubkey: function(callback){
+                  PublicKey.getTheOne(pubkey.fingerprint, callback);
+                },
+                trusted: function(callback){
+                  TrustedKey.getTheOne(pubkey.fingerprint, function (err, trusted) {
+                    if (err)
+                      trusted = null;
+                    callback(null, trusted);
+                  });
+                },
+                key: function(callback){
+                  Key.getTheOne(pubkey.fingerprint, callback);
+                },
+              }, next);
+            },
+            function (res, next){
+              var pubkey = res.pubkey;
+              var trusted = res.trusted;
+              var key = res.key;
+              var keyN = keyhelper.fromArmored(pubkey.raw);
+              var keyT = trusted == null ? null : keyhelper.fromEncodedPackets(trusted.packets);
+              // Compute new subkeys
+              var recordedSubKeys = _((keyT && keyT.getHashedSubkeyPackets()) || {}).keys();
+              var availableSubKeys = _(keyN.getHashedSubkeyPackets()).keys();
+              // Compute new certifications
+              var recordedCertifs = _((keyT && keyT.getHashedCertifPackets()) || {}).keys();
+              var availableCertifs = _(keyN.getHashedCertifPackets()).keys();
+              key.subkeys = _(availableSubKeys).without(availableSubKeys);
+              key.certifs = _(availableCertifs).without(availableCertifs);
+              key.eligible = keyN.hasValidUdid2();
+              key.save(function (err) {
                 next(err);
               });
             },

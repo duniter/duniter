@@ -16,7 +16,8 @@ TrustedKeySchema.pre('save', function (next) {
 });
 
 TrustedKeySchema.statics.getTheOne = function (keyID, done) {
-  this.find({ keyID: keyID }, function (err, keys) {
+  var search = keyID.length == 40 ? keyID.substring(24) : keyID;
+  this.find({ keyID: search }, function (err, keys) {
     if(keys.length < 1){
       done('Trusted Key 0x' + keyID + ' not found.');
       return;

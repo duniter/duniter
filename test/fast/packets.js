@@ -30,6 +30,21 @@ var catPubkeyPackets = "" +
   "hMUN3UJwGzk7HdO7wo0F3e5onOinit7RTpg/tAZX+r3VIj8TzZnl4QpCS15A\n" +
   "9r9tAcdC0An1ji4sVQ==\n";
 
+describe('A packetlist of one element', function(){
+
+  var packets = new openpgp.packet.List();
+  packets.read(base64.decode(catPubkeyPackets));
+  var oneElementList = packets.filterByTag(openpgp.enums.packet.publicKey);
+
+  it('should have one element', function(){
+    assert.equal(oneElementList.length, 1);
+  });
+
+  it('should NOT be the same as the element', function(){
+    assert.notEqual(base64.encode(oneElementList.write()), base64.encode(oneElementList[0].write()));
+  });
+});
+
 describe('Reading key packets:', function(){
 
   var packets = new openpgp.packet.List();

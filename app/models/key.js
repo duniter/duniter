@@ -9,6 +9,9 @@ var KeySchema = new Schema({
   managed: { type: Boolean, default: false },
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
+  eligible: { type: Boolean, default: false },
+  certifs: [String], // Array of md5 hashes of packets to integrate
+  subkeys: [String], // Array of md5 hashes of packets to integrate
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -17,6 +20,17 @@ KeySchema.pre('save', function (next) {
   this.updated = Date.now();
   next();
 });
+
+KeySchema.statics.getTheOne = function (fingerprint, done) {
+  this.find({ fingerprint: fingerprint }, function (err, keys) {
+    if(keys.length < 1){
+      done('Key 0x' + fingerprint + ' not found.');
+      return;
+    }
+    var key = keys[0];
+    done(null, key);
+  });
+};
 
 KeySchema.statics.getToBeKicked = function(done){
   var Key = this.model('Key');

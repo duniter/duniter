@@ -184,8 +184,12 @@ module.exports = new function() {
     var raw = KEYCHANGE_PREFIX + json.type + ":" + json.fingerprint + KEYCHANGE_SUFFIX + "\n";
     if (json.keypackets)
       raw += "KeyPackets:\n" + json.keypackets;
+    if (!raw.match(/\n$/))
+      raw += '\n';
     if (json.certpackets)
       raw += "CertificationPackets:\n" + json.certpackets;
+    if (!raw.match(/\n$/))
+      raw += '\n';
     if (json.membership.membership) {
       raw += "Membership:\n";
       raw += json.membership.membership + "\n";

@@ -141,7 +141,6 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next) {
         // Save block data + compute links obsolescence
-        // next(null, block);
         saveBlockData(block, next);
       }
     ], done);
@@ -176,63 +175,94 @@ function KeyService (conn, conf, PublicKeyService) {
 
   function checkRootBlockKeychanges(block, done) {
     async.forEach(block.keysChanges, function(kc, callback){
-      callback(kc.type != 'F' ? 'Root block must contain only FOUNDER keychanges' : null);
+      if (kc.type != 'F') {
+        callback('Root block must contain only FOUNDER keychanges');
+        return;
+      }
+      checkKeychange(block, kc, callback);
     }, done);
   }
 
-  function checkMemberships (current, block, done) {
-    // Test membership
-    var basicPubkeys = block.getBasicPublicKeys();
-    var findEligiblePubkey = async.apply(getValidMemberPubkey, current ? current.timestamp : null, block);
-    var msExtracted = block.getMemberships();
-    async.waterfall([
-      function (next){
-        // Test no orphan signature
-        if (msExtracted.notFoundMembership > 0)
-          next('Orphan signatures found (not linked with membership)');
-        // Test no orphan membership
-        var mss = msExtracted.mss;
-        _(mss).values().forEach(function(ms){
-          if (!ms.signature) {
-            next('Orphan membership found (not linked with signature)');
-            return;
-          }
-        });
-        // Test orphan pubkeys (must have a membership)
-        basicPubkeys.forEach(function(bPubkey){
-          var keyID = bPubkey.getKeyPacket().getFingerprint().toUpperCase().substring(24);
-          if (!mss[keyID]) {
-            next('Orphan pubkey: requires a membership');
-            return;
-          }
-        });
-        async.forEach(_(mss).values(), function(ms, callback){
-          // Find good key + verify membership signature
-          var entity = new Membership(ms);
-          async.waterfall([
-            function (next){
-              findEligiblePubkey(ms.fingerprint, next);
-            },
-            function (armoredPubkey, next){
-              entity.currency = conf.currency;
-              entity.userid = jpgp().certificate(armoredPubkey).userid;
-              jpgp()
-                .publicKey(armoredPubkey)
-                .data(entity.getRaw())
-                .signature(ms.signature)
-                .verify(next);
-            },
-            function (verified, next) {
-              if(!verified){
-                next('Bad signature for document');
-                return;
-              }
-              next();
-            },
-          ], callback);
-        }, next);
-      },
-    ], done);
+  function checkKeychange (block, kc, done) {
+    try {
+
+      if (kc.type == 'F') {
+        // Check FOUNDER keychange type
+        var key = keyhelper.fromEncodedPackets(kc.keypackets);
+        var ms = Membership.fromInline(kc.membership.membership, kc.membership.signature);
+        if (kc.certpackets) {
+          done('No certification packets allowed for FOUNDER type');
+          return;
+        }
+        if (!kc.membership) {
+          done('Membership is required for FOUNDER type');
+          return;
+        }
+        if (ms.membership != 'IN') {
+          done('Membership must be IN for FOUNDER type');
+          return;
+        }
+        if (!key.hasValidUdid2()) {
+          done('Key must have valid udid2 for FOUNDER type');
+          return;
+        }
+        if (ms.userid != key.getUserID()) {
+          done('Membership must match same UserID as key');
+          return;
+        }
+        var packets = key.getFounderPackets();
+        var cleanOrigin = unix2dos(kc.keypackets.replace(/\n$/, ''));
+        var cleanComputed = unix2dos(base64.encode(packets.write()).replace(/\n$/, ''));
+        if (cleanComputed != cleanOrigin) {
+          done('Only 1 pubkey, 1 udid2 userid and subkeys are allowed for FOUNDER type');
+          return;
+        }
+
+        // Check against signature
+        var entity = new Membership(ms);
+        var armoredPubkey = key.getArmored();
+        async.waterfall([
+          function (next){
+            entity.currency = conf.currency;
+            entity.userid = key.getUserID();
+            jpgp()
+              .publicKey(armoredPubkey)
+              .data(entity.getRaw())
+              .signature(ms.signature)
+              .verify(next);
+          },
+          function (verified, next) {
+            if(!verified){
+              next('Bad signature for membership of ' + entity.userid);
+              return;
+            }
+            next();
+          },
+        ], done);
+
+      } else if (kc.type == 'N') {
+        // Check NEWCOMER keychange type
+        done('NEWCOMER keychange type not managed yet');
+
+      } else if (kc.type == 'U') {
+        // Check UPDATE keychange type
+        done('UPDATE keychange type not managed yet');
+
+      } else if (kc.type == 'L') {
+        // Check LEAVER keychange type
+        done('LEAVER keychange type not managed yet');
+
+      } else if (kc.type == 'B') {
+        // Check BACK keychange type
+        done('BACK keychange type not managed yet');
+
+      } else {
+        done('Unknown keychange type \'' + kc.type + '\'');
+      } 
+    } catch (ex) {
+      done(new Error(ex));
+      return;
+    }
   }
 
   /**
@@ -411,15 +441,17 @@ function KeyService (conn, conf, PublicKeyService) {
     var mss = block.getMemberships().mss;
     async.waterfall([
       function (next){
+        var error = null;
         _(mss).values().forEach(function(ms){
           var change = ms.membership == 'IN' ? '+' : '-';
           var fingerprint = ms.fingerprint;
+          // Checking received memberships all matches a correct membersChanges entry
           if (block.membersChanges.indexOf(change + fingerprint) == -1) {
-            next('Wrong members changes');
+            error = 'Wrong members changes';
             return;
           }
         });
-        next();
+        next(error);
       },
     ], done);
   }
@@ -469,7 +501,7 @@ function KeyService (conn, conf, PublicKeyService) {
         updateMembers(block, next);
       },
       function (next){
-        // Save new pubkeys
+        // Save new pubkeys (from FOUNDERS & NEWCOMERS)
         var pubkeys = block.getNewPubkeys();
         async.forEach(pubkeys, function(encodedPackets, callback){
           var key = keyhelper.fromEncodedPackets(encodedPackets);
@@ -690,105 +722,109 @@ function KeyService (conn, conf, PublicKeyService) {
   this.generateRoot = function (uids, done) {
     var joinData = {};
     var fingerprints = [];
-    async.forEach(uids, function(uid, callback){
-      var join = { pubkey: null, ms: null };
-      async.waterfall([
-        function (next){
-          Membership.find({ userid: uid, eligible: true }, next);
-        },
-        function (mss, next){
-          if (mss.length == 0) {
-            next('Membership of ' + uid + ' not found');
+    if (uids.length == 0) {
+      done('Cannot create root block without members');
+      return;
+    }
+    async.waterfall([
+      function (next){
+        KeyBlock.current(function (err, current){
+          if (current) {
+            next('Root block already exists');
             return;
           }
-          else if (mss.length > 1) {
-            next('Multiple memberships for same user found! Stopping.')
+          else next();
+        });
+      },
+      function (next){
+        async.forEach(uids, function(uid, callback){
+          var join = { pubkey: null, ms: null };
+          async.waterfall([
+            function (next){
+              Membership.find({ userid: uid, eligible: true }, next);
+            },
+            function (mss, next){
+              if (mss.length == 0) {
+                next('Membership of ' + uid + ' not found');
+                return;
+              }
+              else if (mss.length > 1) {
+                next('Multiple memberships for same user found! Stopping.')
+                return;
+              }
+              else {
+                join.ms = mss[0];
+                fingerprints.push(join.ms.issuer);
+                PublicKey.getTheOne(join.ms.issuer, next);
+              }
+            },
+            function (pubk, next){
+              join.pubkey = pubk;
+              if (pubk.eligible.length == 0) {
+                next('PublicKey of ' + uid + ' has no eligible packet');
+                return;
+              }
+              var key = keyhelper.fromArmored(pubk.raw);
+              // Just require a good udid2
+              if (!key.hasValidUdid2()) {
+                next('User ' + uid + ' does not have a valid udid2 userId');
+                return;
+              }
+              joinData[join.pubkey.fingerprint] = join;
+              next();
+            },
+          ], callback);
+        }, next);
+      },
+      function (next){
+        KeyBlock.current(function (err, current){
+          if (!current && uids.length == 0) {
+            next('Cannot create root block without members');
             return;
           }
-          else {
-            join.ms = mss[0];
-            fingerprints.push(join.ms.issuer);
-            PublicKey.getTheOne(join.ms.issuer, next);
-          }
-        },
-        function (pubk, next){
-          join.pubkey = pubk;
-          if (!pubk.keychain && pubk.eligible.length > 0) {
-            // Not in the keychain, with eligible packets, potential new member
-            var wrappedKey = keyhelper.fromArmored(pubk.raw);
-            // Just require a good udid2
-            if (!wrappedKey.hasValidUdid2()) {
-              next('User ' + uid + ' does not have a valid udid2');
-              return;
-            }
-            joinData[join.pubkey.fingerprint] = join;
-            next();
-          }
-          else next('Already in the keychain, or no eligible packet');
-        },
-      ], callback);
-    }, function(err){
-      async.waterfall([
-        function (next){
-          KeyBlock.current(function (err, current){
-            if (!current && uids.length == 0) {
-              next('Cannot create root block without members');
-              return;
-            }
-            else next();
-          });
-        },
-        function (next){
-          var block = new KeyBlock();
-          block.version = 1;
-          block.currency = joinData[fingerprints[0]].ms.currency;
-          block.number = 0;
-          // Members merkle
-          fingerprints.sort();
-          var tree = merkle(fingerprints, 'sha1').process();
-          block.membersCount = fingerprints.length;
-          block.membersRoot = tree.root();
-          block.membersChanges = [];
-          fingerprints.forEach(function(fpr){
-            block.membersChanges.push('+' + fpr);
-          });
-          // Public keys
-          block.publicKeys = [];
-          _(joinData).values().forEach(function(join){
-            var pkData = {
-              fingerprint: join.pubkey.fingerprint,
-              packets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write())
-            };
-            block.publicKeys.push(pkData);
-          });
-          // Memberships
-          block.memberships = [];
-          _(joinData).values().forEach(function(join){
-            var ms = join.ms;
-            var shortMS = [1, join.pubkey.fingerprint, 'IN', ms.date.timestamp(), ms.userid].join(':');
-            block.memberships.push(shortMS);
-          });
-          // Memberships signatures
-          block.membershipsSigs = [];
-          _(joinData).values().forEach(function(join){
-            var ms = join.ms;
-            var splits = dos2unix(ms.signature).split('\n');
-            var signature = "";
-            var keep = false;
-            splits.forEach(function(line){
-              if (keep && !line.match('-----END PGP') && line != '') signature += line + '\n';
-              if (line == "") keep = true;
-            });
-            block.membershipsSigs.push({
-              fingerprint: join.pubkey.fingerprint,
-              packets: signature
-            });
-            next(null, block);
-          });
-        },
-      ], done);
-    });
+          else next();
+        });
+      },
+      function (next){
+        createRootBlock(joinData[fingerprints[0]].ms.currency, fingerprints, joinData, next);
+      },
+    ], done);
   };
+
+  function createRootBlock (currency, fingerprints, joinData, done) {
+    var block = new KeyBlock();
+    block.version = 1;
+    block.currency = currency;
+    block.number = 0;
+    // Members merkle
+    fingerprints.sort();
+    var tree = merkle(fingerprints, 'sha1').process();
+    block.membersCount = fingerprints.length;
+    block.membersRoot = tree.root();
+    block.membersChanges = [];
+    fingerprints.forEach(function(fpr){
+      block.membersChanges.push('+' + fpr);
+    });
+    // Keychanges
+    block.keysChanges = [];
+    _(joinData).values().forEach(function(join){
+      var pkData = {
+        fingerprint: join.pubkey.fingerprint,
+        packets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write())
+      };
+      block.keysChanges.push({
+        type: 'F',
+        fingerprint: join.pubkey.fingerprint,
+        keypackets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write()),
+        certpackets: '',
+        membership: {
+          membership: join.ms.inlineValue(),
+          signature: join.ms.inlineSignature()
+        }
+      });
+    });
+    done(null, block);
+  }
 
   this.prove = function (block, sigFunc, nbZeros, done) {
     var powRegexp = new RegExp('^0{' + nbZeros + '}');

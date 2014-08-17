@@ -132,7 +132,8 @@ function JPGP() {
     catch(ex){
       verified = false;
       err = ex.toString();
-      console.log('Exception during signature verification: ' + err);
+      console.log('Exception during signature verification: ' + ex);
+      console.log(ex.stack);
     }
     callback(err, verified);
   };

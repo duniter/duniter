@@ -13,7 +13,7 @@ function KeychangeParser (onError) {
   var captures = [
     {prop: "type",            regexp: /#####----([FNULB]):[A-Z0-9]{40}----#####/},
     {prop: "fingerprint",     regexp: /#####----[FNULB]:([A-Z0-9]{40})----#####/},
-    {prop: "keypackets",      regexp: /KeyPackets:\n([\s\S]*).+:/, parser: extractBase64Lines},
+    {prop: "keypackets",      regexp: /KeyPackets:\n([\s\S]*)(Membership|Certification)/, parser: extractBase64Lines},
     {prop: "certpackets",     regexp: /CertificationPackets:\n([\s\S]*)(Membership)?/,            parser: extractBase64Lines},
     {prop: "membership",      regexp: /Membership:\n([\s\S]*)/,                                   parser: extractMembership},
   ];
@@ -48,7 +48,8 @@ function KeychangeParser (onError) {
 
 function extractBase64Lines(raw) {
   var validLines = "";
-  var lines = raw.split(/\n/);
+  var splits = raw.split(/\n/);
+  var lines = splits.slice(0, splits.length - 1);
   lines.forEach(function(line){
     if (line.match(/^[A-Za-z0-9\/+=]{1,64}$/)) {
       validLines += line + '\n';

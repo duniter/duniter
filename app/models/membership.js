@@ -4,6 +4,7 @@ var sha1     = require('sha1');
 var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
 var rawer    = require('../lib/rawer');
+var dos2unix = require('../lib/dos2unix');
 var Schema   = mongoose.Schema;
 
 var MembershipSchema = new Schema({
@@ -58,6 +59,21 @@ MembershipSchema.methods = {
     });
   },
   
+  inlineValue: function() {
+    return [this.version, this.issuer, this.membership, this.date.timestamp(), this.userid].join(':');
+  },
+  
+  inlineSignature: function() {
+    var splits = dos2unix(this.signature).split('\n');
+    var signature = "";
+    var keep = false;
+    splits.forEach(function(line){
+      if (keep && !line.match('-----END PGP') && line != '') signature += line + '\n';
+      if (line == "") keep = true;
+    });
+    return signature;
+  },
+  
   json: function() {
     var obj = this;
     var json = {};
@@ -85,6 +101,22 @@ MembershipSchema.methods = {
   getRawSigned: function() {
     return rawer.getMembership(this);
   }
+}
+
+MembershipSchema.statics.fromInline = function (inlineMS, inlineSig) {
+  var Membership = this.model('Membership');
+  var splitted = inlineMS.split(':');
+  var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
+  signature += inlineSig;
+  signature += '-----END PGP SIGNATURE-----\n';
+  return new Membership({
+    version:    splitted[0],
+    issuer:     splitted[1],
+    membership: splitted[2],
+    date:       splitted[3] ?  new Date(parseInt(splitted[3])*1000) : 0,
+    userid:     splitted[4],
+    signature:  signature
+  });
 }
 
 MembershipSchema.statics.getEligibleForAmendment = function (amNumber, done) {

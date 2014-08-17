@@ -147,63 +147,6 @@ KeyBlockSchema.methods = {
     return certifications;
   },
 
-  getBasicPublicKeys: function() {
-    var pubkeys = [];
-    this.publicKeys.forEach(function(obj){
-      var packets = new openpgp.packet.List();
-      var packetsTemp = new openpgp.packet.List();
-      var packetsFinal = new openpgp.packet.List();
-      var base64decoded = base64.decode(obj.packets);
-      packets.read(base64decoded);
-      packets = packets.filterByTag(
-        openpgp.enums.packet.publicKey,
-        openpgp.enums.packet.publicSubkey,
-        openpgp.enums.packet.userid,
-        openpgp.enums.packet.signature);
-      // 1st pass (to keep pubk, userid and certifications)
-      var fingerprint = "";
-      packets.forEach(function(p){
-        if (p.tag == openpgp.enums.packet.signature) {
-          var signaturesToKeep = [
-            openpgp.enums.signature.cert_generic,
-            openpgp.enums.signature.cert_persona,
-            openpgp.enums.signature.cert_casual,
-            openpgp.enums.signature.cert_positive,
-            openpgp.enums.signature.subkey_binding
-          ];
-          if (~signaturesToKeep.indexOf(p.signatureType))
-            packetsTemp.push(p);
-        }
-        else if (p.tag == openpgp.enums.packet.publicKey) {
-          fingerprint = p.getFingerprint().toUpperCase();
-          packetsTemp.push(p);
-        }
-        else packetsTemp.push(p);
-      });
-      // 2nd pass (to slice tier-signatures)
-      packets = packets.filterByTag(
-        openpgp.enums.packet.publicKey,
-        openpgp.enums.packet.userid,
-        openpgp.enums.packet.signature);
-      packetsTemp.forEach(function(p){
-        if (p.tag == openpgp.enums.packet.signature) {
-          var signaturesToKeep = [
-            openpgp.enums.signature.cert_generic,
-            openpgp.enums.signature.cert_persona,
-            openpgp.enums.signature.cert_casual,
-            openpgp.enums.signature.cert_positive,
-            openpgp.enums.signature.subkey_binding
-          ];
-          if (fingerprint.match(new RegExp(p.issuerKeyId.toHex().toUpperCase() + '$')))
-            packetsFinal.push(p);
-        }
-        else packetsFinal.push(p);
-      });
-      pubkeys.push(new openpgp.key.Key(packetsFinal));
-    });
-    return pubkeys;
-  },
-
   getMemberships: function() {
     var notFoundMembership = 0;
     var mss = {};

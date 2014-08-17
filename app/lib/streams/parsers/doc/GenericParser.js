@@ -53,6 +53,9 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
       var raw = that.rawerFunc(obj);
       if (sha1(str) != sha1(raw))
         error = 'Document has unkown fields or wrong line ending format';
+      if (error) {
+        console.log(error);
+      }
     }
     if (typeof done == 'function')
       done(error, obj);

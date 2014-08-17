@@ -6,6 +6,7 @@ var openpgp  = require('openpgp');
 var base64   = require('../../app/lib/base64');
 var jpgp     = require('../../app/lib/jpgp');
 var mongoose = require('mongoose');
+var rawer    = require('../../app/lib/rawer');
 var parsers  = require('../../app/lib/streams/parsers/doc');
 
 var keychangeRaw = "" +
@@ -99,5 +100,9 @@ describe('Founder packet (Cat)', function(){
 
   it('should have empty certification packets', function(){
     assert.equal(keychange.certpackets, '');
+  });
+
+  it('should match original raw', function(){
+    assert.equal(keychangeRaw, rawer.getKeychange(keychange));
   });
 });

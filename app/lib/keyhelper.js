@@ -44,12 +44,40 @@ function KeyHelper (packetList) {
     return key && key.primaryKey && key.primaryKey.getFingerprint().toUpperCase();
   };
 
-  this.getUserID = function (param, next){
+  this.hasPrimaryKey = function (){
+    return key && key.primaryKey;
+  };
+
+  this.getArmored = function (){
+    return key.armor();
+  };
+
+  this.getUserID = function (){
     var primaryUser = key.getPrimaryUser();
     return primaryUser && primaryUser.user && primaryUser.user.userId && primaryUser.user.userId.userid;
   };
 
-  this.hasValidUdid2 = function (param, next){
+  this.getFounderPackets = function (){
+    var packets = new openpgp.packet.List();
+    // Primary key
+    packets.push(key.primaryKey)
+    // UserID
+    var primaryUser = key.getPrimaryUser();
+    if (primaryUser) {
+      packets.push(primaryUser.user.userId);
+      packets.push(primaryUser.selfCertificate);
+    }
+    // Subkeys
+    (key.subKeys || []).forEach(function(subkeyWrapper){
+      if (subkeyWrapper.isValidSigningKey(key.primaryKey) || subkeyWrapper.isValidEncryptionKey(key.primaryKey)) {
+        packets.push(subkeyWrapper.subKey);
+        packets.push(subkeyWrapper.bindingSignature);
+      }
+    });
+    return packets;
+  };
+
+  this.hasValidUdid2 = function (){
     var userid = that.getUserID();
     return userid != null && userid.match(UDID2_FORMAT);
   };

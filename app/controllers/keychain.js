@@ -74,6 +74,7 @@ function KeychainBinding (wotServer) {
   }
 
   this.current = function (req, res) {
-    res.end(503);
+    res.send(501, "Not implemented.");
+    res.end();
   }
 }

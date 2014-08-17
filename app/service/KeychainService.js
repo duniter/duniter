@@ -553,8 +553,7 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next){
         // Compute obsolete links
-        next();
-        // computeObsoleteLinks(block, next);
+        computeObsoleteLinks(block, next);
       },
     ], function (err) {
       done(err, block);
@@ -824,6 +823,56 @@ function KeyService (conn, conf, PublicKeyService) {
         }
       });
     });
+    done(null, block);
+  }
+
+  this.generateEmptyNext = function (done) {
+    var staying = [];
+    var kicked = [];
+    var current;
+    async.waterfall([
+      function (next) {
+        KeyBlock.current(function (err, currentBlock) {
+          current = currentBlock;
+          next(err && 'No root block: cannot generate an empty block');
+        });
+      },
+      function (next){
+        Key.getMembers(next);
+      },
+      function (memberKeys, next){
+        memberKeys.forEach(function(mKey){
+          if (!mKey.kick) {
+          // Member that stays
+            staying.push(mKey.fingerprint);
+          } else {
+          // Member that leaves (kicked)
+            kicked.push(mKey.fingerprint);
+          }
+        });
+        createNextEmptyBlock(current, staying, kicked, next);
+      },
+    ], done);
+  };
+
+  function createNextEmptyBlock (current, members, leaving, done) {
+    var block = new KeyBlock();
+    block.version = 1;
+    block.currency = current.currency;
+    block.number = current.number + 1;
+    // Members merkle
+    var stayers = members.slice(); // copy
+    var leavers = leaving.slice(); // copy
+    stayers.sort();
+    leavers.sort();
+    var tree = merkle(stayers, 'sha1').process();
+    block.membersCount = stayers.length;
+    block.membersRoot = tree.root();
+    block.membersChanges = [];
+    leavers.forEach(function(fpr){
+      block.membersChanges.push('-' + fpr);
+    });
+    block.keysChanges = [];
     done(null, block);
   }
 

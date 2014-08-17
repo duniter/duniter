@@ -489,6 +489,7 @@ function KeyService (conn, conf, PublicKeyService) {
   }
 
   function saveBlockData (block, done) {
+    logger.info('Block #' + block.number + ' added to the keychain');
     async.waterfall([
       function (next) {
         // Saves the block

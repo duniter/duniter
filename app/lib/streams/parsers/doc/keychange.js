@@ -49,7 +49,6 @@ function KeychangeParser (onError) {
 function extractBase64Lines(raw) {
   var validLines = "";
   var lines = raw.split(/\n/);
-  // console.log('raw = ', raw);
   lines.forEach(function(line){
     if (line.match(/^[A-Za-z0-9\/+=]{1,64}$/)) {
       validLines += line + '\n';

@@ -22,7 +22,7 @@ function KeyblockParser (onError) {
     {prop: "membersCount",    regexp: /MembersCount: (.*)/},
     {prop: "membersRoot",     regexp: /MembersRoot: (.*)/},
     {prop: "membersChanges",  regexp: /MembersChanges:\n([\s\S]*)KeysChanges/, parser: split("\n")},
-    {prop: "keysChanges",      regexp: /KeysChanges:\n([\s\S]*)/,              parser: extractKeyChanges}
+    {prop: "keysChanges",     regexp: /KeysChanges:\n([\s\S]*)/,               parser: extractKeyChanges}
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getKeyblock, onError);
@@ -33,6 +33,8 @@ function KeyblockParser (onError) {
       if (obj[field].length > 0)
         obj[field].splice(obj[field].length - 1, 1);
     });
+    if (!obj.keysChanges)
+      obj.keysChanges = [];
   };
 
   this._verify = function(obj){

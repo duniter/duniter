@@ -25,7 +25,7 @@ function KeyService (conn, conf, PublicKeyService) {
   var Link       = conn.model('Link');
   var Key        = conn.model('Key');
 
-  var MINIMUM_ZERO_START = 1;
+  var MINIMUM_ZERO_START = 0;
   var LINK_QUANTITY_MIN = 1;
   var MAX_STEPS = 1;
   var MAX_LINK_VALIDITY = 3600*24*30; // 30 days
@@ -136,11 +136,13 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next) {
         // Check document's coherence
-        checkCoherence(currentBlock, block, next);
-      },
-      function (next) {
+      //   checkCoherence(currentBlock, block, next);
+      // },
+      // function (next) {
         // Save block data + compute links obsolescence
-        saveBlockData(block, next);
+        console.log('OK');
+        next(null, block);
+        // saveBlockData(block, next);
       }
     ], done);
   };

@@ -36,6 +36,11 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     doJob(str, done);
   };
 
+  // Sync way
+  this.syncWrite = function (str) {
+    return doJob(str);
+  };
+
   function doJob (str, done) {
     var error;
     var obj = {};
@@ -49,7 +54,10 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
       if (sha1(str) != sha1(raw))
         error = 'Document has unkown fields or wrong line ending format';
     }
-    done(error, obj);
+    if (typeof done == 'function')
+      done(error, obj);
+    else
+      return obj;
   }
 
   this._clean = function (obj) {

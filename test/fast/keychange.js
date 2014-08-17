@@ -80,12 +80,24 @@ describe('Founder packet (Cat)', function(){
     });
   });
 
+  it('should be FOUNDER packt type', function(){
+    assert.equal(keychange.type, 'F');
+  });
+
+  it('should be LoL Cat\' fingerprint', function(){
+    assert.equal(keychange.fingerprint, 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+  });
+
   it('should have 4 key packets', function(){
     var pubkeyPackets = keychange.keypackets;
     var packetList = new openpgp.packet.List();
     packetList.read(base64.decode(pubkeyPackets));
     var pubkey = new openpgp.key.Key(packetList);
-    assert.equal(packetList.length, 4);
-    assert.equal(pubkey.getFingerprint().toUpperCase(), 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+    assert.equal(packetList.length, 7);
+    assert.equal(pubkey.primaryKey.getFingerprint().toUpperCase(), 'C73882B64B7E72237A2F460CE9CAB76D19A8651E');
+  });
+
+  it('should have empty certification packets', function(){
+    assert.equal(keychange.certpackets, '');
   });
 });

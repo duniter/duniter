@@ -21,6 +21,8 @@ function KeychangeParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getKeychange, onError);
 
   this._clean = function (obj) {
+    if (obj.keypackets == undefined) obj.keypackets = '';
+    if (obj.certpackets == undefined) obj.certpackets = '';
   };
 
   this._verify = function(obj){

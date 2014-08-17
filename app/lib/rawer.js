@@ -166,25 +166,9 @@ module.exports = new function() {
     for(var i = 0; i < json.membersChanges.length; i++){
       raw += json.membersChanges[i] + "\n";
     }
-    raw += "PublicKeys:\n";
-    for(var i = 0; i < json.publicKeys.length; i++){
-      var packets = json.publicKeys[i].packets;
-      raw += KEYBLOCK_PUBK_PREFIX + json.publicKeys[i].fingerprint + KEYBLOCK_PUBK_SUFFIX + '\n';
-      raw += packets;
-      if (!packets.match(/\n$/))
-        raw += '\n';
-    }
-    raw += "Memberships:\n";
-    for(var i = 0; i < json.memberships.length; i++){
-      raw += json.memberships[i] + "\n";
-    }
-    raw += "MembershipsSignatures:\n";
-    for(var i = 0; i < json.membershipsSigs.length; i++){
-      var packets = json.membershipsSigs[i].packets;
-      raw += KEYBLOCK_PUBK_PREFIX + json.membershipsSigs[i].fingerprint + KEYBLOCK_PUBK_SUFFIX + '\n';
-      raw += packets;
-      if (!packets.match(/\n$/))
-        raw += '\n';
+    raw += "KeysChanges:\n";
+    for(var i = 0; i < json.keysChanges.length; i++){
+      raw += this.getKeychange(json.keysChanges[i]);
     }
     return unix2dos(raw);
   };

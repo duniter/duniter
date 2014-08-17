@@ -21,10 +21,8 @@ function KeyblockParser (onError) {
     {prop: "previousIssuer",  regexp: /PreviousIssuer: (.*)/},
     {prop: "membersCount",    regexp: /MembersCount: (.*)/},
     {prop: "membersRoot",     regexp: /MembersRoot: (.*)/},
-    {prop: "membersChanges",  regexp: /MembersChanges:\n([\s\S]*)PublicKeys/,         parser: split("\n")},
-    {prop: "publicKeys",      regexp: /PublicKeys:\n([\s\S]*)Memberships/,            parser: extractFingerprintSeparatedPackets},
-    {prop: "memberships",     regexp: /Memberships:\n([\s\S]*)MembershipsSignatures/, parser: split("\n")},
-    {prop: "membershipsSigs", regexp: /MembershipsSignatures:\n([\s\S]*)/,            parser: extractFingerprintSeparatedPackets},
+    {prop: "membersChanges",  regexp: /MembersChanges:\n([\s\S]*)KeysChanges/, parser: split("\n")},
+    {prop: "keysChanges",      regexp: /KeysChanges:\n([\s\S]*)/,              parser: extractKeyChanges}
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getKeyblock, onError);
@@ -109,25 +107,31 @@ function KeyblockParser (onError) {
   };
 }
 
-function extractFingerprintSeparatedPackets(raw) {
-  var packetsByFPR = [];
+function extractKeyChanges(raw) {
+  var rawKeychanges = [];
+  var keychanges = [];
+  var currentKC;
   var lines = raw.split(/\n/);
   var nbKeys = 0;
   lines.forEach(function(line){
-    if (line.match(/^#####-----[A-Z0-9]{40}-----#####$/)) {
+    if (line.match(/^#####----(F|N|U|L|B):[A-Z0-9]{40}----#####$/)) {
       // New key block
-      packetsByFPR.push({
-        number: nbKeys++,
-        fingerprint: line.substring(10, 50),
-        packets: ""
-      });
-    } else if (line.match(/^[A-Za-z0-9\/+=]{1,64}$/) && nbKeys > 0) {
-      packetsByFPR[nbKeys-1].packets += line + '\n';
+      if (currentKC)
+        rawKeychanges.push(currentKC);
+      currentKC = line + '\n';
+    } else {
+      // Adding to current
+      currentKC += line + '\n';
     }
   });
-  return _(packetsByFPR).sortBy(function (pubk) {
-    return pubk.number;
+  if (currentKC)
+    rawKeychanges.push(currentKC);
+  rawKeychanges.forEach(function(kc){
+    var parsers = require('./.');
+    var obj = parsers.parseKeychange().syncWrite(kc);
+    keychanges.push(obj);
   });
+  return keychanges;
 }
 
 util.inherits(KeyblockParser, GenericParser);

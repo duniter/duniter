@@ -22,6 +22,7 @@ function KeyService (conn, conf, PublicKeyService) {
   var Membership = conn.model('Membership');
   var KeyBlock   = conn.model('KeyBlock');
   var PublicKey  = conn.model('PublicKey');
+  var TrustedKey = conn.model('TrustedKey');
   var Link       = conn.model('Link');
   var Key        = conn.model('Key');
 
@@ -136,13 +137,12 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next) {
         // Check document's coherence
-      //   checkCoherence(currentBlock, block, next);
-      // },
-      // function (next) {
+        checkCoherence(currentBlock, block, next);
+      },
+      function (next) {
         // Save block data + compute links obsolescence
-        console.log('OK');
-        next(null, block);
-        // saveBlockData(block, next);
+        // next(null, block);
+        saveBlockData(block, next);
       }
     ], done);
   };
@@ -154,12 +154,8 @@ function KeyService (conn, conf, PublicKeyService) {
         checkKicked(block, next);
       },
       function (next){
-        // Check memberships
-        checkMemberships(current, block, next);
-      },
-      function (next){
-        // Check certifications updates
-        checkCertificationsUpdates(block, next);
+        // Check key changes
+        checkKeychanges(current, block, next);
       },
       function (next){
         // Check members' changes (+ and -), root & count
@@ -168,6 +164,20 @@ function KeyService (conn, conf, PublicKeyService) {
     ], function (err) {
       done(err);
     });
+  }
+
+  function checkKeychanges (current, block, done) {
+    if (current) {
+      done('Post-root blocks are not managed yet');
+    } else {
+      checkRootBlockKeychanges(block, done);
+    }
+  }
+
+  function checkRootBlockKeychanges(block, done) {
+    async.forEach(block.keysChanges, function(kc, callback){
+      callback(kc.type != 'F' ? 'Root block must contain only FOUNDER keychanges' : null);
+    }, done);
   }
 
   function checkMemberships (current, block, done) {
@@ -432,15 +442,15 @@ function KeyService (conn, conf, PublicKeyService) {
   }
 
   function updateMembers (block, done) {
-    var mss = block.getMemberships().mss;
-    async.forEach(_(mss).values(), function(ms, callback){
-      var doMember = ms.membership == 'IN' ? Key.addMember : Key.removeMember;
+    async.forEach(block.membersChanges, function(mc, callback){
+      var isPlus = mc[0] == '+';
+      var fpr = mc.substring(1);
       async.waterfall([
         function (next){
-          doMember.call(Key, ms.fingerprint, next);
+          (isPlus ? Key.addMember : Key.removeMember).call(Key, fpr, next);
         },
         function (next) {
-          Key.removeKicked(ms.fingerprint, next);
+          Key.unsetKicked(fpr, next);
         }
       ], callback);
     }, done);
@@ -460,21 +470,19 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next){
         // Save new pubkeys
-        var pubkeys = block.getBasicPublicKeys();
-        async.forEach(pubkeys, function(key, callback){
-          var armored = unix2dos(key.armor());
-          var parser = parsers.parsePubkey(next);
-          async.waterfall([
-            function (next){
-              parser.asyncWrite(armored, next);
-            },
-            function (json, next) {
-              json.keychain = base64.encode(key.toPacketlist().write());
-              PublicKeyService.submitPubkey(json, function (err) {
-                next(err);
-              });
-            },
-          ], callback);
+        var pubkeys = block.getNewPubkeys();
+        async.forEach(pubkeys, function(encodedPackets, callback){
+          var key = keyhelper.fromEncodedPackets(encodedPackets);
+          var fpr = key.getFingerprint();
+          var kid = fpr.substring(24);
+          var trusted = new TrustedKey({
+            fingerprint: fpr,
+            keyID: kid,
+            packets: encodedPackets
+          });
+          trusted.save(function (err){
+            callback(err);
+          });
         }, next);
       },
       function (next){
@@ -483,24 +491,25 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next){
         // Save links
-        var certifs = block.getTierCertificationPackets();
-        async.forEach(certifs, function(certif, callback){
-          async.waterfall([
-            function (next){
-              PublicKey.getTheOne(certif.issuerKeyId.toHex().toUpperCase(), next);
-            },
-            function (pubk, next){
-              var link = new Link({
-                source: pubk.fingerprint,
-                target: certif.target,
-                timestamp: certif.created.timestamp()
-              });
-              link.save(function (err) {
-                next(err);
-              });
-            },
-          ], callback);
-        }, next);
+        next();
+        // var certifs = block.getTierCertificationPackets();
+        // async.forEach(certifs, function(certif, callback){
+        //   async.waterfall([
+        //     function (next){
+        //       PublicKey.getTheOne(certif.issuerKeyId.toHex().toUpperCase(), next);
+        //     },
+        //     function (pubk, next){
+        //       var link = new Link({
+        //         source: pubk.fingerprint,
+        //         target: certif.target,
+        //         timestamp: certif.created.timestamp()
+        //       });
+        //       link.save(function (err) {
+        //         next(err);
+        //       });
+        //     },
+        //   ], callback);
+        // }, next);
       },
       function (next){
         // Save memberships
@@ -511,7 +520,8 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next){
         // Compute obsolete links
-        computeObsoleteLinks(block, next);
+        next();
+        // computeObsoleteLinks(block, next);
       },
     ], function (err) {
       done(err, block);

@@ -70,6 +70,16 @@ KeyBlockSchema.methods = {
     return json;
   },
 
+  getNewPubkeys: function() {
+    var pubkeys = [];
+    this.keysChanges.forEach(function(kc){
+      if (kc.type == 'F' || kc.type == 'N') {
+        pubkeys.push(kc.keypackets);
+      }
+    });
+    return pubkeys;
+  },
+
   getPublicKeysPackets: function() {
     var pubkeys = [];
     this.publicKeys.forEach(function(obj){
@@ -197,8 +207,15 @@ KeyBlockSchema.methods = {
   getMemberships: function() {
     var notFoundMembership = 0;
     var mss = {};
-    this.memberships.forEach(function(shortMS){
+    this.keysChanges.forEach(function(kc){
+      var shortSIG = kc.membership.signature;
+      var shortMS = kc.membership.membership;
+      // Membership content
       var sp = shortMS.split(':');
+      // Signature
+      var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
+      signature += shortSIG;
+      signature += '-----END PGP SIGNATURE-----\n';
       var ms = {
         version: sp[0],
         keyID: sp[1].substring(24),
@@ -206,19 +223,9 @@ KeyBlockSchema.methods = {
         membership: sp[2],
         date: new Date(parseInt(sp[3])*1000),
         userid: sp[4],
+        signature: signature
       };
       mss[ms.keyID] = ms;
-    });
-    this.membershipsSigs.forEach(function(msSig){
-      var keyID = msSig.fingerprint.substring(24);
-      if (mss[keyID]) {
-        var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
-        signature += msSig.packets;
-        signature += '-----END PGP SIGNATURE-----\n';
-        mss[keyID].signature = signature;
-        mss[keyID].issuer = msSig.fingerprint;
-      }
-      else notFoundMembership++;
     });
     return {
       'notFoundMembership': notFoundMembership,

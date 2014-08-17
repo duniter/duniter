@@ -10,7 +10,7 @@ var http       = require('http');
 var log4js     = require('log4js');
 var connectPgp = require('connect-pgp');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'CKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'KeyBlock'];
+var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'KeyBlock'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -175,6 +175,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           'wallets',
           'transactions',
           'txmemories',
+          'trustedkeys',
           'memberships'];
         async.forEachSeries(deletableCollections, function(collection, next){
           if (that.conn.collections[collection]) {

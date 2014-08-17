@@ -4,8 +4,22 @@ var PacketList = openpgp.packet.List;
 
 module.exports = {
 
+  fromKey: function (key){
+    return new KeyHelper(key.toPacketlist());
+  },
+
   fromPackets: function (packetList){
     return new KeyHelper(packetList);
+  },
+
+  fromEncodedPackets: function (encodedPackets){
+    return this.fromDecodedPackets(base64.decode(encodedPackets));
+  },
+
+  fromDecodedPackets: function (decodedPackets){
+    var list = new openpgp.packet.List();
+    list.read(decodedPackets);
+    return new KeyHelper(list);
   },
 
   fromArmored: function (armored){
@@ -25,6 +39,10 @@ function KeyHelper (packetList) {
 
   var that = this;
   var key = new openpgp.key.Key(packetList);
+
+  this.getFingerprint = function (){
+    return key && key.primaryKey && key.primaryKey.getFingerprint().toUpperCase();
+  };
 
   this.getUserID = function (param, next){
     var primaryUser = key.getPrimaryUser();

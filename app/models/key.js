@@ -124,7 +124,7 @@ KeySchema.statics.setKicked = function(fingerprint, done){
   });
 };
 
-KeySchema.statics.removeKicked = function(fingerprint, done){
+KeySchema.statics.unsetKicked = function(fingerprint, done){
   var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { kick: false }, function (err) {
     done(err);

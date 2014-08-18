@@ -1,24 +1,23 @@
-var jpgp     = require('../lib/jpgp');
-var mongoose = require('mongoose');
-var async    = require('async');
-var sha1     = require('sha1');
-var _        = require('underscore');
-var Schema   = mongoose.Schema;
-var openpgp  = require('openpgp');
-var KHelper  = require('../lib/keyhelper');
-var base64   = require('../lib/base64');
-var md5      = require('../lib/md5');
-var unix2dos = require('../lib/unix2dos');
-var parsers  = require('../lib/streams/parsers/doc');
-var logger   = require('../lib/logger')('pubkey');
+var jpgp      = require('../lib/jpgp');
+var mongoose  = require('mongoose');
+var async     = require('async');
+var sha1      = require('sha1');
+var _         = require('underscore');
+var Schema    = mongoose.Schema;
+var openpgp   = require('openpgp');
+var KHelper   = require('../lib/keyhelper');
+var base64    = require('../lib/base64');
+var md5       = require('../lib/md5');
+var unix2dos  = require('../lib/unix2dos');
+var parsers   = require('../lib/streams/parsers/doc');
+var keyhelper = require('../lib/keyhelper');
+var logger    = require('../lib/logger')('pubkey');
 
 var PublicKeySchema = new Schema({
   raw: String,
   fingerprint: { type: String, unique: true },
   subkeys: [String], // Array of keyId
   hashes: [String], // Array of ASCII armor representation fingerprints
-  registered: [String], // Array of md5 hashes of the known packets (base64 encoded)
-  eligible: [String], // Array of md5 hashes of the unknown packets (base64 encoded)
   name: String,
   email: String,
   comment: String,
@@ -86,6 +85,14 @@ PublicKeySchema.methods = {
     return this.raw;
   },
 
+  getKey: function () {
+    return keyhelper.fromArmored(this.raw);
+  },
+
+  getUserID: function () {
+    return [this.name, "(" + this.comment + ")", "<" + this.email + ">"].join(' ');
+  },
+
   getWritablePacketsWithoutOtherCertifications: function (){
     var wrappedKey = KHelper.fromArmored(this.raw);
     var packets = new openpgp.packet.List();
@@ -104,6 +111,21 @@ PublicKeySchema.methods = {
     wrappedKey.getBase64subkeys().forEach(function(subKPkt){
       if (~potentials.indexOf(subKPkt)) {
         packets.read(base64.decode(subKPkt));
+      }
+    });
+    return packets;
+  },
+
+  getCertificationsFromMD5List: function (md5array){
+    var packets = new openpgp.packet.List();
+    var key = keyhelper.fromArmored(this.raw);
+    var hashedCertifs = key.getHashedCertifPackets();
+    md5array.forEach(function(md5hash){
+      if (hashedCertifs[md5hash]) {
+        var decoded = base64.decode(hashedCertifs[md5hash]);
+        var otherList = new openpgp.packet.List();
+        otherList.read(decoded);
+        packets.concat(otherList);
       }
     });
     return packets;

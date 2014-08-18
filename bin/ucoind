@@ -323,6 +323,41 @@ program
     });
   }));
 
+program
+  .command('gen-pulse [host] [port] [difficulty]')
+  .description('Tries to generate the 2nd keyblock of the keychain, aka "pulse" keyblock')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (host, port, difficulty, server, conf) {
+    var KeychainService = server.KeychainService;
+    async.waterfall([
+      function (next){
+        KeychainService.generatePulse(next);
+      },
+      function (block, next){
+        var wiz = wizard(server);
+        async.waterfall([
+          function (next){
+            wiz.configOpenpgp(conf, next);
+          },
+          function (next){
+            wiz.configKey(conf, next);
+          },
+          function (next){
+            signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, next);
+          },
+          function (sigFunc, next){
+            proveAndSend(server, block, sigFunc, difficulty, host, port, next);
+          },
+        ], next);
+      },
+    ], function (err) {
+      if (err) {
+        logger.error(err);
+      }
+      server.disconnect();
+      process.exit();
+    });
+  }));
+
 function proveAndSend (server, block, sigFunc, difficulty, host, port, done) {
   var KeychainService = server.KeychainService;
   async.waterfall([
@@ -334,7 +369,7 @@ function proveAndSend (server, block, sigFunc, difficulty, host, port, done) {
       var peer = new Peer({
         endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
       });
-      // console.log(block.getRaw());
+      console.log(block.getRaw());
       // console.log(block.signature);
       multicaster().sendKeyblock(peer, block, next);
     },

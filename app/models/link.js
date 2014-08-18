@@ -33,12 +33,126 @@ LinkSchema.statics.obsoletes = function (minTimestamp, done) {
 /**
 * Mark as obsolete the links with an age equal to or below a given date
 **/
-LinkSchema.statics.isOver3StepsOfAMember = function (theMember, members, done) {
-  var fpr = theMember.fingerprint;
+LinkSchema.statics.isStillOver3Steps = function (keyToKick, newLinks, done) {
+  var Link = this.model('Link');
+  var fpr = keyToKick.fingerprint;
+  var newCertifiers = newLinks[fpr];
+  var remainingKeys = [];
+  keyToKick.distanced.forEach(function(m){
+    remainingKeys.push(m);
+  });
+  // Without self
+  remainingKeys = _(remainingKeys).difference([fpr]);
+  var dist1Links = [];
+  async.waterfall([
+    function (next){
+      // Remove direct links (dist 1)
+      remainingKeys = _(remainingKeys).difference(newCertifiers);
+      next();
+    },
+    function (next) {
+      if (remainingKeys.length > 0) {
+        // Look for 1 distance links
+        Link.find({ target: fpr, obsolete: false }, function (err, links) {
+          dist1Links = [];
+          links.forEach(function(lnk){
+            dist1Links.push(lnk.fingerprint);
+          });
+          // Add new certifiers as distance 1 links
+          dist1Links = _(dist1Links.concat(newCertifiers)).uniq();
+          next(err);
+        });
+      }
+      else next();
+    },
+    function (next){
+      // Remove distance 2 links (those for whom new links make 1 distance)
+      var found = [];
+      if (remainingKeys.length > 0) {
+        async.forEachSeries(remainingKeys, function(member, callback){
+          // Exists distance 1 link?
+          async.detect(dist1Links, function (dist1member, callbackDist1) {
+            // dist1member signed 'fpr', so here we look for (member => dist1member => fpr sigchain)
+            Link.find({ source: member, target: dist1member, obsolete: false }, function (err, links) {
+              if (links && links.length > 0) {
+                found.push(member);
+                callbackDist1(true);
+              }
+              else callbackDist1(false);
+            });
+          }, function (detected) {
+            if (detected)
+              found.push(member);
+            callback();
+          });
+        }, function(err){
+          remainingKeys = _(remainingKeys).difference(found);
+          next(err);
+        });
+      }
+      else next();
+    },
+    function (next){
+      // Remove distance 3 links (those for whom new links make 2 distance)
+      var found = [];
+      if (remainingKeys.length > 0) {
+        async.forEachSeries(remainingKeys, function(member, callback){
+          var dist2Links = [];
+
+          async.waterfall([
+            function (next){
+              // Step 1. Detect distance 1 members from current member (potential dist 2 from 'fpr')
+              Link.find({ source: member, obsolete: false }, function (err, links) {
+                dist2Links = [];
+                links.forEach(function(lnk){
+                  dist2Links.push(lnk.fingerprint);
+                });
+                next(err);
+              });
+            },
+            function (next){
+              // Step 2. Detect links between distance 2 & distance 1 members
+              async.detect(dist2Links, function (dist2member, callbackDist2) {
+                // Exists distance 1 link?
+                async.detect(dist1Links, function (dist1member, callbackDist1) {
+                  // dist1member signed 'fpr', so here we look for (member => dist1member => fpr sigchain)
+                  Link.find({ source: dist2member, target: dist1member, obsolete: false }, function (err, links) {
+                    if (links && links.length > 0) {
+                      callbackDist1(true);
+                    }
+                    else callbackDist1(false);
+                  });
+                }, callbackDist2);
+              }, function (detected) {
+                if (detected)
+                  found.push(member);
+                callback();
+              });
+            },
+          ], callback);
+        }, function(err){
+          remainingKeys = _(remainingKeys).difference(found);
+          next(err);
+        });
+      }
+      else next();
+    },
+  ], function (err) {
+    done(err, remainingKeys);
+  });
+}
+
+/**
+* Mark as obsolete the links with an age equal to or below a given date
+**/
+LinkSchema.statics.isOver3StepsOfAMember = function (key, members, done) {
+  var fpr = key.fingerprint;
   var remainingKeys = [];
   members.forEach(function(m){
     remainingKeys.push(m.fingerprint);
   });
+  // Without self
+  remainingKeys = _(remainingKeys).difference([fpr]);
   var Link = this.model('Link');
   var dist1Links = [];
   async.waterfall([
@@ -55,7 +169,7 @@ LinkSchema.statics.isOver3StepsOfAMember = function (theMember, members, done) {
             callback();
           });
         }, function(err){
-          remainingKeys = _(remainingKeys).without(found);
+          remainingKeys = _(remainingKeys).difference(found);
           next(err);
         });
       }
@@ -65,7 +179,10 @@ LinkSchema.statics.isOver3StepsOfAMember = function (theMember, members, done) {
       if (remainingKeys.length > 0) {
         // Look for 1 distance links
         Link.find({ target: fpr, obsolete: false }, function (err, links) {
-          dist1Links = links;
+          dist1Links = [];
+          links.forEach(function(lnk){
+            dist1Links.push(lnk.fingerprint);
+          });
           next(err);
         });
       }
@@ -92,7 +209,7 @@ LinkSchema.statics.isOver3StepsOfAMember = function (theMember, members, done) {
             callback();
           });
         }, function(err){
-          remainingKeys = _(remainingKeys).without(found);
+          remainingKeys = _(remainingKeys).difference(found);
           next(err);
         });
       }
@@ -109,7 +226,10 @@ LinkSchema.statics.isOver3StepsOfAMember = function (theMember, members, done) {
             function (next){
               // Step 1. Detect distance 1 members from current member (potential dist 2 from 'fpr')
               Link.find({ source: member, obsolete: false }, function (err, links) {
-                dist2Links = links;
+                dist2Links = [];
+                links.forEach(function(lnk){
+                  dist2Links.push(lnk.fingerprint);
+                });
                 next(err);
               });
             },
@@ -134,15 +254,14 @@ LinkSchema.statics.isOver3StepsOfAMember = function (theMember, members, done) {
             },
           ], callback);
         }, function(err){
-          remainingKeys = _(remainingKeys).without(found);
+          remainingKeys = _(remainingKeys).difference(found);
           next(err);
         });
       }
       else next();
     },
   ], function (err) {
-    var nbOutdistanced = remainingKeys.length;
-    done(err, nbOutdistanced);
+    done(err, remainingKeys);
   });
 }
 

@@ -10,6 +10,7 @@ var KeySchema = new Schema({
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
   eligible: { type: Boolean, default: false },
+  distanced: [String], // Array of distanced keys fingerprints
   certifs: [String], // Array of md5 hashes of packets to integrate
   subkeys: [String], // Array of md5 hashes of packets to integrate
   created: { type: Date, default: Date.now },
@@ -131,9 +132,9 @@ KeySchema.statics.removeMember = function(fingerprint, done){
   });
 };
 
-KeySchema.statics.setKicked = function(fingerprint, done){
+KeySchema.statics.setKicked = function(fingerprint, distancedKeys, done){
   var Key = this.model('Key');
-  Key.update({ fingerprint: fingerprint }, { kick: true }, function (err) {
+  Key.update({ fingerprint: fingerprint }, { kick: distancedKeys.length > 0, distanced: distancedKeys }, function (err) {
     done(err);
   });
 };

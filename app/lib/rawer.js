@@ -190,7 +190,7 @@ module.exports = new function() {
       raw += "CertificationPackets:\n" + json.certpackets;
     if (!raw.match(/\n$/))
       raw += '\n';
-    if (json.membership.membership) {
+    if (json.membership && json.membership.membership) {
       raw += "Membership:\n";
       raw += json.membership.membership + "\n";
       raw += json.membership.signature;

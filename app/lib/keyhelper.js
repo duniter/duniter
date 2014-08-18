@@ -30,6 +30,46 @@ module.exports = {
       packets = readKeys[0].toPacketlist();
     }
     return new KeyHelper(packets);
+  },
+
+  toPacketlist: function (encodedPackets){
+    var packets = new PacketList();
+    packets.read(base64.decode(encodedPackets));
+    return packets;
+  },
+
+  hasOnlySubkeyMaterial: function (encodedPackets){
+    var packets = new PacketList();
+    packets.read(base64.decode(encodedPackets));
+
+    var subkeyMaterial = packets.filterByTag(openpgp.enums.packet.publicSubkey);
+    var signatures = packets.filterByTag(openpgp.enums.packet.signature);
+    signatures.forEach(function(packet){
+      if (packet.signatureType == openpgp.enums.signature.subkey_binding) {
+        subkeyMaterial.push(packet);
+      }
+    });
+    return subkeyMaterial.length == packets.length;
+  },
+
+  hasOnlyCertificationMaterial: function (encodedPackets){
+    var packets = new PacketList();
+    packets.read(base64.decode(encodedPackets));
+
+    var certifMaterial = new PacketList();
+    var signatures = packets.filterByTag(openpgp.enums.packet.signature);
+    signatures.forEach(function(packet){
+      var signaturesToKeep = [
+        openpgp.enums.signature.cert_generic,
+        openpgp.enums.signature.cert_persona,
+        openpgp.enums.signature.cert_casual,
+        openpgp.enums.signature.cert_positive
+      ];
+      if (~signaturesToKeep.indexOf(packet.signatureType)) {
+        certifMaterial.push(packet);
+      }
+    });
+    return certifMaterial.length == packets.length;
   }
 };
 
@@ -45,8 +85,12 @@ function KeyHelper (packetList) {
     return key && key.primaryKey && key.primaryKey.getFingerprint().toUpperCase();
   };
 
-  this.hasPrimaryKey = function (){
+  this.getPrimaryKey = function (){
     return key && key.primaryKey;
+  };
+
+  this.hasPrimaryKey = function (){
+    return this.getPrimaryKey() != null;
   };
 
   this.getArmored = function (){

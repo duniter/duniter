@@ -22,6 +22,7 @@ var KeyBlockSchema = new Schema({
   keysChanges: Array,
   signature: String,
   hash: String,
+  issuer: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -151,24 +152,26 @@ KeyBlockSchema.methods = {
     var notFoundMembership = 0;
     var mss = {};
     this.keysChanges.forEach(function(kc){
-      var shortSIG = kc.membership.signature;
-      var shortMS = kc.membership.membership;
-      // Membership content
-      var sp = shortMS.split(':');
-      // Signature
-      var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
-      signature += shortSIG;
-      signature += '-----END PGP SIGNATURE-----\n';
-      var ms = {
-        version: sp[0],
-        keyID: sp[1].substring(24),
-        fingerprint: sp[1],
-        membership: sp[2],
-        date: new Date(parseInt(sp[3])*1000),
-        userid: sp[4],
-        signature: signature
-      };
-      mss[ms.keyID] = ms;
+      if (kc.membership) {
+        var shortSIG = kc.membership.signature;
+        var shortMS = kc.membership.membership;
+        // Membership content
+        var sp = shortMS.split(':');
+        // Signature
+        var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
+        signature += shortSIG;
+        signature += '-----END PGP SIGNATURE-----\n';
+        var ms = {
+          version: sp[0],
+          keyID: sp[1].substring(24),
+          fingerprint: sp[1],
+          membership: sp[2],
+          date: new Date(parseInt(sp[3])*1000),
+          userid: sp[4],
+          signature: signature
+        };
+        mss[ms.keyID] = ms;
+      }
     });
     return {
       'notFoundMembership': notFoundMembership,

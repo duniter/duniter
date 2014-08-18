@@ -102,6 +102,7 @@ function KeyService (conn, conf, PublicKeyService) {
 
   this.submitKeyBlock = function (kb, done) {
     var block = new KeyBlock(kb);
+    block.issuer = kb.pubkey.fingerprint;
     var currentBlock = null;
     async.waterfall([
       function (next){
@@ -131,7 +132,7 @@ function KeyService (conn, conf, PublicKeyService) {
           next('PreviousIssuer does not target current block');
           return;
         }
-        current = currentBlock;
+        currentBlock = current;
         // Check the challenge depending on issuer
         checkProofOfWork(block, next);
       },
@@ -148,13 +149,13 @@ function KeyService (conn, conf, PublicKeyService) {
 
   function checkCoherence (current, block, done) {
     async.waterfall([
-      function (next) {
-        // Check that to be kicked members are kicked
-        checkKicked(block, next);
-      },
       function (next){
         // Check key changes
         checkKeychanges(current, block, next);
+      },
+      function (newLinks, next) {
+        // Check that to be kicked members are kicked
+        checkKicked(block, newLinks, next);
       },
       function (next){
         // Check members' changes (+ and -), root & count
@@ -166,10 +167,16 @@ function KeyService (conn, conf, PublicKeyService) {
   }
 
   function checkKeychanges (current, block, done) {
-    if (current) {
+    if (current && current.number == 0) {
+      checkPulseBlockKeychanges(block, done);
+
+    } else if (current) {
       done('Post-root blocks are not managed yet');
+
     } else {
-      checkRootBlockKeychanges(block, done);
+      checkRootBlockKeychanges(block, function (err) {
+        done(err, {});
+      });
     }
   }
 
@@ -181,6 +188,29 @@ function KeyService (conn, conf, PublicKeyService) {
       }
       checkKeychange(block, kc, callback);
     }, done);
+  }
+
+  function checkPulseBlockKeychanges(block, done) {
+    var newLinks = {};
+    async.forEach(block.keysChanges, function(kc, callback){
+      if (kc.type != 'U') {
+        callback('Pulse block must contain only UPDATE keychanges');
+        return;
+      }
+      async.waterfall([
+        function (next){
+          // Check keychange (certifications verification notably)
+          checkKeychange(block, kc, next);
+        },
+        function (next){
+          // Memorize new links from signatures
+          newLinks[kc.fingerprint] = kc.certifiers;
+          next();
+        },
+      ], callback);
+    }, function (err) {
+      done(err, newLinks);
+    });
   }
 
   function checkKeychange (block, kc, done) {
@@ -246,7 +276,37 @@ function KeyService (conn, conf, PublicKeyService) {
 
       } else if (kc.type == 'U') {
         // Check UPDATE keychange type
-        done('UPDATE keychange type not managed yet');
+        if (kc.membership) {
+          done('Membership must NOT be provided for UPDATE type');
+          return;
+        }
+        if (!kc.keypackets && !kc.certpackets) {
+          done('Both KeyPackets and CertificationPakcets CANNOT be empty for UPDATE type');
+          return;
+        }
+        if (kc.keypackets && !keyhelper.hasOnlySubkeyMaterial(kc.keypackets)) {
+          done('KeyPackets MUST contain only subkeys & subkey bindings if not empty for UPDATE type');
+          return;
+        }
+        if (kc.certpackets && !keyhelper.hasOnlyCertificationMaterial(kc.certpackets)) {
+          done('CertificationPackets MUST contain only certifications if not empty for UPDATE type');
+          return;
+        }
+
+        // Check certifications
+        async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback){
+          kc.certifiers = [];
+          async.waterfall([
+            function (next){
+              checkCertificationOfKey(certif, kc.fingerprint, next);
+            },
+            function (certifier, next){
+              // Add certifier FPR in memory
+              kc.certifiers.push(certifier);
+              next();
+            },
+          ], callback);
+        }, done);
 
       } else if (kc.type == 'L') {
         // Check LEAVER keychange type
@@ -419,20 +479,33 @@ function KeyService (conn, conf, PublicKeyService) {
     callback('No path found!');
   }
 
-  function checkKicked (block, done) {
+  function checkKicked (block, newLinks, done) {
+    var membersChanges = block.membersChanges;
     async.waterfall([
       function (next){
         Key.getToBeKicked(next);
       },
       function (keys, next){
-        var changes = block.membersChanges;
-        keys.forEach(function(key){
-          if (changes.indexOf('-' + key.fingerprint) == -1) {
-            next('Member ' + key.fingerprint + ' has to lose his member status. Wrong block.');
-            return;
-          }
-        });
-        next();
+        async.forEach(keys, function(key, callback){
+          async.waterfall([
+            function (next){
+              Link.isStillOver3Steps(key, newLinks, next);
+            },
+            function (outdistanced, next) {
+              var isStill = outdistanced.length > 0;
+              if (isStill && membersChanges.indexOf('-' + key.fingerprint) == -1) {
+                next('Member ' + key.fingerprint + ' has to lose his member status. Wrong block.');
+                return;
+              }
+              if (!isStill && ~membersChanges.indexOf('-' + key.fingerprint)) {
+                next('Member ' + key.fingerprint + ' is no more outdistanced and should not be kicked. Wrong block.');
+                return;
+              }
+              // Fine
+              next();
+            }
+          ], callback);
+        }, next);
       },
     ], done);
   }
@@ -507,10 +580,12 @@ function KeyService (conn, conf, PublicKeyService) {
         async.forEach(pubkeys, function(encodedPackets, callback){
           var key = keyhelper.fromEncodedPackets(encodedPackets);
           var fpr = key.getFingerprint();
+          var uid = key.getUserID();
           var kid = fpr.substring(24);
           var trusted = new TrustedKey({
             fingerprint: fpr,
             keyID: kid,
+            uid: uid,
             packets: encodedPackets
           });
           trusted.save(function (err){
@@ -576,11 +651,8 @@ function KeyService (conn, conf, PublicKeyService) {
             function (next){
               Link.isOver3StepsOfAMember(key, members, next);
             },
-            function (nbOutdistanced, next){
-              if (nbOutdistanced) {
-                Key.setKicked(fpr, next);
-              }
-              else next();
+            function (distancedKeys, next){
+              Key.setKicked(fpr, distancedKeys, next);
             },
           ], callback);
         }, next);
@@ -755,13 +827,21 @@ function KeyService (conn, conf, PublicKeyService) {
               else {
                 join.ms = mss[0];
                 fingerprints.push(join.ms.issuer);
-                PublicKey.getTheOne(join.ms.issuer, next);
+                async.parallel({
+                  pubkey: function(callback){
+                    PublicKey.getTheOne(join.ms.issuer, callback);
+                  },
+                  key: function(callback){
+                    Key.getTheOne(join.ms.issuer, callback);
+                  },
+                }, next);
               }
             },
-            function (pubk, next){
+            function (res, next){
+              var pubk = res.pubkey;
               join.pubkey = pubk;
-              if (pubk.eligible.length == 0) {
-                next('PublicKey of ' + uid + ' has no eligible packet');
+              if (!res.key.eligible) {
+                next('PublicKey of ' + uid + ' is not eligible');
                 return;
               }
               var key = keyhelper.fromArmored(pubk.raw);
@@ -808,10 +888,6 @@ function KeyService (conn, conf, PublicKeyService) {
     // Keychanges
     block.keysChanges = [];
     _(joinData).values().forEach(function(join){
-      var pkData = {
-        fingerprint: join.pubkey.fingerprint,
-        packets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write())
-      };
       block.keysChanges.push({
         type: 'F',
         fingerprint: join.pubkey.fingerprint,
@@ -873,6 +949,130 @@ function KeyService (conn, conf, PublicKeyService) {
       block.membersChanges.push('-' + fpr);
     });
     block.keysChanges = [];
+    done(null, block);
+  }
+
+  /**
+  * Generate the "pulse" keyblock: the #1 keyblock (following the root keyblock) avoiding WoT collapsing
+  */
+  this.generatePulse = function (done) {
+    // 1. See available keychanges
+    var members = [];
+    var updates = {};
+    var current;
+    async.waterfall([
+      function (next) {
+        KeyBlock.current(function (err, currentBlock) {
+          current = currentBlock;
+          next(err && 'No root block: cannot generate pulse block');
+        });
+      },
+      function (next){
+        Key.getMembers(next);
+      },
+      function (memberKeys, next){
+        // Cache members fingerprints
+        memberKeys.forEach(function(mKey){
+          members.push(mKey.fingerprint);
+        });
+        // Extract available certifications
+        async.forEach(memberKeys, function(mKey, callback){
+          async.waterfall([
+            function (next){
+              PublicKey.getTheOne(mKey.fingerprint, next);
+            },
+            function (pubkey, next) {
+              var pgpPubkey = pubkey.getKey();
+              var packetList = pubkey.getCertificationsFromMD5List(mKey.certifs);
+              var retainedPackets = new openpgp.packet.List();
+              async.forEachSeries(packetList, function(certif, callback){
+                checkCertificationOfKey(certif, mKey.fingerprint, function (err) {
+                  if (!err)
+                    retainedPackets.push(certif);
+                  callback();
+                });
+              }, function(err){
+                // Once all packets of pubkey done
+                if (!err && retainedPackets.length > 0) {
+                  updates[pubkey.fingerprint] = retainedPackets;
+                }
+                next();
+              });
+            }
+          ], callback);
+        }, next);
+      },
+      function (next){
+        createPulseBlock(current, updates, next);
+      },
+    ], done);
+  };
+
+  function checkCertificationOfKey (certif, certifiedFPR, done) {
+    async.waterfall([
+      function (next){
+        var keyID = certif.issuerKeyId.toHex().toUpperCase();
+        async.parallel({
+          pubkeyCertified: function(callback){
+            PublicKey.getTheOne(certifiedFPR, callback);
+          },
+          trusted: function(callback){
+            TrustedKey.getTheOne(keyID, callback);
+          }
+        }, next);
+      },
+      function (res, next){
+        // Known certifier KeyID, get his public key + check if member
+        var certifierFPR = res.trusted.fingerprint;
+        async.parallel({
+          pubkeyCertifier: function(callback){
+            PublicKey.getTheOne(certifierFPR, callback);
+          },
+          isMember: function(callback){
+            Key.isMember(certifierFPR, function (err, isMember) {
+              callback(err || (!isMember && 'Signature from non-member ' + res.trusted.fingerprint), res);
+            });
+          }
+        }, function (err, res2) {
+          res2.pubkeyCertified = res.pubkeyCertified;
+          next(err, res2);
+        });
+      },
+      function (res, next){
+        var other = { pubkey: res.pubkeyCertifier };
+        var uid = res.pubkeyCertified.getUserID();
+        var selfKey = res.pubkeyCertified.getKey();
+        var otherKey = other.pubkey.getKey();
+        var userId = new openpgp.packet.Userid();
+        logger.info('Signature for '+ uid);
+        userId.read(uid);
+        var success = certif.verify(otherKey.getPrimaryKey(), {userid: userId, key: selfKey.getPrimaryKey()});
+        next(success ? null : 'Wrong signature', success && other.pubkey.fingerprint);
+      },
+    ], done);
+  }
+
+  function createPulseBlock (current, updates, done) {
+    var block = new KeyBlock();
+    block.version = 1;
+    block.currency = current.currency;
+    block.number = current.number + 1;
+    block.previousHash = current.hash;
+    block.previousIssuer = current.issuer;
+    block.membersCount = current.membersCount;
+    block.membersRoot = current.membersRoot;
+    block.membersChanges = [];
+    // Keychanges
+    block.keysChanges = [];
+    _(updates).keys().forEach(function(fpr){
+      block.keysChanges.push({
+        type: 'U',
+        fingerprint: fpr,
+        keypackets: '',
+        certpackets: base64.encode(updates[fpr].write()),
+        membership: {}
+      });
+    });
     done(null, block);
   }
 

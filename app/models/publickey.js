@@ -90,7 +90,11 @@ PublicKeySchema.methods = {
   },
 
   getUserID: function () {
-    return [this.name, "(" + this.comment + ")", "<" + this.email + ">"].join(' ');
+    var components = [];
+    if (this.name) components.push(this.name);
+    if (this.comment) components.push("(" + this.comment + ")");
+    if (this.email) components.push("<" + this.email + ">");
+    return components.join(' ');
   },
 
   getWritablePacketsWithoutOtherCertifications: function (){

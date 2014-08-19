@@ -140,20 +140,24 @@ function KeyService (conn, conf, PublicKeyService) {
         // Check document's coherence
         checkCoherence(currentBlock, block, next);
       },
-      function (next) {
+      function (newLinks, next) {
         // Save block data + compute links obsolescence
-        saveBlockData(block, next);
+        saveBlockData(block, newLinks, next);
       }
-    ], done);
+    ], function (err) {
+      done(err, block);
+    });
   };
 
   function checkCoherence (current, block, done) {
+    var newLinks = {};
     async.waterfall([
       function (next){
         // Check key changes
         checkKeychanges(current, block, next);
       },
-      function (newLinks, next) {
+      function (theNewLinks, next) {
+        newLinks = theNewLinks;
         // Check that to be kicked members are kicked
         checkKicked(block, newLinks, next);
       },
@@ -162,7 +166,7 @@ function KeyService (conn, conf, PublicKeyService) {
         checkCommunityChanges(block, next);
       },
     ], function (err) {
-      done(err);
+      done(err, newLinks);
     });
   }
 
@@ -561,7 +565,7 @@ function KeyService (conn, conf, PublicKeyService) {
     }, done);
   }
 
-  function saveBlockData (block, done) {
+  function saveBlockData (block, newLinks, done) {
     logger.info('Block #' + block.number + ' added to the keychain');
     async.waterfall([
       function (next) {
@@ -599,25 +603,18 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next){
         // Save links
-        next();
-        // var certifs = block.getTierCertificationPackets();
-        // async.forEach(certifs, function(certif, callback){
-        //   async.waterfall([
-        //     function (next){
-        //       PublicKey.getTheOne(certif.issuerKeyId.toHex().toUpperCase(), next);
-        //     },
-        //     function (pubk, next){
-        //       var link = new Link({
-        //         source: pubk.fingerprint,
-        //         target: certif.target,
-        //         timestamp: certif.created.timestamp()
-        //       });
-        //       link.save(function (err) {
-        //         next(err);
-        //       });
-        //     },
-        //   ], callback);
-        // }, next);
+        async.forEach(_(newLinks).keys(), function(target, callback){
+          async.forEach(newLinks[target], function(source, callback2){
+            var lnk = new Link({
+              source: source,
+              target: target,
+              timestamp: block.timestamp
+            });
+            lnk.save(function (err) {
+              callback2(err);
+            });
+          }, callback);
+        }, next);
       },
       function (next){
         // Save memberships
@@ -989,6 +986,8 @@ function KeyService (conn, conf, PublicKeyService) {
                 checkCertificationOfKey(certif, mKey.fingerprint, function (err) {
                   if (!err)
                     retainedPackets.push(certif);
+                  else
+                    logger.warn(err);
                   callback();
                 });
               }, function(err){

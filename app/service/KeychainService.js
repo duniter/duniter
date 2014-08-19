@@ -275,6 +275,8 @@ function KeyService (conn, conf, PublicKeyService) {
           return;
         }
 
+        // TODO: check subkeys?
+
         // Check against signature
         var entity = new Membership(ms);
         var armoredPubkey = key.getArmored();
@@ -352,158 +354,12 @@ function KeyService (conn, conf, PublicKeyService) {
     }
   }
 
-  /**
-  * Find the pubkey matching fingerprint + test its validity against WoT constraints (signatures).
-  **/
-  function getValidMemberPubkey (now, block, fingerprint, done) {
-    var wotKey;
-    async.waterfall([
-      function (next){
-        getMemberOrNewcomerPubkey(block, fingerprint, next);
-      },
-      function (wotPubkey, next) {
-        wotKey = wotPubkey;
-        // Check signatures' quantity + distance to WoT
-        var nbLinks = wotKey.getSignatories().length;
-        // wotKey.getSignatories().forEach(function(link){
-        //   if (Math.max(now - link.timestamp, 0) < LINK_DURATION) {
-        //     nbLinks++;
-        //   }
-        // });
-        // Check against quantity
-        if (block.number > 0 && nbLinks < LINK_QUANTITY_MIN) {
-          next('Not enough links to join the Web of Trust');
-          return;
-        }
-        Key.getMembers(next);
-      },
-      function (members, next){
-        // Check against distance to the WoT
-        async.forEach(members, function(member, callback){
-          findExistingPath(wotKey, member, MAX_STEPS, callback);
-        }, next);
-      },
-      function (next){
-        next(null, wotKey.armor());
-      },
-    ], done);
-  }
-
-  /**
-  * Find a member's pubkey, wether it is in the memory block or persisted keychain,
-  * and returns it as WOTPubkey object.
-  **/
-  function getMemberOrNewcomerPubkey (block, fingerprint, done) {
-    var wotPubkey;
-    block.publicKeys.forEach(function(pk){
-      if (pk.fingerprint == fingerprint)
-        wotPubkey = new WOTPubkey(fingerprint, pk.packets);
-    });
-    // New PubKey
-    if (wotPubkey) {
-      async.waterfall([
-        function (next) {
-          // Check each pubkey packet has a UserID, and only one
-          // Check the self-certification exists with pubkey
-          // Only one self-certification
-          if (!wotPubkey.hasOnlyOneValidUserID()) {
-            next('One and only one UserID required & allowed for a pubkey');
-            return;
-          }
-          if (wotPubkey.getSelfCertifications().length != 1) {
-            next('Only one self certification allowed for a key');
-            return;
-          }
-          // Check each pubkey is here for first time
-          // Check no KeyID conflict
-          Key.isMember(fingerprint.substring(24), next);
-        },
-        function (isMember, next){
-          if (isMember) {
-            next('Cannot add a pubkey for an existing member');
-            return;
-          }
-          // Check signatures (good signature + from member)
-          if (block.number == 0) {
-            // No tier-signature allowed (no existing member to justify it)
-            if (wotPubkey.getSignatories().length > 0) {
-              next('No tier-certification allowed for root keyblock');
-              return;
-            }
-            else next();
-          }
-          else {
-            async.forEach(wotPubkey.getSignatories(), function(signatory, callback){
-              async.waterfall([
-                function (next){
-                  getMemberPubkey(signatory.keyID, next);
-                },
-                function (wotKey, next){
-                  // Tiers certif: only from members
-                  if (!signatory.packet.verify(wotPubkey.userid, tierPubkey)) {
-                    next('Signature verification failed for userid');
-                    return;
-                  }
-                  next();
-                },
-              ], callback);
-            }, next);
-          }
-        },
-      ], function (err) {
-        done(err, wotPubkey);
-      });
-    }
-    else {
-      // Existing pubkey
-      async.waterfall([
-        function (next){
-          PublicKey.getTheOne(fingerprint, next);
-        },
-        function (pubk, next){
-          next(null, new WOTPubkey(fingerprint, pubk.keychain));
-        },
-        function (wotPubk, next){
-          var certifs = block.getTierCertificationPacketsFor(wotPubk.fingerprint);
-          wotPubk.addAll(certifs);
-          next(null, wotPubk);
-        },
-      ], done);
-    }
-  }
-
   function checkProofOfWork (block, done) {
     var powRegexp = new RegExp('^0{' + MINIMUM_ZERO_START + '}');
     if (!block.hash.match(powRegexp))
       done('Not a proof-of-work');
     else
       done();
-  }
-
-  /**
-  * Find a member's pubkey, wether it is in the memory block or persisted keychain,
-  * and returns it as WOTPubkey object.
-  **/
-  function getMemberPubkey (fingerprint, done) {
-    async.waterfall([
-      function (next){
-        Key.isMember(fingerprint, next);
-      },
-      function (isMember, next){
-        if (!isMember) {
-          next('Not a member key');
-          return;
-        }
-        PublicKey.getTheOne(fingerprint, next);
-      },
-      function (pubkey, next){
-        next(null, new WOTPubkey(fingerprint, pubkey.keychain));
-      },
-    ], done);
-  }
-
-  function findExistingPath(wotKey, member, maxSteps, callback) {
-    callback('No path found!');
   }
 
   function checkKicked (block, newLinks, done) {
@@ -554,23 +410,6 @@ function KeyService (conn, conf, PublicKeyService) {
         next(error);
       },
     ], done);
-  }
-
-  function checkCertificationsUpdates (block, done) {
-    // Only *members* signatures can be here (not newcomers, nor leaving members)
-    if (block.number == 0) {
-      done();
-      return;
-    }
-    var certifications = block.getTierCertificationPackets();
-    async.forEach(certifications, function(cert, callback){
-      Key.isStayingMember(cert.issuerKeyId.toHex().toUpperCase(), function (err, willBeMember) {
-        if (!willBeMember || err)
-          callback(err || 'Signatory is not a member');
-        else
-          callback();
-      });
-    }, done);
   }
 
   function updateMembers (block, done) {
@@ -730,131 +569,6 @@ function KeyService (conn, conf, PublicKeyService) {
       }
       else callback();
     }, done);
-  }
-
-  function WOTPubkey (fingerprint, rawPackets) {
-
-    this.packets = new openpgp.packet.List();
-
-    var that = this;
-
-    // Get signatories' certification packet of the userid (not checked yet)
-    this.addAll = function (packets) {
-      var thePackets = new openpgp.packet.List();
-      var base64decoded = base64.decode(packets);
-      thePackets.read(base64decoded);
-      thePackets = thePackets.filterByTag(
-        openpgp.enums.packet.publicKey,
-        openpgp.enums.packet.publicSubkey,
-        openpgp.enums.packet.userid,
-        openpgp.enums.packet.signature);
-      thePackets.forEach(function(p){
-        if (p.tag == openpgp.enums.packet.signature) {
-          var signaturesToKeep = [
-            openpgp.enums.signature.cert_generic,
-            openpgp.enums.signature.cert_persona,
-            openpgp.enums.signature.cert_casual,
-            openpgp.enums.signature.cert_positive,
-            openpgp.enums.signature.subkey_binding
-          ];
-          if (~signaturesToKeep.indexOf(p.signatureType))
-            that.packets.push(p);
-        }
-        else that.packets.push(p);
-      });
-    }
-
-    this.addAll(rawPackets);
-
-    // Get signatories' certification packet of the userid (not checked yet)
-    this.getSignatories = function () {
-      var signatories = [];
-      this.packets.filterByTag(openpgp.enums.packet.signature).forEach(function(packet){
-        var issuerKeyId = packet.issuerKeyId.toHex().toUpperCase();
-        var isSelfSig = fingerprint.match(new RegExp(issuerKeyId + '$'));
-        if (!isSelfSig) {
-          signatories.push({
-            keyID: issuerKeyId,
-            packet: packet
-          });
-        }
-      });
-      return signatories;
-    };
-
-    // Get signatories' certification packet of the userid (not checked yet)
-    this.hasOnlyOneValidUserID = function () {
-      return this.getPubKey().getPrimaryUser() != null && this.getUserIDs().length == 1;
-    };
-
-    // Get signatories' certification packet of the userid (not checked yet)
-    this.getSelfCertifications = function () {
-      var certifs = [];
-      this.packets.filterByTag(openpgp.enums.packet.signature).forEach(function(packet){
-        var signaturesToKeep = [
-          openpgp.enums.signature.cert_generic,
-          openpgp.enums.signature.cert_persona,
-          openpgp.enums.signature.cert_casual,
-          openpgp.enums.signature.cert_positive
-        ];
-        if (~signaturesToKeep.indexOf(packet.signatureType)) {
-          var issuerKeyId = packet.issuerKeyId.toHex().toUpperCase();
-          var isSelfSig = fingerprint.match(new RegExp(issuerKeyId + '$'));
-          if (isSelfSig) {
-            certifs.push({
-              keyID: issuerKeyId,
-              packet: packet
-            });
-          }
-        }
-      });
-      return certifs;
-    };
-
-    this.getPurePubkey = function () {
-      return new openpgp.key.Key(this.getPurePackets());
-    };
-
-    // Get signatories' certification packet of the userid (not checked yet)
-    this.getPurePackets = function () {
-      var purePackets = [];
-      var packets = this.packets.filterByTag(
-        openpgp.enums.packet.publicKey,
-        openpgp.enums.packet.publicSubkey,
-        openpgp.enums.packet.userid,
-        openpgp.enums.packet.signature);
-      packets.forEach(function(packet){
-        var signaturesToKeep = [
-          openpgp.enums.signature.cert_generic,
-          openpgp.enums.signature.cert_persona,
-          openpgp.enums.signature.cert_casual,
-          openpgp.enums.signature.cert_positive,
-          openpgp.enums.signature.subkey_binding
-        ];
-        if (~signaturesToKeep.indexOf(packet.signatureType)) {
-          var issuerKeyId = packet.issuerKeyId.toHex().toUpperCase();
-          var isSelfSig = fingerprint.match(new RegExp(issuerKeyId + '$'));
-          if (isSelfSig) {
-            purePackets.push(packet);
-          }
-        }
-      });
-      return purePackets;
-    };
-
-    this.getPubKey = function () {
-      return new openpgp.key.Key(this.packets);
-    };
-
-    this.getUserIDs = function () {
-      var pk = this.getPubKey();
-      return pk.getUserIds();
-    }
-
-    this.armor = function () {
-      var armor = new openpgp.key.Key(this.packets).armor();
-      return armor;
-    }
   }
 
   this.current = function (done) {

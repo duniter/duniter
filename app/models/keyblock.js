@@ -117,59 +117,6 @@ KeyBlockSchema.methods = {
     return pubkeys;
   },
 
-  getTierCertificationPackets: function() {
-    var certifications = [];
-    this.publicKeys.forEach(function(obj){
-      var fingerprint = obj.fingerprint;
-      var packets = new openpgp.packet.List();
-      var base64decoded = base64.decode(obj.packets);
-      packets.read(base64decoded);
-      packets = packets.filterByTag(openpgp.enums.packet.signature);
-      packets.forEach(function(p){
-        if (p.tag == openpgp.enums.packet.signature) {
-          var signaturesToKeep = [
-            openpgp.enums.signature.cert_generic,
-            openpgp.enums.signature.cert_persona,
-            openpgp.enums.signature.cert_casual,
-            openpgp.enums.signature.cert_positive
-          ];
-          var selfSig = fingerprint.match(new RegExp(p.issuerKeyId.toHex().toUpperCase() + '$'));
-          if (~signaturesToKeep.indexOf(p.signatureType) && !selfSig)
-            certifications.push(p);
-        }
-      });
-    });
-    return certifications;
-  },
-
-  getTierCertificationPacketsFor: function(fingerprint) {
-    var certifications = [];
-    this.publicKeys.forEach(function(obj){
-      if (obj.fingerprint == fingerprint) {
-        var fingerprint = obj.fingerprint;
-        var packets = new openpgp.packet.List();
-        var base64decoded = base64.decode(obj.packets);
-        packets.read(base64decoded);
-        packets = packets.filterByTag(openpgp.enums.packet.signature);
-        packets.forEach(function(p){
-          if (p.tag == openpgp.enums.packet.signature) {
-            var signaturesToKeep = [
-              openpgp.enums.signature.cert_generic,
-              openpgp.enums.signature.cert_persona,
-              openpgp.enums.signature.cert_casual,
-              openpgp.enums.signature.cert_positive
-            ];
-            var selfSig = fingerprint.match(new RegExp(p.issuerKeyId.toHex().toUpperCase() + '$'));
-            p.target = fingerprint;
-            if (~signaturesToKeep.indexOf(p.signatureType) && !selfSig)
-              certifications.push(p);
-          }
-        });
-      }
-    });
-    return certifications;
-  },
-
   getMemberships: function() {
     var notFoundMembership = 0;
     var mss = {};

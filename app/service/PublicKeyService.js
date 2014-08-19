@@ -30,6 +30,7 @@ function PublicKeyService (conn, conf, KeyService) {
   */
   this.submitPubkey = function(obj, callback) {
     var pubkey = new PublicKey(obj);
+    var that = this;
     fifo.push(function (cb) {
       async.waterfall([
         function (next) {
@@ -58,40 +59,7 @@ function PublicKeyService (conn, conf, KeyService) {
               });
             },
             function (next) {
-              async.parallel({
-                pubkey: function(callback){
-                  PublicKey.getTheOne(pubkey.fingerprint, callback);
-                },
-                trusted: function(callback){
-                  TrustedKey.getTheOne(pubkey.fingerprint, function (err, trusted) {
-                    if (err)
-                      trusted = null;
-                    callback(null, trusted);
-                  });
-                },
-                key: function(callback){
-                  Key.getTheOne(pubkey.fingerprint, callback);
-                },
-              }, next);
-            },
-            function (res, next){
-              var pubkey = res.pubkey;
-              var trusted = res.trusted;
-              var key = res.key;
-              var keyN = keyhelper.fromArmored(pubkey.raw);
-              var keyT = trusted == null ? null : keyhelper.fromEncodedPackets(trusted.packets);
-              // Compute new subkeys
-              var recordedSubKeys = _((keyT && keyT.getHashedSubkeyPackets()) || {}).keys();
-              var availableSubKeys = _(keyN.getHashedSubkeyPackets()).keys();
-              // Compute new certifications
-              var recordedCertifs = _((keyT && keyT.getHashedCertifPackets()) || {}).keys();
-              var availableCertifs = _(keyN.getHashedCertifPackets()).keys();
-              key.subkeys = _(availableSubKeys).without(availableSubKeys);
-              key.certifs = _(availableCertifs).without(availableCertifs);
-              key.eligible = keyN.hasValidUdid2();
-              key.save(function (err) {
-                next(err);
-              });
+              that.updateAvailableKeyMaterial(pubkey.fingerprint, next);
             },
           ], next);
         },
@@ -110,6 +78,48 @@ function PublicKeyService (conn, conf, KeyService) {
       });
     }, callback);
   };
+
+  // Check subkeys, subkey bindings & certifications that can be recorded in the keychain
+  this.updateAvailableKeyMaterial = function (fpr, done) {
+    async.waterfall([
+      function (next) {
+        async.parallel({
+          pubkey: function(callback){
+            PublicKey.getTheOne(fpr, callback);
+          },
+          trusted: function(callback){
+            TrustedKey.getTheOne(fpr, function (err, trusted) {
+              if (err)
+                trusted = null;
+              callback(null, trusted);
+            });
+          },
+          key: function(callback){
+            Key.getTheOne(fpr, callback);
+          },
+        }, next);
+      },
+      function (res, next){
+        var pubkey = res.pubkey;
+        var trusted = res.trusted;
+        var key = res.key;
+        var keyN = keyhelper.fromArmored(pubkey.raw);
+        var keyT = trusted == null ? null : keyhelper.fromEncodedPackets(trusted.packets);
+        // Compute new subkeys
+        var recordedSubKeys = _((keyT && keyT.getHashedSubkeyPackets()) || {}).keys();
+        var availableSubKeys = _(keyN.getHashedSubkeyPackets()).keys();
+        // Compute new certifications
+        var recordedCertifs = _((keyT && keyT.getHashedCertifPackets()) || {}).keys();
+        var availableCertifs = _(keyN.getHashedCertifPackets()).keys();
+        key.subkeys = _(availableSubKeys).difference(recordedSubKeys);
+        key.certifs = _(availableCertifs).difference(recordedCertifs);
+        key.eligible = keyN.hasValidUdid2();
+        key.save(function (err) {
+          next(err);
+        });
+      },
+    ], done);
+  }
 
   this.getForPeer = function (peer, done) {
     PublicKey.getTheOne(peer.fingerprint, function (err, pubkey) {

@@ -1,12 +1,13 @@
-var mongoose = require('mongoose');
-var async    = require('async');
-var sha1     = require('sha1');
-var _        = require('underscore');
-var fs       = require('fs');
-var Schema   = mongoose.Schema;
-var base64   = require('../lib/base64');
-var openpgp  = require('openpgp');
-var logger   = require('../lib/logger')('dao keyblock');
+var mongoose  = require('mongoose');
+var async     = require('async');
+var sha1      = require('sha1');
+var _         = require('underscore');
+var fs        = require('fs');
+var Schema    = mongoose.Schema;
+var base64    = require('../lib/base64');
+var openpgp   = require('openpgp');
+var keyhelper = require('../lib/keyhelper');
+var logger    = require('../lib/logger')('dao keyblock');
 
 var KeyBlockSchema = new Schema({
   version: String,
@@ -79,6 +80,27 @@ KeyBlockSchema.methods = {
       }
     });
     return pubkeys;
+  },
+
+  getKeyUpdates: function() {
+    var updates = {};
+    this.keysChanges.forEach(function(kc){
+      updates[kc.fingerprint] = { certifs: '', subkeys: '' };
+      var list = new openpgp.packet.List();
+      if (kc.type == 'U' || kc.type == 'B') {
+        // Subkeys
+        if (kc.keypackets) {
+          list.concat(keyhelper.toPacketlist(kc.keypackets));
+          updates[kc.fingerprint].subkeys = keyhelper.toEncoded(list);
+        }
+        // Certifs
+        if (kc.certpackets) {
+          list.concat(keyhelper.toPacketlist(kc.certpackets));
+          updates[kc.fingerprint].certifs = keyhelper.toEncoded(list);
+        }
+      }
+    });
+    return updates;
   },
 
   getPublicKeysPackets: function() {

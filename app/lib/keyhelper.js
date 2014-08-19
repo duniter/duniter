@@ -38,6 +38,10 @@ module.exports = {
     return packets;
   },
 
+  toEncoded: function (packetList){
+    return base64.encode(packetList.write());
+  },
+
   hasOnlySubkeyMaterial: function (encodedPackets){
     var packets = new PacketList();
     packets.read(base64.decode(encodedPackets));
@@ -100,6 +104,10 @@ function KeyHelper (packetList) {
   this.getUserID = function (){
     var primaryUser = key.getPrimaryUser();
     return primaryUser && primaryUser.user && primaryUser.user.userId && primaryUser.user.userId.userid;
+  };
+
+  this.getEncodedPacketList = function (){
+    return base64.encode(key.toPacketlist().write());
   };
 
   this.getFounderPackets = function (){

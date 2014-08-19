@@ -621,8 +621,38 @@ function KeyService (conn, conf, PublicKeyService) {
         }, next);
       },
       function (next){
-        // Save key updates
-        next();
+        // Save key updates (from UPDATE & BACK)
+        var updates = block.getKeyUpdates();
+        async.forEach(_(updates).keys(), function(fpr, callback){
+          async.waterfall([
+            function (next){
+              TrustedKey.getTheOne(fpr, next);
+            },
+            function (trusted, next){
+              var oldList = keyhelper.toPacketlist(trusted.packets);
+              var newList = new openpgp.packet.List();
+              if (updates[fpr].certifs) {
+                // Concat signature packets behind userid + self-signature
+                for (var i = 0; i < 3; i++)
+                  newList.push(oldList[i]);
+                newList.concat(keyhelper.toPacketlist(updates[fpr].certifs));
+                // Concat remaining packets
+                for (var i = 3; i < oldList.length; i++)
+                  newList.push(oldList[i]);
+              } else {
+                // Write the whole existing key
+                newList.concat(oldList);
+              }
+              if (updates[fpr].subkeys)
+                newList.concat(keyhelper.toPacketlist(updates[fpr].subkeys));
+              var key = keyhelper.fromPackets(newList);
+              trusted.packets = key.getEncodedPacketList();
+              trusted.save(function (err) {
+                next(err);
+              });
+            },
+          ], callback);
+        }, next);
       },
       function (next){
         // Save links
@@ -649,6 +679,10 @@ function KeyService (conn, conf, PublicKeyService) {
       function (next){
         // Compute obsolete links
         computeObsoleteLinks(block, next);
+      },
+      function (next){
+        // Update available key material for members with keychanges in this block
+        updateAvailableKeyMaterial(block, next);
       },
     ], function (err) {
       done(err, block);
@@ -678,6 +712,24 @@ function KeyService (conn, conf, PublicKeyService) {
         }, next);
       },
     ], done);
+  }
+
+  function saveKeyUpdates (block, done) {
+    async.forEach(block.keysChanges, function(kc, callback){
+      if (kc.type != 'L') {
+        PublicKeyService.updateAvailableKeyMaterial(kc.fingerprint, callback);
+      }
+      else callback();
+    }, done);
+  }
+
+  function updateAvailableKeyMaterial (block, done) {
+    async.forEach(block.keysChanges, function(kc, callback){
+      if (kc.type != 'L') {
+        PublicKeyService.updateAvailableKeyMaterial(kc.fingerprint, callback);
+      }
+      else callback();
+    }, done);
   }
 
   function WOTPubkey (fingerprint, rawPackets) {

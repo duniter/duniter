@@ -114,6 +114,7 @@ function extractKeyChanges(raw) {
   var keychanges = [];
   var currentKC;
   var lines = raw.split(/\n/);
+  lines = lines.slice(0, lines.length - 1);
   var nbKeys = 0;
   lines.forEach(function(line){
     if (line.match(/^#####----(F|N|U|L|B):[A-Z0-9]{40}----#####$/)) {

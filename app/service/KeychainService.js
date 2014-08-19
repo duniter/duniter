@@ -175,7 +175,7 @@ function KeyService (conn, conf, PublicKeyService) {
       checkPulseBlockKeychanges(block, done);
 
     } else if (current) {
-      done('Post-root blocks are not managed yet');
+      checkNormalBlockKeychanges(block, done);
 
     } else {
       checkRootBlockKeychanges(block, function (err) {
@@ -199,6 +199,29 @@ function KeyService (conn, conf, PublicKeyService) {
     async.forEach(block.keysChanges, function(kc, callback){
       if (kc.type != 'U') {
         callback('Pulse block must contain only UPDATE keychanges');
+        return;
+      }
+      async.waterfall([
+        function (next){
+          // Check keychange (certifications verification notably)
+          checkKeychange(block, kc, next);
+        },
+        function (next){
+          // Memorize new links from signatures
+          newLinks[kc.fingerprint] = kc.certifiers;
+          next();
+        },
+      ], callback);
+    }, function (err) {
+      done(err, newLinks);
+    });
+  }
+
+  function checkNormalBlockKeychanges(block, done) {
+    var newLinks = {};
+    async.forEach(block.keysChanges, function(kc, callback){
+      if (kc.type != 'U') {
+        callback('Only UPDATE block are managed for now');
         return;
       }
       async.waterfall([
@@ -933,6 +956,8 @@ function KeyService (conn, conf, PublicKeyService) {
     block.version = 1;
     block.currency = current.currency;
     block.number = current.number + 1;
+    block.previousHash = current.hash;
+    block.previousIssuer = current.issuer;
     // Members merkle
     var stayers = members.slice(); // copy
     var leavers = leaving.slice(); // copy

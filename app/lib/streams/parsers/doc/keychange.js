@@ -13,9 +13,9 @@ function KeychangeParser (onError) {
   var captures = [
     {prop: "type",            regexp: /#####----([FNULB]):[A-Z0-9]{40}----#####/},
     {prop: "fingerprint",     regexp: /#####----[FNULB]:([A-Z0-9]{40})----#####/},
-    {prop: "keypackets",      regexp: /KeyPackets:\n([\s\S]*)(Membership|Certification)/, parser: extractBase64Lines},
-    {prop: "certpackets",     regexp: /CertificationPackets:\n([\s\S]*)(Membership)?/,            parser: extractBase64Lines},
-    {prop: "membership",      regexp: /Membership:\n([\s\S]*)/,                                   parser: extractMembership},
+    {prop: "keypackets",      regexp: /KeyPackets:\n([\s\S]*?)[a-zA-Z]+:/,            parser: extractBase64Lines},
+    {prop: "certpackets",     regexp: /CertificationPackets:\n([\s\S]*?)[a-zA-Z]+:/,  parser: extractBase64Lines},
+    {prop: "membership",      regexp: /Membership:\n([\s\S]*)/,                       parser: extractMembership},
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getKeychange, onError);

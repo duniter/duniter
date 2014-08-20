@@ -113,12 +113,34 @@ function KeyHelper (packetList) {
   this.getFounderPackets = function (){
     var packets = new openpgp.packet.List();
     // Primary key
-    packets.push(key.primaryKey)
+    packets.push(key.primaryKey);
     // UserID
     var primaryUser = key.getPrimaryUser();
     if (primaryUser) {
       packets.push(primaryUser.user.userId);
       packets.push(primaryUser.selfCertificate);
+    }
+    // Subkeys
+    (key.subKeys || []).forEach(function(subkeyWrapper){
+      if (subkeyWrapper.isValidSigningKey(key.primaryKey) || subkeyWrapper.isValidEncryptionKey(key.primaryKey)) {
+        packets.push(subkeyWrapper.subKey);
+        packets.push(subkeyWrapper.bindingSignature);
+      }
+    });
+    return packets;
+  };
+
+  this.getNewcomerPackets = function (){
+    var packets = new openpgp.packet.List();
+    // Primary key
+    packets.push(key.primaryKey);
+    // UserID
+    var primaryUser = key.getPrimaryUser();
+    if (primaryUser) {
+      packets.push(primaryUser.user.userId);
+      packets.push(primaryUser.selfCertificate);
+      // Certifications
+      packets.concat(primaryUser.otherCertifications);
     }
     // Subkeys
     (key.subKeys || []).forEach(function(subkeyWrapper){
@@ -159,6 +181,17 @@ function KeyHelper (packetList) {
       (primaryUser.user.otherCertifications || []).forEach(function(oCert){
         certifs.push(base64.encode(writePacket(oCert)));
         // oCert.verify(key, { userid: primaryUser.user.userId, key: key }))) {
+      });
+    }
+    return certifs;
+  };
+
+  this.getOtherCertifications = function (){
+    var primaryUser = key.getPrimaryUser();
+    var certifs = new PacketList();
+    if (primaryUser) {
+      (primaryUser.user.otherCertifications || []).forEach(function(oCert){
+        certifs.push(oCert);
       });
     }
     return certifs;

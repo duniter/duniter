@@ -220,8 +220,12 @@ function KeyService (conn, conf, PublicKeyService) {
   function checkNormalBlockKeychanges(block, done) {
     var newLinks = {};
     async.forEach(block.keysChanges, function(kc, callback){
-      if (kc.type != 'U') {
-        callback('Only UPDATE block are managed for now');
+      if (kc.type == 'F') {
+        callback('FOUNDER type is reserved for root keyblock');
+        return;
+      }
+      if (kc.type != 'U' && kc.type != 'N') {
+        callback('Only NEWCOMER & UPDATE blocks are managed for now');
         return;
       }
       async.waterfall([
@@ -301,7 +305,81 @@ function KeyService (conn, conf, PublicKeyService) {
 
       } else if (kc.type == 'N') {
         // Check NEWCOMER keychange type
-        done('NEWCOMER keychange type not managed yet');
+        var key = keyhelper.fromEncodedPackets(kc.keypackets);
+        var ms = Membership.fromInline(kc.membership.membership, kc.membership.signature);
+        if (!kc.certpackets) {
+          done('Certification packets are required for NEWCOMER type');
+          return;
+        }
+        if (!kc.membership) {
+          done('Membership is required for NEWCOMER type');
+          return;
+        }
+        if (ms.membership != 'IN') {
+          done('Membership must be IN for NEWCOMER type');
+          return;
+        }
+        if (!key.hasValidUdid2()) {
+          done('Key must have valid udid2 for NEWCOMER type');
+          return;
+        }
+        if (ms.userid != key.getUserID()) {
+          done('Membership must match same UserID as key');
+          return;
+        }
+        var packets = key.getNewcomerPackets();
+        var cleanOrigin = unix2dos(kc.keypackets.replace(/\n$/, ''));
+        var cleanComputed = unix2dos(base64.encode(packets.write()).replace(/\n$/, ''));
+        if (cleanComputed != cleanOrigin) {
+          done('Only 1 pubkey, 1 udid2 userid, certifications, subkeys & subkey bindings are allowed for NEWCOMER type');
+          return;
+        }
+
+        // TODO: check subkeys?
+
+        async.parallel({
+          certifications: function(callback){
+            // Check certifications
+            async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback2){
+              kc.certifiers = [];
+              async.waterfall([
+                function (next){
+                  checkCertificationOfKey(certif, kc.fingerprint, next);
+                },
+                function (certifier, next){
+                  // Add certifier FPR in memory
+                  kc.certifiers.push(certifier);
+                  next();
+                },
+              ], callback2);
+            }, callback);
+          },
+          membership: function(callback){
+            // Check against signature
+            var entity = new Membership(ms);
+            var armoredPubkey = key.getArmored();
+            async.waterfall([
+              function (next){
+                entity.currency = conf.currency;
+                entity.userid = key.getUserID();
+                jpgp()
+                  .publicKey(armoredPubkey)
+                  .data(entity.getRaw())
+                  .signature(ms.signature)
+                  .verify(next);
+              },
+              function (verified, next) {
+                if(!verified){
+                  next('Bad signature for membership of ' + entity.userid);
+                  return;
+                }
+                next();
+              },
+            ], callback);
+          },
+        }, function(err) {
+          done(err);
+        });
 
       } else if (kc.type == 'U') {
         // Check UPDATE keychange type
@@ -321,6 +399,8 @@ function KeyService (conn, conf, PublicKeyService) {
           done('CertificationPackets MUST contain only certifications if not empty for UPDATE type');
           return;
         }
+
+        // TODO: check subkeys?
 
         // Check certifications
         async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback){
@@ -454,7 +534,23 @@ function KeyService (conn, conf, PublicKeyService) {
             uid: uid,
             packets: encodedPackets
           });
-          trusted.save(function (err){
+          async.parallel({
+            trusted: function(callback){
+              trusted.save(function (err){
+                callback(err);
+              });
+            },
+            pubkey: function(callback){
+              async.waterfall([
+                function (next){
+                  parsers.parsePubkey(next).asyncWrite(unix2dos(key.getArmored()), next);
+                },
+                function (obj, next){
+                  PublicKeyService.submitPubkey(obj, next);
+                },
+              ], callback);
+            },
+          }, function(err) {
             callback(err);
           });
         }, next);
@@ -511,8 +607,8 @@ function KeyService (conn, conf, PublicKeyService) {
       function (next){
         // Save memberships
         var mss = block.getMemberships().mss;
-        async.forEach(mss, function(ms, callback){
-          KeychainService.submit(ms, callback);
+        async.forEach(_(mss).values(), function(ms, callback){
+          Membership.removeFor(ms.fingerprint, callback);
         }, next);
       },
       function (next){
@@ -797,6 +893,109 @@ function KeyService (conn, conf, PublicKeyService) {
       },
     ], done);
   };
+
+  /**
+  * Generate the "pulse" keyblock: the #1 keyblock (following the root keyblock) avoiding WoT collapsing
+  */
+  this.generateNewcomers = function (done) {
+    // 1. See available keychanges
+    var members = [];
+    var joinData = {};
+    var current;
+    async.waterfall([
+      function (next) {
+        KeyBlock.current(function (err, currentBlock) {
+          current = currentBlock;
+          next(err && 'No root block: cannot generate pulse block');
+        });
+      },
+      function (next){
+        Membership.find({ eligible: true }, next);
+      },
+      function (mss, next){
+        async.forEach(mss, function(ms, callback){
+          var join = { pubkey: null, ms: ms };
+          async.waterfall([
+            function (next){
+              async.parallel({
+                pubkey: function(callback){
+                  PublicKey.getTheOne(join.ms.issuer, callback);
+                },
+                key: function(callback){
+                  Key.getTheOne(join.ms.issuer, callback);
+                },
+              }, next);
+            },
+            function (res, next){
+              var pubk = res.pubkey;
+              join.pubkey = pubk;
+              if (!res.key.eligible) {
+                next('PublicKey of ' + uid + ' is not eligible');
+                return;
+              }
+              var key = keyhelper.fromArmored(pubk.raw);
+              // Just require a good udid2
+              if (!key.hasValidUdid2()) {
+                next('User ' + uid + ' does not have a valid udid2 userId');
+                return;
+              }
+              joinData[join.pubkey.fingerprint] = join;
+              next();
+            },
+          ], callback);
+        }, next);
+      },
+      function (next) {
+        Key.getMembers(next);
+      },
+      function (membersKeys, next) {
+        // Concats the joining members
+        var members = [];
+        membersKeys.forEach(function (mKey) {
+          members.push(mKey.fingerprint);
+        });
+        _(joinData).keys().forEach(function (fpr) {
+          members.push(fpr);
+        });
+        // Create the block
+        createNewcomerBlock(current, members, joinData, next);
+      },
+    ], done);
+  };
+
+  function createNewcomerBlock (current, members, joinData, done) {
+    var block = new KeyBlock();
+    block.version = 1;
+    block.currency = current.currency;
+    block.number = current.number + 1;
+    block.previousHash = current.hash;
+    block.previousIssuer = current.issuer;
+    // Members merkle
+    members.sort();
+    var tree = merkle(members, 'sha1').process();
+    block.membersCount = members.length;
+    block.membersRoot = tree.root();
+    block.membersChanges = [];
+    _(joinData).keys().forEach(function(fpr){
+      block.membersChanges.push('+' + fpr);
+    });
+    // Keychanges
+    block.keysChanges = [];
+    _(joinData).values().forEach(function(join){
+      var key = keyhelper.fromArmored(join.pubkey.raw);
+      block.keysChanges.push({
+        type: 'N',
+        fingerprint: join.pubkey.fingerprint,
+        keypackets: keyhelper.toEncoded(key.getFounderPackets()),
+        certpackets: keyhelper.toEncoded(key.getOtherCertifications()),
+        membership: {
+          membership: join.ms.inlineValue(),
+          signature: join.ms.inlineSignature()
+        }
+      });
+    });
+    done(null, block);
+  }
 
   function checkCertificationOfKey (certif, certifiedFPR, done) {
     async.waterfall([

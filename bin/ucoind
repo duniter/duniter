@@ -290,47 +290,25 @@ program
 
 program
   .command('gen-empty-next [host] [port] [difficulty]')
-  .description('Tries to generate the next keyblock of the keychain without any keychange')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (host, port, difficulty, server, conf) {
-    var KeychainService = server.KeychainService;
-    async.waterfall([
-      function (next){
-        KeychainService.generateEmptyNext(next);
-      },
-      function (block, next){
-        var wiz = wizard(server);
-        async.waterfall([
-          function (next){
-            wiz.configOpenpgp(conf, next);
-          },
-          function (next){
-            wiz.configKey(conf, next);
-          },
-          function (next){
-            signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, next);
-          },
-          function (sigFunc, next){
-            proveAndSend(server, block, sigFunc, difficulty, host, port, next);
-          },
-        ], next);
-      },
-    ], function (err) {
-      if (err) {
-        logger.error(err);
-      }
-      server.disconnect();
-      process.exit();
-    });
-  }));
+  .description('Tries to generate the next keyblock of the keychain without any changes')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateEmptyNext")));
 
 program
   .command('gen-pulse [host] [port] [difficulty]')
-  .description('Tries to generate the 2nd keyblock of the keychain, aka "pulse" keyblock')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (host, port, difficulty, server, conf) {
-    var KeychainService = server.KeychainService;
+  .description('Tries to generate a pulse keyblock (#1), containing root signatures')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generatePulse")));
+
+program
+  .command('gen-newcomers [host] [port] [difficulty]')
+  .description('Tries to generate a newcomers (#2+) keyblock, containing only newcomers changes')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomers")));
+
+function generateAndSend (generationMethod) {
+  return function (host, port, difficulty, server, conf) {
     async.waterfall([
       function (next){
-        KeychainService.generatePulse(next);
+        var method = eval('server.KeychainService.' + generationMethod);
+        method(next);
       },
       function (block, next){
         var wiz = wizard(server);
@@ -356,7 +334,8 @@ program
       server.disconnect();
       process.exit();
     });
-  }));
+  };
+}
 
 function proveAndSend (server, block, sigFunc, difficulty, host, port, done) {
   var KeychainService = server.KeychainService;

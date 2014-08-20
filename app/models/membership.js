@@ -181,4 +181,13 @@ MembershipSchema.statics.removeEligible = function (issuer, done) {
     .remove(done);
 }
 
+MembershipSchema.statics.removeFor = function (issuer, done) {
+  
+  this
+    .find({ issuer: issuer })
+    .remove(function (err) {
+      done(err);
+    });
+}
+
 module.exports = MembershipSchema;

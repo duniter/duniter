@@ -131,6 +131,7 @@ KeyBlockSchema.methods = {
         signature += shortSIG;
         signature += '-----END PGP SIGNATURE-----\n';
         var ms = {
+          issuer: kc.fingerprint,
           version: sp[0],
           keyID: sp[1].substring(24),
           fingerprint: sp[1],

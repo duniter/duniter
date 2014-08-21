@@ -146,4 +146,11 @@ KeySchema.statics.unsetKicked = function(fingerprint, done){
   });
 };
 
+KeySchema.statics.undistanceEveryKey = function(done){
+  var Key = this.model('Key');
+  Key.update({}, { kick: false, distanced: [] }, function (err) {
+    done(err);
+  });
+};
+
 module.exports = KeySchema;

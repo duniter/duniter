@@ -1065,6 +1065,25 @@ function KeyService (conn, conf, PublicKeyService) {
     done(null, block);
   }
 
+  this.computeDistances = function (done) {
+    var current;
+    async.waterfall([
+      function (next) {
+        KeyBlock.current(next);
+      },
+      function (currentBlock, next) {
+        current = currentBlock;
+        Link.unobsoletesAllLinks(next);
+      },
+      function (next) {
+        Key.undistanceEveryKey(next);
+      },
+      function (next) {
+        computeObsoleteLinks(current, next);
+      }
+    ], done);
+  }
+
   this.prove = function (block, sigFunc, nbZeros, done) {
     var powRegexp = new RegExp('^0{' + nbZeros + '}');
     var pow = "", sig = "", raw = "";

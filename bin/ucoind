@@ -303,6 +303,17 @@ program
   .description('Tries to generate a newcomers (#2+) keyblock, containing only newcomers changes')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomers")));
 
+program
+  .command('compute-distances')
+  .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {
+    server.KeychainService.computeDistances(function (err) {
+      if (err) logger.error(err);
+      server.disconnect();
+      process.exit();
+    });
+  }));
+
 function generateAndSend (generationMethod) {
   return function (host, port, difficulty, server, conf) {
     async.waterfall([

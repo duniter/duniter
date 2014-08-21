@@ -31,6 +31,16 @@ LinkSchema.statics.obsoletes = function (minTimestamp, done) {
 }
 
 /**
+* Unmark obsolete from all the links
+**/
+LinkSchema.statics.unobsoletesAllLinks = function (done) {
+  var Link = this.model('Link');
+  Link.update({}, { obsolete: false }, function (err) {
+    done(err);
+  });
+}
+
+/**
 * Mark as obsolete the links with an age equal to or below a given date
 **/
 LinkSchema.statics.isStillOver3Steps = function (keyToKick, newLinks, done) {

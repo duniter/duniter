@@ -13,9 +13,9 @@ function KeychangeParser (onError) {
   var captures = [
     {prop: "type",            regexp: /#####----([FNULB]):[A-Z0-9]{40}----#####/},
     {prop: "fingerprint",     regexp: /#####----[FNULB]:([A-Z0-9]{40})----#####/},
-    {prop: "keypackets",      regexp: /KeyPackets:\n([\s\S]*?)[a-zA-Z]+:/,            parser: extractBase64Lines},
-    {prop: "certpackets",     regexp: /CertificationPackets:\n([\s\S]*?)[a-zA-Z]+:/,  parser: extractBase64Lines},
-    {prop: "membership",      regexp: /Membership:\n([\s\S]*)/,                       parser: extractMembership},
+    {prop: "keypackets",      regexp: /KeyPackets:\n([\s\S]*)/,            parser: extractBase64Lines},
+    {prop: "certpackets",     regexp: /CertificationPackets:\n([\s\S]*)/,  parser: extractBase64Lines},
+    {prop: "membership",      regexp: /Membership:\n([\s\S]*)/,            parser: extractMembership},
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getKeychange, onError);
@@ -50,9 +50,12 @@ function extractBase64Lines(raw) {
   var validLines = "";
   var splits = raw.split(/\n/);
   var lines = splits.slice(0, splits.length - 1);
+  var lineOfBlock = true;
   lines.forEach(function(line){
-    if (line.match(/^[A-Za-z0-9\/+=]{1,64}$/)) {
+    if (lineOfBlock && line.match(/^[A-Za-z0-9\/+=]{1,64}$/)) {
       validLines += line + '\n';
+    } else {
+      lineOfBlock = false;
     }
   });
   return validLines;

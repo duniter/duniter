@@ -158,6 +158,15 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (theNewLinks, next) {
         newLinks = theNewLinks;
+        _(newLinks).keys().forEach(function(target){
+          newLinks[target].forEach(function(source){
+            logger.debug('Sig %s --> %s', source, target);
+          });
+        });
+        // Check that new links won't kick other members (existing or incoming)
+        checkWoTStability(block, newLinks, next);
+      },
+      function (next) {
         // Check that to be kicked members are kicked
         checkKicked(block, newLinks, next);
       },
@@ -190,7 +199,7 @@ function KeyService (conn, conf, PublicKeyService) {
         callback('Root block must contain only FOUNDER keychanges');
         return;
       }
-      checkKeychange(block, kc, callback);
+      checkKeychange(block, kc, {}, callback);
     }, done);
   }
 
@@ -204,7 +213,7 @@ function KeyService (conn, conf, PublicKeyService) {
       async.waterfall([
         function (next){
           // Check keychange (certifications verification notably)
-          checkKeychange(block, kc, next);
+          checkKeychange(block, kc, {}, next);
         },
         function (next){
           // Memorize new links from signatures
@@ -219,32 +228,44 @@ function KeyService (conn, conf, PublicKeyService) {
 
   function checkNormalBlockKeychanges(block, done) {
     var newLinks = {};
-    async.forEach(block.keysChanges, function(kc, callback){
-      if (kc.type == 'F') {
-        callback('FOUNDER type is reserved for root keyblock');
-        return;
-      }
-      if (kc.type != 'U' && kc.type != 'N') {
-        callback('Only NEWCOMER & UPDATE blocks are managed for now');
-        return;
-      }
-      async.waterfall([
-        function (next){
-          // Check keychange (certifications verification notably)
-          checkKeychange(block, kc, next);
-        },
-        function (next){
-          // Memorize new links from signatures
-          newLinks[kc.fingerprint] = kc.certifiers;
-          next();
-        },
-      ], callback);
+    var newKeys = {};
+    async.forEachSeries(['N', 'U'], function(currentType, packetTypeDone) {
+      async.forEach(block.keysChanges, function(kc, callback){
+        if (kc.type == 'F') {
+          callback('FOUNDER type is reserved for root keyblock');
+          return;
+        }
+        if (kc.type != 'U' && kc.type != 'N') {
+          callback('Only NEWCOMER & UPDATE blocks are managed for now');
+          return;
+        }
+        // Doing only one type at a time
+        if (kc.type != currentType) {
+          callback();
+          return;
+        }
+        async.waterfall([
+          function (next){
+            // Check keychange (certifications verification notably)
+            checkKeychange(block, kc, newKeys, next);
+          },
+          function (next){
+            // Memorize new links from signatures
+            newLinks[kc.fingerprint] = kc.certifiers;
+            if (kc.type == 'N') {
+              var key = keyhelper.fromEncodedPackets(kc.keypackets);
+              newKeys[kc.fingerprint] = key;
+            }
+            next();
+          },
+        ], callback);
+      }, packetTypeDone);
     }, function (err) {
       done(err, newLinks);
     });
   }
 
-  function checkKeychange (block, kc, done) {
+  function checkKeychange (block, kc, newKeys, done) {
     try {
 
       if (kc.type == 'F') {
@@ -344,7 +365,7 @@ function KeyService (conn, conf, PublicKeyService) {
               kc.certifiers = [];
               async.waterfall([
                 function (next){
-                  checkCertificationOfKey(certif, kc.fingerprint, next);
+                  checkCertificationOfKey(certif, kc.fingerprint, newKeys, next);
                 },
                 function (certifier, next){
                   // Add certifier FPR in memory
@@ -407,7 +428,7 @@ function KeyService (conn, conf, PublicKeyService) {
           kc.certifiers = [];
           async.waterfall([
             function (next){
-              checkCertificationOfKey(certif, kc.fingerprint, next);
+              checkCertificationOfKey(certif, kc.fingerprint, newKeys, next);
             },
             function (certifier, next){
               // Add certifier FPR in memory
@@ -434,6 +455,75 @@ function KeyService (conn, conf, PublicKeyService) {
     }
   }
 
+  function checkWoTStability (block, newLinks, done) {
+    if (block.number == 0) {
+      // block#0 is stable by definition
+      done();
+    } else {
+      // other blocks may introduce unstability with new members
+      async.waterfall([
+        function (next) {
+          Key.getMembers(next);
+        },
+        function (members, next) {
+          var newcomers = [];
+          block.membersChanges.forEach(function (change) {
+            if (change.match(/^\+/)) {
+              var fpr = change.substring(1);
+              newcomers.push(fpr);
+              members.push({ fingerprint: fpr });
+            }
+          });
+          async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
+            async.waterfall([
+              function (next) {
+                // Check the newcomer IS RECOGNIZED BY the WoT + other newcomers
+                // (check we have a path WoT => newcomer)
+                Link.isOver3StepsOfAMember(newcomer, members, next);
+              },
+              function (firstCheck, next) {
+                if (firstCheck.length > 0) {
+                  // This means either:
+                  //   1. WoT does not recognize the newcomer
+                  //   2. Other newcomers do not recognize the newcomer since we haven't taken them into account
+                  // So, we have to test with newcomers' links too
+                  async.waterfall([
+                    function (next) {
+                      Link.isStillOver3Steps(newcomer, firstCheck, newLinks, next);
+                    },
+                    function (secondCheck) {
+                      if (secondCheck.length > 0)
+                        next('Newcomer ' + newcomer + ' is not recognized by the WoT for this block');
+                      else
+                        next();
+                    }
+                  ], next);
+                } else next();
+              },
+              function (next) {
+                // Also check that the newcomer RECOGNIZES the WoT + other newcomers
+                // (check we have a path newcomer => WoT)
+                async.forEachSeries(members, function (member, memberRecognized) {
+                  async.waterfall([
+                    function (next) {
+                      Link.isStillOver3Steps(member.fingerprint, [newcomer], newLinks, next);
+                    },
+                    function (distances, next) {
+                      if (distances.length > 0)
+                        next('Newcomer ' + newcomer + ' cannot recognize member ' + member.fingerprint + ': no path found or too much distance');
+                      else
+                        next();
+                    }
+                  ], memberRecognized);
+                }, next);
+              }
+            ], newcomerTested);
+          }, next);
+        }
+      ], done);
+    }
+  }
+
   function checkProofOfWork (block, done) {
     var powRegexp = new RegExp('^0{' + MINIMUM_ZERO_START + '}');
     if (!block.hash.match(powRegexp))
@@ -452,7 +542,11 @@ function KeyService (conn, conf, PublicKeyService) {
         async.forEach(keys, function(key, callback){
           async.waterfall([
             function (next){
-              Link.isStillOver3Steps(key, newLinks, next);
+              var remainingKeys = [];
+              key.distanced.forEach(function(m){
+                remainingKeys.push(m);
+              });
+              Link.isStillOver3Steps(key.fingerprint, remainingKeys, newLinks, next);
             },
             function (outdistanced, next) {
               var isStill = outdistanced.length > 0;
@@ -870,7 +964,7 @@ function KeyService (conn, conf, PublicKeyService) {
               var packetList = pubkey.getCertificationsFromMD5List(mKey.certifs);
               var retainedPackets = new openpgp.packet.List();
               async.forEachSeries(packetList, function(certif, callback){
-                checkCertificationOfKey(certif, mKey.fingerprint, function (err) {
+                checkCertificationOfKey(certif, mKey.fingerprint, {}, function (err) {
                   if (!err)
                     retainedPackets.push(certif);
                   else
@@ -901,6 +995,7 @@ function KeyService (conn, conf, PublicKeyService) {
     // 1. See available keychanges
     var members = [];
     var joinData = {};
+    var updates = {};
     var current;
     async.waterfall([
       function (next) {
@@ -946,6 +1041,45 @@ function KeyService (conn, conf, PublicKeyService) {
         }, next);
       },
       function (next) {
+        // Look for signatures from newcomers to the WoT
+        async.forEach(_(joinData).keys(), function(newcomer, searchedSignaturesOfTheWoT){
+          async.waterfall([
+            function (next){
+              Key.findWhereSignatory(newcomer, next);
+            },
+            function (keys, next){
+              async.forEach(keys, function(signedKey, extractedSignatures){
+                async.waterfall([
+                  function (next){
+                    async.parallel({
+                      trusted: function(callback){
+                        TrustedKey.getTheOne(signedKey.fingerprint, callback);
+                      },
+                      pubkey: function(callback){
+                        PublicKey.getTheOne(signedKey.fingerprint, callback);
+                      },
+                    }, next);
+                  },
+                  function (res, next){
+                    var key = keyhelper.fromArmored(res.pubkey.raw);
+                    var certifs = key.getCertificationsFromSignatory(newcomer);
+                    if (certifs.length > 0) {
+                      updates[res.pubkey.fingerprint] = certifs;
+                      certifs.forEach(function(){
+                        logger.debug('Found WoT certif %s --> %s', newcomer, res.pubkey.fingerprint);
+                      });
+                    }
+                    next();
+                  },
+                ], function () {
+                  extractedSignatures();
+                });
+              }, next);
+            },
+          ], searchedSignaturesOfTheWoT);
+        }, next);
+      },
+      function (next) {
         Key.getMembers(next);
       },
       function (membersKeys, next) {
@@ -958,12 +1092,12 @@ function KeyService (conn, conf, PublicKeyService) {
           members.push(fpr);
         });
         // Create the block
-        createNewcomerBlock(current, members, joinData, next);
+        createNewcomerBlock(current, members, joinData, updates, next);
       },
     ], done);
   };
 
-  function createNewcomerBlock (current, members, joinData, done) {
+  function createNewcomerBlock (current, members, joinData, updates, done) {
     var block = new KeyBlock();
     block.version = 1;
     block.currency = current.currency;
@@ -979,7 +1113,7 @@ function KeyService (conn, conf, PublicKeyService) {
     _(joinData).keys().forEach(function(fpr){
       block.membersChanges.push('+' + fpr);
     });
-    // Keychanges
+    // Keychanges - newcomers
     block.keysChanges = [];
     _(joinData).values().forEach(function(join){
       var key = keyhelper.fromArmored(join.pubkey.raw);
@@ -994,19 +1128,51 @@ function KeyService (conn, conf, PublicKeyService) {
         }
       });
     });
+    // Keychanges - updates: signatures from newcomers
+    _(updates).keys().forEach(function(fpr){
+      block.keysChanges.push({
+        type: 'U',
+        fingerprint: fpr,
+        keypackets: '',
+        certpackets: base64.encode(updates[fpr].write()),
+        membership: {}
+      });
+    });
     done(null, block);
   }
 
-  function checkCertificationOfKey (certif, certifiedFPR, done) {
+  function checkCertificationOfKey (certif, certifiedFPR, newKeys, done) {
+    var found = null;
     async.waterfall([
       function (next){
         var keyID = certif.issuerKeyId.toHex().toUpperCase();
+        // Check in local newKeys for trusted key (if found, trusted is newcomer here)
+        _(newKeys).keys().forEach(function(fpr){
+          if (fpr.match(new RegExp(keyID + '$')))
+            found = fpr;
+        });
         async.parallel({
           pubkeyCertified: function(callback){
-            PublicKey.getTheOne(certifiedFPR, callback);
+            if (newKeys[certifiedFPR]) {
+              // The certified is a newcomer
+              var key = newKeys[found];
+              async.waterfall([
+                function (next){
+                  parsers.parsePubkey(next).asyncWrite(unix2dos(key.getArmored()), next);
+                },
+                function (obj, next) {
+                  next(null, new PublicKey(obj));
+                }
+              ], callback);
+            }
+            // The certified is a WoT member
+            else PublicKey.getTheOne(certifiedFPR, callback);
           },
           trusted: function(callback){
-            TrustedKey.getTheOne(keyID, callback);
+            if (found)
+              callback(null, { fingerprint: found });
+            else
+              TrustedKey.getTheOne(keyID, callback);
           }
         }, next);
       },
@@ -1018,6 +1184,11 @@ function KeyService (conn, conf, PublicKeyService) {
             PublicKey.getTheOne(certifierFPR, callback);
           },
           isMember: function(callback){
+            if (found) {
+              // Is considered a member since valide newcomer
+              callback(null, res);
+              return;
+            }
             Key.isMember(certifierFPR, function (err, isMember) {
               callback(err || (!isMember && 'Signature from non-member ' + res.trusted.fingerprint), res);
             });

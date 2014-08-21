@@ -197,6 +197,18 @@ function KeyHelper (packetList) {
     return certifs;
   };
 
+  this.getCertificationsFromSignatory = function (newcomer){
+    var primaryUser = key.getPrimaryUser();
+    var certifs = new PacketList();
+    if (primaryUser) {
+      (primaryUser.user.otherCertifications || []).forEach(function(oCert){
+        if (newcomer.match(new RegExp(oCert.issuerKeyId.toHex().toUpperCase() + '$')))
+          certifs.push(oCert);
+      });
+    }
+    return certifs;
+  };
+
   // Give base64 encoded signing subkey packets (subkey + binding)
   this.getBase64subkeys = function (){
     var bSubkeys = [];

@@ -55,6 +55,10 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
         error = 'Document has unkown fields or wrong line ending format';
       if (error) {
         console.log(error);
+        // console.log('-----------------');
+        // console.log('Written:', { str: str });
+        // console.log('Extract:', { raw: raw });
+        // console.log('-----------------');
       }
     }
     if (typeof done == 'function')

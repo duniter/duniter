@@ -120,7 +120,7 @@ function extractKeyChanges(raw) {
     if (line.match(/^#####----(F|N|U|L|B):[A-Z0-9]{40}----#####$/)) {
       // New key block
       if (currentKC)
-        rawKeychanges.push(currentKC);
+        rawKeychanges.push(unix2dos(currentKC));
       currentKC = line + '\n';
     } else {
       // Adding to current
@@ -128,7 +128,7 @@ function extractKeyChanges(raw) {
     }
   });
   if (currentKC)
-    rawKeychanges.push(currentKC);
+    rawKeychanges.push(unix2dos(currentKC));
   rawKeychanges.forEach(function(kc){
     var parsers = require('./.');
     var obj = parsers.parseKeychange().syncWrite(kc);

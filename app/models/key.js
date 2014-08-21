@@ -13,6 +13,7 @@ var KeySchema = new Schema({
   distanced: [String], // Array of distanced keys fingerprints
   certifs: [String], // Array of md5 hashes of packets to integrate
   subkeys: [String], // Array of md5 hashes of packets to integrate
+  signatories: [String], // Array of md5 hashes of packets to integrate
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -116,6 +117,11 @@ KeySchema.statics.getManaged = function(done){
 KeySchema.statics.getMembers = function(done){
   var Key = this.model('Key');
   Key.find({ member: true }, done);
+};
+
+KeySchema.statics.findWhereSignatory = function(signatory, done){
+  var Key = this.model('Key');
+  Key.find({ signatories: new RegExp(signatory.substring(24) + '$') }, done);
 };
 
 KeySchema.statics.addMember = function(fingerprint, done){

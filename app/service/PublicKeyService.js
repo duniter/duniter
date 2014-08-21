@@ -109,10 +109,17 @@ function PublicKeyService (conn, conf, KeyService) {
         var recordedSubKeys = _((keyT && keyT.getHashedSubkeyPackets()) || {}).keys();
         var availableSubKeys = _(keyN.getHashedSubkeyPackets()).keys();
         // Compute new certifications
+        var hashedCertifs = keyN.getHashedCertifPackets();
         var recordedCertifs = _((keyT && keyT.getHashedCertifPackets()) || {}).keys();
-        var availableCertifs = _(keyN.getHashedCertifPackets()).keys();
+        var availableCertifs = _(hashedCertifs).keys();
         key.subkeys = _(availableSubKeys).difference(recordedSubKeys);
         key.certifs = _(availableCertifs).difference(recordedCertifs);
+        key.signatories = [];
+        key.certifs.forEach(function(hash){
+          var certif = keyhelper.toPacketlist(hashedCertifs[hash]);
+          var issuer = certif[0].issuerKeyId.toHex().toUpperCase();
+          key.signatories.push(issuer);
+        });
         key.eligible = keyN.hasValidUdid2();
         key.save(function (err) {
           next(err);

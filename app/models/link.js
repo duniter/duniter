@@ -79,7 +79,7 @@ LinkSchema.statics.isStillOver3Steps = function (fpr, ofMembers, newLinks, done)
           // Exists distance 1 link?
           async.detect(dist1Links, function (dist1member, callbackDist1) {
             // Look in newLinks
-            var signatories = newLinks[dist1member];
+            var signatories = (newLinks[dist1member] || []);
             if (~signatories.indexOf(member)) {
               callbackDist1(true);
               return;
@@ -124,7 +124,7 @@ LinkSchema.statics.isStillOver3Steps = function (fpr, ofMembers, newLinks, done)
               });
               // Look in newLinks
               _(newLinks).keys().forEach(function(signed){
-                newLinks[signed].forEach(function(signatories){
+                (newLinks[signed] || []).forEach(function(signatories){
                   if (~signatories.indexOf(member)) {
                     dist2links.push(signed);
                   }
@@ -137,7 +137,7 @@ LinkSchema.statics.isStillOver3Steps = function (fpr, ofMembers, newLinks, done)
                 // Exists distance 1 link?
                 async.detect(dist1Links, function (dist1member, callbackDist1) {
                   // Look in newLinks
-                  var signatories = newLinks[dist1member];
+                  var signatories = (newLinks[dist1member] || []);
                   if (~signatories.indexOf(dist2member)) {
                     callbackDist1(true);
                     return;

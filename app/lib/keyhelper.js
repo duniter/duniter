@@ -197,6 +197,16 @@ function KeyHelper (packetList) {
     return certifs;
   };
 
+  this.setOtherCertifications = function (certifs){
+    var primaryUser = key.getPrimaryUser();
+    if (primaryUser) {
+      primaryUser.user.otherCertifications = [];
+      certifs.forEach(function(cert){
+        primaryUser.user.otherCertifications.push(cert);
+      });
+    }
+  };
+
   this.getCertificationsFromSignatory = function (newcomer){
     var primaryUser = key.getPrimaryUser();
     var certifs = new PacketList();

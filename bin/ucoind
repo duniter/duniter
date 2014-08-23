@@ -222,81 +222,9 @@ function handleKey (server, key, isManaged, message) {
 }
 
 program
-  .command('gen-root [host] [port] [difficulty]')
-  .description('Tries to generate the root keyblock of the keychain using already received keys & memberships')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (host, port, difficulty, server, conf) {
-    var Membership = server.conn.model('Membership');
-    var KeychainService = server.KeychainService;
-    async.waterfall([
-      function (next){
-        if (!host || !port) {
-          next('usage: gen-root [host] [port]');
-          return;
-        }
-        Membership.find({ eligible: true }, next);
-      },
-      function (mss, next){
-        if (mss.length == 0) {
-          next('No membership was received, no changes to add.');
-          return;
-        }
-        var uids = [];
-        mss.forEach(function(ms){
-          uids.push(ms.userid);
-        });
-        if (mss.length > 0) {
-          inquirer.prompt([{
-            type: "checkbox",
-            name: "uids",
-            message: "Initial members of the Web of Trust",
-            choices: uids,
-            default: uids[0]
-          }], function (answers) {
-            next(null, answers.uids);
-          });
-        } else {
-          logger.info('No membership were found, trying to write an empty block');
-          next(null, []);
-        }
-      },
-      function (uids, next){
-        KeychainService.generateRoot(uids, next);
-      },
-      function (root, next){
-        var wiz = wizard(server);
-        async.waterfall([
-          function (next){
-            wiz.configOpenpgp(conf, next);
-          },
-          function (next){
-            wiz.configKey(conf, next);
-          },
-          function (next){
-            signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, next);
-          },
-          function (sigFunc, next){
-            proveAndSend(server, root, sigFunc, difficulty, host, port, next);
-          },
-        ], next);
-      },
-    ], function (err) {
-      if (err) {
-        logger.error(err);
-      }
-      server.disconnect();
-      process.exit();
-    });
-  }));
-
-program
   .command('gen-empty-next [host] [port] [difficulty]')
   .description('Tries to generate the next keyblock of the keychain without any changes')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateEmptyNext")));
-
-program
-  .command('gen-pulse [host] [port] [difficulty]')
-  .description('Tries to generate a pulse keyblock (#1), containing root signatures')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generatePulse")));
 
 program
   .command('gen-newcomers [host] [port] [difficulty]')

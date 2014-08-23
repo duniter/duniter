@@ -200,7 +200,7 @@ A keychange is a document describing changes to be applied  to a [Public key](#p
 
 Field                 | Data
 --------------------- | ------------------------------------------
-T                     | Type of change: either `F`,`N`,`U`,`L` or `B` for respectively `FOUNDER`,`NEWCOMER`,`UPDATE`,`LEAVER` and `BACK` meaning.
+T                     | Type of change: either `N`,`U`,`L` or `B` for respectively `NEWCOMER`,`UPDATE`,`LEAVER` and `BACK` meaning.
 KeyPackets            | OpenPGP key material field. Value is an OpenPGP packet list base64 encoded. Allowed packets are public key, user ID, self-certification, subkey and subkey binding packets.
 CertificationPackets  | OpenPGP key material field. Value is an OpenPGP packet list base64 encoded. Allowed packets are other keys' certification packets.
 Membership            | Field for writing [Membership](#membership) document data.
@@ -211,9 +211,6 @@ Depending the provided `T` type, fields have different format requirements. Belo
 
 Type        | Field                | Requirement
 ----------- | ---------------------|----------------------------
-`FOUNDER`   | KeyPackets           | Must contain a single public key, plus a single user ID and self-certification packet. May contain subkeys and subkey bindings.
-`FOUNDER`   | CertificationPackets | Must NOT be provided.
-`FOUNDER`   | Membership           | Must contain an `IN` membership with a `USER_ID` field matching exactly `KeyPackets` user ID.
 `NEWCOMER`  | KeyPackets           | Same rule as `FOUNDER`.
 `NEWCOMER`  | CertificationPackets | May contain any number of other keys' certification packets.
 `NEWCOMER`  | Membership           | Must contain an `IN` membership with a `USER_ID` field matching exactly `KeyPackets` user ID.
@@ -305,7 +302,7 @@ Each keyblock, other than the keyblock#0 must follow these rules:
   * previous block `MembersCount` + the sum of all `+` count minus the sum of all `-` count from `MembersChanges` of this keyblock
 * `FOUNDER` type can be present **only** for keyblock#0
 * For a given `PUBLIC_KEY_FINGERPRINT`:
-  * First keychange must be either `FOUNDER` or `NEWCOMER`
+  * First keychange must be `NEWCOMER`
   * `NEWCOMER` type can be present only 1 time and cannot follow a keychange
   * `UPDATE` type cannot follow `LEAVE` type and must follow a keychange
   * `LEAVE` type cannot follow `LEAVE` type and must follow a keychange

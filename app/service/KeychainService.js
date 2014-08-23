@@ -990,11 +990,78 @@ function KeyService (conn, conf, PublicKeyService) {
   };
 
   /**
-  * Generate the "pulse" keyblock: the #1 keyblock (following the root keyblock) avoiding WoT collapsing
+  this.generateNewcomers = function (done) {
+  * Generate a "newcomers" keyblock
   */
   this.generateNewcomers = function (done) {
+    var filteringFunc = function (preJoinData, next) {
+      var joinData = {};
+      var newcomers = _(preJoinData).keys();
+      var uids = [];
+      newcomers.forEach(function(newcomer){
+        uids.push(preJoinData[newcomer].ms.userid);
+      });
+      if (newcomers.length > 0) {
+        inquirer.prompt([{
+          type: "checkbox",
+          name: "uids",
+          message: "Newcomers to add",
+          choices: uids,
+          default: uids[0]
+        }], function (answers) {
+          newcomers.forEach(function(newcomer){
+            if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
+              joinData[newcomer] = preJoinData[newcomer];
+          });
+          if (answers.uids.length == 0)
+            next('No newcomer selected');
+          else
+            next(null, joinData);
+        });
+      } else {
+        next('No newcomer found');
+      }
+    };
+    var checkingWoTFunc = function (newcomers, checkWoTForNewcomers, done) {
+      checkWoTForNewcomers(newcomers, function (err) {
+        // If success, simply add all newcomers. Otherwise, stop everything.
+        done(err, newcomers);
+      });
+    };
+    KeychainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, done);
+  }
+
+  /**
+  this.generateNewcomers = function (done) {
+  * Generate a "newcomers" keyblock
+  */
+  this.generateNewcomersAuto = function (done) {
+    var filtering = function (preJoinData, next) {
+      // No manual filtering, takes all
+      next(null, preJoinData);
+    };
+    var checking = function (newcomers, checkWoTForNewcomers, done) {
+      var passingNewcomers = [];
+      async.forEachSeries(newcomers, function(newcomer, callback){
+        checkWoTForNewcomers(passingNewcomers.concat(newcomer), function (err) {
+          // If success, add this newcomer to the valid newcomers. Otherwise, reject him.
+          if (!err)
+            passingNewcomers.push(newcomer);
+          callback();
+        });
+      }, function(){
+        done(null, passingNewcomers);
+      });
+    }
+    KeychainService.generateNewcomersBlock(filtering, checking, done);
+  }
+
+  /**
+  * Generate a "newcomers" keyblock
+  */
+  this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, done) {
     // 1. See available keychanges
-    var members = [];
+    var wotMembers = [];
     var preJoinData = {};
     var joinData = {};
     var updates = {};
@@ -1049,111 +1116,129 @@ function KeyService (conn, conf, PublicKeyService) {
         }, next);
       },
       function (next){
-        var newcomers = _(preJoinData).keys();
-        var uids = [];
-        newcomers.forEach(function(newcomer){
-          uids.push(preJoinData[newcomer].ms.userid);
-        });
-        if (newcomers.length > 0) {
-          inquirer.prompt([{
-            type: "checkbox",
-            name: "uids",
-            message: "Newcomers to add",
-            choices: uids,
-            default: uids[0]
-          }], function (answers) {
-            newcomers.forEach(function(newcomer){
-              if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
-                joinData[newcomer] = preJoinData[newcomer];
-            });
-            if (answers.uids.length == 0)
-              next('No newcomer selected');
-            else
-              next();
-          });
-        } else {
-          next('No newcomer found');
-        }
+        filteringFunc(preJoinData, next);
       },
-      function (next) {
-        // Look for signatures from newcomers to the WoT
-        async.forEach(_(joinData).keys(), function(newcomer, searchedSignaturesOfTheWoT){
-          async.waterfall([
-            function (next){
-              Key.findWhereSignatory(newcomer, next);
-            },
-            function (keys, next){
-              async.forEach(keys, function(signedKey, extractedSignatures){
-                async.waterfall([
-                  function (next){
-                    async.parallel({
-                      trusted: function(callback){
-                        TrustedKey.getTheOne(signedKey.fingerprint, callback);
-                      },
-                      pubkey: function(callback){
-                        PublicKey.getTheOne(signedKey.fingerprint, callback);
-                      },
-                    }, next);
-                  },
-                  function (res, next){
-                    var key = keyhelper.fromArmored(res.pubkey.raw);
-                    var certifs = key.getCertificationsFromSignatory(newcomer);
-                    if (certifs.length > 0) {
-                      updates[res.pubkey.fingerprint] = certifs;
-                      certifs.forEach(function(){
-                        logger.debug('Found WoT certif %s --> %s', newcomer, res.pubkey.fingerprint);
-                      });
-                    }
-                    next();
-                  },
-                ], function () {
-                  extractedSignatures();
-                });
-              }, next);
-            },
-          ], searchedSignaturesOfTheWoT);
-        }, next);
-      },
-      function (next) {
+      function (filteredJoinData, next) {
+        joinData = filteredJoinData;
+        // Cache the members
         Key.getMembers(next);
       },
       function (membersKeys, next) {
-        // Concats the joining members
-        var members = [];
         membersKeys.forEach(function (mKey) {
-          members.push(mKey.fingerprint);
+          wotMembers.push(mKey.fingerprint);
         });
-        _(joinData).keys().forEach(function (fpr) {
-          members.push(fpr);
-        });
-        // Check WoT stability
-        var membersChanges = [];
-        var newLinks = {};
-        var error;
-        _(joinData).keys().forEach(function (fpr) {
-          membersChanges.push('+' + fpr);
-          newLinks[fpr] = [];
-          var certifs = joinData[fpr].key.getOtherCertifications();
-          certifs.forEach(function (certif) {
-            var issuer = certif.issuerKeyId.toHex().toUpperCase();
-            var matched = matchFingerprint(issuer, members);
-            if (matched)
-              newLinks[fpr].push(matched);
-            else
-              error = 'Unknown key ' + issuer + ': not a member nor a newcomer';
+        // Look for signatures from newcomers to the WoT
+        async.forEach(_(joinData).keys(), function(newcomer, searchedSignaturesOfTheWoT){
+          findSignaturesFromNewcomerToWoT(newcomer, function (err, signatures) {
+            _(signatures).keys().forEach(function(signedMember){
+              updates[signedMember] = (updates[signedMember] || new openpgp.packet.List());
+              updates[signedMember].concat(signatures[signedMember]);
+            });
+            searchedSignaturesOfTheWoT(err);
           });
-        });
-        next(error, newLinks, membersChanges);
-      },
-      function (newLinks, membersChanges, next) {
-        checkWoTStability({ number: current.number + 1, membersChanges: membersChanges }, newLinks, next);
+        }, next);
       },
       function (next) {
+        // Checking step
+        var newcomers = _(joinData).keys();
+        // Checking algo is defined by 'checkingWoTFunc'
+        checkingWoTFunc(newcomers, function (theNewcomers, onceChecked) {
+          var members = wotMembers.slice();
+          // Concats the joining members
+          theNewcomers.forEach(function (fpr) {
+            members.push(fpr);
+          });
+          // Check WoT stability
+          var membersChanges = [];
+          var newLinks = {};
+          var error;
+          // Cache new links from WoT => newcomer
+          theNewcomers.forEach(function (newcomer) {
+            membersChanges.push('+' + newcomer);
+            newLinks[newcomer] = [];
+            var certifs = joinData[newcomer].key.getOtherCertifications();
+            certifs.forEach(function (certif) {
+              var issuer = certif.issuerKeyId.toHex().toUpperCase();
+              var matched = matchFingerprint(issuer, members);
+              if (matched)
+                newLinks[newcomer].push(matched);
+              else
+                error = 'Unknown key ' + issuer + ': not a member nor a newcomer';
+            });
+            // Cache new links from newcomer => WoT
+            var newcomerKeyID = newcomer.substring(24);
+            _(updates).keys().forEach(function(signedFPR){
+              updates[signedFPR].forEach(function(certif){
+                if (certif.issuerKeyId.toHex().toUpperCase() == newcomerKeyID)
+                  newLinks[signedFPR] = (newLinks[signedFPR] || []);
+                newLinks[signedFPR].push(newcomer);
+              });
+            });
+          });
+          if (error)
+            onceChecked(error);
+          else
+            checkWoTStability({ number: current.number + 1, membersChanges: membersChanges }, newLinks, onceChecked);
+        }, next);
+      },
+      function (realNewcomers, next) {
+        var finalJoinData = {};
+        var initialNewcomers = _(joinData).keys();
+        var nonKept = _(initialNewcomers).difference(realNewcomers);
+        // Only keep membership of selected newcomers
+        realNewcomers.forEach(function(newcomer){
+          finalJoinData[newcomer] = joinData[newcomer];
+        });
+        // Only keep signatures of selected newcomers
+        _(updates).keys().forEach(function(signedFPR){
+          var keptCertifs = new openpgp.packet.List();
+          (updates[signedFPR] || new openpgp.packet.List()).forEach(function(certif){
+            var issuerKeyId = certif.issuerKeyId.toHex().toUpperCase();
+            var fingerprint = matchFingerprint(issuerKeyId, initialNewcomers);
+            if (fingerprint && ~realNewcomers.indexOf(fingerprint)) {
+              keptCertifs.push(certif);
+            }
+          });
+          updates[signedFPR] = keptCertifs;
+        });
         // Create the block
-        createNewcomerBlock(current, members, joinData, updates, next);
+        createNewcomerBlock(current, wotMembers.concat(realNewcomers), finalJoinData, updates, next);
       },
     ], done);
   };
+
+  function findSignaturesFromNewcomerToWoT (newcomer, done) {
+    var updates = {};
+    async.waterfall([
+      function (next){
+        Key.findMembersWhereSignatory(newcomer, next);
+      },
+      function (keys, next){
+        async.forEach(keys, function(signedKey, extractedSignatures){
+          async.waterfall([
+            function (next){
+              PublicKey.getTheOne(signedKey.fingerprint, next);
+            },
+            function (signedPubkey, next){
+              var key = keyhelper.fromArmored(signedPubkey.raw);
+              var certifs = key.getCertificationsFromSignatory(newcomer);
+              if (certifs.length > 0) {
+                updates[signedPubkey.fingerprint] = certifs;
+                certifs.forEach(function(){
+                  logger.debug('Found WoT certif %s --> %s', newcomer, signedPubkey.fingerprint);
+                });
+              }
+              next();
+            },
+          ], function () {
+            extractedSignatures();
+          });
+        }, function (err) {
+          next(err, updates);
+        });
+      },
+    ], done);
+  }
 
   function matchFingerprint (keyID, fingerprints) {
     var matched = "";
@@ -1199,13 +1284,15 @@ function KeyService (conn, conf, PublicKeyService) {
     });
     // Keychanges - updates: signatures from newcomers
     _(updates).keys().forEach(function(fpr){
-      block.keysChanges.push({
-        type: 'U',
-        fingerprint: fpr,
-        keypackets: '',
-        certpackets: base64.encode(updates[fpr].write()),
-        membership: {}
-      });
+      if (updates[fpr].length > 0) {
+        block.keysChanges.push({
+          type: 'U',
+          fingerprint: fpr,
+          keypackets: '',
+          certpackets: base64.encode(updates[fpr].write()),
+          membership: {}
+        });
+      }
     });
     done(null, block);
   }

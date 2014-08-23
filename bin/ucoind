@@ -304,6 +304,11 @@ program
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomers")));
 
 program
+  .command('gen-newcomers-auto [host] [port] [difficulty]')
+  .description('Tries to generate a newcomers (#2+) keyblock, containing only newcomers changes')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomersAuto")));
+
+program
   .command('compute-distances')
   .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {

@@ -247,6 +247,17 @@ program
     });
   }));
 
+program
+  .command('compute-certifications')
+  .description('Recompute available certifications for next blocks')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {
+    server.KeychainService.updateCertifications(function (err) {
+      if (err) logger.error(err);
+      server.disconnect();
+      process.exit();
+    });
+  }));
+
 function generateAndSend (generationMethod) {
   return function (host, port, difficulty, server, conf) {
     async.waterfall([

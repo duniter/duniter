@@ -646,15 +646,6 @@ function KeyService (conn, conf, PublicKeyService) {
     ], done);
   }
 
-  function saveKeyUpdates (block, done) {
-    async.forEach(block.keysChanges, function(kc, callback){
-      if (kc.type != 'L') {
-        PublicKeyService.updateAvailableKeyMaterial(kc.fingerprint, callback);
-      }
-      else callback();
-    }, done);
-  }
-
   function updateAvailableKeyMaterial (block, done) {
     async.forEach(block.keysChanges, function(kc, callback){
       if (kc.type != 'L') {
@@ -664,122 +655,24 @@ function KeyService (conn, conf, PublicKeyService) {
     }, done);
   }
 
+  this.updateCertifications = function (done) {
+    async.waterfall([
+      function (next){
+        Key.getMembers(next);
+      },
+      function (members, next){
+        async.forEachSeries(members, function(member, callback){
+          PublicKeyService.updateAvailableKeyMaterial(member.fingerprint, callback);
+        }, next);
+      },
+    ], done);
+  }
+
   this.current = function (done) {
     KeyBlock.current(function (err, kb) {
       done(err, kb || null);
     })
-  }
-
-  this.generateRoot = function (uids, done) {
-    var joinData = {};
-    var fingerprints = [];
-    if (uids.length == 0) {
-      done('Cannot create root block without members');
-      return;
-    }
-    async.waterfall([
-      function (next){
-        KeyBlock.current(function (err, current){
-          if (current) {
-            next('Root block already exists');
-            return;
-          }
-          else next();
-        });
-      },
-      function (next){
-        async.forEach(uids, function(uid, callback){
-          var join = { pubkey: null, ms: null };
-          async.waterfall([
-            function (next){
-              Membership.find({ userid: uid, eligible: true }, next);
-            },
-            function (mss, next){
-              if (mss.length == 0) {
-                next('Membership of ' + uid + ' not found');
-                return;
-              }
-              else if (mss.length > 1) {
-                next('Multiple memberships for same user found! Stopping.')
-                return;
-              }
-              else {
-                join.ms = mss[0];
-                fingerprints.push(join.ms.issuer);
-                async.parallel({
-                  pubkey: function(callback){
-                    PublicKey.getTheOne(join.ms.issuer, callback);
-                  },
-                  key: function(callback){
-                    Key.getTheOne(join.ms.issuer, callback);
-                  },
-                }, next);
-              }
-            },
-            function (res, next){
-              var pubk = res.pubkey;
-              join.pubkey = pubk;
-              if (!res.key.eligible) {
-                next('PublicKey of ' + uid + ' is not eligible');
-                return;
-              }
-              var key = keyhelper.fromArmored(pubk.raw);
-              // Just require a good udid2
-              if (!key.hasValidUdid2()) {
-                next('User ' + uid + ' does not have a valid udid2 userId');
-                return;
-              }
-              joinData[join.pubkey.fingerprint] = join;
-              next();
-            },
-          ], callback);
-        }, next);
-      },
-      function (next){
-        KeyBlock.current(function (err, current){
-          if (!current && uids.length == 0) {
-            next('Cannot create root block without members');
-            return;
-          }
-          else next();
-        });
-      },
-      function (next){
-        createRootBlock(joinData[fingerprints[0]].ms.currency, fingerprints, joinData, next);
-      },
-    ], done);
   };
-
-  function createRootBlock (currency, fingerprints, joinData, done) {
-    var block = new KeyBlock();
-    block.version = 1;
-    block.currency = currency;
-    block.number = 0;
-    // Members merkle
-    fingerprints.sort();
-    var tree = merkle(fingerprints, 'sha1').process();
-    block.membersCount = fingerprints.length;
-    block.membersRoot = tree.root();
-    block.membersChanges = [];
-    fingerprints.forEach(function(fpr){
-      block.membersChanges.push('+' + fpr);
-    });
-    // Keychanges
-    block.keysChanges = [];
-    _(joinData).values().forEach(function(join){
-      block.keysChanges.push({
-        type: 'F',
-        fingerprint: join.pubkey.fingerprint,
-        keypackets: base64.encode(join.pubkey.getWritablePacketsWithoutOtherCertifications().write()),
-        certpackets: '',
-        membership: {
-          membership: join.ms.inlineValue(),
-          signature: join.ms.inlineSignature()
-        }
-      });
-    });
-    done(null, block);
-  }
 
   this.generateEmptyNext = function (done) {
     var staying = [];

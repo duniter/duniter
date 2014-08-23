@@ -10,6 +10,7 @@ var parsers   = require('../lib/streams/parsers/doc');
 var keyhelper = require('../lib/keyhelper');
 var logger    = require('../lib/logger')('membership');
 var moment    = require('moment');
+var inquirer  = require('inquirer');
 
 module.exports.get = function (conn, conf, PublicKeyService) {
   return new KeyService(conn, conf, PublicKeyService);
@@ -994,6 +995,7 @@ function KeyService (conn, conf, PublicKeyService) {
   this.generateNewcomers = function (done) {
     // 1. See available keychanges
     var members = [];
+    var preJoinData = {};
     var joinData = {};
     var updates = {};
     var current;
@@ -1001,7 +1003,12 @@ function KeyService (conn, conf, PublicKeyService) {
       function (next) {
         KeyBlock.current(function (err, currentBlock) {
           current = currentBlock;
-          next(err && 'No root block: cannot generate pulse block');
+          if (!current)
+            next('No root block: cannot generate newcomer block');
+          else if (current.number == 0)
+            next('No pulse block: cannot generate newcomer block');
+          else
+            next();
         });
       },
       function (next){
@@ -1009,7 +1016,7 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (mss, next){
         async.forEach(mss, function(ms, callback){
-          var join = { pubkey: null, ms: ms };
+          var join = { pubkey: null, ms: ms, key: null };
           async.waterfall([
             function (next){
               async.parallel({
@@ -1029,16 +1036,44 @@ function KeyService (conn, conf, PublicKeyService) {
                 return;
               }
               var key = keyhelper.fromArmored(pubk.raw);
+              join.key = key;
               // Just require a good udid2
               if (!key.hasValidUdid2()) {
                 next('User ' + uid + ' does not have a valid udid2 userId');
                 return;
               }
-              joinData[join.pubkey.fingerprint] = join;
+              preJoinData[join.pubkey.fingerprint] = join;
               next();
             },
           ], callback);
         }, next);
+      },
+      function (next){
+        var newcomers = _(preJoinData).keys();
+        var uids = [];
+        newcomers.forEach(function(newcomer){
+          uids.push(preJoinData[newcomer].ms.userid);
+        });
+        if (newcomers.length > 0) {
+          inquirer.prompt([{
+            type: "checkbox",
+            name: "uids",
+            message: "Newcomers to add",
+            choices: uids,
+            default: uids[0]
+          }], function (answers) {
+            newcomers.forEach(function(newcomer){
+              if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
+                joinData[newcomer] = preJoinData[newcomer];
+            });
+            if (answers.uids.length == 0)
+              next('No newcomer selected');
+            else
+              next();
+          });
+        } else {
+          next('No newcomer found');
+        }
       },
       function (next) {
         // Look for signatures from newcomers to the WoT
@@ -1091,11 +1126,45 @@ function KeyService (conn, conf, PublicKeyService) {
         _(joinData).keys().forEach(function (fpr) {
           members.push(fpr);
         });
+        // Check WoT stability
+        var membersChanges = [];
+        var newLinks = {};
+        var error;
+        _(joinData).keys().forEach(function (fpr) {
+          membersChanges.push('+' + fpr);
+          newLinks[fpr] = [];
+          var certifs = joinData[fpr].key.getOtherCertifications();
+          certifs.forEach(function (certif) {
+            var issuer = certif.issuerKeyId.toHex().toUpperCase();
+            var matched = matchFingerprint(issuer, members);
+            if (matched)
+              newLinks[fpr].push(matched);
+            else
+              error = 'Unknown key ' + issuer + ': not a member nor a newcomer';
+          });
+        });
+        next(error, newLinks, membersChanges);
+      },
+      function (newLinks, membersChanges, next) {
+        checkWoTStability({ number: current.number + 1, membersChanges: membersChanges }, newLinks, next);
+      },
+      function (next) {
         // Create the block
         createNewcomerBlock(current, members, joinData, updates, next);
       },
     ], done);
   };
+
+  function matchFingerprint (keyID, fingerprints) {
+    var matched = "";
+    var i = 0;
+    while (!matched && i < fingerprints.length) {
+      if (fingerprints[i].match(new RegExp(keyID + '$')))
+        matched = fingerprints[i];
+      i++;
+    }
+    return matched;
+  }
 
   function createNewcomerBlock (current, members, joinData, updates, done) {
     var block = new KeyBlock();

@@ -1168,4 +1168,20 @@ function KeyService (conn, conf, PublicKeyService) {
         done(err, block);
       });
   };
+
+  this.showKeychain = function (done) {
+    async.waterfall([
+      function (next){
+        KeyBlock
+          .find({})
+          .sort({ number: 1 })
+          .exec(next);
+      },
+      function (blocks, next){
+        async.forEachSeries(blocks, function(block, callback){
+          block.display(callback);
+        }, next);
+      },
+    ], done);
+  }
 }

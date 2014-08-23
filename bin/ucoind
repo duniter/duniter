@@ -248,6 +248,17 @@ program
   }));
 
 program
+  .command('show-keychain')
+  .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {
+    server.KeychainService.showKeychain(function (err) {
+      if (err) logger.error(err);
+      server.disconnect();
+      process.exit();
+    });
+  }));
+
+program
   .command('compute-certifications')
   .description('Recompute available certifications for next blocks')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {

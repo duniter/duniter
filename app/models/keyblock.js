@@ -202,6 +202,20 @@ KeyBlockSchema.methods = {
       }
       done(null, ams[0]);
     });
+  },
+
+  display: function (done) {
+    console.log('------------------');
+    console.log('Block#%s', this.number);
+    console.log('Changes:');
+    this.keysChanges.forEach(function(kc){
+      console.log('>>> %s %s', kc.type, kc.fingerprint);
+      var certifs = keyhelper.toPacketlist(kc.certpackets);
+      certifs.forEach(function(certif){
+        console.log('>>> certified by 0x%s', certif.issuerKeyId.toHex().toUpperCase());
+      });
+    });
+    done();
   }
 };
 

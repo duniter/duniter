@@ -631,7 +631,7 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (members, next){
         // If a member is over 3 steps from the whole WoT, has to be kicked
-        async.forEach(members, function(key, callback){
+        async.forEachSeries(members, function(key, callback){
           var fpr = key.fingerprint;
           async.waterfall([
             function (next){

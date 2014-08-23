@@ -208,7 +208,7 @@ LinkSchema.statics.isOver3StepsOfAMember = function (key, members, done) {
         Link.find({ target: fpr, obsolete: false }, function (err, links) {
           dist1Links = [];
           links.forEach(function(lnk){
-            dist1Links.push(lnk.fingerprint);
+            dist1Links.push(lnk.source);
           });
           next(err);
         });
@@ -255,7 +255,7 @@ LinkSchema.statics.isOver3StepsOfAMember = function (key, members, done) {
               Link.find({ source: member, obsolete: false }, function (err, links) {
                 dist2Links = [];
                 links.forEach(function(lnk){
-                  dist2Links.push(lnk.fingerprint);
+                  dist2Links.push(lnk.target);
                 });
                 next(err);
               });

@@ -520,8 +520,7 @@ function KeyService (conn, conf, PublicKeyService) {
       function (next){
         // Save new pubkeys (from NEWCOMERS)
         var pubkeys = block.getNewPubkeys();
-        async.forEach(pubkeys, function(encodedPackets, callback){
-          var key = keyhelper.fromEncodedPackets(encodedPackets);
+        async.forEach(pubkeys, function(key, callback){
           var fpr = key.getFingerprint();
           var uid = key.getUserID();
           var kid = fpr.substring(24);
@@ -529,7 +528,7 @@ function KeyService (conn, conf, PublicKeyService) {
             fingerprint: fpr,
             keyID: kid,
             uid: uid,
-            packets: encodedPackets
+            packets: key.getEncodedPacketList()
           });
           async.parallel({
             trusted: function(callback){

@@ -75,8 +75,8 @@ KeyBlockSchema.methods = {
   getNewPubkeys: function() {
     var pubkeys = [];
     this.keysChanges.forEach(function(kc){
-      if (kc.type == 'F' || kc.type == 'N') {
-        pubkeys.push(kc.keypackets);
+      if (kc.type == 'N') {
+        pubkeys.push(keyhelper.fromEncodedSeparatedPackets(kc.keypackets, kc.certpackets));
       }
     });
     return pubkeys;

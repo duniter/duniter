@@ -32,6 +32,13 @@ module.exports = {
     return new KeyHelper(packets);
   },
 
+  fromEncodedSeparatedPackets: function (encodedKeyPackets, encodedOtherCertifications){
+    var key = this.fromDecodedPackets(base64.decode(encodedKeyPackets));
+    if (encodedOtherCertifications)
+      key.setOtherCertifications(this.toPacketlist(encodedOtherCertifications));
+    return key;
+  },
+
   toPacketlist: function (encodedPackets){
     var packets = new PacketList();
     packets.read(base64.decode(encodedPackets));

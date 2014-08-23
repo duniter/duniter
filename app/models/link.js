@@ -126,7 +126,7 @@ LinkSchema.statics.isStillOver3Steps = function (fpr, ofMembers, newLinks, done)
               _(newLinks).keys().forEach(function(signed){
                 (newLinks[signed] || []).forEach(function(signatories){
                   if (~signatories.indexOf(member)) {
-                    dist2links.push(signed);
+                    dist2Links.push(signed);
                   }
                 });
               });

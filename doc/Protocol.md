@@ -223,6 +223,9 @@ Type        | Field                | Requirement
 `BACK`      | KeyPackets           | May only contain subkeys and subkey bindings packets.
 `BACK`      | CertificationPackets | May contain any number of other keys' certification packets.
 `BACK`      | Membership           | Must contain an `IN` membership without `USER_ID` field.
+
+> **N.B.:** a field with an empty value MUST NOT be provided.
+
 ### Keyblock
 A Keyblock is a document gathering [keychanges](#keychange) in order to build a Web Of Trust (WoT) representation.
 

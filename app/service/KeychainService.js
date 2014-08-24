@@ -28,10 +28,11 @@ function KeyService (conn, conf, PublicKeyService) {
   var Key        = conn.model('Key');
 
   var MINIMUM_ZERO_START = 1;
-  var PROOF_OF_WORK_PERIOD = 1 // Value 1 allows for continuous single-member writing with minimum difficulty
+  var PROOF_OF_WORK_PERIOD = 1; // Value 1 allows for continuous single-member writing with minimum difficulty
   var LINK_QUANTITY_MIN = 1;
   var MAX_STEPS = 1;
   var MAX_LINK_VALIDITY = 3600*24*30; // 30 days
+  var MAX_TIMESTAMP_DELAY = 30; // in seconds
 
   this.load = function (done) {
     done();
@@ -103,6 +104,7 @@ function KeyService (conn, conf, PublicKeyService) {
   }
 
   this.submitKeyBlock = function (kb, done) {
+    var now = new Date();
     var block = new KeyBlock(kb);
     block.issuer = kb.pubkey.fingerprint;
     var currentBlock = null;
@@ -132,6 +134,11 @@ function KeyService (conn, conf, PublicKeyService) {
         }
         if (current && block.number == current.number + 1 && block.previousIssuer != current.issuer) {
           next('PreviousIssuer does not target current block');
+          return;
+        }
+        // Test timestamp
+        if (Math.abs(block.timestamp - now.utcZero().timestamp()) > MAX_TIMESTAMP_DELAY) {
+          next('Timestamp does not match this node\'s time');
           return;
         }
         // Check the challenge depending on issuer
@@ -1342,7 +1349,7 @@ function KeyService (conn, conf, PublicKeyService) {
     async.whilst(
       function(){ return !pow.match(powRegexp); },
       function (next) {
-        var newTS = new Date().timestamp();
+        var newTS = new Date().utcZero().timestamp();
         if (newTS == block.timestamp) {
           block.nonce++;
         } else {

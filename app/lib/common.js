@@ -42,6 +42,10 @@ String.prototype.hexstrdump = function() {
 };
 
 Date.prototype.utc = function(){
+  return new Date();
+};
+
+Date.prototype.utcZero = function(){
   return new Date(this.getTime() + this.getTimezoneOffset()*60*1000);
 };
 

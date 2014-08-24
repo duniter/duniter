@@ -228,17 +228,17 @@ program
 
 program
   .command('gen-updates [host] [port] [difficulty]')
-  .description('Tries to generate an update (#2+) keyblock, containing only update changes')
+  .description('Tries to generate an update (#1+) keyblock, containing only update changes')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateUpdates")));
 
 program
   .command('gen-newcomers [host] [port] [difficulty]')
-  .description('Tries to generate a newcomers (#2+) keyblock, containing only newcomers changes')
+  .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomers")));
 
 program
   .command('gen-newcomers-auto [host] [port] [difficulty]')
-  .description('Tries to generate a newcomers (#2+) keyblock, containing only newcomers changes')
+  .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomersAuto")));
 
 program

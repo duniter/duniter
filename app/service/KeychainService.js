@@ -756,6 +756,22 @@ function KeyService (conn, conf, PublicKeyService) {
   * Generate a "newcomers" keyblock
   */
   this.generateUpdates = function (done) {
+    async.waterfall([
+      function (next){
+        findUpdates(next);
+      },
+      function (updates, subupdates, next){
+        KeyBlock.current(function (err, current) {
+          next(null, current || null, updates, subupdates);
+        });
+      },
+      function (current, updates, subupdates, next){
+        createNewcomerBlock(current, null, {}, updates, subupdates, next);
+      },
+    ], done);
+  }
+
+  function findUpdates (done) {
     var updates = {};
     var subupdates = {};
     async.waterfall([
@@ -802,15 +818,9 @@ function KeyService (conn, conf, PublicKeyService) {
           ], callback);
         }, next);
       },
-      function (next){
-        KeyBlock.current(function (err, current) {
-          next(null, current || null);
-        });
-      },
-      function (current, next){
-        createNewcomerBlock(current, null, {}, updates, subupdates, next);
-      },
-    ], done);
+    ], function (err) {
+      done(err, updates, subupdates);
+    });
   }
 
   /**
@@ -860,39 +870,81 @@ function KeyService (conn, conf, PublicKeyService) {
   * Generate a "newcomers" keyblock
   */
   this.generateNewcomersAuto = function (done) {
-    var filtering = function (preJoinData, next) {
-      // No manual filtering, takes all
-      next(null, preJoinData);
-    };
-    var checking = function (newcomers, checkWoTForNewcomers, done) {
-      var passingNewcomers = [];
-      async.forEachSeries(newcomers, function(newcomer, callback){
-        checkWoTForNewcomers(passingNewcomers.concat(newcomer), function (err) {
-          // If success, add this newcomer to the valid newcomers. Otherwise, reject him.
-          if (!err)
-            passingNewcomers.push(newcomer);
-          callback();
-        });
-      }, function(){
-        console.log(passingNewcomers);
-        done(null, passingNewcomers);
-      });
-    }
-    KeychainService.generateNewcomersBlock(filtering, checking, done);
+    KeychainService.generateNewcomersBlock(noFiltering, iteratedChecking, done);
   }
+
+
+  function noFiltering(preJoinData, next) {
+    // No manual filtering, takes all
+    next(null, preJoinData);
+  }
+
+  function iteratedChecking(newcomers, checkWoTForNewcomers, done) {
+    var passingNewcomers = [];
+    async.forEachSeries(newcomers, function(newcomer, callback){
+      checkWoTForNewcomers(passingNewcomers.concat(newcomer), function (err) {
+        // If success, add this newcomer to the valid newcomers. Otherwise, reject him.
+        if (!err)
+          passingNewcomers.push(newcomer);
+        callback();
+      });
+    }, function(){
+      console.log(passingNewcomers);
+      done(null, passingNewcomers);
+    });
+  }
+
+  this.generateNext = function (done) {
+    KeychainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, done);
+  };
 
   /**
   * Generate a "newcomers" keyblock
   */
   this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, done) {
-    // 1. See available keychanges
+    var withoutUpdates = function(updates) { updates(null, {}, {}); };
+    KeychainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, done);
+  };
+
+  /**
+  * Generate next keyblock, gathering both updates & newcomers
+  */
+  this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
+    var updates = {};
+    var subupdates = {};
+    async.waterfall([
+      function (next) {
+        // First, check for members' key updates
+        findUpdateFunc(next);
+      },
+      function (theUpdates, theSubupdates, next) {
+        updates = theUpdates;
+        subupdates = theSubupdates;
+        findNewcomers(filteringFunc, checkingWoTFunc, next);
+      },
+      function (current, newWoT, joinData, otherUpdates, next){
+        // Merges updates
+        _(otherUpdates).keys().forEach(function(fpr){
+          if (!updates[fpr])
+            updates[fpr] = otherUpdates[fpr];
+          else
+            updates[fpr].concat(otherUpdates[fpr]);
+        });
+        // Create the block
+        createNewcomerBlock(current, newWoT, joinData, updates, subupdates, next);
+      },
+    ], done);
+  };
+
+  function findNewcomers (filteringFunc, checkingWoTFunc, done) {
     var wotMembers = [];
     var preJoinData = {};
     var joinData = {};
     var updates = {};
     var current;
     async.waterfall([
-      function (next) {
+      function (next){
+        // Second, check for newcomers
         KeyBlock.current(function (err, currentBlock) {
           current = currentBlock;
             next();
@@ -1009,11 +1061,11 @@ function KeyService (conn, conf, PublicKeyService) {
           });
           updates[signedFPR] = keptCertifs;
         });
-        // Create the block
-        createNewcomerBlock(current, wotMembers.concat(realNewcomers), finalJoinData, updates, {}, next);
-      },
+        // Send back the new WoT, the joining data and key updates for newcomers' signature of WoT
+        next(null, current, wotMembers.concat(realNewcomers), finalJoinData, updates);
+      }
     ], done);
-  };
+  }
 
   function computeNewLinks (theNewcomers, joinData, updates, members) {
     var newLinks = {};

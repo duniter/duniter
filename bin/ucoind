@@ -222,6 +222,11 @@ function handleKey (server, key, isManaged, message) {
 }
 
 program
+  .command('gen-next [host] [port] [difficulty]')
+  .description('Tries to generate the next keyblock of the keychain, with both updates & newcomers')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNext")));
+
+program
   .command('gen-empty-next [host] [port] [difficulty]')
   .description('Tries to generate the next keyblock of the keychain without any changes')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateEmptyNext")));

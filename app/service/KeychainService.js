@@ -937,7 +937,6 @@ function KeyService (conn, conf, PublicKeyService) {
         callback();
       });
     }, function(){
-      console.log(passingNewcomers);
       done(null, passingNewcomers);
     });
   }

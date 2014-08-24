@@ -531,16 +531,32 @@ function KeyService (conn, conf, PublicKeyService) {
               key.distanced.forEach(function(m){
                 remainingKeys.push(m);
               });
-              Link.isStillOver3Steps(key.fingerprint, remainingKeys, newLinks, next);
+              async.parallel({
+                outdistanced: function(callback){
+                  Link.isStillOver3Steps(key.fingerprint, remainingKeys, newLinks, next);
+                },
+                enoughLinks: function(callback){
+                  checkHaveEnoughLinks(key.fingerprint, newLinks, function (err) {
+                    callback(null, err);
+                  });
+                },
+              }, next);
             },
-            function (outdistanced, next) {
+            function (res, next) {
+              var outdistanced = res.outdistanced;
+              var enoughLinksErr = res.enoughLinks;
               var isStill = outdistanced.length > 0;
-              if (isStill && membersChanges.indexOf('-' + key.fingerprint) == -1) {
+              var isBeingKicked = membersChanges.indexOf('-' + key.fingerprint);
+              if (isStill && isBeingKicked == -1) {
                 next('Member ' + key.fingerprint + ' has to lose his member status. Wrong block.');
                 return;
               }
-              if (!isStill && ~membersChanges.indexOf('-' + key.fingerprint)) {
+              if (!isStill && ~isBeingKicked) {
                 next('Member ' + key.fingerprint + ' is no more outdistanced and should not be kicked. Wrong block.');
+                return;
+              }
+              if (enoughLinksErr && isBeingKicked == -1) {
+                next(enoughLinksErr);
                 return;
               }
               // Fine
@@ -716,10 +732,21 @@ function KeyService (conn, conf, PublicKeyService) {
           var fpr = key.fingerprint;
           async.waterfall([
             function (next){
-              Link.isOver3StepsOfAMember(key, members, next);
+              async.parallel({
+                outdistanced: function(callback){
+                  Link.isOver3StepsOfAMember(key, members, next);
+                },
+                enoughLinks: function(callback){
+                  checkHaveEnoughLinks(key.fingerprint, {}, function (err) {
+                    callback(null, err);
+                  });
+                },
+              }, next);
             },
-            function (distancedKeys, next){
-              Key.setKicked(fpr, distancedKeys, next);
+            function (res, next){
+              var distancedKeys = res.outdistanced;
+              var notEnoughLinks = res.enoughLinks;
+              Key.setKicked(fpr, distancedKeys, notEnoughLinks ? true : false, next);
             },
           ], callback);
         }, next);

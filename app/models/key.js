@@ -143,9 +143,9 @@ KeySchema.statics.removeMember = function(fingerprint, done){
   });
 };
 
-KeySchema.statics.setKicked = function(fingerprint, distancedKeys, done){
+KeySchema.statics.setKicked = function(fingerprint, distancedKeys, notEnoughLinks, done){
   var Key = this.model('Key');
-  Key.update({ fingerprint: fingerprint }, { kick: distancedKeys.length > 0, distanced: distancedKeys }, function (err) {
+  Key.update({ fingerprint: fingerprint }, { kick: (distancedKeys.length > 0 || notEnoughLinks), distanced: distancedKeys }, function (err) {
     done(err);
   });
 };

@@ -770,10 +770,13 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
     NB_ZEROS = MAX [ powZeroMin ; powZeroMin + lastBlockPenality - nbWaitedPeriods ]
 
 Where:
-* `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`. If no block has been written by the member, `[lastBlockPenality] = 0`.
+* `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`, plus `1`. If no block has been written by the member, `[lastBlockPenality] = 0`.
 * `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member, divided by `[powPeriod]`.
 
 > Those 2 rules, and notably the second, ensures a shared control of the keychain writing
+
+#### Block timestamp
+A node SHOULD NOT accept a new block if `Timestamp` field does not match local machine time, more or less an arbitrary delay. UCP suggests a `[-30 ; +30]` seconds interval, but any other value may be chosen.
 
 ### Status
 The network needs to be able to discover new peers inside it and eventually know their state to efficiently send data to them. For that purpose [Status](./#status) messages are used to introduce nodes to each other and keep a bilateral state of the connection.

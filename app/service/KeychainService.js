@@ -138,6 +138,10 @@ function KeyService (conn, conf, PublicKeyService) {
       },
       function (next) {
         // Check document's coherence
+        checkIssuer(block, next);
+      },
+      function (next) {
+        // Check document's coherence
         checkCoherence(block, next);
       },
       function (newLinks, next) {
@@ -148,6 +152,29 @@ function KeyService (conn, conf, PublicKeyService) {
       done(err, block);
     });
   };
+
+  function checkIssuer (block, done) {
+    async.waterfall([
+      function (next){
+        Key.isMember(block.issuer, next);
+      },
+      function (isMember, next){
+        if (isMember)
+          next();
+        else {
+          if (block.number == 0) {
+            if (~block.membersChanges.indexOf('+' + block.issuer)) {
+              next();
+            } else {
+              next('Keyblock not signed by the root members');
+            }
+          } else {
+            next('Keyblock must be signed by an existing member');
+          }
+        }
+      },
+    ], done);
+  }
 
   function checkCoherence (block, done) {
     var newLinks = {};
@@ -330,8 +357,8 @@ function KeyService (conn, conf, PublicKeyService) {
         // TODO: check subkeys?
 
         // Check certifications
-        kc.certifiers = [];
         async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback){
+          kc.certifiers = [];
           async.waterfall([
             function (next){
               checkCertificationOfKey(certif, kc.fingerprint, newKeys, next);

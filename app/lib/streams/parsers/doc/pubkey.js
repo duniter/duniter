@@ -21,6 +21,7 @@ function PubkeyParser (onError) {
     obj.raw = dosStr;
     obj.hash = sha1(dosStr).toUpperCase();
     var k = jpgp().certificate(obj.raw);
+    if (!k.key) return;
     // Extract udid2
     obj.udid2s = getSignedUdid2s(k.key);
     if (obj.udid2s.length) {
@@ -63,6 +64,9 @@ function PubkeyParser (onError) {
   this._verify = function (obj) {
     if (!obj.fingerprint) {
       return "Data does not seem to be a key";
+    }
+    if (!obj.udid2s) {
+      return "Cannot extract udid2";
     }
   };
 }

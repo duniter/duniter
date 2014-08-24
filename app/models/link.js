@@ -33,7 +33,7 @@ LinkSchema.statics.currentValidLinks = function (fpr, done) {
 **/
 LinkSchema.statics.obsoletes = function (minTimestamp, done) {
   var Link = this.model('Link');
-  Link.update({ timestamp: { $lte: minTimestamp } }, { obsolete: true }, function (err) {
+  Link.update({ timestamp: { $lte: minTimestamp } }, { obsolete: true }, { multi: true }, function (err) {
     done(err);
   });
 }
@@ -43,7 +43,7 @@ LinkSchema.statics.obsoletes = function (minTimestamp, done) {
 **/
 LinkSchema.statics.unobsoletesAllLinks = function (done) {
   var Link = this.model('Link');
-  Link.update({}, { obsolete: false }, function (err) {
+  Link.update({}, { obsolete: false }, { multi: true }, function (err) {
     done(err);
   });
 }

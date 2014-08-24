@@ -131,35 +131,35 @@ KeySchema.statics.findMembersWithUpdates = function(done){
 
 KeySchema.statics.addMember = function(fingerprint, done){
   var Key = this.model('Key');
-  Key.update({ fingerprint: fingerprint }, { member: true }, function (err) {
+  Key.update({ fingerprint: fingerprint }, { member: true }, { multi: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.removeMember = function(fingerprint, done){
   var Key = this.model('Key');
-  Key.update({ fingerprint: fingerprint }, { member: false }, function (err) {
+  Key.update({ fingerprint: fingerprint }, { member: false }, { multi: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.setKicked = function(fingerprint, distancedKeys, notEnoughLinks, done){
   var Key = this.model('Key');
-  Key.update({ fingerprint: fingerprint }, { kick: (distancedKeys.length > 0 || notEnoughLinks), distanced: distancedKeys }, function (err) {
+  Key.update({ fingerprint: fingerprint }, { kick: (distancedKeys.length > 0 || notEnoughLinks), distanced: distancedKeys }, { multi: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.unsetKicked = function(fingerprint, done){
   var Key = this.model('Key');
-  Key.update({ fingerprint: fingerprint }, { kick: false }, function (err) {
+  Key.update({ fingerprint: fingerprint }, { kick: false }, { multi: true }, function (err) {
     done(err);
   });
 };
 
 KeySchema.statics.undistanceEveryKey = function(done){
   var Key = this.model('Key');
-  Key.update({}, { kick: false, distanced: [] }, function (err) {
+  Key.update({}, { kick: false, distanced: [] }, { multi: true }, function (err) {
     done(err);
   });
 };

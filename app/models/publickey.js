@@ -128,6 +128,23 @@ PublicKeySchema.methods = {
       if (hashedCertifs[md5hash]) {
         var decoded = base64.decode(hashedCertifs[md5hash]);
         var otherList = new openpgp.packet.List();
+        // Should read a 1 packet list (signature)
+        otherList.read(decoded);
+        packets.concat(otherList);
+      }
+    });
+    return packets;
+  },
+
+  getSubkeysFromMD5List: function (md5array){
+    var packets = new openpgp.packet.List();
+    var key = keyhelper.fromArmored(this.raw);
+    var hashedSubkeys = key.getHashedSubkeyPackets();
+    md5array.forEach(function(md5hash){
+      if (hashedSubkeys[md5hash]) {
+        var decoded = base64.decode(hashedSubkeys[md5hash]);
+        var otherList = new openpgp.packet.List();
+        // Should read a 2 packets list (subkey + binding signature)
         otherList.read(decoded);
         packets.concat(otherList);
       }

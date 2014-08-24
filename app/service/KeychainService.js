@@ -267,8 +267,8 @@ function KeyService (conn, conf, PublicKeyService) {
         async.parallel({
           certifications: function(callback){
             // Check certifications
+            kc.certifiers = [];
             async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback2){
-              kc.certifiers = [];
               async.waterfall([
                 function (next){
                   checkCertificationOfKey(certif, kc.fingerprint, newKeys, next);
@@ -330,8 +330,8 @@ function KeyService (conn, conf, PublicKeyService) {
         // TODO: check subkeys?
 
         // Check certifications
+        kc.certifiers = [];
         async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback){
-          kc.certifiers = [];
           async.waterfall([
             function (next){
               checkCertificationOfKey(certif, kc.fingerprint, newKeys, next);
@@ -726,6 +726,67 @@ function KeyService (conn, conf, PublicKeyService) {
   }
 
   /**
+  * Generate a "newcomers" keyblock
+  */
+  this.generateUpdates = function (done) {
+    var updates = {};
+    var subupdates = {};
+    async.waterfall([
+      function (next){
+        Key.findMembersWithUpdates(next);
+      },
+      function (members, next){
+        async.forEachSeries(members, function(member, callback){
+          var fpr = member.fingerprint;
+          async.waterfall([
+            function (next){
+              PublicKey.getTheOne(fpr, next);
+            },
+            function (pubkey, next){
+              var key = pubkey.getKey();
+              var finalPackets = new openpgp.packet.List();
+              var certifs = pubkey.getCertificationsFromMD5List(member.certifs);
+              var subkeys = pubkey.getSubkeysFromMD5List(member.subkeys);
+              if (subkeys.length > 0) {
+                subupdates[fpr] = subkeys;
+              }
+              async.forEachSeries(certifs, function(certif, callback){
+                var issuerKeyId = certif.issuerKeyId.toHex().toUpperCase();
+                async.waterfall([
+                  function (next){
+                    TrustedKey.getTheOne(issuerKeyId, next);
+                  },
+                  function (trusted, next){
+                    // Issuer is a member
+                    finalPackets.push(certif);
+                    next();
+                  },
+                ], function (err) {
+                  // Issuer is not a member
+                  callback();
+                });
+              }, function(err){
+                if (finalPackets.length > 0) {
+                  updates[fpr] = finalPackets;
+                }
+                next();
+              });
+            },
+          ], callback);
+        }, next);
+      },
+      function (next){
+        KeyBlock.current(function (err, current) {
+          next(null, current || null);
+        });
+      },
+      function (current, next){
+        createNewcomerBlock(current, null, {}, updates, subupdates, next);
+      },
+    ], done);
+  }
+
+  /**
   this.generateNewcomers = function (done) {
   * Generate a "newcomers" keyblock
   */
@@ -922,7 +983,7 @@ function KeyService (conn, conf, PublicKeyService) {
           updates[signedFPR] = keptCertifs;
         });
         // Create the block
-        createNewcomerBlock(current, wotMembers.concat(realNewcomers), finalJoinData, updates, next);
+        createNewcomerBlock(current, wotMembers.concat(realNewcomers), finalJoinData, updates, {}, next);
       },
     ], done);
   };
@@ -997,7 +1058,7 @@ function KeyService (conn, conf, PublicKeyService) {
     return matched;
   }
 
-  function createNewcomerBlock (current, members, joinData, updates, done) {
+  function createNewcomerBlock (current, members, joinData, updates, subupdates, done) {
     var block = new KeyBlock();
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
@@ -1005,14 +1066,24 @@ function KeyService (conn, conf, PublicKeyService) {
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
     // Members merkle
-    members.sort();
-    var tree = merkle(members, 'sha1').process();
-    block.membersCount = members.length;
-    block.membersRoot = tree.root();
-    block.membersChanges = [];
-    _(joinData).keys().forEach(function(fpr){
-      block.membersChanges.push('+' + fpr);
-    });
+    if (members) {
+      members.sort();
+      var tree = merkle(members, 'sha1').process();
+      block.membersCount = members.length;
+      block.membersRoot = tree.root();
+      block.membersChanges = [];
+      _(joinData).keys().forEach(function(fpr){
+        block.membersChanges.push('+' + fpr);
+      });
+    } else if (!members && current) {
+      // No members changes
+      block.membersCount = current.membersCount;
+      block.membersRoot = current.membersRoot;
+      block.membersChanges = [];
+    } else {
+      done('Wrong new block: cannot make a root block without members');
+      return;
+    }
     // Keychanges - newcomers
     block.keysChanges = [];
     _(joinData).values().forEach(function(join){
@@ -1029,13 +1100,16 @@ function KeyService (conn, conf, PublicKeyService) {
       });
     });
     // Keychanges - updates: signatures from newcomers
-    _(updates).keys().forEach(function(fpr){
-      if (updates[fpr].length > 0) {
+    var updateKeys = _(updates).keys();
+    var subkeyKeys = _(subupdates).keys();
+    var allUpdates = _(updateKeys.concat(subkeyKeys)).uniq();
+    allUpdates.forEach(function(fpr){
+      if ((updates[fpr] && updates[fpr].length > 0) || (subupdates[fpr] && subupdates[fpr].length > 0)) {
         block.keysChanges.push({
           type: 'U',
           fingerprint: fpr,
-          keypackets: '',
-          certpackets: base64.encode(updates[fpr].write()),
+          keypackets: subupdates[fpr] ? base64.encode(subupdates[fpr].write()) : '',
+          certpackets: updates[fpr] ? base64.encode(updates[fpr].write()) : '',
           membership: {}
         });
       }

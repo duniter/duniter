@@ -124,6 +124,11 @@ KeySchema.statics.findMembersWhereSignatory = function(signatory, done){
   Key.find({ member: true, signatories: new RegExp(signatory.substring(24) + '$') }, done);
 };
 
+KeySchema.statics.findMembersWithUpdates = function(done){
+  var Key = this.model('Key');
+  Key.find({ member: true, $or: [ {signatories: { $not: { $size: 0 }}}, { subkeys: { $not: { $size: 0 }}}] }, done);
+};
+
 KeySchema.statics.addMember = function(fingerprint, done){
   var Key = this.model('Key');
   Key.update({ fingerprint: fingerprint }, { member: true }, function (err) {

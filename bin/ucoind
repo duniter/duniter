@@ -227,6 +227,11 @@ program
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateEmptyNext")));
 
 program
+  .command('gen-updates [host] [port] [difficulty]')
+  .description('Tries to generate an update (#2+) keyblock, containing only update changes')
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateUpdates")));
+
+program
   .command('gen-newcomers [host] [port] [difficulty]')
   .description('Tries to generate a newcomers (#2+) keyblock, containing only newcomers changes')
   .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomers")));

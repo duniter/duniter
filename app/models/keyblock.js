@@ -236,6 +236,16 @@ KeyBlockSchema.statics.nextNumber = function (done) {
   });
 };
 
+KeyBlockSchema.statics.lastOfIssuer = function (issuer, done) {
+  this
+    .find({ issuer: issuer })
+    .sort({ 'number': -1 })
+    .limit(1)
+    .exec(function (err, blocks) {
+      done(err, (blocks && blocks.length == 1) ? blocks[0] : null);
+  });
+};
+
 KeyBlockSchema.statics.current = function (done) {
 
   this.find({}).sort({ number: -1 }).limit(1).exec(function (err, blocks) {

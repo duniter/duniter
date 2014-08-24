@@ -27,7 +27,8 @@ function KeyService (conn, conf, PublicKeyService) {
   var Link       = conn.model('Link');
   var Key        = conn.model('Key');
 
-  var MINIMUM_ZERO_START = 0;
+  var MINIMUM_ZERO_START = 1;
+  var PROOF_OF_WORK_PERIOD = 1 // Value 1 allows for continuous single-member writing with minimum difficulty
   var LINK_QUANTITY_MIN = 1;
   var MAX_STEPS = 1;
   var MAX_LINK_VALIDITY = 3600*24*30; // 30 days
@@ -478,8 +479,35 @@ function KeyService (conn, conf, PublicKeyService) {
     var powRegexp = new RegExp('^0{' + MINIMUM_ZERO_START + '}');
     if (!block.hash.match(powRegexp))
       done('Not a proof-of-work');
-    else
-      done();
+    else {
+      // Compute exactly how much zeros are required for this block's issuer
+      var lastBlockPenality = 0;
+      var nbWaitedPeriods = 0;
+      async.waterfall([
+        function (next){
+          KeyBlock.lastOfIssuer(block.issuer, next);
+        },
+        function (last, next){
+          if (last) {
+            var leadingZeros = last.hash.match(/^0+/)[0];
+            lastBlockPenality = leadingZeros.length - MINIMUM_ZERO_START + 1;
+            nbWaitedPeriods = Math.floor((block.number - last.number) / PROOF_OF_WORK_PERIOD);
+            next();
+          } else {
+            next();
+          }
+        },
+        function (next){
+          var nbZeros = Math.max(MINIMUM_ZERO_START, MINIMUM_ZERO_START + lastBlockPenality - nbWaitedPeriods);
+          var powRegexp = new RegExp('^0{' + nbZeros + ',}');
+          if (!block.hash.match(powRegexp))
+            next('Wrong proof-of-work level: given ' + block.hash.match(/^0+/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
+          else {
+            next();
+          }
+        },
+      ], done);
+    }
   }
 
   function checkKicked (block, newLinks, done) {

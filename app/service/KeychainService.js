@@ -734,7 +734,7 @@ function KeyService (conn, conf, PublicKeyService) {
             function (next){
               async.parallel({
                 outdistanced: function(callback){
-                  Link.isOver3StepsOfAMember(key, members, next);
+                  Link.isOver3StepsOfAMember(key, members, callback);
                 },
                 enoughLinks: function(callback){
                   checkHaveEnoughLinks(key.fingerprint, {}, function (err) {

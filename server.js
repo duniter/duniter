@@ -168,7 +168,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           'links',
           'keys',
           'keyblocks',
-          'ckeys',
           'merkles',
           'peers',
           'publickeys',

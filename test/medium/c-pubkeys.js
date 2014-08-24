@@ -12,6 +12,8 @@ var test      = require('./../tool/test');
 var ucoin     = require('./../..');
 var logger    = require('../../app/lib/logger')('test');
 
+require('log4js').configure({});
+
 var currency = "testo";
 var tester    = is = on = new test.tester(currency);
 

@@ -324,8 +324,7 @@ function proveAndSend (server, block, sigFunc, difficulty, host, port, done) {
       var peer = new Peer({
         endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
       });
-      console.log(block.getRaw());
-      // console.log(block.signature);
+      logger.info('Posted block ' + block.quickDescription());
       multicaster().sendKeyblock(peer, block, next);
     },
   ], done);

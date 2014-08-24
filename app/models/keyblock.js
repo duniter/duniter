@@ -216,6 +216,16 @@ KeyBlockSchema.methods = {
       });
     });
     done();
+  },
+
+  quickDescription: function () {
+    var desc = '#' + this.number + ' (';
+    var counts = { 'N': 0, 'U': 0, 'L': 0, 'B': 0 };
+    this.keysChanges.forEach(function(kc){
+      counts[kc.type]++;
+    });
+    desc += counts.N + ' newcomers, ' + counts.U + ' updates)';
+    return desc;
   }
 };
 

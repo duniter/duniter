@@ -23,6 +23,14 @@ LinkSchema.methods = {
 /**
 * Mark as obsolete the links with an age equal to or below a given date
 **/
+LinkSchema.statics.currentValidLinks = function (fpr, done) {
+  var Link = this.model('Link');
+  Link.find({ target: fpr, obsolete: false }, done);
+}
+
+/**
+* Mark as obsolete the links with an age equal to or below a given date
+**/
 LinkSchema.statics.obsoletes = function (minTimestamp, done) {
   var Link = this.model('Link');
   Link.update({ timestamp: { $lte: minTimestamp } }, { obsolete: true }, function (err) {

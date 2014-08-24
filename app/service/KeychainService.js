@@ -407,6 +407,12 @@ function KeyService (conn, conf, PublicKeyService) {
           async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
             async.waterfall([
               function (next) {
+                if (block.number > 0)
+                  checkHaveEnoughLinks(newcomer, newLinks, next);
+                else
+                  next();
+              },
+              function (next) {
                 // Check the newcomer IS RECOGNIZED BY the WoT + other newcomers
                 // (check we have a path WoT => newcomer)
                 Link.isOver3StepsOfAMember(newcomer, members, next);
@@ -452,6 +458,20 @@ function KeyService (conn, conf, PublicKeyService) {
         }
       ], done);
     }
+  }
+
+  function checkHaveEnoughLinks(target, newLinks, done) {
+    async.waterfall([
+      function (next){
+        Link.currentValidLinks(target, next);
+      },
+      function (links, next){
+        var count = links.length;
+        if (newLinks[target] && newLinks[target].length)
+          count += newLinks[target].length;
+        next(count < LINK_QUANTITY_MIN && 'Key ' + target.substring(24) + ' does not have enough links (' + count + '/' + LINK_QUANTITY_MIN + ')');
+      },
+    ], done);
   }
 
   function checkProofOfWork (block, done) {

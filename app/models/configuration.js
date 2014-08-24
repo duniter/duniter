@@ -18,6 +18,14 @@ var ConfigurationSchema = new Schema({
   kmanagement: {"type": String, "default": "ALL"},
   kaccept:     {"type": String, "default": "ALL"},
   upInterval:  {"type": Number, "default": 3600*1000},
+  sigDelay:    {"type": Number, "default": 3600*24*365*5}, // 5 years by default
+  sigValidity: {"type": Number, "default": 3600*24*365}, // 1 year by default
+  sigQty:      {"type": Number, "default": 5},
+  powZeroMin:  {"type": Number, "default": 4},
+  powPeriod:   {"type": Number, "default": 1},
+  powPeriodC:  {"type": Boolean, "default": true}, // Default using Constant value '1'
+  participate: {"type": Boolean, "default": true}, // Participate to writing the keychain
+  tsInterval:  {"type": Number, "default": 30},
 });
 
 ConfigurationSchema.virtual('createNext').get(function () {

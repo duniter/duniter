@@ -27,13 +27,6 @@ function KeyService (conn, conf, PublicKeyService) {
   var Link       = conn.model('Link');
   var Key        = conn.model('Key');
 
-  var MINIMUM_ZERO_START = 1;
-  var PROOF_OF_WORK_PERIOD = 1; // Value 1 allows for continuous single-member writing with minimum difficulty
-  var LINK_QUANTITY_MIN = 1;
-  var MAX_STEPS = 1;
-  var MAX_LINK_VALIDITY = 3600*24*30; // 30 days
-  var MAX_TIMESTAMP_DELAY = 30; // in seconds
-
   this.load = function (done) {
     done();
   };
@@ -137,7 +130,7 @@ function KeyService (conn, conf, PublicKeyService) {
           return;
         }
         // Test timestamp
-        if (Math.abs(block.timestamp - now.utcZero().timestamp()) > MAX_TIMESTAMP_DELAY) {
+        if (Math.abs(block.timestamp - now.utcZero().timestamp()) > conf.tsInterval) {
           next('Timestamp does not match this node\'s time');
           return;
         }
@@ -477,13 +470,13 @@ function KeyService (conn, conf, PublicKeyService) {
         var count = links.length;
         if (newLinks[target] && newLinks[target].length)
           count += newLinks[target].length;
-        next(count < LINK_QUANTITY_MIN && 'Key ' + target.substring(24) + ' does not have enough links (' + count + '/' + LINK_QUANTITY_MIN + ')');
+        next(count < conf.sigQty && 'Key ' + target.substring(24) + ' does not have enough links (' + count + '/' + conf.sigQty + ')');
       },
     ], done);
   }
 
   function checkProofOfWork (block, done) {
-    var powRegexp = new RegExp('^0{' + MINIMUM_ZERO_START + '}');
+    var powRegexp = new RegExp('^0{' + conf.powZeroMin + '}');
     if (!block.hash.match(powRegexp))
       done('Not a proof-of-work');
     else {
@@ -497,15 +490,17 @@ function KeyService (conn, conf, PublicKeyService) {
         function (last, next){
           if (last) {
             var leadingZeros = last.hash.match(/^0+/)[0];
-            lastBlockPenality = leadingZeros.length - MINIMUM_ZERO_START + 1;
-            nbWaitedPeriods = Math.floor((block.number - last.number) / PROOF_OF_WORK_PERIOD);
+            lastBlockPenality = leadingZeros.length - conf.powZeroMin + 1;
+            var powPeriodIsContant = conf.powPeriodC;
+            var nbPeriodsToWait = (powPeriodIsContant ? conf.powPeriod : Math.floor(conf.powPeriod/100*block.membersCount));
+            nbWaitedPeriods = Math.floor((block.number - last.number) / nbPeriodsToWait);
             next();
           } else {
             next();
           }
         },
         function (next){
-          var nbZeros = Math.max(MINIMUM_ZERO_START, MINIMUM_ZERO_START + lastBlockPenality - nbWaitedPeriods);
+          var nbZeros = Math.max(conf.powZeroMin, conf.powZeroMin + lastBlockPenality - nbWaitedPeriods);
           var powRegexp = new RegExp('^0{' + nbZeros + ',}');
           if (!block.hash.match(powRegexp))
             next('Wrong proof-of-work level: given ' + block.hash.match(/^0+/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
@@ -721,7 +716,7 @@ function KeyService (conn, conf, PublicKeyService) {
   function computeObsoleteLinks (block, done) {
     async.waterfall([
       function (next){
-        Link.obsoletes(block.timestamp - MAX_LINK_VALIDITY, next);
+        Link.obsoletes(block.timestamp - conf.sigValidity, next);
       },
       function (next){
         Key.getMembers(next);

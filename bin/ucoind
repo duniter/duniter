@@ -27,22 +27,29 @@ var DO_NOT_LISTEN_HTTP = false;
 program
   .version('0.6.1')
   .usage('<command> [options]')
-  .option('-p, --port <port>', 'Port to listen for requests', parseInt)
-  .option('-c, --currency <name>', 'Name of the currency managed by this node.')
-  .option('--mhost <host>', 'MongoDB host.')
-  .option('--mport <port>', 'MongoDB port.')
-  .option('-d, --mdb <name>', 'MongoDB database name (defaults to "ucoin_default").')
-  .option('--pgpkey <keyPath>', 'Path to the private key used for signing HTTP responses.')
-  .option('--pgppasswd <password>', 'Password for the key provided with --httpgp-key option.')
-  .option('--ipv4 <address>', 'IPV4 interface to listen for requests')
-  .option('--ipv6 <address>', 'IPV6 interface to listen for requests')
-  .option('--remoteh <host>', 'Remote interface others may use to contact this node')
-  .option('--remote4 <host>', 'Remote interface for IPv4 access')
-  .option('--remote6 <host>', 'Remote interface for IPv6 access')
-  .option('--remotep <port>', 'Remote port others may use to contact this node')
-  .option('--kmanagement <ALL|KEYS>', 'Define key management policy')
-  .option('--kaccept <ALL|KEYS>', 'Define key acceptance policy')
-  .option('--openpgpjs', 'Prefer using embedded Openpgpjs implementation for signing requests')
+  .option('-p, --port <port>',         'Port to listen for requests', parseInt)
+  .option('-c, --currency <name>',     'Name of the currency managed by this node.')
+  .option('--mhost <host>',            'MongoDB host.')
+  .option('--mport <port>',            'MongoDB port.')
+  .option('-d, --mdb <name>',          'MongoDB database name (defaults to "ucoin_default").')
+  .option('--pgpkey <keyPath>',        'Path to the private key used for signing HTTP responses.')
+  .option('--pgppasswd <password>',    'Password for the key provided with --httpgp-key option.')
+  .option('--ipv4 <address>',          'IPV4 interface to listen for requests')
+  .option('--ipv6 <address>',          'IPV6 interface to listen for requests')
+  .option('--remoteh <host>',          'Remote interface others may use to contact this node')
+  .option('--remote4 <host>',          'Remote interface for IPv4 access')
+  .option('--remote6 <host>',          'Remote interface for IPv6 access')
+  .option('--remotep <port>',          'Remote port others may use to contact this node')
+  .option('--kmanagement <ALL|KEYS>',  'Define key management policy')
+  .option('--kaccept <ALL|KEYS>',      'Define key acceptance policy')
+  .option('--sigDelay <timestamp>',    'Minimum delay between 2 certifications of a same issuer for a same recipient, in seconds.')
+  .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
+  .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
+  .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
+  .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
+  .option('--particpate <Y|N>',        'Participate to writing the keychain')
+  .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a keyblock')
+  .option('--openpgpjs',               'Prefer using embedded Openpgpjs implementation for signing requests')
   ;
 
 program
@@ -103,7 +110,8 @@ program
         'currency': wiz.configCurrency,
         'openpgp': wiz.configOpenpgp,
         'network': wiz.configNetwork,
-        'key': wiz.configKey
+        'key': wiz.configKey,
+        'ucp': wiz.configUCP
       };
       var wizDo = task[step] || wiz.configAll;
       async.waterfall([
@@ -444,6 +452,15 @@ function overrideConf(conf) {
     policy: {
       keys: program.kmanagement,
       pubkeys: program.kaccept
+    },
+    ucp: {
+      sigDelay:    program.sigDelay,
+      sigValidity: program.sigValidity,
+      sigQty:      program.sigQty,
+      powZeroMin:  program.powZeroMin,
+      powPeriod:   program.powPeriod,
+      particpate:  program.particpate,
+      tsInterval:  program.tsInterval
     }
   };
 
@@ -463,6 +480,13 @@ function overrideConf(conf) {
   if (cli.server.remote.port != undefined)  conf.remoteport     = cli.server.remote.port;
   if (cli.policy.keys)                      conf.kmanagement    = cli.policy.keys;
   if (cli.policy.pubkeys)                   conf.kaccept        = cli.policy.pubkeys;
+  if (cli.ucp.sigDelay)                     conf.sigDelay       = cli.ucp.sigDelay;
+  if (cli.ucp.sigValidity)                  conf.sigValidity    = cli.ucp.sigValidity;
+  if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;
+  if (cli.ucp.powZeroMin)                   conf.powZeroMin     = cli.ucp.powZeroMin;
+  if (cli.ucp.powPeriod)                    conf.powPeriod      = cli.ucp.powPeriod;
+  if (cli.ucp.participate)                  conf.participate    = cli.ucp.participate == 'Y';
+  if (cli.ucp.tsInterval)                   conf.tsInterval     = cli.ucp.tsInterval;
 
   // Specific internal settings
   conf.createNext = true;

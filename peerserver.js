@@ -1,16 +1,17 @@
-var async     = require('async');
-var util      = require('util');
-var openpgp   = require('openpgp');
-var jpgp      = require('./app/lib/jpgp');
-var unix2dos  = require('./app/lib/unix2dos');
-var logger    = require('./app/lib/logger')('peerserver');
-var plogger   = require('./app/lib/logger')('peer');
-var flogger   = require('./app/lib/logger')('forward');
-var slogger   = require('./app/lib/logger')('status');
-var wlogger   = require('./app/lib/logger')('wallet');
-var WOT       = require('./wotserver');
-var signature = require('./app/lib/signature');
-var parsers   = require('./app/lib/streams/parsers/doc');
+var async       = require('async');
+var util        = require('util');
+var openpgp     = require('openpgp');
+var jpgp        = require('./app/lib/jpgp');
+var unix2dos    = require('./app/lib/unix2dos');
+var logger      = require('./app/lib/logger')('peerserver');
+var plogger     = require('./app/lib/logger')('peer');
+var flogger     = require('./app/lib/logger')('forward');
+var slogger     = require('./app/lib/logger')('status');
+var wlogger     = require('./app/lib/logger')('wallet');
+var WOT         = require('./wotserver');
+var signature   = require('./app/lib/signature');
+var parsers     = require('./app/lib/streams/parsers/doc');
+var multicaster = require('./app/lib/streams/multicaster');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
@@ -116,6 +117,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.PublicKeyService    = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
         that.ContractService     = require('./app/service/ContractService').get(conn, that.conf);
         that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, that.PublicKeyService, that.ParametersService);
+        that.KeychainService     = require('./app/service/KeychainService').get(conn, that.conf, that.PublicKeyService, that.PeeringService);
         that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.MerkleService, that.PeeringService);
         that.WalletService       = require('./app/service/WalletService').get(conn);
         async.parallel({
@@ -219,6 +221,30 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.PeeringService.updateForwards(next);
       },
       function (next){
+        async.forever(
+          function tryToGenerateNextBlock(next) {
+            async.waterfall([
+              function (next){
+                that.KeychainService.startGeneration(next);
+              },
+              function (block, next){
+                if (block) {
+                  var Peer = that.conn.model('Peer');
+                  var peer = new Peer({ endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')] });
+                  multicaster().sendKeyblock(peer, block, next);
+                } else {
+                  next();
+                }
+              },
+            ], function (err) {
+              next(err);
+            });
+          },
+          function onError (err) {
+            logger.error(err);
+            logger.error('Keyblock generation STOPPED.');
+          }
+        );
         next();
       },
     ], done);
@@ -304,7 +330,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   this._listenBMA = function (app) {
     this.listenPKS(app);
-    this.listenHDC(app);
+    this.listenWOT(app);
     this.listenNET(app);
   };
 

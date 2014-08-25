@@ -405,7 +405,7 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(service(LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {
+  .action(service(LISTEN_HTTP, ucoin.createPeerServer, function (server, conf) {
 
     // server
     //   .pipe(router(server.PeeringService.cert.fingerprint, server.conn))

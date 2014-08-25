@@ -8,15 +8,25 @@ var unix2dos  = require('../lib/unix2dos');
 var dos2unix  = require('../lib/dos2unix');
 var parsers   = require('../lib/streams/parsers/doc');
 var keyhelper = require('../lib/keyhelper');
-var logger    = require('../lib/logger')('membership');
+var logger    = require('../lib/logger')('keychain');
+var signature = require('../lib/signature');
 var moment    = require('moment');
 var inquirer  = require('inquirer');
 
-module.exports.get = function (conn, conf, PublicKeyService) {
-  return new KeyService(conn, conf, PublicKeyService);
+module.exports.get = function (conn, conf, PublicKeyService, PeeringService) {
+  return new KeyService(conn, conf, PublicKeyService, PeeringService);
 };
 
-function KeyService (conn, conf, PublicKeyService) {
+// Callback used as a semaphore to sync keyblock reception & PoW computation
+var newKeyblockCallback = null;
+
+// Callback used to start again computation of next PoW
+var computeNextCallback = null;
+
+// Flag telling if computation has started
+var computationActivated = false;
+
+function KeyService (conn, conf, PublicKeyService, PeeringService) {
 
   var KeychainService = this;
 
@@ -101,6 +111,7 @@ function KeyService (conn, conf, PublicKeyService) {
     var block = new KeyBlock(kb);
     block.issuer = kb.pubkey.fingerprint;
     var currentBlock = null;
+    var newLinks;
     async.waterfall([
       function (next){
         KeyBlock.current(function (err, kb) {
@@ -135,7 +146,7 @@ function KeyService (conn, conf, PublicKeyService) {
           return;
         }
         // Check the challenge depending on issuer
-        checkProofOfWork(block, next);
+        checkProofOfWork(current, block, next);
       },
       function (next) {
         // Check document's coherence
@@ -145,9 +156,28 @@ function KeyService (conn, conf, PublicKeyService) {
         // Check document's coherence
         checkCoherence(block, next);
       },
-      function (newLinks, next) {
+      function (theNewLinks, next) {
+        newLinks = theNewLinks;
+        // If computation is started, stop it and wait for stop event
+        var isComputeProcessWaiting = computeNextCallback ? true : false;
+        if (computationActivated && !isComputeProcessWaiting) {
+          // Next will be triggered by computation of the PoW process
+          newKeyblockCallback = next;
+        } else {
+          next();
+        }
+      },
+      function (next) {
+        newKeyblockCallback = null;
         // Save block data + compute links obsolescence
         saveBlockData(block, newLinks, next);
+      },
+      function (block, next) {
+        // If PoW computation process is waiting, trigger it
+        if (computeNextCallback)
+          computeNextCallback();
+        computeNextCallback = null;
+        next();
       }
     ], function (err) {
       done(err, block);
@@ -475,7 +505,7 @@ function KeyService (conn, conf, PublicKeyService) {
     ], done);
   }
 
-  function checkProofOfWork (block, done) {
+  function checkProofOfWork (current, block, done) {
     var powRegexp = new RegExp('^0{' + conf.powZeroMin + '}');
     if (!block.hash.match(powRegexp))
       done('Not a proof-of-work');
@@ -485,22 +515,9 @@ function KeyService (conn, conf, PublicKeyService) {
       var nbWaitedPeriods = 0;
       async.waterfall([
         function (next){
-          KeyBlock.lastOfIssuer(block.issuer, next);
+          getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
         },
-        function (last, next){
-          if (last) {
-            var leadingZeros = last.hash.match(/^0+/)[0];
-            lastBlockPenality = leadingZeros.length - conf.powZeroMin + 1;
-            var powPeriodIsContant = conf.powPeriodC;
-            var nbPeriodsToWait = (powPeriodIsContant ? conf.powPeriod : Math.floor(conf.powPeriod/100*block.membersCount));
-            nbWaitedPeriods = Math.floor((block.number - last.number) / nbPeriodsToWait);
-            next();
-          } else {
-            next();
-          }
-        },
-        function (next){
-          var nbZeros = Math.max(conf.powZeroMin, conf.powZeroMin + lastBlockPenality - nbWaitedPeriods);
+        function (nbZeros, next){
           var powRegexp = new RegExp('^0{' + nbZeros + ',}');
           if (!block.hash.match(powRegexp))
             next('Wrong proof-of-work level: given ' + block.hash.match(/^0+/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
@@ -510,6 +527,28 @@ function KeyService (conn, conf, PublicKeyService) {
         },
       ], done);
     }
+  }
+
+  function getTrialLevel (issuer, nextBlockNumber, currentWoTsize, done) {
+    // Compute exactly how much zeros are required for this block's issuer
+    var lastBlockPenality = 0;
+    var nbWaitedPeriods = 0;
+    async.waterfall([
+      function (next){
+        KeyBlock.lastOfIssuer(issuer, next);
+      },
+      function (last, next){
+        if (last) {
+          var leadingZeros = last.hash.match(/^0+/)[0];
+          lastBlockPenality = leadingZeros.length - conf.powZeroMin + 1;
+          var powPeriodIsContant = conf.powPeriodC;
+          var nbPeriodsToWait = (powPeriodIsContant ? conf.powPeriod : Math.floor(conf.powPeriod/100*currentWoTsize));
+          nbWaitedPeriods = Math.floor((nextBlockNumber - last.number) / nbPeriodsToWait);
+        }
+        var nbZeros = Math.max(conf.powZeroMin, conf.powZeroMin + lastBlockPenality - nbWaitedPeriods);
+        next(null, nbZeros);
+      },
+    ], done);
   }
 
   function checkKicked (block, newLinks, done) {
@@ -1384,10 +1423,22 @@ function KeyService (conn, conf, PublicKeyService) {
           var full = raw + sig;
           pow = full.hash();
           testsCount++;
-          if (testsCount % 100 == 0) process.stdout.write('.');
+          if (testsCount % 50 == 0) {
+            process.stdout.write('.');
+            if (newKeyblockCallback) {
+              computationActivated = false
+              next('New block received');
+            }
+          }
           next();
         });
       }, function (err) {
+        if (err) {
+          logger.debug('Proof-of-work computation canceled: valid block received');
+          done(err);
+          newKeyblockCallback();
+          return;
+        }
         block.signature = sig;
         var end = new Date().timestamp();
         var duration = moment.duration((end - start)) + 's';
@@ -1411,5 +1462,57 @@ function KeyService (conn, conf, PublicKeyService) {
         }, next);
       },
     ], done);
-  }
+  };
+
+  this.startGeneration = function (done) {
+    if (!PeeringService) {
+      done('Needed peering service activated.');
+      return;
+    }
+    computationActivated = true;
+    var sigFunc, block, difficulty;
+    async.waterfall([
+      function (next) {
+        KeyBlock.current(function (err, current) {
+          next(null, current);
+        });
+      },
+      function (current, next){
+        if (!current) {
+          next(null, null);
+          return;
+        } else {
+          async.parallel({
+            block: function(callback){
+              KeychainService.generateNext(callback);
+            },
+            signature: function(callback){
+              signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, callback);
+            },
+            trial: function (callback) {
+              getTrialLevel(PeeringService.cert.fingerprint, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
+            }
+          }, next);
+        }
+      },
+      function (res, next){
+        if (!res) {
+          next(null, null, 'Waiting for a root block before computing new blocks');
+        } else {
+          KeychainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {
+            next(null, proofBlock, err);
+          });
+        }
+      },
+    ], function (err, proofBlock, powCanceled) {
+      if (powCanceled) {
+        logger.warn(powCanceled);
+        computeNextCallback = async.apply(done, null, null);
+        computationActivated = false
+      } else {
+        computationActivated = false
+        done(err, proofBlock);
+      }
+    });
+  };
 }

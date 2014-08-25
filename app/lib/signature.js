@@ -18,7 +18,7 @@ module.exports = function (armoredPrivateKey, password, withOpenPGPJS, done) {
       } else {
         var asciiPrivateKey = armoredPrivateKey;
         var keyring = '~/.gnupg/ucoin_' + fingerprint;
-        logger.debug("Keyring = %s", keyring);
+        logger.trace("Keyring = %s", keyring);
         var gnupg = new (require('./gnupg'))(asciiPrivateKey, password, fingerprint, keyring);
         gnupg.init(function (err) {
           next(err, function (message, done) {

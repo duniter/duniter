@@ -1406,7 +1406,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
     var pow = "", sig = "", raw = "";
     var start = new Date().timestamp();
     var testsCount = 0;
-    logger.debug('Generating proof-of-work...');
+    logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
     async.whilst(
       function(){ return !pow.match(powRegexp); },
       function (next) {
@@ -1423,8 +1423,9 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
           var full = raw + sig;
           pow = full.hash();
           testsCount++;
-          if (testsCount % 50 == 0) {
+          if (testsCount % 100 == 0) {
             process.stdout.write('.');
+          } else if (testsCount % 50 == 0) {
             if (newKeyblockCallback) {
               computationActivated = false
               next('New block received');

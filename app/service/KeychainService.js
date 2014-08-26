@@ -816,6 +816,12 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
     })
   };
 
+  this.promoted = function (number, done) {
+    KeyBlock.findByNumber(number, function (err, kb) {
+      done(err, kb || null);
+    })
+  };
+
   this.generateEmptyNext = function (done) {
     var staying = [];
     var kicked = [];

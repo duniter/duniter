@@ -31,7 +31,7 @@ function KeychainBinding (wotServer) {
   var ParametersService = wotServer.ParametersService;
   var PeeringService    = wotServer.PeeringService;
   var SyncService       = wotServer.SyncService;
-  var ContractService   = wotServer.ContractService;
+  var KeychainService   = wotServer.KeychainService;
 
   // Models
   var Peer       = wotServer.conn.model('Peer');
@@ -73,8 +73,35 @@ function KeychainBinding (wotServer) {
       .pipe(res);
   }
 
+  this.promoted = function (req, res) {
+    async.waterfall([
+      function (next){
+        ParametersService.getNumber(req, next);
+      },
+      function (number, next){
+        KeychainService.promoted(number, next);
+      }
+    ], function (err, promoted) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      res.send(200, JSON.stringify(promoted.json(), null, "  "));
+    });
+  }
+
   this.current = function (req, res) {
-    res.send(501, "Not implemented.");
-    res.end();
+    async.waterfall([
+      function (next){
+        KeychainService.current(next);
+      }
+    ], function (err, current) {
+      res.setHeader("Content-Type", "text/plain");
+      if(err || !current){
+        res.send(404, err);
+        return;
+      }
+      res.send(200, JSON.stringify(current.json(), null, "  "));
+    });
   }
 }

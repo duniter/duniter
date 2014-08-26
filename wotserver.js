@@ -75,6 +75,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
     var keychain = require('./app/controllers/keychain')(that);
     app.post(   '/keychain/membership',       keychain.parseMembership);
     app.post(   '/keychain/keyblock',         keychain.parseKeyblock);
+    app.get(    '/keychain/keyblock/:number', keychain.promoted);
     app.get(    '/keychain/current',          keychain.current);
   };
 }

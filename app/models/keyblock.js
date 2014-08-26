@@ -37,7 +37,7 @@ KeyBlockSchema.methods = {
   
   json: function() {
     var that = this;
-    var json = { raw: this.getRaw() };
+    var json = {};
     [
       "version",
       "nonce",
@@ -63,11 +63,16 @@ KeyBlockSchema.methods = {
     });
     [
       "membersChanges",
-      "publicKeys",
-      "memberships",
-      "membershipsSigs",
     ].forEach(function(field){
-      json[field] = that[field] || [];
+      json[field] = json[field] || [];
+    });
+    [
+      "keysChanges",
+    ].forEach(function(field){
+      json[field] = [];
+      that[field].forEach(function(obj){
+        json[field].push(_(obj).omit('raw', 'certifiers', 'hash'));
+      });
     });
     return json;
   },
@@ -279,7 +284,7 @@ KeyBlockSchema.statics.findByNumberAndHash = function (number, hash, done) {
 
 KeyBlockSchema.statics.findByNumber = function (number, done) {
 
-  this.find({ number: number, promoted: true }, function (err, blocks) {
+  this.find({ number: number }, function (err, blocks) {
     if(blocks && blocks.length == 1){
       done(err, blocks[0]);
       return;

@@ -13,6 +13,7 @@
   * [keychain/](#keychain)
       * [membership](#keychainmembership)
       * [keyblock](#keychainkeyblock)
+      * [keyblock/[number]](#keychainkeyblocknumber)
       * [current](#keychaincurrent)
   * [network/](#network)
       * [pubkey](#networkpubkey)
@@ -55,6 +56,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |-- keychain/
     |   |-- membership
     |   |-- keyblock
+    |   |       `-- [NUMBER]
     |   `-- current
     |-- network/
     |   |-- pubkey
@@ -327,15 +329,122 @@ Merkle URL leaf: public key
 
 #### `keychain/membership`
 
-> TODO
+
+**Goal**
+
+POST a [Membership](./Protocol.md#membership) document.
+
+**Parameters**
+
+Name | Value | Method
+---- | ----- | ------
+`membership` | The raw membership structure. | POST
+`signature` | The signature of the `membership` parameter. | POST
+
+**Returns**
+
+The posted membership request + posted signature.
+```json
+{
+  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
+  "membership": {
+    "version": "1",
+    "currency": "beta_brousouf",
+    "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+    "membership": "IN",
+    "sigDate": 1390739944,
+    "raw": "Version: 1\r\n...Membership: IN\r\n"
+  }
+}
+```
 
 #### `keychain/keyblock`
 
-> TODO
+**Goal**
+
+POST a new keyblock to add to the keychain.
+
+**Parameters**
+
+Name               | Value                          | Method
+------------------ | ------------------------------ | ------
+`keyblock`           | The raw keyblock to be added  | POST
+`signature`          | Signature of the raw keyblock | POST
+
+**Returns**
+
+The promoted keyblock if successfuly added to the keychain (see [keyblock/[number]](#keychainkeyblocknumber) return object).
+
+#### `keychain/keyblock/[NUMBER]`
+
+**Goal**
+
+GET the promoted keyblock whose number `NUMBER`.
+
+**Parameters**
+
+Name               | Value                                                         | Method
+------------------ | ------------------------------------------------------------- | ------
+`NUMBER`           | The promoted keyblock number (integer value) we want to see.  | URL
+
+**Returns**
+
+The promoted keyblock if it exists (otherwise return HTTP 404).
+```json
+{
+  "version": 1,
+  "nonce": 28,
+  "number": 1,
+  "timestamp": 1408996317,
+  "membersCount": 4,
+  "currency": "beta_brousouf",
+  "membersRoot": "E9A2E7146E00CF407CE7C837CD83430327928CA9",
+  "signature": "-----BEGIN PGP SIGNATURE-----...-----END PGP SIGNATURE-----\r\n",
+  "hash": "0000F40BDC0399F2E84000468628F50A122B5F16",
+  "previousHash": "0009A7A62703F976F683BBA500FC0CB832B8220D",
+  "previousIssuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+  "membersChanges": [],
+  "keysChanges": [
+    {
+      "membership": {
+        "signature": "iQGcBAABCAA...J8/UODEA==\n=t2S+\n",
+        "membership": "1:33BBFC0C67078D72AF128B5BA296CC530126F372:IN:1408995911:Snowy (udid2;c;SNOW;JOHN;1980-07-13;e+40.71-074.01;0;) 
+<john.snow@got.com>"
+      },
+      "certpackets": "wsBfBBAB...LWPztzla5vwADMow==\n",
+      "keypackets": "xsDNBFH...oEA=\n",
+      "fingerprint": "33BBFC0C67078D72AF128B5BA296CC530126F372",
+      "type": "N"
+    },
+    {
+      "membership": {
+        "signature": "iQEcBAAB...3NGiw=\n=2nmK\n",
+        "membership": "1:663A65AC3CE8F36DCBBCAF7ABD4367024C29635E:IN:1408995912:Superman (udid2;c;KENT;CLARK-JOSEPH;1950-04-07;e+37.31-083.34;0;) 
+    <superman@krypton.com>"
+      },
+      "certpackets": "wsBfB...aWdNJL1VaYk=\n",
+      "fingerprint": "663A65AC3CE8F36DCBBCAF7ABD4367024C29635E",
+      "type": "N"
+    },
+    {
+      "keypackets": "",
+      "certpackets": "wsDfBBAB...zcBmO\n",
+      "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
+      "type": "U"
+    },
+    {
+      "keypackets": "",
+      "certpackets": "wsDfBBAB...KyKG5SymM7YQ==\n",
+      "fingerprint": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
+      "type": "U"
+    }
+  ]
+}
+```
 
 #### `keychain/current`
 
-> TODO
+Same as [keyblock/[number]](#keychainkeyblocknumber), but return last accepted keyblock.
 
 ### network/*
 

@@ -37,6 +37,10 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
   var Link       = conn.model('Link');
   var Key        = conn.model('Key');
 
+  // Flag to say wether timestamp of received keyblocks should be tested
+  // Useful for synchronisation of old blocks
+  this.checkWithLocalTimestamp = true;
+
   this.load = function (done) {
     done();
   };
@@ -141,7 +145,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
           return;
         }
         // Test timestamp
-        if (Math.abs(block.timestamp - now.utcZero().timestamp()) > conf.tsInterval) {
+        if (KeychainService.checkWithLocalTimestamp && Math.abs(block.timestamp - now.utcZero().timestamp()) > conf.tsInterval) {
           next('Timestamp does not match this node\'s time');
           return;
         }
@@ -1472,6 +1476,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
   };
 
   this.startGeneration = function (done) {
+    if (!conf.participate) return;
     if (!PeeringService) {
       done('Needed peering service activated.');
       return;

@@ -64,7 +64,7 @@ KeyBlockSchema.methods = {
     [
       "membersChanges",
     ].forEach(function(field){
-      json[field] = json[field] || [];
+      json[field] = that[field] || [];
     });
     [
       "keysChanges",

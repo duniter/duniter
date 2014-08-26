@@ -141,13 +141,15 @@ program
 program
   .command('sync [host] [port]')
   .description('Tries to synchronise data with remote uCoin node')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createRegistryServer, function (host, port, server, conf) {
+  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createPeerServer, function (host, port, server, conf) {
 
-    // Disable daemon
-    conf.sync.AMDaemon = "OFF";
-    conf.createNext = false;
+    // Stop keyblock generation
+    conf.participate = false;
 
     async.series([
+      function (next) {
+        server.once('peerInited', next);
+      },
       function (next){
         // Synchronize
         var Synchroniser = require('../app/lib/sync');

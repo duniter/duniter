@@ -16,20 +16,20 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
   var that = this;
 
   // Services
-            var PublicKeyService         = server.PublicKeyService;
-            var KeyService         = server.KeyService;
-            var TransactionService = server.TransactionsService;
-            var WalletService      = server.WalletService;
-            var PeeringService     = server.PeeringService;
-            var ParametersService  = server.ParametersService;
+  var PublicKeyService   = server.PublicKeyService;
+  var KeyService         = server.KeyService;
+  var TransactionService = server.TransactionsService;
+  var WalletService      = server.WalletService;
+  var PeeringService     = server.PeeringService;
+  var ParametersService  = server.ParametersService;
+  var KeychainService    = server.KeychainService;
 
   // Models
-  var Amendment     = server.conn.model('Amendment');
   var PublicKey     = server.conn.model('PublicKey');
+  var KeyBlock      = server.conn.model('KeyBlock');
   var Merkle        = server.conn.model('Merkle');
   var Key           = server.conn.model('Key');
   var Membership    = server.conn.model('Membership');
-  var Voting        = server.conn.model('Voting');
   var Transaction   = server.conn.model('Transaction');
   var Wallet        = server.conn.model('Wallet');
   var Peer          = server.conn.model('Peer');
@@ -122,136 +122,152 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         //============
         // Parameters
         //============
-        function (next){
-          node.registry.parameters(next);
-        },
-        function (params, next){
-          async.waterfall([
-            function (next){
-              Configuration.find({}, next);
-            },
-            function (confs, next){
-              var config = confs[0] || new Configuration();
-              var sync = _({}).extend(config.sync);
-              sync.AMStart   = params.AMStart;
-              sync.AMFreq    = params.AMFrequency;
-              sync.UDFreq    = params.UDFrequency;
-              sync.UD0       = params.UD0;
-              sync.UDPercent = params.UDPercent;
-              sync.Consensus = params.Consensus;
-              config.sync = sync;
-              config.save(function (err) {
-                next(err);
-              });
-            },
-          ], next);
-        },
+        // function (next){
+        //   node.registry.parameters(next);
+        // },
+        // function (params, next){
+        //   async.waterfall([
+        //     function (next){
+        //       Configuration.find({}, next);
+        //     },
+        //     function (confs, next){
+        //       var config = confs[0] || new Configuration();
+        //       var sync = _({}).extend(config.sync);
+        //       sync.AMStart   = params.AMStart;
+        //       sync.AMFreq    = params.AMFrequency;
+        //       sync.UDFreq    = params.UDFrequency;
+        //       sync.UD0       = params.UD0;
+        //       sync.UDPercent = params.UDPercent;
+        //       sync.Consensus = params.Consensus;
+        //       config.sync = sync;
+        //       config.save(function (err) {
+        //         next(err);
+        //       });
+        //     },
+        //   ], next);
+        // },
 
         //============
         // Public Keys
         //============
-        function (next){
-          Merkle.forPublicKeys(next);
-        },
-        function (merkle, next) {
-          node.pks.all({}, function (err, json) {
-            var rm = new NodesMerkle(json);
-            if(rm.root() != merkle.root()){
-              var leavesToAdd = [];
-              // Call with nice no to have PGP error 'gpg: input line longer than 19995 characters'
-              node.pks.all({ leaves: true, nice: true }, function (err, json) {
-                _(json.leaves).forEach(function(leaf){
-                  if(merkle.leaves().indexOf(leaf) == -1){
-                    leavesToAdd.push(leaf);
-                  }
-                });
-                var hashes = [];
-                async.forEachSeries(leavesToAdd, function(leaf, callback){
-                  logger.info('Importing public key %s...', leaf);
-                  async.waterfall([
-                    function (cb){
-                      node.pks.all({ "leaf": leaf}, cb);
-                    },
-                    function (json, cb){
-                      hashes.push(leaf);
-                      PublicKey.persistFromRaw(json.leaf.value.pubkey, function (err) {
-                        cb();
-                      });
-                    },
-                    function (next) {
-                      KeyService.handleKey(leaf, conf && conf.kmanagement == 'ALL', next);
-                    },
-                  ], callback);
-                }, function(err, result){
-                  next(err);
-                });
-              });
-            }
-            else next();
-          });
-        },
+        // function (next){
+        //   Merkle.forPublicKeys(next);
+        // },
+        // function (merkle, next) {
+        //   node.pks.all({}, function (err, json) {
+        //     var rm = new NodesMerkle(json);
+        //     if(rm.root() != merkle.root()){
+        //       var leavesToAdd = [];
+        //       // Call with nice no to have PGP error 'gpg: input line longer than 19995 characters'
+        //       node.pks.all({ leaves: true, nice: true }, function (err, json) {
+        //         _(json.leaves).forEach(function(leaf){
+        //           if(merkle.leaves().indexOf(leaf) == -1){
+        //             leavesToAdd.push(leaf);
+        //           }
+        //         });
+        //         var hashes = [];
+        //         async.forEachSeries(leavesToAdd, function(leaf, callback){
+        //           logger.info('Importing public key %s...', leaf);
+        //           async.waterfall([
+        //             function (cb){
+        //               node.pks.all({ "leaf": leaf}, cb);
+        //             },
+        //             function (json, cb){
+        //               hashes.push(leaf);
+        //               PublicKey.persistFromRaw(json.leaf.value.pubkey, function (err) {
+        //                 cb();
+        //               });
+        //             },
+        //             function (next) {
+        //               KeyService.handleKey(leaf, conf && conf.kmanagement == 'ALL', next);
+        //             },
+        //           ], callback);
+        //         }, function(err, result){
+        //           next(err);
+        //         });
+        //       });
+        //     }
+        //     else next();
+        //   });
+        // },
 
         //============
-        // Amendments
+        // Keychain
         //============
         function (next){
-          Amendment.nextNumber(next);
+          node.keychain.current(next);
         },
-        function (number, next) {
-          node.hdc.amendments.current(function (err, json) {
-            if(err){
-              logger.warn('Issue getting current:');
-              err.split('\n').forEach(function (msg) {
-                logger.warn(msg);
-              });
-              next();
-              return;
-            }
-            remoteCurrentNumber = parseInt(json.number);
-            amendments[remoteCurrentNumber] = json.raw;
-            var toGetNumbers = _.range(number, remoteCurrentNumber + 1);
-            async.forEachSeries(toGetNumbers, function(amNumber, callback){
-              async.waterfall([
-                function (cb){
-                  if(!amendments[amNumber])
-                    node.hdc.amendments.promoted(amNumber, cb);
-                  else
-                    cb(null, { raw: amendments[amNumber] });
-                },
-                function (am, cb){
-                  amendments[amNumber] = am.raw;
-                  node.hdc.amendments.promoted(amNumber, cb);
-                },
-                function (am, cb){
-                  amendments[amNumber] = am.raw;
-                  cb();
-                },
-                function (cb) {
-                  node.hdc.amendments.view.signatures(amNumber, sha1(amendments[amNumber]).toUpperCase(), { leaves: true }, cb);
-                },
-                function (json, cb){
-                  applyVotes(amendments, amNumber, number, json, node, cb);
-                }
-              ], function (err, result) {
-                callback(err);
-              });
-            }, function(err, result){
-              next(err);
-            });
-          });
+        function (current, next) {
+          KeychainService.checkWithLocalTimestamp = false;
+          var numbers = _.range(current.number + 1);
+          async.forEachSeries(numbers, function(number, callback){
+            async.waterfall([
+              function (next){
+                node.keychain.keyblock(number, next);
+              },
+              function (keyblock, next){
+                var block = new KeyBlock(keyblock);
+                console.log('keyblock#' + block.number, sha1(block.getRawSigned()));
+                var keyID = jpgp().signature(block.signature).issuer();
+                var newPubkeys = block.getNewPubkeys();
+                // Save pubkeys + block
+                async.waterfall([
+                  function (next){
+                    if (block.number == 0) {
+                      var signatory = null;
+                      newPubkeys.forEach(function(key){
+                        if (key.hasSubkey(keyID))
+                          signatory = key;
+                      });
+                      if (!signatory) {
+                        next('Root block signatory not found');
+                        return;
+                      }
+                      next(null, { fingerprint: signatory.getFingerprint(), raw: signatory.getArmored() });
+                    } else {
+                      PublicKey.getTheOne(keyID, next);
+                    }
+                  },
+                  function (pubkey, next){
+                    keyblock.pubkey = pubkey;
+                    jpgp()
+                      .publicKey(pubkey.raw)
+                      .data(block.getRaw())
+                      .signature(block.signature)
+                      .verify(next);
+                  },
+                  function (verified, next){
+                    async.forEach(newPubkeys, function(newPubkey, callback){
+                      async.waterfall([
+                        function (next){
+                          parsers.parsePubkey(callback).asyncWrite(unix2dos(newPubkey.getArmored()), next);
+                        },
+                        function (obj, next){
+                          PublicKeyService.submitPubkey(obj, next);
+                        },
+                      ], callback);
+                    }, next);
+                  },
+                  function (next){
+                    KeychainService.submitKeyBlock(keyblock, next);
+                  },
+                ], next);
+              },
+            ], callback);
+          }, next)
         },
 
         //==============
         // Transactions
         //==============
-        function (next){
-          Key.find({ managed: true }, next);
-        },
-        function (keys, next) {
-          async.forEachSeries(keys, function (key, onKeyDone) {
-            syncTransactionsOfKey(node, key.fingerprint, onKeyDone);
-          }, next);
-        },
+        // function (next){
+        //   Key.find({ managed: true }, next);
+        // },
+        // function (keys, next) {
+        //   async.forEachSeries(keys, function (key, onKeyDone) {
+        //     syncTransactionsOfKey(node, key.fingerprint, onKeyDone);
+        //   }, next);
+        // },
 
         //=========
         // Wallets

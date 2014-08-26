@@ -260,6 +260,17 @@ function KeyHelper (packetList) {
     return this.getHashedPackets(subkeys);
   };
 
+  this.hasSubkey = function (keyID){
+    var matched = false;
+    (key.subKeys || []).forEach(function(subkeyWrapper){
+      if (subkeyWrapper.isValidSigningKey(key.primaryKey) || subkeyWrapper.isValidEncryptionKey(key.primaryKey)) {
+        if (subkeyWrapper.subKey.getFingerprint().toUpperCase().match(new RegExp(keyID + '$')))
+          matched = true;
+      }
+    });
+    return matched;
+  };
+
   this.getHashedCertifPackets = function (){
     var certifs = this.getBase64primaryUserOtherCertifications(); // Array of 1 packet lists (signature)
     return this.getHashedPackets(certifs);

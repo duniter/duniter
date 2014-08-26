@@ -34,6 +34,17 @@ function Multicaster () {
     });
   });
   
+  that.on('keyblock', function(keyblock, peers) {
+    logger.debug('--> new Keyblock to be sent to %s peer(s)', peers.length);
+    peers.forEach(function(peer){
+      fifo.push(function (sent) {
+        sendKeyblock(peer, keyblock, success(function (err) {
+          sent();
+        }));
+      });
+    });
+  });
+  
   that.on('transaction', function(transaction, peers) {
     logger.debug('--> new Transaction to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){

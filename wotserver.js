@@ -34,9 +34,9 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
           function (next){
             server.KeychainService.submitKeyBlock(obj, next);
           },
-          function (tx, next){
-            server.emit('keyblock', tx);
-            next(null, tx);
+          function (kb, next){
+            server.emit('keyblock', kb);
+            next(null, kb);
           },
         ], next);
       }

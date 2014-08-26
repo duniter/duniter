@@ -24,6 +24,7 @@ function Router (serverFPR, conn) {
 
   this._write = function (obj, enc, done) {
     if (typeof obj.email != 'undefined') {                           route('pubkey',      obj, getRandomInUPPeers,                          done); }
+    else if (obj.keysChanges ? true : false) {                       route('keyblock',    obj, getRandomInUPPeers,                          done); }
     else if (obj.recipient ? true : false) {                         route('transaction', obj, getTargetedButSelf(obj.recipient),           done); }
     else if (obj.endpoints ? true : false) {                         route('peer',        obj, getRandomInAllPeersButPeer(obj.fingerprint), done); }
     else if (obj.forward ? true : false) {                           route('forward',     obj, getTargetedButSelf(obj.to),                  done); }

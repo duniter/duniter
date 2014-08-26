@@ -409,9 +409,9 @@ program
   .description('Start uCoin server using given --currency')
   .action(service(LISTEN_HTTP, ucoin.createPeerServer, function (server, conf) {
 
-    // server
-    //   .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
-    //   .pipe(multicaster());
+    server
+      .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
+      .pipe(multicaster());
 
     // Launching server
     server.on('BMALoaded', function (err, app) {

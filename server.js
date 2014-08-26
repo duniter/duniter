@@ -34,10 +34,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         that.emit('services', err);
         done(err);
       });
-    }
-  ];
-
-  var todoOnInit = initFunctions.concat(onInit).concat([
+    },
     function (done) {
       if (dbConf.listenBMA) {
         listenBMA(function (err, app) {
@@ -46,6 +43,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         });
       } else done();
     }
+  ];
+
+  var todoOnInit = initFunctions.concat(onInit).concat([
   ]);
 
   this._write = function (obj, enc, writeDone, isInnerWrite) {

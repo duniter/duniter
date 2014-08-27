@@ -132,30 +132,21 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         //============
         // Parameters
         //============
-        // function (next){
-        //   node.registry.parameters(next);
-        // },
-        // function (params, next){
-        //   async.waterfall([
-        //     function (next){
-        //       Configuration.find({}, next);
-        //     },
-        //     function (confs, next){
-        //       var config = confs[0] || new Configuration();
-        //       var sync = _({}).extend(config.sync);
-        //       sync.AMStart   = params.AMStart;
-        //       sync.AMFreq    = params.AMFrequency;
-        //       sync.UDFreq    = params.UDFrequency;
-        //       sync.UD0       = params.UD0;
-        //       sync.UDPercent = params.UDPercent;
-        //       sync.Consensus = params.Consensus;
-        //       config.sync = sync;
-        //       config.save(function (err) {
-        //         next(err);
-        //       });
-        //     },
-        //   ], next);
-        // },
+        function (next){
+          node.keychain.parameters(next);
+        },
+        function (params, next){
+          conf.currency    = params["currency"];
+          conf.sigDelay    = params["sigDelay"];
+          conf.sigValidity = params["sigValidity"];
+          conf.sigQty      = params["sigQty"];
+          conf.stepMax     = params["stepMax"];
+          conf.powZeroMin  = params["powZeroMin"];
+          conf.powPeriod   = params["powPeriod"];
+          conf.save(function (err) {
+            next(err);
+          });
+        },
 
         //============
         // Public Keys

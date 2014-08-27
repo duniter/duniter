@@ -27,6 +27,12 @@ var computeNextCallback = null;
 // Flag telling if computation has started
 var computationActivated = false;
 
+// Timeout var for delaying computation of next block
+var computationTimeout = null;
+
+// Flag for saying if timeout was already waited
+var computationTimeoutDone = false;
+
 function KeyService (conn, conf, PublicKeyService, PeeringService) {
 
   var KeychainService = this;
@@ -1488,6 +1494,10 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
       return;
     }
     computationActivated = true;
+    if (computationTimeout) {
+      clearTimeout(computationTimeout);
+      computationTimeout = null;
+    }
     var sigFunc, block, difficulty;
     async.waterfall([
       function (next) {
@@ -1516,7 +1526,16 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
       function (res, next){
         if (!res) {
           next(null, null, 'Waiting for a root block before computing new blocks');
+        } else if (conf.powDelay && !computationTimeoutDone) {
+          computationTimeoutDone = true;
+          computationTimeout = setTimeout(function () {
+            if (computeNextCallback)
+              computeNextCallback();
+          }, conf.powDelay*1000);
+          next(null, null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
+          return;
         } else {
+          computationTimeoutDone = false;
           KeychainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {
             next(null, proofBlock, err);
           });
@@ -1525,9 +1544,13 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
     ], function (err, proofBlock, powCanceled) {
       if (powCanceled) {
         logger.warn(powCanceled);
-        computeNextCallback = async.apply(done, null, null);
+        computeNextCallback = function () {
+          computeNextCallback = null;
+          done(null, null);
+        };
         computationActivated = false
       } else {
+        // Proof-of-work found
         computationActivated = false
         done(err, proofBlock);
       }

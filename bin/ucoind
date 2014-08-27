@@ -47,6 +47,7 @@ program
   .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
   .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
   .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
+  .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
   .option('--particpate <Y|N>',        'Participate to writing the keychain')
   .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a keyblock')
   .option('--openpgpjs',               'Prefer using embedded Openpgpjs implementation for signing requests')
@@ -461,6 +462,7 @@ function overrideConf(conf) {
       sigQty:      program.sigQty,
       powZeroMin:  program.powZeroMin,
       powPeriod:   program.powPeriod,
+      powDelay:   program.powDelay,
       particpate:  program.particpate,
       tsInterval:  program.tsInterval
     }
@@ -487,6 +489,7 @@ function overrideConf(conf) {
   if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;
   if (cli.ucp.powZeroMin)                   conf.powZeroMin     = cli.ucp.powZeroMin;
   if (cli.ucp.powPeriod)                    conf.powPeriod      = cli.ucp.powPeriod;
+  if (cli.ucp.powDelay)                     conf.powDelay       = cli.ucp.powDelay;
   if (cli.ucp.participate)                  conf.participate    = cli.ucp.participate == 'Y';
   if (cli.ucp.tsInterval)                   conf.tsInterval     = cli.ucp.tsInterval;
 

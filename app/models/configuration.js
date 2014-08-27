@@ -23,6 +23,7 @@ var ConfigurationSchema = new Schema({
   sigQty:      {"type": Number, "default": 5},
   powZeroMin:  {"type": Number, "default": 4},
   powPeriod:   {"type": Number, "default": 1},
+  powDelay:    {"type": Number, "default": 0}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the keychain
   tsInterval:  {"type": Number, "default": 30},
 });

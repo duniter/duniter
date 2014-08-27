@@ -303,6 +303,7 @@ var tasks = {
             next();
           });
       },
+      async.apply(simpleInteger, "Time to wait before starting the computation of a new block", "powDelay", conf),
       async.apply(simpleInteger, "Acceptable time offset when receiving a new keyblock", "tsInterval", conf),
     ], done);
   }

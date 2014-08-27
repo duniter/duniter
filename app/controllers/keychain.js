@@ -75,6 +75,7 @@ function KeychainBinding (wotServer) {
 
   this.parameters = function (req, res) {
     res.send(200, JSON.stringify({
+      "currency": conf.currency,
       "sigDelay": conf.sigDelay,
       "sigValidity": conf.sigValidity,
       "sigQty": conf.sigQty,

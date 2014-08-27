@@ -60,7 +60,6 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |       `-- [NUMBER]
     |   `-- current
     |-- network/
-    |   |-- parameters
     |   |-- pubkey
     |   |-- peering
     |   |   |-- forward
@@ -344,6 +343,7 @@ GET the keychain parameters used by this node.
 The synchronization parameters.
 ```json
 {
+  "currency": "beta_brousouf",
     "sigDelay": 157680000,
     "sigValidity": 31536000,
     "sigQty": 5,

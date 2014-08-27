@@ -1,6 +1,6 @@
 # UCP - uCoin Protocol
 
-> This document is to be updated regularly during August 2014
+> This document is to be regularly updated during August 2014
 
 ## Contents
 
@@ -689,7 +689,7 @@ sigValidity | Maximum age of a valid signature
 sigQty      | Minimum quantity of signatures to join/stay in the keychain
 stepMax     | Maximum step between the WoT and individual and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
-powPeriod   | Number of written blocks to wait to lower the PoW difficulty by 1
+powPeriod   | Number of written blocks to wait to lower the PoW difficulty by 1. Value is either a `[1;+infinity[` integer or a `]0;1[` decimal value.
 
 ### Computed variables
 
@@ -773,8 +773,13 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
     NB_ZEROS = MAX [ powZeroMin ; powZeroMin + lastBlockPenality - nbWaitedPeriods ]
 
 Where:
+
 * `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`, plus `1`. If no block has been written by the member, `[lastBlockPenality] = 0`.
-* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member, divided by `[powPeriod]`.
+* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member, divided by `[powPeriodComputed]`.
+    * Note: number of validated blocks is `current` and  `newblock` **excluded**
+    * `[powPeriodComputed] = [powPeriod]` if `[powPeriod]`'s value is between `[1;+inf[`
+    * `[powPeriodComputed] = [powPeriod] * N` if `[powPeriod]`'s value is between `]0;1[`
+    * `N` if the number of members *before* new block, so that `[powPeriodComputed]` can be computed *for new block*
 
 > Those 2 rules, and notably the second, ensures a shared control of the keychain writing
 

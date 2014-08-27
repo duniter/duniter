@@ -73,6 +73,17 @@ function KeychainBinding (wotServer) {
       .pipe(res);
   }
 
+  this.parameters = function (req, res) {
+    res.send(200, JSON.stringify({
+      "sigDelay": conf.sigDelay,
+      "sigValidity": conf.sigValidity,
+      "sigQty": conf.sigQty,
+      "stepMax": 3, // uCoin only handles 3 step currencies for now
+      "powZeroMin": conf.powZeroMin,
+      "powPeriod": conf.powPeriod
+    }, null, "  "));
+  };
+
   this.promoted = function (req, res) {
     async.waterfall([
       function (next){

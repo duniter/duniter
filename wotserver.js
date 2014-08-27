@@ -73,6 +73,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.listenWOT = function (app) {
     var keychain = require('./app/controllers/keychain')(that);
+    app.get(    '/keychain/parameters',       keychain.parameters);
     app.post(   '/keychain/membership',       keychain.parseMembership);
     app.post(   '/keychain/keyblock',         keychain.parseKeyblock);
     app.get(    '/keychain/keyblock/:number', keychain.promoted);

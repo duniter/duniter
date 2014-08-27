@@ -60,6 +60,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |       `-- [NUMBER]
     |   `-- current
     |-- network/
+    |   |-- parameters
     |   |-- pubkey
     |   |-- peering
     |   |   |-- forward

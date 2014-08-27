@@ -23,7 +23,6 @@ var ConfigurationSchema = new Schema({
   sigQty:      {"type": Number, "default": 5},
   powZeroMin:  {"type": Number, "default": 4},
   powPeriod:   {"type": Number, "default": 1},
-  powPeriodC:  {"type": Boolean, "default": true}, // Default using Constant value '1'
   participate: {"type": Boolean, "default": true}, // Participate to writing the keychain
   tsInterval:  {"type": Number, "default": 30},
 });
@@ -46,10 +45,8 @@ ConfigurationSchema.virtual('createNext').set(function (create) {
 
 ConfigurationSchema.pre('save', function (next) {
 
-  // Force sync saving
-  var sync = _({}).extend(this.sync);
-  this.sync = {};
-  this.sync = sync;
+  if (this.powPeriod >= 1)
+    this.powPeriod = parseInt(this.powPeriod);
 
   if(!this.kmanagement || !this.kmanagement.match(/^(ALL|KEYS)$/)){
     logger.error('Incorrect --kmanagement value, reset to default `KEYS` value');

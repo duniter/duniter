@@ -546,9 +546,9 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
         if (last) {
           var leadingZeros = last.hash.match(/^0+/)[0];
           lastBlockPenality = leadingZeros.length - conf.powZeroMin + 1;
-          var powPeriodIsContant = conf.powPeriodC;
-          var nbPeriodsToWait = (powPeriodIsContant ? conf.powPeriod : Math.floor(conf.powPeriod/100*currentWoTsize));
-          nbWaitedPeriods = Math.floor((nextBlockNumber - last.number) / nbPeriodsToWait);
+          var powPeriodIsPercentage = conf.powPeriod < 1;
+          var nbPeriodsToWait = powPeriodIsPercentage ? Math.floor(conf.powPeriod*currentWoTsize) : conf.powPeriod;
+          nbWaitedPeriods = Math.floor((nextBlockNumber - 1 - last.number) / nbPeriodsToWait); // -1 to say "excluded"
         }
         var nbZeros = Math.max(conf.powZeroMin, conf.powZeroMin + lastBlockPenality - nbWaitedPeriods);
         next(null, nbZeros);

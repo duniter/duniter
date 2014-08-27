@@ -291,21 +291,7 @@ var tasks = {
       async.apply(simpleInteger, "Certification validity duration", "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member", "sigQty", conf),
       async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
-      function (next){
-        choose("Lowering proof-of-work difficulty using a percentage of WoT size", !conf.powPeriodC,
-          function ifPercentage () {
-            conf.powPeriodC = false;
-            async.waterfall([
-              async.apply(simpleInteger, "Number of blocks to wait for lowering difficulty = % members count, how much", "powPeriod", conf),
-            ], next);
-          },
-          function ifConstant () {
-            conf.powPeriodC = true;
-            async.waterfall([
-              async.apply(simpleInteger, "Number of blocks to wait to lower proof-of-work difficulty", "powPeriod", conf),
-            ], next);
-          });
-      },
+      async.apply(simplePercentOrPositiveInteger, "Number of blocks to wait for lowering difficulty", "powPeriod", conf),
       function (next){
         choose("Participate writing the keychain (when member)", conf.participate,
           function participate () {
@@ -355,5 +341,11 @@ function simpleInteger (question, property, conf, done) {
 function simpleFloat (question, property, conf, done) {
   simpleValue(question, property, conf[property], conf, function (input) {
     return input && input.toString().match(/^[0-9]+(\.[0-9]+)?$/) ? true : false;
+  }, done);
+}
+
+function simplePercentOrPositiveInteger (question, property, conf, done) {
+  simpleValue(question, property, conf[property], conf, function (input) {
+    return input && (input.toString().match(/^[1-9][0-9]*$/) || input.toString().match(/^0\.[0-9]+$/)) ? true : false;
   }, done);
 }

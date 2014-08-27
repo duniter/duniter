@@ -4,6 +4,7 @@ var sha1             = require('sha1');
 var merkle           = require('merkle');
 var vucoin           = require('vucoin');
 var eventStream      = require('event-stream');
+var inquirer         = require('inquirer');
 var jpgp             = require('./jpgp');
 var unix2dos         = require('./unix2dos');
 var parsers          = require('./streams/parsers/doc');
@@ -70,6 +71,15 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
             var parsed = parser.read();
             PublicKeyService.submitPubkey(parsed, next);
           });
+        },
+        function (pubkey, next){
+          choose("Remote key is 0x" + pubkey.fingerprint + ", should this key be trusted for the sync session?", true,
+            function trust () {
+              next(null, pubkey);
+            },
+            function doNotTrust () {
+              next('You chose not to trust remote\'s pubkey, sync cannot continue');
+            });
         },
 
         //============
@@ -527,4 +537,15 @@ function NodesMerkle (json) {
   this.root = function () {
     return this.merkleRoot;
   }
+}
+
+function choose (question, defaultValue, ifOK, ifNotOK) {
+  inquirer.prompt([{
+    type: "confirm",
+    name: "q",
+    message: question,
+    default: defaultValue,
+  }], function (answer) {
+    answer.q ? ifOK() : ifNotOK();
+  });
 }

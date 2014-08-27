@@ -11,6 +11,7 @@
       * [lookup](#pkslookup)
       * [all](#pksall)
   * [keychain/](#keychain)
+      * [parameters](#parameters)
       * [membership](#keychainmembership)
       * [keyblock](#keychainkeyblock)
       * [keyblock/[number]](#keychainkeyblocknumber)
@@ -30,7 +31,7 @@
       * [wallet (POST)](#networkwallet-post)
       * [wallet/[PGP_FINGERPRINT]](#networkwalletpgp_fingerprint)
   * [contract/](#contract)
-      * [parameters](#parameters)
+      * [parameters](#parameters1)
       * [am/[AMENDMENT_NUMBER]](#amamendment_number)
   * [tx/](#tx)
       * [process](#process)
@@ -326,6 +327,32 @@ Merkle URL leaf: public key
 ```
 
 ### keychain/*
+
+#### `parameters`
+
+**Goal**
+
+GET the keychain parameters used by this node.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+The synchronization parameters.
+```json
+{
+    "sigDelay": 157680000,
+    "sigValidity": 31536000,
+    "sigQty": 5,
+    "stepMax": 3,
+    "powZeroMin": 4,
+    "powPeriod": 10
+}
+```
+
+Parameters meaning is described under [Protocol parameters](./Protocol.md#protocol-parameters).
 
 #### `keychain/membership`
 
@@ -859,11 +886,9 @@ In a general way, those URLs return HTTP **200** code on success, HTTP **501** i
 
 #### `parameters`
 
-> TODO: rewrite this method
-
 **Goal**
 
-GET the synchronization parameters used by this node.
+GET the monetary parameters used by this node.
 
 **Parameters**
 
@@ -871,30 +896,16 @@ GET the synchronization parameters used by this node.
 
 **Returns**
 
-The synchronization parameters.
+The monetary parameters.
 ```json
 {
-    "AMStart": 1388530800,
-    "AMFrequency": 86400,
-    "UDFrequency": 2629800,
-    "UD0": 100,
-    "UDPercent": 0.007376575,
-    "CoinAlgo": "Base2Draft",
-    "Consensus": 0.6666666666666666
+    "c": 0.737826,
+    "dt": 2629800,
+    "ud0": 100
 }
 ```
 
-Below are parameters meaning:
-
-Parameter         | Meaning
------------------ | ------------
-AMStart           | Root amendment starting timestamp (in seconds)
-AMFrequency       | Amendment frequency (in seconds)
-UDFrequency       | Universal Dividend frequency (in seconds)
-UD0               | Universal Dividend initial value
-UDPercent         | Universal Dividend % of monetary mass growth
-CoinAlgo          | Algorithm used for generating coins (this also gives interpretation of coins' value in each amendment)
-Consensus         | Percent of voters required to valid an Amendment
+Parameters meaning is described under [Protocol parameters](./Protocol.md#protocol-parameters).
 
 #### `am/[AMENDMENT_NUMBER]`
 **Goal**

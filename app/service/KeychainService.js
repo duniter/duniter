@@ -10,6 +10,7 @@ var parsers   = require('../lib/streams/parsers/doc');
 var keyhelper = require('../lib/keyhelper');
 var logger    = require('../lib/logger')('keychain');
 var signature = require('../lib/signature');
+var constants = require('../lib/constants');
 var moment    = require('moment');
 var inquirer  = require('inquirer');
 
@@ -184,7 +185,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
         next();
       }
     ], function (err) {
-      done(err, block);
+      done(err, !err && block);
     });
   };
 
@@ -678,7 +679,12 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
                   parsers.parsePubkey(next).asyncWrite(unix2dos(key.getArmored()), next);
                 },
                 function (obj, next){
-                  PublicKeyService.submitPubkey(obj, next);
+                  PublicKeyService.submitPubkey(obj, function (err) {
+                    if (err == constants.ERROR.PUBKEY.ALREADY_UPDATED)
+                      next();
+                    else
+                      next(err);
+                  });
                 },
               ], callback);
             },

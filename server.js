@@ -4,6 +4,7 @@ var util       = require('util');
 var _          = require('underscore');
 var mongoose   = require('mongoose');
 var common     = require('./app/lib/common');
+var constants  = require('./app/lib/constants');
 var express    = require('express');
 var request    = require('request');
 var http       = require('http');
@@ -80,7 +81,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       },
     ], function (err, res) {
       if (err){
-        logger.debug(err);
+        switch (err) {
+          case constants.ERROR.PUBKEY.ALREADY_UPDATED: msg = 'Key already up-to-date';
+          default: msg = err.toString();
+        }
+        logger.debug(msg);
       }
       if (res != null && res != undefined) {
         that.push(res);

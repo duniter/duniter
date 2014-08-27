@@ -11,6 +11,7 @@ var md5       = require('../lib/md5');
 var unix2dos  = require('../lib/unix2dos');
 var parsers   = require('../lib/streams/parsers/doc');
 var keyhelper = require('../lib/keyhelper');
+var constants = require('../lib/constants');
 var logger    = require('../lib/logger')('pubkey');
 
 var PublicKeySchema = new Schema({
@@ -272,8 +273,8 @@ PublicKeySchema.statics.persist = function (pubkey, done) {
           }
           // If already treated this ASCII armored value
           if (~foundKeys[0].hashes.indexOf(comingHash)) {
-            // next('Key already up-to-date');
-            // return;
+            next(constants.ERROR.PUBKEY.ALREADY_UPDATED);
+            return;
           } else {
             // Remembering incoming hash
             foundKeys[0].hashes.push(comingHash);

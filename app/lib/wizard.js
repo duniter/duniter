@@ -4,6 +4,7 @@ var os       = require('os');
 var async    = require('async');
 var _        = require('underscore');
 var inquirer = require('inquirer');
+var request  = require('request');
 var openpgp  = require('openpgp');
 
 module.exports = function () {
@@ -91,6 +92,25 @@ var tasks = {
     if (conf.ipv4 || conf.ipv6) {
       noInterfaceListened = false;
     }
+    var remoteipv4 = null, remoteipv6 = null;
+    // Tries to discover remote IPv4 & IPv6 addresses in background
+    async.parallel({
+      ipv4: function(callback){
+        request('http://ifconfig.me/ip', function (err, res) {
+          var ip = !err && res && res.body && res.body.unix2dos().replace('\r\n', '');
+          remoteipv4 = ip && ip.match(IPV4_REGEXP) && ip;
+          callback();
+        });
+      },
+      ipv6: function(callback){
+        request('http://icanhazip.com', function (err, res) {
+          var ip = !err && res && res.body && res.body.unix2dos().replace('\r\n', '');
+          remoteipv6 = ip && ip.match(IPV6_REGEXP) && ip;
+          callback();
+        });
+      },
+    });
+    // Starts config
     async.waterfall([
       function (next){
         var osInterfaces = os.networkInterfaces();
@@ -146,6 +166,8 @@ var tasks = {
         if (conf.remoteipv4) {
           choices.push({ name: conf.remoteipv4, value: conf.remoteipv4 });
         }
+        if (remoteipv4)
+          choices.push({ name: remoteipv4, value: remoteipv4 });
         choices.push({ name: "Enter new one", value: "new" });
         inquirer.prompt([{
           type: "list",
@@ -178,6 +200,8 @@ var tasks = {
         if (conf.remoteipv6) {
           choices.push({ name: conf.remoteipv6, value: conf.remoteipv6 });
         }
+        if (remoteipv6)
+          choices.push({ name: remoteipv6, value: remoteipv6 });
         choices.push({ name: "Enter new one", value: "new" });
         inquirer.prompt([{
           type: "list",

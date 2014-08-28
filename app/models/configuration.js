@@ -12,7 +12,7 @@ var ConfigurationSchema = new Schema({
   remotehost:  {"type": String, "default": null},
   remoteipv4:  {"type": String, "default": null},
   remoteipv6:  {"type": String, "default": null},
-  remoteport:  {"type": Number, "default": null},
+  remoteport:  {"type": Number, "default": 8033},
   pgpkey:      {"type": String, "default": null},
   pgppasswd:   {"type": String, "default": null},
   kmanagement: {"type": String, "default": "ALL"},

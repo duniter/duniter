@@ -102,25 +102,29 @@ before(function (done) {
       Consensus: 2/3
     }
   });
-  server.on('BMALoaded', function (err, appReady) {
-    async.waterfall([
-      function (next){
-        tester.app(appReady);
-        // Execute all tasks
-        async.forEachSeries(testCases, function(testCase, callback){
-          logger.trace('----------------------------------');
-          logger.trace('Test: %s', testCase.label);
-          logger.trace('----------------------------------');
-          testCase.task(callback);
-        }, next);
-      },
-      function (next){
-        server.disconnect();
-        next();
-      },
-    ], function (err) {
-      logger.debug("API fed.");
-      done(err);
+  server.on('services', function () {
+    server.start(function () {
+    });
+    server.on('BMALoaded', function (err, appReady) {
+      async.waterfall([
+        function (next){
+          tester.app(appReady);
+          // Execute all tasks
+          async.forEachSeries(testCases, function(testCase, callback){
+            logger.trace('----------------------------------');
+            logger.trace('Test: %s', testCase.label);
+            logger.trace('----------------------------------');
+            testCase.task(callback);
+          }, next);
+        },
+        function (next){
+          server.disconnect();
+          next();
+        },
+      ], function (err) {
+        logger.debug("API fed.");
+        done(err);
+      });
     });
   });
 });

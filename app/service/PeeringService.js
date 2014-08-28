@@ -21,10 +21,14 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   var Key         = conn.model('Key');
   var Forward     = conn.model('Forward');
   
-  this.privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-  this.privateKey.decrypt(conf.pgppasswd);
-  this.ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
-  this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
+  this.privateKey = null;
+  this.cert = { fingerprint: '' };
+  if (conf.pgpkey) {
+    this.privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
+    this.privateKey.decrypt(conf.pgppasswd);
+    this.ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
+    this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
+  }
 
   var peer = null;
   var peers = {};

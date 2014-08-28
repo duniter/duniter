@@ -351,8 +351,8 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
                       });
                       entry.signature = sign;
                       entry.pubkey = { fingerprint: entry.fingerprint };
-                      logger.info('Peer 0x' + peer.fingerprint);
-                      PeeringService.submit(peer, function (err) {
+                      logger.info('Peer 0x' + entry.fingerprint);
+                      PeeringService.submit(entry, function (err) {
                         cb();
                       });
                     }

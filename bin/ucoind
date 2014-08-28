@@ -21,7 +21,6 @@ function keys (val) {
 }
 
 // Constants
-var LISTEN_HTTP = true;
 var DO_NOT_LISTEN_HTTP = false;
 
 program
@@ -64,7 +63,7 @@ program
         type: "console"
       }]
     });
-    service(DO_NOT_LISTEN_HTTP, ucoin.createPeerServer, function (server, conf) {
+    service(ucoin.createPeerServer, function (server, conf) {
       // Only show message "Saved"
       require('log4js').configure({
         "appenders": [{
@@ -73,6 +72,9 @@ program
         }]
       });
       async.waterfall([
+        function (next){
+          server.start(DO_NOT_LISTEN_HTTP, next);
+        },
         function (next){
           server.on('peerInited', next);
         },
@@ -127,7 +129,7 @@ program
         },
         function (next) {
           // Check config
-          service(DO_NOT_LISTEN_HTTP, ucoin.createPeerServer, function (key, server, conf) {
+          service(ucoin.createPeerServer, function (key, server, conf) {
             next();
           })(null, null);
         }
@@ -142,15 +144,12 @@ program
 program
   .command('sync [host] [port]')
   .description('Tries to synchronise data with remote uCoin node')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createPeerServer, function (host, port, server, conf) {
+  .action(service(ucoin.createPeerServer, function (host, port, server, conf) {
 
     // Stop keyblock generation
     conf.participate = false;
 
     async.series([
-      function (next) {
-        server.once('peerInited', next);
-      },
       function (next){
         // Synchronize
         var Synchroniser = require('../app/lib/sync');
@@ -169,7 +168,7 @@ program
 program
   .command('allow-key [key]')
   .description('Add given key to authorized keys of this node')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
+  .action(service(ucoin.createWOTServer, function (key, server, conf) {
     key = key || "";
     key = key.toUpperCase();
     async.waterfall([
@@ -199,14 +198,14 @@ program
 program
   .command('manage-key [key]')
   .description('Add given key to stack of managed keys of this node')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
+  .action(service(ucoin.createWOTServer, function (key, server, conf) {
     handleKey(server, key, true, 'Key %s is now managed');
   }));
 
 program
   .command('forget-key [key]')
   .description('Remove given key of the managed keys\' stack of this node')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createHDCServer, function (key, server, conf) {
+  .action(service(ucoin.createWOTServer, function (key, server, conf) {
     handleKey(server, key, false, 'Key %s no more managed from now');
   }));
 
@@ -235,32 +234,32 @@ function handleKey (server, key, isManaged, message) {
 program
   .command('gen-next [host] [port] [difficulty]')
   .description('Tries to generate the next keyblock of the keychain, with both updates & newcomers')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNext")));
+  .action(service(ucoin.createWOTServer, generateAndSend("generateNext")));
 
 program
   .command('gen-empty-next [host] [port] [difficulty]')
   .description('Tries to generate the next keyblock of the keychain without any changes')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateEmptyNext")));
+  .action(service(ucoin.createWOTServer, generateAndSend("generateEmptyNext")));
 
 program
   .command('gen-updates [host] [port] [difficulty]')
   .description('Tries to generate an update (#1+) keyblock, containing only update changes')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateUpdates")));
+  .action(service(ucoin.createWOTServer, generateAndSend("generateUpdates")));
 
 program
   .command('gen-newcomers [host] [port] [difficulty]')
   .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomers")));
+  .action(service(ucoin.createWOTServer, generateAndSend("generateNewcomers")));
 
 program
   .command('gen-newcomers-auto [host] [port] [difficulty]')
   .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, generateAndSend("generateNewcomersAuto")));
+  .action(service(ucoin.createWOTServer, generateAndSend("generateNewcomersAuto")));
 
 program
   .command('compute-distances')
   .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {
+  .action(service(ucoin.createWOTServer, function (server, conf) {
     server.KeychainService.computeDistances(function (err) {
       if (err) logger.error(err);
       server.disconnect();
@@ -271,7 +270,7 @@ program
 program
   .command('show-keychain')
   .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {
+  .action(service(ucoin.createWOTServer, function (server, conf) {
     server.KeychainService.showKeychain(function (err) {
       if (err) logger.error(err);
       server.disconnect();
@@ -282,7 +281,7 @@ program
 program
   .command('compute-certifications')
   .description('Recompute available certifications for next blocks')
-  .action(service(DO_NOT_LISTEN_HTTP, ucoin.createWOTServer, function (server, conf) {
+  .action(service(ucoin.createWOTServer, function (server, conf) {
     server.KeychainService.updateCertifications(function (err) {
       if (err) logger.error(err);
       server.disconnect();
@@ -360,7 +359,7 @@ program
 program
   .command('config')
   .description('Register configuration in database')
-  .action(service(false, function (server, conf) {
+  .action(service(function (server, conf) {
     conf.save(function (err) {
       if(err){
         logger.error("Configuration could not be saved: " + err);
@@ -408,17 +407,17 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(service(LISTEN_HTTP, ucoin.createPeerServer, function (server, conf) {
+  .action(service(ucoin.createPeerServer, function (server, conf) {
 
     server
       .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
       .pipe(multicaster());
 
     // Launching server
-    server.on('BMALoaded', function (err, app) {
+    server.start(function (err, app) {
       if(err){
-        console.error(err);
-        this.disconnect();
+        logger.error(err);
+        server.disconnect();
         process.exit();
         return;
       }
@@ -523,20 +522,16 @@ function connect(callback) {
   };
 }
 
-function service(listenHTTP, serverFactory, callback) {
+function service(serverFactory, callback) {
   if (arguments.length == 1) {
-    callback = listenHTTP;
-    listenHTTP = false;
-    serverFactory = ucoin.createWOTServer;
-  } else if (arguments.length == 2) {
     callback = serverFactory;
-    serverFactory = ucoin.createHDCServer;
+    serverFactory = ucoin.createWOTServer;
   }
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport, listenBMA: listenHTTP }, overrideConf({}));
+    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
 
     // Connecting to DB
     server.on('services', function (err) {

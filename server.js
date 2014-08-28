@@ -35,14 +35,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         that.emit('services', err);
         done(err);
       });
-    },
-    function (done) {
-      if (dbConf.listenBMA) {
-        listenBMA(function (err, app) {
-          that.emit('BMALoaded', err, app);
-          done();
-        });
-      } else done();
     }
   ];
 
@@ -82,10 +74,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     ], function (err, res) {
       if (err){
         switch (err) {
-          case constants.ERROR.PUBKEY.ALREADY_UPDATED: msg = 'Key already up-to-date';
-          default: msg = err.toString();
+          case constants.ERROR.PUBKEY.ALREADY_UPDATED: err = 'Key already up-to-date'; break;
         }
-        logger.debug(msg);
+        logger.debug(err);
       }
       if (res != null && res != undefined) {
         that.push(res);
@@ -158,6 +149,33 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     else {
       done();
     }
+  };
+
+  this.start = function (doListenHTTP, done) {
+    if (arguments.length == 1) {
+      done = doListenHTTP;
+      doListenHTTP = true;
+    }
+    async.waterfall([
+      function (next){
+        that._start(next);
+      },
+      function (next) {
+        if (!doListenHTTP) {
+          next();
+          return;
+        }
+        listenBMA(function (err, app) {
+          that.emit('BMALoaded', err, app);
+          next();
+        });
+      }
+    ], done);
+  };
+
+  this._start = function (done) {
+    // Method to override
+    done();
   };
 
   this.reset = function(done) {

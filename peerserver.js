@@ -91,15 +91,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     }
   ];
 
-  var initFunctions = [
-    function (done) {
-      that.initPeer(that.conn, that.conf, done);
-    },
-    function (done) {
-      that.emit('peerInited');
-      done();
-    }
-  ].concat(onInit || []);
+  var initFunctions = onInit || [];
 
   WOT.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
 
@@ -130,12 +122,18 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         }, function (err) {
           next(err);
         });
+      }
+    ], done);
+  };
+
+  this._start = function (done) {
+    async.waterfall([
+      function (next) {
+        that.initPeer(that.conn, that.conf, next);
       },
-      function (next){
-        that.checkConfig(next);
-      },
-      function (next){
-        that.createSignFunction(that.conf, next);
+      function (next) {
+        that.emit('peerInited');
+        next();
       }
     ], done);
   };
@@ -189,6 +187,12 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.initPeer = function (conn, conf, done) {
     async.waterfall([
+      function (next){
+        that.checkConfig(next);
+      },
+      function (next){
+        that.createSignFunction(that.conf, next);
+      },
       function (next){
         // Add selfkey as managed
         conn.model('Key').setManaged(that.PeeringService.cert.fingerprint, true, next);

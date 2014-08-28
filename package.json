@@ -1,8 +1,8 @@
 {
   "name": "ucoin",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "private": false,
-  "description": "Crypto-currency software using Node.js",
+  "description": "Crypto-currency software allowing to build P2P free currencies",
   "main": "bin/ucoin",
   "directories": {
     "test": "test"
@@ -17,6 +17,7 @@
   },
   "keywords": [
     "openudc",
+    "ucoin",
     "crypto-currency"
   ],
   "author": "Cedric Moreau <cem.moreau@gmail.com>",

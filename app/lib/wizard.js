@@ -38,6 +38,10 @@ function Wizard () {
   this.configUCP = function (conf, done) {
     doTasks(['ucp'], conf, done);
   };
+
+  this.doTasks = function (todos, conf, done) {
+    doTasks(todos, conf, done);
+  };
 }
 
 function doTasks (todos, conf, done) {

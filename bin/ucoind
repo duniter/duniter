@@ -146,9 +146,6 @@ program
   .description('Tries to synchronise data with remote uCoin node')
   .action(service(ucoin.createPeerServer, function (host, port, server, conf) {
 
-    // Stop keyblock generation
-    conf.participate = false;
-
     async.series([
       function (next){
         // Synchronize
@@ -344,7 +341,7 @@ function proveAndSend (server, block, sigFunc, difficulty, host, port, done) {
 program
   .command('check-config')
   .description('Checks the node\'s configuration')
-  .action(service(function (server, conf) {
+  .action(service(ucoin.createPeerServer, function (server, conf) {
     server.checkConfig(function (err) {
       if (err)
         logger.warn(err);
@@ -413,8 +410,33 @@ program
       .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
       .pipe(multicaster());
 
-    // Launching server
-    server.start(function (err, app) {
+    async.waterfall([
+      function (next){
+        server.checkConfig(function (err) {
+          if (err) {
+            // If required, launch config
+            var wiz = wizard(server);
+            async.waterfall([
+              function (next){
+                wiz.doTasks(['currency', 'openpgp', 'key', 'network'], conf, next);
+              },
+              function (next){
+                conf.save(next);
+              },
+            ], function (err) {
+              next(err);
+            });
+          }
+          else next();
+        });
+      },
+      function (next){
+        // Launching server
+        server.start(function (err, app) {
+          next(err);
+        });
+      },
+    ], function (err) {
       if(err){
         logger.error(err);
         server.disconnect();

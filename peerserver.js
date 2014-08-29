@@ -127,6 +127,10 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._start = function (done) {
+    // Overrides PeeringService so we do benefit from registered privateKey
+    that.PeeringService = require('./app/service/PeeringService').get(that.conn, that.conf, that.PublicKeyService, that.ParametersService);
+    that.KeychainService     = require('./app/service/KeychainService').get(that.conn, that.conf, that.PublicKeyService, that.PeeringService);
+    that.TransactionsService = require('./app/service/TransactionsService').get(that.conn, that.MerkleService, that.PeeringService);
     async.waterfall([
       function (next) {
         that.initPeer(that.conn, that.conf, next);

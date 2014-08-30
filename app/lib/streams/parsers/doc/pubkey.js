@@ -8,7 +8,7 @@ var jpgp          = require('../../../jpgp');
 
 module.exports = PubkeyParser;
 
-var UDID2_FORMAT = /\(udid2;c;([A-Z-]*);([A-Z-]*);(\d{4}-\d{2}-\d{2});(e\+\d{2}\.\d{2}-\d{3}\.\d{2});(\d+)(;?)\)/;
+var UDID2_FORMAT = /\(udid2;c;([A-Z-]*);([A-Z-]*);(\d{4}-\d{2}-\d{2});(e\+\d{2}\.\d{2}(\+|-)\d{3}\.\d{2});(\d+)(;?)\)/;
 
 function PubkeyParser (onError) {
   

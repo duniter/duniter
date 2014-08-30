@@ -554,7 +554,10 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
           lastBlockPenality = leadingZeros.length - conf.powZeroMin + 1;
           var powPeriodIsPercentage = conf.powPeriod < 1;
           var nbPeriodsToWait = powPeriodIsPercentage ? Math.floor(conf.powPeriod*currentWoTsize) : conf.powPeriod;
-          nbWaitedPeriods = Math.floor((nextBlockNumber - 1 - last.number) / nbPeriodsToWait); // -1 to say "excluded"
+          if (nbPeriodsToWait == 0)
+            nbWaitedPeriods = lastBlockPenality; // Cancels the penality if do not have to wait
+          else
+            nbWaitedPeriods = Math.floor((nextBlockNumber - 1 - last.number) / nbPeriodsToWait); // -1 to say "excluded"
         }
         var nbZeros = Math.max(conf.powZeroMin, conf.powZeroMin + lastBlockPenality - nbWaitedPeriods);
         next(null, nbZeros);

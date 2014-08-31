@@ -47,116 +47,112 @@ We can deduce here that `UniversalDividend` equals `352`.
 
 ##### Parameters
 
-* $p$ : the threshlod under which the algorithm should not create coins while it can
+* `p` : the threshlod under which the algorithm should not create coins while it can
 
 ##### Functions
 
-$$
-L(n, p) = \begin{pmatrix} P(n-1,p) & | & P(n-1,p) & ... & P(0,p) \end{pmatrix}
-$$
+`L(n, p) = [ P(n-1,p) P(n-1,p) ... P(0,p) ]`
 
-$$
-P(n, p) = \begin{pmatrix} min(n,p) & | & min(n, p)+0 & min(n, p) + 1 & ... & min(n, p) + (n-1)\end{pmatrix}
-$$
+`P(n, p) = [ min(n,p) min(n,p)+0  min(n,p)+1 ... min(n,p)+(n-1) ]`
 
 ##### Description
   
-  // Initialization
-  coins = []
-  groups = {}
-  rest = UD
-  
-  // Compute coins 2^ values
-  while (rest >= 0)
-    pow2 = highestPow2Value(rest)
-    rest = rest - pow(2, pow2)
-    coins = concat(coins, L(pow2, p))
+    // Initialization
+    coins = []
+    groups = {}
+    rest = UD
     
-  // Count the number of occurences for each coin
-  foreach pow2 in coins
-    if (exists(groups(pow2)))
-      groups(pow2) = groups(pow2) + 1
-    else
-      groups(pow2) = 1
+    // Compute coins 2^ values
+    while (rest >= 0)
+      pow2 = highestPow2Value(rest)
+      rest = rest - pow(2, pow2)
+      coins = concat(coins, L(pow2, p))
       
-  // Sort the coins counts by their coin value
-  sortByKey(groups)
+    // Count the number of occurences for each coin
+    foreach pow2 in coins
+      if (exists(groups(pow2)))
+        groups(pow2) = groups(pow2) + 1
+      else
+        groups(pow2) = 1
+        
+    // Sort the coins counts by their coin value
+    sortByKey(groups)
   
 ### Example 1
 
-Let's make coins with `UD = 32`, and $ p = 0 $ ($2^p = 1) $:
+Let's make coins with `UD = 32`, and `p = 0` (`2^p = 1`):
 
-  32 = 16 + 8 + 4 + 2 + 1 + 1
-     =
-     8    =
-      +4    4   =
-    +2   +2   2   =
-    +1   +1  +1   1   =   =
-    +1   +1  +1  +1   1   1
+    32 = 16 + 8 + 4 + 2 + 1 + 1
+         =
+         8    =
+        +4    4   =
+        +2   +2   2   =
+        +1   +1  +1   1   =   =
+        +1   +1  +1  +1   1   1
 Giving:
 
-  CoinAlgo: Base2Draft
-  CoinBase: 0
-  CoinList: 10 3 2 1
+    CoinAlgo: Base2Draft
+    CoinBase: 0
+    CoinList: 10 3 2 1
   
 ### Example 2
 
-Let's make coins with `UD = 13`, and $ p = 0 $ ($2^p = 1) $:
+Let's make coins with `UD = 13`, and `p = 0` (`2^p = 1`):
 
 #### Decimal format
 
-  13 = 8 + 4 + 1
-     =
-       4   =
-    +2   2
-    +1  +1   =
-    +1  +1   1
+    13 = 8 + 4 + 1
+         =
+         4   =
+        +2   2
+        +1  +1   =
+        +1  +1   1
     
 #### Binary format
 
-  13 = 8 + 4 + 1
-     =
-       2   =
-    +1   1
-    +0  +0   =
-    +0  +0   0
+    13 = 8 + 4 + 1
+         =
+         2   =
+        +1   1
+        +0  +0   =
+        +0  +0   0
 
 Giving:
 
-  CoinAlgo: Base2Draft
-  CoinBase: 0
-  CoinList: 5 2 1
+    CoinAlgo: Base2Draft
+    CoinBase: 0
+    CoinList: 5 2 1
   
 ### Example 3
 
-Let's make coins with `UD = 13`, and $ p = 1 $ ($2^p = 2) $:
+Let's make coins with `UD = 13`, and `p = 1` (`2^p = 2`):
 
-  13 = 8 + 4 + 1
-     =
-       4   =
-    +2   2
-    +2  +2   =
-             1
+    13 = 8 + 4 + 1
+         =
+         4   =
+        +2   2
+        +2  +2   =
+                 1
 
 Giving:
 
-  CoinAlgo: Base2Draft
-  CoinBase: 0
-  CoinList: 1 4 1
+    CoinAlgo: Base2Draft
+    CoinBase: 0
+    CoinList: 1 4 1
   
 ### Example 4
 
-Let's make coins with `UD = 13`, and $ p = 2 $ ($2^p = 4) $:
+Let's make coins with `UD = 13`, and `p = 2` (`2^p = 4`):
 
-  13 = 8 + 4 + 1
-     =
-       4   =
-    +4   4
-             =
-             1
+    13 = 8 + 4 + 1
+         =
+         4   =
+        +4   4
+                 =
+                 1
 
 Giving:
 
-  CoinAlgo: Base2Draft
-  CoinBase: 0
-  CoinList: 1 4 1
+    CoinAlgo: Base2Draft
+    CoinBase: 0
+    CoinList: 1 4 1

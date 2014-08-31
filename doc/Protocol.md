@@ -29,6 +29,10 @@
   * [Status](#status-1)
   * [Forward](#forward-1)
   * [Transaction](#transaction-1)
+* [Deducing the Contract](#deducing-the-contract)
+  * [New Amendment event](#new-amendment-event)
+  * [Computing the Universal Dividend](#computing-the-universal-dividend)
+  * [Computing new coins](#computing-new-coins)
 * [Implementations](#implementations)
 * [References](#references)
 
@@ -42,9 +46,9 @@ Monetary Contract | A document gathering the informations defining the community
 
 ## Introduction
 
-UCP aims at defining a data format, interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it does not defined all of the currency parameters' value but only the rules over it.
+UCP aims at defining a data format, interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it does not define all of the currency parameters' value but only the rules about them.
 
-This document is describing UCP in a bottom-up logic, so you will find first the details of the protocol (data format) to end with general protocol requirements.
+This document describes UCP in a bottom-up logic, so you will find first the details of the protocol (data format) to end with general protocol requirements.
 
 ## Conventions
 
@@ -818,6 +822,73 @@ A forward document asks `From` peer to be forwarded any transaction concerning a
 So if a transaction is received thereafter, and either `Sender` or `Recipient` field of the transaction matches the set of keys, then the transaction *SHOULD* be forwarded to `From` peer.
 
 ### Transaction
+
+## Deducing the Contract
+
+After defining its space-time referential, the [Keychain](#keychain]), UCP defines a second data structure on top of it describing the currency details. This data structure is called the Monetary Contract, or simply Contract, and is made up of [Amendment](#amendment) documents.
+
+An Amendment is the place where Universal Dividend is written: its amount, its technical representation (the coins) and who benefit from it (the members).
+
+Using Contract representation, it is defined *at any moment* who were the members, who received a Universal Dividend, its amount and the resulting coins.
+
+### New Amendment event
+
+UCP defines that a new Amendment is emitted at very specific moments depending on `dt` [protocol parameter](#protocol-parameter).
+
+#### General rule
+
+Given the root keyblock timestamp, here called `rootts`, we can define a sequence of timestamps starting from `rootts` with a `dt` period and called `milestones`.
+
+Each time a new keyblock's timestamp is over one of the `milestones` for the first time, **a new Amendment is to be emitted** with a Universal Dividend amount.
+
+#### Root Amendment
+
+The very first Amendment is emitted on the first milestone, at `rootts + dt`.
+
+### Computing the Universal Dividend
+
+The Universal Dividend value is computed on the WoT members from the previous keyblock, in other words `N(t-1)`. Computation rule is the following:
+
+  UD(t+1) = MAX(UD(t) ; c * M(t) / N(t+1) )
+
+### Computing new coins
+
+Coin generation algorithm is currency specific. However, in any case, such algorithm must be defined through 3 parameters:
+
+    CoinAlgo: COIN_ALGORITHM
+    CoinBase: COIN_BASE_POWER
+    CoinList: COIN_LIST
+  
+Where each value of `CoinList` must be a number and defines the quantity of coins of a given value.
+
+Thus, for a particular Amendment #1 with 2 members `BE2B32BE1EBA2E51C254BC01DB7BA85D64ACE62B` and `A0BC40A8131270DFE3EEC76A8B994A66DDE57C29`, and following coin parameters:
+
+    CoinAlgo: SomeAlgo
+    CoinBase: SomeCoinBase
+    CoinList: 2 1 3
+  
+It should be interpreted that 12 coins were issued:
+
+    BE2B32BE1EBA2E51C254BC01DB7BA85D64ACE62B-1-0
+    BE2B32BE1EBA2E51C254BC01DB7BA85D64ACE62B-1-1
+    BE2B32BE1EBA2E51C254BC01DB7BA85D64ACE62B-1-2
+    BE2B32BE1EBA2E51C254BC01DB7BA85D64ACE62B-1-3
+    BE2B32BE1EBA2E51C254BC01DB7BA85D64ACE62B-1-4
+    BE2B32BE1EBA2E51C254BC01DB7BA85D64ACE62B-1-5
+    A0BC40A8131270DFE3EEC76A8B994A66DDE57C29-1-0
+    A0BC40A8131270DFE3EEC76A8B994A66DDE57C29-1-1
+    A0BC40A8131270DFE3EEC76A8B994A66DDE57C29-1-2
+    A0BC40A8131270DFE3EEC76A8B994A66DDE57C29-1-3
+    A0BC40A8131270DFE3EEC76A8B994A66DDE57C29-1-4
+    A0BC40A8131270DFE3EEC76A8B994A66DDE57C29-1-5
+
+Here:
+
+* value of coins `E62B-1-0`, `E62B-1-1`, `7C29-1-0`, `7C29-1-1` is the same
+* value of coins `E62B-1-2`, `7C29-1-2` is the same also, but different from above coins
+
+> Note that here, coins' value is not known at all. Amendment only allows to give IDs to each coin.
+> However, the value may be known by applying the rules of the `CoinAlgo` algorithm.
 
 ## Implementations
 

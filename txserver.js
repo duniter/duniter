@@ -1,9 +1,9 @@
-var async   = require('async');
-var util    = require('util');
-var parsers = require('./app/lib/streams/parsers/doc');
-var PKSServer  = require('./pksserver');
+var async      = require('async');
+var util       = require('util');
+var parsers    = require('./app/lib/streams/parsers/doc');
+var PeerServer = require('./peerserver');
 
-function HDCServer (dbConf, overrideConf, interceptors, onInit) {
+function TxServer (dbConf, overrideConf, interceptors, onInit) {
 
   var logger  = require('./app/lib/logger')(dbConf.name);
 
@@ -27,38 +27,23 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
     }
   ];
 
-  PKSServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
+  PeerServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
 
   var that = this;
 
   this._read = function (size) {
   };
 
-  this._initServices = function(conn, done) {
-    this.KeyService         = require('./app/service/KeyService').get(conn);
-    this.PublicKeyService   = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
-    this.ContractService    = require('./app/service/ContractService').get(conn, that.conf);
-    this.TransactionsService = require('./app/service/TransactionsService').get(conn, that.MerkleService);
-    async.parallel({
-      contract: function(callback){
-        that.ContractService.load(callback);
-      },
-      peering: function(callback){
-        callback();
-      },
-    }, function (err) {
-      done(err);
-    });
-  };
-
   this._listenBMA = function (app) {
     this.listenPKS(app);
-    this.listenHDC(app);
+    this.listenWOT(app);
+    this.listenNET(app);
+    this.listenCTX(app);
   };
 
-  this.listenHDC = function (app) {
+  this.listenCTX = function (app) {
     var hdc = require('./app/controllers/hdc')(that);
-    app.get(    '/contract/amendments/promoted/:am_number',       hdc.amendments.promotedNumber);
+    app.get(    '/contract/am/:am_number',                        hdc.amendments.promotedNumber);
     app.post(   '/tx/transactions/process',                       hdc.transactions.processTx);
     app.get(    '/tx/transactions/last/:count',                   hdc.transactions.lastNAll);
     app.get(    '/tx/transactions/sender/:fpr',                   hdc.transactions.sender.get);
@@ -73,6 +58,6 @@ function HDCServer (dbConf, overrideConf, interceptors, onInit) {
   };
 }
 
-util.inherits(HDCServer, PKSServer);
+util.inherits(TxServer, PeerServer);
 
-module.exports = HDCServer;
+module.exports = TxServer;

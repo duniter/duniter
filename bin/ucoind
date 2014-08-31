@@ -147,7 +147,7 @@ program
 program
   .command('sync [host] [port]')
   .description('Tries to synchronise data with remote uCoin node')
-  .action(service(ucoin.createPeerServer, function (host, port, server, conf) {
+  .action(service(ucoin.createTxServer, function (host, port, server, conf) {
 
     async.series([
       function (next){
@@ -407,7 +407,7 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(service(ucoin.createPeerServer, function (server, conf) {
+  .action(service(ucoin.createTxServer, function (server, conf) {
 
     server
       .pipe(router(server.PeeringService.cert.fingerprint, server.conn))

@@ -20,7 +20,6 @@ var AmendmentSchema = new Schema({
   membersRoot: String,
   membersCount: {"type": Number, "default": 0},
   membersChanges: Array,
-  promoted: {"type": Boolean, "default": false},
   monetaryMass: {"type": Number, "default": 0},
   selfGenerated: {"type": Boolean, "default": false},
   hash: String,
@@ -52,7 +51,6 @@ AmendmentSchema.methods = {
       "membersRoot",
       "membersCount",
       "membersChanges",
-      "promoted",
       "monetaryMass",
       "selfGenerated",
       "hash",
@@ -159,7 +157,7 @@ AmendmentSchema.statics.nextNumber = function (done) {
 
 AmendmentSchema.statics.current = function (done) {
 
-  this.find({ promoted: true }).sort({ number: -1 }).limit(1).exec(function (err, amends) {
+  this.find({}).sort({ number: -1 }).limit(1).exec(function (err, amends) {
     if(amends && amends.length == 1){
       done(err, amends[0]);
       return;
@@ -190,7 +188,7 @@ AmendmentSchema.statics.findByNumberAndHash = function (number, hash, done) {
 
 AmendmentSchema.statics.findPromotedByNumber = function (number, done) {
 
-  this.find({ number: number, promoted: true }, function (err, amends) {
+  this.find({ number: number }, function (err, amends) {
     if(amends && amends.length == 1){
       done(err, amends[0]);
       return;
@@ -208,7 +206,7 @@ AmendmentSchema.statics.findPromotedByNumber = function (number, done) {
 AmendmentSchema.statics.findPromotedPreceding = function (timpestamp, done) {
 
   this
-    .find({ generated: { $lte: timpestamp }, promoted: true })
+    .find({ generated: { $lte: timpestamp } })
     .sort({ 'number': -1 })
     .limit(1)
     .exec(function (err, amends) {
@@ -230,7 +228,7 @@ AmendmentSchema.statics.findByTimestamp = function (timpestamp, done) {
 AmendmentSchema.statics.getPreviouslyPromotedWithDividend = function (done) {
 
   this
-    .find({ promoted: true, dividend: { $gt: 0 } })
+    .find({ dividend: { $gt: 0 } })
     .sort({ 'number': -1 })
     .limit(1)
     .exec(function (err, amends) {
@@ -264,9 +262,7 @@ AmendmentSchema.statics.getLastStatusOfMember = function (member, amNumberLimit,
 
   var criterias = { number: { $lte: amNumberLimit }, membersChanges: new RegExp("^(\\+|-)" + member + "$")};
   if (proposedToo) {
-    criterias.$or = [{ promoted: true }, { selfGenerated: true }];
-  } else {
-    criterias.promoted = true;
+    criterias.$or = [{ }, { selfGenerated: true }];
   }
 
   var that = this;

@@ -767,8 +767,11 @@ function KeyService (conn, conf, PublicKeyService, PeeringService, ContractServi
         updateAvailableKeyMaterial(block, next);
       },
       function (next){
-        // Eventually create next Amendment with Universal Dividend if time has come
-        ContractService.createAmendmentForBlock(block, next);
+        if (ContractService) {
+          // Eventually create next Amendment with Universal Dividend if time has come
+          ContractService.createAmendmentForBlock(block, next);
+        }
+        else next();
       },
     ], function (err) {
       done(err, block);

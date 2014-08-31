@@ -849,7 +849,7 @@ The very first Amendment is emitted on the first milestone, at `rootts + dt`.
 
 The Universal Dividend value is computed on the WoT members from the previous keyblock, in other words `N(t-1)`. Computation rule is the following:
 
-  UD(t+1) = MAX(UD(t) ; c * M(t) / N(t+1) )
+    UD(t+1) = MAX(UD(t) ; c * M(t) / N(t+1) )
 
 ### Computing new coins
 

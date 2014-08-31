@@ -54,18 +54,25 @@ function doTasks (todos, conf, done) {
 var tasks = {
 
   currency: function (conf, done) {
-    inquirer.prompt([{
-      type: "input",
-      name: "currency",
-      message: "Currency name",
-      default: conf.currency,
-      validate: function (input) {
-        return input.match(/^[a-zA-Z0-9-_ ]+$/) ? true : false;
-      }
-    }], function (answers) {
-      conf.currency = answers.currency;
-      done();
-    });
+    async.waterfall([
+      function (next){
+        inquirer.prompt([{
+          type: "input",
+          name: "currency",
+          message: "Currency name",
+          default: conf.currency,
+          validate: function (input) {
+            return input.match(/^[a-zA-Z0-9-_ ]+$/) ? true : false;
+          }
+        }], function (answers) {
+          conf.currency = answers.currency;
+          next();
+        });
+      },
+      async.apply(simpleInteger, "First Universal Dividend (UD[0]) amount", "ud0", conf),
+      async.apply(simpleFloat, "Universal Dividend %growth", "c", conf),
+      async.apply(simpleInteger, "Universal Dividend period (in seconds)", "dt", conf),
+    ], done);
   },
 
   openpgp: function (conf, done) {

@@ -5,6 +5,9 @@ var logger   = require('../lib/logger')();
 
 var ConfigurationSchema = new Schema({
   currency:    {"type": String, "default": null},
+  c:           {"type": Number, "default": 0.7376575},
+  dt:          {"type": Number, "default": 30.4375*24*3600},
+  ud0:         {"type": Number, "default": 100},
   openpgpjs:   {"type": Boolean, "default": false},
   port:        {"type": Number, "default": 8033},
   ipv4:        {"type": String, "default": "127.0.0.1"},

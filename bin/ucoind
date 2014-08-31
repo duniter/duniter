@@ -49,6 +49,9 @@ program
   .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
   .option('--particpate <Y|N>',        'Participate to writing the keychain')
   .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a keyblock')
+  .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
+  .option('--ud0 <number>',            'Universal Dividend initial value')
+  .option('--dt <number>',             'Number of seconds between two UD')
   .option('--openpgpjs',               'Prefer using embedded Openpgpjs implementation for signing requests')
   ;
 
@@ -483,9 +486,12 @@ function overrideConf(conf) {
       sigQty:      program.sigQty,
       powZeroMin:  program.powZeroMin,
       powPeriod:   program.powPeriod,
-      powDelay:   program.powDelay,
+      powDelay:    program.powDelay,
       particpate:  program.particpate,
-      tsInterval:  program.tsInterval
+      tsInterval:  program.tsInterval,
+      ud0:         program.ud0,
+      c:           program.growth,
+      dt:          program.dt
     }
   };
 
@@ -513,6 +519,9 @@ function overrideConf(conf) {
   if (cli.ucp.powDelay)                     conf.powDelay       = cli.ucp.powDelay;
   if (cli.ucp.participate)                  conf.participate    = cli.ucp.participate == 'Y';
   if (cli.ucp.tsInterval)                   conf.tsInterval     = cli.ucp.tsInterval;
+  if (cli.ucp.dt)                           conf.dt             = cli.ucp.dt;
+  if (cli.ucp.c)                            conf.c              = cli.ucp.c;
+  if (cli.ucp.ud0)                          conf.ud0            = cli.ucp.ud0;
 
   // Specific internal settings
   conf.createNext = true;

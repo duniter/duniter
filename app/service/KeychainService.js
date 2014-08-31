@@ -14,8 +14,8 @@ var constants = require('../lib/constants');
 var moment    = require('moment');
 var inquirer  = require('inquirer');
 
-module.exports.get = function (conn, conf, PublicKeyService, PeeringService) {
-  return new KeyService(conn, conf, PublicKeyService, PeeringService);
+module.exports.get = function (conn, conf, PublicKeyService, PeeringService, ContractService) {
+  return new KeyService(conn, conf, PublicKeyService, PeeringService, ContractService);
 };
 
 // Callback used as a semaphore to sync keyblock reception & PoW computation
@@ -33,7 +33,7 @@ var computationTimeout = null;
 // Flag for saying if timeout was already waited
 var computationTimeoutDone = false;
 
-function KeyService (conn, conf, PublicKeyService, PeeringService) {
+function KeyService (conn, conf, PublicKeyService, PeeringService, ContractService) {
 
   var KeychainService = this;
 
@@ -765,6 +765,10 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
       function (next){
         // Update available key material for members with keychanges in this block
         updateAvailableKeyMaterial(block, next);
+      },
+      function (next){
+        // Eventually create next Amendment with Universal Dividend if time has come
+        ContractService.createAmendmentForBlock(block, next);
       },
     ], function (err) {
       done(err, block);

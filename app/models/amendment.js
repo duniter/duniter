@@ -29,6 +29,7 @@ var AmendmentSchema = new Schema({
 });
 
 AmendmentSchema.pre('save', function (next) {
+  this.getHash(); // Recompute the hash
   this.updated = Date.now();
   next();
 });
@@ -208,6 +209,17 @@ AmendmentSchema.statics.findPromotedPreceding = function (timpestamp, done) {
 
   this
     .find({ generated: { $lte: timpestamp }, promoted: true })
+    .sort({ 'number': -1 })
+    .limit(1)
+    .exec(function (err, amends) {
+      done(err, (amends && amends.length == 1) ? amends[0] : null);
+  });
+};
+
+AmendmentSchema.statics.findByTimestamp = function (timpestamp, done) {
+
+  this
+    .find({ generated: timpestamp })
     .sort({ 'number': -1 })
     .limit(1)
     .exec(function (err, amends) {

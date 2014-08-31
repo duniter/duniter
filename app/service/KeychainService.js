@@ -551,11 +551,11 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
       function (last, next){
         if (last) {
           var leadingZeros = last.hash.match(/^0+/)[0];
-          lastBlockPenality = leadingZeros.length - conf.powZeroMin + 1;
+          lastBlockPenality = leadingZeros.length - conf.powZeroMin;
           var powPeriodIsPercentage = conf.powPeriod < 1;
           var nbPeriodsToWait = powPeriodIsPercentage ? Math.floor(conf.powPeriod*currentWoTsize) : conf.powPeriod;
           if (nbPeriodsToWait == 0)
-            nbWaitedPeriods = lastBlockPenality; // Cancels the penality if do not have to wait
+            nbWaitedPeriods = 1; // Minorate by 1 if does not have to wait
           else
             nbWaitedPeriods = Math.floor((nextBlockNumber - 1 - last.number) / nbPeriodsToWait); // -1 to say "excluded"
         }

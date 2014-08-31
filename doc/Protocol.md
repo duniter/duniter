@@ -770,18 +770,19 @@ A public key can join/stay in the community only if its [certifications](#certif
 #### Block fingerprint
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
-    NB_ZEROS = MAX [ powZeroMin ; powZeroMin + lastBlockPenality - nbWaitedPeriods ]
+    NB_ZEROS = MAX [ powZeroMin ; powZeroMin + lastBlockPenality - FLOOR(nbWaitedPeriods) ]
 
 Where:
 
-* `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`, plus `1`. If no block has been written by the member, `[lastBlockPenality] = 0`.
+* `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`. If no block has been written by the member, `[lastBlockPenality] = 0`.
 * `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member, divided by `[powPeriodComputed]`.
     * Note: number of validated blocks is `current` and  `newblock` **excluded**
     * `[powPeriodComputed] = [powPeriod]` if `[powPeriod]`'s value is between `[1;+inf[`
-    * `[powPeriodComputed] = [powPeriod] * N` if `[powPeriod]`'s value is between `]0;1[`
+    * `[powPeriodComputed] = FLOOR([powPeriod] * N)` if `[powPeriod]`'s value is between `]0;1[`
     * `N` if the number of members *before* new block, so that `[powPeriodComputed]` can be computed *for new block*
+    * If `[powPeriodComputed]` equals `0`, then `[nbWaitedPeriods]` directly equals `1`.
 
-> Those 2 rules, and notably the second, ensures a shared control of the keychain writing
+> Those 2 rules (penality and waited periods) ensures a shared control of the keychain writing.
 
 #### Block timestamp
 A node SHOULD NOT accept a new block if `Timestamp` field does not match local machine time, more or less an arbitrary delay. UCP suggests a `[-30 ; +30]` seconds interval, but any other value may be chosen.

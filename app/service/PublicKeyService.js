@@ -120,7 +120,7 @@ function PublicKeyService (conn, conf, KeyService) {
           var issuer = certif[0].issuerKeyId.toHex().toUpperCase();
           key.signatories.push(issuer);
         });
-        key.eligible = keyN.hasValidUdid2();
+        key.eligible = keyN.hasValidUdid2() ? true : false;
         key.save(function (err) {
           next(err);
         });

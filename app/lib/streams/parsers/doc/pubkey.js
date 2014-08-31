@@ -5,10 +5,9 @@ var rawer         = require('../../../rawer');
 var sha1          = require('sha1');
 var unix2dos      = require('../../../unix2dos');
 var jpgp          = require('../../../jpgp');
+var constants     = require('../../../constants');
 
 module.exports = PubkeyParser;
-
-var UDID2_FORMAT = /\(udid2;c;([A-Z-]*);([A-Z-]*);(\d{4}-\d{2}-\d{2});(e\+\d{2}\.\d{2}(\+|-)\d{3}\.\d{2});(\d+)(;?)\)/;
 
 function PubkeyParser (onError) {
   
@@ -74,7 +73,7 @@ function PubkeyParser (onError) {
 function getSignedUdid2s (key) {
   var validsUdid2 = [];
   for (var i = 0; i < key.users.length; i++) {
-    if (!key.users[i].userId || !key.users[i].userId.userid.match(UDID2_FORMAT) || !key.users[i].getValidSelfCertificate(key.primaryKey)) {
+    if (!key.users[i].userId || !key.users[i].userId.userid.match(constants.UDID2_FORMAT) || !key.users[i].getValidSelfCertificate(key.primaryKey)) {
       continue;
     }
     validsUdid2.push({ uid: key.users[i].userId.userid, user: key.users[i], nbSigs: (key.users[i].otherCertifications || []).length , signatures: key.users[i].otherCertifications});

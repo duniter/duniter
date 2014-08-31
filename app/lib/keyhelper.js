@@ -1,6 +1,7 @@
 var openpgp    = require('openpgp');
 var base64     = require('./base64');
 var md5        = require('./md5');
+var constants  = require('./constants');
 var PacketList = openpgp.packet.List;
 
 module.exports = {
@@ -84,9 +85,6 @@ module.exports = {
   }
 };
 
-var UDID2_FORMAT = /udid2;c;/;
-// var UDID2_FORMAT = /\(udid2;c;([A-Z-]*);([A-Z-]*);(\d{4}-\d{2}-\d{2});(e\+\d{2}\.\d{2}-\d{3}\.\d{2});(\d+)(;?)\)/;
-
 function KeyHelper (packetList) {
 
   var that = this;
@@ -109,7 +107,7 @@ function KeyHelper (packetList) {
   };
 
   this.getUserID = function (){
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     return primaryUser && primaryUser.user && primaryUser.user.userId && primaryUser.user.userId.userid;
   };
 
@@ -122,7 +120,7 @@ function KeyHelper (packetList) {
     // Primary key
     packets.push(key.primaryKey);
     // UserID
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     if (primaryUser) {
       packets.push(primaryUser.user.userId);
       packets.push(primaryUser.selfCertificate);
@@ -142,7 +140,7 @@ function KeyHelper (packetList) {
     // Primary key
     packets.push(key.primaryKey);
     // UserID
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     if (primaryUser) {
       packets.push(primaryUser.user.userId);
       packets.push(primaryUser.selfCertificate);
@@ -161,7 +159,7 @@ function KeyHelper (packetList) {
 
   this.hasValidUdid2 = function (){
     var userid = that.getUserID();
-    return userid != null && userid.match(UDID2_FORMAT);
+    return userid != null && userid.match(constants.UDID2_FORMAT);
   };
 
   this.getBase64publicKey = function (){
@@ -172,7 +170,7 @@ function KeyHelper (packetList) {
   };
 
   this.getBase64primaryUser = function (){
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     var packets = new PacketList();
     if (primaryUser) {
       packets.push(primaryUser.user.userId);
@@ -182,7 +180,7 @@ function KeyHelper (packetList) {
   };
 
   this.getBase64primaryUserOtherCertifications = function (){
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     var certifs = [];
     if (primaryUser) {
       (primaryUser.user.otherCertifications || []).forEach(function(oCert){
@@ -194,7 +192,7 @@ function KeyHelper (packetList) {
   };
 
   this.getOtherCertifications = function (){
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     var certifs = new PacketList();
     if (primaryUser) {
       (primaryUser.user.otherCertifications || []).forEach(function(oCert){
@@ -205,7 +203,7 @@ function KeyHelper (packetList) {
   };
 
   this.setOtherCertifications = function (certifs){
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     if (primaryUser) {
       primaryUser.user.otherCertifications = [];
       certifs.forEach(function(cert){
@@ -215,7 +213,7 @@ function KeyHelper (packetList) {
   };
 
   this.getCertificationsFromSignatory = function (newcomer){
-    var primaryUser = key.getPrimaryUser();
+    var primaryUser = key.getUdid2User();
     var certifs = new PacketList();
     if (primaryUser) {
       (primaryUser.user.otherCertifications || []).forEach(function(oCert){

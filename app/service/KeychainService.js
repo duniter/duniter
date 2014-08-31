@@ -526,7 +526,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
       var nbWaitedPeriods = 0;
       async.waterfall([
         function (next){
-          getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
+          KeychainService.getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
         },
         function (nbZeros, next){
           var powRegexp = new RegExp('^0{' + nbZeros + ',}');
@@ -540,7 +540,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
     }
   }
 
-  function getTrialLevel (issuer, nextBlockNumber, currentWoTsize, done) {
+  this.getTrialLevel = function (issuer, nextBlockNumber, currentWoTsize, done) {
     // Compute exactly how much zeros are required for this block's issuer
     var lastBlockPenality = 0;
     var nbWaitedPeriods = 0;
@@ -1521,7 +1521,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService) {
               signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, callback);
             },
             trial: function (callback) {
-              getTrialLevel(PeeringService.cert.fingerprint, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
+              KeychainService.getTrialLevel(PeeringService.cert.fingerprint, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
             }
           }, next);
         }

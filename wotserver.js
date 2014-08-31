@@ -78,6 +78,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
     app.post(   '/keychain/keyblock',         keychain.parseKeyblock);
     app.get(    '/keychain/keyblock/:number', keychain.promoted);
     app.get(    '/keychain/current',          keychain.current);
+    app.get(    '/keychain/hardship/:fpr',    keychain.hardship);
   };
 }
 

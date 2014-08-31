@@ -64,7 +64,7 @@ function ParameterNamespace (conn, currency) {
       callback("Fingerprint is required");
       return;
     }
-    var matches = req.params.fpr.match(/(\w{40})/);
+    var matches = req.params.fpr.match(/([A-Z0-9]{40})/);
     if(!matches){
       callback("Fingerprint format is incorrect, must be an upper-cased SHA1 hash");
       return;

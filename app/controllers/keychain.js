@@ -116,4 +116,36 @@ function KeychainBinding (wotServer) {
       res.send(200, JSON.stringify(current.json(), null, "  "));
     });
   }
+
+  this.hardship = function (req, res) {
+    var member = "";
+    var nextBlockNumber = 0;
+    async.waterfall([
+      function (next){
+        ParametersService.getFingerprint(req, next);
+      },
+      function (fpr, next){
+        member = fpr;
+        Key.isMember(fpr, next);
+      },
+      function (isMember, next){
+        if (!isMember) next('Not a member');
+        KeychainService.current(next);
+      },
+      function (current, next){
+        if (current) nextBlockNumber = current.number + 1;
+        KeychainService.getTrialLevel(member, nextBlockNumber, current ? current.membersCount : 0, next);
+      },
+    ], function (err, nbZeros) {
+      res.setHeader("Content-Type", "text/plain");
+      if(err){
+        res.send(404, err);
+        return;
+      }
+      res.send(200, JSON.stringify({
+        "block": nextBlockNumber,
+        "level": nbZeros
+      }, null, "  "));
+    });
+  }
 }

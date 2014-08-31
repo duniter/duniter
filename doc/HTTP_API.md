@@ -16,6 +16,7 @@
       * [keyblock](#keychainkeyblock)
       * [keyblock/[number]](#keychainkeyblocknumber)
       * [current](#keychaincurrent)
+      * [hardship/[PGP_FINGERPRINT]](#keychainhardshippgpfingerprint)
   * [network/](#network)
       * [pubkey](#networkpubkey)
       * [peering](#networkpeering)
@@ -56,8 +57,10 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   `-- lookup
     |-- keychain/
     |   |-- membership
+    |   |-- hardship
+    |   |   `-- [PGP_FINGERPRINT]
     |   |-- keyblock
-    |   |       `-- [NUMBER]
+    |   |   `-- [NUMBER]
     |   `-- current
     |-- network/
     |   |-- pubkey
@@ -522,6 +525,28 @@ Kva5isa/h0h7Ai3wJ5XJpMrFNN6BU/wIt7fM2hsNAOwaG+WUfgjYEkOua8gPPtpL
 ZJJPb/89yrs9F7JkLi/oiAl5VpItm+hlFpLe1TE7oa6k53eZ2a+V
 =rOj9
 -----END PGP PUBLIC KEY BLOCK-----
+```
+
+#### `keychain/hardship/[PGP_FINGERPRINT]`
+
+**Goal**
+
+GET hardship level for given member's fingerprint for writing next block.
+
+**Parameters**
+
+Name              | Value                     | Method
+----              | -----                     | ------
+`PGP_FINGERPRINT` | Member's PGP fingerprint.   | URL
+
+**Returns**
+
+The hardship value (`level`) + `block` number.
+```json
+{
+  "block": 598,
+  "level": 3
+}
 ```
 
 #### `network/peering`

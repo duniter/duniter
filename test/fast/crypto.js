@@ -48,6 +48,15 @@ describe('ed25519 tests:', function(){
     verified.should.be.true;
     done();
   });
+
+  it('wrong signature from generated key should NOT be verified', function(done){
+    var msg = dec("Some message to be signed");
+    var cor = dec(enc(msg) + 'delta');
+    var sig = nacl.sign.detached(msg, sec);
+    var verified = nacl.sign.detached.verify(cor, sig, pub);
+    verified.should.be.false;
+    done();
+  });
 });
 
 /*****************************

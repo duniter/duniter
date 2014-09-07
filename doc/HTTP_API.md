@@ -1,119 +1,56 @@
 # uCoin HTTP API
 
+## TODO
+
+* blockchain/block/number
+
 ## Contents
 
 * [Contents](#contents)
 * [Overview](#overview)
 * [Merkle URLs](#merkle-urls)
 * [API](#api)
-  * [pks/](#pks)
-      * [add](#pksadd)
-      * [lookup](#pkslookup)
-      * [all](#pksall)
-  * [keychain/](#keychain)
-      * [parameters](#parameters)
-      * [membership](#keychainmembership)
-      * [keyblock](#keychainkeyblock)
-      * [keyblock/[number]](#keychainkeyblocknumber)
-      * [current](#keychaincurrent)
-      * [hardship/[PGP_FINGERPRINT]](#keychainhardshippgpfingerprint)
+  * [blockchain/](#blockchain)
+      * [parameters](#blockchainparameters)
+      * [membership](#blockchainmembership)
+      * [block](#blockchainblock)
+      * [block/[number]](#blockchainblocknumber)
+      * [current](#blockchaincurrent)
+      * [hardship/[PGP_FINGERPRINT]](#blockchainhardshippgpfingerprint)
   * [network/](#network)
-      * [pubkey](#networkpubkey)
       * [peering](#networkpeering)
       * [peering/peers (GET)](#networkpeeringpeers-get)
       * [peering/peers (POST)](#networkpeeringpeers-post)
-      * [peering/peers/upstream](#networkpeeringpeersupstream)
-      * [peering/peers/upstream/[PGP_FINGERPRINT]](#networkpeeringpeersupstreampgp_fingerprint)
-      * [peering/peers/downstream](#networkpeeringpeersdownstream)
-      * [peering/peers/downstream/[PGP_FINGERPRINT]](#networkpeeringpeersdownstreampgp_fingerprint)
-      * [peering/forward](#networkpeeringforward)
       * [peering/status](#networkpeeringstatus)
-      * [wallet (GET)](#networkwallet-get)
-      * [wallet (POST)](#networkwallet-post)
-      * [wallet/[PGP_FINGERPRINT]](#networkwalletpgp_fingerprint)
-  * [contract/](#contract)
-      * [parameters](#parameters1)
-      * [am/[AMENDMENT_NUMBER]](#amamendment_number)
   * [tx/](#tx)
-      * [process](#process)
-      * [last/[count]](#lastcount)
-      * [sender/[PGP_FINGERPRINT]](#senderpgp_fingerprint)
-      * [sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]](#senderpgp_fingerprintviewtx_number)
-      * [sender/[PGP_FINGERPRINT]/last/[count]/[from]](#senderpgp_fingerprintlastcountfrom)
-      * [recipient/[PGP_FINGERPRINT]](#recipientpgp_fingerprint)
-      * [refering/[PGP_FINGERPRINT]/[TX_NUMBER]](#referingpgp_fingerprinttx_number)
-      * [coins/list/[PGP_FINGERPRINT]](#coinslistpgp_fingerprint)
-      * [coins/view/[COIN_ID]/owner](#coinsviewcoin_idowner)
-      * [coins/view/[COIN_ID]/history](#coinsviewcoin_idhistory)
+      * [process](#txprocess)
 
 ## Overview
 
 Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit uCoin specificities.
 
     http[s]://Node[:port]/...
-    |-- pks/
-    |   |-- add
-    |   |-- all
-    |   `-- lookup
-    |-- keychain/
+    |-- blockchain/
     |   |-- membership
     |   |-- hardship
     |   |   `-- [PGP_FINGERPRINT]
-    |   |-- keyblock
+    |   |-- block
     |   |   `-- [NUMBER]
     |   `-- current
     |-- network/
-    |   |-- pubkey
-    |   |-- peering
-    |   |   |-- forward
-    |   |   |-- status
-    |   |   `-- peers/
-    |   |       |-- upstream/
-    |   |       |   `-- [PGP_FINGERPRINT]
-    |   |       `-- downstream/
-    |   |           `-- [PGP_FINGERPRINT]
-    |   `-- wallet/
-    |       `-- [PGP_FINGERPRINT]
-    |-- contract/
-    |   |-- parameters
-    |   `-- amendments/
-    |       `-- am/
-    |           `-- [AMENDMENT_NUMBER]
+    |   `-- peering
+    |       |-- status
+    |       `-- peers
     `-- tx/
-        |-- process
-        |-- last/
-        |   `-- [count]
-        |-- sender/
-        |   `-- [PGP_FINGERPRINT]/
-        |       |-- view/
-        |       |   `-- [TX_NUMBER]
-        |       `-- last/
-        |           `-- [count]/
-        |               `-- [from]
-        |-- recipient/
-        |   `-- [PGP_FINGERPRINT]
-        |-- refering/    
-        |   `-- [PGP_FINGERPRINT]/
-        |       `-- [TX_NUMBER]
-        `-- coins/
-            |-- list/
-            |   `-- [PGP_FINGERPRINT]
-            `-- view/
-                `-- [COIN_ID]/
-                    |-- history
-                    `-- owner
+        `-- process
 
 ## Merkle URLs
 
 Merkle URL is a special kind of URL applicable for resources:
 
-* `pks/all`
 * `network/peering/peers (GET)`
-* `network/wallet (GET)`
-* `hdc/transactions/sender/[PGP_FINGERPRINT]`
-* `hdc/transactions/recipient/[PGP_FINGERPRINT]`
 
-Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `network/peers` is a Merkle tree whose leaves are peers' key fingerprint sorted ascending way. Thus, if any new peer is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
+Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `network/peering/peers` is a Merkle tree whose leaves are peers' key fingerprint sorted ascending way. Thus, if any new peer is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
 For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. uCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
 
@@ -210,132 +147,23 @@ Each tree manages different data, and has a different goal. Hence, each tree has
 Here is a summup of such rules:
 
 
-Merkle URL                                                                | Leaf                                    | Sort
-------------------------------------------------------------------------- | ----------------------------------------| ---------------------------------------
-`pks/all`                                                                 | Fingerprint of the key                  | By fingerprint string sort, ascending.
-`network/peers (GET)`                                                     | Fingerprint of the peer                 | By fingerprint string sort, ascending.
-`network/wallet (GET)`                                                    | Fingerprint of the wallet               | By fingerprint string sort, ascending.
-`hdc/transactions/sender/[PGP_FINGERPRINT]`                               | Hash of (transaction + signature)       | By hash string sort, ascending.
-`hdc/transactions/recipient/[PGP_FINGERPRINT]`                            | Hash of (transaction + signature)       | By hash string sort, ascending.
+Merkle URL             | Leaf                      | Sort
+---------------------- | --------------------------| -------------
+`network/peers (GET)`    | Hash of the peers' pubkey | By hash string sort, ascending.
 
 #### Unicity
 
-It has to be noted that the first four Merkle URLs, there is **no possible conflict** for leaves, as every leaf is represents a OpenPGP key whose fingerprint is unique according to [uCoin protocol](./Protocol.md). Indeed: *nodes are responsible for the concrete key stored under a fingerprint*.
-
-However for the 2 last URLs, conflicts are possible even if largely improbable. Such conflicts would not be a huge problem however: it would lead to hide one of the conflicted transactions, but those 2 URLs are not here for exhaustive inventory of transactions, only for quick synchronization checking. So the goal is still reached.
+It has to be noted that **possible conflict exists** for leaves, as every leaf is hash, but is rather unlikely.
 
 ## API
 
-### pks/*
+### blockchain/*
 
-This URL is used to manage OpenPGP certificates, making uCoin acting **like** an SKS server.
-
-#### `pks/add`
-**Goal**
-
-POST ASCII-armored OpenPGP certificates.
-
-**Parameters**
-
-Name      | Value                                     | Method
---------- | ----------------------------------------- | ------
-`keytext` | The raw certificate, ASCII-armored.       | POST
-
-**Returns**
-
-The sent PGP Public Key and signature.
-```json
-{
-  "email":"cem.moreau@gmail.com",
-  "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
-  "name":"LoL Cat",
-  "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-  "raw":"-----BEGIN PGP PUBLIC KEY BLOCK----- ... -----END PGP PUBLIC KEY BLOCK-----\r\n"
-}
-```
-
-#### `pks/lookup`
-**Goal**
-
-Allows to search for OpenPGP certificates, according to [HKP draft](http://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#page-3).
-
-**Parameters**
-
-Name     | Value                                                                                                         | Method
--------- | ------------------------------------------------------------------------------------------------------------- | ------
-`search` | A value for searching in PGP certificates database. May start with '0x' for direct search on PGP fingerprint. | GET
-`op`     | Operation: may be either 'index' or 'get'.                                                                    | GET
-
-**Returns**
-
-A list of matching PGP keys in json format if `op=index`, a single ASCII-armored key if `op=get`.
-
-```json
-{
-  "keys": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "key":
-      {
-        "email":"cem.moreau@gmail.com",
-        "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
-        "name":"LoL Cat",
-        "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-        "raw":"-----BEGIN PGP PUBLIC KEY BLOCK----- ... -----END PGP PUBLIC KEY BLOCK-----\r\n"
-      }
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "key":
-      {
-        "email":"cem.moreau@gmail.com",
-        "comment":"udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;",
-        "name":"LoL Cat",
-        "fingerprint":"C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-        "raw":"-----BEGIN PGP PUBLIC KEY BLOCK----- ... -----END PGP PUBLIC KEY BLOCK-----\r\n"
-      }
-    }
-  ]
-```
-
-#### `pks/all`
-**Goal**
-
-Merkle URL refering all the received public keys.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: public key
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "pubkey": "-----BEGIN PGP PUBLIC KEY BLOCK----- ... -----END PGP PUBLIC KEY BLOCK-----\r\n"
-  }
-}
-```
-
-### keychain/*
-
-#### `parameters`
+#### `blockchain/parameters`
 
 **Goal**
 
-GET the keychain parameters used by this node.
+GET the blockchain parameters used by this node.
 
 **Parameters**
 
@@ -347,18 +175,21 @@ The synchronization parameters.
 ```json
 {
   "currency": "beta_brousouf",
-    "sigDelay": 157680000,
-    "sigValidity": 31536000,
-    "sigQty": 5,
-    "stepMax": 3,
-    "powZeroMin": 4,
-    "powPeriod": 10
+  "sigDelay": 157680000,
+  "sigValidity": 31536000,
+  "sigQty": 5,
+  "stepMax": 3,
+  "powZeroMin": 4,
+  "powPeriod": 10,
+  "c": 0.737826,
+  "dt": 2629800,
+  "ud0": 100
 }
 ```
 
 Parameters meaning is described under [Protocol parameters](./Protocol.md#protocol-parameters).
 
-#### `keychain/membership`
+#### `blockchain/membership`
 
 
 **Goal**
@@ -377,11 +208,11 @@ Name | Value | Method
 The posted membership request + posted signature.
 ```json
 {
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
+  "signature": "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==",
   "membership": {
     "version": "1",
     "currency": "beta_brousouf",
-    "issuer": "FD17FECBAF731658EDEB60CF8700174B1D585861",
+    "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "membership": "IN",
     "sigDate": 1390739944,
     "raw": "Version: 1\r\n...Membership: IN\r\n"
@@ -389,145 +220,104 @@ The posted membership request + posted signature.
 }
 ```
 
-#### `keychain/keyblock`
+#### `blockchain/block`
 
 **Goal**
 
-POST a new keyblock to add to the keychain.
+POST a new block to add to the blockchain.
 
 **Parameters**
 
 Name               | Value                          | Method
 ------------------ | ------------------------------ | ------
-`keyblock`           | The raw keyblock to be added  | POST
-`signature`          | Signature of the raw keyblock | POST
+`block`             | The raw keyblock to be added  | POST
+`signature`         | Signature of the raw keyblock | POST
 
 **Returns**
 
-The promoted keyblock if successfuly added to the keychain (see [keyblock/[number]](#keychainkeyblocknumber) return object).
+The promoted block if successfuly added to the blockchain (see [block/[number]](#blockchainblocknumber) return object).
 
-#### `keychain/keyblock/[NUMBER]`
+#### `blockchain/block/[NUMBER]`
 
 **Goal**
 
-GET the promoted keyblock whose number `NUMBER`.
+GET the promoted block whose number `NUMBER`.
 
 **Parameters**
 
 Name               | Value                                                         | Method
 ------------------ | ------------------------------------------------------------- | ------
-`NUMBER`           | The promoted keyblock number (integer value) we want to see.  | URL
+`NUMBER`           | The promoted block number (integer value) we want to see.  | URL
 
 **Returns**
 
-The promoted keyblock if it exists (otherwise return HTTP 404).
+The promoted block if it exists (otherwise return HTTP 404).
 ```json
 {
   "version": 1,
+  "currency": "beta_brousouf",
   "nonce": 28,
   "number": 1,
   "timestamp": 1408996317,
-  "membersCount": 4,
-  "currency": "beta_brousouf",
-  "membersRoot": "E9A2E7146E00CF407CE7C837CD83430327928CA9",
-  "signature": "-----BEGIN PGP SIGNATURE-----...-----END PGP SIGNATURE-----\r\n",
-  "hash": "0000F40BDC0399F2E84000468628F50A122B5F16",
+  "dividend": 254,
+  "fees": 14,
+  "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "previousHash": "0009A7A62703F976F683BBA500FC0CB832B8220D",
-  "previousIssuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-  "membersChanges": [],
-  "keysChanges": [
+  "previousIssuer": "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
+  "membersCount": 4,
+  "hash": "0000F40BDC0399F2E84000468628F50A122B5F16",
+  "identities": [
+    "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX:1409007070:udid2;c;CAT;LOL;2000-04-19;e+43.70-079.42;0;"
+  ],
+  "joiners": [
+"9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk:1505004141"
+  ],
+  "leavers": [
+    "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk:1505004141"
+  ],
+  "excluded": [
+    "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
+  ],
+  "certifications": [
+    "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:1505900000:2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk"
+  ],
+  "transactions": [
     {
-      "membership": {
-        "signature": "iQGcBAABCAA...J8/UODEA==\n=t2S+\n",
-        "membership": "1:33BBFC0C67078D72AF128B5BA296CC530126F372:IN:1408995911:Snowy (udid2;c;SNOW;JOHN;1980-07-13;e+40.71-074.01;0;) 
-<john.snow@got.com>"
-      },
-      "certpackets": "wsBfBBAB...LWPztzla5vwADMow==\n",
-      "keypackets": "xsDNBFH...oEA=\n",
-      "fingerprint": "33BBFC0C67078D72AF128B5BA296CC530126F372",
-      "type": "N"
-    },
-    {
-      "membership": {
-        "signature": "iQEcBAAB...3NGiw=\n=2nmK\n",
-        "membership": "1:663A65AC3CE8F36DCBBCAF7ABD4367024C29635E:IN:1408995912:Superman (udid2;c;KENT;CLARK-JOSEPH;1950-04-07;e+37.31-083.34;0;) 
-    <superman@krypton.com>"
-      },
-      "certpackets": "wsBfB...aWdNJL1VaYk=\n",
-      "fingerprint": "663A65AC3CE8F36DCBBCAF7ABD4367024C29635E",
-      "type": "N"
-    },
-    {
-      "keypackets": "",
-      "certpackets": "wsDfBBAB...zcBmO\n",
-      "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "type": "U"
-    },
-    {
-      "keypackets": "",
-      "certpackets": "wsDfBBAB...KyKG5SymM7YQ==\n",
-      "fingerprint": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-      "type": "U"
+      "signatures": [
+        "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
+    ],
+      "version": 1,
+      "currency": "beta_brousouf",
+      "issuers": [
+        "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+        "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
+        "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
+      ],
+      "inputs": [
+        "0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8",
+        "0:T:F80993776FB55154A60B3E58910C942A347964AD",
+        "0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B",
+        "0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097",
+        "1:T:F80993776FB55154A60B3E58910C942A347964AD",
+        "2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91",
+        "2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4"
+      ],
+      "outputs": [
+        "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30",
+        "DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156",
+        "6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49"
+      ]
     }
-  ]
+  ],
+  "signature": "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==",
 }
 ```
 
-#### `keychain/current`
+#### `blockchain/current`
 
-Same as [keyblock/[number]](#keychainkeyblocknumber), but return last accepted keyblock.
+Same as [block/[number]](#blockchainblocknumber), but return last accepted block.
 
-### network/*
-
-This URL is used for uCoin Gossip protocol (exchanging UCG messages).
-
-#### `network/pubkey`
-**Goal**
-
-GET the public key of the peer.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The public key in ASCII-armored format.
-```
------BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-mQENBFHHC/EBCADWTLSN7EGP+n30snndS3ZNcB02foL+0opcS6LK2coPDJLg2noo
-keJRHZxF3THmZQrKwZOjiuDBinOc5DWlzIS/gD/RaXwntgPFlGKBlBU+g255fr28
-ziSb5Y1lW4N//nUFdPZzoMmPgRj0b17T0UPCoMR8ZZ/Smk5LINbQwt+A+LEoxEdE
-Vcq+Tyc0OlEabqO6RFqiKDRiPhGPiCwVQA3yPjb6iCp5gTchObCxCnDbxA0Mfj9F
-mHrGbepNHGXxStO4xT0woCb7y02S1E8K08kOc5Bq9e1Yj5I/mdaw4Hn/Wp28lZl1
-mnO1u1z9ZU/rcglhEyaEOTwasheb44QcdGSfABEBAAG0TUxvTCBDYXQgKHVkaWQy
-O2M7Q0FUO0xPTDsyMDAwLTA0LTE5O2UrNDMuNzAtMDc5LjQyOzA7KSA8Y2VtLm1v
-cmVhdUBnbWFpbC5jb20+iQE9BBMBCAAnBQJRxwvxAhsDBQkLR5jvBQsJCAcDBRUK
-CQgLBRYCAwEAAh4BAheAAAoJEOnKt20ZqGUeZYcH/0ItH4b/O0y7V1Jzc1DZAdn4
-iDiI7/SF3fN4f6cJCu/SOVb+ERFIb6JK+HNHdVAcMHKaPW625R0FahHUkcXWkkGm
-Q6+sLIsVZwVN1oeZtlD12cq9A4UJyfJUXkinMKkI8xpdV8J7s5wFRavOS/qaF5be
-ah0Z+IGwQK0nuXxWpT6UZWbpUfXPQB2Mz2/rpjSWKwO3X4FwwOfDiuZExyH2JPDY
-shdPcj/x+gnzYW9XfWCJw3rOK42vtM+aLtUpJO0Jh6X/sj/iqyS4rPB4DVCmEgSX
-Px1P+kqnsz3aNTOIujXS8Faz+TC+eNhn+z3SoTl5gBlNNM171fWFr0BR3nIfIu65
-AQ0EUccL8QEIAPAQaxK6s4DjDHiOwrMotvb479QD5PsHU6S0VG0+naoPlNJb2d5w
-YhnFAn4aYLiXx4IIl38rHnV+yWATOUe2rdCe4enTXkxyWJVaxIcNJLFpUjHYGbrC
-nNwiXpuQfSDuRN/wcVNSBKXhWNUPY9IsbgERWhS5YTFnuQcBjMqDwF6JImQ8O4nZ
-wno811nqK1XaMuLVvXZAsO1Vi1k3NArM5+jdlq9e3BA0NcHJmGEcQdTw0Tk5Oq6r
-mE8ux7pS0bn6OUkkseR5DyRlFtzqi4wp30GeggeFExx7ZCVuctpJX9ZoC3cJoZT0
-s3LuUtV0EW50yCtP+3Vpkek2WtjfVbM6kDkAEQEAAYkBJQQYAQgADwUCUccL8QIb
-DAUJC0eY7wAKCRDpyrdtGahlHg7+B/95xEoSrFQ7/mc7g6sbisvx3s547gUXXYSu
-FHS03IMDWJrfGKqXtBf9ETBx4OLeBXY7z1lL4WCN6/xtrL+mSQ9dbDqdXv/1EhkS
-v0s+IvJ34KYGAkFXSCoTE7rnkPwQjoMYVSFkf5e8g9adyKvndq/QSPNuv+FPL6sH
-m1N9nmus5Ebr0zTVDmmfoqzokuDfHm5h6YrkFscMGjrCKWuXSiTaGj9Hm3MqeZ3T
-Kva5isa/h0h7Ai3wJ5XJpMrFNN6BU/wIt7fM2hsNAOwaG+WUfgjYEkOua8gPPtpL
-ZJJPb/89yrs9F7JkLi/oiAl5VpItm+hlFpLe1TE7oa6k53eZ2a+V
-=rOj9
------END PGP PUBLIC KEY BLOCK-----
-```
-
-#### `keychain/hardship/[PGP_FINGERPRINT]`
+#### `blockchain/hardship/[PGP_FINGERPRINT]`
 
 **Goal**
 
@@ -549,6 +339,10 @@ The hardship value (`level`) + `block` number.
 }
 ```
 
+### network/*
+
+This URL is used for uCoin Gossip protocol (exchanging UCG messages).
+
 #### `network/peering`
 **Goal**
 
@@ -565,13 +359,13 @@ Peering entry of the node.
 {
   "version": "1",
   "currency": "beta_brousouf",
-  "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+  "fingerprint": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "endpoints": [
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
     "OTHER_PROTOCOL 88.77.66.55 9001",
   ],
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
+  "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
 }
 ```
 
@@ -603,13 +397,13 @@ Merkle URL leaf: peering entry
   "value": {
     "version": "1",
     "currency": "beta_brousouf",
-    "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+    "fingerprint": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "endpoints": [
       "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
       "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-      "OTHER_PROTOCOL 88.77.66.55 9001"
+      "OTHER_PROTOCOL 88.77.66.55 9001",
     ],
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
+    "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
   }
 }
 ```
@@ -633,137 +427,13 @@ The posted entry.
 {
   "version": "1",
   "currency": "beta_brousouf",
-  "fingerprint": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
+  "fingerprint": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "endpoints": [
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002",
-    "OTHER_PROTOCOL 88.77.66.55 9001"
+    "OTHER_PROTOCOL 88.77.66.55 9001",
   ],
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n"
-}
-```
-
-#### `network/peering/peers/upstream`
-**Goal**
-
-GET a list of peers this node is **listening to** for ANY incoming transaction.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The corresponding peer list's fingerprints.
-
-```json
-{
-  "peers": [
-    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
-  ]
-}
-```
-
-#### `network/peering/peers/upstream/[PGP_FINGERPRINT]`
-**Goal**
-
-GET a list of peers this node is **listening to** for incoming transactions of `PGP_FINGERPRINT`.
-
-**Parameters**
-
-Name              | Value                                                                        | Method
------------------ | ---------------------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP key's fingerprint whose incoming transactions are listened by this node. | URL
-
-**Returns**
-
-The corresponding peer list.
-
-```json
-{
-  "peers": [
-    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
-  ]
-}
-```
-
-#### `network/peering/peers/downstream`
-**Goal**
-
-GET a list of peers this node is **listened by** for ANY incoming transaction.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The corresponding peer list.
-
-```json
-{
-  "peers": [
-    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
-  ]
-}
-```
-
-#### `network/peering/peers/downstream/[PGP_FINGERPRINT]`
-**Goal**
-
-GET a list of peers this node is **listened by** for incoming transactions of `PGP_FINGERPRINT`.
-
-**Parameters**
-
-Name              | Value                                                                          | Method
------------------ | ------------------------------------------------------------------------------ | ------
-`PGP_FINGERPRINT` | PGP key's fingerprint whose incoming transactions are listened by other nodes. | URL
-
-**Returns**
-
-The corresponding peer list.
-
-```json
-{
-  "peers": [
-    "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-    "B356F8A6AD4A0431AF047AA204511A9F8A51ED37"
-  ]
-}
-```
-
-#### `network/peering/forward`
-**Goal**
-
-POST a UCG forward document to this node in order to be sent back incoming transactions.
-
-**Parameters**
-
-Name        | Value                                  | Method
------------ | -------------------------------------- | ------
-`forward`   | UCG forward document.                  | POST
-`signature` | Signature of the UCG forward document. | POST
-
-**Returns**
-
-The posted forward.
-```json
-{
-  "version": "1",
-  "currency": "beta_brousouf",
-  "from": "A70B8E8E16F91909B6A06DFB7EEF1651D9CCF468",
-  "to": "CC5AE6DA4307AD2339FB52013119E9704EDE0802",
-  "forward": "KEYS",
-  "keys": [
-    "395DF8F7C51F007019CB30201C49E884B46B92FA",
-    "58E6B3A414A1E090DFC6029ADD0F3555CCBA127F",
-    "4DC7C9EC434ED06502767136789763EC11D2C4B7",
-    "8EFD86FB78A56A5145ED7739DCB00C78581C5375",
-    "95CB0BFD2977C761298D9624E4B4D4C72A39974A"
-  ]
+  "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
 }
 ```
 
@@ -790,180 +460,6 @@ The posted status.
 }
 ```
 
-#### `network/wallet (GET)`
-**Goal**
-
-Merkle URL refering to WHT (Wallets Hash Table).
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: Wallet
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-    "entry": {
-      "version": "1",
-      "currency": "beta_brousouf",
-      "issuer": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "requiredTrusts": 3,
-      "hosters": [
-        "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-        "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-      ],
-      "trusts": [
-        "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-        "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-      ]
-    }
-  }
-}
-```
-
-#### `network/wallet (POST)`
-**Goal**
-
-POST a Wallet.
-
-**Parameters**
-
-Name        | Value                                  | Method
------------ | -------------------------------------- | ------
-`entry`     | Entry data.                            | POST
-`signature` | Signature of the Wallet value.         | POST
-
-**Returns**
-
-The posted Wallet.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-  "entry": {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "requiredTrusts": 3,
-    "hosters": [
-      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-    ],
-    "trusts": [
-      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-    ]
-  }
-}
-```
-
-#### `network/wallet/[PGP_FINGERPRINT]`
-**Goal**
-
-GET a unique Wallet.
-
-**Parameters**
-
-Name              | Value                                           | Method
------------------ | ----------------------------------------------- | ------
-`PGP_FINGERPRINT` | The key fingerprint we want Trust informations. | URL
-
-**Returns**
-
-The requested Wallet.
-```json
-{
-  "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-  "entry": {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-    "requiredTrusts": 3,
-    "hosters": [
-      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-    ],
-    "trusts": [
-      "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "D049002A6724D35F867F64CC087BA351C0AEB6DF"
-    ]
-  }
-}
-```
-
-### contract/*
-
-This URL pattern manages all the data used by uCoin based on the PKS.
-
-In a general way, those URLs return HTTP **200** code on success, HTTP **501** if not implemented and any HTTP error code on error.
-
-#### `parameters`
-
-**Goal**
-
-GET the monetary parameters used by this node.
-
-**Parameters**
-
-*None*.
-
-**Returns**
-
-The monetary parameters.
-```json
-{
-    "c": 0.737826,
-    "dt": 2629800,
-    "ud0": 100
-}
-```
-
-Parameters meaning is described under [Protocol parameters](./Protocol.md#protocol-parameters).
-
-#### `am/[AMENDMENT_NUMBER]`
-**Goal**
-
-GET the promoted amendment with number `AMENDMENT_NUMBER`.
-
-**Parameters**
-
-Name               | Value                                                         | Method
------------------- | ------------------------------------------------------------- | ------
-`AMENDMENT_NUMBER` | The promoted amendment number (integer value) we want to see. | URL
-
-**Returns**
-
-The promoted amendment if it exists (otherwise return HTTP 404).
-```json
-{
-  "version": "1",
-  "currency": "beta_brousouf",
-  "number": "2",
-  "generated": 1400588975,
-  "previousHash": "0F45DFDA214005250D4D2CBE4C7B91E60227B0E5",
-  "dividend": "100",
-  "membersRoot": "F92B6F81C85200250EE51783F5F9F6ACA57A9AFF",
-  "membersCount": "4",
-  "membersChanges": [
-    "+31A6302161AC8F5938969E85399EB3415C237F93"
-  ],
-  "raw": "Version: 1\r\n...+31A6302161AC8F5938969E85399EB3415C237F93\r\n"
-}
-```
-
 ### tx/*
 
 #### `tx/process`
@@ -986,393 +482,30 @@ The recorded transaction and its signature.
   "raw": "Version: 1\r\n...\r\n",
   "transaction":
   {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
+    "signatures": [
+      "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
+  ],
     "version": 1,
     "currency": "beta_brousouf",
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 1,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
-    "amounts": [
-      "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
-      "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
+    "issuers": [
+      "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+      "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
+      "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
     ],
-    "comment": "Buying something"
-  }
-}
-```
-
-#### `tx/last/[COUNT]`
-**Goal**
-
-Get the last `n` received transactions.
-
-**Parameters**
-
-Name              | Value                                                                        | Method
------------------ | ---------------------------------------------------------------------------- | ------
-`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. Defaults to 1. | URL
-
-**Returns**
-
-The last [COUNT] transactions received.
-```json
-{
-  "transactions": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 92,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "amounts": [
-        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
-        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
-      ],
-      "comment": "Paying LoLCat's food."
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "currency": "beta_brousouf",
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 91,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
-      "amounts": [
-        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
-        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
-      ],
-      "comment": "Buying something"
-    }
-  ]
-}
-```
-
-#### `tx/sender/[PGP_FINGERPRINT]`
-**Goal**
-
-Merkle URL referencing all the transactions sent by this sender and stored by this node (should contain all transactions of the sender).
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "transaction":
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "sender": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-      "number": 14,
-      "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "coins": [
-        "2E69197FAB029D8669EF85E82457A1587CA0ED9C-10-1",
-        "2E69197FAB029D8669EF85E82457A1587CA0ED9C-2-4:31A6302161AC8F5938969E85399EB3415C237F93-1",
-        "2E69197FAB029D8669EF85E82457A1587CA0ED9C-3-6:31A6302161AC8F5938969E85399EB3415C237F93-1",
-      ],
-      "comment": "Giving back some coins"
-    }
-  }
-}
-```
-
-#### `tx/sender/[PGP_FINGERPRINT]/view/[TX_NUMBER]`
-**Goal**
-
-GET the transaction of given `TRANSACTION_ID`.
-
-**Parameters**
-
-Name              | Value                                                                                                                | Method
------------------ | -------------------------------------------------------------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see transaction.                                                               | URL
-`TX_NUMBER`       | The transaction [unique identifier](https://github.com/c-geek/ucoin/blob/master/doc/HDC.md#transaction) number part. | URL
-
-**Returns**
-
-The transaction and its signature.
-```json
-{
-  "raw": "Version: 1\r\n...\r\n",
-  "transaction":
-  {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-    "version": 1,
-    "sender": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-    "number": 14,
-    "recipient": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "coins": [
-      "2E69197FAB029D8669EF85E82457A1587CA0ED9C-10-1",
-      "2E69197FAB029D8669EF85E82457A1587CA0ED9C-2-4:31A6302161AC8F5938969E85399EB3415C237F93-1",
-      "2E69197FAB029D8669EF85E82457A1587CA0ED9C-3-6:31A6302161AC8F5938969E85399EB3415C237F93-1",
+    "inputs": [
+      "0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8",
+      "0:T:F80993776FB55154A60B3E58910C942A347964AD",
+      "0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B",
+      "0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097",
+      "1:T:F80993776FB55154A60B3E58910C942A347964AD",
+      "2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91",
+      "2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4"
     ],
-    "comment": "Giving back some coins"
+    "outputs": [
+      "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30",
+      "DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156",
+      "6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49"
+    ]
   }
-}
-```
-
-#### `tx/sender/[PGP_FINGERPRINT]/last/[COUNT]/[FROM]`
-**Goal**
-
-Get the last `n` received transactions of a PGP key.
-
-**Parameters**
-
-Name              | Value                                                                                      | Method
------------------ | ------------------------------------------------------------------------------------------ | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see last transaction.                                | URL
-`COUNT`           | Integer indicating to retrieve the last [COUNT] transactions. Defaults to 1.               | URL
-`FROM`            | Integer indicating to retrieve [COUNT] transactions starting from [FROM] number. Optional. | URL
-
-**Returns**
-
-The last [COUNT] transactions of given PGP key.
-```json
-{
-  "transactions": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 92,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "amounts": [
-        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
-        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
-      ],
-      "comment": "Paying LoLCat's food."
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "currency": "beta_brousouf",
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 91,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
-      "amounts": [
-        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
-        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
-      ],
-      "comment": "Buying something"
-    }
-  ]
-}
-```
-
-#### `tx/recipient/[PGP_FINGERPRINT]`
-**Goal**
-
-Merkle URL referencing all the transactions received for this recipient stored by this node.
-
-**Parameters**
-
-Name              | Value                                                            | Method
------------------ | ---------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see received transactions. | URL
-
-**Returns**
-
-Merkle URL result.
-```json
-{
-  "depth": 3,
-  "nodesCount": 6,
-  "leavesCount": 5,
-  "root": "114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9"
-}
-```
-
-Merkle URL leaf: transaction
-```json
-{
-  "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-  "value": {
-    "transaction":
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 92,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "amounts": [
-        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
-        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
-      ],
-      "comment": "Paying LoLCat's food."
-    }
-  }
-}
-```
-
-#### `tx/refering/[PGP_FINGERPRINT]/[TX_NUMBER]`
-**Goal**
-
-GET all the transactions refering to source transaction #`[TX_NUMBER]` issued by `[PGP_FINGERPRINT]`.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent transactions.  | URL
-`TX_NUMBER`       | Transaction number of given PGP key                           | URL
-
-**Returns**
-
-A list of transactions pointing to this source transaction.
-```json
-{
-  "transactions": [
-    {
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 92,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "amounts": [
-        "70C881D4A26984DDCE795F6F71817C9CF4480E79-92:66",
-        "503A586FE6F7819A18A38426A7C2C1D0880F99CB-122:988",
-      ],
-      "comment": "Paying LoLCat's food."
-    },{
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-      "version": 1,
-      "currency": "beta_brousouf",
-      "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-      "number": 91,
-      "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-      "recipient": "A9571447F4B6B477F1037D85C6211FB059C561C7",
-      "amounts": [
-        "9EE7ABA9EE7A15F57319B6BFC21FA08E821ABEAA-0:100",
-        "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-1:110",
-      ],
-      "comment": "Buying something"
-    }
-  ]
-}
-```
-
-#### `coins/list/[PGP_FINGERPRINT]`
-**Goal**
-
-GET all the coins owned by `[PGP_FINGERPRINT]`.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`PGP_FINGERPRINT` | PGP fingerprint of the key we want to see sent owned coins.   | URL
-
-**Returns**
-
-A list of coins owned by this key.
-```json
-{
-  "coins": [
-    "31A6302161AC8F5938969E85399EB3415C237F93-0-1",
-    "31A6302161AC8F5938969E85399EB3415C237F93-0-2",
-    "31A6302161AC8F5938969E85399EB3415C237F93-0-3",
-    "31A6302161AC8F5938969E85399EB3415C237F93-0-4",
-    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-1",
-    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-2",
-    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-3",
-    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-4",
-    "D02B0466F3F9B7B0C9C8E926700379AEF0DD1E5B-0-5"
-    ...
-  ]
-}
-```
-
-#### `coins/view/[COIN_ID]/owner`
-**Goal**
-
-GET a coin owner + justifying transaction if it exists.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`COIN_ID`         | ID of the coin to be checked.                                 | URL
-
-**Returns**
-
-A coin's ownership.
-```json
-{
-  "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66",
-  "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-  "transaction": {
-    "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-    "version": 1,
-    "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-    "number": 92,
-    "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-    "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-    "amounts": [
-      "31A6302161AC8F5938969E85399EB3415C237F93-92-25",
-      "31A6302161AC8F5938969E85399EB3415C237F93-122-1",
-    ],
-    "comment": "Paying LoLCat's food."
-  }
-}
-```
-
-#### `coins/view/[COIN_ID]/history`
-**Goal**
-
-GET a coin owner + justifying transaction for each state a coin has gone trough.
-
-**Parameters**
-
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`COIN_ID`         | ID of the coin to be checked.                                 | URL
-
-**Returns**
-
-A coin's list of ownerships in time.
-```json
-{
-  "history": [{
-      "coinid": "70C881D4A26984DDCE795F6F71817C9CF4480E79-92-66",
-      "owner": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-      "transaction": {
-        "signature": "-----BEGIN PGP SIGNATURE-----\r\n ... -----END PGP SIGNATURE-----\r\n",
-        "version": 1,
-        "sender": "31A6302161AC8F5938969E85399EB3415C237F93",
-        "number": 92,
-        "previousHash": "BE522363749E62BA1034C7B1358B01C75289DA48",
-        "recipient": "86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8",
-        "amounts": [
-          "31A6302161AC8F5938969E85399EB3415C237F93-92-25",
-          "31A6302161AC8F5938969E85399EB3415C237F93-122-1",
-        ],
-        "comment": "Paying LoLCat's food."
-      }
-    },{
-    ...
-    }
-  ]
 }
 ```

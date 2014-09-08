@@ -10,6 +10,9 @@
 * [Overview](#overview)
 * [Merkle URLs](#merkle-urls)
 * [API](#api)
+  * [wot/](#wot)
+      * [add](#wotadd)
+      * [lookup/[search]](#wotlookupsearch)
   * [blockchain/](#blockchain)
       * [parameters](#blockchainparameters)
       * [membership](#blockchainmembership)
@@ -156,6 +159,94 @@ Merkle URL             | Leaf                      | Sort
 It has to be noted that **possible conflict exists** for leaves, as every leaf is hash, but is rather unlikely.
 
 ## API
+
+### wot/*
+
+#### `wot/add`
+
+
+**Goal**
+
+POST [Public key](./Protocol.md#publickey) data.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`self` | The raw self-certification. | POST
+`other` | A list of [inline certifications](#inline-certification) separated by new lines. | POST
+
+**Returns**
+
+The available validated data for this public key.
+```json
+{
+  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "uids": [
+    {
+      "uid": "udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;",
+      "meta": {
+        "timestamp": 1409990782
+      },
+      "self": "J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci",
+      "others": [
+        {
+          "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
+          "meta": {
+            "timestamp": 1509991044
+          },
+          "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### `wot/lookup/[search]`
+
+
+**Goal**
+
+GET [Public key](./Protocol.md#publickey) data.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`search` | A string of data to look for (public key, uid). | URL
+
+**Returns**
+
+A list of public key data matching search string (may not return all results, check `partial` flag which is set to `false` if all results are here, ` true` otherwise).
+```json
+{
+  "partial": false,
+  "results": [
+    {
+      "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+      "uids": [
+        {
+          "uid": "udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;",
+          "meta": {
+            "timestamp": 1409990782
+          },
+          "self": "J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci",
+          "others": [
+            {
+              "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
+              "meta": {
+                "timestamp": 1509991044
+              },
+              "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
 ### blockchain/*
 

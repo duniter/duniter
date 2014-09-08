@@ -151,6 +151,19 @@ The generic word *certification* is to be used for describing *certification fro
 
 A certification is only the *signature* over a complete self-certification flavoured with a signature date.
 
+##### Inline format
+
+Certification may exists under *inline format*, which is a more precise format than just the signature, and described under a simple line. Here is general structure:
+
+    PUBKEY_FROM:PUBKEY_TO:TIMESTAMP:SIGNATURE
+
+Where
+
+  * `PUBKEY_FROM` is the certification public key
+  * `PUBKEY_TO` is the public key whose identity is being certified
+  * `TIMESTAMP` is the certification date
+  * `SIGNATURE` is the certification
+
 ##### Example
 
 If we have the following complete self-certification:
@@ -184,6 +197,7 @@ Currency: beta_brousouf
 Issuer: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
 Date: TIMESTAMP
 Membership: IN
+UserID: USER_ID
 ```
 
 followed by a signature of `Issuer`.
@@ -197,6 +211,7 @@ Field | Description
 `Issuer` | The public key of the issuer.
 `Date` | Creation date of this message. Timestamp. This date may be different from signature's date.
 `Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
+`UserID` | Identity to use for this public key
 
 #### Validity
 
@@ -592,14 +607,18 @@ A Block can be accepted only if it respects the following rules.
 
 #### Certifications
 
-* Only members' certifications can be added in a keyblock
+* Only members' certifications can be added in a block
 * A same certification (same key being signed by another key twice or more) cannot happen twice in a `[sigDelay]` duration interval
 
 #### Valid membership
-A membership is to be considered valid if matching the following rules:
+A membership is to be considered valid if it matches the following rules:
 
 * The membership must be [well formated](#membership)
 * The membership must be signed by its issuer
+* First membership MUST contain a `UserID` field with an UDID2 in it
+* First membership MUST be `IN` type
+* First membership `UserID` MUST be the same as the one in `Identities` for `Issuer`
+* Following memberships of a given key MUST NOT have an `UserID` field.
 
 #### Certification validity
 A signature (certification)  is considered valid if its age is less or equal to `[sigValidity]` months.

@@ -17,6 +17,14 @@ function ParameterNamespace (conn, currency) {
   var Forward     = conn.model('Forward');
   var Wallet      = conn.model('Wallet');
 
+  this.getSearch = function (req, callback) {
+    if(!req.params || !req.params.search){
+      callback("No search criteria given");
+      return;
+    }
+    callback(null, req.params.search);
+  };
+
   this.getTransaction = function (req, callback) {
     async.waterfall([
       function (next){

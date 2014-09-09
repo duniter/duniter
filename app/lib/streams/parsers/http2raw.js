@@ -2,7 +2,7 @@ var stream = require('stream');
 var util   = require('util');
 
 module.exports = {
-  pubkey:        instanciate.bind(null, Http2RawPubkey),
+  identity:      instanciate.bind(null, Http2RawIdentity),
   transaction:   instanciate.bind(null, Http2RawTransaction),
   peer:          instanciate.bind(null, Http2RawPeer),
   forward:       instanciate.bind(null, Http2RawForward),
@@ -16,19 +16,21 @@ function instanciate (constructorFunc, req, onError) {
   return new constructorFunc(req, onError);
 };
 
-function Http2RawPubkey (req, onError) {
+function Http2RawIdentity (req, onError) {
   
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!req.body || !req.body.keytext){
-      onError('Parameter `keytext` is required');
+    if(!req.body || !req.body.pubkey){
+      onError('Parameter `pubkey` is required');
     }
-    else if(!req.body.keytext.match(/BEGIN PGP PUBLIC KEY/) || !req.body.keytext.match(/END PGP PUBLIC KEY/)){
-      onError('Keytext does not look like a public key message');
+    else if(!req.body || !req.body.self){
+      onError('Parameter `self` is required');
     }
     else {
-      this.push(req.body.keytext);
+      var raw = req.body.pubkey + '\n' + req.body.self + (req.body.other ? '\n' + req.body.other : '');
+      console.log(raw);
+      this.push(raw);
     }
     this.push(null);
   }
@@ -139,7 +141,7 @@ function Http2RawKeyblock (req, onError) {
   }
 }
 
-util.inherits(Http2RawPubkey,      stream.Readable);
+util.inherits(Http2RawIdentity,    stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
 util.inherits(Http2RawPeer,        stream.Readable);
 util.inherits(Http2RawForward,     stream.Readable);

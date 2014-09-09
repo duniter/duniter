@@ -1,7 +1,7 @@
 var async   = require('async');
 var util    = require('util');
 var parsers = require('./app/lib/streams/parsers/doc');
-var PKSServer  = require('./pksserver');
+var Server  = require('./server');
 
 function WOTServer (dbConf, overrideConf, interceptors, onInit) {
 
@@ -9,41 +9,25 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
 
   var selfInterceptors = [
     {
-      // Membership
+      // Identity
       matches: function (obj) {
-        return obj.userid ? true : false;
+        return obj.pubkey && obj.uid ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
-            that.KeychainService.submitMembership(obj, next);
+            that.IdentityService.submitIdentity(obj, next);
           },
-          function (membership, next){
-            that.emit('membership', membership);
-            next(null, membership);
-          },
-        ], next);
-      }
-    },{
-      // KeyBlock
-      matches: function (obj) {
-        return obj.type && obj.type == 'KeyBlock' ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        async.waterfall([
-          function (next){
-            server.KeychainService.submitKeyBlock(obj, next);
-          },
-          function (kb, next){
-            server.emit('keyblock', kb);
-            next(null, kb);
+          function (identity, next){
+            that.emit('identity', identity);
+            next(null, identity);
           },
         ], next);
       }
     }
   ];
 
-  PKSServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
+  Server.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
 
   var that = this;
 
@@ -51,37 +35,33 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._initServices = function(conn, done) {
-    this.KeyService         = require('./app/service/KeyService').get(conn);
-    this.PublicKeyService   = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
-    this.KeychainService    = require('./app/service/KeychainService').get(conn, that.conf, that.PublicKeyService);
-    async.parallel({
-      contract: function(callback){
-        that.KeychainService.load(callback);
-      },
-      peering: function(callback){
-        callback();
-      },
-    }, function (err) {
-      done(err);
-    });
+    this.IdentityService = require('./app/service/IdentityService').get(that.conn, that.conf);
+    done();
+    // this.PublicKeyService   = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
+    // this.KeychainService    = require('./app/service/KeychainService').get(conn, that.conf, that.PublicKeyService);
+    // async.parallel({
+    //   contract: function(callback){
+    //     that.KeychainService.load(callback);
+    //   },
+    //   peering: function(callback){
+    //     callback();
+    //   },
+    // }, function (err) {
+    //   done(err);
+    // });
   };
 
   this._listenBMA = function (app) {
-    this.listenPKS(app);
     this.listenWOT(app);
   };
 
   this.listenWOT = function (app) {
-    var keychain = require('./app/controllers/keychain')(that);
-    app.get(    '/keychain/parameters',       keychain.parameters);
-    app.post(   '/keychain/membership',       keychain.parseMembership);
-    app.post(   '/keychain/keyblock',         keychain.parseKeyblock);
-    app.get(    '/keychain/keyblock/:number', keychain.promoted);
-    app.get(    '/keychain/current',          keychain.current);
-    app.get(    '/keychain/hardship/:fpr',    keychain.hardship);
+    var wot = require('./app/controllers/wot')(that);
+    app.post('/wot/add',            wot.add);
+    app.get( '/wot/lookup/:search', wot.lookup);
   };
 }
 
-util.inherits(WOTServer, PKSServer);
+util.inherits(WOTServer, Server);
 
 module.exports = WOTServer;

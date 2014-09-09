@@ -11,7 +11,7 @@ var http       = require('http');
 var log4js     = require('log4js');
 var connectPgp = require('connect-pgp');
 
-var models = ['Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'KeyBlock'];
+var models = ['Identity', 'Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'KeyBlock'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -185,6 +185,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next){
         var deletableCollections = [
+          'identities',
           'amendments',
           'coins',
           'forwards',
@@ -252,8 +253,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     // To override in child classes
   };
 
-  this._sign = null;
-
   function listenBMA (overConf, onLoaded) {
     if (arguments.length == 1) {
       onLoaded = overConf;
@@ -271,12 +270,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     app.use(express.json());
     async.waterfall([
       function (next){
-
-        if (that._sign) {
-          // HTTP Signatures
-          app.use(connectPgp(that.sign));
-          logger.debug('Signed requests with PGP: enabled.');
-        }
 
         // Routing
         app.use(app.router);

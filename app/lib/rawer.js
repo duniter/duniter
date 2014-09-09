@@ -1,8 +1,17 @@
-var unix2dos = require('./unix2dos');
+var dos2unix = require('./dos2unix');
 
 module.exports = new function() {
 
   var that = this;
+
+  this.getIdentity = function (json) {
+    var raw = "";
+    raw += json.pubkey + '\n';
+    raw += "UID:" + json.uid + '\n';
+    raw += "META:TS:" + json.time.timestamp() + '\n';
+    raw += json.sig + '\n';
+    return dos2unix(raw);
+  };
 
   this.getAmendment = function (json) {
     var raw = "";
@@ -27,11 +36,11 @@ module.exports = new function() {
         raw += json.membersChanges[i] + "\n";
       }
     }
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getPubkey = function (json) {
-    return unix2dos(json.raw);
+    return dos2unix(json.raw);
   };
 
   this.getTransactionWithoutSignature = function (json) {
@@ -51,11 +60,11 @@ module.exports = new function() {
     raw += "Comment:\n" + json.comment;
     if (!raw.match(/\n$/))
       raw += '\n';
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getTransaction = function (json) {
-    return unix2dos(signed(that.getTransactionWithoutSignature(json), json));
+    return dos2unix(signed(that.getTransactionWithoutSignature(json), json));
   };
 
   this.getPeerWithoutSignature = function (json) {
@@ -67,11 +76,11 @@ module.exports = new function() {
     json.endpoints.forEach(function(ep){
       raw += ep + "\n";
     });
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getPeer = function (json) {
-    return unix2dos(signed(that.getPeerWithoutSignature(json), json));
+    return dos2unix(signed(that.getPeerWithoutSignature(json), json));
   };
 
   this.getForwardWithoutSignature = function (json) {
@@ -87,11 +96,11 @@ module.exports = new function() {
         raw += json.keys[i] + "\n";
       }
     }
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getForward = function (json) {
-    return unix2dos(signed(that.getForwardWithoutSignature(json), json));
+    return dos2unix(signed(that.getForwardWithoutSignature(json), json));
   };
 
   this.getStatusWithoutSignature = function (json) {
@@ -101,11 +110,11 @@ module.exports = new function() {
     raw += "Status: " + json.status + "\n";
     raw += "From: " + json.from + "\n";
     raw += "To: " + json.to + "\n";
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getStatus = function (json) {
-    return unix2dos(signed(that.getStatusWithoutSignature(json), json));
+    return dos2unix(signed(that.getStatusWithoutSignature(json), json));
   };
 
   this.getWalletWithoutSignature = function (json) {
@@ -123,11 +132,11 @@ module.exports = new function() {
     json.trusts.forEach(function (fingerprint) {
       raw += fingerprint + "\n";
     });
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getWallet = function (json) {
-    return unix2dos(signed(that.getWalletWithoutSignature(json), json));
+    return dos2unix(signed(that.getWalletWithoutSignature(json), json));
   };
 
   this.getMembershipWithoutSignature = function (json) {
@@ -138,11 +147,11 @@ module.exports = new function() {
     raw += "Date: " + json.date.timestamp() + "\n";
     raw += "Membership: " + json.membership + "\n";
     raw += "UserID: " + json.userid + "\n";
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getMembership = function (json) {
-    return unix2dos(signed(that.getMembershipWithoutSignature(json), json));
+    return dos2unix(signed(that.getMembershipWithoutSignature(json), json));
   };
 
   var KEYBLOCK_PUBK_PREFIX = "#####----";
@@ -170,11 +179,11 @@ module.exports = new function() {
     for(var i = 0; i < json.keysChanges.length; i++){
       raw += this.getKeychange(json.keysChanges[i]);
     }
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getKeyblock = function (json) {
-    return unix2dos(signed(that.getKeyblockWithoutSignature(json), json));
+    return dos2unix(signed(that.getKeyblockWithoutSignature(json), json));
   };
 
   var KEYCHANGE_PREFIX = "#####----";
@@ -195,11 +204,11 @@ module.exports = new function() {
       raw += json.membership.membership + "\n";
       raw += json.membership.signature;
     }
-    return unix2dos(raw);
+    return dos2unix(raw);
   };
 
   this.getKeychange = function (json) {
-    return unix2dos(signed(that.getKeychangeWithoutSignature(json), json));
+    return dos2unix(signed(that.getKeychangeWithoutSignature(json), json));
   };
 
   function signed (raw, json) {

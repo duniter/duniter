@@ -407,32 +407,32 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(service(ucoin.createTxServer, function (server, conf) {
+  .action(service(ucoin.createWOTServer, function (server, conf) {
 
-    server
-      .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
-      .pipe(multicaster());
+    // server
+    //   .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
+    //   .pipe(multicaster());
 
     async.waterfall([
-      function (next){
-        server.checkConfig(function (err) {
-          if (err) {
-            // If required, launch config
-            var wiz = wizard(server);
-            async.waterfall([
-              function (next){
-                wiz.doTasks(['currency', 'openpgp', 'key', 'network'], conf, next);
-              },
-              function (next){
-                conf.save(next);
-              },
-            ], function (err) {
-              next(err);
-            });
-          }
-          else next();
-        });
-      },
+      // function (next){
+      //   server.checkConfig(function (err) {
+      //     if (err) {
+      //       // If required, launch config
+      //       var wiz = wizard(server);
+      //       async.waterfall([
+      //         function (next){
+      //           wiz.doTasks(['currency', 'openpgp', 'key', 'network'], conf, next);
+      //         },
+      //         function (next){
+      //           conf.save(next);
+      //         },
+      //       ], function (err) {
+      //         next(err);
+      //       });
+      //     }
+      //     else next();
+      //   });
+      // },
       function (next){
         // Launching server
         server.start(function (err, app) {

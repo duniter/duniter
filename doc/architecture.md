@@ -19,7 +19,7 @@
        -----------------                        
        |      UCP      | uCoin protocol         
        | ------------- |                        
-       | |  OpenPGP  | | Cryptography features
+       | |  Ed25519  | | Cryptography features
        -----------------
 
 ```
@@ -30,4 +30,4 @@ Layer | Role
 uCoin | The software that implements UCP. May implement UCP throught BMA or any other future protocol.
 [BMA](./HTTP_API.md) | A communication protocol to exchange HDC and Network messages over HTTP.
 [UCP](./Protocol.md) | A protocol defining how to handle Network and HDC messages in order to build a uCoin network.
-OpenPGP | Cryptography format providing horizontal authentication features.
+Ed25519 | Cryptography format providing authentication features.

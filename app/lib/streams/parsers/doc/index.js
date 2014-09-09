@@ -1,5 +1,5 @@
 module.exports = {
-  parsePubkey:      instanciate.bind(instanciate, require('./pubkey')),
+  parseIdentity:    instanciate.bind(instanciate, require('./identity')),
   parseTransaction: instanciate.bind(instanciate, require('./transaction')),
   parsePeer:        instanciate.bind(instanciate, require('./peer')),
   parseForward:     instanciate.bind(instanciate, require('./forward')),

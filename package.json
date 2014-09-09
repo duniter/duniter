@@ -29,13 +29,11 @@
   "dependencies": {
     "express": "~3.4.7",
     "commander": "~2.1.0",
-    "ejs": "~0.8.5",
     "mongoose": "~3.8.4",
     "async": "~0.2.9",
     "sha1": "~1.1.0",
     "openpgp": "0.5.1",
     "merkle": "~0.1.0",
-    "connect-pgp": "~0.3.0",
     "underscore": "~1.5.2",
     "vucoin": "~0.20.0",
     "request": "~2.31.0",

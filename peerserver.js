@@ -17,6 +17,38 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   var selfInterceptors = [
     {
+      // Membership
+      matches: function (obj) {
+        return obj.userid ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.KeychainService.submitMembership(obj, next);
+          },
+          function (membership, next){
+            that.emit('membership', membership);
+            next(null, membership);
+          },
+        ], next);
+      }
+    },{
+      // KeyBlock
+      matches: function (obj) {
+        return obj.type && obj.type == 'KeyBlock' ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            server.KeychainService.submitKeyBlock(obj, next);
+          },
+          function (kb, next){
+            server.emit('keyblock', kb);
+            next(null, kb);
+          },
+        ], next);
+      }
+    },{
       // Peer
       matches: function (obj) {
         return obj.endpoints ? true : false;
@@ -35,24 +67,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         ], next);
       }
     },{
-      // Forward
-      matches: function (obj) {
-        return obj.forward ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        flogger.debug('⬇ FWD %s type %s', obj.from, obj.forward);
-        async.waterfall([
-          function (next){
-            that.PeeringService.submitForward(obj, next);
-          },
-          function (forward, next){
-            flogger.debug('✔ FWD %s type %s', forward.from, forward.forward);
-            that.emit('forward', forward);
-            next(null, forward);
-          },
-        ], next);
-      }
-    },{
       // Status
       matches: function (obj) {
         return obj.status ? true : false;
@@ -67,24 +81,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
             slogger.debug('✔ STATUS %s %s', status.pubkey.fingerprint, status.status);
             that.emit('status', status);
             next(null, status);
-          },
-        ], next);
-      }
-    },{
-      // Wallet
-      matches: function (obj) {
-        return obj.requiredTrusts ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        slogger.debug('⬇ WALLET %s', obj.pubkey.fingerprint);
-        async.waterfall([
-          function (next){
-            that.WalletService.submit(obj, next);
-          },
-          function (wallet, next){
-            wlogger.debug('✔ WALLET %s', obj.pubkey.fingerprint);
-            that.emit('wallet', wallet);
-            next(null, wallet);
           },
         ], next);
       }
@@ -353,6 +349,16 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     this.listenPKS(app);
     this.listenWOT(app);
     this.listenNET(app);
+  };
+
+  this.listenWOT = function (app) {
+    var keychain = require('./app/controllers/keychain')(that);
+    app.get(    '/keychain/parameters',       keychain.parameters);
+    app.post(   '/keychain/membership',       keychain.parseMembership);
+    app.post(   '/keychain/keyblock',         keychain.parseKeyblock);
+    app.get(    '/keychain/keyblock/:number', keychain.promoted);
+    app.get(    '/keychain/current',          keychain.current);
+    app.get(    '/keychain/hardship/:fpr',    keychain.hardship);
   };
 
   this.listenNET = function (app) {

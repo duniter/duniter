@@ -31,14 +31,22 @@ function IdentityService (conn, conf) {
   */
   this.submitIdentity = function(obj, done) {
     var idty = new Identity(obj);
-    var that = this;
+    var selfCert = idty.selfCert();
     fifo.push(function (cb) {
       async.waterfall([
         function (next){
           // Check signature's validity
-          crypto.verifyCbErr(idty.selfCert(), idty.sig, idty.pubkey, next);
+          crypto.verifyCbErr(selfCert, idty.sig, idty.pubkey, next);
         },
         function (next) {
+          var certs = idty.othersCerts();
+          async.forEachSeries(certs, function(cert, cb){
+            var raw = selfCert + idty.sig + '\n' + 'META:TS:' + cert.time.timestamp() + '\n';
+            var verified = crypto.verify(raw, cert.sig, cert.to);
+            cb(verified ? null : 'Wrong signature for certification \'' + cert.raw + '\'');
+          }, next);
+        },
+        function (next){
           Identity.getByHash(obj.hash, next);
         },
         function (existing, next){

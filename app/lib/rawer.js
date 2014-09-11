@@ -10,6 +10,9 @@ module.exports = new function() {
     raw += "UID:" + json.uid + '\n';
     raw += "META:TS:" + json.time.timestamp() + '\n';
     raw += json.sig + '\n';
+    json.certs.forEach(function(cert){
+      raw += [cert.from, json.pubkey, cert.time.timestamp(), cert.sig].join(':') + '\n';
+    });
     return dos2unix(raw);
   };
 

@@ -45,7 +45,7 @@ function IdentityParser (onError) {
         default:
           if (line.match(constants.CERT.OTHER.INLINE)) {
             var sp = line.split(':');
-            var cert = { from: sp[0], time: sp[1], sig: sp[2] };
+            var cert = { from: sp[0], to: sp[0], time: new Date(parseInt(sp[2])*1000), sig: sp[3] };
             obj.certs.push(cert);
           }
           break;

@@ -24,12 +24,12 @@ IdentitySchema.pre('save', function (next) {
   next();
 });
 
-IdentitySchema.virtual('certifs').get(function () {
-  return this._certifs || [];
+IdentitySchema.virtual('certs').get(function () {
+  return this._certs || [];
 });
 
-IdentitySchema.virtual('certifs').set(function (newCertifs) {
-  this._certifs = (newCertifs && newCertifs.length) || [newCertifs];
+IdentitySchema.virtual('certs').set(function (newCertifs) {
+  this._certs = (newCertifs && newCertifs.length >= 0 && newCertifs) || [newCertifs];
 });
 
 IdentitySchema.methods = {
@@ -50,7 +50,19 @@ IdentitySchema.methods = {
 
   selfCert: function () {
     return rawer.getSelfIdentity(this);
-  }
+  },
+
+  othersCerts: function () {
+    var that = this;
+    var certs = [];
+    this.certs.forEach(function(inlineCert){
+      if (inlineCert.to == that.pubkey) {
+        // Signature for this pubkey
+        certs.push(inlineCert)
+      }
+    });
+    return certs;
+  },
 };
 
 IdentitySchema.statics.getByHash = function (hash, done) {

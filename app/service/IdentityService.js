@@ -1,10 +1,7 @@
-var jpgp      = require('../lib/jpgp');
-var async     = require('async');
-var _         = require('underscore');
-var merkle    = require('merkle');
-var vucoin    = require('vucoin');
-var keyhelper = require('../lib/keyhelper');
-var logger    = require('../lib/logger')('pubkey');
+var async  = require('async');
+var _      = require('underscore');
+var crypto = require('../lib/crypto');
+var logger = require('../lib/logger')('pubkey');
 
 module.exports.get = function (conn, conf) {
   return new IdentityService(conn, conf);
@@ -37,6 +34,10 @@ function IdentityService (conn, conf) {
     var that = this;
     fifo.push(function (cb) {
       async.waterfall([
+        function (next){
+          // Check signature's validity
+          crypto.verifyCbErr(idty.selfCert(), idty.sig, idty.pubkey, next);
+        },
         function (next) {
           Identity.getByHash(obj.hash, next);
         },

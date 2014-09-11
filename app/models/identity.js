@@ -6,6 +6,7 @@ var Schema    = mongoose.Schema;
 var unix2dos  = require('../lib/unix2dos');
 var parsers   = require('../lib/streams/parsers/doc');
 var constants = require('../lib/constants');
+var rawer     = require('../lib/rawer');
 var logger    = require('../lib/logger')('pubkey');
 
 var IdentitySchema = new Schema({
@@ -45,6 +46,10 @@ IdentitySchema.methods = {
       "pubkey": this.pubkey,
       "uids": uids
     };
+  },
+
+  selfCert: function () {
+    return rawer.getSelfIdentity(this);
   }
 };
 

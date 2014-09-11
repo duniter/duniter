@@ -29,7 +29,6 @@ function Http2RawIdentity (req, onError) {
     }
     else {
       var raw = req.body.pubkey + '\n' + req.body.self + (req.body.other ? '\n' + req.body.other : '');
-      console.log(raw);
       this.push(raw);
     }
     this.push(null);

@@ -13,6 +13,13 @@ module.exports = new function() {
     return dos2unix(raw);
   };
 
+  this.getSelfIdentity = function (json) {
+    var raw = "";
+    raw += "UID:" + json.uid + '\n';
+    raw += "META:TS:" + json.time.timestamp() + '\n';
+    return dos2unix(raw);
+  };
+
   this.getAmendment = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";

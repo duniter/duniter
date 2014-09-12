@@ -42,8 +42,8 @@ function IdentityService (conn, conf) {
           var certs = idty.othersCerts();
           async.forEachSeries(certs, function(cert, cb){
             var raw = selfCert + idty.sig + '\n' + 'META:TS:' + cert.time.timestamp() + '\n';
-            var verified = crypto.verify(raw, cert.sig, cert.to);
-            cb(verified ? null : 'Wrong signature for certification \'' + cert.raw + '\'');
+            var verified = crypto.verify(raw, cert.sig, cert.from);
+            cb(verified ? null : 'Wrong signature for certification from \'' + cert.from + '\'');
           }, next);
         },
         function (next){

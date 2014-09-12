@@ -55,10 +55,10 @@ IdentitySchema.methods = {
   othersCerts: function () {
     var that = this;
     var certs = [];
-    this.certs.forEach(function(inlineCert){
-      if (inlineCert.to == that.pubkey) {
+    this.certs.forEach(function(cert){
+      if (cert.to == that.pubkey) {
         // Signature for this pubkey
-        certs.push(inlineCert)
+        certs.push(cert)
       }
     });
     return certs;

@@ -23,17 +23,6 @@ function Multicaster () {
     done();
   }
   
-  that.on('pubkey', function(pubkey, peers) {
-    logger.debug('--> new Pubkey to be sent to %s peer(s)', peers.length);
-    peers.forEach(function(peer){
-      fifo.push(function (sent) {
-        sendPubkey(peer, pubkey, success(function (err) {
-          sent();
-        }));
-      });
-    });
-  });
-  
   that.on('keyblock', function(keyblock, peers) {
     logger.debug('--> new Keyblock to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
@@ -140,20 +129,10 @@ function Multicaster () {
     });
   });
 
-  this.sendPubkey = sendPubkey;
   this.sendKeyblock = sendKeyblock;
 }
 
 util.inherits(Multicaster, stream.Transform);
-
-function sendPubkey(peer, pubkey, done) {
-  var keyID = peer.keyID();
-  logger.info('POST pubkey to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
-  post(peer, '/pks/add', {
-    "keytext": pubkey.getRaw(),
-    "keysign": pubkey.signature
-  }, done);
-}
 
 function sendKeyblock(peer, keyblock, done) {
   var keyID = peer.keyID();

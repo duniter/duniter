@@ -179,14 +179,6 @@ module.exports.tester = function (currency) {
     };
   };
 
-  this.pksAdd = function (keytext) {
-    return function (done) {
-      post('/pks/add', {
-        "keytext": keytext
-      }, done);
-    };
-  };
-
   this.join = function (signatory) {
     var Membership = mongoose.model('Membership');
     return function (done) {

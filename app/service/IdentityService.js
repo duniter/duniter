@@ -9,7 +9,8 @@ module.exports.get = function (conn, conf) {
 
 function IdentityService (conn, conf) {
 
-  var Identity = conn.model('Identity');
+  var Identity      = conn.model('Identity');
+  var Certification = conn.model('Certification');
   
   var fifo = async.queue(function (task, callback) {
     task(callback);
@@ -32,6 +33,7 @@ function IdentityService (conn, conf) {
   this.submitIdentity = function(obj, done) {
     var idty = new Identity(obj);
     var selfCert = idty.selfCert();
+    var certs = idty.othersCerts();
     fifo.push(function (cb) {
       async.waterfall([
         function (next){
@@ -39,11 +41,26 @@ function IdentityService (conn, conf) {
           crypto.verifyCbErr(selfCert, idty.sig, idty.pubkey, next);
         },
         function (next) {
-          var certs = idty.othersCerts();
           async.forEachSeries(certs, function(cert, cb){
             var raw = selfCert + idty.sig + '\n' + 'META:TS:' + cert.time.timestamp() + '\n';
             var verified = crypto.verify(raw, cert.sig, cert.from);
             cb(verified ? null : 'Wrong signature for certification from \'' + cert.from + '\'');
+          }, next);
+        },
+        function (next){
+          async.forEachSeries(certs, function(cert, cb){
+            var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, time: cert.time, target: obj.hash });
+            async.waterfall([
+              function (next){
+                Certification.exists(next);
+              },
+              function (exists, next){
+                if (exists) next();
+                else mCert.save(function (err) {
+                  next(err);
+                });
+              },
+            ], cb);
           }, next);
         },
         function (next){

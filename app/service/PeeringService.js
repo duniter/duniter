@@ -1,15 +1,14 @@
-var util        = require('util');
-var jpgp        = require('../lib/jpgp');
-var async       = require('async');
-var request     = require('request');
-var openpgp     = require('openpgp');
-var _           = require('underscore');
-var Status      = require('../models/statusMessage');
-var events      = require('events');
-var logger      = require('../lib/logger')('peering');
+var util    = require('util');
+var async   = require('async');
+var request = require('request');
+var _       = require('underscore');
+var events  = require('events');
+var Status  = require('../models/statusMessage');
+var logger  = require('../lib/logger')('peering');
+var base58  = require('../lib/base58');
 
-function PeeringService(conn, conf, PublicKeyService, ParametersService) {
-
+function PeeringService(conn, conf, pair, signFunc, ParametersService) {
+  
   var currency = conf.currency;
 
   var Wallet      = conn.model('Wallet');
@@ -21,14 +20,11 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   var Key         = conn.model('Key');
   var Forward     = conn.model('Forward');
   
-  this.privateKey = null;
-  this.cert = { fingerprint: '' };
-  if (conf.pgpkey) {
-    this.privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-    this.privateKey.decrypt(conf.pgppasswd);
-    this.ascciiPubkey = this.privateKey ? this.privateKey.toPublic().armor() : "";
-    this.cert = this.ascciiPubkey ? jpgp().certificate(this.ascciiPubkey) : { fingerprint: '' };
+  var selfPubkey = undefined;
+  if (pair) {
+    selfPubkey = base58.encode(pair.publicKey);
   }
+  this.pubkey = selfPubkey;
 
   var peer = null;
   var peers = {};
@@ -67,7 +63,7 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
         dbPeers.forEach(function(peer){
           that.addPeer(peer);
         });
-        Peer.getTheOne(that.cert.fingerprint, function (err, selfPeer) {
+        Peer.getTheOne(selfPubkey, function (err, selfPeer) {
           if (selfPeer)
             peer = selfPeer;
           next();
@@ -81,16 +77,8 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
     var pubkey = peer.pubkey;
     var fpr = pubkey.fingerprint;
     async.waterfall([
-      // Looking for corresponding public key
-      function(next){
-        if(!peer.fingerprint.match(new RegExp(fpr + "$", "g"))){
-          next('Fingerprint in peering entry ('+pubkey.fingerprint+') does not match signatory (' + fpr + ')');
-          return;
-        }
-        that.addPeer(peer);
-        next();
-      },
       function (next){
+        that.addPeer(peer);
         persistPeer(peer, next);
       }
     ], callback);
@@ -130,69 +118,9 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
             }
             else callback();
           },
-          forwardBack: function(callback){
-            // If good status, negociate Forward
-            if (~['NEW', 'NEW_BACK'].indexOf(peer.status)){
-              // Send forward request if not done yet
-              async.waterfall([
-                function (next){
-                  // Any previous forward must be removed and resent by each other
-                  Forward.remove({ $or: [ {from: peer.fingerprint}, {to: peer.fingerprint} ] }, function (err, fwds) {
-                    next(err);
-                  });
-                },
-                function (next){
-                  that.negociateForward(peer, next);
-                },
-              ], function (err, needForward) {
-                if(err) slogger.error(err);
-              });
-            }
-            callback();
-          },
         });
       }
     });
-  }
-
-  this.submitForward = function (obj, done) {
-    var fwd = new Forward(obj);
-    var pubkey;
-    async.waterfall([
-      function (next) {
-        Peer.find({ fingerprint: fwd.from }, next);
-      },
-      function (peers, next) {
-        if(peers.length == 0){
-          errCode = 404;
-          next('Peer ' + fwd.from + ' not found, POST at ucg/peering/peers first');
-          return;
-        }
-        PublicKey.getTheOne(fwd.from, next);
-      },
-      function (pubkey, next){
-        if(!fwd.to.match(new RegExp("^" + that.cert.fingerprint + "$", "g"))){
-          next('Node\'s fingerprint ('+that.cert.fingerprint+') is not concerned by this forwarding (' + fwd.to + ')');
-          return;
-        }
-        if(!fwd.from.match(new RegExp("^" + pubkey.fingerprint + "$", "g"))){
-          next('Forwarder\'s fingerprint ('+fwd.from+') does not match signatory (' + pubkey.fingerprint + ')');
-          return;
-        }
-        Forward.find({ from: fwd.from, to: that.cert.fingerprint }, next);
-      },
-      function (fwds, next){
-        var fwdEntity = fwd;
-        if(fwds.length > 0){
-          // Already existing fwd
-          fwdEntity = fwds[0];
-          fwd.copyValues(fwdEntity);
-        }
-        fwdEntity.save(function (err) {
-          next(err, fwdEntity);
-        });
-      }
-    ], done);
   }
 
   function persistPeer (peer, done) {
@@ -222,129 +150,6 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
           next(err, recordedPR);
         });
       }
-    ], done);
-  }
-
-  this.updateForwards = function (done) {
-    async.waterfall([
-      function (next){
-        that.generateForward(next);
-      },
-      function (forward, next){
-        Forward.findDifferingOf(that.cert.fingerprint, forward.getHashBasis(), next);
-      },
-      function (fwds, next){
-        async.forEach(fwds, function(fwd, callback){
-          async.waterfall([
-            function (next){
-              Peer.getTheOne(fwd.to, next);
-            },function (peer, next){
-              that.negociateForward(peer, next);
-            },
-          ], function (err) {
-            err && logger.warn(err);
-            callback();
-          });
-        }, next);
-      },
-    ], done);
-  };
-
-  /**
-  * Generate the general forward this node should send to peers
-  **/
-  this.generateForward = function (peer, done) {
-    if (arguments.length == 1) {
-      done = peer;
-      peer = undefined;
-    }
-    var forward = null;
-    async.waterfall([
-      function (next) {
-        forward = new Forward({
-          version: 1,
-          currency: currency,
-          from: that.cert.fingerprint,
-          to: peer ? peer.fingerprint : that.cert.fingerprint,
-          forward: 'ALL'
-        });
-        if(conf.kmanagement == 'KEYS'){
-          Key.getManaged(function (err, keys) {
-            var theKeys = [];
-            keys.forEach(function(key){
-              theKeys.push(key.fingerprint);
-            });
-            theKeys.sort();
-            forward.forward = 'KEYS';
-            forward.keys = theKeys;
-            next();
-          });
-        } else {
-          next();
-        }
-      },
-      function (next) {
-        jpgp().sign(forward.getRaw(), that.privateKey, next);
-      },
-      function (signature, next) {
-        forward.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));;
-        next(null, forward);
-      }
-    ], done);
-  };
-
-  this.negociateForward = function (peer, done) {
-    var forward = null;
-    async.waterfall([
-      function (next) {
-        if(peer.fingerprint == that.cert.fingerprint){
-          next('Cannot negociate Forward with self node');
-          return;
-        }
-        next();
-      },
-      function (next) {
-        Forward.removeTheOne(that.cert.fingerprint, peer.fingerprint, next);
-      },
-      function (next) {
-        that.generateForward(peer, next);
-      },
-      function (fwd, next) {
-        forward = fwd;
-        that.sendForward(peer, forward, next);
-      },
-      function (next) {
-        forward.save(next);
-      }
-    ], function (err) {
-      done();
-    });
-  }
-
-  this.sendForward = function (peer, forward, done) {
-    that.propagateForward(forward, peer, function (err, res, body) {
-      if(!err && res && res.statusCode && res.statusCode == 404) done('This node is unknown to peer ' + peer.fingerprint);
-      else if(!res) done('No HTTP result');
-      else if(!res.statusCode) done('No HTTP result code');
-      else done(err);
-    });
-  }
-
-  this.propagateWallet = function (entry, done) {
-    async.waterfall([
-      function (next) {
-        if(entry.propagated){
-          next('Wallet entry for ' + entry.fingerprint + ' already propagated', true);
-          return;
-        }
-        next();
-      },
-      function (next) {
-        getRandomInAllPeers(function (err, peers) {
-          that.emit('wallet', entry, peers || []);
-          next(null, true);
-        });
-      },
     ], done);
   }
 
@@ -414,7 +219,7 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   this.submitSelfPeering = function(toPeer, done){
     async.waterfall([
       function (next){
-        Peer.getTheOne(that.cert.fingerprint, next);
+        Peer.getTheOne(selfPubkey, next);
       },
       function (peering, next){
         sendPeering(toPeer, peering, next);
@@ -451,7 +256,7 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   this.sendUpSignal = function (done) {
     async.waterfall([
       function (next){
-        Peer.allBut([that.cert.fingerprint], next);
+        Peer.allBut([selfPubkey], next);
       },
       function (allPeers, next) {
         async.forEachSeries(allPeers, function(peer, callback){
@@ -495,19 +300,18 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
             version: 1,
             currency: currency,
             status: statusStr,
-            from: that.cert.fingerprint,
+            from: selfPubkey,
             to: peer.fingerprint
           });
           async.waterfall([
             function (next){
-              jpgp().sign(status.getRaw(), that.privateKey, next);
+              signFunc(status.getRaw(), next);
             },
             function (signature, next) {
-              status.signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
-              status.sigDate = new Date();
+              status.sig = signature;
               that.emit('status', status);
               peer.statusSent = status.status;
-              peer.statusSigDate = status.sigDate;
+              peer.statusSigDate = new Date();
               peer.save(function (err) {
                 if (err) logger.error(err);
                 next();
@@ -523,10 +327,6 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
     getAllPeersButSelfAnd(peering.fingerprint, function (err, peers) {
       that.emit('peer', peering, peers || []);
     });
-  };
-
-  this.propagateForward = function (forward, peer, done) {
-    that.emit('forward', forward, [peer], done);
   };
 
   this.propagateMembership = function (membership, done) {
@@ -579,11 +379,11 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
   }
 
   function getAllPeersButSelfAnd (fingerprint, done) {
-    Peer.allBut([that.cert.fingerprint, fingerprint], done);
+    Peer.allBut([selfPubkey, fingerprint], done);
   };
 
   function getRandomInAllPeers (done) {
-    Peer.getRandomlyUPsWithout([that.cert.fingerprint], done);
+    Peer.getRandomlyUPsWithout([selfPubkey], done);
   };
 
   // TODO
@@ -593,7 +393,7 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
 
   function getForwardPeers (done) {
     async.waterfall([
-      async.apply(Forward.find.bind(Forward), { to: that.cert.fingerprint }),
+      async.apply(Forward.find.bind(Forward), { to: selfPubkey }),
       function (fwds, next) {
         var fingerprints = _(fwds).map(function(fwd){ return fwd.fingerprint; });
         Peer.getList(fingerprints, next);
@@ -604,6 +404,6 @@ function PeeringService(conn, conf, PublicKeyService, ParametersService) {
 
 util.inherits(PeeringService, events.EventEmitter);
 
-module.exports.get = function (conn, conf, PublicKeyService, ParametersService) {
-  return new PeeringService(conn, conf, PublicKeyService, ParametersService);
+module.exports.get = function (conn, conf, pair, signFunc, ParametersService) {
+  return new PeeringService(conn, conf, pair, signFunc, ParametersService);
 };

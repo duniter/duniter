@@ -173,8 +173,9 @@ POST [Public key](./Protocol.md#publickey) data.
 
 Name  | Value | Method
 ----  | ----- | ------
+`pubkey` | The [public key](./Protocol.md#publickey). | POST
 `self` | The raw self-certification. | POST
-`other` | A list of [inline certifications](#inline-certification) separated by new lines. | POST
+`other` | A list of [inline certifications](./Protocol.md#inlinecertification) separated by new lines. | POST
 
 **Returns**
 
@@ -291,12 +292,11 @@ POST a [Membership](./Protocol.md#membership) document.
 
 Name | Value | Method
 ---- | ----- | ------
-`membership` | The raw membership structure. | POST
-`signature` | The signature of the `membership` parameter. | POST
+`membership` | The membership document (with signature). | POST
 
 **Returns**
 
-The posted membership request + posted signature.
+The posted membership request.
 ```json
 {
   "signature": "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==",
@@ -306,7 +306,7 @@ The posted membership request + posted signature.
     "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "membership": "IN",
     "sigDate": 1390739944,
-    "raw": "Version: 1\r\n...Membership: IN\r\n"
+    "uid": "udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;"
   }
 }
 ```

@@ -4,6 +4,7 @@ var util          = require('util');
 var sha1          = require('sha1');
 var split         = require('../../../split');
 var unix2dos      = require('../../../unix2dos');
+var constants     = require('../../../constants');
 var _             = require('underscore');
 
 module.exports = MembershipParser;
@@ -30,34 +31,29 @@ function MembershipParser (onError) {
     var codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
-      'BAD_FINGERPRINT': 152,
+      'BAD_ISSUER': 152,
       'BAD_MEMBERSHIP': 153,
       'BAD_REGISTRY_TYPE': 154,
       'BAD_DATE': 155,
       'BAD_USERID': 156,
     }
     if(!err){
-      // Version
       if(!obj.version || !obj.version.match(/^1$/))
         err = {code: codes['BAD_VERSION'], message: "Version unknown"};
     }
     if(!err){
-      // Fingerprint
-      if(obj.issuer && !obj.issuer.match(/^[A-Z\d]+$/))
-        err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect issuer field"};
+      if(obj.issuer && !obj.issuer.match(constants.BASE58))
+        err = {code: codes['BAD_ISSUER'], message: "Incorrect issuer field"};
     }
     if(!err){
-      // Membership
       if(obj.membership && !obj.membership.match(/^(IN|OUT)$/))
         err = {code: codes['BAD_MEMBERSHIP'], message: "Incorrect Membership field: must be either IN or OUT"};
     }
     if(!err){
-      // Date
       if(obj.date && (typeof obj == 'string' ? !obj.date.match(/^\d+$/) : obj.date.timestamp() <= 0))
         err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
     }
     if(!err){
-      // UserID
       if(!obj.userid || !obj.userid.match(/udid2/))
         err = {code: codes['BAD_USERID'], message: "UserID must match udid2 format"};
     }

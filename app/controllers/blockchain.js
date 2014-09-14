@@ -3,7 +3,7 @@ var async            = require('async');
 var vucoin           = require('vucoin');
 var _                = require('underscore');
 var es               = require('event-stream');
-var unix2dos         = require('../lib/unix2dos');
+var dos2unix         = require('../lib/dos2unix');
 var versionFilter    = require('../lib/streams/versionFilter');
 var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
@@ -44,13 +44,13 @@ function KeychainBinding (wotServer) {
   this.parseMembership = function (req, res) {
     var onError = http400(res);
     http2raw.membership(req, onError)
-      .pipe(unix2dos())
+      .pipe(dos2unix())
       .pipe(parsers.parseMembership(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(extractSignature(onError))
-      .pipe(link2pubkey(wotServer.PublicKeyService, onError))
-      .pipe(verifySignature(onError))
+      // .pipe(extractSignature(onError))
+      // .pipe(link2pubkey(wotServer.PublicKeyService, onError))
+      // .pipe(verifySignature(onError))
       .pipe(wotServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
@@ -60,7 +60,7 @@ function KeychainBinding (wotServer) {
   this.parseKeyblock = function (req, res) {
     var onError = http400(res);
     http2raw.keyblock(req, onError)
-      .pipe(unix2dos())
+      .pipe(dos2unix())
       .pipe(parsers.parseKeyblock(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))

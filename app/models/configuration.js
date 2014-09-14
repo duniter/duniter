@@ -8,7 +8,6 @@ var ConfigurationSchema = new Schema({
   c:           {"type": Number, "default": 0.7376575},
   dt:          {"type": Number, "default": 30.4375*24*3600},
   ud0:         {"type": Number, "default": 100},
-  openpgpjs:   {"type": Boolean, "default": false},
   port:        {"type": Number, "default": 8033},
   ipv4:        {"type": String, "default": "127.0.0.1"},
   ipv6:        {"type": String, "default": null},
@@ -16,10 +15,8 @@ var ConfigurationSchema = new Schema({
   remoteipv4:  {"type": String, "default": null},
   remoteipv6:  {"type": String, "default": null},
   remoteport:  {"type": Number, "default": 8033},
-  pgpkey:      {"type": String, "default": null},
-  pgppasswd:   {"type": String, "default": null},
-  kmanagement: {"type": String, "default": "ALL"},
-  kaccept:     {"type": String, "default": "ALL"},
+  salt:        {"type": String, "default": ""},
+  passwd:      {"type": String, "default": ""},
   upInterval:  {"type": Number, "default": 3600*1000},
   sigDelay:    {"type": Number, "default": 3600*24*365*5}, // 5 years by default
   sigValidity: {"type": Number, "default": 3600*24*365}, // 1 year by default

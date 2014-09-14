@@ -5,7 +5,6 @@ var async    = require('async');
 var _        = require('underscore');
 var inquirer = require('inquirer');
 var request  = require('request');
-var openpgp  = require('openpgp');
 
 module.exports = function () {
   return new Wizard();
@@ -17,15 +16,11 @@ var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}
 function Wizard () {
 
   this.configAll = function (conf, done) {
-    doTasks(['currency', 'openpgp', 'network', 'key', 'ucp'], conf, done);
+    doTasks(['currency', 'network', 'key', 'ucp'], conf, done);
   };
 
   this.configCurrency = function (conf, done) {
     doTasks(['currency'], conf, done);
-  };
-
-  this.configOpenpgp = function (conf, done) {
-    doTasks(['openpgp'], conf, done);
   };
 
   this.configNetwork = function (conf, done) {
@@ -73,25 +68,6 @@ var tasks = {
       async.apply(simpleFloat, "Universal Dividend %growth", "c", conf),
       async.apply(simpleInteger, "Universal Dividend period (in seconds)", "dt", conf),
     ], done);
-  },
-
-  openpgp: function (conf, done) {
-    inquirer.prompt([{
-      type: "list",
-      name: "openpgp",
-      message: "Which OpenPGP implementation to use",
-      default: conf.openpgpjs != undefined ? (conf.openpgpjs ? 'embedded' : 'system') : 'system',
-      choices: [{
-        name: 'openpgp.js - Slow but multiplatform',
-        value: 'embedded'
-      },{
-        name: 'gpg - Fast but must be installed on your system',
-        value: 'system'
-      }]
-    }], function (answers) {
-      conf.openpgpjs = answers.openpgp == 'embedded';
-      done();
-    });
   },
 
   network: function (conf, done) {
@@ -243,79 +219,30 @@ var tasks = {
   },
 
   key: function (conf, done) {
-    var fingerprint = jpgp().certificate(conf.pgpkey).fingerprint;
-    var privateKeys = [];
     async.waterfall([
       function (next){
-        var gpglistkeys = __dirname + '/gnupg/gpg-list-secret-keys.sh';
-        var exec = require('child_process').exec;
-        exec(gpglistkeys, next);
-      },
-      function (stdout, stderr, next){
-        var lines = stdout.split('\n');
-        var keys = {};
-        var sec = null;
-        lines.forEach(function(line){
-          var fpr = line.match(/(([A-F0-9]{4}[ ]*){10})/);
-          if (fpr) {
-            sec = fpr[1].replace(/\s/g, "");
-          }
-          var uid = line.match(/^uid[ ]+(.*)/);
-          if (uid) {
-            keys[sec] = uid[1];
-          }
-        });
-        _(keys).keys().forEach(function(fpr){
-          privateKeys.push({
-            name: keys[fpr],
-            value: fpr
-          });
-        });
         inquirer.prompt([{
-          type: "list",
-          name: "pgpkey",
-          message: "Private key",
-          default: fingerprint,
-          choices: privateKeys
+          type: "input",
+          name: "salt",
+          message: "Key's salt",
+          default: conf.salt,
+          validate: function (input) {
+            return input.match(/^[a-zA-Z0-9-_ ]+$/) ? true : false;
+          }
         }], function (answers) {
-          next(null, answers.pgpkey);
-        });
-      },
-      function (chosenFPR, next) {
-        if (fingerprint == chosenFPR) {
+          conf.salt = answers.salt;
           next();
-        } else {
-          async.waterfall([
-            function (next){
-              var gpgexportsecret = __dirname + '/gnupg/gpg-export-secret-key.sh';
-              var exec = require('child_process').exec;
-              exec(gpgexportsecret + ' ' + chosenFPR, next);
-            },
-            function (stdout, stderr, next){
-              conf.pgpkey = stdout;
-              conf.pgppasswd = "";
-              next();
-            },
-          ], next);
-        }
+        });
       },
       function (next) {
-        var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
-        if(privateKey && !privateKey.decrypt(conf.pgppasswd)) {
-          inquirer.prompt([{
-            type: "password",
-            name: "pgppasswd",
-            message: "Key\'s passphrase",
-            validate: function (input) {
-              return privateKey.decrypt(input);
-            }
-          }], function (answers) {
-            conf.pgppasswd = answers.pgppasswd;
-            next();
-          });
-        } else {
+        inquirer.prompt([{
+          type: "password",
+          name: "passwd",
+          message: "Key\'s password"
+        }], function (answers) {
+          conf.passwd = answers.passwd;
           next();
-        }
+        });
       }
     ], done);
   },

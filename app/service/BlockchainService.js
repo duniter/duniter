@@ -14,8 +14,8 @@ var constants = require('../lib/constants');
 var moment    = require('moment');
 var inquirer  = require('inquirer');
 
-module.exports.get = function (conn, conf, PublicKeyService, PeeringService, ContractService) {
-  return new KeyService(conn, conf, PublicKeyService, PeeringService, ContractService);
+module.exports.get = function (conn, conf, IdentityService, PeeringService, ContractService) {
+  return new BlockchainService(conn, conf, IdentityService, PeeringService, ContractService);
 };
 
 // Callback used as a semaphore to sync keyblock reception & PoW computation
@@ -33,10 +33,11 @@ var computationTimeout = null;
 // Flag for saying if timeout was already waited
 var computationTimeoutDone = false;
 
-function KeyService (conn, conf, PublicKeyService, PeeringService, ContractService) {
+function BlockchainService (conn, conf, IdentityService, PeeringService, ContractService) {
 
   var KeychainService = this;
 
+  var Identity   = conn.model('Identity');
   var Membership = conn.model('Membership');
   var KeyBlock   = conn.model('KeyBlock');
   var PublicKey  = conn.model('PublicKey');
@@ -64,15 +65,15 @@ function KeyService (conn, conf, PublicKeyService, PeeringService, ContractServi
         if (entries.length > 0 && entries[0].date > entry.date) {
           next('Already received membership');
         }
-        else Key.isMember(entry.issuer, next);
+        else Identity.isMember(entry.issuer, next);
       },
       function (isMember, next){
         var isJoin = entry.membership == 'IN';
         if (!isMember && isJoin) {
-          hasEligiblePubkey(entry.issuer, next);
+          next();
         }
         else if (isMember && !isJoin) {
-          next(null, true);
+          next();
         } else {
           if (isJoin)
             next('A member cannot join in.');
@@ -80,14 +81,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService, ContractServi
             next('A non-member cannot leave.');
         }
       },
-      function (isClean, next){
-        if (!isClean) {
-          next('Needs an eligible public key (with udid2)');
-          return;
-        }
-        Membership.removeEligible(entry.issuer, next);
-      },
-      function (nbDeleted, next) {
+      function (next){
         // Saves entry
         entry.save(function (err) {
           next(err);
@@ -117,7 +111,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService, ContractServi
     ], done);
   }
 
-  this.submitKeyBlock = function (kb, done) {
+  this.submitBlock = function (kb, done) {
     var now = new Date();
     var block = new KeyBlock(kb);
     block.issuer = kb.pubkey.fingerprint;
@@ -688,7 +682,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService, ContractServi
                   parsers.parsePubkey(next).asyncWrite(unix2dos(key.getArmored()), next);
                 },
                 function (obj, next){
-                  PublicKeyService.submitPubkey(obj, function (err) {
+                  PublicBlockchainService.submitPubkey(obj, function (err) {
                     if (err == constants.ERROR.PUBKEY.ALREADY_UPDATED)
                       next();
                     else
@@ -817,7 +811,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService, ContractServi
   function updateAvailableKeyMaterial (block, done) {
     async.forEach(block.keysChanges, function(kc, callback){
       if (kc.type != 'L') {
-        PublicKeyService.updateAvailableKeyMaterial(kc.fingerprint, callback);
+        PublicBlockchainService.updateAvailableKeyMaterial(kc.fingerprint, callback);
       }
       else callback();
     }, done);
@@ -830,7 +824,7 @@ function KeyService (conn, conf, PublicKeyService, PeeringService, ContractServi
       },
       function (members, next){
         async.forEachSeries(members, function(member, callback){
-          PublicKeyService.updateAvailableKeyMaterial(member.fingerprint, callback);
+          PublicBlockchainService.updateAvailableKeyMaterial(member.fingerprint, callback);
         }, next);
       },
     ], done);

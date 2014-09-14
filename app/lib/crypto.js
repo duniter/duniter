@@ -2,6 +2,17 @@ var nacl   = require('tweetnacl');
 var scrypt = require('scrypt');
 var base58 = require('./base58');
 
+var SEED_LENGTH = 32; // Length of the key
+// TODO: change key parameters
+var TEST_PARAMS = {
+  "N":4096,
+  "r":16,
+  "p":1
+};
+
+var enc = nacl.util.encodeBase64,
+    dec = nacl.util.decodeBase64;
+
 module.exports = {
 
   sign: function (msg, sec, done) {
@@ -30,5 +41,25 @@ module.exports = {
     var verified = module.exports.verify(msg, sig, pub);
     if (typeof done == 'function') done(verified ? null : 'Signature does not match');
     return verified;
+  },
+
+  /**
+  * Generates a new keypair object from salt + password strings.
+  * Returns: { publicKey: pubkeyObject, secretKey: secretkeyObject }.
+  */
+  getKeyPair: function (key, salt, done) {
+    getScryptKey(key, salt, function(keyBytes) {
+      done(null, nacl.sign.keyPair.fromSeed(keyBytes));
+    });
   }
 };
+
+function getScryptKey(key, salt, callback) {
+  // console.log('Derivating the key...');
+  scrypt.kdf.config.saltEncoding = "ascii";
+  scrypt.kdf.config.keyEncoding = "ascii";
+  scrypt.kdf.config.outputEncoding = "base64";
+  scrypt.kdf(key, TEST_PARAMS, SEED_LENGTH, salt, function (err, res) {
+    callback(dec(res.hash));
+  });
+}

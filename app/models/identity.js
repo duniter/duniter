@@ -14,6 +14,7 @@ var IdentitySchema = new Schema({
   pubkey: String,
   sig: String,
   time: { type: Date, default: Date.now },
+  member: { type: Boolean, default: false },
   hash: { type: String, unique: true },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -75,6 +76,17 @@ IdentitySchema.statics.getByHash = function (hash, done) {
     done(null, identities[0] || null);
   });
 };
+
+IdentitySchema.statics.isMember = function(pubkey, done){
+  var Identity = this.model('Identity');
+  Identity.find({ "pubkey": pubkey, "member": true }, function (err, identities) {
+    if(identities.length > 1){
+      done('More than one matching pubkey & member for ' + pubkey);
+      return;
+    }
+    done(null, identities.length == 1);
+  });
+}
 
 IdentitySchema.statics.search = function (search, done) {
   var obj = this;

@@ -115,11 +115,11 @@ function Http2RawMembership (req, onError) {
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!(req.body && req.body.membership && req.body.signature)){
-      onError('Requires a membership + signature');
+    if(!(req.body && req.body.membership)){
+      onError('Requires a membership');
     }
     else {
-      this.push(req.body.membership + req.body.signature);
+      this.push(req.body.membership);
     }
     this.push(null);
   }

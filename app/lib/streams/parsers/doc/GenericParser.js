@@ -83,24 +83,26 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
       error = "";
       obj.hash = sha1(str).toUpperCase();
       // Divide in 2 parts: document & signature
-      var sigIndex = str.lastIndexOf('-----BEGIN PGP SIGNATURE-----\r\n');
-      var endIndex = str.lastIndexOf('-----END PGP SIGNATURE-----\r\n');
-      if (~sigIndex && ~endIndex) {
-        obj.signature = str.substring(sigIndex, endIndex + SIGNATURE_END_LENGTH);
+      var sp = str.split('\n');
+      if (sp.length < 3) {
+        error = "Wrong document: must have at least 2 lines";
       }
-      obj.hash = sha1(str).toUpperCase();
-      obj.raw = ~sigIndex ? str.substring(0, sigIndex) : str;
-      var docLF = obj.raw.replace(/\r\n/g, "\n");
-      if(docLF.match(/\n$/)){
-        captures.forEach(function (cap) {
-          if(~multipleLinesFields.indexOf(multipleLinesFields))
-            error = multipleLinesExtract(obj, docLF, cap);
-          else
-            simpleLineExtract(obj, docLF, cap);
-        });
-      }
-      else{
-        error = "Bad document structure: no new line character at the end of the document.";
+      else {
+        obj.signature = sp[sp.length-2];
+        obj.hash = sha1(str).toUpperCase();
+        obj.raw = sp.slice(0, sp.length-1).join('\n') + '\n';
+        var docLF = obj.raw.replace(/\r\n/g, "\n");
+        if(docLF.match(/\n$/)){
+          captures.forEach(function (cap) {
+            if(~multipleLinesFields.indexOf(multipleLinesFields))
+              error = multipleLinesExtract(obj, docLF, cap);
+            else
+              simpleLineExtract(obj, docLF, cap);
+          });
+        }
+        else{
+          error = "Bad document structure: no new line character at the end of the document.";
+        }
       }
     }
   };

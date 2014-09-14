@@ -4,6 +4,7 @@ var util          = require('util');
 var sha1          = require('sha1');
 var split         = require('../../../split');
 var unix2dos      = require('../../../unix2dos');
+var constants     = require('../../../constants');
 var _             = require('underscore');
 
 module.exports = PeerParser;
@@ -15,7 +16,7 @@ function PeerParser (onError) {
   var captures = [
     {prop: "version",           regexp: /Version: (.*)/},
     {prop: "currency",          regexp: /Currency: (.*)/},
-    {prop: "fingerprint",       regexp: /Fingerprint: (.*)/},
+    {prop: "pub",               regexp: /PublicKey: (.*)/},
     {prop: "endpoints",         regexp: /Endpoints:\n([\s\S]*)/, parser: split("\n")},
   ];
   var multilineFields = [];
@@ -61,9 +62,9 @@ function PeerParser (onError) {
         err = {code: codes['BAD_VERSION'], message: "Version unknown"};
     }
     if(!err){
-      // Fingerprint
-      if(obj.fingerprint && !obj.fingerprint.match(/^[A-Z\d]+$/))
-        err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect fingerprint field"};
+      // PublicKey
+      if(obj.pub && !obj.pub.match(constants.BASE58))
+        err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect pub field"};
     }
     // Basic Merkled API requirements
     var bma = obj.getBMA();

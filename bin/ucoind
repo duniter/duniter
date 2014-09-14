@@ -7,8 +7,6 @@ var program     = require('commander');
 var mongoose    = require('mongoose');
 var moment      = require('moment');
 var inquirer    = require('inquirer');
-var openpgp     = require('openpgp');
-var jpgp        = require('../app/lib/jpgp');
 var wizard      = require('../app/lib/wizard');
 var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
@@ -31,8 +29,8 @@ program
   .option('--mhost <host>',            'MongoDB host.')
   .option('--mport <port>',            'MongoDB port.')
   .option('-d, --mdb <name>',          'MongoDB database name (defaults to "ucoin_default").')
-  .option('--pgpkey <keyPath>',        'Path to the private key used for signing HTTP responses.')
-  .option('--pgppasswd <password>',    'Password for the key provided with --httpgp-key option.')
+  .option('--salt <salt>',             'Key salt to generate this key\'s secret key')
+  .option('--passwd <password>',       'Password to generate this key\'s secret key')
   .option('--ipv4 <address>',          'IPV4 interface to listen for requests')
   .option('--ipv6 <address>',          'IPV6 interface to listen for requests')
   .option('--remoteh <host>',          'Remote interface others may use to contact this node')
@@ -52,7 +50,6 @@ program
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
   .option('--ud0 <number>',            'Universal Dividend initial value')
   .option('--dt <number>',             'Number of seconds between two UD')
-  .option('--openpgpjs',               'Prefer using embedded Openpgpjs implementation for signing requests')
   ;
 
 program
@@ -114,7 +111,6 @@ program
       var wiz = wizard(server);
       var task = {
         'currency': wiz.configCurrency,
-        'openpgp': wiz.configOpenpgp,
         'network': wiz.configNetwork,
         'key': wiz.configKey,
         'ucp': wiz.configUCP
@@ -301,13 +297,10 @@ function generateAndSend (generationMethod) {
         var wiz = wizard(server);
         async.waterfall([
           function (next){
-            wiz.configOpenpgp(conf, next);
-          },
-          function (next){
             wiz.configKey(conf, next);
           },
           function (next){
-            signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, next);
+            signature(conf.salt, conf.passwd, next);
           },
           function (sigFunc, next){
             proveAndSend(server, block, sigFunc, difficulty, host, port, next);
@@ -407,7 +400,7 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(service(ucoin.createWOTServer, function (server, conf) {
+  .action(service(ucoin.createPeerServer, function (server, conf) {
 
     // server
     //   .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
@@ -421,7 +414,7 @@ program
       //       var wiz = wizard(server);
       //       async.waterfall([
       //         function (next){
-      //           wiz.doTasks(['currency', 'openpgp', 'key', 'network'], conf, next);
+      //           wiz.doTasks(['currency', 'key', 'network'], conf, next);
       //         },
       //         function (next){
       //           conf.save(next);
@@ -459,17 +452,14 @@ function overrideConf(conf) {
       port: program.port,
       ipv4address: program.ipv4,
       ipv6address: program.ipv6,
-      pgp: {
-        key: program.pgpkey,
-        password: program.pgppasswd
-      },
+      salt: program.salt,
+      passwd: program.passwd,
       remote: {
         host: program.remoteh,
         ipv4: program.remote4,
         ipv6: program.remote6,
         port: program.remotep
-      },
-      openpgpjs: program.openpgpjs
+      }
     },
     db: {
       host: program.mhost,
@@ -495,16 +485,13 @@ function overrideConf(conf) {
     }
   };
 
-  if(cli.server.pgp.key) cli.server.pgp.key = fs.readFileSync(cli.server.pgp.key, 'utf8');
-
   // Update conf
   if (cli.currency)                         conf.currency       = cli.currency;
   if (cli.server.ipv4address)               conf.ipv4           = cli.server.ipv4address;
   if (cli.server.ipv6address)               conf.ipv6           = cli.server.ipv6address;
   if (cli.server.port)                      conf.port           = cli.server.port;
-  if (cli.server.openpgpjs != undefined)    conf.openpgpjs      = cli.server.openpgpjs;
-  if (cli.server.pgp.key)                   conf.pgpkey         = cli.server.pgp.key;
-  if (cli.server.pgp.password != undefined) conf.pgppasswd      = cli.server.pgp.password;
+  if (cli.server.salt)                      conf.salt           = cli.server.salt;
+  if (cli.server.passwd != undefined)       conf.passwd         = cli.server.passwd;
   if (cli.server.remote.host != undefined)  conf.remotehost     = cli.server.remote.host;
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4     = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6     = cli.server.remote.ipv6;

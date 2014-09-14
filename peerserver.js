@@ -1,14 +1,14 @@
 var async       = require('async');
 var util        = require('util');
 var openpgp     = require('openpgp');
-var jpgp        = require('./app/lib/jpgp');
+var crypto      = require('./app/lib/crypto');
 var unix2dos    = require('./app/lib/unix2dos');
 var logger      = require('./app/lib/logger')('peerserver');
 var plogger     = require('./app/lib/logger')('peer');
 var flogger     = require('./app/lib/logger')('forward');
 var slogger     = require('./app/lib/logger')('status');
 var wlogger     = require('./app/lib/logger')('wallet');
-var WOT         = require('./wotserver');
+var WOTServer   = require('./wotserver');
 var signature   = require('./app/lib/signature');
 var parsers     = require('./app/lib/streams/parsers/doc');
 var multicaster = require('./app/lib/streams/multicaster');
@@ -24,7 +24,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
-            that.KeychainService.submitMembership(obj, next);
+            that.BlockchainService.submitMembership(obj, next);
           },
           function (membership, next){
             that.emit('membership', membership);
@@ -33,17 +33,17 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         ], next);
       }
     },{
-      // KeyBlock
+      // Block
       matches: function (obj) {
-        return obj.type && obj.type == 'KeyBlock' ? true : false;
+        return obj.type && obj.type == 'Block' ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
-            server.KeychainService.submitKeyBlock(obj, next);
+            server.BlockchainService.submitBlock(obj, next);
           },
           function (kb, next){
-            server.emit('keyblock', kb);
+            server.emit('block', kb);
             next(null, kb);
           },
         ], next);
@@ -89,7 +89,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   var initFunctions = onInit || [];
 
-  WOT.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
+  WOTServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
 
   var that = this;
 
@@ -101,17 +101,11 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   this._initServices = function(conn, done) {
     async.waterfall([
       function (next){
-        that.KeyService          = require('./app/service/KeyService').get(conn);
-        that.PublicKeyService    = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
-        that.ContractService     = require('./app/service/ContractService').get(conn, that.conf);
-        that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, that.PublicKeyService, that.ParametersService);
-        that.KeychainService     = require('./app/service/KeychainService').get(conn, that.conf, that.PublicKeyService, that.PeeringService);
+        that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
+        that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.ParametersService);
+        that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.IdentityService, that.PeeringService);
         that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.MerkleService, that.PeeringService);
-        that.WalletService       = require('./app/service/WalletService').get(conn);
         async.parallel({
-          contract: function(callback){
-            that.ContractService.load(callback);
-          },
           peering: function(callback){
             that.PeeringService.load(callback);
           },
@@ -123,31 +117,39 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._start = function (done) {
-    // Overrides PeeringService so we do benefit from registered privateKey
-    that.PeeringService      = require('./app/service/PeeringService').get(that.conn, that.conf, that.PublicKeyService, that.ParametersService);
-    this.ContractService     = require('./app/service/ContractService').get(that.conn, that.conf);
-    that.KeychainService     = require('./app/service/KeychainService').get(that.conn, that.conf, that.PublicKeyService, that.PeeringService, that.ContractService);
-    that.TransactionsService = require('./app/service/TransactionsService').get(that.conn, that.MerkleService, that.PeeringService);
     async.waterfall([
       function (next){
-        async.parallel({
-          contract: function(callback){
-            that.ContractService.load(callback);
-          },
-          peering: function(callback){
-            that.PeeringService.load(callback);
-          },
-        }, function (err) {
-          next(err);
-        });
+        that.createSignFunction(that.conf, next);
       },
-      function (next) {
-        that.initPeer(that.conn, that.conf, next);
+      function (next){
+        // Extract key pair
+        crypto.getKeyPair(that.conf.salt, that.conf.passwd, next);
       },
-      function (next) {
-        that.emit('peerInited');
-        next();
-      }
+      function (pair, next){
+        // Overrides PeeringService so we do benefit from registered privateKey
+        that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
+        that.PeeringService      = require('./app/service/PeeringService').get(that.conn, that.conf, pair, that.sign, that.ParametersService);
+        that.BlockchainService   = require('./app/service/BlockchainService').get(that.conn, that.conf, that.PublicKeyService, that.PeeringService);
+        that.TransactionsService = require('./app/service/TransactionsService').get(that.conn, that.MerkleService, that.PeeringService);
+        async.waterfall([
+          function (next){
+            async.parallel({
+              peering: function(callback){
+                that.PeeringService.load(callback);
+              },
+            }, function (err) {
+              next(err);
+            });
+          },
+          function (next) {
+            that.initPeer(that.conn, that.conf, next);
+          },
+          function (next) {
+            that.emit('peerInited');
+            next();
+          }
+        ], next);
+      },
     ], done);
   };
 
@@ -161,20 +163,12 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.checkPeeringConf = function (conf, done) {
     var errors = [];
-    var privateKey = openpgp.key.readArmored(conf.pgpkey).keys[0];
 
-    if (conf.pgppasswd == null) {
-      conf.pgppasswd = "";
+    if (conf.passwd == null) {
+      errors.push('No key password was given.');
     }
-    if (!privateKey) {
-      errors.push('This node requires a private key to work.');
-    }
-    try {
-      if(privateKey && !privateKey.decrypt(conf.pgppasswd)) {
-        errors.push('Wrong private key password.');
-      }
-    } catch(ex) {
-      errors.push('Not a valid private key, message was: "' + ex.message + '"');
+    if (conf.salt == null) {
+      errors.push('No key salt was given.');
     }
     if (!conf.currency) {
       errors.push('No currency name was given.');
@@ -192,7 +186,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.createSignFunction = function (conf, done) {
-    signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, function (err, sigFunc) {
+    signature(conf.salt, conf.passwd, function (err, sigFunc) {
       that.sign = sigFunc;
       done(err);
     });
@@ -204,17 +198,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.checkConfig(next);
       },
       function (next){
-        that.createSignFunction(that.conf, next);
-      },
-      function (next){
-        // Add selfkey as managed
-        conn.model('Key').setManaged(that.PeeringService.cert.fingerprint, true, next);
-      },
-      function (next){
-        logger.info('Storing self public key...');
-        that.initPubkey(conn, conf, next);
-      },
-      function (next){
         logger.info('Storing self peer...');
         that.initPeeringEntry(conn, conf, next);
       },
@@ -224,56 +207,40 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           // Readable status to be multicasted
           that.push(status);
         });
-        that.PeeringService.on('forward', function (forward) {
-          // Readable forward to be multicasted
-          that.push(forward);
-        });
         that.PeeringService.sendUpSignal(next);
       },
       function (next){
         that.PeeringService.regularUpSignal(next);
       },
       function (next){
-        logger.info('Updating forwards...');
-        that.PeeringService.updateForwards(next);
-      },
-      function (next){
-        async.forever(
-          function tryToGenerateNextBlock(next) {
-            async.waterfall([
-              function (next){
-                that.KeychainService.startGeneration(next);
-              },
-              function (block, next){
-                if (block) {
-                  var Peer = that.conn.model('Peer');
-                  var peer = new Peer({ endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')] });
-                  multicaster().sendKeyblock(peer, block, next);
-                } else {
-                  next();
-                }
-              },
-            ], function (err) {
-              next(err);
-            });
-          },
-          function onError (err) {
-            logger.error(err);
-            logger.error('Keyblock generation STOPPED.');
-          }
-        );
+        // TODO: write next block
+        // async.forever(
+        //   function tryToGenerateNextBlock(next) {
+        //     async.waterfall([
+        //       function (next){
+        //         that.BlockchainService.startGeneration(next);
+        //       },
+        //       function (block, next){
+        //         if (block) {
+        //           var Peer = that.conn.model('Peer');
+        //           var peer = new Peer({ endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')] });
+        //           multicaster().sendKeyblock(peer, block, next);
+        //         } else {
+        //           next();
+        //         }
+        //       },
+        //     ], function (err) {
+        //       next(err);
+        //     });
+        //   },
+        //   function onError (err) {
+        //     logger.error(err);
+        //     logger.error('Block generation STOPPED.');
+        //   }
+        // );
         next();
       },
     ], done);
-  };
-
-  this.initPubkey = function (conn, conf, done) {
-    var parser = parsers.parsePubkey();
-    parser.end(unix2dos(that.PeeringService.cert.raw));
-    parser.on('readable', function () {
-      var parsed = parser.read();
-      that.submit(parsed, false, done);
-    });
   };
 
   this.initPeeringEntry = function (conn, conf, done) {
@@ -281,7 +248,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     var currency = conf.currency;
     async.waterfall([
       function (next) {
-        Peer.find({ fingerprint: that.PeeringService.cert.fingerprint }, next);
+        Peer.find({ fingerprint: that.PeeringService.pubkey }, next);
       },
       function (peers, next) {
         var p1 = new Peer({});
@@ -304,7 +271,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         var p2 = {
           version: 1,
           currency: currency,
-          fingerprint: that.PeeringService.cert.fingerprint,
+          fingerprint: that.PeeringService.pubkey,
           endpoints: [endpoint]
         };
         var raw1 = p1.getRaw().unix2dos();
@@ -313,12 +280,11 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           logger.debug('Generating server\'s peering entry...');
           async.waterfall([
             function (next){
-              jpgp().sign(raw2, that.PeeringService.privateKey, next);
+              that.sign(raw2, next);
             },
             function (signature, next) {
-              signature = signature.substring(signature.indexOf('-----BEGIN PGP SIGNATURE'));
               p2.signature = signature;
-              p2.pubkey = { fingerprint: that.PeeringService.cert.fingerprint };
+              p2.pubkey = { pub: that.PeeringService.pubkey };
               that.submit(p2, false, next);
             },
           ], function (err) {
@@ -330,7 +296,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         }
       },
       function (next){
-        Peer.getTheOne(that.PeeringService.cert.fingerprint, next);
+        Peer.getTheOne(that.PeeringService.pubkey, next);
       },
       function (peer, next){
         // Set peer's statut to UP
@@ -346,39 +312,30 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._listenBMA = function (app) {
-    this.listenPKS(app);
     this.listenWOT(app);
+    this.listenBlock(app);
     this.listenNET(app);
   };
 
-  this.listenWOT = function (app) {
-    var keychain = require('./app/controllers/keychain')(that);
-    app.get(    '/keychain/parameters',       keychain.parameters);
-    app.post(   '/keychain/membership',       keychain.parseMembership);
-    app.post(   '/keychain/keyblock',         keychain.parseKeyblock);
-    app.get(    '/keychain/keyblock/:number', keychain.promoted);
-    app.get(    '/keychain/current',          keychain.current);
-    app.get(    '/keychain/hardship/:fpr',    keychain.hardship);
+  this.listenBlock = function (app) {
+    var blockchain = require('./app/controllers/blockchain')(that);
+    app.get(    '/blockchain/parameters',       blockchain.parameters);
+    app.post(   '/blockchain/membership',       blockchain.parseMembership);
+    app.post(   '/blockchain/block',            blockchain.parseKeyblock);
+    app.get(    '/blockchain/block/:number',    blockchain.promoted);
+    app.get(    '/blockchain/current',          blockchain.current);
+    app.get(    '/blockchain/hardship/:fpr',    blockchain.hardship);
   };
 
   this.listenNET = function (app) {
     var net = require('./app/controllers/network')(that, that.conf);
-    app.get(    '/network/pubkey',                                net.pubkey);
-    app.get(    '/network/peering',                               net.peer);
-    app.get(    '/network/peering/peers',                         net.peersGet);
-    app.post(   '/network/peering/peers',                         net.peersPost);
-    app.get(    '/network/peering/peers/upstream',                net.upstreamAll);
-    app.get(    '/network/peering/peers/upstream/:fingerprint',   net.upstreamKey);
-    app.get(    '/network/peering/peers/downstream',              net.downstreamAll);
-    app.get(    '/network/peering/peers/downstream/:fingerprint', net.downstreamKey);
-    app.post(   '/network/peering/forward',                       net.forward);
-    app.post(   '/network/peering/status',                        net.statusPOST);
-    app.get(    '/network/wallet',                                net.walletGET);
-    app.post(   '/network/wallet',                                net.walletPOST);
-    app.get(    '/network/wallet/:fpr',                           net.walletFPR);
+    app.get(    '/network/peering',             net.peer);
+    app.get(    '/network/peering/peers',       net.peersGet);
+    app.post(   '/network/peering/peers',       net.peersPost);
+    app.post(   '/network/peering/status',      net.statusPOST);
   }
 }
 
-util.inherits(PeerServer, WOT);
+util.inherits(PeerServer, WOTServer);
 
 module.exports = PeerServer;

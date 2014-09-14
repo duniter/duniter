@@ -1,40 +1,15 @@
-var async     = require('async');
-var openpgp   = require('openpgp');
-var jpgp      = require('./jpgp');
-var logger    = require('./logger')('peerserver');
+var async  = require('async');
+var crypto = require('./crypto');
 
-module.exports = function (armoredPrivateKey, password, withOpenPGPJS, done) {
-  var privateKey = openpgp.key.readArmored(armoredPrivateKey).keys[0];
-  var fingerprint = privateKey.getKeyPacket().getFingerprint().toUpperCase();
+module.exports = function (salt, password, done) {
   async.waterfall([
     function (next) {
-      if (withOpenPGPJS) {
-        var pgp = jpgp();
-        privateKey.decrypt(password);
-        var signingFunc = async.apply(pgp.sign.bind(pgp.sign), privateKey);
-        next(null, function (message, done) {
-          jpgp().sign(message, privateKey, done);
-        });
-      } else {
-        var asciiPrivateKey = armoredPrivateKey;
-        var keyring = '~/.gnupg/ucoin_' + fingerprint;
-        logger.trace("Keyring = %s", keyring);
-        var gnupg = new (require('./gnupg'))(asciiPrivateKey, password, fingerprint, keyring);
-        gnupg.init(function (err) {
-          next(err, function (message, done) {
-            gnupg.sign(message, done);
-          });
-        });
-      }
+      crypto.getKeyPair(password, salt, next);
     },
-    function (signFunc, next){
-      try{
-        signFunc("some test\nwith line return", function (err) {
-          next(err, signFunc);
-        });
-      } catch(ex){
-        next("Wrong private key password.");
-      }
+    function (pair, next){
+      next(null, function (msg, cb) {
+        crypto.sign(msg, pair.secretKey, cb);
+      });
     },
   ], function (err, signFunc) {
     done(err, signFunc);

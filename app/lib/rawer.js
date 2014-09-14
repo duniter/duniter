@@ -156,7 +156,8 @@ module.exports = new function() {
     raw += "Issuer: " + json.issuer + "\n";
     raw += "Date: " + json.date.timestamp() + "\n";
     raw += "Membership: " + json.membership + "\n";
-    raw += "UserID: " + json.userid + "\n";
+    if (json.userid)
+      raw += "UserID: " + json.userid + "\n";
     return dos2unix(raw);
   };
 
@@ -223,7 +224,7 @@ module.exports = new function() {
 
   function signed (raw, json) {
     if (json.signature)
-      raw += json.signature;
+      raw += json.signature + '\n';
     return raw;
   }
 }

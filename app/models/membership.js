@@ -14,9 +14,9 @@ var MembershipSchema = new Schema({
   membership: String,
   type: String,
   userid: String,
-  eligible: { type: Boolean, default: true },
   current: { type: Boolean, default: false },
   signature: String,
+  certts: { type: Date },
   date: { type: Date },
   propagated: { type: Boolean, default: false },
   hash: String,
@@ -57,6 +57,10 @@ MembershipSchema.methods = {
     ["version", "currency", "issuer", "membership", "amNumber", "hash", "signature", "sigDate"].forEach(function (key) {
       to[key] = obj[key];
     });
+  },
+  
+  inline: function() {
+    return [this.issuer, this.signature, this.date.timestamp()].join(':');
   },
   
   inlineValue: function() {

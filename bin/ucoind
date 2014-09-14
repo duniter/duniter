@@ -12,6 +12,8 @@ var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
 var logger      = require('../app/lib/logger')('ucoind');
 var signature   = require('../app/lib/signature');
+var crypto      = require('../app/lib/crypto');
+var base58      = require('../app/lib/base58');
 var ucoin       = require('./..');
 
 function keys (val) {
@@ -230,33 +232,33 @@ function handleKey (server, key, isManaged, message) {
 program
   .command('gen-next [host] [port] [difficulty]')
   .description('Tries to generate the next keyblock of the keychain, with both updates & newcomers')
-  .action(service(ucoin.createWOTServer, generateAndSend("generateNext")));
+  .action(service(ucoin.createPeerServer, generateAndSend("generateNext")));
 
 program
   .command('gen-empty-next [host] [port] [difficulty]')
   .description('Tries to generate the next keyblock of the keychain without any changes')
-  .action(service(ucoin.createWOTServer, generateAndSend("generateEmptyNext")));
+  .action(service(ucoin.createPeerServer, generateAndSend("generateEmptyNext")));
 
 program
   .command('gen-updates [host] [port] [difficulty]')
   .description('Tries to generate an update (#1+) keyblock, containing only update changes')
-  .action(service(ucoin.createWOTServer, generateAndSend("generateUpdates")));
+  .action(service(ucoin.createPeerServer, generateAndSend("generateUpdates")));
 
 program
   .command('gen-newcomers [host] [port] [difficulty]')
   .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
-  .action(service(ucoin.createWOTServer, generateAndSend("generateNewcomers")));
+  .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomers")));
 
 program
   .command('gen-newcomers-auto [host] [port] [difficulty]')
   .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
-  .action(service(ucoin.createWOTServer, generateAndSend("generateNewcomersAuto")));
+  .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomersAuto")));
 
 program
   .command('compute-distances')
   .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
-  .action(service(ucoin.createWOTServer, function (server, conf) {
-    server.KeychainService.computeDistances(function (err) {
+  .action(service(ucoin.createPeerServer, function (server, conf) {
+    server.BlockchainService.computeDistances(function (err) {
       if (err) logger.error(err);
       server.disconnect();
       process.exit();
@@ -266,8 +268,8 @@ program
 program
   .command('show-keychain')
   .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
-  .action(service(ucoin.createWOTServer, function (server, conf) {
-    server.KeychainService.showKeychain(function (err) {
+  .action(service(ucoin.createPeerServer, function (server, conf) {
+    server.BlockchainService.showKeychain(function (err) {
       if (err) logger.error(err);
       server.disconnect();
       process.exit();
@@ -277,8 +279,8 @@ program
 program
   .command('compute-certifications')
   .description('Recompute available certifications for next blocks')
-  .action(service(ucoin.createWOTServer, function (server, conf) {
-    server.KeychainService.updateCertifications(function (err) {
+  .action(service(ucoin.createPeerServer, function (server, conf) {
+    server.BlockchainService.updateCertifications(function (err) {
       if (err) logger.error(err);
       server.disconnect();
       process.exit();
@@ -289,12 +291,13 @@ function generateAndSend (generationMethod) {
   return function (host, port, difficulty, server, conf) {
     async.waterfall([
       function (next){
-        var method = eval('server.KeychainService.' + generationMethod);
+        var method = eval('server.BlockchainService.' + generationMethod);
         method(next);
       },
       function (block, next){
         logger.debug('Keyblock to be sent: %s', block.quickDescription());
         var wiz = wizard(server);
+        var doSign = null;
         async.waterfall([
           function (next){
             wiz.configKey(conf, next);
@@ -303,7 +306,12 @@ function generateAndSend (generationMethod) {
             signature(conf.salt, conf.passwd, next);
           },
           function (sigFunc, next){
-            proveAndSend(server, block, sigFunc, difficulty, host, port, next);
+            doSign = sigFunc;
+            // Extract key pair
+            crypto.getKeyPair(conf.salt, conf.passwd, next);
+          },
+          function (pair, next){
+            proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
           },
         ], next);
       },
@@ -317,17 +325,19 @@ function generateAndSend (generationMethod) {
   };
 }
 
-function proveAndSend (server, block, sigFunc, difficulty, host, port, done) {
-  var KeychainService = server.KeychainService;
+function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, done) {
+  var BlockchainService = server.BlockchainService;
   async.waterfall([
     function (next){
-      KeychainService.prove(block, sigFunc, difficulty, next);
+      block.issuer = issuer;
+      BlockchainService.prove(block, sigFunc, difficulty, next);
     },
     function (block, next){
       var Peer = server.conn.model('Peer');
       var peer = new Peer({
         endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
       });
+      console.log(block.getRaw());
       logger.info('Posted block ' + block.quickDescription());
       multicaster().sendKeyblock(peer, block, next);
     },

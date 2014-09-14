@@ -11,7 +11,7 @@ var http       = require('http');
 var log4js     = require('log4js');
 var connectPgp = require('connect-pgp');
 
-var models = ['Identity', 'Certification', 'Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'KeyBlock'];
+var models = ['Identity', 'Certification', 'Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'Block'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -187,12 +187,12 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         var deletableCollections = [
           'identities',
           'certifications',
+          'blocks',
           'amendments',
           'coins',
           'forwards',
           'links',
           'keys',
-          'keyblocks',
           'merkles',
           'peers',
           'publickeys',

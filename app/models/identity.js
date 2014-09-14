@@ -49,6 +49,10 @@ IdentitySchema.methods = {
     };
   },
 
+  inline: function () {
+    return [this.pubkey, this.sig, this.time.timestamp(), this.uid].join(':');
+  },
+
   selfCert: function () {
     return rawer.getSelfIdentity(this);
   },
@@ -87,6 +91,11 @@ IdentitySchema.statics.isMember = function(pubkey, done){
     done(null, identities.length == 1);
   });
 }
+
+IdentitySchema.statics.getMembers = function(done){
+  var Identity = this.model('Identity');
+  Identity.find({ member: true }, done);
+};
 
 IdentitySchema.statics.search = function (search, done) {
   var obj = this;

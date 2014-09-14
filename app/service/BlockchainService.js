@@ -3,6 +3,7 @@ var async     = require('async');
 var _         = require('underscore');
 var openpgp   = require('openpgp');
 var merkle    = require('merkle');
+var sha1      = require('sha1');
 var base64    = require('../lib/base64');
 var unix2dos  = require('../lib/unix2dos');
 var dos2unix  = require('../lib/dos2unix');
@@ -37,13 +38,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
 
   var KeychainService = this;
 
-  var Identity   = conn.model('Identity');
-  var Membership = conn.model('Membership');
-  var KeyBlock   = conn.model('KeyBlock');
-  var PublicKey  = conn.model('PublicKey');
-  var TrustedKey = conn.model('TrustedKey');
-  var Link       = conn.model('Link');
-  var Key        = conn.model('Key');
+  var Identity      = conn.model('Identity');
+  var Certification = conn.model('Certification');
+  var Membership    = conn.model('Membership');
+  var Block         = conn.model('Block');
+  var PublicKey     = conn.model('PublicKey');
+  var TrustedKey    = conn.model('TrustedKey');
+  var Link          = conn.model('Link');
+  var Key           = conn.model('Key');
 
   // Flag to say wether timestamp of received keyblocks should be tested
   // Useful for synchronisation of old blocks
@@ -113,13 +115,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
 
   this.submitBlock = function (kb, done) {
     var now = new Date();
-    var block = new KeyBlock(kb);
+    var block = new Block(kb);
     block.issuer = kb.pubkey.fingerprint;
     var currentBlock = null;
     var newLinks;
     async.waterfall([
       function (next){
-        KeyBlock.current(function (err, kb) {
+        Block.current(function (err, kb) {
           next(null, kb || null);
         })
       },
@@ -433,12 +435,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
         },
         function (members, next) {
           var newcomers = [];
-          block.membersChanges.forEach(function (change) {
-            if (change.match(/^\+/)) {
-              var fpr = change.substring(1);
-              newcomers.push(fpr);
-              members.push({ fingerprint: fpr });
-            }
+          block.joiners.forEach(function (fpr) {
+            newcomers.push(fpr);
+            members.push({ fingerprint: fpr });
           });
           async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
             async.waterfall([
@@ -540,7 +539,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     var nbWaitedPeriods = 0;
     async.waterfall([
       function (next){
-        KeyBlock.lastOfIssuer(issuer, next);
+        Block.lastOfIssuer(issuer, next);
       },
       function (last, next){
         if (last) {
@@ -831,13 +830,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
   }
 
   this.current = function (done) {
-    KeyBlock.current(function (err, kb) {
+    Block.current(function (err, kb) {
       done(err, kb || null);
     })
   };
 
   this.promoted = function (number, done) {
-    KeyBlock.findByNumber(number, function (err, kb) {
+    Block.findByNumber(number, function (err, kb) {
       done(err, kb || null);
     })
   };
@@ -848,7 +847,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     var current;
     async.waterfall([
       function (next) {
-        KeyBlock.current(function (err, currentBlock) {
+        Block.current(function (err, currentBlock) {
           current = currentBlock;
           next(err && 'No root block: cannot generate an empty block');
         });
@@ -872,7 +871,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
   };
 
   function createNextEmptyBlock (current, members, leaving, done) {
-    var block = new KeyBlock();
+    var block = new Block();
     block.version = 1;
     block.currency = current.currency;
     block.number = current.number + 1;
@@ -903,7 +902,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
         findUpdates(next);
       },
       function (updates, subupdates, next){
-        KeyBlock.current(function (err, current) {
+        Block.current(function (err, current) {
           next(null, current || null, updates, subupdates);
         });
       },
@@ -1072,7 +1071,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
             updates[fpr].concat(otherUpdates[fpr]);
         });
         // Create the block
-        createNewcomerBlock(current, newWoT, joinData, updates, subupdates, next);
+        createNewcomerBlock(current, joinData, updates, subupdates, next);
       },
     ], done);
   };
@@ -1086,43 +1085,33 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     async.waterfall([
       function (next){
         // Second, check for newcomers
-        KeyBlock.current(function (err, currentBlock) {
+        Block.current(function (err, currentBlock) {
           current = currentBlock;
             next();
         });
       },
       function (next){
-        Membership.find({ eligible: true }, next);
+        Membership.find({ membership: 'IN', certts: { $gt: 0 }, userid: { $exists: true } }, next);
       },
       function (mss, next){
         async.forEach(mss, function(ms, callback){
-          var join = { pubkey: null, ms: ms, key: null };
+          var join = { identity: null, ms: ms, key: null, idHash: '' };
+          join.idHash = sha1(ms.userid + ms.certts.timestamp() + ms.issuer).toUpperCase();
           async.waterfall([
             function (next){
               async.parallel({
-                pubkey: function(callback){
-                  PublicKey.getTheOne(join.ms.issuer, callback);
+                identity: function(callback){
+                  Identity.getByHash(join.idHash, callback);
                 },
-                key: function(callback){
-                  Key.getTheOne(join.ms.issuer, callback);
+                certs: function(callback){
+                  Certification.toTarget(join.idHash, callback);
                 },
               }, next);
             },
             function (res, next){
-              var pubk = res.pubkey;
-              join.pubkey = pubk;
-              if (!res.key.eligible) {
-                next('PublicKey of ' + uid + ' is not eligible');
-                return;
-              }
-              var key = keyhelper.fromArmored(pubk.raw);
-              join.key = key;
-              // Just require a good udid2
-              if (!key.hasValidUdid2()) {
-                next('User ' + uid + ' does not have a valid udid2 userId');
-                return;
-              }
-              preJoinData[join.pubkey.fingerprint] = join;
+              join.identity = res.identity;
+              join.certs = res.certs;
+              preJoinData[res.identity.pubkey] = join;
               next();
             },
           ], callback);
@@ -1134,18 +1123,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
       function (filteredJoinData, next) {
         joinData = filteredJoinData;
         // Cache the members
-        Key.getMembers(next);
+        Identity.getMembers(next);
       },
       function (membersKeys, next) {
         membersKeys.forEach(function (mKey) {
-          wotMembers.push(mKey.fingerprint);
+          wotMembers.push(mKey.pubkey);
         });
         // Look for signatures from newcomers to the WoT
         async.forEach(_(joinData).keys(), function(newcomer, searchedSignaturesOfTheWoT){
           findSignaturesFromNewcomerToWoT(newcomer, function (err, signatures) {
             _(signatures).keys().forEach(function(signedMember){
-              updates[signedMember] = (updates[signedMember] || new openpgp.packet.List());
-              updates[signedMember].concat(signatures[signedMember]);
+              updates[signedMember] = updates[signedMember] || [];
+              updates[signedMember] = updates[signedMember].concat(signatures[signedMember]);
             });
             searchedSignaturesOfTheWoT(err);
           });
@@ -1159,16 +1148,24 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
           // Concats the joining members
           var members = wotMembers.concat(theNewcomers);
           // Check WoT stability
-          var membersChanges = [];
-          var newLinks = computeNewLinks(theNewcomers, joinData, updates, members);
-          theNewcomers.forEach(function (newcomer) {
-            membersChanges.push('+' + newcomer);
-          });
-          checkWoTStability({ number: current ? current.number + 1 : 0, membersChanges: membersChanges }, newLinks, onceChecked);
+          async.waterfall([
+            function (next){
+              computeNewLinks(theNewcomers, joinData, updates, next);
+            },
+            function (newLinks, next){
+              checkWoTStability({ number: current ? current.number + 1 : 0, joiners: theNewcomers }, newLinks, next);
+            },
+          ], onceChecked);
         }, function (err, realNewcomers) {
-          var newWoT = wotMembers.concat(realNewcomers);
-          var newLinks = computeNewLinks(realNewcomers, joinData, updates, newWoT);
-          next(err, realNewcomers, newLinks, newWoT);
+          async.waterfall([
+            function (next){
+              computeNewLinks(realNewcomers, joinData, updates, next);
+            },
+            function (newLinks, next){
+              var newWoT = wotMembers.concat(realNewcomers);
+              next(err, realNewcomers, newLinks, newWoT);
+            },
+          ], next);
         });
       },
       function (realNewcomers, newLinks, newWoT, next) {
@@ -1176,27 +1173,15 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
         var initialNewcomers = _(joinData).keys();
         var nonKept = _(initialNewcomers).difference(realNewcomers);
         realNewcomers.forEach(function(newcomer){
-          var data = joinData[newcomer];
-          // Only keep newcomer signatures from members
-          var keptCertifs = new openpgp.packet.List();
-          data.key.getOtherCertifications().forEach(function(certif){
-            var issuerKeyId = certif.issuerKeyId.toHex().toUpperCase();
-            var fingerprint = matchFingerprint(issuerKeyId, newWoT);
-            if (fingerprint && ~newLinks[data.key.getFingerprint()].indexOf(fingerprint)) {
-              keptCertifs.push(certif);
-            }
-          });
-          data.key.setOtherCertifications(keptCertifs);
           // Only keep membership of selected newcomers
-          finalJoinData[newcomer] = data;
+          finalJoinData[newcomer] = joinData[newcomer];
         });
-        // Only keep update signatures from members
+        // Only keep update signatures from final members
         _(updates).keys().forEach(function(signedFPR){
-          var keptCertifs = new openpgp.packet.List();
-          (updates[signedFPR] || new openpgp.packet.List()).forEach(function(certif){
-            var issuerKeyId = certif.issuerKeyId.toHex().toUpperCase();
-            var fingerprint = matchFingerprint(issuerKeyId, initialNewcomers);
-            if (fingerprint && ~newWoT.indexOf(fingerprint) && ~newLinks[signedFPR].indexOf(fingerprint)) {
+          var keptCertifs = [];
+          (updates[signedFPR] || []).forEach(function(certif){
+            var issuer = certif.pubkey;
+            if (~newWoT.indexOf(issuer) && ~newLinks[signedFPR].indexOf(issuer)) {
               keptCertifs.push(certif);
             }
           });
@@ -1208,66 +1193,69 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     ], done);
   }
 
-  function computeNewLinks (theNewcomers, joinData, updates, members) {
+  function computeNewLinks (theNewcomers, joinData, updates, done) {
     var newLinks = {};
-    // Cache new links from WoT => newcomer
-    theNewcomers.forEach(function (newcomer) {
-      newLinks[newcomer] = [];
-      var certifs = joinData[newcomer].key.getOtherCertifications();
-      certifs.forEach(function (certif) {
-        var issuer = certif.issuerKeyId.toHex().toUpperCase();
-        var matched = matchFingerprint(issuer, members);
-        if (matched)
-          newLinks[newcomer].push(matched);
-      });
-      // Cache new links from newcomer => WoT
-      var newcomerKeyID = newcomer.substring(24);
-      _(updates).keys().forEach(function(signedFPR){
-        updates[signedFPR].forEach(function(certif){
-          if (certif.issuerKeyId.toHex().toUpperCase() == newcomerKeyID) {
-            newLinks[signedFPR] = (newLinks[signedFPR] || []);
-            newLinks[signedFPR].push(newcomer);
-          }
+    async.waterfall([
+      function (next){
+        async.forEach(theNewcomers, function(newcomer, callback){
+          async.forEach(joinData[newcomer].certs, function(cert, callback){
+            async.waterfall([
+              function (next){
+                Identity.isMember(cert.pubkey, next);
+              },
+              function (isMember, next){
+                if (isMember)
+                  newLinks[newcomer].push(cert.pubkey);
+                next();
+              },
+            ], callback);
+          }, callback);
+        }, next);
+      },
+      function (next){
+        _(updates).keys().forEach(function(signedFPR){
+          updates[signedFPR].forEach(function(certif){
+            newLinks[signedFPR] = newLinks[signedFPR] || [];
+            newLinks[signedFPR].push(certif.pubkey);
+          });
         });
-      });
+        next();
+      },
+    ], function (err) {
+      done(err, newLinks);
     });
-    return newLinks;
   }
 
   function findSignaturesFromNewcomerToWoT (newcomer, done) {
+
     var updates = {};
     async.waterfall([
       function (next){
-        Key.findMembersWhereSignatory(newcomer, next);
+        Certification.from(newcomer, next);
       },
-      function (keys, next){
-        async.forEach(keys, function(signedKey, extractedSignatures){
+      function (certs, next){
+        async.forEachSeries(certs, function(cert, callback){
           async.waterfall([
             function (next){
-              PublicKey.getTheOne(signedKey.fingerprint, next);
+              Identity.getByHash(cert.target, next);
             },
-            function (signedPubkey, next){
-              var key = keyhelper.fromArmored(signedPubkey.raw);
-              var certifs = key.getCertificationsFromSignatory(newcomer);
-              if (certifs.length > 0) {
-                updates[signedPubkey.fingerprint] = certifs;
-                certifs.forEach(function(){
-                  logger.debug('Found WoT certif %s --> %s', newcomer, signedPubkey.fingerprint);
-                });
+            function (idty, next){
+              if (idty.member) {
+                logger.debug('Found WoT certif %s --> %s', newcomer, idty.pubkey);
+                updates[idty.pubkey] = updates[idty.pubkey] || [];
+                updates[idty.pubkey].push(cert);
               }
               next();
             },
-          ], function () {
-            extractedSignatures();
-          });
-        }, function (err) {
-          next(err, updates);
-        });
+          ], callback);
+        }, next);
       },
-    ], done);
+    ], function (err) {
+      done(err, updates);
+    });
   }
 
-  function matchFingerprint (keyID, fingerprints) {
+  function isContainedIn (keyID, fingerprints) {
     var matched = "";
     var i = 0;
     while (!matched && i < fingerprints.length) {
@@ -1278,62 +1266,39 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     return matched;
   }
 
-  function createNewcomerBlock (current, members, joinData, updates, subupdates, done) {
-    var block = new KeyBlock();
+  function createNewcomerBlock (current, joinData, updates, subupdates, done) {
+    var block = new Block();
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
     block.number = current ? current.number + 1 : 0;
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
     // Members merkle
-    if (members) {
-      members.sort();
-      var tree = merkle(members, 'sha1').process();
-      block.membersCount = members.length;
-      block.membersRoot = tree.root();
-      block.membersChanges = [];
-      _(joinData).keys().forEach(function(fpr){
-        block.membersChanges.push('+' + fpr);
-      });
-    } else if (!members && current) {
-      // No members changes
-      block.membersCount = current.membersCount;
-      block.membersRoot = current.membersRoot;
-      block.membersChanges = [];
+    var joiners = _(joinData).keys();
+    var previousCount = current ? current.membersCount : 0;
+    if (joiners.length > 0) {
+      // Joiners
+      block.membersCount = previousCount + joiners.length;
+      block.joiners = joiners.slice();
+    } else if (joiners.length == 0 && current) {
+      // No joiners but B#1+
+      block.membersCount = previousCount;
     } else {
+      // No joiners on B#0
       done('Wrong new block: cannot make a root block without members');
       return;
     }
     // Keychanges - newcomers
-    block.keysChanges = [];
-    _(joinData).values().forEach(function(join){
-      var key = join.key;
-      block.keysChanges.push({
-        type: 'N',
-        fingerprint: join.pubkey.fingerprint,
-        keypackets: keyhelper.toEncoded(key.getFounderPackets()),
-        certpackets: keyhelper.toEncoded(key.getOtherCertifications()),
-        membership: {
-          membership: join.ms.inlineValue(),
-          signature: join.ms.inlineSignature()
-        }
-      });
+    block.identities = [];
+    block.joiners = [];
+    joiners.forEach(function(joiner){
+      var data = joinData[joiner];
+      block.identities.push(data.identity.inline());
+      block.joiners.push(data.ms.inline());
     });
-    // Keychanges - updates: signatures from newcomers
-    var updateKeys = _(updates).keys();
-    var subkeyKeys = _(subupdates).keys();
-    var allUpdates = _(updateKeys.concat(subkeyKeys)).uniq();
-    allUpdates.forEach(function(fpr){
-      if ((updates[fpr] && updates[fpr].length > 0) || (subupdates[fpr] && subupdates[fpr].length > 0)) {
-        block.keysChanges.push({
-          type: 'U',
-          fingerprint: fpr,
-          keypackets: subupdates[fpr] ? base64.encode(subupdates[fpr].write()) : '',
-          certpackets: updates[fpr] ? base64.encode(updates[fpr].write()) : '',
-          membership: {}
-        });
-      }
-    });
+    block.leavers = [];
+    block.excluded = [];
+    block.transactions = [];
     done(null, block);
   }
 
@@ -1412,7 +1377,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     var current;
     async.waterfall([
       function (next) {
-        KeyBlock.current(next);
+        Block.current(next);
       },
       function (currentBlock, next) {
         current = currentBlock;
@@ -1478,7 +1443,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
   this.showKeychain = function (done) {
     async.waterfall([
       function (next){
-        KeyBlock
+        Block
           .find({})
           .sort({ number: 1 })
           .exec(next);
@@ -1505,7 +1470,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     var sigFunc, block, difficulty;
     async.waterfall([
       function (next) {
-        KeyBlock.current(function (err, current) {
+        Block.current(function (err, current) {
           next(null, current);
         });
       },

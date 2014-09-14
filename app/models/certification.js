@@ -14,6 +14,7 @@ var CertificationSchema = new Schema({
   sig: String,
   time: { type: Date, default: Date.now },
   target: String,
+  to: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -31,6 +32,27 @@ CertificationSchema.statics.exists = function (done) {
   var Identity = this.model('Identity');
   Identity.find({ "pubkey": this.pubkey, "sig": this.sig, "time": this.time, "target": this.target }, function (err, identities) {
     done(err, identities && identities.length > 0);
+  });
+};
+
+CertificationSchema.statics.to = function (pubkey, done) {
+  var Certification = this.model('Certification');
+  Certification.find({ "to": pubkey }, function (err, certs) {
+    done(err, certs);
+  });
+};
+
+CertificationSchema.statics.toTarget = function (hash, done) {
+  var Certification = this.model('Certification');
+  Certification.find({ "target": hash }, function (err, certs) {
+    done(err, certs);
+  });
+};
+
+CertificationSchema.statics.from = function (pubkey, done) {
+  var Certification = this.model('Certification');
+  Certification.find({ "pubkey": pubkey }, function (err, certs) {
+    done(err, certs);
   });
 };
 

@@ -18,9 +18,12 @@ var KeyBlockSchema = new Schema({
   previousHash: String,
   previousIssuer: String,
   membersCount: {"type": Number, "default": 0},
-  membersRoot: String,
-  membersChanges: Array,
-  keysChanges: Array,
+  identities: Array,
+  joiners: Array,
+  leavers: Array,
+  excluded: Array,
+  certifications: Array,
+  transactions: Array,
   signature: String,
   hash: String,
   issuer: String,
@@ -225,11 +228,7 @@ KeyBlockSchema.methods = {
 
   quickDescription: function () {
     var desc = '#' + this.number + ' (';
-    var counts = { 'N': 0, 'U': 0, 'L': 0, 'B': 0 };
-    this.keysChanges.forEach(function(kc){
-      counts[kc.type]++;
-    });
-    desc += counts.N + ' newcomers, ' + counts.U + ' updates)';
+    desc += this.identities.length + ' newcomers, ' + this.certifications.length + ' certifications)';
     return desc;
   }
 };

@@ -158,6 +158,8 @@ module.exports = new function() {
     raw += "Membership: " + json.membership + "\n";
     if (json.userid)
       raw += "UserID: " + json.userid + "\n";
+    if (json.certts)
+      raw += "CertTS: " + json.certts.timestamp() + "\n";
     return dos2unix(raw);
   };
 
@@ -171,24 +173,44 @@ module.exports = new function() {
   this.getKeyblockWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
-    raw += "Type: KeyBlock\n";
+    raw += "Type: Block\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Nonce: " + json.nonce + "\n";
     raw += "Number: " + json.number + "\n";
     raw += "Timestamp: " + json.timestamp + "\n";
+    if (json.dividend)
+      raw += "UniversalDividend: " + json.dividend + "\n";
+    if (json.fees)
+      raw += "Fees: " + json.fees + "\n";
+    raw += "Issuer: " + json.issuer + "\n";
     if(json.number > 0){
       raw += "PreviousHash: " + json.previousHash + "\n";
       raw += "PreviousIssuer: " + json.previousIssuer + "\n";
     }
     raw += "MembersCount: " + json.membersCount + "\n";
-    raw += "MembersRoot: " + json.membersRoot + "\n";
-    raw += "MembersChanges:\n";
-    for(var i = 0; i < json.membersChanges.length; i++){
-      raw += json.membersChanges[i] + "\n";
+    raw += "Identities:\n";
+    for(var i = 0; i < json.identities.length; i++){
+      raw += json.identities[i] + "\n";
     }
-    raw += "KeysChanges:\n";
-    for(var i = 0; i < json.keysChanges.length; i++){
-      raw += this.getKeychange(json.keysChanges[i]);
+    raw += "Joiners:\n";
+    for(var i = 0; i < json.joiners.length; i++){
+      raw += json.joiners[i] + "\n";
+    }
+    raw += "Leavers:\n";
+    for(var i = 0; i < json.leavers.length; i++){
+      raw += json.leavers[i] + "\n";
+    }
+    raw += "Excluded:\n";
+    for(var i = 0; i < json.excluded.length; i++){
+      raw += json.excluded[i] + "\n";
+    }
+    raw += "Certifications:\n";
+    for(var i = 0; i < json.certifications.length; i++){
+      raw += json.certifications[i] + "\n";
+    }
+    raw += "Transactions:\n";
+    for(var i = 0; i < json.transactions.length; i++){
+      raw += json.transactions[i] + "\n";
     }
     return dos2unix(raw);
   };

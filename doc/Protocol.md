@@ -198,6 +198,7 @@ Issuer: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
 Date: TIMESTAMP
 Membership: IN
 UserID: USER_ID
+CertTS: CERTIFICATION_TS
 ```
 
 followed by a signature of `Issuer`.
@@ -212,6 +213,7 @@ Field | Description
 `Date` | Creation date of this message. Timestamp. This date may be different from signature's date.
 `Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
 `UserID` | Identity to use for this public key
+`CertTS` | Identity's certification date
 
 #### Validity
 
@@ -221,7 +223,8 @@ A [Membership](#membership) is to be considered valid if:
 * `Membership` matches either `IN` or `OUT` value
 * `Date` is a valid timestamp
 * `Currency` is a valid currency name
-* `Version` equals `1`
+* `UserID` if provided is a non-empty string
+* `CertTS` if provided is a valid timestamp
 
 
 

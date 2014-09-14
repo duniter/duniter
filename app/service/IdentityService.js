@@ -49,7 +49,7 @@ function IdentityService (conn, conf) {
         },
         function (next){
           async.forEachSeries(certs, function(cert, cb){
-            var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, time: cert.time, target: obj.hash });
+            var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, time: cert.time, target: obj.hash, to: idty.pubkey });
             async.waterfall([
               function (next){
                 Certification.exists(next);

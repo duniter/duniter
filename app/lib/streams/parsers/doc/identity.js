@@ -54,8 +54,8 @@ function IdentityParser (onError) {
   };
 
   this._clean = function (obj) {
-    if (obj.uid && obj.time && obj.sig) {
-      obj.hash = sha1(obj.uid + obj.time.timestamp() + obj.sig).toUpperCase();
+    if (obj.uid && obj.time && obj.pubkey) {
+      obj.hash = sha1(obj.uid + obj.time.timestamp() + obj.pubkey).toUpperCase();
     }
   };
 

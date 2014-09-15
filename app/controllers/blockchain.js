@@ -1,6 +1,4 @@
-var jpgp             = require('../lib/jpgp');
 var async            = require('async');
-var vucoin           = require('vucoin');
 var _                = require('underscore');
 var es               = require('event-stream');
 var dos2unix         = require('../lib/dos2unix');
@@ -10,35 +8,29 @@ var http2raw         = require('../lib/streams/parsers/http2raw');
 var jsoner           = require('../lib/streams/jsoner');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
-var link2pubkey      = require('../lib/streams/link2pubkey');
 var extractSignature = require('../lib/streams/extractSignature');
 var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger')();
 var mlogger          = require('../lib/logger')('membership');
 
 module.exports = function (wotServer) {
-  return new KeychainBinding(wotServer);
+  return new BlockchainBinding(wotServer);
 }
 
-function KeychainBinding (wotServer) {
+function BlockchainBinding (wotServer) {
 
   var that = this;
   var conf = wotServer.conf;
 
   // Services
   var http              = wotServer.HTTPService;
-  var MerkleService     = wotServer.MerkleService;
   var ParametersService = wotServer.ParametersService;
   var PeeringService    = wotServer.PeeringService;
-  var SyncService       = wotServer.SyncService;
-  var KeychainService   = wotServer.KeychainService;
+  var BlockchainService = wotServer.BlockchainService;
 
   // Models
   var Peer       = wotServer.conn.model('Peer');
-  var Forward    = wotServer.conn.model('Forward');
   var Membership = wotServer.conn.model('Membership');
-  var PublicKey  = wotServer.conn.model('PublicKey');
-  var Merkle     = wotServer.conn.model('Merkle');
   var Key        = wotServer.conn.model('Key');
 
   this.parseMembership = function (req, res) {
@@ -49,7 +41,6 @@ function KeychainBinding (wotServer) {
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
       // .pipe(extractSignature(onError))
-      // .pipe(link2pubkey(wotServer.PublicKeyService, onError))
       // .pipe(verifySignature(onError))
       .pipe(wotServer.singleWriteStream(onError))
       .pipe(jsoner())
@@ -57,16 +48,15 @@ function KeychainBinding (wotServer) {
       .pipe(res);
   };
 
-  this.parseKeyblock = function (req, res) {
+  this.parseBlock = function (req, res) {
     var onError = http400(res);
-    http2raw.keyblock(req, onError)
+    http2raw.block(req, onError)
       .pipe(dos2unix())
-      .pipe(parsers.parseKeyblock(onError))
+      .pipe(parsers.parseBlock(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(extractSignature(onError))
-      .pipe(link2pubkey(wotServer.PublicKeyService, onError))
-      .pipe(verifySignature(onError))
+      // .pipe(extractSignature(onError))
+      // .pipe(verifySignature(onError))
       .pipe(wotServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
@@ -91,7 +81,7 @@ function KeychainBinding (wotServer) {
         ParametersService.getNumber(req, next);
       },
       function (number, next){
-        KeychainService.promoted(number, next);
+        BlockchainService.promoted(number, next);
       }
     ], function (err, promoted) {
       if(err){
@@ -105,7 +95,7 @@ function KeychainBinding (wotServer) {
   this.current = function (req, res) {
     async.waterfall([
       function (next){
-        KeychainService.current(next);
+        BlockchainService.current(next);
       }
     ], function (err, current) {
       res.setHeader("Content-Type", "text/plain");
@@ -130,11 +120,11 @@ function KeychainBinding (wotServer) {
       },
       function (isMember, next){
         if (!isMember) next('Not a member');
-        KeychainService.current(next);
+        BlockchainService.current(next);
       },
       function (current, next){
         if (current) nextBlockNumber = current.number + 1;
-        KeychainService.getTrialLevel(member, nextBlockNumber, current ? current.membersCount : 0, next);
+        BlockchainService.getTrialLevel(member, nextBlockNumber, current ? current.membersCount : 0, next);
       },
     ], function (err, nbZeros) {
       res.setHeader("Content-Type", "text/plain");

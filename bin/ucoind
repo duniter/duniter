@@ -339,7 +339,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
       });
       console.log(block.getRaw());
       logger.info('Posted block ' + block.quickDescription());
-      multicaster().sendKeyblock(peer, block, next);
+      multicaster().sendBlock(peer, block, next);
     },
   ], done);
 }

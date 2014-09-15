@@ -5,11 +5,9 @@ module.exports = {
   identity:      instanciate.bind(null, Http2RawIdentity),
   transaction:   instanciate.bind(null, Http2RawTransaction),
   peer:          instanciate.bind(null, Http2RawPeer),
-  forward:       instanciate.bind(null, Http2RawForward),
   status:        instanciate.bind(null, Http2RawStatus),
-  wallet:        instanciate.bind(null, Http2RawWallet),
   membership:    instanciate.bind(null, Http2RawMembership),
-  keyblock:      instanciate.bind(null, Http2RawKeyblock),
+  block:         instanciate.bind(null, Http2RawBlock),
 };
 
 function instanciate (constructorFunc, req, onError) {
@@ -65,21 +63,6 @@ function Http2RawPeer (req, onError) {
   }
 }
 
-function Http2RawForward (req, onError) {
-  
-  stream.Readable.call(this);
-
-  this._read = function () {
-    if(!(req.body && req.body.forward && req.body.signature)){
-      onError('Requires a forward + signature');
-    }
-    else {
-      this.push(req.body.forward + req.body.signature);
-    }
-    this.push(null);
-  }
-}
-
 function Http2RawStatus (req, onError) {
   
   stream.Readable.call(this);
@@ -90,21 +73,6 @@ function Http2RawStatus (req, onError) {
     }
     else {
       this.push(req.body.status + req.body.signature);
-    }
-    this.push(null);
-  }
-}
-
-function Http2RawWallet (req, onError) {
-  
-  stream.Readable.call(this);
-
-  this._read = function () {
-    if(!(req.body && req.body.entry && req.body.signature)){
-      onError('Requires a wallet + signature');
-    }
-    else {
-      this.push(req.body.entry + req.body.signature);
     }
     this.push(null);
   }
@@ -125,16 +93,16 @@ function Http2RawMembership (req, onError) {
   }
 }
 
-function Http2RawKeyblock (req, onError) {
+function Http2RawBlock (req, onError) {
   
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!(req.body && req.body.keyblock && req.body.signature)){
-      onError('Requires a keyblock + signature');
+    if(!(req.body && req.body.block)){
+      onError('Requires a block');
     }
     else {
-      this.push(req.body.keyblock + req.body.signature);
+      this.push(req.body.block);
     }
     this.push(null);
   }
@@ -143,8 +111,6 @@ function Http2RawKeyblock (req, onError) {
 util.inherits(Http2RawIdentity,    stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
 util.inherits(Http2RawPeer,        stream.Readable);
-util.inherits(Http2RawForward,     stream.Readable);
 util.inherits(Http2RawStatus,      stream.Readable);
-util.inherits(Http2RawWallet,      stream.Readable);
 util.inherits(Http2RawMembership,  stream.Readable);
-util.inherits(Http2RawKeyblock,    stream.Readable);
+util.inherits(Http2RawBlock,       stream.Readable);

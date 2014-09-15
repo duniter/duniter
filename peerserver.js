@@ -224,7 +224,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         //         if (block) {
         //           var Peer = that.conn.model('Peer');
         //           var peer = new Peer({ endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')] });
-        //           multicaster().sendKeyblock(peer, block, next);
+        //           multicaster().sendBlock(peer, block, next);
         //         } else {
         //           next();
         //         }
@@ -321,7 +321,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     var blockchain = require('./app/controllers/blockchain')(that);
     app.get(    '/blockchain/parameters',       blockchain.parameters);
     app.post(   '/blockchain/membership',       blockchain.parseMembership);
-    app.post(   '/blockchain/block',            blockchain.parseKeyblock);
+    app.post(   '/blockchain/block',            blockchain.parseBlock);
     app.get(    '/blockchain/block/:number',    blockchain.promoted);
     app.get(    '/blockchain/current',          blockchain.current);
     app.get(    '/blockchain/hardship/:fpr',    blockchain.hardship);

@@ -170,7 +170,7 @@ module.exports = new function() {
   var KEYBLOCK_PUBK_PREFIX = "#####----";
   var KEYBLOCK_PUBK_SUFFIX = "----#####";
 
-  this.getKeyblockWithoutSignature = function (json) {
+  this.getBlockWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Type: Block\n";
@@ -215,8 +215,8 @@ module.exports = new function() {
     return dos2unix(raw);
   };
 
-  this.getKeyblock = function (json) {
-    return dos2unix(signed(that.getKeyblockWithoutSignature(json), json));
+  this.getBlock = function (json) {
+    return dos2unix(signed(that.getBlockWithoutSignature(json), json));
   };
 
   var KEYCHANGE_PREFIX = "#####----";

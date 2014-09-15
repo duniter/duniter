@@ -187,11 +187,11 @@ KeyBlockSchema.methods = {
   },
 
   getRaw: function() {
-    return require('../lib/rawer').getKeyblockWithoutSignature(this);
+    return require('../lib/rawer').getBlockWithoutSignature(this);
   },
 
   getRawSigned: function() {
-    return require('../lib/rawer').getKeyblock(this);
+    return require('../lib/rawer').getBlock(this);
   },
 
   getPrevious: function (done) {

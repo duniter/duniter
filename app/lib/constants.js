@@ -1,6 +1,13 @@
 
-var META_TS = /^META:TS:[1-9][0-9]*$/;
-var UDID2 = /^udid2;c;([A-Z-]*);([A-Z-]*);(\d{4}-\d{2}-\d{2});(e\+\d{2}\.\d{2}(\+|-)\d{3}\.\d{2});(\d+)(;?)$/;
+var META_TS      = "META:TS:[1-9][0-9]*";
+var UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
+var BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
+var PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
+var TIMESTAMP    = "[1-9][0-9]*";
+var POSITIVE_INT = "[1-9][0-9]*";
+var INTEGER      = "\\d+";
+var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
+var FINGERPRINT  = "[A-F0-9]{40}";
 
 module.exports = {
 
@@ -11,19 +18,38 @@ module.exports = {
     }
   },
 
-  TIMESTAMP: /^[1-9][0-9]*$/,
-  UDID2_FORMAT: UDID2,
-  BASE58: /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/,
-  PUBLIC_KEY: /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/,
-  SIG: /^[A-Za-z0-9+\/=]{87,88}$/,
+  INTEGER: /^\d+$/,
+  TIMESTAMP: exact(TIMESTAMP),
+  UDID2_FORMAT: exact(UDID2),
+  BASE58: exact(BASE58),
+  PUBLIC_KEY: exact(PUBKEY),
+  SIG: exact(SIGNATURE),
   CERT: {
     SELF: {
-      UID: /^UID:udid2;c;([A-Z-]*);([A-Z-]*);(\d{4}-\d{2}-\d{2});(e\+\d{2}\.\d{2}(\+|-)\d{3}\.\d{2});(\d+)(;?)$/,
-      META: META_TS
+      UID: exact("UID:" + UDID2),
+      META: exact(META_TS)
     },
     OTHER: {
-      META: META_TS,
-      INLINE: /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}:[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}:[1-9][0-9]*:[A-Za-z0-9+\/=]{87,88}$/
+      META: exact(META_TS),
+      INLINE: exact(PUBKEY + ":" + PUBKEY + ":" + TIMESTAMP + ":" + SIGNATURE)
     }
+  },
+  IDENTITY: {
+    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + UDID2)
+  },
+  BLOCK: {
+    JOINER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP),
+    LEAVER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP),
+    EXCLUDED: exact(PUBKEY),
+  },
+  TRANSACTION: {
+    HEADER: exact("TX:" + POSITIVE_INT + ":" + POSITIVE_INT + ":" + POSITIVE_INT + ":" + POSITIVE_INT),
+    SENDER: exact(PUBKEY),
+    SOURCE: exact(INTEGER + ":(T|D|F):" + FINGERPRINT),
+    TARGET: exact(PUBKEY + ":" + POSITIVE_INT)
   }
 };
+
+function exact (regexpContent) {
+  return new RegExp("^" + regexpContent + "$");
+}

@@ -23,11 +23,11 @@ function Multicaster () {
     done();
   }
   
-  that.on('keyblock', function(keyblock, peers) {
-    logger.debug('--> new Keyblock to be sent to %s peer(s)', peers.length);
+  that.on('block', function(block, peers) {
+    logger.debug('--> new Block to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendKeyblock(peer, keyblock, success(function (err) {
+        sendBlock(peer, block, success(function (err) {
           sent();
         }));
       });
@@ -39,17 +39,6 @@ function Multicaster () {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendTransaction(peer, transaction, success(function (err) {
-          sent();
-        }));
-      });
-    });
-  });
-  
-  that.on('wallet', function(wallet, peers) {
-    logger.debug('--> new Wallet to be sent to %s peer(s)', peers.length);
-    peers.forEach(function(peer){
-      fifo.push(function (sent) {
-        sendWallet(peer, wallet, success(function (err) {
           sent();
         }));
       });
@@ -103,43 +92,17 @@ function Multicaster () {
       });
     });
   });
-  
-  that.on('forward', function(forward, peers, done) {
-    logger.debug('--> new Forward to be sent to %s peer(s)', peers.length);
-    fifo.push(function (sent) {
-      async.forEach(peers, function(peer, callback){
-        // Do propagating
-        logger.debug('sending %s forward to peer %s', forward.forward, peer.keyID());
-        post(peer, "/network/peering/forward", {
-          forward: forward.getRaw(),
-          signature: forward.signature
-        }, function (err, res, body) {
-          // Sent!
-          sent();
-          if (typeof done == 'function') {
-            done(err, res, body);
-          }
-        });
-      }, function(err){
-        if (typeof done == 'function') {
-          done(err);
-        }
-        sent();
-      });
-    });
-  });
 
-  this.sendKeyblock = sendKeyblock;
+  this.sendBlock = sendBlock;
 }
 
 util.inherits(Multicaster, stream.Transform);
 
-function sendKeyblock(peer, keyblock, done) {
+function sendBlock(peer, block, done) {
   var keyID = peer.keyID();
-  logger.info('POST keyblock to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
-  post(peer, '/keychain/keyblock', {
-    "keyblock": keyblock.getRaw(),
-    "signature": keyblock.signature
+  logger.info('POST block to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
+  post(peer, '/blockchain/block', {
+    "block": block.getRawSigned(),
   }, done);
 }
 
@@ -151,27 +114,11 @@ function sendTransaction(peer, transaction, done) {
   }, done);
 }
 
-function sendWallet(peer, entry, done) {
-  logger.info('POST Wallet entry %s to %s', entry.keyID(), peer.keyID());
-  post(peer, '/network/wallet', {
-    "entry": entry.getRaw(),
-    "signature": entry.signature
-  }, done);
-}
-
 function sendPeering(toPeer, peer, done) {
   logger.info('POST peering to %s', toPeer.keyID());
   post(toPeer, '/network/peering/peers', {
     "entry": peer.getRaw(),
     "signature": peer.signature
-  }, done);
-}
-
-function sendForward(peer, rawForward, signature, done) {
-  logger.info('POST forward to %s', peer.keyID());
-  post(peer, '/network/peering/forward', {
-    "forward": rawForward,
-    "signature": signature
   }, done);
 }
 

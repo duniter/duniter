@@ -82,7 +82,7 @@ var rawKeyblock = "" +
 
 describe('Reading a root keyblock', function(){
 
-  var block = parsers.parseKeyblock().syncWrite(rawKeyblock);
+  var block = parsers.parseBlock().syncWrite(rawKeyblock);
 
   it('should give root basic informations', function(){
     assert.equal(block.version, 1);

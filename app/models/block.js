@@ -52,7 +52,7 @@ KeyBlockSchema.methods = {
     });
     [
       "currency",
-      "membersRoot",
+      "issuer",
       "signature",
       "hash",
     ].forEach(function(field){
@@ -65,12 +65,30 @@ KeyBlockSchema.methods = {
       json[field] = that[field] || null;
     });
     [
+      "dividend",
+      "fees",
+    ].forEach(function(field){
+      json[field] = parseInt(that[field]) || null;
+    });
+    [
       "membersChanges",
     ].forEach(function(field){
       json[field] = that[field] || [];
     });
     [
-      "keysChanges",
+      "identities",
+      "joiners",
+      "leavers",
+      "excluded",
+      "certifications",
+    ].forEach(function(field){
+      json[field] = [];
+      that[field].forEach(function(raw){
+        json[field].push(raw);
+      });
+    });
+    [
+      "transactions",
     ].forEach(function(field){
       json[field] = [];
       that[field].forEach(function(obj){
@@ -78,105 +96,6 @@ KeyBlockSchema.methods = {
       });
     });
     return json;
-  },
-
-  getNewPubkeys: function() {
-    var pubkeys = [];
-    this.keysChanges.forEach(function(kc){
-      if (kc.type == 'N') {
-        pubkeys.push(keyhelper.fromEncodedSeparatedPackets(kc.keypackets, kc.certpackets));
-      }
-    });
-    return pubkeys;
-  },
-
-  getKeyUpdates: function() {
-    var updates = {};
-    this.keysChanges.forEach(function(kc){
-      updates[kc.fingerprint] = { certifs: '', subkeys: '' };
-      var list = new openpgp.packet.List();
-      if (kc.type == 'U' || kc.type == 'B') {
-        // Subkeys
-        if (kc.keypackets) {
-          list.concat(keyhelper.toPacketlist(kc.keypackets));
-          updates[kc.fingerprint].subkeys = keyhelper.toEncoded(list);
-        }
-        // Certifs
-        if (kc.certpackets) {
-          list.concat(keyhelper.toPacketlist(kc.certpackets));
-          updates[kc.fingerprint].certifs = keyhelper.toEncoded(list);
-        }
-      }
-    });
-    return updates;
-  },
-
-  getPublicKeysPackets: function() {
-    var pubkeys = [];
-    this.publicKeys.forEach(function(obj){
-      var packets = new openpgp.packet.List();
-      var base64decoded = base64.decode(obj.packets);
-      packets.read(base64decoded);
-      packets = packets.filterByTag(openpgp.enums.packet.publicKey);
-      if (packets.length == 1) {
-        pubkeys.push(packets[0]);
-      }
-    });
-    return pubkeys;
-  },
-
-  getMemberships: function() {
-    var notFoundMembership = 0;
-    var mss = {};
-    this.keysChanges.forEach(function(kc){
-      if (kc.membership) {
-        var shortSIG = kc.membership.signature;
-        var shortMS = kc.membership.membership;
-        // Membership content
-        var sp = shortMS.split(':');
-        // Signature
-        var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
-        signature += shortSIG;
-        signature += '-----END PGP SIGNATURE-----\n';
-        var ms = {
-          issuer: kc.fingerprint,
-          version: sp[0],
-          keyID: sp[1].substring(24),
-          fingerprint: sp[1],
-          membership: sp[2],
-          date: new Date(parseInt(sp[3])*1000),
-          userid: sp[4],
-          signature: signature
-        };
-        mss[ms.keyID] = ms;
-      }
-    });
-    return {
-      'notFoundMembership': notFoundMembership,
-      'mss': mss
-    };
-  },
-
-  getNewMembers: function() {
-    var members = [];
-    for (var i = 0; i < this.membersChanges.length; i++) {
-      var matches = this.membersChanges[i].match(/^\+([\w\d]{40})$/);
-      if(matches){
-        members.push(matches[1]);
-      }
-    }
-    return members;
-  },
-
-  getLeavingMembers: function() {
-    var members = [];
-    for (var i = 0; i < this.membersChanges.length; i++) {
-      var matches = this.membersChanges[i].match(/^\-([\w\d]{40})$/);
-      if(matches){
-        members.push(matches[1]);
-      }
-    }
-    return members;
   },
 
   getHash: function() {
@@ -192,24 +111,6 @@ KeyBlockSchema.methods = {
 
   getRawSigned: function() {
     return require('../lib/rawer').getBlock(this);
-  },
-
-  getPrevious: function (done) {
-    if(this.number == 0){
-      done();
-      return;
-    }
-    this.model('KeyBlock').find({ number: this.number - 1, hash: this.previousHash }, function (err, ams) {
-      if(ams.length == 0){
-        done('Previous keyblock not found');
-        return;
-      }
-      if(ams.length > 1){
-        done('Multiple previous keyblocks matches');
-        return;
-      }
-      done(null, ams[0]);
-    });
   },
 
   display: function (done) {

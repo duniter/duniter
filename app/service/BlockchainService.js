@@ -5,7 +5,6 @@ var openpgp   = require('openpgp');
 var merkle    = require('merkle');
 var sha1      = require('sha1');
 var base64    = require('../lib/base64');
-var unix2dos  = require('../lib/unix2dos');
 var dos2unix  = require('../lib/dos2unix');
 var parsers   = require('../lib/streams/parsers/doc');
 var keyhelper = require('../lib/keyhelper');
@@ -113,16 +112,15 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     ], done);
   }
 
-  this.submitBlock = function (kb, done) {
+  this.submitBlock = function (obj, done) {
     var now = new Date();
-    var block = new Block(kb);
-    block.issuer = kb.pubkey.fingerprint;
+    var block = new Block(obj);
     var currentBlock = null;
     var newLinks;
     async.waterfall([
       function (next){
-        Block.current(function (err, kb) {
-          next(null, kb || null);
+        Block.current(function (err, obj) {
+          next(null, obj || null);
         })
       },
       function (current, next){
@@ -194,24 +192,34 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
   function checkIssuer (block, done) {
     async.waterfall([
       function (next){
-        Key.isMember(block.issuer, next);
+        Identity.isMember(block.issuer, next);
       },
       function (isMember, next){
         if (isMember)
           next();
         else {
           if (block.number == 0) {
-            if (~block.membersChanges.indexOf('+' + block.issuer)) {
+            if (matchesList(new RegExp('^' + block.issuer + ':'), block.joiners)) {
               next();
             } else {
-              next('Keyblock not signed by the root members');
+              next('Block not signed by the root members');
             }
           } else {
-            next('Keyblock must be signed by an existing member');
+            next('Block must be signed by an existing member');
           }
         }
       },
     ], done);
+  }
+
+  function matchesList (regexp, list) {
+    var i = 0;
+    var found = "";
+    while (!found && i < list.length) {
+      found = list[i].match(regexp) ? list[i] : "";
+      i++;
+    }
+    return found;
   }
 
   function checkCoherence (block, done) {
@@ -250,40 +258,28 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     async.waterfall([
       function (next){
         // Memorize newKeys
-        async.forEach(block.keysChanges, function(kc, callback){
-          if (kc.type == 'N') {
-            var key = keyhelper.fromEncodedPackets(kc.keypackets);
-            newKeys[kc.fingerprint] = key;
-          }
+        async.forEach(block.identities, function(inlineIdty, callback){
+          var idty = Identity.fromInline(inlineIdty);
+          newKeys[idty.pubkey] = idty;
           callback();
         }, next);
       },
       function (next){
-        async.forEachSeries(['N', 'U'], function(currentType, packetTypeDone) {
-          async.forEachSeries(block.keysChanges, function(kc, callback){
-            if (kc.type != 'U' && kc.type != 'N') {
-              callback('Only NEWCOMER & UPDATE blocks are managed for now');
-              return;
-            }
-            // Doing only one type at a time
-            if (kc.type != currentType) {
-              callback();
-              return;
-            }
-            async.waterfall([
-              function (next){
-                // Check keychange (certifications verification notably)
-                checkKeychange(block, kc, newKeys, next);
-              },
-              function (next){
-                // Memorize new links from signatures
-                newLinks[kc.fingerprint] = kc.certifiers;
-                next();
-              },
-            ], callback);
-          }, function (err) {
-            packetTypeDone(err);
-          });
+        async.forEachSeries(block.certifications, function(inlineCert, callback) {
+          // Build cert
+          var cert = Certification.fromInline(inlineCert);
+          async.waterfall([
+            function (next){
+              // Check validty (signature, and that certified & certifier are members (old or newcomers))
+              checkCertificationOfKey(cert.from, cert.time.timestamp(), cert.sig, cert.to, newKeys, next);
+            },
+            function (next){
+              // Memorize new links from signatures
+              newLinks[cert.to] = newLinks[cert.to] || [];
+              newLinks[cert.to].push(cert.from);
+              next();
+            },
+          ], callback);
         }, function (err) {
           next(err, newLinks);
         });
@@ -293,145 +289,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     });
   }
 
-  function checkKeychange (block, kc, newKeys, done) {
-    try {
-      if (kc.type == 'N') {
-        // Check NEWCOMER keychange type
-        var key = keyhelper.fromEncodedPackets(kc.keypackets);
-        var ms = Membership.fromInline(kc.membership.membership, kc.membership.signature);
-        if (!kc.certpackets) {
-          done('Certification packets are required for NEWCOMER type');
-          return;
-        }
-        if (!kc.membership) {
-          done('Membership is required for NEWCOMER type');
-          return;
-        }
-        if (ms.membership != 'IN') {
-          done('Membership must be IN for NEWCOMER type');
-          return;
-        }
-        if (!key.hasValidUdid2()) {
-          done('Key must have valid udid2 for NEWCOMER type');
-          return;
-        }
-        if (ms.userid != key.getUserID()) {
-          done('Membership must match same UserID as key');
-          return;
-        }
-        var packets = key.getNewcomerPackets();
-        var cleanOrigin = unix2dos(kc.keypackets.replace(/\n$/, ''));
-        var cleanComputed = unix2dos(base64.encode(packets.write()).replace(/\n$/, ''));
-        if (cleanComputed != cleanOrigin) {
-          done('Only 1 pubkey, 1 udid2 userid, certifications, subkeys & subkey bindings are allowed for NEWCOMER type');
-          return;
-        }
-
-        // TODO: check subkeys?
-
-        async.parallel({
-          certifications: function(callback){
-            // Check certifications
-            kc.certifiers = [];
-            async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback2){
-              async.waterfall([
-                function (next){
-                  checkCertificationOfKey(certif, kc.fingerprint, newKeys, next);
-                },
-                function (certifier, next){
-                  // Add certifier FPR in memory
-                  kc.certifiers.push(certifier);
-                  next();
-                },
-              ], callback2);
-            }, callback);
-          },
-          membership: function(callback){
-            // Check against signature
-            var entity = new Membership(ms);
-            var armoredPubkey = key.getArmored();
-            async.waterfall([
-              function (next){
-                entity.currency = conf.currency;
-                entity.userid = key.getUserID();
-                jpgp()
-                  .publicKey(armoredPubkey)
-                  .data(entity.getRaw())
-                  .signature(ms.signature)
-                  .verify(next);
-              },
-              function (verified, next) {
-                if(!verified){
-                  next('Bad signature for membership of ' + entity.userid);
-                  return;
-                }
-                next();
-              },
-            ], callback);
-          },
-        }, function(err) {
-          done(err);
-        });
-
-      } else if (kc.type == 'U') {
-        // Check UPDATE keychange type
-        if (kc.membership) {
-          done('Membership must NOT be provided for UPDATE type');
-          return;
-        }
-        if (!kc.keypackets && !kc.certpackets) {
-          done('Both KeyPackets and CertificationPakcets CANNOT be empty for UPDATE type');
-          return;
-        }
-        if (kc.keypackets && !keyhelper.hasOnlySubkeyMaterial(kc.keypackets)) {
-          done('KeyPackets MUST contain only subkeys & subkey bindings if not empty for UPDATE type');
-          return;
-        }
-        if (kc.certpackets && !keyhelper.hasOnlyCertificationMaterial(kc.certpackets)) {
-          done('CertificationPackets MUST contain only certifications if not empty for UPDATE type');
-          return;
-        }
-
-        // TODO: check subkeys?
-
-        // Check certifications
-        async.forEach(keyhelper.toPacketlist(kc.certpackets), function(certif, callback){
-          kc.certifiers = [];
-          async.waterfall([
-            function (next){
-              checkCertificationOfKey(certif, kc.fingerprint, newKeys, next);
-            },
-            function (certifier, next){
-              // Add certifier FPR in memory
-              kc.certifiers.push(certifier);
-              next();
-            },
-          ], callback);
-        }, done);
-
-      } else if (kc.type == 'L') {
-        // Check LEAVER keychange type
-        done('LEAVER keychange type not managed yet');
-
-      } else if (kc.type == 'B') {
-        // Check BACK keychange type
-        done('BACK keychange type not managed yet');
-
-      } else {
-        done('Unknown keychange type \'' + kc.type + '\'');
-      } 
-    } catch (ex) {
-      done(new Error(ex));
-      return;
-    }
-  }
-
   function checkWoTStability (block, newLinks, done) {
     if (block.number >= 0) {
       // other blocks may introduce unstability with new members
       async.waterfall([
         function (next) {
-          Key.getMembers(next);
+          Identity.getMembers(next);
         },
         function (members, next) {
           var newcomers = [];
@@ -610,34 +473,77 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
   }
 
   function checkCommunityChanges (block, done) {
-    var mss = block.getMemberships().mss;
+    var mss = [];
+    block.joiners.forEach(function(join){
+      var ms = Membership.fromInline(join, 'IN');
+      var identity = matchesList(new RegExp('^' + ms.issuer + ':'), block.identities);
+      if (identity)
+        ms.userid = Identity.fromInline(identity).uid;
+      mss.push(ms);
+    });
     async.waterfall([
       function (next){
-        var error = null;
+        var newcomersCount = 0; // First time comers
         _(mss).values().forEach(function(ms){
-          var change = ms.membership == 'IN' ? '+' : '-';
-          var fingerprint = ms.fingerprint;
-          // Checking received memberships all matches a correct membersChanges entry
-          if (block.membersChanges.indexOf(change + fingerprint) == -1) {
-            error = 'Wrong members changes';
-            return;
-          }
+          if (ms.userid) newcomersCount++;
         });
-        next(error);
+        if (block.identities.length != newcomersCount) {
+          next('Some newcomers havn\'t sent required membership');
+          return;
+        }
+        next();
+      },
+      function (next){
+        async.forEach(mss, function(ms, callback){
+          if (ms.userid) {
+            callback();
+          } else {
+            async.waterfall([
+              function (next){
+                Identity.isMember(ms.pubkey, next);
+              },
+            ], function (err, isMember) {
+              callback(err || (!isMember && ms.pubkey + ' is not a member and must have give an identity with its membership'));
+            });
+          }
+        }, next);
       },
     ], done);
   }
 
   function updateMembers (block, done) {
-    async.forEach(block.membersChanges, function(mc, callback){
-      var isPlus = mc[0] == '+';
-      var fpr = mc.substring(1);
+    async.forEach(block.identities, function(identity, callback){
+      var idty = Identity.fromInline(identity);
       async.waterfall([
         function (next){
-          (isPlus ? Key.addMember : Key.removeMember).call(Key, fpr, next);
+          Identity.getTheOne(idty.pubkey, idty.getTargetHash(), next);
         },
+        function (existing, next){
+          if (existing) {
+            idty = existing;
+          }
+          idty.member = true;
+          idty.kicked = false;
+          idty.save(function (err) {
+            next(err);
+          });
+        }
+      ], callback);
+    }, done);
+  }
+
+  function updateCertifications (block, done) {
+    async.forEach(block.certifications, function(inlineCert, callback){
+      var cert = Certification.fromInline(inlineCert);
+      async.waterfall([
         function (next) {
-          Key.unsetKicked(fpr, next);
+          Identity.getMember(cert.to, next);
+        },
+        function (idty, next){
+          cert.target = idty.getTargetHash();
+          cert.save(function (err) {
+            next(err);
+          });
         }
       ], callback);
     }, done);
@@ -653,81 +559,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
         });
       },
       function (next) {
-        // Update members
+        // Update members (create new identities if do not exist)
         updateMembers(block, next);
       },
-      function (next){
-        // Save new pubkeys (from NEWCOMERS)
-        var pubkeys = block.getNewPubkeys();
-        async.forEach(pubkeys, function(key, callback){
-          var fpr = key.getFingerprint();
-          var uid = key.getUserID();
-          var kid = fpr.substring(24);
-          var trusted = new TrustedKey({
-            fingerprint: fpr,
-            keyID: kid,
-            uid: uid,
-            packets: key.getEncodedPacketList()
-          });
-          async.parallel({
-            trusted: function(callback){
-              trusted.save(function (err){
-                callback(err);
-              });
-            },
-            pubkey: function(callback){
-              async.waterfall([
-                function (next){
-                  parsers.parsePubkey(next).asyncWrite(unix2dos(key.getArmored()), next);
-                },
-                function (obj, next){
-                  PublicBlockchainService.submitPubkey(obj, function (err) {
-                    if (err == constants.ERROR.PUBKEY.ALREADY_UPDATED)
-                      next();
-                    else
-                      next(err);
-                  });
-                },
-              ], callback);
-            },
-          }, function(err) {
-            callback(err);
-          });
-        }, next);
-      },
-      function (next){
-        // Save key updates (from UPDATE & BACK)
-        var updates = block.getKeyUpdates();
-        async.forEach(_(updates).keys(), function(fpr, callback){
-          async.waterfall([
-            function (next){
-              TrustedKey.getTheOne(fpr, next);
-            },
-            function (trusted, next){
-              var oldList = keyhelper.toPacketlist(trusted.packets);
-              var newList = new openpgp.packet.List();
-              if (updates[fpr].certifs) {
-                // Concat signature packets behind userid + self-signature
-                for (var i = 0; i < 3; i++)
-                  newList.push(oldList[i]);
-                newList.concat(keyhelper.toPacketlist(updates[fpr].certifs));
-                // Concat remaining packets
-                for (var i = 3; i < oldList.length; i++)
-                  newList.push(oldList[i]);
-              } else {
-                // Write the whole existing key
-                newList.concat(oldList);
-              }
-              if (updates[fpr].subkeys)
-                newList.concat(keyhelper.toPacketlist(updates[fpr].subkeys));
-              var key = keyhelper.fromPackets(newList);
-              trusted.packets = key.getEncodedPacketList();
-              trusted.save(function (err) {
-                next(err);
-              });
-            },
-          ], callback);
-        }, next);
+      function (next) {
+        // Update certifications
+        updateCertifications(block, next);
       },
       function (next){
         // Save links
@@ -745,26 +582,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
         }, next);
       },
       function (next){
-        // Save memberships
-        var mss = block.getMemberships().mss;
-        async.forEach(_(mss).values(), function(ms, callback){
-          Membership.removeFor(ms.fingerprint, callback);
-        }, next);
-      },
-      function (next){
         // Compute obsolete links
         computeObsoleteLinks(block, next);
-      },
-      function (next){
-        // Update available key material for members with keychanges in this block
-        updateAvailableKeyMaterial(block, next);
-      },
-      function (next){
-        if (ContractService) {
-          // Eventually create next Amendment with Universal Dividend if time has come
-          ContractService.createAmendmentForBlock(block, next);
-        }
-        else next();
       },
     ], function (err) {
       done(err, block);
@@ -1302,73 +1121,50 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     done(null, block);
   }
 
-  function checkCertificationOfKey (certif, certifiedFPR, newKeys, done) {
-    var found = null;
+  /**
+  * Checks wether a certification is valid or not, and from a legit member.
+  */
+  function checkCertificationOfKey (certifier, when, sig, certified, newKeys, done) {
     async.waterfall([
       function (next){
         var keyID = certif.issuerKeyId.toHex().toUpperCase();
-        // Check in local newKeys for trusted key (if found, trusted is newcomer here)
-        _(newKeys).keys().forEach(function(fpr){
-          if (fpr.match(new RegExp(keyID + '$')))
-            found = fpr;
-        });
+        // Compute membership over newcomers
+        var newPubkeys = _(newKeys).keys();
+        var isTargetANewcomer = ~newPubkeys.indexOf(certified);
+        var isIssuerANewcomer = ~newPubkeys.indexOf(certifier);
         async.parallel({
-          pubkeyCertified: function(callback){
-            if (newKeys[certifiedFPR]) {
-              // The certified is a newcomer
-              var key = newKeys[certifiedFPR];
-              async.waterfall([
-                function (next){
-                  parsers.parsePubkey(next).asyncWrite(unix2dos(key.getArmored()), next);
-                },
-                function (obj, next) {
-                  next(null, new PublicKey(obj));
-                }
-              ], callback);
-            }
-            // The certified is a WoT member
-            else PublicKey.getTheOne(certifiedFPR, callback);
-          },
-          trusted: function(callback){
-            if (found)
-              callback(null, { fingerprint: found });
+          issuerIsMember: function(callback){
+            if (!isIssuerANewcomer)
+              Identity.isMember(certifier, callback);
             else
-              TrustedKey.getTheOne(keyID, callback);
+              // A newcomer is a member
+              callback(null, true);
+          },
+          targetIsMember: function(callback){
+            if (!isTargetANewcomer)
+              Identity.isMember(certified, callback);
+            else
+              // A newcomer is a member
+              callback(null, true);
           }
         }, next);
       },
       function (res, next){
-        // Known certifier KeyID, get his public key + check if member
-        var certifierFPR = res.trusted.fingerprint;
-        async.parallel({
-          pubkeyCertifier: function(callback){
-            PublicKey.getTheOne(certifierFPR, callback);
-          },
-          isMember: function(callback){
-            if (found) {
-              // Is considered a member since valide newcomer
-              callback(null, res);
-              return;
-            }
-            Key.isMember(certifierFPR, function (err, isMember) {
-              callback(err || (!isMember && 'Signature from non-member ' + res.trusted.fingerprint), res);
-            });
-          }
-        }, function (err, res2) {
-          res2.pubkeyCertified = res.pubkeyCertified;
-          next(err, res2);
-        });
+        if (!res.issuerIsMember)
+          next('Ceritifier ' + certifier + ' is not a member nor a newcomer');
+        else if (!res.targetIsMember)
+          next('Ceritified ' + certifier + ' is not a member nor a newcomer');
+        else {
+          Identity.getMember(certified, function (err, idty) {
+            res.idty = idty;
+            next(err, res);
+          });
+        }
       },
       function (res, next){
-        var other = { pubkey: res.pubkeyCertifier };
-        var uid = res.pubkeyCertified.getUserID();
-        var selfKey = res.pubkeyCertified.getKey();
-        var otherKey = other.pubkey.getKey();
-        var userId = new openpgp.packet.Userid();
-        logger.info('Signature for '+ uid);
-        userId.read(uid);
-        var success = certif.verify(otherKey.getPrimaryKey(), {userid: userId, key: selfKey.getPrimaryKey()});
-        next(success ? null : 'Wrong signature', success && other.pubkey.fingerprint);
+        logger.info('Signature for '+ ceritified);
+        var selfCert = idty.selfCert();
+        IdentityService.isValidCertification(selfCert, idty.sig, certifier, sig, when, cb);
       },
     ], done);
   }
@@ -1410,8 +1206,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
         }
         raw = block.getRaw();
         sigFunc(raw, function (err, sigResult) {
-          sig = unix2dos(sigResult);
-          var full = raw + sig;
+          sig = dos2unix(sigResult);
+          var full = raw + sig + '\n';
           pow = full.hash();
           testsCount++;
           if (testsCount % 100 == 0) {

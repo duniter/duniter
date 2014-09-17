@@ -299,16 +299,19 @@ function generateAndSend (generationMethod) {
         var wiz = wizard(server);
         var doSign = null;
         async.waterfall([
+          // function (next){
+          //   wiz.configKey(conf, next);
+          // },
+          // function (next){
+          //   signature(conf.salt, conf.passwd, next);
+          // },
           function (next){
-            wiz.configKey(conf, next);
-          },
-          function (next){
-            signature(conf.salt, conf.passwd, next);
+            signature('abc', 'abc', next);
           },
           function (sigFunc, next){
             doSign = sigFunc;
             // Extract key pair
-            crypto.getKeyPair(conf.salt, conf.passwd, next);
+            crypto.getKeyPair('abc', 'abc', next);
           },
           function (pair, next){
             proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
@@ -337,7 +340,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
       var peer = new Peer({
         endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
       });
-      console.log(block.getRaw());
+      console.log(block.getRawSigned());
       logger.info('Posted block ' + block.quickDescription());
       multicaster().sendBlock(peer, block, next);
     },

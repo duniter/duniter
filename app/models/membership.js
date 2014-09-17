@@ -107,19 +107,17 @@ MembershipSchema.methods = {
   }
 }
 
-MembershipSchema.statics.fromInline = function (inlineMS, inlineSig) {
+MembershipSchema.statics.fromInline = function (inlineMS, type) {
   var Membership = this.model('Membership');
-  var splitted = inlineMS.split(':');
-  var signature = '-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\n';
-  signature += inlineSig;
-  signature += '-----END PGP SIGNATURE-----\n';
+  var sp = inlineMS.split(':');
   return new Membership({
-    version:    splitted[0],
-    issuer:     splitted[1],
-    membership: splitted[2],
-    date:       splitted[3] ?  new Date(parseInt(splitted[3])*1000) : 0,
-    userid:     splitted[4],
-    signature:  signature
+    version:    1,
+    issuer:     sp[0],
+    membership: type,
+    type:       type,
+    date:       new Date(parseInt(sp[1])*1000),
+    userid:     '',
+    signature:  sp[2]
   });
 }
 

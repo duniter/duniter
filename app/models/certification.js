@@ -26,12 +26,21 @@ CertificationSchema.pre('save', function (next) {
 
 CertificationSchema.methods = {
 
+  exists: function (done) {
+    this.find({ "pubkey": this.pubkey, "sig": this.sig, "time": this.time, "target": this.target }, function (err, certs) {
+      done(err, certs && certs.length > 0);
+    });
+  }
 };
 
-CertificationSchema.statics.exists = function (done) {
-  var Identity = this.model('Identity');
-  Identity.find({ "pubkey": this.pubkey, "sig": this.sig, "time": this.time, "target": this.target }, function (err, identities) {
-    done(err, identities && identities.length > 0);
+CertificationSchema.statics.fromInline = function (inline) {
+  var Certification = this.model('Certification');
+  var sp = inline.split(':');
+  return new Certification({
+    pubkey: sp[0],
+    to: sp[1],
+    time: new Date(parseInt(sp[2])*1000),
+    sig: sp[3]
   });
 };
 

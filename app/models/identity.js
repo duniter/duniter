@@ -68,6 +68,60 @@ IdentitySchema.methods = {
     });
     return certs;
   },
+
+  getTargetHash: function () {
+    return sha1(this.uid + this.time.timestamp() + this.pubkey).toUpperCase();
+  }
+};
+
+IdentitySchema.statics.addMember = function(pubkey, hash, done){
+  var Identity = this.model('Identity');
+  Identity.update({ "hash": hash, "pubkey": pubkey }, { member: true }, function (err) {
+    done(err);
+  });
+};
+
+IdentitySchema.statics.removeMember = function(pubkey, hash, done){
+  var Identity = this.model('Identity');
+  Identity.update({ "pubkey": pubkey, hash: hash }, { member: false }, function (err) {
+    done(err);
+  });
+};
+
+IdentitySchema.statics.setKicked = function(pubkey, hash, done){
+  var Identity = this.model('Identity');
+  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: true }, function (err) {
+    done(err);
+  });
+};
+
+IdentitySchema.statics.unsetKicked = function(pubkey, hash, done){
+  var Identity = this.model('Identity');
+  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: false }, function (err) {
+    done(err);
+  });
+};
+
+IdentitySchema.statics.fromInline = function (inline) {
+  var Identity = this.model('Identity');
+  var sp = inline.split(':');
+  return new Identity({
+    pubkey: sp[0],
+    sig: sp[1],
+    time: new Date(parseInt(sp[2])*1000),
+    uid: sp[3]
+  });
+};
+
+IdentitySchema.statics.getTheOne = function (pubkey, hash, done) {
+  var Identity = this.model('Identity');
+  Identity.find({ "pubkey": pubkey, "hash": hash }, function (err, identities) {
+    if(identities.length > 1){
+      done('Multiple identities found for pubkey ' + pubkey + ' and hash ' + hash + '.');
+      return;
+    }
+    done(null, identities[0] || null);
+  });
 };
 
 IdentitySchema.statics.getByHash = function (hash, done) {
@@ -89,6 +143,17 @@ IdentitySchema.statics.isMember = function(pubkey, done){
       return;
     }
     done(null, identities.length == 1);
+  });
+}
+
+IdentitySchema.statics.getMember = function(pubkey, done){
+  var Identity = this.model('Identity');
+  Identity.find({ "pubkey": pubkey, "member": true }, function (err, identities) {
+    if(identities.length > 1){
+      done('More than one matching pubkey & member for ' + pubkey);
+      return;
+    }
+    done(null, identities.length == 1 && identities[0]);
   });
 }
 

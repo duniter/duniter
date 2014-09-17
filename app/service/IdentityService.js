@@ -26,6 +26,12 @@ function IdentityService (conn, conf) {
     ], done);
   };
 
+  this.isValidCertification = function (selfCert, selfSig, otherPubkey, otherSig, otherTime, done) {
+    var raw = selfCert + selfSig + '\n' + 'META:TS:' + otherTime + '\n';
+    var verified = crypto.verify(raw, otherSig, otherPubkey);
+    cb(verified ? null : 'Wrong signature for certification from \'' + otherPubkey + '\'');
+  }
+
   /**
   * Tries to persist a public key given in ASCII-armored format.
   * Returns the database stored public key.
@@ -42,9 +48,7 @@ function IdentityService (conn, conf) {
         },
         function (next) {
           async.forEachSeries(certs, function(cert, cb){
-            var raw = selfCert + idty.sig + '\n' + 'META:TS:' + cert.time.timestamp() + '\n';
-            var verified = crypto.verify(raw, cert.sig, cert.from);
-            cb(verified ? null : 'Wrong signature for certification from \'' + cert.from + '\'');
+            isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.time.timestamp(), cb);
           }, next);
         },
         function (next){
@@ -52,7 +56,7 @@ function IdentityService (conn, conf) {
             var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, time: cert.time, target: obj.hash, to: idty.pubkey });
             async.waterfall([
               function (next){
-                Certification.exists(next);
+                mCert.exists(next);
               },
               function (exists, next){
                 if (exists) next();

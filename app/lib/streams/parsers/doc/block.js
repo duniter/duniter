@@ -35,11 +35,6 @@ function KeyblockParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getBlock, onError);
 
   this._clean = function (obj) {
-    ['identities', 'joiners', 'leavers', 'excluded', 'certifications'].forEach(function(field){
-      obj[field] = obj[field] || [];
-      if (obj[field].length > 0)
-        obj[field].splice(obj[field].length - 1, 1);
-    });
   };
 
   this._verify = function(obj){
@@ -84,11 +79,11 @@ function KeyblockParser (onError) {
         err = {code: codes['BAD_SENDER'], message: "Timestamp must be an integer"};
     }
     if(!err){
-      if(!obj.dividend || !obj.dividend.match(constants.INTEGER))
+      if(obj.dividend && !obj.dividend.match(constants.INTEGER))
         err = {code: codes['BAD_DIVIDEND'], message: "Incorrect UniversalDividend field"};
     }
     if(!err){
-      if(!obj.fees || !obj.fees.match(constants.INTEGER))
+      if(obj.fees && !obj.fees.match(constants.INTEGER))
         err = {code: codes['BAD_FEES'], message: "Incorrect Fees field"};
     }
     if(!err){
@@ -128,27 +123,51 @@ function splitAndMatch (separator, regexp) {
       if (line.match(regexp))
         kept.push(line);
     });
+    return kept;
   };
 }
 
 function extractTransactions(raw) {
   var rawTransactions = [];
   var transactions = [];
-  var currentTX;
   var lines = raw.split(/\n/);
-  lines = lines.slice(0, lines.length - 1);
-  var nbKeys = 0;
-  lines.forEach(function(line){
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
     if (line.match(constants.TRANSACTION.HEADER)) {
-      // New TX block
-      if (currentTX) rawTransactions.push(currentTX);
-      currentTX = line + '\n';
+      var currentTX = '';
+      var sp = line.split(':');
+      var nbSignatories = parseInt(sp[2]);
+      var nbInputs = parseInt(sp[3]);
+      var nbOutputs = parseInt(sp[4]);
+      var linesToExtract = {
+        signatories: {
+          start: 1,
+          end: nbSignatories
+        },
+        inputs: {
+          start: 1 + nbSignatories,
+          end: nbSignatories + nbInputs
+        },
+        outputs: {
+          start: 1 + nbSignatories + nbInputs,
+          end: nbSignatories + nbInputs + nbOutputs
+        },
+        signatures: {
+          start: 1 + nbSignatories + nbInputs + nbOutputs,
+          end: 2*nbSignatories + nbInputs + nbOutputs
+        },
+      };
+      ['signatories', 'inputs', 'outputs', 'signatures'].forEach(function(prop){
+        for (var j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
+          currentTX += lines[i + j];
+        }
+      });
+      rawTransactions.push(currentTX)
     } else {
-      // Adding to current
-      currentTX += line + '\n';
+      // Not a transaction header, stop reading
+      i = lines.length;
     }
-  });
-  if (currentTX) rawTransactions.push(currentTX);
+  }
   // Parse each transaction block
   var parsers = require('./.');
   rawTransactions.forEach(function(compactTX){

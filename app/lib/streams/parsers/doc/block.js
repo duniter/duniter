@@ -101,7 +101,7 @@ function KeyblockParser (onError) {
     if(!err){
       // Previous issuer
       var isRoot = parseInt(obj.number, 10) === 0;
-      if(!isRoot && (!obj.previousIssuer || !obj.previousIssuer.match(/^[A-Z\d]{40}$/)))
+      if(!isRoot && (!obj.previousIssuer || !obj.previousIssuer.match(constants.PUBLIC_KEY)))
         err = {code: codes['BAD_PREV_ISSUER_ABSENT'], message: "PreviousIssuer must be provided for non-root block"};
       else if(isRoot && obj.previousIssuer)
         err = {code: codes['BAD_PREV_ISSUER_PRESENT'], message: "PreviousIssuer must not be provided for root block"};

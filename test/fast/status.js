@@ -8,11 +8,12 @@ var ucoin    = require('../..');
 
 var Status = require('../../app/models/statusMessage');
 var rawStatus = "" +
-  "Version: 1\r\n" +
-  "Currency: beta_brousouf\r\n" +
-  "Status: UP\r\n" +
-  "From: 630FF0BE40FAC3C0801620D9734C4575ED412D68\r\n" +
-  "To: 5E2BB6D1377695BEAF1EA9BFF34399A4FAB40813\r\n";
+  "Version: 1\n" +
+  "Currency: beta_brousouf\n" +
+  "Status: UP\n" +
+  "From: 3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu\n" +
+  "To: 6GCnm36t4DnvoJshCYS13i64PxsqyJnGxuNXkzt9Rkh7\n" +
+  "bvuKzc6+cGWMGC8FIkZHN8kdQhaRL/MK60KYyw5vJqkKEgxXbygQHAzfoojeSY4gPKIu4FggBkR1HndSEm2FAQ==\n";
 
 describe('Status', function(){
 
@@ -37,14 +38,6 @@ describe('Status', function(){
 
     it('should have status UP', function(){
       assert.equal(st.status, 'UP');
-    });
-
-    it('its computed hash should be 06A5E9B84D2E7865549CDB5C8C958E35F166B513', function(){
-      assert.equal(st.hash, '06A5E9B84D2E7865549CDB5C8C958E35F166B513');
-    });
-
-    it('its manual hash should be 06A5E9B84D2E7865549CDB5C8C958E35F166B513', function(){
-      assert.equal(sha1(st.getRaw()).toUpperCase(), '06A5E9B84D2E7865549CDB5C8C958E35F166B513');
     });
   });
 });

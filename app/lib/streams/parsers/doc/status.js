@@ -4,6 +4,7 @@ var util          = require('util');
 var sha1          = require('sha1');
 var split         = require('../../../split');
 var unix2dos      = require('../../../unix2dos');
+var constants     = require('../../../constants');
 var _             = require('underscore');
 
 module.exports = StatusParser;
@@ -14,6 +15,7 @@ function StatusParser (onError) {
     {prop: "version",   regexp: /Version: (.*)/},
     {prop: "currency",  regexp: /Currency: (.*)/},
     {prop: "status",    regexp: /Status: (.*)/},
+    {prop: "time",      regexp: /Time: (.*)/, parser: parseDateFromTimestamp},
     {prop: "from",      regexp: /From: (.*)/},
     {prop: "to",        regexp: /To: (.*)/},
   ];
@@ -45,16 +47,20 @@ function StatusParser (onError) {
     }
     if(!err){
       // From
-      if(obj.from && !obj.from.match(/^[A-Z\d]+$/))
+      if(obj.from && !obj.from.match(constants.PUBLIC_KEY))
         err = {code: codes['BAD_FROM_FINGERPRINT'], message: "Incorrect From field"};
     }
     if(!err){
       // To
-      if(obj.to && !obj.to.match(/^[A-Z\d]+$/))
+      if(obj.to && !obj.to.match(constants.PUBLIC_KEY))
         err = {code: codes['BAD_TO_FINGERPRINT'], message: "Incorrect To field"};
     }
     return err && err.message;
   };
+}
+
+function parseDateFromTimestamp (value) {
+  return new Date(parseInt(value)*1000);
 }
 
 util.inherits(StatusParser, GenericParser);

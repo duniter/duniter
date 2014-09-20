@@ -20,7 +20,7 @@ var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9
 var PeerSchema = new Schema({
   version: String,
   currency: String,
-  fingerprint: { type: String, unique: true },
+  pub: { type: String, unique: true },
   endpoints: [String],
   signature: String,
   hash: String,

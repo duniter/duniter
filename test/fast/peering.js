@@ -8,18 +8,19 @@ var parsers  = require('../../app/lib/streams/parsers/doc');
 var ucoin    = require('../..');
 
 var rawPeer = "" +
-  "Version: 1\r\n" +
-  "Currency: beta_brousouf\r\n" +
-  "Fingerprint: D049002A6724D35F867F64CC087BA351C0AEB6DF\r\n" +
-  "Endpoints:\r\n" +
-  "BASIC_MERKLED_API ucoin.twiced.fr 88.163.127.43 9101\r\n" +
-  "OTHER_PROTOCOL 88.163.127.43 9102\r\n";
+  "Version: 1\n" +
+  "Currency: beta_brousouf\n" +
+  "PublicKey: 3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu\n" +
+  "Endpoints:\n" +
+  "BASIC_MERKLED_API ucoin.twiced.fr 88.163.127.43 9101\n" +
+  "OTHER_PROTOCOL 88.163.127.43 9102\n" +
+  "bvuKzc6+cGWMGC8FIkZHN8kdQhaRL/MK60KYyw5vJqkKEgxXbygQHAzfoojeSY4gPKIu4FggBkR1HndSEm2FAQ==\n";
 
 var Peer = mongoose.model('Peer', require('../../app/models/peer'));
 
 describe('Peer', function(){
 
-  describe('of ubot1', function(){
+  describe('of some key', function(){
 
     var pr;
 
@@ -38,8 +39,8 @@ describe('Peer', function(){
       assert.equal(pr.currency, 'beta_brousouf');
     });
 
-    it('should have fingerprint', function(){
-      assert.equal(pr.fingerprint, 'D049002A6724D35F867F64CC087BA351C0AEB6DF');
+    it('should have public key', function(){
+      assert.equal(pr.pub, '3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu');
     });
 
     it('should have 2 endpoints', function(){
@@ -61,26 +62,6 @@ describe('Peer', function(){
 
     it('should have port 9101', function(){
       assert.equal(pr.getPort(), 9101);
-    });
-
-    // it('its computed hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){
-    //   assert.equal(pr.hash, 'D031ECEB784DA346239DB7AF1F5389361E6F1988');
-    // });
-
-    // it('its manual hash should be D031ECEB784DA346239DB7AF1F5389361E6F1988', function(){
-    //   assert.equal(sha1(pr.getRaw()).toUpperCase(), 'D031ECEB784DA346239DB7AF1F5389361E6F1988');
-    // });
-
-    it('its computed hash should be the good one', function(){
-      assert.equal(pr.hash, '057E6F2C568944ED0FBC50EECC72ED8125821D3D');
-    });
-
-    it('its manual hash should be 057E6F2C568944ED0FBC50EECC72ED8125821D3D', function(){
-      assert.equal(sha1(pr.getRaw()).toUpperCase(), '057E6F2C568944ED0FBC50EECC72ED8125821D3D');
-    });
-
-    it('its manual SIGNED hash should be the same (because no signature is provided)', function(){
-      assert.equal(sha1(pr.getRaw()).toUpperCase(), '057E6F2C568944ED0FBC50EECC72ED8125821D3D');
     });
   });
 });

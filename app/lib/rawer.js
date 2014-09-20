@@ -81,7 +81,7 @@ module.exports = new function() {
     var raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Currency: " + json.currency + "\n";
-    raw += "Fingerprint: " + json.fingerprint + "\n";
+    raw += "PublicKey: " + json.pub + "\n";
     raw += "Endpoints:" + "\n";
     json.endpoints.forEach(function(ep){
       raw += ep + "\n";

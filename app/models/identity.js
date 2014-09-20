@@ -173,7 +173,7 @@ IdentitySchema.statics.search = function (search, done) {
       });
     },
     byUID: function(callback){
-      obj.find({ uid: new RegExp(search)}, function (err, keys) {
+      obj.find({ uid: new RegExp(search.replace('+', '\\+'))}, function (err, keys) {
         found.push(keys);
         callback();
       });

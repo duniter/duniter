@@ -16,6 +16,7 @@ function IdentityService (conn, conf) {
     task(callback);
   }, 1);
 
+  var that = this;
 
   this.search = function(search, done) {
     var identities = [];
@@ -29,7 +30,7 @@ function IdentityService (conn, conf) {
   this.isValidCertification = function (selfCert, selfSig, otherPubkey, otherSig, otherTime, done) {
     var raw = selfCert + selfSig + '\n' + 'META:TS:' + otherTime + '\n';
     var verified = crypto.verify(raw, otherSig, otherPubkey);
-    cb(verified ? null : 'Wrong signature for certification from \'' + otherPubkey + '\'');
+    done(verified ? null : 'Wrong signature for certification from \'' + otherPubkey + '\'');
   }
 
   /**

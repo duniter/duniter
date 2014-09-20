@@ -14,8 +14,8 @@ var constants = require('../lib/constants');
 var moment    = require('moment');
 var inquirer  = require('inquirer');
 
-module.exports.get = function (conn, conf, IdentityService, PeeringService, ContractService) {
-  return new BlockchainService(conn, conf, IdentityService, PeeringService, ContractService);
+module.exports.get = function (conn, conf, IdentityService, PeeringService) {
+  return new BlockchainService(conn, conf, IdentityService, PeeringService);
 };
 
 // Callback used as a semaphore to sync keyblock reception & PoW computation
@@ -33,7 +33,7 @@ var computationTimeout = null;
 // Flag for saying if timeout was already waited
 var computationTimeoutDone = false;
 
-function BlockchainService (conn, conf, IdentityService, PeeringService, ContractService) {
+function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   var KeychainService = this;
 
@@ -298,7 +298,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
         },
         function (members, next) {
           var newcomers = [];
-          block.joiners.forEach(function (fpr) {
+          block.joiners.forEach(function (inlineMS) {
+            var fpr = inlineMS.split(':')[0];
             newcomers.push(fpr);
             members.push({ fingerprint: fpr });
           });
@@ -928,9 +929,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
               }, next);
             },
             function (res, next){
-              join.identity = res.identity;
-              join.certs = res.certs;
-              preJoinData[res.identity.pubkey] = join;
+              if (res.identity) {
+                // MS + matching cert are found
+                join.identity = res.identity;
+                join.certs = res.certs;
+                preJoinData[res.identity.pubkey] = join;
+              }
               next();
             },
           ], callback);
@@ -1017,17 +1021,27 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
     async.waterfall([
       function (next){
         async.forEach(theNewcomers, function(newcomer, callback){
+          // New array of certifiers
+          newLinks[newcomer] = newLinks[newcomer] || [];
+          // Check wether each certification of the block is from valid newcomer/member
           async.forEach(joinData[newcomer].certs, function(cert, callback){
-            async.waterfall([
-              function (next){
-                Identity.isMember(cert.pubkey, next);
-              },
-              function (isMember, next){
-                if (isMember)
-                  newLinks[newcomer].push(cert.pubkey);
-                next();
-              },
-            ], callback);
+            if (~theNewcomers.indexOf(cert.pubkey)) {
+              // Newcomer to newcomer => valid link
+              newLinks[newcomer].push(cert.pubkey);
+              callback();
+            } else {
+              async.waterfall([
+                function (next){
+                  Identity.isMember(cert.pubkey, next);
+                },
+                function (isMember, next){
+                  // Member to newcomer => valid link
+                  if (isMember)
+                    newLinks[newcomer].push(cert.pubkey);
+                  next();
+                },
+              ], callback);
+            }
           }, callback);
         }, next);
       },
@@ -1107,16 +1121,27 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
       done('Wrong new block: cannot make a root block without members');
       return;
     }
-    // Keychanges - newcomers
+    // Newcomers
     block.identities = [];
+    // Newcomers + back people
     block.joiners = [];
     joiners.forEach(function(joiner){
       var data = joinData[joiner];
       block.identities.push(data.identity.inline());
       block.joiners.push(data.ms.inline());
     });
+    // Leavers
     block.leavers = [];
+    // Kicked people
     block.excluded = [];
+    // Certifications for the WoT
+    block.certifications = [];
+    joiners.forEach(function(joiner){
+      var data = joinData[joiner];
+      data.certs.forEach(function(cert){
+        block.certifications.push(cert.inline());
+      });
+    });
     block.transactions = [];
     done(null, block);
   }
@@ -1127,44 +1152,40 @@ function BlockchainService (conn, conf, IdentityService, PeeringService, Contrac
   function checkCertificationOfKey (certifier, when, sig, certified, newKeys, done) {
     async.waterfall([
       function (next){
-        var keyID = certif.issuerKeyId.toHex().toUpperCase();
         // Compute membership over newcomers
         var newPubkeys = _(newKeys).keys();
         var isTargetANewcomer = ~newPubkeys.indexOf(certified);
         var isIssuerANewcomer = ~newPubkeys.indexOf(certifier);
         async.parallel({
-          issuerIsMember: function(callback){
+          issuer: function(callback){
             if (!isIssuerANewcomer)
-              Identity.isMember(certifier, callback);
+              Identity.getMember(certifier, callback);
             else
-              // A newcomer is a member
-              callback(null, true);
+              // Member is a newcomer
+              callback(null, newKeys[certifier]);
           },
-          targetIsMember: function(callback){
+          target: function(callback){
             if (!isTargetANewcomer)
-              Identity.isMember(certified, callback);
+              Identity.getMember(certified, callback);
             else
-              // A newcomer is a member
-              callback(null, true);
+              // Member is a newcomer
+              callback(null, newKeys[certified]);
           }
         }, next);
       },
       function (res, next){
-        if (!res.issuerIsMember)
+        if (!res.issuer)
           next('Ceritifier ' + certifier + ' is not a member nor a newcomer');
-        else if (!res.targetIsMember)
-          next('Ceritified ' + certifier + ' is not a member nor a newcomer');
+        else if (!res.target)
+          next('Ceritified ' + certified + ' is not a member nor a newcomer');
         else {
-          Identity.getMember(certified, function (err, idty) {
-            res.idty = idty;
-            next(err, res);
-          });
+          next(null, res.target);
         }
       },
-      function (res, next){
-        logger.info('Signature for '+ ceritified);
+      function (idty, next){
+        logger.info('Signature for '+ certified);
         var selfCert = idty.selfCert();
-        IdentityService.isValidCertification(selfCert, idty.sig, certifier, sig, when, cb);
+        IdentityService.isValidCertification(selfCert, idty.sig, certifier, sig, when, next);
       },
     ], done);
   }

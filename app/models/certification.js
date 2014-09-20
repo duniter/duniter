@@ -24,12 +24,20 @@ CertificationSchema.pre('save', function (next) {
   next();
 });
 
+CertificationSchema.virtual('from').get(function () {
+  return this.pubkey;
+});
+
 CertificationSchema.methods = {
 
   exists: function (done) {
-    this.find({ "pubkey": this.pubkey, "sig": this.sig, "time": this.time, "target": this.target }, function (err, certs) {
+    this.model('Certification').find({ "pubkey": this.pubkey, "sig": this.sig, "time": this.time, "target": this.target }, function (err, certs) {
       done(err, certs && certs.length > 0);
     });
+  },
+
+  inline: function () {
+    return [this.pubkey, this.to, this.time.timestamp(), this.sig].join(':');
   }
 };
 

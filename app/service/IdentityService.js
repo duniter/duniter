@@ -48,7 +48,10 @@ function IdentityService (conn, conf) {
         },
         function (next) {
           async.forEachSeries(certs, function(cert, cb){
-            isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.time.timestamp(), cb);
+            if (cert.from == idty.pubkey)
+              cb('Rejected certification: certifying its own self-certification has no meaning');
+            else
+              that.isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.time.timestamp(), cb);
           }, next);
         },
         function (next){

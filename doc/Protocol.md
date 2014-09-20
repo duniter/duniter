@@ -415,7 +415,7 @@ A Block is a document gathering both:
     BOTTOM_SIGNATURE
 
 Field                 | Data                                              | Mandatory?
---------------------- | ------------------------------------------------- | 
+--------------------- | ------------------------------------------------- | ------------
 Version               | The document version                              | Always
 Type                  | The document type                                 | Always
 Currency              | The currency name                                 | Always

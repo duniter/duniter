@@ -998,17 +998,15 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         realNewcomers.forEach(function(newcomer){
           // Only keep membership of selected newcomers
           finalJoinData[newcomer] = joinData[newcomer];
-        });
-        // Only keep update signatures from final members
-        _(updates).keys().forEach(function(signedFPR){
-          var keptCertifs = [];
-          (updates[signedFPR] || []).forEach(function(certif){
-            var issuer = certif.pubkey;
-            if (~newWoT.indexOf(issuer) && ~newLinks[signedFPR].indexOf(issuer)) {
-              keptCertifs.push(certif);
+          // Only keep certifications from final members
+          var keptCerts = [];
+          joinData[newcomer].certs.forEach(function(cert){
+            var issuer = cert.pubkey;
+            if (~newWoT.indexOf(issuer) && ~newLinks[cert.to].indexOf(issuer)) {
+              keptCerts.push(cert);
             }
           });
-          updates[signedFPR] = keptCertifs;
+          joinData[newcomer].certs = keptCerts;
         });
         // Send back the new WoT, the joining data and key updates for newcomers' signature of WoT
         next(null, current, wotMembers.concat(realNewcomers), finalJoinData, updates);
@@ -1175,9 +1173,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (res, next){
         if (!res.issuer)
-          next('Ceritifier ' + certifier + ' is not a member nor a newcomer');
+          next('Certifier ' + certifier + ' is not a member nor a newcomer');
         else if (!res.target)
-          next('Ceritified ' + certified + ' is not a member nor a newcomer');
+          next('Certified ' + certified + ' is not a member nor a newcomer');
         else {
           next(null, res.target);
         }

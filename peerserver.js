@@ -54,13 +54,13 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         return obj.endpoints ? true : false;
       },
       treatment: function (server, obj, next) {
-        plogger.debug('⬇ PEER %s', obj.pubkey.fingerprint);
+        plogger.debug('⬇ PEER %s', obj.pub);
         async.waterfall([
           function (next){
             that.PeeringService.submit(obj, next);
           },
           function (peer, next){
-            plogger.debug('✔ PEER %s %s:%s', peer.fingerprint, peer.getIPv4() || peer.getIPv6(), peer.getPort());
+            plogger.debug('✔ PEER %s %s:%s', peer.pub, peer.getIPv4() || peer.getIPv6(), peer.getPort());
             that.emit('peer', peer);
             next(null, peer);
           },
@@ -248,7 +248,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     var currency = conf.currency;
     async.waterfall([
       function (next) {
-        Peer.find({ fingerprint: that.PeeringService.pubkey }, next);
+        Peer.find({ pub: that.PeeringService.pubkey }, next);
       },
       function (peers, next) {
         var p1 = new Peer({});
@@ -271,7 +271,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         var p2 = {
           version: 1,
           currency: currency,
-          fingerprint: that.PeeringService.pubkey,
+          pub: that.PeeringService.pubkey,
           endpoints: [endpoint]
         };
         var raw1 = p1.getRaw().unix2dos();

@@ -67,8 +67,8 @@ function PeerParser (onError) {
     }
     if(!err){
       // PublicKey
-      if(obj.pub && !obj.pub.match(constants.BASE58))
-        err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect pub field"};
+      if(!obj.pub || !obj.pub.match(constants.BASE58))
+        err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect PublicKey field"};
     }
     // Basic Merkled API requirements
     var bma = obj.getBMA();

@@ -173,11 +173,11 @@ PeerSchema.statics.getTheOne = function (fpr, done) {
   var that = this;
   async.waterfall([
     function (next){
-      that.find({ fingerprint: fpr }, next);
+      that.find({ pub: fpr }, next);
     },
     function (peers, next){
       if(peers.length == 0){
-        next('Unknown peer 0x' + fpr);
+        next('Unknown peer ' + fpr);
         return;
       }
       else{

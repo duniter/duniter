@@ -299,19 +299,11 @@ function generateAndSend (generationMethod) {
         var wiz = wizard(server);
         var doSign = null;
         async.waterfall([
-          // function (next){
-          //   wiz.configKey(conf, next);
-          // },
-          // function (next){
-          //   signature(conf.salt, conf.passwd, next);
-          // },
           function (next){
-            signature('abc', 'abc', next);
+            wiz.configKey(conf, next);
           },
-          function (sigFunc, next){
-            doSign = sigFunc;
-            // Extract key pair
-            crypto.getKeyPair('abc', 'abc', next);
+          function (next){
+            signature(conf.salt, conf.passwd, next);
           },
           function (pair, next){
             proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);

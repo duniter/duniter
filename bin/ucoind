@@ -266,7 +266,7 @@ function generateAndSend (generationMethod) {
           function (sigFunc, next){
             doSign = sigFunc;
             // Extract key pair
-            crypto.getKeyPair(conf.salt, conf.passwd, next);
+            crypto.getKeyPair(conf.passwd, conf.salt, next);
           },
           function (pair, next){
             proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);

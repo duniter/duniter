@@ -8,7 +8,7 @@ var base64    = require('../lib/base64');
 var dos2unix  = require('../lib/dos2unix');
 var parsers   = require('../lib/streams/parsers/doc');
 var keyhelper = require('../lib/keyhelper');
-var logger    = require('../lib/logger')('keychain');
+var logger    = require('../lib/logger')('blockchain');
 var signature = require('../lib/signature');
 var constants = require('../lib/constants');
 var moment    = require('moment');
@@ -233,7 +233,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         newLinks = theNewLinks;
         _(newLinks).keys().forEach(function(target){
           newLinks[target].forEach(function(source){
-            logger.debug('Sig %s --> %s', source, target);
+            logger.debug('Sig %s --> %s', source.substring(0, 8), target.substring(0, 8));
           });
         });
         // Check that new links won't kick other members (existing or incoming)
@@ -1072,7 +1072,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             },
             function (idty, next){
               if (idty.member) {
-                logger.debug('Found WoT certif %s --> %s', newcomer, idty.pubkey);
+                logger.debug('Found WoT certif %s --> %s', newcomer.substring(0, 8), idty.pubkey.substring(0, 8));
                 updates[idty.pubkey] = updates[idty.pubkey] || [];
                 updates[idty.pubkey].push(cert);
               }

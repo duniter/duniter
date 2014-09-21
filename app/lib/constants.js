@@ -49,6 +49,12 @@ module.exports = {
     SENDER: exact(PUBKEY),
     SOURCE: exact(INTEGER + ":(T|D|F):" + FINGERPRINT),
     TARGET: exact(PUBKEY + ":" + POSITIVE_INT)
+  },
+
+  setUDID2Format: function () {
+    module.exports.USER_ID = module.exports.UDID2_FORMAT;
+    module.exports.CERT.SELF.UID = exact("UID:" + UDID2);
+    module.exports.IDENTITY.INLINE = exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + UDID2);
   }
 };
 

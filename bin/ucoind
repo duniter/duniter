@@ -416,7 +416,7 @@ program
 
     if (conf.udid2) {
       // UserID must match udid2 format
-      constants.USER_ID = constants.UDID2_FORMAT;
+      constants.setUDID2Format();
     }
 
     // server

@@ -1,4 +1,3 @@
-var jpgp        = require('../lib/jpgp');
 var async       = require('async');
 var _           = require('underscore');
 var logger      = require('../lib/logger')();

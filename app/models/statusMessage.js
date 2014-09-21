@@ -1,6 +1,5 @@
 var async    = require('async');
 var sha1     = require('sha1');
-var jpgp     = require('../lib/jpgp');
 var rawer    = require('../lib/rawer');
 var _        = require('underscore');
 
@@ -39,14 +38,6 @@ module.exports = function StatusMessage (values) {
 
   this.isDown = function () {
     return this.status == 'DOWN';
-  }
-
-  this.verifySignature = function (publicKey, done) {
-    jpgp()
-      .publicKey(publicKey)
-      .data(this.getRaw())
-      .signature(this.signature)
-      .verify(publicKey, done);
   }
 
   this.getRaw = function() {

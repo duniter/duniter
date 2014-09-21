@@ -1,8 +1,6 @@
-var jpgp             = require('../lib/jpgp');
 var async            = require('async');
 var vucoin           = require('vucoin');
 var _                = require('underscore');
-var openpgp          = require('openpgp');
 var es               = require('event-stream');
 var dos2unix         = require('../lib/dos2unix');
 var versionFilter    = require('../lib/streams/versionFilter');
@@ -16,9 +14,7 @@ var extractSignature = require('../lib/streams/extractSignature');
 var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger');
 var plogger          = logger('peering');
-var flogger          = logger('forward');
 var slogger          = logger('status');
-var tlogger          = logger('wallet');
 
 module.exports = function (peerServer, conf) {
   return new NetworkBinding(peerServer, conf);
@@ -34,9 +30,7 @@ function NetworkBinding (peerServer, conf) {
 
   // Models
   var Peer      = peerServer.conn.model('Peer');
-  var Forward   = peerServer.conn.model('Forward');
   var Amendment = peerServer.conn.model('Amendment');
-  var PublicKey = peerServer.conn.model('PublicKey');
   var Merkle    = peerServer.conn.model('Merkle');
   var Key       = peerServer.conn.model('Key');
 
@@ -91,43 +85,6 @@ function NetworkBinding (peerServer, conf) {
       .pipe(res);
   }
 
-  function givePeers (criterias, req, res) {
-    var that = this;
-    var watcher = criterias.from ? 'to' : 'from';
-    async.waterfall([
-      function (next){
-        Forward.find(criterias, next);
-      },
-      function (forwards, next){
-        var json = { peers: [] };
-        async.forEach(forwards, function(fwd, callback){
-          var p = { fingerprint: fwd[watcher] || "" };
-          async.waterfall([
-            function (cb){
-              Peer.find({ fingerprint: fwd[watcher] }, cb);
-            },
-            function (peers, cb){
-              if(peers.length == 0){
-                cb();
-                return;
-              }
-              json.peers.push(p.fingerprint);
-              cb();
-            }
-          ], callback);
-        }, function(err){
-          next(null, json);
-        });
-      }
-    ], function (err, json) {
-      if(err){
-        res.send(500, err);
-        return;
-      }
-      res.send(200, JSON.stringify(json, null, "  "));
-    });
-  }
-
   this.statusPOST = function(req, res) {
     var onError = http400(res);
     http2raw.status(req, onError)
@@ -135,9 +92,9 @@ function NetworkBinding (peerServer, conf) {
       .pipe(parsers.parseStatus(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(extractSignature(onError))
-      .pipe(link2pubkey(peerServer.PublicKeyService, onError))
-      .pipe(verifySignature(onError))
+      // .pipe(extractSignature(onError))
+      // .pipe(link2pubkey(peerServer.PublicKeyService, onError))
+      // .pipe(verifySignature(onError))
       .pipe(peerServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())

@@ -4,7 +4,6 @@ var split         = require('../../../split');
 var rawer         = require('../../../rawer');
 var sha1          = require('sha1');
 var unix2dos      = require('../../../unix2dos');
-var jpgp          = require('../../../jpgp');
 var constants     = require('../../../constants');
 
 module.exports = IdentityParser;

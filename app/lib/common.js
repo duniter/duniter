@@ -1,39 +1,5 @@
 var sha1    = require('sha1');
-var openpgp = require('openpgp');
 var constants = require('./constants');
-
-openpgp.cleartext.CleartextMessage.prototype.getText = function() {
-  // normalize end of line to \n
-  return this.text;//.replace(/\r\n/g,"\n");
-};
-
-/**
- * Returns udid2 user and most significant (latest valid) self signature
- * - if multiple users are udid2 users returns the one with the latest self signature
- * - if no udid2 user is found returns null
- * @return {{user: Array<module:packet/User>, selfCertificate: Array<module:packet/signature>}|null} The primary user and the self signature
- */
-openpgp.key.Key.prototype.getUdid2User = function() {
-  var user = null;
-  var userSelfCert;
-  for (var i = 0; i < this.users.length; i++) {
-    if (!this.users[i].userId) {
-      continue;
-    }
-    var selfCert = this.users[i].getValidSelfCertificate(this.primaryKey);
-    if (!selfCert) {
-      continue;
-    }
-    if (this.users[i].userId.userid.match(constants.UDID2_FORMAT) != null &&
-        (!user || 
-          (!userSelfCert.isPrimaryUserID || selfCert.isPrimaryUserID) &&
-          userSelfCert.created > selfCert.created)) {
-      user = this.users[i];
-      userSelfCert = selfCert;
-    }
-  }
-  return user ? {user: user, selfCertificate: userSelfCert} : null;
-};
 
 String.prototype.trim = function(){
   return this.replace(/^\s+|\s+$/g, '');

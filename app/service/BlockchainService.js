@@ -1,13 +1,10 @@
-var jpgp      = require('../lib/jpgp');
 var async     = require('async');
 var _         = require('underscore');
-var openpgp   = require('openpgp');
 var merkle    = require('merkle');
 var sha1      = require('sha1');
 var base64    = require('../lib/base64');
 var dos2unix  = require('../lib/dos2unix');
 var parsers   = require('../lib/streams/parsers/doc');
-var keyhelper = require('../lib/keyhelper');
 var logger    = require('../lib/logger')('blockchain');
 var signature = require('../lib/signature');
 var constants = require('../lib/constants');
@@ -41,7 +38,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Certification = conn.model('Certification');
   var Membership    = conn.model('Membership');
   var Block         = conn.model('Block');
-  var PublicKey     = conn.model('PublicKey');
   var TrustedKey    = conn.model('TrustedKey');
   var Link          = conn.model('Link');
   var Key           = conn.model('Key');
@@ -94,23 +90,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       }
     ], done);
   };
-
-  function hasEligiblePubkey (fpr, done) {
-    async.waterfall([
-      function (next){
-        PublicKey.getTheOne(fpr, next);
-      },
-      function (pubkey, next){
-        if (pubkey.keychain)
-          next(null, true); // Key is already in the chain
-        else {
-          // Key is not in the keychain: valid if it has a valid udid2 (implying pubkey + self certificatio)
-          var wrappedKey = keyhelper.fromArmored(pubkey.raw);
-          next(null, wrappedKey.hasValidUdid2());
-        }
-      },
-    ], done);
-  }
 
   this.submitBlock = function (obj, done) {
     var now = new Date();
@@ -748,53 +727,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   function findUpdates (done) {
     var updates = {};
     var subupdates = {};
-    async.waterfall([
-      function (next){
-        Key.findMembersWithUpdates(next);
-      },
-      function (members, next){
-        async.forEachSeries(members, function(member, callback){
-          var fpr = member.fingerprint;
-          async.waterfall([
-            function (next){
-              PublicKey.getTheOne(fpr, next);
-            },
-            function (pubkey, next){
-              var key = pubkey.getKey();
-              var finalPackets = new openpgp.packet.List();
-              var certifs = pubkey.getCertificationsFromMD5List(member.certifs);
-              var subkeys = pubkey.getSubkeysFromMD5List(member.subkeys);
-              if (subkeys.length > 0) {
-                subupdates[fpr] = subkeys;
-              }
-              async.forEachSeries(certifs, function(certif, callback){
-                var issuerKeyId = certif.issuerKeyId.toHex().toUpperCase();
-                async.waterfall([
-                  function (next){
-                    TrustedKey.getTheOne(issuerKeyId, next);
-                  },
-                  function (trusted, next){
-                    // Issuer is a member
-                    finalPackets.push(certif);
-                    next();
-                  },
-                ], function (err) {
-                  // Issuer is not a member
-                  callback();
-                });
-              }, function(err){
-                if (finalPackets.length > 0) {
-                  updates[fpr] = finalPackets;
-                }
-                next();
-              });
-            },
-          ], callback);
-        }, next);
-      },
-    ], function (err) {
-      done(err, updates, subupdates);
-    });
+    done(null, [], []);
+    // TODO: certifications
+    // updates[pubkey] = certifications;
   }
 
   /**

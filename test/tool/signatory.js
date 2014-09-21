@@ -1,4 +1,3 @@
-var jpgp    = require('../../app/lib/jpgp');
 var openpgp = require('openpgp');
 var logger  = require('../../app/lib/logger')('test');
 var gnupg   = require('../../app/lib/gnupg');

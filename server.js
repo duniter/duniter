@@ -10,7 +10,7 @@ var request    = require('request');
 var http       = require('http');
 var log4js     = require('log4js');
 
-var models = ['Identity', 'Certification', 'Amendment', 'Coin', 'Configuration', 'Forward', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'PublicKey', 'Wallet', 'Transaction', 'TxMemory', 'Membership', 'Block'];
+var models = ['Identity', 'Certification', 'Amendment', 'Coin', 'Configuration', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -189,13 +189,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           'blocks',
           'amendments',
           'coins',
-          'forwards',
           'links',
           'keys',
           'merkles',
           'peers',
           'publickeys',
-          'wallets',
           'transactions',
           'txmemories',
           'trustedkeys',
@@ -312,7 +310,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._listenBMA = function (app) {
-    this.listenPKS(app);
   };
 
   this.singleWriteStream = function (onError) {

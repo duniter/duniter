@@ -1,7 +1,6 @@
 var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
-var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
 var rawer    = require('../lib/rawer');
 var dos2unix = require('../lib/dos2unix');
@@ -88,14 +87,6 @@ MembershipSchema.methods = {
     json.sigDate = this.sigDate && this.sigDate.timestamp();
     json.raw = this.getRaw();
     return { signature: this.signature, membership: json };
-  },
-
-  verifySignature: function (publicKey, done) {
-    jpgp()
-      .publicKey(publicKey)
-      .data(this.getRaw())
-      .signature(this.signature)
-      .verify(publicKey, done);
   },
 
   getRaw: function() {

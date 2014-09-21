@@ -1,7 +1,6 @@
 var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
-var jpgp     = require('../lib/jpgp');
 var _        = require('underscore');
 var vucoin   = require('vucoin');
 var rawer    = require('../lib/rawer');
@@ -85,14 +84,6 @@ PeerSchema.methods = {
     });
     json.raw = this.getRaw();
     return json;
-  },
-
-  verifySignature: function (publicKey, done) {
-    jpgp()
-      .publicKey(publicKey)
-      .data(this.getRaw())
-      .signature(this.signature)
-      .verify(publicKey, done);
   },
 
   getBMA: function() {

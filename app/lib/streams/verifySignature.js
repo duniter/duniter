@@ -2,7 +2,6 @@ var async    = require('async');
 var sha1     = require('sha1');
 var util     = require('util');
 var stream   = require('stream');
-var jpgp     = require('../jpgp');
 
 module.exports = function (onError) {
   return new VerifySignature(onError);

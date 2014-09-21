@@ -37,18 +37,6 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
   this._initServices = function(conn, done) {
     this.IdentityService = require('./app/service/IdentityService').get(that.conn, that.conf);
     done();
-    // this.PublicKeyService   = require('./app/service/PublicKeyService').get(conn, that.conf, that.KeyService);
-    // this.KeychainService    = require('./app/service/KeychainService').get(conn, that.conf, that.PublicKeyService);
-    // async.parallel({
-    //   contract: function(callback){
-    //     that.KeychainService.load(callback);
-    //   },
-    //   peering: function(callback){
-    //     callback();
-    //   },
-    // }, function (err) {
-    //   done(err);
-    // });
   };
 
   this._listenBMA = function (app) {

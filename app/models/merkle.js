@@ -123,10 +123,6 @@ MerkleSchema.statics.retrieve = function(merkleID, done) {
   ], done);
 }
 
-MerkleSchema.statics.forPublicKeys = function (done) {
-  this.retrieve({ type: 'pubkeys' }, done);
-};
-
 MerkleSchema.statics.txOfSender = function (fingerprint, done) {
   this.retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
 };
@@ -137,10 +133,6 @@ MerkleSchema.statics.txToRecipient = function (fingerprint, done) {
 
 MerkleSchema.statics.peers = function (done) {
   this.retrieve({ type: 'peers', criteria: '{}' }, done);
-};
-
-MerkleSchema.statics.WalletEntries = function (done) {
-  this.retrieve({ type: 'thtentries', criteria: '{}' }, done);
 };
 
 MerkleSchema.statics.membersIn = function (number, algo, done) {
@@ -166,40 +158,6 @@ MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
   ], done);
 };
 
-MerkleSchema.statics.addPublicKey = function (fingerprint, done) {
-  var Merkle = this.model('Merkle');
-  async.waterfall([
-    function (next) {
-      Merkle.forPublicKeys(function (err, merkle) {
-        next(err, merkle);
-      });
-    },
-    function (merkle, next) {
-      merkle.push(fingerprint);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], done);
-};
-
-MerkleSchema.statics.removePublicKey = function (fingerprint, done) {
-  var Merkle = this.model('Merkle');
-  async.waterfall([
-    function (next) {
-      Merkle.forPublicKeys(function (err, merkle) {
-        next(err, merkle);
-      });
-    },
-    function (merkle, next) {
-      merkle.remove(fingerprint);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], done);
-};
-
 MerkleSchema.statics.updateSignaturesOfAmendment = function (am, hash, done) {
   var Merkle = this.model('Merkle');
   async.waterfall([
@@ -210,23 +168,6 @@ MerkleSchema.statics.updateSignaturesOfAmendment = function (am, hash, done) {
     },
     function (merkle, next) {
       merkle.push(hash);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], done);
-};
-
-MerkleSchema.statics.updateForWalletEntries= function (newHash, done) {
-  var Merkle = this.model('Merkle');
-  async.waterfall([
-    function (next) {
-      Merkle.WalletEntries(function (err, merkle) {
-        next(err, merkle);
-      });
-    },
-    function (merkle, next) {
-      merkle.push(newHash);
       merkle.save(function (err) {
         next(err);
       });
@@ -260,36 +201,6 @@ MerkleSchema.statics.mapIdentical = function (hashes, done) {
     map[leaf] = leaf;
   });
   done(null, map);
-};
-
-MerkleSchema.statics.mapForPublicKeys = function (hashes, done) {
-  this.model('PublicKey')
-  .find({ fingerprint: { $in: hashes } })
-  .sort('fingerprint')
-  .exec(function (err, pubkeys) {
-    var map = {};
-    pubkeys.forEach(function (pubkey){
-      map[pubkey.fingerprint] = {
-        fingerprint: pubkey.fingerprint,
-        pubkey: pubkey.raw,
-        signature: pubkey.signature
-      };
-    });
-    done(null, map);
-  });
-}
-
-MerkleSchema.statics.mapForWalletEntries = function (hashes, done) {
-  this.model('Wallet')
-  .find({ fingerprint: { $in: hashes } })
-  .sort('fingerprint')
-  .exec(function (err, entries) {
-    var map = {};
-    entries.forEach(function (entry){
-      map[entry.fingerprint] = entry.json();
-    });
-    done(null, map);
-  });
 };
 
 MerkleSchema.statics.mapForMemberships = function (hashes, done) {

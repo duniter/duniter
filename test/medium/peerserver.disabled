@@ -76,11 +76,9 @@ describe('A server', function () {
     peerServer.write(pubkeyCat);
   });
   
-  it('Peer should accept forwards & status', function (done) {
+  it('Peer should accept status', function (done) {
     async.parallel({
-      forward: until(peerServer, 'forward'),
       status:  until(peerServer, 'status'),
-      wallet:  until(peerServer, 'wallet'),
     }, done);
     peerServer.write(pubkeyCat);
     peerServer.write({
@@ -97,36 +95,9 @@ describe('A server', function () {
     peerServer.write({
       "version": "1",
       "currency": "beta_brousouf",
-      "from": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "to": "D049002A6724D35F867F64CC087BA351C0AEB6DF",
-      "keyID": "E9CAB76D19A8651E",
-      "forward": "ALL",
-      "signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: http://openpgpjs.org\r\n\r\nwsBcBAEBCAAQBQJThMLbCRAIe6NRwK623wAA3GMIAIvzPBWfTZfR27vJM0v+\nU5Tv1ro8G2zrBGaTG+qe5ZXNxjgtKjtx6v1XY3zDo8s8IEAoTt09mp5M+Iz9\nPQ1eD3ThPF5Eulc+ZfN8Gqahwqro0gU0YJ6VetXdTsULNm9FJOEy3xToTcvu\nR9bmRNwrIoBRLVECRl5nRcgXCN2ETw7rejVlWSKQbNJKnh13cd65pJIYe4z6\nLDic65WyV5RL12H33F0yoEkL5Srq54iGsqtDjSKH4pCclKOc2tbmqQtS6DDQ\nggPOGrkNAbm3T7fii+UQfmT820gz938iYs/8x3kvQuWOYJgNdbfjbBi+qmg5\nZz3+PPOaiWzLKhdul/rFk5M=\r\n=alII\r\n-----END PGP SIGNATURE-----\r\n"
-    });
-    peerServer.write({
-      "version": "1",
-      "currency": "beta_brousouf",
       "status": "UP",
       "keyID": "E9CAB76D19A8651E",
       "pubkey": { fingerprint: "C73882B64B7E72237A2F460CE9CAB76D19A8651E" }
-    });
-    peerServer.write({
-      "version": "1",
-      "currency": "beta_brousouf",
-      "fingerprint": "C73882B64B7E72237A2F460CE9CAB76D19A8651E",
-      "requiredTrusts": 1,
-      "hosters": [
-        "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-        "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-      ],
-      "trusts": [
-        "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
-        "C73882B64B7E72237A2F460CE9CAB76D19A8651E"
-      ],
-      "date": new Date(),
-      "keyID": "E9CAB76D19A8651E",
-      "pubkey": { fingerprint: "C73882B64B7E72237A2F460CE9CAB76D19A8651E" },
-      "signature": "-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1\n\niQEcBAABCAAGBQJTltBaAAoJED0ZtAvOQO311hYH/RxCRmDbpGZ4OKsJ283MjHI1\nu1Teh/SDWuTjeGld8m76v7Yu61PA4vb4YzTldNvGg1sBoFKy2yH/UXTxTuM2WOJh\nVnzb1BhR4Nbl3+N4E7q/0JndTv+N34c4z3gltOJJQ1VtudYFEnzRxxJPsgc8OTTm\nWmwNUu8lUE3MEI3P10TXfKcU+WmATYj2+VtK6GHjKAqjY5Lnctz94nyHLr2M5+7E\nkJ/9CkXKulTG3qTpwFL3HsILQJO93CGXjDFrdbWcq+RIRbMXWnM4ibQf7lQ1TMKK\n7Z8rKWvyGn6sHkM34OcAPd2dORwtxuCTMLtcHFUp5lxXWkT/CZEGOh9XlcilVXc=\n=ylC/\n-----END PGP SIGNATURE-----\n",
     });
   });
   

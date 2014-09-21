@@ -11,12 +11,9 @@ function Router (serverFPR, conn) {
 
   var Merkle      = conn.model('Merkle');
   var Key         = conn.model('Key');
-  var PublicKey   = conn.model('PublicKey');
   var Amendment   = conn.model('Amendment');
   var Transaction = conn.model('Transaction');
   var Peer        = conn.model('Peer');
-  var Forward     = conn.model('Forward');
-  var Wallet      = conn.model('Wallet');
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -27,9 +24,7 @@ function Router (serverFPR, conn) {
     else if (obj.keysChanges ? true : false) {                       route('keyblock',    obj, getRandomInUPPeers,                          done); }
     else if (obj.recipient ? true : false) {                         route('transaction', obj, getTargetedButSelf(obj.recipient),           done); }
     else if (obj.endpoints ? true : false) {                         route('peer',        obj, getRandomInAllPeersButPeer(obj.fingerprint), done); }
-    else if (obj.forward ? true : false) {                           route('forward',     obj, getTargetedButSelf(obj.to),                  done); }
     else if (obj.status ? true : false) {                            route('status',      obj, getTargetedButSelf(obj.to),                  done); }
-    else if (obj.requiredTrusts ? true : false) {                    route('wallet',      obj, getRandomInUPPeers,                          done); }
     else if (obj.type && obj.type == "MEMBERSHIP" ? true : false) {  route('membership',  obj, getRandomInUPPeers,                          done); }
     else {
       done();

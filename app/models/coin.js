@@ -2,7 +2,6 @@ var mongoose = require('mongoose');
 var async    = require('async');
 var sha1     = require('sha1');
 var _        = require('underscore');
-var jpgp     = require('../lib/jpgp');
 var fs       = require('fs');
 var Schema   = mongoose.Schema;
 

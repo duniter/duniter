@@ -1,4 +1,3 @@
-var jpgp             = require('../lib/jpgp');
 var async            = require('async');
 var _                = require('underscore');
 var es               = require('event-stream');
@@ -29,7 +28,6 @@ function TransactionBinding(hdcServer) {
 
   // Models
   var Amendment   = hdcServer.conn.model('Amendment');
-  var PublicKey   = hdcServer.conn.model('PublicKey');
   var Merkle      = hdcServer.conn.model('Merkle');
   var Key         = hdcServer.conn.model('Key');
   var Transaction = hdcServer.conn.model('Transaction');
@@ -160,9 +158,9 @@ function TransactionBinding(hdcServer) {
       .pipe(parsers.parseTransaction(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(extractSignature(onError))
-      .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
-      .pipe(verifySignature(onError))
+      // .pipe(extractSignature(onError))
+      // .pipe(link2pubkey(hdcServer.PublicKeyService, onError))
+      // .pipe(verifySignature(onError))
       .pipe(hdcServer.singleWriteStream(onError))
       .pipe(es.map(function (tx, callback) {
         callback(null, {

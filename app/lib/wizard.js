@@ -1,4 +1,3 @@
-var jpgp      = require('./jpgp');
 var wizard    = require('./wizard');
 var constants = require('./constants');
 var os        = require('os');

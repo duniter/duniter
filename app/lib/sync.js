@@ -5,7 +5,6 @@ var merkle           = require('merkle');
 var vucoin           = require('vucoin');
 var eventStream      = require('event-stream');
 var inquirer         = require('inquirer');
-var jpgp             = require('./jpgp');
 var unix2dos         = require('./unix2dos');
 var parsers          = require('./streams/parsers/doc');
 var extractSignature = require('./streams/extractSignature');
@@ -17,22 +16,18 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
   var that = this;
 
   // Services
-  var PublicKeyService   = server.PublicKeyService;
   var KeyService         = server.KeyService;
   var TransactionService = server.TransactionsService;
-  var WalletService      = server.WalletService;
   var PeeringService     = server.PeeringService;
   var ParametersService  = server.ParametersService;
   var KeychainService    = server.KeychainService;
 
   // Models
-  var PublicKey     = server.conn.model('PublicKey');
   var KeyBlock      = server.conn.model('KeyBlock');
   var Merkle        = server.conn.model('Merkle');
   var Key           = server.conn.model('Key');
   var Membership    = server.conn.model('Membership');
   var Transaction   = server.conn.model('Transaction');
-  var Wallet        = server.conn.model('Wallet');
   var Peer          = server.conn.model('Peer');
   var Configuration = server.conn.model('Configuration');
   
@@ -56,30 +51,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         function (next){
           logger.info('Sync started.');
           next();
-        },
-
-        //============
-        // Pubkey
-        //============
-        function (next){
-          node.network.pubkey(next);
-        },
-        function (pubkey, next){
-          var parser = parsers.parsePubkey();
-          parser.end(unix2dos(pubkey));
-          parser.on('readable', function () {
-            var parsed = parser.read();
-            PublicKeyService.submitPubkey(parsed, next);
-          });
-        },
-        function (pubkey, next){
-          choose("Remote key is 0x" + pubkey.fingerprint + ", should this key be trusted for the sync session?", true,
-            function trust () {
-              next(null, pubkey);
-            },
-            function doNotTrust () {
-              next('You chose not to trust remote\'s pubkey, sync cannot continue');
-            });
         },
 
         //============
@@ -147,50 +118,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
             next(err);
           });
         },
-
-        //============
-        // Public Keys
-        //============
-        // function (next){
-        //   Merkle.forPublicKeys(next);
-        // },
-        // function (merkle, next) {
-        //   node.pks.all({}, function (err, json) {
-        //     var rm = new NodesMerkle(json);
-        //     if(rm.root() != merkle.root()){
-        //       var leavesToAdd = [];
-        //       // Call with nice no to have PGP error 'gpg: input line longer than 19995 characters'
-        //       node.pks.all({ leaves: true, nice: true }, function (err, json) {
-        //         _(json.leaves).forEach(function(leaf){
-        //           if(merkle.leaves().indexOf(leaf) == -1){
-        //             leavesToAdd.push(leaf);
-        //           }
-        //         });
-        //         var hashes = [];
-        //         async.forEachSeries(leavesToAdd, function(leaf, callback){
-        //           logger.info('Importing public key %s...', leaf);
-        //           async.waterfall([
-        //             function (cb){
-        //               node.pks.all({ "leaf": leaf}, cb);
-        //             },
-        //             function (json, cb){
-        //               hashes.push(leaf);
-        //               PublicKey.persistFromRaw(json.leaf.value.pubkey, function (err) {
-        //                 cb();
-        //               });
-        //             },
-        //             function (next) {
-        //               KeyService.handleKey(leaf, conf && conf.kmanagement == 'ALL', next);
-        //             },
-        //           ], callback);
-        //         }, function(err, result){
-        //           next(err);
-        //         });
-        //       });
-        //     }
-        //     else next();
-        //   });
-        // },
 
         //============
         // Keychain
@@ -269,55 +196,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         //     syncTransactionsOfKey(node, key.fingerprint, onKeyDone);
         //   }, next);
         // },
-
-        //=========
-        // Wallets
-        //=========
-        function (next){
-          Merkle.WalletEntries(next);
-        },
-        function (merkle, next) {
-          node.network.wallet.get({}, function (err, json) {
-            var rm = new NodesMerkle(json);
-            if(rm.root() != merkle.root()){
-              var leavesToAdd = [];
-              node.network.wallet.get({ leaves: true }, function (err, json) {
-                _(json.leaves).forEach(function(leaf){
-                  if(merkle.leaves().indexOf(leaf) == -1){
-                    leavesToAdd.push(leaf);
-                  }
-                });
-                var hashes = [];
-                async.forEachSeries(leavesToAdd, function(leaf, callback){
-                  logger.info('Wallet entry %s', leaf);
-                  async.waterfall([
-                    function (cb){
-                      node.network.wallet.get({ "leaf": leaf }, cb);
-                    },
-                    function (json, cb){
-                      var jsonEntry = json.leaf.value.entry;
-                      if (!jsonEntry.fingerprint) {
-                        cb();
-                        return;
-                      }
-                      var sign = json.leaf.value.signature;
-                      var entry = {};
-                      ["version", "currency", "fingerprint", "hosters", "trusts"].forEach(function (key) {
-                        entry[key] = jsonEntry[key];
-                      });
-                      entry.signature = sign;
-                      entry.pubkey = { fingerprint: entry.fingerprint };
-                      WalletService.submit(entry, cb);
-                    }
-                  ], callback);
-                }, function(err, result){
-                  next(err);
-                });
-              });
-            }
-            else next();
-          });
-        },
 
         //=======
         // Peers

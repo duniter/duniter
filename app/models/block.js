@@ -5,8 +5,6 @@ var _         = require('underscore');
 var fs        = require('fs');
 var Schema    = mongoose.Schema;
 var base64    = require('../lib/base64');
-var openpgp   = require('openpgp');
-var keyhelper = require('../lib/keyhelper');
 var logger    = require('../lib/logger')('dao keyblock');
 
 var KeyBlockSchema = new Schema({
@@ -116,14 +114,6 @@ KeyBlockSchema.methods = {
   display: function (done) {
     console.log('------------------');
     console.log('Block#%s', this.number);
-    console.log('Changes:');
-    this.keysChanges.forEach(function(kc){
-      console.log('>>> %s %s', kc.type, kc.fingerprint);
-      var certifs = keyhelper.toPacketlist(kc.certpackets);
-      certifs.forEach(function(certif){
-        console.log('>>> certified by 0x%s', certif.issuerKeyId.toHex().toUpperCase());
-      });
-    });
     done();
   },
 

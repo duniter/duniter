@@ -93,26 +93,6 @@ module.exports = new function() {
     return dos2unix(signed(that.getPeerWithoutSignature(json), json));
   };
 
-  this.getForwardWithoutSignature = function (json) {
-    var raw = "";
-    raw += "Version: " + json.version + "\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "From: " + json.from + "\n";
-    raw += "To: " + json.to + "\n";
-      raw += "Forward: " + json.forward + "\n";
-    if(json.keys && json.keys.length > 0){
-      raw += "Keys:\n";
-      for(var i = 0; i < json.keys.length; i++){
-        raw += json.keys[i] + "\n";
-      }
-    }
-    return dos2unix(raw);
-  };
-
-  this.getForward = function (json) {
-    return dos2unix(signed(that.getForwardWithoutSignature(json), json));
-  };
-
   this.getStatusWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
@@ -125,28 +105,6 @@ module.exports = new function() {
 
   this.getStatus = function (json) {
     return dos2unix(signed(that.getStatusWithoutSignature(json), json));
-  };
-
-  this.getWalletWithoutSignature = function (json) {
-    var raw = "";
-    raw += "Version: " + json.version + "\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "Key: " + json.fingerprint + "\n";
-    raw += "Date: " + json.date.timestamp() + "\n";
-    raw += "RequiredTrusts: " + json.requiredTrusts + "\n";
-    raw += "Hosters:\n";
-    json.hosters.forEach(function (fingerprint) {
-      raw += fingerprint + "\n";
-    });
-    raw += "Trusts:\n";
-    json.trusts.forEach(function (fingerprint) {
-      raw += fingerprint + "\n";
-    });
-    return dos2unix(raw);
-  };
-
-  this.getWallet = function (json) {
-    return dos2unix(signed(that.getWalletWithoutSignature(json), json));
   };
 
   this.getMembershipWithoutSignature = function (json) {

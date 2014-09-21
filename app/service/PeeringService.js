@@ -11,14 +11,11 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   
   var currency = conf.currency;
 
-  var Wallet      = conn.model('Wallet');
   var Amendment   = conn.model('Amendment');
-  var PublicKey   = conn.model('PublicKey');
   var Transaction = conn.model('Transaction');
   var Merkle      = conn.model('Merkle');
   var Peer        = conn.model('Peer');
   var Key         = conn.model('Key');
-  var Forward     = conn.model('Forward');
   
   var selfPubkey = undefined;
   if (pair) {
@@ -153,69 +150,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     ], done);
   }
 
-  this.propagateTransaction = function (req, done) {
-    var am = null;
-    var pubkey = null;
-    async.waterfall([
-      function (next){
-        ParametersService.getTransaction(req, next);
-      },
-      function (tx, next) {
-        async.waterfall([
-          function (next){
-            var fingerprints = [];
-            async.waterfall([
-              function (next){
-                Transaction.getBySenderAndNumber(tx.sender, tx.number, function (err, dbTX) {
-                  if(!err && dbTX){
-                    tx.propagated = true;
-                    dbTX.propagated = true;
-                    dbTX.save(function (err) {
-                      next(err);
-                    });
-                  }
-                  else next();
-                });
-              },
-              function (next){
-                Forward.findMatchingTransaction(tx, next);
-              },
-              function (fwds, next) {
-                fwds.forEach(function (fwd) {
-                  fingerprints.push(fwd.from);
-                });
-                next();
-              },
-              function (next){
-                Wallet.findMatchingTransaction(tx, next);
-              },
-              function (entries, next){
-                entries.forEach(function(entry){
-                  entry.hosters.forEach(function(host){
-                    fingerprints.push(host);
-                  });
-                });
-                next();
-              },
-              function (next){
-                async.waterfall([
-                  function (next){
-                    fingerprints.sort();
-                    fingerprints = _(fingerprints).uniq();
-                    Peer.getList(fingerprints, function (err, peers) {
-                      that.emit('transaction', tx, peers || []);
-                      next();
-                    });
-                  },
-                ], next);
-              },
-            ], next);
-          }
-        ], next);
-      }
-    ], done);
-  }
-
   this.submitSelfPeering = function(toPeer, done){
     async.waterfall([
       function (next){
@@ -335,49 +269,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     });
   };
 
-  this.coinIsOwned = function (owner, coin, tx, wallet, done) {
-    var nbConfirmations = 0;
-    async.forEach(wallet.trusts, function(trust, callback){
-      async.waterfall([
-        function (next){
-          Peer.getTheOne(trust, next);
-        },
-        function (peer, next){
-          peer.connect(next);
-        },
-        function (node, next){
-          async.waterfall([
-            function (next){
-              node.hdc.coins.owner(coin.issuer, coin.amNumber, coin.coinNumber, next);
-            },
-            function (owning, next) {
-              if (owning.owner != owner) {
-                next('Pretended owner is not');
-                return;
-              }
-              if (!owning.transaction) {
-                next('Coin matches owner, but has no owning transaction while it should');
-              } else if (owning.transaction != [tx.sender, tx.number].join('-')) {
-                next('Coin matches owner, but has not good owning transaction');
-              } else {
-                nbConfirmations++;
-                next();
-              }
-            },
-          ], next);
-        }
-      ], function (err) {
-        if (err)
-          logger.warn(err);
-        callback();
-      });
-    }, function(err){
-      if (err)
-        logger.error(err);
-      done(null, nbConfirmations >= wallet.requiredTrusts);
-    });
-  }
-
   function getAllPeersButSelfAnd (fingerprint, done) {
     Peer.allBut([selfPubkey, fingerprint], done);
   };
@@ -389,16 +280,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   // TODO
   function getVotingPeers (done) {
     getRandomInAllPeers(done);
-  };
-
-  function getForwardPeers (done) {
-    async.waterfall([
-      async.apply(Forward.find.bind(Forward), { to: selfPubkey }),
-      function (fwds, next) {
-        var fingerprints = _(fwds).map(function(fwd){ return fwd.fingerprint; });
-        Peer.getList(fingerprints, next);
-      }
-    ], done);
   };
 };
 

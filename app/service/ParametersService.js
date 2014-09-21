@@ -1,4 +1,3 @@
-var jpgp    = require('../lib/jpgp');
 var async   = require('async');
 var status  = require('../models/statusMessage');
 var parsers = require('../lib/streams/parsers/doc');
@@ -10,12 +9,9 @@ module.exports.get = function (conn, currencyName) {
 function ParameterNamespace (conn, currency) {
 
   var that = this;
-  var PublicKey   = conn.model('PublicKey');
   var Membership  = conn.model('Membership');
   var Peer        = conn.model('Peer');
   var Transaction = conn.model('Transaction');
-  var Forward     = conn.model('Forward');
-  var Wallet      = conn.model('Wallet');
 
   this.getSearch = function (req, callback) {
     if(!req.params || !req.params.search){
@@ -23,48 +19,6 @@ function ParameterNamespace (conn, currency) {
       return;
     }
     callback(null, req.params.search);
-  };
-
-  this.getTransaction = function (req, callback) {
-    async.waterfall([
-      function (next){
-        this.getTransactionFromRaw(req.body && req.body.transaction, req.body && req.body.signature, next);
-      },
-      function (pubkey, signedTx, next) {
-        var tx;
-        async.waterfall([
-          function (next){
-            parsers.parseTransaction(next).asyncWrite(signedTx, next);
-          },
-          function (obj, next){
-            tx = new Transaction(obj);
-            tx.verifySignature(pubkey.raw, next);
-          }
-        ], function (err, verified) {
-          next(err, tx);
-        });
-      }
-    ], callback);
-  };
-
-  this.getTransactionFromRaw = function (transaction, signature, callback) {
-    // Parameters
-    if(!(transaction && signature)){
-      callback('Requires a transaction + signature');
-      return;
-    }
-
-    // Check signature's key ID
-    var keyID = jpgp().signature(signature).issuer();
-    if(!(keyID && keyID.length == 16)){
-      callback('Cannot identify signature issuer`s keyID');
-      return;
-    }
-
-    // Looking for corresponding public key
-    PublicKey.getTheOne(keyID, function (err, pubkey) {
-      callback(err, pubkey, transaction + signature);
-    });
   };
 
   this.getFingerprint = function (req, callback){
@@ -180,182 +134,5 @@ function ParameterNamespace (conn, currency) {
       return;
     }
     callback(null, matches[1], matches[2], matches[3]);
-  };
-
-  this.getMembership = function (req, callback) {
-    if(!(req.body && req.body.membership && req.body.signature)){
-      callback('Requires a membership + signature');
-      return;
-    }
-    async.waterfall([
-
-      // Check signature's key ID
-      function(callback){
-        var sig = req.body.signature;
-        var keyID = jpgp().signature(sig).issuer();
-        if(!(keyID && keyID.length == 16)){
-          callback('Cannot identify signature issuer`s keyID');
-          return;
-        }
-        callback(null, keyID);
-      },
-
-      // Looking for corresponding public key
-      function(keyID, callback){
-        PublicKey.getTheOne(keyID, function (err, pubkey) {
-          callback(err, pubkey);
-        });
-      },
-
-      function (pubkey, next){
-        var entry = new Membership();
-        async.waterfall([
-          function (next){
-            parsers.parseMembership(next).asyncWrite(req.body.membership + req.body.signature, next);
-          },
-          function (obj, next){
-            entry = new Membership(obj);
-            entry.verifySignature(pubkey.raw, next);
-          },
-          function (verified, next){
-            if(!verified){
-              next('Bad signature');
-              return;
-            }
-            if(pubkey.fingerprint != entry.issuer){
-              next('Fingerprint in Membership (' + entry.issuer + ') does not match signatory (' + pubkey.fingerprint + ')');
-              return;
-            }
-            next(null, entry);
-          },
-        ], next);
-      },
-    ], callback);
-  };
-
-  this.getWallet = function (req, callback) {
-    if(!(req.body && req.body.entry && req.body.signature)){
-      callback('Requires a Wallet entry + signature');
-      return;
-    }
-
-    var entry = new Wallet();
-    var pubkey;
-    var signedEntry = req.body.entry.unix2dos() + req.body.signature.unix2dos();
-    
-    async.waterfall([
-
-      function (next) {
-        if(signedEntry.indexOf('-----BEGIN') == -1){
-          next('Signature not found in given Wallet');
-          return;
-        }
-        next();
-      },
-
-      // Check signature's key ID
-      function(next){
-        var sig = signedEntry.substring(signedEntry.indexOf('-----BEGIN'));
-        var keyID = jpgp().signature(sig).issuer();
-        if(!(keyID && keyID.length == 16)){
-          next('Cannot identify signature issuer`s keyID');
-          return;
-        }
-        next(null, keyID);
-      },
-
-      // Looking for corresponding public key
-      function(keyID, next){
-        PublicKey.getTheOne(keyID, function (err, pk) {
-          pubkey = pk;
-          next(err);
-        });
-      },
-
-      // Verify signature
-      function(next){
-        parsers.parseWallet(next).asyncWrite(signedEntry, next);
-      },
-      function (obj, next){
-        entry = new Wallet(obj);
-        entry.verifySignature(pubkey.raw, next);
-      },
-      function (verified, next){
-        if(!verified){
-          next('Bad signature');
-          return;
-        }
-        var obj = {};
-        entry.copyValues(obj);
-        next(null, obj);
-      }
-    ], callback);
-  };
-
-  this.getForward = function (req, callback) {
-    async.waterfall([
-
-      // Parameters
-      function(next){
-        if(!(req.body && req.body.forward && req.body.signature)){
-          next('Requires a peering forward + signature');
-          return;
-        }
-        next(null, req.body.forward, req.body.signature);
-      },
-
-      // Check signature's key ID
-      function(pr, sig, next){
-        PublicKey.getFromSignature(sig, function (err, pubkey) {
-          next(null, pr + sig, pubkey);
-        });
-      },
-
-      // Verify signature
-      function(signedPR, pubkey, next){
-
-        var fwd;
-        async.waterfall([
-          function (next){
-            parsers.parseForward(next).asyncWrite(signedPR, next);
-          },
-          function (obj, next){
-            fwd = new Forward(obj);
-            fwd.verifySignature(pubkey, next);
-          },
-          function (verified, next){
-            next(null, fwd);
-          },
-        ], next);
-      }
-    ], callback);
-  };
-
-  this.getStatus = function (req, callback) {
-    if(!(req.body && req.body.status && req.body.signature)){
-      callback('Requires a status + signature');
-      return;
-    }
-    var status, pubkey;
-    async.waterfall([
-      function (next){
-        parsers.parseStatus(next).asyncWrite(req.body.status + req.status.signature, next);
-      },
-      function (obj, next){
-        status = new Status(obj);
-        PublicKey.getFromSignature(status.signature, next);
-      },
-      function (pk, next){
-        pubkey = pk;
-        status.verifySignature(pubkey.raw, next);
-      },
-      function (verified, next){
-        if (!verified) {
-          next('Wrong signature');
-          return;
-        }
-        next(null, status);
-      },
-    ], callback);
   };
 }

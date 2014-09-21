@@ -19,6 +19,9 @@ module.exports = {
     }
   },
 
+  SALT: exact(".*"),
+  PASSWORD: exact(".*"),
+
   INTEGER: /^\d+$/,
   TIMESTAMP: exact(TIMESTAMP),
   USER_ID: exact(USER_ID), // Any format, by default

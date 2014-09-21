@@ -1,10 +1,11 @@
-var jpgp     = require('./jpgp');
-var wizard   = require('./wizard');
-var os       = require('os');
-var async    = require('async');
-var _        = require('underscore');
-var inquirer = require('inquirer');
-var request  = require('request');
+var jpgp      = require('./jpgp');
+var wizard    = require('./wizard');
+var constants = require('./constants');
+var os        = require('os');
+var async     = require('async');
+var _         = require('underscore');
+var inquirer  = require('inquirer');
+var request   = require('request');
 
 module.exports = function () {
   return new Wizard();
@@ -227,7 +228,7 @@ var tasks = {
           message: "Key's salt",
           default: conf.salt,
           validate: function (input) {
-            return input.match(/^[a-zA-Z0-9-_ ]+$/) ? true : false;
+            return input.match(constants.SALT) ? true : false;
           }
         }], function (answers) {
           conf.salt = answers.salt;
@@ -238,7 +239,10 @@ var tasks = {
         inquirer.prompt([{
           type: "password",
           name: "passwd",
-          message: "Key\'s password"
+          message: "Key\'s password",
+          validate: function (input) {
+            return input.match(constants.PASSWORD) ? true : false;
+          }
         }], function (answers) {
           conf.passwd = answers.passwd;
           next();

@@ -1,7 +1,7 @@
 
 var META_TS      = "META:TS:[1-9][0-9]*";
 var UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
-var USER_ID      = "[^: ]*";
+var USER_ID      = "[A-Za-z0-9_-]*";
 var BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
 var PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
 var TIMESTAMP    = "[1-9][0-9]*";

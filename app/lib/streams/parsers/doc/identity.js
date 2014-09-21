@@ -64,7 +64,7 @@ function IdentityParser (onError) {
       return "No pubkey found";
     }
     if (!obj.uid) {
-      return "Cannot extract udid2";
+      return "Wrong user id format";
     }
     if (!obj.time) {
       return "Cannot extract signature time";

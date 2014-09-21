@@ -14,6 +14,7 @@ var logger      = require('../app/lib/logger')('ucoind');
 var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
+var constants   = require('../app/lib/constants');
 var ucoin       = require('./..');
 
 function keys (val) {
@@ -52,6 +53,7 @@ program
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
   .option('--ud0 <number>',            'Universal Dividend initial value')
   .option('--dt <number>',             'Number of seconds between two UD')
+  .option('--udid2',                   'Enable udid2 format for user id')
   ;
 
 program
@@ -412,6 +414,11 @@ program
   .description('Start uCoin server using given --currency')
   .action(service(ucoin.createPeerServer, function (server, conf) {
 
+    if (conf.udid2) {
+      // UserID must match udid2 format
+      constants.USER_ID = constants.UDID2_FORMAT;
+    }
+
     // server
     //   .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
     //   .pipe(multicaster());
@@ -491,7 +498,8 @@ function overrideConf(conf) {
       tsInterval:  program.tsInterval,
       ud0:         program.ud0,
       c:           program.growth,
-      dt:          program.dt
+      dt:          program.dt,
+      udid2:       program.udid2
     }
   };
 
@@ -519,6 +527,7 @@ function overrideConf(conf) {
   if (cli.ucp.dt)                           conf.dt             = cli.ucp.dt;
   if (cli.ucp.c)                            conf.c              = cli.ucp.c;
   if (cli.ucp.ud0)                          conf.ud0            = cli.ucp.ud0;
+  if (cli.ucp.udid2)                        conf.udid2          = cli.ucp.udid2;
 
   // Specific internal settings
   conf.createNext = true;

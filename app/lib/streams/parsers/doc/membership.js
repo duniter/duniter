@@ -56,7 +56,7 @@ function MembershipParser (onError) {
         err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
     }
     if(!err){
-      if(obj.userid && !obj.userid.match(constants.UDID2_FORMAT))
+      if(obj.userid && !obj.userid.match(constants.USER_ID))
         err = {code: codes['BAD_USERID'], message: "UserID must match udid2 format"};
     }
     if(!err){

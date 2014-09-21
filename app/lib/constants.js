@@ -1,6 +1,7 @@
 
 var META_TS      = "META:TS:[1-9][0-9]*";
 var UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
+var USER_ID      = "[^: ]*";
 var BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
 var PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
 var TIMESTAMP    = "[1-9][0-9]*";
@@ -20,13 +21,14 @@ module.exports = {
 
   INTEGER: /^\d+$/,
   TIMESTAMP: exact(TIMESTAMP),
+  USER_ID: exact(USER_ID), // Any format, by default
   UDID2_FORMAT: exact(UDID2),
   BASE58: exact(BASE58),
   PUBLIC_KEY: exact(PUBKEY),
   SIG: exact(SIGNATURE),
   CERT: {
     SELF: {
-      UID: exact("UID:" + UDID2),
+      UID: exact("UID:" + USER_ID),
       META: exact(META_TS)
     },
     OTHER: {
@@ -35,7 +37,7 @@ module.exports = {
     }
   },
   IDENTITY: {
-    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + UDID2)
+    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + USER_ID)
   },
   BLOCK: {
     JOINER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP),

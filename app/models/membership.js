@@ -104,6 +104,18 @@ MembershipSchema.methods = {
 
   getRawSigned: function() {
     return rawer.getMembership(this);
+  },
+
+  deleteIfExists: function(done) {
+    this.model('Membership').remove({
+      "issuer": this.issuer,
+      "membership": this.membership,
+      "userid": this.userid,
+      "certts": this.certts,
+      "date": this.date
+    }, function (err) {
+      done(err);
+    });
   }
 }
 
@@ -115,9 +127,9 @@ MembershipSchema.statics.fromInline = function (inlineMS, type) {
     issuer:     sp[0],
     membership: type,
     type:       type,
-    date:       new Date(parseInt(sp[1])*1000),
+    date:       new Date(parseInt(sp[2])*1000),
     userid:     '',
-    signature:  sp[2]
+    signature:  sp[1]
   });
 }
 

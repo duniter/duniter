@@ -557,6 +557,30 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     }, done);
   }
 
+  function updateMemberships (block, done) {
+    async.forEach(block.joiners, function(inlineJoin, callback){
+      var ms = Membership.fromInline(inlineJoin, 'IN');
+      async.waterfall([
+        function (next){
+          Identity.getMember(ms.issuer, next);
+        },
+        function (idty, next){
+          if (!idty) {
+            var err = 'Could not find identity for membership of issuer ' + ms.issuer;
+            logger.error(err);
+            next(err);
+            return;
+          }
+          ms.userid = idty.uid;
+          ms.certts = idty.time;
+          ms.deleteIfExists(function (err) {
+            next(err);
+          });
+        },
+      ], callback);
+    }, done);
+  }
+
   function saveBlockData (block, newLinks, done) {
     logger.info('Block #' + block.number + ' added to the keychain');
     async.waterfall([
@@ -573,6 +597,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next) {
         // Update certifications
         updateCertifications(block, next);
+      },
+      function (next) {
+        // Update certifications
+        updateMemberships(block, next);
       },
       function (next){
         // Save links
@@ -629,28 +657,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               Key.setKicked(fpr, distancedKeys, notEnoughLinks ? true : false, next);
             },
           ], callback);
-        }, next);
-      },
-    ], done);
-  }
-
-  function updateAvailableKeyMaterial (block, done) {
-    async.forEach(block.keysChanges, function(kc, callback){
-      if (kc.type != 'L') {
-        PublicBlockchainService.updateAvailableKeyMaterial(kc.fingerprint, callback);
-      }
-      else callback();
-    }, done);
-  }
-
-  this.updateCertifications = function (done) {
-    async.waterfall([
-      function (next){
-        Key.getMembers(next);
-      },
-      function (members, next){
-        async.forEachSeries(members, function(member, callback){
-          PublicBlockchainService.updateAvailableKeyMaterial(member.fingerprint, callback);
         }, next);
       },
     ], done);

@@ -181,10 +181,10 @@ LinkSchema.statics.isStillOver3Steps = function (fpr, ofMembers, newLinks, done)
 * Mark as obsolete the links with an age equal to or below a given date
 **/
 LinkSchema.statics.isOver3StepsOfAMember = function (key, members, done) {
-  var fpr = key.fingerprint;
+  var fpr = key.pubkey;
   var remainingKeys = [];
   members.forEach(function(m){
-    remainingKeys.push(m.fingerprint);
+    remainingKeys.push(m.pubkey);
   });
   // Without self
   remainingKeys = _(remainingKeys).difference([fpr]);

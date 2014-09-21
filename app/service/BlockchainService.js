@@ -301,7 +301,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           block.joiners.forEach(function (inlineMS) {
             var fpr = inlineMS.split(':')[0];
             newcomers.push(fpr);
-            members.push({ fingerprint: fpr });
+            members.push({ pubkey: fpr });
           });
           async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
             async.waterfall([
@@ -341,11 +341,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                 async.forEachSeries(members, function (member, memberRecognized) {
                   async.waterfall([
                     function (next) {
-                      Link.isStillOver3Steps(member.fingerprint, [newcomer], newLinks, next);
+                      Link.isStillOver3Steps(member.pubkey, [newcomer], newLinks, next);
                     },
                     function (distances, next) {
                       if (distances.length > 0)
-                        next('Newcomer ' + newcomer + ' cannot recognize member ' + member.fingerprint + ': no path found or too much distance');
+                        next('Newcomer ' + newcomer + ' cannot recognize member ' + member.pubkey + ': no path found or too much distance');
                       else
                         next();
                     }
@@ -939,6 +939,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                 certs: function(callback){
                   Certification.toTarget(join.idHash, callback);
                 },
+                // wotCerts: function(callback){
+                //   Certification.from(ms.issuer, callback);
+                // },
               }, next);
             },
             function (res, next){
@@ -946,6 +949,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                 // MS + matching cert are found
                 join.identity = res.identity;
                 join.certs = res.certs;
+                // join.wotCerts = res.wotCerts;
                 preJoinData[res.identity.pubkey] = join;
               }
               next();
@@ -1145,11 +1149,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.leavers = [];
     // Kicked people
     block.excluded = [];
-    // Certifications for the WoT
+    // Certifications FROM the WoT
     block.certifications = [];
     joiners.forEach(function(joiner){
       var data = joinData[joiner];
       data.certs.forEach(function(cert){
+        block.certifications.push(cert.inline());
+      });
+    });
+    // Certifications TO the WoT
+    _(updates).keys().forEach(function(certifiedMember){
+      var certs = updates[certifiedMember];
+      certs.forEach(function(cert){
         block.certifications.push(cert.inline());
       });
     });

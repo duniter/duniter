@@ -542,9 +542,16 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         },
         function (idty, next){
           cert.target = idty.getTargetHash();
-          cert.save(function (err) {
-            next(err);
-          });
+          cert.exists(next);
+        },
+        function (exists, next) {
+          if (exists) {
+            next();
+          } else {
+            cert.save(function (err) {
+              next(err);
+            });
+          }
         }
       ], callback);
     }, done);

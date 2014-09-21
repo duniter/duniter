@@ -31,7 +31,6 @@ function BlockchainBinding (wotServer) {
   // Models
   var Peer       = wotServer.conn.model('Peer');
   var Membership = wotServer.conn.model('Membership');
-  var Key        = wotServer.conn.model('Key');
 
   this.parseMembership = function (req, res) {
     var onError = http400(res);

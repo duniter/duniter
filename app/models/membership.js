@@ -124,16 +124,6 @@ MembershipSchema.statics.fromInline = function (inlineMS, type) {
   });
 }
 
-MembershipSchema.statics.getEligibleForAmendment = function (amNumber, done) {
-  
-  this.find({ eligible: true, amNumber: amNumber }, done);
-}
-
-MembershipSchema.statics.getForAmendmentAndIssuer = function (amNumber, issuer, done) {
-  
-  this.find({ issuer: issuer, amNumber: amNumber }, done);
-}
-
 MembershipSchema.statics.getCurrentInOlderThan = function (exclusiveLimitingDate, done) {
   
   this.find({ current: true, sigDate: { $lt: exclusiveLimitingDate } }, function (err, mss) {
@@ -145,17 +135,6 @@ MembershipSchema.statics.getCurrent = function (issuer, done) {
   
   this
     .find({ current: true, issuer: issuer })
-    .sort({ 'sigDate': -1 })
-    .limit(1)
-    .exec(function (err, mss) {
-      done(null, mss.length == 1 ? mss[0] : null);
-  });
-}
-
-MembershipSchema.statics.getCurrentForIssuerAndAmendment = function (issuer, amendmentNumber, done) {
-  
-  this
-    .find({ current: true, issuer: issuer, amNumber: { $lt: amendmentNumber } })
     .sort({ 'sigDate': -1 })
     .limit(1)
     .exec(function (err, mss) {

@@ -23,58 +23,8 @@ module.exports = new function() {
     return dos2unix(raw);
   };
 
-  this.getAmendment = function (json) {
-    var raw = "";
-    raw += "Version: " + json.version + "\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "Number: " + json.number + "\n";
-    raw += "GeneratedOn: " + json.generated + "\n";
-    if(json.dividend){
-      raw += "UniversalDividend: " + json.dividend + "\n";
-      raw += "CoinAlgo: " + json.coinAlgo + "\n";
-      raw += "CoinBase: " + json.coinBase + "\n";
-      raw += "CoinList: " + json.coinList.join(' ') + "\n";
-    }
-    if(json.previousHash){
-      raw += "PreviousHash: " + json.previousHash + "\n";
-    }
-    if(json.membersRoot){
-      raw += "MembersRoot: " + json.membersRoot + "\n";
-      raw += "MembersCount: " + json.membersCount + "\n";
-      raw += "MembersChanges:\n";
-      for(var i = 0; i < json.membersChanges.length; i++){
-        raw += json.membersChanges[i] + "\n";
-      }
-    }
-    return dos2unix(raw);
-  };
-
   this.getPubkey = function (json) {
     return dos2unix(json.raw);
-  };
-
-  this.getTransactionWithoutSignature = function (json) {
-    var raw = "";
-    raw += "Version: " + json.version + "\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "Sender: " + json.sender + "\n";
-    raw += "Number: " + json.number + "\n";
-    if(json.previousHash){
-      raw += "PreviousHash: " + json.previousHash + "\n";
-    }
-    raw += "Recipient: " + json.recipient + "\n";
-    raw += "Coins:\n";
-    for(var i = 0; i < json.coins.length; i++){
-      raw += json.coins[i] + "\n";
-    }
-    raw += "Comment:\n" + json.comment;
-    if (!raw.match(/\n$/))
-      raw += '\n';
-    return dos2unix(raw);
-  };
-
-  this.getTransaction = function (json) {
-    return dos2unix(signed(that.getTransactionWithoutSignature(json), json));
   };
 
   this.getPeerWithoutSignature = function (json) {

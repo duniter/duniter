@@ -16,7 +16,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
   var that = this;
 
   // Services
-  var KeyService         = server.KeyService;
   var TransactionService = server.TransactionsService;
   var PeeringService     = server.PeeringService;
   var ParametersService  = server.ParametersService;
@@ -43,7 +42,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
 
       // Global sync vars
       var remotePeer = new Peer({});
-      var amendments = {};
       var remoteCurrentNumber;
       var remotePubkey;
 
@@ -248,141 +246,6 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         done(err);
       });
     })
-  }
-
-  var alreadyDone = [];
-
-  function syncTransactionsOfKey (node, keyFingerprint, onKeyDone) {
-    if(~alreadyDone.indexOf(keyFingerprint)){
-      onKeyDone();
-      return;
-    }
-    logger.info('Transactions of %s...', keyFingerprint);
-    async.waterfall([
-
-      //==============
-      // Sent TXs
-      //==============
-      function (next){
-        syncTransactionTrees(node, keyFingerprint, Merkle.txOfSender.bind(Merkle), node.hdc.transactions.sender.get, next);
-      },
-
-      //==============
-      // Received TXs
-      //==============
-      function (next){
-        syncTransactionTrees(node, keyFingerprint, Merkle.txToRecipient.bind(Merkle), node.hdc.transactions.recipient, next);
-      }
-    ], function (err) {
-      // Avoid to loop on already synced keys
-      alreadyDone.push(keyFingerprint);
-      onKeyDone(err);
-    });
-  }
-
-  function syncTransactionTrees (node, keyFingerprint, localMerkleFunc, remoteMerkleFunc, onceSyncFinished) {
-    async.waterfall([
-      function (onRootsGotten){
-        async.parallel({
-          local: function(cb){
-            localMerkleFunc.call(localMerkleFunc, keyFingerprint, cb);
-          },
-          remote: function(cb){
-            remoteMerkleFunc.call(remoteMerkleFunc, keyFingerprint, {}, cb);
-          }
-        }, onRootsGotten);
-      },
-      function (results, onKeySentTransactionFinished){
-        var rm = new NodesMerkle(results.remote);
-        if(results.local.root() == rm.root()){
-          onKeySentTransactionFinished();
-          return;
-        }
-        async.waterfall([
-          function (next) {
-            remoteMerkleFunc(keyFingerprint, { leaves: true }, next);
-          },
-          function (json, onEveryTransactionProcessed){
-            var transactions = {};
-            async.forEachSeries(json.leaves, function(leaf, onSentTransactionsProcessed){
-              var transaction;
-              var signature;
-              var raw;
-              var i;
-              async.waterfall([
-                function (next){
-                  remoteMerkleFunc(keyFingerprint, { leaf: leaf }, next);
-                },
-                function (json, next){
-                  transaction = new Transaction(json.leaf.value.transaction);
-                  signature = json.leaf.value.transaction.signature;
-                  raw = json.leaf.value.transaction.raw;
-                  i = 0;
-                  next();
-                },
-                function (next){
-                  async.whilst(
-                    function (){ return i < transaction.coins.length; },
-                    function (callback){
-                      var coin = transaction.coins[i];
-                      var parts = coin.split(':');
-                      var txIssuer = parts[1] && parts[1].substring(0, 40);
-                      async.waterfall([
-                        function (next){
-                          if(!txIssuer || txIssuer == keyFingerprint){
-                            next(null, false);
-                            return;
-                          }
-                          // Transaction of another key
-                          Key.isManaged(txIssuer, next);
-                        },
-                        function  (isOtherManagedKey, next) {
-                          if(isOtherManagedKey){
-                            syncTransactionsOfKey(node, txIssuer, next);
-                            return;
-                          }
-                          next();
-                        }
-                      ], function (err) {
-                        i++;
-                        callback(err);
-                      });
-                    },
-                    function (err) {
-                      async.waterfall([
-                        function (next){
-                          ParametersService.getTransactionFromRaw(raw, signature, next);
-                        },
-                        function (pubkey, signedTx, next) {
-                          Transaction.find({ sender: transaction.sender, number: transaction.number }, function (err, txs) {
-                            next(err, pubkey, signedTx, txs);
-                          });
-                        },
-                        function (pubkey, signedTx, txs, next) {
-                          parsers.parseTransaction(next).asyncWrite(signedTx, function (err, obj) {
-                            var tx = obj || {};
-                            tx.pubkey = { fingerprint: tx.sender };
-                            next(err, pubkey, tx, txs);
-                          });
-                        },
-                        function (pubkey, tx, txs, next){
-                          if(txs.length == 0){
-                            logger.info(tx.sender + '#' + tx.number);
-                            TransactionService.processTx(tx, CONST_FORCE_TX_PROCESSING, next);
-                            return;
-                          }
-                          next();
-                        }
-                      ], next);
-                    }
-                  );
-                },
-              ], onSentTransactionsProcessed);
-            }, onEveryTransactionProcessed);
-          }
-        ], onKeySentTransactionFinished);
-      }
-    ], onceSyncFinished);
   }
 }
 

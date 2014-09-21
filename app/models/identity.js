@@ -15,6 +15,7 @@ var IdentitySchema = new Schema({
   sig: String,
   time: { type: Date, default: Date.now },
   member: { type: Boolean, default: false },
+  kick: { type: Boolean, default: false },
   hash: { type: String, unique: true },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -88,20 +89,6 @@ IdentitySchema.statics.removeMember = function(pubkey, hash, done){
   });
 };
 
-IdentitySchema.statics.setKicked = function(pubkey, hash, done){
-  var Identity = this.model('Identity');
-  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: true }, function (err) {
-    done(err);
-  });
-};
-
-IdentitySchema.statics.unsetKicked = function(pubkey, hash, done){
-  var Identity = this.model('Identity');
-  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: false }, function (err) {
-    done(err);
-  });
-};
-
 IdentitySchema.statics.fromInline = function (inline) {
   var Identity = this.model('Identity');
   var sp = inline.split(':');
@@ -160,6 +147,25 @@ IdentitySchema.statics.getMember = function(pubkey, done){
 IdentitySchema.statics.getMembers = function(done){
   var Identity = this.model('Identity');
   Identity.find({ member: true }, done);
+};
+
+IdentitySchema.statics.getToBeKicked = function(done){
+  var Identity = this.model('Identity');
+  Identity.find({ kick: true }, done);
+};
+
+IdentitySchema.statics.setKicked = function(pubkey, hash, distancedKeys, notEnoughLinks, done){
+  var Identity = this.model('Identity');
+  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: (distancedKeys.length > 0 || notEnoughLinks), distanced: distancedKeys }, function (err) {
+    done(err);
+  });
+};
+
+IdentitySchema.statics.unsetKicked = function(pubkey, hash, done){
+  var Identity = this.model('Identity');
+  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: false }, function (err) {
+    done(err);
+  });
 };
 
 IdentitySchema.statics.search = function (search, done) {

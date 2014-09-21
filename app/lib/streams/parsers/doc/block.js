@@ -7,9 +7,9 @@ var split         = require('../../../split');
 var unix2dos      = require('../../../unix2dos');
 var constants     = require('../../../constants');
 
-module.exports = KeyblockParser;
+module.exports = BlockParser;
 
-function KeyblockParser (onError) {
+function BlockParser (onError) {
   
   var captures = [
     {prop: "version",         regexp: /Version: (.*)/},
@@ -177,4 +177,4 @@ function extractTransactions(raw) {
   return transactions;
 }
 
-util.inherits(KeyblockParser, GenericParser);
+util.inherits(BlockParser, GenericParser);

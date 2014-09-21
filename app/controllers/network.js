@@ -30,9 +30,7 @@ function NetworkBinding (peerServer, conf) {
 
   // Models
   var Peer      = peerServer.conn.model('Peer');
-  var Amendment = peerServer.conn.model('Amendment');
   var Merkle    = peerServer.conn.model('Merkle');
-  var Key       = peerServer.conn.model('Key');
 
   this.cert = PeeringService.cert;
 

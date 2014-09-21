@@ -43,7 +43,6 @@ ConfigurationSchema.virtual('createNext').set(function (create) {
 //  - UD frequency: 1 month (30.4375 days/month)
 //  - UD(0): 100 unities
 //  - UD % (aka 'c'): 9.22% a year <=> 0.7376575% a month
-//  - UD Minimal Coin: none
 
 ConfigurationSchema.pre('save', function (next) {
 

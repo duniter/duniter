@@ -27,9 +27,7 @@ function TransactionBinding(hdcServer) {
   var PeeringService     = hdcServer.PeeringService;
 
   // Models
-  var Amendment   = hdcServer.conn.model('Amendment');
   var Merkle      = hdcServer.conn.model('Merkle');
-  var Key         = hdcServer.conn.model('Key');
   var Transaction = hdcServer.conn.model('Transaction');
 
   this.viewtx = function (req, res) {

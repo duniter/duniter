@@ -11,11 +11,9 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   
   var currency = conf.currency;
 
-  var Amendment   = conn.model('Amendment');
   var Transaction = conn.model('Transaction');
   var Merkle      = conn.model('Merkle');
   var Peer        = conn.model('Peer');
-  var Key         = conn.model('Key');
   
   var selfPubkey = undefined;
   if (pair) {

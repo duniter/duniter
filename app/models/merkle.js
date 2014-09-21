@@ -158,23 +158,6 @@ MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateSignaturesOfAmendment = function (am, hash, done) {
-  var Merkle = this.model('Merkle');
-  async.waterfall([
-    function (next) {
-      Merkle.signaturesOfAmendment(am.number, am.hash, function (err, merkle) {
-        next(err, merkle);
-      });
-    },
-    function (merkle, next) {
-      merkle.push(hash);
-      merkle.save(function (err) {
-        next(err);
-      });
-    }
-  ], done);
-};
-
 MerkleSchema.statics.updateForTransfert = function (tx, done) {
   var Merkle = this.model('Merkle');
   async.waterfall([

@@ -8,10 +8,7 @@ module.exports.get = function (conn, MerkleService, PeeringService) {
 
 function TransactionService (conn, MerkleService, PeeringService) {
 
-  var Amendment     = conn.model('Amendment');
   var Merkle        = conn.model('Merkle');
-  var Coin          = conn.model('Coin');
-  var Key           = conn.model('Key');
   var Transaction   = conn.model('Transaction');
   var TxMemory      = conn.model('TxMemory');
 

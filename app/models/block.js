@@ -7,7 +7,7 @@ var Schema    = mongoose.Schema;
 var base64    = require('../lib/base64');
 var logger    = require('../lib/logger')('dao keyblock');
 
-var KeyBlockSchema = new Schema({
+var BlockSchema = new Schema({
   version: String,
   currency: String,
   nonce: {"type": Number, "default": 0},
@@ -29,12 +29,12 @@ var KeyBlockSchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
-KeyBlockSchema.pre('save', function (next) {
+BlockSchema.pre('save', function (next) {
   this.updated = Date.now();
   next();
 });
 
-KeyBlockSchema.methods = {
+BlockSchema.methods = {
   
   json: function() {
     var that = this;
@@ -124,14 +124,14 @@ KeyBlockSchema.methods = {
   }
 };
 
-KeyBlockSchema.statics.nextNumber = function (done) {
+BlockSchema.statics.nextNumber = function (done) {
   this.current(function (err, kb) {
     var number = err ? -1 : kb.number;
     done(null, number + 1);
   });
 };
 
-KeyBlockSchema.statics.lastOfIssuer = function (issuer, done) {
+BlockSchema.statics.lastOfIssuer = function (issuer, done) {
   this
     .find({ issuer: issuer })
     .sort({ 'number': -1 })
@@ -141,7 +141,7 @@ KeyBlockSchema.statics.lastOfIssuer = function (issuer, done) {
   });
 };
 
-KeyBlockSchema.statics.current = function (done) {
+BlockSchema.statics.current = function (done) {
 
   this.find({}).sort({ number: -1 }).limit(1).exec(function (err, blocks) {
     if(blocks && blocks.length == 1){
@@ -155,7 +155,7 @@ KeyBlockSchema.statics.current = function (done) {
   });
 };
 
-KeyBlockSchema.statics.findByNumberAndHash = function (number, hash, done) {
+BlockSchema.statics.findByNumberAndHash = function (number, hash, done) {
 
   this.find({ number: number, hash: hash }, function (err, blocks) {
     if(blocks && blocks.length == 1){
@@ -172,7 +172,7 @@ KeyBlockSchema.statics.findByNumberAndHash = function (number, hash, done) {
   });
 };
 
-KeyBlockSchema.statics.findByNumber = function (number, done) {
+BlockSchema.statics.findByNumber = function (number, done) {
 
   this.find({ number: number }, function (err, blocks) {
     if(blocks && blocks.length == 1){
@@ -189,7 +189,7 @@ KeyBlockSchema.statics.findByNumber = function (number, done) {
   });
 };
 
-KeyBlockSchema.statics.getLastStatusOfMember = function (member, kbNumberLimit, done) {
+BlockSchema.statics.getLastStatusOfMember = function (member, kbNumberLimit, done) {
 
   var that = this;
   var criterias = { number: { $lte: kbNumberLimit }, membersChanges: new RegExp("^(\\+|-)" + member + "$")};
@@ -220,7 +220,7 @@ KeyBlockSchema.statics.getLastStatusOfMember = function (member, kbNumberLimit, 
   ], done);
 };
 
-KeyBlockSchema.statics.isMember = function (member, kbNumber, done) {
+BlockSchema.statics.isMember = function (member, kbNumber, done) {
 
   var that = this;
   async.waterfall([
@@ -233,12 +233,12 @@ KeyBlockSchema.statics.isMember = function (member, kbNumber, done) {
   ], done);
 };
 
-KeyBlockSchema.statics.isMemberForKB = function (member, kbNumber, kbHash, done) {
+BlockSchema.statics.isMemberForKB = function (member, kbNumber, kbHash, done) {
 
   this.searchPresence(member, kbNumber, kbHash, checkIsJoiningMember, checkIsLeavingMember, this.searchPresence.bind(this), done);
 };
 
-KeyBlockSchema.statics.searchPresence = function (member, kbNumber, kbHash, isJoining, isLeaving, searchCallBack, done) {
+BlockSchema.statics.searchPresence = function (member, kbNumber, kbHash, isJoining, isLeaving, searchCallBack, done) {
   var that = this;
   async.waterfall([
     function(next){
@@ -266,4 +266,4 @@ KeyBlockSchema.statics.searchPresence = function (member, kbNumber, kbHash, isJo
 function checkIsJoiningMember (am, key) { return ~am.membersChanges.indexOf('+' + key); }
 function checkIsLeavingMember (am, key) { return ~am.membersChanges.indexOf('-' + key); }
 
-module.exports = KeyBlockSchema;
+module.exports = BlockSchema;

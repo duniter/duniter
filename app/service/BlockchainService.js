@@ -38,9 +38,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Certification = conn.model('Certification');
   var Membership    = conn.model('Membership');
   var Block         = conn.model('Block');
-  var TrustedKey    = conn.model('TrustedKey');
   var Link          = conn.model('Link');
-  var Key           = conn.model('Key');
 
   // Flag to say wether timestamp of received keyblocks should be tested
   // Useful for synchronisation of old blocks
@@ -405,7 +403,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var membersChanges = block.membersChanges;
     async.waterfall([
       function (next){
-        Key.getToBeKicked(next);
+        Identity.getToBeKicked(next);
       },
       function (keys, next){
         async.forEach(keys, function(key, callback){
@@ -611,20 +609,20 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         Link.obsoletes(block.timestamp - conf.sigValidity, next);
       },
       function (next){
-        Key.getMembers(next);
+        Identity.getMembers(next);
       },
       function (members, next){
         // If a member is over 3 steps from the whole WoT, has to be kicked
-        async.forEachSeries(members, function(key, callback){
-          var fpr = key.fingerprint;
+        async.forEachSeries(members, function(idty, callback){
+          var pubkey = idty.pubkey;
           async.waterfall([
             function (next){
               async.parallel({
                 outdistanced: function(callback){
-                  Link.isOver3StepsOfAMember(key, members, callback);
+                  Link.isOver3StepsOfAMember(idty, members, callback);
                 },
                 enoughLinks: function(callback){
-                  checkHaveEnoughLinks(key.fingerprint, {}, function (err) {
+                  checkHaveEnoughLinks(pubkey, {}, function (err) {
                     callback(null, err);
                   });
                 },
@@ -633,7 +631,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             function (res, next){
               var distancedKeys = res.outdistanced;
               var notEnoughLinks = res.enoughLinks;
-              Key.setKicked(fpr, distancedKeys, notEnoughLinks ? true : false, next);
+              Identity.setKicked(pubkey, idty.getTargetHash(), distancedKeys, notEnoughLinks ? true : false, next);
             },
           ], callback);
         }, next);
@@ -665,7 +663,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (next){
-        Key.getMembers(next);
+        Identity.getMembers(next);
       },
       function (memberKeys, next){
         memberKeys.forEach(function(mKey){
@@ -1158,7 +1156,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         Link.unobsoletesAllLinks(next);
       },
       function (next) {
-        Key.undistanceEveryKey(next);
+        Identity.undistanceEveryKey(next);
       },
       function (next) {
         computeObsoleteLinks(current, next);

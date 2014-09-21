@@ -10,7 +10,7 @@ var request    = require('request');
 var http       = require('http');
 var log4js     = require('log4js');
 
-var models = ['Identity', 'Certification', 'Amendment', 'Coin', 'Configuration', 'Key', 'Link', 'TrustedKey', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block'];
+var models = ['Identity', 'Certification', 'Configuration', 'Link', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -187,16 +187,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           'identities',
           'certifications',
           'blocks',
-          'amendments',
-          'coins',
           'links',
-          'keys',
           'merkles',
           'peers',
-          'publickeys',
           'transactions',
           'txmemories',
-          'trustedkeys',
           'memberships'];
         async.forEachSeries(deletableCollections, function(collection, next){
           if (that.conn.collections[collection]) {

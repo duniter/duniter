@@ -10,8 +10,6 @@ module.exports = function (serverFPR, conn) {
 function Router (serverFPR, conn) {
 
   var Merkle      = conn.model('Merkle');
-  var Key         = conn.model('Key');
-  var Amendment   = conn.model('Amendment');
   var Transaction = conn.model('Transaction');
   var Peer        = conn.model('Peer');
 

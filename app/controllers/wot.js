@@ -24,7 +24,8 @@ function WOTBinding (wotServer) {
   var ParametersService = wotServer.ParametersService;
   var IdentityService   = wotServer.IdentityService;
 
-  var Identity = conn.model('Identity');
+  var Identity      = conn.model('Identity');
+  var Certification = conn.model('Certification');
 
   this.lookup = function (req, res) {
     async.waterfall([
@@ -33,7 +34,22 @@ function WOTBinding (wotServer) {
       },
       function (search, next){
         IdentityService.search(search, next);
-      }
+      },
+      function (identities, next){
+        async.forEach(identities, function(idty, callback){
+          async.waterfall([
+            function (next){
+              Certification.toTarget(idty.getTargetHash(), next);
+            },
+            function (certs, next){
+              idty.certs = certs;
+              next();
+            },
+          ], callback);
+        }, function (err) {
+          next(err, identities);
+        });
+      },
     ], function (err, identities) {
       if(err){
         res.send(400, err);

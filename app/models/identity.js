@@ -37,12 +37,23 @@ IdentitySchema.virtual('certs').set(function (newCertifs) {
 IdentitySchema.methods = {
 
   json: function () {
+    var others = [];
+    this.certs.forEach(function(cert){
+      others.push({
+        "pubkey": cert.pubkey,
+        "meta": {
+          "timestamp": cert.time.timestamp()
+        },
+        "signature": cert.sig
+      });
+    });
     var uids = [{
       "uid": this.uid,
       "meta": {
         "timestamp": this.time.timestamp()
       },
-      "self": this.sig
+      "self": this.sig,
+      "others": others
     }];
     return {
       "pubkey": this.pubkey,

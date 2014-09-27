@@ -257,11 +257,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "Certifications:\n" +
-    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
-    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844658:2KmmmIL8eK/TACjOqTqO5ZG/tgMYWWV8zRICWFQJuqWyYVg/y5wzXyHrgfpdMYhwYMRBhwbMk1sPNLo/kzp0AA==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844653:DU4JlHxJtIb2Z7Ag4Jy+z0qjNNo5jzN5EvTUWOTRRzeb6LbOClw2X+pmb0mV/wpVKd/lJrUHAWeKMDHG4MukCA==\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844660:tY5J+g3sM421sx0WNUuESUL8Zz2BU0UbtXT+nRsTlYThaDubMg/GmhsxWa0ccRJcZvftEwpENtVjyd6hyPSQCw==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411844659:kr2JA6wCGfbNKGpyM86BscsFk22aA9oiAon8mWRPl4G8UpJKZs3tjuPRAw5+04KLCRWl/TT1TumDCkeEjev7DA==\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
@@ -287,11 +283,7 @@ module.exports = {
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "Certifications:\n" +
-    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
-    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844658:2KmmmIL8eK/TACjOqTqO5ZG/tgMYWWV8zRICWFQJuqWyYVg/y5wzXyHrgfpdMYhwYMRBhwbMk1sPNLo/kzp0AA==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844653:DU4JlHxJtIb2Z7Ag4Jy+z0qjNNo5jzN5EvTUWOTRRzeb6LbOClw2X+pmb0mV/wpVKd/lJrUHAWeKMDHG4MukCA==\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844660:tY5J+g3sM421sx0WNUuESUL8Zz2BU0UbtXT+nRsTlYThaDubMg/GmhsxWa0ccRJcZvftEwpENtVjyd6hyPSQCw==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411844659:kr2JA6wCGfbNKGpyM86BscsFk22aA9oiAon8mWRPl4G8UpJKZs3tjuPRAw5+04KLCRWl/TT1TumDCkeEjev7DA==\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
@@ -317,6 +309,62 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844658:2KmmmIL8eK/TACjOqTqO5ZG/tgMYWWV8zRICWFQJuqWyYVg/y5wzXyHrgfpdMYhwYMRBhwbMk1sPNLo/kzp0AA==\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844653:DU4JlHxJtIb2Z7Ag4Jy+z0qjNNo5jzN5EvTUWOTRRzeb6LbOClw2X+pmb0mV/wpVKd/lJrUHAWeKMDHG4MukCA==\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844660:tY5J+g3sM421sx0WNUuESUL8Zz2BU0UbtXT+nRsTlYThaDubMg/GmhsxWa0ccRJcZvftEwpENtVjyd6hyPSQCw==\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411844659:kr2JA6wCGfbNKGpyM86BscsFk22aA9oiAon8mWRPl4G8UpJKZs3tjuPRAw5+04KLCRWl/TT1TumDCkeEjev7DA==\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  LEAVER_WITH_CERTIFICATIONS: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 0\n" +
+    "Date: 1411776000\n" +
+    "ConfirmedDate: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:NJE8nYU4Im+KQDRdoAn5gcfic+Gjjzp0Pp0iji/Fzh9JIThoQeUDDew4Q5vJBEg/Aw7gPnIg+11TbLkIGa/ODQ==:1411837452:TAC\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1V/QnQcnJtQSSvhOFBhl7kGXBea8gKEQ6iqPNCVb41yI9gN79XGtUeHhjlumhQkPeizlzpkcNBkL8bhokiNcBQ==:1411837457:SNOW\n" +
+    "Joiners:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:25xK7+ph7IYeN9Hu8PvuIBjYdVURYtvKayPHZg7zrrYTs6ii2fMtk5J65a3bT/NKr2Qsd7I5TCL29QyiAXa7BA==:1411837456:1411837452:TAC\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:1411837462:1411837457:SNOW\n" +
+    "Leavers:\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:I9kYCknNTp9zYS4CflAMk4Xh1yQIaP1H3PgPHJeQZQNkBavyqddXsq5DUzscsi2kRttJw6C/MATSD8KyZYPNAg==:1411850496\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844658:2KmmmIL8eK/TACjOqTqO5ZG/tgMYWWV8zRICWFQJuqWyYVg/y5wzXyHrgfpdMYhwYMRBhwbMk1sPNLo/kzp0AA==\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844653:DU4JlHxJtIb2Z7Ag4Jy+z0qjNNo5jzN5EvTUWOTRRzeb6LbOClw2X+pmb0mV/wpVKd/lJrUHAWeKMDHG4MukCA==\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844660:tY5J+g3sM421sx0WNUuESUL8Zz2BU0UbtXT+nRsTlYThaDubMg/GmhsxWa0ccRJcZvftEwpENtVjyd6hyPSQCw==\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411844659:kr2JA6wCGfbNKGpyM86BscsFk22aA9oiAon8mWRPl4G8UpJKZs3tjuPRAw5+04KLCRWl/TT1TumDCkeEjev7DA==\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  EXCLUDED_WITH_CERTIFICATIONS: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 0\n" +
+    "Date: 1411776000\n" +
+    "ConfirmedDate: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:NJE8nYU4Im+KQDRdoAn5gcfic+Gjjzp0Pp0iji/Fzh9JIThoQeUDDew4Q5vJBEg/Aw7gPnIg+11TbLkIGa/ODQ==:1411837452:TAC\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1V/QnQcnJtQSSvhOFBhl7kGXBea8gKEQ6iqPNCVb41yI9gN79XGtUeHhjlumhQkPeizlzpkcNBkL8bhokiNcBQ==:1411837457:SNOW\n" +
+    "Joiners:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:25xK7+ph7IYeN9Hu8PvuIBjYdVURYtvKayPHZg7zrrYTs6ii2fMtk5J65a3bT/NKr2Qsd7I5TCL29QyiAXa7BA==:1411837456:1411837452:TAC\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:1411837462:1411837457:SNOW\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844658:2KmmmIL8eK/TACjOqTqO5ZG/tgMYWWV8zRICWFQJuqWyYVg/y5wzXyHrgfpdMYhwYMRBhwbMk1sPNLo/kzp0AA==\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844653:DU4JlHxJtIb2Z7Ag4Jy+z0qjNNo5jzN5EvTUWOTRRzeb6LbOClw2X+pmb0mV/wpVKd/lJrUHAWeKMDHG4MukCA==\n" +
@@ -403,11 +451,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:I9kYCknNTp9zYS4CflAMk4Xh1yQIaP1H3PgPHJeQZQNkBavyqddXsq5DUzscsi2kRttJw6C/MATSD8KyZYPNAg==:1411850495\n" +
     "Excluded:\n" +
     "Certifications:\n" +
-    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
-    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844658:2KmmmIL8eK/TACjOqTqO5ZG/tgMYWWV8zRICWFQJuqWyYVg/y5wzXyHrgfpdMYhwYMRBhwbMk1sPNLo/kzp0AA==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844653:DU4JlHxJtIb2Z7Ag4Jy+z0qjNNo5jzN5EvTUWOTRRzeb6LbOClw2X+pmb0mV/wpVKd/lJrUHAWeKMDHG4MukCA==\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844660:tY5J+g3sM421sx0WNUuESUL8Zz2BU0UbtXT+nRsTlYThaDubMg/GmhsxWa0ccRJcZvftEwpENtVjyd6hyPSQCw==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411844659:kr2JA6wCGfbNKGpyM86BscsFk22aA9oiAon8mWRPl4G8UpJKZs3tjuPRAw5+04KLCRWl/TT1TumDCkeEjev7DA==\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
@@ -431,11 +475,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:I9kYCknNTp9zYS4CflAMk4Xh1yQIaP1H3PgPHJeQZQNkBavyqddXsq5DUzscsi2kRttJw6C/MATSD8KyZYPNAg==:1411850496\n" +
     "Excluded:\n" +
     "Certifications:\n" +
-    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
-    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1411844658:2KmmmIL8eK/TACjOqTqO5ZG/tgMYWWV8zRICWFQJuqWyYVg/y5wzXyHrgfpdMYhwYMRBhwbMk1sPNLo/kzp0AA==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844653:DU4JlHxJtIb2Z7Ag4Jy+z0qjNNo5jzN5EvTUWOTRRzeb6LbOClw2X+pmb0mV/wpVKd/lJrUHAWeKMDHG4MukCA==\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844660:tY5J+g3sM421sx0WNUuESUL8Zz2BU0UbtXT+nRsTlYThaDubMg/GmhsxWa0ccRJcZvftEwpENtVjyd6hyPSQCw==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411844659:kr2JA6wCGfbNKGpyM86BscsFk22aA9oiAon8mWRPl4G8UpJKZs3tjuPRAw5+04KLCRWl/TT1TumDCkeEjev7DA==\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 };

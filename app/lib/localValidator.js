@@ -52,6 +52,10 @@ function LocalValidator () {
       done('Block cannot contain identical certifications (A -> B)');
       return;
     }
+    if (hasCertificationsFromLeaversOrExcluded(block)) {
+      done('Block cannot contain certifications concerning leavers or excluded members');
+      return;
+    }
     if (false) {
       done('Block cannot contain twice same input for transactions');
       return;
@@ -193,4 +197,26 @@ function hasWrongSignatureForMemberships (block) {
     i++;
   }
   return wrongSig;
+}
+
+function hasCertificationsFromLeaversOrExcluded (block) {
+  var pubkeys = [];
+  block.leavers.forEach(function(leaver){
+    var pubk = leaver.split(':')[0];
+    pubkeys.push(pubk);
+  });
+  block.excluded.forEach(function(excluded){
+    var pubk = excluded;
+    pubkeys.push(pubk);
+  });
+  // Certifications
+  var conflict = false;
+  var i = 0;
+  while (!conflict && i < block.certifications.length) {
+    var sp = block.certifications[i].split(':');
+    var pubkFrom = sp[0], pubkTo = sp[1];
+    conflict = ~pubkeys.indexOf(pubkFrom) || ~pubkeys.indexOf(pubkTo);
+    i++;
+  }
+  return conflict;
 }

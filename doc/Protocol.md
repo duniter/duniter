@@ -626,7 +626,7 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 * A block cannot contain identities whose signature does not match identity's content
 * A block cannot have two or more identities sharing a same `USER_ID`.
 * A block cannot have two or more identities sharing a same `PUBLIC_KEY`.
-* Each identity of a block must match a `Joiner` line matching same `PUBLIC_KEY`.
+* Each identity of a block must match a `Joiner` line matching same `PUBLIC_KEY`, `USER_ID` and `CERTTS`.
 
 ##### Memberships (Joiners, Leavers)
 
@@ -639,6 +639,7 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 ##### Certifications
 
 * A block cannot have two identical certifications (same `PUBKEY_FROM` and same `PUBKEY_TO` for the two certifications)
+* A block cannot have certifications for public keys present in either `Excluded` or `Leavers` fields.
 
 ##### Transactions
 

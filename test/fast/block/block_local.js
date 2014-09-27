@@ -72,6 +72,16 @@ describe("Block local coherence", function(){
       done();
     }));
 
+    it('Block cannot contain certifications concerning a leaver', validate(blocks.LEAVER_WITH_CERTIFICATIONS, function (err, done) {
+      assert.equal(err, 'Block cannot contain certifications concerning leavers or excluded members');
+      done();
+    }));
+
+    it('Block cannot contain certifications concerning an excluded member', validate(blocks.EXCLUDED_WITH_CERTIFICATIONS, function (err, done) {
+      assert.equal(err, 'Block cannot contain certifications concerning leavers or excluded members');
+      done();
+    }));
+
     it('Block cannot contain wrongly signed identities', validate(blocks.WRONGLY_SIGNED_IDENTITIES, function (err, done) {
       assert.equal(err, 'Identity\'s signature must match');
       done();

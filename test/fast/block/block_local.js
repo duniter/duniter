@@ -10,6 +10,8 @@ var Block     = mongoose.model('Block', require('../../../app/models/block'));
 
 describe("Block local coherence", function(){
 
+  this.timeout(3000);
+
   it('a valid block should be well formatted', validate(blocks.VALID_ROOT, function (err, done) {
     should.not.exist(err);
     done();

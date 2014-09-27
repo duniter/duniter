@@ -1052,6 +1052,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
     block.number = current ? current.number + 1 : 0;
+    block.confirmedDate = current ? current.confirmedDate : moment.utc().startOf('day').unix();
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
     // Members merkle
@@ -1173,12 +1174,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.whilst(
       function(){ return !pow.match(powRegexp); },
       function (next) {
-        var newTS = new Date().utcZero().timestamp();
-        if (newTS == block.timestamp) {
+        var newTS = moment.utc().startOf('day').unix();
+        if (newTS == block.date) {
           block.nonce++;
         } else {
           block.nonce = 0;
-          block.timestamp = newTS;
+          block.date = newTS;
         }
         raw = block.getRaw();
         sigFunc(raw, function (err, sigResult) {

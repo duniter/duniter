@@ -59,7 +59,7 @@ MembershipSchema.methods = {
   },
   
   inline: function() {
-    return [this.issuer, this.signature, this.date.timestamp()].join(':');
+    return [this.issuer, this.signature, this.date.timestamp(), this.certts.timestamp(), this.userid].join(':');
   },
   
   inlineValue: function() {

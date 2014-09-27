@@ -61,6 +61,11 @@ describe("Block local coherence", function(){
       assert.equal(err, 'Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
       done();
     }));
+
+    it('Block cannot contain identical certifications', validate(blocks.IDENTICAL_CERTIFICATIONS, function (err, done) {
+      assert.equal(err, 'Block cannot contain identical certifications (A -> B)');
+      done();
+    }));
   });
   
 });

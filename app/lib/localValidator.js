@@ -44,7 +44,7 @@ function LocalValidator () {
       done('Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
       return;
     }
-    if (false) {
+    if (hasIdenticalCertifications(block)) {
       done('Block cannot contain identical certifications (A -> B)');
       return;
     }
@@ -143,6 +143,19 @@ function hasMultipleTimesAPubkeyForKeyChanges (block) {
     var pubk = block.excluded[i].split(':')[0];
     conflict = ~pubkeys.indexOf(pubk);
     pubkeys.push(pubk);
+    i++;
+  }
+  return conflict;
+}
+
+function hasIdenticalCertifications (block) {
+  var certs = [];
+  var i = 0;
+  var conflict = false;
+  while (!conflict && i < block.certifications.length) {
+    var cert = block.certifications[i].split(':').slice(0,2).join(':');
+    conflict = ~certs.indexOf(cert);
+    certs.push(cert);
     i++;
   }
   return conflict;

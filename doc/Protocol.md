@@ -33,8 +33,7 @@
 Word | Description
 ---- | -------------
 Universal Dividend | Money issuance **directly** and **exclusively** on community members.
-Community | A groupment of individuals linked together trought a Monetary Contract.
-Monetary Contract | A document gathering the informations defining the community members, voters and monetary mass inside it.
+Web of Trust | A groupment of individuals linked together trought public keys & certification of identities' mechanism
 
 ## Introduction
 
@@ -96,11 +95,9 @@ A certification is the act of creating a link between a *public key* and *an arb
 
 ####Identity string
 
-UCP relies on [udid2](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164) identity string, which looks like this:
-
-    udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;
+UCP does not rely on any particular identity format. Identity simply has to be a string avoiding usage of line endings characters.
     
-In this document *identifier* will be the word refering to this identity string.
+In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferently used to refer to this identity string.
 
 #### Self certification
 
@@ -133,11 +130,11 @@ Where:
 
 A valid identity:
 
-    UID:udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;
+    UID:lolcat
     
 A complete self-certification:
 
-    UID:udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;
+    UID:lolcat
     META:TS:1409990782
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     
@@ -168,7 +165,7 @@ Where
 
 If we have the following complete self-certification:
 
-    UID:udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;
+    UID:lolcat
     META:TS:1409990782
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     
@@ -178,7 +175,7 @@ A valid certification could be:
     
 Over the following data:
 
-    UID:udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;
+    UID:lolcat
     META:TS:1409990782
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     META:TS:1509991044
@@ -240,7 +237,7 @@ Transaction is the support of money: it allows to materialize coins' ownership. 
     PUBLIC_KEY:INDEX
     ...
     Inputs:
-    INDEX:SOURCE:FINGERPRINT
+    INDEX:SOURCE:FINGERPRINT:AMOUNT
     ...
     Outputs:
     PUBLIC_KEY:AMOUNT
@@ -262,7 +259,7 @@ A Transaction structure is considered *valid* if:
 
 * Field `Currency` is not empty.
 * Field `Issuers` is a multiline field whose lines are Base58 strings of 44 characters.
-* Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`, `F`), a colon and a SHA-1 hash
+* Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`, `F`), a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
 * Signatures of `Issuers` are provided and **ALL** verify this structure
 
@@ -275,9 +272,10 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its va
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8
+    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:30
     Outputs:
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
+    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:25
+    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:5
     
 Signatures (fake here):
 
@@ -285,17 +283,17 @@ Signatures (fake here):
 
 #### Example 2
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction + 1 UD + 1 fee (their respective value are not known but the supposed sum could be 30).
+Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction + 1 UD + 1 fee.
 
     Version: 1
     Currency: beta_brousouf
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8
-    0:T:F80993776FB55154A60B3E58910C942A347964AD
-    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B
-    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097
+    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:4
+    0:T:F80993776FB55154A60B3E58910C942A347964AD:6
+    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:11
+    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097:9
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     
@@ -314,13 +312,13 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
     Inputs:
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8
-    0:T:F80993776FB55154A60B3E58910C942A347964AD
-    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B
-    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097
-    1:T:F80993776FB55154A60B3E58910C942A347964AD
-    2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91
-    2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4
+    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
+    0:T:F80993776FB55154A60B3E58910C942A347964AD:8
+    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
+    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097:10
+    1:T:F80993776FB55154A60B3E58910C942A347964AD:200
+    2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
+    2:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156
@@ -339,7 +337,7 @@ A transaction may be described under a more compact format, to be used under [Bl
     TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS
     PUBLIC_KEY:INDEX
     ...
-    INDEX:SOURCE:FINGERPRINT
+    INDEX:SOURCE:FINGERPRINT:AMOUNT
     ...
     PUBLIC_KEY:AMOUNT
     ...
@@ -352,13 +350,13 @@ Here is an example compacting above [example 3](#example-3):
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8
-    0:T:F80993776FB55154A60B3E58910C942A347964AD
-    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B
-    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097
-    1:T:F80993776FB55154A60B3E58910C942A347964AD
-    2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91
-    2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4
+    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
+    0:T:F80993776FB55154A60B3E58910C942A347964AD:8
+    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
+    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097:10
+    1:T:F80993776FB55154A60B3E58910C942A347964AD:120
+    2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
+    2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4:100
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156
     6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:4942yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
@@ -387,7 +385,8 @@ A Block is a document gathering both:
     Currency: CURRENCY
     Nonce: NONCE
     Number: BLOCK_NUMBER
-    Timestamp: GENERATED_ON
+    Date: GENERATED_ON
+    ConfirmedDate: CONFIRMED_DATE
     UniversalDividend: DIVIDEND_AMOUNT
     Fees: FEES_AMOUNT
     Issuer: ISSUER_KEY
@@ -395,13 +394,13 @@ A Block is a document gathering both:
     PreviousIssuer: PREVIOUS_ISSUER_KEY
     MembersCount: WOT_MEM_COUNT
     Identities:
-    PUBLIC_KEY:SIGNATURE:TIMESTAMP:UDID2
+    PUBLIC_KEY:SIGNATURE:TIMESTAMP:USER_ID
     ...
     Joiners:
-    PUBLIC_KEY:SIGNATURE:TIMESTAMP
+    PUBLIC_KEY:SIGNATURE:TIMESTAMP:CERTTS:USER_ID
     ...
     Leavers:
-    PUBLIC_KEY:SIGNATURE:TIMESTAMP
+    PUBLIC_KEY:SIGNATURE:TIMESTAMP:CERTTS:USER_ID
     ...
     Excluded:
     PUBLIC_KEY
@@ -421,7 +420,8 @@ Type                  | The document type                                 | Alwa
 Currency              | The currency name                                 | Always
 Nonce                 | A arbitrary nonce value                           | Always
 Number                | The keyblock number                               | Always
-Timestamp             | Timestamp of generation                           | Always
+Date                  | Date of generation                                | Always
+ConfirmedDate         | Last confirmed date                               | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
 Fees                  | Fees amount from this block's transactions        | Always
 Issuer                | This block's issuer's public key                  | Always
@@ -441,11 +441,12 @@ To be a valid, a block must match the following rules:
 * `Version`, `Nonce`, `Number`, `MembersCount`, `UniversalDividend` and `Fees` are integer values
 * `Currency` can be any String of alphanumeric characters, space, `-` or `_`
 * `PreviousHash` is an uppercased SHA-1 hash
+* `Date` and `ConfirmedDate` have `MM/DD/YYYY` format
 * `Issuer` and `PreviousIssuer` are [Public keys](#publickey)
 * `Identities` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
-  * `UDID2` : an [udid2](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_Authentication_Mechanisms.draft.txt#L164) string
+  * `USER_ID` : an identifier
 * `Joiners` and `Leavers` are multiline fields composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
@@ -592,6 +593,7 @@ sigQty      | Minimum quantity of signatures to join/stay in the keychain
 stepMax     | Maximum step between the WoT and individual and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
 powPeriod   | Number of written blocks to wait to lower the PoW difficulty by 1. Value is either a `[1;+infinity[` integer or a `]0;1[` decimal value.
+incDateMin  | Minimum number of confirmations to increment the current date.
 
 ### Computed variables
 
@@ -606,37 +608,128 @@ members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)`, `keychain(t
 Peer document is to be considered *neutral*, i.e. it does not have specific rules of interpretation. If a P2P node receives such document, it is free on how to handle it.
 
 ### Block
-A Block can be accepted only if it respects the following rules.
+A Block can be accepted only if it respects a set of rules, here divided in 2 parts : *local* and *global*.
 
-#### Certifications
+#### Local validation
 
-* Only members' certifications can be added in a block
-* A same certification (same key being signed by another key twice or more) cannot happen twice in a `[sigDelay]` duration interval
+Local validation verifies the coherence of a well-formatted block, withtout any other context than the block itself.
 
-#### Valid membership
-A membership is to be considered valid if it matches the following rules:
+##### Signature
 
-* The membership must be [well formated](#membership)
-* The membership must be signed by its issuer
-* First membership MUST contain a `UserID` field with an UDID2 in it
-* First membership MUST be `IN` type
-* First membership `UserID` MUST be the same as the one in `Identities` for `Issuer`
-* Following memberships of a given key MUST NOT have an `UserID` field.
+* A block must have a valid signature over the block's content, where associated public key is block's `Issuer` field.
 
-#### Certification validity
-A signature (certification)  is considered valid if its age is less or equal to `[sigValidity]` months.
+##### Dates
 
-#### Certification requirements
-A public key can join/stay in the community only if its [certifications](#certifications) match the following rules:
+* A block must have its `Date` field greater or equal to `ConfirmedDate`.
 
-* The number of valid certifications must be at least `[sigQty]`
-* The maximum step between the key and the whole WoT (each member) must be `[stepMax]`
+##### Identities
 
-#### Members
+* A block cannot contain identities whose signature does not match identity's content
+* A block cannot have two or more identities sharing a same `USER_ID`.
+* A block cannot have two or more identities sharing a same `PUBLIC_KEY`.
+* Each identity of a block must match a `Joiner` line matching same `PUBLIC_KEY`.
 
-`MembersCount` field must match the number of members in the community with this block applied
+##### Memberships (Joiners, Leavers)
 
-#### Block fingerprint
+* A block cannot contain memberships whose signature does not match membership's content, where associated public key is membership's `PUBLIC_KEY` field.
+
+##### Members changes (Joiners, Leavers, Excluded)
+
+* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither be present one time in `Leavers` or `Excluded`.
+
+##### Certifications
+
+* A block cannot have two identical certifications (same `PUBKEY_FROM` and same `PUBKEY_TO` for the two certifications)
+
+##### Transactions
+
+* A transaction cannot have 2 identical sources
+* A transaction cannot have 2 identical recipients
+* A transaction cannot have its output sum greater than its input sum
+
+#### Global
+
+Global validation verifies the coherence of a locally-validated block, in the context of the whole blockchain, including the block.
+
+##### Definitions
+
+###### Current time
+
+Current time is the one provided by the block being currently used. For a new block, it is the new block's time. For a previous block in the blockchain, it is the previous block's time.
+
+###### Machine time
+
+Another existing time is the machine time, which is the time provided by the computer running the software implementing UCP.
+
+###### Certification validity
+A certification is to be considered valid if its age in the blockchain (date of the block adding it) is less or equal to `[sigValidity]` compared to another block.
+
+###### Member
+
+A member is a `PUBLIC_KEY` matching a valid `Identity` plus `IN` membership in the blockchain, and satisfying *WoT constraints* for a given block.
+
+###### WoT constraint
+
+WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
+
+* The minimum number of certifications coming *to* `PUBLIC_KEY` must be `[sigQtyTo]`
+* The minimum number of certifications coming *from* `PUBLIC_KEY` must be `[sigQtyFrom]`
+
+###### WoT recognition
+
+* For each WoT member: it has to exist a path, using certifications, leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` steps. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
+
+###### UD consumption
+
+A *Universal Dividend* is considered *consumed* for a member if a transaction targeting this UD was issued where this member was a signatory.
+
+###### Fees consumption
+
+A *fee* is considered *consumed* for a member if a transaction targeting this fee was issued and where this member was a signatory.
+
+###### Transaction consumption
+
+A *transaction* is considered *consumed* for a public key if a transaction targeting this transaction was issued and where this public key was present in the outputs.
+
+##### Dates
+
+* A block's `ConfirmedDate` has to be equal to *last* (in time value) confirmed date.
+* A `Date` is considered confirmed if at least `incDateMin` blocks with this date were written consecutively.
+* A block confirming (i.e., whose confirmation is the `incDateMin`<sup>th</sup>) new date must have its `Date` equal to `ConfirmedDate`.
+* Root block's `Date` is a confirmed date.
+
+##### Identity
+
+* The blockchain cannot contain two or more identities sharing a same `USER_ID`.
+* The blockchain cannot contain two or more identities sharing a same `PUBLIC_KEY`.
+
+##### Joiners
+
+* A given `PUBLIC_KEY` cannot be in `Joiners` if its last occurrence is in `Joiners`.
+* `PUBLIC_KEY`, `USER_ID` and `CERTTS` must match for exatly one identity of the blockchain.
+* A joining key must be recognized by the WoT (WoT recognition rule).
+
+##### Leavers
+
+* A given `PUBLIC_KEY` cannot be in `Leavers` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
+* `PUBLIC_KEY`, `USER_ID` and `CERTTS` must match for exatly one identity of the blockchain.
+
+##### Excluded
+
+* A given `PUBLIC_KEY` cannot be in `Excluded` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
+* Each `PUBLIC_KEY` which was a member before previous block was applied and became non-member after it was applied **must** be present in the `Excluded` field. These keys are to be considered as non-members for this block.
+
+##### Certifications
+
+* A certification's `PUBKEY_FROM` and `PUBKEY_TO` must be members of the WoT (this block included).
+* A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
+* A same certification (same `PUBKEY_FROM` and same `PUBKEY_TO`) cannot be made twice in interval [`lastCertificationBlockTime`, `lastCertificationBlockTime` + `sigDelay`[.
+
+##### MembersCount
+
+`MembersCount` field must match the number of members in the community with this block `Joiners`, `Leavers` and `Excluded` applied.
+
+##### Block fingerprint
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
     NB_ZEROS = MAX [ powZeroMin ; powZeroMin + lastBlockPenality - FLOOR(nbWaitedPeriods) ]
@@ -644,8 +737,7 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 Where:
 
 * `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`. If no block has been written by the member, `[lastBlockPenality] = 0`.
-* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member, divided by `[powPeriodComputed]`.
-    * Note: number of validated blocks is `current` and  `newblock` **excluded**
+* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member (`current` and  `newblock` **excluded**), divided by `[powPeriodComputed]`:
     * `[powPeriodComputed] = [powPeriod]` if `[powPeriod]`'s value is between `[1;+inf[`
     * `[powPeriodComputed] = FLOOR([powPeriod] * N)` if `[powPeriod]`'s value is between `]0;1[`
     * `N` if the number of members *before* new block, so that `[powPeriodComputed]` can be computed *for new block*
@@ -653,44 +745,43 @@ Where:
 
 > Those 2 rules (penality and waited periods) ensures a shared control of the keychain writing.
 
-#### Block timestamp
-A node SHOULD NOT accept a new block if `Timestamp` field does not match the `network-adjusted-time`, more or less a `30 seconds` interval.
+##### Universal Dividend
 
-`network-adjusted-time` is defined as the median of all connected member peers' time, including self-peer. If the median timestamp is a real, it is rounded to integer.
+* Universal Dividend must be present if previous block changed `ConfirmedDate`'s value and that `ConfirmedDate` value is over `lastUDTime` + `dt`.
+* `lastUDTime` is the `ConfirmedDate` of the last block with `UniversalDividend` in it
+* Initial value of `lastUDTime` equals to the root block's `ConfirmedDate`.
+* Value of `UniversalDividend` equals to:
 
-#### Transactions
+```
+MAX(UD(t) ; c * M(t) / N(t+1) )
+```
 
-A transaction is to be considered valid according to the following rules.
+Where:
 
-##### Inputs
+* `t` is the number of times `UniversalDividend` field appeared in the blockchain (this block excluded)
+* `c` equals to `c` parameter of this protocol
+* `UD(t)` equals to `UniversalDividend` of the `t`<sup>th</sup> block with `UniversalDividend`
+* `N(t)` equals to `MembersCount` of the `t`<sup>th</sup> block with `UniversalDividend`
+* `M(t)` equals to the sum of all `UD(t)*N(t)` of the blockchain
+* `UD(0)` equals to `ud0` parameter of this protocol
+* `M(0) = 0`
+* `N(0) = 0`
+* `N(t+1)` equals to this block's `MembersCount` field
 
-As a general rule, any input from a transaction *MUST drain all the money from its source*. Sources are:
+##### Transactions
 
-* Universal Dividend (1 per member & per block)
-* Fees (1 per block)
-* Transactions' outputs (1 per output)
+Each transaction must follow below rules:
 
-This involves 3 consequences: a transaction input refering to:
+* UD sources must be legitimate (signatory must be a member for this UD)
+* Fees sources must be legitimate (signatory must be `Issuer` of the block with the corresponding fees)
+* UD sources must not be consumed twice by a same public key
+* Fees sources must not be consumed twice by a same public key
 
-* Universal Dividend must have the exact same amount as the refered block's `UniversalDividend` field.
-* transaction fees must have the exact same amount as the refered block's `Fees` field.
-* transaction output must have the exact same amount as the refered transaction output value.
+###### Amounts
 
-##### Sources limits
-
-Each money source can be pointed only once by a transaction.
-
-##### Sources owner
-
-For each source, an owner is *ALWAYS* defined. Only the owner may refer to it as an input for a transaction. Source owner is defined as the following:
-
-* For each transaction output, the *owner* is defined as the output *public key*.
-* For each Block's fees, the *owner* is defined as the `Issuer` of the block
-* For each Block's dividend, `N` *owners* are defined as the members of WoT for this block
-
-##### Members for a block
-
-For a given block, members are defined as the *public keys* for which last occurrence in previous or current block is in `Joiners`.
+* For each UD source, the amount must match the exact targeted UD value
+* For each Fee source, the amount must match the exact targeted Fee value
+* For each Transaction source, the amount must match the exact Output value
 
 ### Status
 The network needs to be able to discover new peers inside it and eventually know their state to efficiently send data to them. For that purpose [Status](./#status) messages are used to introduce nodes to each other and keep a bilateral state of the connection.

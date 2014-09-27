@@ -40,8 +40,8 @@ function LocalValidator () {
       done('Each identity must match a join membership line with same userid and certts');
       return;
     }
-    if (false) {
-      done('Block cannot contain a same pubkey more than once is joiners, leavers and excluded');
+    if (hasMultipleTimesAPubkeyForKeyChanges(block)) {
+      done('Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
       return;
     }
     if (false) {
@@ -83,9 +83,9 @@ function hasPubkeyConflictInIdentities (block) {
   var i = 0;
   var conflict = false;
   while (!conflict && i < block.identities.length) {
-    var uid = block.identities[i].split(':')[0];
-    conflict = ~pubkeys.indexOf(uid);
-    pubkeys.push(uid);
+    var pubk = block.identities[i].split(':')[0];
+    conflict = ~pubkeys.indexOf(pubk);
+    pubkeys.push(pubk);
     i++;
   }
   return conflict;
@@ -116,4 +116,34 @@ function hasEachIdentityMatchesAJoin (block) {
     i++;
   }
   return matchCount != uids.length;
+}
+
+function hasMultipleTimesAPubkeyForKeyChanges (block) {
+  var pubkeys = [];
+  var conflict = false;
+  // Joiners
+  var i = 0;
+  while (!conflict && i < block.joiners.length) {
+    var pubk = block.joiners[i].split(':')[0];
+    conflict = ~pubkeys.indexOf(pubk);
+    pubkeys.push(pubk);
+    i++;
+  }
+  // Leavers
+  i = 0;
+  while (!conflict && i < block.leavers.length) {
+    var pubk = block.leavers[i].split(':')[0];
+    conflict = ~pubkeys.indexOf(pubk);
+    pubkeys.push(pubk);
+    i++;
+  }
+  // Excluded
+  i = 0;
+  while (!conflict && i < block.excluded.length) {
+    var pubk = block.excluded[i].split(':')[0];
+    conflict = ~pubkeys.indexOf(pubk);
+    pubkeys.push(pubk);
+    i++;
+  }
+  return conflict;
 }

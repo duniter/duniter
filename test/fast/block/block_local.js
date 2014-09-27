@@ -41,6 +41,26 @@ describe("Block local coherence", function(){
       assert.equal(err, 'Each identity must match a join membership line with same userid and certts');
       done();
     }));
+
+    it('Block cannot contain a same pubkey more than once in joiners', validate(blocks.MULTIPLE_JOINS, function (err, done) {
+      assert.equal(err, 'Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
+      done();
+    }));
+
+    it('Block cannot contain a same pubkey more than once in leavers', validate(blocks.MULTIPLE_LEAVES, function (err, done) {
+      assert.equal(err, 'Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
+      done();
+    }));
+
+    it('Block cannot contain a same pubkey more than once in excluded', validate(blocks.MULTIPLE_EXCLUDED, function (err, done) {
+      assert.equal(err, 'Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
+      done();
+    }));
+
+    it('Block cannot contain a same pubkey more than once in joiners, leavers and excluded', validate(blocks.MULTIPLE_OVER_ALL, function (err, done) {
+      assert.equal(err, 'Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
+      done();
+    }));
   });
   
 });

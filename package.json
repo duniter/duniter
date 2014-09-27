@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --growl test/fast test/medium",
+    "test": "mocha --growl test/fast test/fast/block test/medium",
     "start": "bin/ucoin"
   },
   "repository": {

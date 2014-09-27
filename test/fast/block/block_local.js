@@ -15,6 +15,11 @@ describe("Block local coherence", function(){
     done();
   }));
 
+  it('with correct leave should pass', validate(blocks.CORRECTLY_SIGNED_LEAVE, function (err, done) {
+    assert.equal(err, 'Signature must match');
+    done();
+  }));
+
   describe("should be rejected", function(){
 
     it('block with wrong signature', validate(blocks.WRONG_SIGNATURE, function (err, done) {
@@ -69,6 +74,16 @@ describe("Block local coherence", function(){
 
     it('Block cannot contain wrongly signed identities', validate(blocks.WRONGLY_SIGNED_IDENTITIES, function (err, done) {
       assert.equal(err, 'Identity\'s signature must match');
+      done();
+    }));
+
+    it('Block cannot contain wrongly signed join', validate(blocks.WRONGLY_SIGNED_JOIN, function (err, done) {
+      assert.equal(err, 'Membership\'s signature must match');
+      done();
+    }));
+
+    it('Block cannot contain wrongly signed leave', validate(blocks.WRONGLY_SIGNED_LEAVE, function (err, done) {
+      assert.equal(err, 'Membership\'s signature must match');
       done();
     }));
   });

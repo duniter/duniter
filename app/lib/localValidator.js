@@ -1,7 +1,8 @@
-var crypto   = require('./crypto');
-var common   = require('./common');
-var mongoose = require('mongoose');
-var Identity = mongoose.model('Identity', require('../models/identity'));
+var crypto     = require('./crypto');
+var common     = require('./common');
+var mongoose   = require('mongoose');
+var Identity   = mongoose.model('Identity', require('../models/identity'));
+var Membership = mongoose.model('Membership', require('../models/membership'));
 
 module.exports = function () {
   
@@ -15,12 +16,12 @@ function LocalValidator () {
       done('Identity\'s signature must match');
       return;
     }
-    if (!crypto.verify(block.getRaw(), block.signature, block.issuer)) {
-      done('Signature must match');
+    if (hasWrongSignatureForMemberships(block)) {
+      done('Membership\'s signature must match');
       return;
     }
-    if (false) {
-      done('Membership\'s signature must match');
+    if (!crypto.verify(block.getRaw(), block.signature, block.issuer)) {
+      done('Signature must match');
       return;
     }
     done(null, true);
@@ -170,6 +171,25 @@ function hasWrongSignatureForIdentities (block) {
   while (!wrongSig && i < block.identities.length) {
     var idty = Identity.fromInline(block.identities[i]);
     wrongSig = !crypto.verify(idty.selfCert(), idty.sig, idty.pubkey);
+    i++;
+  }
+  return wrongSig;
+}
+
+function hasWrongSignatureForMemberships (block) {
+  var i = 0;
+  var wrongSig = false;
+  // Joiners
+  while (!wrongSig && i < block.joiners.length) {
+    var ms = Membership.fromInline(block.joiners[i], 'IN', block.currency);
+    wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
+    i++;
+  }
+  // Leavers
+  i = 0;
+  while (!wrongSig && i < block.leavers.length) {
+    var ms = Membership.fromInline(block.leavers[i], 'OUT', block.currency);
+    wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }
   return wrongSig;

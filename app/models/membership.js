@@ -110,16 +110,18 @@ MembershipSchema.methods = {
   }
 }
 
-MembershipSchema.statics.fromInline = function (inlineMS, type) {
+MembershipSchema.statics.fromInline = function (inlineMS, type, currency) {
   var Membership = this.model('Membership');
   var sp = inlineMS.split(':');
   return new Membership({
     version:    1,
+    currency:   currency,
     issuer:     sp[0],
     membership: type,
     type:       type,
     date:       new Date(parseInt(sp[2])*1000),
-    userid:     '',
+    certts:     new Date(parseInt(sp[3])*1000),
+    userid:     sp[4],
     signature:  sp[1]
   });
 }

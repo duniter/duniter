@@ -66,7 +66,7 @@ module.exports = new function() {
     raw += "Membership: " + json.membership + "\n";
     if (json.userid)
       raw += "UserID: " + json.userid + "\n";
-    if (json.certts)
+    if (!isNaN(json.certts))
       raw += "CertTS: " + json.certts.timestamp() + "\n";
     return dos2unix(raw);
   };

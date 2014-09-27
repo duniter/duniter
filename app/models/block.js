@@ -12,7 +12,8 @@ var BlockSchema = new Schema({
   currency: String,
   nonce: {"type": Number, "default": 0},
   number: {"type": Number, "default": 0},
-  timestamp: {"type": Number, "default": 0},
+  date: {"type": Number, "default": 0},
+  confirmedDate: {"type": Number, "default": 0},
   previousHash: String,
   previousIssuer: String,
   membersCount: {"type": Number, "default": 0},
@@ -43,7 +44,8 @@ BlockSchema.methods = {
       "version",
       "nonce",
       "number",
-      "timestamp",
+      "date",
+      "confirmedDate",
       "membersCount",
     ].forEach(function(field){
       json[field] = parseInt(that[field], 10);
@@ -93,6 +95,7 @@ BlockSchema.methods = {
         json[field].push(_(obj).omit('raw', 'certifiers', 'hash'));
       });
     });
+    json.raw = this.getRaw();
     return json;
   },
 

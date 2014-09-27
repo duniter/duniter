@@ -17,7 +17,8 @@ function BlockParser (onError) {
     {prop: "currency",        regexp: /Currency: (.*)/},
     {prop: "nonce",           regexp: /Nonce: (.*)/},
     {prop: "number",          regexp: /Number: (.*)/},
-    {prop: "timestamp",       regexp: /Timestamp: (.*)/},
+    {prop: "date",            regexp: /Date: (.*)/},
+    {prop: "confirmedDate",   regexp: /ConfirmedDate: (.*)/},
     {prop: "dividend",        regexp: /UniversalDividend: (.*)/},
     {prop: "fees",            regexp: /Fees: (.*)/},
     {prop: "issuer",          regexp: /Issuer: (.*)/},
@@ -74,9 +75,14 @@ function BlockParser (onError) {
         err = {code: codes['BAD_NUMBER'], message: "Incorrect Number field"};
     }
     if(!err){
-      // Timestamp
-      if(!obj.timestamp || !obj.timestamp.match(constants.INTEGER))
-        err = {code: codes['BAD_SENDER'], message: "Timestamp must be an integer"};
+      // Date
+      if(!obj.date || !obj.date.match(constants.INTEGER))
+        err = {code: codes['BAD_SENDER'], message: "Date must be an integer"};
+    }
+    if(!err){
+      // ConfirmedDate
+      if(!obj.confirmedDate || !obj.confirmedDate.match(constants.INTEGER))
+        err = {code: codes['BAD_SENDER'], message: "ConfirmedDate must be an integer"};
     }
     if(!err){
       if(obj.dividend && !obj.dividend.match(constants.INTEGER))

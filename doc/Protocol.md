@@ -438,10 +438,9 @@ Transactions          | A liste of compact transactions                   | Alwa
 To be a valid, a block must match the following rules:
 
 ##### Format
-* `Version`, `Nonce`, `Number`, `MembersCount`, `UniversalDividend` and `Fees` are integer values
+* `Version`, `Nonce`, `Number`, `Date`, `ConfirmedDate`, `MembersCount`, `UniversalDividend` and `Fees` are integer values
 * `Currency` can be any String of alphanumeric characters, space, `-` or `_`
 * `PreviousHash` is an uppercased SHA-1 hash
-* `Date` and `ConfirmedDate` have `MM/DD/YYYY` format
 * `Issuer` and `PreviousIssuer` are [Public keys](#publickey)
 * `Identities` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)

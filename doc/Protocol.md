@@ -400,7 +400,7 @@ A Block is a document gathering both:
     PUBLIC_KEY:SIGNATURE:TIMESTAMP:CERTTS:USER_ID
     ...
     Leavers:
-    PUBLIC_KEY:SIGNATURE:TIMESTAMP:CERTTS:USER_ID
+    PUBLIC_KEY:SIGNATURE:TIMESTAMP
     ...
     Excluded:
     PUBLIC_KEY

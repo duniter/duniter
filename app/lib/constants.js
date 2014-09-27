@@ -43,7 +43,7 @@ module.exports = {
     INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + USER_ID)
   },
   BLOCK: {
-    JOINER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP),
+    JOINER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":(" + TIMESTAMP + ")?:(" + USER_ID + ")?"),
     LEAVER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP),
     EXCLUDED: exact(PUBKEY),
   },

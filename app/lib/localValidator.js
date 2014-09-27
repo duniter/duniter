@@ -36,7 +36,7 @@ function LocalValidator () {
       done('A block must have its Date greater or equal to ConfirmedDate');
       return;
     }
-    if (false) {
+    if (hasEachIdentityMatchesAJoin(block)) {
       done('Each identity must match a join membership line with same userid and certts');
       return;
     }
@@ -95,4 +95,25 @@ function hasDateLowerThanConfirmedDate (block) {
   var dateInt = parseInt(block.date);
   var confirmedInt = parseInt(block.confirmedDate);
   return dateInt < confirmedInt;
+}
+
+function hasEachIdentityMatchesAJoin (block) {
+  // N.B.: this function does not test for potential duplicates in
+  // identities and/or joiners, this is another test responsability
+  var uids = [];
+  block.identities.forEach(function(inline){
+    var sp = inline.split(':');
+    var pubk = sp[0], ts = sp[2], uid = sp[3];
+    uids.push([pubk, ts, uid].join(':'));
+  });
+  var matchCount = 0;
+  var i = 0;
+  while (i < block.joiners.length) {
+    var sp = block.joiners[i].split(':');
+    var pubk = sp[0], ts = sp[3], uid = sp[4];
+    var pattern = [pubk, ts, uid].join(':');
+    if (~uids.indexOf(pattern)) matchCount++;
+    i++;
+  }
+  return matchCount != uids.length;
 }

@@ -36,6 +36,11 @@ describe("Block local coherence", function(){
       assert.equal(err, 'A block must have its Date greater or equal to ConfirmedDate');
       done();
     }));
+
+    it('a block with identities not matchin joins', validate(blocks.WRONG_IDTY_MATCH_JOINS, function (err, done) {
+      assert.equal(err, 'Each identity must match a join membership line with same userid and certts');
+      done();
+    }));
   });
   
 });

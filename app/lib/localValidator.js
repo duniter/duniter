@@ -1,4 +1,7 @@
-var crypto = require('./crypto');
+var crypto   = require('./crypto');
+var common   = require('./common');
+var mongoose = require('mongoose');
+var Identity = mongoose.model('Identity', require('../models/identity'));
 
 module.exports = function () {
   
@@ -8,12 +11,12 @@ module.exports = function () {
 function LocalValidator () {
 
   this.checkSignatures = function (block, done) {
-    if (!crypto.verify(block.getRaw(), block.signature, block.issuer)) {
-      done('Signature must match');
+    if (hasWrongSignatureForIdentities(block)) {
+      done('Identity\'s signature must match');
       return;
     }
-    if (false) {
-      done('Identity\'s signature must match');
+    if (!crypto.verify(block.getRaw(), block.signature, block.issuer)) {
+      done('Signature must match');
       return;
     }
     if (false) {
@@ -159,4 +162,15 @@ function hasIdenticalCertifications (block) {
     i++;
   }
   return conflict;
+}
+
+function hasWrongSignatureForIdentities (block) {
+  var i = 0;
+  var wrongSig = false;
+  while (!wrongSig && i < block.identities.length) {
+    var idty = Identity.fromInline(block.identities[i]);
+    wrongSig = !crypto.verify(idty.selfCert(), idty.sig, idty.pubkey);
+    i++;
+  }
+  return wrongSig;
 }

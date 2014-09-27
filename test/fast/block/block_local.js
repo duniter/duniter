@@ -66,6 +66,11 @@ describe("Block local coherence", function(){
       assert.equal(err, 'Block cannot contain identical certifications (A -> B)');
       done();
     }));
+
+    it('Block cannot contain wrongly signed identities', validate(blocks.WRONGLY_SIGNED_IDENTITIES, function (err, done) {
+      assert.equal(err, 'Identity\'s signature must match');
+      done();
+    }));
   });
   
 });

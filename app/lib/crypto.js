@@ -1,7 +1,9 @@
-var nacl   = require('tweetnacl');
-var scrypt = require('scrypt');
-var base58 = require('./base58');
+var nacl        = require('tweetnacl');
+var scrypt      = require('scrypt');
+var base58      = require('./base58');
+var naclBinding = require('../../naclb');
 
+const crypto_sign_BYTES = 64;
 var SEED_LENGTH = 32; // Length of the key
 // TODO: change key parameters
 var TEST_PARAMS = {
@@ -24,11 +26,31 @@ module.exports = {
   * Verify a signature against data & public key.
   * Return true of false as callback argument.
   */
-  verify: function (msg, sig, pub, done) {
+  verifyOld: function (msg, sig, pub, done) {
     var dMsg = nacl.util.decodeUTF8(msg);
     var dSig = nacl.util.decodeBase64(sig);
     var dPub = base58.decode(pub);
     var verified = nacl.sign.detached.verify(dMsg, dSig, dPub);
+    if (typeof done == 'function') done(null, verified);
+    return verified;
+  },
+
+  /**
+  * Verify a signature against data & public key.
+  * Return true of false as callback argument.
+  */
+  verify: function (rawMsg, rawSig, rawPub, done) {
+    var msg = nacl.util.decodeUTF8(rawMsg);
+    var sig = nacl.util.decodeBase64(rawSig);
+    var pub = base58.decode(rawPub);
+    var m = new Uint8Array(crypto_sign_BYTES + msg.length);
+    var sm = new Uint8Array(crypto_sign_BYTES + msg.length);
+    var i;
+    for (i = 0; i < crypto_sign_BYTES; i++) sm[i] = sig[i];
+    for (i = 0; i < msg.length; i++) sm[i+crypto_sign_BYTES] = msg[i];
+
+    // Call to verification lib...
+    verified = naclBinding.verify(m, sm, pub);
     if (typeof done == 'function') done(null, verified);
     return verified;
   },

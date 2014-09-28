@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "mocha --growl test/fast test/fast/block test/medium",
+    "preinstall": "npm install ./naclb",
     "start": "bin/ucoin"
   },
   "repository": {
@@ -41,8 +42,7 @@
     "inquirer": "~0.5.0",
     "event-stream": "3.1.5",
     "tweetnacl": "0.11.2",
-    "scrypt": "3.0.1",
-    "naclb": "file:./naclb"
+    "scrypt": "3.0.1"
   },
   "devDependencies": {
     "mocha": "",

@@ -10,10 +10,12 @@ typedef unsigned long long u64;
 typedef long long i64;
 typedef i64 gf[16];
 
+const int crypto_sign_BYTES = 64;
+
 using namespace v8;
 
 /**
-* Verify signature using Ed25519 scheme.
+* Verifies a signature using Ed25519 scheme.
 *
 * arg0 (Uint8Array): clear message to be verified
 * arg1 (Uint8Array): signature to check message against
@@ -46,11 +48,48 @@ Handle<Value> Verify(const Arguments& args) {
     return scope.Close(Boolean::New(false));  
 }
 
-// TODO: Sign
+/**
+* Signs a message using Ed25519 scheme.
+*
+* arg0 (Uint8Array): clear message to be signed
+* arg1 (Uint8Array): sec key to use for verification
+*/
+Handle<Value> Sign(const Arguments& args) {
+  HandleScope scope;
+
+  // Reading clear message
+  Local<Object> msg = args[0]->ToObject();
+  u64 mlen = msg->GetIndexedPropertiesExternalArrayDataLength();
+  const u8* m = static_cast<u8*>(msg->GetIndexedPropertiesExternalArrayData());
+
+  // Reading public key
+  Local<Object> sec = args[1]->ToObject();
+  const u8* seck = static_cast<u8*>(sec->GetIndexedPropertiesExternalArrayData());
+  
+  u8* sm;
+  u64 smlen = 0;
+
+  sm = (u8*) malloc(mlen + crypto_sign_BYTES);
+
+  // Signing
+  crypto_sign(sm,&smlen,m,mlen,seck);
+
+  // Result
+  Local<Value> size = Integer::NewFromUnsigned(smlen);
+  Local<Object> array = Array::New(size->IntegerValue());
+
+  for (int i = 0; i < size->IntegerValue(); i++) {
+    array->Set(i, Integer::NewFromUnsigned(sm[i]));
+  }
+
+  return scope.Close(array);
+}
 
 void Init(Handle<Object> exports) {
   exports->Set(String::NewSymbol("verify"),
       FunctionTemplate::New(Verify)->GetFunction());
+  exports->Set(String::NewSymbol("sign"),
+      FunctionTemplate::New(Sign)->GetFunction());
 }
 
 NODE_MODULE(nacl, Init)

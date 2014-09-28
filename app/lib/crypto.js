@@ -18,6 +18,14 @@ var enc = nacl.util.encodeBase64,
 module.exports = {
 
   sign: function (msg, sec, done) {
+    var m = nacl.util.decodeUTF8(msg);
+    var signedMsg = naclBinding.sign(m, sec);
+    var sig = new Uint8Array(crypto_sign_BYTES);
+    for (var i = 0; i < sig.length; i++) sig[i] = signedMsg[i];
+    done(null, nacl.util.encodeBase64(sig));
+  },
+
+  sign2: function (msg, sec, done) {
     var sig = nacl.sign.detached(nacl.util.decodeUTF8(msg), sec);
     done(null, nacl.util.encodeBase64(sig));
   },

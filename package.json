@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "mocha --growl test/fast test/fast/block test/medium",
-    "preinstall": "npm install ./naclb",
+    "preinstall": "cd naclb && npm install ./",
     "start": "bin/ucoin"
   },
   "repository": {

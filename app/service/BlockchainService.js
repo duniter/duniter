@@ -1182,21 +1182,26 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           block.date = newTS;
         }
         raw = block.getRaw();
-        sigFunc(raw, function (err, sigResult) {
-          sig = dos2unix(sigResult);
-          var full = raw + sig + '\n';
-          pow = full.hash();
-          testsCount++;
-          if (testsCount % 100 == 0) {
-            process.stdout.write('.');
-          } else if (testsCount % 50 == 0) {
-            if (newKeyblockCallback) {
-              computationActivated = false
-              next('New block received');
+        async.waterfall([
+          function (next){
+            sigFunc(raw, next);
+          },
+          function (sigResult, next){
+            sig = dos2unix(sigResult);
+            var full = raw + sig + '\n';
+            pow = full.hash();
+            testsCount++;
+            if (testsCount % 100 == 0) {
+              process.stdout.write('.');
+            } else if (testsCount % 50 == 0) {
+              if (newKeyblockCallback) {
+                computationActivated = false
+                next('New block received');
+              }
             }
-          }
-          next();
-        });
+            next();
+          },
+        ], next);
       }, function (err) {
         if (err) {
           logger.debug('Proof-of-work computation canceled: valid block received');

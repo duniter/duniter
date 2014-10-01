@@ -8,6 +8,7 @@ var parsers   = require('../lib/streams/parsers/doc');
 var logger    = require('../lib/logger')('blockchain');
 var signature = require('../lib/signature');
 var constants = require('../lib/constants');
+var validator = require('../lib/localValidator');
 var moment    = require('moment');
 var inquirer  = require('inquirer');
 
@@ -96,6 +97,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var newLinks;
     async.waterfall([
       function (next){
+        validator().validate(block, next);
+      },
+      function (validated, next){
+        validator().checkSignatures(block, next);
+      },
+      function (validated, next){
         Block.current(function (err, obj) {
           next(null, obj || null);
         })

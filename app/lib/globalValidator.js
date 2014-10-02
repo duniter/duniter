@@ -111,7 +111,17 @@ function GlobalValidator (dao) {
   }
 
   function checkIdentityUnicity (block, done) {
-    done();
+    async.forEach(block.identities, function(inlineIdentity, callback){
+      var idty = Identity.fromInline(inlineIdentity);
+      async.waterfall([
+        function (next){
+          dao.existsUserID(idty.uid, next);
+        },
+        function (exists, next){
+          next(exists ? 'Identity already used' : null);
+        },
+      ], callback);
+    }, done);
   }
 
   function checkPubkeyUnicity (block, done) {

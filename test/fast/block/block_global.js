@@ -11,7 +11,7 @@ var Identity  = mongoose.model('Identity', require('../../../app/models/identity
 
 describe("Block local coherence", function(){
 
-  it('a valid block should not have certification error', validate(blocks.VALID_ROOT, function (err, done) {
+  it('a valid block should not have any error', validate(blocks.VALID_ROOT, function (err, done) {
     should.not.exist(err);
     done();
   }));
@@ -31,6 +31,12 @@ describe("Block local coherence", function(){
   it('a block with certification to non-member pubkey should fail', validate(blocks.UNKNOWN_CERTIFIED, function (err, done) {
     should.exist(err);
     err.should.equal('Certification to non-member');
+    done();
+  }));
+
+  it('a block with already used UserID should fail', validate(blocks.EXISTING_UID, function (err, done) {
+    should.exist(err);
+    err.should.equal('Identity already used');
     done();
   }));
 
@@ -60,6 +66,14 @@ function validate (raw, callback) {
 * Mock dao for testing
 */
 function BlockCheckerDao (block) {
+  
+  this.existsUserID = function (uid, done) {
+    if (uid == 'EXISTING') {
+      done(null, true);
+    } else {
+      done(null, false);
+    }
+  }
   
   this.getIdentityByPubkey = function (pubkey, done) {
     // No existing identity

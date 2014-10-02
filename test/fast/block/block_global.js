@@ -40,6 +40,12 @@ describe("Block local coherence", function(){
     done();
   }));
 
+  it('a block with already used pubkey should fail', validate(blocks.EXISTING_PUBKEY, function (err, done) {
+    should.exist(err);
+    err.should.equal('Pubkey already used');
+    done();
+  }));
+
 });
 
 function validate (raw, callback) {
@@ -69,6 +75,14 @@ function BlockCheckerDao (block) {
   
   this.existsUserID = function (uid, done) {
     if (uid == 'EXISTING') {
+      done(null, true);
+    } else {
+      done(null, false);
+    }
+  }
+  
+  this.existsPubkey = function (pubkey, done) {
+    if (pubkey == 'HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH') {
       done(null, true);
     } else {
       done(null, false);

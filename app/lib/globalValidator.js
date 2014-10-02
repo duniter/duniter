@@ -125,7 +125,17 @@ function GlobalValidator (dao) {
   }
 
   function checkPubkeyUnicity (block, done) {
-    done();
+    async.forEach(block.identities, function(inlineIdentity, callback){
+      var idty = Identity.fromInline(inlineIdentity);
+      async.waterfall([
+        function (next){
+          dao.existsPubkey(idty.pubkey, next);
+        },
+        function (exists, next){
+          next(exists ? 'Pubkey already used' : null);
+        },
+      ], callback);
+    }, done);
   }
 
   function checkLeaversAreMembers (block, done) {

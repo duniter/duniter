@@ -25,6 +25,7 @@ function GlobalValidator (dao) {
       async.apply(checkPubkeyUnicity, block),
       async.apply(checkLeaversAreMembers, block),
       async.apply(checkExcludedAreMembers, block),
+      async.apply(checkCertificationsAreMadeByMembers, block),
       async.apply(checkCertificationsDelayIsRespected, block),
       async.apply(checkNewcomersHaveEnoughCertifications, block),
       async.apply(checkNewcomersAreNotOudistanced, block)
@@ -41,6 +42,20 @@ function GlobalValidator (dao) {
         function (idty, next){
           var selfCert = idty.selfCert();
           crypto.isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.when.timestamp(), next);
+        },
+      ], callback);
+    }, done);
+  }
+
+  function checkCertificationsAreMadeByMembers (block, done) {
+    async.forEach(block.certifications, function(inlineCert, callback){
+      var cert = Certification.fromInline(inlineCert);
+      async.waterfall([
+        function (next){
+          dao.getIdentityByPubkey(cert.from, next);
+        },
+        function (idty, next){
+          next(idty ? null : 'Certification from non-member');
         },
       ], callback);
     }, done);

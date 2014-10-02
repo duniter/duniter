@@ -124,6 +124,44 @@ BlockSchema.methods = {
     var desc = '#' + this.number + ' (';
     desc += this.identities.length + ' newcomers, ' + this.certifications.length + ' certifications)';
     return desc;
+  },
+
+  getInlineIdentity: function (pubkey) {
+    var i = 0;
+    var found = false;
+    while (!found && i < this.identities.length) {
+      if (this.identities[i].match(new RegExp('^' + pubkey)))
+        found = this.identities[i];
+      i++;
+    }
+    return found;
+  },
+
+  isLeaving: function (pubkey) {
+    var i = 0;
+    var found = false;
+    while (!found && i < this.leavers.length) {
+      if (this.leavers[i].match(new RegExp('^' + pubkey)))
+        found = true;
+      i++;
+    }
+    while (!found && i < this.excluded.length) {
+      if (this.excluded[i].match(new RegExp('^' + pubkey)))
+        found = true;
+      i++;
+    }
+    return found;
+  },
+
+  isJoining: function (pubkey) {
+    var i = 0;
+    var found = false;
+    while (!found && i < this.joiners.length) {
+      if (this.joiners[i].match(new RegExp('^' + pubkey)))
+        found = true;
+      i++;
+    }
+    return found;
   }
 };
 

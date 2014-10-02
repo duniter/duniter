@@ -62,13 +62,12 @@ function validate (raw, callback) {
 function BlockCheckerDao (block) {
   
   this.getIdentityByPubkey = function (pubkey, done) {
-    var i = 0;
-    var found = false;
-    while (!found && i < block.identities.length) {
-      if (block.identities[i].match(new RegExp('^' + pubkey)))
-        found = Identity.fromInline(block.identities[i]);
-      i++;
-    }
-    done(null, found);
+    // No existing identity
+    done(null, null);
+  }
+  
+  this.isMember = function (pubkey, done) {
+    // No existing member
+    done(null, false);
   }
 }

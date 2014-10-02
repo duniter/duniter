@@ -33,12 +33,46 @@ function GlobalValidator (dao) {
     ], done);
   };
 
+  /**
+  * Get an identity, using global scope.
+  * Considers identity collision + existence have already been checked.
+  **/
+  function getGlobalIdentity (block, pubkey, done) {
+    async.waterfall([
+      function (next){
+        var localInlineIdty = block.getInlineIdentity(pubkey);
+        if (localInlineIdty) {
+          next(null, Identity.fromInline(localInlineIdty));
+        } else {
+          dao.getIdentityByPubkey(pubkey, next);
+        }
+      },
+    ], done);
+  }
+
+  /**
+  * Check wether a pubkey is currently a member or not (globally).
+  **/
+  function isMember (block, pubkey, done) {
+    async.waterfall([
+      function (next){
+        if (block.isLeaving(pubkey)) {
+          next(null, false);
+        } else if (block.isJoining(pubkey)) {
+          next(null, true);
+        } else {
+          dao.isMember(pubkey, next);
+        }
+      },
+    ], done);
+  }
+
   function checkCertificationsAreValid (block, done) {
     async.forEach(block.certifications, function(inlineCert, callback){
       var cert = Certification.fromInline(inlineCert);
       async.waterfall([
         function (next){
-          dao.getIdentityByPubkey(cert.to, next);
+          getGlobalIdentity(block, cert.to, next);
         },
         function (idty, next){
           var selfCert = idty.selfCert();
@@ -53,7 +87,7 @@ function GlobalValidator (dao) {
       var cert = Certification.fromInline(inlineCert);
       async.waterfall([
         function (next){
-          dao.getIdentityByPubkey(cert.from, next);
+          isMember(block, cert.from, next);
         },
         function (idty, next){
           next(idty ? null : 'Certification from non-member');
@@ -67,7 +101,7 @@ function GlobalValidator (dao) {
       var cert = Certification.fromInline(inlineCert);
       async.waterfall([
         function (next){
-          dao.getIdentityByPubkey(cert.to, next);
+          isMember(block, cert.to, next);
         },
         function (idty, next){
           next(idty ? null : 'Certification to non-member');

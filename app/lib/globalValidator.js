@@ -6,12 +6,12 @@ var Identity      = mongoose.model('Identity', require('../models/identity'));
 var Membership    = mongoose.model('Membership', require('../models/membership'));
 var Certification = mongoose.model('Certification', require('../models/certification'));
 
-module.exports = function (dao) {
+module.exports = function (conf, dao) {
   
-  return new GlobalValidator(dao);
+  return new GlobalValidator(conf, dao);
 };
 
-function GlobalValidator (dao) {
+function GlobalValidator (conf, dao) {
 
   this.checkSignatures = function (block, done) {
     async.series([
@@ -147,7 +147,22 @@ function GlobalValidator (dao) {
   }
 
   function checkCertificationsDelayIsRespected (block, done) {
-    done();
+    async.forEach(block.certifications, function(inlineCert, callback){
+      var cert = Certification.fromInline(inlineCert);
+      async.waterfall([
+        function (next){
+          dao.getPreviousLinkFor(cert.from, cert.to, next);
+        },
+        function (previous, next){
+          var duration = previous && (block.confirmedDate - parseInt(previous.timestamp));
+          if (previous && (duration < conf.sigDelay)) {
+            next('Too early for this certification');
+          } else {
+            next();
+          }
+        },
+      ], callback);
+    }, done);
   }
 
   function checkNewcomersHaveEnoughCertifications (block, done) {

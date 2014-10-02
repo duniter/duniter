@@ -1,13 +1,18 @@
-var async     = require('async');
-var should    = require('should');
-var assert    = require('assert');
-var mongoose  = require('mongoose');
-var parsers   = require('../../../app/lib/streams/parsers/doc');
-var blocks    = require('../../data/blocks');
-var validator = require('../../../app/lib/globalValidator');
-var parser    = parsers.parseBlock();
-var Block     = mongoose.model('Block', require('../../../app/models/block'));
-var Identity  = mongoose.model('Identity', require('../../../app/models/identity'));
+var async         = require('async');
+var should        = require('should');
+var assert        = require('assert');
+var mongoose      = require('mongoose');
+var parsers       = require('../../../app/lib/streams/parsers/doc');
+var blocks        = require('../../data/blocks');
+var validator     = require('../../../app/lib/globalValidator');
+var parser        = parsers.parseBlock();
+var Block         = mongoose.model('Block', require('../../../app/models/block'));
+var Identity      = mongoose.model('Identity', require('../../../app/models/identity'));
+var Configuration = mongoose.model('Configuration', require('../../../app/models/configuration'));
+
+var conf = new Configuration({
+  sigDelay: 365.25*24*3600 // 1 year
+});
 
 describe("Block local coherence", function(){
 
@@ -46,6 +51,12 @@ describe("Block local coherence", function(){
     done();
   }));
 
+  it('a block with too early certification replay should fail', validate(blocks.TOO_EARLY_CERTIFICATION_REPLAY, function (err, done) {
+    should.exist(err);
+    err.should.equal('Too early for this certification');
+    done();
+  }));
+
 });
 
 function validate (raw, callback) {
@@ -57,10 +68,10 @@ function validate (raw, callback) {
       },
       function (obj, next){
         block = new Block(obj);
-        validator(new BlockCheckerDao(block)).validate(block, next);
+        validator(conf, new BlockCheckerDao(block)).validate(block, next);
       },
       function (obj, next){
-        validator(new BlockCheckerDao(block)).checkSignatures(block, next);
+        validator(conf, new BlockCheckerDao(block)).checkSignatures(block, next);
       },
     ], function (err) {
       callback(err, done);
@@ -97,5 +108,16 @@ function BlockCheckerDao (block) {
   this.isMember = function (pubkey, done) {
     // No existing member
     done(null, false);
+  }
+
+  this.getPreviousLinkFor = function (from, to, done) {
+    if (from == 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU'
+      && to == 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC') {
+      done(null, {
+        timestamp: '1380218401' // Exactly 1 second remaining
+      });
+    } else {
+      done(null, null);
+    }
   }
 }

@@ -2,6 +2,7 @@ var async     = require('async');
 var _         = require('underscore');
 var merkle    = require('merkle');
 var sha1      = require('sha1');
+var crypto    = require('../lib/crypto');
 var base64    = require('../lib/base64');
 var dos2unix  = require('../lib/dos2unix');
 var parsers   = require('../lib/streams/parsers/doc');
@@ -1148,7 +1149,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (idty, next){
         logger.info('Signature for '+ certified);
         var selfCert = idty.selfCert();
-        IdentityService.isValidCertification(selfCert, idty.sig, certifier, sig, when, next);
+        crypto.isValidCertification(selfCert, idty.sig, certifier, sig, when, next);
       },
     ], done);
   }

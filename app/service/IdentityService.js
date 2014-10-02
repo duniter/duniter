@@ -27,12 +27,6 @@ function IdentityService (conn, conf) {
     ], done);
   };
 
-  this.isValidCertification = function (selfCert, selfSig, otherPubkey, otherSig, otherTime, done) {
-    var raw = selfCert + selfSig + '\n' + 'META:TS:' + otherTime + '\n';
-    var verified = crypto.verify(raw, otherSig, otherPubkey);
-    done(verified ? null : 'Wrong signature for certification from \'' + otherPubkey + '\'');
-  }
-
   /**
   * Tries to persist a public key given in ASCII-armored format.
   * Returns the database stored public key.
@@ -52,7 +46,7 @@ function IdentityService (conn, conf) {
             if (cert.from == idty.pubkey)
               cb('Rejected certification: certifying its own self-certification has no meaning');
             else
-              that.isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.time.timestamp(), cb);
+              crypto.isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.time.timestamp(), cb);
           }, next);
         },
         function (next){

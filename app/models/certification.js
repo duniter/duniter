@@ -28,6 +28,10 @@ CertificationSchema.virtual('from').get(function () {
   return this.pubkey;
 });
 
+CertificationSchema.virtual('when').get(function () {
+  return this.time;
+});
+
 CertificationSchema.methods = {
 
   exists: function (done) {

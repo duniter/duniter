@@ -15,7 +15,15 @@ var TEST_PARAMS = {
 var enc = nacl.util.encodeBase64,
     dec = nacl.util.decodeBase64;
 
+var that = module.exports;
+
 module.exports = {
+
+  /*****************************
+  *
+  *      GENERAL CRYPTO
+  *
+  *****************************/
 
   sign: function (msg, sec, done) {
     var m = nacl.util.decodeUTF8(msg);
@@ -81,6 +89,18 @@ module.exports = {
     getScryptKey(key, salt, function(keyBytes) {
       done(null, nacl.sign.keyPair.fromSeed(keyBytes));
     });
+  },
+
+  /*****************************
+  *
+  *     FUNCTIONAL CRYPTO
+  *
+  *****************************/
+
+  isValidCertification: function (selfCert, selfSig, otherPubkey, otherSig, otherTime, done) {
+    var raw = selfCert + selfSig + '\n' + 'META:TS:' + otherTime + '\n';
+    var verified = this.verify(raw, otherSig, otherPubkey);
+    done(verified ? null : 'Wrong signature for certification');
   }
 };
 

@@ -28,6 +28,12 @@ describe("Block local coherence", function(){
     done();
   }));
 
+  it('a block with certification to non-member pubkey should fail', validate(blocks.UNKNOWN_CERTIFIED, function (err, done) {
+    should.exist(err);
+    err.should.equal('Certification to non-member');
+    done();
+  }));
+
 });
 
 function validate (raw, callback) {

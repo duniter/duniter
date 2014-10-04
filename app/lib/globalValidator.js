@@ -1,3 +1,4 @@
+var _             = require('underscore');
 var async         = require('async');
 var crypto        = require('./crypto');
 var common        = require('./common');
@@ -185,7 +186,34 @@ function GlobalValidator (conf, dao) {
   }
 
   function checkJoinersAreNotOudistanced (block, done) {
-    done();
+    var wotPubkeys = [];
+    async.waterfall([
+      function (next){
+        dao.getMembers(next);
+      },
+      function (identities, next){
+        // Stacking WoT pubkeys
+        identities.forEach(function(idty){
+          wotPubkeys.push(idty.pubkey);
+        });
+        var newLinks = getNewLinks(block);
+        // Checking distance of each member against them
+        async.forEach(block.joiners, function(inlineMembership, callback){
+          var ms = Membership.fromInline(inlineMembership);
+          async.waterfall([
+            function (next){
+              isOver3Hops(ms.issuer, wotPubkeys, newLinks, dao, next);
+            },
+            function (outdistancedCount, next){
+              if (outdistancedCount.length > 0)
+                next('Joiner is outdistanced from WoT');
+              else
+                next();
+            },
+          ], callback);
+        }, next);
+      },
+    ], done);
   }
 
 }
@@ -198,4 +226,133 @@ function getNewLinks (block) {
     newLinks[cert.to].push(cert.from);
   });
   return newLinks;
+}
+
+function isOver3Hops (pubkey, ofMembers, newLinks, dao, done) {
+  var newCertifiers = newLinks[pubkey] || [];
+  var remainingKeys = ofMembers.slice();
+  // Without self
+  remainingKeys = _(remainingKeys).difference([pubkey]);
+  var dist1Links = [];
+  async.waterfall([
+    function (next){
+      // Remove direct links (dist 1)
+      remainingKeys = _(remainingKeys).difference(newCertifiers);
+      next();
+    },
+    function (next) {
+      if (remainingKeys.length > 0) {
+        async.waterfall([
+          function (next){
+            dao.getValidLinksTo(pubkey, next);
+          },
+          function (links, next){
+            dist1Links = [];
+            links.forEach(function(lnk){
+              dist1Links.push(lnk.source);
+            });
+            // Add new certifiers as distance 1 links
+            dist1Links = _(dist1Links.concat(newCertifiers)).uniq();
+            next();
+          },
+        ], next);
+      }
+      else next();
+    },
+    function (next){
+      // Remove distance 2 links (those for whom new links make 1 distance)
+      var found = [];
+      if (remainingKeys.length > 0) {
+        async.forEachSeries(remainingKeys, function(member, callback){
+          // Exists distance 1 link?
+          async.detect(dist1Links, function (dist1member, callbackDist1) {
+            // Look in newLinks
+            var signatories = (newLinks[dist1member] || []);
+            if (~signatories.indexOf(member)) {
+              callbackDist1(true);
+              return;
+            }
+            // dist1member signed 'pubkey', so here we look for (member => dist1member => pubkey sigchain)
+            dao.getPreviousLinkFromTo(member, dist1member, function (err, links) {
+              if (links && links.length > 0) {
+                found.push(member);
+                callbackDist1(true);
+              }
+              else callbackDist1(false);
+            });
+          }, function (detected) {
+            if (detected)
+              found.push(member);
+            callback();
+          });
+        }, function(err){
+          remainingKeys = _(remainingKeys).difference(found);
+          next(err);
+        });
+      }
+      else next();
+    },
+    function (next){
+      // Remove distance 3 links (those for whom new links make 2 distance)
+      var found = [];
+      if (remainingKeys.length > 0) {
+        async.forEachSeries(remainingKeys, function(member, callback){
+          var dist2Links = [];
+
+          async.waterfall([
+            function (next){
+              // Step 1. Detect distance 1 members from current member (potential dist 2 from 'pubkey')
+              // Look in database
+              dao.getValidLinksFrom(member, function (err, links) {
+                dist2Links = [];
+                links.forEach(function(lnk){
+                  dist2Links.push(lnk.source);
+                });
+                next(err);
+              });
+              // Look in newLinks
+              _(newLinks).keys().forEach(function(signed){
+                (newLinks[signed] || []).forEach(function(signatories){
+                  if (~signatories.indexOf(member)) {
+                    dist2Links.push(signed);
+                  }
+                });
+              });
+            },
+            function (next){
+              // Step 2. Detect links between distance 2 & distance 1 members
+              async.detect(dist2Links, function (dist2member, callbackDist2) {
+                // Exists distance 1 link?
+                async.detect(dist1Links, function (dist1member, callbackDist1) {
+                  // Look in newLinks
+                  var signatories = (newLinks[dist1member] || []);
+                  if (~signatories.indexOf(dist2member)) {
+                    callbackDist1(true);
+                    return;
+                  }
+                  // dist1member signed 'pubkey', so here we look for (member => dist1member => pubkey sigchain)
+                  dao.getPreviousLinkFromTo(dist2member, dist1member, function (err, links) {
+                    if (links && links.length > 0) {
+                      callbackDist1(true);
+                    }
+                    else callbackDist1(false);
+                  });
+                }, callbackDist2);
+              }, function (detected) {
+                if (detected)
+                  found.push(member);
+                callback();
+              });
+            },
+          ], callback);
+        }, function(err){
+          remainingKeys = _(remainingKeys).difference(found);
+          next(err);
+        });
+      }
+      else next();
+    },
+  ], function (err) {
+    done(err, remainingKeys);
+  });
 }

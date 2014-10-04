@@ -680,4 +680,27 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411844660:tY5J+g3sM421sx0WNUuESUL8Zz2BU0UbtXT+nRsTlYThaDubMg/GmhsxWa0ccRJcZvftEwpENtVjyd6hyPSQCw==\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  OUTDISTANCED_JOINER: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 3\n" +
+    "Date: 1411776000\n" +
+    "ConfirmedDate: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 15978746968DB6BE3CDAF243E372FEB35F7B0924\n" +
+    "PreviousIssuer: G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1V/QnQcnJtQSSvhOFBhl7kGXBea8gKEQ6iqPNCVb41yI9gN79XGtUeHhjlumhQkPeizlzpkcNBkL8bhokiNcBQ==:1411837457:SNOW\n" +
+    "Joiners:\n" +
+    "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:1411837462:1411837457:SNOW\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411844659:kr2JA6wCGfbNKGpyM86BscsFk22aA9oiAon8mWRPl4G8UpJKZs3tjuPRAw5+04KLCRWl/TT1TumDCkeEjev7DA==\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 };

@@ -15,7 +15,7 @@ var conf = new Configuration({
   sigQty: 1
 });
 
-describe("Block local coherence", function(){
+describe("Block global coherence", function(){
 
   it('a valid block should not have any error', validate(blocks.VALID_ROOT, function (err, done) {
     should.not.exist(err);
@@ -61,6 +61,12 @@ describe("Block local coherence", function(){
   it('a block with at least one joiner without enough certifications should fail', validate(blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER, function (err, done) {
     should.exist(err);
     err.should.equal('Joiner does not gathers enough certifications');
+    done();
+  }));
+
+  it('a block with at least one joiner outdistanced from WoT should fail', validate(blocks.OUTDISTANCED_JOINER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Joiner is outdistanced from WoT');
     done();
   }));
 
@@ -114,7 +120,15 @@ function BlockCheckerDao (block) {
   
   this.isMember = function (pubkey, done) {
     // No existing member
-    done(null, false);
+    if (block.number == 0)
+      done(null, false);
+    else {
+      var members = [
+        'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU',
+      ];
+      done(null, ~members.indexOf(pubkey));
+    }
   }
 
   this.getPreviousLinkFor = function (from, to, done) {
@@ -131,4 +145,24 @@ function BlockCheckerDao (block) {
   this.getValidLinksTo = function (to, done) {
     done(null, []);
   }
+
+  this.getMembers = function (done) {
+    if (block.number == 0)
+      done(null, []);
+    else {
+      done(null, [
+        { pubkey: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
+        { pubkey: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' },
+      ]);
+    }
+  }
+
+  this.getPreviousLinkFromTo = function (from, to, done) {
+    done(null, []);
+  }
+
+  this.getValidLinksFrom = function (member, done) {
+    done(null, []);
+  }
+
 }

@@ -28,8 +28,8 @@ function GlobalValidator (conf, dao) {
       async.apply(checkCertificationsAreMadeByMembers, block),
       async.apply(checkCertificationsAreMadeToMembers, block),
       async.apply(checkCertificationsDelayIsRespected, block),
-      async.apply(checkNewcomersHaveEnoughCertifications, block),
-      async.apply(checkNewcomersAreNotOudistanced, block)
+      async.apply(checkJoinersHaveEnoughCertifications, block),
+      async.apply(checkJoinersAreNotOudistanced, block)
     ], done);
   };
 
@@ -165,12 +165,37 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
-  function checkNewcomersHaveEnoughCertifications (block, done) {
+  function checkJoinersHaveEnoughCertifications (block, done) {
+    var newLinks = getNewLinks(block);
+    async.forEach(block.joiners, function(inlineMembership, callback){
+      var ms = Membership.fromInline(inlineMembership);
+      async.waterfall([
+        function (next){
+          dao.getValidLinksTo(ms.issuer, next);
+        },
+        function (links, next){
+          var nbCerts = links.length + (newLinks[ms.issuer] || []).length;
+          if (nbCerts < conf.sigQty)
+            next('Joiner does not gathers enough certifications');
+          else
+            next();
+        },
+      ], callback);
+    }, done);
+  }
+
+  function checkJoinersAreNotOudistanced (block, done) {
     done();
   }
 
-  function checkNewcomersAreNotOudistanced (block, done) {
-    done();
-  }
+}
 
+function getNewLinks (block) {
+  var newLinks = {};
+  block.certifications.forEach(function(inlineCert){
+    var cert = Certification.fromInline(inlineCert);
+    newLinks[cert.to] = newLinks[cert.to] || [];
+    newLinks[cert.to].push(cert.from);
+  });
+  return newLinks;
 }

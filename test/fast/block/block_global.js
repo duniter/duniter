@@ -11,7 +11,8 @@ var Identity      = mongoose.model('Identity', require('../../../app/models/iden
 var Configuration = mongoose.model('Configuration', require('../../../app/models/configuration'));
 
 var conf = new Configuration({
-  sigDelay: 365.25*24*3600 // 1 year
+  sigDelay: 365.25*24*3600, // 1 year
+  sigQty: 1
 });
 
 describe("Block local coherence", function(){
@@ -54,6 +55,12 @@ describe("Block local coherence", function(){
   it('a block with too early certification replay should fail', validate(blocks.TOO_EARLY_CERTIFICATION_REPLAY, function (err, done) {
     should.exist(err);
     err.should.equal('Too early for this certification');
+    done();
+  }));
+
+  it('a block with at least one joiner without enough certifications should fail', validate(blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Joiner does not gathers enough certifications');
     done();
   }));
 
@@ -119,5 +126,9 @@ function BlockCheckerDao (block) {
     } else {
       done(null, null);
     }
+  }
+
+  this.getValidLinksTo = function (to, done) {
+    done(null, []);
   }
 }

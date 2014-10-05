@@ -691,6 +691,19 @@ A *fee* is considered *consumed* for a member if a transaction targeting this fe
 
 A *transaction* is considered *consumed* for a public key if a transaction targeting this transaction was issued and where this public key was present in the outputs.
 
+##### Number
+
+* A block's `Number` must be exactly equal to previous block + 1.
+* If blockchain is empty, `Number` must be `0` .
+
+##### PreviousHash
+
+* A block's `PreviousHash` must be exactly equal to previous block's computed hash (a.k.a Proof-of-Work). Note that this hash **must** start with ` powZeroMin` zeros.
+
+##### PreviousIssuer
+
+* A block's `PreviousIssuer` must be exactly equal to previous block's `Issuer` field.
+
 ##### Dates
 
 * A block's `ConfirmedDate` has to be equal to *last* (in time value) confirmed date.

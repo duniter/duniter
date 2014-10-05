@@ -22,6 +22,9 @@ function GlobalValidator (conf, dao) {
 
   this.validate = function (block, done) {
     async.series([
+      async.apply(checkNumber, block),
+      async.apply(checkPreviousHash, block),
+      async.apply(checkPreviousIssuer, block),
       async.apply(checkIdentityUnicity, block),
       async.apply(checkPubkeyUnicity, block),
       async.apply(checkLeaversAreMembers, block),
@@ -33,6 +36,12 @@ function GlobalValidator (conf, dao) {
       async.apply(checkJoinersAreNotOudistanced, block)
     ], done);
   };
+
+  /*****************************
+  *
+  *      UTILITY FUNCTIONS
+  *
+  *****************************/
 
   /**
   * Get an identity, using global scope.
@@ -109,6 +118,38 @@ function GlobalValidator (conf, dao) {
         },
       ], callback);
     }, done);
+  }
+
+  /*****************************
+  *
+  *      TESTING FUNCTIONS
+  *
+  *****************************/
+
+  function checkNumber (block, done) {
+    async.waterfall([
+      function (next){
+        dao.getCurrent(next);
+      },
+      function (current, next){
+        if (!current && block.number != 0)
+          next('Root block required first');
+        else if (current && block.number <= current.number)
+          next('Too late for this block');
+        else if (current && block.number > current.number + 1)
+          next('Too early for this block');
+        else
+          next();
+      },
+    ], done);
+  }
+
+  function checkPreviousHash (block, done) {
+    done();
+  }
+
+  function checkPreviousIssuer (block, done) {
+    done();
   }
 
   function checkIdentityUnicity (block, done) {

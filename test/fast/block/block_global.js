@@ -22,6 +22,11 @@ describe("Block global coherence", function(){
     done();
   }));
 
+  it('a valid (next) block should not have any error', validate(blocks.VALID_NEXT, function (err, done) {
+    should.not.exist(err);
+    done();
+  }));
+
   it('a block with certification of unknown pubkey should fail', validate(blocks.WRONGLY_SIGNED_CERTIFICATION, function (err, done) {
     should.exist(err);
     err.should.equal('Wrong signature for certification');
@@ -67,6 +72,30 @@ describe("Block global coherence", function(){
   it('a block with at least one joiner outdistanced from WoT should fail', validate(blocks.OUTDISTANCED_JOINER, function (err, done) {
     should.exist(err);
     err.should.equal('Joiner is outdistanced from WoT');
+    done();
+  }));
+
+  it('a block with positive number while no root exists should fail', validate(blocks.ROOT_BLOCK_REQUIRED, function (err, done) {
+    should.exist(err);
+    err.should.equal('Root block required first');
+    done();
+  }));
+
+  it('a block with same number as current should fail', validate(blocks.SAME_BLOCK_NUMBER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Too late for this block');
+    done();
+  }));
+
+  it('a block with older number than current should fail', validate(blocks.OLD_BLOCK_NUMBER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Too late for this block');
+    done();
+  }));
+
+  it('a block with too far future number than current should fail', validate(blocks.FAR_FUTURE_BLOCK_NUMBER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Too early for this block');
     done();
   }));
 
@@ -163,6 +192,16 @@ function BlockCheckerDao (block) {
 
   this.getValidLinksFrom = function (member, done) {
     done(null, []);
+  }
+
+  this.getCurrent = function (done) {
+    if (block.number == 3)       done(null, { number: 2 });
+    else if (block.number == 1)  done(null, null);
+    else if (block.number == 50) done(null, { number: 50 });
+    else if (block.number == 49) done(null, { number: 50 });
+    else if (block.number == 52) done(null, { number: 50 });
+    else
+      done(null, null);
   }
 
 }

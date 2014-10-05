@@ -159,7 +159,17 @@ function GlobalValidator (conf, dao) {
   }
 
   function checkPreviousIssuer (block, done) {
-    done();
+    async.waterfall([
+      function (next){
+        dao.getCurrent(next);
+      },
+      function (current, next){
+        if (current && block.previousIssuer != current.issuer)
+          next('PreviousIssuer not matching issuer of current block');
+        else
+          next();
+      },
+    ], done);
   }
 
   function checkIdentityUnicity (block, done) {

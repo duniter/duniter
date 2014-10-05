@@ -145,7 +145,17 @@ function GlobalValidator (conf, dao) {
   }
 
   function checkPreviousHash (block, done) {
-    done();
+    async.waterfall([
+      function (next){
+        dao.getCurrent(next);
+      },
+      function (current, next){
+        if (current && block.previousHash != current.hash)
+          next('PreviousHash not matching hash of current block');
+        else
+          next();
+      },
+    ], done);
   }
 
   function checkPreviousIssuer (block, done) {

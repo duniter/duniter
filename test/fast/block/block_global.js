@@ -27,6 +27,12 @@ describe("Block global coherence", function(){
     done();
   }));
 
+  it('a block with wrong PreviousHash should fail', validate(blocks.WRONG_PREVIOUS_HASH, function (err, done) {
+    should.exist(err);
+    err.should.equal('PreviousHash not matching hash of current block');
+    done();
+  }));
+
   it('a block with certification of unknown pubkey should fail', validate(blocks.WRONGLY_SIGNED_CERTIFICATION, function (err, done) {
     should.exist(err);
     err.should.equal('Wrong signature for certification');
@@ -195,11 +201,12 @@ function BlockCheckerDao (block) {
   }
 
   this.getCurrent = function (done) {
-    if (block.number == 3)       done(null, { number: 2 });
+    if (block.number == 3)       done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924' });
     else if (block.number == 1)  done(null, null);
-    else if (block.number == 50) done(null, { number: 50 });
-    else if (block.number == 49) done(null, { number: 50 });
-    else if (block.number == 52) done(null, { number: 50 });
+    else if (block.number == 51) done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B' });
+    else if (block.number == 50) done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B' });
+    else if (block.number == 49) done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B' });
+    else if (block.number == 52) done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B' });
     else
       done(null, null);
   }

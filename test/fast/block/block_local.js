@@ -29,6 +29,26 @@ describe("Block local coherence", function(){
       done();
     }));
 
+    it('if root block has PreviousHash', validate(blocks.ROOT_WITH_PREVIOUS_HASH, function (err, done) {
+      assert.equal(err, 'PreviousHash must not be provided for root block');
+      done();
+    }));
+
+    it('if root block has PreviousIssuer', validate(blocks.ROOT_WITH_PREVIOUS_ISSUER, function (err, done) {
+      assert.equal(err, 'PreviousIssuer must not be provided for root block');
+      done();
+    }));
+
+    it('if root block has PreviousHash', validate(blocks.NON_ROOT_WITHOUT_PREVIOUS_HASH, function (err, done) {
+      assert.equal(err, 'PreviousHash must be provided for non-root block');
+      done();
+    }));
+
+    it('if root block has PreviousIssuer', validate(blocks.NON_ROOT_WITHOUT_PREVIOUS_ISSUER, function (err, done) {
+      assert.equal(err, 'PreviousIssuer must be provided for non-root block');
+      done();
+    }));
+
     it('block with colliding uids in identities', validate(blocks.COLLIDING_UIDS, function (err, done) {
       assert.equal(err, 'Block must not contain twice same identity uid');
       done();

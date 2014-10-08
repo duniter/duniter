@@ -144,6 +144,13 @@ IdentitySchema.statics.isMember = function(pubkey, done){
   });
 }
 
+IdentitySchema.statics.isMemberOrError = function(pubkey, done){
+  var Identity = this.model('Identity');
+  Identity.isMember(pubkey, function (err, isMember) {
+    done(err || (!isMember && "Not a member"));
+  });
+}
+
 IdentitySchema.statics.getMember = function(pubkey, done){
   var Identity = this.model('Identity');
   Identity.find({ "pubkey": pubkey, "member": true }, function (err, identities) {

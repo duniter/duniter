@@ -317,16 +317,16 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         },
         function (idty, next){
           cert.target = idty.getTargetHash();
-          cert.exists(next);
+          cert.existing(next);
         },
-        function (exists, next) {
-          if (exists) {
-            next();
-          } else {
-            cert.save(function (err) {
-              next(err);
-            });
+        function (existing, next) {
+          if (existing) {
+            cert = existing;
           }
+          cert.linked = true;
+          cert.save(function (err) {
+            next(err);
+          });
         }
       ], callback);
     }, done);
@@ -508,23 +508,49 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next){
         findUpdates(next);
       },
-      function (updates, subupdates, next){
+      function (updates, next){
         Block.current(function (err, current) {
-          next(null, current || null, updates, subupdates);
+          next(null, current || null, updates);
         });
       },
-      function (current, updates, subupdates, next){
-        createNewcomerBlock(current, null, {}, updates, subupdates, next);
+      function (current, updates, next){
+        createNewcomerBlock(current, null, {}, updates, next);
       },
     ], done);
   }
 
   function findUpdates (done) {
     var updates = {};
-    var subupdates = {};
     done(null, [], []);
     // TODO: certifications
-    // updates[pubkey] = certifications;
+    async.waterfall([
+      function (next){
+        Certification.findNew(next);
+      },
+      function (certs, next){
+        async.forEachSeries(certs, function(cert, callback){
+          async.waterfall([
+            function (next){
+              // Signatory must be a member
+              Identity.isMemberOrError(cert.from, next);
+            },
+            function (next){
+              // Certified must be a member
+              Identity.isMemberOrError(cert.to, next);
+            },
+            function (next){
+              updates[cert.to] = updates[cert.to] || [];
+              updates[cert.to].push(cert);
+              next();
+            },
+          ], function (err) {
+            callback();
+          });
+        }, next);
+      },
+    ], function (err) {
+      done(err, updates);
+    });
   }
 
   /**
@@ -605,7 +631,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   * Generate a "newcomers" keyblock
   */
   this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, done) {
-    var withoutUpdates = function(updates) { updates(null, {}, {}); };
+    var withoutUpdates = function(updatesDone) {
+      updatesDone(null, {});
+    };
     KeychainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, done);
   };
 
@@ -614,7 +642,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   */
   this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
     var updates = {};
-    var subupdates = {};
     async.waterfall([
       function (next) {
         // First, check for members' key updates
@@ -622,7 +649,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (theUpdates, theSubupdates, next) {
         updates = theUpdates;
-        subupdates = theSubupdates;
         findNewcomers(filteringFunc, checkingWoTFunc, next);
       },
       function (current, newWoT, joinData, otherUpdates, next){
@@ -631,10 +657,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           if (!updates[fpr])
             updates[fpr] = otherUpdates[fpr];
           else
-            updates[fpr].concat(otherUpdates[fpr]);
+            updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
         });
         // Create the block
-        createNewcomerBlock(current, joinData, updates, subupdates, next);
+        createNewcomerBlock(current, joinData, updates, next);
       },
     ], done);
   };
@@ -805,7 +831,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   function findSignaturesFromNewcomerToWoT (newcomer, done) {
-
     var updates = {};
     async.waterfall([
       function (next){
@@ -844,7 +869,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return matched;
   }
 
-  function createNewcomerBlock (current, joinData, updates, subupdates, done) {
+  function createNewcomerBlock (current, joinData, updates, done) {
     var block = new Block();
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
@@ -880,7 +905,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.leavers = [];
     // Kicked people
     block.excluded = [];
-    // Certifications FROM the WoT
+    // Certifications from the WoT, to newcomers
     block.certifications = [];
     joiners.forEach(function(joiner){
       var data = joinData[joiner];
@@ -888,7 +913,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         block.certifications.push(cert.inline());
       });
     });
-    // Certifications TO the WoT
+    // Certifications from the WoT, to the WoT
     _(updates).keys().forEach(function(certifiedMember){
       var certs = updates[certifiedMember];
       certs.forEach(function(cert){

@@ -54,10 +54,10 @@ function IdentityService (conn, conf) {
             var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, time: cert.time, target: obj.hash, to: idty.pubkey });
             async.waterfall([
               function (next){
-                mCert.exists(next);
+                mCert.existing(next);
               },
-              function (exists, next){
-                if (exists) next();
+              function (existing, next){
+                if (existing) next();
                 else mCert.save(function (err) {
                   next(err);
                 });

@@ -15,6 +15,7 @@ var CertificationSchema = new Schema({
   time: { type: Date, default: Date.now },
   target: String,
   to: String,
+  linked: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -34,9 +35,9 @@ CertificationSchema.virtual('when').get(function () {
 
 CertificationSchema.methods = {
 
-  exists: function (done) {
+  existing: function (done) {
     this.model('Certification').find({ "pubkey": this.pubkey, "sig": this.sig, "time": this.time, "target": this.target }, function (err, certs) {
-      done(err, certs && certs.length > 0);
+      done(err, certs && certs.length > 0 ? certs[0] : null);
     });
   },
 
@@ -73,6 +74,13 @@ CertificationSchema.statics.toTarget = function (hash, done) {
 CertificationSchema.statics.from = function (pubkey, done) {
   var Certification = this.model('Certification');
   Certification.find({ "pubkey": pubkey }, function (err, certs) {
+    done(err, certs);
+  });
+};
+
+CertificationSchema.statics.findNew = function (done) {
+  var Certification = this.model('Certification');
+  Certification.find({ "linked": false }, function (err, certs) {
     done(err, certs);
   });
 };

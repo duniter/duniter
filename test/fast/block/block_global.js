@@ -124,7 +124,7 @@ function validate (raw, callback) {
         block = new Block(obj);
         validator(conf, new BlockCheckerDao(block)).validate(block, next);
       },
-      function (obj, next){
+      function (next){
         validator(conf, new BlockCheckerDao(block)).checkSignatures(block, next);
       },
     ], function (err) {

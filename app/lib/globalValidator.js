@@ -17,7 +17,9 @@ function GlobalValidator (conf, dao) {
   this.checkSignatures = function (block, done) {
     async.series([
       async.apply(checkCertificationsAreValid, block)
-    ], done);
+    ], function (err) {
+      done(err);
+    });
   };
 
   this.validate = function (block, done) {
@@ -34,7 +36,13 @@ function GlobalValidator (conf, dao) {
       async.apply(checkCertificationsDelayIsRespected, block),
       async.apply(checkJoinersHaveEnoughCertifications, block),
       async.apply(checkJoinersAreNotOudistanced, block)
-    ], done);
+    ], function (err) {
+      done(err);
+    });
+  };
+
+  this.isOver3Hops = function (member, wot, newLinks, done) {
+    isOver3Hops(member, wot, newLinks, dao, done);
   };
 
   /*****************************

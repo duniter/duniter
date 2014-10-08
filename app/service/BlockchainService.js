@@ -1,17 +1,18 @@
-var async     = require('async');
-var _         = require('underscore');
-var merkle    = require('merkle');
-var sha1      = require('sha1');
-var crypto    = require('../lib/crypto');
-var base64    = require('../lib/base64');
-var dos2unix  = require('../lib/dos2unix');
-var parsers   = require('../lib/streams/parsers/doc');
-var logger    = require('../lib/logger')('blockchain');
-var signature = require('../lib/signature');
-var constants = require('../lib/constants');
-var validator = require('../lib/localValidator');
-var moment    = require('moment');
-var inquirer  = require('inquirer');
+var async           = require('async');
+var _               = require('underscore');
+var merkle          = require('merkle');
+var sha1            = require('sha1');
+var moment          = require('moment');
+var inquirer        = require('inquirer');
+var crypto          = require('../lib/crypto');
+var base64          = require('../lib/base64');
+var dos2unix        = require('../lib/dos2unix');
+var parsers         = require('../lib/streams/parsers/doc');
+var logger          = require('../lib/logger')('blockchain');
+var signature       = require('../lib/signature');
+var constants       = require('../lib/constants');
+var localValidator  = require('../lib/localValidator');
+var globalValidator = require('../lib/globalValidator');
 
 module.exports.get = function (conn, conf, IdentityService, PeeringService) {
   return new BlockchainService(conn, conf, IdentityService, PeeringService);
@@ -98,43 +99,23 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var newLinks;
     async.waterfall([
       function (next){
-        validator().validate(block, next);
+        localValidator().validate(block, next);
       },
       function (validated, next){
-        validator().checkSignatures(block, next);
+        localValidator().checkSignatures(block, next);
       },
       function (validated, next){
+        globalValidator(conf, new BlockCheckerDao(block)).validate(block, next);
+      },
+      function (next){
+        globalValidator(conf, new BlockCheckerDao(block)).checkSignatures(block, next);
+      },
+      function (next){
         Block.current(function (err, obj) {
           next(null, obj || null);
         })
       },
       function (current, next){
-        // Testing chaining
-        if (!current && block.number > 0) {
-          next('Requires root block first');
-          return;
-        }
-        if (current && block.number <= current.number) {
-          next('Too late for this block');
-          return;
-        }
-        if (current && block.number > current.number + 1) {
-          next('Too early for this block');
-          return;
-        }
-        if (current && block.number == current.number + 1 && block.previousHash != current.hash) {
-          next('PreviousHash does not target current block');
-          return;
-        }
-        if (current && block.number == current.number + 1 && block.previousIssuer != current.issuer) {
-          next('PreviousIssuer does not target current block');
-          return;
-        }
-        // Test timestamp
-        if (KeychainService.checkWithLocalTimestamp && Math.abs(block.timestamp - now.utcZero().timestamp()) > conf.tsInterval) {
-          next('Timestamp does not match this node\'s time');
-          return;
-        }
         // Check the challenge depending on issuer
         checkProofOfWork(current, block, next);
       },
@@ -143,11 +124,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         checkIssuer(block, next);
       },
       function (next) {
-        // Check document's coherence
-        checkCoherence(block, next);
-      },
-      function (theNewLinks, next) {
-        newLinks = theNewLinks;
         // If computation is started, stop it and wait for stop event
         var isComputeProcessWaiting = computeNextCallback ? true : false;
         if (computationActivated && !isComputeProcessWaiting) {
@@ -160,7 +136,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next) {
         newKeyblockCallback = null;
         // Save block data + compute links obsolescence
-        saveBlockData(block, newLinks, next);
+        saveBlockData(block, next);
       },
       function (block, next) {
         // If PoW computation process is waiting, trigger it
@@ -207,73 +183,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return found;
   }
 
-  function checkCoherence (block, done) {
-    var newLinks = {};
-    async.waterfall([
-      function (next){
-        // Check key changes
-        checkKeychanges(block, next);
-      },
-      function (theNewLinks, next) {
-        newLinks = theNewLinks;
-        _(newLinks).keys().forEach(function(target){
-          newLinks[target].forEach(function(source){
-            logger.debug('Sig %s --> %s', source.substring(0, 8), target.substring(0, 8));
-          });
-        });
-        // Check that new links won't kick other members (existing or incoming)
-        checkWoTStability(block, newLinks, next);
-      },
-      function (next) {
-        // Check that to be kicked members are kicked
-        checkKicked(block, newLinks, next);
-      },
-      function (next){
-        // Check members' changes (+ and -), root & count
-        checkCommunityChanges(block, next);
-      },
-    ], function (err) {
-      done(err, newLinks);
-    });
-  }
-
-  function checkKeychanges(block, done) {
-    var newLinks = {};
-    var newKeys = {};
-    async.waterfall([
-      function (next){
-        // Memorize newKeys
-        async.forEach(block.identities, function(inlineIdty, callback){
-          var idty = Identity.fromInline(inlineIdty);
-          newKeys[idty.pubkey] = idty;
-          callback();
-        }, next);
-      },
-      function (next){
-        async.forEachSeries(block.certifications, function(inlineCert, callback) {
-          // Build cert
-          var cert = Certification.fromInline(inlineCert);
-          async.waterfall([
-            function (next){
-              // Check validty (signature, and that certified & certifier are members (old or newcomers))
-              checkCertificationOfKey(cert.from, cert.time.timestamp(), cert.sig, cert.to, newKeys, next);
-            },
-            function (next){
-              // Memorize new links from signatures
-              newLinks[cert.to] = newLinks[cert.to] || [];
-              newLinks[cert.to].push(cert.from);
-              next();
-            },
-          ], callback);
-        }, function (err) {
-          next(err, newLinks);
-        });
-      },
-    ], function (err, newLinks) {
-      done(err, newLinks);
-    });
-  }
-
   function checkWoTStability (block, newLinks, done) {
     if (block.number >= 0) {
       // other blocks may introduce unstability with new members
@@ -286,7 +195,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           block.joiners.forEach(function (inlineMS) {
             var fpr = inlineMS.split(':')[0];
             newcomers.push(fpr);
-            members.push({ pubkey: fpr });
+            members.push(fpr);
           });
           async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
             async.waterfall([
@@ -299,43 +208,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               function (next) {
                 // Check the newcomer IS RECOGNIZED BY the WoT + other newcomers
                 // (check we have a path WoT => newcomer)
-                Link.isOver3StepsOfAMember(newcomer, members, next);
+                globalValidator(conf, new BlockCheckerDao(block)).isOver3Hops(newcomer, members, newLinks, next);
               },
-              function (firstCheck, next) {
-                if (firstCheck.length > 0) {
-                  // This means either:
-                  //   1. WoT does not recognize the newcomer
-                  //   2. Other newcomers do not recognize the newcomer since we haven't taken them into account
-                  // So, we have to test with newcomers' links too
-                  async.waterfall([
-                    function (next) {
-                      Link.isStillOver3Steps(newcomer, firstCheck, newLinks, next);
-                    },
-                    function (secondCheck) {
-                      if (secondCheck.length > 0)
-                        next('Newcomer ' + newcomer + ' is not recognized by the WoT for this block');
-                      else
-                        next();
-                    }
-                  ], next);
-                } else next();
-              },
-              function (next) {
-                // Also check that the newcomer RECOGNIZES the WoT + other newcomers
-                // (check we have a path newcomer => WoT)
-                async.forEachSeries(members, function (member, memberRecognized) {
-                  async.waterfall([
-                    function (next) {
-                      Link.isStillOver3Steps(member.pubkey, [newcomer], newLinks, next);
-                    },
-                    function (distances, next) {
-                      if (distances.length > 0)
-                        next('Newcomer ' + newcomer + ' cannot recognize member ' + member.pubkey + ': no path found or too much distance');
-                      else
-                        next();
-                    }
-                  ], memberRecognized);
-                }, next);
+              function (outdistanced, next) {
+                if (outdistanced.length > 0) {
+                  console.log(members, newLinks);
+                  next('Newcomer ' + newcomer + ' is not recognized by the WoT for this block');
+                }
+                else next();
               }
             ], newcomerTested);
           }, next);
@@ -403,96 +283,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         }
         var nbZeros = Math.max(conf.powZeroMin, conf.powZeroMin + lastBlockPenality - nbWaitedPeriods);
         next(null, nbZeros);
-      },
-    ], done);
-  }
-
-  function checkKicked (block, newLinks, done) {
-    var membersChanges = block.membersChanges;
-    async.waterfall([
-      function (next){
-        Identity.getToBeKicked(next);
-      },
-      function (keys, next){
-        async.forEach(keys, function(key, callback){
-          async.waterfall([
-            function (next){
-              var remainingKeys = [];
-              key.distanced.forEach(function(m){
-                remainingKeys.push(m);
-              });
-              async.parallel({
-                outdistanced: function(callback){
-                  Link.isStillOver3Steps(key.fingerprint, remainingKeys, newLinks, next);
-                },
-                enoughLinks: function(callback){
-                  checkHaveEnoughLinks(key.fingerprint, newLinks, function (err) {
-                    callback(null, err);
-                  });
-                },
-              }, next);
-            },
-            function (res, next) {
-              var outdistanced = res.outdistanced;
-              var enoughLinksErr = res.enoughLinks;
-              var isStill = outdistanced.length > 0;
-              var isBeingKicked = membersChanges.indexOf('-' + key.fingerprint);
-              if (isStill && isBeingKicked == -1) {
-                next('Member ' + key.fingerprint + ' has to lose his member status. Wrong block.');
-                return;
-              }
-              if (!isStill && ~isBeingKicked) {
-                next('Member ' + key.fingerprint + ' is no more outdistanced and should not be kicked. Wrong block.');
-                return;
-              }
-              if (enoughLinksErr && isBeingKicked == -1) {
-                next(enoughLinksErr);
-                return;
-              }
-              // Fine
-              next();
-            }
-          ], callback);
-        }, next);
-      },
-    ], done);
-  }
-
-  function checkCommunityChanges (block, done) {
-    var mss = [];
-    block.joiners.forEach(function(join){
-      var ms = Membership.fromInline(join, 'IN');
-      var identity = matchesList(new RegExp('^' + ms.issuer + ':'), block.identities);
-      if (identity)
-        ms.userid = Identity.fromInline(identity).uid;
-      mss.push(ms);
-    });
-    async.waterfall([
-      function (next){
-        var newcomersCount = 0; // First time comers
-        _(mss).values().forEach(function(ms){
-          if (ms.userid) newcomersCount++;
-        });
-        if (block.identities.length != newcomersCount) {
-          next('Some newcomers havn\'t sent required membership');
-          return;
-        }
-        next();
-      },
-      function (next){
-        async.forEach(mss, function(ms, callback){
-          if (ms.userid) {
-            callback();
-          } else {
-            async.waterfall([
-              function (next){
-                Identity.isMember(ms.pubkey, next);
-              },
-            ], function (err, isMember) {
-              callback(err || (!isMember && ms.pubkey + ' is not a member and must have give an identity with its membership'));
-            });
-          }
-        }, next);
       },
     ], done);
   }
@@ -566,7 +356,21 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     }, done);
   }
 
-  function saveBlockData (block, newLinks, done) {
+  function updateLinks (block, done) {
+    async.forEach(block.certifications, function(inlineCert, callback){
+      var cert = Certification.fromInline(inlineCert);
+      new Link({
+        source: cert.from,
+        target: cert.to,
+        timestamp: block.timestamp
+      })
+      .save(function (err) {
+        callback(err);
+      });
+    }, done);
+  }
+
+  function saveBlockData (block, done) {
     logger.info('Block #' + block.number + ' added to the keychain');
     async.waterfall([
       function (next) {
@@ -576,31 +380,20 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (next) {
-        // Update members (create new identities if do not exist)
+        // Create/Update members (create new identities if do not exist)
         updateMembers(block, next);
       },
       function (next) {
-        // Update certifications
+        // Create/Update certifications
         updateCertifications(block, next);
       },
       function (next) {
-        // Update certifications
+        // Create/Update certifications
         updateMemberships(block, next);
       },
       function (next){
         // Save links
-        async.forEach(_(newLinks).keys(), function(target, callback){
-          async.forEach(newLinks[target], function(source, callback2){
-            var lnk = new Link({
-              source: source,
-              target: target,
-              timestamp: block.timestamp
-            });
-            lnk.save(function (err) {
-              callback2(err);
-            });
-          }, callback);
-        }, next);
+        updateLinks(block, next);
       },
       function (next){
         // Compute obsolete links
@@ -620,15 +413,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         Identity.getMembers(next);
       },
       function (members, next){
-        // If a member is over 3 steps from the whole WoT, has to be kicked
+        // If a member no more have enough signatures, he has to be kicked
         async.forEachSeries(members, function(idty, callback){
           var pubkey = idty.pubkey;
           async.waterfall([
             function (next){
               async.parallel({
-                outdistanced: function(callback){
-                  Link.isOver3StepsOfAMember(idty, members, callback);
-                },
                 enoughLinks: function(callback){
                   checkHaveEnoughLinks(pubkey, {}, function (err) {
                     callback(null, err);
@@ -637,9 +427,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               }, next);
             },
             function (res, next){
-              var distancedKeys = res.outdistanced;
               var notEnoughLinks = res.enoughLinks;
-              Identity.setKicked(pubkey, idty.getTargetHash(), distancedKeys, notEnoughLinks ? true : false, next);
+              Identity.setKicked(pubkey, idty.getTargetHash(), notEnoughLinks ? true : false, next);
             },
           ], callback);
         }, next);
@@ -1110,50 +899,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     done(null, block);
   }
 
-  /**
-  * Checks wether a certification is valid or not, and from a legit member.
-  */
-  function checkCertificationOfKey (certifier, when, sig, certified, newKeys, done) {
-    async.waterfall([
-      function (next){
-        // Compute membership over newcomers
-        var newPubkeys = _(newKeys).keys();
-        var isTargetANewcomer = ~newPubkeys.indexOf(certified);
-        var isIssuerANewcomer = ~newPubkeys.indexOf(certifier);
-        async.parallel({
-          issuer: function(callback){
-            if (!isIssuerANewcomer)
-              Identity.getMember(certifier, callback);
-            else
-              // Member is a newcomer
-              callback(null, newKeys[certifier]);
-          },
-          target: function(callback){
-            if (!isTargetANewcomer)
-              Identity.getMember(certified, callback);
-            else
-              // Member is a newcomer
-              callback(null, newKeys[certified]);
-          }
-        }, next);
-      },
-      function (res, next){
-        if (!res.issuer)
-          next('Certifier ' + certifier + ' is not a member nor a newcomer');
-        else if (!res.target)
-          next('Certified ' + certified + ' is not a member nor a newcomer');
-        else {
-          next(null, res.target);
-        }
-      },
-      function (idty, next){
-        logger.info('Signature for '+ certified);
-        var selfCert = idty.selfCert();
-        crypto.isValidCertification(selfCert, idty.sig, certifier, sig, when, next);
-      },
-    ], done);
-  }
-
   this.computeDistances = function (done) {
     var current;
     async.waterfall([
@@ -1311,4 +1056,70 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       }
     });
   };
+
+  function BlockCheckerDao (block) {
+    
+    this.existsUserID = function (uid, done) {
+      async.waterfall([
+        function (next){
+          Identity.getMemberByUserID(uid, next);
+        },
+        function (idty, next){
+          next(null, idty != null);
+        },
+      ], done);
+    }
+    
+    this.existsPubkey = function (pubkey, done) {
+      async.waterfall([
+        function (next){
+          Identity.getMember(pubkey, next);
+        },
+        function (idty, next){
+          next(null, idty != null);
+        },
+      ], done);
+    }
+    
+    this.getIdentityByPubkey = function (pubkey, done) {
+      Identity.getMember(pubkey, done);
+    }
+    
+    this.isMember = function (pubkey, done) {
+      Identity.isMember(pubkey, done);
+    }
+
+    this.getPreviousLinkFor = function (from, to, done) {
+      async.waterfall([
+        function (next){
+          Link.getObsoletesFromTo(from, to, next);
+        },
+        function (links, next){
+          next(null, links.length > 0 ? links[0] : null);
+        },
+      ], done);
+    }
+
+    this.getValidLinksTo = function (to, done) {
+      Link.getValidLinksTo(to, done);
+    }
+
+    this.getMembers = function (done) {
+      Identity.getMembers(done);
+    }
+
+    this.getPreviousLinkFromTo = function (from, to, done) {
+      Link.getValidFromTo(from, to, done);
+    }
+
+    this.getValidLinksFrom = function (member, done) {
+      Link.getValidLinksFrom(member, done);
+    }
+
+    this.getCurrent = function (done) {
+      Block.current(function (err, current) {
+        done(null, (err || !current) ? null : current);
+      });
+    }
+  }
 }

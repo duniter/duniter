@@ -151,7 +151,18 @@ IdentitySchema.statics.getMember = function(pubkey, done){
       done('More than one matching pubkey & member for ' + pubkey);
       return;
     }
-    done(null, identities.length == 1 && identities[0]);
+    done(null, identities.length == 1 ? identities[0] : null);
+  });
+}
+
+IdentitySchema.statics.getMemberByUserID = function(uid, done){
+  var Identity = this.model('Identity');
+  Identity.find({ "uid": uid, "member": true }, function (err, identities) {
+    if(identities.length > 1){
+      done('More than one matching pubkey & member for uid ' + uid);
+      return;
+    }
+    done(null, identities.length == 1 ? identities[0] : null);
   });
 }
 
@@ -165,9 +176,9 @@ IdentitySchema.statics.getToBeKicked = function(done){
   Identity.find({ kick: true }, done);
 };
 
-IdentitySchema.statics.setKicked = function(pubkey, hash, distancedKeys, notEnoughLinks, done){
+IdentitySchema.statics.setKicked = function(pubkey, hash, notEnoughLinks, done){
   var Identity = this.model('Identity');
-  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: (distancedKeys.length > 0 || notEnoughLinks), distanced: distancedKeys }, function (err) {
+  Identity.update({ "pubkey": pubkey, hash: hash }, { kick: notEnoughLinks }, function (err) {
     done(err);
   });
 };

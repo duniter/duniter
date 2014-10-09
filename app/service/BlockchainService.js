@@ -514,15 +514,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (current, updates, next){
-        createNewcomerBlock(current, null, {}, updates, next);
+        createNewcomerBlock(current, {}, updates, next);
       },
     ], done);
   }
 
   function findUpdates (done) {
     var updates = {};
-    done(null, [], []);
-    // TODO: certifications
     async.waterfall([
       function (next){
         Certification.findNew(next);
@@ -647,7 +645,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         // First, check for members' key updates
         findUpdateFunc(next);
       },
-      function (theUpdates, theSubupdates, next) {
+      function (theUpdates, next) {
         updates = theUpdates;
         findNewcomers(filteringFunc, checkingWoTFunc, next);
       },

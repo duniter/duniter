@@ -22,6 +22,10 @@ var blockFifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 
+var powFifo = async.queue(function (task, callback) {
+  task(callback);
+}, 1);
+
 // Callback used as a semaphore to sync keyblock reception & PoW computation
 var newKeyblockCallback = null;
 
@@ -84,10 +88,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         }
       },
       function (next){
-        // Saves entry
-        entry.save(function (err) {
-          next(err);
-        });
+        BlockchainService.stopPoWThenProcessAndRestartPoW(function (saved) {
+          // Saves entry
+          entry.save(function (err) {
+            saved(err);
+          });
+        }, next);
       },
       function (next){
         logger.debug('✔ %s %s', entry.issuer, entry.membership);
@@ -129,6 +135,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           checkIssuer(block, next);
         },
         function (next) {
+          BlockchainService.stopPoWThenProcessAndRestartPoW(async.apply(saveBlockData, block), next);
+        },
+      ], function (err) {
+        sent(err, !err && block);
+      });
+    }, done);
+  };
+
+  this.stopPoWThenProcessAndRestartPoW = function (task, done) {
+    powFifo.push(function (taskDone) {
+      async.waterfall([
+        function (next) {
           // If computation is started, stop it and wait for stop event
           var isComputeProcessWaiting = computeNextCallback ? true : false;
           if (computationActivated && !isComputeProcessWaiting) {
@@ -140,21 +158,21 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         },
         function (next) {
           newKeyblockCallback = null;
-          // Save block data + compute links obsolescence
-          saveBlockData(block, next);
+          // Do the task, without passing parameters
+          task(function (err) {
+            next(err);
+          });
         },
-        function (block, next) {
+        function (next) {
           // If PoW computation process is waiting, trigger it
           if (computeNextCallback)
             computeNextCallback();
           computeNextCallback = null;
           next();
         }
-      ], function (err) {
-        sent(err, !err && block);
-      });
+      ], taskDone);
     }, done);
-  };
+  }
 
   function checkIssuer (block, done) {
     async.waterfall([
@@ -198,10 +216,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         },
         function (members, next) {
           var newcomers = [];
+          var ofMembers = [];
           block.joiners.forEach(function (inlineMS) {
             var fpr = inlineMS.split(':')[0];
             newcomers.push(fpr);
-            members.push(fpr);
+            ofMembers.push(fpr);
+          });
+          members.forEach(function (member) {
+            ofMembers.push(member.pubkey);
           });
           async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
             async.waterfall([
@@ -214,11 +236,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               function (next) {
                 // Check the newcomer IS RECOGNIZED BY the WoT + other newcomers
                 // (check we have a path WoT => newcomer)
-                globalValidator(conf, new BlockCheckerDao(block)).isOver3Hops(newcomer, members, newLinks, next);
+                globalValidator(conf, new BlockCheckerDao(block)).isOver3Hops(newcomer, ofMembers, newLinks, next);
               },
               function (outdistanced, next) {
                 if (outdistanced.length > 0) {
-                  console.log(members, newLinks);
+                  logger.debug('------ Newcomers ------');
+                  logger.debug(newcomers);
+                  logger.debug('------ Members ------');
+                  logger.debug(ofMembers);
+                  logger.debug('------ newLinks ------');
+                  logger.debug(newLinks);
+                  logger.debug('------ outdistanced ------');
+                  logger.debug(outdistanced);
                   next('Newcomer ' + newcomer + ' is not recognized by the WoT for this block');
                 }
                 else next();
@@ -1042,6 +1071,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           return;
         } else {
           async.parallel({
+            data: function(callback){
+              findNewData(callback);
+            },
             block: function(callback){
               BlockchainService.generateNext(callback);
             },
@@ -1057,6 +1089,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (res, next){
         if (!res) {
           next(null, null, 'Waiting for a root block before computing new blocks');
+        } else if (_(res.data.joinData).keys().length == 0 && _(res.data.updates).keys().length == 0) {
+          next(null, null, 'Waiting for new data to be written');
         } else if (conf.powDelay && !computationTimeoutDone) {
           computationTimeoutDone = true;
           computationTimeout = setTimeout(function () {
@@ -1087,6 +1121,36 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       }
     });
   };
+
+  function findNewData (done) {
+    var updates = {};
+    async.waterfall([
+      function (next) {
+        // First, check for members' key updates
+        findUpdates(next);
+      },
+      function (theUpdates, next) {
+        updates = theUpdates;
+        var checkingWoTFunc = function (newcomers, checkWoTForNewcomers, done) {
+          checkWoTForNewcomers(newcomers, function (err) {
+            // If success, simply add all newcomers. Otherwise, stop everything.
+            done(err, newcomers);
+          });
+        };
+        findNewcomers(noFiltering, checkingWoTFunc, next);
+      },
+      function (current, newWoT, joinData, otherUpdates, next){
+        // Merges updates
+        _(otherUpdates).keys().forEach(function(fpr){
+          if (!updates[fpr])
+            updates[fpr] = otherUpdates[fpr];
+          else
+            updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
+        });
+        next(null, { "joinData": joinData, "updates": updates });
+      },
+    ], done);
+  }
 
   function BlockCheckerDao (block) {
     

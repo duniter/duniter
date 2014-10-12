@@ -18,6 +18,9 @@ function IdentityService (conn, conf) {
 
   var that = this;
 
+  // Reference to BlockchainService
+  var BlockchainService = null;
+
   this.search = function(search, done) {
     var identities = [];
     async.waterfall([
@@ -25,6 +28,10 @@ function IdentityService (conn, conf) {
         Identity.search(search, next);
       },
     ], done);
+  };
+
+  this.setBlockchainService = function (service) {
+    BlockchainService = service;
   };
 
   /**
@@ -72,8 +79,12 @@ function IdentityService (conn, conf) {
           if (existing)
             next(null, existing);
           else {
-            // Create
-            idty.save(function (err) {
+            BlockchainService.stopPoWThenProcessAndRestartPoW(function (saved) {
+              // Create
+              idty.save(function (err) {
+                saved(err, idty);
+              });
+            }, function (err) {
               next(err, idty);
             });
           }

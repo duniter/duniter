@@ -120,7 +120,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next){
         // Extract key pair
-        crypto.getKeyPair(that.conf.salt, that.conf.passwd, next);
+        crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
       },
       function (pair, next){
         // Overrides PeeringService so we do benefit from registered privateKey
@@ -211,30 +211,30 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next){
         // TODO: write next block
-        // async.forever(
-        //   function tryToGenerateNextBlock(next) {
-        //     async.waterfall([
-        //       function (next){
-        //         that.BlockchainService.startGeneration(next);
-        //       },
-        //       function (block, next){
-        //         if (block) {
-        //           var Peer = that.conn.model('Peer');
-        //           var peer = new Peer({ endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')] });
-        //           multicaster().sendBlock(peer, block, next);
-        //         } else {
-        //           next();
-        //         }
-        //       },
-        //     ], function (err) {
-        //       next(err);
-        //     });
-        //   },
-        //   function onError (err) {
-        //     logger.error(err);
-        //     logger.error('Block generation STOPPED.');
-        //   }
-        // );
+        async.forever(
+          function tryToGenerateNextBlock(next) {
+            async.waterfall([
+              function (next){
+                that.BlockchainService.startGeneration(next);
+              },
+              function (block, next){
+                if (block) {
+                  var Peer = that.conn.model('Peer');
+                  var peer = new Peer({ endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')] });
+                  multicaster().sendBlock(peer, block, next);
+                } else {
+                  next();
+                }
+              },
+            ], function (err) {
+              next(err);
+            });
+          },
+          function onError (err) {
+            logger.error(err);
+            logger.error('Block generation STOPPED.');
+          }
+        );
         next();
       },
     ], done);

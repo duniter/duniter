@@ -35,7 +35,7 @@ var computationTimeoutDone = false;
 
 function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
-  var KeychainService = this;
+  var BlockchainService = this;
 
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
@@ -248,7 +248,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       var nbWaitedPeriods = 0;
       async.waterfall([
         function (next){
-          KeychainService.getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
+          BlockchainService.getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
         },
         function (nbZeros, next){
           var powRegexp = new RegExp('^0{' + nbZeros + ',}');
@@ -590,7 +590,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         done(err, newcomers);
       });
     };
-    KeychainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, done);
+    BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, done);
   }
 
   /**
@@ -598,7 +598,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   * Generate a "newcomers" keyblock
   */
   this.generateNewcomersAuto = function (done) {
-    KeychainService.generateNewcomersBlock(noFiltering, iteratedChecking, done);
+    BlockchainService.generateNewcomersBlock(noFiltering, iteratedChecking, done);
   }
 
 
@@ -622,7 +622,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   this.generateNext = function (done) {
-    KeychainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, done);
+    BlockchainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, done);
   };
 
   /**
@@ -632,7 +632,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var withoutUpdates = function(updatesDone) {
       updatesDone(null, {});
     };
-    KeychainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, done);
+    BlockchainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, done);
   };
 
   /**
@@ -875,6 +875,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.confirmedDate = current ? current.confirmedDate : moment.utc().startOf('day').unix();
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
+    if (PeeringService)
+      block.issuer = PeeringService.pubkey;
     // Members merkle
     var joiners = _(joinData).keys();
     var previousCount = current ? current.membersCount : 0;
@@ -1035,13 +1037,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         } else {
           async.parallel({
             block: function(callback){
-              KeychainService.generateNext(callback);
+              BlockchainService.generateNext(callback);
             },
             signature: function(callback){
-              signature(conf.pgpkey, conf.pgppasswd, conf.openpgpjs, callback);
+              signature(conf.salt, conf.passwd, callback);
             },
             trial: function (callback) {
-              KeychainService.getTrialLevel(PeeringService.cert.fingerprint, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
+              BlockchainService.getTrialLevel(PeeringService.pubkey, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
             }
           }, next);
         }
@@ -1059,7 +1061,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           return;
         } else {
           computationTimeoutDone = false;
-          KeychainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {
+          BlockchainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {
             next(null, proofBlock, err);
           });
         }

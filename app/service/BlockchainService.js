@@ -18,6 +18,10 @@ module.exports.get = function (conn, conf, IdentityService, PeeringService) {
   return new BlockchainService(conn, conf, IdentityService, PeeringService);
 };
 
+var blockFifo = async.queue(function (task, callback) {
+  task(callback);
+}, 1);
+
 // Callback used as a semaphore to sync keyblock reception & PoW computation
 var newKeyblockCallback = null;
 
@@ -93,61 +97,63 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   };
 
   this.submitBlock = function (obj, done) {
-    var now = new Date();
-    var block = new Block(obj);
-    var currentBlock = null;
-    var newLinks;
-    async.waterfall([
-      function (next){
-        localValidator().validate(block, next);
-      },
-      function (validated, next){
-        localValidator().checkSignatures(block, next);
-      },
-      function (validated, next){
-        globalValidator(conf, new BlockCheckerDao(block)).validate(block, next);
-      },
-      function (next){
-        globalValidator(conf, new BlockCheckerDao(block)).checkSignatures(block, next);
-      },
-      function (next){
-        Block.current(function (err, obj) {
-          next(null, obj || null);
-        })
-      },
-      function (current, next){
-        // Check the challenge depending on issuer
-        checkProofOfWork(current, block, next);
-      },
-      function (next) {
-        // Check document's coherence
-        checkIssuer(block, next);
-      },
-      function (next) {
-        // If computation is started, stop it and wait for stop event
-        var isComputeProcessWaiting = computeNextCallback ? true : false;
-        if (computationActivated && !isComputeProcessWaiting) {
-          // Next will be triggered by computation of the PoW process
-          newKeyblockCallback = next;
-        } else {
+    blockFifo.push(function (sent) {
+      var now = new Date();
+      var block = new Block(obj);
+      var currentBlock = null;
+      var newLinks;
+      async.waterfall([
+        function (next){
+          localValidator().validate(block, next);
+        },
+        function (validated, next){
+          localValidator().checkSignatures(block, next);
+        },
+        function (validated, next){
+          globalValidator(conf, new BlockCheckerDao(block)).validate(block, next);
+        },
+        function (next){
+          globalValidator(conf, new BlockCheckerDao(block)).checkSignatures(block, next);
+        },
+        function (next){
+          Block.current(function (err, obj) {
+            next(null, obj || null);
+          })
+        },
+        function (current, next){
+          // Check the challenge depending on issuer
+          checkProofOfWork(current, block, next);
+        },
+        function (next) {
+          // Check document's coherence
+          checkIssuer(block, next);
+        },
+        function (next) {
+          // If computation is started, stop it and wait for stop event
+          var isComputeProcessWaiting = computeNextCallback ? true : false;
+          if (computationActivated && !isComputeProcessWaiting) {
+            // Next will be triggered by computation of the PoW process
+            newKeyblockCallback = next;
+          } else {
+            next();
+          }
+        },
+        function (next) {
+          newKeyblockCallback = null;
+          // Save block data + compute links obsolescence
+          saveBlockData(block, next);
+        },
+        function (block, next) {
+          // If PoW computation process is waiting, trigger it
+          if (computeNextCallback)
+            computeNextCallback();
+          computeNextCallback = null;
           next();
         }
-      },
-      function (next) {
-        newKeyblockCallback = null;
-        // Save block data + compute links obsolescence
-        saveBlockData(block, next);
-      },
-      function (block, next) {
-        // If PoW computation process is waiting, trigger it
-        if (computeNextCallback)
-          computeNextCallback();
-        computeNextCallback = null;
-        next();
-      }
-    ], function (err) {
-      done(err, !err && block);
-    });
+      ], function (err) {
+        sent(err, !err && block);
+      });
+    }, done);
   };
 
   function checkIssuer (block, done) {

@@ -110,6 +110,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       var newLinks;
       async.waterfall([
         function (next){
+          console.log(block.getRaw());
           localValidator().validate(block, next);
         },
         function (validated, next){
@@ -207,7 +208,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return found;
   }
 
-  function checkWoTStability (block, newLinks, done) {
+  function checkWoTConstraints (block, newLinks, done) {
     if (block.number >= 0) {
       // other blocks may introduce unstability with new members
       async.waterfall([
@@ -234,9 +235,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                   next();
               },
               function (next) {
-                // Check the newcomer IS RECOGNIZED BY the WoT + other newcomers
-                // (check we have a path WoT => newcomer)
-                globalValidator(conf, new BlockCheckerDao(block)).isOver3Hops(newcomer, ofMembers, newLinks, next);
+                // Check the newcomer IS RECOGNIZED BY the WoT
+                // (check we have a path for each WoT member => newcomer)
+                if (block.number > 0)
+                  globalValidator(conf, new BlockCheckerDao(block)).isOver3Hops(newcomer, ofMembers, newLinks, next);
+                else
+                  next(null, []);
               },
               function (outdistanced, next) {
                 if (outdistanced.length > 0) {
@@ -268,7 +272,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         var count = links.length;
         if (newLinks[target] && newLinks[target].length)
           count += newLinks[target].length;
-        next(count < conf.sigQty && 'Key ' + target.substring(24) + ' does not have enough links (' + count + '/' + conf.sigQty + ')');
+        console.log(target, count);
+        next(count < conf.sigQty && 'Key ' + target + ' does not have enough links (' + count + '/' + conf.sigQty + ')');
       },
     ], done);
   }
@@ -726,11 +731,32 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                   Identity.getByHash(join.idHash, callback);
                 },
                 certs: function(callback){
-                  Certification.toTarget(join.idHash, callback);
+                  // Look for certifications fro WoT members
+                  async.waterfall([
+                    function (next) {
+                      Certification.toTarget(join.idHash, next);
+                    },
+                    function (certs, next) {
+                      var finalCerts = [];
+                      async.forEachSeries(certs, function (cert, callback) {
+                        async.waterfall([
+                          function (next) {
+                            Identity.isMember(cert.pubkey, next);
+                          },
+                          function (isMember, next) {
+                            if (isMember)
+                              finalCerts.push(cert);
+                            next();
+                          }
+                        ], function (err) {
+                          callback();
+                        });
+                      }, function () {
+                        next(null, finalCerts);
+                      });
+                    }
+                  ], callback)
                 },
-                // wotCerts: function(callback){
-                //   Certification.from(ms.issuer, callback);
-                // },
               }, next);
             },
             function (res, next){
@@ -758,16 +784,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         membersKeys.forEach(function (mKey) {
           wotMembers.push(mKey.pubkey);
         });
-        // Look for signatures from newcomers to the WoT
-        async.forEach(_(joinData).keys(), function(newcomer, searchedSignaturesOfTheWoT){
-          findSignaturesFromNewcomerToWoT(newcomer, function (err, signatures) {
-            _(signatures).keys().forEach(function(signedMember){
-              updates[signedMember] = updates[signedMember] || [];
-              updates[signedMember] = updates[signedMember].concat(signatures[signedMember]);
-            });
-            searchedSignaturesOfTheWoT(err);
-          });
-        }, next);
+        next();
       },
       function (next) {
         // Checking step
@@ -782,7 +799,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               computeNewLinks(theNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
-              checkWoTStability({ number: current ? current.number + 1 : 0, joiners: theNewcomers }, newLinks, next);
+              checkWoTConstraints({ number: current ? current.number + 1 : 0, joiners: theNewcomers }, newLinks, next);
             },
           ], onceChecked);
         }, function (err, realNewcomers) {
@@ -814,6 +831,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           });
           joinData[newcomer].certs = keptCerts;
         });
+        // console.log(finalJoinData);
         // Send back the new WoT, the joining data and key updates for newcomers' signature of WoT
         next(null, current, wotMembers.concat(realNewcomers), finalJoinData, updates);
       }
@@ -1061,6 +1079,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var sigFunc, block, difficulty;
     async.waterfall([
       function (next) {
+        if (conf.powDelay && !computationTimeoutDone) {
+          computationTimeoutDone = true;
+          computationTimeout = setTimeout(function () {
+            if (computeNextCallback)
+              computeNextCallback();
+          }, conf.powDelay*1000);
+          next('Skipping', null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
+          return;
+        }
+        else next();
+      },
+      function (next) {
         Block.current(function (err, current) {
           next(null, current);
         });
@@ -1071,9 +1101,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           return;
         } else {
           async.parallel({
-            data: function(callback){
-              findNewData(callback);
-            },
+            // data: function(callback){
+            //   findNewData(callback);
+            // },
             block: function(callback){
               BlockchainService.generateNext(callback);
             },
@@ -1089,16 +1119,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (res, next){
         if (!res) {
           next(null, null, 'Waiting for a root block before computing new blocks');
-        } else if (_(res.data.joinData).keys().length == 0 && _(res.data.updates).keys().length == 0) {
+        } else if (res.block.joiners.length == 0 && res.block.certifications.length == 0) {
           next(null, null, 'Waiting for new data to be written');
-        } else if (conf.powDelay && !computationTimeoutDone) {
-          computationTimeoutDone = true;
-          computationTimeout = setTimeout(function () {
-            if (computeNextCallback)
-              computeNextCallback();
-          }, conf.powDelay*1000);
-          next(null, null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
-          return;
         } else {
           computationTimeoutDone = false;
           BlockchainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {
@@ -1131,13 +1153,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (theUpdates, next) {
         updates = theUpdates;
+        console.log(updates);
         var checkingWoTFunc = function (newcomers, checkWoTForNewcomers, done) {
           checkWoTForNewcomers(newcomers, function (err) {
             // If success, simply add all newcomers. Otherwise, stop everything.
             done(err, newcomers);
           });
         };
-        findNewcomers(noFiltering, checkingWoTFunc, next);
+        findNewcomers(withEnoughCerts, checkingWoTFunc, next);
       },
       function (current, newWoT, joinData, otherUpdates, next){
         // Merges updates
@@ -1150,6 +1173,32 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         next(null, { "joinData": joinData, "updates": updates });
       },
     ], done);
+  }
+
+  function withEnoughCerts (preJoinData, done) {
+    var joinData = {};
+    var newcomers = _(preJoinData).keys();
+    var uids = [];
+    async.forEachSeries(newcomers, function (newcomer, callback) {
+      async.waterfall([
+        function (next){
+          var newLinks = {};
+          newLinks[newcomer] = [];
+          preJoinData[newcomer].certs.forEach(function (cert) {
+            newLinks[newcomer].push(cert.pubkey);
+          });
+          checkHaveEnoughLinks(newcomer, newLinks, next);
+        },
+        function (next){
+          joinData[newcomer] = preJoinData[newcomer];
+          next();
+        },
+      ], function (err) {
+        callback(null);
+      });
+    }, function (err) {
+      done(null, joinData);
+    });
   }
 
   function BlockCheckerDao (block) {
@@ -1215,6 +1264,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       Block.current(function (err, current) {
         done(null, (err || !current) ? null : current);
       });
+    }
+
+    this.getToBeKicked = function (blockNumber, done) {
+      Identity.getToBeKicked(done);
     }
   }
 }

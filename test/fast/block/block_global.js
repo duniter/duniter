@@ -81,6 +81,11 @@ describe("Block global coherence", function(){
     done();
   }));
 
+  it('a block with at least one joiner without enough certifications should succeed', validate(blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER_BLOCK_0, function (err, done) {
+    should.not.exist(err);
+    done();
+  }));
+
   it('a block with at least one joiner outdistanced from WoT should fail', validate(blocks.OUTDISTANCED_JOINER, function (err, done) {
     should.exist(err);
     err.should.equal('Joiner is outdistanced from WoT');

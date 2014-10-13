@@ -35,7 +35,8 @@ function GlobalValidator (conf, dao) {
       async.apply(checkCertificationsAreMadeToMembers, block),
       async.apply(checkCertificationsDelayIsRespected, block),
       async.apply(checkJoinersHaveEnoughCertifications, block),
-      async.apply(checkJoinersAreNotOudistanced, block)
+      async.apply(checkJoinersAreNotOudistanced, block),
+      async.apply(checkKickedMembersAreExcluded, block)
     ], function (err) {
       done(err);
     });
@@ -239,18 +240,25 @@ function GlobalValidator (conf, dao) {
     var newLinks = getNewLinks(block);
     async.forEach(block.joiners, function(inlineMembership, callback){
       var ms = Membership.fromInline(inlineMembership);
-      async.waterfall([
-        function (next){
-          dao.getValidLinksTo(ms.issuer, next);
-        },
-        function (links, next){
-          var nbCerts = links.length + (newLinks[ms.issuer] || []).length;
-          if (nbCerts < conf.sigQty)
-            next('Joiner does not gathers enough certifications');
-          else
-            next();
-        },
-      ], callback);
+      if (block.number == 0) {
+        // No test for root block
+        callback();
+        return;
+      }
+      else {
+        async.waterfall([
+          function (next){
+            dao.getValidLinksTo(ms.issuer, next);
+          },
+          function (links, next){
+            var nbCerts = links.length + (newLinks[ms.issuer] || []).length;
+            if (nbCerts < conf.sigQty)
+              next('Joiner does not gathers enough certifications');
+            else
+              next();
+          },
+        ], callback);
+      }
     }, done);
   }
 
@@ -281,6 +289,29 @@ function GlobalValidator (conf, dao) {
             },
           ], callback);
         }, next);
+      },
+    ], done);
+  }
+
+  function checkKickedMembersAreExcluded (block, done) {
+    var wotPubkeys = [];
+    async.waterfall([
+      function (next){
+        dao.getToBeKicked(block.number, next);
+      },
+      function (identities, next){
+        var remainingKeys = [];
+        identities.forEach(function (idty) {
+          remainingKeys.push(idty.pubkey);
+        });
+        block.excluded.forEach(function (excluded) {
+          remainingKeys = _(remainingKeys).difference(excluded);
+        });
+        if (remainingKeys.length > 0) {
+          next('All kicked members must be present under Excluded members')
+        } else {
+          next();
+        }
       },
     ], done);
   }
@@ -375,7 +406,7 @@ function isOver3Hops (pubkey, ofMembers, newLinks, dao, done) {
               dao.getValidLinksFrom(member, function (err, links) {
                 dist2Links = [];
                 links.forEach(function(lnk){
-                  dist2Links.push(lnk.source);
+                  dist2Links.push(lnk.target);
                 });
                 next(err);
               });

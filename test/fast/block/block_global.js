@@ -116,6 +116,17 @@ describe("Block global coherence", function(){
     done();
   }));
 
+  it('a block with kicked members not written under Excluded field should fail', validate(blocks.KICKED_NOT_EXCLUDED, function (err, done) {
+    should.exist(err);
+    err.should.equal('All kicked members must be present under Excluded members');
+    done();
+  }));
+
+  it('a block with kicked members well written under Excluded field should succeed', validate(blocks.KICKED_EXCLUDED, function (err, done) {
+    should.not.exist(err);
+    done();
+  }));
+
 });
 
 function validate (raw, callback) {
@@ -213,6 +224,7 @@ function BlockCheckerDao (block) {
 
   this.getCurrent = function (done) {
     if (block.number == 3)       done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
+    else if (block.number == 4)  done(null, { number: 3, hash: '4AE9FA0A8299A828A886C0EB30C930C7CF302A72', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
     else if (block.number == 1)  done(null, null);
     else if (block.number == 51) done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
     else if (block.number == 50) done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
@@ -220,6 +232,17 @@ function BlockCheckerDao (block) {
     else if (block.number == 52) done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
     else
       done(null, null);
+  }
+
+  this.getToBeKicked = function (blockNumber, done) {
+    if (block.number != 4)
+      done(null, []);
+    else {
+      done(null, [
+        { pubkey: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
+        { pubkey: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' },
+      ]);
+    }
   }
 
 }

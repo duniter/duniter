@@ -328,24 +328,46 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   function updateMembers (block, done) {
-    async.forEach(block.identities, function(identity, callback){
-      var idty = Identity.fromInline(identity);
-      async.waterfall([
-        function (next){
-          Identity.getTheOne(idty.pubkey, idty.getTargetHash(), next);
-        },
-        function (existing, next){
-          if (existing) {
-            idty = existing;
-          }
-          idty.member = true;
-          idty.kicked = false;
-          idty.save(function (err) {
-            next(err);
-          });
-        }
-      ], callback);
-    }, done);
+    async.waterfall([
+      function (next) {
+        // Newcomers
+        async.forEach(block.identities, function(identity, callback){
+          var idty = Identity.fromInline(identity);
+          async.waterfall([
+            function (next){
+              Identity.getTheOne(idty.pubkey, idty.getTargetHash(), next);
+            },
+            function (existing, next){
+              if (existing) {
+                idty = existing;
+              }
+              idty.member = true;
+              idty.kick = false;
+              idty.save(function (err) {
+                next(err);
+              });
+            }
+          ], callback);
+        }, next);
+      },
+      function (next) {
+        // Excluded
+        async.forEach(block.excluded, function (pubkey, callback) {
+          async.waterfall([
+            function (next) {
+              Identity.getMember(pubkey, next);
+            },
+            function (idty, next) {
+              idty.member = false;
+              idty.kick = false;
+              idty.save(function (err) {
+                next(err);
+              });
+            }
+          ], callback);
+        }, next);
+      }
+    ], done);
   }
 
   function updateCertifications (block, done) {
@@ -544,8 +566,17 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   * Generate a "newcomers" keyblock
   */
   this.generateUpdates = function (done) {
+    var exclusions = [];
     async.waterfall([
-      function (next){
+      function (next) {
+        // First, check for members' exclusions
+        Identity.getToBeKicked(next);
+      },
+      function (toBeKicked, next) {
+        toBeKicked.forEach(function (idty) {
+          exclusions.push(idty.pubkey);
+        });
+        // Second, check for members' key updates
         findUpdates(next);
       },
       function (updates, next){
@@ -554,7 +585,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (current, updates, next){
-        createNewcomerBlock(current, {}, updates, next);
+        createNewcomerBlock(current, {}, updates, exclusions, next);
       },
     ], done);
   }
@@ -680,9 +711,17 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   */
   this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
     var updates = {};
+    var exclusions = [];
     async.waterfall([
       function (next) {
-        // First, check for members' key updates
+        // First, check for members' exclusions
+        Identity.getToBeKicked(next);
+      },
+      function (toBeKicked, next) {
+        toBeKicked.forEach(function (idty) {
+          exclusions.push(idty.pubkey);
+        });
+        // Second, check for members' key updates
         findUpdateFunc(next);
       },
       function (theUpdates, next) {
@@ -698,7 +737,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
         });
         // Create the block
-        createNewcomerBlock(current, joinData, updates, next);
+        createNewcomerBlock(current, joinData, updates, exclusions, next);
       },
     ], done);
   };
@@ -920,7 +959,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return matched;
   }
 
-  function createNewcomerBlock (current, joinData, updates, done) {
+  function createNewcomerBlock (current, joinData, updates, exclusions, done) {
+    // Prevent writing joins/updates for excluded members
+    exclusions.forEach(function (excluded) {
+      delete updates[excluded];
+      delete joinData[excluded];
+    });
     var block = new Block();
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
@@ -933,15 +977,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     // Members merkle
     var joiners = _(joinData).keys();
     var previousCount = current ? current.membersCount : 0;
-    if (joiners.length > 0) {
-      // Joiners
-      block.membersCount = previousCount + joiners.length;
-      block.joiners = joiners.slice();
-    } else if (joiners.length == 0 && current) {
-      // No joiners but B#1+
-      block.membersCount = previousCount;
-    } else {
-      // No joiners on B#0
+    if (joiners.length == 0 && !current) {
       done('Wrong new block: cannot make a root block without members');
       return;
     }
@@ -957,7 +993,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     // Leavers
     block.leavers = [];
     // Kicked people
-    block.excluded = [];
+    block.excluded = exclusions;
+    // Final number of members
+    block.membersCount = previousCount + block.joiners.length - block.leavers.length - block.excluded.length;
     // Certifications from the WoT, to newcomers
     block.certifications = [];
     joiners.forEach(function(joiner){

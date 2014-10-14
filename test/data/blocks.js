@@ -1026,7 +1026,7 @@ module.exports = {
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "MembersCount: 3\n" +
+    "MembersCount: 1\n" +
     "Identities:\n" +
     "Joiners:\n" +
     "Leavers:\n" +
@@ -1037,6 +1037,28 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   KICKED_EXCLUDED: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 4\n" +
+    "Date: 1411776000\n" +
+    "ConfirmedDate: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 1\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  WRONG_MEMBERS_COUNT: 
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +

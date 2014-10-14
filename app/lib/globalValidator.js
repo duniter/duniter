@@ -36,7 +36,8 @@ function GlobalValidator (conf, dao) {
       async.apply(checkCertificationsDelayIsRespected, block),
       async.apply(checkJoinersHaveEnoughCertifications, block),
       async.apply(checkJoinersAreNotOudistanced, block),
-      async.apply(checkKickedMembersAreExcluded, block)
+      async.apply(checkKickedMembersAreExcluded, block),
+      async.apply(checkMembersCountIsGood, block)
     ], function (err) {
       done(err);
     });
@@ -312,6 +313,22 @@ function GlobalValidator (conf, dao) {
         } else {
           next();
         }
+      },
+    ], done);
+  }
+
+  function checkMembersCountIsGood (block, done) {
+    async.waterfall([
+      function (next){
+        dao.getCurrent(next);
+      },
+      function (current, next){
+        var currentCount = current ? current.membersCount : 0;
+        var variation = block.joiners.length - block.leavers.length - block.excluded.length;
+        if (block.membersCount != currentCount + variation)
+          next('Wrong members count');
+        else
+          next();
       },
     ], done);
   }

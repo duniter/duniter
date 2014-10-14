@@ -712,7 +712,15 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
     var updates = {};
     var exclusions = [];
+    var current = null;
     async.waterfall([
+      function (next){
+        // Second, check for newcomers
+        Block.current(function (err, currentBlock) {
+          current = currentBlock;
+            next();
+        });
+      },
       function (next) {
         // First, check for members' exclusions
         Identity.getToBeKicked(next);
@@ -726,7 +734,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (theUpdates, next) {
         updates = theUpdates;
-        findNewcomers(filteringFunc, checkingWoTFunc, next);
+        // Third, check for newcomers
+        findNewcomers(current, filteringFunc, checkingWoTFunc, next);
       },
       function (current, newWoT, joinData, otherUpdates, next){
         // Merges updates
@@ -742,24 +751,20 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     ], done);
   };
 
-  function findNewcomers (filteringFunc, checkingWoTFunc, done) {
+  function findNewcomers (current, filteringFunc, checkingWoTFunc, done) {
     var wotMembers = [];
     var preJoinData = {};
     var joinData = {};
     var updates = {};
-    var current;
     async.waterfall([
-      function (next){
-        // Second, check for newcomers
-        Block.current(function (err, currentBlock) {
-          current = currentBlock;
-            next();
-        });
-      },
       function (next){
         Membership.find({ membership: 'IN', certts: { $gt: 0 }, userid: { $exists: true } }, next);
       },
       function (mss, next){
+        var joiners = [];
+        mss.forEach(function (ms) {
+          joiners.push(ms.issuer);
+        });
         async.forEach(mss, function(ms, callback){
           var join = { identity: null, ms: ms, key: null, idHash: '' };
           join.idHash = sha1(ms.userid + ms.certts.timestamp() + ms.issuer).toUpperCase();
@@ -770,31 +775,48 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                   Identity.getByHash(join.idHash, callback);
                 },
                 certs: function(callback){
-                  // Look for certifications fro WoT members
-                  async.waterfall([
-                    function (next) {
-                      Certification.toTarget(join.idHash, next);
-                    },
-                    function (certs, next) {
-                      var finalCerts = [];
-                      async.forEachSeries(certs, function (cert, callback) {
-                        async.waterfall([
-                          function (next) {
-                            Identity.isMember(cert.pubkey, next);
-                          },
-                          function (isMember, next) {
-                            if (isMember)
-                              finalCerts.push(cert);
-                            next();
-                          }
-                        ], function (err) {
-                          callback();
+                  if (!current) {
+                    // Look for certifications from initial joiners
+                    async.waterfall([
+                      function (next) {
+                        Certification.to(ms.issuer, next);
+                      },
+                      function (certs, next) {
+                        var finalCerts = [];
+                        certs.forEach(function (cert) {
+                          if (~joiners.indexOf(cert.pubkey))
+                            finalCerts.push(cert);
                         });
-                      }, function () {
                         next(null, finalCerts);
-                      });
-                    }
-                  ], callback)
+                      }
+                    ], callback);
+                  } else {
+                    // Look for certifications from WoT members
+                    async.waterfall([
+                      function (next) {
+                        Certification.toTarget(join.idHash, next);
+                      },
+                      function (certs, next) {
+                        var finalCerts = [];
+                        async.forEachSeries(certs, function (cert, callback) {
+                          async.waterfall([
+                            function (next) {
+                              Identity.isMember(cert.pubkey, next);
+                            },
+                            function (isMember, next) {
+                              if (isMember)
+                                finalCerts.push(cert);
+                              next();
+                            }
+                          ], function (err) {
+                            callback();
+                          });
+                        }, function () {
+                          next(null, finalCerts);
+                        });
+                      }
+                    ], callback);
+                  }
                 },
               }, next);
             },
@@ -1186,7 +1208,15 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var updates = {};
     var joinData = {};
     var exclusions = [];
+    var current = null;
     async.waterfall([
+      function (next){
+        // Second, check for newcomers
+        Block.current(function (err, currentBlock) {
+          current = currentBlock;
+            next();
+        });
+      },
       function (next) {
         // First, check for members' key updates
         findUpdates(next);
@@ -1200,7 +1230,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             done(err, newcomers);
           });
         };
-        findNewcomers(withEnoughCerts, checkingWoTFunc, next);
+        findNewcomers(current, withEnoughCerts, checkingWoTFunc, next);
       },
       function (current, newWoT, theJoinData, otherUpdates, next){
         // Merges updates

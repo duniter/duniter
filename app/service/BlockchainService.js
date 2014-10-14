@@ -1157,7 +1157,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (res, next){
         if (!res) {
           next(null, null, 'Waiting for a root block before computing new blocks');
-        } else if (res.block.joiners.length == 0 && res.block.certifications.length == 0) {
+        } else if (res.block.joiners.length == 0 && res.block.excluded.length == 0 && res.block.certifications.length == 0) {
           next(null, null, 'Waiting for new data to be written');
         } else {
           computationTimeoutDone = false;
@@ -1184,6 +1184,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   function findNewData (done) {
     var updates = {};
+    var joinData = {};
+    var exclusions = [];
     async.waterfall([
       function (next) {
         // First, check for members' key updates
@@ -1200,7 +1202,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         };
         findNewcomers(withEnoughCerts, checkingWoTFunc, next);
       },
-      function (current, newWoT, joinData, otherUpdates, next){
+      function (current, newWoT, theJoinData, otherUpdates, next){
         // Merges updates
         _(otherUpdates).keys().forEach(function(fpr){
           if (!updates[fpr])
@@ -1208,8 +1210,19 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           else
             updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
         });
-        next(null, { "joinData": joinData, "updates": updates });
+        joinData = theJoinData;
+        next();
       },
+      function (next) {
+        // First, check for members' exclusions
+        Identity.getToBeKicked(next);
+      },
+      function (toBeKicked, next) {
+        toBeKicked.forEach(function (idty) {
+          exclusions.push(idty.pubkey);
+        });
+        next(null, { "joinData": joinData, "updates": updates, "exclusions": exclusions });
+      }
     ], done);
   }
 

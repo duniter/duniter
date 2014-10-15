@@ -88,12 +88,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         }
       },
       function (next){
-        BlockchainService.stopPoWThenProcessAndRestartPoW(function (saved) {
-          // Saves entry
-          entry.save(function (err) {
-            saved(err);
-          });
-        }, next);
+        // Saves entry
+        entry.save(function (err) {
+          if (computeNextCallback) {
+            // A new block may be written
+            computeNextCallback();
+          }
+          next(err);
+        });
       },
       function (next){
         logger.debug('✔ %s %s', entry.issuer, entry.membership);
@@ -168,7 +170,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           // If PoW computation process is waiting, trigger it
           if (computeNextCallback)
             computeNextCallback();
-          computeNextCallback = null;
           next();
         }
       ], taskDone);

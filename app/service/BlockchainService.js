@@ -68,7 +68,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         Membership.getForHashAndIssuer(entry.hash, entry.issuer, next);
       },
       function (entries, next){
-        if (entries.length > 0 && entries[0].date > entry.date) {
+        if (entries.length > 0) {
           next('Already received membership');
         }
         else Identity.isMember(entry.issuer, next);

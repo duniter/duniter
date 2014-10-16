@@ -259,7 +259,7 @@ A Transaction structure is considered *valid* if:
 
 * Field `Currency` is not empty.
 * Field `Issuers` is a multiline field whose lines are Base58 strings of 44 characters.
-* Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`, `F`), a colon, a SHA-1 hash and an integer value
+* Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
 * Signatures of `Issuers` are provided and **ALL** verify this structure
 
@@ -283,7 +283,7 @@ Signatures (fake here):
 
 #### Example 2
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction + 1 UD + 1 fee.
+Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction + 1 UD.
 
     Version: 1
     Currency: beta_brousouf
@@ -291,9 +291,8 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction + 1 UD
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
     0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:4
-    0:T:F80993776FB55154A60B3E58910C942A347964AD:6
+    0:T:F80993776FB55154A60B3E58910C942A347964AD:15
     0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:11
-    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097:9
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     
@@ -303,7 +302,7 @@ Signatures (fake here):
 
 #### Example 3
 
-Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction + 2 UD + 1 fee (their respective value are not known but the supposed sum could be 220 for example, so this transaction also carries a fee).
+Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction + 2 UD.
 
     Version: 1
     Currency: beta_brousouf
@@ -315,13 +314,12 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
     0:T:F80993776FB55154A60B3E58910C942A347964AD:8
     0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
-    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097:10
     1:T:F80993776FB55154A60B3E58910C942A347964AD:200
     2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
     2:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
-    DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156
+    DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:146
     6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49
     
 Signatures (fakes here):
@@ -346,14 +344,13 @@ A transaction may be described under a more compact format, to be used under [Bl
 
 Here is an example compacting above [example 3](#example-3):
 
-    TX:1:3:7:3
+    TX:1:3:6:3
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
     0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
     0:T:F80993776FB55154A60B3E58910C942A347964AD:8
     0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
-    0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097:10
     1:T:F80993776FB55154A60B3E58910C942A347964AD:120
     2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
     2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4:100
@@ -613,6 +610,16 @@ A Block can be accepted only if it respects a set of rules, here divided in 2 pa
 
 Local validation verifies the coherence of a well-formatted block, withtout any other context than the block itself.
 
+##### PreviousHash
+
+* `PreviousHash` must be present if `Number` field is over `0` value.
+* `PreviousHash` must not be present if `Number` field equals `0` value.
+
+##### PreviousIssuer
+
+* `PreviousIssuer` must be present if `Number` field is over `0` value.
+* `PreviousIssuer` must not be present if `Number` field equals `0` value.
+
 ##### Signature
 
 * A block must have a valid signature over the block's content, where associated public key is block's `Issuer` field.
@@ -655,11 +662,7 @@ Global validation verifies the coherence of a locally-validated block, in the co
 
 ###### Current time
 
-Current time is the one provided by the block being currently used. For a new block, it is the new block's time. For a previous block in the blockchain, it is the previous block's time.
-
-###### Machine time
-
-Another existing time is the machine time, which is the time provided by the computer running the software implementing UCP.
+Current time is the one provided by the block being currently used, and provided by `ConfirmedDate` field. For a new block, it is the new block's time provided by `ConfirmedDate`. For a previous block in the blockchain, it is the previous block's time.
 
 ###### Certification validity
 A certification is to be considered valid if its age in the blockchain (date of the block adding it) is less or equal to `[sigValidity]` compared to another block.
@@ -673,19 +676,13 @@ A member is a `PUBLIC_KEY` matching a valid `Identity` plus `IN` membership in t
 WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 
 * The minimum number of certifications coming *to* `PUBLIC_KEY` must be `[sigQtyTo]`
-* The minimum number of certifications coming *from* `PUBLIC_KEY` must be `[sigQtyFrom]`
-
-###### WoT recognition
+* This rule does not apply for block#0
 
 * For each WoT member: it has to exist a path, using certifications, leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` steps. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
 
 ###### UD consumption
 
 A *Universal Dividend* is considered *consumed* for a member if a transaction targeting this UD was issued where this member was a signatory.
-
-###### Fees consumption
-
-A *fee* is considered *consumed* for a member if a transaction targeting this fee was issued and where this member was a signatory.
 
 ###### Transaction consumption
 
@@ -734,7 +731,7 @@ A *transaction* is considered *consumed* for a public key if a transaction targe
 
 ##### Certifications
 
-* A certification's `PUBKEY_FROM` and `PUBKEY_TO` must be members of the WoT (this block included).
+* A certification's `PUBKEY_FROM` and `PUBKEY_TO` must be members of the WoT (this block excluded).
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
 * A same certification (same `PUBKEY_FROM` and same `PUBKEY_TO`) cannot be made twice in interval [`lastCertificationBlockTime`, `lastCertificationBlockTime` + `sigDelay`[.
 

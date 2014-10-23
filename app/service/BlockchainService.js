@@ -110,28 +110,24 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       var block = new Block(obj);
       var currentBlock = null;
       var newLinks;
+      var localValidation = localValidator();
+      var globalValidation = globalValidator(conf, new BlockCheckerDao(block));
       async.waterfall([
         function (next){
           console.log(block.getRaw());
-          localValidator().validate(block, next);
+          localValidation.validate(block, next);
         },
         function (validated, next){
-          localValidator().checkSignatures(block, next);
+          localValidation.checkSignatures(block, next);
         },
         function (validated, next){
-          globalValidator(conf, new BlockCheckerDao(block)).validate(block, next);
+          globalValidation.validate(block, next);
         },
         function (next){
-          globalValidator(conf, new BlockCheckerDao(block)).checkSignatures(block, next);
+          globalValidation.checkSignatures(block, next);
         },
         function (next){
-          Block.current(function (err, obj) {
-            next(null, obj || null);
-          })
-        },
-        function (current, next){
-          // Check the challenge depending on issuer
-          checkProofOfWork(current, block, next);
+          globalValidation.checkProofOfWork(block, next);
         },
         function (next) {
           // Check document's coherence
@@ -275,55 +271,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           count += newLinks[target].length;
         console.log(target, count);
         next(count < conf.sigQty && 'Key ' + target + ' does not have enough links (' + count + '/' + conf.sigQty + ')');
-      },
-    ], done);
-  }
-
-  function checkProofOfWork (current, block, done) {
-    var powRegexp = new RegExp('^0{' + conf.powZeroMin + '}');
-    if (!block.hash.match(powRegexp))
-      done('Not a proof-of-work');
-    else {
-      // Compute exactly how much zeros are required for this block's issuer
-      var lastBlockPenality = 0;
-      var nbWaitedPeriods = 0;
-      async.waterfall([
-        function (next){
-          BlockchainService.getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
-        },
-        function (nbZeros, next){
-          var powRegexp = new RegExp('^0{' + nbZeros + ',}');
-          if (!block.hash.match(powRegexp))
-            next('Wrong proof-of-work level: given ' + block.hash.match(/^0+/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
-          else {
-            next();
-          }
-        },
-      ], done);
-    }
-  }
-
-  this.getTrialLevel = function (issuer, nextBlockNumber, currentWoTsize, done) {
-    // Compute exactly how much zeros are required for this block's issuer
-    var lastBlockPenality = 0;
-    var nbWaitedPeriods = 0;
-    async.waterfall([
-      function (next){
-        Block.lastOfIssuer(issuer, next);
-      },
-      function (last, next){
-        if (last) {
-          var leadingZeros = last.hash.match(/^0+/)[0];
-          lastBlockPenality = leadingZeros.length - conf.powZeroMin;
-          var powPeriodIsPercentage = conf.powPeriod < 1;
-          var nbPeriodsToWait = powPeriodIsPercentage ? Math.floor(conf.powPeriod*currentWoTsize) : conf.powPeriod;
-          if (nbPeriodsToWait == 0)
-            nbWaitedPeriods = 1; // Minorate by 1 if does not have to wait
-          else
-            nbWaitedPeriods = Math.floor((nextBlockNumber - 1 - last.number) / nbPeriodsToWait); // -1 to say "excluded"
-        }
-        var nbZeros = Math.max(conf.powZeroMin, conf.powZeroMin + lastBlockPenality - nbWaitedPeriods);
-        next(null, nbZeros);
       },
     ], done);
   }
@@ -1172,7 +1119,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               signature(conf.salt, conf.passwd, callback);
             },
             trial: function (callback) {
-              BlockchainService.getTrialLevel(PeeringService.pubkey, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
+              globalValidator(conf, new BlockCheckerDao(block)).getTrialLevel(PeeringService.pubkey, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
             }
           }, next);
         }
@@ -1350,6 +1297,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
     this.getToBeKicked = function (blockNumber, done) {
       Identity.getToBeKicked(done);
+    },
+
+    this.lastBlockOfIssuer = function (issuer, done) {
+      Block.lastOfIssuer(issuer, done);
     }
   }
 }

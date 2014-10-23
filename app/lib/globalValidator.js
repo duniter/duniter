@@ -22,6 +22,14 @@ function GlobalValidator (conf, dao) {
     });
   };
 
+  this.checkProofOfWork = function (block, done) {
+    async.series([
+      async.apply(checkFingerprint, block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
   this.validate = function (block, done) {
     async.series([
       async.apply(checkNumber, block),
@@ -45,6 +53,10 @@ function GlobalValidator (conf, dao) {
 
   this.isOver3Hops = function (member, wot, newLinks, done) {
     isOver3Hops(member, wot, newLinks, dao, done);
+  };
+
+  this.getTrialLevel = function (issuer, nextBlockNumber, currentWoTsize, done) {
+    getTrialLevel(issuer, nextBlockNumber, currentWoTsize, done);
   };
 
   /*****************************
@@ -178,6 +190,61 @@ function GlobalValidator (conf, dao) {
           next('PreviousIssuer not matching issuer of current block');
         else
           next();
+      },
+    ], done);
+  }
+
+  function checkFingerprint (block, done) {
+    async.waterfall([
+      function (next){
+        dao.getCurrent(next);
+      },
+      function (current, next){
+        var powRegexp = new RegExp('^0{' + conf.powZeroMin + '}');
+        if (!block.hash.match(powRegexp))
+          next('Not a proof-of-work');
+        else {
+          // Compute exactly how much zeros are required for this block's issuer
+          var lastBlockPenality = 0;
+          var nbWaitedPeriods = 0;
+          async.waterfall([
+            function (next){
+              getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
+            },
+            function (nbZeros, next){
+              var powRegexp = new RegExp('^0{' + nbZeros + ',}');
+              if (!block.hash.match(powRegexp))
+                next('Wrong proof-of-work level: given ' + block.hash.match(/^0+/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
+              else {
+                next();
+              }
+            },
+          ], next);
+        }
+      },
+    ], done);
+  }
+
+  function getTrialLevel (issuer, nextBlockNumber, currentWoTsize, done) {
+    // Compute exactly how much zeros are required for this block's issuer
+    var lastBlockNbZeros = conf.powZeroMin;
+    var nbWaitedPeriods = 0;
+    async.waterfall([
+      function (next){
+        dao.lastBlockOfIssuer(issuer, next);
+      },
+      function (last, next){
+        if (last) {
+          var lastBlockNbZeros = last.hash.match(/^0+/)[0].length;
+          var powPeriodIsPercentage = conf.powPeriod < 1;
+          var nbPeriodsToWait = powPeriodIsPercentage ? Math.floor(conf.powPeriod*currentWoTsize) : conf.powPeriod;
+          if (nbPeriodsToWait == 0)
+            nbWaitedPeriods = 1; // Minorate by 1 if does not have to wait
+          else
+            nbWaitedPeriods = Math.floor((nextBlockNumber - last.number) / nbPeriodsToWait); // -1 to say "excluded"
+        }
+        var nbZeros = Math.max(conf.powZeroMin, lastBlockNbZeros + 1 - nbWaitedPeriods);
+        next(null, nbZeros);
       },
     ], done);
   }

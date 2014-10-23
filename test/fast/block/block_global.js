@@ -12,7 +12,9 @@ var Configuration = mongoose.model('Configuration', require('../../../app/models
 
 var conf = new Configuration({
   sigDelay: 365.25*24*3600, // 1 year
-  sigQty: 1
+  sigQty: 1,
+  powZeroMin: 1,
+  powPeriod: 18
 });
 
 describe("Block global coherence", function(){
@@ -133,6 +135,42 @@ describe("Block global coherence", function(){
     done();
   }));
 
+  it('a block not starting with a leading zero should fail', validateProofOfWork(blocks.NO_LEADING_ZERO, function (err, done) {
+    should.exist(err);
+    err.should.equal('Not a proof-of-work');
+    done();
+  }));
+
+  it('a block requiring 4 leading zeros but providing less should fail', validateProofOfWork(blocks.REQUIRES_4_LEADING_ZEROS, function (err, done) {
+    should.exist(err);
+    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 4 zeros');
+    done();
+  }));
+
+  it('a block requiring 7 leading zeros but providing less should fail', validateProofOfWork(blocks.REQUIRES_7_LEADING_ZEROS, function (err, done) {
+    should.exist(err);
+    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 7 zeros');
+    done();
+  }));
+
+  it('a block requiring 6 leading zeros but providing less should fail', validateProofOfWork(blocks.REQUIRES_6_LEADING_ZEROS, function (err, done) {
+    should.exist(err);
+    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 6 zeros');
+    done();
+  }));
+
+  it('a block requiring 5 leading zeros but providing less should fail', validateProofOfWork(blocks.REQUIRES_5_LEADING_ZEROS, function (err, done) {
+    should.exist(err);
+    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 5 zeros');
+    done();
+  }));
+
+  it('a block requiring 7 leading zeros (again) but providing less should fail', validateProofOfWork(blocks.REQUIRES_7_LEADING_ZEROS_AGAIN, function (err, done) {
+    should.exist(err);
+    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 7 zeros');
+    done();
+  }));
+
 });
 
 function validate (raw, callback) {
@@ -148,6 +186,23 @@ function validate (raw, callback) {
       },
       function (next){
         validator(conf, new BlockCheckerDao(block)).checkSignatures(block, next);
+      },
+    ], function (err) {
+      callback(err, done);
+    });
+  };
+}
+
+function validateProofOfWork (raw, callback) {
+  var block;
+  return function (done) {
+    async.waterfall([
+      function (next){
+        parser.asyncWrite(raw, next);
+      },
+      function (obj, next){
+        block = new Block(obj);
+        validator(conf, new BlockCheckerDao(block)).checkProofOfWork(block, next);
       },
     ], function (err) {
       callback(err, done);
@@ -255,6 +310,37 @@ function BlockCheckerDao (block) {
         { pubkey: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
         { pubkey: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' },
       ]);
+    }
+  },
+
+  this.lastBlockOfIssuer = function (issuer, done) {
+    if (block.number == 60 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+      done(null, {
+        number: 5, // 60 - 5 = 55 waited, % 18 = 3,0555555
+        hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 + 1 - 3 = 4 required zeros
+      });
+    } else if (block.number == 61 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+      done(null, {
+        number: 60, // 61 - 60 = 0 waited, % 18 = 0
+        hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 + 1 - 0 = 7 required zeros
+      });
+    } else if (block.number == 62 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+      done(null, {
+        number: 44, // 62 - 44 = 18 waited, % 18 = 0
+        hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 + 1 - 1 = 6 required zeros
+      });
+    } else if (block.number == 64 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+      done(null, {
+        number: 47, // 64 - 47 = 17 waited, % 18 = 17
+        hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 + 1 - 0 = 7 required zeros
+      });
+    } else if (block.number == 63 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+      done(null, {
+        number: 26, // 62 - 26 = 36 waited, % 18 = 0
+        hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 + 1 - 2 = 5 required zeros
+      });
+    } else {
+      done(null, null);
     }
   }
 

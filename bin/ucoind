@@ -455,7 +455,8 @@ function overrideConf(conf) {
       ud0:         program.ud0,
       c:           program.growth,
       dt:          program.dt,
-      udid2:       program.udid2
+      udid2:       program.udid2,
+      incDateMin:  program.incDateMin
     }
   };
 
@@ -484,6 +485,7 @@ function overrideConf(conf) {
   if (cli.ucp.c)                            conf.c              = cli.ucp.c;
   if (cli.ucp.ud0)                          conf.ud0            = cli.ucp.ud0;
   if (cli.ucp.udid2)                        conf.udid2          = cli.ucp.udid2;
+  if (cli.ucp.incDateMin)                   conf.incDateMin     = cli.ucp.incDateMin;
 
   // Specific internal settings
   conf.createNext = true;

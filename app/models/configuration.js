@@ -26,6 +26,7 @@ var ConfigurationSchema = new Schema({
   powDelay:    {"type": Number, "default": 0}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the keychain
   tsInterval:  {"type": Number, "default": 30},
+  incDateMin:  {"type": Number, "default": 10}, // Increment date on incDateMin'th block with same new Date
   udid2:       {"type": Boolean, "default": false},
 });
 

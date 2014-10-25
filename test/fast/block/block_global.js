@@ -14,7 +14,8 @@ var conf = new Configuration({
   sigDelay: 365.25*24*3600, // 1 year
   sigQty: 1,
   powZeroMin: 1,
-  powPeriod: 18
+  powPeriod: 18,
+  incDateMin: 10
 });
 
 describe("Block global coherence", function(){
@@ -171,6 +172,35 @@ describe("Block global coherence", function(){
     done();
   }));
 
+  it('a root block with date field different from confirmed date should fail', validateDate(blocks.WRONG_ROOT_DATES, function (err, done) {
+    should.exist(err);
+    err.should.equal('Root block\'s Date and ConfirmedDate must be equal');
+    done();
+  }));
+
+  it('a block with date field lower than confirmed date should fail', validateDate(blocks.WRONG_DATE_LOWER_THAN_CONFIRMED, function (err, done) {
+    should.exist(err);
+    err.should.equal('Date field cannot be lower than previous block\'s ConfirmedDate');
+    done();
+  }));
+
+  it('a block with different confirmed dates AND not confirming a new date should fail', validateDate(blocks.WRONG_CONFIRMED_DATE_NOT_SAME, function (err, done) {
+    should.exist(err);
+    err.should.equal('ConfirmedDate must be equal to previous block\'s ConfirmedDate');
+    done();
+  }));
+
+  it('a block with different confirmed dates AND not confirming a new date should fail', validateDate(blocks.WRONG_CONFIRMED_DATE_MUST_CONFIRM, function (err, done) {
+    should.exist(err);
+    err.should.equal('ConfirmedDate must be equal to Date for a confirming block');
+    done();
+  }));
+
+  it('a block with good confirmation of a new date should pass', validateDate(blocks.GOOD_CONFIRMED_DATE, function (err, done) {
+    should.not.exist(err);
+    done();
+  }));
+
 });
 
 function validate (raw, callback) {
@@ -203,6 +233,23 @@ function validateProofOfWork (raw, callback) {
       function (obj, next){
         block = new Block(obj);
         validator(conf, new BlockCheckerDao(block)).checkProofOfWork(block, next);
+      },
+    ], function (err) {
+      callback(err, done);
+    });
+  };
+}
+
+function validateDate (raw, callback) {
+  var block;
+  return function (done) {
+    async.waterfall([
+      function (next){
+        parser.asyncWrite(raw, next);
+      },
+      function (obj, next){
+        block = new Block(obj);
+        validator(conf, new BlockCheckerDao(block)).checkDates(block, next);
       },
     ], function (err) {
       callback(err, done);
@@ -298,6 +345,14 @@ function BlockCheckerDao (block) {
       done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 52)
       done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
+    else if (block.number == 70)
+      done(null, { number: 69, date: 1411777000, confirmedDate: 1411777000, newDateNth: 1 });
+    else if (block.number == 71)
+      done(null, { number: 70, date: 1411775000, confirmedDate: 1411775000, newDateNth: 1 });
+    else if (block.number == 72)
+      done(null, { number: 71, date: 1411777000, confirmedDate: 1411777000, newDateNth: 9 });
+    else if (block.number == 73)
+      done(null, { number: 72, date: 1411777000, confirmedDate: 1411776000, newDateNth: 9 });
     else
       done(null, null);
   }

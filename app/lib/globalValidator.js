@@ -30,6 +30,14 @@ function GlobalValidator (conf, dao) {
     });
   };
 
+  this.checkDates = function (block, done) {
+    async.series([
+      async.apply(checkDates, block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
   this.validate = function (block, done) {
     async.series([
       async.apply(checkNumber, block),
@@ -220,6 +228,31 @@ function GlobalValidator (conf, dao) {
               }
             },
           ], next);
+        }
+      },
+    ], done);
+  }
+
+  function checkDates (block, done) {
+    async.waterfall([
+      function (next){
+        dao.getCurrent(next);
+      },
+      function (current, next){
+        if (!current && block.date != block.confirmedDate) {
+          next('Root block\'s Date and ConfirmedDate must be equal');
+        }
+        else if (current && block.date < current.confirmedDate) {
+          next('Date field cannot be lower than previous block\'s ConfirmedDate');
+        }
+        else if (current && current.newDateNth + 1 == conf.incDateMin && block.date == current.date && block.confirmedDate != block.date) {
+          next('ConfirmedDate must be equal to Date for a confirming block');
+        }
+        else if (current && current.newDateNth + 1 != conf.incDateMin && block.confirmedDate != current.confirmedDate) {
+          next('ConfirmedDate must be equal to previous block\'s ConfirmedDate');
+        }
+        else {
+          next();
         }
       },
     ], done);

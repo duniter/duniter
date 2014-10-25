@@ -17,6 +17,7 @@ var BlockSchema = new Schema({
   previousHash: String,
   previousIssuer: String,
   membersCount: {"type": Number, "default": 0},
+  newDateNth: {"type": Number, "default": 0},
   identities: Array,
   joiners: Array,
   leavers: Array,

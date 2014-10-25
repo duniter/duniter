@@ -113,7 +113,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       var localValidation = localValidator();
       var globalValidation = globalValidator(conf, new BlockCheckerDao(block));
       async.waterfall([
-        function (next){
+        function (next) {
+          BlockchainService.current(next);
+        },
+        function (current, next){
+          currentBlock = current;
           console.log(block.getRaw());
           localValidation.validate(block, next);
         },
@@ -127,6 +131,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           globalValidation.checkSignatures(block, next);
         },
         function (next){
+          globalValidation.checkDates(block, next);
+        },
+        function (next){
           globalValidation.checkProofOfWork(block, next);
         },
         function (next) {
@@ -134,7 +141,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           checkIssuer(block, next);
         },
         function (next) {
-          BlockchainService.stopPoWThenProcessAndRestartPoW(async.apply(saveBlockData, block), next);
+          BlockchainService.stopPoWThenProcessAndRestartPoW(async.apply(saveBlockData, currentBlock, block), next);
         },
       ], function (err) {
         sent(err, !err && block);
@@ -275,6 +282,16 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     ], done);
   }
 
+  function updateBlocksComputedVars (current, block, done) {
+    // New date confirmation
+    if (!current || current.date != block.date) {
+      block.newDateNth = 1;
+    } else {
+      block.newDateNth = current.newDateNth + 1;
+    }
+    done();
+  }
+
   function updateMembers (block, done) {
     async.waterfall([
       function (next) {
@@ -380,9 +397,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     }, done);
   }
 
-  function saveBlockData (block, done) {
+  function saveBlockData (current, block, done) {
     logger.info('Block #' + block.number + ' added to the keychain');
     async.waterfall([
+      function (next) {
+        updateBlocksComputedVars(current, block, next);
+      },
       function (next) {
         // Saves the block
         block.save(function (err) {
@@ -448,7 +468,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   this.current = function (done) {
     Block.current(function (err, kb) {
-      done(err, kb || null);
+      done(null, kb || null);
     })
   };
 
@@ -939,7 +959,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
     block.number = current ? current.number + 1 : 0;
-    block.confirmedDate = current ? current.confirmedDate : moment.utc().startOf('day').unix();
+    var now = moment.utc().startOf('day').unix();
+    block.date = now;
+    block.confirmedDate = current ? current.confirmedDate : now;
+    var lastDate = current ? current.date : null;
+    if (lastDate && current.newDateNth == conf.incDateMin - 1) {
+      // Must change confirmedDate to the new date
+      block.confirmedDate = block.date;
+    }
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
     if (PeeringService)

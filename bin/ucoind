@@ -258,7 +258,10 @@ function generateAndSend (generationMethod) {
         var doSign = null;
         async.waterfall([
           function (next){
-            wiz.configKey(conf, next);
+            if (!conf.salt && !conf.passwd)
+              wiz.configKey(conf, next);
+            else
+              next();
           },
           function (next){
             signature(conf.salt, conf.passwd, next);

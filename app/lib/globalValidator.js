@@ -227,7 +227,7 @@ function GlobalValidator (conf, dao) {
 
   function getTrialLevel (issuer, nextBlockNumber, currentWoTsize, done) {
     // Compute exactly how much zeros are required for this block's issuer
-    var lastBlockNbZeros = conf.powZeroMin;
+    var lastBlockNbZeros = 0;
     var nbWaitedPeriods = 0;
     async.waterfall([
       function (next){
@@ -235,7 +235,7 @@ function GlobalValidator (conf, dao) {
       },
       function (last, next){
         if (last) {
-          var lastBlockNbZeros = last.hash.match(/^0+/)[0].length;
+          lastBlockNbZeros = last.hash.match(/^0+/)[0].length;
           var powPeriodIsPercentage = conf.powPeriod < 1;
           var nbPeriodsToWait = powPeriodIsPercentage ? Math.floor(conf.powPeriod*currentWoTsize) : conf.powPeriod;
           if (nbPeriodsToWait == 0)

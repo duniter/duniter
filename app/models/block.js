@@ -13,11 +13,14 @@ var BlockSchema = new Schema({
   nonce: {"type": Number, "default": 0},
   number: {"type": Number, "default": 0},
   date: {"type": Number, "default": 0},
+  dividend: {"type": Number, "default": 0},
   confirmedDate: {"type": Number, "default": 0},
+  monetaryMass: {"type": Number, "default": 0},
   previousHash: String,
   previousIssuer: String,
   membersCount: {"type": Number, "default": 0},
   newDateNth: {"type": Number, "default": 0},
+  confirmedDateChanged: {"type": Boolean, "default": false},
   identities: Array,
   joiners: Array,
   leavers: Array,
@@ -180,6 +183,25 @@ BlockSchema.statics.lastOfIssuer = function (issuer, done) {
     .limit(1)
     .exec(function (err, blocks) {
       done(err, (blocks && blocks.length == 1) ? blocks[0] : null);
+  });
+};
+
+BlockSchema.statics.lastUDBlock = function (done) {
+  this
+    .find({ dividend: { $gt: 0 } })
+    .sort({ 'number': -1 })
+    .limit(1)
+    .exec(function (err, blocks) {
+      done(err, blocks.length > 0 ? blocks[0] : null);
+    });
+};
+
+BlockSchema.statics.getRoot = function (done) {
+  this.find({ number: 0 }).limit(1).exec(function (err, blocks) {
+    if(blocks && blocks.length == 1)
+      done(err, blocks[0]);
+    else
+      done(null, null);
   });
 };
 

@@ -134,6 +134,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           globalValidation.checkDates(block, next);
         },
         function (next){
+          globalValidation.checkUD(block, next);
+        },
+        function (next){
           globalValidation.checkProofOfWork(block, next);
         },
         function (next) {
@@ -291,6 +294,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     }
     if (current && block.confirmedDate != current.confirmedDate) {
       block.confirmedDateChanged = true;
+    }
+    // Monetary Mass update
+    if (current) {
+      block.monetaryMass = (current.monetaryMass || 0) + block.dividend*block.membersCount;
     }
     done();
   }
@@ -556,7 +563,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (current, updates, next){
-        createNewcomerBlock(current, {}, updates, exclusions, next);
+        createNewcomerBlock(current, {}, updates, exclusions, null, next);
       },
     ], done);
   }
@@ -684,6 +691,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var updates = {};
     var exclusions = [];
     var current = null;
+    var lastUDBlock = null;
     async.waterfall([
       function (next){
         // Second, check for newcomers
@@ -692,7 +700,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             next();
         });
       },
-      function (next) {
+      function (next){
+        // Second, check for newcomers
+        Block.lastUDBlock(next);
+      },
+      function (theLastUDBlock, next) {
+        lastUDBlock = theLastUDBlock;
         // First, check for members' exclusions
         Identity.getToBeKicked(next);
       },
@@ -717,7 +730,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
         });
         // Create the block
-        createNewcomerBlock(current, joinData, updates, exclusions, next);
+        createNewcomerBlock(current, joinData, updates, exclusions, lastUDBlock, next);
       },
     ], done);
   };
@@ -952,7 +965,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return matched;
   }
 
-  function createNewcomerBlock (current, joinData, updates, exclusions, done) {
+  function createNewcomerBlock (current, joinData, updates, exclusions, lastUDBlock, done) {
     // Prevent writing joins/updates for excluded members
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
@@ -962,11 +975,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
     block.number = current ? current.number + 1 : 0;
-    var now = moment.utc().startOf('day').unix();
+    var now = moment.utc().startOf('minute').unix();
     block.date = now;
     block.confirmedDate = current ? current.confirmedDate : now;
     var lastDate = current ? current.date : null;
-    if (lastDate && current.newDateNth == conf.incDateMin - 1) {
+    if (lastDate && current.newDateNth == conf.incDateMin - 1 && block.date == current.date) {
       // Must change confirmedDate to the new date
       block.confirmedDate = block.date;
     }
@@ -1011,8 +1024,35 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         block.certifications.push(cert.inline());
       });
     });
+    // Transactions
     block.transactions = [];
-    done(null, block);
+    // Universal Dividend
+    async.waterfall([
+      function (next) {
+        if (lastUDBlock)
+          next(null, lastUDBlock.confirmedDate);
+        else
+          Block.getRoot(function (err, root) {
+            if (root)
+              next(null, root.confirmedDate);
+            else
+              next(null, null);
+          });
+      },
+      function (lastUDTime, next) {
+        if (lastUDTime != null) {
+          if (current && current.confirmedDateChanged && lastUDTime + conf.dt <= current.confirmedDate) {
+            var M = current.monetaryMass || 0;
+            var c = conf.c;
+            var N = block.membersCount;
+            var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+            var UD = Math.ceil(Math.max(previousUD, c * M / N));
+            block.dividend = UD;
+          } 
+        }
+        next(null, block);
+      }
+    ], done);
   }
 
   this.computeDistances = function (done) {
@@ -1043,7 +1083,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.whilst(
       function(){ return !pow.match(powRegexp); },
       function (next) {
-        var newTS = moment.utc().startOf('day').unix();
+        var newTS = moment.utc().startOf('minute').unix();
         if (newTS == block.date) {
           block.nonce++;
         } else {
@@ -1331,6 +1371,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
     this.lastBlockOfIssuer = function (issuer, done) {
       Block.lastOfIssuer(issuer, done);
+    },
+
+    this.getLastUDBlock = function (done) {
+      Block.lastUDBlock(done);
     }
   }
 }

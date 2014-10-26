@@ -38,6 +38,14 @@ function GlobalValidator (conf, dao) {
     });
   };
 
+  this.checkUD = function (block, done) {
+    async.series([
+      async.apply(checkUD, block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
   this.validate = function (block, done) {
     async.series([
       async.apply(checkNumber, block),
@@ -250,6 +258,48 @@ function GlobalValidator (conf, dao) {
         }
         else if (current && !(current.newDateNth + 1 == conf.incDateMin && block.date == current.date) && block.confirmedDate != current.confirmedDate) {
           next('ConfirmedDate must be equal to previous block\'s ConfirmedDate');
+        }
+        else {
+          next();
+        }
+      },
+    ], done);
+  }
+
+  function checkUD (block, done) {
+    async.waterfall([
+      function (next){
+        async.parallel({
+          current: function (next) {
+            dao.getCurrent(next);
+          },
+          lastUDBlock: function (next) {
+            dao.getLastUDBlock(next);
+          }
+        }, next);
+      },
+      function (res, next){
+        var current = res.current;
+        var lastUDTime = res.lastUDBlock ? res.lastUDBlock.confirmedDate : 0;
+        var UD = res.lastUDBlock ? res.lastUDBlock.dividend : conf.ud0;
+        var M = res.lastUDBlock ? res.lastUDBlock.monetaryMass : 0;
+        var Nt1 = block.membersCount;
+        var c = conf.c;
+        var UDt1 = Math.ceil(Math.max(UD, c * M / Nt1));
+        if (!current && block.dividend) {
+          next('Root block cannot have UniversalDividend field');
+        }
+        else if (current && current.confirmedDateChanged && block.confirmedDate >= lastUDTime + conf.dt && !block.dividend) {
+          next('Block must have a UniversalDividend field');
+        }
+        else if (current && current.confirmedDateChanged && block.confirmedDate >= lastUDTime + conf.dt && block.dividend != UDt1) {
+          next('UniversalDividend must be equal to ' + UDt1);
+        }
+        else if (current && !current.confirmedDateChanged && block.dividend) {
+          next('This block cannot have UniversalDividend since ConfirmedDate has not changed');
+        }
+        else if (current && current.confirmedDateChanged && block.confirmedDate < lastUDTime + conf.dt && block.dividend) {
+          next('This block cannot have UniversalDividend');
         }
         else {
           next();

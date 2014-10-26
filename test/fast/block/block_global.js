@@ -15,10 +15,13 @@ var conf = new Configuration({
   sigQty: 1,
   powZeroMin: 1,
   powPeriod: 18,
-  incDateMin: 10
+  incDateMin: 10,
+  dt: 100,
+  ud0: 100,
+  c: 0.1
 });
 
-describe("Block global coherence", function(){
+describe("Block global coherence:", function(){
 
   it('a valid block should not have any error', validate(blocks.VALID_ROOT, function (err, done) {
     should.not.exist(err);
@@ -201,6 +204,36 @@ describe("Block global coherence", function(){
     done();
   }));
 
+  it('a root block with Universal Dividend should fail', validateUD(blocks.ROOT_BLOCK_WITH_UD, function (err, done) {
+    should.exist(err);
+    err.should.equal('Root block cannot have UniversalDividend field');
+    done();
+  }));
+
+  it('a block without Universal Dividend whereas it have to have one should fail', validateUD(blocks.UD_BLOCK_WIHTOUT_UD, function (err, done) {
+    should.exist(err);
+    err.should.equal('Block must have a UniversalDividend field');
+    done();
+  }));
+
+  it('a block with wrong Universal Dividend value should fail', validateUD(blocks.BLOCK_WITH_WRONG_UD, function (err, done) {
+    should.exist(err);
+    err.should.equal('UniversalDividend must be equal to 121');
+    done();
+  }));
+
+  it('a root block with unlegitimated Universal Dividend presence should fail', validateUD(blocks.BLOCK_UNLEGITIMATE_UD, function (err, done) {
+    should.exist(err);
+    err.should.equal('This block cannot have UniversalDividend since ConfirmedDate has not changed');
+    done();
+  }));
+
+  it('a root block with unlegitimated Universal Dividend presence should fail', validateUD(blocks.BLOCK_UNLEGITIMATE_UD_2, function (err, done) {
+    should.exist(err);
+    err.should.equal('This block cannot have UniversalDividend');
+    done();
+  }));
+
 });
 
 function validate (raw, callback) {
@@ -250,6 +283,23 @@ function validateDate (raw, callback) {
       function (obj, next){
         block = new Block(obj);
         validator(conf, new BlockCheckerDao(block)).checkDates(block, next);
+      },
+    ], function (err) {
+      callback(err, done);
+    });
+  };
+}
+
+function validateUD (raw, callback) {
+  var block;
+  return function (done) {
+    async.waterfall([
+      function (next){
+        parser.asyncWrite(raw, next);
+      },
+      function (obj, next){
+        block = new Block(obj);
+        validator(conf, new BlockCheckerDao(block)).checkUD(block, next);
       },
     ], function (err) {
       callback(err, done);
@@ -335,8 +385,6 @@ function BlockCheckerDao (block) {
       done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 4) 
       done(null, { number: 3, hash: '4AE9FA0A8299A828A886C0EB30C930C7CF302A72', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
-    else if (block.number == 1) 
-      done(null, null);
     else if (block.number == 51)
       done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 50)
@@ -353,6 +401,14 @@ function BlockCheckerDao (block) {
       done(null, { number: 71, date: 1411777000, confirmedDate: 1411777000, newDateNth: 9 });
     else if (block.number == 73)
       done(null, { number: 72, date: 1411777000, confirmedDate: 1411776000, newDateNth: 9 });
+    else if (block.number == 80)
+      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: true });
+    else if (block.number == 81)
+      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: true });
+    else if (block.number == 82)
+      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: false });
+    else if (block.number == 83)
+      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: true });
     else
       done(null, null);
   }
@@ -394,6 +450,22 @@ function BlockCheckerDao (block) {
         number: 26, // 62 - 26 = 36 waited, % 18 = 0
         hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 + 1 - 2 = 5 required zeros
       });
+    } else {
+      done(null, null);
+    }
+  }
+
+  this.getLastUDBlock = function (done) {
+    if (block.number == 0) {
+      done(null, null);
+    } else if (block.number == 80) {
+      done(null, { confirmedDate: 1411776900, monetaryMass: 300, dividend: 100 });
+    } else if (block.number == 81) {
+      done(null, { confirmedDate: 1411776900, monetaryMass: 3620, dividend: 110 });
+    } else if (block.number == 82) {
+      done(null, { confirmedDate: 1411777000, monetaryMass: 3620, dividend: 110 });
+    } else if (block.number == 83) {
+      done(null, { confirmedDate: 1411777000, monetaryMass: 3620, dividend: 110 });
     } else {
       done(null, null);
     }

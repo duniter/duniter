@@ -289,6 +289,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     } else {
       block.newDateNth = current.newDateNth + 1;
     }
+    if (current && block.confirmedDate != current.confirmedDate) {
+      block.confirmedDateChanged = true;
+    }
     done();
   }
 

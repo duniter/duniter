@@ -248,7 +248,7 @@ function GlobalValidator (conf, dao) {
         else if (current && current.newDateNth + 1 == conf.incDateMin && block.date == current.date && block.confirmedDate != block.date) {
           next('ConfirmedDate must be equal to Date for a confirming block');
         }
-        else if (current && current.newDateNth + 1 != conf.incDateMin && block.confirmedDate != current.confirmedDate) {
+        else if (current && !(current.newDateNth + 1 == conf.incDateMin && block.date == current.date) && block.confirmedDate != current.confirmedDate) {
           next('ConfirmedDate must be equal to previous block\'s ConfirmedDate');
         }
         else {

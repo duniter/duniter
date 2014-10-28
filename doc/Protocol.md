@@ -1,6 +1,6 @@
 # UCP - uCoin Protocol
 
-> This document is still regularly updated (as of September 2014)
+> This document is still regularly updated (as of October 2014)
 
 ## Contents
 
@@ -237,7 +237,7 @@ Transaction is the support of money: it allows to materialize coins' ownership. 
     PUBLIC_KEY:INDEX
     ...
     Inputs:
-    INDEX:SOURCE:FINGERPRINT:AMOUNT
+    INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
     ...
     Outputs:
     PUBLIC_KEY:AMOUNT
@@ -259,20 +259,20 @@ A Transaction structure is considered *valid* if:
 
 * Field `Currency` is not empty.
 * Field `Issuers` is a multiline field whose lines are Base58 strings of 44 characters.
-* Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, a SHA-1 hash and an integer value
+* Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, an integer, a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
 * Signatures of `Issuers` are provided and **ALL** verify this structure
 
 #### Example 1
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its value is not known but could be 30).
+Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its value is not known but could be 30) written in block #3.
 
     Version: 1
     Currency: beta_brousouf
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:30
+    0:T:3:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:30
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:25
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:5
@@ -283,16 +283,16 @@ Signatures (fake here):
 
 #### Example 2
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction + 1 UD.
+Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction written in blocks #65 and #77 + 1 UD from block #88.
 
     Version: 1
     Currency: beta_brousouf
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:4
-    0:T:F80993776FB55154A60B3E58910C942A347964AD:15
-    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:11
+    0:T:65:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:4
+    0:T:77:F80993776FB55154A60B3E58910C942A347964AD:15
+    0:D:88:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:11
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     
@@ -302,7 +302,7 @@ Signatures (fake here):
 
 #### Example 3
 
-Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction + 2 UD.
+Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction (written in blocks #4, #78, #66 and #176) + 2 UD from same block #46.
 
     Version: 1
     Currency: beta_brousouf
@@ -311,12 +311,12 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
     Inputs:
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
-    0:T:F80993776FB55154A60B3E58910C942A347964AD:8
-    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
-    1:T:F80993776FB55154A60B3E58910C942A347964AD:200
-    2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
-    2:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
+    0:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
+    0:T:78:F80993776FB55154A60B3E58910C942A347964AD:8
+    0:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
+    1:T:66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD:200
+    2:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
+    2:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:146
@@ -348,12 +348,12 @@ Here is an example compacting above [example 3](#example-3):
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
-    0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
-    0:T:F80993776FB55154A60B3E58910C942A347964AD:8
-    0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
-    1:T:F80993776FB55154A60B3E58910C942A347964AD:120
-    2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
-    2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4:100
+    0:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
+    0:T:78:F80993776FB55154A60B3E58910C942A347964AD:8
+    0:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
+    1:T:66:F80993776FB55154A60B3E58910C942A347964AD:120
+    2:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
+    2:D:46:20DA3C59D27EABACFFD27626EF74EA56579C58D4:100
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156
     6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:4942yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
@@ -650,9 +650,9 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 
 ##### Transactions
 
-* A transaction cannot have 2 identical sources
-* A transaction cannot have 2 identical recipients
-* A transaction cannot have its output sum greater than its input sum
+* A transaction cannot have 2 identical sources (INDEX + SOURCE + NUMBER + FINGERPRINT)
+* A transaction cannot have 2 identical recipients (PUBLIC_KEY)
+* A transaction **must** have its output sum equal to its input sum
 
 #### Global
 
@@ -680,14 +680,6 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 
 * For each WoT member: it has to exist a path, using certifications, leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` steps. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
 
-###### UD consumption
-
-A *Universal Dividend* is considered *consumed* for a member if a transaction targeting this UD was issued where this member was a signatory.
-
-###### Transaction consumption
-
-A *transaction* is considered *consumed* for a public key if a transaction targeting this transaction was issued and where this public key was present in the outputs.
-
 ##### Number
 
 * A block's `Number` must be exactly equal to previous block + 1.
@@ -703,10 +695,10 @@ A *transaction* is considered *consumed* for a public key if a transaction targe
 
 ##### Dates
 
-* A block's `ConfirmedDate` has to be equal to *last* (in time value) confirmed date.
-* A `Date` is considered confirmed if at least `incDateMin` blocks with this date were written consecutively.
-* A block confirming (i.e., whose confirmation is the `incDateMin`<sup>th</sup>) new date must have its `Date` equal to `ConfirmedDate`.
-* Root block's `Date` is a confirmed date.
+* A block's `Date` must always be greater or equal to previous block's `ConfirmedDate`
+* A block's `ConfirmedDate` must be equal to *last block* `ConfirmedDate` field (in time value), unless it is a confirming block.
+* A confirming block (i.e., whose `Date` field is the `incDateMin`<sup>th</sup> consecutive block with same `Date` field) must have its `ConfirmedDate` equal to `Date`.
+* Root block's `Date` & `ConfirmedDate` must be equal.
 
 ##### Identity
 
@@ -742,28 +734,29 @@ A *transaction* is considered *consumed* for a public key if a transaction targe
 ##### Block fingerprint
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
-    NB_ZEROS = MAX [ powZeroMin ; powZeroMin + lastBlockPenality - FLOOR(nbWaitedPeriods) ]
+    NB_ZEROS = MAX [ powZeroMin ; lastBlockNbZeros + 1 - FLOOR(nbWaitedPeriods) ]
 
 Where:
 
-* `[lastBlockPenality]` is the number of leading zeros of last written block of the member, minus `[powZeroMin]`. If no block has been written by the member, `[lastBlockPenality] = 0`.
-* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member (`current` and  `newblock` **excluded**), divided by `[powPeriodComputed]`:
+* `[lastBlockNbZeros]` is the number of leading zeros of last written block of the member. If no block has been written by the member, `[lastBlockNbZeros] = 0`.
+* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member (`newblock` **excluded**), divided by `[powPeriodComputed]`:
     * `[powPeriodComputed] = [powPeriod]` if `[powPeriod]`'s value is between `[1;+inf[`
     * `[powPeriodComputed] = FLOOR([powPeriod] * N)` if `[powPeriod]`'s value is between `]0;1[`
     * `N` if the number of members *before* new block, so that `[powPeriodComputed]` can be computed *for new block*
     * If `[powPeriodComputed]` equals `0`, then `[nbWaitedPeriods]` directly equals `1`.
 
-> Those 2 rules (penality and waited periods) ensures a shared control of the keychain writing.
+> Those 2 rules (penality and waited periods) ensures a shared control of the blockchain writing.
 
 ##### Universal Dividend
 
-* Universal Dividend must be present if previous block changed `ConfirmedDate`'s value and that `ConfirmedDate` value is over `lastUDTime` + `dt`.
+* Root block do not have `UniversalDividend` field.
+* Universal Dividend must be present if previous block changed `ConfirmedDate`'s value and that `ConfirmedDate` value is greater or equal to `lastUDTime` + `dt`.
 * `lastUDTime` is the `ConfirmedDate` of the last block with `UniversalDividend` in it
 * Initial value of `lastUDTime` equals to the root block's `ConfirmedDate`.
 * Value of `UniversalDividend` equals to:
 
 ```
-MAX(UD(t) ; c * M(t) / N(t+1) )
+UD(t+1) = CEIL(MAX(UD(t) ; c * M(t) / N(t+1) ))
 ```
 
 Where:
@@ -780,17 +773,13 @@ Where:
 
 ##### Transactions
 
-Each transaction must follow below rules:
-
-* UD sources must be legitimate (signatory must be a member for this UD)
-* Fees sources must be legitimate (signatory must be `Issuer` of the block with the corresponding fees)
-* UD sources must not be consumed twice by a same public key
-* Fees sources must not be consumed twice by a same public key
+* It cannot exist 2 transactions with an identical source (where `INDEX` is replaced by the correct `PUBLIC_KEY`)
+* For `D` sources, public key must be a member of the WoT for the block `#NUMBER`
+* For `T` sources, public key must be a recipient of the source transaction
 
 ###### Amounts
 
 * For each UD source, the amount must match the exact targeted UD value
-* For each Fee source, the amount must match the exact targeted Fee value
 * For each Transaction source, the amount must match the exact Output value
 
 ### Status

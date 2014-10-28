@@ -137,6 +137,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           globalValidation.checkUD(block, next);
         },
         function (next){
+          globalValidation.checkTransactions(block, next);
+        },
+        function (next){
           globalValidation.checkProofOfWork(block, next);
         },
         function (next) {

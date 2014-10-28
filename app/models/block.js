@@ -166,6 +166,38 @@ BlockSchema.methods = {
       i++;
     }
     return found;
+  },
+
+  getTransactions: function (pubkey) {
+    var transactions = [];
+    this.transactions.forEach(function (simpleTx) {
+      var tx = {};
+      tx.issuers = simpleTx.signatories;
+      tx.signatures = simpleTx.signatures;
+      // Inputs
+      tx.inputs = [];
+      simpleTx.inputs.forEach(function (input) {
+        var sp = input.split(':');
+        tx.inputs.push({
+          pubkey: tx.issuers[parseInt(sp[0])],
+          type: sp[1],
+          number: parseInt(sp[2]),
+          fingerprint: sp[3],
+          amount: parseInt(sp[4])
+        });
+      });
+      // Outputs
+      tx.outputs = [];
+      simpleTx.outputs.forEach(function (output) {
+        var sp = output.split(':');
+        tx.outputs.push({
+          type: sp[0],
+          amount: parseInt(sp[1])
+        });
+      });
+      transactions.push(tx);
+    });
+    return transactions;
   }
 };
 

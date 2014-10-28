@@ -116,7 +116,7 @@ module.exports = new function() {
     }
     raw += "Transactions:\n";
     for(var i = 0; i < json.transactions.length; i++){
-      raw += json.transactions[i] + "\n";
+      raw += json.transactions[i].raw;
     }
     return dos2unix(raw);
   };

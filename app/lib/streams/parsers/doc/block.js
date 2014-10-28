@@ -134,13 +134,14 @@ function splitAndMatch (separator, regexp) {
 }
 
 function extractTransactions(raw) {
-  var rawTransactions = [];
   var transactions = [];
   var lines = raw.split(/\n/);
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
+    // On each header
     if (line.match(constants.TRANSACTION.HEADER)) {
-      var currentTX = '';
+      // Parse the transaction
+      var currentTX = { raw: line + '\n' };
       var sp = line.split(':');
       var nbSignatories = parseInt(sp[2]);
       var nbInputs = parseInt(sp[3]);
@@ -165,21 +166,17 @@ function extractTransactions(raw) {
       };
       ['signatories', 'inputs', 'outputs', 'signatures'].forEach(function(prop){
         for (var j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
-          currentTX += lines[i + j];
+          currentTX.raw += lines[i + j] + '\n';
+          currentTX[prop] = currentTX[prop] || [];
+          currentTX[prop].push(lines[i + j]);
         }
       });
-      rawTransactions.push(currentTX)
+      transactions.push(currentTX)
     } else {
       // Not a transaction header, stop reading
       i = lines.length;
     }
   }
-  // Parse each transaction block
-  var parsers = require('./.');
-  rawTransactions.forEach(function(compactTX){
-    var obj = parsers.parseCompactTX().syncWrite(compactTX);
-    transactions.push(obj);
-  });
   return transactions;
 }
 

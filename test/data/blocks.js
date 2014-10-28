@@ -1431,4 +1431,88 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITHOUT_TRANSACTIONS: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITH_GOOD_TRANSACTIONS: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:3:6:3\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp\n" +
+    "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB\n" +
+    "0:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22\n" +
+    "0:T:78:F80993776FB55154A60B3E58910C942A347964AD:8\n" +
+    "0:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40\n" +
+    "1:T:66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD:120\n" +
+    "2:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5\n" +
+    "2:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:100\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30\n" +
+    "DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156\n" +
+    "6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX\n" +
+    "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITH_WRONG_UD_SOURCE: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:1:1:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "0:D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 };

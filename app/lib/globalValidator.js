@@ -46,6 +46,15 @@ function GlobalValidator (conf, dao) {
     });
   };
 
+  this.checkTransactions = function (block, done) {
+    async.series([
+      async.apply(checkSourcesExistence, block),
+      async.apply(checkSourcesAvailability, block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
   this.validate = function (block, done) {
     async.series([
       async.apply(checkNumber, block),
@@ -305,6 +314,54 @@ function GlobalValidator (conf, dao) {
           next();
         }
       },
+    ], done);
+  }
+
+  function checkSourcesExistence (block, done) {
+    async.waterfall([
+      function (next){
+        var sources = [];
+        async.forEachSeries(block.getTransactions(), function (tx, callback) {
+          async.forEachSeries(tx.inputs, function (src, callback) {
+            async.waterfall([
+              function (next) {
+                if (src.type == 'D') {
+                  dao.existsUDSource(src.number, src.fingerprint, next);
+                } else {
+                  dao.existsTXSource(src.number, src.fingerprint, next);
+                }
+              },
+              function (exists, next) {
+                next(exists ? null : 'Source ' + [src.type, src.number, src.fingerprint].join(':') + ' does not exist');
+              }
+            ], callback);
+          }, callback);
+        }, next);
+      }
+    ], done);
+  }
+
+  function checkSourcesAvailability (block, done) {
+    async.waterfall([
+      function (next){
+        var sources = [];
+        async.forEachSeries(block.getTransactions(), function (tx, callback) {
+          async.forEachSeries(tx.inputs, function (src, callback) {
+            async.waterfall([
+              function (next) {
+                if (src.type == 'D') {
+                  dao.isAvailableUDSource(src.pubkey, src.number, src.fingerprint, next);
+                } else {
+                  dao.isAvailableTXSource(src.pubkey, src.number, src.fingerprint, next);
+                }
+              },
+              function (isAvailable, next) {
+                next(isAvailable ? null : 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint].join(':') + ' is not available');
+              }
+            ], callback);
+          }, callback);
+        }, next);
+      }
     ], done);
   }
 

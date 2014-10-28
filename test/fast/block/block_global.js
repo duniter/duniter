@@ -234,6 +234,28 @@ describe("Block global coherence:", function(){
     done();
   }));
 
+
+  it('a block without transactions should pass', validateTransactions(blocks.BLOCK_WITHOUT_TRANSACTIONS, function (err, done) {
+    should.not.exist(err);
+    done();
+  }));
+
+  it('a block with good transactions should pass', validateTransactions(blocks.BLOCK_WITH_GOOD_TRANSACTIONS, function (err, done) {
+    should.not.exist(err);
+    done();
+  }));
+
+  it('a block with wrong UD source should fail', validateTransactions(blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err, done) {
+    should.exist(err);
+    err.should.equal('Source D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B does not exist');
+    done();
+  }));
+
+  // it('a block with wrong UD source should fail', validateTransactions(blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err, done) {
+  //   should.exist(err);
+  //   err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B is not available');
+  //   done();
+  // }));
 });
 
 function validate (raw, callback) {
@@ -300,6 +322,23 @@ function validateUD (raw, callback) {
       function (obj, next){
         block = new Block(obj);
         validator(conf, new BlockCheckerDao(block)).checkUD(block, next);
+      },
+    ], function (err) {
+      callback(err, done);
+    });
+  };
+}
+
+function validateTransactions (raw, callback) {
+  var block;
+  return function (done) {
+    async.waterfall([
+      function (next){
+        parser.asyncWrite(raw, next);
+      },
+      function (obj, next){
+        block = new Block(obj);
+        validator(conf, new BlockCheckerDao(block)).checkTransactions(block, next);
       },
     ], function (err) {
       callback(err, done);
@@ -469,6 +508,45 @@ function BlockCheckerDao (block) {
     } else {
       done(null, null);
     }
+  }
+
+  this.existsUDSource = function (number, fpr, done) {
+    var existing = [
+      '46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B'
+    ];
+    var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
+    done(null, exists);
+  }
+
+  this.existsTXSource = function (number, fpr, done) {
+    var existing = [
+      '4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8',
+      '78:F80993776FB55154A60B3E58910C942A347964AD',
+      '66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD',
+      '176:0651DE13A80EB0515A5D9F29E25D5D777152DE91'
+    ];
+    var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
+    done(null, exists);
+  }
+
+  this.isAvailableUDSource = function (pubkey, number, fpr, done) {
+    var existing = [
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B',
+      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B'
+    ];
+    var isAvailable = ~existing.indexOf([pubkey, 'D', number, fpr].join(':')) ? true : false;
+    done(null, isAvailable);
+  }
+
+  this.isAvailableTXSource = function (pubkey, number, fpr, done) {
+    var existing = [
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8',
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:78:F80993776FB55154A60B3E58910C942A347964AD',
+      'CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp:T:66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD',
+      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91'
+    ];
+    var isAvailable = ~existing.indexOf([pubkey, 'T', number, fpr].join(':')) ? true : false;
+    done(null, isAvailable);
   }
 
 }

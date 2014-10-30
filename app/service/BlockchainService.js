@@ -1378,6 +1378,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
     this.getLastUDBlock = function (done) {
       Block.lastUDBlock(done);
+    },
+
+    this.isAvailableUDSource = function (pubkey, number, fingerprint, amount, done) {
+      Source.existsNotConsumed('D', pubkey, number, fingerprint, amount, done);
+    },
+
+    this.isAvailableTXSource = function (pubkey, number, fingerprint, amount, done) {
+      Source.existsNotConsumed('T', pubkey, number, fingerprint, amount, done);
     }
   }
 }

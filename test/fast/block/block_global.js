@@ -245,17 +245,41 @@ describe("Block global coherence:", function(){
     done();
   }));
 
-  it('a block with wrong UD source should fail', validateTransactions(blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err, done) {
+  it('a block with wrong UD source amount should fail', validateTransactions(blocks.BLOCK_WITH_WRONG_UD_AMOUNT, function (err, done) {
     should.exist(err);
-    err.should.equal('Source D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B does not exist');
+    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:100 is not available');
+    done();
+  }));
+
+  it('a block with wrong UD source amount should fail', validateTransactions(blocks.BLOCK_WITH_WRONG_TX_AMOUNT, function (err, done) {
+    should.exist(err);
+    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:60 is not available');
     done();
   }));
 
   // it('a block with wrong UD source should fail', validateTransactions(blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err, done) {
   //   should.exist(err);
-  //   err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B is not available');
+  //   err.should.equal('Source D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B does not exist');
   //   done();
   // }));
+
+  // it('a block with wrong TX source should fail', validateTransactions(blocks.BLOCK_WITH_WRONG_TX_SOURCE, function (err, done) {
+  //   should.exist(err);
+  //   err.should.equal('Source T:44:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD does not exist');
+  //   done();
+  // }));
+
+  it('a block with unavailable UD source should fail', validateTransactions(blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, function (err, done) {
+    should.exist(err);
+    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:55:C3AE457BB31EA0B0DF811CF615E81CB46FEFDBE9:40 is not available');
+    done();
+  }));
+
+  it('a block with unavailable TX source should fail', validateTransactions(blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, function (err, done) {
+    should.exist(err);
+    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40 is not available');
+    done();
+  }));
 });
 
 function validate (raw, callback) {
@@ -512,7 +536,8 @@ function BlockCheckerDao (block) {
 
   this.existsUDSource = function (number, fpr, done) {
     var existing = [
-      '46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B'
+      '46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B',
+      '55:C3AE457BB31EA0B0DF811CF615E81CB46FEFDBE9'
     ];
     var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
     done(null, exists);
@@ -523,29 +548,30 @@ function BlockCheckerDao (block) {
       '4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8',
       '78:F80993776FB55154A60B3E58910C942A347964AD',
       '66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD',
-      '176:0651DE13A80EB0515A5D9F29E25D5D777152DE91'
+      '176:0651DE13A80EB0515A5D9F29E25D5D777152DE91',
+      '88:B3052F06756154DC11033D4F3E1771AC30054E1F'
     ];
     var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
     done(null, exists);
   }
 
-  this.isAvailableUDSource = function (pubkey, number, fpr, done) {
+  this.isAvailableUDSource = function (pubkey, number, fpr, amount, done) {
     var existing = [
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B',
-      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B'
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40',
+      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40'
     ];
-    var isAvailable = ~existing.indexOf([pubkey, 'D', number, fpr].join(':')) ? true : false;
+    var isAvailable = ~existing.indexOf([pubkey, 'D', number, fpr, amount].join(':')) ? true : false;
     done(null, isAvailable);
   }
 
-  this.isAvailableTXSource = function (pubkey, number, fpr, done) {
+  this.isAvailableTXSource = function (pubkey, number, fpr, amount, done) {
     var existing = [
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8',
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:78:F80993776FB55154A60B3E58910C942A347964AD',
-      'CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp:T:66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD',
-      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91'
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22',
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:78:F80993776FB55154A60B3E58910C942A347964AD:8',
+      'CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp:T:66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD:120',
+      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5'
     ];
-    var isAvailable = ~existing.indexOf([pubkey, 'T', number, fpr].join(':')) ? true : false;
+    var isAvailable = ~existing.indexOf([pubkey, 'T', number, fpr, amount].join(':')) ? true : false;
     done(null, isAvailable);
   }
 

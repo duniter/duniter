@@ -48,7 +48,7 @@ function GlobalValidator (conf, dao) {
 
   this.checkTransactions = function (block, done) {
     async.series([
-      async.apply(checkSourcesExistence, block),
+      // async.apply(checkSourcesExistence, block),
       async.apply(checkSourcesAvailability, block)
     ], function (err) {
       done(err);
@@ -350,13 +350,13 @@ function GlobalValidator (conf, dao) {
             async.waterfall([
               function (next) {
                 if (src.type == 'D') {
-                  dao.isAvailableUDSource(src.pubkey, src.number, src.fingerprint, next);
+                  dao.isAvailableUDSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
                 } else {
-                  dao.isAvailableTXSource(src.pubkey, src.number, src.fingerprint, next);
+                  dao.isAvailableTXSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
                 }
               },
               function (isAvailable, next) {
-                next(isAvailable ? null : 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint].join(':') + ' is not available');
+                next(isAvailable ? null : 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' is not available');
               }
             ], callback);
           }, callback);

@@ -242,6 +242,8 @@ Transaction is the support of money: it allows to materialize coins' ownership. 
     Outputs:
     PUBLIC_KEY:AMOUNT
     ...
+    SIGNATURES
+    ...
 
 Here is a description of each field:
 
@@ -261,7 +263,7 @@ A Transaction structure is considered *valid* if:
 * Field `Issuers` is a multiline field whose lines are Base58 strings of 44 characters.
 * Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, an integer, a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
-* Signatures of `Issuers` are provided and **ALL** verify this structure
+* Field `Outputs` is followed by a list of signatures corresponding to the number of issuers
 
 #### Example 1
 
@@ -351,12 +353,13 @@ Here is an example compacting above [example 3](#example-3):
     0:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22
     0:T:78:F80993776FB55154A60B3E58910C942A347964AD:8
     0:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40
-    1:T:66:F80993776FB55154A60B3E58910C942A347964AD:120
+    1:T:66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD:120
     2:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5
-    2:D:46:20DA3C59D27EABACFFD27626EF74EA56579C58D4:100
+    2:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:100
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156
-    6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:4942yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
+    6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49
+    42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
     2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
     2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk
 
@@ -653,6 +656,13 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 * A transaction cannot have 2 identical sources (INDEX + SOURCE + NUMBER + FINGERPRINT)
 * A transaction cannot have 2 identical recipients (PUBLIC_KEY)
 * A transaction **must** have its output sum equal to its input sum
+* A transaction **must** have signatures matching its content for each issuer
+
+###### About signatures
+
+* Signature count must be the same as issuers count
+* Signatures are ordered by issuer
+* Signature is made over the transaction's content, signatures excepted
 
 #### Global
 

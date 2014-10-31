@@ -101,7 +101,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
         that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.ParametersService);
         that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.IdentityService, that.PeeringService);
-        that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.MerkleService, that.PeeringService);
+        that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf, that.PeeringService);
         async.parallel({
           peering: function(callback){
             that.PeeringService.load(callback);
@@ -127,7 +127,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
         that.PeeringService      = require('./app/service/PeeringService').get(that.conn, that.conf, pair, that.sign, that.ParametersService);
         that.BlockchainService   = require('./app/service/BlockchainService').get(that.conn, that.conf, that.IdentityService, that.PeeringService);
-        that.TransactionsService = require('./app/service/TransactionsService').get(that.conn, that.MerkleService, that.PeeringService);
+        that.TransactionsService = require('./app/service/TransactionsService').get(that.conn, that.conf, that.PeeringService);
         that.IdentityService.setBlockchainService(that.BlockchainService);
         async.waterfall([
           function (next){

@@ -50,7 +50,7 @@ module.exports = {
   TRANSACTION: {
     HEADER: exact("TX:" + POSITIVE_INT + ":" + POSITIVE_INT + ":" + POSITIVE_INT + ":" + POSITIVE_INT),
     SENDER: exact(PUBKEY),
-    SOURCE: exact(INTEGER + ":(T|D|F):" + FINGERPRINT),
+    SOURCE: exact(INTEGER + ":(T|D):" + POSITIVE_INT + ":" + FINGERPRINT + ":" + POSITIVE_INT),
     TARGET: exact(PUBKEY + ":" + POSITIVE_INT)
   },
 

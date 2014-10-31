@@ -13,6 +13,7 @@ var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
+var blockchainDao   = require('../lib/blockchainDao');
 
 module.exports.get = function (conn, conf, IdentityService, PeeringService) {
   return new BlockchainService(conn, conf, IdentityService, PeeringService);
@@ -50,6 +51,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Membership    = conn.model('Membership');
   var Block         = conn.model('Block');
   var Link          = conn.model('Link');
+  var Source        = conn.model('Source');
 
   // Flag to say wether timestamp of received keyblocks should be tested
   // Useful for synchronisation of old blocks
@@ -111,7 +113,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       var currentBlock = null;
       var newLinks;
       var localValidation = localValidator();
-      var globalValidation = globalValidator(conf, new BlockCheckerDao(block));
+      var globalValidation = globalValidator(conf, blockchainDao(conn, block));
       async.waterfall([
         function (next) {
           BlockchainService.current(next);
@@ -248,7 +250,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                 // Check the newcomer IS RECOGNIZED BY the WoT
                 // (check we have a path for each WoT member => newcomer)
                 if (block.number > 0)
-                  globalValidator(conf, new BlockCheckerDao(block)).isOver3Hops(newcomer, ofMembers, newLinks, next);
+                  globalValidator(conf, blockchainDao(conn, block)).isOver3Hops(newcomer, ofMembers, newLinks, next);
                 else
                   next(null, []);
               },
@@ -442,6 +444,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         // Compute obsolete links
         computeObsoleteLinks(block, next);
       },
+      function (next){
+        // Update consumed sources & create new ones
+        updateTransactionSources(block, next);
+      },
     ], function (err) {
       done(err, block);
     });
@@ -477,6 +483,38 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         }, next);
       },
     ], done);
+  }
+
+  function updateTransactionSources (block, done) {
+    async.parallel({
+      newDividend: function (next) {
+        if (block.dividend) {
+          async.waterfall([
+            function (next) {
+              Identity.getMembers(next);
+            },
+            function (idties, next) {
+              async.forEachSeries(idties, function (idty, callback) {
+                new Source({
+                  'pubkey': idty.pubkey,
+                  'type': 'D',
+                  'number': block.number,
+                  'fingerprint': block.hash,
+                  'amount': block.dividend
+                }).save(function (err) {
+                  callback(err);
+                });
+              }, next);
+            }
+          ], next);
+        }
+        else next();
+      },
+      transactions: function (next) {
+        // TODO: sources consumption by transactions
+        next();
+      }
+    }, done);
   }
 
   this.current = function (done) {
@@ -1192,7 +1230,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               signature(conf.salt, conf.passwd, callback);
             },
             trial: function (callback) {
-              globalValidator(conf, new BlockCheckerDao(block)).getTrialLevel(PeeringService.pubkey, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
+              globalValidator(conf, blockchainDao(conn, block)).getTrialLevel(PeeringService.pubkey, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
             }
           }, next);
         }
@@ -1301,91 +1339,5 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     }, function (err) {
       done(null, joinData);
     });
-  }
-
-  function BlockCheckerDao (block) {
-    
-    this.existsUserID = function (uid, done) {
-      async.waterfall([
-        function (next){
-          Identity.getMemberByUserID(uid, next);
-        },
-        function (idty, next){
-          next(null, idty != null);
-        },
-      ], done);
-    }
-    
-    this.existsPubkey = function (pubkey, done) {
-      async.waterfall([
-        function (next){
-          Identity.getMember(pubkey, next);
-        },
-        function (idty, next){
-          next(null, idty != null);
-        },
-      ], done);
-    }
-    
-    this.getIdentityByPubkey = function (pubkey, done) {
-      Identity.getMember(pubkey, done);
-    }
-    
-    this.isMember = function (pubkey, done) {
-      Identity.isMember(pubkey, done);
-    }
-
-    this.getPreviousLinkFor = function (from, to, done) {
-      async.waterfall([
-        function (next){
-          Link.getObsoletesFromTo(from, to, next);
-        },
-        function (links, next){
-          next(null, links.length > 0 ? links[0] : null);
-        },
-      ], done);
-    }
-
-    this.getValidLinksTo = function (to, done) {
-      Link.getValidLinksTo(to, done);
-    }
-
-    this.getMembers = function (done) {
-      Identity.getMembers(done);
-    }
-
-    this.getPreviousLinkFromTo = function (from, to, done) {
-      Link.getValidFromTo(from, to, done);
-    }
-
-    this.getValidLinksFrom = function (member, done) {
-      Link.getValidLinksFrom(member, done);
-    }
-
-    this.getCurrent = function (done) {
-      Block.current(function (err, current) {
-        done(null, (err || !current) ? null : current);
-      });
-    }
-
-    this.getToBeKicked = function (blockNumber, done) {
-      Identity.getToBeKicked(done);
-    },
-
-    this.lastBlockOfIssuer = function (issuer, done) {
-      Block.lastOfIssuer(issuer, done);
-    },
-
-    this.getLastUDBlock = function (done) {
-      Block.lastUDBlock(done);
-    },
-
-    this.isAvailableUDSource = function (pubkey, number, fingerprint, amount, done) {
-      Source.existsNotConsumed('D', pubkey, number, fingerprint, amount, done);
-    },
-
-    this.isAvailableTXSource = function (pubkey, number, fingerprint, amount, done) {
-      Source.existsNotConsumed('T', pubkey, number, fingerprint, amount, done);
-    }
   }
 }

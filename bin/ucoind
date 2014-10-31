@@ -371,7 +371,7 @@ program
 program
   .command('start')
   .description('Start uCoin server using given --currency')
-  .action(service(ucoin.createPeerServer, function (server, conf) {
+  .action(service(ucoin.createTxServer, function (server, conf) {
 
     if (conf.udid2) {
       // UserID must match udid2 format
@@ -523,7 +523,7 @@ function connect(callback) {
 function service(serverFactory, callback) {
   if (arguments.length == 1) {
     callback = serverFactory;
-    serverFactory = ucoin.createWOTServer;
+    serverFactory = ucoin.createTxServer;
   }
   return function () {
     var cbArgs = arguments;

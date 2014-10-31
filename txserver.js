@@ -11,7 +11,7 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
     {
       // Transaction
       matches: function (obj) {
-        return obj.recipient ? true : false;
+        return obj.inputs ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([
@@ -36,11 +36,14 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
 
   this._listenBMA = function (app) {
     this.listenWOT(app);
+    this.listenBlock(app);
     this.listenNET(app);
-    this.listenCTX(app);
+    this.listenTX(app);
   };
 
-  this.listenCTX = function (app) {
+  this.listenTX = function (app) {
+    var transactions = require('./app/controllers/transactions')(that);
+    app.post('/tx/process', transactions.parseTransaction);
   };
 }
 

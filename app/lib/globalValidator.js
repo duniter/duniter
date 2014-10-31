@@ -55,6 +55,14 @@ function GlobalValidator (conf, dao) {
     });
   };
 
+  this.checkSingleTransaction = function (tx, done) {
+    async.series([
+      async.apply(checkSourcesAvailabilityForTransaction, tx)
+    ], function (err) {
+      done(err);
+    });
+  };
+
   this.validate = function (block, done) {
     async.series([
       async.apply(checkNumber, block),
@@ -345,24 +353,26 @@ function GlobalValidator (conf, dao) {
     async.waterfall([
       function (next){
         var sources = [];
-        async.forEachSeries(block.getTransactions(), function (tx, callback) {
-          async.forEachSeries(tx.inputs, function (src, callback) {
-            async.waterfall([
-              function (next) {
-                if (src.type == 'D') {
-                  dao.isAvailableUDSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
-                } else {
-                  dao.isAvailableTXSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
-                }
-              },
-              function (isAvailable, next) {
-                next(isAvailable ? null : 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' is not available');
-              }
-            ], callback);
-          }, callback);
-        }, next);
+        async.forEachSeries(block.getTransactions(), checkSourcesAvailabilityForTransaction, next);
       }
     ], done);
+  }
+
+  function checkSourcesAvailabilityForTransaction (tx, done) {
+    async.forEachSeries(tx.inputs, function (src, callback) {
+      async.waterfall([
+        function (next) {
+          if (src.type == 'D') {
+            dao.isAvailableUDSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
+          } else {
+            dao.isAvailableTXSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
+          }
+        },
+        function (isAvailable, next) {
+          next(isAvailable ? null : 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' is not available');
+        }
+      ], callback);
+    }, done);
   }
 
   function getTrialLevel (issuer, nextBlockNumber, currentWoTsize, done) {

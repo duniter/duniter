@@ -125,6 +125,28 @@ module.exports = new function() {
     return dos2unix(signed(that.getBlockWithoutSignature(json), json));
   };
 
+  this.getTransaction = function (json) {
+    var raw = "";
+    raw += "Version: " + json.version + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Issuers:\n";
+    json.issuers.forEach(function (issuer) {
+      raw += issuer + '\n';
+    });
+    raw += "Inputs:\n";
+    json.inputs.forEach(function (input) {
+      raw += input + '\n';
+    });
+    raw += "Outputs:\n";
+    json.outputs.forEach(function (output) {
+      raw += output + '\n';
+    });
+    json.signatures.forEach(function (signature) {
+      raw += signature + '\n';
+    });
+    return dos2unix(raw);
+  };
+
   function signed (raw, json) {
     if (json.signature)
       raw += json.signature + '\n';

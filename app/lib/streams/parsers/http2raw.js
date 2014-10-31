@@ -38,11 +38,11 @@ function Http2RawTransaction (req, onError) {
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!(req.body && req.body.transaction && req.body.signature)){
-      onError('Requires a transaction + signature');
+    if(!(req.body && req.body.transaction)){
+      onError('Requires a transaction');
     }
     else {
-      this.push(req.body.transaction + req.body.signature);
+      this.push(req.body.transaction);
     }
     this.push(null);
   }

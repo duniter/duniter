@@ -1,64 +1,43 @@
-var async         = require('async');
-var _             = require('underscore');
-var logger        = require('../lib/logger')();
+var async           = require('async');
+var _               = require('underscore');
+var logger          = require('../lib/logger')();
+var globalValidator = require('../lib/globalValidator');
+var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports.get = function (conn, MerkleService, PeeringService) {
-  return new TransactionService(conn, MerkleService, PeeringService);
+module.exports.get = function (conn, conf, PeeringService) {
+  return new TransactionService(conn, conf, PeeringService);
 };
 
-function TransactionService (conn, MerkleService, PeeringService) {
+function TransactionService (conn, conf, PeeringService) {
 
-  var Merkle        = conn.model('Merkle');
-  var Transaction   = conn.model('Transaction');
-  var TxMemory      = conn.model('TxMemory');
+  var Transaction = conn.model('Transaction');
+  var Block       = conn.model('Block');
 
-  this.processTx = function (txObj, doFilter, callback) {
-    if (arguments.length == 2) {
-      callback = doFilter;
-      doFilter = true;
-    }
+  this.processTx = function (txObj, done) {
     var tx = new Transaction(txObj);
     async.waterfall([
       function (next) {
-        if (tx.pubkey.fingerprint != tx.sender) {
-          next('Sender does not match signatory');
-          return;
-        }
-        if (doFilter) {
-          TxMemory.getTheOne(tx.sender, tx.number, tx.hash, function (err, found) {
-            if(err) {
-              // Sibling was not found: transaction was not processed
-              var txMem = new TxMemory({
-                "sender": tx.sender,
-                "number": tx.number,
-                "hash": tx.hash
-              });
-              txMem.save(function (err){
-                next(err);
-              });
-            } else {
-              tx = found;
-              next('Transaction already processed', true);
-            }
-          });
-        } else {
-          next();
-        }
+        transactionAlreadyProcessed(tx, next);
       },
-    ], function (err, alreadyProcessed) {
-      if(alreadyProcessed){
-        callback(err, tx, alreadyProcessed);
+      function (alreadyProcessed, next) {
+        if (alreadyProcessed)
+          next('Transaction already processed');
+        else
+          Block.current(next);
+      },
+      function (current, next) {
+        globalValidator(conf, blockchainDao(conn, current)).checkSingleTransaction(tx.getTransaction(), next);
+      },
+      function (next) {
+        // Save the transaction
+        tx.save(function (err) {
+          next(err, tx);
+        });
       }
-      else if(err){
-        callback(err);
-      }
-      else{
-        transfert(tx, callback);
-      }
-    });
+    ], done);
   }
 
-  function transfert(tx, callback) {
-    // TODO
+  function transactionAlreadyProcessed (tx, done) {
+    Transaction.getByHash(tx.hash, done);
   }
 };

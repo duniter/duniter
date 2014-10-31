@@ -52,6 +52,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Block         = conn.model('Block');
   var Link          = conn.model('Link');
   var Source        = conn.model('Source');
+  var Transaction   = conn.model('Transaction');
 
   // Flag to say wether timestamp of received keyblocks should be tested
   // Useful for synchronisation of old blocks
@@ -448,6 +449,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         // Update consumed sources & create new ones
         updateTransactionSources(block, next);
       },
+      function (next){
+        // Delete eventually present transactions
+        deleteTransactions(block, next);
+      },
     ], function (err) {
       done(err, block);
     });
@@ -511,9 +516,51 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         else next();
       },
       transactions: function (next) {
-        // TODO: sources consumption by transactions
-        next();
+        async.forEachSeries(block.transactions, function (json, callback) {
+          var obj = json;
+          obj.version = 1;
+          obj.currency = block.currency;
+          obj.issuers = json.signatories;
+          var tx = new Transaction(obj);
+          var txObj = tx.getTransaction();
+          var txHash = tx.getHash();
+          async.parallel({
+            consume: function (next) {
+              async.forEachSeries(txObj.inputs, function (input, callback) {
+                Source.setConsumed(input.type, input.pubkey, input.number, input.fingerprint, input.amount, callback);
+              }, next);
+            },
+            create: function (next) {
+              async.forEachSeries(txObj.outputs, function (output, callback) {
+                new Source({
+                  'pubkey': output.pubkey,
+                  'type': 'T',
+                  'number': block.number,
+                  'fingerprint': txHash,
+                  'amount': output.amount
+                }).save(function (err) {
+                  callback(err);
+                });
+              }, next);
+            }
+          }, callback);
+        }, next);
       }
+    }, function (err) {
+      done(err);
+    });
+  }
+
+  function deleteTransactions (block, done) {
+    async.forEachSeries(block.transactions, function (json, callback) {
+      var obj = json;
+      obj.version = 1;
+      obj.currency = block.currency;
+      obj.issuers = json.signatories;
+      var tx = new Transaction(obj);
+      var txHash = tx.getHash();
+      console.log(txHash);
+      Transaction.removeByHash(txHash, callback);
     }, done);
   }
 
@@ -604,7 +651,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (current, updates, next){
-        createNewcomerBlock(current, {}, updates, exclusions, null, next);
+        createNewcomerBlock(current, {}, updates, exclusions, null, [], next);
       },
     ], done);
   }
@@ -733,6 +780,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var exclusions = [];
     var current = null;
     var lastUDBlock = null;
+    var transactions = [];
     async.waterfall([
       function (next){
         // Second, check for newcomers
@@ -762,7 +810,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         // Third, check for newcomers
         findNewcomers(current, filteringFunc, checkingWoTFunc, next);
       },
-      function (current, newWoT, joinData, otherUpdates, next){
+      function (current, newWoT, theJoinData, otherUpdates, next){
+        joinData = theJoinData;
         // Merges updates
         _(otherUpdates).keys().forEach(function(fpr){
           if (!updates[fpr])
@@ -770,8 +819,28 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           else
             updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
         });
+        // Finally look for transactions
+        Transaction.find({}, next);
+      },
+      function (txs, next) {
+        var validator = globalValidator(conf, blockchainDao(conn, null));
+        async.forEachSeries(txs, function (tx, callback) {
+          async.waterfall([
+            function (next) {
+              validator.checkSingleTransaction(tx.getTransaction(), next);
+            },
+            function (next) {
+              transactions.push(tx);
+              next();
+            }
+          ], function (err) {
+            callback();
+          });
+        }, next);
+      },
+      function (next) {
         // Create the block
-        createNewcomerBlock(current, joinData, updates, exclusions, lastUDBlock, next);
+        createNewcomerBlock(current, joinData, updates, exclusions, lastUDBlock, transactions, next);
       },
     ], done);
   };
@@ -1006,7 +1075,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return matched;
   }
 
-  function createNewcomerBlock (current, joinData, updates, exclusions, lastUDBlock, done) {
+  function createNewcomerBlock (current, joinData, updates, exclusions, lastUDBlock, transactions, done) {
     // Prevent writing joins/updates for excluded members
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
@@ -1067,6 +1136,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     });
     // Transactions
     block.transactions = [];
+    transactions.forEach(function (tx) {
+      block.transactions.push({ raw: tx.compact() });
+    });
     // Universal Dividend
     async.waterfall([
       function (next) {

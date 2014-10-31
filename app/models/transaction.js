@@ -59,7 +59,7 @@ TransactionSchema.methods = {
     this.outputs.forEach(function (output) {
       var sp = output.split(':');
       tx.outputs.push({
-        type: sp[0],
+        pubkey: sp[0],
         amount: parseInt(sp[1])
       });
     });
@@ -68,16 +68,31 @@ TransactionSchema.methods = {
 
   getRaw: function () {
     return rawer.getTransaction(this);
+  },
+
+  getHash: function () {
+    return sha1(rawer.getTransaction(this)).toUpperCase();
+  },
+
+  compact: function () {
+    return rawer.getCompactTransaction(this);
   }
 };
 
 TransactionSchema.statics.getByHash = function (hash, done) {
-
   this
     .find({ "hash": hash })
     .sort({number: -1})
     .exec(function (err, txs) {
       done(err, txs.length > 0 ? txs[0] : null);
+    });
+};
+
+TransactionSchema.statics.removeByHash = function (hash, done) {
+  this
+    .find({ "hash": hash })
+    .remove(function (err) {
+      done(err);
     });
 };
 

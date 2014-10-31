@@ -172,6 +172,7 @@ function extractTransactions(raw) {
         }
       });
       transactions.push(currentTX)
+      i = i + 2*nbSignatories + nbInputs + nbOutputs;
     } else {
       // Not a transaction header, stop reading
       i = lines.length;

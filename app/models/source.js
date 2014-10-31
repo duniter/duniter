@@ -31,4 +31,13 @@ SourceSchema.statics.existsNotConsumed = function (type, pubkey, number, fingerp
       done(err, sources.length == 1);
     });
 }
+
+SourceSchema.statics.setConsumed = function (type, pubkey, number, fingerprint, amount, done) {
+  var Source = this.model('Source');
+  Source
+    .update({ "type": type, "pubkey": pubkey, "number": number, "fingerprint": fingerprint, "amount": amount }, { "consumed": true }, { multi: true }, function (err) {
+      done(err);
+    });
+}
+
 module.exports = SourceSchema;

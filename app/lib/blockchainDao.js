@@ -1,3 +1,4 @@
+var async = require('async');
 
 module.exports = function(conn, block) {
 

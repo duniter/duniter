@@ -591,7 +591,6 @@ sigValidity | Maximum age of a valid signature
 sigQty      | Minimum quantity of signatures to join/stay in the keychain
 stepMax     | Maximum step between the WoT and individual and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
-powPeriod   | Number of written blocks to wait to lower the PoW difficulty by 1. Value is either a `[1;+infinity[` integer or a `]0;1[` decimal value.
 dtDateMin   | Number of seconds that can be added to current date
 incDateMin  | Minimum number of confirmations to increment the current date.
 
@@ -749,16 +748,20 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 ##### Block fingerprint
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
-    NB_ZEROS = MAX [ powZeroMin ; lastBlockNbZeros + 1 - FLOOR(nbWaitedPeriods) ]
+    NB_ZEROS = MAX [ powZeroMin ; lastBlockNbZeros + interBlocksCount - followingBlocksCount ]
 
 Where:
 
-* `[lastBlockNbZeros]` is the number of leading zeros of last written block of the member. If no block has been written by the member, `[lastBlockNbZeros] = 0`.
-* `[nbWaitedPeriods]` is the number of blocks written by any member since last written block of the member (`newblock` **excluded**), divided by `[powPeriodComputed]`:
-    * `[powPeriodComputed] = [powPeriod]` if `[powPeriod]`'s value is between `[1;+inf[`
-    * `[powPeriodComputed] = FLOOR([powPeriod] * N)` if `[powPeriod]`'s value is between `]0;1[`
-    * `N` if the number of members *before* new block, so that `[powPeriodComputed]` can be computed *for new block*
-    * If `[powPeriodComputed]` equals `0`, then `[nbWaitedPeriods]` directly equals `1`.
+* `[lastBlockNbZeros]` is the number of leading zeros of last written block of the member
+* `[interBlocksCount]` is the number of blocks written by *other* members **between** the 2 last blocks of the member (so, those 2 blocks excluded)
+* `[followingBlocksCount]` is the number of blocks written by *other* members **since** the last block of the member (so, this block excluded)
+
+
+* If no block has been written by the member:
+  * `[lastBlockNbZeros] = 0`
+  * `[followingBlocksCount] = 0`
+* If member has written less than 2 blocks:
+  * `[interBlocksCount] = 0` 
 
 > Those 2 rules (penality and waited periods) ensures a shared control of the blockchain writing.
 

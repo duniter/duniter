@@ -65,12 +65,17 @@ function BlockchainBinding (wotServer) {
   this.parameters = function (req, res) {
     res.send(200, JSON.stringify({
       "currency": conf.currency,
+      "c": conf.c,
+      "dt": conf.dt,
+      "ud0": conf.ud0,
       "sigDelay": conf.sigDelay,
       "sigValidity": conf.sigValidity,
       "sigQty": conf.sigQty,
       "stepMax": 3, // uCoin only handles 3 step currencies for now
       "powZeroMin": conf.powZeroMin,
-      "powPeriod": conf.powPeriod
+      "powPeriod": conf.powPeriod,
+      "incDateMin": conf.incDateMin,
+      "dtDateMin": conf.dtDateMin
     }, null, "  "));
   };
 

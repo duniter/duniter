@@ -6,12 +6,12 @@ var rawer      = require('./rawer');
 var Identity   = mongoose.model('Identity', require('../models/identity'));
 var Membership = mongoose.model('Membership', require('../models/membership'));
 
-module.exports = function () {
+module.exports = function (conf) {
   
-  return new LocalValidator();
+  return new LocalValidator(conf);
 };
 
-function LocalValidator () {
+function LocalValidator (conf) {
 
   this.checkSignatures = function (block, done) {
     if (hasWrongSignatureForIdentities(block)) {
@@ -70,8 +70,8 @@ function LocalValidator () {
       done('Block must not contain twice same identity pubkey');
       return;
     }
-    if (hasDateLowerThanConfirmedDate(block)) {
-      done('A block must have its Date greater or equal to ConfirmedDate');
+    if (hasDateDifferentThanConfirmedDateOrIncremented(block)) {
+      done('A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
       return;
     }
     if (hasEachIdentityMatchesAJoin(block)) {
@@ -105,6 +105,12 @@ function LocalValidator () {
     // Validated
     done(null, true);
   };
+
+  function hasDateDifferentThanConfirmedDateOrIncremented (block) {
+    var dateInt = parseInt(block.date);
+    var confirmedInt = parseInt(block.confirmedDate);
+    return dateInt != confirmedInt && dateInt != (confirmedInt + conf.dtDateMin);
+  }
 }
 
 function hasUserIDConflictInIdentities (block) {
@@ -131,12 +137,6 @@ function hasPubkeyConflictInIdentities (block) {
     i++;
   }
   return conflict;
-}
-
-function hasDateLowerThanConfirmedDate (block) {
-  var dateInt = parseInt(block.date);
-  var confirmedInt = parseInt(block.confirmedDate);
-  return dateInt < confirmedInt;
 }
 
 function hasEachIdentityMatchesAJoin (block) {

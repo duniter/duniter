@@ -256,9 +256,12 @@ var tasks = {
       async.apply(simpleInteger, "Certification validity duration", "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member", "sigQty", conf),
       async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
+      async.apply(simpleInteger, "Number of confirmation to change current Date", "incDateMin", conf),
+      async.apply(simpleInteger, "Increment value (in seconds) for date changing", "dtDateMin", conf),
+      async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
       async.apply(simplePercentOrPositiveInteger, "Number of blocks to wait for lowering difficulty", "powPeriod", conf),
       function (next){
-        choose("Participate writing the keychain (when member)", conf.participate,
+        choose("Participate writing the blockchain (when member)", conf.participate,
           function participate () {
             conf.participate = true;
             next();
@@ -269,7 +272,6 @@ var tasks = {
           });
       },
       async.apply(simpleInteger, "Time to wait before starting the computation of a new block", "powDelay", conf),
-      async.apply(simpleInteger, "Acceptable time offset when receiving a new keyblock", "tsInterval", conf),
     ], done);
   }
 };

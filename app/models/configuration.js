@@ -27,6 +27,7 @@ var ConfigurationSchema = new Schema({
   participate: {"type": Boolean, "default": true}, // Participate to writing the keychain
   tsInterval:  {"type": Number, "default": 30},
   incDateMin:  {"type": Number, "default": 10}, // Increment date on incDateMin'th block with same new Date
+  dtDateMin:   {"type": Number, "default": 3600*24}, // Increment date value (default 1 day)
   udid2:       {"type": Boolean, "default": false},
 });
 

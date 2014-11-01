@@ -16,7 +16,7 @@ function TransactionService (conn, conf, PeeringService) {
 
   this.processTx = function (txObj, done) {
     var tx = new Transaction(txObj);
-    var localValidation = localValidator();
+    var localValidation = localValidator(conf);
     var globalValidation = null;
     async.waterfall([
       function (next) {

@@ -1,12 +1,25 @@
-var async     = require('async');
-var should    = require('should');
-var assert    = require('assert');
-var mongoose  = require('mongoose');
-var parsers   = require('../../../app/lib/streams/parsers/doc');
-var blocks    = require('../../data/blocks');
-var validator = require('../../../app/lib/localValidator');
-var parser    = parsers.parseBlock();
-var Block     = mongoose.model('Block', require('../../../app/models/block'));
+var async          = require('async');
+var should         = require('should');
+var assert         = require('assert');
+var mongoose       = require('mongoose');
+var parsers        = require('../../../app/lib/streams/parsers/doc');
+var blocks         = require('../../data/blocks');
+var localValidator = require('../../../app/lib/localValidator');
+var parser         = parsers.parseBlock();
+var Block          = mongoose.model('Block', require('../../../app/models/block'));
+var Configuration  = mongoose.model('Configuration', require('../../../app/models/configuration'));
+
+var conf = new Configuration({
+  sigDelay: 365.25*24*3600, // 1 year
+  sigQty: 1,
+  powZeroMin: 1,
+  powPeriod: 18,
+  incDateMin: 10,
+  dtDateMin: 60,
+  dt: 100,
+  ud0: 100,
+  c: 0.1
+});
 
 describe("Block local coherence", function(){
 
@@ -59,8 +72,23 @@ describe("Block local coherence", function(){
       done();
     }));
 
-    it('a block with wrong date', validate(blocks.WRONG_DATE, function (err, done) {
-      assert.equal(err, 'A block must have its Date greater or equal to ConfirmedDate');
+    it('a block with wrong date (in past)', validateWithoutSignatures(blocks.WRONG_DATE_LOWER, function (err, done) {
+      assert.equal(err, 'A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
+      done();
+    }));
+
+    it('a block with wrong date (in future, but too close)', validateWithoutSignatures(blocks.WRONG_DATE_HIGHER_BUT_TOO_FEW, function (err, done) {
+      assert.equal(err, 'A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
+      done();
+    }));
+
+    it('a block with wrong date (in future, but too far)', validateWithoutSignatures(blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, function (err, done) {
+      assert.equal(err, 'A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
+      done();
+    }));
+
+    it('a block with good date', validateWithoutSignatures(blocks.GOOD_DATE_HIGHER, function (err, done) {
+      should.not.exist(err);
       done();
     }));
 
@@ -166,10 +194,27 @@ function validate (raw, callback) {
       },
       function (obj, next){
         block = new Block(obj);
-        validator().validate(block, next);
+        localValidator(conf).validate(block, next);
       },
       function (obj, next){
-        validator().checkSignatures(block, next);
+        localValidator(conf).checkSignatures(block, next);
+      },
+    ], function (err) {
+      callback(err, done);
+    });
+  };
+}
+
+function validateWithoutSignatures (raw, callback) {
+  var block;
+  return function (done) {
+    async.waterfall([
+      function (next){
+        parser.asyncWrite(raw, next);
+      },
+      function (obj, next){
+        block = new Block(obj);
+        localValidator(conf).validate(block, next);
       },
     ], function (err) {
       callback(err, done);
@@ -186,7 +231,7 @@ function validateTransactions (raw, callback) {
       },
       function (obj, next){
         block = new Block(obj);
-        validator().checkTransactionsOfBlock(block, next);
+        localValidator(conf).checkTransactionsOfBlock(block, next);
       },
     ], function (err) {
       callback(err, done);
@@ -203,10 +248,10 @@ function validateTransactionsSignature (raw, callback) {
       },
       function (obj, next){
         block = new Block(obj);
-        validator().checkTransactionsOfBlock(block, next);
+        localValidator(conf).checkTransactionsOfBlock(block, next);
       },
       function (next){
-        validator().checkTransactionsSignature(block, next);
+        localValidator(conf).checkTransactionsSignature(block, next);
       },
     ], function (err) {
       callback(err, done);

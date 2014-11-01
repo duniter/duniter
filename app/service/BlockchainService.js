@@ -113,7 +113,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       var block = new Block(obj);
       var currentBlock = null;
       var newLinks;
-      var localValidation = localValidator();
+      var localValidation = localValidator(conf);
       var globalValidation = globalValidator(conf, blockchainDao(conn, block));
       async.waterfall([
         function (next) {
@@ -1092,6 +1092,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.currency = current ? current.currency : conf.currency;
     block.number = current ? current.number + 1 : 0;
     var now = moment.utc().startOf('minute').unix();
+    if (current) {
+      var nextDate = current.confirmedDate + conf.dtDateMin;
+      console.log(nextDate <= now, nextDate, now, conf.dtDateMin);
+      now = (nextDate <= now) ? nextDate : current.confirmedDate;
+    }
     block.date = now;
     block.confirmedDate = current ? current.confirmedDate : now;
     var lastDate = current ? current.date : null;
@@ -1202,13 +1207,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.whilst(
       function(){ return !pow.match(powRegexp); },
       function (next) {
-        var newTS = moment.utc().startOf('minute').unix();
-        if (newTS == block.date) {
-          block.nonce++;
-        } else {
-          block.nonce = 0;
-          block.date = newTS;
-        }
+        block.nonce++;
         raw = block.getRaw();
         async.waterfall([
           function (next){

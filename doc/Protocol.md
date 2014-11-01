@@ -233,8 +233,8 @@ Transaction is the support of money: it allows to materialize coins' ownership. 
 
     Version: VERSION
     Currency: CURRENCY_NAME
-    Issuers:
-    PUBLIC_KEY:INDEX
+    Issuers: 
+    PUBLIC_KEY
     ...
     Inputs:
     INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
@@ -253,7 +253,7 @@ Field | Description
 `Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be UCP-based.
 `Issuers` | a list of public key, followed by a sequential integer
 `Inputs` | a list linking `Issuers` (via INDEX) to coin sources
-`Outpus` | a list of public keys and amounts allowed to them
+`Outputs` | a list of public keys and amounts allowed to them
 
 #### Validity
 
@@ -613,6 +613,10 @@ A Block can be accepted only if it respects a set of rules, here divided in 2 pa
 
 Local validation verifies the coherence of a well-formatted block, withtout any other context than the block itself.
 
+##### Nonce
+
+* `Nonce` value may be any zero or positive integer. This field is a special field allowing for document hash to change for proof-of-work computation.
+
 ##### PreviousHash
 
 * `PreviousHash` must be present if `Number` field is over `0` value.
@@ -824,7 +828,7 @@ As each peer receives Status messages from other peers, it is able to compare `T
 ## Implementations
 
 ### APIs
-
+## Heading ##
 UCP does not imposes a particular API to deal with UCP data. Instead, UCP prefers to allow for any API definition using [Peer](#peer) document, and then leting peers deal themselves with the API(s) they prefer.
 
 At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is known as a valid UCP API.

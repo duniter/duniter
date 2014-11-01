@@ -40,6 +40,8 @@ TransactionSchema.methods = {
 
   getTransaction: function () {
     var tx = {};
+    tx.version = this.version;
+    tx.currency = this.currency;
     tx.issuers = this.issuers;
     tx.signatures = this.signatures;
     // Inputs
@@ -47,11 +49,13 @@ TransactionSchema.methods = {
     this.inputs.forEach(function (input) {
       var sp = input.split(':');
       tx.inputs.push({
-        pubkey: tx.issuers[parseInt(sp[0])],
+        index: parseInt(sp[0]),
+        pubkey: tx.issuers[parseInt(sp[0])] || '',
         type: sp[1],
         number: parseInt(sp[2]),
         fingerprint: sp[3],
-        amount: parseInt(sp[4])
+        amount: parseInt(sp[4]),
+        raw: input
       });
     });
     // Outputs
@@ -60,7 +64,8 @@ TransactionSchema.methods = {
       var sp = output.split(':');
       tx.outputs.push({
         pubkey: sp[0],
-        amount: parseInt(sp[1])
+        amount: parseInt(sp[1]),
+        raw: output
       });
     });
     return tx;

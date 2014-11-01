@@ -170,6 +170,8 @@ BlockSchema.methods = {
 
   getTransactions: function (pubkey) {
     var transactions = [];
+    var version = this.version;
+    var currency = this.currency;
     this.transactions.forEach(function (simpleTx) {
       var tx = {};
       tx.issuers = simpleTx.signatories;
@@ -179,11 +181,13 @@ BlockSchema.methods = {
       simpleTx.inputs.forEach(function (input) {
         var sp = input.split(':');
         tx.inputs.push({
-          pubkey: tx.issuers[parseInt(sp[0])],
+          index: parseInt(sp[0]),
+          pubkey: tx.issuers[parseInt(sp[0])] || '',
           type: sp[1],
           number: parseInt(sp[2]),
           fingerprint: sp[3],
-          amount: parseInt(sp[4])
+          amount: parseInt(sp[4]),
+          raw: input
         });
       });
       // Outputs
@@ -191,10 +195,13 @@ BlockSchema.methods = {
       simpleTx.outputs.forEach(function (output) {
         var sp = output.split(':');
         tx.outputs.push({
-          type: sp[0],
-          amount: parseInt(sp[1])
+          pubkey: sp[0],
+          amount: parseInt(sp[1]),
+          raw: output
         });
       });
+      tx.version = version;
+      tx.currency = currency;
       transactions.push(tx);
     });
     return transactions;

@@ -1,6 +1,8 @@
+var async      = require('async');
+var mongoose   = require('mongoose');
 var crypto     = require('./crypto');
 var common     = require('./common');
-var mongoose   = require('mongoose');
+var rawer      = require('./rawer');
 var Identity   = mongoose.model('Identity', require('../models/identity'));
 var Membership = mongoose.model('Membership', require('../models/membership'));
 
@@ -25,6 +27,38 @@ function LocalValidator () {
       return;
     }
     done(null, true);
+  };
+
+  this.checkTransactionsOfBlock = function (block, done) {
+    async.series([
+      async.apply(checkTransactionsOfBlock, block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
+  this.checkTransactionsSignature = function (block, done) {
+    async.series([
+      async.apply(checkTransactionsSignature, block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
+  this.checkSingleTransaction = function (tx, done) {
+    async.series([
+      async.apply(checkTransactionCoherence, tx)
+    ], function (err) {
+      done(err);
+    });
+  };
+
+  this.checkSingleTransactionSignature = function (tx, done) {
+    async.series([
+      async.apply(checkSingleTransactionSignature, tx)
+    ], function (err) {
+      done(err);
+    });
   };
 
   this.validate = function (block, done) {
@@ -219,4 +253,147 @@ function hasCertificationsFromLeaversOrExcluded (block) {
     i++;
   }
   return conflict;
+}
+
+function checkTransactionsOfBlock (block, done) {
+  var txs = block.getTransactions();
+    async.waterfall([
+      function (next){
+        // Check local coherence of each tx
+        async.forEachSeries(txs, checkTransactionCoherence, next);
+      },
+      function (next){
+        // Check local coherence of all txs as a whole
+        checkTransactionPack(txs, next);
+      }
+    ], done);
+}
+
+function checkTransactionsSignature (block, done) {
+  var txs = block.getTransactions();
+  // Check local coherence of each tx
+  async.forEachSeries(txs, checkSingleTransactionSignature, done);
+}
+
+function checkSingleTransactionSignature (tx, done) {
+  var json = { "version": tx.version, "currency": tx.currency, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [] };
+  tx.inputs.forEach(function (input) {
+    json.inputs.push(input.raw);
+  });
+  tx.outputs.forEach(function (output) {
+    json.outputs.push(output.raw);
+  });
+  var i = 0;
+  var signaturesMatching = true;
+  var raw = rawer.getTransaction(json);
+  while (signaturesMatching && i < tx.signatures.length) {
+    var sig = tx.signatures[i];
+    var pub = tx.issuers[i];
+    signaturesMatching = crypto.verify(raw, sig, pub);
+    i++;
+  }
+  done(signaturesMatching ? null : 'Signature from a transaction must match');
+}
+
+function checkTransactionCoherence (tx, done) {
+  async.waterfall([
+    function (next) {
+      if (tx.issuers.length == 0) {
+        next('A transaction must have at least 1 issuer'); return;
+      }
+      if (tx.inputs.length == 0) {
+        next('A transaction must have at least 1 source'); return;
+      }
+      if (tx.outputs.length == 0) {
+        next('A transaction must have at least 1 recipient'); return;
+      }
+      if (tx.signatures.length == 0) {
+        next('A transaction must have at least 1 signature'); return;
+      }
+      // Signatures count == issuers.length
+      if (tx.issuers.length != tx.signatures.length) {
+        next('Number of signatures must be equal to number of issuers'); return;
+      }
+      // INDEX related
+      var indexes = [];
+      tx.inputs.forEach(function (input) {
+        var index = input.index;
+        if (indexes.indexOf(index) == -1)
+          indexes.push(index);
+      });
+      // Indexes <= issuers.length
+      if (tx.issuers.length != indexes.length) {
+        next('Number of indexes must be equal to number of issuers'); return;
+      }
+      // It must appear each index 0..Nissuers - 1
+      var containsAll = true;
+      for (var i = 0; i < indexes.length; i++) {
+        if (indexes.indexOf(i) == -1)
+          containsAll = false;
+      }
+      if (!containsAll) {
+        next('Each issuer must be present in sources'); return;
+      }
+      // input sum == output sum
+      var inputSum = 0;
+      tx.inputs.forEach(function (input) {
+        inputSum += input.amount;
+      });
+      var outputSum = 0;
+      tx.outputs.forEach(function (output) {
+        outputSum += output.amount;
+      });
+      if (inputSum != outputSum) {
+        next('Input sum and output sum must be equal'); return;
+      }
+      // Cannot have 2 identical sources
+      var existsIdenticalSource = false;
+      var sources = [];
+      tx.inputs.forEach(function (input) {
+        if (~sources.indexOf(input.raw)) {
+          existsIdenticalSource = true;
+        } else {
+          sources.push(input.raw);
+        }
+      });
+      if (existsIdenticalSource) {
+        next('It cannot exist 2 identical sources inside a transaction'); return;
+      }
+      // Cannot have 2 identical pubkeys in outputs
+      var existsIdenticalRecipient = false;
+      var recipients = [];
+      tx.outputs.forEach(function (output) {
+        if (~recipients.indexOf(output.pubkey)) {
+          existsIdenticalRecipient = true;
+        } else {
+          recipients.push(output.pubkey);
+        }
+      });
+      if (existsIdenticalRecipient) {
+        next('It cannot exist 2 identical recipients inside a transaction'); return;
+      }
+      next();
+    }
+  ], done);
+}
+
+function checkTransactionPack (txs, done) {
+  var sources = [];
+  var i = 0;
+  var existsIdenticalSource = false;
+  while (!existsIdenticalSource && i < txs.length) {
+    var tx = txs[i];
+    tx.inputs.forEach(function (input) {
+      if (~sources.indexOf(input.raw)) {
+        existsIdenticalSource = true;
+      } else {
+        sources.push(input.raw);
+      }
+    });
+    i++;
+  }
+  if (existsIdenticalSource) {
+    done('It cannot exist 2 identical sources for transactions inside a given block'); return;
+  }
+  done();
 }

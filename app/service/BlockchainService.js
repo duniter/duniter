@@ -125,6 +125,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           localValidation.validate(block, next);
         },
         function (validated, next){
+          localValidation.checkTransactionsOfBlock(block, next);
+        },
+        function (next){
+          localValidation.checkTransactionsSignature(block, next);
+        },
+        function (next){
           localValidation.checkSignatures(block, next);
         },
         function (validated, next){

@@ -1667,4 +1667,212 @@ module.exports = {
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  TRANSACTION_WITH_MORE_INDEXES_THAN_ISSUERS: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:1:2:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "1:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  TRANSACTION_WITH_UNMATCHING_INDEX: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:2:2:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "3:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  TRANSACTION_WITH_DIFFERENT_INPUT_OUTPUT_SUMS: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:2:2:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "1:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:440\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  TRANSACTION_WITH_DUPLICATED_SOURCE_SINGLE_TX: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:2:3:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "1:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:120\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  TRANSACTION_WITH_DUPLICATED_RECIPIENTS_SINGLE_TX: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:2:2:2\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "1:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  TRANSACTION_WITH_DUPLICATED_SOURCE_MULTIPLE_TX: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:2:2:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "1:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:80\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
+    "TX:1:1:1:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  TRANSACTION_WITH_WRONG_SIGNATURES: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 83\n" +
+    "Date: 1411777000\n" +
+    "ConfirmedDate: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:2:2:1\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "1:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
+    "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:80\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 };

@@ -1,6 +1,7 @@
 var async           = require('async');
 var _               = require('underscore');
 var logger          = require('../lib/logger')();
+var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
@@ -15,6 +16,8 @@ function TransactionService (conn, conf, PeeringService) {
 
   this.processTx = function (txObj, done) {
     var tx = new Transaction(txObj);
+    var localValidation = localValidator();
+    var globalValidation = null;
     async.waterfall([
       function (next) {
         transactionAlreadyProcessed(tx, next);
@@ -26,7 +29,16 @@ function TransactionService (conn, conf, PeeringService) {
           Block.current(next);
       },
       function (current, next) {
-        globalValidator(conf, blockchainDao(conn, current)).checkSingleTransaction(tx.getTransaction(), next);
+        // Validator OK
+        globalValidation = globalValidator(conf, blockchainDao(conn, current));
+        // Start checks...
+        localValidation.checkSingleTransaction(tx.getTransaction(), next);
+      },
+      function (next) {
+        localValidation.checkSingleTransactionSignature(tx.getTransaction(), next);
+      },
+      function (next) {
+        globalValidation.checkSingleTransaction(tx.getTransaction(), next);
       },
       function (next) {
         // Save the transaction

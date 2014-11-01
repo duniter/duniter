@@ -592,6 +592,7 @@ sigQty      | Minimum quantity of signatures to join/stay in the keychain
 stepMax     | Maximum step between the WoT and individual and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
 powPeriod   | Number of written blocks to wait to lower the PoW difficulty by 1. Value is either a `[1;+infinity[` integer or a `]0;1[` decimal value.
+dtDateMin   | Number of seconds that can be added to current date
 incDateMin  | Minimum number of confirmations to increment the current date.
 
 ### Computed variables
@@ -633,7 +634,7 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 
 ##### Dates
 
-* A block must have its `Date` field greater or equal to `ConfirmedDate`.
+* A block must have its `Date` field must be equal either to `ConfirmedDate` or `ConfirmedDate` + `dtDateMin`.
 
 ##### Identities
 

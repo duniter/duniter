@@ -825,6 +825,23 @@ Status     | Event
 
 As each peer receives Status messages from other peers, it is able to compare `Time` field to local machine time.
 
+### Transactions
+
+#### Local coherence
+
+* A transaction must be signed by all of its `Issuers`
+  * Signatures are to be associated to each `Issuers` according to their apparition order
+* A transaction must have at least 1 issuer
+* A transaction must have at least 1 source
+* A transaction must have at least 1 recipient
+* A transaction must have at least 1 signature
+* A transaction must exactly same number of signatures and issuers
+* A transaction's indexes' (`Inputs` field) value must be less or equal to `Issuers` line count
+* A transaction must have its issuers appear at least once in `Inputs` field, where an issuer is linked to `INDEX` by its position in `Issuers` field. First issuer is `INDEX = 0`.
+* A transaction's `Inputs` amount sum must be equal to `Ouputs` amount sum.
+* A transaction cannot have two identical `Inputs`
+* A transaction cannot have a same pubkey twice in `Outputs`
+
 ## Implementations
 
 ### APIs

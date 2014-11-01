@@ -65,7 +65,7 @@ For any document using a date field, targeted date is to be understood as **UTC+
 
 Signatures follow [Ed55219 pattern](http://en.wikipedia.org/wiki/EdDSA), and are written under [Base64](http://en.wikipedia.org/wiki/Base64) encoding.
 
-Here is an of expected signature:
+Here is an example of expected signature:
 
     H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==
 
@@ -109,7 +109,7 @@ A self certification is the act, for a given key's owner, to sign an identifier 
 
 ##### Format
 
-Self-certification is the signature of a special string *containing* the udid2 identifier:
+Self-certification is the signature of a special string *containing* the identifier:
 
     UID:IDENTIFIER
     

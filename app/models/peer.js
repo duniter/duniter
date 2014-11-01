@@ -48,7 +48,7 @@ PeerSchema.virtual('pubkey').set(function (am) {
 PeerSchema.methods = {
 
   keyID: function () {
-    return this.fingerprint && this.fingerprint.length > 24 ? "0x" + this.fingerprint.substring(24) : "0x?";
+    return this.pub && this.pub.length > 24 ? "0x" + this.pub.substring(0, 24) : "0x?";
   },
 
   setStatus: function (newStatus, done) {

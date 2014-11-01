@@ -3,11 +3,11 @@ var sha1     = require('sha1');
 var util     = require('util');
 var stream   = require('stream');
 
-module.exports = function (serverFPR, conn) {
-  return new Router(serverFPR, conn);
+module.exports = function (serverPubkey, conn) {
+  return new Router(serverPubkey, conn);
 };
 
-function Router (serverFPR, conn) {
+function Router (serverPubkey, conn) {
 
   var Merkle      = conn.model('Merkle');
   var Transaction = conn.model('Transaction');
@@ -18,12 +18,12 @@ function Router (serverFPR, conn) {
   var that = this;
 
   this._write = function (obj, enc, done) {
-    if (typeof obj.email != 'undefined') {                           route('pubkey',      obj, getRandomInUPPeers,                          done); }
-    else if (obj.keysChanges ? true : false) {                       route('keyblock',    obj, getRandomInUPPeers,                          done); }
-    else if (obj.recipient ? true : false) {                         route('transaction', obj, getTargetedButSelf(obj.recipient),           done); }
-    else if (obj.endpoints ? true : false) {                         route('peer',        obj, getRandomInAllPeersButPeer(obj.fingerprint), done); }
-    else if (obj.status ? true : false) {                            route('status',      obj, getTargetedButSelf(obj.to),                  done); }
-    else if (obj.type && obj.type == "MEMBERSHIP" ? true : false) {  route('membership',  obj, getRandomInUPPeers,                          done); }
+    if (obj.pubkey && obj.uid) {                 route('identity',    obj, getRandomInUPPeers,                          done); }
+    else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers,                          done); }
+    else if (obj.type && obj.type == 'Block') {  route('block',       obj, getRandomInUPPeers,                          done); }
+    else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers,                          done); }
+    else if (obj.endpoints) {                    route('peer',        obj, getRandomInAllPeersButPeer(obj.pub),         done); }
+    else if (obj.status) {                       route('status',      obj, getTargetedButSelf(obj.to),                  done); }
     else {
       done();
     }
@@ -42,12 +42,12 @@ function Router (serverFPR, conn) {
 
   function getRandomInAllPeersButPeer (fpr) {
     return function (done) {
-      Peer.getRandomlyWithout([serverFPR, fpr], done);
+      Peer.getRandomlyWithout([serverPubkey, fpr], done);
     };
   };
 
   function getRandomInUPPeers (done) {
-    Peer.getRandomlyUPsWithout([serverFPR], done);
+    Peer.getRandomlyUPsWithout([serverPubkey], done);
   };
 
   /**
@@ -55,7 +55,7 @@ function Router (serverFPR, conn) {
   */
   function getTargetedButSelf (to) {
     return function (done) {
-      if (to == serverFPR) {
+      if (to == serverPubkey) {
         done(null, []);
       } else {
         Peer.getTheOne(to, function (err, peer) {

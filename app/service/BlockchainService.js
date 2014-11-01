@@ -1281,7 +1281,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (theCurrent, next) {
         current = theCurrent;
         var lastIssuedByUs = current.issuer == PeeringService.pubkey;
-        console.log(current.issuer, PeeringService.pubkey);
         if (lastIssuedByUs && conf.powDelay && !computationTimeoutDone) {
           computationTimeoutDone = true;
           computationTimeout = setTimeout(function () {

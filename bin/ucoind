@@ -378,9 +378,9 @@ program
       constants.setUDID2Format();
     }
 
-    // server
-    //   .pipe(router(server.PeeringService.cert.fingerprint, server.conn))
-    //   .pipe(multicaster());
+    server
+      .pipe(router(server.PeeringService.pubkey, server.conn))
+      .pipe(multicaster());
 
     async.waterfall([
       // function (next){

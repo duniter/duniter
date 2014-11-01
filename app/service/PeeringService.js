@@ -98,7 +98,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
         }
         wasStatus = peer.status;
         peer.statusSigDate = status.sigDate;
-        peers[peer.fingerprint].status = status;
+        peers[peer.pub].status = status;
         peer.setStatus(status.status, next);
       },
     ], function (err) {
@@ -121,7 +121,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   function persistPeer (peer, done) {
     async.waterfall([
       function (next){
-        Peer.find({ fingerprint: peer.fingerprint }, next);
+        Peer.find({ fingerprint: peer.pub }, next);
       },
       function (peers, next){
         var peerEntity = peer;
@@ -174,7 +174,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     async.waterfall([
       function (next){
         var statusToSend = actionForReceived[peer.status] || 'NEW';
-        that.sendStatusTo(statusToSend, [peer.fingerprint], next);
+        that.sendStatusTo(statusToSend, [peer.pub], next);
       },
     ], function (err) {
       if (err) plogger.error(err);
@@ -233,7 +233,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
             currency: currency,
             status: statusStr,
             from: selfPubkey,
-            to: peer.fingerprint
+            to: peer.pub
           });
           async.waterfall([
             function (next){

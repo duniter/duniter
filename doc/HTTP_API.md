@@ -27,6 +27,7 @@
       * [peering/status](#networkpeeringstatus)
   * [tx/](#tx)
       * [process](#txprocess)
+      * [sources/[pubkey]](#txsourcespubkey)
 
 ## Overview
 
@@ -45,7 +46,8 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       |-- status
     |       `-- peers
     `-- tx/
-        `-- process
+        |-- process
+        `-- sources
 
 ## Merkle URLs
 
@@ -563,11 +565,10 @@ POST a transaction.
 Name              | Value                                                         | Method
 ----------------- | ------------------------------------------------------------- | ------
 `transaction`     | The raw transaction.                                          | POST
-`signature`       | The signature of the `transaction`.                           | POST
 
 **Returns**
 
-The recorded transaction and its signature.
+The recorded transaction.
 ```json
 {
   "raw": "Version: 1\r\n...\r\n",
@@ -598,5 +599,48 @@ The recorded transaction and its signature.
       "6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49"
     ]
   }
+}
+```
+
+
+#### `tx/sources/[pubkey]`
+
+**Goal**
+
+GET a list of available sources.
+
+**Parameters**
+
+Name              | Value                       | Method
+----              | -----                       | ------
+`pubkey`           | Owner of the coins' pubkey. | URL
+
+**Returns**
+
+A list of available sources for the given `pubkey`.
+```json
+{
+  "currency": "beta_brousouf",
+  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "sources": [
+    {
+      "type: "D",
+      "number": 5,
+      "fingerprint": "6C20752F6AD06AEA8D0BB46BB8C4F68641A34C79",
+      "amount": 100
+    },
+    {
+      "type: "D",
+      "number": 18,
+      "fingerprint": "DB7D88E795E42CF8CFBFAAFC77379E97847F9B42",
+      "amount": 110
+    },
+    {
+      "type: "T",
+      "number": 55,
+      "fingerprint": "E614E814179F313B1113475E6319EF4A3D470AD0",
+      "amount": 30
+    }
+  ]
 }
 ```

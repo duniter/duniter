@@ -1,6 +1,7 @@
-var async   = require('async');
-var status  = require('../models/statusMessage');
-var parsers = require('../lib/streams/parsers/doc');
+var async     = require('async');
+var status    = require('../models/statusMessage');
+var parsers   = require('../lib/streams/parsers/doc');
+var constants = require('../lib/constants');
 
 module.exports.get = function (conn, currencyName) {
   return new ParameterNamespace(conn, currencyName);
@@ -19,6 +20,19 @@ function ParameterNamespace (conn, currency) {
       return;
     }
     callback(null, req.params.search);
+  };
+
+  this.getPubkey = function (req, callback){
+    if(!req.params.pubkey){
+      callback('Parameter `pubkey` is required');
+      return;
+    }
+    var matches = req.params.pubkey.match(constants.PUBLIC_KEY);
+    if(!matches){
+      callback("Pubkey format is incorrect, must be a Base58 string");
+      return;
+    }
+    callback(null, matches[0]);
   };
 
   this.getFingerprint = function (req, callback){

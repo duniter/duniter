@@ -43,7 +43,8 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.listenTX = function (app) {
     var transactions = require('./app/controllers/transactions')(that);
-    app.post('/tx/process', transactions.parseTransaction);
+    app.post('/tx/process',           transactions.parseTransaction);
+    app.get( '/tx/sources/:pubkey',   transactions.getSources);
   };
 }
 

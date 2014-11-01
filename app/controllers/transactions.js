@@ -23,14 +23,11 @@ function TransactionBinding(txServer) {
   var conf = txServer.conf;
 
   // Services
-  var http              = txServer.HTTPService;
   var ParametersService = txServer.ParametersService;
-  var PeeringService    = txServer.PeeringService;
   var BlockchainService = txServer.BlockchainService;
 
   // Models
-  var Peer       = txServer.conn.model('Peer');
-  var Membership = txServer.conn.model('Membership');
+  var Source = txServer.conn.model('Source');
 
   this.parseTransaction = function (req, res) {
     var onError = http400(res);
@@ -45,6 +42,36 @@ function TransactionBinding(txServer) {
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
+  }
+
+  this.getSources = function (req, res) {
+    var pubkey = "";
+    async.waterfall([
+      function (next) {
+        ParametersService.getPubkey(req, next);
+      },
+      function (pPubkey, next) {
+        pubkey = pPubkey;
+        Source.getAvailableByPubkey(pubkey, next);
+      },
+      function (sources, next) {
+        var result = {
+          "currency": conf.currency,
+          "pubkey": pubkey,
+          "sources": []
+        };
+        sources.forEach(function (src) {
+          result.sources.push(src.json());
+        });
+        next(null, result);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
   }
   
   return this;

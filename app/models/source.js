@@ -20,7 +20,24 @@ SourceSchema.pre('save', function (next) {
 });
 
 SourceSchema.methods = {
+
+  json: function () {
+    return {
+      "pubkey": this.pubkey,
+      "type": this.type,
+      "number": this.number,
+      "fingerprint": this.fingerprint,
+      "amount": this.amount
+    };
+  }
 };
+
+SourceSchema.statics.getAvailableByPubkey = function (pubkey, done) {
+  var Source = this.model('Source');
+  Source
+    .find({ "pubkey": pubkey, "consumed": false })
+    .exec(done);
+}
 
 SourceSchema.statics.existsNotConsumed = function (type, pubkey, number, fingerprint, amount, done) {
   var Source = this.model('Source');

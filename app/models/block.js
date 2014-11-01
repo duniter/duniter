@@ -215,14 +215,12 @@ BlockSchema.statics.nextNumber = function (done) {
   });
 };
 
-BlockSchema.statics.lastOfIssuer = function (issuer, done) {
+BlockSchema.statics.last2BlocksOfIssuer = function (issuer, done) {
   this
     .find({ issuer: issuer })
     .sort({ 'number': -1 })
-    .limit(1)
-    .exec(function (err, blocks) {
-      done(err, (blocks && blocks.length == 1) ? blocks[0] : null);
-  });
+    .limit(2)
+    .exec(done);
 };
 
 BlockSchema.statics.lastUDBlock = function (done) {

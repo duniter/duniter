@@ -134,7 +134,7 @@ function BlockchainBinding (wotServer) {
         if (current) {
           nextBlockNumber = current ? current.number + 1 : 0;
         }
-        globalValidator(conf, blockchainDao(conn, null)).getTrialLevel(PeeringService.pubkey, nextBlockNumber, current ? current.membersCount : 0, next);
+        globalValidator(conf, blockchainDao(conn, null)).getTrialLevel(PeeringService.pubkey, next);
       },
     ], function (err, nbZeros) {
       res.setHeader("Content-Type", "text/plain");

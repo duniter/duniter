@@ -76,8 +76,8 @@ module.exports = function(conn, block) {
       Identity.getToBeKicked(done);
     },
 
-    this.lastBlockOfIssuer = function (issuer, done) {
-      Block.lastOfIssuer(issuer, done);
+    this.last2BlocksOfIssuer = function (issuer, done) {
+      Block.last2BlocksOfIssuer(issuer, done);
     },
 
     this.getLastUDBlock = function (done) {

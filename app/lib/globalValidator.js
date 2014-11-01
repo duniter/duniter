@@ -88,8 +88,8 @@ function GlobalValidator (conf, dao) {
     isOver3Hops(member, wot, newLinks, dao, done);
   };
 
-  this.getTrialLevel = function (issuer, nextBlockNumber, currentWoTsize, done) {
-    getTrialLevel(issuer, nextBlockNumber, currentWoTsize, done);
+  this.getTrialLevel = function (issuer, done) {
+    getTrialLevel(issuer, done);
   };
 
   /*****************************
@@ -242,7 +242,7 @@ function GlobalValidator (conf, dao) {
           var nbWaitedPeriods = 0;
           async.waterfall([
             function (next){
-              getTrialLevel(block.issuer, block.number, current ? current.membersCount : 0, next);
+              getTrialLevel(block.issuer, next);
             },
             function (nbZeros, next){
               var powRegexp = new RegExp('^0{' + nbZeros + ',}');
@@ -375,25 +375,31 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
-  function getTrialLevel (issuer, nextBlockNumber, currentWoTsize, done) {
+  function getTrialLevel (issuer, done) {
     // Compute exactly how much zeros are required for this block's issuer
     var lastBlockNbZeros = 0;
-    var nbWaitedPeriods = 0;
+    var interBlocksCount = 0;
+    var followingBlocksCount = 0;
     async.waterfall([
       function (next){
-        dao.lastBlockOfIssuer(issuer, next);
+        async.parallel({
+          lasts: function (next) {
+            dao.last2BlocksOfIssuer(issuer, next);
+          },
+          current: function (next) {
+            dao.getCurrent(next);
+          }
+        }, next);
       },
-      function (last, next){
-        if (last) {
-          lastBlockNbZeros = last.hash.match(/^0+/)[0].length;
-          var powPeriodIsPercentage = conf.powPeriod < 1;
-          var nbPeriodsToWait = powPeriodIsPercentage ? Math.floor(conf.powPeriod*currentWoTsize) : conf.powPeriod;
-          if (nbPeriodsToWait == 0)
-            nbWaitedPeriods = 1; // Minorate by 1 if does not have to wait
-          else
-            nbWaitedPeriods = Math.floor((nextBlockNumber - last.number) / nbPeriodsToWait); // -1 to say "excluded"
+      function (res, next){
+        var current = res.current;
+        var lasts = res.lasts;
+        if (current && lasts) {
+          interBlocksCount = lasts.length == 2 ? Math.abs(lasts[0].number - lasts[1].number - 1) : 0;
+          followingBlocksCount = lasts.length >= 1 ? Math.abs(lasts[0].number - current.number) : 0;
+          lastBlockNbZeros = lasts[0].hash.match(/^0+/)[0].length;
         }
-        var nbZeros = Math.max(conf.powZeroMin, lastBlockNbZeros + 1 - nbWaitedPeriods);
+        var nbZeros = Math.max(conf.powZeroMin, lastBlockNbZeros + interBlocksCount - followingBlocksCount);
         next(null, nbZeros);
       },
     ], done);

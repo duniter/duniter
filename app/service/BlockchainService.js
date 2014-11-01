@@ -1307,7 +1307,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               signature(conf.salt, conf.passwd, callback);
             },
             trial: function (callback) {
-              globalValidator(conf, blockchainDao(conn, block)).getTrialLevel(PeeringService.pubkey, current ? current.number + 1 : 0, current ? current.membersCount : 0, callback);
+              globalValidator(conf, blockchainDao(conn, block)).getTrialLevel(PeeringService.pubkey, callback);
             }
           }, next);
         }

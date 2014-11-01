@@ -253,7 +253,7 @@ function generateAndSend (generationMethod) {
         method(next);
       },
       function (block, next){
-        logger.debug('Keyblock to be sent: %s', block.quickDescription());
+        logger.debug('Block to be sent: %s', block.quickDescription());
         var wiz = wizard(server);
         var doSign = null;
         async.waterfall([

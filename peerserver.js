@@ -322,7 +322,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     app.post(   '/blockchain/block',            blockchain.parseBlock);
     app.get(    '/blockchain/block/:number',    blockchain.promoted);
     app.get(    '/blockchain/current',          blockchain.current);
-    app.get(    '/blockchain/hardship/:fpr',    blockchain.hardship);
+    app.get(    '/blockchain/hardship/:pubkey', blockchain.hardship);
   };
 
   this.listenNET = function (app) {

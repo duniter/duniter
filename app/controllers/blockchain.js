@@ -12,6 +12,8 @@ var extractSignature = require('../lib/streams/extractSignature');
 var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger')();
 var mlogger          = require('../lib/logger')('membership');
+var blockchainDao    = require('../lib/blockchainDao');
+var globalValidator  = require('../lib/globalValidator');
 
 module.exports = function (wotServer) {
   return new BlockchainBinding(wotServer);
@@ -21,6 +23,7 @@ function BlockchainBinding (wotServer) {
 
   var that = this;
   var conf = wotServer.conf;
+  var conn = wotServer.conn;
 
   // Services
   var http              = wotServer.HTTPService;
@@ -31,6 +34,7 @@ function BlockchainBinding (wotServer) {
   // Models
   var Peer       = wotServer.conn.model('Peer');
   var Membership = wotServer.conn.model('Membership');
+  var Identity   = wotServer.conn.model('Identity');
 
   this.parseMembership = function (req, res) {
     var onError = http400(res);
@@ -116,19 +120,21 @@ function BlockchainBinding (wotServer) {
     var nextBlockNumber = 0;
     async.waterfall([
       function (next){
-        ParametersService.getFingerprint(req, next);
+        ParametersService.getPubkey(req, next);
       },
-      function (fpr, next){
-        member = fpr;
-        Key.isMember(fpr, next);
+      function (pubkey, next){
+        member = pubkey;
+        Identity.isMember(pubkey, next);
       },
       function (isMember, next){
         if (!isMember) next('Not a member');
         BlockchainService.current(next);
       },
       function (current, next){
-        if (current) nextBlockNumber = current.number + 1;
-        BlockchainService.getTrialLevel(member, nextBlockNumber, current ? current.membersCount : 0, next);
+        if (current) {
+          nextBlockNumber = current ? current.number + 1 : 0;
+        }
+        globalValidator(conf, blockchainDao(conn, null)).getTrialLevel(PeeringService.pubkey, nextBlockNumber, current ? current.membersCount : 0, next);
       },
     ], function (err, nbZeros) {
       res.setHeader("Content-Type", "text/plain");

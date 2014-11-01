@@ -1094,7 +1094,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var now = moment.utc().startOf('minute').unix();
     if (current) {
       var nextDate = current.confirmedDate + conf.dtDateMin;
-      console.log(nextDate <= now, nextDate, now, conf.dtDateMin);
       now = (nextDate <= now) ? nextDate : current.confirmedDate;
     }
     block.date = now;
@@ -1272,10 +1271,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       clearTimeout(computationTimeout);
       computationTimeout = null;
     }
-    var sigFunc, block, difficulty;
+    var sigFunc, block, difficulty, current;
     async.waterfall([
       function (next) {
-        if (conf.powDelay && !computationTimeoutDone) {
+        Block.current(function (err, current) {
+          next(null, current);
+        });
+      },
+      function (theCurrent, next) {
+        current = theCurrent;
+        var lastIssuedByUs = current.issuer == PeeringService.pubkey;
+        console.log(current.issuer, PeeringService.pubkey);
+        if (lastIssuedByUs && conf.powDelay && !computationTimeoutDone) {
           computationTimeoutDone = true;
           computationTimeout = setTimeout(function () {
             if (computeNextCallback)
@@ -1286,12 +1293,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         }
         else next();
       },
-      function (next) {
-        Block.current(function (err, current) {
-          next(null, current);
-        });
-      },
-      function (current, next){
+      function (next){
         if (!current) {
           next(null, null);
           return;
@@ -1315,8 +1317,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (res, next){
         if (!res) {
           next(null, null, 'Waiting for a root block before computing new blocks');
-        } else if (res.block.joiners.length == 0 && res.block.excluded.length == 0 && res.block.certifications.length == 0) {
-          next(null, null, 'Waiting for new data to be written');
         } else {
           computationTimeoutDone = false;
           BlockchainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {

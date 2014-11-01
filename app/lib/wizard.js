@@ -258,8 +258,6 @@ var tasks = {
       async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
       async.apply(simpleInteger, "Number of confirmation to change current Date", "incDateMin", conf),
       async.apply(simpleInteger, "Increment value (in seconds) for date changing", "dtDateMin", conf),
-      async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
-      async.apply(simplePercentOrPositiveInteger, "Number of blocks to wait for lowering difficulty", "powPeriod", conf),
       function (next){
         choose("Participate writing the blockchain (when member)", conf.participate,
           function participate () {
@@ -271,7 +269,7 @@ var tasks = {
             next();
           });
       },
-      async.apply(simpleInteger, "Time to wait before starting the computation of a new block", "powDelay", conf),
+      async.apply(simpleInteger, "Start computation of a new block if none received since (seconds)", "powDelay", conf),
     ], done);
   }
 };

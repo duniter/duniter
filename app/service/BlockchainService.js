@@ -4,6 +4,7 @@ var merkle          = require('merkle');
 var sha1            = require('sha1');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
+var rawer           = require('../lib/rawer');
 var crypto          = require('../lib/crypto');
 var base64          = require('../lib/base64');
 var dos2unix        = require('../lib/dos2unix');
@@ -121,7 +122,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         },
         function (current, next){
           currentBlock = current;
-          console.log(block.getRaw());
           localValidation.validate(block, next);
         },
         function (validated, next){
@@ -291,7 +291,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         var count = links.length;
         if (newLinks[target] && newLinks[target].length)
           count += newLinks[target].length;
-        console.log(target, count);
         next(count < conf.sigQty && 'Key ' + target + ' does not have enough links (' + count + '/' + conf.sigQty + ')');
       },
     ], done);
@@ -318,10 +317,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.waterfall([
       function (next) {
         // Newcomers
-        async.forEach(block.identities, function(identity, callback){
+        async.forEachSeries(block.identities, function(identity, callback){
           var idty = Identity.fromInline(identity);
           async.waterfall([
             function (next){
+              // Computes the hash if not done yet
+              if (!idty.hash)
+                idty.hash = sha1(rawer.getIdentity(idty)).toUpperCase();
               Identity.getTheOne(idty.pubkey, idty.getTargetHash(), next);
             },
             function (existing, next){
@@ -1275,7 +1277,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.waterfall([
       function (next) {
         Block.current(function (err, current) {
-          next(null, current);
+          if (err)
+            next('Skipping', null, 'Waiting for a root block before computing new blocks');
+          else
+            next(null, current);
         });
       },
       function (theCurrent, next) {

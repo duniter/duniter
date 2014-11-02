@@ -48,7 +48,7 @@ PeerSchema.virtual('pubkey').set(function (am) {
 PeerSchema.methods = {
 
   keyID: function () {
-    return this.pub && this.pub.length > 24 ? "0x" + this.pub.substring(0, 24) : "0x?";
+    return this.pub && this.pub.length > 10 ? this.pub.substring(0, 10) : "Unknown";
   },
 
   setStatus: function (newStatus, done) {
@@ -64,14 +64,14 @@ PeerSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "fingerprint", "endpoints", "hash", "status", "signature"].forEach(function (key) {
+    ["version", "currency", "pub", "endpoints", "hash", "status", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
   
   copyValuesFrom: function(from) {
     var obj = this;
-    ["version", "currency", "fingerprint", "endpoints", "signature"].forEach(function (key) {
+    ["version", "currency", "pub", "endpoints", "signature"].forEach(function (key) {
       obj[key] = from[key];
     });
   },
@@ -79,10 +79,11 @@ PeerSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "fingerprint", "endpoints", "status", "signature"].forEach(function (key) {
+    ["version", "currency", "endpoints", "status", "signature"].forEach(function (key) {
       json[key] = obj[key];
     });
     json.raw = this.getRaw();
+    json.pubkey = this.pub;
     return json;
   },
 
@@ -178,22 +179,22 @@ PeerSchema.statics.getTheOne = function (fpr, done) {
   ], done);
 };
 
-PeerSchema.statics.getList = function (fingerprints, done) {
-  this.find({ fingerprint: { $in: fingerprints }}, done);
+PeerSchema.statics.getList = function (pubs, done) {
+  this.find({ pub: { $in: pubs }}, done);
 };
 
-PeerSchema.statics.allBut = function (fingerprints, done) {
-  this.find({ fingerprint: { $nin: fingerprints } }, done);
+PeerSchema.statics.allBut = function (pubs, done) {
+  this.find({ pub: { $nin: pubs } }, done);
 };
 
 /**
 * Look for 10 last updated peers, and choose randomly 4 peers in it
 */
-PeerSchema.statics.getRandomlyWithout = function (fingerprints, done) {
+PeerSchema.statics.getRandomlyWithout = function (pubs, done) {
   var that = this;
   async.waterfall([
     function (next){
-      that.find({ fingerprint: { $nin: fingerprints } })
+      that.find({ pub: { $nin: pubs } })
       .sort({ 'updated': -1 })
       .limit(10)
       .exec(next);
@@ -205,11 +206,11 @@ PeerSchema.statics.getRandomlyWithout = function (fingerprints, done) {
 /**
 * Look for 10 last updated peers, and choose randomly 4 peers in it
 */
-PeerSchema.statics.getRandomlyUPsWithout = function (fingerprints, done) {
+PeerSchema.statics.getRandomlyUPsWithout = function (pubs, done) {
   var that = this;
   async.waterfall([
     function (next){
-      that.find({ fingerprint: { $nin: fingerprints }, status: { $in: ['NEW_BACK', 'UP'] } })
+      that.find({ pub: { $nin: pubs }, status: { $in: ['NEW_BACK', 'UP'] } })
       .sort({ 'updated': -1 })
       .limit(10)
       .exec(next);

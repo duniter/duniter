@@ -17,6 +17,7 @@ function PeerParser (onError) {
     {prop: "version",           regexp: /Version: (.*)/},
     {prop: "currency",          regexp: /Currency: (.*)/},
     {prop: "pub",               regexp: /PublicKey: (.*)/},
+    {prop: "time",              regexp: /Time: (.*)/},
     {prop: "endpoints",         regexp: /Endpoints:\n([\s\S]*)/, parser: split("\n")},
   ];
   var multilineFields = [];

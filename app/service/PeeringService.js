@@ -6,6 +6,7 @@ var events  = require('events');
 var Status  = require('../models/statusMessage');
 var logger  = require('../lib/logger')('peering');
 var base58  = require('../lib/base58');
+var moment  = require('moment');
 
 function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   
@@ -46,7 +47,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   };
 
   this.addPeer = function (p) {
-    peers[p.fingerprint] = p;
+    peers[p.pub] = p;
   };
 
   this.load = function (done) {
@@ -69,8 +70,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
 
   this.submit = function(peering, callback){
     var peer = new Peer(peering);
-    var pubkey = peer.pubkey;
-    var fpr = pubkey.fingerprint;
     async.waterfall([
       function (next){
         that.addPeer(peer);
@@ -81,14 +80,11 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
 
   this.submitStatus = function(obj, callback){
     var status = new Status(obj);
-    var peer, pubkey;
+    var peer;
     var wasStatus = null;
     async.waterfall([
       function (next){
-        PublicKey.getTheOne(obj.keyID, next);
-      },
-      function (pubkey, next){
-        Peer.getTheOne(pubkey.fingerprint, next);
+        Peer.getTheOne(status.from, next);
       },
       function (theOne, next){
         peer = theOne;
@@ -98,6 +94,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
         }
         wasStatus = peer.status;
         peer.statusSigDate = status.sigDate;
+        peers[peer.pub] = peers[peer.pub] || peer;
         peers[peer.pub].status = status;
         peer.setStatus(status.status, next);
       },
@@ -121,7 +118,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   function persistPeer (peer, done) {
     async.waterfall([
       function (next){
-        Peer.find({ fingerprint: peer.pub }, next);
+        Peer.find({ pub: peer.pub }, next);
       },
       function (peers, next){
         var peerEntity = peer;
@@ -221,16 +218,17 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   /**
   * Send given status to a list of peers.
   * @param statusStr Status string to send
-  * @param fingerprints List of peers' fingerprints to which status is to be sent
+  * @param pubs List of peers' pubs to which status is to be sent
   */
-  this.sendStatusTo = function (statusStr, fingerprints, done) {
+  this.sendStatusTo = function (statusStr, pubs, done) {
     async.waterfall([
-      async.apply(Peer.getList.bind(Peer), fingerprints),
+      async.apply(Peer.getList.bind(Peer), pubs),
       function (peers, next) {
         async.forEach(peers, function(peer, callback){
           var status = new Status({
             version: 1,
             currency: currency,
+            time: new Date(moment.utc().unix()*1000),
             status: statusStr,
             from: selfPubkey,
             to: peer.pub
@@ -241,7 +239,15 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
             },
             function (signature, next) {
               status.sig = signature;
-              that.emit('status', status);
+              if (statusStr == 'NEW') {
+                console.log(that.peer());
+                that.emit('peer', _(that.peer()).extend({ peerTarget: peer.pub }));
+                setTimeout(function () {
+                  that.emit('status', status);
+                }, 2000);
+              } else {
+                that.emit('status', status);
+              }
               peer.statusSent = status.status;
               peer.statusSigDate = new Date();
               peer.save(function (err) {
@@ -256,7 +262,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   }
 
   this.propagatePeering = function (peering, done) {
-    getAllPeersButSelfAnd(peering.fingerprint, function (err, peers) {
+    getAllPeersButSelfAnd(peering.pub, function (err, peers) {
       that.emit('peer', peering, peers || []);
     });
   };
@@ -267,8 +273,8 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     });
   };
 
-  function getAllPeersButSelfAnd (fingerprint, done) {
-    Peer.allBut([selfPubkey, fingerprint], done);
+  function getAllPeersButSelfAnd (pub, done) {
+    Peer.allBut([selfPubkey, pub], done);
   };
 
   function getRandomInAllPeers (done) {

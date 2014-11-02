@@ -57,7 +57,7 @@ function Http2RawPeer (req, onError) {
       onError('Requires a peering entry + signature');
     }
     else {
-      this.push(req.body.entry + req.body.signature);
+      this.push(req.body.entry + req.body.signature + (req.body.signature.match(/\n$/) ? '' : '\n'));
     }
     this.push(null);
   }
@@ -68,11 +68,11 @@ function Http2RawStatus (req, onError) {
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!(req.body && req.body.status && req.body.signature)){
-      onError('Requires a status + signature');
+    if(!(req.body && req.body.status)){
+      onError('Requires a status');
     }
     else {
-      this.push(req.body.status + req.body.signature);
+      this.push(req.body.status);
     }
     this.push(null);
   }

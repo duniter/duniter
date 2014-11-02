@@ -394,7 +394,7 @@ function GlobalValidator (conf, dao) {
       function (res, next){
         var current = res.current;
         var lasts = res.lasts;
-        if (current && lasts) {
+        if (current && lasts && lasts.length > 0) {
           interBlocksCount = lasts.length == 2 ? Math.abs(lasts[0].number - lasts[1].number - 1) : 0;
           followingBlocksCount = lasts.length >= 1 ? Math.abs(lasts[0].number - current.number) : 0;
           lastBlockNbZeros = lasts[0].hash.match(/^0+/)[0].length;

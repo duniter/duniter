@@ -48,7 +48,7 @@ program
   .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
   .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
   .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
-  .option('--particpate <Y|N>',        'Participate to writing the keychain')
+  .option('--participate <Y|N>',        'Participate to writing the keychain')
   .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a keyblock')
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
   .option('--ud0 <number>',            'Universal Dividend initial value')
@@ -109,7 +109,7 @@ program
       function (next){
         // Synchronize
         var Synchroniser = require('../app/lib/sync');
-        var remote = new Synchroniser(server, host, port, false, conf);
+        var remote = new Synchroniser(server, host, port, conf);
         remote.sync(next);
       },
     ], function (err) {
@@ -378,10 +378,6 @@ program
       constants.setUDID2Format();
     }
 
-    server
-      .pipe(router(server.PeeringService.pubkey, server.conn))
-      .pipe(multicaster());
-
     async.waterfall([
       // function (next){
       //   server.checkConfig(function (err) {
@@ -408,6 +404,11 @@ program
           next(err);
         });
       },
+      function (next) {
+        server
+          .pipe(router(server.PeeringService.pubkey, server.conn))
+          .pipe(multicaster());
+      }
     ], function (err) {
       if(err){
         logger.error(err);
@@ -453,7 +454,7 @@ function overrideConf(conf) {
       powZeroMin:  program.powZeroMin,
       powPeriod:   program.powPeriod,
       powDelay:    program.powDelay,
-      particpate:  program.particpate,
+      participate: program.participate,
       tsInterval:  program.tsInterval,
       ud0:         program.ud0,
       c:           program.growth,

@@ -18,7 +18,8 @@ function Router (serverPubkey, conn) {
   var that = this;
 
   this._write = function (obj, enc, done) {
-    if (obj.pubkey && obj.uid) {                 route('identity',    obj, getRandomInUPPeers,                          done); }
+    if (obj.peerTarget) {                        route('peer',        obj, getTargetedButSelf(obj.peerTarget),          done); }
+    else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers,                          done); }
     else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers,                          done); }
     else if (obj.type && obj.type == 'Block') {  route('block',       obj, getRandomInUPPeers,                          done); }
     else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers,                          done); }
@@ -40,9 +41,9 @@ function Router (serverPubkey, conn) {
     });
   }
 
-  function getRandomInAllPeersButPeer (fpr) {
+  function getRandomInAllPeersButPeer (pub) {
     return function (done) {
-      Peer.getRandomlyWithout([serverPubkey, fpr], done);
+      Peer.getRandomlyWithout([serverPubkey, pub], done);
     };
   };
 

@@ -5,26 +5,26 @@ var merkle           = require('merkle');
 var vucoin           = require('vucoin');
 var eventStream      = require('event-stream');
 var inquirer         = require('inquirer');
-var unix2dos         = require('./unix2dos');
+var dos2unix         = require('./dos2unix');
 var parsers          = require('./streams/parsers/doc');
 var extractSignature = require('./streams/extractSignature');
+var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
 
 var CONST_FORCE_TX_PROCESSING = false;
 
-module.exports = function Synchroniser (server, host, port, authenticated, conf) {
+module.exports = function Synchroniser (server, host, port, conf) {
   var that = this;
 
   // Services
   var TransactionService = server.TransactionsService;
   var PeeringService     = server.PeeringService;
   var ParametersService  = server.ParametersService;
-  var KeychainService    = server.KeychainService;
+  var BlockchainService  = server.BlockchainService;
 
   // Models
-  var KeyBlock      = server.conn.model('KeyBlock');
+  var Block      = server.conn.model('Block');
   var Merkle        = server.conn.model('Merkle');
-  var Key           = server.conn.model('Key');
   var Membership    = server.conn.model('Membership');
   var Transaction   = server.conn.model('Transaction');
   var Peer          = server.conn.model('Peer');
@@ -34,7 +34,7 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
 
   this.sync = function (done) {
     logger.info('Connecting remote host...');
-    vucoin(host, port, authenticated, function (err, node) {
+    vucoin(host, port, function (err, node) {
       if(err){
         done('Cannot sync: ' + err);
         return;
@@ -42,6 +42,7 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
 
       // Global sync vars
       var remotePeer = new Peer({});
+      var remoteJsonPeer = {};
       var remoteCurrentNumber;
       var remotePubkey;
 
@@ -54,133 +55,87 @@ module.exports = function Synchroniser (server, host, port, authenticated, conf)
         //============
         // Peer
         //============
-        function (pubkey, next){
-          remotePubkey = pubkey;
+        function (next){
           node.network.peering.get(next);
         },
         function (json, next){
+          remotePubkey = json.pubkey;
           remotePeer.copyValuesFrom(json);
           var entry = remotePeer.getRaw();
-          var signature = unix2dos(remotePeer.signature);
+          var signature = dos2unix(remotePeer.signature);
           // Parameters
           if(!(entry && signature)){
             callback('Requires a peering entry + signature');
             return;
           }
 
-          // Check signature's key ID
-          var keyID = jpgp().signature(signature).issuer();
-          if(!(keyID && keyID.length == 16)){
-            callback('Cannot identify signature issuer`s keyID');
-            return;
-          }
-          next(null, entry + signature, keyID);
+          remoteJsonPeer = json;
+          remoteJsonPeer.pub = json.pubkey;
+          remoteJsonPeer.status = "NOTHING";
+          localValidator().checkPeerSignature(remoteJsonPeer, next);
         },
-        function (signedPR, keyID, next) {
-          var peer;
+        function (next) {
           async.waterfall([
             function (next){
-              parsers.parsePeer(next).asyncWrite(signedPR, next);
-            },
-            function (obj, next) {
-              obj.pubkey = remotePubkey;
-              peer = obj;
-              // Temporarily manage ALL keys for sync
-              server.conf.kmanagement = "ALL";
-              PeeringService.submit(peer, next);
+              PeeringService.submit(remoteJsonPeer, next);
             },
           ], function (err) {
-            next(err, peer);
+            next(err);
           });
-        },
-        function (recordedPR, next){
-          that.remoteFingerprint = recordedPR.fingerprint;
-          next();
         },
 
         //============
         // Parameters
         //============
         function (next){
-          node.keychain.parameters(next);
+          node.blockchain.parameters(next);
         },
-        function (params, next){
-          conf.currency    = params["currency"];
-          conf.sigDelay    = params["sigDelay"];
-          conf.sigValidity = params["sigValidity"];
-          conf.sigQty      = params["sigQty"];
-          conf.stepMax     = params["stepMax"];
-          conf.powZeroMin  = params["powZeroMin"];
-          conf.powPeriod   = params["powPeriod"];
+        function (params, body, next){
+          conf.currency    = params.currency;
+          conf.c           = params.c;
+          conf.dt          = params.dt;
+          conf.ud0         = params.ud0;
+          conf.sigDelay    = params.sigDelay;
+          conf.sigValidity = params.sigValidity;
+          conf.sigQty      = params.sigQty;
+          conf.stepMax     = params.stepMax;
+          conf.powZeroMin  = params.powZeroMin;
+          conf.powPeriod   = params.powPeriod;
+          conf.incDateMin  = params.incDateMin;
+          conf.dtDateMin   = params.dtDateMin;
           conf.save(function (err) {
             next(err);
           });
         },
 
         //============
-        // Keychain
+        // Blockchain
         //============
         function (next){
-          node.keychain.current(next);
+          logger.info('Downloading Blockchain...');
+          node.blockchain.current(function (err) {
+            next(null, err ? null : current);
+          });
         },
         function (current, next) {
-          KeychainService.checkWithLocalTimestamp = false;
-          var numbers = _.range(current.number + 1);
-          async.forEachSeries(numbers, function(number, callback){
-            async.waterfall([
-              function (next){
-                node.keychain.keyblock(number, next);
-              },
-              function (keyblock, next){
-                var block = new KeyBlock(keyblock);
-                console.log('keyblock#' + block.number, sha1(block.getRawSigned()));
-                var keyID = jpgp().signature(block.signature).issuer();
-                var newPubkeys = block.getNewPubkeys();
-                // Save pubkeys + block
+          var i = 0;
+          async.whilst(
+            function () { return false; },
+            // function () { return i <= current.number; },
+            function (callback) {
                 async.waterfall([
-                  function (next){
-                    if (block.number == 0) {
-                      var signatory = null;
-                      newPubkeys.forEach(function(key){
-                        if (key.hasSubkey(keyID))
-                          signatory = key;
-                      });
-                      if (!signatory) {
-                        next('Root block signatory not found');
-                        return;
-                      }
-                      next(null, { fingerprint: signatory.getFingerprint(), raw: signatory.getArmored() });
-                    } else {
-                      PublicKey.getTheOne(keyID, next);
-                    }
+                  function (next) {
+                    node.blockchain.block(i, next);
                   },
-                  function (pubkey, next){
-                    keyblock.pubkey = pubkey;
-                    jpgp()
-                      .publicKey(pubkey.raw)
-                      .data(block.getRaw())
-                      .signature(block.signature)
-                      .verify(next);
+                  function (block, next) {
+                    BlockchainService.submitBlock(block, next);
                   },
-                  function (verified, next){
-                    async.forEach(newPubkeys, function(newPubkey, callback){
-                      async.waterfall([
-                        function (next){
-                          parsers.parsePubkey(callback).asyncWrite(unix2dos(newPubkey.getArmored()), next);
-                        },
-                        function (obj, next){
-                          PublicKeyService.submitPubkey(obj, next);
-                        },
-                      ], callback);
-                    }, next);
-                  },
-                  function (next){
-                    KeychainService.submitKeyBlock(keyblock, next);
-                  },
-                ], next);
-              },
-            ], callback);
-          }, next)
+                  function (block, next) {
+                    i++;
+                    next();
+                  }
+                ], callback);
+            }, next);
         },
 
         //==============

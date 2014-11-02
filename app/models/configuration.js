@@ -50,15 +50,6 @@ ConfigurationSchema.pre('save', function (next) {
 
   if (this.powPeriod >= 1)
     this.powPeriod = parseInt(this.powPeriod);
-
-  if(!this.kmanagement || !this.kmanagement.match(/^(ALL|KEYS)$/)){
-    logger.error('Incorrect --kmanagement value, reset to default `KEYS` value');
-    this.kmanagement = 'KEYS';
-  }
-  if(!this.kaccept || !this.kaccept.match(/^(ALL|KEYS)$/)){
-    logger.error('Incorrect --kaccept value, reset to default `KEYS` value');
-    this.kaccept = 'KEYS';
-  }
   this.updated = Date.now();
   next();
 });

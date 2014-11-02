@@ -1,7 +1,7 @@
 var async       = require('async');
 var util        = require('util');
 var crypto      = require('./app/lib/crypto');
-var unix2dos    = require('./app/lib/unix2dos');
+var dos2unix    = require('./app/lib/dos2unix');
 var logger      = require('./app/lib/logger')('peerserver');
 var plogger     = require('./app/lib/logger')('peer');
 var slogger     = require('./app/lib/logger')('status');
@@ -69,13 +69,13 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         return obj.status ? true : false;
       },
       treatment: function (server, obj, next) {
-        slogger.debug('⬇ STATUS %s %s', obj.pubkey.fingerprint, obj.status);
+        slogger.debug('⬇ STATUS %s %s', obj.from, obj.status);
         async.waterfall([
           function (next){
             that.PeeringService.submitStatus(obj, next);
           },
           function (status, peer, wasStatus, next){
-            slogger.debug('✔ STATUS %s %s', status.pubkey.fingerprint, status.status);
+            slogger.debug('✔ STATUS %s %s', status.from, status.status);
             that.emit('status', status);
             next(null, status);
           },
@@ -272,8 +272,8 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           pub: that.PeeringService.pubkey,
           endpoints: [endpoint]
         };
-        var raw1 = p1.getRaw().unix2dos();
-        var raw2 = new Peer(p2).getRaw().unix2dos();
+        var raw1 = p1.getRaw().dos2unix();
+        var raw2 = new Peer(p2).getRaw().dos2unix();
         if (raw1 != raw2) {
           logger.debug('Generating server\'s peering entry...');
           async.waterfall([

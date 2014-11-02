@@ -5,7 +5,7 @@ var _         = require('underscore');
 var fs        = require('fs');
 var Schema    = mongoose.Schema;
 var base64    = require('../lib/base64');
-var logger    = require('../lib/logger')('dao keyblock');
+var logger    = require('../lib/logger')('dao block');
 
 var BlockSchema = new Schema({
   version: String,
@@ -250,7 +250,7 @@ BlockSchema.statics.current = function (done) {
       return;
     }
     else {
-      done('No current keyblock');
+      done('No current block');
       return;
     }
   });
@@ -264,11 +264,11 @@ BlockSchema.statics.findByNumberAndHash = function (number, hash, done) {
       return;
     }
     if(!blocks || blocks.length == 0){
-      done('No keyblock found');
+      done('No block found');
       return;
     }
     if(blocks || blocks.length > 1){
-      done('More than one keyblock found');
+      done('More than one block found');
     }
   });
 };
@@ -281,11 +281,11 @@ BlockSchema.statics.findByNumber = function (number, done) {
       return;
     }
     if(!blocks || blocks.length == 0){
-      done('No keyblock found');
+      done('No block found');
       return;
     }
     if(blocks || blocks.length > 1){
-      done('More than one keyblock found');
+      done('More than one block found');
     }
   });
 };
@@ -353,7 +353,7 @@ BlockSchema.statics.searchPresence = function (member, kbNumber, kbHash, isJoini
         // Not a member
         next(null, false);
       } else if (kb.number > 0) {
-        // Not present in this keyblock, check previous
+        // Not present in this block, check previous
         logger.debug("searchPresence callback %s to %s", kb.number, kb.number -1);
         searchCallBack(member, kb.number - 1, kb.previousHash, isJoining, isLeaving, searchCallBack, next);
       } else {

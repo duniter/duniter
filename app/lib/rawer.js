@@ -48,6 +48,7 @@ module.exports = new function() {
     raw += "Version: " + json.version + "\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Status: " + json.status + "\n";
+    raw += "Time: " + json.time.timestamp() + "\n";
     raw += "From: " + json.from + "\n";
     raw += "To: " + json.to + "\n";
     return dos2unix(raw);

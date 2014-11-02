@@ -282,7 +282,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
             },
             function (signature, next) {
               p2.signature = signature;
-              p2.pubkey = { pub: that.PeeringService.pubkey };
+              p2.pubkey = that.PeeringService.pubkey;
               that.submit(p2, false, next);
             },
           ], function (err) {

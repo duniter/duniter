@@ -69,6 +69,14 @@ function LocalValidator (conf) {
     });
   };
 
+  this.checkStatusSignature = function (peer, done) {
+    async.series([
+      async.apply(checkStatusSignature, peer)
+    ], function (err) {
+      done(err);
+    });
+  };
+
   this.validate = function (block, done) {
     if (hasUserIDConflictInIdentities(block)) {
       done('Block must not contain twice same identity uid');
@@ -306,9 +314,17 @@ function checkSingleTransactionSignature (tx, done) {
 function checkPeerSignature (peer, done) {
   var raw = rawer.getPeerWithoutSignature(peer);
   var sig = peer.signature;
-  var pub = peer.pubkey;
+  var pub = peer.pubkey || peer.pub;
   var signaturesMatching = crypto.verify(raw, sig, pub);
   done(signaturesMatching ? null : 'Signature from a peer must match');
+}
+
+function checkStatusSignature (status, done) {
+  var raw = rawer.getStatusWithoutSignature(status);
+  var sig = status.signature;
+  var pub = status.from;
+  var signaturesMatching = crypto.verify(raw, sig, pub);
+  done(signaturesMatching ? null : 'Signature from a status must match');
 }
 
 function checkTransactionCoherence (tx, done) {

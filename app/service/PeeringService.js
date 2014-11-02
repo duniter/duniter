@@ -1,12 +1,13 @@
-var util    = require('util');
-var async   = require('async');
-var request = require('request');
-var _       = require('underscore');
-var events  = require('events');
-var Status  = require('../models/statusMessage');
-var logger  = require('../lib/logger')('peering');
-var base58  = require('../lib/base58');
-var moment  = require('moment');
+var util           = require('util');
+var async          = require('async');
+var request        = require('request');
+var _              = require('underscore');
+var events         = require('events');
+var Status         = require('../models/statusMessage');
+var logger         = require('../lib/logger')('peering');
+var base58         = require('../lib/base58');
+var moment         = require('moment');
+var localValidator = require('../lib/localValidator');
 
 function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   
@@ -71,6 +72,9 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   this.submit = function(peering, callback){
     var peer = new Peer(peering);
     async.waterfall([
+      function (next) {
+        localValidator(null).checkPeerSignature(peer, next);
+      },
       function (next){
         that.addPeer(peer);
         persistPeer(peer, next);
@@ -83,6 +87,9 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     var peer;
     var wasStatus = null;
     async.waterfall([
+      function (next) {
+        localValidator(null).checkStatusSignature(status, next);
+      },
       function (next){
         Peer.getTheOne(status.from, next);
       },
@@ -238,9 +245,8 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
               signFunc(status.getRaw(), next);
             },
             function (signature, next) {
-              status.sig = signature;
+              status.signature = signature;
               if (statusStr == 'NEW') {
-                console.log(that.peer());
                 that.emit('peer', _(that.peer()).extend({ peerTarget: peer.pub }));
                 setTimeout(function () {
                   that.emit('status', status);

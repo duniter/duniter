@@ -20,7 +20,7 @@ function StatusParser (onError) {
     {prop: "to",        regexp: /To: (.*)/},
   ];
   var multilineFields = [];
-  GenericParser.call(this, captures, multilineFields, rawer.getStatusWithoutSignature, onError);
+  GenericParser.call(this, captures, multilineFields, rawer.getStatus, onError);
 
   this._clean = function (obj) {
   };

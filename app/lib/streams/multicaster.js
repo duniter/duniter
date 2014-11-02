@@ -72,8 +72,7 @@ function Multicaster () {
         // Do propagating
         logger.debug('sending %s status to peer %s', status.status, peer.keyID());
         post(peer, "/network/peering/status", {
-          status: status.getRaw(),
-          signature: status.signature
+          status: status.getRawSigned()
         }, function (err, res, body) {
           // Sent!
           sent(err);

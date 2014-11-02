@@ -6,18 +6,17 @@ var _        = require('underscore');
 module.exports = function StatusMessage (values) {
 
   var that = this;
-  ['version', 'currency', 'status', 'from', 'to', 'hash', 'pubkey', 'time'].forEach(function(field){
+  ['version', 'currency', 'status', 'from', 'to', 'hash', 'pubkey', 'time', 'signature'].forEach(function(field){
     that[field] = values && values[field] || '';
   });
 
   this.json = function () {
     var obj = {};
-    ['version', 'currency', 'status', 'from', 'to'].forEach(function(field){
+    ['version', 'currency', 'status', 'from', 'to', 'signature'].forEach(function(field){
       obj[field] = that[field] || '';
     });
     obj.time = this.time.timestamp();
     obj.raw = this.getRaw();
-    obj.signature = this.signature;
     return obj;
   }
 

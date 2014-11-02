@@ -113,15 +113,14 @@ module.exports = function Synchroniser (server, host, port, conf) {
         //============
         function (next){
           logger.info('Downloading Blockchain...');
-          node.blockchain.current(function (err) {
+          node.blockchain.current(function (err, current) {
             next(null, err ? null : current);
           });
         },
         function (current, next) {
           var i = 0;
           async.whilst(
-            function () { return false; },
-            // function () { return i <= current.number; },
+            function () { return current ? i <= current.number : false; },
             function (callback) {
                 async.waterfall([
                   function (next) {

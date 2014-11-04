@@ -192,7 +192,7 @@ This step is done by issuing a the following document:
 Version: 1
 Currency: beta_brousouf
 Issuer: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-Date: TIMESTAMP
+Block: NUMBER-HASH
 Membership: IN
 UserID: USER_ID
 CertTS: CERTIFICATION_TS
@@ -207,7 +207,7 @@ Field | Description
 `Version` | Denotes the current structure version.
 `Currency` | Contains the name of the currency.
 `Issuer` | The public key of the issuer.
-`Date` | Creation date of this message. Timestamp. This date may be different from signature's date.
+`Block` | Block number and hash. Value is used to target a blockchain and precise time reference for membership's time validity.
 `Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
 `UserID` | Identity to use for this public key
 `CertTS` | Identity's certification date
@@ -217,8 +217,9 @@ Field | Description
 A [Membership](#membership) is to be considered valid if:
 
 * `Issuer` matches signature
+* `Currency` is a string without carriage return
 * `Membership` matches either `IN` or `OUT` value
-* `Date` is a valid timestamp
+* `Block` starts with an integer value, followed by an uppercased SHA1 string
 * `Currency` is a valid currency name
 * `UserID` if provided is a non-empty string
 * `CertTS` if provided is a valid timestamp
@@ -388,7 +389,6 @@ A Block is a document gathering both:
     Date: GENERATED_ON
     ConfirmedDate: CONFIRMED_DATE
     UniversalDividend: DIVIDEND_AMOUNT
-    Fees: FEES_AMOUNT
     Issuer: ISSUER_KEY
     PreviousHash: PREVIOUS_HASH
     PreviousIssuer: PREVIOUS_ISSUER_KEY
@@ -396,11 +396,14 @@ A Block is a document gathering both:
     Identities:
     PUBLIC_KEY:SIGNATURE:TIMESTAMP:USER_ID
     ...
-    Joiners:
-    PUBLIC_KEY:SIGNATURE:TIMESTAMP:CERTTS:USER_ID
+    Newcomers:
+    PUBLIC_KEY:SIGNATURE:NUMER:HASH:CERTTS:USER_ID
+    ...
+    Actives:
+    PUBLIC_KEY:SIGNATURE:NUMER:HASH
     ...
     Leavers:
-    PUBLIC_KEY:SIGNATURE:TIMESTAMP
+    PUBLIC_KEY:SIGNATURE:NUMER:HASH
     ...
     Excluded:
     PUBLIC_KEY
@@ -423,13 +426,13 @@ Number                | The keyblock number                               | Alwa
 Date                  | Date of generation                                | Always
 ConfirmedDate         | Last confirmed date                               | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
-Fees                  | Fees amount from this block's transactions        | Always
 Issuer                | This block's issuer's public key                  | Always
 PreviousHash          | Previous keyblock fingerprint (SHA-1)             | from Block#1
 PreviousIssuer        | Previous keyblock issuer's public key             | from Block#1
 MembersCount          | Number of members in the WoT, this block included | Always
 Identities            | New identities in the WoT                         | Always
-Joiners               | `IN` memberships                                  | Always
+Newcomers             | `IN` memberships, with `UserID` provided           | Always
+Actives               | `IN` memberships, without `UserID` provided        | Always
 Leavers               | `OUT` memberships                                 | Always
 Excluded              | Exluded members' public key                       | Always
 Transactions          | A liste of compact transactions                   | Always
@@ -446,10 +449,17 @@ To be a valid, a block must match the following rules:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
   * `USER_ID` : an identifier
-* `Joiners` and `Leavers` are multiline fields composed for each line of:
+* `Newcomers` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
-  * `TIMESTAMP` : a timestamp value
+  * `NUMBER` : an integer
+  * `HASH` : an uppercased SHA1 string
+  * `USER_ID` : a string without any ':' or carriage return character
+* `Actives` and `Leavers` are multiline fields composed for each line of:
+  * `PUBLIC_KEY` : a [Public key](#publickey)
+  * `SIGNATURE` : a [Signature](#signature)
+  * `NUMBER` : an integer
+  * `HASH` : an uppercased SHA1 string
 * `Excluded` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
 * `Certifications` is a multiline field composed for each line of:
@@ -587,12 +597,14 @@ c           | The %growth of the UD every `[dt]` period
 dt          | Time period between two UD
 ud0         | UD(0), i.e. initial Universal Dividend
 sigDelay    | Time to wait between two certifications of a same UserID by a same key
-sigValidity | Maximum age of a valid signature
-sigQty      | Minimum quantity of signatures to join/stay in the keychain
-stepMax     | Maximum step between the WoT and individual and a newcomer
+sigValidity | Maximum age of a valid signature (in seconds)
+sigQty      | Minimum quantity of signatures to be part of the WoT
+msValidity  | Maximum age of a valid membership (in seconds)
+stepMax     | Maximum step between the each WoT member and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
 dtDateMin   | Number of seconds that can be added to current date
 incDateMin  | Minimum number of confirmations to increment the current date.
+pctWOT      | Percent of WoT variations required to allow the certification of another newcomer
 
 ### Computed variables
 
@@ -642,13 +654,13 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 * A block cannot have two or more identities sharing a same `PUBLIC_KEY`.
 * Each identity of a block must match a `Joiner` line matching same `PUBLIC_KEY`, `USER_ID` and `CERTTS`.
 
-##### Memberships (Joiners, Leavers)
+##### Memberships (Newcomers, Actives, Leavers)
 
 * A block cannot contain memberships whose signature does not match membership's content, where associated public key is membership's `PUBLIC_KEY` field.
 
-##### Members changes (Joiners, Leavers, Excluded)
+##### Members changes (Newcomers, Actives, Leavers, Excluded)
 
-* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither be present one time in `Leavers` or `Excluded`.
+* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Newcomers`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Newcomers` cannot be present in `Newcomers` a second time, neither be present one time in `Actives`, `Leavers` or `Excluded`.
 
 ##### Certifications
 
@@ -685,7 +697,7 @@ A certification is to be considered valid if its age in the blockchain (date of 
 
 A member is a `PUBLIC_KEY` matching a valid `Identity` plus `IN` membership in the blockchain, and satisfying *WoT constraints* for a given block.
 
-###### WoT constraint
+###### WoT recognition
 
 WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 
@@ -719,27 +731,36 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 * The blockchain cannot contain two or more identities sharing a same `USER_ID`.
 * The blockchain cannot contain two or more identities sharing a same `PUBLIC_KEY`.
 
-##### Joiners
+##### Newcomers
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if its last occurrence is in `Joiners`.
+* A given `PUBLIC_KEY` cannot be in `Newcomers` if it already exists a block with it in `Newcomers`.
 * `PUBLIC_KEY`, `USER_ID` and `CERTTS` must match for exatly one identity of the blockchain.
+* `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
+  * Block#0's membership `NUMBER` must be `0` and `HASH` the special value `DA39A3EE5E6B4B0D3255BFEF95601890AFD80709` (SHA1 of empty string).
+* An active key must be recognized by the WoT (WoT recognition rule).
+
+##### Actives
+
+* A given `PUBLIC_KEY` **cannot** be in `Actives` if it has no occurrence in `Newcomers` for a previous block.
+* `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
 * A joining key must be recognized by the WoT (WoT recognition rule).
 
 ##### Leavers
 
 * A given `PUBLIC_KEY` cannot be in `Leavers` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
-* `PUBLIC_KEY`, `USER_ID` and `CERTTS` must match for exatly one identity of the blockchain.
+* `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
 
 ##### Excluded
 
 * A given `PUBLIC_KEY` cannot be in `Excluded` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
-* Each `PUBLIC_KEY` which was a member before previous block was applied and became non-member after it was applied **must** be present in the `Excluded` field. These keys are to be considered as non-members for this block.
+* Each `PUBLIC_KEY` with less than `[sigQty]` valid certifications or whose last membership in either `Newcomers` or `Actives` is outdated, **must** be present in this field.
 
 ##### Certifications
 
 * A certification's `PUBKEY_FROM` and `PUBKEY_TO` must be members of the WoT (this block excluded).
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
 * A same certification (same `PUBKEY_FROM` and same `PUBKEY_TO`) cannot be made twice in interval [`lastCertificationBlockTime`, `lastCertificationBlockTime` + `sigDelay`[.
+* A certifcation of a `Newcomer` can be made only **once**, until a total of `[pctWOT] x N` newcomers have join *after* this certification's block. `N` is the `membersCount` field of the block carrying the certification.
 
 ##### MembersCount
 
@@ -753,17 +774,17 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 Where:
 
 * `[lastBlockNbZeros]` is the number of leading zeros of last written block of the member
-* `[interBlocksCount]` is the number of blocks written by *other* members **between** the 2 last blocks of the member (so, those 2 blocks excluded)
-* `[followingBlocksCount]` is the number of blocks written by *other* members **since** the last block of the member (so, this block excluded)
+* `[interBlocksCount]` is the number of blocks written by *other* members **between** the 2 last blocks of the member (so, those 2 blocks excluded). Max value is `40 - [powZeroMin]`.
+* `[followingBlocksCount]` is the number of blocks written by *other* members **since** the last block of the member (so, this block excluded).
 
 
 * If no block has been written by the member:
   * `[lastBlockNbZeros] = 0`
   * `[followingBlocksCount] = 0`
-* If member has written less than 2 blocks:
-  * `[interBlocksCount] = 0` 
+* If member has written exactly 1 block:
+  * `[interBlocksCount]` equal to the number of different issuers since last `10` blocks.
 
-> Those 2 rules (penality and waited periods) ensures a shared control of the blockchain writing.
+> Those rules of difficulty adaptation ensures a shared control of the blockchain writing.
 
 ##### Universal Dividend
 
@@ -845,7 +866,7 @@ As each peer receives Status messages from other peers, it is able to compare `T
 * A transaction's `Inputs` amount sum must be equal to `Ouputs` amount sum.
 * A transaction cannot have two identical `Inputs`
 * A transaction cannot have a same pubkey twice in `Outputs`
-
+    
 ## Implementations
 
 ### APIs
@@ -858,4 +879,4 @@ At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is 
 
 * [Relative Money Theory](http://fr.wikipedia.org/wiki/Th%C3%A9orie_relative_de_la_monnaie), the theoretical reference behind Universal Dividend
 * [OpenUDC](www.openudc.org), the inspiration project of uCoin
-* [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system
+    * [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system

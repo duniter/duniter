@@ -55,6 +55,10 @@ This is a *very important information* as every document is subject to hashes, a
 
 [Block](#block) numbering starts from `0`. That is, first block is `BLOCK#0`.
 
+#### Currency name
+
+A valid currency name is composed of alphanumeric characters, space, `-` or `_`.
+
 #### Dates
 
 For any document using a date field, targeted date is to be understood as **UTC+0** reference.
@@ -125,6 +129,7 @@ Where:
 * `META` is just 'META' string
 * `TS` is just 'TS' string
 * `TIMESTAMP` is the timestamp value of the signature date
+* `SIGNATURE` is a signature
 
 ##### Example
 
@@ -159,7 +164,7 @@ Where
   * `PUBKEY_FROM` is the certification public key
   * `PUBKEY_TO` is the public key whose identity is being certified
   * `TIMESTAMP` is the certification date
-  * `SIGNATURE` is the certification
+  * `SIGNATURE` is the certification signature
 
 ##### Example
 
@@ -189,11 +194,11 @@ In UCP, a member is represented by a public key he is supposed to be the owner. 
 This step is done by issuing a the following document:
 
 ```bash
-Version: 1
-Currency: beta_brousouf
-Issuer: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+Version: VERSION
+Currency: CURRENCY_NAME
+Issuer: ISSUER
 Block: NUMBER-HASH
-Membership: IN
+Membership: MEMBERSHIP_TYPE
 UserID: USER_ID
 CertTS: CERTIFICATION_TS
 ```
@@ -216,11 +221,10 @@ Field | Description
 
 A [Membership](#membership) is to be considered valid if:
 
-* `Issuer` matches signature
-* `Currency` is a string without carriage return
+* `Version` equals `1`
+* `Currency` is a valid currency name
 * `Membership` matches either `IN` or `OUT` value
 * `Block` starts with an integer value, followed by an uppercased SHA1 string
-* `Currency` is a valid currency name
 * `UserID` if provided is a non-empty string
 * `CertTS` if provided is a valid timestamp
 
@@ -230,7 +234,19 @@ A [Membership](#membership) is to be considered valid if:
 
 #### Definition
 
-Transaction is the support of money: it allows to materialize coins' ownership. It is defined by the following format:
+Transaction is the support of money: it allows to materialize coins' ownership.
+
+#### Money ownership
+
+Money ownership **IS NOT** limited to members of the Community. Any owner (an individual or an organization) of a public key may own money: it only requires the key to match `Ouputs` of a transaction.
+
+#### Transfering money
+
+Obviously, coins a sender does not own CANNOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.
+
+#### Format
+
+It is defined by the following format:
 
     Version: VERSION
     Currency: CURRENCY_NAME
@@ -264,7 +280,6 @@ A Transaction structure is considered *valid* if:
 * Field `Issuers` is a multiline field whose lines are Base58 strings of 44 characters.
 * Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, an integer, a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
-* Field `Outputs` is followed by a list of signatures corresponding to the number of issuers
 
 #### Example 1
 
@@ -364,14 +379,6 @@ Here is an example compacting above [example 3](#example-3):
     2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
     2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk
 
-#### Money ownership
-
-Money ownership **IS NOT** limited to members of the Community. Any owner (an individual or an organization) of a public key may own money: it only requires the key to match `Ouputs` of a transaction.
-
-#### Transfering money
-
-Obviously, coins a sender does not own CANNOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.
-
 ### Block
 
 A Block is a document gathering both:
@@ -396,14 +403,14 @@ A Block is a document gathering both:
     Identities:
     PUBLIC_KEY:SIGNATURE:TIMESTAMP:USER_ID
     ...
-    Newcomers:
-    PUBLIC_KEY:SIGNATURE:NUMER:HASH:CERTTS:USER_ID
+    Joiners:
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH
     ...
     Actives:
-    PUBLIC_KEY:SIGNATURE:NUMER:HASH
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH
     ...
     Leavers:
-    PUBLIC_KEY:SIGNATURE:NUMER:HASH
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH
     ...
     Excluded:
     PUBLIC_KEY
@@ -421,18 +428,18 @@ Field                 | Data                                              | Mand
 Version               | The document version                              | Always
 Type                  | The document type                                 | Always
 Currency              | The currency name                                 | Always
-Nonce                 | A arbitrary nonce value                           | Always
-Number                | The keyblock number                               | Always
+Nonce                 | An arbitrary nonce value                           | Always
+Number                | The block number                               | Always
 Date                  | Date of generation                                | Always
 ConfirmedDate         | Last confirmed date                               | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
 Issuer                | This block's issuer's public key                  | Always
-PreviousHash          | Previous keyblock fingerprint (SHA-1)             | from Block#1
-PreviousIssuer        | Previous keyblock issuer's public key             | from Block#1
+PreviousHash          | Previous block fingerprint (SHA-1)             | from Block#1
+PreviousIssuer        | Previous block issuer's public key             | from Block#1
 MembersCount          | Number of members in the WoT, this block included | Always
 Identities            | New identities in the WoT                         | Always
-Newcomers             | `IN` memberships, with `UserID` provided           | Always
-Actives               | `IN` memberships, without `UserID` provided        | Always
+Joiners               | `IN` memberships                                  | Always
+Actives               | `IN` memberships                                  | Always
 Leavers               | `OUT` memberships                                 | Always
 Excluded              | Exluded members' public key                       | Always
 Transactions          | A liste of compact transactions                   | Always
@@ -441,21 +448,16 @@ Transactions          | A liste of compact transactions                   | Alwa
 To be a valid, a block must match the following rules:
 
 ##### Format
-* `Version`, `Nonce`, `Number`, `Date`, `ConfirmedDate`, `MembersCount`, `UniversalDividend` and `Fees` are integer values
-* `Currency` can be any String of alphanumeric characters, space, `-` or `_`
+* `Version`, `Nonce`, `Number`, `Date`, `ConfirmedDate`, `MembersCount` and `UniversalDividend` are integer values
+* `Currency` is a valid currency name
 * `PreviousHash` is an uppercased SHA-1 hash
 * `Issuer` and `PreviousIssuer` are [Public keys](#publickey)
 * `Identities` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
+  * `TIMESTAMP` : an integer
   * `USER_ID` : an identifier
-* `Newcomers` is a multiline field composed for each line of:
-  * `PUBLIC_KEY` : a [Public key](#publickey)
-  * `SIGNATURE` : a [Signature](#signature)
-  * `NUMBER` : an integer
-  * `HASH` : an uppercased SHA1 string
-  * `USER_ID` : a string without any ':' or carriage return character
-* `Actives` and `Leavers` are multiline fields composed for each line of:
+* `Joiners`, `Actives` and `Leavers` are multiline fields composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
   * `NUMBER` : an integer
@@ -468,15 +470,11 @@ To be a valid, a block must match the following rules:
   * `SIGNATURE` : a [Signature](#signature) of the certification
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 
-The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature) issued by `Issuer` verifying the block's content.
+The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
 ##### Data
 * `Version` equals `1`
 * `Type` equals `Block`
-
-##### Specific rules
-* If `Number` equals `0`, `PreviousHash` and `PreviousIssuer` must not be provided
-* If `Number` is over `0`, `PreviousHash` and `PreviousIssuer` must be provided
 
 #### Blockchain
 A Blockchain is a chaining of [Blocks](#block). Such a document describes a WoT + Transactions over the time.
@@ -487,7 +485,7 @@ Each Block other than the Block#0 must follow these rules:
 * Its `Currency` field has exactly the same value as preceding block
 * Its `PreviousHash` field match the uppercased SHA-1 fingerprint of the whole previous block
 * Its `PreviousIssuer` field has the same value as the previous block's `Issuer`
-* Its `MembersCount` field equals to the previous block's `MembersCount` value plus `Joiners` line count, minus `Leavers` and `Excluded` line count.
+* Its `MembersCount` field equals to the previous block's `MembersCount` value plus `Identities` line count, minus `Leavers` and `Excluded` line count.
 
 ##### Identities
 
@@ -497,7 +495,7 @@ Each Block other than the Block#0 must follow these rules:
 ##### Joiners
 
 1. A given public key cannot appear twice under `Joiners` field in the same block.
-2. For each public key under `Joiners`, a valid identity must exist either in the same block or a previous block.
+2. For each public key under `Joiners`, a valid identity must exist either in the same block or a previous one
 3. A key appearing in `Joiners`field is to be considered as a **member** from this block until it appears under `Leavers` or `Excluded` fields, included.
 
 ##### Leavers
@@ -645,22 +643,22 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 
 ##### Dates
 
-* A block must have its `Date` field must be equal either to `ConfirmedDate` or `ConfirmedDate` + `dtDateMin`.
+* A block must have its `Date` field be equal either to `ConfirmedDate` or `ConfirmedDate` + `dtDateMin`.
 
 ##### Identities
 
 * A block cannot contain identities whose signature does not match identity's content
 * A block cannot have two or more identities sharing a same `USER_ID`.
 * A block cannot have two or more identities sharing a same `PUBLIC_KEY`.
-* Each identity of a block must match a `Joiner` line matching same `PUBLIC_KEY`, `USER_ID` and `CERTTS`.
+* Each identity of a block must match a `Joiners` line matching same `PUBLIC_KEY`
 
-##### Memberships (Newcomers, Actives, Leavers)
+##### Memberships (Joiners, Actives, Leavers)
 
-* A block cannot contain memberships whose signature does not match membership's content, where associated public key is membership's `PUBLIC_KEY` field.
+* A block cannot contain memberships whose signature does not match membership's content
 
-##### Members changes (Newcomers, Actives, Leavers, Excluded)
+##### Members changes (Joiners, Actives, Leavers, Excluded)
 
-* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Newcomers`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Newcomers` cannot be present in `Newcomers` a second time, neither be present one time in `Actives`, `Leavers` or `Excluded`.
+* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither be present one time in `Actives`, `Leavers` or `Excluded`.
 
 ##### Certifications
 
@@ -669,6 +667,8 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 
 ##### Transactions
 
+* A transaction must have at least 1 issuer, 1 source and 1 recipient
+* For each issuer line, starting from line # `0`, it must exist a source with an `INDEX` value equal to this line#
 * A transaction cannot have 2 identical sources (INDEX + SOURCE + NUMBER + FINGERPRINT)
 * A transaction cannot have 2 identical recipients (PUBLIC_KEY)
 * A transaction **must** have its output sum equal to its input sum
@@ -731,9 +731,9 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 * The blockchain cannot contain two or more identities sharing a same `USER_ID`.
 * The blockchain cannot contain two or more identities sharing a same `PUBLIC_KEY`.
 
-##### Newcomers
+##### Joiners
 
-* A given `PUBLIC_KEY` cannot be in `Newcomers` if it already exists a block with it in `Newcomers`.
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it last membership of the issuer is already in `Joiners` of a previous block.
 * `PUBLIC_KEY`, `USER_ID` and `CERTTS` must match for exatly one identity of the blockchain.
 * `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
   * Block#0's membership `NUMBER` must be `0` and `HASH` the special value `DA39A3EE5E6B4B0D3255BFEF95601890AFD80709` (SHA1 of empty string).
@@ -741,7 +741,7 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 
 ##### Actives
 
-* A given `PUBLIC_KEY` **cannot** be in `Actives` if it has no occurrence in `Newcomers` for a previous block.
+* A given `PUBLIC_KEY` **cannot** be in `Actives` if it has no occurrence in `Joiners` for a previous block.
 * `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
 * A joining key must be recognized by the WoT (WoT recognition rule).
 
@@ -753,14 +753,14 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 ##### Excluded
 
 * A given `PUBLIC_KEY` cannot be in `Excluded` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
-* Each `PUBLIC_KEY` with less than `[sigQty]` valid certifications or whose last membership in either `Newcomers` or `Actives` is outdated, **must** be present in this field.
+* Each `PUBLIC_KEY` with less than `[sigQty]` valid certifications or whose last membership in either `Joiners` or `Actives` is outdated, **must** be present in this field.
 
 ##### Certifications
 
 * A certification's `PUBKEY_FROM` and `PUBKEY_TO` must be members of the WoT (this block excluded).
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
 * A same certification (same `PUBKEY_FROM` and same `PUBKEY_TO`) cannot be made twice in interval [`lastCertificationBlockTime`, `lastCertificationBlockTime` + `sigDelay`[.
-* A certifcation of a `Newcomer` can be made only **once**, until a total of `[pctWOT] x N` newcomers have join *after* this certification's block. `N` is the `membersCount` field of the block carrying the certification.
+* A certifcation over an `Identity` can be made only **once**, until a total of `[pctWOT] x N` identities have joined *during and after* this certification's block. `N` is the `membersCount` field of the block carrying the certification.
 
 ##### MembersCount
 
@@ -870,7 +870,7 @@ As each peer receives Status messages from other peers, it is able to compare `T
 ## Implementations
 
 ### APIs
-## Heading ##
+
 UCP does not imposes a particular API to deal with UCP data. Instead, UCP prefers to allow for any API definition using [Peer](#peer) document, and then leting peers deal themselves with the API(s) they prefer.
 
 At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is known as a valid UCP API.
@@ -879,4 +879,4 @@ At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is 
 
 * [Relative Money Theory](http://fr.wikipedia.org/wiki/Th%C3%A9orie_relative_de_la_monnaie), the theoretical reference behind Universal Dividend
 * [OpenUDC](www.openudc.org), the inspiration project of uCoin
-    * [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system
+* [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system

@@ -23,6 +23,7 @@ var BlockSchema = new Schema({
   confirmedDateChanged: {"type": Boolean, "default": false},
   identities: Array,
   joiners: Array,
+  actives: Array,
   leavers: Array,
   excluded: Array,
   certifications: Array,
@@ -70,7 +71,6 @@ BlockSchema.methods = {
     });
     [
       "dividend",
-      "fees",
     ].forEach(function(field){
       json[field] = parseInt(that[field]) || null;
     });
@@ -82,6 +82,7 @@ BlockSchema.methods = {
     [
       "identities",
       "joiners",
+      "actives",
       "leavers",
       "excluded",
       "certifications",
@@ -174,11 +175,11 @@ BlockSchema.methods = {
     var currency = this.currency;
     this.transactions.forEach(function (simpleTx) {
       var tx = {};
-      tx.issuers = simpleTx.signatories;
-      tx.signatures = simpleTx.signatures;
+      tx.issuers = simpleTx.signatories || [];
+      tx.signatures = simpleTx.signatures || [];
       // Inputs
       tx.inputs = [];
-      simpleTx.inputs.forEach(function (input) {
+      (simpleTx.inputs || []).forEach(function (input) {
         var sp = input.split(':');
         tx.inputs.push({
           index: parseInt(sp[0]),
@@ -192,7 +193,7 @@ BlockSchema.methods = {
       });
       // Outputs
       tx.outputs = [];
-      simpleTx.outputs.forEach(function (output) {
+      (simpleTx.outputs || []).forEach(function (output) {
         var sp = output.split(':');
         tx.outputs.push({
           pubkey: sp[0],

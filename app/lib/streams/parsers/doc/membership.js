@@ -18,7 +18,7 @@ function MembershipParser (onError) {
     {prop: "membership",        regexp: /Membership: (.*)/},
     {prop: "userid",            regexp: /UserID: (.*)/},
     {prop: "certts",            regexp: /CertTS: (.*)/, parser: parseDateFromTimestamp},
-    {prop: "date",              regexp: /Date: (.*)/, parser: parseDateFromTimestamp}
+    {prop: "block",             regexp: /Block: (.*)/}
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
@@ -35,7 +35,7 @@ function MembershipParser (onError) {
       'BAD_ISSUER': 152,
       'BAD_MEMBERSHIP': 153,
       'BAD_REGISTRY_TYPE': 154,
-      'BAD_DATE': 155,
+      'BAD_BLOCK': 155,
       'BAD_USERID': 156,
       'BAD_CERTTS': 157
     }
@@ -52,8 +52,8 @@ function MembershipParser (onError) {
         err = {code: codes['BAD_MEMBERSHIP'], message: "Incorrect Membership field: must be either IN or OUT"};
     }
     if(!err){
-      if(obj.date && (typeof obj == 'string' ? !obj.date.match(/^\d+$/) : obj.date.timestamp() <= 0))
-        err = {code: codes['BAD_DATE'], message: "Incorrect Date field: must be a positive or zero integer"};
+      if(obj.block && !obj.block.match(constants.MEMBERSHIP.BLOCK))
+        err = {code: codes['BAD_BLOCK'], message: "Incorrect Block field: must be a positive or zero integer, a dash and an uppercased SHA1 hash"};
     }
     if(!err){
       if(obj.userid && !obj.userid.match(constants.USER_ID))

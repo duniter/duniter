@@ -1,4 +1,5 @@
 
+var CURRENCY     = "[a-zA-Z0-9-_ ]+";
 var META_TS      = "META:TS:[1-9][0-9]*";
 var UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 var USER_ID      = "[A-Za-z0-9_-]*";
@@ -42,13 +43,23 @@ module.exports = {
   IDENTITY: {
     INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + USER_ID)
   },
+  MEMBERSHIP: {
+    BLOCK: exact(INTEGER + "-" + FINGERPRINT)
+  },
   BLOCK: {
-    JOINER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":(" + TIMESTAMP + ")?:(" + USER_ID + ")?"),
-    LEAVER: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP),
+    NONCE:       find("Nonce: (" + INTEGER + ")"),
+    VERSION:     find("Version: (1)"),
+    TYPE:        find("Type: (Block)"),
+    CURRENCY:    find("Currency: (" + CURRENCY + ")"),
+    PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
+    PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
+    JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT),
+    ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT),
+    LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT),
     EXCLUDED: exact(PUBKEY),
   },
   TRANSACTION: {
-    HEADER: exact("TX:" + POSITIVE_INT + ":" + POSITIVE_INT + ":" + POSITIVE_INT + ":" + POSITIVE_INT),
+    HEADER: exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER),
     SENDER: exact(PUBKEY),
     SOURCE: exact(INTEGER + ":(T|D):" + POSITIVE_INT + ":" + FINGERPRINT + ":" + POSITIVE_INT),
     TARGET: exact(PUBKEY + ":" + POSITIVE_INT)
@@ -63,4 +74,8 @@ module.exports = {
 
 function exact (regexpContent) {
   return new RegExp("^" + regexpContent + "$");
+}
+
+function find (regexpContent) {
+  return new RegExp(regexpContent);
 }

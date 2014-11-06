@@ -12,21 +12,21 @@ module.exports = BlockParser;
 function BlockParser (onError) {
   
   var captures = [
-    {prop: "version",         regexp: /Version: (.*)/},
-    {prop: "type",            regexp: /Type: (.*)/},
-    {prop: "currency",        regexp: /Currency: (.*)/},
-    {prop: "nonce",           regexp: /Nonce: (.*)/},
+    {prop: "version",         regexp: constants.BLOCK.VERSION},
+    {prop: "type",            regexp: constants.BLOCK.TYPE},
+    {prop: "currency",        regexp: constants.BLOCK.CURRENCY},
+    {prop: "nonce",           regexp: constants.BLOCK.NONCE},
     {prop: "number",          regexp: /Number: (.*)/},
     {prop: "date",            regexp: /Date: (.*)/},
     {prop: "confirmedDate",   regexp: /ConfirmedDate: (.*)/},
     {prop: "dividend",        regexp: /UniversalDividend: (.*)/},
-    {prop: "fees",            regexp: /Fees: (.*)/},
     {prop: "issuer",          regexp: /Issuer: (.*)/},
-    {prop: "previousHash",    regexp: /PreviousHash: (.*)/},
-    {prop: "previousIssuer",  regexp: /PreviousIssuer: (.*)/},
+    {prop: "previousHash",    regexp: constants.BLOCK.PREV_HASH},
+    {prop: "previousIssuer",  regexp: constants.BLOCK.PREV_ISSUER},
     {prop: "membersCount",    regexp: /MembersCount: (.*)/},
     {prop: "identities",      regexp: /Identities:\n([\s\S]*)Joiners/,          parser: splitAndMatch('\n', constants.IDENTITY.INLINE)},
-    {prop: "joiners",         regexp: /Joiners:\n([\s\S]*)Leavers/,             parser: splitAndMatch('\n', constants.BLOCK.JOINER)},
+    {prop: "joiners",         regexp: /Joiners:\n([\s\S]*)Actives/,             parser: splitAndMatch('\n', constants.BLOCK.JOINER)},
+    {prop: "actives",         regexp: /Actives:\n([\s\S]*)Leavers/,             parser: splitAndMatch('\n', constants.BLOCK.ACTIVE)},
     {prop: "leavers",         regexp: /Leavers:\n([\s\S]*)Excluded/,            parser: splitAndMatch('\n', constants.BLOCK.LEAVER)},
     {prop: "excluded",        regexp: /Excluded:\n([\s\S]*)Certifications/,     parser: splitAndMatch('\n', constants.PUBLIC_KEY)},
     {prop: "certifications",  regexp: /Certifications:\n([\s\S]*)Transactions/, parser: splitAndMatch('\n', constants.CERT.OTHER.INLINE)},
@@ -36,6 +36,13 @@ function BlockParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getBlock, onError);
 
   this._clean = function (obj) {
+    obj.identities = obj.identities || [];
+    obj.joiners = obj.joiners || [];
+    obj.actives = obj.actives || [];
+    obj.leavers = obj.leavers || [];
+    obj.excluded = obj.excluded || [];
+    obj.certifications = obj.certifications || [];
+    obj.transactions = obj.transactions || [];
   };
 
   this._verify = function(obj){
@@ -89,28 +96,8 @@ function BlockParser (onError) {
         err = {code: codes['BAD_DIVIDEND'], message: "Incorrect UniversalDividend field"};
     }
     if(!err){
-      if(obj.fees && !obj.fees.match(constants.INTEGER))
-        err = {code: codes['BAD_FEES'], message: "Incorrect Fees field"};
-    }
-    if(!err){
       if(!obj.issuer || !obj.issuer.match(constants.BASE58))
         err = {code: codes['BAD_ISSUER'], message: "Incorrect Issuer field"};
-    }
-    if(!err){
-      // Previous hash
-      var isRoot = parseInt(obj.number, 10) === 0;
-      if(!isRoot && (!obj.previousHash || !obj.previousHash.match(/^[A-Z\d]{40}$/)))
-        err = {code: codes['BAD_PREV_HASH_ABSENT'], message: "PreviousHash must be provided for non-root block"};
-      else if(isRoot && obj.previousHash)
-        err = {code: codes['BAD_PREV_HASH_PRESENT'], message: "PreviousHash must not be provided for root block"};
-    }
-    if(!err){
-      // Previous issuer
-      var isRoot = parseInt(obj.number, 10) === 0;
-      if(!isRoot && (!obj.previousIssuer || !obj.previousIssuer.match(constants.PUBLIC_KEY)))
-        err = {code: codes['BAD_PREV_ISSUER_ABSENT'], message: "PreviousIssuer must be provided for non-root block"};
-      else if(isRoot && obj.previousIssuer)
-        err = {code: codes['BAD_PREV_ISSUER_PRESENT'], message: "PreviousIssuer must not be provided for root block"};
     }
     if(!err){
       // MembersCount

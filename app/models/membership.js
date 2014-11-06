@@ -16,7 +16,7 @@ var MembershipSchema = new Schema({
   current: { type: Boolean, default: false },
   signature: String,
   certts: { type: Date },
-  date: { type: Date },
+  block: String,
   propagated: { type: Boolean, default: false },
   hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
@@ -59,11 +59,11 @@ MembershipSchema.methods = {
   },
   
   inline: function() {
-    return [this.issuer, this.signature, this.date.timestamp(), this.certts.timestamp(), this.userid].join(':');
+    return [this.issuer, this.signature, this.block, this.certts.timestamp(), this.userid].join(':');
   },
   
   inlineValue: function() {
-    return [this.version, this.issuer, this.membership, this.date.timestamp(), this.userid].join(':');
+    return [this.version, this.issuer, this.membership, this.block, this.userid].join(':');
   },
   
   inlineSignature: function() {

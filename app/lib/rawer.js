@@ -63,7 +63,7 @@ module.exports = new function() {
     raw += "Version: " + json.version + "\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Issuer: " + json.issuer + "\n";
-    raw += "Date: " + json.date.timestamp() + "\n";
+    raw += "Block: " + json.block + "\n";
     raw += "Membership: " + json.membership + "\n";
     if (json.userid)
       raw += "UserID: " + json.userid + "\n";
@@ -90,10 +90,10 @@ module.exports = new function() {
     if (json.fees)
       raw += "Fees: " + json.fees + "\n";
     raw += "Issuer: " + json.issuer + "\n";
-    if(json.number > 0){
+    if(json.previousHash)
       raw += "PreviousHash: " + json.previousHash + "\n";
+    if(json.previousIssuer)
       raw += "PreviousIssuer: " + json.previousIssuer + "\n";
-    }
     raw += "MembersCount: " + json.membersCount + "\n";
     raw += "Identities:\n";
     for(var i = 0; i < json.identities.length; i++){
@@ -102,6 +102,10 @@ module.exports = new function() {
     raw += "Joiners:\n";
     for(var i = 0; i < json.joiners.length; i++){
       raw += json.joiners[i] + "\n";
+    }
+    raw += "Actives:\n";
+    for(var i = 0; i < json.actives.length; i++){
+      raw += json.actives[i] + "\n";
     }
     raw += "Leavers:\n";
     for(var i = 0; i < json.leavers.length; i++){

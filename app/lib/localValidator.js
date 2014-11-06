@@ -13,37 +13,283 @@ module.exports = function (conf) {
 
 function LocalValidator (conf) {
 
-  this.checkSignatures = function (block, done) {
-    if (hasWrongSignatureForIdentities(block)) {
-      done('Identity\'s signature must match');
-      return;
-    }
-    if (hasWrongSignatureForMemberships(block)) {
-      done('Membership\'s signature must match');
-      return;
-    }
-    if (!crypto.verify(block.getRaw(), block.signature, block.issuer)) {
-      done('Signature must match');
-      return;
-    }
-    done(null, true);
-  };
-
-  this.checkTransactionsOfBlock = function (block, done) {
+  /**
+  * Compilation of all local tests
+  */
+  this.validate = function (block, done) {
+    var that = this;
     async.series([
-      async.apply(checkTransactionsOfBlock, block)
+      async.apply(that.checkPreviousHash,                         block),
+      async.apply(that.checkPreviousIssuer,                       block),
+      async.apply(that.checkBlockSignature,                       block),
+      async.apply(that.checkBlockDates,                           block),
+      async.apply(that.checkIdentitiesSignature,                  block),
+      async.apply(that.checkIdentitiesUserIDConflict,             block),
+      async.apply(that.checkIdentitiesPubkeyConflict,             block),
+      async.apply(that.checkIdentitiesMatchJoin,                  block),
+      async.apply(that.checkMembershipsSignature,                 block),
+      async.apply(that.checkPubkeyUnicity,                        block),
+      async.apply(that.checkCertificationUnicity,                 block),
+      async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
+      async.apply(that.checkTxIdenticalSources,                   block),
+      async.apply(that.checkTxIssuers,                            block),
+      async.apply(that.checkTxSources,                            block),
+      async.apply(that.checkTxRecipients,                         block),
+      async.apply(that.checkTxSums,                               block),
+      async.apply(that.checkTxIndexes,                            block),
+      async.apply(that.checkTxSignature,                          block)
     ], function (err) {
       done(err);
     });
   };
 
-  this.checkTransactionsSignature = function (block, done) {
+  /**
+  * Compilation of all local tests, BUT signatures testing
+  */
+  this.validateWithoutSignatures = function (block, done) {
+    var that = this;
+    async.series([
+      async.apply(that.checkPreviousHash,                         block),
+      async.apply(that.checkPreviousIssuer,                       block),
+      async.apply(that.checkBlockDates,                           block),
+      async.apply(that.checkIdentitiesUserIDConflict,             block),
+      async.apply(that.checkIdentitiesPubkeyConflict,             block),
+      async.apply(that.checkIdentitiesMatchJoin,                  block),
+      async.apply(that.checkPubkeyUnicity,                        block),
+      async.apply(that.checkCertificationUnicity,                 block),
+      async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
+      async.apply(that.checkTxIdenticalSources,                   block),
+      async.apply(that.checkTxIssuers,                            block),
+      async.apply(that.checkTxSources,                            block),
+      async.apply(that.checkTxRecipients,                         block),
+      async.apply(that.checkTxSums,                               block),
+      async.apply(that.checkTxIndexes,                            block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
+  this.checkPreviousHash = check(function (block, done) {
+    if (block.number == 0 && block.previousHash)
+      done('PreviousHash must not be provided for root block');
+    else if (block.number > 0 && !block.previousHash)
+      done('PreviousHash must be provided for non-root block');
+    else
+      done();
+  });
+
+  this.checkPreviousIssuer = check(function (block, done) {
+    if (block.number == 0 && block.previousIssuer)
+      done('PreviousIssuer must not be provided for root block');
+    else if (block.number > 0 && !block.previousIssuer)
+      done('PreviousIssuer must be provided for non-root block');
+    else
+      done();
+  });
+
+  this.checkBlockSignature = check(function (block, done) {
+    if (!crypto.verify(block.getRaw(), block.signature, block.issuer))
+      done('Block\'s signature must match');
+    else
+      done();
+  });
+
+  this.checkBlockDates = check(function (block, done) {
+    if (hasDateDifferentThanConfirmedDateOrIncremented(block)) {
+      done('A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
+      return;
+    }
+    else done();
+  });
+
+  this.checkIdentitiesSignature = check(function (block, done) {
+    if (hasWrongSignatureForIdentities(block)) {
+      done('Identity\'s signature must match');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkIdentitiesUserIDConflict = check(function (block, done) {
+    if (hasUserIDConflictInIdentities(block)) {
+      done('Block must not contain twice same identity uid');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkIdentitiesPubkeyConflict = check(function (block, done) {
+    if (hasPubkeyConflictInIdentities(block)) {
+      done('Block must not contain twice same identity pubkey');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkIdentitiesMatchJoin = check(function (block, done) {
+    if (hasEachIdentityMatchesANewcomer(block)) {
+      done('Each identity must match a newcomer line with same userid and certts');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkMembershipsSignature = check(function (block, done) {
+    if (hasWrongSignatureForMemberships(block)) {
+      done('Membership\'s signature must match');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkPubkeyUnicity = check(function (block, done) {
+    if (hasMultipleTimesAPubkeyForKeyChanges(block)) {
+      done('Block cannot contain a same pubkey more than once in joiners, actives, leavers and excluded');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkCertificationUnicity = check(function (block, done) {
+    if (hasIdenticalCertifications(block)) {
+      done('Block cannot contain identical certifications (A -> B)');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkCertificationIsntForLeaverOrExcluded = check(function (block, done) {
+    if (hasCertificationsFromLeaversOrExcluded(block)) {
+      done('Block cannot contain certifications concerning leavers or excluded members');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkTxIdenticalSources = checkTxs(function (tx, done) {
+    if (hasCertificationsFromLeaversOrExcluded(tx)) {
+      done('Block cannot contain certifications concerning leavers or excluded members');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkTxIssuers = checkTxs(function (tx, done) {
+    if (tx.issuers.length == 0) {
+      done('A transaction must have at least 1 issuer'); return;
+    }
+    else
+      done();
+  });
+
+  this.checkTxSources = check(function (block, done) {
+    var txs = block.getTransactions();
+    var sources = [];
+    var i = 0;
+    var existsIdenticalSource = false;
+    while (!existsIdenticalSource && i < txs.length) {
+      var tx = txs[i];
+      if (!tx.inputs || tx.inputs.length == 0) {
+        done('A transaction must have at least 1 source');
+        return;
+      }
+      tx.inputs.forEach(function (input) {
+        if (~sources.indexOf(input.raw)) {
+          existsIdenticalSource = true;
+        } else {
+          sources.push(input.raw);
+        }
+      });
+      i++;
+    }
+    if (existsIdenticalSource) {
+      done('It cannot exist 2 identical sources for transactions inside a given block');
+    }
+    else done();
+  });
+
+  this.checkTxRecipients = checkTxs(function (tx, done) {
+    if (!tx.outputs || tx.outputs.length == 0) {
+      done('A transaction must have at least 1 recipient'); return;
+    }
+    else {
+      // Cannot have 2 identical pubkeys in outputs
+      var existsIdenticalRecipient = false;
+      var recipients = [];
+      tx.outputs.forEach(function (output) {
+        if (~recipients.indexOf(output.pubkey)) {
+          existsIdenticalRecipient = true;
+        } else {
+          recipients.push(output.pubkey);
+        }
+      });
+      if (existsIdenticalRecipient) {
+        done('It cannot exist 2 identical recipients inside a transaction'); return;
+      }
+      else done();
+    }
+  });
+
+  this.checkTxSums = checkTxs(function (tx, done) {
+      // input sum == output sum
+      var inputSum = 0;
+      tx.inputs.forEach(function (input) {
+        inputSum += input.amount;
+      });
+      var outputSum = 0;
+      tx.outputs.forEach(function (output) {
+        outputSum += output.amount;
+      });
+      if (inputSum != outputSum) {
+        done('Input sum and output sum must be equal');
+      }
+      else done();
+  });
+
+  this.checkTxIndexes = checkTxs(function (tx, done) {
+    // Signatures count == issuers.length
+    if (tx.issuers.length != tx.signatures.length) {
+      done('Number of signatures must be equal to number of issuers'); return;
+    }
+    // INDEX related
+    var indexes = [];
+    tx.inputs.forEach(function (input) {
+      var index = input.index;
+      if (indexes.indexOf(index) == -1)
+        indexes.push(index);
+    });
+    // Indexes <= issuers.length
+    if (tx.issuers.length != indexes.length) {
+      done('Number of indexes must be equal to number of issuers'); return;
+    }
+    // It must appear each index 0..Nissuers - 1
+    var containsAll = true;
+    for (var i = 0; i < indexes.length; i++) {
+      if (indexes.indexOf(i) == -1)
+        containsAll = false;
+    }
+    if (!containsAll) {
+      done('Each issuer must be present in sources'); return;
+    }
+    done();
+  });
+
+  this.checkTxSignature = check(function (block, done) {
     async.series([
       async.apply(checkTransactionsSignature, block)
     ], function (err) {
       done(err);
     });
-  };
+  });
 
   this.checkSingleTransaction = function (tx, done) {
     async.series([
@@ -77,50 +323,35 @@ function LocalValidator (conf) {
     });
   };
 
-  this.validate = function (block, done) {
-    if (hasUserIDConflictInIdentities(block)) {
-      done('Block must not contain twice same identity uid');
-      return;
-    }
-    if (hasPubkeyConflictInIdentities(block)) {
-      done('Block must not contain twice same identity pubkey');
-      return;
-    }
-    if (hasDateDifferentThanConfirmedDateOrIncremented(block)) {
-      done('A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
-      return;
-    }
-    if (hasEachIdentityMatchesAJoin(block)) {
-      done('Each identity must match a join membership line with same userid and certts');
-      return;
-    }
-    if (hasMultipleTimesAPubkeyForKeyChanges(block)) {
-      done('Block cannot contain a same pubkey more than once in joiners, leavers and excluded');
-      return;
-    }
-    if (hasIdenticalCertifications(block)) {
-      done('Block cannot contain identical certifications (A -> B)');
-      return;
-    }
-    if (hasCertificationsFromLeaversOrExcluded(block)) {
-      done('Block cannot contain certifications concerning leavers or excluded members');
-      return;
-    }
-    if (false) {
-      done('Block cannot contain twice same input for transactions');
-      return;
-    }
-    if (false) {
-      done('Block cannot contain transactions containing twice a same output');
-      return;
-    }
-    if (false) {
-      done('Block cannot contain transactions with output > input');
-      return;
-    }
-    // Validated
-    done(null, true);
-  };
+  /**
+  * Function for testing constraints.
+  * Useful for function signature reason: it won't give any result in final callback.
+  */
+  function check (fn) {
+    return function (arg, done) {
+      async.series([
+        async.apply(fn, arg)
+      ], function (err) {
+        // Only return err as result
+        done(err);
+      });
+    };
+  }
+
+  /**
+  * Function for testing constraints.
+  * Useful for function signature reason: it won't give any result in final callback.
+  */
+  function checkTxs (fn) {
+    return function (block, done) {
+      var txs = block.getTransactions();
+      // Check rule against each transaction
+      async.forEachSeries(txs, fn, function (err) {
+        // Only return err as result
+        done(err);
+      });
+    };
+  }
 
   function hasDateDifferentThanConfirmedDateOrIncremented (block) {
     var dateInt = parseInt(block.date);
@@ -155,25 +386,24 @@ function hasPubkeyConflictInIdentities (block) {
   return conflict;
 }
 
-function hasEachIdentityMatchesAJoin (block) {
+function hasEachIdentityMatchesANewcomer (block) {
   // N.B.: this function does not test for potential duplicates in
   // identities and/or joiners, this is another test responsability
-  var uids = [];
+  var pubkeys = [];
   block.identities.forEach(function(inline){
     var sp = inline.split(':');
     var pubk = sp[0], ts = sp[2], uid = sp[3];
-    uids.push([pubk, ts, uid].join(':'));
+    pubkeys.push(pubk);
   });
   var matchCount = 0;
   var i = 0;
   while (i < block.joiners.length) {
     var sp = block.joiners[i].split(':');
     var pubk = sp[0], ts = sp[3], uid = sp[4];
-    var pattern = [pubk, ts, uid].join(':');
-    if (~uids.indexOf(pattern)) matchCount++;
+    if (~pubkeys.indexOf(pubk)) matchCount++;
     i++;
   }
-  return matchCount != uids.length;
+  return matchCount != pubkeys.length;
 }
 
 function hasMultipleTimesAPubkeyForKeyChanges (block) {
@@ -183,6 +413,14 @@ function hasMultipleTimesAPubkeyForKeyChanges (block) {
   var i = 0;
   while (!conflict && i < block.joiners.length) {
     var pubk = block.joiners[i].split(':')[0];
+    conflict = ~pubkeys.indexOf(pubk);
+    pubkeys.push(pubk);
+    i++;
+  }
+  // Actives
+  i = 0;
+  while (!conflict && i < block.actives.length) {
+    var pubk = block.actives[i].split(':')[0];
     conflict = ~pubkeys.indexOf(pubk);
     pubkeys.push(pubk);
     i++;
@@ -239,6 +477,13 @@ function hasWrongSignatureForMemberships (block) {
     wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }
+  // Actives
+  i = 0;
+  while (!wrongSig && i < block.actives.length) {
+    var ms = Membership.fromInline(block.actives[i], 'IN', block.currency);
+    wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
+    i++;
+  }
   // Leavers
   i = 0;
   while (!wrongSig && i < block.leavers.length) {
@@ -269,20 +514,6 @@ function hasCertificationsFromLeaversOrExcluded (block) {
     i++;
   }
   return conflict;
-}
-
-function checkTransactionsOfBlock (block, done) {
-  var txs = block.getTransactions();
-    async.waterfall([
-      function (next){
-        // Check local coherence of each tx
-        async.forEachSeries(txs, checkTransactionCoherence, next);
-      },
-      function (next){
-        // Check local coherence of all txs as a whole
-        checkTransactionPack(txs, next);
-      }
-    ], done);
 }
 
 function checkTransactionsSignature (block, done) {
@@ -330,102 +561,9 @@ function checkStatusSignature (status, done) {
 function checkTransactionCoherence (tx, done) {
   async.waterfall([
     function (next) {
-      if (tx.issuers.length == 0) {
-        next('A transaction must have at least 1 issuer'); return;
-      }
-      if (tx.inputs.length == 0) {
-        next('A transaction must have at least 1 source'); return;
-      }
-      if (tx.outputs.length == 0) {
-        next('A transaction must have at least 1 recipient'); return;
-      }
       if (tx.signatures.length == 0) {
         next('A transaction must have at least 1 signature'); return;
       }
-      // Signatures count == issuers.length
-      if (tx.issuers.length != tx.signatures.length) {
-        next('Number of signatures must be equal to number of issuers'); return;
-      }
-      // INDEX related
-      var indexes = [];
-      tx.inputs.forEach(function (input) {
-        var index = input.index;
-        if (indexes.indexOf(index) == -1)
-          indexes.push(index);
-      });
-      // Indexes <= issuers.length
-      if (tx.issuers.length != indexes.length) {
-        next('Number of indexes must be equal to number of issuers'); return;
-      }
-      // It must appear each index 0..Nissuers - 1
-      var containsAll = true;
-      for (var i = 0; i < indexes.length; i++) {
-        if (indexes.indexOf(i) == -1)
-          containsAll = false;
-      }
-      if (!containsAll) {
-        next('Each issuer must be present in sources'); return;
-      }
-      // input sum == output sum
-      var inputSum = 0;
-      tx.inputs.forEach(function (input) {
-        inputSum += input.amount;
-      });
-      var outputSum = 0;
-      tx.outputs.forEach(function (output) {
-        outputSum += output.amount;
-      });
-      if (inputSum != outputSum) {
-        next('Input sum and output sum must be equal'); return;
-      }
-      // Cannot have 2 identical sources
-      var existsIdenticalSource = false;
-      var sources = [];
-      tx.inputs.forEach(function (input) {
-        if (~sources.indexOf(input.raw)) {
-          existsIdenticalSource = true;
-        } else {
-          sources.push(input.raw);
-        }
-      });
-      if (existsIdenticalSource) {
-        next('It cannot exist 2 identical sources inside a transaction'); return;
-      }
-      // Cannot have 2 identical pubkeys in outputs
-      var existsIdenticalRecipient = false;
-      var recipients = [];
-      tx.outputs.forEach(function (output) {
-        if (~recipients.indexOf(output.pubkey)) {
-          existsIdenticalRecipient = true;
-        } else {
-          recipients.push(output.pubkey);
-        }
-      });
-      if (existsIdenticalRecipient) {
-        next('It cannot exist 2 identical recipients inside a transaction'); return;
-      }
-      next();
     }
   ], done);
-}
-
-function checkTransactionPack (txs, done) {
-  var sources = [];
-  var i = 0;
-  var existsIdenticalSource = false;
-  while (!existsIdenticalSource && i < txs.length) {
-    var tx = txs[i];
-    tx.inputs.forEach(function (input) {
-      if (~sources.indexOf(input.raw)) {
-        existsIdenticalSource = true;
-      } else {
-        sources.push(input.raw);
-      }
-    });
-    i++;
-  }
-  if (existsIdenticalSource) {
-    done('It cannot exist 2 identical sources for transactions inside a given block'); return;
-  }
-  done();
 }

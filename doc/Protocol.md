@@ -695,16 +695,9 @@ A certification is to be considered valid if its age in the blockchain (date of 
 
 ###### Member
 
-A member is a `PUBLIC_KEY` matching a valid `Identity` plus `IN` membership in the blockchain, and satisfying *WoT constraints* for a given block.
+A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners` or `Actives`.
 
-###### WoT recognition
-
-WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
-
-* The minimum number of certifications coming *to* `PUBLIC_KEY` must be `[sigQtyTo]`
-* This rule does not apply for block#0
-
-* For each WoT member: it has to exist a path, using certifications, leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` steps. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
+A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain is **not** a member.
 
 ##### Number
 
@@ -731,29 +724,35 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 * The blockchain cannot contain two or more identities sharing a same `USER_ID`.
 * The blockchain cannot contain two or more identities sharing a same `PUBLIC_KEY`.
 
+##### Joiners, Actives, Leavers (block fingerprint based memberships)
+
+* Block#0's memberships' `NUMBER` must be `0` and `HASH` the special value `DA39A3EE5E6B4B0D3255BFEF95601890AFD80709` (SHA1 of empty string).
+* Other blocks' memberships' `NUMBER` and `HASH` field must match an existing block in the blockchain.
+* Each membership's `NUMBER` must be higher than previous membership's `NUMBER` of the same issuer.
+
+##### Joiners, Actives (Web of Trust distance constraint)
+
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for each WoT member, a path using certifications (this block included), leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
+
 ##### Joiners
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it last membership of the issuer is already in `Joiners` of a previous block.
-* `PUBLIC_KEY`, `USER_ID` and `CERTTS` must match for exatly one identity of the blockchain.
-* `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
-  * Block#0's membership `NUMBER` must be `0` and `HASH` the special value `DA39A3EE5E6B4B0D3255BFEF95601890AFD80709` (SHA1 of empty string).
-* An active key must be recognized by the WoT (WoT recognition rule).
+* A given `PUBLIC_KEY` cannot be in `Joiners` if its last membership in the blockchain is either in `Joiners` or `Actives`.
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` valid certifications coming *to* it (this block included)
+* `PUBLIC_KEY` must match for exactly one identity of the blockchain (this block included).
 
 ##### Actives
 
-* A given `PUBLIC_KEY` **cannot** be in `Actives` if it has no occurrence in `Joiners` for a previous block.
-* `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
-* A joining key must be recognized by the WoT (WoT recognition rule).
+* A given `PUBLIC_KEY` **can** be in `Actives` **only if** if its last occurrence in the blockchain is either in `Joiners` or `Actives`.
 
 ##### Leavers
 
 * A given `PUBLIC_KEY` cannot be in `Leavers` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
-* `NUMBER` and `HASH` must match a unique block in the blockchain, and `NUMBER` must be higher than previous membership's `NUMBER`.
 
 ##### Excluded
 
 * A given `PUBLIC_KEY` cannot be in `Excluded` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
-* Each `PUBLIC_KEY` with less than `[sigQty]` valid certifications or whose last membership in either `Joiners` or `Actives` is outdated, **must** be present in this field.
+* Each `PUBLIC_KEY` with less than `[sigQty]` valid certifications or whose last membership is either in `Joiners` or `Actives` is outdated **must** be present in this field.
+* Each `PUBLIC_KEY` whose last membership occurrence is either in `Joiners` or `Actives` *and* is outdated **must** be present in this field.
 
 ##### Certifications
 
@@ -764,7 +763,7 @@ WoT constraints is a set of rules toward a `PUBLIC_KEY`'s certifications:
 
 ##### MembersCount
 
-`MembersCount` field must match the number of members in the community with this block `Joiners`, `Leavers` and `Excluded` applied.
+`MembersCount` field must be equal to last block's `MembersCount` plus this block's `Joiners` count, plus this block's `Leavers` count minus this block's `Excluded` count.
 
 ##### Block fingerprint
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:

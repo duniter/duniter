@@ -14,47 +14,6 @@ module.exports = function (conf, dao) {
 
 function GlobalValidator (conf, dao) {
 
-  this.checkSignatures = function (block, done) {
-    async.series([
-      async.apply(checkCertificationsAreValid, block)
-    ], function (err) {
-      done(err);
-    });
-  };
-
-  this.checkProofOfWork = function (block, done) {
-    async.series([
-      async.apply(checkFingerprint, block)
-    ], function (err) {
-      done(err);
-    });
-  };
-
-  this.checkDates = function (block, done) {
-    async.series([
-      async.apply(checkDates, block)
-    ], function (err) {
-      done(err);
-    });
-  };
-
-  this.checkUD = function (block, done) {
-    async.series([
-      async.apply(checkUD, block)
-    ], function (err) {
-      done(err);
-    });
-  };
-
-  this.checkTransactions = function (block, done) {
-    async.series([
-      // async.apply(checkSourcesExistence, block),
-      async.apply(checkSourcesAvailability, block)
-    ], function (err) {
-      done(err);
-    });
-  };
-
   this.checkSingleTransaction = function (tx, done) {
     async.series([
       async.apply(checkSourcesAvailabilityForTransaction, tx)
@@ -62,6 +21,27 @@ function GlobalValidator (conf, dao) {
       done(err);
     });
   };
+
+  this.checkNumber                          = check(checkNumber);
+  this.checkPreviousHash                    = check(checkPreviousHash);
+  this.checkPreviousIssuer                  = check(checkPreviousIssuer);
+  this.checkCertificationsAreValid          = check(checkCertificationsAreValid);
+  this.checkCertificationsAreMadeByMembers  = check(checkCertificationsAreMadeByMembers);
+  this.checkCertificationsAreMadeToMembers  = check(checkCertificationsAreMadeToMembers);
+  this.checkIdentityUnicity                 = check(checkIdentityUnicity);
+  this.checkPubkeyUnicity                   = check(checkPubkeyUnicity);
+  this.checkCertificationsDelayIsRespected  = check(checkCertificationsDelayIsRespected);
+  this.checkJoinersHaveEnoughCertifications = check(checkJoinersHaveEnoughCertifications);
+  this.checkJoinersAreNotOudistanced        = check(checkJoinersAreNotOudistanced);
+  this.checkKickedMembersAreExcluded        = check(checkKickedMembersAreExcluded);
+  this.checkMembersCountIsGood              = check(checkMembersCountIsGood);
+  this.checkProofOfWork                     = check(checkFingerprint);
+  this.checkDates                           = check(checkDates);
+  this.checkUD                              = check(checkUD);
+  this.checkTransactions                    = check(checkSourcesAvailability);
+  
+  this.checkLeaversAreMembers               = check(checkLeaversAreMembers);
+  this.checkExcludedAreMembers              = check(checkExcludedAreMembers);
 
   this.validate = function (block, done) {
     async.series([
@@ -83,6 +63,36 @@ function GlobalValidator (conf, dao) {
       done(err);
     });
   };
+
+  /**
+  * Function for testing constraints.
+  * Useful for function signature reason: it won't give any result in final callback.
+  */
+  function check (fn) {
+    return function (arg, done) {
+      async.series([
+        async.apply(fn, arg)
+      ], function (err) {
+        // Only return err as result
+        done(err);
+      });
+    };
+  }
+
+  /**
+  * Function for testing constraints.
+  * Useful for function signature reason: it won't give any result in final callback.
+  */
+  function checkTxs (fn) {
+    return function (block, done) {
+      var txs = block.getTransactions();
+      // Check rule against each transaction
+      async.forEachSeries(txs, fn, function (err) {
+        // Only return err as result
+        done(err);
+      });
+    };
+  }
 
   this.isOver3Hops = function (member, wot, newLinks, done) {
     isOver3Hops(member, wot, newLinks, dao, done);
@@ -388,6 +398,9 @@ function GlobalValidator (conf, dao) {
           },
           current: function (next) {
             dao.getCurrent(next);
+          },
+          last10: function (next) {
+            dao.getLastBlocks(issuer, 10, next);
           }
         }, next);
       },
@@ -395,9 +408,23 @@ function GlobalValidator (conf, dao) {
         var current = res.current;
         var lasts = res.lasts;
         if (current && lasts && lasts.length > 0) {
-          interBlocksCount = lasts.length == 2 ? Math.abs(lasts[0].number - lasts[1].number - 1) : 0;
-          followingBlocksCount = lasts.length >= 1 ? Math.abs(lasts[0].number - current.number) : 0;
+          // Nb zeros of last block
           lastBlockNbZeros = lasts[0].hash.match(/^0+/)[0].length;
+          // Nb following blocks since last
+          followingBlocksCount = Math.abs(lasts[0].number - current.number);
+          if (lasts.length == 1) {
+            // Number of issuers since last 10 blocks
+            var issuers = [];
+            res.last10.forEach(function (block) {
+              if (issuers.indexOf(block.issuer) == -1) {
+                issuers.push(block.issuer);
+              }
+            });
+            interBlocksCount = issuers.length;
+          } else {
+            // Number of blocks between 2 last blocks of issuer
+            interBlocksCount = Math.abs(lasts[0].number - lasts[1].number - 1);
+          }
         }
         var nbZeros = Math.max(conf.powZeroMin, lastBlockNbZeros + interBlocksCount - followingBlocksCount);
         next(null, nbZeros);

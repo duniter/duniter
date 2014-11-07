@@ -127,21 +127,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         function (next){
           globalValidation.validate(block, next);
         },
-        function (next){
-          globalValidation.checkSignatures(block, next);
-        },
-        function (next){
-          globalValidation.checkDates(block, next);
-        },
-        function (next){
-          globalValidation.checkUD(block, next);
-        },
-        function (next){
-          globalValidation.checkTransactions(block, next);
-        },
-        function (next){
-          globalValidation.checkProofOfWork(block, next);
-        },
         function (next) {
           // Check document's coherence
           checkIssuer(block, next);

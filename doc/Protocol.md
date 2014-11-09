@@ -404,13 +404,13 @@ A Block is a document gathering both:
     PUBLIC_KEY:SIGNATURE:TIMESTAMP:USER_ID
     ...
     Joiners:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:TIMESTAMP:USER_ID
     ...
     Actives:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:TIMESTAMP:USER_ID
     ...
     Leavers:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:TIMESTAMP:USER_ID
     ...
     Excluded:
     PUBLIC_KEY
@@ -462,6 +462,8 @@ To be a valid, a block must match the following rules:
   * `SIGNATURE` : a [Signature](#signature)
   * `NUMBER` : an integer
   * `HASH` : an uppercased SHA1 string
+  * `TIMESTAMP` : an integer
+  * `USER_ID` : an identifier
 * `Excluded` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
 * `Certifications` is a multiline field composed for each line of:

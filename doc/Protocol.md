@@ -695,7 +695,7 @@ A certification is to be considered valid if its age in the blockchain (date of 
 
 ###### Member
 
-A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners` or `Actives`.
+A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners` or `Actives`, *and* is not expired.
 
 A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain is **not** a member.
 
@@ -736,13 +736,13 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Joiners
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if its last membership in the blockchain is either in `Joiners` or `Actives`.
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it is already a member
 * A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` valid certifications coming *to* it (this block included)
 * `PUBLIC_KEY` must match for exactly one identity of the blockchain (this block included).
 
 ##### Actives
 
-* A given `PUBLIC_KEY` **can** be in `Actives` **only if** if its last occurrence in the blockchain is either in `Joiners` or `Actives`.
+* A given `PUBLIC_KEY` **can** be in `Actives` **only if** if public key is a member.
 
 ##### Leavers
 
@@ -750,7 +750,7 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Excluded
 
-* A given `PUBLIC_KEY` cannot be in `Excluded` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
+* A given `PUBLIC_KEY` cannot be in `Excluded` if public key is not a member
 * Each `PUBLIC_KEY` with less than `[sigQty]` valid certifications or whose last membership is either in `Joiners` or `Actives` is outdated **must** be present in this field.
 * Each `PUBLIC_KEY` whose last membership occurrence is either in `Joiners` or `Actives` *and* is outdated **must** be present in this field.
 
@@ -866,7 +866,7 @@ As each peer receives Status messages from other peers, it is able to compare `T
 * A transaction cannot have two identical `Inputs`
 * A transaction cannot have a same pubkey twice in `Outputs`
     
-## Implementations
+## Implementations  
 
 ### APIs
 

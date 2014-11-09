@@ -22,44 +22,45 @@ function GlobalValidator (conf, dao) {
     });
   };
 
-  this.checkNumber                          = check(checkNumber);
-  this.checkPreviousHash                    = check(checkPreviousHash);
-  this.checkPreviousIssuer                  = check(checkPreviousIssuer);
-  this.checkCertificationsAreValid          = check(checkCertificationsAreValid);
-  this.checkCertificationsAreMadeByMembers  = check(checkCertificationsAreMadeByMembers);
-  this.checkCertificationsAreMadeToMembers  = check(checkCertificationsAreMadeToMembers);
-  this.checkIdentityUnicity                 = check(checkIdentityUnicity);
-  this.checkPubkeyUnicity                   = check(checkPubkeyUnicity);
-  this.checkCertificationsDelayIsRespected  = check(checkCertificationsDelayIsRespected);
-  this.checkJoinersHaveEnoughCertifications = check(checkJoinersHaveEnoughCertifications);
-  this.checkJoinersAreNotOudistanced        = check(checkJoinersAreNotOudistanced);
-  this.checkKickedMembersAreExcluded        = check(checkKickedMembersAreExcluded);
-  this.checkMembersCountIsGood              = check(checkMembersCountIsGood);
-  this.checkProofOfWork                     = check(checkFingerprint);
-  this.checkDates                           = check(checkDates);
-  this.checkUD                              = check(checkUD);
-  this.checkTransactions                    = check(checkSourcesAvailability);
-  
-  this.checkLeaversAreMembers               = check(checkLeaversAreMembers);
-  this.checkExcludedAreMembers              = check(checkExcludedAreMembers);
+  var that = this;
+
+  var testFunctions = [
+    { name: 'checkNumber',                          func: check(checkNumber)                          },
+    { name: 'checkPreviousHash',                    func: check(checkPreviousHash)                    },
+    { name: 'checkPreviousIssuer',                  func: check(checkPreviousIssuer)                  },
+    { name: 'checkIssuerIsMember',                  func: check(checkIssuerIsMember)                  },
+    { name: 'checkDates',                           func: check(checkDates)                           },
+    { name: 'checkIdentityUnicity',                 func: check(checkIdentityUnicity)                 },
+    { name: 'checkPubkeyUnicity',                   func: check(checkPubkeyUnicity)                   },
+    { name: 'checkJoiners',                         func: check(checkJoiners)                         },
+    { name: 'checkJoinersHaveUniqueIdentity',       func: check(checkJoinersHaveUniqueIdentity)       },
+    { name: 'checkJoinersHaveEnoughCertifications', func: check(checkJoinersHaveEnoughCertifications) },
+    { name: 'checkJoinersAreNotOudistanced',        func: check(checkJoinersAreNotOudistanced)        },
+    { name: 'checkActives',                         func: check(checkActives)                         },
+    { name: 'checkActivesAreNotOudistanced',        func: check(checkActivesAreNotOudistanced)        },
+    { name: 'checkLeavers',                         func: check(checkLeavers)                         },
+    { name: 'checkExcluded',                        func: check(checkExcluded)                        },
+    { name: 'checkKickedMembersAreExcluded',        func: check(checkKickedMembersAreExcluded)        },
+    { name: 'checkCertificationsAreMadeByMembers',  func: check(checkCertificationsAreMadeByMembers)  },
+    { name: 'checkCertificationsAreValid',          func: check(checkCertificationsAreValid)          },
+    { name: 'checkCertificationsAreMadeToMembers',  func: check(checkCertificationsAreMadeToMembers)  },
+    { name: 'checkCertificationsDelayIsRespected',  func: check(checkCertificationsDelayIsRespected)  },
+    { name: 'checkMembersCountIsGood',              func: check(checkMembersCountIsGood)              },
+    { name: 'checkProofOfWork',                     func: check(checkFingerprint)                     },
+    { name: 'checkUD',                              func: check(checkUD)                              },
+    { name: 'checkTransactions',                    func: check(checkSourcesAvailability)             }
+  ];
+
+  testFunctions.forEach(function (fObj) {
+    that[fObj.name] = fObj.func;
+  });
 
   this.validate = function (block, done) {
-    async.series([
-      async.apply(checkNumber, block),
-      async.apply(checkPreviousHash, block),
-      async.apply(checkPreviousIssuer, block),
-      async.apply(checkIdentityUnicity, block),
-      async.apply(checkPubkeyUnicity, block),
-      async.apply(checkLeaversAreMembers, block),
-      async.apply(checkExcludedAreMembers, block),
-      async.apply(checkCertificationsAreMadeByMembers, block),
-      async.apply(checkCertificationsAreMadeToMembers, block),
-      async.apply(checkCertificationsDelayIsRespected, block),
-      async.apply(checkJoinersHaveEnoughCertifications, block),
-      async.apply(checkJoinersAreNotOudistanced, block),
-      async.apply(checkKickedMembersAreExcluded, block),
-      async.apply(checkMembersCountIsGood, block)
-    ], function (err) {
+    var testFunctionsPrepared = [];
+    testFunctions.forEach(function (obj) {
+      testFunctionsPrepared.push(async.apply(obj.func, block));
+    });
+    async.series(testFunctionsPrepared, function (err) {
       done(err);
     });
   };
@@ -460,12 +461,165 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
-  function checkLeaversAreMembers (block, done) {
-    done();
+  function checkIssuerIsMember (block, done) {
+    async.waterfall([
+      function (next){
+        if (block.number == 0)
+          isMember(block, block.issuer, next);
+        else
+          dao.isMember(block.issuer, next);
+      },
+      function (isMember, next) {
+        if (!isMember) {
+          next('Issuer is not a member');
+          return;
+        }
+        next();
+      }
+    ], done);
   }
 
-  function checkExcludedAreMembers (block, done) {
-    done();
+  function checkJoiners (block, done) {
+    async.forEachSeries(block.joiners, function(inlineMS, callback){
+      var ms = Membership.fromInline(inlineMS);
+      async.waterfall([
+        function (next){
+          checkMSTarget(ms, block, next);
+        },
+        function (next){
+          dao.getCurrentMembership(ms.issuer, next);
+        },
+        function (currentMS, next) {
+          if (currentMS && currentMS.number <= ms.number) {
+            next('Membership\'s number must be greater than last membership of the pubkey');
+            return;
+          }
+          dao.isMember(ms.issuer, next);
+        },
+        function (isMember, next) {
+          if (isMember) {
+            next('Cannot be in joiners if already a member');
+            return;
+          }
+          next();
+        }
+      ], callback);
+    }, done);
+  }
+
+  function checkActives (block, done) {
+    async.forEachSeries(block.actives, function(inlineMS, callback){
+      var ms = Membership.fromInline(inlineMS);
+      async.waterfall([
+        function (next){
+          checkMSTarget(ms, block, next);
+        },
+        function (next){
+          dao.getCurrentMembership(ms.issuer, next);
+        },
+        function (currentMS, next) {
+          if (currentMS && currentMS.number <= ms.number) {
+            next('Membership\'s number must be greater than last membership of the pubkey');
+            return;
+          }
+          dao.isMember(ms.issuer, next);
+        },
+        function (isMember, next) {
+          if (!isMember) {
+            next('Cannot be in actives if not a member');
+            return;
+          }
+          next();
+        }
+      ], callback);
+    }, done);
+  }
+
+  function checkLeavers (block, done) {
+    async.forEachSeries(block.leavers, function(inlineMS, callback){
+      var ms = Membership.fromInline(inlineMS);
+      async.waterfall([
+        function (next){
+          checkMSTarget(ms, block, next);
+        },
+        function (next){
+          dao.getCurrentMembership(ms.issuer, next);
+        },
+        function (currentMS, next) {
+          if (currentMS && currentMS.number <= ms.number) {
+            next('Membership\'s number must be greater than last membership of the pubkey');
+            return;
+          }
+          dao.isMember(ms.issuer, next);
+        },
+        function (isMember, next) {
+          if (isMember) {
+            next('Cannot be in leavers if not a member');
+            return;
+          }
+          next();
+        }
+      ], callback);
+    }, done);
+  }
+
+  function checkExcluded (block, done) {
+    async.forEachSeries(block.leavers, function(inlineMS, callback){
+      var ms = Membership.fromInline(inlineMS);
+      async.waterfall([
+        function (next){
+          dao.isMember(ms.issuer, next);
+        },
+        function (isMember, next) {
+          if (!isMember) {
+            next('Cannot be in excluded if not a member');
+            return;
+          }
+          next();
+        }
+      ], callback);
+    }, done);
+  }
+
+  function checkExcluded (block, done) {
+    async.forEachSeries(block.leavers, function(inlineMS, callback){
+      var ms = Membership.fromInline(inlineMS);
+      async.waterfall([
+        function (next){
+          checkMSTarget(ms, block, next);
+        },
+        function (next){
+          dao.getCurrentMembership(ms.issuer, next);
+        },
+        function (currentMS, next) {
+          if (currentMS && currentMS.number <= ms.number) {
+            next('Membership\'s number must be greater than last membership of the pubkey');
+            return;
+          }
+          if (!currentMS || currentMS.expired || currentMS.category == 'LEAVER') {
+            next('Cannot be in leavers if not a member');
+            return;
+          }
+          next();
+        }
+      ], callback);
+    }, done);
+  }
+
+  function checkMSTarget (ms, block, done) {
+    if (block.number == 0 && ms.number != 0) {
+      done('Number must be 0 for root block\'s memberships');
+    }
+    else if (block.number == 0 && ms.fpr != 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709') {
+      done('Hash must be DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 for root block\'s memberships');
+    }
+    else if (block.number == 0) {
+      done(); // Valid for root block
+    } else {
+      dao.findBlock(ms.number, ms.fpr, function (err, theBlock) {
+        done(err || (theBlock == null && 'Membership based on an unexisting block') || null);
+      });
+    }
   }
 
   function checkCertificationsDelayIsRespected (block, done) {
@@ -487,9 +641,39 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
+  function checkJoinersHaveUniqueIdentity (block, done) {
+    async.forEachSeries(block.joiners, function (inlineMS, callback) {
+      async.waterfall([
+        function (next) {
+          var ms = Membership.fromInline(inlineMS);
+          getGlobalIdentity(block, ms.issuer, next); // Have to throw an error if no identity exists
+        },
+        function (idty, next) {
+          if (!idty) {
+            next('Identity does not exist for joiner');
+            return;
+          }
+          next();
+        }
+      ], callback);
+    }, done);
+  }
+
   function checkJoinersHaveEnoughCertifications (block, done) {
+    checkPeopleHaveEnoughCertifications(block.joiners, block, done);
+  }
+
+  function checkJoinersAreNotOudistanced (block, done) {
+    checkPeopleAreNotOudistanced(block.joiners, block, done);
+  }
+
+  function checkActivesAreNotOudistanced (block, done) {
+    checkPeopleAreNotOudistanced(block.actives, block, done);
+  }
+
+  function checkPeopleHaveEnoughCertifications (memberships, block, done) {
     var newLinks = getNewLinks(block);
-    async.forEach(block.joiners, function(inlineMembership, callback){
+    async.forEach(memberships, function(inlineMembership, callback){
       var ms = Membership.fromInline(inlineMembership);
       if (block.number == 0) {
         // No test for root block
@@ -504,7 +688,7 @@ function GlobalValidator (conf, dao) {
           function (links, next){
             var nbCerts = links.length + (newLinks[ms.issuer] || []).length;
             if (nbCerts < conf.sigQty)
-              next('Joiner does not gathers enough certifications');
+              next('Joiner/Active does not gathers enough certifications');
             else
               next();
           },
@@ -513,7 +697,7 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
-  function checkJoinersAreNotOudistanced (block, done) {
+  function checkPeopleAreNotOudistanced (memberships, block, done) {
     var wotPubkeys = [];
     async.waterfall([
       function (next){
@@ -526,7 +710,7 @@ function GlobalValidator (conf, dao) {
         });
         var newLinks = getNewLinks(block);
         // Checking distance of each member against them
-        async.forEach(block.joiners, function(inlineMembership, callback){
+        async.forEach(memberships, function(inlineMembership, callback){
           var ms = Membership.fromInline(inlineMembership);
           async.waterfall([
             function (next){
@@ -534,7 +718,7 @@ function GlobalValidator (conf, dao) {
             },
             function (outdistancedCount, next){
               if (outdistancedCount.length > 0)
-                next('Joiner is outdistanced from WoT');
+                next('Joiner/Active is outdistanced from WoT');
               else
                 next();
             },

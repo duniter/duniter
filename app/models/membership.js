@@ -18,6 +18,8 @@ var MembershipSchema = new Schema({
   certts: { type: Date },
   block: String,
   propagated: { type: Boolean, default: false },
+  number: Number,
+  fpr: String,
   hash: String,
   sigDate: { type: Date, default: function(){ return new Date(0); } },
   created: { type: Date, default: Date.now },
@@ -119,9 +121,9 @@ MembershipSchema.statics.fromInline = function (inlineMS, type, currency) {
     issuer:     sp[0],
     membership: type,
     type:       type,
-    date:       new Date(parseInt(sp[2])*1000),
-    certts:     new Date(parseInt(sp[3])*1000),
-    userid:     sp[4],
+    number:     parseInt(sp[2]),
+    fpr:        sp[3],
+    userid:     '',
     signature:  sp[1]
   });
 }

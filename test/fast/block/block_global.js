@@ -69,6 +69,65 @@ describe("Block global coherence:", function(){
     done();
   }));
 
+  it('a block with wrong Issuer should fail', test('checkIssuerIsMember', blocks.WRONG_ISSUER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Issuer is not a member');
+    done();
+  }));
+
+  it('a block with joiner for root block without root number shoud fail', test('checkJoiners', blocks.WRONG_JOIN_ROOT_NUMBER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Number must be 0 for root block\'s memberships');
+    done();
+  }));
+
+  it('a block with joiner for root block without root hash shoud fail', test('checkJoiners', blocks.WRONG_JOIN_ROOT_HASH, function (err, done) {
+    should.exist(err);
+    err.should.equal('Hash must be DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 for root block\'s memberships');
+    done();
+  }));
+
+  it('a block with joiner targeting unexisting block fail', test('checkJoiners', blocks.WRONG_JOIN_BLOCK_TARGET, function (err, done) {
+    should.exist(err);
+    err.should.equal('Membership based on an unexisting block');
+    done();
+  }));
+
+  it('a block with joiner membership number lower or equal than previous should fail', test('checkJoiners', blocks.WRONG_JOIN_NUMBER_TOO_LOW, function (err, done) {
+    should.exist(err);
+    err.should.equal('Membership\'s number must be greater than last membership of the pubkey');
+    done();
+  }));
+
+  it('a block with joiner membership of a yet member should fail', test('checkJoiners', blocks.WRONG_JOIN_ALREADY_MEMBER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Cannot be in joiners if already a member');
+    done();
+  }));
+
+  it('a block with at least one joiner without enough certifications should fail', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Joiner/Active does not gathers enough certifications');
+    done();
+  }));
+
+  it('a block with at least one joiner without enough certifications should succeed', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER_BLOCK_0, function (err, done) {
+    should.not.exist(err);
+    done();
+  }));
+
+  it('a block with at least one joiner outdistanced from WoT should fail', test('checkJoinersAreNotOudistanced', blocks.OUTDISTANCED_JOINER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Joiner/Active is outdistanced from WoT');
+    done();
+  }));
+
+  it('a block with active targeting unexisting block fail', test('checkActives', blocks.WRONG_ACTIVE_BLOCK_TARGET, function (err, done) {
+    should.exist(err);
+    err.should.equal('Membership based on an unexisting block');
+    done();
+  }));
+
   it('a block with certification of unknown pubkey should fail', test('checkCertificationsAreValid', blocks.WRONGLY_SIGNED_CERTIFICATION, function (err, done) {
     should.exist(err);
     err.should.equal('Wrong signature for certification');
@@ -102,23 +161,6 @@ describe("Block global coherence:", function(){
   it('a block with too early certification replay should fail', test('checkCertificationsDelayIsRespected', blocks.TOO_EARLY_CERTIFICATION_REPLAY, function (err, done) {
     should.exist(err);
     err.should.equal('Too early for this certification');
-    done();
-  }));
-
-  it('a block with at least one joiner without enough certifications should fail', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER, function (err, done) {
-    should.exist(err);
-    err.should.equal('Joiner does not gathers enough certifications');
-    done();
-  }));
-
-  it('a block with at least one joiner without enough certifications should succeed', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER_BLOCK_0, function (err, done) {
-    should.not.exist(err);
-    done();
-  }));
-
-  it('a block with at least one joiner outdistanced from WoT should fail', test('checkJoinersAreNotOudistanced', blocks.OUTDISTANCED_JOINER, function (err, done) {
-    should.exist(err);
-    err.should.equal('Joiner is outdistanced from WoT');
     done();
   }));
 
@@ -345,6 +387,8 @@ function BlockCheckerDao (block) {
     // No existing member
     if (block.number == 0)
       done(null, false);
+    else if (block.number == 51 && pubkey == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
+      done(null, true);
     else {
       var members = [
         'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -390,8 +434,8 @@ function BlockCheckerDao (block) {
 
   this.getCurrent = function (done) {
     if (block.number == 3)      
-      done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
-    else if (block.number == 4) 
+      done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, date: 1411777000, confirmedDate: 1411776000, newDateNth: 9 });
+    else if (block.number == 4)
       done(null, { number: 3, hash: '4AE9FA0A8299A828A886C0EB30C930C7CF302A72', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 48)
       done(null, { number: 46 });
@@ -540,6 +584,22 @@ function BlockCheckerDao (block) {
     ];
     var isAvailable = ~existing.indexOf([pubkey, 'T', number, fpr, amount].join(':')) ? true : false;
     done(null, isAvailable);
+  }
+
+  this.findBlock = function (number, hash, done) {
+    if (number == 2 && hash == 'A9B751F5D24A3F418815BD9CE2766759E21E9E21')
+      done(null, {});
+    else if (number == 3 && hash == 'A9B751F5D24A3F418815BD9CE2766759E21E9E21')
+      done(null, {});
+    else
+      done(null, null);
+  }
+
+  this.getCurrentMembership = function (pubkey, done) {
+    if (block.number == 12 && pubkey == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
+      done(null, { number: 2 });
+    else
+      done(null, null);
   }
 
 }

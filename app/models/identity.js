@@ -13,6 +13,7 @@ var IdentitySchema = new Schema({
   uid: String,
   pubkey: String,
   sig: String,
+  currentMSN: { type: Number, default: -1 },
   time: { type: Date, default: Date.now },
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
@@ -186,6 +187,13 @@ IdentitySchema.statics.getToBeKicked = function(done){
 IdentitySchema.statics.setKicked = function(pubkey, hash, notEnoughLinks, done){
   var Identity = this.model('Identity');
   Identity.update({ "pubkey": pubkey, hash: hash }, { kick: notEnoughLinks }, function (err) {
+    done(err);
+  });
+};
+
+IdentitySchema.statics.kickWithOutdatedMemberships = function(maxNumber, done){
+  var Identity = this.model('Identity');
+  Identity.update({ "currentMSN": { $lt: maxNumber } }, { kick: true }, function (err) {
     done(err);
   });
 };

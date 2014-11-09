@@ -61,11 +61,11 @@ MembershipSchema.methods = {
   },
   
   inline: function() {
-    return [this.issuer, this.signature, this.block, this.certts.timestamp(), this.userid].join(':');
+    return [this.issuer, this.signature, this.number, this.fpr, this.certts.timestamp(), this.userid].join(':');
   },
   
   inlineValue: function() {
-    return [this.version, this.issuer, this.membership, this.block, this.userid].join(':');
+    return [this.version, this.issuer, this.membership, this.number, this.fpr, this.userid].join(':');
   },
   
   inlineSignature: function() {
@@ -123,7 +123,10 @@ MembershipSchema.statics.fromInline = function (inlineMS, type, currency) {
     type:       type,
     number:     parseInt(sp[2]),
     fpr:        sp[3],
-    userid:     '',
+    block:      [sp[2], sp[3]].join('-'),
+    fpr:        sp[3],
+    certts:     new Date(parseInt(sp[4])*1000),
+    userid:     sp[5],
     signature:  sp[1]
   });
 }

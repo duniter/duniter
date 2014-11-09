@@ -17,6 +17,7 @@ function MembershipParser (onError) {
     {prop: "issuer",            regexp: /Issuer: (.*)/},
     {prop: "membership",        regexp: /Membership: (.*)/},
     {prop: "userid",            regexp: /UserID: (.*)/},
+    {prop: "block",             regexp: constants.MEMBERSHIP.BLOCK},
     {prop: "certts",            regexp: /CertTS: (.*)/, parser: parseDateFromTimestamp},
     {prop: "block",             regexp: /Block: (.*)/}
   ];
@@ -24,6 +25,8 @@ function MembershipParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
 
   this._clean = function (obj) {
+    obj.number = obj.block.split('-')[0];
+    obj.fpr = obj.block.split('-')[1];
   };
 
   this._verify = function(obj){

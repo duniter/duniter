@@ -451,6 +451,7 @@ function overrideConf(conf) {
       sigDelay:    program.sigDelay,
       sigValidity: program.sigValidity,
       sigQty:      program.sigQty,
+      msValidity:  program.msValidity,
       powZeroMin:  program.powZeroMin,
       powPeriod:   program.powPeriod,
       powDelay:    program.powDelay,
@@ -480,6 +481,7 @@ function overrideConf(conf) {
   if (cli.ucp.sigDelay)                     conf.sigDelay       = cli.ucp.sigDelay;
   if (cli.ucp.sigValidity)                  conf.sigValidity    = cli.ucp.sigValidity;
   if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;
+  if (cli.ucp.msValidity)                   conf.msValidity     = cli.ucp.msValidity;
   if (cli.ucp.powZeroMin)                   conf.powZeroMin     = cli.ucp.powZeroMin;
   if (cli.ucp.powPeriod)                    conf.powPeriod      = cli.ucp.powPeriod;
   if (cli.ucp.powDelay)                     conf.powDelay       = cli.ucp.powDelay;

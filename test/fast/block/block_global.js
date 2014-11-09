@@ -515,8 +515,8 @@ function BlockCheckerDao (block) {
     }
   }
 
-  this.getLastBlocks = function (issuer, count, done) {
-    if (block.number == 66 && issuer == 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+  this.getLastBlocks = function (count, done) {
+    if (block.number == 66) {
       done(null, [
         { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
         { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
@@ -595,11 +595,11 @@ function BlockCheckerDao (block) {
       done(null, null);
   }
 
-  this.getCurrentMembership = function (pubkey, done) {
+  this.getCurrentMembershipNumber = function (pubkey, done) {
     if (block.number == 12 && pubkey == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
-      done(null, { number: 2 });
+      done(null, 2);
     else
-      done(null, null);
+      done(null, -1);
   }
 
 }

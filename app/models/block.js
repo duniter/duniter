@@ -257,6 +257,26 @@ BlockSchema.statics.current = function (done) {
   });
 };
 
+BlockSchema.statics.getLastBlocks = function (count, done) {
+
+  this
+    .find({})
+    .sort({ number: -1 })
+    .limit(count)
+    .exec(done);
+};
+
+BlockSchema.statics.getFirstFrom = function (t, done) {
+
+  this
+    .find({ confirmedDate: { $gte: t }})
+    .sort({ number: 1 })
+    .limit(1)
+    .exec(function (err, blocks) {
+      done(err, blocks.length == 1 ? blocks[0] : null);
+    });
+};
+
 BlockSchema.statics.findByNumberAndHash = function (number, hash, done) {
 
   this.find({ number: number, hash: hash }, function (err, blocks) {

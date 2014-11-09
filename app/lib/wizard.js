@@ -253,6 +253,7 @@ var tasks = {
   ucp: function (conf, done) {
     async.waterfall([
       async.apply(simpleInteger, "Delay between 2 identical certifications", "sigDelay", conf),
+      async.apply(simpleInteger, "Membership validity duration", "msValidity", conf),
       async.apply(simpleInteger, "Certification validity duration", "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member", "sigQty", conf),
       async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),

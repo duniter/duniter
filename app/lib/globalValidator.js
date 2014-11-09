@@ -51,9 +51,15 @@ function GlobalValidator (conf, dao) {
     { name: 'checkTransactions',                    func: check(checkSourcesAvailability)             }
   ];
 
+  // Functions used in an external for testing a block's content
   testFunctions.forEach(function (fObj) {
     that[fObj.name] = fObj.func;
   });
+
+  // Functions used in an external context too
+  this.checkMembershipBlock = function (ms, current, done) {
+    checkMSTarget(ms, current ? current : { number: 0 }, done);
+  };
 
   this.validate = function (block, done) {
     var testFunctionsPrepared = [];
@@ -401,7 +407,7 @@ function GlobalValidator (conf, dao) {
             dao.getCurrent(next);
           },
           last10: function (next) {
-            dao.getLastBlocks(issuer, 10, next);
+            dao.getLastBlocks(10, next);
           }
         }, next);
       },
@@ -487,10 +493,10 @@ function GlobalValidator (conf, dao) {
           checkMSTarget(ms, block, next);
         },
         function (next){
-          dao.getCurrentMembership(ms.issuer, next);
+          dao.getCurrentMembershipNumber(ms.issuer, next);
         },
-        function (currentMS, next) {
-          if (currentMS && currentMS.number <= ms.number) {
+        function (msNumber, next) {
+          if (msNumber != -1 && msNumber <= ms.number) {
             next('Membership\'s number must be greater than last membership of the pubkey');
             return;
           }
@@ -515,10 +521,10 @@ function GlobalValidator (conf, dao) {
           checkMSTarget(ms, block, next);
         },
         function (next){
-          dao.getCurrentMembership(ms.issuer, next);
+          dao.getCurrentMembershipNumber(ms.issuer, next);
         },
-        function (currentMS, next) {
-          if (currentMS && currentMS.number <= ms.number) {
+        function (msNumber, next) {
+          if (msNumber != -1 && msNumber <= ms.number) {
             next('Membership\'s number must be greater than last membership of the pubkey');
             return;
           }
@@ -543,10 +549,10 @@ function GlobalValidator (conf, dao) {
           checkMSTarget(ms, block, next);
         },
         function (next){
-          dao.getCurrentMembership(ms.issuer, next);
+          dao.getCurrentMembershipNumber(ms.issuer, next);
         },
-        function (currentMS, next) {
-          if (currentMS && currentMS.number <= ms.number) {
+        function (msNumber, next) {
+          if (msNumber != -1 && msNumber <= ms.number) {
             next('Membership\'s number must be greater than last membership of the pubkey');
             return;
           }
@@ -564,40 +570,14 @@ function GlobalValidator (conf, dao) {
   }
 
   function checkExcluded (block, done) {
-    async.forEachSeries(block.leavers, function(inlineMS, callback){
-      var ms = Membership.fromInline(inlineMS);
+    async.forEachSeries(block.excluded, function(pubkey, callback){
       async.waterfall([
         function (next){
-          dao.isMember(ms.issuer, next);
+          dao.isMember(pubkey, next);
         },
         function (isMember, next) {
           if (!isMember) {
             next('Cannot be in excluded if not a member');
-            return;
-          }
-          next();
-        }
-      ], callback);
-    }, done);
-  }
-
-  function checkExcluded (block, done) {
-    async.forEachSeries(block.leavers, function(inlineMS, callback){
-      var ms = Membership.fromInline(inlineMS);
-      async.waterfall([
-        function (next){
-          checkMSTarget(ms, block, next);
-        },
-        function (next){
-          dao.getCurrentMembership(ms.issuer, next);
-        },
-        function (currentMS, next) {
-          if (currentMS && currentMS.number <= ms.number) {
-            next('Membership\'s number must be greater than last membership of the pubkey');
-            return;
-          }
-          if (!currentMS || currentMS.expired || currentMS.category == 'LEAVER') {
-            next('Cannot be in leavers if not a member');
             return;
           }
           next();

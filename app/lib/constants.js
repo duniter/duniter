@@ -53,9 +53,9 @@ module.exports = {
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
     PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
-    JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT),
-    ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT),
-    LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT),
+    JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
+    ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
+    LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
     EXCLUDED: exact(PUBKEY),
   },
   TRANSACTION: {

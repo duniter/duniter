@@ -20,6 +20,7 @@ var ConfigurationSchema = new Schema({
   upInterval:  {"type": Number, "default": 3600*1000},
   sigDelay:    {"type": Number, "default": 3600*24*365*5}, // 5 years by default
   sigValidity: {"type": Number, "default": 3600*24*365}, // 1 year by default
+  msValidity:  {"type": Number, "default": 3600*24*365}, // 1 year by default
   sigQty:      {"type": Number, "default": 5},
   powZeroMin:  {"type": Number, "default": 4},
   powPeriod:   {"type": Number, "default": 1},

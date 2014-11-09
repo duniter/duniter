@@ -90,6 +90,24 @@ module.exports = function(conn, block) {
 
     this.isAvailableTXSource = function (pubkey, number, fingerprint, amount, done) {
       Source.existsNotConsumed('T', pubkey, number, fingerprint, amount, done);
+    },
+
+    this.getCurrentMembershipNumber = function (pubkey, done) {
+      async.waterfall([
+        function (next) {
+          Identity.getMember(pubkey, next);
+        },
+        function (idty, next) {
+          if (idty == null)
+            next(null, -1);
+          else
+            next(null, idty.currentMSN);
+        }
+      ], done);
+    },
+
+    this.getLastBlocks = function (count, done) {
+      Block.getLastBlocks(count, done);
     }
   }
 

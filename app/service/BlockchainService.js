@@ -65,6 +65,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   this.submitMembership = function (ms, done) {
     var entry = new Membership(ms);
+    var globalValidation = globalValidator(conf, blockchainDao(conn, null));
     async.waterfall([
       function (next){
         logger.debug('⬇ %s %s', entry.issuer, entry.membership);
@@ -90,6 +91,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           else 
             next('A non-member cannot leave.');
         }
+      },
+      function (next) {
+        BlockchainService.current(next);
+      },
+      function (current, next) {
+        globalValidation.checkMembershipBlock(entry, current, next);
       },
       function (next){
         // Saves entry
@@ -306,7 +313,66 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               if (existing) {
                 idty = existing;
               }
+              idty.currentMSN = block.number;
               idty.member = true;
+              idty.kick = false;
+              idty.save(function (err) {
+                next(err);
+              });
+            }
+          ], callback);
+        }, next);
+      },
+      function (next) {
+        // Joiners (come back)
+        async.forEachSeries(block.joiners, function(inlineMS, callback){
+          var ms = Identity.fromInline(inlineMS);
+          async.waterfall([
+            function (next){
+              // Necessarily exists, since we've just created them in the worst case
+              Identity.getMember(ms.pubkey, next);
+            },
+            function (idty, next){
+              idty.currentMSN = block.number;
+              idty.member = true;
+              idty.kick = false;
+              idty.save(function (err) {
+                next(err);
+              });
+            }
+          ], callback);
+        }, next);
+      },
+      function (next) {
+        // Actives
+        async.forEachSeries(block.actives, function(inlineMS, callback){
+          var ms = Identity.fromInline(inlineMS);
+          async.waterfall([
+            function (next){
+              Identity.getMember(ms.pubkey, next);
+            },
+            function (idty, next){
+              idty.currentMSN = block.number;
+              idty.member = true;
+              idty.kick = false;
+              idty.save(function (err) {
+                next(err);
+              });
+            }
+          ], callback);
+        }, next);
+      },
+      function (next) {
+        // Leavers
+        async.forEachSeries(block.leavers, function(inlineMS, callback){
+          var ms = Identity.fromInline(inlineMS);
+          async.waterfall([
+            function (next){
+              Identity.getMember(ms.pubkey, next);
+            },
+            function (idty, next){
+              idty.currentMSN = block.number;
+              idty.member = false;
               idty.kick = false;
               idty.save(function (err) {
                 next(err);
@@ -430,6 +496,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         computeObsoleteLinks(block, next);
       },
       function (next){
+        // Compute obsolete memberships (active, joiner)
+        computeObsoleteMemberships(block, next);
+      },
+      function (next){
         // Update consumed sources & create new ones
         updateTransactionSources(block, next);
       },
@@ -470,6 +540,20 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             },
           ], callback);
         }, next);
+      },
+    ], done);
+  }
+
+  function computeObsoleteMemberships (block, done) {
+    async.waterfall([
+      function (next){
+        Block.getFirstFrom(block.confirmedDate - conf.msValidity, next);
+      },
+      function (first, next){
+        if (first)
+          Identity.kickWithOutdatedMemberships(first.number, next);
+        else
+          next();
       },
     ], done);
   }

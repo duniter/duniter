@@ -541,6 +541,7 @@ function BlockCheckerDao (block) {
     if (block.number == 66) {
       done(null, [
         { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
+        { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
         { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
         { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
         { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },

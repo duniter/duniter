@@ -127,8 +127,10 @@ function BlockchainBinding (wotServer) {
         Identity.isMember(pubkey, next);
       },
       function (isMember, next){
-        if (!isMember) next('Not a member');
-        BlockchainService.current(next);
+        if (!isMember)
+          next('Not a member');
+        else
+          BlockchainService.current(next);
       },
       function (current, next){
         if (current) {

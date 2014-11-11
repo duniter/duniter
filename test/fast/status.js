@@ -9,6 +9,7 @@ var ucoin    = require('../..');
 var Status = require('../../app/models/statusMessage');
 var rawStatus = "" +
   "Version: 1\n" +
+  "Type: Status\n" +
   "Currency: beta_brousouf\n" +
   "Status: UP\n" +
   "Time: 1414937786\n" +

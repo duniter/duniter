@@ -58,7 +58,11 @@ function GlobalValidator (conf, dao) {
 
   // Functions used in an external context too
   this.checkMembershipBlock = function (ms, current, done) {
-    checkMSTarget(ms, current ? current : { number: 0 }, done);
+    checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, done);
+  };
+
+  this.checkCertificationIsValid = function (cert, current, findIdtyFunc, done) {
+    checkCertificationIsValid(current ? current : { number: 0 }, cert, findIdtyFunc, done);
   };
 
   this.validate = function (block, done) {
@@ -150,18 +154,46 @@ function GlobalValidator (conf, dao) {
   }
 
   function checkCertificationsAreValid (block, done) {
-    async.forEach(block.certifications, function(inlineCert, callback){
+    async.forEachSeries(block.certifications, function(inlineCert, callback){
       var cert = Certification.fromInline(inlineCert);
-      async.waterfall([
-        function (next){
-          getGlobalIdentity(block, cert.to, next);
-        },
-        function (idty, next){
-          var selfCert = idty.selfCert();
-          crypto.isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.when.timestamp(), next);
-        },
-      ], callback);
+      checkCertificationIsValid(block, cert, getGlobalIdentity, callback);
     }, done);
+  }
+
+  function checkCertificationIsValid (block, cert, findIdtyFunc, done) {
+    async.waterfall([
+      function (next) {
+        checkCertTarget(cert, block, next);
+      },
+      function (next){
+        async.parallel({
+          idty: function (next) {
+            findIdtyFunc(block, cert.to, next);
+          },
+          target: function (next) {
+            if (block.number == 0)
+              next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709' });
+            else
+              dao.getBlock(cert.block_number, function (err, theBlock) {
+                next(err ? 'Certification based on an unknown block' : null, theBlock);
+              });
+          }
+        }, next);
+      },
+      function (res, next){
+        if (!res.idty) {
+          next('Identity does not exist for certified');
+          return;
+        }
+        else if (cert.from == res.idty.pubkey)
+          next('Rejected certification: certifying its own self-certification has no meaning');
+        else {
+          var selfCert = res.idty.selfCert();
+          var targetId = [cert.block_number, res.target.hash].join('-');
+          crypto.isValidCertification(selfCert, res.idty.sig, cert.from, cert.sig, targetId, next);
+        }
+      },
+    ], done);
   }
 
   function checkCertificationsAreMadeByMembers (block, done) {
@@ -598,6 +630,18 @@ function GlobalValidator (conf, dao) {
     } else {
       dao.findBlock(ms.number, ms.fpr, function (err, theBlock) {
         done(err || (theBlock == null && 'Membership based on an unexisting block') || null);
+      });
+    }
+  }
+
+  function checkCertTarget (cert, block, done) {
+    if (block.number == 0 && cert.block_number != 0) {
+      done('Number must be 0 for root block\'s certifications');
+    } else if (block.number == 0 && cert.block_number == 0) {
+      done(); // Valid for root block
+    } else {
+      dao.getBlock(cert.block_number, function (err) {
+        done(err && 'Certification based on an unexisting block');
       });
     }
   }

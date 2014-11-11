@@ -37,7 +37,7 @@ module.exports = {
     },
     OTHER: {
       META: exact(META_TS),
-      INLINE: exact(PUBKEY + ":" + PUBKEY + ":" + TIMESTAMP + ":" + SIGNATURE)
+      INLINE: exact(PUBKEY + ":" + PUBKEY + ":" + INTEGER + ":" + SIGNATURE)
     }
   },
   IDENTITY: {

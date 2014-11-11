@@ -44,7 +44,7 @@ function IdentityParser (onError) {
         default:
           if (line.match(constants.CERT.OTHER.INLINE)) {
             var sp = line.split(':');
-            var cert = { from: sp[0], to: sp[1], time: new Date(parseInt(sp[2])*1000), sig: sp[3] };
+            var cert = { from: sp[0], to: sp[1], block_number: sp[2], sig: sp[3] };
             obj.certs.push(cert);
           }
           break;
@@ -66,7 +66,7 @@ function IdentityParser (onError) {
       return "Wrong user id format";
     }
     if (!obj.time) {
-      return "Cannot extract signature time";
+      return "Could not extract signature time";
     }
     if (!obj.sig) {
       return "No signature found for self-certification";

@@ -1,7 +1,9 @@
-var async  = require('async');
-var _      = require('underscore');
-var crypto = require('../lib/crypto');
-var logger = require('../lib/logger')('pubkey');
+var async           = require('async');
+var _               = require('underscore');
+var blockchainDao   = require('../lib/blockchainDao');
+var globalValidator = require('../lib/globalValidator');
+var crypto          = require('../lib/crypto');
+var logger          = require('../lib/logger')('pubkey');
 
 module.exports.get = function (conn, conf) {
   return new IdentityService(conn, conf);
@@ -9,6 +11,7 @@ module.exports.get = function (conn, conf) {
 
 function IdentityService (conn, conf) {
 
+  var Block         = conn.model('Block');
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
   
@@ -20,6 +23,9 @@ function IdentityService (conn, conf) {
 
   // Reference to BlockchainService
   var BlockchainService = null;
+  
+  // Validator for certifications
+  var globalValidation = globalValidator(conf, blockchainDao(conn, null));
 
   this.search = function(search, done) {
     var identities = [];
@@ -42,23 +48,28 @@ function IdentityService (conn, conf) {
     var idty = new Identity(obj);
     var selfCert = idty.selfCert();
     var certs = idty.othersCerts();
+    var potentialNext;
     fifo.push(function (cb) {
       async.waterfall([
-        function (next){
+        function (next) {
+          BlockchainService.current(next);
+        },
+        function (current, next) {
+          // Prepare validator for certifications
+          potentialNext = new Block({ identities: [], number: current ? current.number + 1 : 0 });
           // Check signature's validity
           crypto.verifyCbErr(selfCert, idty.sig, idty.pubkey, next);
         },
         function (next) {
           async.forEachSeries(certs, function(cert, cb){
-            if (cert.from == idty.pubkey)
-              cb('Rejected certification: certifying its own self-certification has no meaning');
-            else
-              crypto.isValidCertification(selfCert, idty.sig, cert.from, cert.sig, cert.time.timestamp(), cb);
+            globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
+              next(null, idty);
+            }, next);
           }, next);
         },
         function (next){
           async.forEachSeries(certs, function(cert, cb){
-            var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, time: cert.time, target: obj.hash, to: idty.pubkey });
+            var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, block_number: cert.block_number, target: obj.hash, to: idty.pubkey });
             async.waterfall([
               function (next){
                 mCert.existing(next);

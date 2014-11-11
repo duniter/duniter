@@ -72,6 +72,14 @@ module.exports = function(conn, block) {
       });
     }
 
+    this.getBlock = function (number, done) {
+      Block.findByNumber(number, done);
+    }
+
+    this.findBlock = function (number, fpr, done) {
+      Block.findByNumberAndHash(number, fpr, done);
+    }
+
     this.getToBeKicked = function (blockNumber, done) {
       Identity.getToBeKicked(done);
     },

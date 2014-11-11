@@ -627,7 +627,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       obj.issuers = json.signatories;
       var tx = new Transaction(obj);
       var txHash = tx.getHash();
-      console.log(txHash);
       Transaction.removeByHash(txHash, callback);
     }, done);
   }

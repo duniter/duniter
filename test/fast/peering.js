@@ -9,6 +9,7 @@ var ucoin    = require('../..');
 
 var rawPeer = "" +
   "Version: 1\n" +
+  "Type: Peer\n" +
   "Currency: beta_brousouf\n" +
   "PublicKey: 3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu\n" +
   "Endpoints:\n" +

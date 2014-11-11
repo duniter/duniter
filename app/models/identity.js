@@ -43,7 +43,7 @@ IdentitySchema.methods = {
       others.push({
         "pubkey": cert.pubkey,
         "meta": {
-          "timestamp": cert.time.timestamp()
+          "block_number": cert.block_number
         },
         "signature": cert.sig
       });

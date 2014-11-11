@@ -11,7 +11,7 @@ module.exports = new function() {
     raw += "META:TS:" + json.time.timestamp() + '\n';
     raw += json.sig + '\n';
     json.certs.forEach(function(cert){
-      raw += [cert.from, json.pubkey, cert.time.timestamp(), cert.sig].join(':') + '\n';
+      raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
     });
     return dos2unix(raw);
   };
@@ -30,6 +30,7 @@ module.exports = new function() {
   this.getPeerWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
+    raw += "Type: Peer\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "PublicKey: " + json.pub + "\n";
     raw += "Endpoints:" + "\n";
@@ -46,6 +47,7 @@ module.exports = new function() {
   this.getStatusWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
+    raw += "Type: Status\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Status: " + json.status + "\n";
     raw += "Time: " + json.time.timestamp() + "\n";
@@ -61,6 +63,7 @@ module.exports = new function() {
   this.getMembershipWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
+    raw += "Type: Membership\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Issuer: " + json.issuer + "\n";
     raw += "Block: " + json.block + "\n";
@@ -133,6 +136,7 @@ module.exports = new function() {
   this.getTransaction = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";
+    raw += "Type: Transaction\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Issuers:\n";
     json.issuers.forEach(function (issuer) {

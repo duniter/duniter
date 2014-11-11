@@ -134,6 +134,18 @@ describe("Block global coherence:", function(){
     done();
   }));
 
+  it('a block with certification to non-zero block for root block should fail', test('checkCertificationsAreValid', blocks.CERT_BASED_ON_NON_ZERO_FOR_ROOT, function (err, done) {
+    should.exist(err);
+    err.should.equal('Number must be 0 for root block\'s certifications');
+    done();
+  }));
+
+  it('a block with certification to unknown block should fail', test('checkCertificationsAreValid', blocks.CERT_BASED_ON_NON_EXISTING_BLOCK, function (err, done) {
+    should.exist(err);
+    err.should.equal('Certification based on an unexisting block');
+    done();
+  }));
+
   it('a block with certification from non-member pubkey should fail', test('checkCertificationsAreMadeByMembers', blocks.UNKNOWN_CERTIFIER, function (err, done) {
     should.exist(err);
     err.should.equal('Certification from non-member');
@@ -380,7 +392,10 @@ function BlockCheckerDao (block) {
   
   this.getIdentityByPubkey = function (pubkey, done) {
     // No existing identity
-    done(null, null);
+    if (pubkey == 'CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
+      done(null, new Identity({ pubkey: 'CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' }));
+    else
+      done(null, null);
   }
   
   this.isMember = function (pubkey, done) {
@@ -470,6 +485,13 @@ function BlockCheckerDao (block) {
       done(null, { number: block.number - 1 });
     else
       done(null, null);
+  }
+
+  this.getBlock = function (number, done) {
+    if (number == 0)      
+      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709' });
+    else
+      done('No block found', null);
   }
 
   this.getToBeKicked = function (blockNumber, done) {

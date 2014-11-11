@@ -1,6 +1,6 @@
 # UCP - uCoin Protocol
 
-> This document is still regularly updated (as of October 2014)
+> This document is still regularly updated (as of November 2014)
 
 ## Contents
 
@@ -30,14 +30,16 @@
 
 ## Vocabulary
 
-Word | Description
----- | -------------
-Universal Dividend | Money issuance **directly** and **exclusively** on community members.
-Web of Trust | A groupment of individuals linked together trought public keys & certification of identities' mechanism
+Word                  | Description
+--------------------- | -------------
+UCP                   | Acronym for *UCoin Protocol*. A set of rules to create uCoin based currencies.
+Signature             | The cryptographical act of certifying a document using a private key.
+WoT                   | Acronym for *Web of Trust*. A groupment of individuals recognizing each other's identity through public keys and certification mechanisms
+UD                    | Acronym for *Universal Dividend*. Means money issuance **directly** and **exclusively** by and to WoT members
 
 ## Introduction
 
-UCP aims at defining a data format, interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it does not define all of the currency parameters' value but only the rules about them.
+UCP aims at defining a data format, interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it defines currency parameters and rules about them, but not their value which is implementation specific.
 
 This document describes UCP in a bottom-up logic, so you will find first the details of the protocol (data format) to end with general protocol requirements.
 
@@ -75,7 +77,7 @@ Here is an example of expected signature:
 
 #### Line endings
 
-No new line character exists in a signature.
+No new line character exists in a signature. However, a signature may be followed by a new line character, hence denoting the end of the signature.
 
 ## Formats
 
@@ -85,21 +87,23 @@ This section deals with the various data formats used by UCP.
 
 #### Definition
 
-A public key is to be understood as a [Ed55219](http://en.wikipedia.org/wiki/EdDSA) public key.
+A public key is to be understood as an [Ed55219](http://en.wikipedia.org/wiki/EdDSA) public key.
 
-Its format is a [Base58](http://en.wikipedia.org/wiki/Base58) string such as the following:
+Its format is a [Base58](http://en.wikipedia.org/wiki/Base58) string of 43 or 44 characters, such as the following:
 
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+
+A public key is alway paired with a private key, which UCP will never deal with. UCP only deals with public keys and signatures.
 
 ### Certification
 
 #### Definition
 
-A certification is the act of creating a link between a *public key* and *an arbitrary identity*. In UCP, this certification is done through the signature of an identity string by a public key.
+A certification is the generic act of creating a link between a *public key* and *an arbitrary identity*. In UCP, this certification is done through the signature of an identity string by a public key.
 
 ####Identity string
 
-UCP does not rely on any particular identity format. Identity simply has to be a string avoiding usage of line endings characters.
+UCP does not rely on any particular identity format, which remains implementation free. Identity simply has to be a string avoiding usage of line endings characters.
     
 In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferently used to refer to this identity string.
 
@@ -107,7 +111,7 @@ In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferent
 
 ##### Definition
 
-A self certification is the act, for a given key's owner, to sign an identifier *he considers it reflects his identity*. Doing a self-certification is extacly like saying:
+A self certification is the act, for a given public key's owner, to sign an identifier *he considers it reflects his identity*. Doing a self-certification is extacly like saying:
 
 > « This identity refers to me ! »
 
@@ -131,6 +135,10 @@ Where:
 * `TIMESTAMP` is the timestamp value of the signature date
 * `SIGNATURE` is a signature
 
+So a self-certification is the act of saying:
+
+> « I attest, today, that this identity refers to me. »
+
 ##### Example
 
 A valid identity:
@@ -147,25 +155,38 @@ A complete self-certification:
 
 ##### Definition
 
-The generic word *certification* is to be used for describing *certification from others*, i.e. *non-self certifications*.
+The generic word *certification*, in UCP, is to be used for describing *certification from others*, i.e. *non-self certifications*.
 
 ##### Format
 
-A certification is only the *signature* over a complete self-certification flavoured with a signature date.
+A certification is just *a signature* over a complete self-certification flavoured with a signature date:
+
+    UID:IDENTIFIER
+    META:TS:TIMESTAMP
+    SIGNATURE
+    META:TS:BLOCK_NUMBER-BLOCK_HASH
+    CERTIFIER_SIGNATURE
+
+Where:
+
+* `BLOCK_NUMBER` refers to a block number of the Blockchain, and represents a time reference.
+* `BLOCK_HASH` refers to the fingerprint of the block targeted by `BLOCK_NUMBER`.
+* `CERTIFIER_SIGNATURE` is the signature of the *certifier*.
 
 ##### Inline format
 
-Certification may exists under *inline format*, which is a more precise format than just the signature, and described under a simple line. Here is general structure:
+Certification may exists under *inline format* which describes the certification under a simple line. Here is general structure:
 
-    PUBKEY_FROM:PUBKEY_TO:TIMESTAMP:SIGNATURE
+    PUBKEY_FROM:PUBKEY_TO:BLOCK_NUMBER:SIGNATURE
 
 Where
 
   * `PUBKEY_FROM` is the certification public key
   * `PUBKEY_TO` is the public key whose identity is being certified
-  * `TIMESTAMP` is the certification date
+  * `BLOCK_NUMBER` is the certification time reference
   * `SIGNATURE` is the certification signature
 
+> Note: BLOCK_HASH is not required in the inline format, since this format aims at being used in the context of a blockchain, where hash can be deduced.
 ##### Example
 
 If we have the following complete self-certification:
@@ -183,18 +204,19 @@ Over the following data:
     UID:lolcat
     META:TS:1409990782
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    META:TS:1509991044
+    META:TS:84
 
 Note here that a certification *alone* has no meaning: it is only when appended to a flavoured self-certification that this signature (the certification) makes sense.
 
 ### Membership
 
-In UCP, a member is represented by a public key he is supposed to be the owner. To be integrated in a community, the newcomer owner of the key *has to express its will* to integrate the Community.
+In UCP, a member is represented by a public key he is supposed to be the owner. To be integrated in a WoT, the newcomer owner of the key *has to express its will* to integrate the WoT.
 
 This step is done by issuing a the following document:
 
 ```bash
 Version: VERSION
+Type: Membership
 Currency: CURRENCY_NAME
 Issuer: ISSUER
 Block: NUMBER-HASH
@@ -210,6 +232,7 @@ followed by a signature of `Issuer`.
 Field | Description
 ----- | -----------
 `Version` | Denotes the current structure version.
+`Type` | Type of the document.
 `Currency` | Contains the name of the currency.
 `Issuer` | The public key of the issuer.
 `Block` | Block number and hash. Value is used to target a blockchain and precise time reference for membership's time validity.
@@ -219,16 +242,16 @@ Field | Description
 
 #### Validity
 
-A [Membership](#membership) is to be considered valid if:
+A [Membership](#membership) is to be considered having valid format if:
 
 * `Version` equals `1`
+* `Type` equals `Membership` value.
 * `Currency` is a valid currency name
+* `Issuer` is a public key
 * `Membership` matches either `IN` or `OUT` value
-* `Block` starts with an integer value, followed by an uppercased SHA1 string
-* `UserID` if provided is a non-empty string
-* `CertTS` if provided is a valid timestamp
-
-
+* `Block` starts with an integer value, followed by a dash and an uppercased SHA1 string
+* `UserID` is a non-empty string
+* `CertTS` is a valid timestamp
 
 ### Transaction
 
@@ -246,9 +269,10 @@ Obviously, coins a sender does not own CANNOT be sent by him. That is why a tran
 
 #### Format
 
-It is defined by the following format:
+A transaction is defined by the following format:
 
     Version: VERSION
+    Type: Transaction
     Currency: CURRENCY_NAME
     Issuers: 
     PUBLIC_KEY
@@ -267,6 +291,7 @@ Here is a description of each field:
 Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
+`Type` | Type of the document.
 `Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be UCP-based.
 `Issuers` | a list of public key, followed by a sequential integer
 `Inputs` | a list linking `Issuers` (via INDEX) to coin sources
@@ -276,8 +301,10 @@ Field | Description
 
 A Transaction structure is considered *valid* if:
 
+* Field `Version` equals `1`.
+* Field `Type` equals `Transaction`.
 * Field `Currency` is not empty.
-* Field `Issuers` is a multiline field whose lines are Base58 strings of 44 characters.
+* Field `Issuers` is a multiline field whose lines are public keys.
 * Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, an integer, a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
 
@@ -286,6 +313,7 @@ A Transaction structure is considered *valid* if:
 Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its value is not known but could be 30) written in block #3.
 
     Version: 1
+    Type: Transaction
     Currency: beta_brousouf
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
@@ -304,6 +332,7 @@ Signatures (fake here):
 Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction written in blocks #65 and #77 + 1 UD from block #88.
 
     Version: 1
+    Type: Transaction
     Currency: beta_brousouf
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
@@ -323,6 +352,7 @@ Signatures (fake here):
 Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction (written in blocks #4, #78, #66 and #176) + 2 UD from same block #46.
 
     Version: 1
+    Type: Transaction
     Currency: beta_brousouf
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
@@ -386,6 +416,11 @@ A Block is a document gathering both:
   * [Public key](#publickey) data in order to build a Web Of Trust (WoT) representation
   * [Transaction](#transaction) data to identify money units & ownership
 
+but also other informations like:
+
+* time reference (calendar time)
+* UD value for money issuance
+
 #### Structure
 
     Version: VERSION
@@ -416,7 +451,7 @@ A Block is a document gathering both:
     PUBLIC_KEY
     ...
     Certifications:
-    PUBKEY_FROM:PUBKEY_TO:TIMESTAMP:SIGNATURE
+    PUBKEY_FROM:PUBKEY_TO:BLOCK_NUMBER:SIGNATURE
     ...
     Transactions:
     COMPACT_TRANSACTION
@@ -469,6 +504,7 @@ To be a valid, a block must match the following rules:
 * `Certifications` is a multiline field composed for each line of:
   * `PUBKEY_FROM` : a [Public key](#publickey) doing the certification
   * `PUBKEY_TO` : a [Public key](#publickey) being certified
+  * `BLOCK_NUMBER` : a positive integer
   * `SIGNATURE` : a [Signature](#signature) of the certification
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 
@@ -477,33 +513,6 @@ The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 ##### Data
 * `Version` equals `1`
 * `Type` equals `Block`
-
-#### Blockchain
-A Blockchain is a chaining of [Blocks](#block). Such a document describes a WoT + Transactions over the time.
-
-Each Block other than the Block#0 must follow these rules:
-
-* Its `Number` field has the same value as preceding block + 1
-* Its `Currency` field has exactly the same value as preceding block
-* Its `PreviousHash` field match the uppercased SHA-1 fingerprint of the whole previous block
-* Its `PreviousIssuer` field has the same value as the previous block's `Issuer`
-* Its `MembersCount` field equals to the previous block's `MembersCount` value plus `Identities` line count, minus `Leavers` and `Excluded` line count.
-
-##### Identities
-
-1. A given public key cannot appear twice under `Identities` field in all the blockchain.
-2. For each public key under `Identities` field of a block, the `Joiners` field must see one line with the same public key
-
-##### Joiners
-
-1. A given public key cannot appear twice under `Joiners` field in the same block.
-2. For each public key under `Joiners`, a valid identity must exist either in the same block or a previous one
-3. A key appearing in `Joiners`field is to be considered as a **member** from this block until it appears under `Leavers` or `Excluded` fields, included.
-
-##### Leavers
-
-1. A given public key cannot appear twice under `Leavers` field in the same block.
-2. Only **members** can have their public key under `Leavers`.
 
 ### Peer
 
@@ -514,9 +523,12 @@ For that purpose, UCP defines a peering table containing, for a given node publi
 * a currency name
 * a list of endpoints to contact the node
 
-This link is made through a document called *Peer* whose format is:
+This link is made through a document called *Peer* whose format is described below.
+
+#### Structure
   
     Version: VERSION
+    Type: Peer
     Currency: CURRENCY_NAME
     PublicKey: NODE_PUBLICKEY
     Endpoints:
@@ -534,6 +546,7 @@ The aggregation of all *Peer* documents is called the *peering table*, and allow
 Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
+`Type`  | The document type.
 `Currency` | contains the name of the currency.
 `PublicKey` | the node's public key.
 `Endpoints` | a list of endpoints to interact with the node
@@ -556,9 +569,22 @@ Field | Description
 `IPv6` | is the IPv6 address to access the node.
 `PORT` | is the port of the address to access the node.
 
+#### Coherence
+To be a valid, a peer document must match the following rules:
+
+##### Format
+* `Version` equals `1`
+* `Type` equals `Peer`
+* `Currency` is a valid currency name
+* `PublicKey` is a [Public key](#publickey)
+* `Endpoints` is a multiline field
+
+The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
+
 #### Example
 
     Version: 1
+    Type: Peer
     Currency: beta_brousouf
     PublicKey: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Endpoints:
@@ -570,10 +596,12 @@ Field | Description
 
 Such a document informs a node on current node's status, either connected, up, or disconnected.
 
+#### Structure
+
     Version: VERSION
+    Type: Status
     Currency: CURRENCY_NAME
-    Status: NEW|NEW_BACK|UP|UP_BACK|DOWN
-    Time: TIMESTAMP
+    Status: STATUS
     From: SENDER
     To: RECIPIENT
 
@@ -581,11 +609,22 @@ Such a document informs a node on current node's status, either connected, up, o
 Field      | Description
 -----      | -----------
 `Version`  | denotes the current structure version.
+`Type`     | The document type.
 `Currency` | contains the name of the currency.
 `Status`   | Status type to be sent.
-`Time`     | Current node's timestamp
 `From`     | Issuer's public key for this message.
 `To`       | Recipient's public key for this message.
+
+#### Coherence
+To be a valid, a peer document must match the following rules:
+
+##### Format
+* `Version` equals `1`
+* `Type` equals `Status`
+* `Currency` is a valid currency name
+* `Status` either equals `NEW`, `NEW_BACK`, `UP`, `UP_BACK`, `DOWN`
+* `From` is a [Public key](#publickey)
+* `To` is a [Public key](#publickey)
 
 ## Variables
 
@@ -596,7 +635,7 @@ Parameter   | Goal
 c           | The %growth of the UD every `[dt]` period
 dt          | Time period between two UD
 ud0         | UD(0), i.e. initial Universal Dividend
-sigDelay    | Time to wait between two certifications of a same UserID by a same key
+sigDelay    | Minimum delay between 2 identical certifications (same pubkeys)
 sigValidity | Maximum age of a valid signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
 msValidity  | Maximum age of a valid membership (in seconds)
@@ -610,7 +649,7 @@ pctWOT      | Percent of WoT variations required to allow the certification of a
 
 Variable  | Meaning
 --------- | ----
-members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)`, `keychain(t)` targeting the keys whose last status is `+` in the keychain.
+members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last valid (non-expired) membership is either in `Joiners` or `Actives`.
 
 ## Processing
 
@@ -688,18 +727,49 @@ Global validation verifies the coherence of a locally-validated block, in the co
 
 ##### Definitions
 
-###### Current time
+###### Block time
+Block time is a special discrete time defined by the blocks themselves, where unit is *a block*, and values are *block number + fingerprint*.
 
-Current time is the one provided by the block being currently used, and provided by `ConfirmedDate` field. For a new block, it is the new block's time provided by `ConfirmedDate`. For a previous block in the blockchain, it is the previous block's time.
+So, refering to t<sub>block</sub> = 0-2B7A158B9FD052164005ED5B491699644A846CE2 is valid only if it exists a block#0 in the blockchain whose hash equals 2B7A158B9FD052164005ED5B491699644A846CE2.
+
+###### UD time
+UD time is a special discrete time defined by the UDs written in the blockchain where unit is a *UD*.
+
+Refering to UD(t = 1) means UD#1, and refers to the *first UD* written in the blockchain.
+
+> UD(t = 0) means UD#0 which does not exist. However, UD#0 is a currency parameter noted **[ud0]**.
+
+###### Calendar time
+Calendar time is the one provided by the blocks under `ConfirmedDate` field. This time is discrete and unit is second.
+
+> *Current time* is to be understood as the last block calendar time written in the blockchain.
+
+###### Certification time
+When making a certification, `BLOCK_NUMBER` is a reference to *block time*.
+
+###### Membership time
+When making a membership, `NUMBER` is a reference to *block time*.
+
+###### Certification & Membership age
+Age is defined as the number of seconds between the certification's or membership's *block time* and *current time*:
+
+    AGE = current_time - block_time
 
 ###### Certification validity
-A certification is to be considered valid if its age in the blockchain (date of the block adding it) is less or equal to `[sigValidity]` compared to another block.
+A certification is to be considered valid if its age is less or equal to `[sigValidity]`:
+
+    VALID   = AGE <= [sigValidity]
+    EXPIRED = AGE > [sigValidity]
+
+###### Certification replayability
+A certification is to be considered replayable if its age is greater than `[sigDelay]`:
+
+    REPLAYABLE = AGE > [sigDelay]
 
 ###### Member
+A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners` or `Actives`, **and is not expired**.
 
-A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners` or `Actives`, *and* is not expired.
-
-A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain is **not** a member.
+A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain **is not** a member.
 
 ##### Number
 
@@ -738,17 +808,17 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Joiners
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it is already a member
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` valid certifications coming *to* it (this block included)
-* `PUBLIC_KEY` must match for exactly one identity of the blockchain (this block included).
+* A given `PUBLIC_KEY` can be in `Joiners` if it is not a member.
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` valid certifications coming *to* it (incoming block included)
+* `PUBLIC_KEY` must match for exactly one identity of the blockchain (incoming block included).
 
 ##### Actives
 
-* A given `PUBLIC_KEY` **can** be in `Actives` **only if** if public key is a member.
+* A given `PUBLIC_KEY` **can** be in `Actives` **only if** if it is a member.
 
 ##### Leavers
 
-* A given `PUBLIC_KEY` cannot be in `Leavers` if its last occurrence is either in `Leavers` or `Excluded`, or has no last occurrence.
+* A given `PUBLIC_KEY` cannot be in `Leavers` if it is not a member.
 
 ##### Excluded
 
@@ -758,14 +828,17 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Certifications
 
-* A certification's `PUBKEY_FROM` and `PUBKEY_TO` must be members of the WoT (this block excluded).
+* A certification's `PUBKEY_FROM` must be a member.
+* A certification's `PUBKEY_TO` must be a member **or** be in incoming block's `Joiners`.
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
-* A same certification (same `PUBKEY_FROM` and same `PUBKEY_TO`) cannot be made twice in interval [`lastCertificationBlockTime`, `lastCertificationBlockTime` + `sigDelay`[.
-* A certifcation over an `Identity` can be made only **once**, until a total of `[pctWOT] x N` identities have joined *during and after* this certification's block. `N` is the `membersCount` field of the block carrying the certification.
+* A certification whose `PUBKEY_FROM` and `PUBKEY_TO` are the same than an existing certification in the blockchain can be written **only if** last certification is considered replayable.
+* A certifcation over a newcomer (public key in `Identities`) can be made only if:
+  * certification issuer has never made certification over a newcomer
+  * a total of `[pctWOT] x N` identities have joined since last certification of a newcomer by the issuer. `N` is the `membersCount` field of the block carrying the last certification.
 
 ##### MembersCount
 
-`MembersCount` field must be equal to last block's `MembersCount` plus this block's `Joiners` count, plus this block's `Leavers` count minus this block's `Excluded` count.
+`MembersCount` field must be equal to last block's `MembersCount` plus incoming block's `Joiners` count, minus incoming block's `Leavers` count minus this block's `Excluded` count.
 
 ##### Block fingerprint
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
@@ -776,7 +849,7 @@ Where:
 
 * `[lastBlockNbZeros]` is the number of leading zeros of last written block of the member
 * `[interBlocksCount]` is the number of blocks written by *other* members **between** the 2 last blocks of the member (so, those 2 blocks excluded). Max value is `40 - [powZeroMin]`.
-* `[followingBlocksCount]` is the number of blocks written by *other* members **since** the last block of the member (so, this block excluded).
+* `[followingBlocksCount]` is the number of blocks written by *other* members **since** the last block of the member (so, incoming block excluded).
 
 
 * If no block has been written by the member:
@@ -790,10 +863,10 @@ Where:
 ##### Universal Dividend
 
 * Root block do not have `UniversalDividend` field.
-* Universal Dividend must be present if previous block changed `ConfirmedDate`'s value and that `ConfirmedDate` value is greater or equal to `lastUDTime` + `dt`.
+* Universal Dividend must be present if previous block changed current time and that `ConfirmedDate` value is greater or equal to `lastUDTime` + `dt`.
 * `lastUDTime` is the `ConfirmedDate` of the last block with `UniversalDividend` in it
 * Initial value of `lastUDTime` equals to the root block's `ConfirmedDate`.
-* Value of `UniversalDividend` equals to:
+* Value of `UniversalDividend` (`UD(t+1)`) equals to:
 
 ```
 UD(t+1) = CEIL(MAX(UD(t) ; c * M(t) / N(t+1) ))
@@ -801,21 +874,20 @@ UD(t+1) = CEIL(MAX(UD(t) ; c * M(t) / N(t+1) ))
 
 Where:
 
-* `t` is the number of times `UniversalDividend` field appeared in the blockchain (this block excluded)
-* `c` equals to `c` parameter of this protocol
-* `UD(t)` equals to `UniversalDividend` of the `t`<sup>th</sup> block with `UniversalDividend`
-* `N(t)` equals to `MembersCount` of the `t`<sup>th</sup> block with `UniversalDividend`
-* `M(t)` equals to the sum of all `UD(t)*N(t)` of the blockchain
-* `UD(0)` equals to `ud0` parameter of this protocol
-* `M(0) = 0`
-* `N(0) = 0`
-* `N(t+1)` equals to this block's `MembersCount` field
+* `t` is UD time
+* `UD(t)` is last UD value
+* `c` equals to `[c]` parameter of this protocol
+* `N(t+1)` equals to `MembersCount` of the current block (last written block)
+* `M(t)` equals to the sum of all `UD(t)*N(t)` of the blockchain (from t = 0, to t = now) where:
+  * `N(t)` is the `MembersCount` for `UD(t)`
+  * `UD(0)` equals to `[ud0]` parameter of this protocol
+  * `N(0) = 0`
 
 ##### Transactions
 
 * It cannot exist 2 transactions with an identical source (where `INDEX` is replaced by the correct `PUBLIC_KEY`)
-* For `D` sources, public key must be a member of the WoT for the block `#NUMBER`
-* For `T` sources, public key must be a recipient of the source transaction
+* For `D` sources, public key must be a member for the block `#NUMBER` (so, *before* the block's memberships were applied)
+* For `T` sources, public key must be a recipient of the source transaction, written in the block targeted by the source
 
 ###### Amounts
 
@@ -829,7 +901,6 @@ Protocol is the following: for a given node receiving `Receives` message, it sho
 
 Receives   | Answers    | Impacts
 --------   | -------    | --------
-`ASK`      |            | Answer the estimated status of the node toward asking node. Answer can be any status other than `ASK`.
 `NEW`      | `NEW_BACK` | Consider the emitter as able to receive data. Send `NEW_BACK` as a response.
 `NEW_BACK` |            | Consider the emitter as able to receive data.
 `UP`       | `UP_BACK`  | Consider the emitter as able to receive data.
@@ -842,14 +913,9 @@ UCP suggests the above `Receives` events to be sent according to the following r
 
 Status     | Event
 --------   | --------
-`ASK`      | Should be sent regularly to peers not sending `NEW`, `UP` or `DOWN` status by themselves.
 `NEW`      | Should be sent on the discovering of new nodes.
 `UP`       | Should be sent on startup to nodes which were already sent `NEW`.
 `DOWN`     | May be sent on node's shutdown
-
-#### Time offset
-
-As each peer receives Status messages from other peers, it is able to compare `Time` field to local machine time.
 
 ### Transactions
 

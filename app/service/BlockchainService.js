@@ -1259,7 +1259,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   this.prove = function (block, sigFunc, nbZeros, done) {
-    var powRegexp = new RegExp('^0{' + nbZeros + '}');
+    var powRegexp = new RegExp('^0{' + nbZeros + '}[^0]');
     var pow = "", sig = "", raw = "";
     var start = new Date().timestamp();
     var testsCount = 0;

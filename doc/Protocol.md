@@ -856,7 +856,7 @@ Where:
   * `[lastBlockNbZeros] = 0`
   * `[followingBlocksCount] = 0`
 * If member has written exactly 1 block:
-  * `[interBlocksCount]` equal to the number of different issuers since last `10` blocks.
+  * `[interBlocksCount]` equal to the number of different issuers since last `10` blocks *before* current block.
 
 > Those rules of difficulty adaptation ensures a shared control of the blockchain writing.
 

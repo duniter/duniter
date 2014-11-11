@@ -439,9 +439,11 @@ function GlobalValidator (conf, dao) {
             dao.getCurrent(next);
           },
           last10: function (next) {
-            dao.getLastBlocks(10, next);
+            dao.getLastBlocks(11, next);
           }
-        }, next);
+        }, function (err, res) {
+          next(err, res);
+        });
       },
       function (res, next){
         var current = res.current;
@@ -454,7 +456,8 @@ function GlobalValidator (conf, dao) {
           if (lasts.length == 1) {
             // Number of issuers since last 10 blocks
             var issuers = [];
-            res.last10.forEach(function (block) {
+            var last10beforeCurrent = res.last10.splice(1);
+            last10beforeCurrent.forEach(function (block) {
               if (issuers.indexOf(block.issuer) == -1) {
                 issuers.push(block.issuer);
               }

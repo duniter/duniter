@@ -8,8 +8,10 @@ var PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]
 var TIMESTAMP    = "[1-9][0-9]*";
 var POSITIVE_INT = "[1-9][0-9]*";
 var INTEGER      = "\\d+";
+var BOOLEAN      = "[01]";
 var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 var FINGERPRINT  = "[A-F0-9]{40}";
+var COMMENT      = "[a-zA-Z0-9-_:/;*\[\]()?!^\\+=@&~#{}|\\<>%.]{0,255}";
 
 module.exports = {
 
@@ -59,10 +61,11 @@ module.exports = {
     EXCLUDED: exact(PUBKEY),
   },
   TRANSACTION: {
-    HEADER: exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER),
-    SENDER: exact(PUBKEY),
-    SOURCE: exact(INTEGER + ":(T|D):" + POSITIVE_INT + ":" + FINGERPRINT + ":" + POSITIVE_INT),
-    TARGET: exact(PUBKEY + ":" + POSITIVE_INT)
+    HEADER:  exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN),
+    SENDER:  exact(PUBKEY),
+    SOURCE:  exact(INTEGER + ":(T|D):" + POSITIVE_INT + ":" + FINGERPRINT + ":" + POSITIVE_INT),
+    TARGET:  exact(PUBKEY + ":" + POSITIVE_INT),
+    COMMENT: find("Comment: (" + COMMENT + ")"),
   },
 
   setUDID2Format: function () {

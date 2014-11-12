@@ -14,6 +14,7 @@ var TransactionSchema = new Schema({
   inputs: [String],
   outputs: [String],
   signatures: [String],
+  comment: String,
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
 });
@@ -32,6 +33,7 @@ TransactionSchema.methods = {
       'issuers': this.issuers,
       'inputs': this.inputs,
       'outputs': this.outputs,
+      'comment': this.comment,
       'signatures': this.signatures,
       'raw': this.getRaw(),
       'hash': this.hash
@@ -51,7 +53,7 @@ TransactionSchema.methods = {
       tx.inputs.push({
         index: parseInt(sp[0]),
         pubkey: tx.issuers[parseInt(sp[0])] || '',
-        type: sp[1],
+        type: sp[1], 
         number: parseInt(sp[2]),
         fingerprint: sp[3],
         amount: parseInt(sp[4]),
@@ -68,6 +70,7 @@ TransactionSchema.methods = {
         raw: output
       });
     });
+    tx.comment = this.comment;
     return tx;
   },
 

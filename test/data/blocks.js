@@ -1843,7 +1843,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:3:6:3\n" +
+    "TX:1:3:6:3:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp\n" +
     "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB\n" +
@@ -1881,7 +1881,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:3:6:3\n" +
+    "TX:1:3:6:3:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp\n" +
     "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB\n" +
@@ -1919,7 +1919,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:3:6:3\n" +
+    "TX:1:3:6:3:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp\n" +
     "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB\n" +
@@ -1957,7 +1957,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:1:1:1\n" +
+    "TX:1:1:1:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "0:D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40\n" +
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
@@ -1984,7 +1984,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:1:1:1\n" +
+    "TX:1:1:1:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "0:T:44:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD:120\n" +
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
@@ -2011,7 +2011,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:1:1:1\n" +
+    "TX:1:1:1:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "0:D:55:C3AE457BB31EA0B0DF811CF615E81CB46FEFDBE9:40\n" +
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
@@ -2038,7 +2038,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:1:1:1\n" +
+    "TX:1:1:1:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
@@ -2065,7 +2065,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:1:2:1\n" +
+    "TX:1:1:2:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
     "1:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
@@ -2093,7 +2093,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:0:2:1\n" +
+    "TX:1:0:2:1:0\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
     "3:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
@@ -2119,7 +2119,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:0:1\n" +
+    "TX:1:2:0:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
@@ -2147,7 +2147,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:2:0\n" +
+    "TX:1:2:2:0:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
@@ -2176,7 +2176,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:2:1\n" +
+    "TX:1:2:2:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
@@ -2206,7 +2206,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:2:1\n" +
+    "TX:1:2:2:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
@@ -2236,7 +2236,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:3:1\n" +
+    "TX:1:2:3:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
@@ -2267,7 +2267,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:2:2\n" +
+    "TX:1:2:2:2:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
@@ -2298,7 +2298,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:2:1\n" +
+    "TX:1:2:2:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
@@ -2306,7 +2306,7 @@ module.exports = {
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:80\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
-    "TX:1:1:1:1\n" +
+    "TX:1:1:1:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +
     "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:40\n" +
@@ -2333,7 +2333,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:1:2:2:1\n" +
+    "TX:1:2:2:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "0:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40\n" +

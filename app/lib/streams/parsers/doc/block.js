@@ -133,6 +133,7 @@ function extractTransactions(raw) {
       var nbSignatories = parseInt(sp[2]);
       var nbInputs = parseInt(sp[3]);
       var nbOutputs = parseInt(sp[4]);
+      var hasComment = parseInt(sp[5]);
       var linesToExtract = {
         signatories: {
           start: 1,
@@ -146,20 +147,31 @@ function extractTransactions(raw) {
           start: 1 + nbSignatories + nbInputs,
           end: nbSignatories + nbInputs + nbOutputs
         },
-        signatures: {
+        comments: {
           start: 1 + nbSignatories + nbInputs + nbOutputs,
-          end: 2*nbSignatories + nbInputs + nbOutputs
+          end: nbSignatories + nbInputs + nbOutputs + hasComment
+        },
+        signatures: {
+          start: 1 + nbSignatories + nbInputs + nbOutputs + hasComment,
+          end: 2*nbSignatories + nbInputs + nbOutputs + hasComment
         },
       };
-      ['signatories', 'inputs', 'outputs', 'signatures'].forEach(function(prop){
+      ['signatories', 'inputs', 'outputs', 'comments', 'signatures'].forEach(function(prop){
         for (var j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
           currentTX.raw += lines[i + j] + '\n';
           currentTX[prop] = currentTX[prop] || [];
           currentTX[prop].push(lines[i + j]);
         }
       });
+      // Comment
+      if (hasComment) {
+        currentTX.comment = currentTX.comments[0];
+      } else {
+        currentTX.comment = '';
+      }
+      // Add to txs array
       transactions.push(currentTX)
-      i = i + 2*nbSignatories + nbInputs + nbOutputs;
+      i = i + 2*nbSignatories + nbInputs + nbOutputs + hasComment;
     } else {
       // Not a transaction header, stop reading
       i = lines.length;

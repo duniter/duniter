@@ -17,6 +17,7 @@ function TransactionParser (onError) {
     {prop: "issuers",    regexp: /Issuers:\n([\s\S]*)Inputs/, parser: extractIssuers },
     {prop: "inputs",     regexp: /Inputs:\n([\s\S]*)Outputs/, parser: extractInputs },
     {prop: "outputs",    regexp: /Outputs:\n([\s\S]*)/,       parser: extractOutputs },
+    {prop: "comment",    regexp: constants.TRANSACTION.COMMENT },
     {prop: "signatures", regexp: /Outputs:\n([\s\S]*)/,       parser: extractSignatures }
   ];
   var multilineFields = [];

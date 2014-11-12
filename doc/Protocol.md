@@ -283,6 +283,7 @@ A transaction is defined by the following format:
     Outputs:
     PUBLIC_KEY:AMOUNT
     ...
+    Comment: COMMENT
     SIGNATURES
     ...
 
@@ -296,6 +297,7 @@ Field | Description
 `Issuers` | a list of public key, followed by a sequential integer
 `Inputs` | a list linking `Issuers` (via INDEX) to coin sources
 `Outputs` | a list of public keys and amounts allowed to them
+`Comment` | a comment to write on the transaction
 
 #### Validity
 
@@ -307,6 +309,7 @@ A Transaction structure is considered *valid* if:
 * Field `Issuers` is a multiline field whose lines are public keys.
 * Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, an integer, a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
+* Field `Comment` is a string of maximum 255 characters, exclusively composed of alphanumeric characters, `-`, `_`, `:`, `/`, `;`, `*`, `[`, `]`, `(`, `)`, `?`, `!`, `^`, `+`, `=`, `@`, `&`, `~`, `#`, `{`, `}`, `|`, `\`, `<`, `>`, `%`, `.`. Must be present even if empty.
 
 #### Example 1
 
@@ -322,6 +325,7 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its va
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:25
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:5
+    Comment: First transaction
     
 Signatures (fake here):
 
@@ -342,6 +346,7 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction writte
     0:D:88:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:11
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
+    Comment: 
     
 Signatures (fake here):
 
@@ -369,6 +374,7 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:120
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:146
     6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49
+    Comment: -----@@@----- (why not this comment?)
     
 Signatures (fakes here):
 
@@ -380,19 +386,30 @@ Signatures (fakes here):
 
 A transaction may be described under a more compact format, to be used under [Block](#block) document. General format is:
 
-    TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS
+    TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS:HAS_COMMENT
     PUBLIC_KEY:INDEX
     ...
     INDEX:SOURCE:FINGERPRINT:AMOUNT
     ...
     PUBLIC_KEY:AMOUNT
     ...
+    COMMENT
     SIGNATURE
     ...
 
+Here is an example compacting above [example 2](#example-2):
+
+    TX:1:1:3:1:0
+    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+    0:T:65:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:4
+    0:T:77:F80993776FB55154A60B3E58910C942A347964AD:15
+    0:D:88:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:11
+    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
+    42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
+
 Here is an example compacting above [example 3](#example-3):
 
-    TX:1:3:6:3
+    TX:1:3:6:3:1
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
@@ -405,6 +422,7 @@ Here is an example compacting above [example 3](#example-3):
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:120
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:146
     6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49
+    -----@@@----- (why not this comment?)
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
     2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
     2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk

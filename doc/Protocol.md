@@ -850,9 +850,6 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 * A certification's `PUBKEY_TO` must be a member **or** be in incoming block's `Joiners`.
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
 * A certification whose `PUBKEY_FROM` and `PUBKEY_TO` are the same than an existing certification in the blockchain can be written **only if** last certification is considered replayable.
-* A certifcation over a newcomer (public key in `Identities`) can be made only if:
-  * certification issuer has never made certification over a newcomer
-  * a total of `[pctWOT] x N` identities have joined since last certification of a newcomer by the issuer. `N` is the `membersCount` field of the block carrying the last certification.
 
 ##### MembersCount
 

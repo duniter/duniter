@@ -12,6 +12,8 @@ var Configuration = mongoose.model('Configuration', require('../../../app/models
 
 var conf = new Configuration({
   sigDelay: 365.25*24*3600, // 1 year
+  msValidity: 365.25*24*3600, // 1 year
+  sigValidity: 365.25*24*3600, // 1 year
   sigQty: 1,
   powZeroMin: 1,
   powPeriod: 18,
@@ -116,6 +118,12 @@ describe("Block global coherence:", function(){
     done();
   }));
 
+  it('a block with expired membership should fail', test('checkJoiners', blocks.EXPIRED_MEMBERSHIP, function (err, done) {
+    should.exist(err);
+    err.should.equal('Membership has expired');
+    done();
+  }));
+
   it('a block with at least one joiner outdistanced from WoT should fail', test('checkJoinersAreNotOudistanced', blocks.OUTDISTANCED_JOINER, function (err, done) {
     should.exist(err);
     err.should.equal('Joiner/Active is outdistanced from WoT');
@@ -148,7 +156,7 @@ describe("Block global coherence:", function(){
 
   it('a block with expired certifications should fail', test('checkCertificationsAreValid', blocks.EXPIRED_CERTIFICATIONS, function (err, done) {
     should.exist(err);
-    err.should.equal('Certification is expired');
+    err.should.equal('Certification has expired');
     done();
   }));
 
@@ -624,6 +632,8 @@ function BlockCheckerDao (block) {
       done(null, {});
     else if (number == 3 && hash == 'A9B751F5D24A3F418815BD9CE2766759E21E9E21')
       done(null, {});
+    else if (number == 70 && hash == '3BAF425A914349B9681A444B5A2F59EEA55D2663')
+      done(null, { confirmedDate: 1411775000 });
     else
       done(null, null);
   }

@@ -195,8 +195,8 @@ function GlobalValidator (conf, dao) {
           next('Identity does not exist for certified');
           return;
         }
-        else if (res.current && res.current.confirmedDate > res.target.confirmedDate + conf.sigDelay) {
-          next('Certification is expired');
+        else if (res.current && res.current.confirmedDate > res.target.confirmedDate + conf.sigValidity) {
+          next('Certification has expired');
         }
         else if (cert.from == res.idty.pubkey)
           next('Rejected certification: certifying its own self-certification has no meaning');
@@ -644,9 +644,32 @@ function GlobalValidator (conf, dao) {
     else if (block.number == 0) {
       done(); // Valid for root block
     } else {
-      dao.findBlock(ms.number, ms.fpr, function (err, theBlock) {
-        done(err || (theBlock == null && 'Membership based on an unexisting block') || null);
-      });
+      async.waterfall([
+        function (next) {
+          dao.findBlock(ms.number, ms.fpr, function (err, basedBlock) {
+            next(err || (basedBlock == null && 'Membership based on an unexisting block') || null, basedBlock);
+          });
+        },
+        function (basedBlock, next) {
+          async.parallel({
+            target: function (next) {
+              next(null, basedBlock);
+            },
+            current: function (next) {
+              if (block.number == 0)
+                next(null, null);
+              else
+                dao.getCurrent(next);
+            }
+          }, next);
+        },
+        function (res, next) {
+          if (res.current && res.current.confirmedDate > res.target.confirmedDate + conf.msValidity) {
+            next('Membership has expired');
+          }
+          else next();
+        }
+      ], done);
     }
   }
 

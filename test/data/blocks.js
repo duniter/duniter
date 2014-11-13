@@ -919,6 +919,27 @@ module.exports = {
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
+  EXPIRED_MEMBERSHIP: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 90\n" +
+    "Date: 1443333600\n" +
+    "ConfirmedDate: 1443333600\n" +
+    "Issuer: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:s9DSBEAIbLi1HjBvXaHySApHo0HBkE9Ibxm10k/zUvmP49+FLg1IbXGj0JK6Y5SsywTcPWyQXseqXGSeGiIjAw==:1415734556:tac\n" +
+    "Joiners:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:25xK7+ph7IYeN9Hu8PvuIBjYdVURYtvKayPHZg7zrrYTs6ii2fMtk5J65a3bT/NKr2Qsd7I5TCL29QyiAXa7BA==:70:3BAF425A914349B9681A444B5A2F59EEA55D2663:1415734556:tac\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
   NOT_ENOUGH_CERTIFICATIONS_JOINER: 
     "Version: 1\n" +
     "Type: Block\n" +

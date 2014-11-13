@@ -779,6 +779,12 @@ A certification is to be considered valid if its age is less or equal to `[sigVa
     VALID   = AGE <= [sigValidity]
     EXPIRED = AGE > [sigValidity]
 
+###### Membership validity
+A membership is to be considered valid if its age is less or equal to `[msValidity]`:
+
+    VALID   = AGE <= [msValidity]
+    EXPIRED = AGE > [msValidity]
+
 ###### Certification replayability
 A certification is to be considered replayable if its age is greater than `[sigDelay]`:
 
@@ -816,6 +822,7 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Joiners, Actives, Leavers (block fingerprint based memberships)
 
+* A membership must not be expired.
 * Block#0's memberships' `NUMBER` must be `0` and `HASH` the special value `DA39A3EE5E6B4B0D3255BFEF95601890AFD80709` (SHA1 of empty string).
 * Other blocks' memberships' `NUMBER` and `HASH` field must match an existing block in the blockchain.
 * Each membership's `NUMBER` must be higher than previous membership's `NUMBER` of the same issuer.

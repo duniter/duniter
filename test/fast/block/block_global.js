@@ -146,6 +146,12 @@ describe("Block global coherence:", function(){
     done();
   }));
 
+  it('a block with expired certifications should fail', test('checkCertificationsAreValid', blocks.EXPIRED_CERTIFICATIONS, function (err, done) {
+    should.exist(err);
+    err.should.equal('Certification is expired');
+    done();
+  }));
+
   it('a block with certification from non-member pubkey should fail', test('checkCertificationsAreMadeByMembers', blocks.UNKNOWN_CERTIFIER, function (err, done) {
     should.exist(err);
     err.should.equal('Certification from non-member');
@@ -483,6 +489,8 @@ function BlockCheckerDao (block) {
     // Tests for TrialLevel
     else if (block.number >= 60 && block.number <= 66)
       done(null, { number: block.number - 1 });
+    else if (block.number == 90)
+      done(null, { date: 1443333600, confirmedDate: 1443333600, confirmedDateChanged: true });
     else
       done(null, null);
   }
@@ -490,6 +498,8 @@ function BlockCheckerDao (block) {
   this.getBlock = function (number, done) {
     if (number == 0)      
       done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709' });
+    else if (number == 70)      
+      done(null, { confirmedDate: 1411775000 });
     else
       done('No block found', null);
   }

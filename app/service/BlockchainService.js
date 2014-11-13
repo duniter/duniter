@@ -515,7 +515,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   function computeObsoleteLinks (block, done) {
     async.waterfall([
       function (next){
-        Link.obsoletes(block.timestamp - conf.sigValidity, next);
+        Link.obsoletes(block.confirmedDate - conf.sigValidity, next);
       },
       function (next){
         Identity.getMembers(next);

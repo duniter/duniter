@@ -850,14 +850,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var transactions = [];
     async.waterfall([
       function (next){
-        // Second, check for newcomers
         Block.current(function (err, currentBlock) {
           current = currentBlock;
             next();
         });
       },
       function (next){
-        // Second, check for newcomers
         Block.lastUDBlock(next);
       },
       function (theLastUDBlock, next) {
@@ -869,7 +867,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         toBeKicked.forEach(function (idty) {
           exclusions.push(idty.pubkey);
         });
-        // Second, check for members' key updates
+        // Second, check for WoT inner certifications
         findUpdateFunc(next);
       },
       function (theUpdates, next) {
@@ -932,6 +930,15 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           async.waterfall([
             function (next){
               async.parallel({
+                block: function (callback) {
+                  if (current) {
+                    Block.findByNumberAndHash(ms.number, ms.fpr, function (err, basedBlock) {
+                      callback(null, err ? null : basedBlock);
+                    });
+                  } else {
+                    callback(null, {});
+                  }
+                },
                 identity: function(callback){
                   Identity.getByHash(join.idHash, callback);
                 },
@@ -982,7 +989,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               }, next);
             },
             function (res, next){
-              if (res.identity) {
+              if (res.identity && res.block) {
                 // MS + matching cert are found
                 join.identity = res.identity;
                 join.certs = res.certs;

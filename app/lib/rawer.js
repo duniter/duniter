@@ -158,7 +158,7 @@ module.exports = new function() {
   };
 
   this.getCompactTransaction = function (json) {
-    var raw = ["TX", 1, json.issuers.length, json.inputs.length, json.outputs.length].join(':') + '\n';
+    var raw = ["TX", 1, json.issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
     json.issuers.forEach(function (issuer) {
       raw += issuer + '\n';
     }); 
@@ -171,7 +171,8 @@ module.exports = new function() {
     json.signatures.forEach(function (signature) {
       raw += signature + '\n';
     });
-    raw += json.comment + '\n';
+    if (json.comment)
+      raw += json.comment + '\n';
     return dos2unix(raw);
   };
 

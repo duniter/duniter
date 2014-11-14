@@ -909,14 +909,21 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         Transaction.find({}, next);
       },
       function (txs, next) {
-        var validator = globalValidator(conf, blockchainDao(conn, null));
+        var passingTxs = [];
+        var localValidation = localValidator(conf);
+        var globalValidation = globalValidator(conf, blockchainDao(conn, null));
         async.forEachSeries(txs, function (tx, callback) {
+          var extractedTX = tx.getTransaction();
           async.waterfall([
             function (next) {
-              validator.checkSingleTransaction(tx.getTransaction(), next);
+              localValidation.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
+            },
+            function (next) {
+              globalValidation.checkSingleTransaction(extractedTX, next);
             },
             function (next) {
               transactions.push(tx);
+              passingTxs.push(extractedTX);
               next();
             }
           ], function (err) {

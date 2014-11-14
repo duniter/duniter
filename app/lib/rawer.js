@@ -150,7 +150,7 @@ module.exports = new function() {
     json.outputs.forEach(function (output) {
       raw += output + '\n';
     });
-    raw += "Comment: " + json.comment + "\n";
+    raw += "Comment: " + (json.comment || "") + "\n";
     json.signatures.forEach(function (signature) {
       raw += signature + '\n';
     });

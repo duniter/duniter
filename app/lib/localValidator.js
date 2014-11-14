@@ -281,10 +281,14 @@ function LocalValidator (conf) {
   });
 
   this.checkSingleTransaction = function (tx, done) {
+    checkBunchOfTransactions([tx], done);
+  };
+
+  this.checkBunchOfTransactions = function (txs, done) {
     var that = this;
     var block = {
       getTransactions: function () {
-        return [tx];
+        return txs;
       }
     };
     async.series([

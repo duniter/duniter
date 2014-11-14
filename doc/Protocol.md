@@ -452,6 +452,7 @@ but also other informations like:
     Issuer: ISSUER_KEY
     PreviousHash: PREVIOUS_HASH
     PreviousIssuer: PREVIOUS_ISSUER_KEY
+    Parameters: PARAMETERS
     MembersCount: WOT_MEM_COUNT
     Identities:
     PUBLIC_KEY:SIGNATURE:TIMESTAMP:USER_ID
@@ -489,6 +490,7 @@ UniversalDividend     | Universal Dividend amount                         | **Op
 Issuer                | This block's issuer's public key                  | Always
 PreviousHash          | Previous block fingerprint (SHA-1)             | from Block#1
 PreviousIssuer        | Previous block issuer's public key             | from Block#1
+Parameters            | Currency parameters.                             | **Block#0 only**
 MembersCount          | Number of members in the WoT, this block included | Always
 Identities            | New identities in the WoT                         | Always
 Joiners               | `IN` memberships                                  | Always
@@ -525,6 +527,9 @@ To be a valid, a block must match the following rules:
   * `BLOCK_NUMBER` : a positive integer
   * `SIGNATURE` : a [Signature](#signature) of the certification
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
+* `Parameters` is a simple line field, composed of 1 float and 10 integers all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
+
+        c:dt:ud0:sigDelay:sigValidity:sigQty:msValidity:stepMax:powZeroMin:dtDateMin:incDateMin
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -694,6 +699,11 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 
 * `PreviousIssuer` must be present if `Number` field is over `0` value.
 * `PreviousIssuer` must not be present if `Number` field equals `0` value.
+
+##### Parameters
+
+* `Parameters` must be present if `Number` field equals `0` value.
+* `Parameters` must not be present if `Number` field is over `0` value.
 
 ##### Signature
 

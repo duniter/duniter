@@ -54,6 +54,16 @@ LinkSchema.statics.getObsoletesFromTo = function (from, to, done) {
     });
 }
 
+LinkSchema.statics.existsLinkFromOrAfterDate = function (from, to, maxDate, done) {
+  var Link = this.model('Link');
+  Link
+    .find({ source: from, target: to, timestamp: { $gte: maxDate } })
+    .limit(1)
+    .exec(function (err, links) {
+      done(err, links.length > 0);
+    });
+}
+
 /**
 * Mark as obsolete the links with an age equal to or below a given date
 **/

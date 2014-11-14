@@ -455,7 +455,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       new Link({
         source: cert.from,
         target: cert.to,
-        timestamp: block.timestamp
+        timestamp: block.confirmedDate
       })
       .save(function (err) {
         callback(err);
@@ -725,24 +725,45 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   function findUpdates (done) {
     var updates = {};
+    var updatesToFrom = {};
+    var current;
     async.waterfall([
-      function (next){
+      function (next) {
+        BlockchainService.current(next);
+      },
+      function (theCurrent, next){
+        current = theCurrent;
         Certification.findNew(next);
       },
       function (certs, next){
         async.forEachSeries(certs, function(cert, callback){
           async.waterfall([
-            function (next){
-              // Signatory must be a member
-              Identity.isMemberOrError(cert.from, next);
+            function (next) {
+              if (current) {
+                // Already exists a link not replayable yet?
+                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.confirmedDate - conf.sigDelay, next);
+              }
+              else next(null, false);
+            },
+            function (exists, next) {
+              if (exists)
+                next('It already exists a similar certification written, which is not replayable yet');
+              else {
+                // Signatory must be a member
+                Identity.isMemberOrError(cert.from, next);
+              }
             },
             function (next){
               // Certified must be a member
               Identity.isMemberOrError(cert.to, next);
             },
             function (next){
+              updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
               updates[cert.to] = updates[cert.to] || [];
-              updates[cert.to].push(cert);
+              if (updatesToFrom[cert.to].indexOf(cert.pubkey) == -1) {
+                updates[cert.to].push(cert);
+                updatesToFrom[cert.to].push(cert.pubkey);
+              }
               next();
             },
           ], function (err) {
@@ -966,14 +987,28 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                       },
                       function (certs, next) {
                         var finalCerts = [];
+                        var certifiers = [];
                         async.forEachSeries(certs, function (cert, callback) {
                           async.waterfall([
                             function (next) {
-                              Identity.isMember(cert.pubkey, next);
+                              if (current) {
+                                // Already exists a link not replayable yet?
+                                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.confirmedDate - conf.sigDelay, next);
+                              }
+                              else next(null, false);
+                            },
+                            function (exists, next) {
+                              if (exists)
+                                next('It already exists a similar certification written, which is not replayable yet');
+                              else
+                                Identity.isMember(cert.pubkey, next);
                             },
                             function (isMember, next) {
-                              if (isMember)
+                              var doubleSignature = ~certifiers.indexOf(cert.pubkey) ? true : false;
+                              if (isMember && !doubleSignature) {
+                                certifiers.push(cert.pubkey);
                                 finalCerts.push(cert);
+                              }
                               next();
                             }
                           ], function (err) {
@@ -1429,7 +1464,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (theUpdates, next) {
         updates = theUpdates;
-        console.log(updates);
         var checkingWoTFunc = function (newcomers, checkWoTForNewcomers, done) {
           checkWoTForNewcomers(newcomers, function (err) {
             // If success, simply add all newcomers. Otherwise, stop everything.

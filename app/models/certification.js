@@ -62,7 +62,10 @@ CertificationSchema.statics.to = function (pubkey, done) {
 
 CertificationSchema.statics.toTarget = function (hash, done) {
   var Certification = this.model('Certification');
-  Certification.find({ "target": hash }, function (err, certs) {
+  Certification
+    .find({ "target": hash })
+    .sort({ "block_number": "-1" })
+    .exec(function (err, certs) {
     done(err, certs);
   });
 };
@@ -76,8 +79,11 @@ CertificationSchema.statics.from = function (pubkey, done) {
 
 CertificationSchema.statics.findNew = function (done) {
   var Certification = this.model('Certification');
-  Certification.find({ "linked": false }, function (err, certs) {
-    done(err, certs);
+  Certification
+    .find({ "linked": false })
+    .sort({ "block_number": "-1" })
+    .exec(function (err, certs) {
+      done(err, certs);
   });
 };
 

@@ -35,9 +35,6 @@ function TransactionService (conn, conf, PeeringService) {
         localValidation.checkSingleTransaction(tx.getTransaction(), next);
       },
       function (next) {
-        localValidation.checkSingleTransactionSignature(tx.getTransaction(), next);
-      },
-      function (next) {
         globalValidation.checkSingleTransaction(tx.getTransaction(), next);
       },
       function (next) {

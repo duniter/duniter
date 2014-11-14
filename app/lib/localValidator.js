@@ -31,7 +31,6 @@ function LocalValidator (conf) {
       async.apply(that.checkPubkeyUnicity,                        block),
       async.apply(that.checkCertificationUnicity,                 block),
       async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
-      async.apply(that.checkTxIdenticalSources,                   block),
       async.apply(that.checkTxIssuers,                            block),
       async.apply(that.checkTxSources,                            block),
       async.apply(that.checkTxRecipients,                         block),
@@ -58,7 +57,6 @@ function LocalValidator (conf) {
       async.apply(that.checkPubkeyUnicity,                        block),
       async.apply(that.checkCertificationUnicity,                 block),
       async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
-      async.apply(that.checkTxIdenticalSources,                   block),
       async.apply(that.checkTxIssuers,                            block),
       async.apply(that.checkTxSources,                            block),
       async.apply(that.checkTxRecipients,                         block),
@@ -167,15 +165,6 @@ function LocalValidator (conf) {
 
   this.checkCertificationIsntForLeaverOrExcluded = check(function (block, done) {
     if (hasCertificationsFromLeaversOrExcluded(block)) {
-      done('Block cannot contain certifications concerning leavers or excluded members');
-      return;
-    }
-    else
-      done();
-  });
-
-  this.checkTxIdenticalSources = checkTxs(function (tx, done) {
-    if (hasCertificationsFromLeaversOrExcluded(tx)) {
       done('Block cannot contain certifications concerning leavers or excluded members');
       return;
     }
@@ -292,8 +281,19 @@ function LocalValidator (conf) {
   });
 
   this.checkSingleTransaction = function (tx, done) {
+    var that = this;
+    var block = {
+      getTransactions: function () {
+        return [tx];
+      }
+    };
     async.series([
-      async.apply(checkTransactionCoherence, tx)
+      async.apply(that.checkTxIssuers,          block),
+      async.apply(that.checkTxSources,          block),
+      async.apply(that.checkTxRecipients,       block),
+      async.apply(that.checkTxSums,             block),
+      async.apply(that.checkTxIndexes,          block),
+      async.apply(that.checkTxSignature,        block)
     ], function (err) {
       done(err);
     });
@@ -523,7 +523,7 @@ function checkTransactionsSignature (block, done) {
 }
 
 function checkSingleTransactionSignature (tx, done) {
-  var json = { "version": tx.version, "currency": tx.currency, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [] };
+  var json = { "version": tx.version, "currency": tx.currency, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
   tx.inputs.forEach(function (input) {
     json.inputs.push(input.raw);
   });
@@ -556,14 +556,4 @@ function checkStatusSignature (status, done) {
   var pub = status.from;
   var signaturesMatching = crypto.verify(raw, sig, pub);
   done(signaturesMatching ? null : 'Signature from a status must match');
-}
-
-function checkTransactionCoherence (tx, done) {
-  async.waterfall([
-    function (next) {
-      if (tx.signatures.length == 0) {
-        next('A transaction must have at least 1 signature'); return;
-      }
-    }
-  ], done);
 }

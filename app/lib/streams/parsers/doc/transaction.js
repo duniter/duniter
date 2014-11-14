@@ -25,6 +25,7 @@ function TransactionParser (onError) {
 
   this._clean = function (obj) {
     obj.coins = obj.coins || [];
+    obj.comment = obj.comment || "";
   };
 
   this._verify = function(obj){

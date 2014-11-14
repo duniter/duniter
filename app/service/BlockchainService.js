@@ -46,7 +46,7 @@ var computationTimeoutDone = false;
 function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   var BlockchainService = this;
-
+  
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
   var Membership    = conn.model('Membership');
@@ -54,6 +54,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Link          = conn.model('Link');
   var Source        = conn.model('Source');
   var Transaction   = conn.model('Transaction');
+  var Configuration = conn.model('Configuration');
 
   // Flag to say wether timestamp of received keyblocks should be tested
   // Useful for synchronisation of old blocks
@@ -476,6 +477,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (next) {
+        saveParametersForRootBlock(block, next);
+      },
+      function (next) {
         // Create/Update members (create new identities if do not exist)
         updateMembers(block, next);
       },
@@ -510,6 +514,27 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     ], function (err) {
       done(err, block);
     });
+  }
+
+  function saveParametersForRootBlock (block, done) {
+    if (block.parameters) {
+      var sp = block.parameters.split(':');
+      conf.c           = parseFloat(sp[0]);
+      conf.dt          = parseInt(sp[1]);
+      conf.ud0         = parseInt(sp[2]);
+      conf.sigDelay    = parseInt(sp[3]);
+      conf.sigValidity = parseInt(sp[4]);
+      conf.sigQty      = parseInt(sp[5]);
+      conf.msValidity  = parseInt(sp[6]);
+      conf.stepMax     = parseInt(sp[7]);
+      conf.powZeroMin  = parseInt(sp[8]);
+      conf.dtDateMin   = parseInt(sp[9]);
+      conf.incDateMin  = parseInt(sp[10]);
+      conf.save(function (err) {
+        done(err);
+      });
+    }
+    else done();
   }
 
   function computeObsoleteLinks (block, done) {

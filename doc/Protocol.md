@@ -657,11 +657,10 @@ sigDelay    | Minimum delay between 2 identical certifications (same pubkeys)
 sigValidity | Maximum age of a valid signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
 msValidity  | Maximum age of a valid membership (in seconds)
-stepMax     | Maximum step between the each WoT member and a newcomer
+stepMax     | Maximum distance between each WoT member and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
 dtDateMin   | Number of seconds that can be added to current date
 incDateMin  | Minimum number of confirmations to increment the current date.
-pctWOT      | Percent of WoT variations required to allow the certification of another newcomer
 
 ### Computed variables
 

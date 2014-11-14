@@ -23,7 +23,7 @@ var ConfigurationSchema = new Schema({
   sigValidity: {"type": Number, "default": 3600*24*365}, // 1 year by default
   msValidity:  {"type": Number, "default": 3600*24*365}, // 1 year by default
   sigQty:      {"type": Number, "default": 5},
-  powZeroMin:  {"type": Number, "default": 4},
+  powZeroMin:  {"type": Number, "default": 1},
   powPeriod:   {"type": Number, "default": 1},
   powDelay:    {"type": Number, "default": 0}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the keychain

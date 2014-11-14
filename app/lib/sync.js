@@ -85,30 +85,6 @@ module.exports = function Synchroniser (server, host, port, conf) {
         },
 
         //============
-        // Parameters
-        //============
-        function (next){
-          node.blockchain.parameters(next);
-        },
-        function (params, body, next){
-          conf.currency    = params.currency;
-          conf.c           = params.c;
-          conf.dt          = params.dt;
-          conf.ud0         = params.ud0;
-          conf.sigDelay    = params.sigDelay;
-          conf.sigValidity = params.sigValidity;
-          conf.sigQty      = params.sigQty;
-          conf.stepMax     = params.stepMax;
-          conf.powZeroMin  = params.powZeroMin;
-          conf.powPeriod   = params.powPeriod;
-          conf.incDateMin  = params.incDateMin;
-          conf.dtDateMin   = params.dtDateMin;
-          conf.save(function (err) {
-            next(err);
-          });
-        },
-
-        //============
         // Blockchain
         //============
         function (next){

@@ -61,6 +61,7 @@ BlockSchema.methods = {
       "issuer",
       "signature",
       "hash",
+      "parameters",
     ].forEach(function(field){
       json[field] = that[field] || "";
     });

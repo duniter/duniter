@@ -292,7 +292,7 @@ function LocalValidator (conf) {
   });
 
   this.checkSingleTransaction = function (tx, done) {
-    checkBunchOfTransactions([tx], done);
+    this.checkBunchOfTransactions([tx], done);
   };
 
   this.checkBunchOfTransactions = function (txs, done) {

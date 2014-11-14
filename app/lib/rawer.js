@@ -97,6 +97,8 @@ module.exports = new function() {
       raw += "PreviousHash: " + json.previousHash + "\n";
     if(json.previousIssuer)
       raw += "PreviousIssuer: " + json.previousIssuer + "\n";
+    if(json.parameters)
+      raw += "Parameters: " + json.parameters + "\n";
     raw += "MembersCount: " + json.membersCount + "\n";
     raw += "Identities:\n";
     for(var i = 0; i < json.identities.length; i++){

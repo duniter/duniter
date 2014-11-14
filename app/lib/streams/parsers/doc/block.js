@@ -21,6 +21,7 @@ function BlockParser (onError) {
     {prop: "confirmedDate",   regexp: /ConfirmedDate: (.*)/},
     {prop: "dividend",        regexp: /UniversalDividend: (.*)/},
     {prop: "issuer",          regexp: /Issuer: (.*)/},
+    {prop: "parameters",      regexp: constants.BLOCK.PARAMETERS},
     {prop: "previousHash",    regexp: constants.BLOCK.PREV_HASH},
     {prop: "previousIssuer",  regexp: constants.BLOCK.PREV_ISSUER},
     {prop: "membersCount",    regexp: /MembersCount: (.*)/},

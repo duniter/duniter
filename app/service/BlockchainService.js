@@ -1201,6 +1201,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
     block.number = current ? current.number + 1 : 0;
+    block.parameters = block.number > 0 ? '' : [
+      conf.c, conf.dt, conf.ud0,
+      conf.sigDelay, conf.sigValidity,
+      conf.sigQty, conf.msValidity,
+      conf.stepMax, conf.powZeroMin, conf.dtDateMin, conf.incDateMin
+    ].join(':');
     var now = moment.utc().startOf('minute').unix();
     if (current) {
       var nextDate = current.confirmedDate + conf.dtDateMin;

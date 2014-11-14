@@ -19,6 +19,7 @@ function LocalValidator (conf) {
   this.validate = function (block, done) {
     var that = this;
     async.series([
+      async.apply(that.checkParameters,                           block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
       async.apply(that.checkBlockSignature,                       block),
@@ -48,6 +49,7 @@ function LocalValidator (conf) {
   this.validateWithoutSignatures = function (block, done) {
     var that = this;
     async.series([
+      async.apply(that.checkParameters,                           block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
       async.apply(that.checkBlockDates,                           block),
@@ -66,6 +68,15 @@ function LocalValidator (conf) {
       done(err);
     });
   };
+
+  this.checkParameters = check(function (block, done) {
+    if (block.number == 0 && !block.parameters)
+      done('Parameters must be provided for root block');
+    else if (block.number > 0 && block.parameters)
+      done('Parameters must not be provided for non-root block');
+    else
+      done();
+  });
 
   this.checkPreviousHash = check(function (block, done) {
     if (block.number == 0 && block.previousHash)

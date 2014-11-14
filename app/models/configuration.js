@@ -18,6 +18,7 @@ var ConfigurationSchema = new Schema({
   salt:        {"type": String, "default": ""},
   passwd:      {"type": String, "default": ""},
   upInterval:  {"type": Number, "default": 3600*1000},
+  stepMax:     {"type": Number, "default": 3}, // Max distance between WoT members and newcomers
   sigDelay:    {"type": Number, "default": 3600*24*365*5}, // 5 years by default
   sigValidity: {"type": Number, "default": 3600*24*365}, // 1 year by default
   msValidity:  {"type": Number, "default": 3600*24*365}, // 1 year by default

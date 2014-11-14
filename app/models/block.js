@@ -18,6 +18,7 @@ var BlockSchema = new Schema({
   monetaryMass: {"type": Number, "default": 0},
   previousHash: String,
   previousIssuer: String,
+  parameters: String,
   membersCount: {"type": Number, "default": 0},
   newDateNth: {"type": Number, "default": 0},
   confirmedDateChanged: {"type": Boolean, "default": false},

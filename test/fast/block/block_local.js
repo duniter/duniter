@@ -40,6 +40,16 @@ describe("Block local coherence", function(){
       done();
     }));
 
+    it('if root block does not have Parameters', test('checkParameters', blocks.ROOT_WITHOUT_PARAMETERS, function (err, done) {
+      assert.equal(err, 'Parameters must be provided for root block');
+      done();
+    }));
+
+    it('if non-root has Parameters', test('checkParameters', blocks.NON_ROOT_WITH_PARAMETERS, function (err, done) {
+      assert.equal(err, 'Parameters must not be provided for non-root block');
+      done();
+    }));
+
     it('if root block has PreviousHash', test('checkPreviousHash', blocks.ROOT_WITH_PREVIOUS_HASH, function (err, done) {
       assert.equal(err, 'PreviousHash must not be provided for root block');
       done();

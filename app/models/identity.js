@@ -193,7 +193,7 @@ IdentitySchema.statics.setKicked = function(pubkey, hash, notEnoughLinks, done){
 
 IdentitySchema.statics.kickWithOutdatedMemberships = function(maxNumber, done){
   var Identity = this.model('Identity');
-  Identity.update({ "currentMSN": { $lt: maxNumber } }, { kick: true }, function (err) {
+  Identity.update({ "currentMSN": { $lt: maxNumber }, "member": true }, { kick: true }, function (err) {
     done(err);
   });
 };

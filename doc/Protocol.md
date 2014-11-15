@@ -529,7 +529,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float and 10 integers all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigValidity:sigQty:msValidity:stepMax:powZeroMin:dtDateMin:incDateMin
+        c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:powZeroMin:dtDateMin:incDateMin
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -661,6 +661,7 @@ ud0         | UD(0), i.e. initial Universal Dividend
 sigDelay    | Minimum delay between 2 identical certifications (same pubkeys)
 sigValidity | Maximum age of a valid signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
+sigWoT      | Minimum quantity of valid made certifications to be part of the WoT for distance rule
 msValidity  | Maximum age of a valid membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
 powZeroMin  | Minimum number of zeros for a Proof-of-Work
@@ -838,7 +839,7 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Joiners, Actives (Web of Trust distance constraint)
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for each WoT member, a path using certifications (this block included), leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for each WoT member with at least `[sigWoT]` valid certifications emitted (incoming block excluded), a path using certifications (this block included), leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
 
 ##### Joiners
 

@@ -89,14 +89,23 @@ module.exports = function Synchroniser (server, host, port, conf) {
         //============
         function (next){
           logger.info('Downloading Blockchain...');
-          node.blockchain.current(function (err, current) {
-            next(null, err ? null : current);
-          });
+          async.parallel({
+            localCurrent: function (next) {
+              BlockchainService.current(next);
+            },
+            remoteCurrent: function (next) {
+              node.blockchain.current(function (err, current) {
+                next(null, err ? null : current);
+              });
+            }
+          }, next);
         },
-        function (current, next) {
-          var i = 0;
+        function (res, next) {
+          var lCurrent = res.localCurrent;
+          var rCurrent = res.remoteCurrent;
+          var i = lCurrent ? lCurrent.number + 1 : 0;
           async.whilst(
-            function () { return current ? i <= current.number : false; },
+            function () { return rCurrent ? i <= rCurrent.number : false; },
             function (callback) {
                 async.waterfall([
                   function (next) {

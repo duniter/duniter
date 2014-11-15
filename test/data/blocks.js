@@ -34,12 +34,12 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 1\n" +
+    "Nonce: 9\n" +
     "Number: 0\n" +
     "Date: 1411776000\n" +
     "ConfirmedDate: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "Parameters: 0.7376575:10:100:157680000:31536000:1:31536000:3:1:60:2\n" +
+    "Parameters: 0.7376575:10:100:157680000:31536000:1:1:31536000:3:1:60:2\n" +
     "MembersCount: 3\n" +
     "Identities:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:CTmlh3tO4B8f8IbL8iDy5ZEr3jZDcxkPmDmRPQY74C39MRLXi0CKUP+oFzTZPYmyUC7fZrUXrb3LwRKWw1jEBQ==:1415734556:cat\n" +
@@ -90,7 +90,7 @@ module.exports = {
     "Date: 1411776000\n" +
     "ConfirmedDate: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "Parameters: 0.7376575:10:100:157680000:31536000:1:31536000:3:1:60:2\n" +
+    "Parameters: 0.7376575:10:100:157680000:31536000:1:1:31536000:3:1:60:2\n" +
     "MembersCount: 3\n" +
     "Identities:\n" +
     "Joiners:\n" +

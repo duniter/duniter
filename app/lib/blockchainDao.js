@@ -8,6 +8,8 @@ module.exports = function(conn, block) {
   var Source        = conn.model('Source');
 
   function BlockCheckerDao (block) {
+
+    var dao = this;
     
     this.existsUserID = function (uid, done) {
       async.waterfall([
@@ -56,6 +58,31 @@ module.exports = function(conn, block) {
 
     this.getMembers = function (done) {
       Identity.getMembers(done);
+    }
+
+    this.getMembersWithEnoughSigWoT = function (minSigToWoT, done) {
+      var membersWithEnough = [];
+      async.waterfall([
+        function (next) {
+          Identity.getMembers(next);
+        },
+        function (members, next) {
+          async.forEachSeries(members, function (member, callback) {
+            async.waterfall([
+              function (next) {
+                dao.getValidLinksFrom(member.pubkey, next);
+              },
+              function (links, next) {
+                if (links.length >= minSigToWoT)
+                  membersWithEnough.push(member);
+                next();
+              }
+            ], callback);
+          }, next);
+        }
+      ], function (err) {
+        done(err, membersWithEnough);
+      });
     }
 
     this.getPreviousLinkFromTo = function (from, to, done) {

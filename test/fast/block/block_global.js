@@ -453,6 +453,16 @@ function BlockCheckerDao (block) {
     }
   }
 
+  this.getMembersWithEnoughSigWoT = function (minSigWoT, done) {
+    if (block.number == 0)
+      done(null, []);
+    else {
+      done(null, [
+        { pubkey: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' },
+      ]);
+    }
+  }
+
   this.getPreviousLinkFromTo = function (from, to, done) {
     done(null, []);
   }

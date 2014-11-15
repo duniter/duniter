@@ -247,14 +247,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               },
               function (outdistanced, next) {
                 if (outdistanced.length > 0) {
-                  logger.debug('------ Newcomers ------');
-                  logger.debug(newcomers);
-                  logger.debug('------ Members ------');
-                  logger.debug(ofMembers);
-                  logger.debug('------ newLinks ------');
-                  logger.debug(newLinks);
-                  logger.debug('------ outdistanced ------');
-                  logger.debug(outdistanced);
+                  // logger.debug('------ Newcomers ------');
+                  // logger.debug(newcomers);
+                  // logger.debug('------ Members ------');
+                  // logger.debug(ofMembers);
+                  // logger.debug('------ newLinks ------');
+                  // logger.debug(newLinks);
+                  // logger.debug('------ outdistanced ------');
+                  // logger.debug(outdistanced);
                   next('Newcomer ' + newcomer + ' is not recognized by the WoT for this block');
                 }
                 else next();
@@ -525,11 +525,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       conf.sigDelay    = parseInt(sp[3]);
       conf.sigValidity = parseInt(sp[4]);
       conf.sigQty      = parseInt(sp[5]);
-      conf.msValidity  = parseInt(sp[6]);
-      conf.stepMax     = parseInt(sp[7]);
-      conf.powZeroMin  = parseInt(sp[8]);
-      conf.dtDateMin   = parseInt(sp[9]);
-      conf.incDateMin  = parseInt(sp[10]);
+      conf.sigWoT      = parseInt(sp[6]);
+      conf.msValidity  = parseInt(sp[7]);
+      conf.stepMax     = parseInt(sp[8]);
+      conf.powZeroMin  = parseInt(sp[9]);
+      conf.dtDateMin   = parseInt(sp[10]);
+      conf.incDateMin  = parseInt(sp[11]);
       conf.save(function (err) {
         done(err);
       });
@@ -1229,7 +1230,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
       conf.sigDelay, conf.sigValidity,
-      conf.sigQty, conf.msValidity,
+      conf.sigQty, conf.sigWoT, conf.msValidity,
       conf.stepMax, conf.powZeroMin, conf.dtDateMin, conf.incDateMin
     ].join(':');
     var now = moment.utc().startOf('minute').unix();

@@ -752,7 +752,7 @@ function GlobalValidator (conf, dao) {
     var wotPubkeys = [];
     async.waterfall([
       function (next){
-        dao.getMembers(next);
+        dao.getMembersWithEnoughSigWoT(conf.sigWoT, next);
       },
       function (identities, next){
         // Stacking WoT pubkeys

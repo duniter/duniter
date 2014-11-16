@@ -7,12 +7,14 @@ var Status         = require('../models/statusMessage');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/base58');
 var moment         = require('moment');
+var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 
 function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   
   var currency = conf.currency;
 
+  var Block       = conn.model('Block');
   var Transaction = conn.model('Transaction');
   var Merkle      = conn.model('Merkle');
   var Peer        = conn.model('Peer');
@@ -71,12 +73,20 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
 
   this.submit = function(peering, callback){
     var peer = new Peer(peering);
+    var sp = peer.block.split('-');
+    var number = sp[0], fpr = sp[1];
     async.waterfall([
       function (next) {
         localValidator(null).checkPeerSignature(peer, next);
       },
-      function (next){
-        that.addPeer(peer);
+      function (next) {
+        if (peer.block == constants.PEER.SPECIAL_BLOCK)
+          next(null, null);
+        else
+          // Check if document is based upon an existing block as time reference
+          Block.findByNumberAndHash(number, fpr, next);
+      },
+      function (block, next){
         Peer.find({ pub: peer.pub }, next);
       },
       function (peers, next){
@@ -84,8 +94,10 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
         var previousHash = null;
         if(peers.length > 0){
           // Already existing peer
-          if(peers[0].sigDate > peerEntity.sigDate){
-            next('Cannot record a previous peering');
+          var sp2 = peers[0].block.split('-');
+          var number2 = sp2[0], fpr2 = sp2[1];
+          if(number <= number2){
+            next(constants.ERROR.PEER.ALREADY_RECORDED);
             return;
           }
           peerEntity = peers[0];
@@ -108,18 +120,31 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     var status = new Status(obj);
     var peer;
     var wasStatus = null;
+    var sp = status.block.split('-');
+    var number = sp[0], fpr = sp[1];
     async.waterfall([
       function (next) {
         localValidator(null).checkStatusSignature(status, next);
       },
-      function (next){
+      function (next) {
+        if (status.block == constants.STATUS.SPECIAL_BLOCK)
+          next(null, null);
+        else
+          // Check if document is based upon an existing block as time reference
+          Block.findByNumberAndHash(number, fpr, next);
+      },
+      function (block, next){
         Peer.getTheOne(status.from, next);
       },
       function (theOne, next){
         peer = theOne;
-        if (peer.statusSigDate > status.sigDate) {
-          next('Old status given');
-          return;
+        if (peer.statusBlock) {
+          var sp2 = peer.statusBlock.split('-');
+          var number2 = sp2[0], fpr2 = sp2[1];
+          if(number <= number2){
+            next('Old status given');
+            return;
+          }
         }
         wasStatus = peer.status;
         peer.statusSigDate = status.sigDate;
@@ -220,7 +245,14 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   * @param pubs List of peers' pubs to which status is to be sent
   */
   this.sendStatusTo = function (statusStr, pubs, done) {
+    var current = null;
     async.waterfall([
+      function (next) {
+        Block.current(function (err, block) {
+        current = block;
+          next();
+        });
+      },
       async.apply(Peer.getList.bind(Peer), pubs),
       function (peers, next) {
         async.forEach(peers, function(peer, callback){
@@ -229,6 +261,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
             currency: currency,
             time: new Date(moment.utc().unix()*1000),
             status: statusStr,
+            block: current ? [current.number, current.hash].join('-') : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709',
             from: selfPubkey,
             to: peer.pub
           });

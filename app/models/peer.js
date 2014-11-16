@@ -23,7 +23,10 @@ var PeerSchema = new Schema({
   endpoints: [String],
   signature: String,
   hash: String,
-  status: { type: String, default: STATUS.NOTHING },
+  hash: String,
+  block: { type: String },
+  statusBlock: { type: String },
+  status: { type: String },
   statusSent: { type: String, default: STATUS.NOTHING },
   statusSigDate: { type: Date, default: function(){ return new Date(0); } },
   propagated: { type: Boolean, default: false },
@@ -64,14 +67,14 @@ PeerSchema.methods = {
   
   copyValues: function(to) {
     var obj = this;
-    ["version", "currency", "pub", "endpoints", "hash", "status", "signature"].forEach(function (key) {
+    ["version", "currency", "pub", "endpoints", "hash", "status", "block", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   },
   
   copyValuesFrom: function(from) {
     var obj = this;
-    ["version", "currency", "pub", "endpoints", "signature"].forEach(function (key) {
+    ["version", "currency", "pub", "endpoints", "block", "signature"].forEach(function (key) {
       obj[key] = from[key];
     });
   },
@@ -79,7 +82,7 @@ PeerSchema.methods = {
   json: function() {
     var obj = this;
     var json = {};
-    ["version", "currency", "endpoints", "status", "signature"].forEach(function (key) {
+    ["version", "currency", "endpoints", "status", "block", "signature"].forEach(function (key) {
       json[key] = obj[key];
     });
     json.raw = this.getRaw();

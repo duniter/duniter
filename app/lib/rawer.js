@@ -33,6 +33,7 @@ module.exports = new function() {
     raw += "Type: Peer\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "PublicKey: " + json.pub + "\n";
+    raw += "Block: " + json.block + "\n";
     raw += "Endpoints:" + "\n";
     json.endpoints.forEach(function(ep){
       raw += ep + "\n";
@@ -50,6 +51,7 @@ module.exports = new function() {
     raw += "Type: Status\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Status: " + json.status + "\n";
+    raw += "Block: " + json.block + "\n";
     raw += "From: " + json.from + "\n";
     raw += "To: " + json.to + "\n";
     return dos2unix(raw);

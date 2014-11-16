@@ -17,7 +17,7 @@ function PeerParser (onError) {
     {prop: "version",           regexp: /Version: (.*)/},
     {prop: "currency",          regexp: /Currency: (.*)/},
     {prop: "pub",               regexp: /PublicKey: (.*)/},
-    {prop: "time",              regexp: /Time: (.*)/},
+    {prop: "block",             regexp: constants.PEER.BLOCK},
     {prop: "endpoints",         regexp: /Endpoints:\n([\s\S]*)/, parser: split("\n")},
   ];
   var multilineFields = [];
@@ -59,6 +59,7 @@ function PeerParser (onError) {
       'BAD_IPV6': 154,
       'BAD_PORT': 155,
       'BAD_FINGERPRINT': 156,
+      'BAD_BLOCK': 157,
       'NO_IP_GIVEN': 158
     }
     if(!err){
@@ -70,6 +71,11 @@ function PeerParser (onError) {
       // PublicKey
       if(!obj.pub || !obj.pub.match(constants.BASE58))
         err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect PublicKey field"};
+    }
+    if(!err){
+      // Block
+      if(!obj.block)
+        err = {code: codes['BAD_BLOCK'], message: "Incorrect Block field"};
     }
     // Basic Merkled API requirements
     var bma = obj.getBMA();

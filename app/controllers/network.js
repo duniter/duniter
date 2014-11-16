@@ -13,6 +13,7 @@ var link2pubkey      = require('../lib/streams/link2pubkey');
 var extractSignature = require('../lib/streams/extractSignature');
 var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger');
+var constants        = require('../lib/constants');
 var plogger          = logger('peering');
 var slogger          = logger('status');
 
@@ -87,36 +88,45 @@ function NetworkBinding (peerServer, conf) {
     var onError = http400(res);
     async.waterfall([
       function (next) {
+        function errorPeer (err) {
+          if (err == constants.ERROR.PEER.ALREADY_RECORDED)
+            next();
+          else
+            next(err);
+        }
         // If peer is provided, parse it first
         if (req.body && req.body.peer) {
-          http2raw.peer(req, onError)
+          http2raw.peer(req, errorPeer)
             .pipe(dos2unix())
-            .pipe(parsers.parsePeer(onError))
-            .pipe(versionFilter(onError))
-            .pipe(currencyFilter(conf.currency, onError))
-            // .pipe(verifySignature(onError))
-            .pipe(peerServer.singleWriteStream(onError))
-            .pipe(es.mapSync(function () {
+            .pipe(parsers.parsePeer(errorPeer))
+            .pipe(versionFilter(errorPeer))
+            .pipe(currencyFilter(conf.currency, errorPeer))
+            // .pipe(verifySignature(errorPeer))
+            .pipe(peerServer.singleWriteStream(errorPeer))
+            .pipe(es.mapSync(function (data) {
               next();
             }))
         }
         else next();
       },
       function (next) {
-        http2raw.status(req, onError)
+        http2raw.status(req, next)
           .pipe(dos2unix())
-          .pipe(parsers.parseStatus(onError))
-          .pipe(versionFilter(onError))
-          .pipe(currencyFilter(conf.currency, onError))
-          // .pipe(extractSignature(onError))
-          // .pipe(link2pubkey(peerServer.PublicKeyService, onError))
-          // .pipe(verifySignature(onError))
-          .pipe(peerServer.singleWriteStream(onError))
+          .pipe(parsers.parseStatus(next))
+          .pipe(versionFilter(next))
+          .pipe(currencyFilter(conf.currency, next))
+          // .pipe(extractSignature(next))
+          // .pipe(link2pubkey(peerServer.PublicKeyService, next))
+          // .pipe(verifySignature(next))
+          .pipe(peerServer.singleWriteStream(next))
           .pipe(jsoner())
           .pipe(es.stringify())
           .pipe(res);
         next();
       }
-    ]);
+    ], function (err) {
+      if (err)
+        onError(err);
+    });
   }
 }

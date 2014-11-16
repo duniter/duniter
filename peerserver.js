@@ -9,6 +9,7 @@ var WOTServer   = require('./wotserver');
 var signature   = require('./app/lib/signature');
 var parsers     = require('./app/lib/streams/parsers/doc');
 var multicaster = require('./app/lib/streams/multicaster');
+var constants   = require('./app/lib/constants');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
@@ -244,8 +245,13 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   this.initPeeringEntry = function (conn, conf, done) {
     var Peer = conn.model('Peer');
     var currency = conf.currency;
+    var current = null;
     async.waterfall([
       function (next) {
+        that.BlockchainService.current(next);
+      },
+      function (currentBlock, next) {
+        current = currentBlock;
         Peer.find({ pub: that.PeeringService.pubkey }, next);
       },
       function (peers, next) {
@@ -270,6 +276,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           version: 1,
           currency: currency,
           pub: that.PeeringService.pubkey,
+          block: current ? [current.number, current.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
           endpoints: [endpoint]
         };
         var raw1 = p1.getRaw().dos2unix();

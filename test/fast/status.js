@@ -12,7 +12,7 @@ var rawStatus = "" +
   "Type: Status\n" +
   "Currency: beta_brousouf\n" +
   "Status: UP\n" +
-  "Time: 1414937786\n" +
+  "Block: 0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709\n" +
   "From: 3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu\n" +
   "To: 6GCnm36t4DnvoJshCYS13i64PxsqyJnGxuNXkzt9Rkh7\n" +
   "bvuKzc6+cGWMGC8FIkZHN8kdQhaRL/MK60KYyw5vJqkKEgxXbygQHAzfoojeSY4gPKIu4FggBkR1HndSEm2FAQ==\n";

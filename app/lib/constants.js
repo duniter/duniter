@@ -20,6 +20,9 @@ module.exports = {
 
     PUBKEY: {
       ALREADY_UPDATED: 1
+    },
+    PEER: {
+      ALREADY_RECORDED: 'Peer document is older than currently recorded'
     }
   },
 
@@ -68,6 +71,14 @@ module.exports = {
     SOURCE:  exact(INTEGER + ":(T|D):" + POSITIVE_INT + ":" + FINGERPRINT + ":" + POSITIVE_INT),
     TARGET:  exact(PUBKEY + ":" + POSITIVE_INT),
     COMMENT: find("Comment: (" + COMMENT + ")"),
+  },
+  PEER: {
+    BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
+    SPECIAL_BLOCK: '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
+  },
+  STATUS: {
+    BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
+    SPECIAL_BLOCK: '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
   },
 
   setUDID2Format: function () {

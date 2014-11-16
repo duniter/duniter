@@ -15,7 +15,7 @@ function StatusParser (onError) {
     {prop: "version",   regexp: /Version: (.*)/},
     {prop: "currency",  regexp: /Currency: (.*)/},
     {prop: "status",    regexp: /Status: (.*)/},
-    {prop: "time",      regexp: /Time: (.*)/, parser: parseDateFromTimestamp},
+    {prop: "block",      regexp: constants.STATUS.BLOCK},
     {prop: "from",      regexp: /From: (.*)/},
     {prop: "to",        regexp: /To: (.*)/},
   ];
@@ -57,10 +57,6 @@ function StatusParser (onError) {
     }
     return err && err.message;
   };
-}
-
-function parseDateFromTimestamp (value) {
-  return new Date(parseInt(value)*1000);
 }
 
 util.inherits(StatusParser, GenericParser);

@@ -247,13 +247,9 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
             function (signature, next) {
               status.signature = signature;
               if (statusStr == 'NEW') {
-                that.emit('peer', _(that.peer()).extend({ peerTarget: peer.pub }));
-                setTimeout(function () {
-                  that.emit('status', status);
-                }, 2000);
-              } else {
-                that.emit('status', status);
+                status.peer = _(that.peer()).extend({ peerTarget: peer.pub });
               }
+              that.emit('status', status);
               peer.statusSent = status.status;
               peer.statusSigDate = new Date();
               peer.save(function (err) {

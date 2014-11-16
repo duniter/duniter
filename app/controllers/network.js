@@ -85,17 +85,38 @@ function NetworkBinding (peerServer, conf) {
 
   this.statusPOST = function(req, res) {
     var onError = http400(res);
-    http2raw.status(req, onError)
-      .pipe(dos2unix())
-      .pipe(parsers.parseStatus(onError))
-      .pipe(versionFilter(onError))
-      .pipe(currencyFilter(conf.currency, onError))
-      // .pipe(extractSignature(onError))
-      // .pipe(link2pubkey(peerServer.PublicKeyService, onError))
-      // .pipe(verifySignature(onError))
-      .pipe(peerServer.singleWriteStream(onError))
-      .pipe(jsoner())
-      .pipe(es.stringify())
-      .pipe(res);
+    async.waterfall([
+      function (next) {
+        // If peer is provided, parse it first
+        if (req.body && req.body.peer) {
+          http2raw.peer(req, onError)
+            .pipe(dos2unix())
+            .pipe(parsers.parsePeer(onError))
+            .pipe(versionFilter(onError))
+            .pipe(currencyFilter(conf.currency, onError))
+            // .pipe(verifySignature(onError))
+            .pipe(peerServer.singleWriteStream(onError))
+            .pipe(es.mapSync(function () {
+              next();
+            }))
+        }
+        else next();
+      },
+      function (next) {
+        http2raw.status(req, onError)
+          .pipe(dos2unix())
+          .pipe(parsers.parseStatus(onError))
+          .pipe(versionFilter(onError))
+          .pipe(currencyFilter(conf.currency, onError))
+          // .pipe(extractSignature(onError))
+          // .pipe(link2pubkey(peerServer.PublicKeyService, onError))
+          // .pipe(verifySignature(onError))
+          .pipe(peerServer.singleWriteStream(onError))
+          .pipe(jsoner())
+          .pipe(es.stringify())
+          .pipe(res);
+        next();
+      }
+    ]);
   }
 }

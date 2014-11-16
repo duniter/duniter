@@ -53,11 +53,11 @@ function Http2RawPeer (req, onError) {
   stream.Readable.call(this);
 
   this._read = function () {
-    if(!(req.body && req.body.entry && req.body.signature)){
-      onError('Requires a peering entry + signature');
+    if(!(req.body && req.body.peer)){
+      onError('Requires a peer');
     }
     else {
-      this.push(req.body.entry + req.body.signature + (req.body.signature.match(/\n$/) ? '' : '\n'));
+      this.push(req.body.peer);
     }
     this.push(null);
   }

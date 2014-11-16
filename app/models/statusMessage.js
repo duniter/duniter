@@ -15,7 +15,6 @@ module.exports = function StatusMessage (values) {
     ['version', 'currency', 'status', 'from', 'to', 'signature'].forEach(function(field){
       obj[field] = that[field] || '';
     });
-    obj.time = this.time.timestamp();
     obj.raw = this.getRaw();
     return obj;
   }

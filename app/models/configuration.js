@@ -27,7 +27,7 @@ var ConfigurationSchema = new Schema({
   powZeroMin:  {"type": Number, "default": 1},
   powPeriod:   {"type": Number, "default": 1},
   powDelay:    {"type": Number, "default": 0}, // Delay before starting computation of a new block
-  participate: {"type": Boolean, "default": true}, // Participate to writing the keychain
+  participate: {"type": Boolean, "default": true}, // Participate to writing the blockchain
   tsInterval:  {"type": Number, "default": 30},
   incDateMin:  {"type": Number, "default": 10}, // Increment date on incDateMin'th block with same new Date
   dtDateMin:   {"type": Number, "default": 3600*24}, // Increment date value (default 1 day)

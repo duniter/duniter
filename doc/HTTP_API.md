@@ -533,14 +533,14 @@ The posted entry.
 #### `network/peering/status`
 **Goal**
 
-POST a UCG status document to this node in order notify of its status.
+POST a Status document to this node in order notify of its status. Eventually, the Status document may be posted with a Peer document that is to be processed just before the Status.
 
 **Parameters**
 
 Name        | Value                                  | Method
 ----------- | -------------------------------------- | ------
-`status`    | UCG status document.                   | POST
-`signature` | Signature of the UCG entry's value.    | POST
+`status`    | Status document.                        | POST
+`peer`      | Peer document.                          | POST
 
 **Returns**
 

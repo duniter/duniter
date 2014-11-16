@@ -18,16 +18,16 @@ function Router (serverPubkey, conn) {
   var that = this;
 
   this._write = function (obj, enc, done) {
-    if (obj.peerTarget) {                        route('peer',        obj, getTargetedButSelf(obj.peerTarget),          done); }
+    if (obj.peerTarget) {                        route('peer',        obj, getTargeted(obj.peerTarget),                 done); }
     // else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers,                          done); }
     // else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers,                          done); }
     else if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers,                          done); }
     else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers,                          done); }
-    // else if (obj.endpoints) {                    route('peer',        obj, getRandomInAllPeersButPeer(obj.pub),         done); }
-    else if (obj.from) {                         route('status',      obj, getTargetedButSelf(obj.to),                  done); }
+    else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pub),              done); }
+    else if (obj.from) {                         route('status',      obj, getTargeted(obj.to),                         done); }
     else {
       done();
-    }
+    }       
   };
 
   function route (type, obj, getPeersFunc, done) {
@@ -51,10 +51,16 @@ function Router (serverPubkey, conn) {
     Peer.getRandomlyUPsWithout([serverPubkey], done);
   };
 
+  function getRandomInUPPeersBut (pubkey) {
+    return function (done) {
+      Peer.getRandomlyUPsWithout([serverPubkey, pubkey], done);
+    }
+  };
+
   /**
   * Get the peer targeted by `to` argument, this node excluded (for not to loop on self).
   */
-  function getTargetedButSelf (to) {
+  function getTargeted (to) {
     return function (done) {
       if (to == serverPubkey) {
         done(null, []);

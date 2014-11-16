@@ -77,7 +77,29 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
       },
       function (next){
         that.addPeer(peer);
-        persistPeer(peer, next);
+        Peer.find({ pub: peer.pub }, next);
+      },
+      function (peers, next){
+        var peerEntity = peer;
+        var previousHash = null;
+        if(peers.length > 0){
+          // Already existing peer
+          if(peers[0].sigDate > peerEntity.sigDate){
+            next('Cannot record a previous peering');
+            return;
+          }
+          peerEntity = peers[0];
+          previousHash = peerEntity.hash;
+          peer.copyValues(peerEntity);
+        }
+        peerEntity.save(function (err) {
+          next(err, peerEntity, previousHash);
+        });
+      },
+      function (recordedPR, previousHash, next) {
+        Merkle.updatePeers(recordedPR, previousHash, function (err, code, merkle) {
+          next(err, recordedPR);
+        });
       }
     ], callback);
   }
@@ -120,36 +142,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
         });
       }
     });
-  }
-
-  function persistPeer (peer, done) {
-    async.waterfall([
-      function (next){
-        Peer.find({ pub: peer.pub }, next);
-      },
-      function (peers, next){
-        var peerEntity = peer;
-        var previousHash = null;
-        if(peers.length > 0){
-          // Already existing peer
-          if(peers[0].sigDate > peerEntity.sigDate){
-            next('Cannot record a previous peering');
-            return;
-          }
-          peerEntity = peers[0];
-          previousHash = peerEntity.hash;
-          peer.copyValues(peerEntity);
-        }
-        peerEntity.save(function (err) {
-          next(err, peerEntity, previousHash);
-        });
-      },
-      function (recordedPR, previousHash, next) {
-        Merkle.updatePeers(recordedPR, previousHash, function (err, code, merkle) {
-          next(err, recordedPR);
-        });
-      }
-    ], done);
   }
 
   this.submitSelfPeering = function(toPeer, done){

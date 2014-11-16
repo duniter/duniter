@@ -50,10 +50,9 @@ function Multicaster () {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         // Do propagating
-        logger.debug('sending peering of %s to peer %s', peering.keyID(), peer.keyID());
+        logger.debug('sending peer %s to peer %s', peering.keyID(), peer.keyID());
         post(peer, "/network/peering/peers", {
-          entry: peering.getRaw(),
-          signature: peering.signature
+          peer: peering.getRawSigned(),
         }, function (err, res, body) {
           // Sent!
           sent();

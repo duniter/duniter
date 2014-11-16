@@ -21,8 +21,8 @@
   * [Protocol parameters](#protocol-parameters)
   * [Computed variables](#computed-variables)
 * [Processing](#processing)
-  * [Peer](#peer-1)
   * [Block](#block-1)
+  * [Peer](#peer-1)
   * [Status](#status-1)
   * [Transaction](#transaction-1)
 * [Implementations](#implementations)
@@ -554,6 +554,7 @@ This link is made through a document called *Peer* whose format is described bel
     Type: Peer
     Currency: CURRENCY_NAME
     PublicKey: NODE_PUBLICKEY
+    Block: BLOCK
     Endpoints:
     END_POINT_1
     END_POINT_2
@@ -572,8 +573,8 @@ Field | Description
 `Type`  | The document type.
 `Currency` | contains the name of the currency.
 `PublicKey` | the node's public key.
+`Block` | Block number and hash. Value is used to target a blockchain and precise time reference.
 `Endpoints` | a list of endpoints to interact with the node
-
 `Endpoints` has a particular structure: it is made up of at least one line with each line following format:
 
     PROTOCOL_NAME[ OPTIONS]
@@ -610,6 +611,7 @@ The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
     Type: Peer
     Currency: beta_brousouf
     PublicKey: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+    Block: 8-1922C324ABC4AF7EF7656734A31F5197888DDD52
     Endpoints:
     BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001
     BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002
@@ -625,6 +627,7 @@ Such a document informs a node on current node's status, either connected, up, o
     Type: Status
     Currency: CURRENCY_NAME
     Status: STATUS
+    Block: BLOCK
     From: SENDER
     To: RECIPIENT
 
@@ -635,6 +638,7 @@ Field      | Description
 `Type`     | The document type.
 `Currency` | contains the name of the currency.
 `Status`   | Status type to be sent.
+`Block` | Block number and hash. Value is used to target a blockchain and precise time reference.
 `From`     | Issuer's public key for this message.
 `To`       | Recipient's public key for this message.
 
@@ -675,10 +679,6 @@ Variable  | Meaning
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last valid (non-expired) membership is either in `Joiners` or `Actives`.
 
 ## Processing
-
-### Peer
-
-Peer document is to be considered *neutral*, i.e. it does not have specific rules of interpretation. If a P2P node receives such document, it is free on how to handle it.
 
 ### Block
 A Block can be accepted only if it respects a set of rules, here divided in 2 parts : *local* and *global*.
@@ -927,7 +927,32 @@ Where:
 * For each UD source, the amount must match the exact targeted UD value
 * For each Transaction source, the amount must match the exact Output value
 
+### Peer
+
+#### Global validation
+
+##### Block
+
+* `Block` field must target an existing block in the blockchain, or target special block `0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709`.
+
+#### Interpretation
+
+* A Peer document SHOULD NOT be interpreted if its `Block` field is anterior to previously recorded Peer document for a same `PublicKey` key.
+
 ### Status
+
+#### Global validation
+
+##### Block
+
+* `Block` field must target an existing block in the blockchain, or target special block `0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709`.
+
+#### Interpretation
+
+* A Status document SHOULD NOT be interpreted if its `Block` field is anterior or equal to previously recorded Status document for a same `From` key.
+
+#### Behavior
+
 The network needs to be able to discover new peers inside it and eventually know their state to efficiently send data to them. For that purpose [Status](./#status) messages are used to introduce nodes to each other and keep a bilateral state of the connection.
 
 Protocol is the following: for a given node receiving `Receives` message, it should answer `Answers` status type and apply `Impacts` rules.

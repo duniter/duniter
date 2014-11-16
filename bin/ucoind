@@ -48,7 +48,7 @@ program
   .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
   .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
   .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
-  .option('--participate <Y|N>',        'Participate to writing the keychain')
+  .option('--participate <Y|N>',        'Participate to writing the blockchain')
   .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a keyblock')
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
   .option('--ud0 <number>',            'Universal Dividend initial value')
@@ -189,12 +189,12 @@ function handleKey (server, key, isManaged, message) {
 
 program
   .command('gen-next [host] [port] [difficulty]')
-  .description('Tries to generate the next keyblock of the keychain, with both updates & newcomers')
+  .description('Tries to generate the next keyblock of the blockchain, with both updates & newcomers')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNext")));
 
 program
   .command('gen-empty-next [host] [port] [difficulty]')
-  .description('Tries to generate the next keyblock of the keychain without any changes')
+  .description('Tries to generate the next keyblock of the blockchain without any changes')
   .action(service(ucoin.createPeerServer, generateAndSend("generateEmptyNext")));
 
 program
@@ -224,7 +224,7 @@ program
   }));
 
 program
-  .command('show-keychain')
+  .command('show-blockchain')
   .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
   .action(service(ucoin.createPeerServer, function (server, conf) {
     server.BlockchainService.showKeychain(function (err) {

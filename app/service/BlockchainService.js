@@ -465,7 +465,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   function saveBlockData (current, block, done) {
-    logger.info('Block #' + block.number + ' added to the keychain');
+    logger.info('Block #' + block.number + ' added to the blockchain');
     async.waterfall([
       function (next) {
         updateBlocksComputedVars(current, block, next);

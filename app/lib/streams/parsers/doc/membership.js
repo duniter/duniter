@@ -25,8 +25,13 @@ function MembershipParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
 
   this._clean = function (obj) {
-    obj.number = obj.block.split('-')[0];
-    obj.fpr = obj.block.split('-')[1];
+    if (obj.block) {
+      obj.number = obj.block.split('-')[0];
+      obj.fpr = obj.block.split('-')[1];
+    } else {
+      obj.number = '0';
+      obj.fpr = '';
+    }
   };
 
   this._verify = function(obj){

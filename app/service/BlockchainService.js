@@ -28,7 +28,7 @@ var powFifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 
-// Callback used as a semaphore to sync keyblock reception & PoW computation
+// Callback used as a semaphore to sync block reception & PoW computation
 var newKeyblockCallback = null;
 
 // Callback used to start again computation of next PoW
@@ -56,7 +56,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Transaction   = conn.model('Transaction');
   var Configuration = conn.model('Configuration');
 
-  // Flag to say wether timestamp of received keyblocks should be tested
+  // Flag to say wether timestamp of received blocks should be tested
   // Useful for synchronisation of old blocks
   this.checkWithLocalTimestamp = true;
 
@@ -723,7 +723,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   /**
-  * Generate a "newcomers" keyblock
+  * Generate a "newcomers" block
   */
   this.generateUpdates = function (done) {
     var exclusions = [];
@@ -805,7 +805,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   /**
   this.generateNewcomers = function (done) {
-  * Generate a "newcomers" keyblock
+  * Generate a "newcomers" block
   */
   this.generateNewcomers = function (done) {
     var filteringFunc = function (preJoinData, next) {
@@ -847,7 +847,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   /**
   this.generateNewcomers = function (done) {
-  * Generate a "newcomers" keyblock
+  * Generate a "newcomers" block
   */
   this.generateNewcomersAuto = function (done) {
     BlockchainService.generateNewcomersBlock(noFiltering, iteratedChecking, done);
@@ -878,7 +878,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   };
 
   /**
-  * Generate a "newcomers" keyblock
+  * Generate a "newcomers" block
   */
   this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, done) {
     var withoutUpdates = function(updatesDone) {
@@ -888,7 +888,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   };
 
   /**
-  * Generate next keyblock, gathering both updates & newcomers
+  * Generate next block, gathering both updates & newcomers
   */
   this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
     var updates = {};

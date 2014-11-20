@@ -323,8 +323,8 @@ POST a new block to add to the blockchain.
 
 Name               | Value                          | Method
 ------------------ | ------------------------------ | ------
-`block`             | The raw keyblock to be added  | POST
-`signature`         | Signature of the raw keyblock | POST
+`block`             | The raw block to be added     | POST
+`signature`         | Signature of the raw block    | POST
 
 **Returns**
 

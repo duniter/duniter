@@ -47,7 +47,7 @@ program
   .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
   .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
   .option('--participate <Y|N>',        'Participate to writing the blockchain')
-  .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a keyblock')
+  .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a block')
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
   .option('--ud0 <number>',            'Universal Dividend initial value')
   .option('--dt <number>',             'Number of seconds between two UD')
@@ -121,28 +121,28 @@ program
   }));
 
 program
-  .command('gen-next [host] [port] [difficulty]')
-  .description('Tries to generate the next keyblock of the blockchain, with both updates & newcomers')
+  .command('gen-next [host] [port] [diff]')
+  .description('Tries to generate the next block of the blockchain, with both updates & newcomers')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNext")));
 
 program
-  .command('gen-empty-next [host] [port] [difficulty]')
-  .description('Tries to generate the next keyblock of the blockchain without any changes')
+  .command('gen-empty-next [host] [port] [diff]')
+  .description('Tries to generate the next block of the blockchain without any changes')
   .action(service(ucoin.createPeerServer, generateAndSend("generateEmptyNext")));
 
 program
-  .command('gen-updates [host] [port] [difficulty]')
-  .description('Tries to generate an update (#1+) keyblock, containing only update changes')
+  .command('gen-updates [host] [port] [diff]')
+  .description('Tries to generate an update (#1+) block, containing only update changes')
   .action(service(ucoin.createPeerServer, generateAndSend("generateUpdates")));
 
 program
-  .command('gen-newcomers [host] [port] [difficulty]')
-  .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
+  .command('gen-newcomers [host] [port] [diff]')
+  .description('Tries to generate a newcomers (#0+) block, containing only newcomers changes')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomers")));
 
 program
-  .command('gen-newcomers-auto [host] [port] [difficulty]')
-  .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
+  .command('gen-newcomers-auto [host] [port] [diff]')
+  .description('Tries to generate a newcomers (#0+) block, containing only newcomers changes')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomersAuto")));
 
 function generateAndSend (generationMethod) {

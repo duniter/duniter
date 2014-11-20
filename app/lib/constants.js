@@ -26,7 +26,7 @@ module.exports = {
     }
   },
 
-  SALT: exact(".*"),
+  SALT: exact(".+"),
   PASSWORD: exact(".*"),
 
   INTEGER: /^\d+$/,

@@ -149,6 +149,19 @@ var tasks = {
       async.apply(simpleInteger, "Port", "port", conf),
       function (next){
         var choices = [{ name: "None", value: null }];
+        // Local interfaces
+        var osInterfaces = os.networkInterfaces();
+        _(osInterfaces).keys().forEach(function(interfaceName){
+          var addresses = osInterfaces[interfaceName];
+          var filtered = _(addresses).where({family: 'IPv4'});
+          filtered.forEach(function(addr){
+            choices.push({
+              name: [interfaceName, addr.address].join(' '),
+              value: addr.address
+            });
+          });
+        });
+        // Remote interfaces
         if (conf.remoteipv4) {
           choices.push({ name: conf.remoteipv4, value: conf.remoteipv4 });
         }
@@ -159,7 +172,7 @@ var tasks = {
           type: "list",
           name: "remoteipv4",
           message: "Remote IPv4",
-          default: conf.remoteipv4 || null,
+          default: conf.remoteipv4 || conf.ipv4 || null,
           choices: choices,
           validate: function (input) {
             return input && input.toString().match(IPV4_REGEXP) ? true : false;

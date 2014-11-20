@@ -23,6 +23,10 @@ function Wizard () {
     doTasks(['key', 'network'], conf, done);
   };
 
+  this.configPoW = function (conf, done) {
+    doTasks(['pow'], conf, done);
+  };
+
   this.configCurrency = function (conf, done) {
     doTasks(['currency'], conf, done);
   };

@@ -70,6 +70,7 @@ program
       var task = {
         'currency': wiz.configCurrency,
         'basic': wiz.configBasic,
+        'pow': wiz.configPoW,
         'network': wiz.configNetwork,
         'key': wiz.configKey,
         'ucp': wiz.configUCP

@@ -44,6 +44,19 @@ function BlockParser (onError) {
     obj.excluded = obj.excluded || [];
     obj.certifications = obj.certifications || [];
     obj.transactions = obj.transactions || [];
+    obj.version = obj.version || '';
+    obj.type = obj.type || '';
+    obj.currency = obj.currency || '';
+    obj.nonce = obj.nonce || '';
+    obj.number = obj.number || '';
+    obj.date = obj.date || '';
+    obj.confirmedDate = obj.confirmedDate || '';
+    obj.dividend = obj.dividend || '';
+    obj.issuer = obj.issuer || '';
+    obj.parameters = obj.parameters || '';
+    obj.previousHash = obj.previousHash || '';
+    obj.previousIssuer = obj.previousIssuer || '';
+    obj.membersCount = obj.membersCount || '';
   };
 
   this._verify = function(obj){

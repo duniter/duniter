@@ -256,6 +256,7 @@ var tasks = {
       async.apply(simpleInteger, "Membership validity duration", "msValidity", conf),
       async.apply(simpleInteger, "Certification validity duration", "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member", "sigQty", conf),
+      async.apply(simpleInteger, "Number of valid emitted certifications to be a distance checked member", "sigWoT", conf),
       async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
       async.apply(simpleInteger, "Number of confirmation to change current Date", "incDateMin", conf),
       async.apply(simpleInteger, "Increment value (in seconds) for date changing", "dtDateMin", conf),

@@ -16,7 +16,8 @@ var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}
 function Wizard () {
 
   this.configAll = function (conf, done) {
-    doTasks(['currency', 'network', 'key', 'ucp'], conf, done);
+    doTasks(['currency', 'network', 'key', 'pow', 'ucp'], conf, done);
+  };
 
   this.configBasic = function (conf, done) {
     doTasks(['key', 'network'], conf, done);
@@ -278,7 +279,12 @@ var tasks = {
       async.apply(simpleInteger, "Number of valid emitted certifications to be a distance checked member", "sigWoT", conf),
       async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
       async.apply(simpleInteger, "Number of confirmation to change current Date", "incDateMin", conf),
-      async.apply(simpleInteger, "Increment value (in seconds) for date changing", "dtDateMin", conf),
+      async.apply(simpleInteger, "Increment value (in seconds) for date changing", "dtDateMin", conf)
+    ], done);
+  },
+
+  pow: function (conf, done) {
+    async.waterfall([
       function (next){
         choose("Participate writing the blockchain (when member)", conf.participate,
           function participate () {
@@ -290,7 +296,12 @@ var tasks = {
             next();
           });
       },
-      async.apply(simpleInteger, "Start computation of a new block if none received since (seconds)", "powDelay", conf),
+      function (next) {
+        if (conf.participate) {
+          simpleInteger("Start computation of a new block if none received since (seconds)", "powDelay", conf, next);
+        }
+        else next();
+      }
     ], done);
   }
 };

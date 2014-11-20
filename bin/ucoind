@@ -40,7 +40,7 @@ program
   .option('--remote4 <host>',          'Remote interface for IPv4 access')
   .option('--remote6 <host>',          'Remote interface for IPv6 access')
   .option('--remotep <port>',          'Remote port others may use to contact this node')
-  .option('--sigDelay <timestamp>',    'Minimum delay between 2 certifications of a same issuer for a same recipient, in seconds.')
+  .option('--sigDelay <timestamp>',    'Minimum delay between 2 similar certifications, in seconds.')
   .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
   .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
   .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
@@ -102,7 +102,7 @@ program
 
 program
   .command('sync [host] [port]')
-  .description('Tries to synchronise data with remote uCoin node')
+  .description('Synchronize blockchain from a remote uCoin node')
   .action(service(ucoin.createTxServer, function (host, port, server, conf) {
 
     async.series([
@@ -123,28 +123,13 @@ program
 
 program
   .command('gen-next [host] [port] [diff]')
-  .description('Tries to generate the next block of the blockchain, with both updates & newcomers')
+  .description('Tries to generate the next block of the blockchain')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNext")));
 
 program
-  .command('gen-empty-next [host] [port] [diff]')
-  .description('Tries to generate the next block of the blockchain without any changes')
-  .action(service(ucoin.createPeerServer, generateAndSend("generateEmptyNext")));
-
-program
-  .command('gen-updates [host] [port] [diff]')
-  .description('Tries to generate an update (#1+) block, containing only update changes')
-  .action(service(ucoin.createPeerServer, generateAndSend("generateUpdates")));
-
-program
-  .command('gen-newcomers [host] [port] [diff]')
-  .description('Tries to generate a newcomers (#0+) block, containing only newcomers changes')
+  .command('gen-root [host] [port] [diff]')
+  .description('Tries to generate root block, with choice of root members')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomers")));
-
-program
-  .command('gen-newcomers-auto [host] [port] [diff]')
-  .description('Tries to generate a newcomers (#0+) block, containing only newcomers changes')
-  .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomersAuto")));
 
 function generateAndSend (generationMethod) {
   return function (host, port, difficulty, server, conf) {
@@ -284,7 +269,7 @@ program
 
 program
   .command('start')
-  .description('Start uCoin server using given --currency')
+  .description('Start uCoin server.')
   .action(service(ucoin.createTxServer, function (server, conf) {
 
     if (conf.udid2) {

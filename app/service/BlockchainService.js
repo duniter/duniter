@@ -64,6 +64,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     done();
   };
 
+  this.current = function (done) {
+    Block.current(function (err, kb) {
+      done(null, kb || null);
+    })
+  };
+
+  this.promoted = function (number, done) {
+    Block.findByNumber(number, function (err, kb) {
+      done(err, kb || null);
+    })
+  };
+
   this.submitMembership = function (ms, done) {
     var entry = new Membership(ms);
     var globalValidation = globalValidator(conf, blockchainDao(conn, null));
@@ -658,98 +670,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     }, done);
   }
 
-  this.current = function (done) {
-    Block.current(function (err, kb) {
-      done(null, kb || null);
-    })
-  };
-
-  this.promoted = function (number, done) {
-    Block.findByNumber(number, function (err, kb) {
-      done(err, kb || null);
-    })
-  };
-
-  this.generateEmptyNext = function (done) {
-    var staying = [];
-    var kicked = [];
-    var current;
-    async.waterfall([
-      function (next) {
-        Block.current(function (err, currentBlock) {
-          current = currentBlock;
-          next(err && 'No root block: cannot generate an empty block');
-        });
-      },
-      function (next){
-        Identity.getMembers(next);
-      },
-      function (memberKeys, next){
-        memberKeys.forEach(function(mKey){
-          if (!mKey.kick) {
-          // Member that stays
-            staying.push(mKey.fingerprint);
-          } else {
-          // Member that leaves (kicked)
-            kicked.push(mKey.fingerprint);
-          }
-        });
-        createNextEmptyBlock(current, staying, kicked, next);
-      },
-    ], done);
-  };
-
-  function createNextEmptyBlock (current, members, leaving, done) {
-    var block = new Block();
-    block.version = 1;
-    block.currency = current.currency;
-    block.number = current.number + 1;
-    block.previousHash = current.hash;
-    block.previousIssuer = current.issuer;
-    // Members merkle
-    var stayers = members.slice(); // copy
-    var leavers = leaving.slice(); // copy
-    stayers.sort();
-    leavers.sort();
-    var tree = merkle(stayers, 'sha1').process();
-    block.membersCount = stayers.length;
-    block.membersRoot = tree.root();
-    block.membersChanges = [];
-    leavers.forEach(function(fpr){
-      block.membersChanges.push('-' + fpr);
-    });
-    block.keysChanges = [];
-    done(null, block);
-  }
-
-  /**
-  * Generate a "newcomers" block
-  */
-  this.generateUpdates = function (done) {
-    var exclusions = [];
-    async.waterfall([
-      function (next) {
-        // First, check for members' exclusions
-        Identity.getToBeKicked(next);
-      },
-      function (toBeKicked, next) {
-        toBeKicked.forEach(function (idty) {
-          exclusions.push(idty.pubkey);
-        });
-        // Second, check for members' key updates
-        findUpdates(next);
-      },
-      function (updates, next){
-        Block.current(function (err, current) {
-          next(null, current || null, updates);
-        });
-      },
-      function (current, updates, next){
-        createNewcomerBlock(current, {}, updates, exclusions, null, [], next);
-      },
-    ], done);
-  }
-
   function findUpdates (done) {
     var updates = {};
     var updatesToFrom = {};
@@ -842,17 +762,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         done(err, newcomers);
       });
     };
-    BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, done);
+    async.waterfall([
+      function (next) {
+        BlockchainService.current(next);
+      },
+      function (block, next) {
+        if (!block)
+          BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, next);
+        else
+          next('Cannot generate root block: it already exists.');
+      }
+    ], done);
   }
-
-  /**
-  this.generateNewcomers = function (done) {
-  * Generate a "newcomers" block
-  */
-  this.generateNewcomersAuto = function (done) {
-    BlockchainService.generateNewcomersBlock(noFiltering, iteratedChecking, done);
-  }
-
 
   function noFiltering(preJoinData, next) {
     // No manual filtering, takes all

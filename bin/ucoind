@@ -145,39 +145,6 @@ program
   .description('Tries to generate a newcomers (#0+) keyblock, containing only newcomers changes')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomersAuto")));
 
-program
-  .command('compute-distances')
-  .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
-  .action(service(ucoin.createPeerServer, function (server, conf) {
-    server.BlockchainService.computeDistances(function (err) {
-      if (err) logger.error(err);
-      server.disconnect();
-      process.exit();
-    });
-  }));
-
-program
-  .command('show-blockchain')
-  .description('Recompute distance between each member and the whole WoT and mark outdistanced ones as kicked')
-  .action(service(ucoin.createPeerServer, function (server, conf) {
-    server.BlockchainService.showKeychain(function (err) {
-      if (err) logger.error(err);
-      server.disconnect();
-      process.exit();
-    });
-  }));
-
-program
-  .command('compute-certifications')
-  .description('Recompute available certifications for next blocks')
-  .action(service(ucoin.createPeerServer, function (server, conf) {
-    server.BlockchainService.updateCertifications(function (err) {
-      if (err) logger.error(err);
-      server.disconnect();
-      process.exit();
-    });
-  }));
-
 function generateAndSend (generationMethod) {
   return function (host, port, difficulty, server, conf) {
     async.waterfall([
@@ -325,25 +292,6 @@ program
     }
 
     async.waterfall([
-      // function (next){
-      //   server.checkConfig(function (err) {
-      //     if (err) {
-      //       // If required, launch config
-      //       var wiz = wizard(server);
-      //       async.waterfall([
-      //         function (next){
-      //           wiz.doTasks(['currency', 'key', 'network'], conf, next);
-      //         },
-      //         function (next){
-      //           conf.save(next);
-      //         },
-      //       ], function (err) {
-      //         next(err);
-      //       });
-      //     }
-      //     else next();
-      //   });
-      // },
       function (next){
         // Launching server
         server.start(function (err, app) {
@@ -490,22 +438,6 @@ function service(serverFactory, callback) {
       callback.apply(this, cbArgs);
     });
   };
-}
-
-function parseMoment (d) {
-  if (d.toLowerCase() == 'now') {
-    return parseInt(moment().format("X"));
-  } else if (d.match(/^\d{2}-\d{2}-\d{4}$/)) {
-    return parseInt(moment(d, "DD-MM-YYYY").format("X"));
-  } else if (d.match(/^\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}$/)) {
-    return parseInt(moment(d, "DD-MM-YYYY hh:mm:ss").format("X"));
-  } else {
-    return parseInt(d);
-  }
-}
-
-function splitColon (str) {
-  return str.split(':');
 }
 
 program.parse(process.argv);

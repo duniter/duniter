@@ -66,10 +66,7 @@ var tasks = {
           conf.currency = answers.currency;
           next();
         });
-      },
-      async.apply(simpleInteger, "First Universal Dividend (UD[0]) amount", "ud0", conf),
-      async.apply(simpleFloat, "Universal Dividend %growth", "c", conf),
-      async.apply(simpleInteger, "Universal Dividend period (in seconds)", "dt", conf),
+      }
     ], done);
   },
 
@@ -271,6 +268,9 @@ var tasks = {
 
   ucp: function (conf, done) {
     async.waterfall([
+      async.apply(simpleInteger, "First Universal Dividend (UD[0]) amount", "ud0", conf),
+      async.apply(simpleFloat,   "Universal Dividend %growth", "c", conf),
+      async.apply(simpleInteger, "Universal Dividend period (in seconds)", "dt", conf),
       async.apply(simpleInteger, "Delay between 2 identical certifications", "sigDelay", conf),
       async.apply(simpleInteger, "Membership validity duration", "msValidity", conf),
       async.apply(simpleInteger, "Certification validity duration", "sigValidity", conf),

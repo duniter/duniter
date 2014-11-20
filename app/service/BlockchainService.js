@@ -531,6 +531,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       conf.powZeroMin  = parseInt(sp[9]);
       conf.dtDateMin   = parseInt(sp[10]);
       conf.incDateMin  = parseInt(sp[11]);
+      conf.currency    = block.currency;
       conf.save(function (err) {
         done(err);
       });

@@ -235,15 +235,18 @@ var tasks = {
         });
       },
       function (next) {
+        var obfuscated = conf.passwd.replace(/./g, '*');
         inquirer.prompt([{
           type: "password",
           name: "passwd",
           message: "Key\'s password",
+          default: obfuscated,
           validate: function (input) {
             return input.match(constants.PASSWORD) ? true : false;
           }
         }], function (answers) {
-          conf.passwd = answers.passwd;
+          var keepOld = obfuscated.length > 0 && obfuscated == answers.passwd;
+          conf.passwd = keepOld ? conf.passwd : answers.passwd;
           next();
         });
       }

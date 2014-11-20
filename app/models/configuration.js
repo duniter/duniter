@@ -26,7 +26,7 @@ var ConfigurationSchema = new Schema({
   sigWoT:      {"type": Number, "default": 5},
   powZeroMin:  {"type": Number, "default": 1},
   powPeriod:   {"type": Number, "default": 1},
-  powDelay:    {"type": Number, "default": 0}, // Delay before starting computation of a new block
+  powDelay:    {"type": Number, "default": 10}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the blockchain
   tsInterval:  {"type": Number, "default": 30},
   incDateMin:  {"type": Number, "default": 10}, // Increment date on incDateMin'th block with same new Date

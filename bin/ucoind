@@ -338,11 +338,11 @@ program
   }));
 
 program
-  .command('reset [config|data]')
-  .description('Reset configuration or data in database')
+  .command('reset [config|data|all]')
+  .description('Reset configuration, data or everything in the database')
   .action(service(function (type, server, conf) {
-    if(!~['config', 'data'].indexOf(type)){
-      logger.error('Bad command: usage `reset config` or `reset data`');
+    if(!~['config', 'data', 'all'].indexOf(type)){
+      logger.error('Bad command: usage `reset config`, `reset data` or `reset all`');
       server.disconnect();
       return;
     }
@@ -362,6 +362,19 @@ program
           logger.error(err);
         else
           logger.warn('Configuration successfuly reseted.');
+        server.disconnect();
+        process.exit();
+      });
+    }
+    if(type == 'all'){
+      async.parallel({
+        data: server.reset,
+        config: server.resetConf
+        }, function (err) {
+        if(err)
+          logger.error(err);
+        else
+          logger.warn('Data & Configuration successfuly reseted.');
         server.disconnect();
         process.exit();
       });

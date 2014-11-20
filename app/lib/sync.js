@@ -74,6 +74,10 @@ module.exports = function Synchroniser (server, host, port, conf) {
           var lCurrent = res.localCurrent;
           var rCurrent = res.remoteCurrent;
           var i = lCurrent ? lCurrent.number + 1 : 0;
+          if (!rCurrent) {
+            next('No block found on remote node');
+            return;
+          }
           async.whilst(
             function () { return rCurrent ? i <= rCurrent.number : false; },
             function (callback) {

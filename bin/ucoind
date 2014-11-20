@@ -71,6 +71,7 @@ program
       var wiz = wizard(server);
       var task = {
         'currency': wiz.configCurrency,
+        'basic': wiz.configBasic,
         'network': wiz.configNetwork,
         'key': wiz.configKey,
         'ucp': wiz.configUCP

@@ -17,6 +17,9 @@ function Wizard () {
 
   this.configAll = function (conf, done) {
     doTasks(['currency', 'network', 'key', 'ucp'], conf, done);
+
+  this.configBasic = function (conf, done) {
+    doTasks(['key', 'network'], conf, done);
   };
 
   this.configCurrency = function (conf, done) {

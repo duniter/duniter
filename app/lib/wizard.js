@@ -228,7 +228,7 @@ var tasks = {
           type: "input",
           name: "salt",
           message: "Key's salt",
-          default: conf.salt,
+          default: conf.salt ? conf.salt : undefined,
           validate: function (input) {
             return input.match(constants.SALT) ? true : false;
           }
@@ -243,7 +243,7 @@ var tasks = {
           type: "password",
           name: "passwd",
           message: "Key\'s password",
-          default: obfuscated,
+          default: obfuscated ? obfuscated : undefined,
           validate: function (input) {
             return input.match(constants.PASSWORD) ? true : false;
           }

@@ -40,8 +40,6 @@ program
   .option('--remote4 <host>',          'Remote interface for IPv4 access')
   .option('--remote6 <host>',          'Remote interface for IPv6 access')
   .option('--remotep <port>',          'Remote port others may use to contact this node')
-  .option('--kmanagement <ALL|KEYS>',  'Define key management policy')
-  .option('--kaccept <ALL|KEYS>',      'Define key acceptance policy')
   .option('--sigDelay <timestamp>',    'Minimum delay between 2 certifications of a same issuer for a same recipient, in seconds.')
   .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
   .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
@@ -121,72 +119,6 @@ program
       process.exit();
     });
   }));
-
-program
-  .command('allow-key [key]')
-  .description('Add given key to authorized keys of this node')
-  .action(service(ucoin.createWOTServer, function (key, server, conf) {
-    key = key || "";
-    key = key.toUpperCase();
-    async.waterfall([
-      function (next) {
-        if (!key.isSha1()) {
-          next("Key must match a SHA-1 hash");
-          return;
-        }
-        next();
-      },
-      function (next){
-        server.KeyService.setKnown(key, next);
-      }
-    ], function (err, result) {
-      if(err){
-        logger.error('Error: %s', err);
-        server.disconnect();
-        process.exit();
-        return;
-      }
-      logger.debug("Key %s is now allowed to be stored" , key);
-      server.disconnect();
-      process.exit();
-    });
-  }));
-
-program
-  .command('manage-key [key]')
-  .description('Add given key to stack of managed keys of this node')
-  .action(service(ucoin.createWOTServer, function (key, server, conf) {
-    handleKey(server, key, true, 'Key %s is now managed');
-  }));
-
-program
-  .command('forget-key [key]')
-  .description('Remove given key of the managed keys\' stack of this node')
-  .action(service(ucoin.createWOTServer, function (key, server, conf) {
-    handleKey(server, key, false, 'Key %s no more managed from now');
-  }));
-
-function handleKey (server, key, isManaged, message) {
-  key = key || "";
-  key = key.toUpperCase();
-  async.waterfall([
-    function (next){
-      server.initServices(next);
-    },
-    function (next){
-      server.KeyService.handleKey(key, isManaged, next);
-    }
-  ], function (err, result) {
-    if(err){
-      logger.error('Error: %s', err);
-      server.disconnect();
-      return;
-    }
-    logger.debug(message , key);
-    server.disconnect();
-    process.exit();
-  });
-}
 
 program
   .command('gen-next [host] [port] [difficulty]')
@@ -457,10 +389,6 @@ function overrideConf(conf) {
       port: program.mport,
       database: program.mdb,
     },
-    policy: {
-      keys: program.kmanagement,
-      pubkeys: program.kaccept
-    },
     ucp: {
       sigDelay:    program.sigDelay,
       sigValidity: program.sigValidity,
@@ -490,8 +418,6 @@ function overrideConf(conf) {
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4     = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6     = cli.server.remote.ipv6;
   if (cli.server.remote.port != undefined)  conf.remoteport     = cli.server.remote.port;
-  if (cli.policy.keys)                      conf.kmanagement    = cli.policy.keys;
-  if (cli.policy.pubkeys)                   conf.kaccept        = cli.policy.pubkeys;
   if (cli.ucp.sigDelay)                     conf.sigDelay       = cli.ucp.sigDelay;
   if (cli.ucp.sigValidity)                  conf.sigValidity    = cli.ucp.sigValidity;
   if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;

@@ -24,7 +24,6 @@ function Router (serverPubkey, conn) {
     else if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers,                          done); }
     else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers,                          done); }
     else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pub),              done); }
-    else if (obj.from) {                         route('status',      obj, getTargeted(obj.to),                         done); }
     else {
       done();
     }       

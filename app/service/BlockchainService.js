@@ -1338,6 +1338,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var sigFunc, block, difficulty, current;
     async.waterfall([
       function (next) {
+        Identity.isMember(PeeringService.pubkey, function (err, isMember) {
+          if (err || !isMember)
+            next('Skipping', null, 'Local node is not a member. Waiting to be a member before computing a block.');
+          else
+            next();
+        });
+      },
+      function (next) {
         Block.current(function (err, current) {
           if (err)
             next('Skipping', null, 'Waiting for a root block before computing new blocks');

@@ -277,6 +277,18 @@ describe("Block global coherence:", function(){
     done();
   }));
 
+  it('first block with Universal Dividend should not happen before root time + dt', test('checkUD', blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULDNT, function (err, done) {
+    should.exist(err);
+    err.should.equal('This block cannot have UniversalDividend');
+    done();
+  }));
+
+  it('first block with Universal Dividend should happen on root time + dt', test('checkUD', blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULD, function (err, done) {
+    should.exist(err);
+    err.should.equal('Block must have a UniversalDividend field');
+    done();
+  }));
+
   it('a block without Universal Dividend whereas it have to have one should fail', test('checkUD', blocks.UD_BLOCK_WIHTOUT_UD, function (err, done) {
     should.exist(err);
     err.should.equal('Block must have a UniversalDividend field');
@@ -476,6 +488,8 @@ function BlockCheckerDao (block) {
       done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, date: 1411777000, confirmedDate: 1411776000, newDateNth: 9 });
     else if (block.number == 4)
       done(null, { number: 3, hash: '4AE9FA0A8299A828A886C0EB30C930C7CF302A72', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
+    else if (block.number == 20)
+      done(null, { number: 19, date: 1411773000, confirmedDate: 1411773000, confirmedDateChanged: true });
     else if (block.number == 48)
       done(null, { number: 46 });
     else if (block.number == 47)
@@ -515,7 +529,7 @@ function BlockCheckerDao (block) {
 
   this.getBlock = function (number, done) {
     if (number == 0)      
-      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709' });
+      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', confirmedDate: 1411773000 });
     else if (number == 70)      
       done(null, { confirmedDate: 1411775000 });
     else

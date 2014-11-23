@@ -354,12 +354,21 @@ function GlobalValidator (conf, dao) {
           },
           lastUDBlock: function (next) {
             dao.getLastUDBlock(next);
+          },
+          root: function (next) {
+            dao.getBlock(0, function (err, root) {
+              if (root)
+                next(null, root);
+              else
+                next(null, null);
+            });
           }
         }, next);
       },
       function (res, next){
         var current = res.current;
-        var lastUDTime = res.lastUDBlock ? res.lastUDBlock.confirmedDate : 0;
+        var root = res.root;
+        var lastUDTime = res.lastUDBlock ? res.lastUDBlock.confirmedDate : (root != null ? root.confirmedDate : 0);
         var UD = res.lastUDBlock ? res.lastUDBlock.dividend : conf.ud0;
         var M = res.lastUDBlock ? res.lastUDBlock.monetaryMass : 0;
         var Nt1 = block.membersCount;

@@ -534,10 +534,10 @@ function BlockCheckerDao (block) {
       done(null, { confirmedDate: 1411775000 });
     else if (number == 59)      
       done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' });
+    else if (number == 60)      
+      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
     else if (number == 61)      
       done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' });
-    else if (number == 62)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
     else if (number == 63)      
       done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
     else if (number == 64)      
@@ -583,7 +583,7 @@ function BlockCheckerDao (block) {
       }]);
     } else if (block.number == 67 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
       done(null, [{
-        number: 60,
+        number: 62,
         hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 zeros + 2 (3 blocks with 2 diff. issuers) interblock - 2 (3 blocks with 2 diff. issuers) block since = 6 required zeros
       },{
         number: 58,

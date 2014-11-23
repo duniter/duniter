@@ -516,7 +516,7 @@ function GlobalValidator (conf, dao) {
               function (next) {
                 //----- Following blocks -----
                 var issuers = [];
-                var neededMax = interBlocksCount;
+                var neededMax = lastBlockNbZeros - conf.powZeroMin + interBlocksCount;
                 var i = current.number; // Start INCLUDING current number
                 async.whilst(
                   function(){ return i > lasts[0].number && issuers.length < neededMax; }, // End exluding last block, stop if reaches 0 difficulty

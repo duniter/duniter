@@ -881,8 +881,8 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 Where:
 
 * `[lastBlockNbZeros]` is the number of leading zeros of last written block of the member
-* `[interBlocksCount]` is the number of blocks written by *other* members **between** the 2 last blocks of the member (so, those 2 blocks excluded). Max value is `40 - [powZeroMin]`.
-* `[followingBlocksCount]` is the number of blocks written by *other* members **since** the last block of the member (so, incoming block excluded).
+* `[interBlocksCount]` is the number of different block issuers **between** the 2 last blocks of the member (so, those 2 blocks excluded). Max value is `40 - [powZeroMin]`.
+* `[followingBlocksCount]` is the number of different block issuers **since** the last block of the member (so, incoming block excluded).
 
 
 * If no block has been written by the member:
@@ -1005,3 +1005,4 @@ At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is 
 * [Relative Money Theory](http://fr.wikipedia.org/wiki/Th%C3%A9orie_relative_de_la_monnaie), the theoretical reference behind Universal Dividend
 * [OpenUDC](www.openudc.org), the inspiration project of uCoin
 * [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system
+

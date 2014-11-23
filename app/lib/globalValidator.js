@@ -47,7 +47,7 @@ function GlobalValidator (conf, dao) {
     { name: 'checkCertificationsAreMadeToMembers',  func: check(checkCertificationsAreMadeToMembers)  },
     { name: 'checkCertificationsDelayIsRespected',  func: check(checkCertificationsDelayIsRespected)  },
     { name: 'checkMembersCountIsGood',              func: check(checkMembersCountIsGood)              },
-    { name: 'checkProofOfWork',                     func: check(checkFingerprint)                     },
+    { name: 'checkProofOfWork',                     func: check(checkProofOfWork)                     },
     { name: 'checkUD',                              func: check(checkUD)                              },
     { name: 'checkTransactions',                    func: check(checkSourcesAvailability)             }
   ];
@@ -289,7 +289,7 @@ function GlobalValidator (conf, dao) {
     ], done);
   }
 
-  function checkFingerprint (block, done) {
+  function checkProofOfWork (block, done) {
     async.waterfall([
       function (next){
         dao.getCurrent(next);
@@ -485,14 +485,68 @@ function GlobalValidator (conf, dao) {
               }
             });
             interBlocksCount = issuers.length;
+            next();
           } else {
-            // Number of blocks between 2 last blocks of issuer
-            interBlocksCount = Math.abs(lasts[0].number - lasts[1].number - 1);
+            // Number of different issuers between 2 last blocks of issuer
+            async.waterfall([
+              function (next) {
+                //----- Interblocks -----
+                var issuers = [];
+                var i = lasts[0].number - 1; // Start excluding last block of issuer
+                async.whilst(
+                  function(){ return i > lasts[1].number && issuers.length < 40 - conf.powZeroMin; }, // End exluding first block of issuer
+                  function (next) {
+                    async.waterfall([
+                      function (next){
+                        dao.getBlock(i, next);
+                      },
+                      function (block, next){
+                        if (issuers.indexOf(block.issuer) == -1) {
+                          issuers.push(block.issuer);
+                        }
+                        i--;
+                        next();
+                      },
+                    ], next);
+                  }, function (err) {
+                    interBlocksCount = issuers.length;
+                    next();
+                  });
+              },
+              function (next) {
+                //----- Following blocks -----
+                var issuers = [];
+                var neededMax = interBlocksCount;
+                var i = current.number; // Start INCLUDING current number
+                async.whilst(
+                  function(){ return i > lasts[0].number && issuers.length < neededMax; }, // End exluding last block, stop if reaches 0 difficulty
+                  function (next) {
+                    async.waterfall([
+                      function (next){
+                        dao.getBlock(i, next);
+                      },
+                      function (block, next){
+                        if (issuers.indexOf(block.issuer) == -1) {
+                          issuers.push(block.issuer);
+                        }
+                        i--;
+                        next();
+                      },
+                    ], next);
+                  }, function (err) {
+                    followingBlocksCount = issuers.length;
+                    next();
+                  });
+              }
+            ], next);
           }
         }
+        else next(); // No block for issuer
+      },
+      function (next) {
         var nbZeros = Math.max(conf.powZeroMin, lastBlockNbZeros + interBlocksCount - followingBlocksCount);
         next(null, nbZeros);
-      },
+      }
     ], done);
   }
 

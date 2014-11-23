@@ -1542,8 +1542,8 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 10\n" +
-    "Number: 62\n" +
+    "Nonce: 3\n" +
+    "Number: 67\n" +
     "Date: 1411776000\n" +
     "ConfirmedDate: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +

@@ -77,7 +77,8 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         }
         logger.debug(err);
       }
-      if (res != null && res != undefined) {
+      if (res != null && res != undefined && !err) {
+        // Only emit valid documents
         that.push(res);
       }
       if (isInnerWrite) {

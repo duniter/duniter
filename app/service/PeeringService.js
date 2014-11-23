@@ -124,6 +124,10 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     var number = sp[0], fpr = sp[1];
     async.waterfall([
       function (next) {
+        if (status.to != that.pubkey) {
+          next('Node is not concerned by this status');
+          return;
+        }
         localValidator(null).checkStatusSignature(status, next);
       },
       function (next) {

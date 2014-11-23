@@ -18,12 +18,15 @@ function Router (serverPubkey, conn) {
   var that = this;
 
   this._write = function (obj, enc, done) {
-    if (obj.peerTarget) {                        route('peer',        obj, getTargeted(obj.peerTarget),                 done); }
+         if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers,                          done); }
     // else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers,                          done); }
     // else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers,                          done); }
-    else if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers,                          done); }
     else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers,                          done); }
     else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pub),              done); }
+    else if (obj.from && obj.from == serverPubkey) {
+      // Route ONLY status emitted by this node
+      route('status', obj, getTargeted(obj.to), done);
+    }
     else {
       done();
     }       

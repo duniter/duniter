@@ -446,8 +446,9 @@ but also other informations like:
     Currency: CURRENCY
     Nonce: NONCE
     Number: BLOCK_NUMBER
-    Date: GENERATED_ON
-    ConfirmedDate: CONFIRMED_DATE
+    PoWMin: NUMBER_OF_ZEROS
+    Time: GENERATED_ON
+    MedianTime: MEDIAN_DATE
     UniversalDividend: DIVIDEND_AMOUNT
     Issuer: ISSUER_KEY
     PreviousHash: PREVIOUS_HASH
@@ -482,10 +483,11 @@ Field                 | Data                                              | Mand
 Version               | The document version                              | Always
 Type                  | The document type                                 | Always
 Currency              | The currency name                                 | Always
-Nonce                 | An arbitrary nonce value                           | Always
-Number                | The block number                               | Always
-Date                  | Date of generation                                | Always
-ConfirmedDate         | Last confirmed date                               | Always
+Nonce                 | An arbitrary nonce value                          | Always
+Number                | The block number                                  | Always
+PoWMin                | The current minimum PoW difficulty                | Always
+Time                  | Time of generation                                | Always
+MedianTime            | Median date                                       | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
 Issuer                | This block's issuer's public key                  | Always
 PreviousHash          | Previous block fingerprint (SHA-1)             | from Block#1
@@ -503,7 +505,7 @@ Transactions          | A liste of compact transactions                   | Alwa
 To be a valid, a block must match the following rules:
 
 ##### Format
-* `Version`, `Nonce`, `Number`, `Date`, `ConfirmedDate`, `MembersCount` and `UniversalDividend` are integer values
+* `Version`, `Nonce`, `Number`, `PoWMin`, `Time`, `MedianTime`, `MembersCount` and `UniversalDividend` are integer values
 * `Currency` is a valid currency name
 * `PreviousHash` is an uppercased SHA-1 hash
 * `Issuer` and `PreviousIssuer` are [Public keys](#publickey)
@@ -529,7 +531,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float and 10 integers all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:powZeroMin:dtDateMin:incDateMin
+        c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:powZeroMin:dtTimeMax:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -668,9 +670,10 @@ sigQty      | Minimum quantity of signatures to be part of the WoT
 sigWoT      | Minimum quantity of valid made certifications to be part of the WoT for distance rule
 msValidity  | Maximum age of a valid membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
-powZeroMin  | Minimum number of zeros for a Proof-of-Work
-dtDateMin   | Number of seconds that can be added to current date
-incDateMin  | Minimum number of confirmations to increment the current date.
+dtTimeMax   | The max. number of seconds that can be added to median date
+dtDiffEval  | The number of blocks required to evaluate again `PoWMin` value
+blocksRot   | The number of previous blocks to check for personalized difficulty
+percentRot  | The percent of previous issuers to reach for personalized difficulty
 
 ### Computed variables
 
@@ -690,6 +693,9 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 ##### Nonce
 
 * `Nonce` value may be any zero or positive integer. This field is a special field allowing for document hash to change for proof-of-work computation.
+
+##### Block fingerprint
+To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Locally, this hash must start with at least `PoWMin` zeros.
 
 ##### PreviousHash
 
@@ -712,7 +718,7 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 
 ##### Dates
 
-* A block must have its `Date` field be equal either to `ConfirmedDate` or `ConfirmedDate` + `dtDateMin`.
+* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `dtTimeMax`].
 
 ##### Identities
 
@@ -768,7 +774,7 @@ Refering to UD(t = 1) means UD#1, and refers to the *first UD* written in the bl
 > UD(t = 0) means UD#0 which does not exist. However, UD#0 is a currency parameter noted **[ud0]**.
 
 ###### Calendar time
-Calendar time is the one provided by the blocks under `ConfirmedDate` field. This time is discrete and unit is second.
+Calendar time is the one provided by the blocks under `MedianTime` field. This time is discrete and unit is second.
 
 > *Current time* is to be understood as the last block calendar time written in the blockchain.
 
@@ -810,6 +816,13 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 * A block's `Number` must be exactly equal to previous block + 1.
 * If blockchain is empty, `Number` must be `0` .
 
+##### PoWMin
+
+* If incoming block's `Number` is a multiple of `dtDiffEval`, then:
+  * If `dtDiffEval / (current time - time of block(current number - dtDiffEval))` is:
+    * Greater or equal to `1/CEIL(dtTimeMax/16)`, then `PoWMin = PoWMin + 1`
+    * Less or equal to `1/dtTimeMax`, then `PoWMin = PoWMin - 1`
+
 ##### PreviousHash
 
 * A block's `PreviousHash` must be exactly equal to previous block's computed hash (a.k.a Proof-of-Work). Note that this hash **must** start with ` powZeroMin` zeros.
@@ -820,10 +833,8 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Dates
 
-* A block's `Date` must always be greater or equal to previous block's `ConfirmedDate`
-* A block's `ConfirmedDate` must be equal to *last block* `ConfirmedDate` field (in time value), unless it is a confirming block.
-* A confirming block (i.e., whose `Date` field is the `incDateMin`<sup>th</sup> consecutive block with same `Date` field) must have its `ConfirmedDate` equal to `Date`.
-* Root block's `Date` & `ConfirmedDate` must be equal.
+* A block's `MedianTime` must be equal to the median value of the last `medianTimeBlocks` blocks' `Time`.
+* Root block's `Time` & `MedianTime` must be equal.
 
 ##### Identity
 
@@ -876,29 +887,28 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 ##### Block fingerprint
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
-    NB_ZEROS = MAX [ powZeroMin ; lastBlockNbZeros + interBlocksCount - followingBlocksCount ]
+    NB_ZEROS = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ]
 
 Where:
 
-* `[lastBlockNbZeros]` is the number of leading zeros of last written block of the member
-* `[interBlocksCount]` is the number of different block issuers **between** the 2 last blocks of the member (so, those 2 blocks excluded). Max value is `40 - [powZeroMin]`.
-* `[followingBlocksCount]` is the number of different block issuers **since** the last block of the member (so, incoming block excluded).
+* `[PoWMin]` is the `PoWMin` value of incoming block
+* `[percentRot]` is the protocol parameter
+* `[nbPreviousIssuers]` is the number of different block issuers in `blockRot` blocks **before** the last block of the member (so, incoming block excluded).
+* `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
 
 
 * If no block has been written by the member:
-  * `[lastBlockNbZeros] = 0`
-  * `[followingBlocksCount] = 0`
-* If member has written exactly 1 block:
-  * `[interBlocksCount]` equal to the number of different issuers since last `10` blocks *before* current block.
+  * `[nbPreviousIssuers] = 0`
+  * `[nbBlocksSince] = 0`
 
 > Those rules of difficulty adaptation ensures a shared control of the blockchain writing.
 
 ##### Universal Dividend
 
 * Root block do not have `UniversalDividend` field.
-* Universal Dividend must be present if previous block changed current time and that `ConfirmedDate` value is greater or equal to `lastUDTime` + `dt`.
-* `lastUDTime` is the `ConfirmedDate` of the last block with `UniversalDividend` in it
-* Initial value of `lastUDTime` equals to the root block's `ConfirmedDate`.
+* Universal Dividend must be present if `MedianTime` value is greater or equal to `lastUDTime` + `dt`.
+* `lastUDTime` is the `MedianTime` of the last block with `UniversalDividend` in it.
+* Initial value of `lastUDTime` equals to the root block's `MedianTime`.
 * Value of `UniversalDividend` (`UD(t+1)`) equals to:
 
 ```
@@ -1005,4 +1015,3 @@ At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is 
 * [Relative Money Theory](http://fr.wikipedia.org/wiki/Th%C3%A9orie_relative_de_la_monnaie), the theoretical reference behind Universal Dividend
 * [OpenUDC](www.openudc.org), the inspiration project of uCoin
 * [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system
-

@@ -23,7 +23,7 @@ function LocalValidator (conf) {
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
       async.apply(that.checkBlockSignature,                       block),
-      async.apply(that.checkBlockDates,                           block),
+      async.apply(that.checkBlockTimes,                           block),
       async.apply(that.checkIdentitiesSignature,                  block),
       async.apply(that.checkIdentitiesUserIDConflict,             block),
       async.apply(that.checkIdentitiesPubkeyConflict,             block),
@@ -52,7 +52,7 @@ function LocalValidator (conf) {
       async.apply(that.checkParameters,                           block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
-      async.apply(that.checkBlockDates,                           block),
+      async.apply(that.checkBlockTimes,                           block),
       async.apply(that.checkIdentitiesUserIDConflict,             block),
       async.apply(that.checkIdentitiesPubkeyConflict,             block),
       async.apply(that.checkIdentitiesMatchJoin,                  block),
@@ -103,12 +103,15 @@ function LocalValidator (conf) {
       done();
   });
 
-  this.checkBlockDates = check(function (block, done) {
-    if (hasDateDifferentThanConfirmedDateOrIncremented(block)) {
-      done('A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
-      return;
-    }
-    else done();
+  this.checkBlockTimes = check(function (block, done) {
+    var time = parseInt(block.time);
+    var medianTime = parseInt(block.medianTime);
+    if (block.number > 0 && (time < medianTime || time > medianTime + conf.dtTimeMax))
+      done('A block must have its Time between MedianTime and MedianTime + dtTimeMax');
+    else if (block.number == 0 && time != medianTime)
+      done('Root block must have Time equal MedianTime');
+    else
+      done();
   });
 
   this.checkIdentitiesSignature = check(function (block, done) {
@@ -366,12 +369,6 @@ function LocalValidator (conf) {
         done(err);
       });
     };
-  }
-
-  function hasDateDifferentThanConfirmedDateOrIncremented (block) {
-    var dateInt = parseInt(block.date);
-    var confirmedInt = parseInt(block.confirmedDate);
-    return dateInt != confirmedInt && dateInt != (confirmedInt + conf.dtDateMin);
   }
 }
 

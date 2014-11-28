@@ -12,9 +12,9 @@ var BlockSchema = new Schema({
   currency: String,
   nonce: {"type": Number, "default": 0},
   number: {"type": Number, "default": 0},
-  date: {"type": Number, "default": 0},
+  time: {"type": Number, "default": 0},
   dividend: {"type": Number, "default": 0},
-  confirmedDate: {"type": Number, "default": 0},
+  medianTime: {"type": Number, "default": 0},
   monetaryMass: {"type": Number, "default": 0},
   previousHash: String,
   previousIssuer: String,
@@ -50,8 +50,8 @@ BlockSchema.methods = {
       "version",
       "nonce",
       "number",
-      "date",
-      "confirmedDate",
+      "time",
+      "medianTime",
       "membersCount",
     ].forEach(function(field){
       json[field] = parseInt(that[field], 10);
@@ -271,7 +271,7 @@ BlockSchema.statics.getLastBlocks = function (count, done) {
 BlockSchema.statics.getFirstFrom = function (t, done) {
 
   this
-    .find({ confirmedDate: { $gte: t }})
+    .find({ medianTime: { $gte: t }})
     .sort({ number: 1 })
     .limit(1)
     .exec(function (err, blocks) {

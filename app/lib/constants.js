@@ -57,6 +57,8 @@ module.exports = {
     VERSION:     find("Version: (1)"),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
+    TIME:        find("Time: (" + TIMESTAMP + ")"),
+    MEDIAN_TIME: find("MedianTime: (" + TIMESTAMP + ")"),
     PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
     PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ")"),

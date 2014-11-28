@@ -17,8 +17,8 @@ function BlockParser (onError) {
     {prop: "currency",        regexp: constants.BLOCK.CURRENCY},
     {prop: "nonce",           regexp: constants.BLOCK.NONCE},
     {prop: "number",          regexp: /Number: (.*)/},
-    {prop: "date",            regexp: /Date: (.*)/},
-    {prop: "confirmedDate",   regexp: /ConfirmedDate: (.*)/},
+    {prop: "time",            regexp: constants.BLOCK.TIME},
+    {prop: "medianTime",      regexp: constants.BLOCK.MEDIAN_TIME},
     {prop: "dividend",        regexp: /UniversalDividend: (.*)/},
     {prop: "issuer",          regexp: /Issuer: (.*)/},
     {prop: "parameters",      regexp: constants.BLOCK.PARAMETERS},
@@ -49,8 +49,8 @@ function BlockParser (onError) {
     obj.currency = obj.currency || '';
     obj.nonce = obj.nonce || '';
     obj.number = obj.number || '';
-    obj.date = obj.date || '';
-    obj.confirmedDate = obj.confirmedDate || '';
+    obj.time = obj.time || '';
+    obj.medianTime = obj.medianTime || '';
     obj.dividend = obj.dividend || '';
     obj.issuer = obj.issuer || '';
     obj.parameters = obj.parameters || '';
@@ -74,6 +74,8 @@ function BlockParser (onError) {
       'BAD_PREV_ISSUER_PRESENT': 158,
       'BAD_PREV_ISSUER_ABSENT': 159,
       'BAD_DIVIDEND': 160,
+      'BAD_TIME': 161,
+      'BAD_MEDIAN_TIME': 162,
     }
     if(!err){
       // Version
@@ -96,14 +98,14 @@ function BlockParser (onError) {
         err = {code: codes['BAD_NUMBER'], message: "Incorrect Number field"};
     }
     if(!err){
-      // Date
-      if(!obj.date || !obj.date.match(constants.INTEGER))
-        err = {code: codes['BAD_SENDER'], message: "Date must be an integer"};
+      // Time
+      if(!obj.time || !obj.time.match(constants.INTEGER))
+        err = {code: codes['BAD_TIME'], message: "Time must be an integer"};
     }
     if(!err){
-      // ConfirmedDate
-      if(!obj.confirmedDate || !obj.confirmedDate.match(constants.INTEGER))
-        err = {code: codes['BAD_SENDER'], message: "ConfirmedDate must be an integer"};
+      // MedianTime
+      if(!obj.medianTime || !obj.medianTime.match(constants.INTEGER))
+        err = {code: codes['BAD_MEDIAN_TIME'], message: "MedianTime must be an integer"};
     }
     if(!err){
       if(obj.dividend && !obj.dividend.match(constants.INTEGER))

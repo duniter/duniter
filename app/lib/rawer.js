@@ -87,8 +87,8 @@ module.exports = new function() {
     raw += "Currency: " + json.currency + "\n";
     raw += "Nonce: " + json.nonce + "\n";
     raw += "Number: " + json.number + "\n";
-    raw += "Date: " + json.date + "\n";
-    raw += "ConfirmedDate: " + json.confirmedDate + "\n";
+    raw += "Time: " + json.time + "\n";
+    raw += "MedianTime: " + json.medianTime + "\n";
     if (json.dividend)
       raw += "UniversalDividend: " + json.dividend + "\n";
     if (json.fees)

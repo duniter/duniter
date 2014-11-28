@@ -29,8 +29,7 @@ var ConfigurationSchema = new Schema({
   powDelay:    {"type": Number, "default": 10}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the blockchain
   tsInterval:  {"type": Number, "default": 30},
-  incDateMin:  {"type": Number, "default": 10}, // Increment date on incDateMin'th block with same new Date
-  dtDateMin:   {"type": Number, "default": 3600*24}, // Increment date value (default 1 day)
+  dtTimeMax:   {"type": Number, "default": 120}, // Max increment time value
   udid2:       {"type": Boolean, "default": false},
 });
 

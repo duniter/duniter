@@ -15,7 +15,7 @@ var conf = new Configuration({
   powZeroMin: 1,
   powPeriod: 18,
   incDateMin: 10,
-  dtDateMin: 60,
+  dtTimeMax: 60,
   dt: 100,
   ud0: 100,
   c: 0.1
@@ -70,22 +70,22 @@ describe("Block local coherence", function(){
       done();
     }));
 
-    it('a block with wrong date (in past)', test('checkBlockDates', blocks.WRONG_DATE_LOWER, function (err, done) {
-      assert.equal(err, 'A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
+    it('a block with wrong date (in past)', test('checkBlockTimes', blocks.WRONG_DATE_LOWER, function (err, done) {
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + dtTimeMax');
       done();
     }));
 
-    it('a block with wrong date (in future, but too close)', test('checkBlockDates', blocks.WRONG_DATE_HIGHER_BUT_TOO_FEW, function (err, done) {
-      assert.equal(err, 'A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
+    it('a block with wrong date (in future, but too far)', test('checkBlockTimes', blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, function (err, done) {
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + dtTimeMax');
       done();
     }));
 
-    it('a block with wrong date (in future, but too far)', test('checkBlockDates', blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, function (err, done) {
-      assert.equal(err, 'A block must have its Date equal to ConfirmedDate or ConfirmedDate + dtDateMin');
+    it('a root block with different time & medianTime should fail', test('checkBlockTimes', blocks.WRONG_ROOT_TIMES, function (err, done) {
+      assert.equal(err, 'Root block must have Time equal MedianTime');
       done();
     }));
 
-    it('a block with good date', test('checkBlockDates', blocks.GOOD_DATE_HIGHER, function (err, done) {
+    it('a block with good date', test('checkBlockTimes', blocks.GOOD_DATE_HIGHER, function (err, done) {
       should.not.exist(err);
       done();
     }));

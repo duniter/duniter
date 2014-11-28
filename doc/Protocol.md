@@ -670,6 +670,7 @@ sigQty      | Minimum quantity of signatures to be part of the WoT
 sigWoT      | Minimum quantity of valid made certifications to be part of the WoT for distance rule
 msValidity  | Maximum age of a valid membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
+medianTimeBlocks | Number of blocks used for calculating median time. Must be an odd value.
 dtTimeMax   | The max. number of seconds that can be added to median date
 dtDiffEval  | The number of blocks required to evaluate again `PoWMin` value
 blocksRot   | The number of previous blocks to check for personalized difficulty

@@ -34,7 +34,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 9\n" +
+    "Nonce: 30\n" +
     "Number: 0\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
@@ -1105,10 +1105,11 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 12\n" +
+    "Nonce: 7\n" +
     "Number: 3\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
+    "UniversalDividend: 100\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 15978746968DB6BE3CDAF243E372FEB35F7B0924\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1532,7 +1533,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 49\n" +
+    "Nonce: 31\n" +
     "Number: 60\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
@@ -1555,7 +1556,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 8\n" +
+    "Nonce: 6\n" +
     "Number: 61\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
@@ -1578,7 +1579,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 3\n" +
+    "Nonce: 28\n" +
     "Number: 67\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
@@ -1647,7 +1648,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 14\n" +
+    "Nonce: 1\n" +
     "Number: 65\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
@@ -1670,7 +1671,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 15\n" +
+    "Nonce: 19\n" +
     "Number: 66\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
@@ -1719,12 +1720,12 @@ module.exports = {
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
-  WRONG_DATE_LOWER_THAN_CONFIRMED: 
+  WRONG_MEDIAN_TIME_ODD: 
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
-    "Number: 70\n" +
+    "Number: 101\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1740,14 +1741,56 @@ module.exports = {
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
-  WRONG_CONFIRMED_DATE_NOT_SAME: 
+  WRONG_MEDIAN_TIME_EVEN: 
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
-    "Number: 71\n" +
+    "Number: 102\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  GOOD_MEDIAN_TIME_ODD: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 103\n" +
+    "Time: 161\n" +
+    "MedianTime: 161\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  GOOD_MEDIAN_TIME_EVEN: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 104\n" +
+    "Time: 162\n" +
+    "MedianTime: 162\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1769,27 +1812,6 @@ module.exports = {
     "Number: 72\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411776000\n" +
-    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
-    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "MembersCount: 3\n" +
-    "Identities:\n" +
-    "Joiners:\n" +
-    "Actives:\n" +
-    "Leavers:\n" +
-    "Excluded:\n" +
-    "Certifications:\n" +
-    "Transactions:\n" +
-    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
-
-  GOOD_CONFIRMED_DATE: 
-    "Version: 1\n" +
-    "Type: Block\n" +
-    "Currency: beta_brousouf\n" +
-    "Nonce: 11\n" +
-    "Number: 73\n" +
-    "Time: 1411777000\n" +
-    "MedianTime: 1411777000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +

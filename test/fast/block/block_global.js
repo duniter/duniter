@@ -20,7 +20,8 @@ var conf = new Configuration({
   incDateMin: 10,
   dt: 100,
   ud0: 100,
-  c: 0.1
+  c: 0.1,
+  medianTimeBlocks: 200
 });
 
 describe("Block global coherence:", function(){
@@ -242,31 +243,29 @@ describe("Block global coherence:", function(){
     done();
   }));
 
-  it('a root block with date field different from confirmed date should fail', test('checkDates', blocks.WRONG_ROOT_DATES, function (err, done) {
-    should.exist(err);
-    err.should.equal('Root block\'s Date and ConfirmedDate must be equal');
+  it('a root block should not fail for time reason', test('checkTimes', blocks.WRONG_ROOT_DATES, function (err, done) {
+    should.not.exist(err);
     done();
   }));
 
-  it('a block with date field lower than confirmed date should fail', test('checkDates', blocks.WRONG_DATE_LOWER_THAN_CONFIRMED, function (err, done) {
+  it('a block with wrong median for an odd number of blocks should fail', test('checkTimes', blocks.WRONG_MEDIAN_TIME_ODD, function (err, done) {
     should.exist(err);
-    err.should.equal('Date field cannot be lower than previous block\'s ConfirmedDate');
+    err.should.equal('Wrong MedianTime');
     done();
   }));
 
-  it('a block with different confirmed dates AND not confirming a new date should fail', test('checkDates', blocks.WRONG_CONFIRMED_DATE_NOT_SAME, function (err, done) {
+  it('a block with wrong median for an even number of blocks should fail', test('checkTimes', blocks.WRONG_MEDIAN_TIME_EVEN, function (err, done) {
     should.exist(err);
-    err.should.equal('ConfirmedDate must be equal to previous block\'s ConfirmedDate');
+    err.should.equal('Wrong MedianTime');
     done();
   }));
 
-  it('a block with different confirmed dates AND not confirming a new date should fail', test('checkDates', blocks.WRONG_CONFIRMED_DATE_MUST_CONFIRM, function (err, done) {
-    should.exist(err);
-    err.should.equal('ConfirmedDate must be equal to Date for a confirming block');
+  it('a block whose median time is correct (odd) should pass', test('checkTimes', blocks.GOOD_MEDIAN_TIME_ODD, function (err, done) {
+    should.not.exist(err);
     done();
   }));
 
-  it('a block with good confirmation of a new date should pass', test('checkDates', blocks.GOOD_CONFIRMED_DATE, function (err, done) {
+  it('a block whose median time is correct (even) should pass', test('checkTimes', blocks.GOOD_MEDIAN_TIME_EVEN, function (err, done) {
     should.not.exist(err);
     done();
   }));
@@ -303,7 +302,7 @@ describe("Block global coherence:", function(){
 
   it('a root block with unlegitimated Universal Dividend presence should fail', test('checkUD', blocks.BLOCK_UNLEGITIMATE_UD, function (err, done) {
     should.exist(err);
-    err.should.equal('This block cannot have UniversalDividend since ConfirmedDate has not changed');
+    err.should.equal('This block cannot have UniversalDividend');
     done();
   }));
 
@@ -485,11 +484,11 @@ function BlockCheckerDao (block) {
 
   this.getCurrent = function (done) {
     if (block.number == 3)      
-      done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, date: 1411777000, confirmedDate: 1411776000, newDateNth: 9 });
+      done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, time: 1411776000, medianTime: 1411776000 });
     else if (block.number == 4)
       done(null, { number: 3, hash: '4AE9FA0A8299A828A886C0EB30C930C7CF302A72', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 20)
-      done(null, { number: 19, date: 1411773000, confirmedDate: 1411773000, confirmedDateChanged: true });
+      done(null, { number: 19, time: 1411773000, medianTime: 1411773000 });
     else if (block.number == 48)
       done(null, { number: 46 });
     else if (block.number == 47)
@@ -503,35 +502,45 @@ function BlockCheckerDao (block) {
     else if (block.number == 52)
       done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 70)
-      done(null, { number: 69, date: 1411777000, confirmedDate: 1411777000, newDateNth: 1 });
+      done(null, { number: 69, time: 1411777000, medianTime: 1411777000 });
     else if (block.number == 71)
-      done(null, { number: 70, date: 1411775000, confirmedDate: 1411775000, newDateNth: 1 });
+      done(null, { number: 70, time: 1411775000, medianTime: 1411775000 });
     else if (block.number == 72)
-      done(null, { number: 71, date: 1411777000, confirmedDate: 1411777000, newDateNth: 9 });
+      done(null, { number: 71, time: 1411777000, medianTime: 1411777000 });
     else if (block.number == 73)
-      done(null, { number: 72, date: 1411777000, confirmedDate: 1411776000, newDateNth: 9 });
+      done(null, { number: 72, time: 1411777000, medianTime: 1411776000 });
     else if (block.number == 80)
-      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: true });
+      done(null, { time: 1411777000, medianTime: 1411777000 });
     else if (block.number == 81)
-      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: true });
+      done(null, { time: 1411777000, medianTime: 1411777000 });
     else if (block.number == 82)
-      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: false });
+      done(null, { time: 1411777000, medianTime: 1411777000 });
     else if (block.number == 83)
-      done(null, { date: 1411777000, confirmedDate: 1411777000, confirmedDateChanged: true });
+      done(null, { time: 1411777000, medianTime: 1411777000 });
     // Tests for TrialLevel
     else if (block.number >= 60 && block.number <= 67)
       done(null, { number: block.number - 1 });
     else if (block.number == 90)
-      done(null, { date: 1443333600, confirmedDate: 1443333600, confirmedDateChanged: true });
+      done(null, { time: 1443333600, medianTime: 1443333600 });
+    else if (block.number == 101)
+      done(null, { number: 100 });
+    else if (block.number == 102)
+      done(null, { number: 101 });
+    else if (block.number == 103)
+      done(null, { number: 102 });
+    else if (block.number == 104)
+      done(null, { number: 103 });
     else
       done(null, null);
   }
 
   this.getBlock = function (number, done) {
     if (number == 0)      
-      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', confirmedDate: 1411773000 });
+      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: 1411773000 });
+    else if (block.number == 3 && number == 1)      
+      done(null, { time: 1411776000 });
     else if (number == 70)      
-      done(null, { confirmedDate: 1411775000 });
+      done(null, { medianTime: 1411775000 });
     else if (number == 59)      
       done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' });
     else if (number == 60)      
@@ -546,6 +555,12 @@ function BlockCheckerDao (block) {
       done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
     else if (number == 66)      
       done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
+    else if (number == 50)      
+      done(null, { time: 160 });
+    else if (number == 51)      
+      done(null, { time: 161 });
+    else if (number == 52)      
+      done(null, { time: 162 });
     else
       done('No block found', null);
   }
@@ -612,13 +627,13 @@ function BlockCheckerDao (block) {
     if (block.number == 0) {
       done(null, null);
     } else if (block.number == 80) {
-      done(null, { confirmedDate: 1411776900, monetaryMass: 300, dividend: 100 });
+      done(null, { medianTime: 1411776900, monetaryMass: 300, dividend: 100 });
     } else if (block.number == 81) {
-      done(null, { confirmedDate: 1411776900, monetaryMass: 3620, dividend: 110 });
+      done(null, { medianTime: 1411776900, monetaryMass: 3620, dividend: 110 });
     } else if (block.number == 82) {
-      done(null, { confirmedDate: 1411777000, monetaryMass: 3620, dividend: 110 });
+      done(null, { medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
     } else if (block.number == 83) {
-      done(null, { confirmedDate: 1411777000, monetaryMass: 3620, dividend: 110 });
+      done(null, { medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
     } else {
       done(null, null);
     }
@@ -671,7 +686,7 @@ function BlockCheckerDao (block) {
     else if (number == 3 && hash == 'A9B751F5D24A3F418815BD9CE2766759E21E9E21')
       done(null, {});
     else if (number == 70 && hash == '3BAF425A914349B9681A444B5A2F59EEA55D2663')
-      done(null, { confirmedDate: 1411775000 });
+      done(null, { medianTime: 1411775000 });
     else
       done(null, null);
   }

@@ -20,8 +20,6 @@ var BlockSchema = new Schema({
   previousIssuer: String,
   parameters: String,
   membersCount: {"type": Number, "default": 0},
-  newDateNth: {"type": Number, "default": 0},
-  confirmedDateChanged: {"type": Boolean, "default": false},
   identities: Array,
   joiners: Array,
   actives: Array,

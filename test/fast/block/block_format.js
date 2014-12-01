@@ -7,8 +7,8 @@ var raw = "Version: 1\n" +
   "Currency: beta_brousouf\n" + 
   "Nonce: 2\n" + 
   "Number: 0\n" + 
-  "Date: 1411321505\n" + 
-  "ConfirmedDate: 1411321505\n" + 
+  "Time: 1411321505\n" + 
+  "MedianTime: 1411321505\n" + 
   "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" + 
   "MembersCount: 3\n" + 
   "Identities:\n" + 

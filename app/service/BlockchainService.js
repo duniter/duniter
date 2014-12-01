@@ -293,15 +293,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   function updateBlocksComputedVars (current, block, done) {
-    // New date confirmation
-    if (!current || current.date != block.date) {
-      block.newDateNth = 1;
-    } else {
-      block.newDateNth = current.newDateNth + 1;
-    }
-    if (current && block.confirmedDate != current.confirmedDate) {
-      block.confirmedDateChanged = true;
-    }
     // Monetary Mass update
     if (current) {
       block.monetaryMass = (current.monetaryMass || 0) + block.dividend*block.membersCount;
@@ -468,7 +459,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       new Link({
         source: cert.from,
         target: cert.to,
-        timestamp: block.confirmedDate
+        timestamp: block.medianTime
       })
       .save(function (err) {
         callback(err);
@@ -554,7 +545,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   function computeObsoleteLinks (block, done) {
     async.waterfall([
       function (next){
-        Link.obsoletes(block.confirmedDate - conf.sigValidity, next);
+        Link.obsoletes(block.medianTime - conf.sigValidity, next);
       },
       function (next){
         Identity.getMembers(next);
@@ -586,7 +577,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   function computeObsoleteMemberships (block, done) {
     async.waterfall([
       function (next){
-        Block.getFirstFrom(block.confirmedDate - conf.msValidity, next);
+        Block.getFirstFrom(block.medianTime - conf.msValidity, next);
       },
       function (first, next){
         if (first)
@@ -688,7 +679,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             function (next) {
               if (current) {
                 // Already exists a link not replayable yet?
-                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.confirmedDate - conf.sigDelay, next);
+                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
               }
               else next(null, false);
             },
@@ -948,7 +939,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                             function (next) {
                               if (current) {
                                 // Already exists a link not replayable yet?
-                                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.confirmedDate - conf.sigDelay, next);
+                                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
                               }
                               else next(null, false);
                             },
@@ -1157,15 +1148,16 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     ].join(':');
     var now = moment.utc().startOf('minute').unix();
     if (current) {
-      var nextDate = current.confirmedDate + conf.dtDateMin;
-      now = (nextDate <= now) ? nextDate : current.confirmedDate;
+      var nextDate = current.medianTime + conf.dtDateMin;
+      now = (nextDate <= now) ? nextDate : current.medianTime;
     }
-    block.date = now;
-    block.confirmedDate = current ? current.confirmedDate : now;
-    var lastDate = current ? current.date : null;
-    if (lastDate && current.newDateNth == conf.incDateMin - 1 && block.date == current.date) {
-      // Must change confirmedDate to the new date
-      block.confirmedDate = block.date;
+    block.time = now;
+    block.medianTime = current ? current.medianTime : now;
+    // TODO: medianTime + time
+    var lastDate = current ? current.time : null;
+    if (lastDate && current.newDateNth == conf.incDateMin - 1 && block.time == current.time) {
+      // Must change medianTime to the new date
+      block.medianTime = block.time;
     }
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
@@ -1217,18 +1209,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.waterfall([
       function (next) {
         if (lastUDBlock)
-          next(null, lastUDBlock.confirmedDate);
+          next(null, lastUDBlock.medianTime);
         else
           Block.getRoot(function (err, root) {
             if (root)
-              next(null, root.confirmedDate);
+              next(null, root.medianTime);
             else
               next(null, null);
           });
       },
       function (lastUDTime, next) {
         if (lastUDTime != null) {
-          if (current && current.confirmedDateChanged && lastUDTime + conf.dt <= current.confirmedDate) {
+          if (current && lastUDTime + conf.dt <= current.medianTime) {
             var M = current.monetaryMass || 0;
             var c = conf.c;
             var N = block.membersCount;

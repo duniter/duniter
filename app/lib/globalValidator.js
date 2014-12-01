@@ -30,7 +30,7 @@ function GlobalValidator (conf, dao) {
     { name: 'checkPreviousHash',                    func: check(checkPreviousHash)                    },
     { name: 'checkPreviousIssuer',                  func: check(checkPreviousIssuer)                  },
     { name: 'checkIssuerIsMember',                  func: check(checkIssuerIsMember)                  },
-    { name: 'checkDates',                           func: check(checkDates)                           },
+    { name: 'checkTimes',                           func: check(checkTimes)                           },
     { name: 'checkIdentityUnicity',                 func: check(checkIdentityUnicity)                 },
     { name: 'checkPubkeyUnicity',                   func: check(checkPubkeyUnicity)                   },
     { name: 'checkJoiners',                         func: check(checkJoiners)                         },
@@ -167,7 +167,7 @@ function GlobalValidator (conf, dao) {
         if (block.number == 0 && cert.block_number != 0) {
           next('Number must be 0 for root block\'s certifications');
         } else if (block.number == 0 && cert.block_number == 0) {
-          next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', confirmedDate: moment.utc().startOf('minute').unix() }); // Valid for root block
+          next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
         } else {
           dao.getBlock(cert.block_number, function (err, basedBlock) {
             next(err && 'Certification based on an unexisting block', basedBlock);
@@ -195,7 +195,7 @@ function GlobalValidator (conf, dao) {
           next('Identity does not exist for certified');
           return;
         }
-        else if (res.current && res.current.confirmedDate > res.target.confirmedDate + conf.sigValidity) {
+        else if (res.current && res.current.medianTime > res.target.medianTime + conf.sigValidity) {
           next('Certification has expired');
         }
         else if (cert.from == res.idty.pubkey)
@@ -320,28 +320,59 @@ function GlobalValidator (conf, dao) {
     ], done);
   }
 
-  function checkDates (block, done) {
+  function checkTimes (block, done) {
+    if (block.number == 0) {
+      // No rule to check for block#0
+      done();
+      return;
+    }
     async.waterfall([
       function (next){
         dao.getCurrent(next);
       },
       function (current, next){
-        if (!current && block.date != block.confirmedDate) {
-          next('Root block\'s Date and ConfirmedDate must be equal');
-        }
-        else if (current && block.date < current.confirmedDate) {
-          next('Date field cannot be lower than previous block\'s ConfirmedDate');
-        }
-        else if (current && current.newDateNth + 1 == conf.incDateMin && block.date == current.date && block.confirmedDate != block.date) {
-          next('ConfirmedDate must be equal to Date for a confirming block');
-        }
-        else if (current && !(current.newDateNth + 1 == conf.incDateMin && block.date == current.date) && block.confirmedDate != current.confirmedDate) {
-          next('ConfirmedDate must be equal to previous block\'s ConfirmedDate');
+        var blocksCount = current.number + 1 >= conf.medianTimeBlocks ? conf.medianTimeBlocks : current.number + 1;
+        if (blocksCount % 2 == 0) {
+          // Even number of blocks
+          var middle = blocksCount / 2;
+          async.parallel({
+            one: function (next) {
+              dao.getBlock(current.number - middle, next);
+            },
+            two: function (next) {
+              dao.getBlock(current.number - middle + 1, next);
+            }
+          }, function (err, res) {
+            next(err, [res.one, res.two]);
+          });
         }
         else {
-          next();
+          // Odd number of blocks
+          var middle = (blocksCount - 1) / 2;
+          dao.getBlock(current.number - middle, function (err, block) {
+            next(err, [block]);
+          });
         }
       },
+      function (blocks, next) {
+        // Content
+        if (blocks.length == 2) {
+          // Even number of blocks
+          median = Math.ceil((blocks[0].time + blocks[1].time) / 2);
+          next(null, median);
+        }
+        else if (blocks.length == 1) {
+          // Odd number of blocks
+          median = blocks[0].time;
+          next(null, median);
+        }
+        else {
+          next('No block found for MedianTime comparison');
+        }
+      },
+      function (median, next) {
+        next(median != block.medianTime ? 'Wrong MedianTime' : null);
+      }
     ], done);
   }
 
@@ -368,7 +399,7 @@ function GlobalValidator (conf, dao) {
       function (res, next){
         var current = res.current;
         var root = res.root;
-        var lastUDTime = res.lastUDBlock ? res.lastUDBlock.confirmedDate : (root != null ? root.confirmedDate : 0);
+        var lastUDTime = res.lastUDBlock ? res.lastUDBlock.medianTime : (root != null ? root.medianTime : 0);
         var UD = res.lastUDBlock ? res.lastUDBlock.dividend : conf.ud0;
         var M = res.lastUDBlock ? res.lastUDBlock.monetaryMass : 0;
         var Nt1 = block.membersCount;
@@ -377,16 +408,13 @@ function GlobalValidator (conf, dao) {
         if (!current && block.dividend) {
           next('Root block cannot have UniversalDividend field');
         }
-        else if (current && current.confirmedDateChanged && block.confirmedDate >= lastUDTime + conf.dt && !block.dividend) {
+        else if (current && block.medianTime >= lastUDTime + conf.dt && !block.dividend) {
           next('Block must have a UniversalDividend field');
         }
-        else if (current && current.confirmedDateChanged && block.confirmedDate >= lastUDTime + conf.dt && block.dividend != UDt1) {
+        else if (current && block.medianTime >= lastUDTime + conf.dt && block.dividend != UDt1) {
           next('UniversalDividend must be equal to ' + UDt1);
         }
-        else if (current && !current.confirmedDateChanged && block.dividend) {
-          next('This block cannot have UniversalDividend since ConfirmedDate has not changed');
-        }
-        else if (current && current.confirmedDateChanged && block.confirmedDate < lastUDTime + conf.dt && block.dividend) {
+        else if (current && block.medianTime < lastUDTime + conf.dt && block.dividend) {
           next('This block cannot have UniversalDividend');
         }
         else {
@@ -727,7 +755,7 @@ function GlobalValidator (conf, dao) {
           }, next);
         },
         function (res, next) {
-          if (res.current && res.current.confirmedDate > res.target.confirmedDate + conf.msValidity) {
+          if (res.current && res.current.medianTime > res.target.medianTime + conf.msValidity) {
             next('Membership has expired');
           }
           else next();
@@ -744,7 +772,7 @@ function GlobalValidator (conf, dao) {
           dao.getPreviousLinkFor(cert.from, cert.to, next);
         },
         function (previous, next){
-          var duration = previous && (block.confirmedDate - parseInt(previous.timestamp));
+          var duration = previous && (block.medianTime - parseInt(previous.timestamp));
           if (previous && (duration < conf.sigDelay)) {
             next('Too early for this certification');
           } else {

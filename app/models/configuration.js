@@ -30,6 +30,7 @@ var ConfigurationSchema = new Schema({
   participate: {"type": Boolean, "default": true}, // Participate to writing the blockchain
   tsInterval:  {"type": Number, "default": 30},
   dtTimeMax:   {"type": Number, "default": 120}, // Max increment time value
+  medianTimeBlocks: {"type": Number, "default": 20}, // Number of blocks to check for median time value
   udid2:       {"type": Boolean, "default": false},
 });
 

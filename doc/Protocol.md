@@ -670,7 +670,7 @@ sigQty      | Minimum quantity of signatures to be part of the WoT
 sigWoT      | Minimum quantity of valid made certifications to be part of the WoT for distance rule
 msValidity  | Maximum age of a valid membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
-medianTimeBlocks | Number of blocks used for calculating median time. Must be an odd value.
+medianTimeBlocks | Number of blocks used for calculating median time.
 dtTimeMax   | The max. number of seconds that can be added to median date
 dtDiffEval  | The number of blocks required to evaluate again `PoWMin` value
 blocksRot   | The number of previous blocks to check for personalized difficulty
@@ -720,6 +720,7 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 ##### Dates
 
 * A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `dtTimeMax`].
+* Root block's `Time` & `MedianTime` must be equal.
 
 ##### Identities
 
@@ -834,8 +835,7 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Dates
 
-* A block's `MedianTime` must be equal to the median value of the last `medianTimeBlocks` blocks' `Time`.
-* Root block's `Time` & `MedianTime` must be equal.
+* For any non-root block, `MedianTime` must be equal to the median value of `Time` field for the last `medianTimeBlocks` blocks. If the number of available blocks is an even value, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
 
 ##### Identity
 

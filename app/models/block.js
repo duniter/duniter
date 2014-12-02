@@ -218,11 +218,11 @@ BlockSchema.statics.nextNumber = function (done) {
   });
 };
 
-BlockSchema.statics.last2BlocksOfIssuer = function (issuer, done) {
+BlockSchema.statics.lastBlocksOfIssuer = function (issuer, count, done) {
   this
     .find({ issuer: issuer })
     .sort({ 'number': -1 })
-    .limit(2)
+    .limit(count)
     .exec(done);
 };
 

@@ -24,12 +24,13 @@ var ConfigurationSchema = new Schema({
   msValidity:  {"type": Number, "default": 3600*24*365}, // 1 year by default
   sigQty:      {"type": Number, "default": 5},
   sigWoT:      {"type": Number, "default": 5},
-  powZeroMin:  {"type": Number, "default": 1},
-  powPeriod:   {"type": Number, "default": 1},
+  percentRot:  {"type": Number, "default": 2/3},
+  blockRot:    {"type": Number, "default": 20},
   powDelay:    {"type": Number, "default": 10}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the blockchain
   tsInterval:  {"type": Number, "default": 30},
   dtTimeMax:   {"type": Number, "default": 120}, // Max increment time value
+  dtDiffEval:  {"type": Number, "default": 10},
   medianTimeBlocks: {"type": Number, "default": 20}, // Number of blocks to check for median time value
   udid2:       {"type": Boolean, "default": false},
 });

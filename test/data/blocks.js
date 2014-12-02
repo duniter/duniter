@@ -1166,7 +1166,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 7\n" +
+    "Nonce: 23\n" +
     "Number: 3\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
@@ -1733,7 +1733,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 1\n" +
+    "Nonce: 7\n" +
     "Number: 65\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
@@ -2684,7 +2684,7 @@ module.exports = {
     "Leavers:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
-    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:2:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:111:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 };

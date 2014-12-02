@@ -76,8 +76,6 @@ function BlockchainBinding (wotServer) {
       "sigValidity": conf.sigValidity,
       "sigQty": conf.sigQty,
       "stepMax": 3, // uCoin only handles 3 step currencies for now
-      "powZeroMin": conf.powZeroMin,
-      "powPeriod": conf.powPeriod,
       "incDateMin": conf.incDateMin,
       "dtDateMin": conf.dtDateMin
     }, null, "  "));

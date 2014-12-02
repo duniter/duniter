@@ -21,7 +21,10 @@ var conf = new Configuration({
   dt: 100,
   ud0: 100,
   c: 0.1,
-  medianTimeBlocks: 200
+  medianTimeBlocks: 200,
+  percentRot: 2/3,
+  blockRot: 300,
+  dtDiffEval: 500
 });
 
 describe("Block global coherence:", function(){
@@ -210,25 +213,25 @@ describe("Block global coherence:", function(){
 
   it('a block not starting with a leading zero should fail', test('checkProofOfWork', blocks.NO_LEADING_ZERO, function (err, done) {
     should.exist(err);
-    err.should.equal('Not a proof-of-work');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 1 zeros');
     done();
   }));
 
-  it('a block requiring 4 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_4_LEADING_ZEROS, function (err, done) {
+  it('a block requiring 1 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_4_LEADING_ZEROS, function (err, done) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 4 zeros');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 1 zeros');
     done();
   }));
 
-  it('a block requiring 7 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_7_LEADING_ZEROS, function (err, done) {
+  it('a block requiring 2 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_7_LEADING_ZEROS, function (err, done) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 7 zeros');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 2 zeros');
     done();
   }));
 
-  it('a block requiring 6 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_6_LEADING_ZEROS, function (err, done) {
+  it('a block requiring 1 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_6_LEADING_ZEROS, function (err, done) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 6 zeros');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 1 zeros');
     done();
   }));
 
@@ -237,9 +240,9 @@ describe("Block global coherence:", function(){
     done();
   }));
 
-  it('a block requiring 3 leading zeros as second block of newcomer should fail', test('checkProofOfWork', blocks.SECOND_BLOCK_OF_NEWCOMER, function (err, done) {
+  it('a block requiring 40 leading zeros as second block of newcomer should fail', test('checkProofOfWork', blocks.SECOND_BLOCK_OF_NEWCOMER, function (err, done) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 1 zeros, required was 3 zeros');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 40 zeros');
     done();
   }));
 
@@ -536,31 +539,33 @@ function BlockCheckerDao (block) {
 
   this.getBlock = function (number, done) {
     if (number == 0)      
-      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: 1411773000 });
+      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: 1411773000, powMin: 1 });
+    else if (number == 2)
+      done(null, { number: 3, powMin: 1 });
     else if (block.number == 3 && number == 1)      
-      done(null, { time: 1411776000 });
+      done(null, { time: 1411776000, powMin: 1 });
     else if (number == 70)      
-      done(null, { medianTime: 1411775000 });
+      done(null, { medianTime: 1411775000, powMin: 1 });
     else if (number == 59)      
-      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' });
+      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 });
     else if (number == 60)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
+      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 });
     else if (number == 61)      
-      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' });
+      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 });
     else if (number == 63)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
+      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 });
     else if (number == 64)      
-      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' });
+      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 });
     else if (number == 65)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
+      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 10 });
     else if (number == 66)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' });
+      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 });
     else if (number == 50)      
-      done(null, { time: 160 });
+      done(null, { time: 160, powMin: 1 });
     else if (number == 51)      
-      done(null, { time: 161 });
+      done(null, { time: 161, powMin: 1 });
     else if (number == 52)      
-      done(null, { time: 162 });
+      done(null, { time: 162, powMin: 1 });
     else
       done('No block found', null);
   }
@@ -576,32 +581,23 @@ function BlockCheckerDao (block) {
     }
   },
 
-  this.last2BlocksOfIssuer = function (issuer, done) {
+  this.lastBlocksOfIssuer = function (issuer, count, done) {
     if (block.number == 60 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
       done(null, [{
         number: 59,
         hash: '0000AB8A955B2196FB8560DCDA7A70B19DDB3433' // 4 zeros + 0 interblock - 0 block since = 4 required zeros
-      },{
-        number: 58,
       }]);
     } else if (block.number == 61 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
       done(null, [{
-        number: 60,
-        hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 zeros + 1 interblock - 0 block since = 7 required zeros
-      },{
-        number: 58,
+        number: 60, // 3 issuers, 0 block since, 2/3 percent, 1 powMin = 2 required zeros
       }]);
     } else if (block.number == 66 && issuer == 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
       done(null, [{
-        number: 65,
-        hash: '0123458A955B2196FB8560DCDA7A70B19DDB3433'
+        number: 63 // 18 issuers, 2 blocks since, 2/3 percent + 10 powMin ==> 10 * (2/3 * 18 / (1 + 2)) ==> 10 * 12/3 ==> 40
       }]);
     } else if (block.number == 67 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
       done(null, [{
-        number: 62,
-        hash: '0000008A955B2196FB8560DCDA7A70B19DDB3433' // 6 zeros + 2 (3 blocks with 2 diff. issuers) interblock - 2 (3 blocks with 2 diff. issuers) block since = 6 required zeros
-      },{
-        number: 58,
+        number: 62 // 18 issuers, 11 blocks since, 1 powMin = 1 required zeros
       }]);
     } else {
       done(null, null);
@@ -696,6 +692,17 @@ function BlockCheckerDao (block) {
       done(null, 2);
     else
       done(null, -1);
+  }
+
+  this.getIssuersBetween = function (bStart, bEnd, done) {
+    if (block.number == 66)
+      done(null, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,18,18]);
+    else if (block.number == 61)
+      done(null, [1,2,3]);
+    else if (block.number == 60)
+      done(null, [1,2]);
+    else
+      done(null, []);
   }
 
 }

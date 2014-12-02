@@ -47,6 +47,7 @@ function GlobalValidator (conf, dao) {
     { name: 'checkCertificationsAreMadeToMembers',  func: check(checkCertificationsAreMadeToMembers)  },
     { name: 'checkCertificationsDelayIsRespected',  func: check(checkCertificationsDelayIsRespected)  },
     { name: 'checkMembersCountIsGood',              func: check(checkMembersCountIsGood)              },
+    { name: 'checkPoWMin',                          func: check(checkPoWMin)                          },
     { name: 'checkProofOfWork',                     func: check(checkProofOfWork)                     },
     { name: 'checkUD',                              func: check(checkUD)                              },
     { name: 'checkTransactions',                    func: check(checkSourcesAvailability)             }
@@ -289,32 +290,91 @@ function GlobalValidator (conf, dao) {
     ], done);
   }
 
+  function checkPoWMin (block, done) {
+    if (block.number == 0) {
+      done();
+      return;
+    }
+    async.waterfall([
+      function (next) {
+        getPoWMinFor(block.number, next);
+      },
+      function (correctPowMin, next) {
+        if (block.powMin < correctPowMin) {
+          next('PoWMin value must be incremented');
+        }
+        else if (correctPowMin < block.powMin) {
+          next('PoWMin value must be decremented');
+        }
+        else {
+          next();
+        }
+      }
+    ], done);
+  }
+
+  /**
+  * Deduce the PoWMin field for a given block number
+  */
+  function getPoWMinFor (blockNumber, done) {
+    if (blockNumber == 0) {
+      done('Cannot deduce PoWMin for block#0');
+    } else if (blockNumber % conf.dtDiffEval != 0) {
+      async.waterfall([
+        function (next) {
+          // Find preceding
+          dao.getBlock(blockNumber - 1, next);
+        },
+        function (previous, next) {
+          next(null, previous.powMin);
+        }
+      ], done);
+    } else {
+      var previous = null;
+      async.waterfall([
+        function (next){
+          // Find preceding
+          dao.getBlock(blockNumber - 1, next);
+        },
+        function (thePrevious, next) {
+          previous = thePrevious;
+          dao.getBlock(previous.number - conf.dtDiffEval, next);
+        },
+        function (lastBlock, next){
+          // Compute PoWMin value
+          var duration = previous.medianTime - lastBlock.medianTime;
+          var speed = conf.dtDiffEval*1.0 / duration*1.0;
+          var maxSpeed = 1.0 / Math.ceil(conf.dtTimeMax/16.0);
+          var minSpeed = 1.0 / conf.dtTimeMax;
+          if (speed >= maxSpeed) {
+            // Must increase difficulty
+            next(null, previous.powMin + 1);
+          }
+          else if (speed <= minSpeed) {
+            // Must decrease difficulty
+            next(null, previous.powMin - 1);
+          }
+          else {
+            // Must not change difficulty
+            next(null, previous.powMin);
+          }
+        },
+      ], done);
+    }
+  }
+
   function checkProofOfWork (block, done) {
+    // Compute exactly how much zeros are required for this block's issuer
     async.waterfall([
       function (next){
-        dao.getCurrent(next);
+        getTrialLevel(block.issuer, next);
       },
-      function (current, next){
-        var powRegexp = new RegExp('^0{' + conf.powZeroMin + '}');
+      function (nbZeros, next){
+        var powRegexp = new RegExp('^0{' + nbZeros + ',}');
         if (!block.hash.match(powRegexp))
-          next('Not a proof-of-work');
+          next('Wrong proof-of-work level: given ' + block.hash.match(/^0*/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
         else {
-          // Compute exactly how much zeros are required for this block's issuer
-          var lastBlockPenality = 0;
-          var nbWaitedPeriods = 0;
-          async.waterfall([
-            function (next){
-              getTrialLevel(block.issuer, next);
-            },
-            function (nbZeros, next){
-              var powRegexp = new RegExp('^0{' + nbZeros + ',}');
-              if (!block.hash.match(powRegexp))
-                next('Wrong proof-of-work level: given ' + block.hash.match(/^0+/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
-              else {
-                next();
-              }
-            },
-          ], next);
+          next();
         }
       },
     ], done);
@@ -476,104 +536,49 @@ function GlobalValidator (conf, dao) {
 
   function getTrialLevel (issuer, done) {
     // Compute exactly how much zeros are required for this block's issuer
-    var lastBlockNbZeros = 0;
-    var interBlocksCount = 0;
-    var followingBlocksCount = 0;
+    var powMin = 0;
+    var percentRot = conf.percentRot;
     async.waterfall([
-      function (next){
-        async.parallel({
-          lasts: function (next) {
-            dao.last2BlocksOfIssuer(issuer, next);
-          },
-          current: function (next) {
-            dao.getCurrent(next);
-          },
-          last10: function (next) {
-            dao.getLastBlocks(11, next);
-          }
-        }, function (err, res) {
-          next(err, res);
-        });
-      },
-      function (res, next){
-        var current = res.current;
-        var lasts = res.lasts;
-        if (current && lasts && lasts.length > 0) {
-          // Nb zeros of last block
-          lastBlockNbZeros = lasts[0].hash.match(/^0+/)[0].length;
-          // Nb following blocks since last
-          followingBlocksCount = Math.abs(lasts[0].number - current.number);
-          if (lasts.length == 1) {
-            // Number of issuers since last 10 blocks
-            var issuers = [];
-            var last10beforeCurrent = res.last10.splice(1);
-            last10beforeCurrent.forEach(function (block) {
-              if (issuers.indexOf(block.issuer) == -1) {
-                issuers.push(block.issuer);
-              }
-            });
-            interBlocksCount = issuers.length;
-            next();
-          } else {
-            // Number of different issuers between 2 last blocks of issuer
-            async.waterfall([
-              function (next) {
-                //----- Interblocks -----
-                var issuers = [];
-                var i = lasts[0].number - 1; // Start excluding last block of issuer
-                async.whilst(
-                  function(){ return i > lasts[1].number && issuers.length < 40 - conf.powZeroMin; }, // End exluding first block of issuer
-                  function (next) {
-                    async.waterfall([
-                      function (next){
-                        dao.getBlock(i, next);
-                      },
-                      function (block, next){
-                        if (issuers.indexOf(block.issuer) == -1) {
-                          issuers.push(block.issuer);
-                        }
-                        i--;
-                        next();
-                      },
-                    ], next);
-                  }, function (err) {
-                    interBlocksCount = issuers.length;
-                    next();
-                  });
-              },
-              function (next) {
-                //----- Following blocks -----
-                var issuers = [];
-                var neededMax = lastBlockNbZeros - conf.powZeroMin + interBlocksCount;
-                var i = current.number; // Start INCLUDING current number
-                async.whilst(
-                  function(){ return i > lasts[0].number && issuers.length < neededMax; }, // End exluding last block, stop if reaches 0 difficulty
-                  function (next) {
-                    async.waterfall([
-                      function (next){
-                        dao.getBlock(i, next);
-                      },
-                      function (block, next){
-                        if (issuers.indexOf(block.issuer) == -1) {
-                          issuers.push(block.issuer);
-                        }
-                        i--;
-                        next();
-                      },
-                    ], next);
-                  }, function (err) {
-                    followingBlocksCount = issuers.length;
-                    next();
-                  });
-              }
-            ], next);
-          }
-        }
-        else next(); // No block for issuer
-      },
       function (next) {
-        var nbZeros = Math.max(conf.powZeroMin, lastBlockNbZeros + interBlocksCount - followingBlocksCount);
-        next(null, nbZeros);
+        dao.getCurrent(next);
+      },
+      function (current, next) {
+        if (!current) {
+          next(null, 0);
+          return;
+        }
+        var last;
+        async.waterfall([
+          function (next){
+            async.parallel({
+              lasts: function (next) {
+                dao.lastBlocksOfIssuer(issuer, 1, next);
+              },
+              powMin: function (next) {
+                getPoWMinFor(current.number + 1, next);
+              }
+            }, function (err, res) {
+              next(err, res);
+            });
+          },
+          function (res, next){
+            powMin = res.powMin;
+            last = (res.lasts && res.lasts[0]) || null;
+            if (last) {
+              dao.getIssuersBetween(last.number - 1 - conf.blockRot, last.number - 1, next);
+            } else {
+              // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
+              last = { number: current.number };
+              next(null, []);
+            }
+          },
+          function (issuers, next) {
+            var nbPreviousIssuers = _(issuers).uniq().length;
+            var nbBlocksSince = current.number - last.number;
+            var nbZeros = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
+            next(null, nbZeros);
+          }
+        ], next);
       }
     ], done);
   }

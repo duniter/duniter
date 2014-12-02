@@ -17,6 +17,7 @@ function BlockParser (onError) {
     {prop: "currency",        regexp: constants.BLOCK.CURRENCY},
     {prop: "nonce",           regexp: constants.BLOCK.NONCE},
     {prop: "number",          regexp: /Number: (.*)/},
+    {prop: "powMin",          regexp: constants.BLOCK.POWMIN},
     {prop: "time",            regexp: constants.BLOCK.TIME},
     {prop: "medianTime",      regexp: constants.BLOCK.MEDIAN_TIME},
     {prop: "dividend",        regexp: /UniversalDividend: (.*)/},

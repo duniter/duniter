@@ -45,6 +45,11 @@ describe("Block local coherence", function(){
       done();
     }));
 
+    it('if proof-of-work does not match PoWMin field', test('checkProofOfWork', blocks.WRONG_PROOF_OF_WORK, function (err, done) {
+      assert.equal(err, 'Not a proof-of-work');
+      done();
+    }));
+
     it('if non-root has Parameters', test('checkParameters', blocks.NON_ROOT_WITH_PARAMETERS, function (err, done) {
       assert.equal(err, 'Parameters must not be provided for non-root block');
       done();

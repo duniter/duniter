@@ -6,6 +6,7 @@ module.exports = {
     "Currency: beta_brousouf\n" + 
     "Nonce: 2\n" + 
     "Number: 0\n" + 
+    "PoWMin: 1\n" +
     "Time: 1411321505\n" + 
     "MedianTime: 1411321505\n" + 
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" + 
@@ -30,12 +31,34 @@ module.exports = {
     "Transactions:\n" +
     "mqzcL5FW0ZMz7/aPpV8vLb6KzMYXl3WYI4bdm6Usq34tSgvROoAOp1uSuyqFBHNd7hggfR/8tACCPhkJMVNLCw==\n",
 
+  WRONG_PROOF_OF_WORK: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 1\n" +
+    "PoWMin: 10\n" +
+    "Time: 1411776000\n" +
+    "MedianTime: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 61306C1F380BB71B3533FC523C85187F1D247063\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
   VALID_ROOT: 
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 30\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -67,6 +90,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -87,6 +111,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 5\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -107,6 +132,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -127,6 +153,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -147,6 +174,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 1\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -166,6 +194,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 1\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -186,6 +215,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -216,6 +246,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -246,6 +277,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 50\n" +
+    "PoWMin: 1\n" +
     "Time: 1411775999\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -276,6 +308,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 10\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776059\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -308,6 +341,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 10\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776061\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -340,6 +374,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776001\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -370,6 +405,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 20\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776060\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -402,6 +438,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -431,6 +468,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 1\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -459,6 +497,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 1\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -487,6 +526,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -519,6 +559,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -547,6 +588,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -574,6 +616,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -605,6 +648,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -634,6 +678,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -663,6 +708,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -693,6 +739,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -723,6 +770,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -750,6 +798,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -775,6 +824,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -800,6 +850,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -830,6 +881,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -860,6 +912,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -890,6 +943,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -920,6 +974,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -950,6 +1005,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n" +
@@ -980,6 +1036,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 90\n" +
+    "PoWMin: 1\n" +
     "Time: 1443333600\n" +
     "MedianTime: 1443333600\n" +
     "Issuer: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n" +
@@ -1002,6 +1059,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 90\n" +
+    "PoWMin: 1\n" +
     "Time: 1443333600\n" +
     "MedianTime: 1443333600\n" +
     "Issuer: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n" +
@@ -1023,6 +1081,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 3\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1054,6 +1113,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1083,6 +1143,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 3\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1107,6 +1168,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 7\n" +
     "Number: 3\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "UniversalDividend: 100\n" +
@@ -1129,6 +1191,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 1\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1150,6 +1213,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 50\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1171,6 +1235,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 49\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1192,6 +1257,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 52\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1213,6 +1279,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 51\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1245,6 +1312,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 51\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1277,6 +1345,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 51\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1298,6 +1367,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 51\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1320,6 +1390,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1340,6 +1411,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1360,6 +1432,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 12\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1380,6 +1453,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 51\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1402,6 +1476,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 51\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1424,6 +1499,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 51\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1446,6 +1522,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 4\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1468,6 +1545,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 4\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1491,6 +1569,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 4\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1514,6 +1593,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 3\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1535,6 +1615,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 31\n" +
     "Number: 60\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1558,6 +1639,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 6\n" +
     "Number: 61\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1581,6 +1663,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 28\n" +
     "Number: 67\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1604,6 +1687,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 18\n" +
     "Number: 63\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1627,6 +1711,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 4\n" +
     "Number: 64\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1650,6 +1735,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 1\n" +
     "Number: 65\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1673,6 +1759,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 19\n" +
     "Number: 66\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1696,6 +1783,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776002\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1726,6 +1814,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 101\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1747,6 +1836,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 102\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1768,6 +1858,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 103\n" +
+    "PoWMin: 1\n" +
     "Time: 161\n" +
     "MedianTime: 161\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1789,6 +1880,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 104\n" +
+    "PoWMin: 1\n" +
     "Time: 162\n" +
     "MedianTime: 162\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1810,6 +1902,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 72\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1831,6 +1924,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "UniversalDividend: 100\n" +
@@ -1862,6 +1956,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 80\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1883,6 +1978,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 81\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -1905,6 +2001,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 82\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -1927,6 +2024,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -1949,6 +2047,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 20\n" +
+    "PoWMin: 1\n" +
     "Time: 1411773099\n" +
     "MedianTime: 1411773099\n" +
     "UniversalDividend: 100\n" +
@@ -1971,6 +2070,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 20\n" +
+    "PoWMin: 1\n" +
     "Time: 1411773100\n" +
     "MedianTime: 1411773100\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1992,6 +2092,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2014,6 +2115,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2052,6 +2154,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2090,6 +2193,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2128,6 +2232,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2155,6 +2260,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2182,6 +2288,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2209,6 +2316,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2236,6 +2344,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2264,6 +2373,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2290,6 +2400,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2318,6 +2429,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2347,6 +2459,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2377,6 +2490,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2407,6 +2521,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2438,6 +2553,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2469,6 +2585,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2504,6 +2621,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
     "Number: 83\n" +
+    "PoWMin: 1\n" +
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
@@ -2534,6 +2652,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 14\n" +
     "Number: 0\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2554,6 +2673,7 @@ module.exports = {
     "Currency: beta_brousouf\n" +
     "Nonce: 14\n" +
     "Number: 1\n" +
+    "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +

@@ -20,6 +20,7 @@ function LocalValidator (conf) {
     var that = this;
     async.series([
       async.apply(that.checkParameters,                           block),
+      async.apply(that.checkProofOfWork,                          block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
       async.apply(that.checkBlockSignature,                       block),
@@ -74,6 +75,14 @@ function LocalValidator (conf) {
       done('Parameters must be provided for root block');
     else if (block.number > 0 && block.parameters)
       done('Parameters must not be provided for non-root block');
+    else
+      done();
+  });
+
+  this.checkProofOfWork = check(function (block, done) {
+    var powRegexp = new RegExp('^0{' + block.powMin + '}');
+    if (!block.hash.match(powRegexp))
+      done('Not a proof-of-work');
     else
       done();
   });

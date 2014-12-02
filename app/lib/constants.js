@@ -57,6 +57,7 @@ module.exports = {
     VERSION:     find("Version: (1)"),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
+    POWMIN:      find("PoWMin: (" + INTEGER + ")"),
     TIME:        find("Time: (" + TIMESTAMP + ")"),
     MEDIAN_TIME: find("MedianTime: (" + TIMESTAMP + ")"),
     PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),

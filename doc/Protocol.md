@@ -820,10 +820,12 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### PoWMin
 
-* If incoming block's `Number` is a multiple of `dtDiffEval`, then:
+* If incoming block's `Number` is > 0 and a multiple of `dtDiffEval`, then:
   * If `dtDiffEval / (current time - time of block(current number - dtDiffEval))` is:
     * Greater or equal to `1/CEIL(dtTimeMax/16)`, then `PoWMin = PoWMin + 1`
     * Less or equal to `1/dtTimeMax`, then `PoWMin = PoWMin - 1`
+* Else
+  * If `Number` is > 0, `PoWMin` must be equal to previous block's `PoWMin`
 
 ##### PreviousHash
 
@@ -885,7 +887,7 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 `MembersCount` field must be equal to last block's `MembersCount` plus incoming block's `Joiners` count, minus incoming block's `Leavers` count minus this block's `Excluded` count.
 
-##### Block fingerprint
+##### Proof-of-Work
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
     NB_ZEROS = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ]

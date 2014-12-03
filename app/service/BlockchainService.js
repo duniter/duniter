@@ -378,6 +378,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               idty.currentMSN = block.number;
               idty.member = false;
               idty.kick = false;
+              idty.revoked = true;
               idty.save(function (err) {
                 next(err);
               });

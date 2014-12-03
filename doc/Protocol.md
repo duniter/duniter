@@ -739,6 +739,7 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 
 ##### Certifications
 
+* A block cannot have two certifications from a same `PUBKEY_FROM`, unless it is block#0.
 * A block cannot have two identical certifications (same `PUBKEY_FROM` and same `PUBKEY_TO` for the two certifications)
 * A block cannot have certifications for public keys present in either `Excluded` or `Leavers` fields.
 
@@ -813,6 +814,10 @@ A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in 
 
 A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain **is not** a member.
 
+###### Revocation
+
+A member may *revoke* its membership to the currency by sending an `OUT` membership. Public keys under `Leavers` field are to be considered *revoked*.
+
 ##### Number
 
 * A block's `Number` must be exactly equal to previous block + 1.
@@ -857,6 +862,7 @@ A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, o
 
 ##### Joiners
 
+* A revoked public key **cannot** be in `Joiners`
 * A given `PUBLIC_KEY` can be in `Joiners` if it is not a member.
 * A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` valid certifications coming *to* it (incoming block included)
 * `PUBLIC_KEY` must match for exactly one identity of the blockchain (incoming block included).

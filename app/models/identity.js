@@ -17,6 +17,7 @@ var IdentitySchema = new Schema({
   time: { type: Date, default: Date.now },
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
+  revoked: { type: Boolean, default: false },
   hash: { type: String, unique: true },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }

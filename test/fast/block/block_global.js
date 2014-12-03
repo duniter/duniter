@@ -111,6 +111,12 @@ describe("Block global coherence:", function(){
     done();
   }));
 
+  it('a block with at least one revoked joiner should fail', test('checkJoinersAreNotRevoked', blocks.REVOKED_JOINER, function (err, done) {
+    should.exist(err);
+    err.should.equal('Revoked pubkeys cannot join');
+    done();
+  }));
+
   it('a block with at least one joiner without enough certifications should fail', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER, function (err, done) {
     should.exist(err);
     err.should.equal('Joiner/Active does not gathers enough certifications');
@@ -422,6 +428,8 @@ function BlockCheckerDao (block) {
     // No existing identity
     if (pubkey == 'CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
       done(null, new Identity({ pubkey: 'CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' }));
+    else if (pubkey == 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+      done(null, new Identity({ pubkey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', revoked: true }));
     else
       done(null, null);
   }

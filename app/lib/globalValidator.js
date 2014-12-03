@@ -34,6 +34,7 @@ function GlobalValidator (conf, dao) {
     { name: 'checkIdentityUnicity',                 func: check(checkIdentityUnicity)                 },
     { name: 'checkPubkeyUnicity',                   func: check(checkPubkeyUnicity)                   },
     { name: 'checkJoiners',                         func: check(checkJoiners)                         },
+    { name: 'checkJoinersAreNotRevoked',            func: check(checkJoinersAreNotRevoked)            },
     { name: 'checkJoinersHaveUniqueIdentity',       func: check(checkJoinersHaveUniqueIdentity)       },
     { name: 'checkJoinersHaveEnoughCertifications', func: check(checkJoinersHaveEnoughCertifications) },
     { name: 'checkJoinersAreNotOudistanced',        func: check(checkJoinersAreNotOudistanced)        },
@@ -784,6 +785,24 @@ function GlobalValidator (conf, dao) {
             next();
           }
         },
+      ], callback);
+    }, done);
+  }
+
+  function checkJoinersAreNotRevoked (block, done) {
+    async.forEachSeries(block.joiners, function (inlineMS, callback) {
+      async.waterfall([
+        function (next) {
+          var ms = Membership.fromInline(inlineMS);
+          getGlobalIdentity(block, ms.issuer, next); // Have to throw an error if no identity exists
+        },
+        function (idty, next) {
+          if (idty && idty.revoked) {
+            next('Revoked pubkeys cannot join');
+            return;
+          }
+          next();
+        }
       ], callback);
     }, done);
   }

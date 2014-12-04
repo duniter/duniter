@@ -273,17 +273,19 @@ var tasks = {
 
   ucp: function (conf, done) {
     async.waterfall([
-      async.apply(simpleInteger, "First Universal Dividend (UD[0]) amount", "ud0", conf),
-      async.apply(simpleFloat,   "Universal Dividend %growth", "c", conf),
-      async.apply(simpleInteger, "Universal Dividend period (in seconds)", "dt", conf),
-      async.apply(simpleInteger, "Delay between 2 identical certifications", "sigDelay", conf),
-      async.apply(simpleInteger, "Membership validity duration", "msValidity", conf),
-      async.apply(simpleInteger, "Certification validity duration", "sigValidity", conf),
-      async.apply(simpleInteger, "Number of valid certifications required to be a member", "sigQty", conf),
+      async.apply(simpleFloat,   "Universal Dividend %growth",                                             "c", conf),
+      async.apply(simpleInteger, "Universal Dividend period (in seconds)",                                 "dt", conf),
+      async.apply(simpleInteger, "First Universal Dividend (UD[0]) amount",                                "ud0", conf),
+      async.apply(simpleInteger, "Delay between 2 identical certifications",                               "sigDelay", conf),
+      async.apply(simpleInteger, "Certification validity duration",                                        "sigValidity", conf),
+      async.apply(simpleInteger, "Number of valid certifications required to be a member",                 "sigQty", conf),
       async.apply(simpleInteger, "Number of valid emitted certifications to be a distance checked member", "sigWoT", conf),
-      async.apply(simpleInteger, "Minimum number of leading zeros for a proof-of-work", "powZeroMin", conf),
-      async.apply(simpleInteger, "Number of confirmation to change current Date", "incDateMin", conf),
-      async.apply(simpleInteger, "Increment value (in seconds) for date changing", "dtDateMin", conf)
+      async.apply(simpleInteger, "Membership validity duration",                                           "msValidity", conf),
+      async.apply(simpleInteger, "Number of blocks on which is computed median time",                      "medianTimeBlocks", conf),
+      async.apply(simpleInteger, "Maximum increment of date/time value",                                   "dtTimeMax", conf),
+      async.apply(simpleInteger, "Frequency, in number of blocks, to wait for changing common difficulty", "dtDiffEval", conf),
+      async.apply(simpleInteger, "Number of blocks to check in past for deducing personalized difficulty", "blocksRot", conf),
+      async.apply(simpleFloat,   "Weight in percent for previous issuers",                                 "percentRot", conf),
     ], done);
   },
 

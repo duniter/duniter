@@ -531,7 +531,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float and 10 integers all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:powZeroMin:dtTimeMax:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:medianTimeBlocks:dtTimeMax:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -826,7 +826,7 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 ##### PoWMin
 
 * If incoming block's `Number` is > 0 and a multiple of `dtDiffEval`, then:
-  * If `dtDiffEval / (current time - time of block(current number - dtDiffEval))` is:
+  * If `dtDiffEval / (current time - time of block(current number + 1 - dtDiffEval))` is:
     * Greater or equal to `1/CEIL(dtTimeMax/16)`, then `PoWMin = PoWMin + 1`
     * Less or equal to `1/dtTimeMax`, then `PoWMin = PoWMin - 1`
 * Else

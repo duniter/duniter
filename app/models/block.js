@@ -268,6 +268,14 @@ BlockSchema.statics.getLastBlocks = function (count, done) {
     .exec(done);
 };
 
+BlockSchema.statics.getBlocksBetween = function (start, end, done) {
+
+  this
+    .find({ number: { $gte: start }, number: { $lte: end }})
+    .sort({ number: -1 })
+    .exec(done);
+};
+
 BlockSchema.statics.getFirstFrom = function (t, done) {
 
   this

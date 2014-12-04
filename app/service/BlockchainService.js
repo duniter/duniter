@@ -523,19 +523,22 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   function saveParametersForRootBlock (block, done) {
     if (block.parameters) {
       var sp = block.parameters.split(':');
-      conf.c           = parseFloat(sp[0]);
-      conf.dt          = parseInt(sp[1]);
-      conf.ud0         = parseInt(sp[2]);
-      conf.sigDelay    = parseInt(sp[3]);
-      conf.sigValidity = parseInt(sp[4]);
-      conf.sigQty      = parseInt(sp[5]);
-      conf.sigWoT      = parseInt(sp[6]);
-      conf.msValidity  = parseInt(sp[7]);
-      conf.stepMax     = parseInt(sp[8]);
-      conf.powZeroMin  = parseInt(sp[9]);
-      conf.dtDateMin   = parseInt(sp[10]);
-      conf.incDateMin  = parseInt(sp[11]);
-      conf.currency    = block.currency;
+
+      conf.c                = parseFloat(sp[0]);
+      conf.dt               = parseInt(sp[1]);
+      conf.ud0              = parseInt(sp[2]);
+      conf.sigDelay         = parseInt(sp[3]);
+      conf.sigValidity      = parseInt(sp[4]);
+      conf.sigQty           = parseInt(sp[5]);
+      conf.sigWoT           = parseInt(sp[6]);
+      conf.msValidity       = parseInt(sp[7]);
+      conf.stepMax          = parseInt(sp[8]);
+      conf.medianTimeBlocks = parseInt(sp[9]);
+      conf.dtTimeMax        = parseInt(sp[10]);
+      conf.dtDiffEval       = parseInt(sp[11]);
+      conf.blocksRot        = parseInt(sp[12]);
+      conf.percentRot       = parseFloat(sp[13]);
+      conf.currency         = block.currency;
       conf.save(function (err) {
         done(err);
       });
@@ -1145,21 +1148,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       conf.c, conf.dt, conf.ud0,
       conf.sigDelay, conf.sigValidity,
       conf.sigQty, conf.sigWoT, conf.msValidity,
-      conf.stepMax, conf.powZeroMin, conf.dtDateMin, conf.incDateMin
+      conf.stepMax, conf.medianTimeBlocks, conf.dtTimeMax, conf.dtDiffEval,
+      conf.blocksRot, conf.percentRot 
     ].join(':');
     var now = moment.utc().startOf('minute').unix();
-    if (current) {
-      var nextDate = current.medianTime + conf.dtDateMin;
-      now = (nextDate <= now) ? nextDate : current.medianTime;
-    }
-    block.time = now;
-    block.medianTime = current ? current.medianTime : now;
-    // TODO: medianTime + time
-    var lastDate = current ? current.time : null;
-    if (lastDate && current.newDateNth == conf.incDateMin - 1 && block.time == current.time) {
-      // Must change medianTime to the new date
-      block.medianTime = block.time;
-    }
+    block.time = current ? Math.max(current.medianTime, Math.min(current.medianTime + conf.dtTimeMax, now)) : now; // So we have time = [medianTime; medianTime + dtTimeMax]
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
     if (PeeringService)
@@ -1206,9 +1199,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     transactions.forEach(function (tx) {
       block.transactions.push({ raw: tx.compact() });
     });
-    // Universal Dividend
     async.waterfall([
       function (next) {
+        // Universal Dividend
         if (lastUDBlock)
           next(null, lastUDBlock.medianTime);
         else
@@ -1230,6 +1223,25 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             block.dividend = UD;
           } 
         }
+        next();
+      },
+      function (next) {
+        // PoWMin
+        if (block.number == 0)
+          next(null, 0); // By default: start with no difficulty
+        else
+          globalValidator(conf, blockchainDao(conn, block)).getPoWMin(block.number, next);
+      },
+      function (powMin, next) {
+        block.powMin = powMin;
+        // MedianTime
+        if (block.number == 0)
+          next(null, 0);
+        else
+          globalValidator(conf, blockchainDao(conn, block)).getMedianTime(block.number, next);
+      },
+      function (medianTime, next) {
+        block.medianTime = current ? medianTime : block.time;
         next(null, block);
       }
     ], done);

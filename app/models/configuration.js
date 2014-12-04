@@ -25,7 +25,7 @@ var ConfigurationSchema = new Schema({
   sigQty:      {"type": Number, "default": 5},
   sigWoT:      {"type": Number, "default": 5},
   percentRot:  {"type": Number, "default": 2/3},
-  blockRot:    {"type": Number, "default": 20},
+  blocksRot:   {"type": Number, "default": 20},
   powDelay:    {"type": Number, "default": 10}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the blockchain
   tsInterval:  {"type": Number, "default": 30},

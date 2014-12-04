@@ -116,6 +116,14 @@ function GlobalValidator (conf, dao) {
     getTrialLevel(issuer, done);
   };
 
+  this.getPoWMin = function (blockNumber, done) {
+    getPoWMinFor(blockNumber, done);
+  };
+
+  this.getMedianTime = function (blockNumber, done) {
+    getMedianTime(blockNumber, done);
+  };
+
   /*****************************
   *
   *      UTILITY FUNCTIONS
@@ -323,7 +331,7 @@ function GlobalValidator (conf, dao) {
     } else if (blockNumber % conf.dtDiffEval != 0) {
       async.waterfall([
         function (next) {
-          // Find preceding
+          // Find dao
           dao.getBlock(blockNumber - 1, next);
         },
         function (previous, next) {
@@ -339,7 +347,7 @@ function GlobalValidator (conf, dao) {
         },
         function (thePrevious, next) {
           previous = thePrevious;
-          dao.getBlock(previous.number - conf.dtDiffEval, next);
+          dao.getBlock(previous.number + 1 - conf.dtDiffEval, next);
         },
         function (lastBlock, next){
           // Compute PoWMin value
@@ -389,19 +397,32 @@ function GlobalValidator (conf, dao) {
     }
     async.waterfall([
       function (next){
-        dao.getCurrent(next);
+        getMedianTime(block.number, next);
       },
-      function (current, next){
-        var blocksCount = current.number + 1 >= conf.medianTimeBlocks ? conf.medianTimeBlocks : current.number + 1;
+      function (median, next) {
+        next(median != block.medianTime ? 'Wrong MedianTime' : null);
+      }
+    ], done);
+  }
+
+  function getMedianTime (blockNumber, done) {
+    if (blockNumber == 0) {
+      // No rule to check for block#0
+      done(null, 0);
+      return;
+    }
+    async.waterfall([
+      function (next){
+        var blocksCount = blockNumber >= conf.medianTimeBlocks ? conf.medianTimeBlocks : blockNumber;
         if (blocksCount % 2 == 0) {
           // Even number of blocks
           var middle = blocksCount / 2;
           async.parallel({
             one: function (next) {
-              dao.getBlock(current.number - middle, next);
+              dao.getBlock(blockNumber - 1 - middle, next);
             },
             two: function (next) {
-              dao.getBlock(current.number - middle + 1, next);
+              dao.getBlock(blockNumber - middle, next);
             }
           }, function (err, res) {
             next(err, [res.one, res.two]);
@@ -410,7 +431,7 @@ function GlobalValidator (conf, dao) {
         else {
           // Odd number of blocks
           var middle = (blocksCount - 1) / 2;
-          dao.getBlock(current.number - middle, function (err, block) {
+          dao.getBlock(blockNumber - 1 - middle, function (err, block) {
             next(err, [block]);
           });
         }
@@ -430,9 +451,6 @@ function GlobalValidator (conf, dao) {
         else {
           next('No block found for MedianTime comparison');
         }
-      },
-      function (median, next) {
-        next(median != block.medianTime ? 'Wrong MedianTime' : null);
       }
     ], done);
   }

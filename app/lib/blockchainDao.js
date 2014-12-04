@@ -1,4 +1,5 @@
 var async = require('async');
+var _     = require('underscore');
 
 module.exports = function(conn, block) {
 
@@ -143,6 +144,17 @@ module.exports = function(conn, block) {
 
     this.getLastBlocks = function (count, done) {
       Block.getLastBlocks(count, done);
+    },
+
+    this.getIssuersBetween = function (bStart, bEnd, done) {
+      async.waterfall([
+        function (next) {
+          Block.getBlocksBetween(bStart, bEnd, next);
+        },
+        function (blocks, next) {
+          next(null, _.pluck(blocks, 'issuer'));
+        }
+      ], done);
     }
   }
 

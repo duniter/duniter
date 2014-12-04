@@ -610,6 +610,28 @@ module.exports = {
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
+  MULTIPLE_CERTIFICATIONS_FROM_SAME_ISSUER: 
+    "Version: 1\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Nonce: 11\n" +
+    "Number: 2\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411776000\n" +
+    "MedianTime: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
+    "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
+    "Transactions:\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
   IDENTICAL_CERTIFICATIONS: 
     "Version: 1\n" +
     "Type: Block\n" +

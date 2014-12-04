@@ -155,6 +155,11 @@ describe("Block local coherence", function(){
       done();
     }));
 
+    it('Block cannot contain 2 certifications from same issuer', test('checkCertificationOneByIssuer', blocks.MULTIPLE_CERTIFICATIONS_FROM_SAME_ISSUER, function (err, done) {
+      assert.equal(err, 'Block cannot contain two certifications from same issuer');
+      done();
+    }));
+
     it('Block cannot contain identical certifications', test('checkCertificationUnicity', blocks.IDENTICAL_CERTIFICATIONS, function (err, done) {
       assert.equal(err, 'Block cannot contain identical certifications (A -> B)');
       done();

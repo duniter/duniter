@@ -31,6 +31,7 @@ function LocalValidator (conf) {
       async.apply(that.checkIdentitiesMatchJoin,                  block),
       async.apply(that.checkMembershipsSignature,                 block),
       async.apply(that.checkPubkeyUnicity,                        block),
+      async.apply(that.checkCertificationOneByIssuer,             block),
       async.apply(that.checkCertificationUnicity,                 block),
       async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
       async.apply(that.checkTxIssuers,                            block),
@@ -58,6 +59,7 @@ function LocalValidator (conf) {
       async.apply(that.checkIdentitiesPubkeyConflict,             block),
       async.apply(that.checkIdentitiesMatchJoin,                  block),
       async.apply(that.checkPubkeyUnicity,                        block),
+      async.apply(that.checkCertificationOneByIssuer,             block),
       async.apply(that.checkCertificationUnicity,                 block),
       async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
       async.apply(that.checkTxIssuers,                            block),
@@ -171,6 +173,15 @@ function LocalValidator (conf) {
   this.checkPubkeyUnicity = check(function (block, done) {
     if (hasMultipleTimesAPubkeyForKeyChanges(block)) {
       done('Block cannot contain a same pubkey more than once in joiners, actives, leavers and excluded');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkCertificationOneByIssuer = check(function (block, done) {
+    if (hasSeveralCertificationsFromSameIssuer(block)) {
+      done('Block cannot contain two certifications from same issuer');
       return;
     }
     else
@@ -463,6 +474,23 @@ function hasMultipleTimesAPubkeyForKeyChanges (block) {
     i++;
   }
   return conflict;
+}
+
+function hasSeveralCertificationsFromSameIssuer (block) {
+  if (block.number == 0) {
+    return false;
+  } else {
+    var issuers = [];
+    var i = 0;
+    var conflict = false;
+    while (!conflict && i < block.certifications.length) {
+      var issuer = block.certifications[i].split(':')[0];
+      conflict = ~issuers.indexOf(issuer);
+      issuers.push(issuer);
+      i++;
+    }
+    return conflict;
+  }
 }
 
 function hasIdenticalCertifications (block) {

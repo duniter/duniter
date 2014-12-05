@@ -1272,6 +1272,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       // On initial block, difficulty is the one given manually
       block.powMin = nbZeros;
     }
+    // Time must be = [medianTime; medianTime + minSpeed]
+    var now = moment.utc().unix();
+    var maxGenTime = conf.avgGenTime*4;
+    block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*2, now)) : block.medianTime;
     logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
     async.whilst(
       function(){ return !pow.match(powRegexp); },
@@ -1289,10 +1293,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             testsCount++;
             if (testsCount % 100 == 0) {
               process.stdout.write('.');
-              var now = moment.utc().unix();
               // Time must be = [medianTime; medianTime + minSpeed]
-              var maxGenTime = conf.avgGenTime*4;
-              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*2, now)) : now;
+              now = moment.utc().unix();
+              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*2, now)) : block.medianTime;
             } else if (testsCount % 50 == 0) {
               if (newKeyblockCallback) {
                 computationActivated = false

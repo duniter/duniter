@@ -15,7 +15,7 @@ var conf = new Configuration({
   powZeroMin: 1,
   powPeriod: 18,
   incDateMin: 10,
-  dtTimeMax: 60,
+  avgGenTime: 60,
   dt: 100,
   ud0: 100,
   c: 0.1
@@ -76,12 +76,12 @@ describe("Block local coherence", function(){
     }));
 
     it('a block with wrong date (in past)', test('checkBlockTimes', blocks.WRONG_DATE_LOWER, function (err, done) {
-      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + dtTimeMax');
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + maxGenTime*2');
       done();
     }));
 
     it('a block with wrong date (in future, but too far)', test('checkBlockTimes', blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, function (err, done) {
-      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + dtTimeMax');
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + maxGenTime*2');
       done();
     }));
 

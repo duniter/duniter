@@ -534,7 +534,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       conf.msValidity       = parseInt(sp[7]);
       conf.stepMax          = parseInt(sp[8]);
       conf.medianTimeBlocks = parseInt(sp[9]);
-      conf.dtTimeMax        = parseInt(sp[10]);
+      conf.avgGenTime       = parseInt(sp[10]);
       conf.dtDiffEval       = parseInt(sp[11]);
       conf.blocksRot        = parseInt(sp[12]);
       conf.percentRot       = parseFloat(sp[13]);
@@ -1045,7 +1045,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           });
           joinData[newcomer].certs = keptCerts;
         });
-        // console.log(finalJoinData);
         // Send back the new WoT, the joining data and key updates for newcomers' signature of WoT
         next(null, current, wotMembers.concat(realNewcomers), finalJoinData, updates);
       }
@@ -1148,11 +1147,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       conf.c, conf.dt, conf.ud0,
       conf.sigDelay, conf.sigValidity,
       conf.sigQty, conf.sigWoT, conf.msValidity,
-      conf.stepMax, conf.medianTimeBlocks, conf.dtTimeMax, conf.dtDiffEval,
+      conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, conf.percentRot 
     ].join(':');
-    var now = moment.utc().startOf('minute').unix();
-    block.time = current ? Math.max(current.medianTime, Math.min(current.medianTime + conf.dtTimeMax, now)) : now; // So we have time = [medianTime; medianTime + dtTimeMax]
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
     if (PeeringService)
@@ -1228,7 +1225,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next) {
         // PoWMin
         if (block.number == 0)
-          next(null, 0); // By default: start with no difficulty
+          next(null, 0); // Root difficulty is given by manually written block
         else
           globalValidator(conf, blockchainDao(conn, block)).getPoWMin(block.number, next);
       },
@@ -1241,7 +1238,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           globalValidator(conf, blockchainDao(conn, block)).getMedianTime(block.number, next);
       },
       function (medianTime, next) {
-        block.medianTime = current ? medianTime : block.time;
+        block.medianTime = current ? medianTime : moment.utc().unix();
         next(null, block);
       }
     ], done);
@@ -1271,6 +1268,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var pow = "", sig = "", raw = "";
     var start = new Date().timestamp();
     var testsCount = 0;
+    if (block.number == 0) {
+      // On initial block, difficulty is the one given manually
+      block.powMin = nbZeros;
+    }
     logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
     async.whilst(
       function(){ return !pow.match(powRegexp); },
@@ -1288,6 +1289,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             testsCount++;
             if (testsCount % 100 == 0) {
               process.stdout.write('.');
+              var now = moment.utc().unix();
+              // Time must be = [medianTime; medianTime + minSpeed]
+              var maxGenTime = conf.avgGenTime*4;
+              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*2, now)) : now;
             } else if (testsCount % 50 == 0) {
               if (newKeyblockCallback) {
                 computationActivated = false

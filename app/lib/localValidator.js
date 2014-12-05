@@ -117,8 +117,9 @@ function LocalValidator (conf) {
   this.checkBlockTimes = check(function (block, done) {
     var time = parseInt(block.time);
     var medianTime = parseInt(block.medianTime);
-    if (block.number > 0 && (time < medianTime || time > medianTime + conf.dtTimeMax))
-      done('A block must have its Time between MedianTime and MedianTime + dtTimeMax');
+    var maxGenTime = conf.avgGenTime * 4;
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxGenTime*2))
+      done('A block must have its Time between MedianTime and MedianTime + maxGenTime*2');
     else if (block.number == 0 && time != medianTime)
       done('Root block must have Time equal MedianTime');
     else

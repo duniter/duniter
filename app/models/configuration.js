@@ -29,7 +29,7 @@ var ConfigurationSchema = new Schema({
   powDelay:    {"type": Number, "default": 10}, // Delay before starting computation of a new block
   participate: {"type": Boolean, "default": true}, // Participate to writing the blockchain
   tsInterval:  {"type": Number, "default": 30},
-  dtTimeMax:   {"type": Number, "default": 120}, // Max increment time value
+  avgGenTime:  {"type": Number, "default": 16*60}, // Average time to write 1 block
   dtDiffEval:  {"type": Number, "default": 10},
   medianTimeBlocks: {"type": Number, "default": 20}, // Number of blocks to check for median time value
   udid2:       {"type": Boolean, "default": false},

@@ -353,8 +353,10 @@ function GlobalValidator (conf, dao) {
           // Compute PoWMin value
           var duration = previous.medianTime - lastBlock.medianTime;
           var speed = conf.dtDiffEval*1.0 / duration*1.0;
-          var maxSpeed = 1.0 / Math.ceil(conf.dtTimeMax/16.0);
-          var minSpeed = 1.0 / conf.dtTimeMax;
+          var maxGenTime = conf.avgGenTime * 4;
+          var minGenTime = conf.avgGenTime / 4;
+          var maxSpeed = 1.0 / minGenTime;
+          var minSpeed = 1.0 / maxGenTime;
           if (speed >= maxSpeed) {
             // Must increase difficulty
             next(null, previous.powMin + 1);

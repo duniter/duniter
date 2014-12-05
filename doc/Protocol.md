@@ -531,7 +531,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float and 10 integers all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:medianTimeBlocks:dtTimeMax:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -671,7 +671,7 @@ sigWoT      | Minimum quantity of valid made certifications to be part of the Wo
 msValidity  | Maximum age of a valid membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
 medianTimeBlocks | Number of blocks used for calculating median time.
-dtTimeMax   | The max. number of seconds that can be added to median date
+avgGenTime  | The average time for writing 1 block (wished time)
 dtDiffEval  | The number of blocks required to evaluate again `PoWMin` value
 blocksRot   | The number of previous blocks to check for personalized difficulty
 percentRot  | The percent of previous issuers to reach for personalized difficulty
@@ -681,6 +681,8 @@ percentRot  | The percent of previous issuers to reach for personalized difficul
 Variable  | Meaning
 --------- | ----
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last valid (non-expired) membership is either in `Joiners` or `Actives`.
+maxGenTime  | `= avgGenTime * 4`
+minGenTime  | `= avgGenTime / 4`
 
 ## Processing
 
@@ -719,7 +721,7 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 
 ##### Dates
 
-* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `dtTimeMax`].
+* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `maxGenTime`*2].
 * Root block's `Time` & `MedianTime` must be equal.
 
 ##### Identities
@@ -825,10 +827,16 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 
 ##### PoWMin
 
+###### Définitions
+* `speed = dtDiffEval / (current time - time of block(current number + 1 - dtDiffEval))`
+* `maxSpeed = 1/minGenTime`
+* `minSpeed = 1/maxGenTime`
+
+###### Rules
+
 * If incoming block's `Number` is > 0 and a multiple of `dtDiffEval`, then:
-  * If `dtDiffEval / (current time - time of block(current number + 1 - dtDiffEval))` is:
-    * Greater or equal to `1/CEIL(dtTimeMax/16)`, then `PoWMin = PoWMin + 1`
-    * Less or equal to `1/dtTimeMax`, then `PoWMin = PoWMin - 1`
+  * If `speed` is greater or equal to `maxSpeed`, then `PoWMin = PoWMin + 1`
+  * If `speed` is less or equal to `minSpeed`, then `PoWMin = PoWMin - 1`
 * Else
   * If `Number` is > 0, `PoWMin` must be equal to previous block's `PoWMin`
 

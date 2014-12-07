@@ -28,8 +28,8 @@ function Multicaster () {
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendBlock(peer, block, success(function (err) {
-          sent();
         }));
+        sent();
       });
     });
   });

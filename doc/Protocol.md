@@ -910,7 +910,7 @@ Where:
 
 * `[PoWMin]` is the `PoWMin` value of incoming block
 * `[percentRot]` is the protocol parameter
-* `[nbPreviousIssuers]` is the number of different block issuers in `blockRot` blocks **before** the last block of the member (so, last block of issuer & incoming block excluded).
+* `[nbPreviousIssuers]` is the number of different block issuers in `blockRot` blocks **before** the last block of the member, **excepted the member**.
 * `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
 
 

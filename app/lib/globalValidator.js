@@ -602,7 +602,7 @@ function GlobalValidator (conf, dao) {
             }
           },
           function (issuers, next) {
-            var nbPreviousIssuers = _(issuers).uniq().length;
+            var nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
             var nbBlocksSince = current.number - last.number;
             var nbZeros = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
             next(null, nbZeros);

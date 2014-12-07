@@ -1148,7 +1148,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       conf.sigDelay, conf.sigValidity,
       conf.sigQty, conf.sigWoT, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
-      conf.blocksRot, conf.percentRot 
+      conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot) 
     ].join(':');
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";

@@ -1300,6 +1300,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               if (newKeyblockCallback) {
                 computationActivated = false
                 next('New block received');
+                return;
               }
             }
             next();

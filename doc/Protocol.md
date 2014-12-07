@@ -828,7 +828,7 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 ##### PoWMin
 
 ###### Définitions
-* `speed = dtDiffEval / (current time - time of block(current number + 1 - dtDiffEval))`
+* `speed = dtDiffEval / (medianTime(incomingNumber) - medianTime(incomingNumber - dtDiffEval))`
 * `maxSpeed = 1/minGenTime`
 * `minSpeed = 1/maxGenTime`
 
@@ -836,7 +836,7 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 
 * If incoming block's `Number` is > 0 and a multiple of `dtDiffEval`, then:
   * If `speed` is greater or equal to `maxSpeed`, then `PoWMin = PoWMin + 1`
-  * If `speed` is less or equal to `minSpeed`, then `PoWMin = PoWMin - 1`
+  * If `speed` is less or equal to `minSpeed`, then `PoWMin = MAX(0, PoWMin - 1)`
 * Else
   * If `Number` is > 0, `PoWMin` must be equal to previous block's `PoWMin`
 

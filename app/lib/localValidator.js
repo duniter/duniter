@@ -3,6 +3,7 @@ var mongoose   = require('mongoose');
 var crypto     = require('./crypto');
 var common     = require('./common');
 var rawer      = require('./rawer');
+var constants  = require('./constants');
 var Identity   = mongoose.model('Identity', require('../models/identity'));
 var Membership = mongoose.model('Membership', require('../models/membership'));
 
@@ -118,8 +119,8 @@ function LocalValidator (conf) {
     var time = parseInt(block.time);
     var medianTime = parseInt(block.medianTime);
     var maxGenTime = conf.avgGenTime * 4;
-    if (block.number > 0 && (time < medianTime || time > medianTime + maxGenTime*2))
-      done('A block must have its Time between MedianTime and MedianTime + maxGenTime*2');
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxGenTime*constants.VALUES.AVG_SPEED_TIME_MARGIN))
+      done('A block must have its Time between MedianTime and MedianTime + maxGenTime*' + constants.VALUES.AVG_SPEED_TIME_MARGIN);
     else if (block.number == 0 && time != medianTime)
       done('Root block must have Time equal MedianTime');
     else

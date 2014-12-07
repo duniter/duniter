@@ -269,9 +269,8 @@ BlockSchema.statics.getLastBlocks = function (count, done) {
 };
 
 BlockSchema.statics.getBlocksBetween = function (start, end, done) {
-
   this
-    .find({ number: { $gte: start }, number: { $lte: end }})
+    .find({ $and: [{ number: { $gte: start }}, { number: { $lte: end }}]})
     .sort({ number: -1 })
     .exec(done);
 };

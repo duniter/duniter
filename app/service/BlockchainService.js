@@ -1198,31 +1198,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     });
     async.waterfall([
       function (next) {
-        // Universal Dividend
-        if (lastUDBlock)
-          next(null, lastUDBlock.medianTime);
-        else
-          Block.getRoot(function (err, root) {
-            if (root)
-              next(null, root.medianTime);
-            else
-              next(null, null);
-          });
-      },
-      function (lastUDTime, next) {
-        if (lastUDTime != null) {
-          if (current && lastUDTime + conf.dt <= current.medianTime) {
-            var M = current.monetaryMass || 0;
-            var c = conf.c;
-            var N = block.membersCount;
-            var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-            var UD = Math.ceil(Math.max(previousUD, c * M / N));
-            block.dividend = UD;
-          } 
-        }
-        next();
-      },
-      function (next) {
         // PoWMin
         if (block.number == 0)
           next(null, 0); // Root difficulty is given by manually written block
@@ -1239,8 +1214,33 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (medianTime, next) {
         block.medianTime = current ? medianTime : moment.utc().unix();
+        next();
+      },
+      function (next) {
+        // Universal Dividend
+        if (lastUDBlock)
+          next(null, lastUDBlock.medianTime);
+        else
+          Block.getRoot(function (err, root) {
+            if (root)
+              next(null, root.medianTime);
+            else
+              next(null, null);
+          });
+      },
+      function (lastUDTime, next) {
+        if (lastUDTime != null) {
+          if (current && lastUDTime + conf.dt <= block.medianTime) {
+            var M = current.monetaryMass || 0;
+            var c = conf.c;
+            var N = block.membersCount;
+            var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+            var UD = Math.ceil(Math.max(previousUD, c * M / N));
+            block.dividend = UD;
+          } 
+        }
         next(null, block);
-      }
+      },
     ], done);
   }
 
@@ -1275,7 +1275,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     // Time must be = [medianTime; medianTime + minSpeed]
     var now = moment.utc().unix();
     var maxGenTime = conf.avgGenTime*4;
-    block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*2, now)) : block.medianTime;
+    block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*constants.VALUES.AVG_SPEED_TIME_MARGIN, now)) : block.medianTime;
     logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
     async.whilst(
       function(){ return !pow.match(powRegexp); },
@@ -1295,7 +1295,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               process.stdout.write('.');
               // Time must be = [medianTime; medianTime + minSpeed]
               now = moment.utc().unix();
-              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*2, now)) : block.medianTime;
+              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*constants.VALUES.AVG_SPEED_TIME_MARGIN, now)) : block.medianTime;
             } else if (testsCount % 50 == 0) {
               if (newKeyblockCallback) {
                 computationActivated = false
@@ -1306,6 +1306,9 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           },
         ], next);
       }, function (err) {
+        if (testsCount >= 100) {
+          console.log(''); // Adds a CR to the waiting dots
+        }
         if (err) {
           logger.debug('Proof-of-work computation canceled: valid block received');
           done(err);

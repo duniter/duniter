@@ -4,6 +4,7 @@ var crypto        = require('./crypto');
 var common        = require('./common');
 var moment        = require('moment');
 var mongoose      = require('mongoose');
+var logger        = require('./logger')('validator');
 var Identity      = mongoose.model('Identity', require('../models/identity'));
 var Membership    = mongoose.model('Membership', require('../models/membership'));
 var Certification = mongoose.model('Certification', require('../models/certification'));
@@ -339,35 +340,42 @@ function GlobalValidator (conf, dao) {
         }
       ], done);
     } else {
-      var previous = null;
       async.waterfall([
         function (next){
-          // Find preceding
-          dao.getBlock(blockNumber - 1, next);
+          async.parallel({
+            previous: function (next) {
+              dao.getBlock(blockNumber - 1, next);
+            },
+            medianTime: function (next) {
+              // Get Mediant time for "blockNumber"
+              getMedianTime(blockNumber, next);
+            },
+            lastDistant: function (next) {
+              dao.getBlock(blockNumber - conf.dtDiffEval, next);
+            }
+          }, next);
         },
-        function (thePrevious, next) {
-          previous = thePrevious;
-          dao.getBlock(previous.number + 1 - conf.dtDiffEval, next);
-        },
-        function (lastBlock, next){
+        function (res, next){
           // Compute PoWMin value
-          var duration = previous.medianTime - lastBlock.medianTime;
+          console.log(blockNumber);
+          var duration = res.medianTime - res.lastDistant.medianTime;
           var speed = conf.dtDiffEval*1.0 / duration*1.0;
           var maxGenTime = conf.avgGenTime * 4;
           var minGenTime = conf.avgGenTime / 4;
           var maxSpeed = 1.0 / minGenTime;
           var minSpeed = 1.0 / maxGenTime;
+          // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');
           if (speed >= maxSpeed) {
             // Must increase difficulty
-            next(null, previous.powMin + 1);
+            next(null, res.previous.powMin + 1);
           }
           else if (speed <= minSpeed) {
             // Must decrease difficulty
-            next(null, previous.powMin - 1);
+            next(null, Math.max(0, res.previous.powMin - 1));
           }
           else {
             // Must not change difficulty
-            next(null, previous.powMin);
+            next(null, res.previous.powMin);
           }
         },
       ], done);
@@ -413,41 +421,42 @@ function GlobalValidator (conf, dao) {
       done(null, 0);
       return;
     }
+    var blocksCount;
     async.waterfall([
       function (next){
-        var blocksCount = blockNumber >= conf.medianTimeBlocks ? conf.medianTimeBlocks : blockNumber;
+        // Get the number of blocks we can look back from this block
+        blocksCount = blockNumber < conf.medianTimeBlocks ? blockNumber : conf.medianTimeBlocks;
+        // Get their 'time' value
+        // console.log('Times between ', blockNumber - blocksCount, blockNumber - 1);
+        dao.getTimesBetween(blockNumber - blocksCount, blockNumber - 1, next);
+      },
+      function (timeValues, next) {
+        timeValues.sort();
+        // console.log(timeValues);
+        var times = [0];
         if (blocksCount % 2 == 0) {
           // Even number of blocks
           var middle = blocksCount / 2;
-          async.parallel({
-            one: function (next) {
-              dao.getBlock(blockNumber - 1 - middle, next);
-            },
-            two: function (next) {
-              dao.getBlock(blockNumber - middle, next);
-            }
-          }, function (err, res) {
-            next(err, [res.one, res.two]);
-          });
+          times = [timeValues[middle - 1], timeValues[middle]];
+          // console.log('middle', middle);
+          // console.log('times = ', times);
         }
         else {
           // Odd number of blocks
           var middle = (blocksCount - 1) / 2;
-          dao.getBlock(blockNumber - 1 - middle, function (err, block) {
-            next(err, [block]);
-          });
+          times = [timeValues[middle]];
+          // console.log('middle', middle);
+          // console.log('times = ', times);
         }
-      },
-      function (blocks, next) {
         // Content
-        if (blocks.length == 2) {
-          // Even number of blocks
-          median = Math.ceil((blocks[0].time + blocks[1].time) / 2);
+        if (times.length == 2) {
+          // Even number of times
+          median = Math.ceil((times[0] + times[1]) / 2);
           next(null, median);
         }
-        else if (blocks.length == 1) {
-          // Odd number of blocks
-          median = blocks[0].time;
+        else if (times.length == 1) {
+          // Odd number of times
+          median = times[0];
           next(null, median);
         }
         else {
@@ -586,7 +595,7 @@ function GlobalValidator (conf, dao) {
             powMin = res.powMin;
             last = (res.lasts && res.lasts[0]) || null;
             if (last) {
-              dao.getIssuersBetween(last.number - 1 - conf.blockRot, last.number - 1, next);
+              dao.getIssuersBetween(last.number - 1 - conf.blocksRot, last.number - 1, next);
             } else {
               // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
               last = { number: current.number };

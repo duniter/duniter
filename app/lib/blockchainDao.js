@@ -156,6 +156,17 @@ module.exports = function(conn, block) {
         }
       ], done);
     }
+
+    this.getTimesBetween = function (bStart, bEnd, done) {
+      async.waterfall([
+        function (next) {
+          Block.getBlocksBetween(bStart, bEnd, next);
+        },
+        function (blocks, next) {
+          next(null, _.pluck(blocks, 'time'));
+        }
+      ], done);
+    }
   }
 
   return new BlockCheckerDao(block);

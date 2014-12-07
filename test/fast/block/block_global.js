@@ -713,4 +713,15 @@ function BlockCheckerDao (block) {
       done(null, []);
   }
 
+  this.getTimesBetween = function (bStart, bEnd, done) {
+    if (block.number == 66)
+      done(null, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,18,18]);
+    else if (block.number == 61)
+      done(null, [1,2,3]);
+    else if (block.number == 60)
+      done(null, [1,2]);
+    else
+      done(null, []);
+  }
+
 }

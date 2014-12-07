@@ -904,13 +904,13 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 ##### Proof-of-Work
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
 
-    NB_ZEROS = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ]
+    NB_ZEROS = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * (1 + nbPreviousIssuers )/ (1 + nbBlocksSince)) ]
 
 Where:
 
 * `[PoWMin]` is the `PoWMin` value of incoming block
 * `[percentRot]` is the protocol parameter
-* `[nbPreviousIssuers]` is the number of different block issuers in `blockRot` blocks **before** the last block of the member (so, incoming block excluded).
+* `[nbPreviousIssuers]` is the number of different block issuers in `blockRot` blocks **before** the last block of the member (so, last block of issuer & incoming block excluded).
 * `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
 
 

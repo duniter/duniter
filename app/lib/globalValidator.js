@@ -357,7 +357,6 @@ function GlobalValidator (conf, dao) {
         },
         function (res, next){
           // Compute PoWMin value
-          console.log(blockNumber);
           var duration = res.medianTime - res.lastDistant.medianTime;
           var speed = conf.dtDiffEval*1.0 / duration*1.0;
           var maxGenTime = conf.avgGenTime * 4;
@@ -605,7 +604,7 @@ function GlobalValidator (conf, dao) {
           function (issuers, next) {
             var nbPreviousIssuers = _(issuers).uniq().length;
             var nbBlocksSince = current.number - last.number;
-            var nbZeros = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
+            var nbZeros = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
             next(null, nbZeros);
           }
         ], next);

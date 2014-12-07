@@ -77,7 +77,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           },
           function (status, peer, wasStatus, next){
             slogger.debug('✔ STATUS %s %s', status.from, status.status);
-            // next(null, status);
+            next(null, status);
           },
         ], next);
       }

@@ -223,12 +223,6 @@ describe("Block global coherence:", function(){
     done();
   }));
 
-  it('a block requiring 1 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_4_LEADING_ZEROS, function (err, done) {
-    should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 1 zeros');
-    done();
-  }));
-
   it('a block requiring 2 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_7_LEADING_ZEROS, function (err, done) {
     should.exist(err);
     err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 2 zeros');
@@ -720,6 +714,20 @@ function BlockCheckerDao (block) {
       done(null, [1,2,3]);
     else if (block.number == 60)
       done(null, [1,2]);
+    else if (block.number == 3)
+      done(null, [1411776000,1411776000,1411776000]);
+    else if (block.number == 103) {
+      var times = [];
+      for (var i = 0; i < 103; i++)
+        times.push(161);
+      done(null, times);
+    }
+    else if (block.number == 104) {
+      var times = [];
+      for (var i = 0; i < 104; i++)
+        times.push(162);
+      done(null, times);
+    }
     else
       done(null, []);
   }

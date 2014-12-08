@@ -48,6 +48,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
     app.post('/wot/add',                   wot.add);
     app.get( '/wot/lookup/:search',        wot.lookup);
     app.get( '/wot/certifiers-of/:search', wot.certifiersOf);
+    app.get( '/wot/certified-by/:search',  wot.certifiedBy);
   };
 }
 

@@ -81,13 +81,17 @@ function WOTBinding (wotServer) {
             Certification.toTarget(idty.getTargetHash(), next);
           },
           function (certs, next){
-            idty.certs = certs;
+            idty.certs = [];
             async.forEach(certs, function (cert, callback) {
               async.waterfall([
                 function (next) {
                   Identity.getMember(cert.from, next);
                 },
                 function (idty, next) {
+                  if (!idty) {
+                    next('Not a member');
+                    return;
+                  }
                   cert.uid = idty.uid;
                   Block.findByNumber(cert.block_number, next);
                 },
@@ -96,6 +100,77 @@ function WOTBinding (wotServer) {
                     block: block.number,
                     medianTime: block.medianTime
                   };
+                  idty.certs.push(cert);
+                  next();
+                }
+              ], function (err) {
+                callback();
+              });
+            }, next);
+          },
+          function (next) {
+            next(null, idty);
+          }
+        ], next);
+      },
+    ], function (err, idty) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      var json = {
+        pubkey: idty.pubkey,
+        uid: idty.uid,
+        certifications: []
+      };
+      idty.certs.forEach(function(cert){
+        json.certifications.push({
+          pubkey: cert.pubkey,
+          uid: cert.uid,
+          cert_time: cert.cert_time,
+          written: cert.linked,
+          signature: cert.sig
+        });
+      });
+      res.send(200, JSON.stringify(json, null, "  "));
+    });
+  };
+
+  this.certifiedBy = function (req, res) {
+    async.waterfall([
+      function (next){
+        ParametersService.getSearch(req, next);
+      },
+      function (search, next){
+        IdentityService.findMember(search, next);
+      },
+      function (idty, next){
+        async.waterfall([
+          function (next){
+            Certification.from(idty.pubkey, next);
+          },
+          function (certs, next){
+            idty.certs = [];
+            async.forEach(certs, function (cert, callback) {
+              async.waterfall([
+                function (next) {
+                  Identity.getMember(cert.to, next);
+                },
+                function (idty, next) {
+                  if (!idty) {
+                    next('Not a member');
+                    return;
+                  }
+                  cert.pubkey = idty.pubkey;
+                  cert.uid = idty.uid;
+                  Block.findByNumber(cert.block_number, next);
+                },
+                function (block, next) {
+                  cert.cert_time = {
+                    block: block.number,
+                    medianTime: block.medianTime
+                  };
+                  idty.certs.push(cert);
                   next();
                 }
               ], function (err) {

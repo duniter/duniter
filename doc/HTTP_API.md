@@ -13,6 +13,8 @@
   * [wot/](#wot)
       * [add](#wotadd)
       * [lookup/[search]](#wotlookupsearch)
+      * [certifiers-of/[search]](#wotcertifiers-ofsearch)
+      * [certified-by/[search]](#wotcertified-bysearch)
   * [blockchain/](#blockchain)
       * [parameters](#blockchainparameters)
       * [membership](#blockchainmembership)
@@ -247,6 +249,78 @@ A list of public key data matching search string (may not return all results, ch
         }
       ]
     }
+  ]
+}
+```
+
+#### `wot/certifiers-of/[search]`
+
+
+**Goal**
+
+GET [Certification](./Protocol.md#certification) data over a member.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`search` | Pulbic key or uid of a *member* we want see the certifications. | URL
+
+**Returns**
+
+A list of certifications issued to the member, with `written` data indicating wether the certification is written in the blockchain or not.
+```json
+{
+  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "uid": "user identifier",
+  "certifications": [
+    {
+      "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
+      "uid": "certifier uid",
+      "cert_time": {
+        "block": 88,
+        "medianTime": 1509991044
+      },
+      "written": true,
+      "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
+    },
+    ...
+  ]
+}
+```
+
+#### `wot/certified-by/[search]`
+
+
+**Goal**
+
+GET [Certification](./Protocol.md#certification) data over a member.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`search` | Pulbic key or uid of a *member* we want see the certifications. | URL
+
+**Returns**
+
+A list of certifications issued by the *member* to other *members*, with `written` data indicating wether the certification is written in the blockchain or not.
+```json
+{
+  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "uid": "user identifier",
+  "certifications": [
+    {
+      "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
+      "uid": "certifier uid",
+      "cert_time": {
+        "block": 88,
+        "medianTime": 1509991044
+      },
+      "written": true,
+      "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
+    },
+    ...
   ]
 }
 ```

@@ -264,7 +264,7 @@ GET [Certification](./Protocol.md#certification) data over a member.
 
 Name  | Value | Method
 ----  | ----- | ------
-`search` | Pulbic key or uid of a *member* we want see the certifications. | URL
+`search` | Public key or uid of a *member* we want see the certifications. | URL
 
 **Returns**
 
@@ -300,7 +300,7 @@ GET [Certification](./Protocol.md#certification) data over a member.
 
 Name  | Value | Method
 ----  | ----- | ------
-`search` | Pulbic key or uid of a *member* we want see the certifications. | URL
+`search` | Public key or uid of a *member* we want see the certifications. | URL
 
 **Returns**
 

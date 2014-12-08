@@ -45,8 +45,9 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.listenWOT = function (app) {
     var wot = require('./app/controllers/wot')(that);
-    app.post('/wot/add',            wot.add);
-    app.get( '/wot/lookup/:search', wot.lookup);
+    app.post('/wot/add',                   wot.add);
+    app.get( '/wot/lookup/:search',        wot.lookup);
+    app.get( '/wot/certifiers-of/:search', wot.certifiersOf);
   };
 }
 

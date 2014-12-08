@@ -36,6 +36,19 @@ function IdentityService (conn, conf) {
     ], done);
   };
 
+  this.findMember = function(search, done) {
+    async.parallel({
+      pubkey: function (next) {
+        Identity.getMember(search, next);
+      },
+      uid: function (next) {
+        Identity.getMemberByUID(search, next);
+      }
+    }, function (err, res) {
+      done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, res.pubkey || res.uid);
+    });
+  };
+
   this.setBlockchainService = function (service) {
     BlockchainService = service;
   };

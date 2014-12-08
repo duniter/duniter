@@ -164,6 +164,17 @@ IdentitySchema.statics.getMember = function(pubkey, done){
   });
 }
 
+IdentitySchema.statics.getMemberByUID = function(uid, done){
+  var Identity = this.model('Identity');
+  Identity.find({ "uid": uid, "member": true }, function (err, identities) {
+    if(identities.length > 1){
+      done('More than one matching pubkey & member for ' + uid);
+      return;
+    }
+    done(null, identities.length == 1 ? identities[0] : null);
+  });
+}
+
 IdentitySchema.statics.getMemberByUserID = function(uid, done){
   var Identity = this.model('Identity');
   Identity.find({ "uid": uid, "member": true }, function (err, identities) {

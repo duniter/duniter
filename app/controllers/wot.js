@@ -24,6 +24,7 @@ function WOTBinding (wotServer) {
   var ParametersService = wotServer.ParametersService;
   var IdentityService   = wotServer.IdentityService;
 
+  var Block         = conn.model('Block');
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
 
@@ -61,6 +62,70 @@ function WOTBinding (wotServer) {
       };
       identities.forEach(function(identity){
         json.results.push(identity.json());
+      });
+      res.send(200, JSON.stringify(json, null, "  "));
+    });
+  };
+
+  this.certifiersOf = function (req, res) {
+    async.waterfall([
+      function (next){
+        ParametersService.getSearch(req, next);
+      },
+      function (search, next){
+        IdentityService.findMember(search, next);
+      },
+      function (idty, next){
+        async.waterfall([
+          function (next){
+            Certification.toTarget(idty.getTargetHash(), next);
+          },
+          function (certs, next){
+            idty.certs = certs;
+            async.forEach(certs, function (cert, callback) {
+              async.waterfall([
+                function (next) {
+                  Identity.getMember(cert.from, next);
+                },
+                function (idty, next) {
+                  cert.uid = idty.uid;
+                  Block.findByNumber(cert.block_number, next);
+                },
+                function (block, next) {
+                  cert.cert_time = {
+                    block: block.number,
+                    medianTime: block.medianTime
+                  };
+                  next();
+                }
+              ], function (err) {
+                callback();
+              });
+            }, next);
+          },
+          function (next) {
+            next(null, idty);
+          }
+        ], next);
+      },
+    ], function (err, idty) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      var json = {
+        pubkey: idty.pubkey,
+        uid: idty.uid,
+        certifications: []
+      };
+      idty.certs.forEach(function(cert){
+        json.certifications.push({
+          pubkey: cert.pubkey,
+          uid: cert.uid,
+          cert_time: cert.cert_time,
+          written: cert.linked,
+          signature: cert.sig
+        });
       });
       res.send(200, JSON.stringify(json, null, "  "));
     });

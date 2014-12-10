@@ -28,6 +28,10 @@ var powFifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 
+var statQueue = async.queue(function (task, callback) {
+  task(callback);
+});
+
 // Callback used as a semaphore to sync block reception & PoW computation
 var newKeyblockCallback = null;
 
@@ -55,6 +59,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Source        = conn.model('Source');
   var Transaction   = conn.model('Transaction');
   var Configuration = conn.model('Configuration');
+  var BlockStat     = conn.model('BlockStat');
 
   // Flag to say wether timestamp of received blocks should be tested
   // Useful for synchronisation of old blocks
@@ -1505,6 +1510,77 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       });
     }, function (err) {
       done(null, joinData);
+    });
+  }
+
+  this.addStatComputing = function () {
+    var tests = {
+      'newcomers': 'identities',
+      'certs': 'certifications',
+      'joiners': 'joiners',
+      'actives': 'actives',
+      'leavers': 'leavers',
+      'excluded': 'excluded',
+      'ud': 'dividend',
+      'tx': 'transactions'
+    };
+    statQueue.push(function (sent) {
+      logger.debug('Computing stats...');
+      async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx'], function (statName, callback) {
+        async.waterfall([
+          function (next) {
+            async.parallel({
+              stat: function (next) {
+                BlockStat.getStat(statName, next);
+              },
+              current: function (next) {
+                BlockchainService.current(next);
+              }
+            }, next);
+          },
+          function (res, next) {
+            var stat = res.stat;
+            var current = res.current;
+            // Create stat if it does not exist
+            if (stat == null) {
+              stat = new BlockStat({ statName: statName, blocks: [], lastParsedBlock: 0 });
+            }
+            // Compute new stat
+            if (!current) {
+              next(null, stat);
+            } else {
+              async.forEachSeries(_.range(stat.lastParsedBlock, current.number + 1), function (blockNumber, callback) {
+                // console.log('Stat', statName, ': tested block#' + blockNumber);
+                async.waterfall([
+                  function (next) {
+                    Block.findByNumber(blockNumber, next);
+                  },
+                  function (block, next) {
+                    var testProperty = tests[statName];
+                    var value = block[testProperty];
+                    var isPositiveValue = value && typeof value != 'object';
+                    var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+                    if (isPositiveValue || isNonEmptyArray) {
+                      stat.blocks.push(blockNumber);
+                    }
+                    stat.lastParsedBlock = blockNumber;
+                    next();
+                  }
+                ], callback);
+              }, function (err) {
+                next(err, stat);
+              });
+            }
+          },
+          function (stat, next) {
+            stat.save(function (err) {
+              next(err);
+            });
+          }
+        ], callback);
+      }, function (err) {
+        logger.debug('Computing stats: done!');
+      });
     });
   }
 }

@@ -41,6 +41,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
             server.BlockchainService.submitBlock(obj, next);
           },
           function (kb, next){
+            server.BlockchainService.addStatComputing();
             server.emit('block', kb);
             next(null, kb);
           },
@@ -212,7 +213,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.PeeringService.regularUpSignal(next);
       },
       function (next){
-        // TODO: write next block
         async.forever(
           function tryToGenerateNextBlock(next) {
             async.waterfall([
@@ -239,6 +239,11 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         );
         next();
       },
+      function (next) {
+        // Launch a block analysis
+        that.BlockchainService.addStatComputing();
+        next();
+      }
     ], done);
   };
 

@@ -1292,7 +1292,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             pow = full.hash();
             testsCount++;
             if (testsCount % 100 == 0) {
-              process.stdout.write('.');
+              // Update block with local time
               // Time must be = [medianTime; medianTime + minSpeed]
               now = moment.utc().unix();
               block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*constants.VALUES.AVG_SPEED_TIME_MARGIN, now)) : block.medianTime;

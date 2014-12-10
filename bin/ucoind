@@ -379,6 +379,8 @@ function connect(callback) {
 
     var server = ucoin.connect({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
 
+    server.on('mongoFail', logErrorAndExit(server, 'Could not connect to MongoDB. Is it installed?'));
+
     // Connecting to DB
     server.on('connected', function (err) {
 
@@ -394,6 +396,9 @@ function connect(callback) {
       cbArgs[cbArgs.length++] = server.conf;
       callback.apply(this, cbArgs);
     });
+
+    // Initialize server (db connection, ...)
+    server.init();
   };
 }
 
@@ -407,6 +412,8 @@ function service(serverFactory, callback) {
     var dbName = program.mdb || "ucoin_default";
 
     var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
+
+    server.on('mongoFail', logErrorAndExit(server, 'Could not connect to MongoDB. Is it installed?'));
 
     // Connecting to DB
     server.on('services', function (err) {
@@ -423,6 +430,17 @@ function service(serverFactory, callback) {
       cbArgs[cbArgs.length++] = server.conf;
       callback.apply(this, cbArgs);
     });
+
+    // Initialize server (db connection, ...)
+    server.init();
+  };
+}
+
+function logErrorAndExit (server, errMsg) {
+  return function (err) {
+    logger.warn(errMsg ? errMsg : (err.message || err));
+    server.disconnect();
+    process.exit(1);
   };
 }
 

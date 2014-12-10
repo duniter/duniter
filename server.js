@@ -50,6 +50,13 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     });
   };
 
+  this.init = function () {
+    // Launches the server
+    async.forEachSeries(todoOnInit, function(f, cb){
+      f(cb);
+    });
+  }
+
   this.submit = function (obj, isInnerWrite, done) {
     async.waterfall([
       function (next){
@@ -93,6 +100,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     var databaseName = dbConf.name || "ucoin_default";
     var host = dbConf.host || "localhost";
     var port = dbConf.port;
+    var that = this;
     if (arguments.length == 1) {
       done = reset;
       reset = dbConf.resetData;
@@ -118,7 +126,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       // logger.debug('Connecting to database `%s`', databaseName);
       var conn = that.conn = mongoose.createConnection('mongodb://' + host + (port ? ':' + port : '') + '/' + databaseName);
       conn.on('error', function (err) {
-        logger.error('connection error:', err);
+        that.emit('mongoFail', err);
       });
       async.waterfall([
         function (next){
@@ -331,11 +339,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   }
 
   util.inherits(TempStream, stream.Duplex);
-
-  // Launches the server
-  async.forEachSeries(todoOnInit, function(f, cb){
-    f(cb);
-  });
 }
 
 util.inherits(Server, stream.Duplex);

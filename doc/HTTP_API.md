@@ -381,16 +381,21 @@ GET the blockchain parameters used by this node.
 The synchronization parameters.
 ```json
 {
-  "currency": "beta_brousouf",
-  "sigDelay": 157680000,
-  "sigValidity": 31536000,
-  "sigQty": 5,
-  "stepMax": 3,
-  "powZeroMin": 4,
-  "powPeriod": 10,
-  "c": 0.737826,
-  "dt": 2629800,
-  "ud0": 100
+  currency: "beta_brousouf",
+  c: 0.01,
+  dt: 302400,
+  ud0: 100,
+  sigDelay: 5259600,
+  sigValidity: 2629800,
+  sigQty: 3,
+  sigWoT: 5,
+  msValidity: 2629800,
+  stepMax: 3,
+  medianTimeBlocks: 11,
+  avgGenTime: 600,
+  dtDiffEval: 10,
+  blocksRot: 20,
+  percentRot: 0.67
 }
 ```
 

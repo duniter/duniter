@@ -76,9 +76,14 @@ function BlockchainBinding (wotServer) {
       "sigDelay": conf.sigDelay,
       "sigValidity": conf.sigValidity,
       "sigQty": conf.sigQty,
+      "sigWoT": conf.sigWoT,
+      "msValidity": conf.msValidity,
       "stepMax": 3, // uCoin only handles 3 step currencies for now
-      "incDateMin": conf.incDateMin,
-      "dtDateMin": conf.dtDateMin
+      "medianTimeBlocks": conf.medianTimeBlocks,
+      "avgGenTime": conf.avgGenTime,
+      "dtDiffEval": conf.dtDiffEval,
+      "blocksRot": conf.blocksRot,
+      "percentRot": conf.percentRot,
     }, null, "  "));
   };
 

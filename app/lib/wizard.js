@@ -20,7 +20,7 @@ function Wizard () {
   };
 
   this.configBasic = function (conf, done) {
-    doTasks(['key', 'network'], conf, done);
+    doTasks(['key', 'network', 'pow'], conf, done);
   };
 
   this.configPoW = function (conf, done) {

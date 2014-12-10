@@ -10,7 +10,7 @@ var request    = require('request');
 var http       = require('http');
 var log4js     = require('log4js');
 
-var models = ['Identity', 'Certification', 'Configuration', 'Link', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block', 'Source'];
+var models = ['Identity', 'Certification', 'Configuration', 'Link', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block', 'Source', 'BlockStat'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {

@@ -36,8 +36,23 @@
 Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit uCoin specificities.
 
     http[s]://Node[:port]/...
+    |-- wot/
+    |   |-- certifiers-of/[uid|pubkey]
+    |   |-- certified-by/[uid|pubkey]
+    |   |-- members
+    |   `-- lookup
     |-- blockchain/
+    |   |-- parameters
     |   |-- membership
+    |   |-- with/
+    |       |-- newcomers
+    |       |-- certs
+    |       |-- joiners
+    |       |-- actives
+    |       |-- leavers
+    |       |-- excluded
+    |       |-- ud
+    |       `-- tx
     |   |-- hardship
     |   |   `-- [PGP_FINGERPRINT]
     |   |-- block

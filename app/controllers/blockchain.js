@@ -35,6 +35,7 @@ function BlockchainBinding (wotServer) {
   var Peer       = wotServer.conn.model('Peer');
   var Membership = wotServer.conn.model('Membership');
   var Identity   = wotServer.conn.model('Identity');
+  var BlockStat  = wotServer.conn.model('BlockStat');
 
   this.parseMembership = function (req, res) {
     var onError = http400(res);
@@ -80,6 +81,37 @@ function BlockchainBinding (wotServer) {
       "dtDateMin": conf.dtDateMin
     }, null, "  "));
   };
+
+  this.with = {
+
+    newcomers: getStat('newcomers'),
+    certs:     getStat('certs'),
+    joiners:   getStat('joiners'),
+    actives:   getStat('actives'),
+    leavers:   getStat('leavers'),
+    excluded:  getStat('excluded'),
+    ud:        getStat('ud'),
+    tx:        getStat('tx')
+  };
+
+  function getStat (statName) {
+    return function (req, res) {
+      async.waterfall([
+        function (next) {
+          BlockStat.getStat(statName, next);
+        }
+      ], function (err, stat) {
+        if(err){
+          res.send(400, err);
+          return;
+        }
+        if (stat == null) {
+          stat = new BlockStat();
+        }
+        res.send(200, JSON.stringify({ result: stat.json() }, null, "  "));
+      });
+    }
+  }
 
   this.promoted = function (req, res) {
     async.waterfall([

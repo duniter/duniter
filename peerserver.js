@@ -330,6 +330,14 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     app.get(    '/blockchain/block/:number',    blockchain.promoted);
     app.get(    '/blockchain/current',          blockchain.current);
     app.get(    '/blockchain/hardship/:pubkey', blockchain.hardship);
+    app.get(    '/blockchain/with/newcomers',   blockchain.with.newcomers);
+    app.get(    '/blockchain/with/certs',       blockchain.with.certs);
+    app.get(    '/blockchain/with/joiners',     blockchain.with.joiners);
+    app.get(    '/blockchain/with/actives',     blockchain.with.actives);
+    app.get(    '/blockchain/with/leavers',     blockchain.with.leavers);
+    app.get(    '/blockchain/with/excluded',    blockchain.with.excluded);
+    app.get(    '/blockchain/with/ud',          blockchain.with.ud);
+    app.get(    '/blockchain/with/tx',          blockchain.with.tx);
   };
 
   this.listenNET = function (app) {

@@ -67,6 +67,26 @@ function WOTBinding (wotServer) {
     });
   };
 
+  this.members = function (req, res) {
+    async.waterfall([
+      function (next){
+        Identity.getMembers(next);
+      },
+    ], function (err, identities) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      var json = {
+        results: []
+      };
+      identities.forEach(function(identity){
+        json.results.push({ pubkey: identity.pubkey, uid: identity.uid });
+      });
+      res.send(200, JSON.stringify(json, null, "  "));
+    });
+  };
+
   this.certifiersOf = function (req, res) {
     async.waterfall([
       function (next){

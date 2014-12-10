@@ -253,6 +253,30 @@ A list of public key data matching search string (may not return all results, ch
 }
 ```
 
+#### `wot/members`
+
+
+**Goal**
+
+GET the list of current Web of Trust members.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+A list of public key + uid.
+```json
+{
+  "results": [
+    { "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY", "uid": "cat" },
+    { "pubkey": "9kNEiyseUNoPn3pmNUhWpvCCwPRgavsLu7YFKZuzzd1L", "uid": "tac" },
+    { "pubkey": "9HJ9VXa9wc6EKC6NkCi8b5TKWBot68VhYDg7kDk5T8Cz", "uid": "toc" }
+  ]
+}
+```
+
 #### `wot/certifiers-of/[search]`
 
 

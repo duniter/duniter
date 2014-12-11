@@ -30,7 +30,7 @@ var powFifo = async.queue(function (task, callback) {
 
 var statQueue = async.queue(function (task, callback) {
   task(callback);
-});
+}, 1);
 
 // Callback used as a semaphore to sync block reception & PoW computation
 var newKeyblockCallback = null;
@@ -1549,7 +1549,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             if (!current) {
               next(null, stat);
             } else {
-              async.forEachSeries(_.range(stat.lastParsedBlock, current.number + 1), function (blockNumber, callback) {
+              async.forEachSeries(_.range(stat.lastParsedBlock + 1, current.number + 1), function (blockNumber, callback) {
                 // console.log('Stat', statName, ': tested block#' + blockNumber);
                 async.waterfall([
                   function (next) {
@@ -1580,6 +1580,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         ], callback);
       }, function (err) {
         logger.debug('Computing stats: done!');
+        sent();
       });
     });
   }

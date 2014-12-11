@@ -471,7 +471,7 @@ The promoted block if it exists (otherwise return HTTP 404).
   "number": 1,
   "timestamp": 1408996317,
   "dividend": 254,
-  "fees": 14,
+  "monetaryMass": 18948,
   "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "previousHash": "0009A7A62703F976F683BBA500FC0CB832B8220D",
   "previousIssuer": "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",

@@ -53,6 +53,7 @@ BlockSchema.methods = {
       "time",
       "medianTime",
       "membersCount",
+      "monetaryMass",
     ].forEach(function(field){
       json[field] = parseInt(that[field], 10);
     });

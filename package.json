@@ -1,6 +1,6 @@
 {
   "name": "ucoin",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "private": false,
   "description": "Crypto-currency software allowing to build P2P free currencies",
   "main": "bin/ucoin",

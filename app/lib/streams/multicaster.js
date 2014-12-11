@@ -141,8 +141,8 @@ function success (done) {
 function post(peer, url, data, done) {
   reach(peer, function(){
     var postReq = request.post('http://' + peer.getURL() + url, function (err, res, body) {
-      if (err)
-        logger.debug('Error while connecting to %s: %s', peer.keyID(), err.toString());
+      // if (err)
+      //   logger.debug('Error while connecting to %s: %s', peer.keyID(), err.toString());
       done(err, res, body);
     });
     postReq.form(data);

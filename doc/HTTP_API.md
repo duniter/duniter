@@ -15,6 +15,8 @@
       * [lookup/[search]](#wotlookupsearch)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)
+  * [currency/](#currency)
+      * [parameters](#currencyparameters)
   * [blockchain/](#blockchain)
       * [parameters](#blockchainparameters)
       * [membership](#blockchainmembership)
@@ -22,6 +24,14 @@
       * [block/[number]](#blockchainblocknumber)
       * [current](#blockchaincurrent)
       * [hardship/[PGP_FINGERPRINT]](#blockchainhardshippgpfingerprint)
+      * [with/](#blockchainwith)
+          * [newcomers](#blockchainwithnewcomers)
+          * [certs](#blockchainwithcerts)
+          * [actives](#blockchainwithactives)
+          * [leavers](#blockchainwithleavers)
+          * [excluded](#blockchainwithexcluded)
+          * [ud](#blockchainwithud)
+          * [tx](#blockchainwithtx)
   * [network/](#network)
       * [peering](#networkpeering)
       * [peering/peers (GET)](#networkpeeringpeers-get)
@@ -364,9 +374,9 @@ A list of certifications issued by the *member* to other *members*, with `writte
 }
 ```
 
-### blockchain/*
+### currency/*
 
-#### `blockchain/parameters`
+#### `currency/parameters`
 
 **Goal**
 
@@ -398,6 +408,14 @@ The synchronization parameters.
   percentRot: 0.67
 }
 ```
+
+### blockchain/*
+
+#### `blockchain/parameters`
+
+**Goal**
+
+Shortcut to [/currency/parameters](#currency-parameters).
 
 Parameters meaning is described under [Protocol parameters](./Protocol.md#protocol-parameters).
 
@@ -547,6 +565,167 @@ The hardship value (`level`) + `block` number.
 {
   "block": 598,
   "level": 3
+}
+
+```
+
+#### `blockchain/with/newcomers`
+**Goal**
+
+GET the block numbers containing newcomers (new identities).
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/certs`
+**Goal**
+
+GET the block numbers containing certifications.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/joiners`
+**Goal**
+
+GET the block numbers containing joiners (newcomers or people coming back after exclusion).
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/actives`
+**Goal**
+
+GET the block numbers containing actives (members updating their membership).
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/leavers`
+**Goal**
+
+GET the block numbers containing leavers (members leaving definitely the currency).
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/excluded`
+**Goal**
+
+GET the block numbers containing excluded members.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/ud`
+**Goal**
+
+GET the block numbers containing Universal Dividend.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/tx`
+**Goal**
+
+GET the block numbers containing transactions.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
 }
 ```
 

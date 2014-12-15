@@ -23,7 +23,7 @@
       * [block](#blockchainblock)
       * [block/[number]](#blockchainblocknumber)
       * [current](#blockchaincurrent)
-      * [hardship/[PGP_FINGERPRINT]](#blockchainhardshippgpfingerprint)
+      * [hardship/[PUBKEY]](#blockchainhardshippubkey)
       * [with/](#blockchainwith)
           * [newcomers](#blockchainwithnewcomers)
           * [certs](#blockchainwithcerts)
@@ -64,7 +64,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       |-- ud
     |       `-- tx
     |   |-- hardship
-    |   |   `-- [PGP_FINGERPRINT]
+    |   |   `-- [PUBKEY]
     |   |-- block
     |   |   `-- [NUMBER]
     |   `-- current
@@ -546,7 +546,7 @@ The promoted block if it exists (otherwise return HTTP 404).
 
 Same as [block/[number]](#blockchainblocknumber), but return last accepted block.
 
-#### `blockchain/hardship/[PGP_FINGERPRINT]`
+#### `blockchain/hardship/[PUBKEY]`
 
 **Goal**
 
@@ -556,7 +556,7 @@ GET hardship level for given member's fingerprint for writing next block.
 
 Name              | Value                     | Method
 ----              | -----                     | ------
-`PGP_FINGERPRINT` | Member's PGP fingerprint.   | URL
+`PUBKEY` | Member's PGP fingerprint.   | URL
 
 **Returns**
 

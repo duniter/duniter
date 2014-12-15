@@ -204,7 +204,7 @@ Over the following data:
     UID:lolcat
     META:TS:1409990782
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    META:TS:84
+    META:TS:84-2E76A3677D24C4A7225059A4A51364A11A6E47F7
 
 Note here that a certification *alone* has no meaning: it is only when appended to a flavoured self-certification that this signature (the certification) makes sense.
 
@@ -389,7 +389,7 @@ A transaction may be described under a more compact format, to be used under [Bl
     TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS:HAS_COMMENT
     PUBLIC_KEY:INDEX
     ...
-    INDEX:SOURCE:FINGERPRINT:AMOUNT
+    INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
     ...
     PUBLIC_KEY:AMOUNT
     ...
@@ -529,7 +529,7 @@ To be a valid, a block must match the following rules:
   * `BLOCK_NUMBER` : a positive integer
   * `SIGNATURE` : a [Signature](#signature) of the certification
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
-* `Parameters` is a simple line field, composed of 1 float and 10 integers all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
+* `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
         c:dt:ud0:sigDelay:sigValidity:sigQty:sigWoT:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 

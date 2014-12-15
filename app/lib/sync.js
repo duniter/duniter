@@ -86,6 +86,16 @@ module.exports = function Synchroniser (server, host, port, conf) {
                     node.blockchain.block(i, next);
                   },
                   function (block, next) {
+                    // Rawification of transactions
+                    block.transactions.forEach(function (tx) {
+                      tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+                      tx.raw += tx.signatories.join('\n') + '\n';
+                      tx.raw += tx.inputs.join('\n') + '\n';
+                      tx.raw += tx.outputs.join('\n') + '\n';
+                      if (tx.comment)
+                        tx.raw += tx.comment + '\n';
+                      tx.raw += tx.signatures.join('\n') + '\n';
+                    });
                     BlockchainService.submitBlock(block, next);
                   },
                   function (block, next) {

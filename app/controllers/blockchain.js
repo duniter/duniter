@@ -147,7 +147,6 @@ function BlockchainBinding (wotServer) {
         BlockchainService.current(next);
       }
     ], function (err, current) {
-      res.setHeader("Content-Type", "text/plain");
       if(err || !current){
         res.send(404, err);
         return;
@@ -181,7 +180,6 @@ function BlockchainBinding (wotServer) {
         globalValidator(conf, blockchainDao(conn, null)).getTrialLevel(member, next);
       },
     ], function (err, nbZeros) {
-      res.setHeader("Content-Type", "text/plain");
       if(err){
         res.send(404, err);
         return;

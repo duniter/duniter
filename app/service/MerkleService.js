@@ -3,7 +3,6 @@ module.exports = {
 
   merkleDone: function (req, res, json) {
     if(req.query.nice){
-      res.setHeader("Content-Type", "text/plain");
       res.end(JSON.stringify(json, null, "  "));
     }
     else res.end(JSON.stringify(json));

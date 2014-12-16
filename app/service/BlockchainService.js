@@ -1263,7 +1263,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next) {
         // Universal Dividend
         if (lastUDBlock)
-          next(null, lastUDBlock.medianTime);
+          next(null, lastUDBlock.UDTime);
         else
           Block.getRoot(function (err, root) {
             if (root)

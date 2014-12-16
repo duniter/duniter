@@ -192,6 +192,31 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
 }
 
 program
+  .command('export-bc [upto]')
+  .description('Exports the whole blockchain as JSON array, up to [upto] block number (excluded).')
+  .action(service(ucoin.createPeerServer, function (upto, server, conf) {
+    async.waterfall([
+      function (next){
+        server.conn.model('Block').find(upto ? { number: { $lt: upto }} : {}, next);
+      },
+      function (blocks, next){
+        var jsoned = [];
+        blocks.forEach(function (block) {
+          jsoned.push(_(block.json()).omit('raw'));
+        });
+        console.log(jsoned);
+        next();
+      },
+    ], function (err) {
+      if (err) {
+        logger.error(err);
+      }
+      server.disconnect();
+      process.exit();
+    });
+  }));
+
+program
   .command('check-config')
   .description('Checks the node\'s configuration')
   .action(service(ucoin.createPeerServer, function (server, conf) {

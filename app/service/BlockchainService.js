@@ -302,7 +302,32 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     if (current) {
       block.monetaryMass = (current.monetaryMass || 0) + block.dividend*block.membersCount;
     }
-    done();
+    // UD Time update
+    if (block.number == 0) {
+      block.UDTime = block.medianTime; // Root = first UD time
+      done();
+    }
+    else if (block.dividend) {
+      async.waterfall([
+        function (next) {
+          async.parallel({
+            last: function (next) {
+              blockchainDao(conn, block).getLastUDBlock(next);
+            },
+            root: function (next) {
+              blockchainDao(conn, block).getBlock(0, next);
+            }
+          }, next);
+        },
+        function (res, next) {
+          var last = res.last;
+          var root = res.root;
+          block.UDTime = conf.dt + (last ? last.UDTime : root.UDTime);
+          next();
+        }
+      ], done);
+    }
+    else done();
   }
 
   function updateMembers (block, done) {

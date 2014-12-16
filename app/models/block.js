@@ -16,6 +16,7 @@ var BlockSchema = new Schema({
   time: {"type": Number, "default": 0},
   dividend: {"type": Number, "default": 0},
   medianTime: {"type": Number, "default": 0},
+  UDTime: {"type": Number, "default": 0},
   monetaryMass: {"type": Number, "default": 0},
   previousHash: String,
   previousIssuer: String,

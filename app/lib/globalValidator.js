@@ -488,7 +488,7 @@ function GlobalValidator (conf, dao) {
       function (res, next){
         var current = res.current;
         var root = res.root;
-        var lastUDTime = res.lastUDBlock ? res.lastUDBlock.medianTime : (root != null ? root.medianTime : 0);
+        var lastUDTime = res.lastUDBlock ? res.lastUDBlock.UDTime : (root != null ? root.medianTime : 0);
         var UD = res.lastUDBlock ? res.lastUDBlock.dividend : conf.ud0;
         var M = res.lastUDBlock ? res.lastUDBlock.monetaryMass : 0;
         var Nt1 = block.membersCount;

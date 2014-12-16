@@ -625,13 +625,13 @@ function BlockCheckerDao (block) {
     if (block.number == 0) {
       done(null, null);
     } else if (block.number == 80) {
-      done(null, { medianTime: 1411776900, monetaryMass: 300, dividend: 100 });
+      done(null, { UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 300, dividend: 100 });
     } else if (block.number == 81) {
-      done(null, { medianTime: 1411776900, monetaryMass: 3620, dividend: 110 });
+      done(null, { UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 3620, dividend: 110 });
     } else if (block.number == 82) {
-      done(null, { medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
+      done(null, { UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
     } else if (block.number == 83) {
-      done(null, { medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
+      done(null, { UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
     } else {
       done(null, null);
     }

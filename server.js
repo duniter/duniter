@@ -187,25 +187,29 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.reset = function(done) {
+    this.resetDatas([
+      'identities',
+      'certifications',
+      'blocks',
+      'links',
+      'sources',
+      'merkles',
+      'peers',
+      'transactions',
+      'blockstats',
+      'txmemories',
+      'memberships'
+    ], done);
+  };
+  this.resetDatas = function(collections, done) {
     async.waterfall([
       function (next){
         that.connect(next);
       },
       function (next){
-        var deletableCollections = [
-          'identities',
-          'certifications',
-          'blocks',
-          'links',
-          'sources',
-          'merkles',
-          'peers',
-          'transactions',
-          'txmemories',
-          'memberships'];
-        async.forEachSeries(deletableCollections, function(collection, next){
-          if (that.conn.collections[collection]) {
-            that.conn.collections[collection].drop(function (err) {
+        async.forEachSeries(collections, function(collectionName, next){
+          if (that.conn.collections[collectionName]) {
+            that.conn.collections[collectionName].drop(function (err) {
               next();
             });
           } else {

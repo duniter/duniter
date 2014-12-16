@@ -201,6 +201,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       'memberships'
     ], done);
   };
+
+  this.resetStats = function(done) {
+    this.resetDatas(['blockstats'], done);
+  };
+
   this.resetDatas = function(collections, done) {
     async.waterfall([
       function (next){

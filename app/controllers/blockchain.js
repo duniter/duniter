@@ -38,6 +38,7 @@ function BlockchainBinding (wotServer) {
   var BlockStat  = wotServer.conn.model('BlockStat');
 
   this.parseMembership = function (req, res) {
+    res.type('application/json');
     var onError = http400(res);
     http2raw.membership(req, onError)
       .pipe(dos2unix())
@@ -53,6 +54,7 @@ function BlockchainBinding (wotServer) {
   };
 
   this.parseBlock = function (req, res) {
+    res.type('application/json');
     var onError = http400(res);
     http2raw.block(req, onError)
       .pipe(dos2unix())
@@ -68,6 +70,7 @@ function BlockchainBinding (wotServer) {
   }
 
   this.parameters = function (req, res) {
+    res.type('application/json');
     res.send(200, JSON.stringify({
       "currency": conf.currency,
       "c": conf.c,
@@ -113,12 +116,14 @@ function BlockchainBinding (wotServer) {
         if (stat == null) {
           stat = new BlockStat();
         }
+        res.type('application/json');
         res.send(200, JSON.stringify({ result: stat.json() }, null, "  "));
       });
     }
   }
 
   this.promoted = function (req, res) {
+    res.type('application/json');
     async.waterfall([
       function (next){
         ParametersService.getNumber(req, next);
@@ -136,6 +141,7 @@ function BlockchainBinding (wotServer) {
   }
 
   this.current = function (req, res) {
+    res.type('application/json');
     async.waterfall([
       function (next){
         BlockchainService.current(next);
@@ -151,6 +157,7 @@ function BlockchainBinding (wotServer) {
   }
 
   this.hardship = function (req, res) {
+    res.type('application/json');
     var member = "";
     var nextBlockNumber = 0;
     async.waterfall([

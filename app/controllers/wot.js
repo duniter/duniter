@@ -29,6 +29,7 @@ function WOTBinding (wotServer) {
   var Certification = conn.model('Certification');
 
   this.lookup = function (req, res) {
+    res.type('application/json');
     async.waterfall([
       function (next){
         ParametersService.getSearch(req, next);
@@ -68,6 +69,7 @@ function WOTBinding (wotServer) {
   };
 
   this.members = function (req, res) {
+    res.type('application/json');
     async.waterfall([
       function (next){
         Identity.getMembers(next);
@@ -88,6 +90,7 @@ function WOTBinding (wotServer) {
   };
 
   this.certifiersOf = function (req, res) {
+    res.type('application/json');
     async.waterfall([
       function (next){
         ParametersService.getSearch(req, next);
@@ -157,6 +160,7 @@ function WOTBinding (wotServer) {
   };
 
   this.certifiedBy = function (req, res) {
+    res.type('application/json');
     async.waterfall([
       function (next){
         ParametersService.getSearch(req, next);
@@ -227,6 +231,7 @@ function WOTBinding (wotServer) {
   };
 
   this.add = function (req, res) {
+    res.type('application/json');
     var onError = http400(res);
     http2raw.identity(req, onError)
       .pipe(dos2unix())

@@ -30,6 +30,7 @@ function TransactionBinding(txServer) {
   var Source = txServer.conn.model('Source');
 
   this.parseTransaction = function (req, res) {
+    res.type('application/json');
     var onError = http400(res);
     http2raw.transaction(req, onError)
       .pipe(dos2unix())
@@ -45,6 +46,7 @@ function TransactionBinding(txServer) {
   }
 
   this.getSources = function (req, res) {
+    res.type('application/json');
     var pubkey = "";
     async.waterfall([
       function (next) {

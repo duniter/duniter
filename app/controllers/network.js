@@ -38,11 +38,13 @@ function NetworkBinding (peerServer, conf) {
   var that = this;
 
   this.peer = function (req, res) {
+    res.type('application/json');
     var p = PeeringService.peer();
     p ? res.send(200, JSON.stringify(p.json(), null, "  ")) : res.send(500, 'Self peering was not found.');
   };
 
   this.peersGet = function (req, res) {
+    res.type('application/json');
     async.waterfall([
       function (next){
         Merkle.peers(next);
@@ -71,6 +73,7 @@ function NetworkBinding (peerServer, conf) {
   }
 
   this.peersPost = function (req, res) {
+    res.type('application/json');
     var onError = http400(res);
     http2raw.peer(req, onError)
       .pipe(dos2unix())
@@ -85,6 +88,7 @@ function NetworkBinding (peerServer, conf) {
   }
 
   this.statusPOST = function(req, res) {
+    res.type('application/json');
     var onError = http400(res);
     async.waterfall([
       function (next) {

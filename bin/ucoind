@@ -197,14 +197,17 @@ program
   .action(service(ucoin.createPeerServer, function (upto, server, conf) {
     async.waterfall([
       function (next){
-        server.conn.model('Block').find(upto ? { number: { $lt: upto }} : {}, next);
+        server.conn.model('Block')
+          .find(upto ? { number: { $lt: upto }} : {})
+          .sort({ number: 1 })
+          .exec(next);
       },
       function (blocks, next){
         var jsoned = [];
         blocks.forEach(function (block) {
           jsoned.push(_(block.json()).omit('raw'));
         });
-        console.log(jsoned);
+        console.log(JSON.stringify(jsoned, null, "  "));
         next();
       },
     ], function (err) {

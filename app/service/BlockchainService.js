@@ -1206,19 +1206,33 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.excluded = exclusions;
     // Final number of members
     block.membersCount = previousCount + block.joiners.length - block.leavers.length - block.excluded.length;
+
+    //----- Certifications -----
+    var certifiers = []; // Since we cannot have two certifications from same issuer/block, unless block# == 0
+
     // Certifications from the WoT, to newcomers
     block.certifications = [];
     joiners.forEach(function(joiner){
       var data = joinData[joiner];
+      var doubleCerts = false;
       data.certs.forEach(function(cert){
-        block.certifications.push(cert.inline());
+        doubleCerts = doubleCerts || (~certifiers.indexOf(cert.pubkey) ? true : false);
       });
+      if (!doubleCerts || block.number == 0) {
+        data.certs.forEach(function(cert){
+          block.certifications.push(cert.inline());
+          certifiers.push(cert.pubkey);
+        });
+      }
     });
     // Certifications from the WoT, to the WoT
     _(updates).keys().forEach(function(certifiedMember){
       var certs = updates[certifiedMember];
       certs.forEach(function(cert){
-        block.certifications.push(cert.inline());
+        if (certifiers.indexOf(cert.pubkey) == -1) {
+          block.certifications.push(cert.inline());
+          certifiers.push(cert.pubkey);
+        }
       });
     });
     // Transactions

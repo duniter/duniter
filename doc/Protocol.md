@@ -1,6 +1,6 @@
 # UCP - uCoin Protocol
 
-> This document is still regularly updated (as of November 2014)
+> This document is still regularly updated (as of December 2014)
 
 ## Contents
 
@@ -120,8 +120,9 @@ A self certification is the act, for a given public key's owner, to sign an iden
 Self-certification is the signature of a special string *containing* the identifier:
 
     UID:IDENTIFIER
+    META:TS:TIMESTAMP
     
-Here, `UID` is just 'UID' string and `IDENTIFIER` has to be replaced by a valid identifier. This string **is what signature is based upon**, without any carriage return.
+Here, `UID` is just 'UID' string and `IDENTIFIER` has to be replaced by a valid identifier. Also, `META` and `TS` are simple strings, and `TIMESTAMP` has to be replaced by a valid timestamp. This whole string **is what signature is based upon**, without any carriage return.
 
 The whole self-certification is then:
 

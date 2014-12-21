@@ -75,6 +75,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     var peer = new Peer(peering);
     var sp = peer.block.split('-');
     var number = sp[0], fpr = sp[1];
+    var sigTime = new Date(0);
     async.waterfall([
       function (next) {
         localValidator(null).checkPeerSignature(peer, next);
@@ -87,6 +88,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           Block.findByNumberAndHash(number, fpr, next);
       },
       function (block, next){
+        sigTime = block.medianTime;
         Peer.find({ pub: peer.pub }, next);
       },
       function (peers, next){
@@ -103,6 +105,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           peerEntity = peers[0];
           previousHash = peerEntity.hash;
           peer.copyValues(peerEntity);
+          peerEntity.sigDate = new Date(sigTime*1000);
         }
         peerEntity.save(function (err) {
           next(err, peerEntity, previousHash);
@@ -122,6 +125,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     var wasStatus = null;
     var sp = status.block.split('-');
     var number = sp[0], fpr = sp[1];
+    var sigTime = new Date(0);
     async.waterfall([
       function (next) {
         if (status.to != that.pubkey) {
@@ -138,6 +142,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           Block.findByNumberAndHash(number, fpr, next);
       },
       function (block, next){
+        sigTime = block.medianTime;
         Peer.getTheOne(status.from, next);
       },
       function (theOne, next){
@@ -151,9 +156,9 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           }
         }
         wasStatus = peer.status;
-        peer.statusSigDate = status.sigDate;
         peers[peer.pub] = peers[peer.pub] || peer;
         peers[peer.pub].status = status;
+        peer.statusSigDate = new Date(sigTime*1000);
         peer.setStatus(status.status, next);
       },
     ], function (err) {
@@ -213,7 +218,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   this.sendUpSignal = function (done) {
     async.waterfall([
       function (next){
-        Peer.allBut([selfPubkey], next);
+        Peer.allNEWUPBut([selfPubkey], next);
       },
       function (allPeers, next) {
         async.forEachSeries(allPeers, function(peer, callback){
@@ -237,9 +242,20 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
       clearInterval(statusUpInterval);
     statusUpInterval = setInterval(function () {
       statusUpfifo.push(function (callback) {
-        that.sendUpSignal(callback);
+        async.waterfall([
+          function (next) {
+            Block.current(next);
+          },
+          function (current, next) {
+            // set DOWN for peers with too old status
+            Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*10, next);
+          },
+          function (next) {
+            that.sendUpSignal(callback);
+          }
+        ], callback);
       });
-    }, conf.upSignalInterval || 3600*1000);
+    }, 1000*conf.avgGenTime*10);
     done();
   };
 
@@ -280,7 +296,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
               }
               that.emit('status', status);
               peer.statusSent = status.status;
-              peer.statusSigDate = new Date();
               peer.save(function (err) {
                 if (err) logger.error(err);
                 next();
@@ -291,31 +306,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
       },
     ], done);
   }
-
-  this.propagatePeering = function (peering, done) {
-    getAllPeersButSelfAnd(peering.pub, function (err, peers) {
-      that.emit('peer', peering, peers || []);
-    });
-  };
-
-  this.propagateMembership = function (membership, done) {
-    getRandomInAllPeers(function (err, peers) {
-      that.emit('membership', membership, peers || []);
-    });
-  };
-
-  function getAllPeersButSelfAnd (pub, done) {
-    Peer.allBut([selfPubkey, pub], done);
-  };
-
-  function getRandomInAllPeers (done) {
-    Peer.getRandomlyUPsWithout([selfPubkey], done);
-  };
-
-  // TODO
-  function getVotingPeers (done) {
-    getRandomInAllPeers(done);
-  };
 };
 
 util.inherits(PeeringService, events.EventEmitter);

@@ -6,7 +6,6 @@ var _           = require('underscore');
 var program     = require('commander');
 var mongoose    = require('mongoose');
 var moment      = require('moment');
-var inquirer    = require('inquirer');
 var wizard      = require('../app/lib/wizard');
 var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
@@ -323,9 +322,12 @@ program
         });
       },
       function (next) {
+        var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf);
+        var theCaster = multicaster();
         server
-          .pipe(router(server.PeeringService.pubkey, server.conn))
-          .pipe(multicaster());
+          .pipe(theRouter) // The router ask for multicasting of documents
+          .pipe(theCaster) // The multicaster may answer 'unreachable peer'
+          .pipe(theRouter);
       }
     ], function (err) {
       if(err){

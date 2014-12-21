@@ -5,6 +5,7 @@ var _        = require('underscore');
 var vucoin   = require('vucoin');
 var rawer    = require('../lib/rawer');
 var Schema   = mongoose.Schema;
+var logger   = require('../lib/logger')('peer');
 
 var STATUS = {
   ASK: "ASK",
@@ -182,6 +183,43 @@ PeerSchema.statics.getTheOne = function (fpr, done) {
   ], done);
 };
 
+PeerSchema.statics.setDown = function (pubkey, done) {
+  var that = this;
+  async.waterfall([
+    function (next) {
+      that.getTheOne(pubkey, next);
+    },
+    function (peer, next) {
+      peer.status = 'DOWN';
+      peer.save(function (err) {
+        next(err);
+      });
+    }
+  ], function (err) {
+    if (err) logger.error(err);
+    else logger.info("Peer %s unreachable: now considered as DOWN.", pubkey);
+    done();
+  });
+};
+
+PeerSchema.statics.setDownWithStatusOlderThan = function (minSigDate, done) {
+  var that = this;
+  async.waterfall([
+    function (next) {
+      that.find({ status: { $in: ['NEW', 'NEW_BACK', 'UP'] }, statusSigDate: { $lt: minSigDate } }, next);
+    },
+    function (peers, next) {
+      async.forEachSeries(peers, function (peer, callback) {
+        logger.info("Peer %s has too old status: now considered as DOWN.", peer.pub);
+        peer.status = 'DOWN';
+        peer.save(function (err) {
+          callback(err);
+        });
+      }, next);
+    }
+  ], done);
+};
+
 PeerSchema.statics.getList = function (pubs, done) {
   this.find({ pub: { $in: pubs }}, done);
 };
@@ -190,48 +228,19 @@ PeerSchema.statics.allBut = function (pubs, done) {
   this.find({ pub: { $nin: pubs } }, done);
 };
 
-/**
-* Look for 10 last updated peers, and choose randomly 4 peers in it
-*/
-PeerSchema.statics.getRandomlyWithout = function (pubs, done) {
-  var that = this;
-  async.waterfall([
-    function (next){
-      that.find({ pub: { $nin: pubs } })
-      .sort({ 'updated': -1 })
-      .limit(10)
-      .exec(next);
-    },
-    choose4in
-  ], done);
+PeerSchema.statics.allNEWUPBut = function (pubs, done) {
+  this.find({ pub: { $nin: pubs }, status: { $in: ['NOTHING', 'NEW', 'NEW_BACK', 'UP'] } }, done);
 };
 
 /**
 * Look for 10 last updated peers, and choose randomly 4 peers in it
 */
-PeerSchema.statics.getRandomlyUPsWithout = function (pubs, done) {
+PeerSchema.statics.getRandomlyUPsWithout = function (pubs, minSigDate, done) {
   var that = this;
-  async.waterfall([
-    function (next){
-      that.find({ pub: { $nin: pubs }, status: { $in: ['NEW_BACK', 'UP'] } })
-      .sort({ 'updated': -1 })
-      .limit(10)
-      .exec(next);
-    },
-    choose4in
-  ], done);
+  that.find({ pub: { $nin: pubs }, status: { $in: ['NEW', 'NEW_BACK', 'UP'] }, statusSigDate: { $gte: minSigDate } })
+  .sort({ 'updated': -1 })
+  .exec(done);
 };
-
-function choose4in (peers, done) {
-  var chosen = [];
-  var nbPeers = peers.length;
-  for (var i = 0; i < Math.min(nbPeers, 4); i++) {
-    var randIndex = Math.max(Math.floor(Math.random()*10) - (10 - nbPeers) - i, 0);
-    chosen.push(peers[randIndex]);
-    peers.splice(randIndex, 1);
-  }
-  done(null, chosen);
-}
 
 PeerSchema.statics.status = STATUS;
 

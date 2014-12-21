@@ -6,7 +6,7 @@ var logger  = require('../../lib/logger')('multicaster');
 
 var fifo = async.queue(function (task, callback) {
   task(callback);
-}, 1);
+}, 10);
 
 module.exports = function () {
   return new Multicaster();
@@ -93,76 +93,79 @@ function Multicaster () {
   });
 
   this.sendBlock = sendBlock;
+
+  function post(peer, url, data, done) {
+    reach(peer, function(){
+      var postReq = request.post({
+        "uri": 'http://' + peer.getURL() + url,
+        "timeout": 1000*3
+      }, function (err, res, body) {
+        if (err)
+          that.push({ unreachable: true, peer: { pubkey: peer.pub }});
+        done(err, res, body);
+      });
+      postReq.form(data);
+    }, done);
+  }
+
+  function sendBlock(peer, block, done) {
+    var keyID = peer.keyID();
+    logger.info('POST block to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
+    post(peer, '/blockchain/block', {
+      "block": block.getRawSigned(),
+    }, done);
+  }
+
+  function sendTransaction(peer, transaction, done) {
+    logger.info('POST transaction to %s', peer.keyID());
+    post(peer, '/tx/process', {
+      "transaction": transaction.getRaw(),
+      "signature": transaction.signature
+    }, done);
+  }
+
+  function sendPeering(toPeer, peer, done) {
+    logger.info('POST peering to %s', toPeer.keyID());
+    post(toPeer, '/network/peering/peers', {
+      "entry": peer.getRaw(),
+      "signature": peer.signature
+    }, done);
+  }
+
+  function sendMembership(peer, membership, done) {
+    logger.info('POST membership to %s', peer.keyID());
+    post(peer, '/blockchain/membership', {
+      "membership": membership.getRaw(),
+      "signature": membership.signature
+    }, done);
+  }
+
+  function success (done) {
+    return function (err, res, body) {
+      if (err) {
+        logger.error(err);
+      }
+      done(err, res, body);
+    };
+  }
+
+  function get(peer, url, done) {
+    reach(peer, function(){
+      logger.debug('GET http://' + peer.getURL() + url);
+      request
+      .get('http://' + peer.getURL() + url)
+      .end(done);
+    }, done);
+  }
+
+  function reach (peer, onSuccess, done) {
+    if (!peer.isReachable()) {
+      logger.debug('Host is not reachable through HTTP API');
+      done();
+    } else {
+      onSuccess();
+    }
+  }
 }
 
 util.inherits(Multicaster, stream.Transform);
-
-function sendBlock(peer, block, done) {
-  var keyID = peer.keyID();
-  logger.info('POST block to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
-  post(peer, '/blockchain/block', {
-    "block": block.getRawSigned(),
-  }, done);
-}
-
-function sendTransaction(peer, transaction, done) {
-  logger.info('POST transaction to %s', peer.keyID());
-  post(peer, '/hdc/transactions/process', {
-    "transaction": transaction.getRaw(),
-    "signature": transaction.signature
-  }, done);
-}
-
-function sendPeering(toPeer, peer, done) {
-  logger.info('POST peering to %s', toPeer.keyID());
-  post(toPeer, '/network/peering/peers', {
-    "entry": peer.getRaw(),
-    "signature": peer.signature
-  }, done);
-}
-
-function sendMembership(peer, membership, done) {
-  logger.info('POST membership to %s', peer.keyID());
-  post(peer, '/registry/community/members', {
-    "membership": membership.getRaw(),
-    "signature": membership.signature
-  }, done);
-}
-
-function success (done) {
-  return function (err, res, body) {
-    if (err) {
-      logger.error(err);
-    }
-    done(err, res, body);
-  };
-}
-
-function post(peer, url, data, done) {
-  reach(peer, function(){
-    var postReq = request.post('http://' + peer.getURL() + url, function (err, res, body) {
-      // if (err)
-      //   logger.debug('Error while connecting to %s: %s', peer.keyID(), err.toString());
-      done(err, res, body);
-    });
-    postReq.form(data);
-  }, done);
-}
-
-function get(peer, url, done) {
-  reach(peer, function(){
-    logger.debug('GET http://' + peer.getURL() + url);
-    request
-    .get('http://' + peer.getURL() + url)
-    .end(done);
-  }, done);
-}
-
-function reach (peer, onSuccess, done) {
-  if (!peer.isReachable()) {
-    logger.debug('Host is not reachable through HTTP API');
-    done();
-  } else {
-    onSuccess();
-  }
-}

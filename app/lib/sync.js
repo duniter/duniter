@@ -40,12 +40,6 @@ module.exports = function Synchroniser (server, host, port, conf) {
         return;
       }
 
-      // Global sync vars
-      var remotePeer = new Peer({});
-      var remoteJsonPeer = {};
-      var remoteCurrentNumber;
-      var remotePubkey;
-
       async.waterfall([
         function (next){
           logger.info('Sync started.');
@@ -106,38 +100,8 @@ module.exports = function Synchroniser (server, host, port, conf) {
             }, next);
         },
 
-        //============
-        // Peer
-        //============
-        function (next){
-          node.network.peering.get(next);
-        },
-        function (json, next){
-          remotePubkey = json.pubkey;
-          remotePeer.copyValuesFrom(json);
-          var entry = remotePeer.getRaw();
-          var signature = dos2unix(remotePeer.signature);
-          // Parameters
-          if(!(entry && signature)){
-            callback('Requires a peering entry + signature');
-            return;
-          }
-
-          remoteJsonPeer = json;
-          remoteJsonPeer.pub = json.pubkey;
-          remoteJsonPeer.status = "NOTHING";
-          localValidator().checkPeerSignature(remoteJsonPeer, next);
-        },
         function (next) {
-          async.waterfall([
-            function (next){
-              PeeringService.submit(remoteJsonPeer, function (err) {
-                next(err == 'Peer document is older than currently recorded' ? null : err);
-              });
-            },
-          ], function (err) {
-            next(err);
-          });
+          syncPeer(node, next);
         },
 
         //==============
@@ -203,6 +167,50 @@ module.exports = function Synchroniser (server, host, port, conf) {
         done(err);
       });
     })
+  }
+
+  //============
+  // Peer
+  //============
+  function syncPeer (node, done) {
+
+    // Global sync vars
+    var remotePeer = new Peer({});
+    var remoteJsonPeer = {};
+    var remotePubkey;
+
+    async.waterfall([
+      function (next){
+        node.network.peering.get(next);
+      },
+      function (json, next){
+        remotePubkey = json.pubkey;
+        remotePeer.copyValuesFrom(json);
+        var entry = remotePeer.getRaw();
+        var signature = dos2unix(remotePeer.signature);
+        // Parameters
+        if(!(entry && signature)){
+          callback('Requires a peering entry + signature');
+          return;
+        }
+
+        remoteJsonPeer = json;
+        remoteJsonPeer.pub = json.pubkey;
+        remoteJsonPeer.status = "NOTHING";
+        localValidator().checkPeerSignature(remoteJsonPeer, next);
+      },
+      function (next) {
+        async.waterfall([
+          function (next){
+            PeeringService.submit(remoteJsonPeer, function (err) {
+              next(err == 'Peer document is older than currently recorded' ? null : err);
+            });
+          },
+        ], function (err) {
+          next(err);
+        });
+      },
+    ], done);
   }
 }
 

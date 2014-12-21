@@ -88,7 +88,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           Block.findByNumberAndHash(number, fpr, next);
       },
       function (block, next){
-        sigTime = block.medianTime;
+        sigTime = block ? block.medianTime : 0;
         Peer.find({ pub: peer.pub }, next);
       },
       function (peers, next){
@@ -142,7 +142,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           Block.findByNumberAndHash(number, fpr, next);
       },
       function (block, next){
-        sigTime = block.medianTime;
+        sigTime = block ? block.medianTime : 0;
         Peer.getTheOne(status.from, next);
       },
       function (theOne, next){

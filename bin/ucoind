@@ -51,6 +51,7 @@ program
   .option('--ud0 <number>',            'Universal Dividend initial value')
   .option('--dt <number>',             'Number of seconds between two UD')
   .option('--udid2',                   'Enable udid2 format for user id')
+  .option('--rootoffset <number>',     'Allow to give a time offset for first block (offset in the past)')
   ;
 
 program
@@ -135,7 +136,7 @@ function generateAndSend (generationMethod) {
     async.waterfall([
       function (next){
         var method = eval('server.BlockchainService.' + generationMethod);
-        method(next);
+        method(program.rootoffset || 0, next);
       },
       function (block, next){
         logger.debug('Block to be sent: %s', block.quickDescription());

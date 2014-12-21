@@ -752,7 +752,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   this.generateNewcomers = function (done) {
   * Generate a "newcomers" block
   */
-  this.generateNewcomers = function (done) {
+  this.generateNewcomers = function (medianTimeBackOffset, done) {
     var filteringFunc = function (preJoinData, next) {
       var joinData = {};
       var newcomers = _(preJoinData).keys();
@@ -793,7 +793,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (block, next) {
         if (!block)
-          BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, next);
+          BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, medianTimeBackOffset, next);
         else
           next('Cannot generate root block: it already exists.');
       }
@@ -819,24 +819,24 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     });
   }
 
-  this.generateNext = function (done) {
-    BlockchainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, done);
+  this.generateNext = function (medianTimeBackOffset, done) {
+    BlockchainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, medianTimeBackOffset, done);
   };
 
   /**
   * Generate a "newcomers" block
   */
-  this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, done) {
+  this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, medianTimeBackOffset, done) {
     var withoutUpdates = function(updatesDone) {
       updatesDone(null, {});
     };
-    BlockchainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, done);
+    BlockchainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, medianTimeBackOffset, done);
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
-  this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
+  this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, medianTimeBackOffset, done) {
     var updates = {};
     var exclusions = [];
     var current = null;
@@ -906,7 +906,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (next) {
         // Create the block
-        createNewcomerBlock(current, joinData, updates, exclusions, lastUDBlock, transactions, next);
+        createNewcomerBlock(current, joinData, updates, exclusions, lastUDBlock, transactions, medianTimeBackOffset, next);
       },
     ], done);
   };
@@ -1163,7 +1163,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return matched;
   }
 
-  function createNewcomerBlock (current, joinData, updates, exclusions, lastUDBlock, transactions, done) {
+  function createNewcomerBlock (current, joinData, updates, exclusions, lastUDBlock, transactions, medianTimeBackOffset, done) {
     // Prevent writing joins/updates for excluded members
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
@@ -1257,7 +1257,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           globalValidator(conf, blockchainDao(conn, block)).getMedianTime(block.number, next);
       },
       function (medianTime, next) {
-        block.medianTime = current ? medianTime : moment.utc().unix();
+        block.medianTime = current ? medianTime : moment.utc().unix() - medianTimeBackOffset;
         next();
       },
       function (next) {
@@ -1438,7 +1438,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             //   findNewData(callback);
             // },
             block: function(callback){
-              BlockchainService.generateNext(callback);
+              BlockchainService.generateNext(0, callback);
             },
             signature: function(callback){
               signature(conf.salt, conf.passwd, callback);

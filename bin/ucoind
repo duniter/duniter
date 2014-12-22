@@ -42,6 +42,8 @@ program
   .option('--sigDelay <timestamp>',    'Minimum delay between 2 similar certifications, in seconds.')
   .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
   .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
+  .option('--medtblocks <number>',     'medianTimeBlocks parameter of UCP')
+  .option('--avgGenTime <number>',     'avgGenTime parameter of UCP')
   .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
   .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
   .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
@@ -378,7 +380,9 @@ function overrideConf(conf) {
       c:           program.growth,
       dt:          program.dt,
       udid2:       program.udid2,
-      incDateMin:  program.incDateMin
+      incDateMin:  program.incDateMin,
+      medtblocks:  program.medtblocks,
+      avgGenTime:  program.avgGenTime
     }
   };
 
@@ -407,6 +411,8 @@ function overrideConf(conf) {
   if (cli.ucp.ud0)                          conf.ud0            = cli.ucp.ud0;
   if (cli.ucp.udid2)                        conf.udid2          = cli.ucp.udid2;
   if (cli.ucp.incDateMin)                   conf.incDateMin     = cli.ucp.incDateMin;
+  if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
+  if (cli.ucp.avgGenTime)                   conf.avgGenTime     = cli.ucp.avgGenTime;
 
   // Specific internal settings
   conf.createNext = true;

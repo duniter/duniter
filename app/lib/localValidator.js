@@ -73,6 +73,14 @@ function LocalValidator (conf) {
     });
   };
 
+  this.maxAcceleration = function () {
+    return maxAcceleration();
+  };
+
+  function maxAcceleration () {
+    return conf.avgGenTime * 4 * conf.medianTimeBlocks;
+  }
+
   this.checkParameters = check(function (block, done) {
     if (block.number == 0 && !block.parameters)
       done('Parameters must be provided for root block');
@@ -119,8 +127,8 @@ function LocalValidator (conf) {
     var time = parseInt(block.time);
     var medianTime = parseInt(block.medianTime);
     var maxGenTime = conf.avgGenTime * 4;
-    if (block.number > 0 && (time < medianTime || time > medianTime + maxGenTime*constants.VALUES.AVG_SPEED_TIME_MARGIN))
-      done('A block must have its Time between MedianTime and MedianTime + maxGenTime*' + constants.VALUES.AVG_SPEED_TIME_MARGIN);
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration()))
+      done('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration());
     else if (block.number == 0 && time != medianTime)
       done('Root block must have Time equal MedianTime');
     else

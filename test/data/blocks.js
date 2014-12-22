@@ -342,7 +342,7 @@ module.exports = {
     "Nonce: 11\n" +
     "Number: 10\n" +
     "PoWMin: 1\n" +
-    "Time: 1411776481\n" +
+    "Time: 1411785481\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 4AE9FA0A8299A828A886C0EB30C930C7CF302A72\n" +

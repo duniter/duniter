@@ -684,6 +684,7 @@ Variable  | Meaning
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last valid (non-expired) membership is either in `Joiners` or `Actives`.
 maxGenTime  | `= avgGenTime * 4`
 minGenTime  | `= avgGenTime / 4`
+maxAcceleration | `= maxGenTime * medianTimeBlocks`
 
 ## Processing
 
@@ -722,7 +723,7 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 
 ##### Dates
 
-* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `maxGenTime`*2].
+* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `accelerationMax`].
 * Root block's `Time` & `MedianTime` must be equal.
 
 ##### Identities

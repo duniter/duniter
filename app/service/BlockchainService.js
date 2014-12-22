@@ -1319,7 +1319,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     // Time must be = [medianTime; medianTime + minSpeed]
     var now = moment.utc().unix();
     var maxGenTime = conf.avgGenTime*4;
-    block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*constants.VALUES.AVG_SPEED_TIME_MARGIN, now)) : block.medianTime;
+    var maxAcceleration = localValidator(conf).maxAcceleration();
+    block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxAcceleration, now)) : block.medianTime;
     logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
     async.whilst(
       function(){ return !pow.match(powRegexp); },
@@ -1339,7 +1340,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               // Update block with local time
               // Time must be = [medianTime; medianTime + minSpeed]
               now = moment.utc().unix();
-              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxGenTime*constants.VALUES.AVG_SPEED_TIME_MARGIN, now)) : block.medianTime;
+              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxAcceleration, now)) : block.medianTime;
             } else if (testsCount % 50 == 0) {
               if (newKeyblockCallback) {
                 computationActivated = false

@@ -15,11 +15,7 @@ var FINGERPRINT  = "[A-F0-9]{40}";
 var COMMENT      = "[a-zA-Z0-9-_:/;*\[\]()?!^\\+=@&~#{}|\\<>%.]{0,255}";
 
 module.exports = {
-
-  VALUES: {
-    AVG_SPEED_TIME_MARGIN: 2
-  },
-
+  
   ERROR: {
 
     PUBKEY: {

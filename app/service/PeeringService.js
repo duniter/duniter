@@ -248,7 +248,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           },
           function (current, next) {
             // set DOWN for peers with too old status
-            Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*10, next);
+            Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
           },
           function (next) {
             that.sendUpSignal(callback);

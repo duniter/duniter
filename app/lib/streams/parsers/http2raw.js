@@ -26,7 +26,17 @@ function Http2RawIdentity (req, onError) {
       onError('Parameter `self` is required');
     }
     else {
-      var raw = req.body.pubkey + '\n' + req.body.self + (req.body.other ? '\n' + req.body.other : '');
+      var pubkey = req.body.pubkey;
+      // Add trailing LF to pubkey
+      if (!req.body.pubkey.match(/\n$/)) {
+        pubkey += '\n';
+      }
+      var selfCert = req.body.self;
+      // Add trailing LF to self
+      if (!req.body.self.match(/\n$/)) {
+        selfCert += '\n';
+      }
+      var raw = pubkey + selfCert + (req.body.other || '');
       this.push(raw);
     }
     this.push(null);

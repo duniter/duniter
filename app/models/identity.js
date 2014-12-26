@@ -25,6 +25,7 @@ var IdentitySchema = new Schema({
 
 IdentitySchema.pre('save', function (next) {
   this.updated = Date.now();
+  this.hash = sha1(this.uid + this.time.timestamp() + this.pubkey).toUpperCase();
   next();
 });
 

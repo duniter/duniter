@@ -103,12 +103,8 @@ function IdentityService (conn, conf) {
           if (existing)
             next(null, existing);
           else {
-            BlockchainService.stopPoWThenProcessAndRestartPoW(function (saved) {
-              // Create
-              idty.save(function (err) {
-                saved(err, idty);
-              });
-            }, function (err) {
+            // Create
+            idty.save(function (err) {
               next(err, idty);
             });
           }

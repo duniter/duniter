@@ -98,7 +98,7 @@ function Multicaster () {
     reach(peer, function(){
       var postReq = request.post({
         "uri": 'http://' + peer.getURL() + url,
-        "timeout": 1000*3
+        "timeout": 1000*10
       }, function (err, res, body) {
         if (err)
           that.push({ unreachable: true, peer: { pubkey: peer.pub }});

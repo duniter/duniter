@@ -310,7 +310,7 @@ A Transaction structure is considered *valid* if:
 * Field `Issuers` is a multiline field whose lines are public keys.
 * Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, an integer, a colon, a SHA-1 hash and an integer value
 * Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
-* Field `Comment` is a string of maximum 255 characters, exclusively composed of alphanumeric characters, `-`, `_`, `:`, `/`, `;`, `*`, `[`, `]`, `(`, `)`, `?`, `!`, `^`, `+`, `=`, `@`, `&`, `~`, `#`, `{`, `}`, `|`, `\`, `<`, `>`, `%`, `.`. Must be present even if empty.
+* Field `Comment` is a string of maximum 255 characters, exclusively composed of alphanumeric characters, space, `-`, `_`, `:`, `/`, `;`, `*`, `[`, `]`, `(`, `)`, `?`, `!`, `^`, `+`, `=`, `@`, `&`, `~`, `#`, `{`, `}`, `|`, `\`, `<`, `>`, `%`, `.`. Must be present even if empty.
 
 #### Example 1
 

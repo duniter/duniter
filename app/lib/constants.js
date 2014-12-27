@@ -12,7 +12,7 @@ var FLOAT        = "\\d+\.\\d+";
 var BOOLEAN      = "[01]";
 var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 var FINGERPRINT  = "[A-F0-9]{40}";
-var COMMENT      = "[a-zA-Z0-9-_:/;*\[\]()?!^\\+=@&~#{}|\\<>%.]{0,255}";
+var COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
 
 module.exports = {
   

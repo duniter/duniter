@@ -123,24 +123,8 @@ MerkleSchema.statics.retrieve = function(merkleID, done) {
   ], done);
 }
 
-MerkleSchema.statics.txOfSender = function (fingerprint, done) {
-  this.retrieve({ type: 'txOfSender', criteria: '{"fpr":'+fingerprint+'"}' }, done);
-};
-
-MerkleSchema.statics.txToRecipient = function (fingerprint, done) {
-  this.retrieve({ type: 'txToRecipient', criteria: '{"fpr":"'+fingerprint+'"}' }, done);
-};
-
 MerkleSchema.statics.peers = function (done) {
   this.retrieve({ type: 'peers', criteria: '{}' }, done);
-};
-
-MerkleSchema.statics.membersIn = function (number, algo, done) {
-  this.retrieve({ type: 'membersIn', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
-};
-
-MerkleSchema.statics.membersOut = function (number, algo, done) {
-  this.retrieve({ type: 'membersOut', criteria: '{"number":'+number+',algo:'+algo+'}' }, done);
 };
 
 MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
@@ -158,22 +142,31 @@ MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateForTransfert = function (tx, done) {
+MerkleSchema.statics.updateForPeers = function (done) {
   var Merkle = this.model('Merkle');
+  var Peer = this.model('Peer');
   async.waterfall([
-    function (next){
-      Merkle.txOfSender(tx.sender, next);
+    function (next) {
+      async.parallel({
+        peers: function (next) {
+          Peer.allNEWUPBut([], next);
+        },
+        merkle: function (next) {
+          Merkle.peers(next);
+        }
+      }, next);
     },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
-    },
-    function (merkle, code, next){
-      Merkle.txToRecipient(tx.recipient, next);
-    },
-    function (merkle, next){
-      merkle.push(tx.hash);
-      merkle.save(next);
+    function (res, next) {
+      var peers = res.peers;
+      var merkle = res.merkle;
+      var leaves = [];
+      peers.forEach(function (p) {
+        leaves.push(p.hash);
+      });
+      merkle.initialize(leaves);
+      merkle.save(function (err) {
+        next(err);
+      });
     }
   ], done);
 };
@@ -184,19 +177,6 @@ MerkleSchema.statics.mapIdentical = function (hashes, done) {
     map[leaf] = leaf;
   });
   done(null, map);
-};
-
-MerkleSchema.statics.mapForMemberships = function (hashes, done) {
-  this.model('Membership')
-  .find({ issuer: { $in: hashes } })
-  .sort('issuer')
-  .exec(function (err, entries) {
-    var map = {};
-    entries.forEach(function (entry){
-      map[entry.issuer] = entry.json();
-    });
-    done(null, map);
-  });
 };
 
 module.exports = MerkleSchema;

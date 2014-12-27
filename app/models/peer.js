@@ -24,7 +24,6 @@ var PeerSchema = new Schema({
   endpoints: [String],
   signature: String,
   hash: String,
-  hash: String,
   block: { type: String },
   statusBlock: { type: String },
   status: { type: String },
@@ -37,6 +36,7 @@ var PeerSchema = new Schema({
 });
 
 PeerSchema.pre('save', function (next) {
+  this.hash = sha1(this.pub).toUpperCase();
   this.updated = Date.now();
   next();
 });

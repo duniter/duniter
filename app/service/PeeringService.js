@@ -112,7 +112,7 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
         });
       },
       function (recordedPR, previousHash, next) {
-        Merkle.updatePeers(recordedPR, previousHash, function (err, code, merkle) {
+        Merkle.updateForPeers(function (err) {
           next(err, recordedPR);
         });
       }
@@ -161,6 +161,9 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
         peer.statusSigDate = new Date(sigTime*1000);
         peer.setStatus(status.status, next);
       },
+      function (next) {
+        Merkle.updateForPeers(next);
+      }
     ], function (err) {
       callback(err, status, peer, wasStatus);
       if (!err) {
@@ -249,6 +252,9 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
           function (current, next) {
             // set DOWN for peers with too old status
             Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
+          },
+          function (next) {
+            Merkle.updateForPeers(next);
           },
           function (next) {
             that.sendUpSignal(callback);

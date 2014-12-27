@@ -11,6 +11,7 @@ module.exports = function (serverPubkey, conn, conf) {
 function Router (serverPubkey, conn, conf) {
 
   var Identity = conn.model('Identity');
+  var Merkle   = conn.model('Merkle');
   var Block    = conn.model('Block');
   var Peer     = conn.model('Peer');
 
@@ -29,7 +30,14 @@ function Router (serverPubkey, conn, conf) {
       route('status', obj, getTargeted(obj.to), done);
     }
     else if (obj.unreachable) {
-      Peer.setDown(obj.peer.pubkey, done);
+      async.waterfall([
+        function (next) {
+          Peer.setDown(obj.peer.pubkey, next);
+        },
+        function (next) {
+          Merkle.updateForPeers(next);
+        }
+      ], done);
     }
     else {
       done();

@@ -202,6 +202,10 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.initPeeringEntry(conn, conf, next);
       },
       function (next){
+        logger.info('Updating list of peers...');
+        that.conn.model('Merkle').updateForPeers(next);
+      },
+      function (next){
         logger.info('Broadcasting UP/NEW signals...');
         that.PeeringService.on('status', function (status) {
           // Readable status to be multicasted

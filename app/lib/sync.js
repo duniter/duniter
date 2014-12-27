@@ -143,11 +143,10 @@ module.exports = function Synchroniser (server, host, port, conf) {
                       var jsonEntry = json.leaf.value;
                       var sign = json.leaf.value.signature;
                       var entry = {};
-                      ["version", "currency", "fingerprint", "endpoints"].forEach(function (key) {
+                      ["version", "currency", "pubkey", "endpoints", "block"].forEach(function (key) {
                         entry[key] = jsonEntry[key];
                       });
                       entry.signature = sign;
-                      entry.pubkey = { fingerprint: entry.fingerprint };
                       logger.info('Peer 0x' + entry.fingerprint);
                       PeeringService.submit(entry, function (err) {
                         cb();

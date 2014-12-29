@@ -206,6 +206,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     this.resetDatas(['blockstats'], done);
   };
 
+  this.resetTxs = function(done) {
+    this.resetDatas(['transactions'], done);
+  };
+
   this.resetDatas = function(collections, done) {
     async.waterfall([
       function (next){

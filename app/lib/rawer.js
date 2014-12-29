@@ -172,11 +172,11 @@ module.exports = new function() {
     json.outputs.forEach(function (output) {
       raw += output + '\n';
     });
+    if (json.comment)
+      raw += json.comment + '\n';
     json.signatures.forEach(function (signature) {
       raw += signature + '\n';
     });
-    if (json.comment)
-      raw += json.comment + '\n';
     return dos2unix(raw);
   };
 

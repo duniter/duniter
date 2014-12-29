@@ -138,6 +138,13 @@ function splitAndMatch (separator, regexp) {
 }
 
 function extractTransactions(raw) {
+  var regexps = {
+    "signatories": constants.TRANSACTION.SENDER,
+    "inputs": constants.TRANSACTION.SOURCE,
+    "outputs": constants.TRANSACTION.TARGET,
+    "comments": constants.TRANSACTION.INLINE_COMMENT,
+    "signatures": constants.SIG
+  };
   var transactions = [];
   var lines = raw.split(/\n/);
   for (var i = 0; i < lines.length; i++) {
@@ -174,10 +181,13 @@ function extractTransactions(raw) {
         },
       };
       ['signatories', 'inputs', 'outputs', 'comments', 'signatures'].forEach(function(prop){
+        currentTX[prop] = currentTX[prop] || [];
         for (var j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
-          currentTX.raw += lines[i + j] + '\n';
-          currentTX[prop] = currentTX[prop] || [];
-          currentTX[prop].push(lines[i + j]);
+          var line = lines[i + j];
+          if (line.match(regexps[prop])) {
+            currentTX.raw += line + '\n';
+            currentTX[prop].push(line);
+          }
         }
       });
       // Comment

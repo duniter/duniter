@@ -205,6 +205,7 @@ BlockSchema.methods = {
           raw: output
         });
       });
+      tx.comment = simpleTx.comment;
       tx.version = version;
       tx.currency = currency;
       transactions.push(tx);

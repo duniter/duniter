@@ -730,7 +730,7 @@ Variable  | Meaning
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last valid (non-expired) membership is either in `Joiners` or `Actives`.
 maxGenTime  | `= avgGenTime * 4`
 minGenTime  | `= avgGenTime / 4`
-maxAcceleration | `= maxGenTime * medianTimeBlocks`
+maxAcceleration | `= maxGenTime * CEIL((medianTimeBlocks + 1) / 2)`
 
 ## Processing
 

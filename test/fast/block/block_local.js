@@ -76,12 +76,12 @@ describe("Block local coherence", function(){
     }));
 
     it('a block with wrong date (in past)', test('checkBlockTimes', blocks.WRONG_DATE_LOWER, function (err, done) {
-      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 4800');
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 2640');
       done();
     }));
 
     it('a block with wrong date (in future, but too far)', test('checkBlockTimes', blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, function (err, done) {
-      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 4800');
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 2640');
       done();
     }));
 

@@ -18,7 +18,7 @@ var IdentitySchema = new Schema({
   time: { type: Date, default: Date.now },
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
-  written: { type: Boolean, default: false },
+  wasMember: { type: Boolean, default: false },
   hash: { type: String, unique: true },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -49,6 +49,16 @@ IdentitySchema.virtual('revocation').get(function () {
 
 IdentitySchema.virtual('revocation').set(function (revocation) {
   this._revocation = revocation;
+});
+
+// Revocation sigature
+
+IdentitySchema.virtual('written').get(function () {
+  return this.wasMember || this.member;
+});
+
+IdentitySchema.virtual('written').set(function (written) {
+  this.wasMember = written;
 });
 
 IdentitySchema.methods = {

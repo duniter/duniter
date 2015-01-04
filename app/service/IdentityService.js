@@ -132,10 +132,14 @@ function IdentityService (conn, conf) {
         function (existing, next){
           if (existing) {
             // Modify
-            existing.revoked = true;
-            existing.save(function (err) {
-              next(err, jsonResultTrue());
-            });
+            if (existing.written) {
+              next('This identity cannot be revoked since it is present in the blockchain.');
+            } else {
+              existing.revoked = true;
+              existing.save(function (err) {
+                next(err, jsonResultTrue());
+              });
+            }
           }
           else {
             // Create

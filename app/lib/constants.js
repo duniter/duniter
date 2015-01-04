@@ -41,6 +41,7 @@ module.exports = {
       UID: exact("UID:" + USER_ID),
       META: exact(META_TS)
     },
+    REVOKE: exact("UID:REVOKE"),
     OTHER: {
       META: exact(META_TS),
       INLINE: exact(PUBKEY + ":" + PUBKEY + ":" + INTEGER + ":" + SIGNATURE)

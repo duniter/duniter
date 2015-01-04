@@ -3,6 +3,7 @@ var util   = require('util');
 
 module.exports = {
   identity:      instanciate.bind(null, Http2RawIdentity),
+  revocation:    instanciate.bind(null, Http2RawRevocation),
   transaction:   instanciate.bind(null, Http2RawTransaction),
   peer:          instanciate.bind(null, Http2RawPeer),
   status:        instanciate.bind(null, Http2RawStatus),
@@ -37,6 +38,39 @@ function Http2RawIdentity (req, onError) {
         selfCert += '\n';
       }
       var raw = pubkey + selfCert + (req.body.other || '');
+      this.push(raw);
+    }
+    this.push(null);
+  }
+}
+
+function Http2RawRevocation (req, onError) {
+  
+  stream.Readable.call(this);
+
+  this._read = function () {
+    if(!req.body || !req.body.pubkey){
+      onError('Parameter `pubkey` is required');
+    }
+    else if(!req.body || !req.body.self){
+      onError('Parameter `self` is required');
+    }
+    else if(!req.body || !req.body.sig){
+      onError('Parameter `sig` is required');
+    }
+    else {
+      var pubkey = req.body.pubkey;
+      // Add trailing LF to pubkey
+      if (!req.body.pubkey.match(/\n$/)) {
+        pubkey += '\n';
+      }
+      var selfCert = req.body.self;
+      // Add trailing LF to self
+      if (!req.body.self.match(/\n$/)) {
+        selfCert += '\n';
+      }
+      var revocationLine = 'META:REVOKE\n';
+      var raw = pubkey + selfCert + revocationLine + (req.body.sig || '');
       this.push(raw);
     }
     this.push(null);
@@ -119,6 +153,7 @@ function Http2RawBlock (req, onError) {
 }
 
 util.inherits(Http2RawIdentity,    stream.Readable);
+util.inherits(Http2RawRevocation,  stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
 util.inherits(Http2RawPeer,        stream.Readable);
 util.inherits(Http2RawStatus,      stream.Readable);

@@ -11,7 +11,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
     {
       // Identity
       matches: function (obj) {
-        return obj.pubkey && obj.uid ? true : false;
+        return obj.pubkey && obj.uid && !obj.revocation ? true : false;
       },
       treatment: function (server, obj, next) {
         async.waterfall([
@@ -21,6 +21,22 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
           function (identity, next){
             that.emit('identity', identity);
             next(null, identity);
+          },
+        ], next);
+      }
+    },
+    {
+      // Revocation
+      matches: function (obj) {
+        return obj.pubkey && obj.uid && obj.revocation ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.IdentityService.submitRevocation(obj, next);
+          },
+          function (revocation, next){
+            next(null, revocation);
           },
         ], next);
       }
@@ -46,6 +62,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
   this.listenWOT = function (app) {
     var wot = require('./app/controllers/wot')(that);
     app.post('/wot/add',                   wot.add);
+    app.post('/wot/revoke',                wot.revoke);
     app.get( '/wot/lookup/:search',        wot.lookup);
     app.get( '/wot/members',               wot.members);
     app.get( '/wot/certifiers-of/:search', wot.certifiersOf);

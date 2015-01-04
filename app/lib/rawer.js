@@ -23,6 +23,27 @@ module.exports = new function() {
     return dos2unix(raw);
   };
 
+  this.getRevocation = function (json) {
+    var raw = "";
+    raw += json.pubkey + '\n';
+    raw += "UID:" + json.uid + '\n';
+    raw += "META:TS:" + json.time.timestamp() + '\n';
+    raw += json.sig + '\n';
+    raw += "META:REVOKE\n";
+    raw += json.revocation;
+    return dos2unix(raw);
+  };
+
+  this.getSelfRevocation = function (json) {
+    var raw = "";
+    raw += "UID:" + json.uid + '\n';
+    raw += "META:TS:" + json.time.timestamp() + '\n';
+    raw += json.sig + '\n';
+    raw += "META:REVOKE\n";
+    raw += json.revocation;
+    return dos2unix(raw);
+  };
+
   this.getPubkey = function (json) {
     return dos2unix(json.raw);
   };

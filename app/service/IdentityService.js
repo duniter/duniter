@@ -112,4 +112,47 @@ function IdentityService (conn, conf) {
       ], cb);
     }, done);
   };
+
+  this.submitRevocation = function(obj, done) {
+    var idty = new Identity(obj);
+    var selfCert = idty.selfCert();
+    var certs = idty.othersCerts();
+    fifo.push(function (cb) {
+      async.waterfall([
+        function (next) {
+          // Check signature's validity
+          crypto.verifyCbErr(selfCert, idty.sig, idty.pubkey, next);
+        },
+        function (next) {
+          crypto.isValidRevocation(selfCert, idty.sig, idty.pubkey, idty.revocation, next);
+        },
+        function (next){
+          Identity.getByHash(obj.hash, next);
+        },
+        function (existing, next){
+          if (existing) {
+            // Modify
+            existing.revoked = true;
+            existing.save(function (err) {
+              next(err, jsonResultTrue());
+            });
+          }
+          else {
+            // Create
+            idty.save(function (err) {
+              next(err, jsonResultTrue());
+            });
+          }
+        },
+      ], cb);
+    }, done);
+  };
+}
+
+function jsonResultTrue () {
+  return {
+    json: function () {
+      result: true
+    }
+  };
 }

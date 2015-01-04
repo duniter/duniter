@@ -151,6 +151,52 @@ A complete self-certification:
     UID:lolcat
     META:TS:1409990782
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+
+#### Self-revocation
+
+##### Definition
+
+A self revocation is the act, for a given public key's owner, to revoke an identity he created for representing himself. Doing a self-revocation is extacly like saying:
+
+> « Sorry, I made a mistake about this identity. Do not consider it. »
+
+##### Use case
+
+This document is not to be written in the blockchain. Its goal is only to inform that a created identity was made by mistake, or contained a mistake, and should not be considered.
+
+For example, this document could be sent to a node to remove an identity we submitted by mistake.
+
+##### Format
+
+A self-revocation is just *a signature* over a complete self-certification flavoured with metadata telling this identity is to be revoked:
+
+    UID:IDENTIFIER
+    META:TS:TIMESTAMP
+    SIGNATURE
+    META:REVOKE
+    CERTIFIER_SIGNATURE
+
+Where:
+
+* `CERTIFIER_SIGNATURE` is the signature of the *certifier*.
+##### Example
+
+If we have the following complete self-certification:
+
+    UID:lolcat
+    META:TS:1409990782
+    J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+    
+A valid self-revocation could be:
+
+    SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
+    
+Over the following data:
+
+    UID:lolcat
+    META:TS:1409990782
+    J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+    META:REVOKE
     
 #### Certification
 

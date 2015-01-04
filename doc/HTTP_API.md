@@ -12,6 +12,7 @@
 * [API](#api)
   * [wot/](#wot)
       * [add](#wotadd)
+      * [remove](#wotremove)
       * [lookup/[search]](#wotlookupsearch)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)
@@ -230,6 +231,31 @@ The available validated data for this public key.
       ]
     }
   ]
+}
+```
+
+#### `wot/remove`
+
+
+**Goal**
+
+Remove an identity from Identity pool.
+
+> N.B.: An identity **written in the blockchain cannot be removed**.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`pubkey` | The [public key](./Protocol.md#publickey). | POST
+`revoke` | The raw self-revocation. | POST
+
+**Returns**
+
+True if operation went well. An HTTP error otherwise with body as error message.
+```json
+{
+  "result": true
 }
 ```
 

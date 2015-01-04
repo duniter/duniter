@@ -241,4 +241,16 @@ function WOTBinding (wotServer) {
       .pipe(es.stringify())
       .pipe(res);
   };
+
+  this.revoke = function (req, res) {
+    res.type('application/json');
+    var onError = http400(res);
+    http2raw.revocation(req, onError)
+      .pipe(dos2unix())
+      .pipe(parsers.parseRevocation(onError))
+      .pipe(wotServer.singleWriteStream(onError))
+      .pipe(jsoner())
+      .pipe(es.stringify())
+      .pipe(res);
+  };
 };

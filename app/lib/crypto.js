@@ -101,6 +101,12 @@ module.exports = {
     var raw = selfCert + selfSig + '\n' + 'META:TS:' + blockID + '\n';
     var verified = this.verify(raw, otherSig, otherPubkey);
     done(verified ? null : 'Wrong signature for certification');
+  },
+
+  isValidRevocation: function (selfCert, selfSig, selfPubkey, selfRevocationSig, done) {
+    var raw = selfCert + selfSig + '\n' + 'META:REVOKE\n';
+    var verified = this.verify(raw, selfRevocationSig, selfPubkey);
+    done(verified ? null : 'Wrong signature for revocation');
   }
 };
 

@@ -13,11 +13,12 @@ var IdentitySchema = new Schema({
   uid: String,
   pubkey: String,
   sig: String,
+  revoked: { type: Boolean, default: false },
   currentMSN: { type: Number, default: -1 },
   time: { type: Date, default: Date.now },
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
-  revoked: { type: Boolean, default: false },
+  written: { type: Boolean, default: false },
   hash: { type: String, unique: true },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now }
@@ -25,9 +26,12 @@ var IdentitySchema = new Schema({
 
 IdentitySchema.pre('save', function (next) {
   this.updated = Date.now();
+  this.written = this.written || this.member; // A member has always be written once
   this.hash = sha1(this.uid + this.time.timestamp() + this.pubkey).toUpperCase();
   next();
 });
+
+// Certifications
 
 IdentitySchema.virtual('certs').get(function () {
   return this._certs || [];
@@ -35,6 +39,16 @@ IdentitySchema.virtual('certs').get(function () {
 
 IdentitySchema.virtual('certs').set(function (newCertifs) {
   this._certs = (newCertifs && newCertifs.length >= 0 && newCertifs) || [newCertifs];
+});
+
+// Revocation sigature
+
+IdentitySchema.virtual('revocation').get(function () {
+  return this._revocation || '';
+});
+
+IdentitySchema.virtual('revocation').set(function (revocation) {
+  this._revocation = revocation;
 });
 
 IdentitySchema.methods = {
@@ -70,6 +84,10 @@ IdentitySchema.methods = {
 
   selfCert: function () {
     return rawer.getSelfIdentity(this);
+  },
+
+  selfRevocation: function () {
+    return rawer.getSelfRevocation(this);
   },
 
   othersCerts: function () {
@@ -223,13 +241,13 @@ IdentitySchema.statics.search = function (search, done) {
   var found = [];
   var searchByUID = {
     byPublicKey: function(callback){
-      obj.find({ pubkey: new RegExp(search)}, function (err, keys) {
+      obj.find({ revoked: false, pubkey: new RegExp(search)}, function (err, keys) {
         found.push(keys);
         callback();
       });
     },
     byUID: function(callback){
-      obj.find({ uid: new RegExp(search.replace('+', '\\+'))}, function (err, keys) {
+      obj.find({ revoked: false, uid: new RegExp(search.replace('+', '\\+'))}, function (err, keys) {
         found.push(keys);
         callback();
       });

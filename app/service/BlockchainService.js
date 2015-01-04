@@ -752,7 +752,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   this.generateNewcomers = function (done) {
   * Generate a "newcomers" block
   */
-  this.generateNewcomers = function (medianTimeBackOffset, done) {
+  this.generateNewcomers = function (done) {
     var filteringFunc = function (preJoinData, next) {
       var joinData = {};
       var newcomers = _(preJoinData).keys();
@@ -793,7 +793,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (block, next) {
         if (!block)
-          BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, medianTimeBackOffset, next);
+          BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, next);
         else
           next('Cannot generate root block: it already exists.');
       }
@@ -819,24 +819,24 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     });
   }
 
-  this.generateNext = function (medianTimeBackOffset, done) {
-    BlockchainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, medianTimeBackOffset, done);
+  this.generateNext = function (done) {
+    BlockchainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, done);
   };
 
   /**
   * Generate a "newcomers" block
   */
-  this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, medianTimeBackOffset, done) {
+  this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, done) {
     var withoutUpdates = function(updatesDone) {
       updatesDone(null, {});
     };
-    BlockchainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, medianTimeBackOffset, done);
+    BlockchainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, done);
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
-  this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, medianTimeBackOffset, done) {
+  this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
     var updates = {};
     var exclusions = [];
     var current = null;
@@ -906,7 +906,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       },
       function (next) {
         // Create the block
-        createNewcomerBlock(current, joinData, updates, exclusions, lastUDBlock, transactions, medianTimeBackOffset, next);
+        createNewcomerBlock(current, joinData, updates, exclusions, lastUDBlock, transactions, next);
       },
     ], done);
   };
@@ -1163,7 +1163,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     return matched;
   }
 
-  function createNewcomerBlock (current, joinData, updates, exclusions, lastUDBlock, transactions, medianTimeBackOffset, done) {
+  function createNewcomerBlock (current, joinData, updates, exclusions, lastUDBlock, transactions, done) {
     // Prevent writing joins/updates for excluded members
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
@@ -1257,7 +1257,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           globalValidator(conf, blockchainDao(conn, block)).getMedianTime(block.number, next);
       },
       function (medianTime, next) {
-        block.medianTime = current ? medianTime : moment.utc().unix() - medianTimeBackOffset;
+        block.medianTime = current ? medianTime : moment.utc().unix() - conf.rootoffset;
         next();
       },
       function (next) {
@@ -1317,10 +1317,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       block.powMin = nbZeros;
     }
     // Time must be = [medianTime; medianTime + minSpeed]
-    var now = moment.utc().unix();
-    var maxGenTime = conf.avgGenTime*4;
-    var maxAcceleration = localValidator(conf).maxAcceleration();
-    block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxAcceleration, now)) : block.medianTime;
+    block.time = getBlockTime(block);
     logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
     async.whilst(
       function(){ return !pow.match(powRegexp); },
@@ -1339,8 +1336,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             if (testsCount % 100 == 0) {
               // Update block with local time
               // Time must be = [medianTime; medianTime + minSpeed]
-              now = moment.utc().unix();
-              block.time = block.number > 0 ? Math.max(block.medianTime, Math.min(block.medianTime + maxAcceleration, now)) : block.medianTime;
+              block.time = getBlockTime(block);
             } else if (testsCount % 50 == 0) {
               if (newKeyblockCallback) {
                 computationActivated = false
@@ -1369,6 +1365,15 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         done(err, block);
       });
   };
+
+  function getBlockTime (block) {
+    var now = moment.utc().unix();
+    var maxAcceleration = localValidator(conf).maxAcceleration();
+    var timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
+    var medianTime = block.medianTime;
+    var upperBound = block.number == 0 ? medianTime : Math.min(medianTime + maxAcceleration, now - timeoffset);
+    return Math.max(medianTime, upperBound);
+  }
 
   this.showKeychain = function (done) {
     async.waterfall([
@@ -1439,7 +1444,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             //   findNewData(callback);
             // },
             block: function(callback){
-              BlockchainService.generateNext(0, callback);
+              BlockchainService.generateNext(callback);
             },
             signature: function(callback){
               signature(conf.salt, conf.passwd, callback);

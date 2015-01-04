@@ -78,7 +78,7 @@ function LocalValidator (conf) {
   };
 
   function maxAcceleration () {
-    return conf.avgGenTime * 4 * conf.medianTimeBlocks;
+    return conf.avgGenTime * 4 * (Math.ceil((conf.medianTimeBlocks + 1) / 2));
   }
 
   this.checkParameters = check(function (block, done) {

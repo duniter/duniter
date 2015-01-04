@@ -43,6 +43,14 @@ ConfigurationSchema.virtual('createNext').set(function (create) {
   this._createNext = create;
 });
 
+ConfigurationSchema.virtual('rootoffset').get(function () {
+  return this._rootoffset;
+});
+
+ConfigurationSchema.virtual('rootoffset').set(function (offset) {
+  this._rootoffset = parseInt(offset);
+});
+
 // Automatic Monetary Contract default parameters:
 //  - Voting start: None (must be given)
 //  - Voting frequency: 1 day

@@ -44,6 +44,7 @@ program
   .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
   .option('--medtblocks <number>',     'medianTimeBlocks parameter of UCP')
   .option('--avgGenTime <number>',     'avgGenTime parameter of UCP')
+  .option('--dtdiffeval <number>',     'dtDiffEval parameter of UCP')
   .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
   .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
   .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
@@ -138,7 +139,7 @@ function generateAndSend (generationMethod) {
     async.waterfall([
       function (next){
         var method = eval('server.BlockchainService.' + generationMethod);
-        method(program.rootoffset || 0, next);
+        method(next);
       },
       function (block, next){
         logger.debug('Block to be sent: %s', block.quickDescription());
@@ -377,6 +378,7 @@ function overrideConf(conf) {
       database: program.mdb,
     },
     ucp: {
+      rootoffset:  program.rootoffset,
       sigDelay:    program.sigDelay,
       sigValidity: program.sigValidity,
       sigQty:      program.sigQty,
@@ -392,6 +394,7 @@ function overrideConf(conf) {
       udid2:       program.udid2,
       incDateMin:  program.incDateMin,
       medtblocks:  program.medtblocks,
+      dtdiffeval:  program.dtdiffeval,
       avgGenTime:  program.avgGenTime
     }
   };
@@ -407,6 +410,7 @@ function overrideConf(conf) {
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4     = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6     = cli.server.remote.ipv6;
   if (cli.server.remote.port != undefined)  conf.remoteport     = cli.server.remote.port;
+  if (cli.ucp.rootoffset)                   conf.rootoffset     = cli.ucp.rootoffset;
   if (cli.ucp.sigDelay)                     conf.sigDelay       = cli.ucp.sigDelay;
   if (cli.ucp.sigValidity)                  conf.sigValidity    = cli.ucp.sigValidity;
   if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;
@@ -423,6 +427,7 @@ function overrideConf(conf) {
   if (cli.ucp.incDateMin)                   conf.incDateMin     = cli.ucp.incDateMin;
   if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
   if (cli.ucp.avgGenTime)                   conf.avgGenTime     = cli.ucp.avgGenTime;
+  if (cli.ucp.dtdiffeval)                   conf.dtDiffEval     = cli.ucp.dtdiffeval;
 
   // Specific internal settings
   conf.createNext = true;

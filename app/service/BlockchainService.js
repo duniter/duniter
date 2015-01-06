@@ -1628,5 +1628,89 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         sent();
       });
     });
+    statQueue.push(function (sent) {
+      logger.debug('Computing memberships...');
+      async.forEachSeries(['memberships'], function (statName, callback) {
+        async.waterfall([
+          function (next) {
+            async.parallel({
+              stat: function (next) {
+                BlockStat.getStat(statName, next);
+              },
+              current: function (next) {
+                BlockchainService.current(next);
+              }
+            }, next);
+          },
+          function (res, next) {
+            var stat = res.stat;
+            var current = res.current;
+            // Create stat if it does not exist
+            if (stat == null) {
+              stat = new BlockStat({ statName: statName, blocks: [], lastParsedBlock: -1 });
+            }
+            async.waterfall([
+              function (next) {
+                // Reset memberships if first computation
+                if (stat.lastParsedBlock == -1) {
+                  Identity.resetMemberships(next);
+                } else {
+                  next();
+                }
+              },
+              function (next) {
+                // Compute new stat
+                async.forEachSeries(_.range(stat.lastParsedBlock + 1, current.number + 1), function (blockNumber, callback) {
+                  // console.log('Stat', statName, ': tested block#' + blockNumber);
+                  async.waterfall([
+                    function (next) {
+                      Block.findByNumber(blockNumber, next);
+                    },
+                    function (block, next) {
+                      async.forEachSeries(['joiners', 'actives', 'leavers'], function (category, callback) {
+                        async.forEachSeries(block[category], function (inlineMS, callback2) {
+                          var ms = Membership.fromInline(inlineMS, category == 'leavers' ? 'OUT' : 'IN', conf.currency);
+                          async.waterfall([
+                            function (next) {
+                              Identity.getMember(ms.issuer, next);
+                            },
+                            function (member, next) {
+                              member.memberships.push({
+                                "version": ms.version,
+                                "membership": "IN",
+                                "inBlock": block.number,
+                                "blockNumber": ms.number,
+                                "blockHash": ms.fpr
+                              });
+                              member.save(function (err) {
+                                next(err);
+                              });
+                            }
+                          ], callback2);
+                        }, callback);
+                      }, next);
+                    },
+                    function (next) {
+                      stat.lastParsedBlock = blockNumber;
+                      next();
+                    }
+                  ], callback);
+                }, function (err) {
+                  next(err, stat);
+                });
+              }
+            ], next);
+          },
+          function (stat, next) {
+            stat.save(function (err) {
+              next(err);
+            });
+          }
+        ], callback);
+      }, function (err) {
+        logger.debug('Computing memberships: done!');
+        sent();
+      });
+    });
   }
 }

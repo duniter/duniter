@@ -21,6 +21,7 @@
   * [blockchain/](#blockchain)
       * [parameters](#blockchainparameters)
       * [membership](#blockchainmembership)
+      * [memberships/[search]](#blockchainmembershipssearch)
       * [block](#blockchainblock)
       * [block/[number]](#blockchainblocknumber)
       * [current](#blockchaincurrent)
@@ -470,8 +471,42 @@ The posted membership request.
     "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "membership": "IN",
     "sigDate": 1390739944,
-    "uid": "udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;"
+    "uid": "superman63"
   }
+}
+```
+
+#### `blockchain/memberships/[search]`
+
+
+**Goal**
+
+GET [Membership](./Protocol.md#membership) data written for a member.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`search` | Public key or uid of a *member* we want see the memberships. | URL
+
+**Returns**
+
+A list of memberships issued by the *member* and written in the blockchain.
+```json
+{
+  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "uid": "user identifier",
+  "sigDate": 1390739944,
+  "memberships": [
+    {
+    "version": "1",
+    "currency": "beta_brousouf",
+    "membership": "IN",
+    "blockNumber": 678,
+    "blockHash": "000007936DF3CC32BFCC1023D1258EC9E485D474"
+  },
+    ...
+  ]
 }
 ```
 

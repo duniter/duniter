@@ -30,6 +30,7 @@ function BlockchainBinding (wotServer) {
   var ParametersService = wotServer.ParametersService;
   var PeeringService    = wotServer.PeeringService;
   var BlockchainService = wotServer.BlockchainService;
+  var IdentityService   = wotServer.IdentityService;
 
   // Models
   var Peer       = wotServer.conn.model('Peer');
@@ -189,5 +190,38 @@ function BlockchainBinding (wotServer) {
         "level": nbZeros
       }, null, "  "));
     });
-  }
+  };
+
+  this.memberships = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next){
+        ParametersService.getSearch(req, next);
+      },
+      function (search, next){
+        IdentityService.findMember(search, next);
+      },
+    ], function (err, idty) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      var json = {
+        pubkey: idty.pubkey,
+        uid: idty.uid,
+        sigDate: idty.time.timestamp(),
+        memberships: []
+      };
+      idty.memberships.forEach(function(ms){
+        json.memberships.push({
+          version: ms.version,
+          currency: conf.currency,
+          membership: ms.type,
+          blockNumber: ms.blockNumber,
+          blockHash: ms.blockHash
+        });
+      });
+      res.send(200, JSON.stringify(json, null, "  "));
+    });
+  };
 }

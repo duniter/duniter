@@ -335,6 +335,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     var blockchain = require('./app/controllers/blockchain')(that);
     app.get(    '/blockchain/parameters',       blockchain.parameters);
     app.post(   '/blockchain/membership',       blockchain.parseMembership);
+    app.get(    '/blockchain/memberships/:search', blockchain.memberships);
     app.post(   '/blockchain/block',            blockchain.parseBlock);
     app.get(    '/blockchain/block/:number',    blockchain.promoted);
     app.get(    '/blockchain/current',          blockchain.current);

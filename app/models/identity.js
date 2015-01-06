@@ -15,6 +15,7 @@ var IdentitySchema = new Schema({
   sig: String,
   revoked: { type: Boolean, default: false },
   currentMSN: { type: Number, default: -1 },
+  memberships: Array,
   time: { type: Date, default: Date.now },
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
@@ -115,6 +116,13 @@ IdentitySchema.methods = {
   getTargetHash: function () {
     return sha1(this.uid + this.time.timestamp() + this.pubkey).toUpperCase();
   }
+};
+
+IdentitySchema.statics.resetMemberships = function(done){
+  var Identity = this.model('Identity');
+  Identity.update({}, { memberships: [] }, { multi: true }, function (err) {
+    done(err);
+  });
 };
 
 IdentitySchema.statics.addMember = function(pubkey, hash, done){

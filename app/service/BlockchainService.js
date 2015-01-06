@@ -1458,6 +1458,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (res, next){
         if (!res) {
           next(null, null, 'Waiting for a root block before computing new blocks');
+        } else if (res.trial > current.powMin) {
+          next(null, null, 'Too high difficulty: waiting for other members to write next block');
         } else {
           computationTimeoutDone = false;
           BlockchainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {

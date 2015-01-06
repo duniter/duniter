@@ -229,6 +229,16 @@ BlockSchema.statics.lastBlocksOfIssuer = function (issuer, count, done) {
     .exec(done);
 };
 
+BlockSchema.statics.from = function (number, done) {
+  this
+    .find({ number: { $gte: number } })
+    .sort({ 'number': 1 })
+    .exec(function (err, blocks) {
+      console.log(blocks.length);
+      done(err, blocks);
+    });
+};
+
 BlockSchema.statics.lastUDBlock = function (done) {
   this
     .find({ dividend: { $gt: 0 } })

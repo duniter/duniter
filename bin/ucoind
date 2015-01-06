@@ -125,6 +125,37 @@ program
   }));
 
 program
+  .command('forward [fromBlock] [host] [port]')
+  .description('Forward local blockchain to a remote uCoin node')
+  .action(service(ucoin.createTxServer, function (fromBlock, host, port, server, conf) {
+
+    async.waterfall([
+      function (next) {
+        var Block = server.conn.model('Block');
+        Block.from(fromBlock, next);
+      },
+      function (blocks, next){
+        // Forward
+        var Peer = server.conn.model('Peer');
+        var peer = new Peer({
+          endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
+        });
+        logger.info(blocks);
+        async.forEachSeries(blocks, function (block, callback) {
+          logger.info("Forwarding block#" + block.number);
+          multicaster().sendBlock(peer, block, callback);
+        }, next);
+      },
+    ], function (err) {
+      if(err){
+        logger.error('Error during forwarding:', err);
+      }
+      server.disconnect();
+      process.exit();
+    });
+  }));
+
+program
   .command('gen-next [host] [port] [diff]')
   .description('Tries to generate the next block of the blockchain')
   .action(service(ucoin.createPeerServer, generateAndSend("generateNext")));

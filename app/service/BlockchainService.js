@@ -99,13 +99,16 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (isMember, next){
         var isJoin = entry.membership == 'IN';
         if (!isMember && isJoin) {
+          // JOIN
           next();
         }
         else if (isMember && !isJoin) {
+          // LEAVE
           next();
         } else {
           if (isJoin)
-            next('A member cannot join in.');
+            // RENEW
+            next();
           else 
             next('A non-member cannot leave.');
         }
@@ -461,26 +464,28 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   function updateMemberships (block, done) {
-    async.forEach(block.joiners, function(inlineJoin, callback){
-      var ms = Membership.fromInline(inlineJoin, 'IN');
-      async.waterfall([
-        function (next){
-          Identity.getMember(ms.issuer, next);
-        },
-        function (idty, next){
-          if (!idty) {
-            var err = 'Could not find identity for membership of issuer ' + ms.issuer;
-            logger.error(err);
-            next(err);
-            return;
-          }
-          ms.userid = idty.uid;
-          ms.certts = idty.time;
-          ms.deleteIfExists(function (err) {
-            next(err);
-          });
-        },
-      ], callback);
+    async.forEachSeries(['joiners', 'actives', 'leavers'], function (prop, callback1) {
+      async.forEach(block[prop], function(inlineJoin, callback){
+        var ms = Membership.fromInline(inlineJoin, 'IN');
+        async.waterfall([
+          function (next){
+            Identity.getMember(ms.issuer, next);
+          },
+          function (idty, next){
+            if (!idty) {
+              var err = 'Could not find identity for membership of issuer ' + ms.issuer;
+              logger.error(err);
+              next(err);
+              return;
+            }
+            ms.userid = idty.uid;
+            ms.certts = idty.time;
+            ms.deleteIfExists(function (err) {
+              next(err);
+            });
+          },
+        ], callback);
+      }, callback1);
     }, done);
   }
 
@@ -611,11 +616,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   function computeObsoleteMemberships (block, done) {
     async.waterfall([
       function (next){
-        Block.getFirstFrom(block.medianTime - conf.msValidity, next);
+        Block.getLastBeforeOrAt(block.medianTime - conf.msValidity, next);
       },
-      function (first, next){
-        if (first)
-          Identity.kickWithOutdatedMemberships(first.number, next);
+      function (last, next){
+        if (last)
+          Identity.kickWithOutdatedMemberships(last.number, next);
         else
           next();
       },
@@ -1004,7 +1009,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               }, next);
             },
             function (res, next){
-              if (res.identity && res.block) {
+              console.log(res.identity.currentMSN, join.ms.number);
+              if (res.identity && res.block && res.identity.currentMSN < join.ms.number) {
                 // MS + matching cert are found
                 join.identity = res.identity;
                 join.certs = res.certs;
@@ -1197,8 +1203,20 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.joiners = [];
     joiners.forEach(function(joiner){
       var data = joinData[joiner];
-      block.identities.push(data.identity.inline());
-      block.joiners.push(data.ms.inline());
+      // Join only for non-members
+      if (!data.identity.member) {
+        block.identities.push(data.identity.inline());
+        block.joiners.push(data.ms.inline());
+      }
+    });
+    // Renewed
+    block.actives = [];
+    joiners.forEach(function(joiner){
+      var data = joinData[joiner];
+      // Join only for non-members
+      if (data.identity.member) {
+        block.actives.push(data.ms.inline());
+      }
     });
     // Leavers
     block.leavers = [];

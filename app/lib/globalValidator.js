@@ -669,7 +669,7 @@ function GlobalValidator (conf, dao) {
           dao.getCurrentMembershipNumber(ms.issuer, next);
         },
         function (msNumber, next) {
-          if (msNumber != -1 && msNumber <= ms.number) {
+          if (msNumber != -1 && msNumber >= ms.number) {
             next('Membership\'s number must be greater than last membership of the pubkey');
             return;
           }
@@ -697,7 +697,7 @@ function GlobalValidator (conf, dao) {
           dao.getCurrentMembershipNumber(ms.issuer, next);
         },
         function (msNumber, next) {
-          if (msNumber != -1 && msNumber <= ms.number) {
+          if (msNumber != -1 && msNumber >= ms.number) {
             next('Membership\'s number must be greater than last membership of the pubkey');
             return;
           }
@@ -725,7 +725,7 @@ function GlobalValidator (conf, dao) {
           dao.getCurrentMembershipNumber(ms.issuer, next);
         },
         function (msNumber, next) {
-          if (msNumber != -1 && msNumber <= ms.number) {
+          if (msNumber != -1 && msNumber >= ms.number) {
             next('Membership\'s number must be greater than last membership of the pubkey');
             return;
           }

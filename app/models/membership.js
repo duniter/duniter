@@ -105,7 +105,8 @@ MembershipSchema.methods = {
       "membership": this.membership,
       "userid": this.userid,
       "certts": this.certts,
-      "date": this.date
+      "number": this.number,
+      "fpr": this.fpr
     }, function (err) {
       done(err);
     });

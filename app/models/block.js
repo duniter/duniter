@@ -288,11 +288,11 @@ BlockSchema.statics.getBlocksBetween = function (start, end, done) {
     .exec(done);
 };
 
-BlockSchema.statics.getFirstFrom = function (t, done) {
+BlockSchema.statics.getLastBeforeOrAt = function (t, done) {
 
   this
-    .find({ medianTime: { $gte: t }})
-    .sort({ number: 1 })
+    .find({ medianTime: { $lte: t }})
+    .sort({ number: -1 })
     .limit(1)
     .exec(function (err, blocks) {
       done(err, blocks.length == 1 ? blocks[0] : null);

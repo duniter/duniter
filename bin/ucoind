@@ -41,6 +41,7 @@ program
   .option('--remotep <port>',          'Remote port others may use to contact this node')
   .option('--sigDelay <timestamp>',    'Minimum delay between 2 similar certifications, in seconds.')
   .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
+  .option('--msValidity <timestamp>',  'Validity duration of a memberships, in seconds.')
   .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
   .option('--medtblocks <number>',     'medianTimeBlocks parameter of UCP')
   .option('--avgGenTime <number>',     'avgGenTime parameter of UCP')
@@ -412,6 +413,7 @@ function overrideConf(conf) {
       rootoffset:  program.rootoffset,
       sigDelay:    program.sigDelay,
       sigValidity: program.sigValidity,
+      msValidity:  program.msValidity,
       sigQty:      program.sigQty,
       msValidity:  program.msValidity,
       powZeroMin:  program.powZeroMin,
@@ -444,6 +446,7 @@ function overrideConf(conf) {
   if (cli.ucp.rootoffset)                   conf.rootoffset     = cli.ucp.rootoffset;
   if (cli.ucp.sigDelay)                     conf.sigDelay       = cli.ucp.sigDelay;
   if (cli.ucp.sigValidity)                  conf.sigValidity    = cli.ucp.sigValidity;
+  if (cli.ucp.msValidity)                   conf.msValidity     = cli.ucp.msValidity;
   if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;
   if (cli.ucp.msValidity)                   conf.msValidity     = cli.ucp.msValidity;
   if (cli.ucp.powZeroMin)                   conf.powZeroMin     = cli.ucp.powZeroMin;

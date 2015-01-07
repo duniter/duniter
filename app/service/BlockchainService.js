@@ -1603,34 +1603,30 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             var current = res.current;
             // Create stat if it does not exist
             if (stat == null) {
-              stat = new BlockStat({ statName: statName, blocks: [], lastParsedBlock: 0 });
+              stat = new BlockStat({ statName: statName, blocks: [], lastParsedBlock: -1 });
             }
             // Compute new stat
-            if (!current) {
-              next(null, stat);
-            } else {
-              async.forEachSeries(_.range(stat.lastParsedBlock + 1, current.number + 1), function (blockNumber, callback) {
-                // console.log('Stat', statName, ': tested block#' + blockNumber);
-                async.waterfall([
-                  function (next) {
-                    Block.findByNumber(blockNumber, next);
-                  },
-                  function (block, next) {
-                    var testProperty = tests[statName];
-                    var value = block[testProperty];
-                    var isPositiveValue = value && typeof value != 'object';
-                    var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
-                    if (isPositiveValue || isNonEmptyArray) {
-                      stat.blocks.push(blockNumber);
-                    }
-                    stat.lastParsedBlock = blockNumber;
-                    next();
+            async.forEachSeries(_.range(stat.lastParsedBlock + 1, (current ? current.number : -1) + 1), function (blockNumber, callback) {
+              // console.log('Stat', statName, ': tested block#' + blockNumber);
+              async.waterfall([
+                function (next) {
+                  Block.findByNumber(blockNumber, next);
+                },
+                function (block, next) {
+                  var testProperty = tests[statName];
+                  var value = block[testProperty];
+                  var isPositiveValue = value && typeof value != 'object';
+                  var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+                  if (isPositiveValue || isNonEmptyArray) {
+                    stat.blocks.push(blockNumber);
                   }
-                ], callback);
-              }, function (err) {
-                next(err, stat);
-              });
-            }
+                  stat.lastParsedBlock = blockNumber;
+                  next();
+                }
+              ], callback);
+            }, function (err) {
+              next(err, stat);
+            });
           },
           function (stat, next) {
             stat.save(function (err) {
@@ -1675,7 +1671,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               },
               function (next) {
                 // Compute new stat
-                async.forEachSeries(_.range(stat.lastParsedBlock + 1, current.number + 1), function (blockNumber, callback) {
+                async.forEachSeries(_.range(stat.lastParsedBlock + 1, (current ? current.number : -1) + 1), function (blockNumber, callback) {
                   // console.log('Stat', statName, ': tested block#' + blockNumber);
                   async.waterfall([
                     function (next) {

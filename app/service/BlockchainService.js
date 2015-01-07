@@ -1310,7 +1310,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   this.prove = function (block, sigFunc, nbZeros, done) {
     var powRegexp = new RegExp('^0{' + nbZeros + '}[^0]');
     var pow = "", sig = "", raw = "";
-    var start = new Date().timestamp();
+    var start = new Date();
     var testsCount = 0;
     if (block.number == 0) {
       // On initial block, difficulty is the one given manually
@@ -1319,6 +1319,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     // Time must be = [medianTime; medianTime + minSpeed]
     block.time = getBlockTime(block);
     logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
+    var testsPerSecond = 200;
+    var speedComputed = false;
     async.whilst(
       function(){ return !pow.match(powRegexp); },
       function (next) {
@@ -1333,24 +1335,35 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             var full = raw + sig + '\n';
             pow = full.hash();
             testsCount++;
-            if (testsCount % 100 == 0) {
+            if (testsCount % testsPerSecond == 0) {
+              // Update computing speed
+              if (!speedComputed) {
+                var now = new Date();
+                var duration = now - start;
+                testsPerSecond = Math.round(testsCount*1000/duration);
+                speedComputed = true;
+              }
+              // Run NEXT only after a delay
+              setTimeout(function () {
+                next();
+              }, 1000*0.01); // 99% CPU time
+            } else if (testsCount % 100 == 0) {
               // Update block with local time
               // Time must be = [medianTime; medianTime + minSpeed]
               block.time = getBlockTime(block);
+              next();
             } else if (testsCount % 50 == 0) {
               if (newKeyblockCallback) {
                 computationActivated = false
                 next('New block received');
                 return;
-              }
+              } else next();
+            } else {
+              next();
             }
-            next();
           },
         ], next);
       }, function (err) {
-        if (testsCount >= 100) {
-          console.log(''); // Adds a CR to the waiting dots
-        }
         if (err) {
           logger.debug('Proof-of-work computation canceled: valid block received');
           done(err);
@@ -1359,8 +1372,8 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         }
         block.signature = sig;
         var end = new Date().timestamp();
-        var duration = moment.duration((end - start)) + 's';
-        var testsPerSecond = (testsCount / (end - start)).toFixed(2);
+        var duration = moment.duration((end - start.timestamp())) + 's';
+        var testsPerSecond = (testsCount / (end - start.timestamp())).toFixed(2);
         logger.debug('Done: ' + pow + ' in ' + duration + ' (~' + testsPerSecond + ' tests/s)');
         done(err, block);
       });

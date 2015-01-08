@@ -1009,7 +1009,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               }, next);
             },
             function (res, next){
-              console.log(res.identity.currentMSN, join.ms.number);
               if (res.identity && res.block && res.identity.currentMSN < join.ms.number) {
                 // MS + matching cert are found
                 join.identity = res.identity;

@@ -338,6 +338,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     app.get(    '/blockchain/memberships/:search', blockchain.memberships);
     app.post(   '/blockchain/block',            blockchain.parseBlock);
     app.get(    '/blockchain/block/:number',    blockchain.promoted);
+    app.get(    '/blockchain/blocks/:count/:from',    blockchain.blocks);
     app.get(    '/blockchain/current',          blockchain.current);
     app.get(    '/blockchain/hardship/:pubkey', blockchain.hardship);
     app.get(    '/blockchain/with/newcomers',   blockchain.with.newcomers);

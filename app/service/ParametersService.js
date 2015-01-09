@@ -22,6 +22,28 @@ function ParameterNamespace (conn, currency) {
     callback(null, req.params.search);
   };
 
+  this.getCountAndFrom = function (req, callback){
+    if(!req.params.from){
+      callback("From is required");
+      return;
+    }
+    if(!req.params.count){
+      callback("Count is required");
+      return;
+    }
+    var matches = req.params.from.match(/^(\d+)$/);
+    if(!matches){
+      callback("From format is incorrect, must be a positive integer");
+      return;
+    }
+    var matches2 = req.params.count.match(/^(\d+)$/);
+    if(!matches){
+      callback("Count format is incorrect, must be a positive integer");
+      return;
+    }
+    callback(null, matches2[1], matches[1]);
+  };
+
   this.getPubkey = function (req, callback){
     if(!req.params.pubkey){
       callback('Parameter `pubkey` is required');

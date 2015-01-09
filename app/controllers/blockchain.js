@@ -34,6 +34,7 @@ function BlockchainBinding (wotServer) {
 
   // Models
   var Peer       = wotServer.conn.model('Peer');
+  var Block      = wotServer.conn.model('Block');
   var Membership = wotServer.conn.model('Membership');
   var Identity   = wotServer.conn.model('Identity');
   var BlockStat  = wotServer.conn.model('BlockStat');
@@ -138,6 +139,56 @@ function BlockchainBinding (wotServer) {
         return;
       }
       res.send(200, JSON.stringify(promoted.json(), null, "  "));
+    });
+  }
+
+  this.blocks = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next){
+        async.parallel({
+          params: async.apply(ParametersService.getCountAndFrom, req),
+          current: async.apply(BlockchainService.current),
+        }, next);
+      },
+      function (res, next){
+        var current = res.current;
+        var count = parseInt(res.params[0]);
+        var from = parseInt(res.params[1]);
+        if (count > 5000) {
+          next('Count is too high');
+          return;
+        }
+        if (!current || current.number < from) {
+          next('Starting block #' + from + ' does not exist');
+          return;
+        }
+        count = Math.min(current.number - from + 1, count);
+        var blocks = [];
+        var i = from;
+        async.whilst(
+          function(){ return i < from + count; },
+          function (next) {
+            async.waterfall([
+              function (next){
+                BlockchainService.promoted(i, next);
+              },
+              function (block, next){
+                blocks.push(block.json());
+                i++;
+                next();
+              },
+            ], next);
+          }, function (err) {
+            next(err, blocks);
+          });
+      }
+    ], function (err, blocks) {
+      if(err){
+        res.send(400, err);
+        return;
+      }
+      res.send(200, JSON.stringify(blocks, null, "  "));
     });
   }
 

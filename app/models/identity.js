@@ -190,9 +190,9 @@ IdentitySchema.statics.isMemberOrError = function(pubkey, done){
   });
 }
 
-IdentitySchema.statics.getMember = function(pubkey, done){
+IdentitySchema.statics.getWritten = function(pubkey, done){
   var Identity = this.model('Identity');
-  Identity.find({ "pubkey": pubkey, "member": true }, function (err, identities) {
+  Identity.find({ "pubkey": pubkey, "wasMember": true }, function (err, identities) {
     if(identities.length > 1){
       done('More than one matching pubkey & member for ' + pubkey);
       return;
@@ -201,22 +201,11 @@ IdentitySchema.statics.getMember = function(pubkey, done){
   });
 }
 
-IdentitySchema.statics.getMemberByUID = function(uid, done){
+IdentitySchema.statics.getWrittenByUID = function(uid, done){
   var Identity = this.model('Identity');
-  Identity.find({ "uid": uid, "member": true }, function (err, identities) {
+  Identity.find({ "uid": uid, "wasMember": true }, function (err, identities) {
     if(identities.length > 1){
       done('More than one matching pubkey & member for ' + uid);
-      return;
-    }
-    done(null, identities.length == 1 ? identities[0] : null);
-  });
-}
-
-IdentitySchema.statics.getMemberByUserID = function(uid, done){
-  var Identity = this.model('Identity');
-  Identity.find({ "uid": uid, "member": true }, function (err, identities) {
-    if(identities.length > 1){
-      done('More than one matching pubkey & member for uid ' + uid);
       return;
     }
     done(null, identities.length == 1 ? identities[0] : null);

@@ -39,10 +39,10 @@ function IdentityService (conn, conf) {
   this.findMember = function(search, done) {
     async.parallel({
       pubkey: function (next) {
-        Identity.getMember(search, next);
+        Identity.getWritten(search, next);
       },
       uid: function (next) {
-        Identity.getMemberByUID(search, next);
+        Identity.getWrittenByUID(search, next);
       }
     }, function (err, res) {
       done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, res.pubkey || res.uid);

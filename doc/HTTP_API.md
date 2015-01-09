@@ -1,9 +1,5 @@
 # uCoin HTTP API
 
-## TODO
-
-* blockchain/block/number
-
 ## Contents
 
 * [Contents](#contents)
@@ -340,15 +336,18 @@ GET [Certification](./Protocol.md#certification) data over a member.
 
 Name  | Value | Method
 ----  | ----- | ------
-`search` | Public key or uid of a *member* we want see the certifications. | URL
+`search` | Public key or uid of a *member* (or someone who *was a member*) we want see the certifications. | URL
 
 **Returns**
 
-A list of certifications issued to the member, with `written` data indicating wether the certification is written in the blockchain or not.
+A list of certifications issued to the member by other members (or who used to be members), with `written` data indicating wether the certification is written in the blockchain or not.
+
+Each certification also has a `isMember`  field to indicate wether the issuer of the certification is still a member or not.
 ```json
 {
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "uid": "user identifier",
+  "isMember": true,
   "certifications": [
     {
       "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
@@ -358,6 +357,7 @@ A list of certifications issued to the member, with `written` data indicating we
         "medianTime": 1509991044
       },
       "written": true,
+      "isMember": true,
       "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
     },
     ...
@@ -376,15 +376,18 @@ GET [Certification](./Protocol.md#certification) data over a member.
 
 Name  | Value | Method
 ----  | ----- | ------
-`search` | Public key or uid of a *member* we want see the certifications. | URL
+`search` | Public key or uid of a *member* (or someone who *was a member*) we want see the certifications. | URL
 
 **Returns**
 
-A list of certifications issued by the *member* to other *members*, with `written` data indicating wether the certification is written in the blockchain or not.
+A list of certifications issued by the member to other members (or who used to be members), with `written` data indicating wether the certification is written in the blockchain or not.
+
+Each certification also has a `isMember`  field to indicate wether the issuer of the certification is still a member or not.
 ```json
 {
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "uid": "user identifier",
+  "isMember": true,
   "certifications": [
     {
       "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
@@ -394,6 +397,7 @@ A list of certifications issued by the *member* to other *members*, with `writte
         "medianTime": 1509991044
       },
       "written": true,
+      "isMember": true,
       "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
     },
     ...

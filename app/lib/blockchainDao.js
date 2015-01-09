@@ -15,7 +15,7 @@ module.exports = function(conn, block) {
     this.existsUserID = function (uid, done) {
       async.waterfall([
         function (next){
-          Identity.getMemberByUserID(uid, next);
+          Identity.getWrittenByUID(uid, next);
         },
         function (idty, next){
           next(null, idty != null);
@@ -26,7 +26,7 @@ module.exports = function(conn, block) {
     this.existsPubkey = function (pubkey, done) {
       async.waterfall([
         function (next){
-          Identity.getMember(pubkey, next);
+          Identity.getWritten(pubkey, next);
         },
         function (idty, next){
           next(null, idty != null);
@@ -35,7 +35,7 @@ module.exports = function(conn, block) {
     }
     
     this.getIdentityByPubkey = function (pubkey, done) {
-      Identity.getMember(pubkey, done);
+      Identity.getWritten(pubkey, done);
     }
     
     this.isMember = function (pubkey, done) {
@@ -131,7 +131,7 @@ module.exports = function(conn, block) {
     this.getCurrentMembershipNumber = function (pubkey, done) {
       async.waterfall([
         function (next) {
-          Identity.getMember(pubkey, next);
+          Identity.getWritten(pubkey, next);
         },
         function (idty, next) {
           if (idty == null)

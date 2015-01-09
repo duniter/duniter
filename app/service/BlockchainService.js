@@ -367,7 +367,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           async.waterfall([
             function (next){
               // Necessarily exists, since we've just created them in the worst case
-              Identity.getMember(ms.pubkey, next);
+              Identity.getWritten(ms.pubkey, next);
             },
             function (idty, next){
               idty.currentMSN = block.number;
@@ -386,7 +386,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           var ms = Identity.fromInline(inlineMS);
           async.waterfall([
             function (next){
-              Identity.getMember(ms.pubkey, next);
+              Identity.getWritten(ms.pubkey, next);
             },
             function (idty, next){
               idty.currentMSN = block.number;
@@ -405,7 +405,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           var ms = Identity.fromInline(inlineMS);
           async.waterfall([
             function (next){
-              Identity.getMember(ms.pubkey, next);
+              Identity.getWritten(ms.pubkey, next);
             },
             function (idty, next){
               idty.currentMSN = block.number;
@@ -424,7 +424,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         async.forEach(block.excluded, function (pubkey, callback) {
           async.waterfall([
             function (next) {
-              Identity.getMember(pubkey, next);
+              Identity.getWritten(pubkey, next);
             },
             function (idty, next) {
               idty.member = false;
@@ -444,7 +444,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       var cert = Certification.fromInline(inlineCert);
       async.waterfall([
         function (next) {
-          Identity.getMember(cert.to, next);
+          Identity.getWritten(cert.to, next);
         },
         function (idty, next){
           cert.target = idty.getTargetHash();
@@ -469,7 +469,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         var ms = Membership.fromInline(inlineJoin, 'IN');
         async.waterfall([
           function (next){
-            Identity.getMember(ms.issuer, next);
+            Identity.getWritten(ms.issuer, next);
           },
           function (idty, next){
             if (!idty) {
@@ -1700,7 +1700,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                           var ms = Membership.fromInline(inlineMS, category == 'leavers' ? 'OUT' : 'IN', conf.currency);
                           async.waterfall([
                             function (next) {
-                              Identity.getMember(ms.issuer, next);
+                              Identity.getWritten(ms.issuer, next);
                             },
                             function (member, next) {
                               member.memberships.push({

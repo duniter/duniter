@@ -108,7 +108,7 @@ function WOTBinding (wotServer) {
             async.forEach(certs, function (cert, callback) {
               async.waterfall([
                 function (next) {
-                  Identity.getMember(cert.from, next);
+                  Identity.getWritten(cert.from, next);
                 },
                 function (idty, next) {
                   if (!idty) {
@@ -116,6 +116,7 @@ function WOTBinding (wotServer) {
                     return;
                   }
                   cert.uid = idty.uid;
+                  cert.isMember = idty.member;
                   Block.findByNumber(cert.block_number, next);
                 },
                 function (block, next) {
@@ -144,12 +145,14 @@ function WOTBinding (wotServer) {
       var json = {
         pubkey: idty.pubkey,
         uid: idty.uid,
+        isMember: idty.member,
         certifications: []
       };
       idty.certs.forEach(function(cert){
         json.certifications.push({
           pubkey: cert.pubkey,
           uid: cert.uid,
+          isMember: cert.isMember,
           cert_time: cert.cert_time,
           written: cert.linked,
           signature: cert.sig
@@ -178,7 +181,7 @@ function WOTBinding (wotServer) {
             async.forEach(certs, function (cert, callback) {
               async.waterfall([
                 function (next) {
-                  Identity.getMember(cert.to, next);
+                  Identity.getWritten(cert.to, next);
                 },
                 function (idty, next) {
                   if (!idty) {
@@ -187,6 +190,7 @@ function WOTBinding (wotServer) {
                   }
                   cert.pubkey = idty.pubkey;
                   cert.uid = idty.uid;
+                  cert.isMember = idty.member;
                   Block.findByNumber(cert.block_number, next);
                 },
                 function (block, next) {
@@ -215,6 +219,7 @@ function WOTBinding (wotServer) {
       var json = {
         pubkey: idty.pubkey,
         uid: idty.uid,
+        isMember: idty.member,
         certifications: []
       };
       idty.certs.forEach(function(cert){
@@ -222,6 +227,7 @@ function WOTBinding (wotServer) {
           pubkey: cert.pubkey,
           uid: cert.uid,
           cert_time: cert.cert_time,
+          isMember: cert.isMember,
           written: cert.linked,
           signature: cert.sig
         });

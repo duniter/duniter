@@ -122,10 +122,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next){
         // Saves entry
         entry.save(function (err) {
-          if (computeNextCallback) {
-            // A new block may be written
-            computeNextCallback();
-          }
           next(err);
         });
       },

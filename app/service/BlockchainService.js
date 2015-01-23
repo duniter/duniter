@@ -229,21 +229,34 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   function checkWoTConstraints (block, newLinks, done) {
     if (block.number >= 0) {
+      var newcomers = [];
+      var ofMembers = [];
       // other blocks may introduce unstability with new members
       async.waterfall([
         function (next) {
           Identity.getMembers(next);
         },
         function (members, next) {
-          var newcomers = [];
-          var ofMembers = [];
+          async.forEachSeries(members, function (m, callback) {
+            async.waterfall([
+              function (next) {
+                Link.getValidLinksFrom(m.pubkey, next);
+              },
+              function (links, next) {
+                // Only test agains members who make enough signatures
+                if (links.length >= conf.sigWoT) {
+                  ofMembers.push(m.pubkey);
+                }
+                next();
+              }
+            ], callback);
+          }, next);
+        },
+        function (next) {
           block.joiners.forEach(function (inlineMS) {
             var fpr = inlineMS.split(':')[0];
             newcomers.push(fpr);
             ofMembers.push(fpr);
-          });
-          members.forEach(function (member) {
-            ofMembers.push(member.pubkey);
           });
           async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
             async.waterfall([

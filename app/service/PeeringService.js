@@ -244,26 +244,28 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
     if (statusUpInterval)
       clearInterval(statusUpInterval);
     statusUpInterval = setInterval(function () {
-      statusUpfifo.push(function (callback) {
-        async.waterfall([
-          function (next) {
-            Block.current(next);
-          },
-          function (current, next) {
-            // set DOWN for peers with too old status
-            Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
-          },
-          function (next) {
-            Merkle.updateForPeers(next);
-          },
-          function (next) {
-            that.sendUpSignal(callback);
-          }
-        ], callback);
-      });
+      statusUpfifo.push(upSignal);
     }, 1000*conf.avgGenTime*10);
-    done();
+    upSignal(done);
   };
+
+  function upSignal(callback) {
+    async.waterfall([
+      function (next) {
+        Block.current(next);
+      },
+      function (current, next) {
+        // set DOWN for peers with too old status
+        Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
+      },
+      function (next) {
+        Merkle.updateForPeers(next);
+      },
+      function (next) {
+        that.sendUpSignal(next);
+      }
+    ], callback);
+  }
 
   /**
   * Send given status to a list of peers.

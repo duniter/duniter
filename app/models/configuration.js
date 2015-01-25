@@ -11,6 +11,8 @@ var ConfigurationSchema = new Schema({
   port:        {"type": Number, "default": 8033},
   ipv4:        {"type": String, "default": "127.0.0.1"},
   ipv6:        {"type": String, "default": null},
+  autoconf:    {"type": Boolean, "default": true},
+  upnp:        {"type": Boolean, "default": true},
   remotehost:  {"type": String, "default": null},
   remoteipv4:  {"type": String, "default": null},
   remoteipv6:  {"type": String, "default": null},

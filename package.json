@@ -44,6 +44,7 @@
     "scrypt": "3.0.1",
     "bindings": "1.2.1",
     "nan": "1.3.0",
+    "nat-upnp": "0.2.11",
     "naclb": "0.0.1"
   },
   "devDependencies": {

@@ -9,6 +9,7 @@ var express    = require('express');
 var request    = require('request');
 var http       = require('http');
 var log4js     = require('log4js');
+var upnp       = require('nat-upnp');
 
 var models = ['Identity', 'Certification', 'Configuration', 'Link', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block', 'Source', 'BlockStat'];
 var INNER_WRITE = true;
@@ -174,7 +175,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           return;
         }
         listenBMA(function (err, app) {
-          that.emit('BMALoaded', err, app);
+          if (!err)
+            that.emit('BMALoaded', app);
+          else
+            that.emit('BMAFailed', err);
           next();
         });
       }
@@ -269,6 +273,40 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     // To override in child classes
   };
 
+  this.initUPnP = function (conn, conf, done) {
+    logger.info('Configuring UPnP...');
+    var client = upnp.createClient();
+    async.waterfall([
+      function (next) {
+        client.externalIp(function(err, ip) {
+          if (err && err.message == 'timeout') {
+            err = 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.';
+          }
+          next(err, ip);
+        });
+      },
+      function (ip, next) {
+        // Update UPnP IGD every INTERVAL seconds
+        setInterval(async.apply(openPort, conf, client), 1000*constants.NETWORK.UPNP.INTERVAL);
+        openPort(conf, client);
+        next();
+      }
+    ], done);
+  };
+
+  function openPort (conf, client) {
+    client.portMapping({
+      public: conf.remoteport,
+      private: conf.port,
+      ttl: constants.NETWORK.UPNP.TTL
+    }, function (err) {
+      if (err) {
+        logger.info('Err:', err);
+        process.exit(0);
+      }
+    });
+  }
+
   function listenBMA (overConf, onLoaded) {
     if (arguments.length == 1) {
       onLoaded = overConf;
@@ -277,11 +315,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     var app = express();
     var conf = _.extend(that.conf, overConf || {});
     var port = process.env.PORT || conf.port;
-    var currency = conf.currency;
 
     // all environments
     app.set('port', port);
-    app.use(log4js.connectLogger(logger, { level: 'auto', format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m' }));
+    app.use(log4js.connectLogger(logger, { level: 'warn', format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m' }));
     app.use(express.urlencoded());
     app.use(express.json());
     async.waterfall([
@@ -301,9 +338,14 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         that._listenBMA(app);
         next();
       },
+      function (next){
+        if (conf.upnp) {
+          that.initUPnP(that.conn, conf, next);
+        }
+        else next();
+      },
       function (next) {
         if(conf.ipv4){
-          logger.info('Connecting on interface %s:%s...', conf.ipv4, conf.port);
           http.createServer(app).listen(conf.port, conf.ipv4, function(){
             logger.info('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
             next();
@@ -313,7 +355,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next) {
         if(conf.ipv6){
-          logger.info('Connecting on interface %s:%s...', conf.ipv6, conf.port);
           http.createServer(app).listen(conf.port, conf.ipv6, function(){
             logger.info('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
             next();
@@ -321,6 +362,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         }
         else next();
       },
+      function(next) {
+        logger.info('External access:', [conf.remoteipv4, conf.remoteport].join(':'));
+        next();
+      }
     ], function (err) {
       if (typeof onLoaded == 'function')
         onLoaded.call(that, err, app);

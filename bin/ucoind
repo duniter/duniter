@@ -1,11 +1,8 @@
 #!/usr/bin/env node
-var fs          = require('fs');
-var os          = require('os');
 var async       = require('async');
 var _           = require('underscore');
 var program     = require('commander');
 var mongoose    = require('mongoose');
-var moment      = require('moment');
 var wizard      = require('../app/lib/wizard');
 var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
@@ -14,14 +11,11 @@ var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
 var constants   = require('../app/lib/constants');
-var ucoin       = require('./..');
+var ucoin       = require('./../');
 
 function keys (val) {
   return val.split(',');
 }
-
-// Constants
-var DO_NOT_LISTEN_HTTP = false;
 
 program
   .version('0.9.17')
@@ -49,7 +43,9 @@ program
   .option('--powZeroMin <number>',     'Minimum number of leading zeros for a proof-of-work')
   .option('--powPeriod <number>',      'Number of blocks to wait to decrease proof-of-work difficulty by one')
   .option('--powDelay <number>',       'Number of seconds to wait before starting the computation of next block')
-  .option('--participate <Y|N>',        'Participate to writing the blockchain')
+  .option('--participate <Y|N>',       'Participate to writing the blockchain')
+  .option('--upnp',                    'Use UPnP to open remote port')
+  .option('--noupnp',                  'Do not use UPnP to open remote port')
   .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a block')
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
   .option('--ud0 <number>',            'Universal Dividend initial value')
@@ -406,13 +402,16 @@ function overrideConf(conf) {
     db: {
       host: program.mhost,
       port: program.mport,
-      database: program.mdb,
+      database: program.mdb
+    },
+    net: {
+      upnp:          program.upnp,
+      noupnp:        program.noupnp
     },
     ucp: {
       rootoffset:  program.rootoffset,
       sigDelay:    program.sigDelay,
       sigValidity: program.sigValidity,
-      msValidity:  program.msValidity,
       sigQty:      program.sigQty,
       msValidity:  program.msValidity,
       powZeroMin:  program.powZeroMin,
@@ -461,6 +460,8 @@ function overrideConf(conf) {
   if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
   if (cli.ucp.avgGenTime)                   conf.avgGenTime     = cli.ucp.avgGenTime;
   if (cli.ucp.dtdiffeval)                   conf.dtDiffEval     = cli.ucp.dtdiffeval;
+  if (cli.net.upnp)                         conf.upnp           = true;
+  if (cli.net.noupnp)                       conf.upnp           = false;
 
   // Specific internal settings
   conf.createNext = true;
@@ -509,6 +510,7 @@ function service(serverFactory, callback) {
     var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
 
     server.on('mongoFail', logErrorAndExit(server, 'Could not connect to MongoDB. Is it installed?'));
+    server.on('BMAFailed', logErrorAndExit(server));
 
     // Connecting to DB
     server.on('services', function (err) {
@@ -533,7 +535,7 @@ function service(serverFactory, callback) {
 
 function logErrorAndExit (server, errMsg) {
   return function (err) {
-    logger.warn(errMsg ? errMsg : (err.message || err));
+    logger.error(errMsg ? errMsg : (err.message || err));
     server.disconnect();
     process.exit(1);
   };

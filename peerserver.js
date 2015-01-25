@@ -27,7 +27,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           function (membership, next){
             that.emit('membership', membership);
             next(null, membership);
-          },
+          }
         ], next);
       }
     },{
@@ -106,7 +106,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         async.parallel({
           peering: function(callback){
             that.PeeringService.load(callback);
-          },
+          }
         }, function (err) {
           next(err);
         });
@@ -136,7 +136,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
             async.parallel({
               peering: function(callback){
                 that.PeeringService.load(callback);
-              },
+              }
             }, function (err) {
               next(err);
             });
@@ -217,30 +217,32 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.PeeringService.regularUpSignal(next);
       },
       function (next){
-        async.forever(
-          function tryToGenerateNextBlock(next) {
-            async.waterfall([
-              function (next){
-                that.BlockchainService.startGeneration(next);
-              },
-              function (block, next){
-                if (block) {
-                  var Peer = that.conn.model('Peer');
-                  var peer = new Peer({ endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')] });
-                  multicaster().sendBlock(peer, block, next);
-                } else {
-                  next();
+        if (conf.participate) {
+          async.forever(
+            function tryToGenerateNextBlock(next) {
+              async.waterfall([
+                function (next) {
+                  that.BlockchainService.startGeneration(next);
+                },
+                function (block, next) {
+                  if (block) {
+                    var Peer = that.conn.model('Peer');
+                    var peer = new Peer({endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')]});
+                    multicaster().sendBlock(peer, block, next);
+                  } else {
+                    next();
+                  }
                 }
-              },
-            ], function (err) {
-              next(err);
-            });
-          },
-          function onError (err) {
-            logger.error(err);
-            logger.error('Block generation STOPPED.');
-          }
-        );
+              ], function (err) {
+                next(err);
+              });
+            },
+            function onError(err) {
+              logger.error(err);
+              logger.error('Block generation STOPPED.');
+            }
+          );
+        }
         next();
       },
       function (next) {

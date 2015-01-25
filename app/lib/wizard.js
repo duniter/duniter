@@ -5,6 +5,7 @@ var async     = require('async');
 var _         = require('underscore');
 var inquirer  = require('inquirer');
 var request   = require('request');
+var upnp      = require('nat-upnp');
 
 module.exports = function () {
   return new Wizard();
@@ -76,163 +77,12 @@ var tasks = {
   },
 
   network: function (conf, done) {
-    var noInterfaceListened = true;
-    if (conf.ipv4 || conf.ipv6) {
-      noInterfaceListened = false;
-    }
-    var remoteipv4 = null, remoteipv6 = null;
-    // Tries to discover remote IPv4 & IPv6 addresses in background
-    async.parallel({
-      ipv4: function(callback){
-        request('http://ifconfig.me/ip', function (err, res) {
-          var ip = !err && res && res.body && res.body.unix2dos().replace('\r\n', '');
-          remoteipv4 = ip && ip.match(IPV4_REGEXP) && ip;
-          callback();
-        });
-      },
-      ipv6: function(callback){
-        request('http://icanhazip.com', function (err, res) {
-          var ip = !err && res && res.body && res.body.unix2dos().replace('\r\n', '');
-          remoteipv6 = ip && ip.match(IPV6_REGEXP) && ip;
-          callback();
-        });
-      },
-    });
-    // Starts config
     async.waterfall([
-      function (next){
-        var osInterfaces = os.networkInterfaces();
-        var interfaces = [{ name: "None", value: null }];
-        _(osInterfaces).keys().forEach(function(interfaceName){
-          var addresses = osInterfaces[interfaceName];
-          var filtered = _(addresses).where({family: 'IPv4'});
-          filtered.forEach(function(addr){
-            interfaces.push({
-              name: [interfaceName, addr.address].join(' '),
-              value: addr.address
-            });
-          });
-        });
-        inquirer.prompt([{
-          type: "list",
-          name: "ipv4",
-          message: "IPv4 interface",
-          default: conf.ipv4,
-          choices: interfaces
-        }], function (answers) {
-          conf.ipv4 = answers.ipv4;
-          next();
-        });
-      },
-      function (next){
-        var osInterfaces = os.networkInterfaces();
-        var interfaces = [{ name: "None", value: null }];
-        _(osInterfaces).keys().forEach(function(interfaceName){
-          var addresses = osInterfaces[interfaceName];
-          var filtered = _(addresses).where({family: 'IPv6'});
-          filtered.forEach(function(addr){
-            interfaces.push({
-              name: [interfaceName, addr.address].join(' '),
-              value: addr.address
-            });
-          });
-        });
-        inquirer.prompt([{
-          type: "list",
-          name: "ipv6",
-          message: "IPv6 interface",
-          default: conf.ipv6,
-          choices: interfaces
-        }], function (answers) {
-          conf.ipv6 = answers.ipv6;
-          next();
-        });
-      },
-      async.apply(simpleInteger, "Port", "port", conf),
-      function (next){
-        var choices = [{ name: "None", value: null }];
-        // Local interfaces
-        var osInterfaces = os.networkInterfaces();
-        _(osInterfaces).keys().forEach(function(interfaceName){
-          var addresses = osInterfaces[interfaceName];
-          var filtered = _(addresses).where({family: 'IPv4'});
-          filtered.forEach(function(addr){
-            choices.push({
-              name: [interfaceName, addr.address].join(' '),
-              value: addr.address
-            });
-          });
-        });
-        // Remote interfaces
-        if (conf.remoteipv4) {
-          choices.push({ name: conf.remoteipv4, value: conf.remoteipv4 });
-        }
-        if (remoteipv4)
-          choices.push({ name: remoteipv4, value: remoteipv4 });
-        choices.push({ name: "Enter new one", value: "new" });
-        inquirer.prompt([{
-          type: "list",
-          name: "remoteipv4",
-          message: "Remote IPv4",
-          default: conf.remoteipv4 || conf.ipv4 || null,
-          choices: choices,
-          validate: function (input) {
-            return input && input.toString().match(IPV4_REGEXP) ? true : false;
-          }
-        }], function (answers) {
-          if (answers.remoteipv4 == "new") {
-            inquirer.prompt([{
-              type: "input",
-              name: "remoteipv4",
-              message: "Remote IPv4",
-              default: conf.remoteipv4 || conf.ipv4,
-              validate: function (input) {
-                return input && input.toString().match(IPV4_REGEXP) ? true : false;
-              }
-            }], async.apply(next, null));
-          } else {
-            next(null, answers);
-          }
-        });
-      },
-      function (answers, next){
-        conf.remoteipv4 = answers.remoteipv4;
-        var choices = [{ name: "None", value: null }];
-        if (conf.remoteipv6) {
-          choices.push({ name: conf.remoteipv6, value: conf.remoteipv6 });
-        }
-        if (remoteipv6)
-          choices.push({ name: remoteipv6, value: remoteipv6 });
-        choices.push({ name: "Enter new one", value: "new" });
-        inquirer.prompt([{
-          type: "list",
-          name: "remoteipv6",
-          message: "Remote IPv6",
-          default: conf.remoteipv6 || null,
-          choices: choices,
-          validate: function (input) {
-            return input && input.toString().match(IPV6_REGEXP) ? true : false;
-          }
-        }], function (answers) {
-          if (answers.remoteipv6 == "new") {
-            inquirer.prompt([{
-              type: "input",
-              name: "remoteipv6",
-              message: "Remote IPv6",
-              default: conf.remoteipv6 || conf.ipv6,
-              validate: function (input) {
-                return input && input.toString().match(IPV6_REGEXP) ? true : false;
-              }
-            }], function (answers) {
-              conf.remoteipv6 = answers.remoteipv6;
-              next();
-            });
-          } else {
-            next();
-          }
-        });
-      },
-      async.apply(simpleInteger, "Remote port", "remoteport", conf),
+      function(next) {
+        choose("Network: use automatic configuration?", conf.autoconf,
+          async.apply(automaticNetworkConfiguration, conf, next),
+          async.apply(manualNetworkConfiguration, conf, next));
+      }
     ], done);
   },
 
@@ -352,4 +202,215 @@ function simplePercentOrPositiveInteger (question, property, conf, done) {
   simpleValue(question, property, conf[property], conf, function (input) {
     return input && (input.toString().match(/^[1-9][0-9]*$/) || input.toString().match(/^0\.[0-9]+$/)) ? true : false;
   }, done);
+}
+
+function automaticNetworkConfiguration(conf, done) {
+  if(conf.autoconf) {
+    done();
+  } else {
+    conf.autoconf = true;
+    var client = upnp.createClient();
+    var privateIP = null, publicIP = null;
+    // Look for 2 random ports
+    var privatePort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
+    var publicPort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
+    async.waterfall([
+      function (next) {
+        client.externalIp(next);
+      },
+      function (ip, next) {
+        publicIP = ip;
+        next();
+      },
+      function(next) {
+        client.portMapping({
+          public: publicPort,
+          private: privatePort,
+          ttl: 120
+        }, next);
+      },
+      function(res, next) {
+        client.findGateway(next);
+      },
+      function(res, localIP, next) {
+        privateIP = localIP;
+        console.log('-----------');
+        console.log('Remote access:', [publicIP, publicPort].join(':'));
+        console.log('Local access:', [privateIP, privatePort].join(':'));
+        console.log('-----------');
+        conf.remoteipv4 = publicIP.match(IPV4_REGEXP) ? publicIP : null;
+        conf.remoteipv6 = publicIP.match(IPV6_REGEXP) ? publicIP : null;
+        conf.remoteport = publicPort;
+        conf.port = privatePort;
+        conf.ipv4 = privateIP.match(IPV4_REGEXP) ? privateIP : null;
+        conf.ipv6 = privateIP.match(IPV6_REGEXP) ? privateIP : null;
+        next();
+      }
+    ], done);
+  }
+}
+
+function manualNetworkConfiguration(conf, done) {
+  var remoteipv4 = null, remoteipv6 = null;
+  var client = upnp.createClient();
+  conf.autoconf = false;
+
+  // Tries to discover remote IPv4 address in background
+  async.parallel({
+    ipv4: function(callback){
+      client.externalIp(function (err, remoteIp) {
+        var ip = !err && remoteIp;
+        remoteipv4 = ip && ip.match(IPV4_REGEXP) && ip;
+        callback();
+      });
+    }
+  });
+
+  // Starts config
+  async.waterfall([
+    function (next){
+      var osInterfaces = os.networkInterfaces();
+      var interfaces = [{ name: "None", value: null }];
+      _(osInterfaces).keys().forEach(function(interfaceName){
+        var addresses = osInterfaces[interfaceName];
+        var filtered = _(addresses).where({family: 'IPv4'});
+        filtered.forEach(function(addr){
+          interfaces.push({
+            name: [interfaceName, addr.address].join(' '),
+            value: addr.address
+          });
+        });
+      });
+      inquirer.prompt([{
+        type: "list",
+        name: "ipv4",
+        message: "IPv4 interface",
+        default: conf.ipv4,
+        choices: interfaces
+      }], function (answers) {
+        conf.ipv4 = answers.ipv4;
+        next();
+      });
+    },
+    function (next){
+      var osInterfaces = os.networkInterfaces();
+      var interfaces = [{ name: "None", value: null }];
+      _(osInterfaces).keys().forEach(function(interfaceName){
+        var addresses = osInterfaces[interfaceName];
+        var filtered = _(addresses).where({family: 'IPv6'});
+        filtered.forEach(function(addr){
+          interfaces.push({
+            name: [interfaceName, addr.address].join(' '),
+            value: addr.address
+          });
+        });
+      });
+      inquirer.prompt([{
+        type: "list",
+        name: "ipv6",
+        message: "IPv6 interface",
+        default: conf.ipv6,
+        choices: interfaces
+      }], function (answers) {
+        conf.ipv6 = answers.ipv6;
+        next();
+      });
+    },
+    async.apply(simpleInteger, "Port", "port", conf),
+    function (next){
+      var choices = [{ name: "None", value: null }];
+      // Local interfaces
+      var osInterfaces = os.networkInterfaces();
+      _(osInterfaces).keys().forEach(function(interfaceName){
+        var addresses = osInterfaces[interfaceName];
+        var filtered = _(addresses).where({family: 'IPv4'});
+        filtered.forEach(function(addr){
+          choices.push({
+            name: [interfaceName, addr.address].join(' '),
+            value: addr.address
+          });
+        });
+      });
+      // Remote interfaces
+      if (conf.remoteipv4) {
+        choices.push({ name: conf.remoteipv4, value: conf.remoteipv4 });
+      }
+      if (remoteipv4)
+        choices.push({ name: remoteipv4, value: remoteipv4 });
+      choices.push({ name: "Enter new one", value: "new" });
+      inquirer.prompt([{
+        type: "list",
+        name: "remoteipv4",
+        message: "Remote IPv4",
+        default: conf.remoteipv4 || conf.ipv4 || null,
+        choices: choices,
+        validate: function (input) {
+          return input && input.toString().match(IPV4_REGEXP) ? true : false;
+        }
+      }], function (answers) {
+        if (answers.remoteipv4 == "new") {
+          inquirer.prompt([{
+            type: "input",
+            name: "remoteipv4",
+            message: "Remote IPv4",
+            default: conf.remoteipv4 || conf.ipv4,
+            validate: function (input) {
+              return input && input.toString().match(IPV4_REGEXP) ? true : false;
+            }
+          }], async.apply(next, null));
+        } else {
+          next(null, answers);
+        }
+      });
+    },
+    function (answers, next){
+      conf.remoteipv4 = answers.remoteipv4;
+      var choices = [{ name: "None", value: null }];
+      if (conf.remoteipv6) {
+        choices.push({ name: conf.remoteipv6, value: conf.remoteipv6 });
+      }
+      if (remoteipv6)
+        choices.push({ name: remoteipv6, value: remoteipv6 });
+      choices.push({ name: "Enter new one", value: "new" });
+      inquirer.prompt([{
+        type: "list",
+        name: "remoteipv6",
+        message: "Remote IPv6",
+        default: conf.remoteipv6 || null,
+        choices: choices,
+        validate: function (input) {
+          return input && input.toString().match(IPV6_REGEXP) ? true : false;
+        }
+      }], function (answers) {
+        if (answers.remoteipv6 == "new") {
+          inquirer.prompt([{
+            type: "input",
+            name: "remoteipv6",
+            message: "Remote IPv6",
+            default: conf.remoteipv6 || conf.ipv6,
+            validate: function (input) {
+              return input && input.toString().match(IPV6_REGEXP) ? true : false;
+            }
+          }], function (answers) {
+            conf.remoteipv6 = answers.remoteipv6;
+            next();
+          });
+        } else {
+          next();
+        }
+      });
+    },
+    async.apply(simpleInteger, "Remote port", "remoteport", conf),
+    function(next) {
+      choose("Network: use UPnP to open remote port? (easier)", conf.upnp,
+        function() {
+          conf.upnp = true;
+          next();
+        },
+        function() {
+          conf.upnp = false;
+          next();
+        });
+    }
+  ], done);
 }

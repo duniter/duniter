@@ -85,6 +85,15 @@ module.exports = {
     BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
     SPECIAL_BLOCK: '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
   },
+  NETWORK: {
+    PORT: {
+      START: 15000
+    },
+    UPNP: {
+      INTERVAL: 5,
+      TTL: 30
+    }
+  },
 
   setUDID2Format: function () {
     module.exports.USER_ID = module.exports.UDID2_FORMAT;

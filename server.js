@@ -210,6 +210,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     that.resetDatas(['blockstats'], done);
   };
 
+  this.resetPeers = function(done) {
+    that.resetDatas(['peers'], done);
+  };
+
   this.resetTxs = function(done) {
     that.resetDatas(['transactions'], done);
   };

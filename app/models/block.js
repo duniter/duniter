@@ -231,10 +231,9 @@ BlockSchema.statics.lastBlocksOfIssuer = function (issuer, count, done) {
 
 BlockSchema.statics.from = function (number, done) {
   this
-    .find({ number: { $gte: number } })
+    .find({ number: { $gte: parseInt(number) } })
     .sort({ 'number': 1 })
     .exec(function (err, blocks) {
-      console.log(blocks.length);
       done(err, blocks);
     });
 };

@@ -141,7 +141,6 @@ program
         var peer = new Peer({
           endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
         });
-        logger.info(blocks);
         async.forEachSeries(blocks, function (block, callback) {
           logger.info("Forwarding block#" + block.number);
           multicaster().sendBlock(peer, block, callback);

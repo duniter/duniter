@@ -186,7 +186,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.createSignFunction = function (conf, done) {
-    signature(conf.salt, conf.passwd, function (err, sigFunc) {
+    signature.async(conf.salt, conf.passwd, function (err, sigFunc) {
       that.sign = sigFunc;
       done(err);
     });

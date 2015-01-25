@@ -90,12 +90,15 @@ module.exports = {
       START: 15000
     },
     UPNP: {
-      INTERVAL: 150,
-      TTL: 300
+      INTERVAL: 300,
+      TTL: 600
     },
     SYNC: {
       MAX: 20
     }
+  },
+  PROOF_OF_WORK: {
+    EVALUATION: 200
   },
 
   setUDID2Format: function () {

@@ -1336,58 +1336,54 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   this.prove = function (block, sigFunc, nbZeros, done) {
     var powRegexp = new RegExp('^0{' + nbZeros + '}[^0]');
     var pow = "", sig = "", raw = "";
-    var start = new Date();
-    var testsCount = 0;
     if (block.number == 0) {
       // On initial block, difficulty is the one given manually
       block.powMin = nbZeros;
     }
     // Time must be = [medianTime; medianTime + minSpeed]
     block.time = getBlockTime(block);
-    logger.debug('Generating proof-of-work with %s leading zeros...', nbZeros);
-    var testsPerSecond = 200;
-    var speedComputed = false;
+    logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
+    // Test CPU speed
+    var testsPerSecond = computeSpeed(block, sigFunc);
+    var testsPerRound = Math.round(testsPerSecond*conf.cpu);
+    logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', testsPerSecond, testsPerRound);
+    // Really start now
+    var start = new Date();
+    var end;
+    var testsCount = 0;
     async.whilst(
       function(){ return !pow.match(powRegexp); },
       function (next) {
-        block.nonce++;
-        raw = block.getRaw();
         async.waterfall([
-          function (next){
-            sigFunc(raw, next);
-          },
-          function (sigResult, next){
-            sig = dos2unix(sigResult);
-            var full = raw + sig + '\n';
-            pow = full.hash();
-            testsCount++;
-            if (testsCount % testsPerSecond == 0) {
-              // Update computing speed
-              if (!speedComputed) {
-                var now = new Date();
-                var duration = now - start;
-                testsPerSecond = Math.round(testsCount*1000/duration);
-                speedComputed = true;
-              }
-              // Run NEXT only after a delay
-              setTimeout(function () {
-                next();
-              }, 1000*0.01); // 99% CPU time
-            } else if (testsCount % 100 == 0) {
-              // Update block with local time
-              // Time must be = [medianTime; medianTime + minSpeed]
-              block.time = getBlockTime(block);
-              next();
-            } else if (testsCount % 50 == 0) {
-              if (newKeyblockCallback) {
-                computationActivated = false
-                next('New block received');
-                return;
-              } else next();
-            } else {
-              next();
+          function(next) {
+            // Prove
+            var testStart = new Date();
+            var found = false;
+            var i = 0;
+            block.time = getBlockTime(block);
+            while(!found && i < testsPerRound) {
+              block.nonce++;
+              raw = block.getRaw();
+              sig = dos2unix(sigFunc(raw));
+              pow = (raw + sig + '\n').hash();
+              found = pow.match(powRegexp);
+              testsCount++;
+              i++;
             }
+            end = new Date();
+            var durationMS = (end.getTime() - testStart.getTime());
+            // Run NEXT only after a delay
+            setTimeout(function () {
+              next();
+            }, Math.max(0, (1000-durationMS))); // Max wait 1 second
           },
+          function(next) {
+            // Look for incoming block
+            if (newKeyblockCallback) {
+              computationActivated = false
+              return next('New block received');
+            } else next();
+          }
         ], next);
       }, function (err) {
         if (err) {
@@ -1397,13 +1393,26 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           return;
         }
         block.signature = sig;
-        var end = new Date().timestamp();
-        var duration = moment.duration((end - start.timestamp())) + 's';
-        var testsPerSecond = (testsCount / (end - start.timestamp())).toFixed(2);
-        logger.debug('Done: ' + pow + ' in ' + duration + ' (~' + testsPerSecond + ' tests/s)');
+        var duration = (end.getTime() - start.getTime());
+        var testsPerSecond = (1000/duration * testsCount).toFixed(2);
+        logger.debug('Done: %s in %ss (%s tests, ~%s tests/s)', pow, (duration/1000).toFixed(2), testsCount, testsPerSecond);
+        //logger.debug('Done: ' + pow + ' in ' + duration + ' (~' + testsPerSecond + ' tests/s)');
         done(err, block);
       });
   };
+
+  function computeSpeed(block, sigFunc) {
+    var start = new Date();
+    var raw = block.getRaw();
+    for (var i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
+      // Signature
+      var sig = dos2unix(sigFunc(raw));
+      // Hash
+      (raw + sig + '\n').hash();
+    }
+    var duration = (new Date().getTime() - start.getTime());
+    return Math.round(constants.PROOF_OF_WORK.EVALUATION*1000/duration);
+  }
 
   function getBlockTime (block) {
     var now = moment.utc().unix();
@@ -1486,7 +1495,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               BlockchainService.generateNext(callback);
             },
             signature: function(callback){
-              signature(conf.salt, conf.passwd, callback);
+              signature.sync(conf.salt, conf.passwd, callback);
             },
             trial: function (callback) {
               globalValidator(conf, blockchainDao(conn, block)).getTrialLevel(PeeringService.pubkey, callback);

@@ -19,6 +19,7 @@ var ConfigurationSchema = new Schema({
   remoteport:  {"type": Number, "default": 8033},
   salt:        {"type": String, "default": ""},
   passwd:      {"type": String, "default": ""},
+  cpu:         {"type": Number, "default": 0.9}, // Percent of CPU usage
   upInterval:  {"type": Number, "default": 3600*1000},
   stepMax:     {"type": Number, "default": 3}, // Max distance between WoT members and newcomers
   sigDelay:    {"type": Number, "default": 3600*24*365*5}, // 5 years by default

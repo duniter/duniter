@@ -26,11 +26,15 @@ module.exports = {
   *****************************/
 
   sign: function (msg, sec, done) {
+    done(null, this.signSync(msg, sec));
+  },
+
+  signSync: function (msg, sec) {
     var m = nacl.util.decodeUTF8(msg);
     var signedMsg = naclBinding.sign(m, sec);
     var sig = new Uint8Array(crypto_sign_BYTES);
     for (var i = 0; i < sig.length; i++) sig[i] = signedMsg[i];
-    done(null, nacl.util.encodeBase64(sig));
+    return nacl.util.encodeBase64(sig);
   },
 
   sign2: function (msg, sec, done) {

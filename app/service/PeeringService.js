@@ -252,17 +252,26 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   function upSignal(callback) {
     async.waterfall([
       function (next) {
-        Block.current(next);
+        Block.current(function(err, block) {
+          next(null, block || null);
+        });
       },
-      function (current, next) {
-        // set DOWN for peers with too old status
-        Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
-      },
-      function (next) {
-        Merkle.updateForPeers(next);
-      },
-      function (next) {
-        that.sendUpSignal(next);
+      function(current, next) {
+        if (current) {
+          async.waterfall([
+            function (next) {
+              // set DOWN for peers with too old status
+              Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
+            },
+            function (next) {
+              Merkle.updateForPeers(next);
+            },
+            function (next) {
+              that.sendUpSignal(next);
+            }
+          ], next);
+        }
+        else next();
       }
     ], callback);
   }

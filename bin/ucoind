@@ -3,6 +3,7 @@ var async       = require('async');
 var _           = require('underscore');
 var program     = require('commander');
 var mongoose    = require('mongoose');
+var vucoin      = require('vucoin');
 var wizard      = require('../app/lib/wizard');
 var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
@@ -11,6 +12,7 @@ var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
 var constants   = require('../app/lib/constants');
+var Synchroniser = require('../app/lib/sync');
 var ucoin       = require('./../');
 
 function keys (val) {
@@ -55,6 +57,11 @@ program
   ;
 
 program
+  .command('start')
+  .description('Start uCoin server.')
+  .action(service(ucoin.createTxServer, serverStart));
+
+program
   .command('wizard [step]')
   .description('Launch the configuration Wizard')
   .action(function (step) {
@@ -65,38 +72,12 @@ program
         type: "console"
       }]
     });
-    connect(function (step, server, conf) {
-      var wiz = wizard(server);
-      var task = {
-        'currency': wiz.configCurrency,
-        'basic': wiz.configBasic,
-        'pow': wiz.configPoW,
-        'network': wiz.configNetwork,
-        'key': wiz.configKey,
-        'ucp': wiz.configUCP
-      };
-      var wizDo = task[step] || wiz.configAll;
-      async.waterfall([
-        function (next){
-          wizDo(conf, next);
-        },
-        function (next){
-          conf.save(function (err) {
-            !err && logger.debug("Configuration saved.");
-            next(err);
-          });
-        },
-        function (next) {
-          // Check config
-          service(ucoin.createPeerServer, function (key, server, conf) {
-            next();
-          })(null, null);
+    connect(function(step, server, conf){
+      async.series([
+        function(next) {
+          startWizard(step, server, conf, next);
         }
-      ], function (err, result) {
-        err && logger.error(err);
-        server.disconnect();
-        process.exit();
-      });
+      ], logIfErrorAndExit(server));
     })(step, null);
   });
 
@@ -108,18 +89,16 @@ program
     async.series([
       function (next){
         // Synchronize
-        var Synchroniser = require('../app/lib/sync');
         var remote = new Synchroniser(server, host, port, conf);
         remote.sync(next);
-      },
-    ], function (err) {
-      if(err){
-        logger.error('Error during sync:', err);
       }
-      server.disconnect();
-      process.exit();
-    });
+    ], logIfErrorAndExit(server, 'Error during sync: '));
   }));
+
+program
+  .command('bootstrap [host] [port]')
+  .description('Synchronize blockchain from a remote uCoin node')
+  .action(service(ucoin.createTxServer, bootstrapServer));
 
 program
   .command('forward [fromBlock] [host] [port]')
@@ -345,41 +324,175 @@ program
     }
   }));
 
-program
-  .command('start')
-  .description('Start uCoin server.')
-  .action(service(ucoin.createTxServer, function (server, conf) {
+function serverStart(server, conf) {
 
-    if (conf.udid2) {
-      // UserID must match udid2 format
-      constants.setUDID2Format();
+  if (conf.udid2) {
+    // UserID must match udid2 format
+    constants.setUDID2Format();
+  }
+
+  async.waterfall([
+    function (next){
+      // Launching server
+      server.start(function (err, app) {
+        next(err);
+      });
+    },
+    function (next) {
+      var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf);
+      var theCaster = multicaster();
+      server
+        .pipe(theRouter) // The router ask for multicasting of documents
+        .pipe(theCaster) // The multicaster may answer 'unreachable peer'
+        .pipe(theRouter);
     }
+  ], function (err) {
+    if(err){
+      logger.error(err);
+      server.disconnect();
+      process.exit();
+      return;
+    }
+    logger.debug('Server ready!');
+  });
+}
 
-    async.waterfall([
-      function (next){
-        // Launching server
-        server.start(function (err, app) {
-          next(err);
-        });
-      },
-      function (next) {
-        var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf);
-        var theCaster = multicaster();
-        server
-          .pipe(theRouter) // The router ask for multicasting of documents
-          .pipe(theCaster) // The multicaster may answer 'unreachable peer'
-          .pipe(theRouter);
-      }
-    ], function (err) {
-      if(err){
-        logger.error(err);
-        server.disconnect();
-        process.exit();
-        return;
-      }
-      logger.debug('Server ready!');
-    });
-  }));
+function startWizard(step, server, conf, done) {
+  var wiz = wizard(server);
+  var task = {
+    'currency': wiz.configCurrency,
+    'basic': wiz.configBasic,
+    'pow': wiz.configPoW,
+    'network': wiz.configNetwork,
+    'key': wiz.configKey,
+    'ucp': wiz.configUCP
+  };
+  var wizDo = task[step] || wiz.configAll;
+  async.waterfall([
+    function (next){
+      wizDo(conf, next);
+    },
+    function (next){
+      conf.save(function (err) {
+        !err && logger.debug("Configuration saved.");
+        next(err);
+      });
+    },
+    function (next) {
+      // Check config
+      service(ucoin.createPeerServer, function (key, server, conf) {
+        next();
+      })(null, null);
+    }
+  ], done);
+}
+
+function bootstrapServer(host, port, server, conf) {
+  var wiz = wizard(server);
+  async.series([
+    function(next) {
+      // Reset data
+      server.reset(next);
+    },
+    function(next) {
+      conf.autoconf = false; // Say "not yet configured"
+      conf.salt = "";
+      conf.passwd = "";
+      wiz.automaticNetworkConfiguration(conf, next);
+    },
+    function(next) {
+      // PublicKey
+      var keyChosen = false;
+      var autoGenerated = false;
+      async.whilst(function(){
+        return !keyChosen;
+      }, function(next){
+        async.waterfall([
+          function(next) {
+            if (!conf.salt && !conf.passwd) {
+              logger.warn('You need a keypair to identify your node on the network.');
+              wiz.choose('Would you like to automatically generate your keypair? This key won\'t be able to compute blocks.', true,
+                function(){
+                  conf.salt = ~~(Math.random() * 2147483647);
+                  conf.passwd = ~~(Math.random() * 2147483647);
+                  keyChosen = true;
+                  autoGenerated = true;
+                  next();
+                },
+                function(){
+                  keyChosen = true;
+                  startWizard("key", server, conf, next);
+                });
+            } else {
+              next();
+            }
+          },
+          function(next) {
+            async.parallel({
+              node: function(callback){
+                vucoin(host, port, callback);
+              },
+              keys: function(callback){
+                crypto.getKeyPair(conf.passwd, conf.salt, callback);
+              }
+            }, next);
+          },
+          function(res, next) {
+            var node = res.node;
+            var keys = res.keys;
+            // Look for existing member with this key
+            node.wot.certifiersOf(base58.encode(keys.publicKey), function(err) {
+              next(null, !err);
+            });
+          },
+          function(matchesMember, next) {
+            if (!autoGenerated && !matchesMember){
+              wiz.choose('Your key does not match an existing member: this node won\'t compute blocks. Keep it?', true,
+                function(){
+                  keyChosen = true;
+                  next();
+                },
+                function(){
+                  keyChosen = false;
+                  conf.passwd = conf.salt = "";
+                  next();
+                });
+            } else {
+              next();
+            }
+          }
+        ], next);
+      }, next);
+    },
+    function (next){
+      // Sync
+      var start = 0;
+      var remote = new Synchroniser(server, host, port, conf);
+      async.doWhilst(function(next){
+        start = new Date().getTime();
+        remote.sync(next);
+      }, function(){
+        var now = new Date().getTime();
+        return (now - start)/1000 > constants.NETWORK.SYNC.MAX;
+      }, function(err) {
+        if(err){
+          err = 'Error during sync: ' + err;
+        }
+        next(err);
+      });
+    },
+    function() {
+      // Start
+      serverStart(server, conf);
+    }
+  ], function (err) {
+    if (err) {
+      logger.error(err);
+    }
+    server.disconnect();
+    process.exit();
+  });
+}
 
 function overrideConf(conf) {
 
@@ -533,9 +646,17 @@ function service(serverFactory, callback) {
   };
 }
 
+function logIfErrorAndExit (server, prefix) {
+  return function (err) {
+    err && logger.error((prefix ? prefix : "") + (err.message || err));
+    server.disconnect();
+    process.exit(err ? 1 : 0);
+  };
+}
+
 function logErrorAndExit (server, errMsg) {
   return function (err) {
-    logger.error(errMsg ? errMsg : (err.message || err));
+    (err || errMsg) && logger.error(errMsg ? errMsg : (err.message || err));
     server.disconnect();
     process.exit(1);
   };

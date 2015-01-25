@@ -47,6 +47,9 @@ function Wizard () {
   this.doTasks = function (todos, conf, done) {
     doTasks(todos, conf, done);
   };
+
+  this.choose = choose;
+  this.automaticNetworkConfiguration = automaticNetworkConfiguration;
 }
 
 function doTasks (todos, conf, done) {

@@ -52,7 +52,7 @@ function Multicaster () {
         // Do propagating
         logger.debug('sending peer %s to peer %s', peering.keyID(), peer.keyID());
         post(peer, "/network/peering/peers", {
-          peer: peering.getRawSigned(),
+          peer: peering.getRawSigned()
         }, function (err, res, body) {
           // Sent!
           sent();
@@ -110,9 +110,9 @@ function Multicaster () {
 
   function sendBlock(peer, block, done) {
     var keyID = peer.keyID();
-    logger.info('POST block to %s', keyID.match(/\?/) ? peer.getURL() : keyID);
+    logger.info('POST block to %s', keyID.match(/Unknown/) ? peer.getURL() : keyID);
     post(peer, '/blockchain/block', {
-      "block": block.getRawSigned(),
+      "block": block.getRawSigned()
     }, done);
   }
 

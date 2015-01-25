@@ -302,7 +302,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     }, function (err) {
       if (err) {
         logger.info('Err:', err);
-        process.exit(0);
       }
     });
   }

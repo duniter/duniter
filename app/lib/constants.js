@@ -98,7 +98,8 @@ module.exports = {
     }
   },
   PROOF_OF_WORK: {
-    EVALUATION: 200
+    EVALUATION: 200,
+    RELEASE_MEMORY: 10000
   },
 
   setUDID2Format: function () {

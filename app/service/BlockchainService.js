@@ -4,6 +4,7 @@ var merkle          = require('merkle');
 var sha1            = require('sha1');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
+var childProcess    = require('child_process');
 var rawer           = require('../lib/rawer');
 var crypto          = require('../lib/crypto');
 var base64          = require('../lib/base64');
@@ -1334,109 +1335,52 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   }
 
   this.prove = function (block, sigFunc, nbZeros, done) {
-    var powRegexp = new RegExp('^0{' + nbZeros + '}[^0]');
-    var pow = "", sig = "", raw = "";
     if (block.number == 0) {
       // On initial block, difficulty is the one given manually
       block.powMin = nbZeros;
     }
-    // Time must be = [medianTime; medianTime + minSpeed]
-    block.time = getBlockTime(block);
     logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
-    // Test CPU speed
-    var testsPerSecond = computeSpeed(block, sigFunc);
-    var testsPerRound = Math.round(testsPerSecond*conf.cpu);
-    logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', testsPerSecond, testsPerRound);
-    // Really start now
     var start = new Date();
-    var end;
-    var testsCount = 0;
-    async.whilst(
-      function(){ return !pow.match(powRegexp); },
-      function (next) {
-        async.waterfall([
-          function(next) {
-            // Prove
-            var testStart = new Date();
-            var found = false;
-            var i = 0;
-            block.time = getBlockTime(block);
-            while(!found && i < testsPerRound) {
-              block.nonce++;
-              raw = block.getRaw();
-              sig = dos2unix(sigFunc(raw));
-              pow = (raw + sig + '\n').hash();
-              found = pow.match(powRegexp);
-              testsCount++;
-              i++;
-            }
-            end = new Date();
-            var durationMS = (end.getTime() - testStart.getTime());
-            // Run NEXT only after a delay
-            setTimeout(function () {
-              next();
-            }, Math.max(0, (1000-durationMS))); // Max wait 1 second
-          },
-          function(next) {
-            // Look for incoming block
-            if (newKeyblockCallback) {
-              computationActivated = false
-              return next('New block received');
-            } else next();
+    var stopped = false;
+    async.whilst(function(){
+      return !stopped;
+    }, function(next){
+      var powProcess = childProcess.fork('./app/lib/proof', [conf.salt, conf.passwd, nbZeros]);
+      powProcess.on('message', function(msg) {
+        if (!stopped && msg.found) {
+          block.signature = msg.sig;
+          block.nonce = msg.nonce;
+          block.time = msg.time;
+          var end = new Date();
+          var duration = (end.getTime() - start.getTime());
+          var testsPerSecond = (1000/duration * msg.testsCount).toFixed(2);
+          logger.debug('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration/1000).toFixed(2), msg.testsCount, testsPerSecond);
+          done(null, block);
+        } else if (!stopped && msg.testsPerRound) {
+          // Started...
+          logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', msg.testsPerSecond, msg.testsPerRound);
+        } else if (!stopped && msg.nonce > block.nonce + constants.PROOF_OF_WORK.RELEASE_MEMORY) {
+          // Reset fork process (release memory)...
+          //logger.debug('Release mem... lastCount = %s, nonce = %s', block.nonce);
+          block.nonce = msg.nonce;
+          powProcess.kill();
+          next();
+        } else if (!stopped) {
+          // Continue...
+          //console.log('Already made: %s tests...', msg.nonce);
+          // Look for incoming block
+          if (newKeyblockCallback) {
+            stopped = true;
+            powProcess.kill();
+            next();
+            logger.debug('Proof-of-work computation canceled: valid block received');
+            newKeyblockCallback();
           }
-        ], next);
-      }, function (err) {
-        if (err) {
-          logger.debug('Proof-of-work computation canceled: valid block received');
-          done(err);
-          newKeyblockCallback();
-          return;
         }
-        block.signature = sig;
-        var duration = (end.getTime() - start.getTime());
-        var testsPerSecond = (1000/duration * testsCount).toFixed(2);
-        logger.debug('Done: %s in %ss (%s tests, ~%s tests/s)', pow, (duration/1000).toFixed(2), testsCount, testsPerSecond);
-        //logger.debug('Done: ' + pow + ' in ' + duration + ' (~' + testsPerSecond + ' tests/s)');
-        done(err, block);
       });
-  };
-
-  function computeSpeed(block, sigFunc) {
-    var start = new Date();
-    var raw = block.getRaw();
-    for (var i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
-      // Signature
-      var sig = dos2unix(sigFunc(raw));
-      // Hash
-      (raw + sig + '\n').hash();
-    }
-    var duration = (new Date().getTime() - start.getTime());
-    return Math.round(constants.PROOF_OF_WORK.EVALUATION*1000/duration);
-  }
-
-  function getBlockTime (block) {
-    var now = moment.utc().unix();
-    var maxAcceleration = localValidator(conf).maxAcceleration();
-    var timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
-    var medianTime = block.medianTime;
-    var upperBound = block.number == 0 ? medianTime : Math.min(medianTime + maxAcceleration, now - timeoffset);
-    return Math.max(medianTime, upperBound);
-  }
-
-  this.showKeychain = function (done) {
-    async.waterfall([
-      function (next){
-        Block
-          .find({})
-          .sort({ number: 1 })
-          .exec(next);
-      },
-      function (blocks, next){
-        async.forEachSeries(blocks, function(block, callback){
-          block.display(callback);
-        }, next);
-      },
-    ], done);
+      // Start
+      powProcess.send({ conf: conf, block: block, zeros: nbZeros });
+    }, done);
   };
 
   this.startGeneration = function (done) {

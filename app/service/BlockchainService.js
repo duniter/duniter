@@ -1345,7 +1345,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.whilst(function(){
       return !stopped;
     }, function(next){
-      var powProcess = childProcess.fork('./app/lib/proof', [conf.salt, conf.passwd, nbZeros]);
+      var powProcess = childProcess.fork(__dirname + '/../lib/proof', [conf.salt, conf.passwd, nbZeros]);
       powProcess.on('message', function(msg) {
         if (!stopped && msg.found) {
           block.signature = msg.sig;

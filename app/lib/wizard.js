@@ -50,6 +50,7 @@ function Wizard () {
 
   this.choose = choose;
   this.automaticNetworkConfiguration = automaticNetworkConfiguration;
+  this.manualNetworkConfiguration = manualNetworkConfiguration;
 }
 
 function doTasks (todos, conf, done) {

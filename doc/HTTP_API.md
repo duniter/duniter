@@ -6,6 +6,8 @@
 * [Overview](#overview)
 * [Merkle URLs](#merkle-urls)
 * [API](#api)
+  * [node/](#node)
+      * [summary](#nodesummary)
   * [wot/](#wot)
       * [add](#wotadd)
       * [revoke](#wotrevoke)
@@ -187,6 +189,29 @@ Merkle URL             | Leaf                      | Sort
 It has to be noted that **possible conflict exists** for leaves, as every leaf is hash, but is rather unlikely.
 
 ## API
+
+### node/*
+
+#### `node/summary`
+**Goal**
+
+GET technical informations about this peer.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Technical informations about the node.
+```json
+{
+  "ucoin": {
+    "software": "ucoind",
+    "version": "0.10.3"
+  }
+}
+```
 
 ### wot/*
 

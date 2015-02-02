@@ -13,6 +13,7 @@ var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
 var constants   = require('../app/lib/constants');
 var Synchroniser = require('../app/lib/sync');
+var pjson       = require('../package.json');
 var ucoin       = require('./../');
 
 function keys (val) {
@@ -20,7 +21,7 @@ function keys (val) {
 }
 
 program
-  .version('0.10.3')
+  .version(pjson.version)
   .usage('<command> [options]')
   .option('-p, --port <port>',         'Port to listen for requests', parseInt)
   .option('-c, --currency <name>',     'Name of the currency managed by this node.')
@@ -609,6 +610,7 @@ function overrideConf(conf) {
   if (cli.logs.nohttp)                      conf.httplogs       = false;
 
   // Specific internal settings
+  conf.ucoinVersion = program.version();
   conf.createNext = true;
   return conf;
 }

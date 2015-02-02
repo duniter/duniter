@@ -56,6 +56,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._listenBMA = function (app) {
+    this.listenNode(app);
     this.listenWOT(app);
   };
 

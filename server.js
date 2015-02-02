@@ -22,6 +22,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   var that = this;
   that.conn = null;
   that.conf = null;
+  that.version = overrideConf.ucoinVersion;
 
   var initFunctions = [
     function (done) {
@@ -381,6 +382,12 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._listenBMA = function (app) {
+    this.listenNode(app);
+  };
+
+  this.listenNode= function (app) {
+    var node = require('./app/controllers/node')(that);
+    app.get( '/node/summary',  node.summary);
   };
 
   this.singleWriteStream = function (onError) {

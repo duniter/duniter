@@ -20,6 +20,7 @@
       * [memberships/[search]](#blockchainmembershipssearch)
       * [block](#blockchainblock)
       * [block/[number]](#blockchainblocknumber)
+      * [blocks/[count]/[from]](#blockchainblockscountfrom)
       * [current](#blockchaincurrent)
       * [hardship/[PUBKEY]](#blockchainhardshippubkey)
       * [with/](#blockchainwith)
@@ -604,6 +605,31 @@ The promoted block if it exists (otherwise return HTTP 404).
     }
   ],
   "signature": "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==",
+}
+```
+
+#### `blockchain/blocks/[COUNT]/[FROM]`
+
+**Goal**
+
+GET the `[COUNT]` promoted blocks from `[FROM]` number, inclusive.
+
+**Parameters**
+
+Name               | Value                                                         | Method
+------------------ | ------------------------------------------------------------- | ------
+`COUNT`           | The number of blocks we want to see.  | URL
+`FROM`           | The starting block.  | URL
+
+**Returns**
+
+The promoted blocks if it exists block `[FROM]` (otherwise return HTTP 404). Result is an array whose values are the same structure as [/blockchain/block/[number]](#blockchainblocknumber).
+```json
+{
+  "blocks": [
+    { number: 2, ... },
+    { number: 3, ... }
+  ]
 }
 ```
 

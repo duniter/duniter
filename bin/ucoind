@@ -406,7 +406,7 @@ function bootstrapServer(host, port, server, conf) {
     },
     function(next) {
       wiz.automaticNetworkConfiguration(conf, function(err) {
-        if (true || err) {
+        if (err) {
           wiz.choose('UPnP does not seem available. Switch to manual network configuration?', true,
             function() {
               conf.autoconf = false;

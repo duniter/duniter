@@ -34,6 +34,7 @@ var ConfigurationSchema = new Schema({
   tsInterval:  {"type": Number, "default": 30},
   avgGenTime:  {"type": Number, "default": 16*60}, // Average time to write 1 block
   dtDiffEval:  {"type": Number, "default": 10},
+  httplogs:    {"type": Boolean, "default": false},
   medianTimeBlocks: {"type": Number, "default": 20}, // Number of blocks to check for median time value
   udid2:       {"type": Boolean, "default": false}
 });

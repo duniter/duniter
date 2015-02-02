@@ -56,7 +56,9 @@ program
   .option('--rootoffset <number>',     'Allow to give a time offset for first block (offset in the past)')
   .option('--cpu <percent>',           'Percent of CPU usage for proof-of-work computation', parsePercent)
   .option('--show',                    'With gen-next or gen-root commands, displays the generated block')
-  .option('--member',                  'WIth `bootstrap` command, ensures we have a member keypair')
+  .option('--member',                  'With `bootstrap` command, ensures we have a member keypair')
+  .option('--httplogs',                'Enable HTTP logs')
+  .option('--nohttplogs',              'Disable HTTP logs')
   ;
 
 program
@@ -544,6 +546,10 @@ function overrideConf(conf) {
       upnp:          program.upnp,
       noupnp:        program.noupnp
     },
+    logs: {
+      http:          program.httplogs,
+      nohttp:        program.nohttplogs
+    },
     ucp: {
       rootoffset:  program.rootoffset,
       sigDelay:    program.sigDelay,
@@ -599,6 +605,8 @@ function overrideConf(conf) {
   if (cli.net.upnp)                         conf.upnp           = true;
   if (cli.net.noupnp)                       conf.upnp           = false;
   if (cli.cpu)                              conf.cpu            = Math.max(0.01, Math.min(1.0, cli.cpu));
+  if (cli.logs.http)                        conf.httplogs       = true;
+  if (cli.logs.nohttp)                      conf.httplogs       = false;
 
   // Specific internal settings
   conf.createNext = true;

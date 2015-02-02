@@ -321,6 +321,40 @@ A list of public key data matching search string (may not return all results, ch
             }
           ]
         }
+      ],
+      "signed": [
+        {
+          "uid": "snow",
+          "pubkey": "2P7y2UDiCcvsgSSt8sgHF3BPKS4m9waqKw4yXHCuP6CN",
+          "meta": {
+            "timestamp": 1509992000
+          },
+          "signature": "Xbr7qhyGNCmLoVuuKnKIbrdmtCvb9VBIEY19izUNwA5nufsjNm8iEsBTwKWOo0lq5O1+AAPMnht8cm2JjMq8AQ=="
+        },
+        {
+          "uid": "snow",
+          "pubkey": "2P7y2UDiCcvsgSSt8sgHF3BPKS4m9waqKw4yXHCuP6CN",
+          "meta": {
+            "timestamp": 1509992006
+          },
+          "signature": "HU9VPwC4EqPJwATPuyUJM7HLjfig5Ke1CKonL9Q78n5/uNSL2hkgE9Pxsor8CCJfkwCxh66NjGyqnGYqZnQMAg=="
+        },
+        {
+          "uid": "snow",
+          "pubkey": "7xapQvvxQ6367bs8DsskEf3nvQAgJv97Yu11aPbkCLQj",
+          "meta": {
+            "timestamp": 1609994000
+          },
+          "signature": "6S3x3NwiHB2QqYEY79x4wCUYHcDctbazfxIyxejs38V1uRAl4DuC8R3HJUfD6wMSiWKPqbO+td+8ZMuIn0L8AA=="
+        },
+        {
+          "uid": "cat",
+          "pubkey": "CK2hBp25sYQhdBf9oFMGHyokkmYFfzSCmwio27jYWAN7",
+          "meta": {
+            "timestamp": 1422890632
+          },
+          "signature": "AhgblSOdxUkLwpUN9Ec46St3JGaw2jPyDn/mLcR4j3EjKxUOwHBYqqkxcQdRz/6K4Qo/xMa941MgUp6NjNbKBA=="
+        }
       ]
     }
   ]

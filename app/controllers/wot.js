@@ -45,7 +45,21 @@ function WOTBinding (wotServer) {
             },
             function (certs, next){
               idty.certs = certs;
-              next();
+              Certification.from(idty.pubkey, next);
+            },
+            function (signed, next){
+              idty.signed = signed;
+              async.forEachSeries(idty.signed, function(cert, callback) {
+                async.waterfall([
+                  function(next) {
+                    Identity.getByHash(cert.target, next);
+                  },
+                  function(idty, next) {
+                    cert.idty = idty;
+                    next();
+                  }
+                ], callback);
+              }, next);
             },
           ], callback);
         }, function (err) {

@@ -42,6 +42,16 @@ IdentitySchema.virtual('certs').set(function (newCertifs) {
   this._certs = (newCertifs && newCertifs.length >= 0 && newCertifs) || [newCertifs];
 });
 
+// Signed
+
+IdentitySchema.virtual('signed').get(function () {
+  return this._signed || [];
+});
+
+IdentitySchema.virtual('signed').set(function (newSigned) {
+  this._signed = (newSigned && newSigned.length >= 0 && newSigned) || [newSigned];
+});
+
 // Revocation sigature
 
 IdentitySchema.virtual('revocation').get(function () {
@@ -83,9 +93,21 @@ IdentitySchema.methods = {
       "self": this.sig,
       "others": others
     }];
+    var signed = [];
+    this.signed.forEach(function(cert) {
+      signed.push({
+        "uid": cert.idty.uid,
+        "pubkey": cert.idty.pubkey,
+        "meta": {
+          "timestamp": cert.idty.time.timestamp()
+        },
+        "signature": cert.sig
+      });
+    });
     return {
       "pubkey": this.pubkey,
-      "uids": uids
+      "uids": uids,
+      "signed": signed
     };
   },
 

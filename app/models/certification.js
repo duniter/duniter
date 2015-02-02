@@ -20,6 +20,14 @@ var CertificationSchema = new Schema({
   updated: { type: Date, default: Date.now }
 });
 
+CertificationSchema.virtual('idty').get(function () {
+  return this._idty || '';
+});
+
+CertificationSchema.virtual('idty').set(function (idty) {
+  this._idty = idty;
+});
+
 CertificationSchema.pre('save', function (next) {
   this.updated = Date.now();
   next();

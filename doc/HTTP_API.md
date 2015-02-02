@@ -504,12 +504,12 @@ A list of memberships issued by the *member* and written in the blockchain.
   "sigDate": 1390739944,
   "memberships": [
     {
-    "version": "1",
-    "currency": "beta_brousouf",
-    "membership": "IN",
-    "blockNumber": 678,
-    "blockHash": "000007936DF3CC32BFCC1023D1258EC9E485D474"
-  },
+	  "version": "1",
+	  "currency": "beta_brousouf",
+	  "membership": "IN",
+	  "blockNumber": 678,
+	  "blockHash": "000007936DF3CC32BFCC1023D1258EC9E485D474"
+	},
     ...
   ]
 }
@@ -963,9 +963,7 @@ The recorded transaction.
   "transaction":
   {
     "signatures": [
-      "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==",
-      "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX",
-      "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk"
+      "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
   ],
     "version": 1,
     "currency": "beta_brousouf",
@@ -975,12 +973,13 @@ The recorded transaction.
       "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
     ],
     "inputs": [
-      "0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:30",
-      "0:T:F80993776FB55154A60B3E58910C942A347964AD:5",
-      "0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:100",
-      "1:T:F80993776FB55154A60B3E58910C942A347964AD:40",
-      "2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91:50",
-      "2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4:10"
+      "0:T:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8",
+      "0:T:F80993776FB55154A60B3E58910C942A347964AD",
+      "0:D:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B",
+      "0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097",
+      "1:T:F80993776FB55154A60B3E58910C942A347964AD",
+      "2:T:0651DE13A80EB0515A5D9F29E25D5D777152DE91",
+      "2:D:20DA3C59D27EABACFFD27626EF74EA56579C58D4"
     ],
     "outputs": [
       "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30",

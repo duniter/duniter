@@ -38,6 +38,8 @@ after(node1.after());
 
 describe("Lookup on", function(){
 
+  this.timeout(10000);
+
   describe("user cat", function(){
 
     it('should give only 1 result', node1.lookup('cat', function(res, done){

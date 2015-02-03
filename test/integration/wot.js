@@ -33,12 +33,13 @@ var scenarios = [
   cat.cert(tac)
 ];
 
-before(node1.before(scenarios));
+before(function(done) {
+  this.timeout(10000);
+  node1.before(scenarios)(done);
+})
 after(node1.after());
 
 describe("Lookup on", function(){
-
-  this.timeout(10000);
 
   describe("user cat", function(){
 

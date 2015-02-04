@@ -1,7 +1,7 @@
 var should = require('should');
 var assert = require('assert');
-var user   = require('./tools/user');
-var node   = require('./tools/node');
+var user   = require('./../tools/user');
+var node   = require('./../tools/node');
 var async  = require('async');
 require('log4js').configure({
    "appenders": [

@@ -24,7 +24,7 @@ process.on('message', function(stuff){
       // Time must be = [medianTime; medianTime + minSpeed]
       block.time = getBlockTime(block, conf);
       // Test CPU speed
-      var testsPerSecond = computeSpeed(block, sigFunc);
+      var testsPerSecond = nbZeros > 0 ? computeSpeed(block, sigFunc) : 1;
       var testsPerRound = Math.round(testsPerSecond*conf.cpu);
       process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound });
       // Really start now
@@ -53,7 +53,7 @@ process.on('message', function(stuff){
               // Run NEXT only after a delay
               setTimeout(function () {
                 next();
-              }, Math.max(0, (1000-durationMS))); // Max wait 1 second
+              }, nbZeros == 0 ? 0 : Math.max(0, (1000-durationMS))); // Max wait 1 second
             },
             function(next) {
               process.send({ found: false, nonce: block.nonce });

@@ -860,7 +860,7 @@ A certification is to be considered replayable if its age is greater than `[sigD
     REPLAYABLE = AGE > [sigDelay]
 
 ###### Member
-A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners` or `Actives`, **and is not expired**.
+A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners`, `Actives` or `Leavers` **and is not expired**.
 
 A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain **is not** a member.
 
@@ -941,13 +941,14 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 
 * A certification's `PUBKEY_FROM` must be a member.
 * A certification must not be expired.
+* A certification's `PUBKEY_TO`'s last membership occurrence **must not** be in `Leavers`.
 * A certification's `PUBKEY_TO` must be a member **or** be in incoming block's `Joiners`.
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
 * A certification whose `PUBKEY_FROM` and `PUBKEY_TO` are the same than an existing certification in the blockchain can be written **only if** last certification is considered replayable.
 
 ##### MembersCount
 
-`MembersCount` field must be equal to last block's `MembersCount` plus incoming block's `Joiners` count, minus incoming block's `Leavers` count minus this block's `Excluded` count.
+`MembersCount` field must be equal to last block's `MembersCount` plus incoming block's `Joiners` count, minus minus this block's `Excluded` count.
 
 ##### Proof-of-Work
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:

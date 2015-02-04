@@ -40,7 +40,11 @@ module.exports = function(conn, block) {
     
     this.isMember = function (pubkey, done) {
       Identity.isMember(pubkey, done);
-    }
+    };
+
+    this.isLeaving = function (pubkey, done) {
+      Identity.isLeaving(pubkey, done);
+    };
 
     this.getPreviousLinkFor = function (from, to, done) {
       async.waterfall([

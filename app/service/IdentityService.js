@@ -28,7 +28,6 @@ function IdentityService (conn, conf) {
   var globalValidation = globalValidator(conf, blockchainDao(conn, null));
 
   this.search = function(search, done) {
-    var identities = [];
     async.waterfall([
       function (next){
         Identity.search(search, next);

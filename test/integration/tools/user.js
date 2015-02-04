@@ -13,6 +13,7 @@ function User (uid, salt, passwd, node) {
   var that = this;
   var pub, sec;
   var selfCert = "";
+  var selfTime = new Date();
 
   function init(done) {
     async.waterfall([
@@ -31,6 +32,7 @@ function User (uid, salt, passwd, node) {
     return function(done) {
       var when = new Date();
       when.setTime(whenTimestamp*1000);
+      selfTime = when;
       async.waterfall([
         function(next) {
           if (!pub) {
@@ -80,6 +82,47 @@ function User (uid, salt, passwd, node) {
             "pubkey": hisPub,
             "self": selfCert,
             "other": [pub, hisPub, blockNumber, sig].join(':') + '\n'
+          }, next);
+        }
+      ], function(err) {
+        done(err);
+      });
+    }
+  };
+
+  this.join = function () {
+    return that.sendMembership("IN");
+  };
+
+  this.leave = function () {
+    return that.sendMembership("OUT");
+  };
+
+  this.sendMembership = function (type) {
+    return function(done) {
+      async.waterfall([
+        function(next) {
+          async.parallel({
+            current: function(callback){
+              node.server.BlockchainService.current(callback);
+            }
+          }, next);
+        },
+        function(res, next) {
+          var current = res.current;
+          var block = (current ? [current.number, current.hash].join('-') : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709');
+          var join = rawer.getMembershipWithoutSignature({
+            "version": 1,
+            "currency": node.server.conf.currency,
+            "issuer": pub,
+            "block": block,
+            "membership": type,
+            "userid": uid,
+            "certts": selfTime
+          });
+          var sig = crypto.signSync(join, sec);
+          post('/blockchain/membership', {
+            "membership": join + sig + '\n'
           }, next);
         }
       ], function(err) {

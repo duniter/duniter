@@ -441,7 +441,11 @@ function BlockCheckerDao (block) {
       ];
       done(null, ~members.indexOf(pubkey));
     }
-  }
+  };
+
+  this.isLeaving = function (pubkey, done) {
+    done(null, false);
+  };
 
   this.getPreviousLinkFor = function (from, to, done) {
     if (from == 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU'

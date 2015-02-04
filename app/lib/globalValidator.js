@@ -47,6 +47,7 @@ function GlobalValidator (conf, dao) {
     { name: 'checkCertificationsAreMadeByMembers',  func: check(checkCertificationsAreMadeByMembers)  },
     { name: 'checkCertificationsAreValid',          func: check(checkCertificationsAreValid)          },
     { name: 'checkCertificationsAreMadeToMembers',  func: check(checkCertificationsAreMadeToMembers)  },
+    { name: 'checkCertificationsAreMadeToNonLeaver',func: check(checkCertificationsAreMadeToNonLeaver)  },
     { name: 'checkCertificationsDelayIsRespected',  func: check(checkCertificationsDelayIsRespected)  },
     { name: 'checkMembersCountIsGood',              func: check(checkMembersCountIsGood)              },
     { name: 'checkPoWMin',                          func: check(checkPoWMin)                          },
@@ -154,15 +155,22 @@ function GlobalValidator (conf, dao) {
   function isMember (block, pubkey, done) {
     async.waterfall([
       function (next){
-        if (block.isLeaving(pubkey)) {
-          next(null, false);
-        } else if (block.isJoining(pubkey)) {
+        if (block.isJoining(pubkey)) {
           next(null, true);
         } else {
           dao.isMember(pubkey, next);
         }
       },
     ], done);
+  }
+
+  /**
+  * Check wether a pubkey is currently a leaver or not (globally).
+  **/
+  function isNonLeaver (pubkey, done) {
+    dao.isLeaving(pubkey, function(err, isLeaver) {
+      done(err, !isLeaver);
+    });
   }
 
   function checkCertificationsAreValid (block, done) {
@@ -227,8 +235,8 @@ function GlobalValidator (conf, dao) {
         function (next){
           isMember(block, cert.from, next);
         },
-        function (idty, next){
-          next(idty ? null : 'Certification from non-member');
+        function (isMember, next){
+          next(isMember ? null : 'Certification from non-member');
         },
       ], callback);
     }, done);
@@ -241,8 +249,22 @@ function GlobalValidator (conf, dao) {
         function (next){
           isMember(block, cert.to, next);
         },
-        function (idty, next){
-          next(idty ? null : 'Certification to non-member');
+        function (isMember, next){
+          next(isMember ? null : 'Certification to non-member');
+        },
+      ], callback);
+    }, done);
+  }
+
+  function checkCertificationsAreMadeToNonLeaver (block, done) {
+    async.forEach(block.certifications, function(inlineCert, callback){
+      var cert = Certification.fromInline(inlineCert);
+      async.waterfall([
+        function (next){
+          isNonLeaver(cert.to, next);
+        },
+        function (isNonLeaver, next){
+          next(isNonLeaver ? null : 'Certification to leaver');
         },
       ], callback);
     }, done);
@@ -732,7 +754,7 @@ function GlobalValidator (conf, dao) {
           dao.isMember(ms.issuer, next);
         },
         function (isMember, next) {
-          if (isMember) {
+          if (!isMember) {
             next('Cannot be in leavers if not a member');
             return;
           }
@@ -952,7 +974,7 @@ function GlobalValidator (conf, dao) {
       },
       function (current, next){
         var currentCount = current ? current.membersCount : 0;
-        var variation = block.joiners.length - block.leavers.length - block.excluded.length;
+        var variation = block.joiners.length - block.excluded.length;
         if (block.membersCount != currentCount + variation)
           next('Wrong members count');
         else

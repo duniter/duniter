@@ -19,6 +19,7 @@ var IdentitySchema = new Schema({
   time: { type: Date, default: Date.now },
   member: { type: Boolean, default: false },
   kick: { type: Boolean, default: false },
+  leaving: { type: Boolean, default: false },
   wasMember: { type: Boolean, default: false },
   hash: { type: String, unique: true },
   created: { type: Date, default: Date.now },
@@ -203,7 +204,18 @@ IdentitySchema.statics.isMember = function(pubkey, done){
     }
     done(null, identities.length == 1);
   });
-}
+};
+
+IdentitySchema.statics.isLeaving = function(pubkey, done){
+  var Identity = this.model('Identity');
+  Identity.find({ "pubkey": pubkey, "member": true, "leaving": true }, function (err, identities) {
+    if(identities.length > 1){
+      done('More than one matching pubkey & member for ' + pubkey);
+      return;
+    }
+    done(null, identities.length == 1);
+  });
+};
 
 IdentitySchema.statics.isMemberOrError = function(pubkey, done){
   var Identity = this.model('Identity');
@@ -211,6 +223,24 @@ IdentitySchema.statics.isMemberOrError = function(pubkey, done){
     done(err || (!isMember && "Not a member"));
   });
 }
+
+IdentitySchema.statics.isMembeAndNonLeaverOrError = function(pubkey, done){
+  var Identity = this.model('Identity');
+  async.parallel({
+    isMember: function(callback){
+      Identity.isMember(pubkey, function (err, isMember) {
+        callback(err || (!isMember && "Not a member"));
+      });
+    },
+    isLeaving: function(callback){
+      Identity.isLeaving(pubkey, function (err, isLeaver) {
+        callback(err || (isLeaver && "Is a leaver"));
+      });
+    }
+  }, function(err){
+    done(err);
+  });
+};
 
 IdentitySchema.statics.getWritten = function(pubkey, done){
   var Identity = this.model('Identity');

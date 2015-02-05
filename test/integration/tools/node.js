@@ -23,9 +23,6 @@ function Node (dbName, options) {
     return function(done) {
       async.waterfall([
         function(next) {
-          start(next);
-        },
-        function(next) {
           that.server.reset(next);
         },
         function (next) {
@@ -52,7 +49,8 @@ function Node (dbName, options) {
     return function (done) {
       async.waterfall([
         function(next) {
-          that.server.conn.db.dropDatabase(next);
+          //that.server.conn.db.dropDatabase(next);
+          next();
         }
       ], done);
     }
@@ -112,7 +110,7 @@ function Node (dbName, options) {
     postReq.form(data);
   }
   
-  function start(done) {
+  this.start = function(done) {
     if (started) return done();
     async.waterfall([
       function(next) {

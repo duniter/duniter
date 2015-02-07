@@ -267,7 +267,7 @@ function BlockchainBinding (wotServer) {
         json.memberships.push({
           version: ms.version,
           currency: conf.currency,
-          membership: ms.type,
+          membership: ms.membership,
           blockNumber: ms.blockNumber,
           blockHash: ms.blockHash
         });

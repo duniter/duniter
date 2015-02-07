@@ -434,7 +434,7 @@ Signatures (fakes here):
 A transaction may be described under a more compact format, to be used under [Block](#block) document. General format is:
 
     TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS:HAS_COMMENT
-    PUBLIC_KEY:INDEX
+    PUBLIC_KEY
     ...
     INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
     ...

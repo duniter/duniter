@@ -130,7 +130,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.BlockchainService   = require('./app/service/BlockchainService').get(that.conn, that.conf, that.IdentityService, that.PeeringService);
         that.TransactionsService = require('./app/service/TransactionsService').get(that.conn, that.conf, that.PeeringService);
         that.IdentityService.setBlockchainService(that.BlockchainService);
-        logger.info('Node version: ' + overrideConf.ucoinVersion);
+        logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
         async.waterfall([
           function (next){

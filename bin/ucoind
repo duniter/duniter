@@ -610,7 +610,6 @@ function overrideConf(conf) {
   if (cli.logs.nohttp)                      conf.httplogs       = false;
 
   // Specific internal settings
-  conf.ucoinVersion = program.version();
   conf.createNext = true;
   return conf;
 }

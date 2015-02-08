@@ -1,8 +1,10 @@
 var should = require('should');
 var assert = require('assert');
-var user   = require('./tools/user');
-var node   = require('./tools/node');
 var async  = require('async');
+var node   = require('./tools/node');
+var user   = require('./tools/user');
+var jspckg = require('../../package');
+
 require('log4js').configure({
    "appenders": [
      //{ category: "db1", type: "console" }
@@ -23,7 +25,26 @@ before(function(done) {
 
 describe("Integration", function() {
 
-  describe.only("Testing malformed documents", function(){
+  describe("Testing technical API", function(){
+
+    before(function(done) {
+      this.timeout(10000);
+      node1.before([])(done);
+    });
+    after(node1.after());
+
+    it('/node/summary should give package.json version', node1.summary(function(summary, done){
+      should.exists(summary);
+      should.exists(summary.ucoin);
+      should.exists(summary.ucoin.software);
+      should.exists(summary.ucoin.version);
+      assert.equal(summary.ucoin.software, "ucoind");
+      assert.equal(summary.ucoin.version, jspckg.version);
+      done();
+    }));
+  });
+
+  describe("Testing malformed documents", function(){
 
     before(function(done) {
       this.timeout(10000);

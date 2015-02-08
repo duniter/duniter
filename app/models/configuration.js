@@ -55,14 +55,6 @@ ConfigurationSchema.virtual('rootoffset').set(function (offset) {
   this._rootoffset = parseInt(offset);
 });
 
-ConfigurationSchema.virtual('ucoinVersion').get(function () {
-  return this._ucoinVersion;
-});
-
-ConfigurationSchema.virtual('ucoinVersion').set(function (ucoinVersion) {
-  this._ucoinVersion = parseInt(ucoinVersion);
-});
-
 // Automatic Monetary Contract default parameters:
 //  - Voting start: None (must be given)
 //  - Voting frequency: 1 day

@@ -214,4 +214,16 @@ function Node (dbName, options) {
       });
     }
   };
+
+  this.summary = function(callback) {
+    return function(done) {
+      async.waterfall([
+        function(next) {
+          that.http.node.summary(next);
+        }
+      ], function(err, summary) {
+        callback(summary, done);
+      });
+    }
+  };
 }

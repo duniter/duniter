@@ -10,6 +10,7 @@ var request    = require('request');
 var http       = require('http');
 var log4js     = require('log4js');
 var upnp       = require('nat-upnp');
+var jsonpckg   = require('./package.json');
 
 var models = ['Identity', 'Certification', 'Configuration', 'Link', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block', 'Source', 'BlockStat'];
 var INNER_WRITE = true;
@@ -22,7 +23,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   var that = this;
   that.conn = null;
   that.conf = null;
-  that.version = overrideConf.ucoinVersion;
+  that.version = jsonpckg.version;
 
   var initFunctions = [
     function (done) {

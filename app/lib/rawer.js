@@ -10,7 +10,7 @@ module.exports = new function() {
     raw += "UID:" + json.uid + '\n';
     raw += "META:TS:" + json.time.timestamp() + '\n';
     raw += json.sig + '\n';
-    json.certs.forEach(function(cert){
+    (json.certs || []).forEach(function(cert){
       raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
     });
     return dos2unix(raw);
@@ -56,7 +56,7 @@ module.exports = new function() {
     raw += "PublicKey: " + json.pub + "\n";
     raw += "Block: " + json.block + "\n";
     raw += "Endpoints:" + "\n";
-    json.endpoints.forEach(function(ep){
+    (json.endpoints || []).forEach(function(ep){
       raw += ep + "\n";
     });
     return dos2unix(raw);
@@ -164,19 +164,19 @@ module.exports = new function() {
     raw += "Type: Transaction\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Issuers:\n";
-    json.issuers.forEach(function (issuer) {
+    (json.issuers || []).forEach(function (issuer) {
       raw += issuer + '\n';
     });
     raw += "Inputs:\n";
-    json.inputs.forEach(function (input) {
+    (json.inputs || []).forEach(function (input) {
       raw += input + '\n';
     });
     raw += "Outputs:\n";
-    json.outputs.forEach(function (output) {
+    (json.outputs || []).forEach(function (output) {
       raw += output + '\n';
     });
     raw += "Comment: " + (json.comment || "") + "\n";
-    json.signatures.forEach(function (signature) {
+    (json.signatures || []).forEach(function (signature) {
       raw += signature + '\n';
     });
     return dos2unix(raw);
@@ -184,18 +184,18 @@ module.exports = new function() {
 
   this.getCompactTransaction = function (json) {
     var raw = ["TX", 1, json.issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
-    json.issuers.forEach(function (issuer) {
+    (json.issuers || []).forEach(function (issuer) {
       raw += issuer + '\n';
     }); 
-    json.inputs.forEach(function (input) {
+    (json.inputs || []).forEach(function (input) {
       raw += input + '\n';
     });
-    json.outputs.forEach(function (output) {
+    (json.outputs || []).forEach(function (output) {
       raw += output + '\n';
     });
     if (json.comment)
       raw += json.comment + '\n';
-    json.signatures.forEach(function (signature) {
+    (json.signatures || []).forEach(function (signature) {
       raw += signature + '\n';
     });
     return dos2unix(raw);

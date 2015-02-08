@@ -23,6 +23,19 @@ before(function(done) {
 
 describe("Integration", function() {
 
+  describe.only("Testing malformed documents", function(){
+
+    before(function(done) {
+      this.timeout(10000);
+      node1.before(require('./scenarios/malformed-documents')(node1))(done);
+    });
+    after(node1.after());
+
+    it('should not have crashed because of wrong tx', function(){
+      assert.equal(true, true);
+    });
+  });
+
   describe("Lookup on", function(){
 
     before(function(done) {

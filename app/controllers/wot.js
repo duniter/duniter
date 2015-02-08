@@ -44,7 +44,32 @@ function WOTBinding (wotServer) {
               Certification.toTarget(idty.getTargetHash(), next);
             },
             function (certs, next){
-              idty.certs = certs;
+              async.forEachSeries(certs, function(cert, callback) {
+                async.waterfall([
+                  function(next) {
+                    IdentityService.findIdentities(cert.from, next);
+                  },
+                  function(res, next) {
+                    var writtens = res.written ? [res.written] : [];
+                    var nonWrittens = res.nonWritten || [];
+                    if (writtens.length > 0) {
+                      cert.uids = [writtens[0].uid];
+                      cert.isMember = writtens[0].member;
+                      cert.wasMember = writtens[0].wasMember;
+                    } else {
+                      cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
+                      cert.isMember = false;
+                      cert.wasMember = false;
+                    }
+                    next();
+                  }
+                ], callback);
+              }, function(err) {
+                idty.certs = certs;
+                next(err);
+              });
+            },
+            function (next) {
               Certification.from(idty.pubkey, next);
             },
             function (signed, next){

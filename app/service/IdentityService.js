@@ -48,6 +48,17 @@ function IdentityService (conn, conf) {
     });
   };
 
+  this.findIdentities = function(pubkey, done) {
+    async.parallel({
+      written: function (next) {
+        Identity.getWritten(pubkey, next);
+      },
+      nonWritten: function (next) {
+        Identity.getNonWritten(pubkey, next);
+      }
+    }, done);
+  };
+
   this.setBlockchainService = function (service) {
     BlockchainService = service;
   };

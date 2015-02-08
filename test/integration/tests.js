@@ -42,6 +42,10 @@ describe("Integration", function() {
       it('should have sent 1 signature', node1.lookup('cat', function(res, done){
         should.exists(res);
         assert.equal(res.results[0].signed.length, 1);
+        should.exists(res.results[0].signed[0].isMember);
+        should.exists(res.results[0].signed[0].wasMember);
+        assert.equal(res.results[0].signed[0].isMember, false);
+        assert.equal(res.results[0].signed[0].wasMember, false);
         done();
       }));
     });
@@ -98,6 +102,20 @@ describe("Integration", function() {
     it('tic should give only 1 results', node1.lookup('tic', function(res, done){
       should.exists(res);
       assert.equal(res.results.length, 1);
+      assert.equal(res.results[0].signed.length, 3);
+      assert.equal(res.results[0].signed[0].uid, "cat");
+      assert.equal(res.results[0].signed[0].isMember, true);
+      assert.equal(res.results[0].signed[0].wasMember, true);
+      assert.equal(res.results[0].signed[1].uid, "tac");
+      assert.equal(res.results[0].signed[1].isMember, true);
+      assert.equal(res.results[0].signed[1].wasMember, true);
+      assert.equal(res.results[0].signed[2].uid, "toc");
+      assert.equal(res.results[0].signed[2].isMember, true);
+      assert.equal(res.results[0].signed[2].wasMember, true);
+      assert.equal(res.results[0].uids[0].others.length, 3);
+      assert.equal(res.results[0].uids[0].others[0].uids.length, 1);
+      assert.equal(res.results[0].uids[0].others[0].isMember, true);
+      assert.equal(res.results[0].uids[0].others[0].wasMember, true);
       done();
     }));
 

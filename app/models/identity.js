@@ -83,6 +83,9 @@ IdentitySchema.methods = {
         "meta": {
           "block_number": cert.block_number
         },
+        "uids": cert.uids,
+        "isMember": cert.isMember,
+        "wasMember": cert.wasMember,
         "signature": cert.sig
       });
     });
@@ -102,6 +105,8 @@ IdentitySchema.methods = {
         "meta": {
           "timestamp": cert.idty.time.timestamp()
         },
+        "isMember": cert.idty.member,
+        "wasMember": cert.idty.wasMember,
         "signature": cert.sig
       });
     });
@@ -240,6 +245,11 @@ IdentitySchema.statics.isMembeAndNonLeaverOrError = function(pubkey, done){
   }, function(err){
     done(err);
   });
+};
+
+IdentitySchema.statics.getNonWritten = function(pubkey, done){
+  var Identity = this.model('Identity');
+  Identity.find({ "pubkey": pubkey, "wasMember": false }, done);
 };
 
 IdentitySchema.statics.getWritten = function(pubkey, done){

@@ -78,6 +78,16 @@ CertificationSchema.statics.toTarget = function (hash, done) {
   });
 };
 
+CertificationSchema.statics.notLinkedToTarget = function (hash, done) {
+  var Certification = this.model('Certification');
+  Certification
+    .find({ "target": hash, "linked": false })
+    .sort({ "block_number": "-1" })
+    .exec(function (err, certs) {
+    done(err, certs);
+  });
+};
+
 CertificationSchema.statics.from = function (pubkey, done) {
   var Certification = this.model('Certification');
   Certification.find({ "pubkey": pubkey }, function (err, certs) {

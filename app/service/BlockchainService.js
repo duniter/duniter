@@ -1045,7 +1045,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                     // Look for certifications from WoT members
                     async.waterfall([
                       function (next) {
-                        Certification.toTarget(join.idHash, next);
+                        Certification.notLinkedToTarget(join.idHash, next);
                       },
                       function (certs, next) {
                         var finalCerts = [];

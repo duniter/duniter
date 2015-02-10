@@ -107,14 +107,19 @@ program
   .action(service(ucoin.createTxServer, bootstrapServer));
 
 program
-  .command('forward [fromBlock] [host] [port]')
+  .command('forward [host] [port] [what]')
   .description('Forward local blockchain to a remote uCoin node')
-  .action(service(ucoin.createTxServer, function (fromBlock, host, port, server, conf) {
+  .action(service(ucoin.createTxServer, function (host, port, what, server, conf) {
 
     async.waterfall([
-      function (next) {
-        var Block = server.conn.model('Block');
-        Block.from(fromBlock, next);
+      function(next) {
+        vucoin(host, port, next);
+      },
+      function (node, next) {
+        node.blockchain.current(next);
+      },
+      function(current, next) {
+        server.conn.model('Block').from(current.number, next);
       },
       function (blocks, next){
         // Forward

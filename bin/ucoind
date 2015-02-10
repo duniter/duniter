@@ -111,6 +111,8 @@ program
   .description('Forward local blockchain to a remote uCoin node')
   .action(service(ucoin.createTxServer, function (host, port, what, server, conf) {
 
+    var localCurrent;
+    var remoteCurrent;
     async.waterfall([
       function(next) {
         vucoin(host, port, next);
@@ -119,7 +121,14 @@ program
         node.blockchain.current(next);
       },
       function(current, next) {
-        server.conn.model('Block').from(current.number, next);
+        remoteCurrent = current;
+        if (!remoteCurrent) return next('Remote node has no blockchain');
+        server.conn.model('Block').findByNumber(remoteCurrent.number, function(err, current) {
+          localCurrent = current;
+          if (!localCurrent) return next('Local node is dropped behind');
+          if (localCurrent.hash != remoteCurrent.hash) return next('Remote node has forked');
+          server.conn.model('Block').from(localCurrent.number, next);
+        });
       },
       function (blocks, next){
         // Forward

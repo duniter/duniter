@@ -51,7 +51,9 @@ var computationTimeoutDone = false;
 function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   var BlockchainService = this;
-  
+
+  var lastGeneratedWasWrong = false;
+
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
   var Membership    = conn.model('Membership');
@@ -158,8 +160,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         },
         function (next) {
           BlockchainService.stopPoWThenProcessAndRestartPoW(async.apply(saveBlockData, currentBlock, block), next);
-        },
+        }
       ], function (err) {
+        var eligibleSelfBlock = currentBlock && currentBlock.number == block.number - 1 && block.issuer == PeeringService.pubkey;
+        if (err && eligibleSelfBlock) {
+          lastGeneratedWasWrong = true;
+        } else if (eligibleSelfBlock) {
+          lastGeneratedWasWrong = false;
+        }
         sent(err, !err && block);
       });
     }, done);
@@ -928,6 +936,44 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     ], done);
   };
 
+  /**
+  * Generate next block, gathering both updates & newcomers
+  */
+  this.generateEmptyNextBlock = function (done) {
+    var updates = {};
+    var exclusions = [];
+    var current = null;
+    var lastUDBlock = null;
+    var transactions = [];
+    var joinData = {}, leaveData = {};
+    async.waterfall([
+      function (next){
+        Block.current(function (err, currentBlock) {
+          current = currentBlock;
+            next();
+        });
+      },
+      function (next){
+        Block.lastUDBlock(next);
+      },
+      function (theLastUDBlock, next) {
+        lastUDBlock = theLastUDBlock;
+        // First, check for members' exclusions
+        Identity.getToBeKicked(next);
+      },
+      function (toBeKicked, next) {
+        toBeKicked.forEach(function (idty) {
+          exclusions.push(idty.pubkey);
+        });
+        next();
+      },
+      function (next) {
+        // Create the block
+        createNewcomerBlock(current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, next);
+      }
+    ], done);
+  };
+
   function findNewcomersAndLeavers (current, filteringFunc, checkingWoTFunc, done) {
     async.parallel({
       newcomers: function(callback){
@@ -1522,7 +1568,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             //   findNewData(callback);
             // },
             block: function(callback){
-              BlockchainService.generateNext(callback);
+              if (lastGeneratedWasWrong) {
+                BlockchainService.generateEmptyNextBlock(callback);
+              } else {
+                BlockchainService.generateNext(callback);
+              }
             },
             signature: function(callback){
               signature.sync(conf.salt, conf.passwd, callback);

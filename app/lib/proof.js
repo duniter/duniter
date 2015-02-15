@@ -25,7 +25,7 @@ process.on('message', function(stuff){
       block.time = getBlockTime(block, conf);
       // Test CPU speed
       var testsPerSecond = nbZeros > 0 ? computeSpeed(block, sigFunc) : 1;
-      var testsPerRound = Math.round(testsPerSecond*conf.cpu);
+      var testsPerRound = Math.max(Math.round(testsPerSecond*conf.cpu), 1);
       process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound });
       // Really start now
       var testsCount = 0;

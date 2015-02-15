@@ -21,6 +21,8 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
 
   var logger  = require('./app/lib/logger')(dbConf.name);
   var that = this;
+  var server4, server6;
+  var serverListening = false;
   that.conn = null;
   that.conf = null;
   that.version = jsonpckg.version;
@@ -129,6 +131,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       // logger.debug('Connecting to database `%s`', databaseName);
       var conn = that.conn = mongoose.createConnection('mongodb://' + host + (port ? ':' + port : '') + '/' + databaseName);
       conn.on('error', function (err) {
+        logger.error(err);
         that.emit('mongoFail', err);
       });
       async.waterfall([
@@ -181,7 +184,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
             that.emit('BMALoaded', app);
           else
             that.emit('BMAFailed', err);
-          next();
+          next(err);
         });
       }
     ], done);
@@ -190,6 +193,18 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   this._start = function (done) {
     // Method to override
     done();
+  };
+
+  this.stop = function () {
+    logger.info('Shutting down server...');
+    server4 && server4.close();
+    server6 && server6.close();
+    logger.info('Server DOWN');
+    serverListening = false;
+  };
+
+  this.isListening = function () {
+    return serverListening;
   };
 
   this.reset = function(done) {
@@ -294,21 +309,18 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       function (ip, next) {
         // Update UPnP IGD every INTERVAL seconds
         setInterval(async.apply(openPort, conf, client), 1000*constants.NETWORK.UPNP.INTERVAL);
-        openPort(conf, client);
-        next();
+        openPort(conf, client, next);
       }
     ], done);
   };
 
-  function openPort (conf, client) {
+  function openPort (conf, client, done) {
     client.portMapping({
       public: conf.remoteport,
       private: conf.port,
       ttl: constants.NETWORK.UPNP.TTL
-    }, function (err) {
-      if (err) {
-        logger.info('Err:', err);
-      }
+    }, function(err) {
+      return done && done(err);
     });
   }
 
@@ -356,7 +368,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next) {
         if(conf.ipv4){
-          http.createServer(app).listen(conf.port, conf.ipv4, function(){
+          server4 = http.createServer(app);
+          serverListening = true;
+          server4.listen(conf.port, conf.ipv4, function(){
             logger.info('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
             next();
           });
@@ -365,7 +379,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next) {
         if(conf.ipv6){
-          http.createServer(app).listen(conf.port, conf.ipv6, function(){
+          server6 = http.createServer(app);
+          serverListening = true;
+          server6.createServer(app).listen(conf.port, conf.ipv6, function(){
             logger.info('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
             next();
           });

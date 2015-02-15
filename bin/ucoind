@@ -15,6 +15,7 @@ var constants   = require('../app/lib/constants');
 var Synchroniser = require('../app/lib/sync');
 var pjson       = require('../package.json');
 var ucoin       = require('./../');
+var webapp      = require('../web/app');
 
 function keys (val) {
   return val.split(',');
@@ -25,6 +26,8 @@ program
   .usage('<command> [options]')
   .option('-p, --port <port>',         'Port to listen for requests', parseInt)
   .option('-c, --currency <name>',     'Name of the currency managed by this node.')
+  .option('--whost <host>',            'WebApp host.')
+  .option('--wport <port>',            'WebApp port.')
   .option('--mhost <host>',            'MongoDB host.')
   .option('--mport <port>',            'MongoDB port.')
   .option('-d, --mdb <name>',          'MongoDB database name (defaults to "ucoin_default").')
@@ -61,6 +64,13 @@ program
   .option('--httplogs',                'Enable HTTP logs')
   .option('--nohttplogs',              'Disable HTTP logs')
   ;
+
+program
+  .command('webapp')
+  .description('Start uCoin web interface.')
+  .action(function() {
+    webapp(program.whost || 'localhost', program.wport || 3050, overrideConf());
+  });
 
 program
   .command('start')
@@ -535,6 +545,7 @@ function bootstrapServer(host, port, server, conf) {
 
 function overrideConf(conf) {
 
+  conf = conf || {};
   conf.sync = conf.sync || {};
   var cli = {
     currency: program.currency,

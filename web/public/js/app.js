@@ -76,7 +76,7 @@ ucoinApp.config(['$routeProvider',
 var ucoinControllers = angular.module('ucoinControllers', []);
 var btnStart, btnStop, btnRestart;
 
-ucoinControllers.controller('homeController', function ($scope, $route, $location, $http, $timeout) {
+ucoinControllers.controller('homeController', function ($scope, $route, $location, $http, $interval) {
 
   if (!btnStart) {
     btnStart = $('#button-start');
@@ -109,11 +109,16 @@ ucoinControllers.controller('homeController', function ($scope, $route, $locatio
   }, true);
   $scope.nodeMessage = '';
   $scope.errorMessage = false;
-  getAndStatus($http.get('/node/start'), $scope)
-  getAndStatus($http.get('/node/start'), $scope)
+  getAndStatus($http.get('/node/status'), $scope)
     .then(function(){
       return getAndHome($http.get('/node/home'), $scope);
     });
+
+  $interval(function() {
+    getAndLogs($http.get('/node/logs'), $scope);
+  }, 1000);
+  // Launch one
+  getAndLogs($http.get('/node/logs'), $scope);
 
   $scope.path = ($route.current && $route.current.path) || "";
   $scope.menus = [{
@@ -160,6 +165,32 @@ function getAndHome(jsonPromise, $scope) {
       $.each(data, function (key, value) {
         $scope[key] = value;
       });
+    })
+    .error(handleError($scope));
+}
+
+function getAndLogs(jsonPromise, $scope) {
+  jsonPromise
+    .success(function (data) {
+      var messages = [];
+      var nbMessagesMax = 10;
+      if (data.length > nbMessagesMax) {
+        data = data.slice(data.length - nbMessagesMax, data.length + 1);
+      }
+      for (var i = 0; i < data.length; i++) {
+        var log = data[i];
+        var date = log.match(/^\[([\d-:. ]+)\]/)[1];
+        var type = log.match(/^\[.*\] \[([\w]+)\]/)[1];
+        var source = log.match(/^\[.*\] \[[\w]+\] (\w+) -/)[1];
+        var message = log.match(/^\[.*\] \[[\w]+\] \w+ - (.*)/)[1];
+        messages.push({
+          date: date,
+          type: type,
+          source: source,
+          message: message
+        })
+      }
+      $scope.logs = messages;
     })
     .error(handleError($scope));
 }

@@ -51,8 +51,32 @@ ConfigurationSchema.virtual('rootoffset').get(function () {
   return this._rootoffset;
 });
 
-ConfigurationSchema.virtual('rootoffset').set(function (offset) {
-  this._rootoffset = parseInt(offset);
+ConfigurationSchema.virtual('rootoffset').set(function (rootoffset) {
+  this._rootoffset = parseInt(rootoffset);
+});
+
+ConfigurationSchema.virtual('mdb').get(function () {
+  return this._mdb;
+});
+
+ConfigurationSchema.virtual('mdb').set(function (mdb) {
+  this._mdb = parseInt(mdb);
+});
+
+ConfigurationSchema.virtual('mhost').get(function () {
+  return this._mhost;
+});
+
+ConfigurationSchema.virtual('mhost').set(function (mhost) {
+  this._mhost = parseInt(mhost);
+});
+
+ConfigurationSchema.virtual('mport').get(function () {
+  return this._mport;
+});
+
+ConfigurationSchema.virtual('mport').set(function (mport) {
+  this._mport = parseInt(mport);
 });
 
 // Automatic Monetary Contract default parameters:

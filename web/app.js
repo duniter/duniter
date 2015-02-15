@@ -2,7 +2,15 @@ var express = require('express');
 var http    = require('http');
 var path    = require('path');
 
-module.exports = function(app_host, app_port, mdb, mhost, mport) {
+module.exports = function(app_host, app_port, conf, autoStart) {
+
+  var logsOut = [];
+
+  require('log4js').configure({
+    "appenders": [
+      { type: __dirname + "/weblog", options: { output: logsOut } }
+    ]
+  });
 
   var app = express();
 
@@ -21,12 +29,20 @@ module.exports = function(app_host, app_port, mdb, mhost, mport) {
     app.use(express.errorHandler());
   }
 
-  var adminApi = new (require('./admin'))(mdb, mhost, mport);
+  // Override some defaults
+  conf.httplogs = false;
+
+  var adminApi = new (require('./admin'))(conf, conf.mdb, conf.mhost, conf.mport, logsOut);
+
+  if(autoStart) {
+    adminApi.doStart();
+  }
 
   app.get('/node/start',     adminApi.start);
   app.get('/node/stop',      adminApi.stop);
   app.get('/node/status',    adminApi.status);
   app.get('/node/home',      adminApi.home);
+  app.get('/node/logs',      adminApi.logs);
 
   http.createServer(app).listen(app_port, app_host, function(){
     console.log('Web interface: http://' + app_host + ':' + app_port);

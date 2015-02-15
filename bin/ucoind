@@ -63,13 +63,14 @@ program
   .option('--member',                  'With `bootstrap` command, ensures we have a member keypair')
   .option('--httplogs',                'Enable HTTP logs')
   .option('--nohttplogs',              'Disable HTTP logs')
+  .option('--autostart',               'With webapp command: ask to start the node automatically')
   ;
 
 program
   .command('webapp')
   .description('Start uCoin web interface.')
   .action(function() {
-    webapp(program.whost || 'localhost', program.wport || 3050, overrideConf());
+    webapp(program.whost || 'localhost', program.wport || 3050, overrideConf(), program.autostart);
   });
 
 program
@@ -564,9 +565,9 @@ function overrideConf(conf) {
       }
     },
     db: {
-      host: program.mhost,
-      port: program.mport,
-      database: program.mdb
+      mhost: program.mhost,
+      mport: program.mport,
+      mdb: program.mdb
     },
     net: {
       upnp:          program.upnp,
@@ -633,6 +634,9 @@ function overrideConf(conf) {
   if (cli.cpu)                              conf.cpu            = Math.max(0.01, Math.min(1.0, cli.cpu));
   if (cli.logs.http)                        conf.httplogs       = true;
   if (cli.logs.nohttp)                      conf.httplogs       = false;
+  if (cli.db.mhost)                         conf.mhost          = cli.db.mhost;
+  if (cli.db.mport)                         conf.mport          = cli.db.mport;
+  if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
 
   // Specific internal settings
   conf.createNext = true;

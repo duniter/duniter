@@ -7,7 +7,7 @@ var Q           = require('q');
 var wizard      = require('../app/lib/wizard');
 var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
-var logger      = require('../app/lib/logger')('ucoind');
+var logger      = require('../app/lib/logger')('webapp');
 var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
@@ -17,9 +17,20 @@ var pjson       = require('../package.json');
 var ucoin       = require('./../index');
 var webapp      = require('../web/app');
 
-module.exports = function AdminAPI(conf, mdb, mhost, mport) {
+module.exports = function AdminAPI(conf, mdb, mhost, mport, logsOut) {
 
   var theServer;
+
+  this.doStart = function() {
+    getServer()
+      .tap(function(server){
+        return server.isListening() ? Q() : Q.nbind(server.start, server)();
+      })
+      .fail(function(err) {
+        logger.error('Could not auto start ucoin: %s', err.message || err);
+        logger.error(err.stack);
+      });
+  };
 
   this.start = function(req, res) {
     getServer()
@@ -55,12 +66,22 @@ module.exports = function AdminAPI(conf, mdb, mhost, mport) {
       .fail(onError(res));
   };
 
+  this.logs = function(req, res){
+    Q(logsOut)
+      .then(onSuccess(res))
+      .fail(onError(res));
+  };
+
   function getServer() {
     return (theServer ?
       // Use existing server
       Q(theServer) :
       // Creates a new one
-      service());
+      service())
+      .then(function(server){
+        theServer = theServer || server;
+        return theServer;
+      });
   }
 
   function getNode() {
@@ -71,8 +92,7 @@ module.exports = function AdminAPI(conf, mdb, mhost, mport) {
   }
 
   function getStatus(server) {
-    theServer = theServer || server;
-    var Block = theServer.conn.model('Block');
+    var Block = server.conn.model('Block');
     return Q.nbind(Block.current, Block)()
       .then(function(current){
         return {

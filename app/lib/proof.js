@@ -73,7 +73,6 @@ process.on('message', function(stuff){
       testsCount: testsCount,
       pow: pow
     });
-    process.exit(0);
   });
 });
 

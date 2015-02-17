@@ -1,11 +1,13 @@
 "use strict";
 var layouts = require('log4js').layouts;
-var output = [];
+var logFunc = function(l) {
+  console.log(l);
+};
 
 function arrayAppender (layout) {
   layout = layout || layouts.basicLayout;
   return function(loggingEvent) {
-    output.push(layout(loggingEvent));
+    logFunc(layout(loggingEvent));
   };
 }
 
@@ -15,7 +17,7 @@ function configure(config) {
     layout = layouts.layout(config.layout.type, config.layout);
   }
   if (config.options.output) {
-    output = config.options.output;
+    logFunc = config.options.output;
   }
   return arrayAppender(layout);
 }

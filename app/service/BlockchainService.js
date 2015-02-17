@@ -5,6 +5,7 @@ var sha1            = require('sha1');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
 var childProcess    = require('child_process');
+var usage           = require('usage');
 var rawer           = require('../lib/rawer');
 var crypto          = require('../lib/crypto');
 var base64          = require('../lib/base64');
@@ -1458,9 +1459,27 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         computeObsoleteLinks(current, next);
       }
     ], done);
+  };
+
+  var debug = process.execArgv.toString().indexOf('--debug') !== -1;
+  if(debug) {
+    //Set an unused port number.
+    process.execArgv = [];
   }
+  var powProcess = childProcess.fork(__dirname + '/../lib/proof');
+
+  this.getPoWProcessStats = function(options, done) {
+    usage.lookup(powProcess.pid, options, done);
+  };
+
+  this.stopProof = function(done) {
+    if (!newKeyblockCallback)
+      newKeyblockCallback = done;
+    else done();
+  };
 
   this.prove = function (block, sigFunc, nbZeros, done) {
+    //if (powProcess) return done('Proof-of-work process already running.');
     if (block.number == 0) {
       // On initial block, difficulty is the one given manually
       block.powMin = nbZeros;
@@ -1471,13 +1490,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.whilst(function(){
       return !stopped;
     }, function(next){
-      var debug = process.execArgv.toString().indexOf('--debug') !== -1;
-      var forkArgv;
-      if(debug) {
-        //Set an unused port number.
-        process.execArgv = [];
-      }
-      var powProcess = childProcess.fork(__dirname + '/../lib/proof', [conf.salt, conf.passwd, nbZeros]);
       powProcess.on('message', function(msg) {
         if (!stopped && msg.found) {
           block.signature = msg.sig;
@@ -1496,6 +1508,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           //logger.debug('Release mem... lastCount = %s, nonce = %s', block.nonce);
           block.nonce = msg.nonce;
           powProcess.kill();
+          powProcess = childProcess.fork(__dirname + '/../lib/proof');
           next();
         } else if (!stopped) {
           // Continue...
@@ -1504,15 +1517,18 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           if (newKeyblockCallback) {
             stopped = true;
             powProcess.kill();
+            powProcess = childProcess.fork(__dirname + '/../lib/proof');
             next();
-            logger.debug('Proof-of-work computation canceled: valid block received');
+            logger.debug('Proof-of-work computation canceled.');
             newKeyblockCallback();
           }
         }
       });
       // Start
       powProcess.send({ conf: conf, block: block, zeros: nbZeros });
-    }, done);
+    }, function(err, block) {
+      done(err, block);
+    });
   };
 
   this.startGeneration = function (done) {

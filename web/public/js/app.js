@@ -76,49 +76,133 @@ ucoinApp.config(['$routeProvider',
 var ucoinControllers = angular.module('ucoinControllers', []);
 var btnStart, btnStop, btnRestart;
 
-ucoinControllers.controller('homeController', function ($scope, $route, $location, $http, $interval) {
-
-  if (!btnStart) {
-    btnStart = $('#button-start');
-    btnStop = $('#button-stop');
-    btnRestart = $('#button-restart');
-    btnStart.click(function (e) {
-      e.preventDefault();
-      getAndStatus($http.get('/node/start'), $scope);
-    });
-    btnStop.click(function (e) {
-      e.preventDefault();
-      getAndStatus($http.get('/node/stop'), $scope);
-    });
-    btnRestart.click(function (e) {
-      e.preventDefault();
-      getAndStatus($http.get('/node/stop'), $scope)
-        .then(function(){
-          return getAndStatus($http.get('/node/start'), $scope);
+ucoinControllers.factory('socket', function ($rootScope) {
+  var socket = io();
+  return {
+    on: function (eventName, callback) {
+      socket.on(eventName, function () {
+        var args = arguments;
+        $rootScope.$apply(function () {
+          callback.apply(socket, args);
         });
-    });
-  }
+      });
+    },
+    emit: function (eventName, data, callback) {
+      socket.emit(eventName, data, function () {
+        var args = arguments;
+        $rootScope.$apply(function () {
+          if (callback) {
+            callback.apply(socket, args);
+          }
+        });
+      })
+    }
+  };
+});
+
+ucoinControllers.controller('sidebarController', function ($scope, socket, $http) {
+
+  $scope.nodeMessage = '';
+  $scope.errorMessage = false;
+  $scope.status = '';
+  $scope.$watch('status', function() {
+    $scope.isUP = $scope.status == 'UP';
+  }, true);
+
+  socket.on('connection', function(msg) {
+    $scope.nodeMessage = 'Connected';
+  });
+
+  socket.on('status', function(status) {
+    $scope.status = status;
+  });
+
+  socket.on('message', function(msg) {
+    $scope.nodeMessage = msg;
+  });
+
+  socket.on('block', function(block) {
+    if (block) {
+      $scope.currentBlock = block.number;
+    }
+  });
+
+  $scope.start = function() {
+    getOrError($http.get('/node/start'), $scope);
+  };
+
+  $scope.stop = function() {
+    getOrError($http.get('/node/stop'), $scope);
+  };
+
+  $scope.restart = function() {
+    getOrError($http.get('/node/restart'), $scope);
+  };
+
+  $scope.reset = function() {
+    getOrError($http.get('/node/reset'), $scope);
+  };
+});
+
+ucoinControllers.controller('homeController', function ($scope, $route, $location, socket, $http, $interval) {
+
   $scope.currency_acronym = currency_acronym;
   $scope.relative_acronym = relative_acronym;
   $scope.isNotLoading = true;
   $scope.currentBlock = 'No blockchain';
   $scope.status = 'DOWN';
   $scope.isUP = false;
-  $scope.$watch('status', function() {
-    $scope.isUP = $scope.status == 'UP';
-  }, true);
-  $scope.nodeMessage = '';
-  $scope.errorMessage = false;
-  getAndStatus($http.get('/node/status'), $scope)
-    .then(function(){
-      return getAndHome($http.get('/node/home'), $scope);
-    });
+  $scope.logs = [];
 
-  $interval(function() {
-    getAndLogs($http.get('/node/logs'), $scope);
-  }, 1000);
-  // Launch one
-  getAndLogs($http.get('/node/logs'), $scope);
+  var memoryMainSeries, cpuMainSeries, memoryForkSeries, cpuForkSeries;
+  setTimeout(function() {
+    var now = new Date().getTime();
+    var values = [];
+    for (var i = 20; i > 0; i--) {
+      values.push([now - i*1000, 0]);
+    }
+    memoryMainSeries = memoryGraph('#memoryGraph1', values);
+    memoryForkSeries = memoryGraph('#memoryGraph2', values);
+    cpuMainSeries = cpuGraph('#cpuGraph1', values);
+    cpuForkSeries = cpuGraph('#cpuGraph2', values);
+  }, 500);
+
+  socket.on('overview', function(data) {
+    if (data) {
+      $.each(data, function (key, value) {
+        $scope[key] = value;
+      });
+    }
+  });
+
+  var seriesLength = 0;
+  socket.on('usage', function(data) {
+    if (memoryMainSeries) {
+      seriesLength++;
+      var now = new Date().getTime();
+      var MB = 1024*1024;
+      memoryMainSeries.addPoint([now, data.main.memory/MB], true, true);
+      memoryForkSeries.addPoint([now, data.fork.memory/MB], true, true);
+      cpuMainSeries.addPoint([now, data.main.cpu], true, true);
+      cpuForkSeries.addPoint([now, data.fork.cpu], true, true);
+    }
+  });
+
+  socket.on('log', function(log) {
+    var date = log.match(/^\[([\d-:. ]+)\]/)[1];
+    var type = log.match(/^\[.*\] \[([\w]+)\]/)[1];
+    var source = log.match(/^\[.*\] \[[\w]+\] (\w+) -/)[1];
+    var message = log.match(/^\[.*\] \[[\w]+\] \w+ - (.*)/)[1];
+    $scope.logs.push({
+      date: date,
+      type: type,
+      source: source,
+      message: message
+    });
+    if($scope.logs.length >= 10) {
+      $scope.logs.splice(0, 1);
+    }
+  });
 
   $scope.path = ($route.current && $route.current.path) || "";
   $scope.menus = [{
@@ -149,49 +233,8 @@ ucoinControllers.controller('homeController', function ($scope, $route, $locatio
   $scope.home = true;
 });
 
-function getAndStatus(jsonPromise, $scope) {
+function getOrError(jsonPromise, $scope) {
   return jsonPromise
-    .success(function (statusObj) {
-      var current = statusObj.current;
-      $scope.currentBlock = current ? 'Current block: #' + current.number : 'No blockchain';
-      $scope.status = statusObj.status;
-    })
-    .error(handleError($scope));
-}
-
-function getAndHome(jsonPromise, $scope) {
-  jsonPromise
-    .success(function (data) {
-      $.each(data, function (key, value) {
-        $scope[key] = value;
-      });
-    })
-    .error(handleError($scope));
-}
-
-function getAndLogs(jsonPromise, $scope) {
-  jsonPromise
-    .success(function (data) {
-      var messages = [];
-      var nbMessagesMax = 10;
-      if (data.length > nbMessagesMax) {
-        data = data.slice(data.length - nbMessagesMax, data.length + 1);
-      }
-      for (var i = 0; i < data.length; i++) {
-        var log = data[i];
-        var date = log.match(/^\[([\d-:. ]+)\]/)[1];
-        var type = log.match(/^\[.*\] \[([\w]+)\]/)[1];
-        var source = log.match(/^\[.*\] \[[\w]+\] (\w+) -/)[1];
-        var message = log.match(/^\[.*\] \[[\w]+\] \w+ - (.*)/)[1];
-        messages.push({
-          date: date,
-          type: type,
-          source: source,
-          message: message
-        })
-      }
-      $scope.logs = messages;
-    })
     .error(handleError($scope));
 }
 

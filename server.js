@@ -165,23 +165,17 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     }
   };
 
-  this.start = function (doListenHTTP, done) {
-    if (arguments.length == 1) {
-      done = doListenHTTP;
-      doListenHTTP = true;
-    }
+  this.start = function (done) {
     async.waterfall([
       function (next){
         that._start(next);
       },
       function (next) {
-        if (!doListenHTTP) {
-          next();
-          return;
-        }
         listenBMA(function (err, app) {
-          if (!err)
+          if (!err) {
             that.emit('BMALoaded', app);
+            that.emit('started');
+          }
           else
             that.emit('BMAFailed', err);
           next(err);
@@ -199,6 +193,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     logger.info('Shutting down server...');
     server4 && server4.close();
     server6 && server6.close();
+    that.emit('stopped');
     logger.info('Server DOWN');
     serverListening = false;
   };

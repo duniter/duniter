@@ -1466,15 +1466,30 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     //Set an unused port number.
     process.execArgv = [];
   }
-  var powProcess = childProcess.fork(__dirname + '/../lib/proof');
+  var powProcess;
 
-  this.getPoWProcessStats = function(options, done) {
-    usage.lookup(powProcess.pid, options, done);
+  this.getPoWProcessStats = function(done) {
+    if (powProcess)
+      usage.lookup(powProcess.pid, done);
+    else
+      done(null, { memory: 0, cpu: 0 });
   };
 
+  var askedStop = null;
+
   this.stopProof = function(done) {
-    if (!newKeyblockCallback)
-      newKeyblockCallback = done;
+    if (!newKeyblockCallback) {
+      askedStop = 'Stopping node.';
+      newKeyblockCallback = function() {
+        newKeyblockCallback = null;
+        // Definitely kill the process for this BlockchainService instance
+        if (powProcess) {
+          powProcess.kill();
+          powProcess = null;
+        }
+        done();
+      }
+    }
     else done();
   };
 
@@ -1490,6 +1505,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.whilst(function(){
       return !stopped;
     }, function(next){
+      powProcess = childProcess.fork(__dirname + '/../lib/proof');
       powProcess.on('message', function(msg) {
         if (!stopped && msg.found) {
           block.signature = msg.sig;
@@ -1622,7 +1638,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       } else {
         // Proof-of-work found
         computationActivated = false
-        done(err, proofBlock);
+        done(err || askedStop, proofBlock);
       }
     });
   };

@@ -5,11 +5,11 @@ var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports.get = function (conn, conf, PeeringService) {
-  return new TransactionService(conn, conf, PeeringService);
+module.exports.get = function (conn, conf) {
+  return new TransactionService(conn, conf);
 };
 
-function TransactionService (conn, conf, PeeringService) {
+function TransactionService (conn, conf) {
 
   var Transaction = conn.model('Transaction');
   var Block       = conn.model('Block');

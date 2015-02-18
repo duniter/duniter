@@ -102,7 +102,8 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
         that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.ParametersService);
         that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.IdentityService, that.PeeringService);
-        that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf, that.PeeringService);
+        that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf);
+        that.IdentityService.setBlockchainService(that.BlockchainService);
         async.parallel({
           peering: function(callback){
             that.PeeringService.load(callback);
@@ -124,12 +125,9 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
       },
       function (pair, next){
-        // Overrides PeeringService so we do benefit from registered privateKey
-        that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
-        that.PeeringService      = require('./app/service/PeeringService').get(that.conn, that.conf, pair, that.sign, that.ParametersService);
-        that.BlockchainService   = require('./app/service/BlockchainService').get(that.conn, that.conf, that.IdentityService, that.PeeringService);
-        that.TransactionsService = require('./app/service/TransactionsService').get(that.conn, that.conf, that.PeeringService);
-        that.IdentityService.setBlockchainService(that.BlockchainService);
+        // Add signing & public key functions to PeeringService
+        that.PeeringService.setKeyPair(pair);
+        that.PeeringService.setSignFunc(that.sign);
         logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
         async.waterfall([

@@ -10,7 +10,7 @@ var moment         = require('moment');
 var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 
-function PeeringService(conn, conf, pair, signFunc, ParametersService) {
+function PeeringService(conn, conf, pair, signFunc) {
   
   var currency = conf.currency;
 
@@ -20,14 +20,23 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
   var Peer        = conn.model('Peer');
   
   var selfPubkey = undefined;
-  if (pair) {
-    selfPubkey = base58.encode(pair.publicKey);
-  }
   this.pubkey = selfPubkey;
 
   var peer = null;
   var peers = {};
   var that = this;
+
+  this.setKeyPair = function(keypair) {
+    if (keypair) {
+      pair = keypair;
+      selfPubkey = base58.encode(pair.publicKey);
+      that.pubkey = selfPubkey;
+    }
+  };
+
+  this.setSignFunc = function(f) {
+    signFunc = f;
+  };
 
   this.peer = function (newPeer) {
     if (newPeer) {
@@ -327,6 +336,6 @@ function PeeringService(conn, conf, pair, signFunc, ParametersService) {
 
 util.inherits(PeeringService, events.EventEmitter);
 
-module.exports.get = function (conn, conf, pair, signFunc, ParametersService) {
-  return new PeeringService(conn, conf, pair, signFunc, ParametersService);
+module.exports.get = function (conn, conf, pair, signFunc) {
+  return new PeeringService(conn, conf, pair, signFunc);
 };

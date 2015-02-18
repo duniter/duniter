@@ -1732,7 +1732,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       'tx': 'transactions'
     };
     statQueue.push(function (sent) {
-      logger.debug('Computing stats...');
+      //logger.debug('Computing stats...');
       async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx'], function (statName, callback) {
         async.waterfall([
           function (next) {
@@ -1782,12 +1782,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           }
         ], callback);
       }, function (err) {
-        logger.debug('Computing stats: done!');
+        //logger.debug('Computing stats: done!');
         sent();
       });
     });
     statQueue.push(function (sent) {
-      logger.debug('Computing memberships...');
+      //logger.debug('Computing memberships...');
       async.forEachSeries(['memberships'], function (statName, callback) {
         async.waterfall([
           function (next) {
@@ -1866,7 +1866,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           }
         ], callback);
       }, function (err) {
-        logger.debug('Computing memberships: done!');
+        //logger.debug('Computing memberships: done!');
         sent();
       });
     });

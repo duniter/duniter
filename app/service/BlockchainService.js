@@ -1331,9 +1331,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     block.joiners = [];
     joiners.forEach(function(joiner){
       var data = joinData[joiner];
-      // Join only for non-members
-      if (!data.identity.wasMember) {
+      // Identities only for never-have-been members
+      if (!data.identity.member && !data.identity.wasMember) {
         block.identities.push(data.identity.inline());
+      }
+      // Join only for non-members
+      if (!data.identity.member) {
         block.joiners.push(data.ms.inline());
       }
     });
@@ -1342,7 +1345,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     joiners.forEach(function(joiner){
       var data = joinData[joiner];
       // Join only for non-members
-      if (data.identity.wasMember) {
+      if (data.identity.member) {
         block.actives.push(data.ms.inline());
       }
     });

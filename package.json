@@ -37,18 +37,18 @@
     "merkle": "0.1.0",
     "moment": "2.6.0",
     "mongoose": "3.8.4",
-    "naclb": "0.0.1",
+    "naclb": "0.1.2",
     "nan": "1.3.0",
     "nat-upnp": "0.2.11",
     "q": "^1.1.2",
     "request": "2.31.0",
-    "scrypt": "3.0.1",
+    "scrypt-hash": "^1.1.10",
     "sha1": "1.1.0",
     "socket.io": "^1.3.4",
     "tweetnacl": "0.11.2",
     "underscore": "1.5.2",
     "usage": "^0.6.0",
-    "vucoin": "0.23.8"
+    "vucoin": "0.24.0"
   },
   "devDependencies": {
     "grunt": "^0.4.5",

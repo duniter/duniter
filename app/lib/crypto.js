@@ -1,5 +1,5 @@
 var nacl        = require('tweetnacl');
-var scrypt      = require('scrypt');
+//var scrypt      = require('scrypt');
 var base58      = require('./base58');
 var naclBinding = require('naclb');
 
@@ -91,7 +91,10 @@ module.exports = {
   */
   getKeyPair: function (key, salt, done) {
     getScryptKey(key, salt, function(keyBytes) {
-      done(null, nacl.sign.keyPair.fromSeed(keyBytes));
+      var keyPair = nacl.sign.keyPair.fromSeed(keyBytes);
+      keyPair.publicKey = base58.decode(base58.encode(keyPair.publicKey));
+      keyPair.secretKey = base58.decode(base58.encode(keyPair.secretKey));
+      done(null, keyPair);
     });
   },
 
@@ -114,12 +117,18 @@ module.exports = {
   }
 };
 
-function getScryptKey(key, salt, callback) {
+function getScryptKey(key, saltString, callback) {
   // console.log('Derivating the key...');
-  scrypt.kdf.config.saltEncoding = "ascii";
-  scrypt.kdf.config.keyEncoding = "ascii";
-  scrypt.kdf.config.outputEncoding = "base64";
-  scrypt.kdf(key, TEST_PARAMS, SEED_LENGTH, salt, function (err, res) {
-    callback(dec(res.hash));
+  var scrypt = require('scrypt-hash');
+  var password = Buffer(key);
+  var salt = Buffer(saltString);
+  var N = TEST_PARAMS.N;
+  var r = TEST_PARAMS.r;
+  var p = TEST_PARAMS.p;
+  scrypt(password, salt, N, r, p, SEED_LENGTH, function (err, hash) {
+    if (err) {
+      throw err;
+    }
+    callback(dec(hash.toString('base64')));
   });
 }

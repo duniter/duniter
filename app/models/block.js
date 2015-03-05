@@ -248,6 +248,13 @@ BlockSchema.statics.lastUDBlock = function (done) {
     });
 };
 
+BlockSchema.statics.findAll = function (done) {
+  this
+    .find({})
+    .sort({ 'number': 1 })
+    .exec(done);
+};
+
 BlockSchema.statics.getRoot = function (done) {
   this.find({ number: 0 }).limit(1).exec(function (err, blocks) {
     if(blocks && blocks.length == 1)

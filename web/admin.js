@@ -291,6 +291,126 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
       });
     });
   }
+
+  this.graphs = function(req, res){
+    getReadyServer()
+      .then(function(){
+        var Block = theServer.conn.model('Block');
+        return Q.nbind(Block.findAll, Block)();
+      })
+      .then(function(blocks) {
+        return Q.Promise(function(resolve, reject){
+          async.waterfall([
+            function (next) {
+              if (blocks.length == 0) return next('No block');
+              var sp = blocks[0].parameters.split(':');
+              var parameters = {
+                "c":                parseFloat(sp[0]),
+                "dt":               parseInt(sp[1]),
+                "ud0":              parseInt(sp[2]),
+                "sigDelay":         parseInt(sp[3]),
+                "sigValidity":      parseInt(sp[4]),
+                "sigQty":           parseInt(sp[5]),
+                "sigWoT":           parseInt(sp[6]),
+                "msValidity":       parseInt(sp[7]),
+                "stepMax":          parseInt(sp[8]),
+                "medianTimeBlocks": parseInt(sp[9]),
+                "avgGenTime":       parseInt(sp[10]),
+                "dtDiffEval":       parseInt(sp[11]),
+                "blocksRot":        parseInt(sp[12]),
+                "percentRot":       parseFloat(sp[13])
+              };
+              var medianTimes = [];
+              var accelerations = [];
+              var speed = [];
+              var increments = [];
+              var members = [];
+              var certifications = [];
+              var newcomers = [];
+              var actives = [];
+              var outputs = [];
+              var outputsEstimated = [];
+              var leavers = [];
+              var excluded = [];
+              var transactions = [];
+              var nbDifferentIssuers = [];
+              var difficulties = [];
+              var blockchainTime = 0;
+              blocks.forEach(function (block, index) {
+                members.push(block.membersCount);
+                certifications.push(block.certifications.length);
+                newcomers.push(block.identities.length);
+                actives.push(block.actives.length);
+                leavers.push(block.leavers.length);
+                excluded.push(block.excluded.length);
+                transactions.push(block.transactions.length);
+                medianTimes.push(block.medianTime);
+                accelerations.push(block.time - block.medianTime);
+                difficulties.push(block.powMin);
+                increments.push(block.medianTime - (index ? blocks[index-1].medianTime : block.medianTime));
+                // Accumulation of last medianTimeBlocks variation
+                var acc = 0;
+                for (var i = Math.max(0, index - parameters.dtDiffEval); i < index; i++) {
+                  acc += increments[i+1];
+                }
+                speed.push(acc / parameters.dtDiffEval);
+                // Volume
+                var outputVolume = 0;
+                block.transactions.forEach(function (tx) {
+                  tx.outputs.forEach(function (out) {
+                    var amount = parseInt(out.split(':')[1]);
+                    outputVolume += amount;
+                  });
+                });
+                outputs.push(outputVolume);
+                // Volume without money change
+                var outputVolumeEstimated = 0;
+                block.transactions.forEach(function (tx) {
+                  tx.outputs.forEach(function (out) {
+                    var sp = out.split(':');
+                    var recipient = sp[0];
+                    var amount = parseInt(sp[1]);
+                    if (tx.signatories.indexOf(recipient) == -1)
+                      outputVolumeEstimated += amount;
+                  });
+                });
+                outputsEstimated.push(outputVolumeEstimated);
+                // Number of different issuers
+                var issuers = [];
+                for (var i = Math.max(0, index - 1 - parameters.blocksRot); i <= index - 1; i++) {
+                  issuers.push(blocks[i].issuer);
+                }
+                nbDifferentIssuers.push(_(issuers).uniq().length);
+                blockchainTime = block.medianTime;
+              });
+              next(null, {
+                'parameters': parameters,
+                'blockchainTime': blockchainTime,
+                'medianTimes': medianTimes,
+                'speed': speed,
+                'accelerations': accelerations,
+                'medianTimeIncrements': increments,
+                'certifications': certifications,
+                'members': members,
+                'newcomers': newcomers,
+                'actives': actives,
+                'leavers': leavers,
+                'excluded': excluded,
+                'outputs': outputs,
+                'outputsEstimated': outputsEstimated,
+                'transactions': transactions,
+                'difficulties': difficulties,
+                'nbDifferentIssuers': nbDifferentIssuers
+              });
+            }
+          ], function(err, data) {
+            if (err) reject(err); else resolve(data);
+          });
+        });
+      })
+      .then(onSuccess(res))
+      .fail(onError(res));
+  };
 }
 
 function onSuccess(res) {

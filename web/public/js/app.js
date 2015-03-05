@@ -144,7 +144,7 @@ ucoinControllers.controller('sidebarController', function ($scope, socket, $http
   };
 });
 
-ucoinControllers.controller('homeController', function ($scope, $route, $location, socket, $http, $interval) {
+ucoinControllers.controller('homeController', function ($scope, $route, $location, socket, $http, $timeout) {
 
   $scope.currency_acronym = currency_acronym;
   $scope.relative_acronym = relative_acronym;
@@ -166,6 +166,66 @@ ucoinControllers.controller('homeController', function ($scope, $route, $locatio
     cpuMainSeries = cpuGraph('#cpuGraph1', values);
     cpuForkSeries = cpuGraph('#cpuGraph2', values);
   }, 500);
+
+  getOrError($http.get('/node/graphs')
+    .success(function(data){
+      $timeout(function() {
+        var minSpeeds = [], speeds = [], maxSpeeds = [], actualDurations = [], maxDurations = [], minDurations = [];
+        var BY_HOUR = 3600;
+        data.speed.forEach(function (actualDuration, index) {
+          var realDuration = !isNaN(actualDuration) && actualDuration != 0 ? actualDuration : data.parameters.avgGenTime;
+          speeds.push(parseFloat((BY_HOUR/realDuration).toFixed(2)));
+          minSpeeds.push(parseFloat((BY_HOUR/(data.parameters.avgGenTime*4)).toFixed(2)));
+          maxSpeeds.push(parseFloat((BY_HOUR/(data.parameters.avgGenTime/4)).toFixed(2)));
+          actualDurations.push(parseFloat((realDuration).toFixed(2)));
+          minDurations.push(parseFloat(((data.parameters.avgGenTime/4)).toFixed(2)));
+          maxDurations.push(parseFloat(((data.parameters.avgGenTime*4)).toFixed(2)));
+        });
+        var times = [];
+        data.medianTimes.forEach(function (mdT, index) {
+          times.push([index*1000, BY_HOUR*data.speed[index]]);
+        });
+        timeGraphs('#timeGraph', data.accelerations, data.medianTimeIncrements, actualDurations, minDurations, maxDurations);
+        //speedGraphs('#speedGraph', speeds, minSpeeds, maxSpeeds);
+        //issuersGraphs('#issuersGraph', data.nbDifferentIssuers, data.parameters);
+        //difficultyGraph('#difficultyGraph', data.difficulties);
+
+        //// Comboboxes
+        //var textField1 = $("#textFieldBlock1");
+        //var textField2 = $("#textFieldBlock2");
+        //var last1Button = $("#buttonLast1");
+        //var last2Button = $("#buttonLast2");
+        //var allButton = $("#buttonAll");
+        //var buttons = [300, 100, 50, 30, 10];
+        //for (var i = 0; i < buttons.length; i++) {
+        //  (function() {
+        //    var btn = $("#buttonLast" + i);
+        //    var num = buttons[i];
+        //    btn.text(num + ' lasts');
+        //    btn.click(function () {
+        //      textField1.val(Math.max(0, data.speed.length - num));
+        //      textField2.val(data.speed.length - 1);
+        //      textField2.trigger('change');
+        //    });
+        //  })();
+        //};
+        //allButton.click(function () {
+        //  textField1.val(0);
+        //  textField2.val(data.speed.length - 1);
+        //  textField2.trigger('change');
+        //});
+        //textField1.change(majGraphes);
+        //textField2.change(majGraphes);
+        //$("#buttonLast2").trigger('click');
+        //
+        //function majGraphes () {
+        //  $("#timeGraph").highcharts().xAxis[0].setExtremes(parseFloat(textField1.val()), parseFloat(textField2.val()));
+        //  $("#speedGraph").highcharts().xAxis[0].setExtremes(parseFloat(textField1.val()), parseFloat(textField2.val()));
+        //  $("#issuersGraph").highcharts().xAxis[0].setExtremes(parseFloat(textField1.val()), parseFloat(textField2.val()));
+        //  $("#difficultyGraph").highcharts().xAxis[0].setExtremes(parseFloat(textField1.val()), parseFloat(textField2.val()));
+        //}
+      }, 500);
+    }), $scope);
 
   socket.on('overview', function(data) {
     if (data) {

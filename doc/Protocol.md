@@ -711,7 +711,7 @@ Parameter   | Goal
 c           | The %growth of the UD every `[dt]` period
 dt          | Time period between two UD
 ud0         | UD(0), i.e. initial Universal Dividend
-sigDelay    | Minimum delay between 2 identical certifications (same pubkeys)
+sigDelay    | Minimum delay between 2 identical certifications (same pubkeys). Must be superior to `sigValidity`.
 sigValidity | Maximum age of a valid signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
 sigWoT      | Minimum quantity of valid made certifications to be part of the WoT for distance rule

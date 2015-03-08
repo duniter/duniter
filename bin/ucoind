@@ -374,7 +374,7 @@ function serverStart(server, conf) {
       });
     },
     function (next) {
-      var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf);
+      var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf, server.dal);
       var theCaster = multicaster();
       server
         .pipe(theRouter) // The router ask for multicasting of documents

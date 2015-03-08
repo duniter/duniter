@@ -1,7 +1,7 @@
 var async  = require('async');
 var request  = require('request');
 var vucoin = require('vucoin');
-var ucoin  = require('../../..');
+var ucoin  = require('../../../index');
 
 module.exports = function (dbName, options) {
 	return new Node(dbName, options);
@@ -125,7 +125,7 @@ function Node (dbName, options) {
         });
       },
       //function (next) {
-      //  var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf);
+      //  var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf, server.dal);
       //  var theCaster = multicaster();
       //  server
       //    .pipe(theRouter) // The router ask for multicasting of documents

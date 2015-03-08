@@ -5,6 +5,7 @@ var _          = require('underscore');
 var mongoose   = require('mongoose');
 var common     = require('./app/lib/common');
 var constants  = require('./app/lib/constants');
+var sqliteDAL  = require('./app/lib/dal/sqliteDAL');
 var express    = require('express');
 var request    = require('request');
 var http       = require('http');
@@ -25,6 +26,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   var serverListening = false;
   that.conn = null;
   that.conf = null;
+  that.dal = null;
   that.version = jsonpckg.version;
 
   var initFunctions = [
@@ -36,7 +38,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     },
     function (done) {
       that.initServices(function (err) {
-        that.emit('services', err);
+        that.emit('services');
         done(err);
       });
     }
@@ -60,7 +62,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     async.forEachSeries(todoOnInit, function(f, cb){
       f(cb);
     });
-  }
+  };
 
   this.submit = function (obj, isInnerWrite, done) {
     async.waterfall([
@@ -105,7 +107,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     var databaseName = dbConf.name || "ucoin_default";
     var host = dbConf.host || "localhost";
     var port = dbConf.port;
-    var that = this;
     if (arguments.length == 1) {
       done = reset;
       reset = dbConf.resetData;
@@ -158,6 +159,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           }
           next();
         },
+        function(next) {
+          that.dal = sqliteDAL.memory(dbConf.name);
+          that.dal.initDabase().done(next);
+        }
       ], done);
     }
     else {
@@ -203,19 +208,21 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.reset = function(done) {
-    that.resetDatas([
-      'identities',
-      'certifications',
-      'blocks',
-      'links',
-      'sources',
-      'merkles',
-      'peers',
-      'transactions',
-      'blockstats',
-      'txmemories',
-      'memberships'
-    ], done);
+    return that.dal.dropModel('peer').then(function() {
+      that.resetDatas([
+        'identities',
+        'certifications',
+        'blocks',
+        'links',
+        'sources',
+        'merkles',
+        'peers',
+        'transactions',
+        'blockstats',
+        'txmemories',
+        'memberships'
+      ], done);
+    }).fail(done);
   };
 
   this.resetStats = function(done) {
@@ -223,7 +230,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.resetPeers = function(done) {
-    that.resetDatas(['peers'], done);
+    return that.dal.dropModel('peer').then(function() {
+      that.resetDatas(['peers'], done);
+    });
   };
 
   this.resetTxs = function(done) {

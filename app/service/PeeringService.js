@@ -10,20 +10,18 @@ var moment         = require('moment');
 var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 
-function PeeringService(conn, conf, pair, signFunc) {
+function PeeringService(conn, conf, pair, signFunc, dal) {
   
   var currency = conf.currency;
 
   var Block       = conn.model('Block');
-  var Transaction = conn.model('Transaction');
   var Merkle      = conn.model('Merkle');
-  var Peer        = conn.model('Peer');
+  var Peer        = require('../lib/entity/peer');
   
   var selfPubkey = undefined;
   this.pubkey = selfPubkey;
 
   var peer = null;
-  var peers = {};
   var that = this;
 
   this.setKeyPair = function(keypair) {
@@ -45,39 +43,7 @@ function PeeringService(conn, conf, pair, signFunc) {
     return peer;
   };
 
-  this.peers = function (newPeers) {
-    if (newPeers) {
-      peers = newPeers;
-    }
-    return peers;
-  };
-
-  this.upPeers = function () {
-    return _(peers).filter(function (p) {
-      return p.status == Peer.status.UP;
-    });
-  };
-
-  this.addPeer = function (p) {
-    peers[p.pub] = p;
-  };
-
   this.load = function (done) {
-    async.waterfall([
-      function (next){
-        Peer.find({}, next);
-      },
-      function (dbPeers, next){
-        dbPeers.forEach(function(peer){
-          that.addPeer(peer);
-        });
-        Peer.getTheOne(selfPubkey, function (err, selfPeer) {
-          if (selfPeer)
-            peer = selfPeer;
-          next();
-        });
-      },
-    ], done);
   };
 
   this.submit = function(peering, callback){
@@ -98,30 +64,30 @@ function PeeringService(conn, conf, pair, signFunc) {
       },
       function (block, next){
         sigTime = block ? block.medianTime : 0;
-        Peer.find({ pub: peer.pub }, next);
+        dal.getPeerOrNull(peer.pub, next);
       },
-      function (peers, next){
+      function (found, next){
         var peerEntity = peer;
         var previousHash = null;
-        if(peers.length > 0){
+        if(found){
           // Already existing peer
-          var sp2 = peers[0].block.split('-');
+          var sp2 = found.block.split('-');
           var number2 = sp2[0], fpr2 = sp2[1];
           if(number <= number2){
             next(constants.ERROR.PEER.ALREADY_RECORDED);
             return;
           }
-          peerEntity = peers[0];
+          peerEntity = found;
           previousHash = peerEntity.hash;
           peer.copyValues(peerEntity);
           peerEntity.sigDate = new Date(sigTime*1000);
         }
-        peerEntity.save(function (err) {
+        dal.savePeer(peerEntity, function (err) {
           next(err, peerEntity, previousHash);
         });
       },
       function (recordedPR, previousHash, next) {
-        Merkle.updateForPeers(function (err) {
+        Merkle.updateForPeers(dal, function (err) {
           next(err, recordedPR);
         });
       }
@@ -152,7 +118,7 @@ function PeeringService(conn, conf, pair, signFunc) {
       },
       function (block, next){
         sigTime = block ? block.medianTime : 0;
-        Peer.getTheOne(status.from, next);
+        dal.getPeer(status.from, next);
       },
       function (theOne, next){
         peer = theOne;
@@ -165,13 +131,11 @@ function PeeringService(conn, conf, pair, signFunc) {
           }
         }
         wasStatus = peer.status;
-        peers[peer.pub] = peers[peer.pub] || peer;
-        peers[peer.pub].status = status;
         peer.statusSigDate = new Date(sigTime*1000);
         peer.setStatus(status.status, next);
       },
       function (next) {
-        Merkle.updateForPeers(next);
+        Merkle.updateForPeers(dal, next);
       }
     ], function (err) {
       callback(err, status, peer, wasStatus);
@@ -188,18 +152,7 @@ function PeeringService(conn, conf, pair, signFunc) {
         });
       }
     });
-  }
-
-  this.submitSelfPeering = function(toPeer, done){
-    async.waterfall([
-      function (next){
-        Peer.getTheOne(selfPubkey, next);
-      },
-      function (peering, next){
-        sendPeering(toPeer, peering, next);
-      },
-    ], done);
-  }
+  };
 
   /**
   * Send status to a peer according to his last sent status to us
@@ -230,7 +183,7 @@ function PeeringService(conn, conf, pair, signFunc) {
   this.sendUpSignal = function (done) {
     async.waterfall([
       function (next){
-        Peer.allNEWUPBut([selfPubkey], next);
+        dal.findAllPeersNEWUPBut([selfPubkey], next);
       },
       function (allPeers, next) {
         async.forEachSeries(allPeers, function(peer, callback){
@@ -239,7 +192,7 @@ function PeeringService(conn, conf, pair, signFunc) {
             callback();
           });
         }, function(err){
-          done(err);
+          next(err);
         });
       }
     ], done);
@@ -270,10 +223,10 @@ function PeeringService(conn, conf, pair, signFunc) {
           async.waterfall([
             function (next) {
               // set DOWN for peers with too old status
-              Peer.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
+              dal.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
             },
             function (next) {
-              Merkle.updateForPeers(next);
+              Merkle.updateForPeers(dal, next);
             },
             function (next) {
               that.sendUpSignal(next);
@@ -299,7 +252,9 @@ function PeeringService(conn, conf, pair, signFunc) {
           next();
         });
       },
-      async.apply(Peer.getList.bind(Peer), pubs),
+      function(next) {
+        dal.getPeers(pubs, next);
+      },
       function (peers, next) {
         async.forEach(peers, function(peer, callback){
           var status = new Status({
@@ -336,6 +291,6 @@ function PeeringService(conn, conf, pair, signFunc) {
 
 util.inherits(PeeringService, events.EventEmitter);
 
-module.exports.get = function (conn, conf, pair, signFunc) {
-  return new PeeringService(conn, conf, pair, signFunc);
+module.exports.get = function (conn, conf, pair, signFunc, dal) {
+  return new PeeringService(conn, conf, pair, signFunc, dal);
 };

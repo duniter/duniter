@@ -142,14 +142,14 @@ MerkleSchema.statics.updatePeers = function (peer, previousHash, done) {
   ], done);
 };
 
-MerkleSchema.statics.updateForPeers = function (done) {
+MerkleSchema.statics.updateForPeers = function (dal, done) {
   var Merkle = this.model('Merkle');
   var Peer = this.model('Peer');
   async.waterfall([
     function (next) {
       async.parallel({
         peers: function (next) {
-          Peer.allNEWUPBut([], next);
+          dal.findAllPeersNEWUPBut([], next);
         },
         merkle: function (next) {
           Merkle.peers(next);

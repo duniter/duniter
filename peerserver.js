@@ -97,22 +97,12 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._initServices = function(conn, done) {
-    async.waterfall([
-      function (next){
-        that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
-        that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.ParametersService);
-        that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.IdentityService, that.PeeringService);
-        that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf);
-        that.IdentityService.setBlockchainService(that.BlockchainService);
-        async.parallel({
-          peering: function(callback){
-            that.PeeringService.load(callback);
-          }
-        }, function (err) {
-          next(err);
-        });
-      }
-    ], done);
+    that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
+    that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.dal);
+    that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.IdentityService, that.PeeringService);
+    that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf);
+    that.IdentityService.setBlockchainService(that.BlockchainService);
+    done();
   };
 
   this._start = function (done) {
@@ -131,15 +121,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
         async.waterfall([
-          function (next){
-            async.parallel({
-              peering: function(callback){
-                that.PeeringService.load(callback);
-              }
-            }, function (err) {
-              next(err);
-            });
-          },
           function (next) {
             that.initPeer(that.conn, that.conf, next);
           },
@@ -202,7 +183,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next){
         logger.info('Updating list of peers...');
-        that.conn.model('Merkle').updateForPeers(next);
+        that.conn.model('Merkle').updateForPeers(that.dal, next);
       },
       function (next){
         logger.info('Broadcasting UP/NEW signals...');
@@ -311,19 +292,20 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         }
       },
       function (next){
-        Peer.getTheOne(that.PeeringService.pubkey, next);
+        that.dal.getPeer(that.PeeringService.pubkey, next);
       },
       function (peer, next){
         // Set peer's statut to UP
         that.PeeringService.peer(peer);
         that.PeeringService.peer().status = 'UP';
-        that.PeeringService.peer().save(function (err) {
+        that.dal.savePeer(that.PeeringService.peer(), function (err) {
           // Update it in memory
-          that.PeeringService.addPeer(that.PeeringService.peer());
           next(err);
         });
-      },
-    ], done);
+      }
+    ], function(err) {
+      done(err);
+    });
   };
 
   this._listenBMA = function (app) {

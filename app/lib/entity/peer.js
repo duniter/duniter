@@ -1,11 +1,6 @@
-var mongoose = require('mongoose');
-var async    = require('async');
-var sha1     = require('sha1');
-var _        = require('underscore');
-var vucoin   = require('vucoin');
-var rawer    = require('../lib/rawer');
-var Schema   = mongoose.Schema;
-var logger   = require('../lib/logger')('peer');
+var _ = require('underscore');
+
+module.exports = Peer;
 
 var STATUS = {
   ASK: "ASK",
@@ -17,45 +12,19 @@ var STATUS = {
 };
 var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
-var PeerSchema = new Schema({
-  version: String,
-  currency: String,
-  pub: { type: String, unique: true },
-  endpoints: [String],
-  signature: String,
-  hash: String,
-  block: { type: String },
-  statusBlock: { type: String },
-  status: { type: String },
-  statusSent: { type: String, default: STATUS.NOTHING },
-  statusSigDate: { type: Date, default: function(){ return new Date(0); } },
-  propagated: { type: Boolean, default: false },
-  sigDate: { type: Date, default: function(){ return new Date(0); } },
-  created: { type: Date, default: Date.now },
-  updated: { type: Date, default: Date.now }
-});
+function Peer(json) {
 
-PeerSchema.pre('save', function (next) {
-  this.hash = sha1(this.pub).toUpperCase();
-  this.updated = Date.now();
-  next();
-});
+  var that = this;
 
-PeerSchema.virtual('pubkey').get(function () {
-  return this._pubkey;
-});
+  _(json).keys().forEach(function(key) {
+   that[key] = json[key];
+  });
 
-PeerSchema.virtual('pubkey').set(function (am) {
-  this._pubkey = am;
-});
-
-PeerSchema.methods = {
-
-  keyID: function () {
+  this.keyID = function () {
     return this.pub && this.pub.length > 10 ? this.pub.substring(0, 10) : "Unknown";
-  },
+  };
 
-  setStatus: function (newStatus, done) {
+  this.setStatus = function (newStatus, done) {
     if(this.status != newStatus){
       this.status = newStatus;
       this.save(function (err) {
@@ -64,23 +33,23 @@ PeerSchema.methods = {
       return;
     }
     else done();
-  },
-  
-  copyValues: function(to) {
+  };
+
+  this.copyValues = function(to) {
     var obj = this;
     ["version", "currency", "pub", "endpoints", "hash", "status", "block", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
-  },
-  
-  copyValuesFrom: function(from) {
+  };
+
+  this.copyValuesFrom = function(from) {
     var obj = this;
     ["version", "currency", "pub", "endpoints", "block", "signature"].forEach(function (key) {
       obj[key] = from[key];
     });
-  },
-  
-  json: function() {
+  };
+
+  this.json = function() {
     var obj = this;
     var json = {};
     ["version", "currency", "endpoints", "status", "block", "signature"].forEach(function (key) {
@@ -89,9 +58,9 @@ PeerSchema.methods = {
     json.raw = this.getRaw();
     json.pubkey = this.pub;
     return json;
-  },
+  };
 
-  getBMA: function() {
+  this.getBMA = function() {
     var bma = null;
     this.endpoints.forEach(function(ep){
       var matches = !bma && ep.match(BMA_REGEXP);
@@ -105,38 +74,38 @@ PeerSchema.methods = {
       }
     });
     return bma || {};
-  },
+  };
 
-  getDns: function() {
+  this.getDns = function() {
     var bma = this.getBMA();
     return bma.dns ? bma.dns : null;
-  },
+  };
 
-  getIPv4: function() {
+  this.getIPv4 = function() {
     var bma = this.getBMA();
     return bma.ipv4 ? bma.ipv4 : null;
-  },
+  };
 
-  getIPv6: function() {
+  this.getIPv6 = function() {
     var bma = this.getBMA();
     return bma.ipv6 ? bma.ipv6 : null;
-  },
+  };
 
-  getPort: function() {
+  this.getPort = function() {
     var bma = this.getBMA();
     return bma.port ? bma.port : null;
-  },
+  };
 
-  getHost: function() {
+  this.getHost = function() {
     var bma = this.getBMA();
     var host =
       (bma.ipv6 ? bma.ipv6 :
         (bma.ipv4 ? bma.ipv4 :
           (bma.dns ? bma.dns : '')));
     return host;
-  },
+  };
 
-  getURL: function() {
+  this.getURL = function() {
     var bma = this.getBMA();
     var base =
       (bma.ipv6 ? '[' + bma.ipv6 + ']' :
@@ -145,26 +114,22 @@ PeerSchema.methods = {
     if(bma.port)
       base += ':' + bma.port;
     return base;
-  },
+  };
 
-  getRaw: function() {
+  this.getRaw = function() {
     return rawer.getPeerWithoutSignature(this);
-  },
+  };
 
-  getRawSigned: function() {
+  this.getRawSigned = function() {
     return rawer.getPeer(this);
-  },
+  };
 
-  connect: function (done){
+  this.connect = function (done){
     var WITH_SIGNATURE_PARAM = false;
     vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), true, WITH_SIGNATURE_PARAM, done);
-  },
+  };
 
-  isReachable: function () {
+  this.isReachable = function () {
     return this.getURL() ? true : false;
   }
 }
-
-PeerSchema.statics.status = STATUS;
-
-module.exports = PeerSchema;

@@ -4,11 +4,11 @@ var util     = require('util');
 var stream   = require('stream');
 var logger   = require('../../lib/logger')('router');
 
-module.exports = function (serverPubkey, conn, conf) {
-  return new Router(serverPubkey, conn, conf);
+module.exports = function (serverPubkey, conn, conf, dal) {
+  return new Router(serverPubkey, conn, conf, dal);
 };
 
-function Router (serverPubkey, conn, conf) {
+function Router (serverPubkey, conn, conf, dal) {
 
   var Identity = conn.model('Identity');
   var Merkle   = conn.model('Merkle');
@@ -32,12 +32,15 @@ function Router (serverPubkey, conn, conf) {
     else if (obj.unreachable) {
       async.waterfall([
         function (next) {
-          Peer.setDown(obj.peer.pubkey, next);
+          dal.setPeerDown(obj.peer.pubkey, next);
         },
         function (next) {
-          Merkle.updateForPeers(next);
+          Merkle.updateForPeers(dal, next);
         }
-      ], done);
+      ], function(err) {
+        if (err) logger.error(err);
+        else logger.info("Peer %s unreachable: now considered as DOWN.", obj.peer.pubkey);
+      });
     }
     else {
       done();
@@ -70,7 +73,7 @@ function Router (serverPubkey, conn, conf) {
       async.waterfall([
         Block.current.bind(Block),
         function (current, next) {
-          Peer.getRandomlyUPsWithout(without, current.medianTime - conf.avgGenTime*10, next); // Peers with status UP
+          dal.getRandomlyUPsWithout(without, current.medianTime - conf.avgGenTime*10, next); // Peers with status UP
         },
         function (peers, next) {
           async.forEachSeries(peers, function (p, callback) {
@@ -108,7 +111,7 @@ function Router (serverPubkey, conn, conf) {
       if (to == serverPubkey) {
         done(null, []);
       } else {
-        Peer.getTheOne(to, function (err, peer) {
+        dal.getPeer(to, function (err, peer) {
           done(err, [peer]);
         });
       }

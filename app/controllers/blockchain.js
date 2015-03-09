@@ -34,7 +34,6 @@ function BlockchainBinding (wotServer) {
 
   // Models
   var Peer       = wotServer.conn.model('Peer');
-  var Block      = wotServer.conn.model('Block');
   var Membership = wotServer.conn.model('Membership');
   var Identity   = wotServer.conn.model('Identity');
   var BlockStat  = wotServer.conn.model('BlockStat');
@@ -229,7 +228,7 @@ function BlockchainBinding (wotServer) {
         if (current) {
           nextBlockNumber = current ? current.number + 1 : 0;
         }
-        globalValidator(conf, blockchainDao(conn, null)).getTrialLevel(member, next);
+        globalValidator(conf, blockchainDao(conn, null, server.dal)).getTrialLevel(member, next);
       },
     ], function (err, nbZeros) {
       if(err){

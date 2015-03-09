@@ -5,13 +5,13 @@ var globalValidator = require('../lib/globalValidator');
 var crypto          = require('../lib/crypto');
 var logger          = require('../lib/logger')('pubkey');
 
-module.exports.get = function (conn, conf) {
-  return new IdentityService(conn, conf);
+module.exports.get = function (conn, conf, dal) {
+  return new IdentityService(conn, conf, dal);
 };
 
-function IdentityService (conn, conf) {
+function IdentityService (conn, conf, dal) {
 
-  var Block         = conn.model('Block');
+  var Block         = require('../../app/lib/entity/block');
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
   
@@ -25,7 +25,7 @@ function IdentityService (conn, conf) {
   var BlockchainService = null;
   
   // Validator for certifications
-  var globalValidation = globalValidator(conf, blockchainDao(conn, null));
+  var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
 
   this.search = function(search, done) {
     async.waterfall([

@@ -97,10 +97,10 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._initServices = function(conn, done) {
-    that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf);
+    that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf, that.dal);
     that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.dal);
-    that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.IdentityService, that.PeeringService);
-    that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf);
+    that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.dal, that.PeeringService);
+    that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf, that.dal);
     that.IdentityService.setBlockchainService(that.BlockchainService);
     done();
   };

@@ -4,6 +4,7 @@ var crypto     = require('./crypto');
 var common     = require('./common');
 var rawer      = require('./rawer');
 var constants  = require('./constants');
+var Block         = require('../lib/entity/block');
 var Identity   = mongoose.model('Identity', require('../models/identity'));
 var Membership = mongoose.model('Membership', require('../models/membership'));
 
@@ -17,7 +18,8 @@ function LocalValidator (conf) {
   /**
   * Compilation of all local tests
   */
-  this.validate = function (block, done) {
+  this.validate = function (b, done) {
+    var block = new Block(b);
     var that = this;
     async.series([
       async.apply(that.checkParameters,                           block),

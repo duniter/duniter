@@ -14,10 +14,9 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
   
   var currency = conf.currency;
 
-  var Block       = conn.model('Block');
   var Merkle      = conn.model('Merkle');
   var Peer        = require('../lib/entity/peer');
-  
+
   var selfPubkey = undefined;
   this.pubkey = selfPubkey;
 
@@ -49,7 +48,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
   this.submit = function(peering, callback){
     var peer = new Peer(peering);
     var sp = peer.block.split('-');
-    var number = sp[0], fpr = sp[1];
+    var number = sp[0];
     var sigTime = new Date(0);
     async.waterfall([
       function (next) {
@@ -60,7 +59,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
           next(null, null);
         else
           // Check if document is based upon an existing block as time reference
-          Block.findByNumberAndHash(number, fpr, next);
+          dal.getBlockOrNull(number, next);
       },
       function (block, next){
         sigTime = block ? block.medianTime : 0;
@@ -72,7 +71,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         if(found){
           // Already existing peer
           var sp2 = found.block.split('-');
-          var number2 = sp2[0], fpr2 = sp2[1];
+          var number2 = sp2[0];
           if(number <= number2){
             next(constants.ERROR.PEER.ALREADY_RECORDED);
             return;
@@ -114,7 +113,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
           next(null, null);
         else
           // Check if document is based upon an existing block as time reference
-          Block.findByNumberAndHash(number, fpr, next);
+          dal.getBlockOrNull(number, next);
       },
       function (block, next){
         sigTime = block ? block.medianTime : 0;
@@ -124,7 +123,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         peer = theOne;
         if (peer.statusBlock) {
           var sp2 = peer.statusBlock.split('-');
-          var number2 = sp2[0], fpr2 = sp2[1];
+          var number2 = sp2[0];
           if(number <= number2){
             next('Old status given');
             return;
@@ -214,9 +213,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
   function upSignal(callback) {
     async.waterfall([
       function (next) {
-        Block.current(function(err, block) {
-          next(null, block || null);
-        });
+        dal.getCurrentBlockOrNull(next);
       },
       function(current, next) {
         if (current) {
@@ -247,10 +244,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
     var current = null;
     async.waterfall([
       function (next) {
-        Block.current(function (err, block) {
-        current = block;
-          next();
-        });
+        dal.getCurrentBlockOrNull(next);
       },
       function(next) {
         dal.getPeers(pubs, next);

@@ -6,7 +6,7 @@ var parsers        = require('../../../app/lib/streams/parsers/doc');
 var blocks         = require('../../data/blocks');
 var localValidator = require('../../../app/lib/localValidator');
 var parser         = parsers.parseBlock();
-var Block          = mongoose.model('Block', require('../../../app/models/block'));
+var Block          = require('../../../app/lib/entity/block');
 var Configuration  = mongoose.model('Configuration', require('../../../app/models/configuration'));
 
 var conf = new Configuration({

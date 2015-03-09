@@ -134,11 +134,11 @@ program
       function(current, next) {
         remoteCurrent = current;
         if (!remoteCurrent) return next('Remote node has no blockchain');
-        server.conn.model('Block').findByNumber(remoteCurrent.number, function(err, current) {
+        server.dal.getBlock(remoteCurrent.number, function(err, current) {
           localCurrent = current;
           if (!localCurrent) return next('Local node is dropped behind');
           if (localCurrent.hash != remoteCurrent.hash) return next('Remote node has forked');
-          server.conn.model('Block').from(localCurrent.number, next);
+          server.dal.getBlockFrom(localCurrent.number, next);
         });
       },
       function (blocks, next){
@@ -231,10 +231,7 @@ program
   .action(service(ucoin.createPeerServer, function (upto, server, conf) {
     async.waterfall([
       function (next){
-        server.conn.model('Block')
-          .find(upto ? { number: { $lt: upto }} : {})
-          .sort({ number: 1 })
-          .exec(next);
+        server.dal.getBlocksUntil(upto, next);
       },
       function (blocks, next){
         var jsoned = [];

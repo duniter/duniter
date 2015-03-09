@@ -5,6 +5,7 @@ var common        = require('./common');
 var moment        = require('moment');
 var mongoose      = require('mongoose');
 var logger        = require('./logger')('validator');
+var Block         = require('../lib/entity/block');
 var Identity      = mongoose.model('Identity', require('../models/identity'));
 var Membership    = mongoose.model('Membership', require('../models/membership'));
 var Certification = mongoose.model('Certification', require('../models/certification'));
@@ -73,7 +74,7 @@ function GlobalValidator (conf, dao) {
   this.validate = function (block, done) {
     var testFunctionsPrepared = [];
     testFunctions.forEach(function (obj) {
-      testFunctionsPrepared.push(async.apply(obj.func, block));
+      testFunctionsPrepared.push(async.apply(obj.func, new Block(block)));
     });
     async.series(testFunctionsPrepared, function (err) {
       done(err);

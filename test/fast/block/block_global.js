@@ -6,7 +6,7 @@ var parsers       = require('../../../app/lib/streams/parsers/doc');
 var blocks        = require('../../data/blocks');
 var validator     = require('../../../app/lib/globalValidator');
 var parser        = parsers.parseBlock();
-var Block         = mongoose.model('Block', require('../../../app/models/block'));
+var Block         = require('../../../app/lib/entity/block');
 var Identity      = mongoose.model('Identity', require('../../../app/models/identity'));
 var Configuration = mongoose.model('Configuration', require('../../../app/models/configuration'));
 

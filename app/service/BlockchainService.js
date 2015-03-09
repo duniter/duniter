@@ -18,8 +18,8 @@ var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports.get = function (conn, conf, IdentityService, PeeringService) {
-  return new BlockchainService(conn, conf, IdentityService, PeeringService);
+module.exports.get = function (conn, conf, dal, PeeringService) {
+  return new BlockchainService(conn, conf, dal, PeeringService);
 };
 
 var blockFifo = async.queue(function (task, callback) {
@@ -49,7 +49,7 @@ var computationTimeout = null;
 // Flag for saying if timeout was already waited
 var computationTimeoutDone = false;
 
-function BlockchainService (conn, conf, IdentityService, PeeringService) {
+function BlockchainService (conn, conf, dal, PeeringService) {
 
   var BlockchainService = this;
 
@@ -58,36 +58,28 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
   var Membership    = conn.model('Membership');
-  var Block         = conn.model('Block');
+  var Block         = require('../lib/entity/block');
   var Link          = conn.model('Link');
   var Source        = conn.model('Source');
   var Transaction   = conn.model('Transaction');
   var Configuration = conn.model('Configuration');
   var BlockStat     = conn.model('BlockStat');
 
-  // Flag to say wether timestamp of received blocks should be tested
-  // Useful for synchronisation of old blocks
-  this.checkWithLocalTimestamp = true;
-
   this.load = function (done) {
     done();
   };
 
   this.current = function (done) {
-    Block.current(function (err, kb) {
-      done(null, kb || null);
-    })
+    dal.getCurrentBlockOrNull(done);
   };
 
   this.promoted = function (number, done) {
-    Block.findByNumber(number, function (err, kb) {
-      done(err, kb || null);
-    })
+    dal.getPromotedOrNull(number, done);
   };
 
   this.submitMembership = function (ms, done) {
     var entry = new Membership(ms);
-    var globalValidation = globalValidator(conf, blockchainDao(conn, null));
+    var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
     async.waterfall([
       function (next){
         logger.debug('⬇ %s %s', entry.issuer, entry.membership);
@@ -138,12 +130,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
 
   this.submitBlock = function (obj, done) {
     blockFifo.push(function (sent) {
-      var now = new Date();
       var block = new Block(obj);
       var currentBlock = null;
-      var newLinks;
       var localValidation = localValidator(conf);
-      var globalValidation = globalValidator(conf, blockchainDao(conn, block));
+      var globalValidation = globalValidator(conf, blockchainDao(conn, block, dal));
       async.waterfall([
         function (next) {
           BlockchainService.current(next);
@@ -202,7 +192,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         }
       ], taskDone);
     }, done);
-  }
+  };
 
   function checkIssuer (block, done) {
     async.waterfall([
@@ -223,7 +213,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             next('Block must be signed by an existing member');
           }
         }
-      },
+      }
     ], done);
   }
 
@@ -280,7 +270,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                 // Check the newcomer IS RECOGNIZED BY the WoT
                 // (check we have a path for each WoT member => newcomer)
                 if (block.number > 0)
-                  globalValidator(conf, blockchainDao(conn, block)).isOver3Hops(newcomer, ofMembers, newLinks, next);
+                  globalValidator(conf, blockchainDao(conn, block, dal)).isOver3Hops(newcomer, ofMembers, newLinks, next);
                 else
                   next(null, []);
               },
@@ -315,7 +305,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         if (newLinks[target] && newLinks[target].length)
           count += newLinks[target].length;
         next(count < conf.sigQty && 'Key ' + target + ' does not have enough links (' + count + '/' + conf.sigQty + ')');
-      },
+      }
     ], done);
   }
 
@@ -334,17 +324,17 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         function (next) {
           async.parallel({
             last: function (next) {
-              blockchainDao(conn, block).getLastUDBlock(next);
+              blockchainDao(conn, block, dal).getLastUDBlock(next);
             },
             root: function (next) {
-              blockchainDao(conn, block).getBlock(0, next);
+              blockchainDao(conn, block, dal).getBlock(0, next);
             }
           }, next);
         },
         function (res, next) {
           var last = res.last;
           var root = res.root;
-          block.UDTime = conf.dt + (last ? last.UDTime : root.UDTime);
+          block.UDTime = conf.dt + (last ? last['UDTime'] : root['UDTime']);
           next();
         }
       ], done);
@@ -362,7 +352,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             function (next){
               // Computes the hash if not done yet
               if (!idty.hash)
-                idty.hash = sha1(rawer.getIdentity(idty)).toUpperCase();
+                idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
               Identity.getTheOne(idty.pubkey, idty.getTargetHash(), next);
             },
             function (existing, next){
@@ -502,7 +492,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             ms.deleteIfExists(function (err) {
               next(err);
             });
-          },
+          }
         ], callback);
       }, callback1);
     }, done);
@@ -529,10 +519,14 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         updateBlocksComputedVars(current, block, next);
       },
       function (next) {
-        // Saves the block
-        block.save(function (err) {
+        // Saves the block (DAL)
+        dal.saveBlock(block, next);
+      },
+      function (next) {
+        var b = new (conn.model('Block'))(block);
+        b.save(function(err) {
           next(err);
-        });
+        })
       },
       function (next) {
         saveParametersForRootBlock(block, next);
@@ -568,7 +562,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next){
         // Delete eventually present transactions
         deleteTransactions(block, next);
-      },
+      }
     ], function (err) {
       done(err, block);
     });
@@ -619,30 +613,30 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                   checkHaveEnoughLinks(pubkey, {}, function (err) {
                     callback(null, err);
                   });
-                },
+                }
               }, next);
             },
             function (res, next){
               var notEnoughLinks = res.enoughLinks;
               Identity.setKicked(pubkey, idty.getTargetHash(), notEnoughLinks ? true : false, next);
-            },
+            }
           ], callback);
         }, next);
-      },
+      }
     ], done);
   }
 
   function computeObsoleteMemberships (block, done) {
     async.waterfall([
       function (next){
-        Block.getLastBeforeOrAt(block.medianTime - conf.msValidity, next);
+        dal.getLastBeforeOrAt(block.medianTime - conf.msValidity, next);
       },
       function (last, next){
         if (last)
           Identity.kickWithOutdatedMemberships(last.number, next);
         else
           next();
-      },
+      }
     ], done);
   }
 
@@ -761,12 +755,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                 updatesToFrom[cert.to].push(cert.pubkey);
               }
               next();
-            },
-          ], function (err) {
+            }
+          ], function () {
             callback();
           });
         }, next);
-      },
+      }
     ], function (err) {
       done(err, updates);
     });
@@ -822,7 +816,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           next('Cannot generate root block: it already exists.');
       }
     ], done);
-  }
+  };
 
   function noFiltering(preJoinData, next) {
     // No manual filtering, takes all
@@ -869,13 +863,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var joinData, leaveData;
     async.waterfall([
       function (next){
-        Block.current(function (err, currentBlock) {
-          current = currentBlock;
-            next();
-        });
+        dal.getCurrentBlockOrNull(next);
       },
-      function (next){
-        Block.lastUDBlock(next);
+      function (currentBlock, next){
+        current = currentBlock;
+        dal.lastUDBlock(next);
       },
       function (theLastUDBlock, next) {
         lastUDBlock = theLastUDBlock;
@@ -910,7 +902,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (txs, next) {
         var passingTxs = [];
         var localValidation = localValidator(conf);
-        var globalValidation = globalValidator(conf, blockchainDao(conn, null));
+        var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
         async.forEachSeries(txs, function (tx, callback) {
           var extractedTX = tx.getTransaction();
           async.waterfall([
@@ -925,7 +917,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               passingTxs.push(extractedTX);
               next();
             }
-          ], function (err) {
+          ], function () {
             callback();
           });
         }, next);
@@ -933,7 +925,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       function (next) {
         // Create the block
         createNewcomerBlock(current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, next);
-      },
+      }
     ], done);
   };
 
@@ -948,14 +940,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     var transactions = [];
     var joinData = {}, leaveData = {};
     async.waterfall([
-      function (next){
-        Block.current(function (err, currentBlock) {
-          current = currentBlock;
-            next();
-        });
+      function (){
+        dal.getCurrentBlockOrNull(done);
       },
-      function (next){
-        Block.lastUDBlock(next);
+      function (currentBlock, next){
+        current = currentBlock;
+        dal.lastUDBlock(next);
       },
       function (theLastUDBlock, next) {
         lastUDBlock = theLastUDBlock;
@@ -1005,13 +995,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
         async.forEach(mss, function(ms, callback){
           var leave = { identity: null, ms: ms, key: null, idHash: '' };
-          leave.idHash = sha1(ms.userid + ms.certts.timestamp() + ms.issuer).toUpperCase();
+          leave.idHash = (sha1(ms.userid + ms.certts.timestamp() + ms.issuer) + "").toUpperCase();
           async.waterfall([
             function (next){
               async.parallel({
                 block: function (callback) {
                   if (current) {
-                    Block.findByNumberAndHash(ms.number, ms.fpr, function (err, basedBlock) {
+                    dal.getBlockOrNull(ms.number, function (err, basedBlock) {
                       callback(null, err ? null : basedBlock);
                     });
                   } else {
@@ -1056,13 +1046,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
         async.forEach(mss, function(ms, callback){
           var join = { identity: null, ms: ms, key: null, idHash: '' };
-          join.idHash = sha1(ms.userid + ms.certts.timestamp() + ms.issuer).toUpperCase();
+          join.idHash = (sha1(ms.userid + ms.certts.timestamp() + ms.issuer) + "").toUpperCase();
           async.waterfall([
             function (next){
               async.parallel({
                 block: function (callback) {
                   if (current) {
-                    Block.findByNumberAndHash(ms.number, ms.fpr, function (err, basedBlock) {
+                    dal.getBlockOrNull(ms.number, function (err, basedBlock) {
                       callback(null, err ? null : basedBlock);
                     });
                   } else {
@@ -1120,7 +1110,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                               }
                               next();
                             }
-                          ], function (err) {
+                          ], function () {
                             callback();
                           });
                         }, function () {
@@ -1129,7 +1119,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                       }
                     ], callback);
                   }
-                },
+                }
               }, next);
             },
             function (res, next){
@@ -1141,7 +1131,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                 preJoinData[res.identity.pubkey] = join;
               }
               next();
-            },
+            }
           ], callback);
         }, next);
       },
@@ -1164,8 +1154,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         var newcomers = _(joinData).keys();
         // Checking algo is defined by 'checkingWoTFunc'
         checkingWoTFunc(newcomers, function (theNewcomers, onceChecked) {
-          // Concats the joining members
-          var members = wotMembers.concat(theNewcomers);
           // Check WoT stability
           async.waterfall([
             function (next){
@@ -1173,7 +1161,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             },
             function (newLinks, next){
               checkWoTConstraints({ number: current ? current.number + 1 : 0, joiners: theNewcomers }, newLinks, next);
-            },
+            }
           ], onceChecked);
         }, function (err, realNewcomers) {
           async.waterfall([
@@ -1183,14 +1171,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             function (newLinks, next){
               var newWoT = wotMembers.concat(realNewcomers);
               next(err, realNewcomers, newLinks, newWoT);
-            },
+            }
           ], next);
         });
       },
       function (realNewcomers, newLinks, newWoT, next) {
         var finalJoinData = {};
-        var initialNewcomers = _(joinData).keys();
-        var nonKept = _(initialNewcomers).difference(realNewcomers);
         realNewcomers.forEach(function(newcomer){
           // Only keep membership of selected newcomers
           finalJoinData[newcomer] = joinData[newcomer];
@@ -1233,7 +1219,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                   if (isMember)
                     newLinks[newcomer].push(cert.pubkey);
                   next();
-                },
+                }
               ], callback);
             }
           }, callback);
@@ -1247,49 +1233,10 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
           });
         });
         next();
-      },
+      }
     ], function (err) {
       done(err, newLinks);
     });
-  }
-
-  function findSignaturesFromNewcomerToWoT (newcomer, done) {
-    var updates = {};
-    async.waterfall([
-      function (next){
-        Certification.from(newcomer, next);
-      },
-      function (certs, next){
-        async.forEachSeries(certs, function(cert, callback){
-          async.waterfall([
-            function (next){
-              Identity.getByHash(cert.target, next);
-            },
-            function (idty, next){
-              if (idty.member) {
-                logger.debug('Found WoT certif %s --> %s', newcomer.substring(0, 8), idty.pubkey.substring(0, 8));
-                updates[idty.pubkey] = updates[idty.pubkey] || [];
-                updates[idty.pubkey].push(cert);
-              }
-              next();
-            },
-          ], callback);
-        }, next);
-      },
-    ], function (err) {
-      done(err, updates);
-    });
-  }
-
-  function isContainedIn (keyID, fingerprints) {
-    var matched = "";
-    var i = 0;
-    while (!matched && i < fingerprints.length) {
-      if (fingerprints[i].match(new RegExp(keyID + '$')))
-        matched = fingerprints[i];
-      i++;
-    }
-    return matched;
   }
 
   function createNewcomerBlock (current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, done) {
@@ -1403,7 +1350,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         if (block.number == 0)
           next(null, 0); // Root difficulty is given by manually written block
         else
-          globalValidator(conf, blockchainDao(conn, block)).getPoWMin(block.number, next);
+          globalValidator(conf, blockchainDao(conn, block, dal)).getPoWMin(block.number, next);
       },
       function (powMin, next) {
         block.powMin = powMin;
@@ -1411,7 +1358,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         if (block.number == 0)
           next(null, 0);
         else
-          globalValidator(conf, blockchainDao(conn, block)).getMedianTime(block.number, next);
+          globalValidator(conf, blockchainDao(conn, block, dal)).getMedianTime(block.number, next);
       },
       function (medianTime, next) {
         block.medianTime = current ? medianTime : moment.utc().unix() - conf.rootoffset;
@@ -1422,7 +1369,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         if (lastUDBlock)
           next(null, lastUDBlock.UDTime);
         else
-          Block.getRoot(function (err, root) {
+          dal.getRootBlock(function (err, root) {
             if (root)
               next(null, root.medianTime);
             else
@@ -1436,33 +1383,13 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             var c = conf.c;
             var N = block.membersCount;
             var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-            var UD = Math.ceil(Math.max(previousUD, c * M / N));
-            block.dividend = UD;
+            block.dividend = Math.ceil(Math.max(previousUD, c * M / N));
           } 
         }
         next(null, block);
-      },
-    ], done);
-  }
-
-  this.computeDistances = function (done) {
-    var current;
-    async.waterfall([
-      function (next) {
-        Block.current(next);
-      },
-      function (currentBlock, next) {
-        current = currentBlock;
-        Link.unobsoletesAllLinks(next);
-      },
-      function (next) {
-        Identity.undistanceEveryKey(next);
-      },
-      function (next) {
-        computeObsoleteLinks(current, next);
       }
     ], done);
-  };
+  }
 
   var debug = process.execArgv.toString().indexOf('--debug') !== -1;
   if(debug) {
@@ -1505,6 +1432,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
     var start = new Date();
     var stopped = false;
+    block.nonce = 0;
     async.whilst(function(){
       return !stopped;
     }, function(next){
@@ -1562,7 +1490,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
       clearTimeout(computationTimeout);
       computationTimeout = null;
     }
-    var sigFunc, block, difficulty, current;
+    var block, difficulty, current;
     async.waterfall([
       function (next) {
         Identity.isMember(PeeringService.pubkey, function (err, isMember) {
@@ -1573,7 +1501,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         });
       },
       function (next) {
-        Block.current(function (err, current) {
+        dal.getCurrentBlockOrNull(function (err, current) {
           if (err)
             next('Skipping', null, 'Waiting for a root block before computing new blocks');
           else
@@ -1590,14 +1518,12 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               computeNextCallback();
           }, conf.powDelay*1000);
           next('Skipping', null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
-          return;
         }
         else next();
       },
       function (next){
         if (!current) {
           next(null, null);
-          return;
         } else {
           async.parallel({
             // data: function(callback){
@@ -1614,7 +1540,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               signature.sync(conf.salt, conf.passwd, callback);
             },
             trial: function (callback) {
-              globalValidator(conf, blockchainDao(conn, block)).getTrialLevel(PeeringService.pubkey, callback);
+              globalValidator(conf, blockchainDao(conn, block, dal)).getTrialLevel(PeeringService.pubkey, callback);
             }
           }, next);
         }
@@ -1655,7 +1581,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
     async.waterfall([
       function (next){
         // Second, check for newcomers
-        Block.current(function (err, currentBlock) {
+        dal.getCurrentBlockOrNull(function (err, currentBlock) {
           current = currentBlock;
             next();
         });
@@ -1701,7 +1627,6 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
   function withEnoughCerts (preJoinData, done) {
     var joinData = {};
     var newcomers = _(preJoinData).keys();
-    var uids = [];
     async.forEachSeries(newcomers, function (newcomer, callback) {
       async.waterfall([
         function (next){
@@ -1715,11 +1640,11 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
         function (next){
           joinData[newcomer] = preJoinData[newcomer];
           next();
-        },
-      ], function (err) {
+        }
+      ], function () {
         callback(null);
       });
-    }, function (err) {
+    }, function () {
       done(null, joinData);
     });
   }
@@ -1761,7 +1686,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
               // console.log('Stat', statName, ': tested block#' + blockNumber);
               async.waterfall([
                 function (next) {
-                  Block.findByNumber(blockNumber, next);
+                  dal.getBlockOrNull(blockNumber, next);
                 },
                 function (block, next) {
                   var testProperty = tests[statName];
@@ -1785,7 +1710,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             });
           }
         ], callback);
-      }, function (err) {
+      }, function () {
         //logger.debug('Computing stats: done!');
         sent();
       });
@@ -1826,7 +1751,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
                   // console.log('Stat', statName, ': tested block#' + blockNumber);
                   async.waterfall([
                     function (next) {
-                      Block.findByNumber(blockNumber, next);
+                      dal.getBlockOrNull(blockNumber, next);
                     },
                     function (block, next) {
                       async.forEachSeries(['joiners', 'actives', 'leavers'], function (category, callback) {
@@ -1869,7 +1794,7 @@ function BlockchainService (conn, conf, IdentityService, PeeringService) {
             });
           }
         ], callback);
-      }, function (err) {
+      }, function () {
         //logger.debug('Computing memberships: done!');
         sent();
       });

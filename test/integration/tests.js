@@ -5,11 +5,11 @@ var node   = require('./tools/node');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
 
-require('log4js').configure({
-   "appenders": [
-     //{ category: "db1", type: "console" }
-   ]
-});
+//require('log4js').configure({
+//   "appenders": [
+//     //{ category: "db1", type: "console" }
+//   ]
+//});
 
 var host = 'localhost';
 var port = 9999;
@@ -133,7 +133,7 @@ describe("Integration", function() {
       done();
     }));
 
-    it('tic should give only 1 results', node1.lookup('tic', function(res, done){
+    it.only('tic should give only 1 results', node1.lookup('tic', function(res, done){
       should.exists(res);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].signed.length, 3);

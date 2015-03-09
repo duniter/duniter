@@ -12,7 +12,6 @@ function Router (serverPubkey, conn, conf, dal) {
 
   var Identity = conn.model('Identity');
   var Merkle   = conn.model('Merkle');
-  var Block    = conn.model('Block');
   var Peer     = conn.model('Peer');
 
   stream.Transform.call(this, { objectMode: true });
@@ -71,7 +70,9 @@ function Router (serverPubkey, conn, conf, dal) {
       var members = [];
       var nonmembers = [];
       async.waterfall([
-        Block.current.bind(Block),
+        function(next) {
+          dal.getCurrent(next);
+        },
         function (current, next) {
           dal.getRandomlyUPsWithout(without, current.medianTime - conf.avgGenTime*10, next); // Peers with status UP
         },

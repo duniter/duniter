@@ -26,7 +26,7 @@ var fifo = async.queue(function (task, callback) {
 
 module.exports = function (conf, mdb, mhost, mport, autoStart) {
   return new ServerHandler(conf, mdb, mhost, mport, autoStart);
-}
+};
 
 function ServerHandler(conf, mdb, mhost, mport, autoStart) {
 
@@ -65,8 +65,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
         theServer.start();
       })
       .then(function(){
-        var Block = theServer.conn.model('Block');
-        return Q.nbind(Block.current, Block)();
+        return Q.nbind(theServer.dal.getBlockCurrent, theServer.dal)();
       })
       .then(setAsCurrentBlock)
       .then(onSuccess(res))
@@ -92,8 +91,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
         theServer.start();
       })
       .then(function(){
-        var Block = theServer.conn.model('Block');
-        return Q.nbind(Block.current, Block)();
+        return Q.nbind(theServer.dal.getBlockCurrent, theServer.dal)();
       })
       .then(setAsCurrentBlock)
       .then(onSuccess(res))
@@ -106,8 +104,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
         return Q.nbind(theServer.reset, theServer)();
       })
       .then(function(){
-        var Block = theServer.conn.model('Block');
-        return Q.nbind(Block.current, Block)();
+        return Q.nbind(theServer.dal.getBlockCurrent, theServer.dal)();
       })
       .then(setAsCurrentBlock)
       .then(onSuccess(res))
@@ -185,9 +182,9 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
                   var peer = (json.leaf && json.leaf.value) || {};
                   peers.push(peer);
                   next();
-                },
+                }
               ], callback);
-            }, function (err) {
+            }, function () {
               next(null, peers);
             });
           }
@@ -295,8 +292,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
   this.graphs = function(req, res){
     getReadyServer()
       .then(function(){
-        var Block = theServer.conn.model('Block');
-        return Q.nbind(Block.findAll, Block)();
+        return Q.nbind(theServer.dal.listAllBlocks, theServer.dal)();
       })
       .then(function(blocks) {
         return Q.Promise(function(resolve, reject){
@@ -492,8 +488,7 @@ util.inherits(ServerHandler, stream.Transform);
 //  }
 //
 //  function getStatus(server) {
-//    var Block = server.conn.model('Block');
-//    return Q.nbind(Block.current, Block)()
+//    return Q.nbind(theServer.dal.getBlockCurrent, theServer.dal)()
 //      .then(function(current){
 //        return {
 //          "status": theServer.isListening() ? "UP" : "DOWN",

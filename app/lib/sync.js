@@ -24,7 +24,6 @@ module.exports = function Synchroniser (server, host, port, conf) {
   var BlockchainService  = server.BlockchainService;
 
   // Models
-  var Block      = server.conn.model('Block');
   var Merkle        = server.conn.model('Merkle');
   var Membership    = server.conn.model('Membership');
   var Transaction   = server.conn.model('Transaction');

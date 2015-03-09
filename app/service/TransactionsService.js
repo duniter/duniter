@@ -5,14 +5,13 @@ var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports.get = function (conn, conf) {
-  return new TransactionService(conn, conf);
+module.exports.get = function (conn, conf, dal) {
+  return new TransactionService(conn, conf, dal);
 };
 
-function TransactionService (conn, conf) {
+function TransactionService (conn, conf, dal) {
 
   var Transaction = conn.model('Transaction');
-  var Block       = conn.model('Block');
 
   this.processTx = function (txObj, done) {
     var tx = new Transaction(txObj);
@@ -26,11 +25,11 @@ function TransactionService (conn, conf) {
         if (alreadyProcessed)
           next('Transaction already processed');
         else
-          Block.current(next);
+          dal.getCurrent(next);
       },
       function (current, next) {
         // Validator OK
-        globalValidation = globalValidator(conf, blockchainDao(conn, current));
+        globalValidation = globalValidator(conf, blockchainDao(conn, current, dal));
         // Start checks...
         localValidation.checkSingleTransaction(tx.getTransaction(), next);
       },
@@ -44,9 +43,9 @@ function TransactionService (conn, conf) {
         });
       }
     ], done);
-  }
+  };
 
   function transactionAlreadyProcessed (tx, done) {
     Transaction.getByHash(tx.hash, done);
   }
-};
+}

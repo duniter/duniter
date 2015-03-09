@@ -2,9 +2,13 @@ var Q       = require('q');
 var _       = require('underscore');
 var async   = require('async');
 var moment = require('moment');
+var uuid = require('node-uuid').v4;
 var util = require('util');
 var sqlite3 = require('sqlite3');
 var logger  = require('../../lib/logger')('data');
+var Identity = require('../entity/identity');
+var Certification = require('../entity/certification');
+var Membership = require('../entity/membership');
 
 module.exports = {
   memory: function() {
@@ -19,7 +23,22 @@ function SQLiteDAL(db) {
 
   var that = this;
 
-  var models = [EndpointModel, PeerModel];
+  var models = [
+    EndpointModel,
+    PeerModel,
+    BlockModel,
+    IdentityModel,
+    CertificationModel,
+    JoinerModel,
+    ActiveModel,
+    LeaverModel,
+    ExcludedModel,
+    TransactionModel,
+    SignatoryModel,
+    InputModel,
+    OutputModel,
+    TxSignatoryModel
+  ];
 
   this.run = function(sql, params, done) {
     logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
@@ -49,14 +68,15 @@ function SQLiteDAL(db) {
   };
 
   this.query = function(sql, params, done) {
-    logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
     return Q.Promise(function(resolve, reject){
       db.all(sql, params || [], function(err, rows) {
         if (err) {
+          logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
           logger.error('sqlite error: %s', err.message || err);
           reject(err);
         } else {
-          logger.debug('Found: %s rows', rows.length);
+          logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
+          //logger.debug('Found: %s rows', rows.length);
           resolve(rows);
         }
         done && done(err, rows);
@@ -64,7 +84,8 @@ function SQLiteDAL(db) {
     });
   };
 
-  this.queryOne = function(sql, params, done) {
+  this.queryOne = function(sql, givenParams, done) {
+    var params = givenParams || [];
     logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
     return Q.Promise(function(resolve, reject){
       db.all(sql, params || [], function (err, rows) {
@@ -90,6 +111,13 @@ function SQLiteDAL(db) {
     });
   };
 
+  this.queryAggregate = function(sql, params, done) {
+    return that.queryOne(sql, params)
+      .then(function(res){
+        return res.aggregate;
+      });
+  };
+
   this.save = function(entity, modelClass, isNew, done) {
     logger.debug('Save %s', new modelClass().table);
     return that.batch(that.getSaveQueries(entity, modelClass, isNew), done);
@@ -101,10 +129,14 @@ function SQLiteDAL(db) {
 
   this.getSaveEntityQuery = function(entity, modelClass, isNew) {
     var model = new modelClass();
-    var fields = ['created', 'updated'].concat(model.fields);
-    var values = fields.map(function(f) {
+    var valueFields = ['created', 'updated'].concat(model.getFields());
+    var fields = ['created', 'updated'].concat(model.getAliasedFields());
+    var values = valueFields.map(function(f) {
       return entity[f];
     });
+    if (model.primary == "id" && isNew) {
+      entity[model.primary] = uuid();
+    }
     if (isNew) {
       values[0] = moment().unix();
     }
@@ -130,11 +162,20 @@ function SQLiteDAL(db) {
     });
     // Recreate new ones
     model.oneToManys.forEach(function(o2m){
-      var subModel = new o2m.model();
       (entity[o2m.property] || []).forEach(function(o2mEntity, index){
         var persistable = o2m.toDB(o2mEntity, index);
-        persistable[subModel.primary] = entity[model.primary];
+        persistable[o2m.fk] = entity[model.primary];
         queries.push(that.getSaveEntityQuery(persistable, o2m.model, true));
+        var subQueries = that.getOneToManyQueries(persistable, o2m.model);
+        subQueries.forEach(function(sub){
+          queries.push(sub);
+        });
+        //// Recursive OneToMany
+        //new o2m.model().oneToManys.forEach(function(subO2M){
+        //  (entity[o2m.property] || []).forEach(function(subEntity){
+        //    queries.push();
+        //  });
+        //});
       });
     });
     return queries;
@@ -142,6 +183,10 @@ function SQLiteDAL(db) {
 
   this.listAllPeers = function(done) {
     return that.queryForMultipleEntities(PeerModel, [], [], done);
+  };
+
+  this.listAllBlocks = function(done) {
+    return that.queryForMultipleEntities(BlockModel, [], [], done);
   };
 
   this.nullIfError = function(promise, done) {
@@ -159,6 +204,10 @@ function SQLiteDAL(db) {
   this.getPeer = function(pubkey, done) {
     return that.queryEntityById(PeerModel, pubkey, done);
   };
+
+  this.getBlock = function(number, done) {
+    return that.queryEntityById(BlockModel, number, done);
+  };
   
   this.queryEntityById = function(Model, id, done) {
     return that.queryForSingleEntity(Model, [new Model().primary], [id], done);
@@ -175,7 +224,12 @@ function SQLiteDAL(db) {
   this.queryForEntity = function(ModelClass, queryMethod, fields, params, done) {
     var model = new ModelClass();
     var conditions = fields.length ? fields.join('=?, ') + '=?' : '1';
-    return queryMethod('SELECT * FROM ' + model.table + ' WHERE ' + conditions, params)
+    return that.fillInEntity(queryMethod('SELECT * FROM ' + model.table + ' WHERE ' + conditions, params), ModelClass, done);
+  };
+
+  this.fillInEntity = function(queryPromise, ModelClass, done) {
+    var model = new ModelClass();
+    return queryPromise
       .tap(function(rows){
         if(rows.length != undefined) {
           return Q.all(rows.map(function(row) {
@@ -200,8 +254,65 @@ function SQLiteDAL(db) {
       });
   };
 
+  this.getCurrentBlockOrNull = function(done) {
+    return that.nullIfError(that.getBlockCurrent(), done);
+  };
+
+  this.getPromotedOrNull = function(number, done) {
+    return that.nullIfError(that.getBlock(number), done);
+  };
+
+  // Block
+  this.getLastBeforeOrAt = function (t, done) {
+    return that.nullIfError(
+      that.fillInEntity(that.queryOne('SELECT * FROM block WHERE medianTime <= ? ORDER BY number DESC', [t]), BlockModel), done);
+  };
+
+  this.lastUDBlock = function(done) {
+    return that.nullIfError(
+      that.fillInEntity(that.queryOne('SELECT * FROM block WHERE dividend > 0 ORDER BY number DESC', []), BlockModel), done);
+  };
+
+  this.getRootBlock = function(done) {
+    return that.nullIfError(
+      that.fillInEntity(that.queryOne('SELECT * FROM block WHERE number = 0', []), BlockModel), done);
+  };
+
+  this.lastBlocksOfIssuer = function(issuer, count, done) {
+    return that.nullIfError(
+      that.fillInEntity(that.query('SELECT * FROM block WHERE issuer = ? ORDER BY number DESC LIMIT ?', [issuer, count]), BlockModel), done);
+  };
+
+  this.getLastBlocks = function(count, done) {
+    return that.nullIfError(
+      that.fillInEntity(that.query('SELECT * FROM block ORDER BY number DESC LIMIT ?', [count]), BlockModel), done);
+  };
+
+  this.getBlocksBetween = function(start, end, done) {
+    return that.nullIfError(
+      that.fillInEntity(that.query('SELECT * FROM block WHERE number BETWEEN ? AND ? ORDER BY number DESC', [start, end]), BlockModel), done);
+  };
+
+  this.getBlockCurrent = function() {
+    return that.queryAggregate("SELECT MAX(number) as aggregate FROM block")
+      .then(that.getBlockOrNull);
+  };
+
+  this.getBlockFrom = function(number) {
+    return that.query("SELECT * FROM block WHERE number >= ? ORDER BY number ASC", [number])
+      .then(that.getBlockOrNull);
+  };
+
+  this.getBlocksUntil = function(number, done) {
+    return that.query("SELECT * FROM block WHERE number < ? ORDER BY number ASC", [number], done);
+  };
+
   this.getPeerOrNull = function(pubkey, done) {
     return that.nullIfError(that.getPeer(pubkey), done);
+  };
+
+  this.getBlockOrNull = function(number, done) {
+    return that.nullIfError(that.getBlock(number), done);
   };
 
   this.getPeers = function(pubkeys, done) {
@@ -265,11 +376,23 @@ function SQLiteDAL(db) {
   };
 
   this.savePeer = function(peer, done) {
-    return that.getPeerOrNull(peer && peer.pubkey)
-      .then(function(p){
-        return that.save(_(p || {}).extend(peer), PeerModel, !p, done);
-      });
+    return saveEntity(PeerModel, peer, done);
   };
+
+  this.saveBlock = function(block, done) {
+    return saveEntity(BlockModel, block, done);
+  };
+
+  function saveEntity(model, entity, done) {
+    return getEntityOrNull(model, entity)
+      .then(function(found){
+        return that.save(_(found || {}).extend(entity), model, !found, done);
+      });
+  }
+
+  function getEntityOrNull(model, entity) {
+    return that.nullIfError(that.queryEntityById(model, entity[new model().primary]));
+  }
 
   this.initDabase = function() {
     return Q.Promise(function(resolve, reject){
@@ -310,6 +433,17 @@ function Model() {
   var that = this;
 
   this.oneToManys = this.oneToManys || [];
+  this.aliases = this.aliases || {};
+
+  this.getFields = function() {
+    return _(that.fields).without("id", that.primary);
+  };
+
+  this.getAliasedFields = function() {
+    return _(that.fields.map(function(f) {
+      return that.aliases[f] || f;
+    })).without("id", that.primary);
+  };
 
   this.sqlDrop= function() {
     return "DROP TABLE IF EXISTS " + this.table;
@@ -319,11 +453,9 @@ function Model() {
     return Q.Promise(function(resolve, reject){
       async.forEachSeries(that.oneToManys, function(o2m, callback) {
         if (o2m.property == collectionProperty) {
-          var subModel = new o2m.model();
-          dal.query("SELECT * FROM " + subModel.table + " WHERE " + subModel.primary + " = ?", [entity[that.primary]])
-            .then(function(rows){
-              entity[collectionProperty] = o2m.toEntities(rows);
-              return null;
+          dal.queryForEntity(o2m.model, dal.query, [o2m.fk], [entity[that.primary]])
+            .then(function(entities){
+              entity[collectionProperty] = o2m.toEntities(entities);
             })
             .then(callback)
             .fail(callback);
@@ -352,7 +484,7 @@ function EndpointModel() {
   this.sqlCreate = function() {
     return 'CREATE TABLE IF NOT EXISTS endpoint (' +
       'pubkey VARCHAR(50) NOT NULL,' +
-      'currency VARCHAT(50) DEFAULT NULL,' +
+      'currency VARCHAR(50) DEFAULT NULL,' +
       'protocol VARCHAR(255) DEFAULT NULL,' +
       'indexNb INTEGER DEFAULT NULL,' +
       'created DATETIME DEFAULT NULL,' +
@@ -397,10 +529,10 @@ function PeerModel() {
   this.sqlCreate = function() {
     return 'CREATE TABLE IF NOT EXISTS peer (' +
       'pubkey VARCHAR(50) NOT NULL,' +
-      'block VARCHAT(60) DEFAULT NULL,' +
-      'currency VARCHAT(50) DEFAULT NULL,' +
-      'signature VARCHAT(100) DEFAULT NULL,' +
-      'status VARCHAT(10) DEFAULT NULL,' +
+      'block VARCHAR(60) DEFAULT NULL,' +
+      'currency VARCHAR(50) DEFAULT NULL,' +
+      'signature VARCHAR(100) DEFAULT NULL,' +
+      'status VARCHAR(10) DEFAULT NULL,' +
       'statusTS DATETIME DEFAULT NULL,' +
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
@@ -409,5 +541,547 @@ function PeerModel() {
   }
 }
 
+function BlockModel() {
+
+  Model.call(this);
+
+  var that = this;
+
+  this.table = 'block';
+  this.primary = 'number';
+  this.fields = [
+    'hash',
+    'signature',
+    'version',
+    'currency',
+    'issuer',
+    'parameters',
+    'previousHash',
+    'previousIssuer',
+    'membersCount',
+    'monetaryMass',
+    'UDTime',
+    'medianTime',
+    'dividend',
+    'time',
+    'powMin',
+    'number',
+    'nonce'
+  ];
+
+  this.oneToManys = [{
+    property: 'identities',
+    model: IdentityModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var idty = Identity.statics.fromInline(inline);
+      idty.indexNb = index;
+      return idty;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.time = new Date(row.time);
+        return Identity.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'certifications',
+    model: CertificationModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var idty = Certification.statics.fromInline(inline);
+      idty.indexNb = index;
+      return idty;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return Certification.statics.toInline(row, CertificationModel);
+      })
+    }
+  },{
+    property: 'joiners',
+    model: JoinerModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var ms = Membership.statics.fromInline(inline, 'IN');
+      ms.indexNb = index;
+      return ms;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.certts = new Date(row.certts);
+        return Membership.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'actives',
+    model: ActiveModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var ms = Membership.statics.fromInline(inline, 'IN');
+      ms.indexNb = index;
+      return ms;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.certts = new Date(row.certts);
+        return Membership.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'leavers',
+    model: LeaverModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var idty = Membership.statics.fromInline(inline, 'OUT');
+      idty.indexNb = index;
+      return idty;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.certts = new Date(row.certts);
+        return Membership.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'excluded',
+    model: ExcludedModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var excluded = { pubkey: inline };
+      excluded.indexNb = index;
+      return excluded;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return row.pubkey;
+      })
+    }
+  },{
+    property: 'transactions',
+    model: TransactionModel,
+    fk: 'block',
+    toDB: function(tx, index) {
+      tx.indexNb = index;
+      return tx;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        delete row.created;
+        delete row.updated;
+        return row;
+      });
+    }
+  }];
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS block (' +
+      'hash VARCHAR(40) NOT NULL,' +
+      'signature VARCHAR(100) NOT NULL,' +
+      'currency VARCHAR(50) NOT NULL,' +
+      'issuer VARCHAR(50) NOT NULL,' +
+      'parameters VARCHAR(255) NOT NULL,' +
+      'previousHash VARCHAR(50) NOT NULL,' +
+      'previousIssuer VARCHAR(50) NOT NULL,' +
+      'version INTEGER NOT NULL,' +
+      'membersCount INTEGER NOT NULL,' +
+      'monetaryMass INTEGER DEFAULT 0,' +
+      'UDTime DATETIME,' +
+      'medianTime DATETIME NOT NULL,' +
+      'dividend INTEGER NOT NULL,' +
+      'time DATETIME NOT NULL,' +
+      'powMin INTEGER NOT NULL,' +
+      'number INTEGER NOT NULL,' +
+      'nonce INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (number)' +
+      ');';
+  }
+}
+
+function IdentityModel() {
+
+  Model.call(this);
+
+  this.table = 'identity';
+  this.primary = 'pubkey';
+  this.fields = [
+    'pubkey',
+    'block',
+    'sig',
+    'time',
+    'uid',
+    'currency',
+    'indexNb'
+  ];
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS identity (' +
+      'pubkey VARCHAR(50) NOT NULL,' +
+      'block INTEGER DEFAULT NULL,' +
+      'currency VARCHAR(50) DEFAULT NULL,' +
+      'sig VARCHAR(100) NOT NULL,' +
+      'time DATETIME DEFAULT NULL,' +
+      'uid VARCHAR(255) NOT NULL,' +
+      'indexNb INTEGER DEFAULT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (pubkey)' +
+      ');';
+  };
+}
+
+function CertificationModel() {
+
+  Model.call(this);
+
+  this.table = 'cert';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'block_number',
+    'pubkey',
+    'to',
+    'block',
+    'sig',
+    'currency',
+    'indexNb'
+  ];
+
+  this.aliases = {
+    'pubkey': 'fromKey',
+    'to': 'toKey',
+    'block_number': 'block'
+  };
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS cert (' +
+      'id CHAR(36) NOT NULL,' +
+      'fromKey VARCHAR(50) NOT NULL,' +
+      'toKey VARCHAR(50) NOT NULL,' +
+      'currency VARCHAR(50) DEFAULT NULL,' +
+      'sig VARCHAR(100) NOT NULL,' +
+      'block INTEGER NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id), UNIQUE(fromKey, toKey, block), UNIQUE(fromKey, toKey, indexNb)' +
+      ');';
+  };
+}
+
+function MembershipModel() {
+
+  var that = this;
+
+  Model.call(this);
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'block',
+    'number',
+    'issuer',
+    'fpr',
+    'userid',
+    'signature',
+    'certts',
+    'currency',
+    'indexNb'
+  ];
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
+      'id CHAR(36) NOT NULL,' +
+      'issuer VARCHAR(50) NOT NULL,' +
+      'currency VARCHAR(50) DEFAULT NULL,' +
+      'signature VARCHAR(100) NOT NULL,' +
+      'number INTEGER NOT NULL,' +
+      'fpr CHAR(40) DEFAULT NULL,' +
+      'userid VARCHAR(255) DEFAULT NULL,' +
+      'block CHAR(60) NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'certts DATETIME DEFAULT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
+function JoinerModel() {
+  MembershipModel.call(this);
+  this.table = 'joiner';
+}
+
+function ActiveModel() {
+  MembershipModel.call(this);
+  this.table = 'active';
+}
+
+function LeaverModel() {
+  MembershipModel.call(this);
+  this.table = 'leaver';
+}
+
+function ExcludedModel() {
+
+  Model.call(this);
+
+  this.table = 'excluded';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'block',
+    'pubkey',
+    'currency',
+    'indexNb'
+  ];
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS excluded (' +
+      'id CHAR(36) NOT NULL,' +
+      'pubkey VARCHAR(50) NOT NULL,' +
+      'currency VARCHAR(50) DEFAULT NULL,' +
+      'block INTEGER NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
+function TransactionModel() {
+
+  Model.call(this);
+
+  this.table = 'tx';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'comment',
+    'block',
+    'indexNb'
+  ];
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS tx (' +
+      'id CHAR(36) NOT NULL,' +
+      'comment VARCHAR(255) NOT NULL,' +
+      'block INTEGER NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+
+  this.oneToManys = [{
+    property: 'signatories',
+    model: SignatoryModel,
+    fk: 'tx_id',
+    toDB: function(inline, index) {
+      var signatory = { pubkey: inline };
+      signatory.indexNb = index;
+      return signatory;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return row.pubkey;
+      });
+    }
+  },{
+    property: 'signatures',
+    model: TxSignatoryModel,
+    fk: 'tx_id',
+    toDB: function(inline, index) {
+      var signatory = { sig: inline };
+      signatory.indexNb = index;
+      return signatory;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return row.sig;
+      });
+    }
+  },{
+    property: 'inputs',
+    model: InputModel,
+    fk: 'tx_id',
+    toDB: function(inline, index) {
+      var sp = inline.split(':');
+      var input = {
+        index: parseInt(sp[0]),
+        type: sp[1],
+        number: parseInt(sp[2]),
+        fingerprint: sp[3],
+        amount: parseInt(sp[4])
+      };
+      input.indexNb = index;
+      return input;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return [row.index_signatory, row.source_type, row.source_number, row.source_hash, row.amount].join(':');
+      });
+    }
+  },{
+    property: 'outputs',
+    model: OutputModel,
+    fk: 'tx_id',
+    toDB: function(inline, index) {
+      var sp = inline.split(':');
+      var output = {
+        pubkey: sp[0],
+        amount: parseInt(sp[1])
+      };
+      output.indexNb = index;
+      return output;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return [row.recipient, row.amount].join(':');
+      });
+    }
+  }];
+}
+
+function SignatoryModel() {
+
+  Model.call(this);
+
+  this.table = 'signatory';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'tx_id',
+    'pubkey',
+    'indexNb'
+  ];
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS signatory (' +
+      'id CHAR(36) NOT NULL,' +
+      'tx_id CHAR(36) NOT NULL,' +
+      'pubkey VARCHAR(50) NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
+function TxSignatoryModel() {
+
+  Model.call(this);
+
+  this.table = 'tx_signature';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'tx_id',
+    'sig',
+    'indexNb'
+  ];
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS tx_signature (' +
+      'id CHAR(36) NOT NULL,' +
+      'tx_id CHAR(36) NOT NULL,' +
+      'sig VARCHAR(100) NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
+function InputModel() {
+
+  Model.call(this);
+
+  this.table = 'input';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'tx_id',
+    'index',
+    'type',
+    'number',
+    'fingerprint',
+    'amount',
+    'indexNb'
+  ];
+
+  this.aliases = {
+    'index': 'index_signatory',
+    'type': 'source_type',
+    'number': 'source_number',
+    'fingerprint': 'source_hash'
+  };
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS input (' +
+      'id CHAR(36) NOT NULL,' +
+      'tx_id CHAR(36) NOT NULL,' +
+      'index_signatory INTEGER NOT NULL,' +
+      'source_type CHAR(1) NOT NULL,' +
+      'source_number INTEGER NOT NULL,' +
+      'source_hash CHAR(40) NOT NULL,' +
+      'amount INTEGER NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
+function OutputModel() {
+
+  Model.call(this);
+
+  this.table = 'output';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'tx_id',
+    'pubkey',
+    'amount',
+    'indexNb'
+  ];
+
+  this.aliases = {
+    'pubkey': 'recipient'
+  };
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS output (' +
+      'id CHAR(36) NOT NULL,' +
+      'tx_id CHAR(36) NOT NULL,' +
+      'recipient CHAR(50) NOT NULL,' +
+      'amount INTEGER NOT NULL,' +
+      'indexNb INTEGER NOT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
 util.inherits(EndpointModel, Model);
 util.inherits(PeerModel, Model);
+util.inherits(BlockModel, Model);
+util.inherits(IdentityModel, Model);
+util.inherits(MembershipModel, Model);
+util.inherits(JoinerModel, MembershipModel);
+util.inherits(ActiveModel, MembershipModel);
+util.inherits(LeaverModel, MembershipModel);
+util.inherits(ExcludedModel, Model);
+util.inherits(TransactionModel, Model);
+util.inherits(SignatoryModel, Model);
+util.inherits(InputModel, Model);
+util.inherits(OutputModel, Model);

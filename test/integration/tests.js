@@ -121,7 +121,7 @@ describe("Integration", function() {
   describe("Testing leavers", function(){
 
     before(function(done) {
-      this.timeout(10000);
+      this.timeout(20000);
       node1.before(require('./scenarios/certifications')(node1))(done);
     });
     after(node1.after());
@@ -133,7 +133,7 @@ describe("Integration", function() {
       done();
     }));
 
-    it.only('tic should give only 1 results', node1.lookup('tic', function(res, done){
+    it('tic should give only 1 results', node1.lookup('tic', function(res, done){
       should.exists(res);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].signed.length, 3);
@@ -153,21 +153,21 @@ describe("Integration", function() {
       done();
     }));
 
-    it('current should exist block#2 with 4 members', node1.block(2, function(block, done){
+    it('it should exist block#2 with 4 members', node1.block(2, function(block, done){
       should.exists(block);
       assert.equal(block.number, 2);
       assert.equal(block.membersCount, 4);
       done();
     }));
 
-    it('current should exist block#3 with only 1 certification', node1.block(3, function(block, done){
+    it('it should exist block#3 with only 1 certification', node1.block(3, function(block, done){
       should.exists(block);
       assert.equal(block.number, 3);
       assert.equal(block.certifications.length, 1);
       done();
     }));
 
-    it('current should exist block#4 with only 1 certification', node1.block(4, function(block, done){
+    it('it should exist block#4 with only 1 certification', node1.block(4, function(block, done){
       should.exists(block);
       assert.equal(block.number, 4);
       assert.equal(block.certifications.length, 1);

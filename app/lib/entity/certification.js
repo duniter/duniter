@@ -16,7 +16,7 @@ Certification.statics.fromInline = function (inline) {
   return new Certification({
     pubkey: sp[0],
     to: sp[1],
-    block_number: sp[2],
+    block_number: parseInt(sp[2]),
     sig: sp[3]
   });
 };

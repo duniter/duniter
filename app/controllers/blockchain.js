@@ -33,6 +33,7 @@ function BlockchainBinding (wotServer) {
   var IdentityService   = wotServer.IdentityService;
 
   // Models
+  var Block      = require('../lib/entity/block');
   var Peer       = wotServer.conn.model('Peer');
   var Membership = wotServer.conn.model('Membership');
   var Identity   = wotServer.conn.model('Identity');
@@ -137,7 +138,7 @@ function BlockchainBinding (wotServer) {
         res.send(400, err);
         return;
       }
-      res.send(200, JSON.stringify(promoted.json(), null, "  "));
+      res.send(200, JSON.stringify(new Block(promoted).json(), null, "  "));
     });
   }
 
@@ -147,7 +148,7 @@ function BlockchainBinding (wotServer) {
       function (next){
         async.parallel({
           params: async.apply(ParametersService.getCountAndFrom, req),
-          current: async.apply(BlockchainService.current),
+          current: async.apply(BlockchainService.current)
         }, next);
       },
       function (res, next){
@@ -173,7 +174,7 @@ function BlockchainBinding (wotServer) {
                 BlockchainService.promoted(i, next);
               },
               function (block, next){
-                blocks.push(block.json());
+                blocks.push(new Block(block).json());
                 i++;
                 next();
               },
@@ -202,7 +203,7 @@ function BlockchainBinding (wotServer) {
         res.send(404, err);
         return;
       }
-      res.send(200, JSON.stringify(current.json(), null, "  "));
+      res.send(200, JSON.stringify(new Block(current).json(), null, "  "));
     });
   }
 

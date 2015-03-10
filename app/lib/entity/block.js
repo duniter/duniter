@@ -7,7 +7,11 @@ function Block(json) {
   var that = this;
 
   _(json || {}).keys().forEach(function(key) {
-   that[key] = json[key];
+    var value = json[key];
+    if (key == "number") {
+      value = parseInt(value);
+    }
+    that[key] = value;
   });
 
   this.json = function() {

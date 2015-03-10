@@ -57,7 +57,7 @@ function SQLiteDAL(db) {
         async.forEachSeries(queries, function(query, callback) {
           var sql = query.sql;
           var params = query.params;
-          logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
+          logger.debug('Batch Query: %s | Params: %s', sql, JSON.stringify(params));
           db.run(sql, params || [], callback);
         }, function(err) {
           done && done(err);
@@ -69,13 +69,14 @@ function SQLiteDAL(db) {
 
   this.query = function(sql, params, done) {
     return Q.Promise(function(resolve, reject){
+      var start = new Date();
       db.all(sql, params || [], function(err, rows) {
         if (err) {
           logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
           logger.error('sqlite error: %s', err.message || err);
           reject(err);
         } else {
-          logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
+          logger.debug('Time: %s ms | Query: %s | Params: %s | Found %s rows', (new Date() - start), sql, JSON.stringify(params), rows.length);
           //logger.debug('Found: %s rows', rows.length);
           resolve(rows);
         }
@@ -86,23 +87,24 @@ function SQLiteDAL(db) {
 
   this.queryOne = function(sql, givenParams, done) {
     var params = givenParams || [];
-    logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
+    //logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
     return Q.Promise(function(resolve, reject){
+      var start = new Date();
       db.all(sql, params || [], function (err, rows) {
         if (err)
           reject(err);
         else {
           if (rows.length == 0){
-            logger.warn('Entity not found');
+            logger.warn('Time: %s ms | Query: %s | Params: %s | Not found', (new Date() - start), sql, JSON.stringify(params));
             reject('Cannot find single result: empty result');
             done && done(null, null);
           }
           else if (rows.length >= 2){
-            logger.warn('Multiple entities found');
+            logger.warn('Time: %s ms | Query: %s | Params: %s | Multiple found', (new Date() - start), sql, JSON.stringify(params));
             reject('Cannot find single result: several results');
             done && done(null, null);
           } else {
-            logger.debug('Entity found');
+            logger.debug('Time: %s ms | Query: %s | Params: %s', (new Date() - start), sql, JSON.stringify(params));
             resolve(rows[0]);
             done && done(err, rows[0]);
           }
@@ -295,7 +297,9 @@ function SQLiteDAL(db) {
 
   this.getBlockCurrent = function() {
     return that.queryAggregate("SELECT MAX(number) as aggregate FROM block")
-      .then(that.getBlockOrNull);
+      .then(function(number) {
+        return number != null ? that.getBlockOrNull(number) : null;
+      });
   };
 
   this.getBlockFrom = function(number) {
@@ -397,7 +401,11 @@ function SQLiteDAL(db) {
   this.initDabase = function() {
     return Q.Promise(function(resolve, reject){
       async.forEachSeries(models, function(model, callback) {
-        db.run(new model().sqlCreate(), [], callback);
+        var sqlValue = new model().sqlCreate();
+        var sqls = typeof sqlValue == 'object' ? sqlValue : [sqlValue];
+        async.forEachSeries(sqls, function(sql, callback) {
+          db.run(sql, [], callback);
+        }, callback);
       }, function(err) {
         err ? reject(err) : resolve();
       });
@@ -675,7 +683,7 @@ function BlockModel() {
   }];
 
   this.sqlCreate = function() {
-    return 'CREATE TABLE IF NOT EXISTS block (' +
+    return ['CREATE TABLE IF NOT EXISTS block (' +
       'hash VARCHAR(40) NOT NULL,' +
       'signature VARCHAR(100) NOT NULL,' +
       'currency VARCHAR(50) NOT NULL,' +
@@ -696,7 +704,9 @@ function BlockModel() {
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (number)' +
-      ');';
+      ');',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_block_number ON block (number);'
+    ];
   }
 }
 
@@ -717,7 +727,8 @@ function IdentityModel() {
   ];
 
   this.sqlCreate = function() {
-    return 'CREATE TABLE IF NOT EXISTS identity (' +
+    return [
+      'CREATE TABLE IF NOT EXISTS identity (' +
       'pubkey VARCHAR(50) NOT NULL,' +
       'block INTEGER DEFAULT NULL,' +
       'currency VARCHAR(50) DEFAULT NULL,' +
@@ -728,7 +739,9 @@ function IdentityModel() {
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (pubkey)' +
-      ');';
+      ');',
+      'CREATE INDEX IF NOT EXISTS idx_idty_block_number ON identity (block);'
+      ];
   };
 }
 
@@ -740,7 +753,6 @@ function CertificationModel() {
   this.primary = 'id';
   this.fields = [
     'id',
-    'block_number',
     'pubkey',
     'to',
     'block',
@@ -756,7 +768,8 @@ function CertificationModel() {
   };
 
   this.sqlCreate = function() {
-    return 'CREATE TABLE IF NOT EXISTS cert (' +
+    return [
+      'CREATE TABLE IF NOT EXISTS cert (' +
       'id CHAR(36) NOT NULL,' +
       'fromKey VARCHAR(50) NOT NULL,' +
       'toKey VARCHAR(50) NOT NULL,' +
@@ -766,8 +779,10 @@ function CertificationModel() {
       'indexNb INTEGER NOT NULL,' +
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
-      'PRIMARY KEY (id), UNIQUE(fromKey, toKey, block), UNIQUE(fromKey, toKey, indexNb)' +
-      ');';
+      'PRIMARY KEY (id), UNIQUE(fromKey, toKey, block)' +
+      ');',
+      'CREATE INDEX IF NOT EXISTS idx_cert_block_number ON cert (block);'
+    ];
   };
 }
 
@@ -791,7 +806,8 @@ function MembershipModel() {
   ];
 
   this.sqlCreate = function() {
-    return 'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
+    return [
+      'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       'id CHAR(36) NOT NULL,' +
       'issuer VARCHAR(50) NOT NULL,' +
       'currency VARCHAR(50) DEFAULT NULL,' +
@@ -805,7 +821,9 @@ function MembershipModel() {
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (id)' +
-      ');';
+      ');',
+      'CREATE INDEX IF NOT EXISTS idx_' + that.table + '_block_number ON ' + that.table + ' (number);'
+    ];
   };
 }
 
@@ -839,7 +857,8 @@ function ExcludedModel() {
   ];
 
   this.sqlCreate = function() {
-    return 'CREATE TABLE IF NOT EXISTS excluded (' +
+    return [
+      'CREATE TABLE IF NOT EXISTS excluded (' +
       'id CHAR(36) NOT NULL,' +
       'pubkey VARCHAR(50) NOT NULL,' +
       'currency VARCHAR(50) DEFAULT NULL,' +
@@ -848,7 +867,9 @@ function ExcludedModel() {
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (id)' +
-      ');';
+      ');',
+      'CREATE INDEX IF NOT EXISTS idx_excluded_block_number ON excluded (block);'
+    ];
   };
 }
 
@@ -866,7 +887,8 @@ function TransactionModel() {
   ];
 
   this.sqlCreate = function() {
-    return 'CREATE TABLE IF NOT EXISTS tx (' +
+    return [
+      'CREATE TABLE IF NOT EXISTS tx (' +
       'id CHAR(36) NOT NULL,' +
       'comment VARCHAR(255) NOT NULL,' +
       'block INTEGER NOT NULL,' +
@@ -874,7 +896,9 @@ function TransactionModel() {
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (id)' +
-      ');';
+      ');',
+      'CREATE INDEX IF NOT EXISTS idx_tx_block_number ON tx (block);'
+    ];
   };
 
   this.oneToManys = [{

@@ -23,6 +23,8 @@ function SQLiteDAL(db) {
 
   var that = this;
 
+  var currentNumber = null;
+
   var models = [
     EndpointModel,
     PeerModel,
@@ -296,9 +298,10 @@ function SQLiteDAL(db) {
   };
 
   this.getBlockCurrent = function() {
-    return that.queryAggregate("SELECT MAX(number) as aggregate FROM block")
+    return (currentNumber == null ? that.queryAggregate("SELECT MAX(number) as aggregate FROM block") : Q(currentNumber))
       .then(function(number) {
-        return number != null ? that.getBlockOrNull(number) : null;
+        if (number == null) currentNumber = -1;
+        return currentNumber != -1 ? that.getBlockOrNull(currentNumber) : null;
       });
   };
 
@@ -384,7 +387,11 @@ function SQLiteDAL(db) {
   };
 
   this.saveBlock = function(block, done) {
-    return saveEntity(BlockModel, block, done);
+    return saveEntity(BlockModel, block)
+      .then(function(){
+        currentNumber = block.number;
+        done && done();
+      });
   };
 
   function saveEntity(model, entity, done) {

@@ -108,15 +108,17 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   this._start = function (done) {
     async.waterfall([
       function (next){
-        that.createSignFunction(that.conf, next);
-      },
-      function (next){
         // Extract key pair
         crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
       },
       function (pair, next){
-        // Add signing & public key functions to PeeringService
+        that.pair = pair;
+        that.BlockchainService.setKeyPair(pair);
         that.PeeringService.setKeyPair(pair);
+        that.createSignFunction(pair, next);
+      },
+      function (next){
+        // Add signing & public key functions to PeeringService
         that.PeeringService.setSignFunc(that.sign);
         logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
@@ -165,12 +167,12 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     done(errors[0]);
   };
 
-  this.createSignFunction = function (conf, done) {
-    signature.async(conf.salt, conf.passwd, function (err, sigFunc) {
+  this.createSignFunction = function (pair, done) {
+    signature.async(pair, function (err, sigFunc) {
       that.sign = sigFunc;
       done(err);
     });
-  }
+  };
 
   this.initPeer = function (conn, conf, done) {
     async.waterfall([

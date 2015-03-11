@@ -7,17 +7,22 @@ var dos2unix = require('./dos2unix');
 var signature = require('./signature');
 var rawer = require('./rawer');
 
+var signatureFunc;
+
 process.on('message', function(stuff){
   var conf = stuff.conf;
   var block = stuff.block;
   var nbZeros = stuff.zeros;
-  //console.log(msg);
+  var pair = stuff.pair;
   async.waterfall([
     function(next) {
-      signature.sync(conf.salt, conf.passwd, next);
+      if (signatureFunc)
+        next(null, signatureFunc);
+      else
+        signature.sync(pair, next);
     },
     function(sigFunc, next) {
-
+      signatureFunc = sigFunc;
       var powRegexp = new RegExp('^0{' + nbZeros + '}[^0]');
       var pow = "", sig = "", raw = "";
 
@@ -56,20 +61,19 @@ process.on('message', function(stuff){
               }, nbZeros == 0 ? 0 : Math.max(0, (1000-durationMS))); // Max wait 1 second
             },
             function(next) {
-              process.send({ found: false, nonce: block.nonce });
+              process.send({ found: false, block: block, nbZeros: nbZeros });
               next();
             }
           ], next);
         }, function () {
-          next(pow, sig, block.nonce, block.time, testsCount);
+          next(pow, sig, block, testsCount);
         });
     }
-  ], function(pow, sig, nonce, time, testsCount) {
+  ], function(pow, sig, block, testsCount) {
+    block.signature = sig;
     process.send({
       found: true,
-      sig: sig,
-      time: time,
-      nonce: nonce,
+      block: block,
       testsCount: testsCount,
       pow: pow
     });

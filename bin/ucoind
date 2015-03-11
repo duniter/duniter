@@ -190,18 +190,20 @@ function generateAndSend (generationMethod) {
               next();
           },
           function (next){
-            signature.sync(conf.salt, conf.passwd, next);
-          },
-          function (sigFunc, next){
-            doSign = sigFunc;
             // Extract key pair
             crypto.getKeyPair(conf.passwd, conf.salt, next);
           },
           function (pair, next){
-            proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
+            signature.sync(pair, function(err, sigFunc) {
+              doSign = sigFunc;
+              next(err, pair);
+            });
           },
+          function (pair, next){
+            proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
+          }
         ], next);
-      },
+      }
     ], logIfErrorAndExit(server));
   };
 }

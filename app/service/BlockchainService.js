@@ -54,6 +54,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var BlockchainService = this;
 
   var lastGeneratedWasWrong = false;
+  this.pair = null;
 
   var Identity      = conn.model('Identity');
   var Certification = conn.model('Certification');
@@ -75,6 +76,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
 
   this.promoted = function (number, done) {
     dal.getPromotedOrNull(number, done);
+  };
+
+  this.setKeyPair = function(keypair) {
+    this.pair = keypair;
   };
 
   this.submitMembership = function (ms, done) {
@@ -1396,11 +1401,11 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     //Set an unused port number.
     process.execArgv = [];
   }
-  var powProcess;
+  var powWorker;
 
   this.getPoWProcessStats = function(done) {
-    if (powProcess)
-      usage.lookup(powProcess.pid, done);
+    if (powWorker)
+      usage.lookup(powWorker.powProcess.pid, done);
     else
       done(null, { memory: 0, cpu: 0 });
   };
@@ -1413,9 +1418,8 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       newKeyblockCallback = function() {
         newKeyblockCallback = null;
         // Definitely kill the process for this BlockchainService instance
-        if (powProcess) {
-          powProcess.kill();
-          powProcess = null;
+        if (powWorker) {
+          powWorker.kill();
         }
         done();
       }
@@ -1424,59 +1428,82 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   };
 
   this.prove = function (block, sigFunc, nbZeros, done) {
-    //if (powProcess) return done('Proof-of-work process already running.');
+
+    if (!powWorker) {
+      powWorker = new Worker();
+    }
     if (block.number == 0) {
       // On initial block, difficulty is the one given manually
       block.powMin = nbZeros;
     }
-    logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
-    var start = new Date();
-    var stopped = false;
-    block.nonce = 0;
-    async.whilst(function(){
-      return !stopped;
-    }, function(next){
-      powProcess = childProcess.fork(__dirname + '/../lib/proof');
-      powProcess.on('message', function(msg) {
-        if (!stopped && msg.found) {
-          block.signature = msg.sig;
-          block.nonce = msg.nonce;
-          block.time = msg.time;
-          var end = new Date();
-          var duration = (end.getTime() - start.getTime());
-          var testsPerSecond = (1000/duration * msg.testsCount).toFixed(2);
-          logger.debug('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration/1000).toFixed(2), msg.testsCount, testsPerSecond);
-          done(null, block);
-        } else if (!stopped && msg.testsPerRound) {
-          // Started...
-          logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', msg.testsPerSecond, msg.testsPerRound);
-        } else if (!stopped && msg.nonce > block.nonce + constants.PROOF_OF_WORK.RELEASE_MEMORY) {
-          // Reset fork process (release memory)...
-          //logger.debug('Release mem... lastCount = %s, nonce = %s', block.nonce);
-          block.nonce = msg.nonce;
-          powProcess.kill();
-          powProcess = childProcess.fork(__dirname + '/../lib/proof');
-          next();
-        } else if (!stopped) {
-          // Continue...
-          //console.log('Already made: %s tests...', msg.nonce);
-          // Look for incoming block
-          if (newKeyblockCallback) {
-            stopped = true;
-            powProcess.kill();
-            powProcess = childProcess.fork(__dirname + '/../lib/proof');
-            next();
-            logger.debug('Proof-of-work computation canceled.');
-            newKeyblockCallback();
-          }
-        }
-      });
-      // Start
-      powProcess.send({ conf: conf, block: block, zeros: nbZeros });
-    }, function(err, block) {
-      done(err, block);
+    // Start
+    powWorker.setOnPoW(function(err, block) {
+      done(null, new Block(block));
     });
+    block.nonce = 0;
+    powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, pair: BlockchainService.pair });
+    logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
   };
+
+  function Worker() {
+
+    var stopped = true;
+    var that = this;
+    var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.' };
+    that.powProcess = childProcess.fork(__dirname + '/../lib/proof');
+    var start = null;
+
+    that.powProcess.on('message', function(msg) {
+      var block = msg.block;
+      if (stopped) {
+        // Started...
+        start = new Date();
+        stopped = false;
+      }
+      if (!stopped && msg.found) {
+        var end = new Date();
+        var duration = (end.getTime() - start.getTime());
+        var testsPerSecond = (1000/duration * msg.testsCount).toFixed(2);
+        logger.debug('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration/1000).toFixed(2), msg.testsCount, testsPerSecond);
+        stopped = true;
+        start = null;
+        onPoWFound(null, block);
+      } else if (!stopped && msg.testsPerRound) {
+        logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', msg.testsPerSecond, msg.testsPerRound);
+      } else if (!stopped && msg.nonce > block.nonce + constants.PROOF_OF_WORK.RELEASE_MEMORY) {
+        // Reset fork process (release memory)...
+        //logger.debug('Release mem... lastCount = %s, nonce = %s', block.nonce);
+        block.nonce = msg.nonce;
+        that.powProcess.kill();
+        that.powProcess = childProcess.fork(__dirname + '/../lib/proof');
+        that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: BlockchainService.pair });
+      } else if (!stopped) {
+        // Continue...
+        //console.log('Already made: %s tests...', msg.nonce);
+        // Look for incoming block
+        if (newKeyblockCallback) {
+          stopped = true;
+          that.powProcess.kill();
+          that.powProcess = childProcess.fork(__dirname + '/../lib/proof');
+          onPoWFound();
+          logger.debug('Proof-of-work computation canceled.');
+          start = null;
+          newKeyblockCallback();
+        }
+      }
+    });
+
+    this.kill = function() {
+      if (that.powProcess) {
+        that.powProcess.kill();
+        that.powProcess = null;
+      }
+    };
+
+    this.setOnPoW = function(onPoW) {
+      onPoWFound = onPoW;
+    };
+  }
 
   this.startGeneration = function (done) {
     if (!conf.participate) return;
@@ -1537,7 +1564,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
               }
             },
             signature: function(callback){
-              signature.sync(conf.salt, conf.passwd, callback);
+              signature.sync(BlockchainService.pair, callback);
             },
             trial: function (callback) {
               globalValidator(conf, blockchainDao(conn, block, dal)).getTrialLevel(PeeringService.pubkey, callback);

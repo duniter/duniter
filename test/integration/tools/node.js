@@ -69,7 +69,7 @@ function Node (dbName, options) {
               that.server.BlockchainService.generateNext(callback);
             },
             sigFunc: function(callback){
-              require('../../../app/lib/signature').sync(that.server.conf.salt, that.server.conf.passwd, callback);
+              require('../../../app/lib/signature').sync(that.server.pair, callback);
             }
           }, next);
         },

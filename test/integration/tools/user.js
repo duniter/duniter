@@ -8,7 +8,7 @@ module.exports = function (uid, salt, passwd, url) {
 	return new User(uid, salt, passwd, url);
 };
 
-function User (uid, salt, passwd, node) {
+function User (uid, options, node) {
 
   var that = this;
   var pub, sec;
@@ -16,16 +16,24 @@ function User (uid, salt, passwd, node) {
   var selfTime = new Date();
 
   function init(done) {
-    async.waterfall([
-      function(next) {
-        crypto.getKeyPair(salt, passwd, next);
-      },
-      function(pair, next) {
-        pub = that.pub = base58.encode(pair.publicKey);
-        sec = pair.secretKey;
-        next();
-      }
-    ], done);
+    if (options.salt && options.passwd) {
+      async.waterfall([
+        function (next) {
+          crypto.getKeyPair(options.salt, options.passwd, next);
+        },
+        function (pair, next) {
+          pub = that.pub = base58.encode(pair.publicKey);
+          sec = pair.secretKey;
+          next();
+        }
+      ], done);
+    } else if (options.pub && options.sec) {
+      pub = that.pub = options.pub;
+      sec = base58.decode(options.sec);
+      done();
+    } else {
+      throw 'Not keypair information given for testing user ' + uid;
+    }
   }
 
   this.selfCert = function (whenTimestamp) {

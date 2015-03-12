@@ -60,7 +60,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var Certification = conn.model('Certification');
   var Membership    = conn.model('Membership');
   var Block         = require('../lib/entity/block');
-  var Link          = conn.model('Link');
+  var Link          = require('../lib/entity/link');
   var Source        = conn.model('Source');
   var Transaction   = conn.model('Transaction');
   var Configuration = conn.model('Configuration');
@@ -245,7 +245,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           async.forEachSeries(members, function (m, callback) {
             async.waterfall([
               function (next) {
-                Link.getValidLinksFrom(m.pubkey, next);
+                dal.getValidLinksFrom(m.pubkey, next);
               },
               function (links, next) {
                 // Only test agains members who make enough signatures
@@ -303,7 +303,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   function checkHaveEnoughLinks(target, newLinks, done) {
     async.waterfall([
       function (next){
-        Link.currentValidLinks(target, next);
+        dal.currentValidLinks(target, next);
       },
       function (links, next){
         var count = links.length;
@@ -506,12 +506,13 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   function updateLinks (block, done) {
     async.forEach(block.certifications, function(inlineCert, callback){
       var cert = Certification.fromInline(inlineCert);
-      new Link({
-        source: cert.from,
-        target: cert.to,
-        timestamp: block.medianTime
-      })
-      .save(function (err) {
+      dal.saveLink(
+        new Link({
+          source: cert.from,
+          target: cert.to,
+          timestamp: block.medianTime,
+          obsolete: false
+        }), function (err) {
         callback(err);
       });
     }, done);
@@ -602,7 +603,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   function computeObsoleteLinks (block, done) {
     async.waterfall([
       function (next){
-        Link.obsoletes(block.medianTime - conf.sigValidity, next);
+        dal.obsoletesLinks(block.medianTime - conf.sigValidity, next);
       },
       function (next){
         Identity.getMembers(next);
@@ -736,7 +737,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             function (next) {
               if (current) {
                 // Already exists a link not replayable yet?
-                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
+                dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
               }
               else next(null, false);
             },
@@ -1097,7 +1098,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                             function (next) {
                               if (current) {
                                 // Already exists a link not replayable yet?
-                                Link.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
+                                dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
                               }
                               else next(null, false);
                             },

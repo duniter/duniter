@@ -48,7 +48,7 @@ module.exports = function(conn, block, dal) {
     this.getPreviousLinkFor = function (from, to, done) {
       async.waterfall([
         function (next){
-          Link.getObsoletesFromTo(from, to, next);
+          dal.getObsoletesFromTo(from, to, next);
         },
         function (links, next){
           next(null, links.length > 0 ? links[0] : null);
@@ -57,7 +57,7 @@ module.exports = function(conn, block, dal) {
     };
 
     this.getValidLinksTo = function (to, done) {
-      Link.getValidLinksTo(to, done);
+      dal.getValidLinksTo(to, done);
     };
 
     this.getMembers = function (done) {
@@ -90,11 +90,11 @@ module.exports = function(conn, block, dal) {
     };
 
     this.getPreviousLinkFromTo = function (from, to, done) {
-      Link.getValidFromTo(from, to, done);
+      dal.getValidFromTo(from, to, done);
     };
 
     this.getValidLinksFrom = function (member, done) {
-      Link.getValidLinksFrom(member, done);
+      dal.getValidLinksFrom(member, done);
     };
 
     this.getCurrent = function (done) {

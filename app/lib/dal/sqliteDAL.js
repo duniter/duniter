@@ -39,7 +39,8 @@ function SQLiteDAL(db) {
     SignatoryModel,
     InputModel,
     OutputModel,
-    TxSignatoryModel
+    TxSignatoryModel,
+    LinkModel
   ];
 
   this.run = function(sql, params, done) {
@@ -314,6 +315,38 @@ function SQLiteDAL(db) {
     return that.query("SELECT * FROM block WHERE number < ? ORDER BY number ASC", [number], done);
   };
 
+  this.getValidLinksFrom = function(from, done) {
+    return that.query("SELECT * FROM link WHERE source = ? AND NOT obsolete", [from], done);
+  };
+
+  this.getValidLinksTo = function(to, done) {
+    return that.query("SELECT * FROM link WHERE target = ? AND NOT obsolete", [to], done);
+  };
+
+  this.currentValidLinks = function(fpr, done) {
+    return that.query("SELECT * FROM link WHERE target = ? AND NOT obsolete", [fpr], done);
+  };
+
+  this.getObsoletesFromTo = function(from, to, done) {
+    return that.query("SELECT * FROM link WHERE source = ? AND target = ? AND obsolete ORDER BY on_timestamp DESC LIMIT 1", [from, to], done);
+  };
+
+  this.getValidFromTo = function(from, to, done) {
+    return that.query("SELECT * FROM link WHERE source = ? AND target = ? AND NOT obsolete", [from, to], done);
+  };
+
+  this.existsLinkFromOrAfterDate = function(from, to, maxDate, done) {
+    return that.query("SELECT * FROM link WHERE source = ? AND target = ? AND on_timestamp >= ?", [from, to, maxDate])
+      .then(function(rows){
+        done && done(null, rows.length);
+        return rows.length > 0;
+      });
+  };
+
+  this.obsoletesLinks = function(minTimestamp, done) {
+    return that.run("UPDATE link SET obsolete = 1 WHERE on_timestamp <= ?", [minTimestamp], done);
+  };
+
   this.getPeerOrNull = function(pubkey, done) {
     return that.nullIfError(that.getPeer(pubkey), done);
   };
@@ -392,6 +425,10 @@ function SQLiteDAL(db) {
         currentNumber = block.number;
         done && done();
       });
+  };
+
+  this.saveLink = function(link, done) {
+    return saveEntity(LinkModel, link, done);
   };
 
   function saveEntity(model, entity, done) {
@@ -1103,6 +1140,38 @@ function OutputModel() {
   };
 }
 
+function LinkModel() {
+
+  Model.call(this);
+
+  this.table = 'link';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'source',
+    'target',
+    'timestamp',
+    'obsolete'
+  ];
+
+  this.aliases = {
+    'timestamp': 'on_timestamp'
+  };
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS link (' +
+      'id CHAR(36) NOT NULL,' +
+      'source CHAR(50) NOT NULL,' +
+      'target CHAR(50) NOT NULL,' +
+      'on_timestamp DATETIME DEFAULT NULL,' +
+      'obsolete BOOLEAN DEFAULT true,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
 util.inherits(EndpointModel, Model);
 util.inherits(PeerModel, Model);
 util.inherits(BlockModel, Model);
@@ -1116,3 +1185,4 @@ util.inherits(TransactionModel, Model);
 util.inherits(SignatoryModel, Model);
 util.inherits(InputModel, Model);
 util.inherits(OutputModel, Model);
+util.inherits(LinkModel, Model);

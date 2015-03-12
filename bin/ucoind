@@ -200,6 +200,7 @@ function generateAndSend (generationMethod) {
             });
           },
           function (pair, next){
+            server.setPair(pair);
             proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
           }
         ], next);

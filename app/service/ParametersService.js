@@ -80,7 +80,7 @@ function ParameterNamespace (conn, currency) {
       callback("Number format is incorrect, must be a positive integer");
       return;
     }
-    callback(null, matches[1]);
+    callback(null, parseInt(matches[1]));
   };
 
   this.getCount = function (req, callback){

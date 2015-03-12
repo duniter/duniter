@@ -226,4 +226,16 @@ function Node (dbName, options) {
       });
     }
   };
+
+  this.sourcesOf = function(pub, callback) {
+    return function(done) {
+      async.waterfall([
+        function(next) {
+          that.http.tx.sources(pub, next);
+        }
+      ], function(err, res) {
+        callback(res, done);
+      });
+    }
+  };
 }

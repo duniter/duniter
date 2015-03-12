@@ -11,16 +11,25 @@ var jspckg = require('../../package');
 //   ]
 //});
 
-var host = 'localhost';
-var port = 9999;
-var node1 = node('db2', { currency: 'bb', ipv4: host, port: port, remoteipv4: host, remoteport: port, upnp: false, httplogs: true,
+var node1 = node('db2', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: true,
   salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
   sigQty: 1
+});
+var node2 = node('db3', { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: true,
+  pair: {
+    pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+    sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
+  },
+  participate: false, rootoffset: 10,
+  sigQty: 1, dt: 1, ud0: 120
 });
 
 before(function(done) {
   this.timeout(10000);
-  node1.start(done);
+  async.parallel([
+    node1.start,
+    node2.start
+  ], done);
 });
 
 describe("Integration", function() {
@@ -114,6 +123,42 @@ describe("Integration", function() {
     it('tic should give only 3 results', node1.lookup('tic', function(res, done){
       should.exists(res);
       assert.equal(res.results.length, 3);
+      done();
+    }));
+  });
+
+  describe("Testing transactions", function(){
+
+    before(function(done) {
+      this.timeout(20000);
+      node2.before(require('./scenarios/transactions')(node2))(done);
+    });
+    after(node2.after());
+
+    it('it should exist block#2 with UD of 120', node2.block(2, function(block, done){
+      should.exists(block);
+      assert.equal(block.number, 2);
+      assert.equal(block.dividend, 120);
+      done();
+    }));
+
+    it('tic should be able to send 51 to toc', node2.sourcesOf('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', function(res, done){
+      should.exists(res);
+      assert.equal(res.sources.length, 2);
+      assert.equal(res.sources[0].type, 'T');
+      assert.equal(res.sources[0].amount, 69);
+      done();
+    }));
+
+    it('toc should have 151 of sources', node2.sourcesOf('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', function(res, done){
+      should.exists(res);
+      assert.equal(res.sources.length, 3);
+      assert.equal(res.sources[0].type, 'D');
+      assert.equal(res.sources[0].amount, 120);
+      assert.equal(res.sources[1].type, 'T');
+      assert.equal(res.sources[1].amount, 51);
+      assert.equal(res.sources[2].type, 'D');
+      assert.equal(res.sources[2].amount, 120);
       done();
     }));
   });

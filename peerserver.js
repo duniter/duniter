@@ -1,5 +1,6 @@
 var async       = require('async');
 var util        = require('util');
+var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
 var dos2unix    = require('./app/lib/dos2unix');
 var logger      = require('./app/lib/logger')('peerserver');
@@ -115,7 +116,13 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     async.waterfall([
       function (next){
         // Extract key pair
-        crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
+        if (that.conf.pair)
+          next(null, {
+            publicKey: base58.decode(that.conf.pair.pub),
+            secretKey: base58.decode(that.conf.pair.sec)
+          });
+        else
+          crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
       },
       function (pair, next){
         that.setPair(pair);

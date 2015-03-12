@@ -259,12 +259,16 @@ function SQLiteDAL(db) {
       });
   };
 
+  this.getCurrent = function(done) {
+    return that.getBlockCurrent(done);
+  };
+
   this.getCurrentBlockOrNull = function(done) {
     return that.nullIfError(that.getBlockCurrent(), done);
   };
 
-  this.getPromotedOrNull = function(number, done) {
-    return that.nullIfError(that.getBlock(number), done);
+  this.getPromoted = function(number, done) {
+    return that.getBlock(number, done);
   };
 
   // Block
@@ -298,11 +302,15 @@ function SQLiteDAL(db) {
       that.fillInEntity(that.query('SELECT * FROM block WHERE number BETWEEN ? AND ? ORDER BY number DESC', [start, end]), BlockModel), done);
   };
 
-  this.getBlockCurrent = function() {
+  this.getBlockCurrent = function(done) {
     return (currentNumber == null ? that.queryAggregate("SELECT MAX(number) as aggregate FROM block") : Q(currentNumber))
       .then(function(number) {
         if (number == null) currentNumber = -1;
         return currentNumber != -1 ? that.getBlockOrNull(currentNumber) : null;
+      })
+      .then(function(block){
+        done && done(null, block);
+        return block;
       });
   };
 

@@ -75,7 +75,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   };
 
   this.promoted = function (number, done) {
-    dal.getPromotedOrNull(number, done);
+    dal.getPromoted(number, done);
   };
 
   this.setKeyPair = function(keypair) {
@@ -1439,6 +1439,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     }
     // Start
     powWorker.setOnPoW(function(err, block) {
+      console.log(new Block(block).getRaw());
       done(null, new Block(block));
     });
     block.nonce = 0;

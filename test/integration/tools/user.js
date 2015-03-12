@@ -139,6 +139,93 @@ function User (uid, options, node) {
     }
   };
 
+  this.send = function (amount, recipient, comment) {
+    return function(done) {
+      var sources = [];
+      var choices = {};
+      var currency = '';
+      var raw = "";
+      async.waterfall([
+        function (next) {
+          if (!amount || !recipient) {
+            next('Amount and recipient are required');
+            return;
+          }
+          node.http.tx.sources(pub, next);
+        },
+        function (json, next) {
+          currency = json.currency;
+          var i = 0;
+          var cumulated = 0;
+          while (i < json.sources.length) {
+            var src = json.sources[i];
+            sources.push({
+              'type': src.type,
+              'amount': src.amount,
+              'number': src.number,
+              'hash': src.fingerprint
+            });
+            cumulated += src.amount;
+            i++;
+          }
+          if (cumulated < amount) {
+            next('You do not have enough coins! (' + cumulated + ' ' + currency + ' left)');
+          }
+          else {
+            next();
+          }
+        },
+        function (next) {
+          var selected = [];
+          var total = 0;
+          for (var i = 0; i < sources.length && total < amount; i++) {
+            var src = sources[i];
+            total += src.amount;
+            selected.push(src);
+          }
+          next(null, selected);
+        },
+        function (sources, next) {
+          var inputSum = 0;
+          var issuer = pub;
+          raw += "Version: 1" + '\n';
+          raw += "Type: Transaction\n";
+          raw += "Currency: " + currency + '\n';
+          raw += "Issuers:\n";
+          raw += issuer + '\n';
+          raw += "Inputs:\n";
+          sources.forEach(function (src) {
+            raw += ['0', src.type, src.number, src.hash, src.amount].join(':') + '\n';
+            inputSum += src.amount;
+          });
+          raw += "Outputs:\n";
+          raw += [recipient.pub, amount].join(':') + '\n';
+          if (inputSum - amount > 0) {
+            // Rest back to issuer
+            raw += [issuer, inputSum - amount].join(':') + '\n';
+          }
+          raw += "Comment: " + (comment || "") + "\n";
+          next(null, raw);
+        },
+        function (raw, next) {
+          var sig = crypto.signSync(raw, sec);
+          raw += sig + '\n';
+          console.log(raw);
+          //post('/tx/process', { transaction: raw }, function (err) {
+          //  if (err) console.error('Error:', err);
+          //  else console.log('Successfully sent transaction.');
+          //  next(err);
+          //});
+          node.http.tx.process(raw, function (err) {
+            if (err) console.error('Error:', err);
+            else console.log('Successfully sent transaction.');
+            next(err);
+          });
+        }
+      ], done);
+    }
+  };
+
   function post(uri, data, done) {
     var postReq = request.post({
       "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,

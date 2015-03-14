@@ -27,7 +27,7 @@ function TransactionBinding(txServer) {
   var BlockchainService = txServer.BlockchainService;
 
   // Models
-  var Source = txServer.conn.model('Source');
+  var Source = require('../lib/entity/source');
 
   this.parseTransaction = function (req, res) {
     res.type('application/json');
@@ -54,7 +54,7 @@ function TransactionBinding(txServer) {
       },
       function (pPubkey, next) {
         pubkey = pPubkey;
-        Source.getAvailableByPubkey(pubkey, next);
+        txServer.dal.getAvailableSourcesByPubkey(pubkey, next);
       },
       function (sources, next) {
         var result = {
@@ -63,7 +63,7 @@ function TransactionBinding(txServer) {
           "sources": []
         };
         sources.forEach(function (src) {
-          result.sources.push(src.json());
+          result.sources.push(new Source(src).json());
         });
         next(null, result);
       }

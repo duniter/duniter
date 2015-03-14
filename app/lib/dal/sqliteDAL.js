@@ -40,7 +40,8 @@ function SQLiteDAL(db) {
     InputModel,
     OutputModel,
     TxSignatoryModel,
-    LinkModel
+    LinkModel,
+    SourceModel
   ];
 
   this.run = function(sql, params, done) {
@@ -343,6 +344,10 @@ function SQLiteDAL(db) {
     return that.query("SELECT * FROM link WHERE source = ? AND target = ? AND NOT obsolete", [from, to], done);
   };
 
+  this.getAvailableSourcesByPubkey = function(pubkey, done) {
+    return that.query("SELECT * FROM source WHERE pubkey = ? AND NOT consumed ORDER BY created, number, type DESC", [pubkey], done);
+  };
+
   this.existsLinkFromOrAfterDate = function(from, to, maxDate, done) {
     return that.query("SELECT * FROM link WHERE source = ? AND target = ? AND on_timestamp >= ?", [from, to, maxDate])
       .then(function(rows){
@@ -351,8 +356,20 @@ function SQLiteDAL(db) {
       });
   };
 
+  this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount, done) {
+    return that.query("SELECT * FROM source WHERE type = ? AND pubkey = ? AND number = ? AND fingerprint = ? AND amount = ? AND NOT consumed", [type, pubkey, number, fingerprint, amount])
+      .then(function(rows){
+        done && done(null, rows.length);
+        return rows.length > 0;
+      });
+  };
+
   this.obsoletesLinks = function(minTimestamp, done) {
     return that.run("UPDATE link SET obsolete = 1 WHERE on_timestamp <= ?", [minTimestamp], done);
+  };
+
+  this.setConsumedSource = function(type, pubkey, number, fingerprint, amount, done) {
+    return that.run("UPDATE source SET consumed = 1 WHERE type = ? AND pubkey = ? AND number = ? AND fingerprint = ? AND amount = ?", [type, pubkey, number, fingerprint, amount], done);
   };
 
   this.getPeerOrNull = function(pubkey, done) {
@@ -437,6 +454,10 @@ function SQLiteDAL(db) {
 
   this.saveLink = function(link, done) {
     return saveEntity(LinkModel, link, done);
+  };
+
+  this.saveSource = function(link, done) {
+    return saveEntity(SourceModel, link, done);
   };
 
   function saveEntity(model, entity, done) {
@@ -1176,6 +1197,42 @@ function LinkModel() {
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
+function SourceModel() {
+
+  Model.call(this);
+
+  this.table = 'source';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'pubkey',
+    'type',
+    'number',
+    'fingerprint',
+    'amount',
+    'consumed'
+  ];
+
+  this.aliases = {
+    'timestamp': 'on_timestamp'
+  };
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS source (' +
+      'id CHAR(36) NOT NULL,' +
+      'pubkey CHAR(50) NOT NULL,' +
+      'type CHAR(1) NOT NULL,' +
+      'number INTEGER DEFAULT NULL,' +
+      'fingerprint CHAR(40) NOT NULL,' +
+      'amount INTEGER DEFAULT NULL,' +
+      'consumed BOOLEAN DEFAULT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id), UNIQUE(pubkey,fingerprint,number)' +
       ');';
   };
 }

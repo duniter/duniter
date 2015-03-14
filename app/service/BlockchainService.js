@@ -61,7 +61,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var Membership    = conn.model('Membership');
   var Block         = require('../lib/entity/block');
   var Link          = require('../lib/entity/link');
-  var Source        = conn.model('Source');
+  var Source        = require('../lib/entity/source');
   var Transaction   = conn.model('Transaction');
   var Configuration = conn.model('Configuration');
   var BlockStat     = conn.model('BlockStat');
@@ -656,13 +656,14 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             },
             function (idties, next) {
               async.forEachSeries(idties, function (idty, callback) {
-                new Source({
+                dal.saveSource(new Source({
                   'pubkey': idty.pubkey,
                   'type': 'D',
                   'number': block.number,
                   'fingerprint': block.hash,
-                  'amount': block.dividend
-                }).save(function (err) {
+                  'amount': block.dividend,
+                  'consumed': 0
+                }), function (err) {
                   callback(err);
                 });
               }, next);
@@ -683,18 +684,19 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           async.parallel({
             consume: function (next) {
               async.forEachSeries(txObj.inputs, function (input, callback) {
-                Source.setConsumed(input.type, input.pubkey, input.number, input.fingerprint, input.amount, callback);
+                dal.setConsumedSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount, callback);
               }, next);
             },
             create: function (next) {
               async.forEachSeries(txObj.outputs, function (output, callback) {
-                new Source({
+                dal.saveSource(new Source({
                   'pubkey': output.pubkey,
                   'type': 'T',
                   'number': block.number,
                   'fingerprint': txHash,
-                  'amount': output.amount
-                }).save(function (err) {
+                  'amount': output.amount,
+                  'consumed': 0
+                }), function (err) {
                   callback(err);
                 });
               }, next);

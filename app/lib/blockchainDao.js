@@ -4,8 +4,6 @@ var _     = require('underscore');
 module.exports = function(conn, block, dal) {
 
   var Identity      = conn.model('Identity');
-  var Link          = conn.model('Link');
-  var Source        = conn.model('Source');
 
   function BlockCheckerDao () {
 
@@ -122,11 +120,11 @@ module.exports = function(conn, block, dal) {
     };
 
     this.isAvailableUDSource = function (pubkey, number, fingerprint, amount, done) {
-      Source.existsNotConsumed('D', pubkey, number, fingerprint, amount, done);
+      dal.existsNotConsumed('D', pubkey, number, fingerprint, amount, done);
     };
 
     this.isAvailableTXSource = function (pubkey, number, fingerprint, amount, done) {
-      Source.existsNotConsumed('T', pubkey, number, fingerprint, amount, done);
+      dal.existsNotConsumed('T', pubkey, number, fingerprint, amount, done);
     };
 
     this.getCurrentMembershipNumber = function (pubkey, done) {

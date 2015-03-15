@@ -10,7 +10,6 @@ module.exports = function (serverPubkey, conn, conf, dal) {
 
 function Router (serverPubkey, conn, conf, dal) {
 
-  var Identity = conn.model('Identity');
   var Merkle   = conn.model('Merkle');
   var Peer     = conn.model('Peer');
 
@@ -80,7 +79,7 @@ function Router (serverPubkey, conn, conf, dal) {
           async.forEachSeries(peers, function (p, callback) {
             async.waterfall([
               function (next) {
-                Identity.isMember(p.pub, next);
+                dal.isMember(p.pub, next);
               },
               function (isMember, next) {
                 isMember ? members.push(p) : nonmembers.push(p);

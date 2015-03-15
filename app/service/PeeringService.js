@@ -131,7 +131,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         }
         wasStatus = peer.status;
         peer.statusSigDate = new Date(sigTime*1000);
-        peer.setStatus(status.status, next);
+        peer.setStatus(status.status, dal, next);
       },
       function (next) {
         Merkle.updateForPeers(dal, next);
@@ -271,17 +271,17 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
               }
               that.emit('status', status);
               peer.statusSent = status.status;
-              peer.save(function (err) {
+              dal.savePeer(new Peer(peer), function (err) {
                 if (err) logger.error(err);
                 next();
               });
-            },
+            }
           ], callback);
         }, next);
-      },
+      }
     ], done);
   }
-};
+}
 
 util.inherits(PeeringService, events.EventEmitter);
 

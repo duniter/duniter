@@ -24,13 +24,12 @@ function Peer(json) {
     return this.pub && this.pub.length > 10 ? this.pub.substring(0, 10) : "Unknown";
   };
 
-  this.setStatus = function (newStatus, done) {
+  this.setStatus = function (newStatus, dal, done) {
     if(this.status != newStatus){
       this.status = newStatus;
-      this.save(function (err) {
+      dal.savePeer(this, function (err) {
         done(err);
       });
-      return;
     }
     else done();
   };

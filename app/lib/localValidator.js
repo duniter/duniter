@@ -4,8 +4,8 @@ var crypto     = require('./crypto');
 var common     = require('./common');
 var rawer      = require('./rawer');
 var constants  = require('./constants');
-var Block         = require('../lib/entity/block');
-var Identity   = mongoose.model('Identity', require('../models/identity'));
+var Block      = require('../lib/entity/block');
+var Identity   = require('../lib/entity/identity');
 var Membership = mongoose.model('Membership', require('../models/membership'));
 
 module.exports = function (conf) {
@@ -522,7 +522,7 @@ function hasWrongSignatureForIdentities (block) {
   var i = 0;
   var wrongSig = false;
   while (!wrongSig && i < block.identities.length) {
-    var idty = Identity.fromInline(block.identities[i]);
+    var idty = Identity.statics.fromInline(block.identities[i]);
     wrongSig = !crypto.verify(idty.selfCert(), idty.sig, idty.pubkey);
     i++;
   }

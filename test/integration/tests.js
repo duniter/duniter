@@ -5,17 +5,17 @@ var node   = require('./tools/node');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
 
-//require('log4js').configure({
-//   "appenders": [
-//     //{ category: "db1", type: "console" }
-//   ]
-//});
+require('log4js').configure({
+   "appenders": [
+     //{ category: "db1", type: "console" }
+   ]
+});
 
-var node1 = node('db2', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: true,
+var node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: true,
   salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
   sigQty: 1
 });
-var node2 = node('db3', { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: true,
+var node2 = node('db2', { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: true,
   pair: {
     pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
     sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
@@ -24,11 +24,16 @@ var node2 = node('db3', { currency: 'cc', ipv4: 'localhost', port: 9998, remotei
   sigQty: 1, dt: 1, ud0: 120
 });
 
+var node3 = node('db3', { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: true,
+  salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
+  sigQty: 1
+});
+
 before(function(done) {
-  this.timeout(10000);
   async.parallel([
     node1.start,
-    node2.start
+    node2.start,
+    node3.start
   ], done);
 });
 
@@ -37,7 +42,6 @@ describe("Integration", function() {
   describe("Testing technical API", function(){
 
     before(function(done) {
-      this.timeout(10000);
       node1.before([])(done);
     });
     after(node1.after());
@@ -56,7 +60,6 @@ describe("Integration", function() {
   describe("Testing malformed documents", function(){
 
     before(function(done) {
-      this.timeout(10000);
       node1.before(require('./scenarios/malformed-documents')(node1))(done);
     });
     after(node1.after());
@@ -69,7 +72,6 @@ describe("Integration", function() {
   describe("Lookup on", function(){
 
     before(function(done) {
-      this.timeout(10000);
       node1.before(require('./scenarios/wot-lookup')(node1))(done);
     });
     after(node1.after());
@@ -130,7 +132,6 @@ describe("Integration", function() {
   describe("Testing transactions", function(){
 
     before(function(done) {
-      this.timeout(20000);
       node2.before(require('./scenarios/transactions')(node2))(done);
     });
     after(node2.after());
@@ -166,19 +167,18 @@ describe("Integration", function() {
   describe("Testing leavers", function(){
 
     before(function(done) {
-      this.timeout(20000);
-      node1.before(require('./scenarios/certifications')(node1))(done);
+      node3.before(require('./scenarios/certifications')(node3))(done);
     });
-    after(node1.after());
+    after(node3.after());
 
-    it('toc should give only 1 result with 3 certification by others', node1.lookup('toc', function(res, done){
+    it('toc should give only 1 result with 3 certification by others', node3.lookup('toc', function(res, done){
       should.exists(res);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].uids[0].others.length, 3);
       done();
     }));
 
-    it('tic should give only 1 results', node1.lookup('tic', function(res, done){
+    it('tic should give only 1 results', node3.lookup('tic', function(res, done){
       should.exists(res);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].signed.length, 3);
@@ -198,21 +198,21 @@ describe("Integration", function() {
       done();
     }));
 
-    it('it should exist block#2 with 4 members', node1.block(2, function(block, done){
+    it('it should exist block#2 with 4 members', node3.block(2, function(block, done){
       should.exists(block);
       assert.equal(block.number, 2);
       assert.equal(block.membersCount, 4);
       done();
     }));
 
-    it('it should exist block#3 with only 1 certification', node1.block(3, function(block, done){
+    it('it should exist block#3 with only 1 certification', node3.block(3, function(block, done){
       should.exists(block);
       assert.equal(block.number, 3);
       assert.equal(block.certifications.length, 1);
       done();
     }));
 
-    it('it should exist block#4 with only 1 certification', node1.block(4, function(block, done){
+    it('it should exist block#4 with only 1 certification', node3.block(4, function(block, done){
       should.exists(block);
       assert.equal(block.number, 4);
       assert.equal(block.certifications.length, 1);

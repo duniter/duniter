@@ -56,8 +56,8 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var lastGeneratedWasWrong = false;
   this.pair = null;
 
-  var Identity      = conn.model('Identity');
-  var Certification = conn.model('Certification');
+  var Identity      = require('../lib/entity/identity');
+  var Certification = require('../lib/entity/certification');
   var Membership    = conn.model('Membership');
   var Block         = require('../lib/entity/block');
   var Link          = require('../lib/entity/link');
@@ -95,7 +95,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         if (entries.length > 0) {
           next('Already received membership');
         }
-        else Identity.isMember(entry.issuer, next);
+        else dal.isMember(entry.issuer, next);
       },
       function (isMember, next){
         var isJoin = entry.membership == 'IN';
@@ -202,7 +202,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   function checkIssuer (block, done) {
     async.waterfall([
       function (next){
-        Identity.isMember(block.issuer, next);
+        dal.isMember(block.issuer, next);
       },
       function (isMember, next){
         if (isMember)
@@ -239,7 +239,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       // other blocks may introduce unstability with new members
       async.waterfall([
         function (next) {
-          Identity.getMembers(next);
+          dal.getMembers(next);
         },
         function (members, next) {
           async.forEachSeries(members, function (m, callback) {
@@ -352,13 +352,14 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (next) {
         // Newcomers
         async.forEachSeries(block.identities, function(identity, callback){
-          var idty = Identity.fromInline(identity);
+          var idty = Identity.statics.fromInline(identity);
+          var indexNb = block.identities.indexOf(identity);
           async.waterfall([
             function (next){
               // Computes the hash if not done yet
               if (!idty.hash)
                 idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
-              Identity.getTheOne(idty.pubkey, idty.getTargetHash(), next);
+              dal.getIdentityByPubkeyAndHashOrNull(idty.pubkey, idty.getTargetHash(), next);
             },
             function (existing, next){
               if (existing) {
@@ -366,8 +367,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
               }
               idty.currentMSN = block.number;
               idty.member = true;
+              idty.wasMember = true;
               idty.kick = false;
-              idty.save(function (err) {
+              idty.indexNb = indexNb;
+              dal.saveIdentity(new Identity(idty), function (err) {
                 next(err);
               });
             }
@@ -377,17 +380,17 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (next) {
         // Joiners (come back)
         async.forEachSeries(block.joiners, function(inlineMS, callback){
-          var ms = Identity.fromInline(inlineMS);
+          var ms = Identity.statics.fromInline(inlineMS);
           async.waterfall([
             function (next){
               // Necessarily exists, since we've just created them in the worst case
-              Identity.getWritten(ms.pubkey, next);
+              dal.getWritten(ms.pubkey, next);
             },
             function (idty, next){
               idty.currentMSN = block.number;
               idty.member = true;
               idty.kick = false;
-              idty.save(function (err) {
+              dal.saveIdentity(new Identity(idty), function (err) {
                 next(err);
               });
             }
@@ -397,16 +400,16 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (next) {
         // Actives
         async.forEachSeries(block.actives, function(inlineMS, callback){
-          var ms = Identity.fromInline(inlineMS);
+          var ms = Identity.statics.fromInline(inlineMS);
           async.waterfall([
             function (next){
-              Identity.getWritten(ms.pubkey, next);
+              dal.getWritten(ms.pubkey, next);
             },
             function (idty, next){
               idty.currentMSN = block.number;
               idty.member = true;
               idty.kick = false;
-              idty.save(function (err) {
+              dal.saveIdentity(new Identity(idty), function (err) {
                 next(err);
               });
             }
@@ -416,17 +419,17 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (next) {
         // Leavers
         async.forEachSeries(block.leavers, function(inlineMS, callback){
-          var ms = Identity.fromInline(inlineMS);
+          var ms = Identity.statics.fromInline(inlineMS);
           async.waterfall([
             function (next){
-              Identity.getWritten(ms.pubkey, next);
+              dal.getWritten(ms.pubkey, next);
             },
             function (idty, next){
               idty.currentMSN = block.number;
               idty.member = true;
               idty.leaving = true;
               idty.kick = false;
-              idty.save(function (err) {
+              dal.saveIdentity(new Identity(idty), function (err) {
                 next(err);
               });
             }
@@ -438,12 +441,12 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         async.forEach(block.excluded, function (pubkey, callback) {
           async.waterfall([
             function (next) {
-              Identity.getWritten(pubkey, next);
+              dal.getWritten(pubkey, next);
             },
             function (idty, next) {
               idty.member = false;
               idty.kick = false;
-              idty.save(function (err) {
+              dal.saveIdentity(new Identity(idty), function (err) {
                 next(err);
               });
             }
@@ -454,22 +457,25 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   }
 
   function updateCertifications (block, done) {
-    async.forEach(block.certifications, function(inlineCert, callback){
-      var cert = Certification.fromInline(inlineCert);
+    async.forEachSeries(block.certifications, function(inlineCert, callback){
+      var cert = Certification.statics.fromInline(inlineCert);
+      var indexNb = block.certifications.indexOf(inlineCert);
       async.waterfall([
         function (next) {
-          Identity.getWritten(cert.to, next);
+          dal.getWritten(cert.to, next);
         },
         function (idty, next){
-          cert.target = idty.getTargetHash();
-          cert.existing(next);
+          cert.target = new Identity(idty).getTargetHash();
+          dal.existsCert(cert, next);
         },
         function (existing, next) {
           if (existing) {
             cert = existing;
           }
           cert.linked = true;
-          cert.save(function (err) {
+          cert.block = block.number;
+          cert.indexNb = indexNb;
+          dal.saveCertification(new Certification(cert), function (err) {
             next(err);
           });
         }
@@ -483,7 +489,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         var ms = Membership.fromInline(inlineJoin, prop == 'leavers' ? 'OUT' : 'IN');
         async.waterfall([
           function (next){
-            Identity.getWritten(ms.issuer, next);
+            dal.getWritten(ms.issuer, next);
           },
           function (idty, next){
             if (!idty) {
@@ -505,7 +511,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
 
   function updateLinks (block, done) {
     async.forEach(block.certifications, function(inlineCert, callback){
-      var cert = Certification.fromInline(inlineCert);
+      var cert = Certification.statics.fromInline(inlineCert);
       dal.saveLink(
         new Link({
           source: cert.from,
@@ -606,7 +612,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         dal.obsoletesLinks(block.medianTime - conf.sigValidity, next);
       },
       function (next){
-        Identity.getMembers(next);
+        dal.getMembers(next);
       },
       function (members, next){
         // If a member no more have enough signatures, he has to be kicked
@@ -624,7 +630,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             },
             function (res, next){
               var notEnoughLinks = res.enoughLinks;
-              Identity.setKicked(pubkey, idty.getTargetHash(), notEnoughLinks ? true : false, next);
+              dal.setKicked(pubkey, new Identity(idty).getTargetHash(), notEnoughLinks ? true : false, next);
             }
           ], callback);
         }, next);
@@ -639,7 +645,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       },
       function (last, next){
         if (last)
-          Identity.kickWithOutdatedMemberships(last.number, next);
+          dal.kickWithOutdatedMemberships(last.number, next);
         else
           next();
       }
@@ -652,7 +658,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         if (block.dividend) {
           async.waterfall([
             function (next) {
-              Identity.getMembers(next);
+              dal.getMembers(next);
             },
             function (idties, next) {
               async.forEachSeries(idties, function (idty, callback) {
@@ -731,7 +737,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       },
       function (theCurrent, next){
         current = theCurrent;
-        Certification.findNew(next);
+        dal.certsFindNew(next);
       },
       function (certs, next){
         async.forEachSeries(certs, function(cert, callback){
@@ -748,12 +754,12 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                 next('It already exists a similar certification written, which is not replayable yet');
               else {
                 // Signatory must be a member
-                Identity.isMemberOrError(cert.from, next);
+                dal.isMemberOrError(cert.from, next);
               }
             },
             function (next){
               // Certified must be a member and non-leaver
-              Identity.isMembeAndNonLeaverOrError(cert.to, next);
+              dal.isMembeAndNonLeaverOrError(cert.to, next);
             },
             function (next){
               updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
@@ -880,7 +886,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (theLastUDBlock, next) {
         lastUDBlock = theLastUDBlock;
         // First, check for members' exclusions
-        Identity.getToBeKicked(next);
+        dal.getToBeKicked(next);
       },
       function (toBeKicked, next) {
         toBeKicked.forEach(function (idty) {
@@ -958,7 +964,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (theLastUDBlock, next) {
         lastUDBlock = theLastUDBlock;
         // First, check for members' exclusions
-        Identity.getToBeKicked(next);
+        dal.getToBeKicked(next);
       },
       function (toBeKicked, next) {
         toBeKicked.forEach(function (idty) {
@@ -1017,7 +1023,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                   }
                 },
                 identity: function(callback){
-                  Identity.getByHash(leave.idHash, callback);
+                  dal.getIdentityByHashOrNull(leave.idHash, callback);
                 }
               }, next);
             },
@@ -1068,14 +1074,14 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                   }
                 },
                 identity: function(callback){
-                  Identity.getByHash(join.idHash, callback);
+                  dal.getIdentityByHashOrNull(join.idHash, callback);
                 },
                 certs: function(callback){
                   if (!current) {
                     // Look for certifications from initial joiners
                     async.waterfall([
                       function (next) {
-                        Certification.to(ms.issuer, next);
+                        dal.certsTo(ms.issuer, next);
                       },
                       function (certs, next) {
                         var finalCerts = [];
@@ -1090,7 +1096,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                     // Look for certifications from WoT members
                     async.waterfall([
                       function (next) {
-                        Certification.notLinkedToTarget(join.idHash, next);
+                        dal.certsNotLinkedToTarget(join.idHash, next);
                       },
                       function (certs, next) {
                         var finalCerts = [];
@@ -1108,7 +1114,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                               if (exists)
                                 next('It already exists a similar certification written, which is not replayable yet');
                               else
-                                Identity.isMember(cert.pubkey, next);
+                                dal.isMember(cert.pubkey, next);
                             },
                             function (isMember, next) {
                               var doubleSignature = ~certifiers.indexOf(cert.pubkey) ? true : false;
@@ -1149,7 +1155,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (filteredJoinData, next) {
         joinData = filteredJoinData;
         // Cache the members
-        Identity.getMembers(next);
+        dal.getMembers(next);
       },
       function (membersKeys, next) {
         membersKeys.forEach(function (mKey) {
@@ -1220,7 +1226,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             } else {
               async.waterfall([
                 function (next){
-                  Identity.isMember(cert.pubkey, next);
+                  dal.isMember(cert.pubkey, next);
                 },
                 function (isMember, next){
                   // Member to newcomer => valid link
@@ -1288,7 +1294,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       var data = joinData[joiner];
       // Identities only for never-have-been members
       if (!data.identity.member && !data.identity.wasMember) {
-        block.identities.push(data.identity.inline());
+        block.identities.push(new Identity(data.identity).inline());
       }
       // Join only for non-members
       if (!data.identity.member) {
@@ -1332,7 +1338,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       });
       if (!doubleCerts || block.number == 0) {
         data.certs.forEach(function(cert){
-          block.certifications.push(cert.inline());
+          block.certifications.push(new Certification(cert).inline());
           certifiers.push(cert.pubkey);
         });
       }
@@ -1342,7 +1348,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       var certs = updates[certifiedMember];
       certs.forEach(function(cert){
         if (certifiers.indexOf(cert.pubkey) == -1) {
-          block.certifications.push(cert.inline());
+          block.certifications.push(new Certification(cert).inline());
           certifiers.push(cert.pubkey);
         }
       });
@@ -1441,7 +1447,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     }
     // Start
     powWorker.setOnPoW(function(err, block) {
-      console.log(new Block(block).getRaw());
       done(null, new Block(block));
     });
     block.nonce = 0;
@@ -1524,7 +1529,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     var block, difficulty, current;
     async.waterfall([
       function (next) {
-        Identity.isMember(PeeringService.pubkey, function (err, isMember) {
+        dal.isMember(PeeringService.pubkey, function (err, isMember) {
           if (err || !isMember)
             next('Skipping', null, 'Local node is not a member. Waiting to be a member before computing a block.');
           else
@@ -1644,7 +1649,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       },
       function (next) {
         // First, check for members' exclusions
-        Identity.getToBeKicked(next);
+        dal.getToBeKicked(next);
       },
       function (toBeKicked, next) {
         toBeKicked.forEach(function (idty) {
@@ -1743,90 +1748,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         ], callback);
       }, function () {
         //logger.debug('Computing stats: done!');
-        sent();
-      });
-    });
-    statQueue.push(function (sent) {
-      //logger.debug('Computing memberships...');
-      async.forEachSeries(['memberships'], function (statName, callback) {
-        async.waterfall([
-          function (next) {
-            async.parallel({
-              stat: function (next) {
-                BlockStat.getStat(statName, next);
-              },
-              current: function (next) {
-                BlockchainService.current(next);
-              }
-            }, next);
-          },
-          function (res, next) {
-            var stat = res.stat;
-            var current = res.current;
-            // Create stat if it does not exist
-            if (stat == null) {
-              stat = new BlockStat({ statName: statName, blocks: [], lastParsedBlock: -1 });
-            }
-            async.waterfall([
-              function (next) {
-                // Reset memberships if first computation
-                if (stat.lastParsedBlock == -1) {
-                  Identity.resetMemberships(next);
-                } else {
-                  next();
-                }
-              },
-              function (next) {
-                // Compute new stat
-                async.forEachSeries(_.range(stat.lastParsedBlock + 1, (current ? current.number : -1) + 1), function (blockNumber, callback) {
-                  // console.log('Stat', statName, ': tested block#' + blockNumber);
-                  async.waterfall([
-                    function (next) {
-                      dal.getBlockOrNull(blockNumber, next);
-                    },
-                    function (block, next) {
-                      async.forEachSeries(['joiners', 'actives', 'leavers'], function (category, callback) {
-                        async.forEachSeries(block[category], function (inlineMS, callback2) {
-                          var ms = Membership.fromInline(inlineMS, category == 'leavers' ? 'OUT' : 'IN', conf.currency);
-                          async.waterfall([
-                            function (next) {
-                              Identity.getWritten(ms.issuer, next);
-                            },
-                            function (member, next) {
-                              member.memberships.push({
-                                "version": ms.version,
-                                "membership": "IN",
-                                "inBlock": block.number,
-                                "blockNumber": ms.number,
-                                "blockHash": ms.fpr
-                              });
-                              member.save(function (err) {
-                                next(err);
-                              });
-                            }
-                          ], callback2);
-                        }, callback);
-                      }, next);
-                    },
-                    function (next) {
-                      stat.lastParsedBlock = blockNumber;
-                      next();
-                    }
-                  ], callback);
-                }, function (err) {
-                  next(err, stat);
-                });
-              }
-            ], next);
-          },
-          function (stat, next) {
-            stat.save(function (err) {
-              next(err);
-            });
-          }
-        ], callback);
-      }, function () {
-        //logger.debug('Computing memberships: done!');
         sent();
       });
     });

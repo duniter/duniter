@@ -14,18 +14,14 @@ var logger   = require('../lib/logger')();
 
 module.exports = function (wotServer) {
   return new WOTBinding(wotServer);
-}
+};
 
 function WOTBinding (wotServer) {
 
-  var conn = wotServer.conn;
-
-  var http              = wotServer.HTTPService;
   var ParametersService = wotServer.ParametersService;
   var IdentityService   = wotServer.IdentityService;
 
-  var Identity      = conn.model('Identity');
-  var Certification = conn.model('Certification');
+  var Identity = require('../lib/entity/identity');
 
   this.lookup = function (req, res) {
     res.type('application/json');
@@ -37,10 +33,13 @@ function WOTBinding (wotServer) {
         IdentityService.search(search, next);
       },
       function (identities, next){
+        identities.forEach(function(idty, index){
+          identities[index] = new Identity(idty);
+        });
         async.forEach(identities, function(idty, callback){
           async.waterfall([
             function (next){
-              Certification.toTarget(idty.getTargetHash(), next);
+              wotServer.dal.certsToTarget(idty.getTargetHash(), next);
             },
             function (certs, next){
               async.forEachSeries(certs, function(cert, callback) {
@@ -69,14 +68,14 @@ function WOTBinding (wotServer) {
               });
             },
             function (next) {
-              Certification.from(idty.pubkey, next);
+              wotServer.dal.certsFrom(idty.pubkey, next);
             },
             function (signed, next){
               idty.signed = signed;
               async.forEachSeries(idty.signed, function(cert, callback) {
                 async.waterfall([
                   function(next) {
-                    Identity.getByHash(cert.target, next);
+                    wotServer.dal.getIdentityByHashOrNull(cert.target, next);
                   },
                   function(idty, next) {
                     cert.idty = idty;
@@ -84,12 +83,12 @@ function WOTBinding (wotServer) {
                   }
                 ], callback);
               }, next);
-            },
+            }
           ], callback);
         }, function (err) {
           next(err, identities);
         });
-      },
+      }
     ], function (err, identities) {
       if(err){
         res.send(400, err);
@@ -110,8 +109,8 @@ function WOTBinding (wotServer) {
     res.type('application/json');
     async.waterfall([
       function (next){
-        Identity.getMembers(next);
-      },
+        wotServer.dal.getMembers(next);
+      }
     ], function (err, identities) {
       if(err){
         res.send(400, err);
@@ -139,14 +138,14 @@ function WOTBinding (wotServer) {
       function (idty, next){
         async.waterfall([
           function (next){
-            Certification.toTarget(idty.getTargetHash(), next);
+            wotServer.dal.certsToTarget(idty.getTargetHash(), next);
           },
           function (certs, next){
             idty.certs = [];
             async.forEach(certs, function (cert, callback) {
               async.waterfall([
                 function (next) {
-                  Identity.getWritten(cert.from, next);
+                  wotServer.dal.getWritten(cert.from, next);
                 },
                 function (idty, next) {
                   if (!idty) {
@@ -165,7 +164,7 @@ function WOTBinding (wotServer) {
                   idty.certs.push(cert);
                   next();
                 }
-              ], function (err) {
+              ], function () {
                 callback();
               });
             }, next);
@@ -174,7 +173,7 @@ function WOTBinding (wotServer) {
             next(null, idty);
           }
         ], next);
-      },
+      }
     ], function (err, idty) {
       if(err){
         res.send(400, err);
@@ -212,14 +211,14 @@ function WOTBinding (wotServer) {
       function (idty, next){
         async.waterfall([
           function (next){
-            Certification.from(idty.pubkey, next);
+            wotServer.dal.certsFrom(idty.pubkey, next);
           },
           function (certs, next){
             idty.certs = [];
             async.forEach(certs, function (cert, callback) {
               async.waterfall([
                 function (next) {
-                  Identity.getWritten(cert.to, next);
+                  wotServer.dal.getWritten(cert.to, next);
                 },
                 function (idty, next) {
                   if (!idty) {
@@ -239,7 +238,7 @@ function WOTBinding (wotServer) {
                   idty.certs.push(cert);
                   next();
                 }
-              ], function (err) {
+              ], function () {
                 callback();
               });
             }, next);
@@ -248,7 +247,7 @@ function WOTBinding (wotServer) {
             next(null, idty);
           }
         ], next);
-      },
+      }
     ], function (err, idty) {
       if(err){
         res.send(400, err);
@@ -297,4 +296,4 @@ function WOTBinding (wotServer) {
       .pipe(es.stringify())
       .pipe(res);
   };
-};
+}

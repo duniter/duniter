@@ -12,8 +12,8 @@ module.exports.get = function (conn, conf, dal) {
 function IdentityService (conn, conf, dal) {
 
   var Block         = require('../../app/lib/entity/block');
-  var Identity      = conn.model('Identity');
-  var Certification = conn.model('Certification');
+  var Identity      = require('../../app/lib/entity/identity');
+  var Certification = require('../../app/lib/entity/certification');
   
   var fifo = async.queue(function (task, callback) {
     task(callback);
@@ -30,18 +30,18 @@ function IdentityService (conn, conf, dal) {
   this.search = function(search, done) {
     async.waterfall([
       function (next){
-        Identity.search(search, next);
-      },
+        dal.searchIdentity(search, next);
+      }
     ], done);
   };
 
   this.findMember = function(search, done) {
     async.parallel({
       pubkey: function (next) {
-        Identity.getWritten(search, next);
+        dal.getWritten(search, next);
       },
       uid: function (next) {
-        Identity.getWrittenByUID(search, next);
+        dal.getWrittenByUID(search, next);
       }
     }, function (err, res) {
       done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, res.pubkey || res.uid);
@@ -51,10 +51,10 @@ function IdentityService (conn, conf, dal) {
   this.findIdentities = function(pubkey, done) {
     async.parallel({
       written: function (next) {
-        Identity.getWritten(pubkey, next);
+        dal.getWritten(pubkey, next);
       },
       nonWritten: function (next) {
-        Identity.getNonWritten(pubkey, next);
+        dal.getNonWritten(pubkey, next);
       }
     }, done);
   };
@@ -95,30 +95,31 @@ function IdentityService (conn, conf, dal) {
             var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, block_number: cert.block_number, target: obj.hash, to: idty.pubkey });
             async.waterfall([
               function (next){
-                mCert.existing(next);
+                dal.existsCert(mCert, next);
               },
               function (existing, next){
                 if (existing) next();
-                else mCert.save(function (err) {
+                else dal.saveCertification(new Certification(mCert), function (err) {
                   next(err);
                 });
-              },
+              }
             ], cb);
           }, next);
         },
         function (next){
-          Identity.getByHash(obj.hash, next);
+          dal.getIdentityByHashOrNull(obj.hash, next);
         },
         function (existing, next){
           if (existing)
-            next(null, existing);
+            next(null, new Identity(existing));
           else {
             // Create
-            idty.save(function (err) {
+            idty = new Identity(idty);
+            dal.saveIdentity(idty, function (err) {
               next(err, idty);
             });
           }
-        },
+        }
       ], cb);
     }, done);
   };
@@ -137,7 +138,7 @@ function IdentityService (conn, conf, dal) {
           crypto.isValidRevocation(selfCert, idty.sig, idty.pubkey, idty.revocation, next);
         },
         function (next){
-          Identity.getByHash(obj.hash, next);
+          dal.getIdentityByHashOrNull(obj.hash, next);
         },
         function (existing, next){
           if (existing) {
@@ -146,18 +147,18 @@ function IdentityService (conn, conf, dal) {
               next('This identity cannot be revoked since it is present in the blockchain.');
             } else {
               existing.revoked = true;
-              existing.save(function (err) {
+              dal.saveIdentity(new Identity(existing), function (err) {
                 next(err, jsonResultTrue());
               });
             }
           }
           else {
             // Create
-            idty.save(function (err) {
+            dal.saveIdentity(new Identity(idty), function (err) {
               next(err, jsonResultTrue());
             });
           }
-        },
+        }
       ], cb);
     }, done);
   };

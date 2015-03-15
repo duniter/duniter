@@ -21,7 +21,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
           function (identity, next){
             that.emit('identity', identity);
             next(null, identity);
-          },
+          }
         ], next);
       }
     },

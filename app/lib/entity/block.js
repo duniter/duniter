@@ -8,8 +8,8 @@ function Block(json) {
 
   _(json || {}).keys().forEach(function(key) {
     var value = json[key];
-    if (key == "number") {
-      value = parseInt(value);
+    if (key == "number" || key == "dividend") {
+      value = typeof value == "string" && value == "" ? null : parseInt(value);
     }
     that[key] = value;
   });

@@ -6,9 +6,9 @@ var moment        = require('moment');
 var mongoose      = require('mongoose');
 var logger        = require('./logger')('validator');
 var Block         = require('../lib/entity/block');
-var Identity      = mongoose.model('Identity', require('../models/identity'));
+var Identity      = require('../lib/entity/identity');
 var Membership    = mongoose.model('Membership', require('../models/membership'));
-var Certification = mongoose.model('Certification', require('../models/certification'));
+var Certification = require('../lib/entity/certification');
 
 module.exports = function (conf, dao) {
   
@@ -142,7 +142,7 @@ function GlobalValidator (conf, dao) {
       function (next){
         var localInlineIdty = block.getInlineIdentity(pubkey);
         if (localInlineIdty) {
-          next(null, Identity.fromInline(localInlineIdty));
+          next(null, Identity.statics.fromInline(localInlineIdty));
         } else {
           dao.getIdentityByPubkey(pubkey, next);
         }
@@ -176,7 +176,7 @@ function GlobalValidator (conf, dao) {
 
   function checkCertificationsAreValid (block, done) {
     async.forEachSeries(block.certifications, function(inlineCert, callback){
-      var cert = Certification.fromInline(inlineCert);
+      var cert = Certification.statics.fromInline(inlineCert);
       checkCertificationIsValid(block, cert, getGlobalIdentity, callback);
     }, done);
   }
@@ -221,7 +221,7 @@ function GlobalValidator (conf, dao) {
         else if (cert.from == res.idty.pubkey)
           next('Rejected certification: certifying its own self-certification has no meaning');
         else {
-          var selfCert = res.idty.selfCert();
+          var selfCert = new Identity(res.idty).selfCert();
           var targetId = [cert.block_number, res.target.hash].join('-');
           crypto.isValidCertification(selfCert, res.idty.sig, cert.from, cert.sig, targetId, next);
         }
@@ -231,7 +231,7 @@ function GlobalValidator (conf, dao) {
 
   function checkCertificationsAreMadeByMembers (block, done) {
     async.forEach(block.certifications, function(inlineCert, callback){
-      var cert = Certification.fromInline(inlineCert);
+      var cert = Certification.statics.fromInline(inlineCert);
       async.waterfall([
         function (next){
           isMember(block, cert.from, next);
@@ -245,7 +245,7 @@ function GlobalValidator (conf, dao) {
 
   function checkCertificationsAreMadeToMembers (block, done) {
     async.forEach(block.certifications, function(inlineCert, callback){
-      var cert = Certification.fromInline(inlineCert);
+      var cert = Certification.statics.fromInline(inlineCert);
       async.waterfall([
         function (next){
           isMember(block, cert.to, next);
@@ -259,7 +259,7 @@ function GlobalValidator (conf, dao) {
 
   function checkCertificationsAreMadeToNonLeaver (block, done) {
     async.forEach(block.certifications, function(inlineCert, callback){
-      var cert = Certification.fromInline(inlineCert);
+      var cert = Certification.statics.fromInline(inlineCert);
       async.waterfall([
         function (next){
           isNonLeaver(cert.to, next);
@@ -637,7 +637,7 @@ function GlobalValidator (conf, dao) {
 
   function checkIdentityUnicity (block, done) {
     async.forEach(block.identities, function(inlineIdentity, callback){
-      var idty = Identity.fromInline(inlineIdentity);
+      var idty = Identity.statics.fromInline(inlineIdentity);
       async.waterfall([
         function (next){
           dao.existsUserID(idty.uid, next);
@@ -651,7 +651,7 @@ function GlobalValidator (conf, dao) {
 
   function checkPubkeyUnicity (block, done) {
     async.forEach(block.identities, function(inlineIdentity, callback){
-      var idty = Identity.fromInline(inlineIdentity);
+      var idty = Identity.statics.fromInline(inlineIdentity);
       async.waterfall([
         function (next){
           dao.existsPubkey(idty.pubkey, next);
@@ -823,7 +823,7 @@ function GlobalValidator (conf, dao) {
 
   function checkCertificationsDelayIsRespected (block, done) {
     async.forEach(block.certifications, function(inlineCert, callback){
-      var cert = Certification.fromInline(inlineCert);
+      var cert = Certification.statics.fromInline(inlineCert);
       async.waterfall([
         function (next){
           dao.getPreviousLinkFor(cert.from, cert.to, next);
@@ -989,7 +989,7 @@ function GlobalValidator (conf, dao) {
 function getNewLinks (block) {
   var newLinks = {};
   block.certifications.forEach(function(inlineCert){
-    var cert = Certification.fromInline(inlineCert);
+    var cert = Certification.statics.fromInline(inlineCert);
     newLinks[cert.to] = newLinks[cert.to] || [];
     newLinks[cert.to].push(cert.from);
   });

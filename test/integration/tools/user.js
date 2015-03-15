@@ -210,15 +210,8 @@ function User (uid, options, node) {
         function (raw, next) {
           var sig = crypto.signSync(raw, sec);
           raw += sig + '\n';
-          console.log(raw);
-          //post('/tx/process', { transaction: raw }, function (err) {
-          //  if (err) console.error('Error:', err);
-          //  else console.log('Successfully sent transaction.');
-          //  next(err);
-          //});
           node.http.tx.process(raw, function (err) {
             if (err) console.error('Error:', err);
-            else console.log('Successfully sent transaction.');
             next(err);
           });
         }

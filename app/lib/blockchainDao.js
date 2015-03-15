@@ -3,8 +3,6 @@ var _     = require('underscore');
 
 module.exports = function(conn, block, dal) {
 
-  var Identity      = conn.model('Identity');
-
   function BlockCheckerDao () {
 
     var dao = this;
@@ -12,7 +10,7 @@ module.exports = function(conn, block, dal) {
     this.existsUserID = function (uid, done) {
       async.waterfall([
         function (next){
-          Identity.getWrittenByUID(uid, next);
+          dal.getWrittenByUID(uid, next);
         },
         function (idty, next){
           next(null, idty != null);
@@ -23,7 +21,7 @@ module.exports = function(conn, block, dal) {
     this.existsPubkey = function (pubkey, done) {
       async.waterfall([
         function (next){
-          Identity.getWritten(pubkey, next);
+          dal.getWritten(pubkey, next);
         },
         function (idty, next){
           next(null, idty != null);
@@ -32,15 +30,15 @@ module.exports = function(conn, block, dal) {
     };
     
     this.getIdentityByPubkey = function (pubkey, done) {
-      Identity.getWritten(pubkey, done);
+      dal.getWritten(pubkey, done);
     };
     
     this.isMember = function (pubkey, done) {
-      Identity.isMember(pubkey, done);
+      dal.isMember(pubkey, done);
     };
 
     this.isLeaving = function (pubkey, done) {
-      Identity.isLeaving(pubkey, done);
+      dal.isLeaving(pubkey, done);
     };
 
     this.getPreviousLinkFor = function (from, to, done) {
@@ -59,14 +57,14 @@ module.exports = function(conn, block, dal) {
     };
 
     this.getMembers = function (done) {
-      Identity.getMembers(done);
+      dal.getMembers(done);
     };
 
     this.getMembersWithEnoughSigWoT = function (minSigToWoT, done) {
       var membersWithEnough = [];
       async.waterfall([
         function (next) {
-          Identity.getMembers(next);
+          dal.getMembers(next);
         },
         function (members, next) {
           async.forEachSeries(members, function (member, callback) {
@@ -108,7 +106,7 @@ module.exports = function(conn, block, dal) {
     };
 
     this.getToBeKicked = function (blockNumber, done) {
-      Identity.getToBeKicked(done);
+      dal.getToBeKicked(done);
     };
 
     this.lastBlocksOfIssuer = function (issuer, count, done) {
@@ -130,7 +128,7 @@ module.exports = function(conn, block, dal) {
     this.getCurrentMembershipNumber = function (pubkey, done) {
       async.waterfall([
         function (next) {
-          Identity.getWritten(pubkey, next);
+          dal.getWritten(pubkey, next);
         },
         function (idty, next) {
           if (idty == null)

@@ -1,4 +1,5 @@
 var dos2unix = require('./dos2unix');
+var moment = require('moment');
 
 module.exports = new function() {
 
@@ -8,7 +9,7 @@ module.exports = new function() {
     var raw = "";
     raw += json.pubkey + '\n';
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.time.timestamp() + '\n';
+    raw += "META:TS:" + moment(json.time).unix() + '\n';
     raw += json.sig + '\n';
     (json.certs || []).forEach(function(cert){
       raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
@@ -19,7 +20,7 @@ module.exports = new function() {
   this.getSelfIdentity = function (json) {
     var raw = "";
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.time.timestamp() + '\n';
+    raw += "META:TS:" + moment(json.time).unix() + '\n';
     return dos2unix(raw);
   };
 
@@ -27,7 +28,7 @@ module.exports = new function() {
     var raw = "";
     raw += json.pubkey + '\n';
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.time.timestamp() + '\n';
+    raw += "META:TS:" + moment(json.time).unix() + '\n';
     raw += json.sig + '\n';
     raw += "META:REVOKE\n";
     raw += json.revocation;
@@ -37,7 +38,7 @@ module.exports = new function() {
   this.getSelfRevocation = function (json) {
     var raw = "";
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.time.timestamp() + '\n';
+    raw += "META:TS:" + moment(json.time).unix() + '\n';
     raw += json.sig + '\n';
     raw += "META:REVOKE\n";
     raw += json.revocation;
@@ -93,7 +94,7 @@ module.exports = new function() {
     if (json.userid)
       raw += "UserID: " + json.userid + "\n";
     if (!isNaN(json.certts))
-      raw += "CertTS: " + json.certts.timestamp() + "\n";
+      raw += "CertTS: " + moment(json.certts).unix() + "\n";
     return dos2unix(raw);
   };
 

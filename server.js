@@ -1,3 +1,4 @@
+var fs         = require('fs');
 var stream     = require('stream');
 var async      = require('async');
 var util       = require('util');
@@ -160,7 +161,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           next();
         },
         function(next) {
-          that.dal = sqliteDAL.memory(dbConf.name);
+          if(fs.existsSync(__dirname + '/' + dbConf.name))
+            fs.unlinkSync(__dirname + '/' + dbConf.name);
+          that.dal = sqliteDAL.memory(__dirname + '/' + dbConf.name);
           that.dal.initDabase().done(next);
         }
       ], done);

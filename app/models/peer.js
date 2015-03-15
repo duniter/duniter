@@ -55,17 +55,6 @@ PeerSchema.methods = {
     return this.pub && this.pub.length > 10 ? this.pub.substring(0, 10) : "Unknown";
   },
 
-  setStatus: function (newStatus, done) {
-    if(this.status != newStatus){
-      this.status = newStatus;
-      this.save(function (err) {
-        done(err);
-      });
-      return;
-    }
-    else done();
-  },
-  
   copyValues: function(to) {
     var obj = this;
     ["version", "currency", "pub", "endpoints", "hash", "status", "block", "signature"].forEach(function (key) {

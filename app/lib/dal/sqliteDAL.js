@@ -45,9 +45,9 @@ function SQLiteDAL(db) {
   ];
 
   this.run = function(sql, params, done) {
-    logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
     return Q.Promise(function(resolve, reject){
-      db.all(sql, params || [], function(err) {
+      logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
+      db.run(sql, params || [], function(err) {
         err ? reject(err) : resolve();
         done && done(err);
       });
@@ -161,28 +161,32 @@ function SQLiteDAL(db) {
     model.oneToManys.forEach(function(o2m){
       var subModel = new o2m.model();
       var subTable = subModel.table;
-      queries.push({
-        sql: 'DELETE FROM ' + subTable + ' WHERE ' + o2m.fk + ' = ?',
-        params: [entity[model.primary]]
-      });
+      if (!o2m.cascade || o2m.cascade.persist) {
+        queries.push({
+          sql: 'DELETE FROM ' + subTable + ' WHERE ' + o2m.fk + ' = ?',
+          params: [entity[model.primary]]
+        });
+      }
     });
     // Recreate new ones
     model.oneToManys.forEach(function(o2m){
-      (entity[o2m.property] || []).forEach(function(o2mEntity, index){
-        var persistable = o2m.toDB(o2mEntity, index);
-        persistable[o2m.fk] = entity[model.primary];
-        queries.push(that.getSaveEntityQuery(persistable, o2m.model, true));
-        var subQueries = that.getOneToManyQueries(persistable, o2m.model);
-        subQueries.forEach(function(sub){
-          queries.push(sub);
+      if (!o2m.cascade || o2m.cascade.persist) {
+        (entity[o2m.property] || []).forEach(function (o2mEntity, index) {
+          var persistable = o2m.toDB(o2mEntity, index);
+          persistable[o2m.fk] = entity[model.primary];
+          queries.push(that.getSaveEntityQuery(persistable, o2m.model, true));
+          var subQueries = that.getOneToManyQueries(persistable, o2m.model);
+          subQueries.forEach(function (sub) {
+            queries.push(sub);
+          });
+          //// Recursive OneToMany
+          //new o2m.model().oneToManys.forEach(function(subO2M){
+          //  (entity[o2m.property] || []).forEach(function(subEntity){
+          //    queries.push();
+          //  });
+          //});
         });
-        //// Recursive OneToMany
-        //new o2m.model().oneToManys.forEach(function(subO2M){
-        //  (entity[o2m.property] || []).forEach(function(subEntity){
-        //    queries.push();
-        //  });
-        //});
-      });
+      }
     });
     return queries;
   };
@@ -237,6 +241,14 @@ function SQLiteDAL(db) {
     var model = new ModelClass();
     return queryPromise
       .tap(function(rows){
+        // Aliases
+        var sources = _(model.aliases).keys();
+        sources.forEach(function(src){
+          (rows.length ? rows : [rows]).forEach(function(row){
+            row[src] = row[model.aliases[src]];
+          });
+        });
+        // LazyLoad
         if(rows.length != undefined) {
           return Q.all(rows.map(function(row) {
             return Q.all(model.oneToManys.map(function(o2m) {
@@ -279,8 +291,12 @@ function SQLiteDAL(db) {
   };
 
   this.lastUDBlock = function(done) {
-    return that.nullIfError(
-      that.fillInEntity(that.queryOne('SELECT * FROM block WHERE dividend > 0 ORDER BY number DESC', []), BlockModel), done);
+    return that.query('SELECT * FROM block WHERE dividend > 0 ORDER BY number DESC', [])
+      .then(function(rows){
+        var theRow = rows.length ? rows[0] : null;
+        done && done(null, theRow);
+        return theRow;
+      })
   };
 
   this.getRootBlock = function(done) {
@@ -348,6 +364,58 @@ function SQLiteDAL(db) {
     return that.query("SELECT * FROM source WHERE pubkey = ? AND NOT consumed ORDER BY created, number, type DESC", [pubkey], done);
   };
 
+  this.getIdentityByPubkeyAndHashOrNull = function(pubkey, hash, done) {
+    return that.nullIfError(that.queryOne("SELECT * FROM identity WHERE pubkey = ? AND hash = ?", [pubkey, hash]), done);
+  };
+
+  this.getIdentityByHashOrNull = function(hash, done) {
+    return that.nullIfError(that.queryOne("SELECT * FROM identity WHERE hash = ?", [hash]), done);
+  };
+
+  this.getMembers = function(done) {
+    return that.query("SELECT * FROM identity WHERE member", [], done);
+  };
+
+  this.getWritten = function(pubkey, done) {
+    return that.queryOne("SELECT * FROM identity WHERE pubkey = ? AND wasMember", [pubkey], done);
+  };
+
+  this.getNonWritten = function(pubkey, done) {
+    return that.query("SELECT * FROM identity WHERE pubkey = ? AND NOT wasMember", [pubkey], done);
+  };
+
+  this.getToBeKicked = function(done) {
+    return that.query("SELECT * FROM identity WHERE kick", [], done);
+  };
+
+  this.getWrittenByUID = function(uid, done) {
+    return that.nullIfError(that.queryOne("SELECT * FROM identity WHERE wasMember AND uid = ?", [uid]), done);
+  };
+
+  this.searchIdentity = function(search, done) {
+    return that.fillInEntity(that.query("SELECT * FROM identity WHERE NOT revoked AND (pubkey like ? OR uid like ?)", ['%' + search + '%', '%' + search.replace('+', '\\+') + '%']), IdentityModel, done);
+  };
+
+  this.certsToTarget = function(hash, done) {
+    return that.fillInEntity(that.query("SELECT * FROM cert WHERE target = ? ORDER BY created ASC, block DESC", [hash]), CertificationModel, done);
+  };
+
+  this.certsFrom = function(pubkey, done) {
+    return that.fillInEntity(that.query("SELECT * FROM cert WHERE fromKey = ? ORDER BY block, indexNb", [pubkey]), CertificationModel, done);
+  };
+
+  this.certsFindNew = function(done) {
+    return that.fillInEntity(that.query("SELECT * FROM cert WHERE NOT linked ORDER BY block DESC", []), CertificationModel, done);
+  };
+
+  this.certsNotLinkedToTarget = function(hash, done) {
+    return that.fillInEntity(that.query("SELECT * FROM cert WHERE NOT linked AND target = ? ORDER BY block DESC", [hash]), CertificationModel, done);
+  };
+
+  this.certsTo = function(pubkey, done) {
+    return that.fillInEntity(that.query("SELECT * FROM cert WHERE toKey = ? ORDER BY block DESC", [pubkey]), CertificationModel, done);
+  };
+
   this.existsLinkFromOrAfterDate = function(from, to, maxDate, done) {
     return that.query("SELECT * FROM link WHERE source = ? AND target = ? AND on_timestamp >= ?", [from, to, maxDate])
       .then(function(rows){
@@ -364,12 +432,56 @@ function SQLiteDAL(db) {
       });
   };
 
+  this.isMember = function(pubkey, done) {
+    return that.query("SELECT * FROM identity WHERE pubkey = ? AND member", [pubkey])
+      .then(function(rows){
+        done && done(null, rows.length);
+        return rows.length > 0;
+      });
+  };
+
+  this.isMemberOrError = function(pubkey, done) {
+    return that.query("SELECT * FROM identity WHERE pubkey = ? AND member", [pubkey])
+      .then(function(rows){
+        done && done((!rows.length && 'Is not a member') || null);
+        return rows.length > 0;
+      });
+  };
+
+  this.isLeaving = function(pubkey, done) {
+    return that.query("SELECT * FROM identity WHERE pubkey = ? AND member AND leaving", [pubkey])
+      .then(function(rows){
+        done && done(null, rows.length);
+        return rows.length > 0;
+      });
+  };
+
+  this.isMembeAndNonLeaverOrError = function(pubkey, done) {
+    return that.query("SELECT * FROM identity WHERE pubkey = ? AND member AND NOT leaving", [pubkey])
+      .then(function(rows){
+        done && done((!rows.length && 'Not a non-leaving member') || null);
+        return rows.length > 0;
+      });
+  };
+
+  this.existsCert = function(cert, done) {
+    return that.nullIfError(that.queryOne("SELECT * FROM cert WHERE fromKey = ? AND sig = ? AND block = ? AND target = ?", [cert.pubkey, cert.sig, cert.block_number, cert.target]), done);
+  };
+
   this.obsoletesLinks = function(minTimestamp, done) {
     return that.run("UPDATE link SET obsolete = 1 WHERE on_timestamp <= ?", [minTimestamp], done);
   };
 
   this.setConsumedSource = function(type, pubkey, number, fingerprint, amount, done) {
     return that.run("UPDATE source SET consumed = 1 WHERE type = ? AND pubkey = ? AND number = ? AND fingerprint = ? AND amount = ?", [type, pubkey, number, fingerprint, amount], done);
+  };
+
+  this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
+    return that.run("UPDATE identity SET kick = ? WHERE pubkey = ? AND hash = ?", [notEnoughLinks ? 1 : 0, pubkey, hash], done);
+  };
+
+  this.kickWithOutdatedMemberships = function(maxNumber, done) {
+    return that.run("UPDATE identity SET kick = 1 WHERE currentMSN <= ? AND member", [maxNumber], done);
   };
 
   this.getPeerOrNull = function(pubkey, done) {
@@ -445,12 +557,42 @@ function SQLiteDAL(db) {
   };
 
   this.saveBlock = function(block, done) {
-    return saveEntity(BlockModel, block)
+    return cleanBeforeBlockInsert(block)
+      .then(function(){
+        return saveEntity(BlockModel, block);
+      })
       .then(function(){
         currentNumber = block.number;
         done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
       });
   };
+
+  function cleanBeforeBlockInsert(block) {
+    return Q();
+  }
+
+  //function deleteIdentities(block) {
+  //  return Q.all((block.identities || []).map(function(inline) {
+  //    var idty = Identity.statics.fromInline(inline);
+  //    return that.run("DELETE FROM identity WHERE pubkey = ? AND uid = ? AND hash = ?", [idty.pubkey, idty.uid, idty.getTargetHash()]);
+  //  }));
+  //}
+  //
+  //function deleteCertifications(block) {
+  //  return Q.all((block.certifications || []).map(function(inline) {
+  //    var cert = Certification.statics.fromInline(inline);
+  //    return that.run("DELETE FROM cert WHERE fromKey = ? AND toKey = ? AND block <= ?", [cert.from, cert.to, block.number]);
+  //  }));
+  //}
+
+  function deleteMemberships(block) {
+    // TODO
+    return Q.all([]);
+  }
 
   this.saveLink = function(link, done) {
     return saveEntity(LinkModel, link, done);
@@ -458,6 +600,14 @@ function SQLiteDAL(db) {
 
   this.saveSource = function(link, done) {
     return saveEntity(SourceModel, link, done);
+  };
+
+  this.saveIdentity = function(idty, done) {
+    return saveEntity(IdentityModel, idty, done);
+  };
+
+  this.saveCertification = function(cert, done) {
+    return saveEntity(CertificationModel, cert, done);
   };
 
   function saveEntity(model, entity, done) {
@@ -482,7 +632,20 @@ function SQLiteDAL(db) {
       }, function(err) {
         err ? reject(err) : resolve();
       });
-    });
+    })
+      .then(function(){
+        return Q.Promise(function(resolve, reject){
+          db.run("CREATE VIEW certifications AS " +
+            "select i1.uid as fromUID, c.fromKey, i2.uid as toUID, c.toKey, c.block, c.indexNb, c.linked, c.target, c.sig " +
+            "from cert c " +
+            "left join identity i1 ON i1.pubkey = c.fromKey " +
+            "left join identity i2 ON i2.pubkey = c.toKey " +
+            "ORDER BY c.linked DESC"
+          , [], function(err) {
+              err ? reject(err) : resolve();
+          })
+        });
+      });
   };
 
   this.dropDabase = function() {
@@ -654,6 +817,9 @@ function BlockModel() {
     property: 'identities',
     model: IdentityModel,
     fk: 'block',
+    cascade: {
+      persist: false
+    },
     toDB: function(inline, index) {
       var idty = Identity.statics.fromInline(inline);
       idty.indexNb = index;
@@ -669,6 +835,9 @@ function BlockModel() {
     property: 'certifications',
     model: CertificationModel,
     fk: 'block',
+    cascade: {
+      persist: false
+    },
     toDB: function(inline, index) {
       var idty = Certification.statics.fromInline(inline);
       idty.indexNb = index;
@@ -769,7 +938,7 @@ function BlockModel() {
       'monetaryMass INTEGER DEFAULT 0,' +
       'UDTime DATETIME,' +
       'medianTime DATETIME NOT NULL,' +
-      'dividend INTEGER NOT NULL,' +
+      'dividend INTEGER DEFAULT NULL,' +
       'time DATETIME NOT NULL,' +
       'powMin INTEGER NOT NULL,' +
       'number INTEGER NOT NULL,' +
@@ -788,30 +957,46 @@ function IdentityModel() {
   Model.call(this);
 
   this.table = 'identity';
-  this.primary = 'pubkey';
+  this.primary = 'id';
   this.fields = [
+    'id',
     'pubkey',
     'block',
     'sig',
+    'hash',
     'time',
     'uid',
     'currency',
-    'indexNb'
+    'indexNb',
+    'currentMSN',
+    'member',
+    'wasMember',
+    'leaving',
+    'revoked',
+    'kick'
   ];
 
   this.sqlCreate = function() {
     return [
       'CREATE TABLE IF NOT EXISTS identity (' +
+      'id CHAR(36) NOT NULL,' +
       'pubkey VARCHAR(50) NOT NULL,' +
+      'hash CHAR(40) NOT NULL,' +
       'block INTEGER DEFAULT NULL,' +
       'currency VARCHAR(50) DEFAULT NULL,' +
       'sig VARCHAR(100) NOT NULL,' +
       'time DATETIME DEFAULT NULL,' +
       'uid VARCHAR(255) NOT NULL,' +
       'indexNb INTEGER DEFAULT NULL,' +
+      'currentMSN INTEGER DEFAULT -1,' +
+      'member BOOLEAN NOT NULL,' +
+      'wasMember BOOLEAN NOT NULL,' +
+      'leaving BOOLEAN NOT NULL,' +
+      'revoked BOOLEAN NOT NULL,' +
+      'kick BOOLEAN NOT NULL,' +
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
-      'PRIMARY KEY (pubkey)' +
+      'PRIMARY KEY (id), UNIQUE(pubkey, uid, hash)' +
       ');',
       'CREATE INDEX IF NOT EXISTS idx_idty_block_number ON identity (block);'
       ];
@@ -828,16 +1013,19 @@ function CertificationModel() {
     'id',
     'pubkey',
     'to',
+    'block_number',
     'block',
     'sig',
+    'target',
     'currency',
-    'indexNb'
+    'indexNb',
+    'linked'
   ];
 
   this.aliases = {
     'pubkey': 'fromKey',
-    'to': 'toKey',
-    'block_number': 'block'
+    'from': 'fromKey',
+    'to': 'toKey'
   };
 
   this.sqlCreate = function() {
@@ -846,10 +1034,13 @@ function CertificationModel() {
       'id CHAR(36) NOT NULL,' +
       'fromKey VARCHAR(50) NOT NULL,' +
       'toKey VARCHAR(50) NOT NULL,' +
+      'target CHAR(40) NOT NULL,' +
       'currency VARCHAR(50) DEFAULT NULL,' +
       'sig VARCHAR(100) NOT NULL,' +
+      'block_number INTEGER NOT NULL,' +
       'block INTEGER NOT NULL,' +
-      'indexNb INTEGER NOT NULL,' +
+      'indexNb INTEGER NULL,' +
+      'linked BOOLEAN NOT NULL,' +
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (id), UNIQUE(fromKey, toKey, block)' +
@@ -1241,6 +1432,7 @@ util.inherits(EndpointModel, Model);
 util.inherits(PeerModel, Model);
 util.inherits(BlockModel, Model);
 util.inherits(IdentityModel, Model);
+util.inherits(CertificationModel, Model);
 util.inherits(MembershipModel, Model);
 util.inherits(JoinerModel, MembershipModel);
 util.inherits(ActiveModel, MembershipModel);

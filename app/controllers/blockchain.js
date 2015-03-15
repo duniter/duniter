@@ -36,7 +36,6 @@ function BlockchainBinding (wotServer) {
   var Block      = require('../lib/entity/block');
   var Peer       = wotServer.conn.model('Peer');
   var Membership = wotServer.conn.model('Membership');
-  var Identity   = wotServer.conn.model('Identity');
   var BlockStat  = wotServer.conn.model('BlockStat');
 
   this.parseMembership = function (req, res) {
@@ -217,7 +216,7 @@ function BlockchainBinding (wotServer) {
       },
       function (pubkey, next){
         member = pubkey;
-        Identity.isMember(pubkey, next);
+        wotServer.dal.isMember(pubkey, next);
       },
       function (isMember, next){
         if (!isMember)

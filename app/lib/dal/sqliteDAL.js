@@ -31,6 +31,7 @@ function SQLiteDAL(db) {
     BlockModel,
     IdentityModel,
     CertificationModel,
+    MembershipModel,
     JoinerModel,
     ActiveModel,
     LeaverModel,
@@ -416,6 +417,18 @@ function SQLiteDAL(db) {
     return that.fillInEntity(that.query("SELECT * FROM cert WHERE toKey = ? ORDER BY block DESC", [pubkey]), CertificationModel, done);
   };
 
+  this.getMembershipsForHashAndIssuer = function(hash, issuer, done) {
+    return that.fillInEntity(that.query("SELECT * FROM membership WHERE issuer = ? AND fpr = ? ORDER BY sigDate DESC", [hash, issuer]), MembershipModel, done);
+  };
+
+  this.findNewcomers = function(done) {
+    return that.fillInEntity(that.query("SELECT * FROM membership WHERE membership like 'IN' ORDER BY sigDate DESC", []), MembershipModel, done);
+  };
+
+  this.findLeavers = function(done) {
+    return that.fillInEntity(that.query("SELECT * FROM membership WHERE membership like 'OUT' ORDER BY sigDate DESC", []), MembershipModel, done);
+  };
+
   this.existsLinkFromOrAfterDate = function(from, to, maxDate, done) {
     return that.query("SELECT * FROM link WHERE source = ? AND target = ? AND on_timestamp >= ?", [from, to, maxDate])
       .then(function(rows){
@@ -478,6 +491,10 @@ function SQLiteDAL(db) {
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
     return that.run("UPDATE identity SET kick = ? WHERE pubkey = ? AND hash = ?", [notEnoughLinks ? 1 : 0, pubkey, hash], done);
+  };
+
+  this.deleteIfExists = function(ms, done) {
+    return that.run("DELETE FROM membership WHERE membership=? AND issuer=? AND userid=? AND certts=? AND number=? AND fpr=?", [ms.membership, ms.issuer, ms.userid, ms.certts, ms.number, ms.fpr], done);
   };
 
   this.kickWithOutdatedMemberships = function(maxNumber, done) {
@@ -554,6 +571,10 @@ function SQLiteDAL(db) {
 
   this.savePeer = function(peer, done) {
     return saveEntity(PeerModel, peer, done);
+  };
+
+  this.saveMembership = function(ms, done) {
+    return saveEntity(MembershipModel, ms, done);
   };
 
   this.saveBlock = function(block, done) {
@@ -1055,6 +1076,7 @@ function MembershipModel() {
   var that = this;
 
   Model.call(this);
+  this.table = 'membership';
   this.primary = 'id';
   this.fields = [
     'id',
@@ -1064,7 +1086,9 @@ function MembershipModel() {
     'fpr',
     'userid',
     'signature',
+    'sigDate',
     'certts',
+    'membership',
     'currency',
     'indexNb'
   ];
@@ -1080,7 +1104,9 @@ function MembershipModel() {
       'fpr CHAR(40) DEFAULT NULL,' +
       'userid VARCHAR(255) DEFAULT NULL,' +
       'block CHAR(60) NOT NULL,' +
-      'indexNb INTEGER NOT NULL,' +
+      'indexNb INTEGER NULL,' +
+      'membership CHAR(3) NOT NULL,' +
+      'sigDate DATETIME DEFAULT NULL,' +
       'certts DATETIME DEFAULT NULL,' +
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +

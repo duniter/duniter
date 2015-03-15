@@ -7,7 +7,7 @@ var mongoose      = require('mongoose');
 var logger        = require('./logger')('validator');
 var Block         = require('../lib/entity/block');
 var Identity      = require('../lib/entity/identity');
-var Membership    = mongoose.model('Membership', require('../models/membership'));
+var Membership    = require('../lib/entity/membership');
 var Certification = require('../lib/entity/certification');
 
 module.exports = function (conf, dao) {
@@ -683,7 +683,7 @@ function GlobalValidator (conf, dao) {
 
   function checkJoiners (block, done) {
     async.forEachSeries(block.joiners, function(inlineMS, callback){
-      var ms = Membership.fromInline(inlineMS);
+      var ms = Membership.statics.fromInline(inlineMS);
       async.waterfall([
         function (next){
           checkMSTarget(ms, block, next);
@@ -711,7 +711,7 @@ function GlobalValidator (conf, dao) {
 
   function checkActives (block, done) {
     async.forEachSeries(block.actives, function(inlineMS, callback){
-      var ms = Membership.fromInline(inlineMS);
+      var ms = Membership.statics.fromInline(inlineMS);
       async.waterfall([
         function (next){
           checkMSTarget(ms, block, next);
@@ -739,7 +739,7 @@ function GlobalValidator (conf, dao) {
 
   function checkLeavers (block, done) {
     async.forEachSeries(block.leavers, function(inlineMS, callback){
-      var ms = Membership.fromInline(inlineMS);
+      var ms = Membership.statics.fromInline(inlineMS);
       async.waterfall([
         function (next){
           checkMSTarget(ms, block, next);
@@ -844,7 +844,7 @@ function GlobalValidator (conf, dao) {
     async.forEachSeries(block.joiners, function (inlineMS, callback) {
       async.waterfall([
         function (next) {
-          var ms = Membership.fromInline(inlineMS);
+          var ms = Membership.statics.fromInline(inlineMS);
           getGlobalIdentity(block, ms.issuer, next); // Have to throw an error if no identity exists
         },
         function (idty, next) {
@@ -862,7 +862,7 @@ function GlobalValidator (conf, dao) {
     async.forEachSeries(block.joiners, function (inlineMS, callback) {
       async.waterfall([
         function (next) {
-          var ms = Membership.fromInline(inlineMS);
+          var ms = Membership.statics.fromInline(inlineMS);
           getGlobalIdentity(block, ms.issuer, next); // Have to throw an error if no identity exists
         },
         function (idty, next) {
@@ -891,7 +891,7 @@ function GlobalValidator (conf, dao) {
   function checkPeopleHaveEnoughCertifications (memberships, block, done) {
     var newLinks = getNewLinks(block);
     async.forEach(memberships, function(inlineMembership, callback){
-      var ms = Membership.fromInline(inlineMembership);
+      var ms = Membership.statics.fromInline(inlineMembership);
       if (block.number == 0) {
         // No test for root block
         callback();
@@ -928,7 +928,7 @@ function GlobalValidator (conf, dao) {
         var newLinks = getNewLinks(block);
         // Checking distance of each member against them
         async.forEach(memberships, function(inlineMembership, callback){
-          var ms = Membership.fromInline(inlineMembership);
+          var ms = Membership.statics.fromInline(inlineMembership);
           async.waterfall([
             function (next){
               isOver3Hops(ms.issuer, wotPubkeys, newLinks, dao, next);

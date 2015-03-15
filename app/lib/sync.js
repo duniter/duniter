@@ -18,20 +18,15 @@ module.exports = function Synchroniser (server, host, port, conf) {
   var that = this;
 
   // Services
-  var TransactionService = server.TransactionsService;
   var PeeringService     = server.PeeringService;
-  var ParametersService  = server.ParametersService;
   var BlockchainService  = server.BlockchainService;
 
   // Models
   var Merkle        = server.conn.model('Merkle');
-  var Membership    = server.conn.model('Membership');
   var Transaction   = server.conn.model('Transaction');
   var Peer          = server.conn.model('Peer');
   var Configuration = server.conn.model('Configuration');
   
-  this.remoteFingerprint = null;
-
   this.sync = function (done) {
     logger.info('Connecting remote host...');
     vucoin(host, port, function (err, node) {

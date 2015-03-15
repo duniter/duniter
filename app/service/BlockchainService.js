@@ -58,7 +58,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
 
   var Identity      = require('../lib/entity/identity');
   var Certification = require('../lib/entity/certification');
-  var Membership    = conn.model('Membership');
+  var Membership    = require('../lib/entity/membership');
   var Block         = require('../lib/entity/block');
   var Link          = require('../lib/entity/link');
   var Source        = require('../lib/entity/source');
@@ -89,7 +89,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (next){
         logger.debug('⬇ %s %s', entry.issuer, entry.membership);
         // Get already existing Membership with same parameters
-        Membership.getForHashAndIssuer(entry.hash, entry.issuer, next);
+        dal.getMembershipsForHashAndIssuer(entry.hash, entry.issuer, next);
       },
       function (entries, next){
         if (entries.length > 0) {
@@ -122,7 +122,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       },
       function (next){
         // Saves entry
-        entry.save(function (err) {
+        dal.saveMembership(entry, function (err) {
           next(err);
         });
       },
@@ -486,7 +486,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   function updateMemberships (block, done) {
     async.forEachSeries(['joiners', 'actives', 'leavers'], function (prop, callback1) {
       async.forEach(block[prop], function(inlineJoin, callback){
-        var ms = Membership.fromInline(inlineJoin, prop == 'leavers' ? 'OUT' : 'IN');
+        var ms = Membership.statics.fromInline(inlineJoin, prop == 'leavers' ? 'OUT' : 'IN');
         async.waterfall([
           function (next){
             dal.getWritten(ms.issuer, next);
@@ -500,7 +500,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             }
             ms.userid = idty.uid;
             ms.certts = idty.time;
-            ms.deleteIfExists(function (err) {
+            dal.deleteIfExists(ms, function (err) {
               next(err);
             });
           }
@@ -1000,7 +1000,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     var leaveData = {};
     async.waterfall([
       function (next){
-        Membership.find({ membership: 'OUT', certts: { $gt: 0 }, userid: { $exists: true } }, next);
+        dal.findLeavers(next);
       },
       function (mss, next){
         var leavers = [];
@@ -1009,7 +1009,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         });
         async.forEach(mss, function(ms, callback){
           var leave = { identity: null, ms: ms, key: null, idHash: '' };
-          leave.idHash = (sha1(ms.userid + ms.certts.timestamp() + ms.issuer) + "").toUpperCase();
+          leave.idHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
           async.waterfall([
             function (next){
               async.parallel({
@@ -1051,7 +1051,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     var updates = {};
     async.waterfall([
       function (next){
-        Membership.find({ membership: 'IN', certts: { $gt: 0 }, userid: { $exists: true } }, next);
+        dal.findNewcomers(next);
       },
       function (mss, next){
         var joiners = [];
@@ -1060,7 +1060,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         });
         async.forEach(mss, function(ms, callback){
           var join = { identity: null, ms: ms, key: null, idHash: '' };
-          join.idHash = (sha1(ms.userid + ms.certts.timestamp() + ms.issuer) + "").toUpperCase();
+          join.idHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
           async.waterfall([
             function (next){
               async.parallel({
@@ -1298,7 +1298,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       }
       // Join only for non-members
       if (!data.identity.member) {
-        block.joiners.push(data.ms.inline());
+        block.joiners.push(new Membership(data.ms).inline());
       }
     });
     // Renewed
@@ -1307,7 +1307,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       var data = joinData[joiner];
       // Join only for non-members
       if (data.identity.member) {
-        block.actives.push(data.ms.inline());
+        block.actives.push(new Membership(data.ms).inline());
       }
     });
     // Leavers
@@ -1317,7 +1317,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       var data = leaveData[leaver];
       // Join only for non-members
       if (data.identity.member) {
-        block.leavers.push(data.ms.inline());
+        block.leavers.push(new Membership(data.ms).inline());
       }
     });
     // Kicked people
@@ -1450,6 +1450,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       done(null, new Block(block));
     });
     block.nonce = 0;
+    //console.log(block.getRaw());
     powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, pair: BlockchainService.pair });
     logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
   };

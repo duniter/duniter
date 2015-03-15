@@ -10,7 +10,6 @@ module.exports.get = function (conn, currencyName) {
 function ParameterNamespace (conn, currency) {
 
   var that = this;
-  var Membership  = conn.model('Membership');
   var Peer        = conn.model('Peer');
   var Transaction = conn.model('Transaction');
 

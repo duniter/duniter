@@ -1,5 +1,6 @@
 var _ = require('underscore');
 var moment = require('moment');
+var rawer = require('../rawer');
 
 var Membership = function(json) {
 
@@ -8,6 +9,56 @@ var Membership = function(json) {
   _(json).keys().forEach(function(key) {
    that[key] = json[key];
   });
+
+  this.keyID = function () {
+    return this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
+  };
+
+  this.copyValues = function(to) {
+    var obj = this;
+    ["version", "currency", "issuer", "membership", "amNumber", "hash", "signature", "sigDate"].forEach(function (key) {
+      to[key] = obj[key];
+    });
+  };
+
+  this.inline = function() {
+    return [this.issuer, this.signature, this.number, this.fpr, moment(this.certts).unix(), this.userid].join(':');
+  };
+
+  this.inlineValue = function() {
+    return [this.version, this.issuer, this.membership, this.number, this.fpr, this.userid].join(':');
+  };
+
+  this.inlineSignature = function() {
+    var splits = dos2unix(this.signature).split('\n');
+    var signature = "";
+    var keep = false;
+    splits.forEach(function(line){
+      if (keep && !line.match('-----END PGP') && line != '') signature += line + '\n';
+      if (line == "") keep = true;
+    });
+    return signature;
+  };
+
+  this.json = function() {
+    var obj = this;
+    var json = {};
+    ["version", "currency", "issuer", "membership"].forEach(function (key) {
+      json[key] = obj[key];
+    });
+    json.date = this.date && moment(this.date).unix();
+    json.sigDate = this.sigDate && moment(this.sigDate).unix();
+    json.raw = this.getRaw();
+    return { signature: this.signature, membership: json };
+  };
+
+  this.getRaw = function() {
+    return rawer.getMembershipWithoutSignature(this);
+  };
+
+  this.getRawSigned = function() {
+    return rawer.getMembership(this);
+  };
 };
 
 Membership.statics = {};

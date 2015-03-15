@@ -6,7 +6,7 @@ var rawer      = require('./rawer');
 var constants  = require('./constants');
 var Block      = require('../lib/entity/block');
 var Identity   = require('../lib/entity/identity');
-var Membership = mongoose.model('Membership', require('../models/membership'));
+var Membership = require('../lib/entity/membership');
 
 module.exports = function (conf) {
   
@@ -534,21 +534,21 @@ function hasWrongSignatureForMemberships (block) {
   var wrongSig = false;
   // Joiners
   while (!wrongSig && i < block.joiners.length) {
-    var ms = Membership.fromInline(block.joiners[i], 'IN', block.currency);
+    var ms = Membership.statics.fromInline(block.joiners[i], 'IN', block.currency);
     wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }
   // Actives
   i = 0;
   while (!wrongSig && i < block.actives.length) {
-    var ms = Membership.fromInline(block.actives[i], 'IN', block.currency);
+    var ms = Membership.statics.fromInline(block.actives[i], 'IN', block.currency);
     wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }
   // Leavers
   i = 0;
   while (!wrongSig && i < block.leavers.length) {
-    var ms = Membership.fromInline(block.leavers[i], 'OUT', block.currency);
+    var ms = Membership.statics.fromInline(block.leavers[i], 'OUT', block.currency);
     wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }

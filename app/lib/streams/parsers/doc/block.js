@@ -178,7 +178,7 @@ function extractTransactions(raw) {
         signatures: {
           start: 1 + nbSignatories + nbInputs + nbOutputs + hasComment,
           end: 2*nbSignatories + nbInputs + nbOutputs + hasComment
-        },
+        }
       };
       ['signatories', 'inputs', 'outputs', 'comments', 'signatures'].forEach(function(prop){
         currentTX[prop] = currentTX[prop] || [];
@@ -196,8 +196,9 @@ function extractTransactions(raw) {
       } else {
         currentTX.comment = '';
       }
+      currentTX.hash = sha1(rawer.getTransaction(currentTX)).toUpperCase();
       // Add to txs array
-      transactions.push(currentTX)
+      transactions.push(currentTX);
       i = i + 2*nbSignatories + nbInputs + nbOutputs + hasComment;
     } else {
       // Not a transaction header, stop reading

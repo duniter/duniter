@@ -37,6 +37,7 @@ function SQLiteDAL(db) {
     LeaverModel,
     ExcludedModel,
     TransactionModel,
+    TempTransactionModel,
     SignatoryModel,
     InputModel,
     OutputModel,
@@ -381,6 +382,42 @@ function SQLiteDAL(db) {
     return that.queryOne("SELECT * FROM identity WHERE pubkey = ? AND wasMember", [pubkey], done);
   };
 
+  this.getTxByHash = function(hash, done) {
+    return that.nullIfError(that.queryOne("SELECT * FROM tx WHERE hash = ?", [hash]))
+      .then(function(tx){
+        if (tx) {
+          return tx;
+        } else {
+          return that.nullIfError(that.queryOne("SELECT * FROM temp_tx WHERE hash = ?", [hash]))
+        }
+      })
+      .then(function(tx){
+        done && done(null, tx);
+        return tx;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.removeTxByHash = function(hash, done) {
+    return Q.all([
+      that.run('DELETE FROM tx WHERE hash = ?', [hash]),
+      that.run('DELETE FROM temp_tx WHERE hash = ?', [hash])
+    ])
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+      });
+  };
+
+  this.findAllWaitingTransactions = function(done) {
+    return that.fillInEntity(that.query("SELECT * FROM temp_tx", []), TempTransactionModel, done);
+  };
+
   this.getNonWritten = function(pubkey, done) {
     return that.query("SELECT * FROM identity WHERE pubkey = ? AND NOT wasMember", [pubkey], done);
   };
@@ -629,6 +666,10 @@ function SQLiteDAL(db) {
 
   this.saveCertification = function(cert, done) {
     return saveEntity(CertificationModel, cert, done);
+  };
+
+  this.saveTransaction = function(tx, done) {
+    return saveEntity(TempTransactionModel, tx, done);
   };
 
   function saveEntity(model, entity, done) {
@@ -1173,21 +1214,23 @@ function TransactionModel() {
     'id',
     'comment',
     'block',
+    'hash',
     'indexNb'
   ];
 
   this.sqlCreate = function() {
     return [
-      'CREATE TABLE IF NOT EXISTS tx (' +
+      'CREATE TABLE IF NOT EXISTS ' + this.table + ' (' +
       'id CHAR(36) NOT NULL,' +
       'comment VARCHAR(255) NOT NULL,' +
-      'block INTEGER NOT NULL,' +
-      'indexNb INTEGER NOT NULL,' +
+      'block INTEGER DEFAULT -1,' +
+      'indexNb INTEGER NULL,' +
+      'hash CHAR(40) NOT NULL,' +
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (id)' +
       ');',
-      'CREATE INDEX IF NOT EXISTS idx_tx_block_number ON tx (block);'
+      'CREATE INDEX IF NOT EXISTS idx_tx_block_number ON ' + this.table + ' (block);'
     ];
   };
 
@@ -1259,6 +1302,11 @@ function TransactionModel() {
       });
     }
   }];
+}
+
+function TempTransactionModel() {
+  TransactionModel.call(this);
+  this.table = 'temp_tx';
 }
 
 function SignatoryModel() {
@@ -1465,6 +1513,7 @@ util.inherits(ActiveModel, MembershipModel);
 util.inherits(LeaverModel, MembershipModel);
 util.inherits(ExcludedModel, Model);
 util.inherits(TransactionModel, Model);
+util.inherits(TempTransactionModel, TransactionModel);
 util.inherits(SignatoryModel, Model);
 util.inherits(InputModel, Model);
 util.inherits(OutputModel, Model);

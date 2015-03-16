@@ -1,9 +1,13 @@
 var should   = require('should');
 var assert   = require('assert');
+var fs = require('fs');
 var Q = require('q');
 var sqlite    = require('../../app/lib/dal/sqliteDAL');
 
-var sqliteDAL = sqlite.memory();
+if(fs.existsSync(__dirname + '/db0'))
+  fs.unlinkSync(__dirname + '/db0');
+var sqliteDAL = sqlite.memory(__dirname + '/db0');
+//var sqliteDAL = sqlite.file();
 
 //require('log4js').configure({
 //  "appenders": [
@@ -32,6 +36,7 @@ var mocks = {
     "previousIssuer" : "",
     "transactions" : [
       {
+        "hash": "E65B13D52D5F5F82881C831D5A43FFF624130066",
         "signatories" : [
           "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
         ],
@@ -48,6 +53,7 @@ var mocks = {
         "comment" : "for memory leak elimination :)"
       },
       {
+        "hash": "CB856DBE7A1D39CB37F5EA9962059CD44F903AD5",
         "signatories" : [
           "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
         ],
@@ -64,6 +70,7 @@ var mocks = {
         "comment" : ""
       },
       {
+        "hash": "18D1CDBCB9B77F6A7409F2BA5F53301FF3307850",
         "signatories" : [
           "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
         ],
@@ -81,6 +88,7 @@ var mocks = {
         "comment" : ""
       },
       {
+        "hash": "3CC9AA2B8EB657E7A2A31DBC3379B29064551B1C",
         "signatories" : [
           "ERzNcJmHpdqeLAehYwktwhrGeGKd8DVy4ZhhgdhYtE5M"
         ],
@@ -220,9 +228,10 @@ describe("DAL", function(){
         assert.deepEqual(blocks[0].leavers, mocks.block0.leavers);
         assert.deepEqual(blocks[0].actives, mocks.block0.actives);
         assert.deepEqual(blocks[0].joiners, mocks.block0.joiners);
-        assert.deepEqual(blocks[0].identities, mocks.block0.identities);
-        assert.deepEqual(blocks[0].certifications, mocks.block0.certifications);
         assert.deepEqual(blocks[0].transactions, mocks.block0.transactions);
+        // DAL is not responsible for this
+        assert.deepEqual(blocks[0].identities, []);
+        assert.deepEqual(blocks[0].certifications, []);
     })
   });
 });

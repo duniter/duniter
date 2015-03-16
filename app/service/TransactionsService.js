@@ -11,10 +11,10 @@ module.exports.get = function (conn, conf, dal) {
 
 function TransactionService (conn, conf, dal) {
 
-  var Transaction = conn.model('Transaction');
+  var Transaction = require('../lib/entity/transaction');
 
   this.processTx = function (txObj, done) {
-    var tx = new Transaction(txObj);
+    var tx = new Transaction(txObj, conf.currency);
     var localValidation = localValidator(conf);
     var globalValidation = null;
     async.waterfall([
@@ -38,7 +38,7 @@ function TransactionService (conn, conf, dal) {
       },
       function (next) {
         // Save the transaction
-        tx.save(function (err) {
+        dal.saveTransaction(tx, function (err) {
           next(err, tx);
         });
       }
@@ -46,6 +46,6 @@ function TransactionService (conn, conf, dal) {
   };
 
   function transactionAlreadyProcessed (tx, done) {
-    Transaction.getByHash(tx.hash, done);
+    dal.getTxByHash(tx.hash, done);
   }
 }

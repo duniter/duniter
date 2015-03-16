@@ -62,7 +62,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var Block         = require('../lib/entity/block');
   var Link          = require('../lib/entity/link');
   var Source        = require('../lib/entity/source');
-  var Transaction   = conn.model('Transaction');
+  var Transaction   = require('../lib/entity/transaction');
   var Configuration = conn.model('Configuration');
   var BlockStat     = conn.model('BlockStat');
 
@@ -723,7 +723,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       obj.issuers = json.signatories;
       var tx = new Transaction(obj);
       var txHash = tx.getHash();
-      Transaction.removeByHash(txHash, callback);
+      dal.removeTxByHash(txHash, callback);
     }, done);
   }
 
@@ -911,13 +911,14 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
         });
         // Finally look for transactions
-        Transaction.find({}, next);
+        dal.findAllWaitingTransactions(next);
       },
       function (txs, next) {
         var passingTxs = [];
         var localValidation = localValidator(conf);
         var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
-        async.forEachSeries(txs, function (tx, callback) {
+        async.forEachSeries(txs, function (rawtx, callback) {
+          var tx = new Transaction(rawtx, conf.currency);
           var extractedTX = tx.getTransaction();
           async.waterfall([
             function (next) {
@@ -931,7 +932,8 @@ function BlockchainService (conn, conf, dal, PeeringService) {
               passingTxs.push(extractedTX);
               next();
             }
-          ], function () {
+          ], function (err) {
+            logger.error(err);
             callback();
           });
         }, next);

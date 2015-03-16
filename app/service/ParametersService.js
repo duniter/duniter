@@ -11,7 +11,6 @@ function ParameterNamespace (conn, currency) {
 
   var that = this;
   var Peer        = conn.model('Peer');
-  var Transaction = conn.model('Transaction');
 
   this.getSearch = function (req, callback) {
     if(!req.params || !req.params.search){

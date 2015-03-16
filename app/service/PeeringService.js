@@ -14,7 +14,6 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
   
   var currency = conf.currency;
 
-  var Merkle      = conn.model('Merkle');
   var Peer        = require('../lib/entity/peer');
 
   var selfPubkey = undefined;
@@ -86,12 +85,12 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         });
       },
       function (recordedPR, previousHash, next) {
-        Merkle.updateForPeers(dal, function (err) {
+        dal.updateMerkleForPeers(function(err) {
           next(err, recordedPR);
         });
       }
     ], callback);
-  }
+  };
 
   this.submitStatus = function(obj, callback){
     var status = new Status(obj);
@@ -134,7 +133,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         peer.setStatus(status.status, dal, next);
       },
       function (next) {
-        Merkle.updateForPeers(dal, next);
+        dal.updateMerkleForPeers(next);
       }
     ], function (err) {
       callback(err, status, peer, wasStatus);
@@ -223,7 +222,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
               dal.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
             },
             function (next) {
-              Merkle.updateForPeers(dal, next);
+              dal.updateMerkleForPeers(next);
             },
             function (next) {
               that.sendUpSignal(next);

@@ -29,9 +29,6 @@ function NetworkBinding (peerServer, conf) {
   var ParametersService = peerServer.ParametersService;
   var PeeringService    = peerServer.PeeringService;
 
-  // Models
-  var Merkle    = peerServer.conn.model('Merkle');
-
   this.cert = PeeringService.cert;
 
   var that = this;
@@ -46,11 +43,11 @@ function NetworkBinding (peerServer, conf) {
     res.type('application/json');
     async.waterfall([
       function (next){
-        Merkle.peers(next);
+        peerServer.dal.merkleForPeers(next);
       },
       function (merkle, next){
         MerkleService.processForURL(req, merkle, function (hashes, done) {
-          dal.findPeersWhoseHashIsIn(hashes)
+          peerServer.dal.findPeersWhoseHashIsIn(hashes)
             .then(function(peers) {
               var map = {};
               peers.forEach(function (peer){
@@ -67,7 +64,7 @@ function NetworkBinding (peerServer, conf) {
       }
       MerkleService.merkleDone(req, res, json);
     });
-  }
+  };
 
   this.peersPost = function (req, res) {
     res.type('application/json');

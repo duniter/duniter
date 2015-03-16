@@ -9,6 +9,7 @@ var logger  = require('../../lib/logger')('data');
 var Identity = require('../entity/identity');
 var Certification = require('../entity/certification');
 var Membership = require('../entity/membership');
+var Merkle = require('../entity/merkle');
 
 module.exports = {
   memory: function() {
@@ -43,7 +44,8 @@ function SQLiteDAL(db) {
     OutputModel,
     TxSignatoryModel,
     LinkModel,
-    SourceModel
+    SourceModel,
+    MerkleLeafModel
   ];
 
   this.run = function(sql, params, done) {
@@ -415,6 +417,7 @@ function SQLiteDAL(db) {
       })
       .fail(function(err){
         done && done(err);
+        throw err;
       });
   };
 
@@ -623,7 +626,7 @@ function SQLiteDAL(db) {
   };
 
   this.saveBlock = function(block, done) {
-    return cleanBeforeBlockInsert(block)
+    return Q()
       .then(function(){
         return saveEntity(BlockModel, block);
       })
@@ -637,28 +640,51 @@ function SQLiteDAL(db) {
       });
   };
 
-  function cleanBeforeBlockInsert(block) {
-    return Q();
-  }
+  this.merkleForPeers = function(done) {
+    return that.query('SELECT * FROM merkle_leaf WHERE tree = ?', ['peer'])
+      .then(function(leaves){
+        var merkle = new Merkle();
+        merkle.initialize(leaves);
+        done && done(null, merkle);
+        return merkle;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
 
-  //function deleteIdentities(block) {
-  //  return Q.all((block.identities || []).map(function(inline) {
-  //    var idty = Identity.statics.fromInline(inline);
-  //    return that.run("DELETE FROM identity WHERE pubkey = ? AND uid = ? AND hash = ?", [idty.pubkey, idty.uid, idty.getTargetHash()]);
-  //  }));
-  //}
-  //
-  //function deleteCertifications(block) {
-  //  return Q.all((block.certifications || []).map(function(inline) {
-  //    var cert = Certification.statics.fromInline(inline);
-  //    return that.run("DELETE FROM cert WHERE fromKey = ? AND toKey = ? AND block <= ?", [cert.from, cert.to, block.number]);
-  //  }));
-  //}
-
-  function deleteMemberships(block) {
-    // TODO
-    return Q.all([]);
-  }
+  that.updateMerkleForPeers = function(done) {
+    return that.run("DELETE FROM merkle_leaf WHERE tree = ?", ['peer'])
+      .then(function(){
+        return that.findAllPeersNEWUPBut([]);
+      })
+      .then(function(peers){
+        var merkle = new Merkle();
+        var leaves = [];
+        peers.forEach(function (p) {
+          leaves.push(p.hash);
+        });
+        merkle.initialize(leaves);
+        return merkle.leaves();
+      })
+      .then(function(leaves){
+        return Q.all(leaves.map(function(leaf, index) {
+          return that.saveMerkleLeaf({
+            tree: 'peers',
+            hash: leaf,
+            indexNb: index
+          });
+        }))
+      })
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
 
   this.saveLink = function(link, done) {
     return saveEntity(LinkModel, link, done);
@@ -678,6 +704,10 @@ function SQLiteDAL(db) {
 
   this.saveTransaction = function(tx, done) {
     return saveEntity(TempTransactionModel, tx, done);
+  };
+
+  this.saveMerkleLeaf = function(leaf, done) {
+    return saveEntity(MerkleLeafModel, leaf, done);
   };
 
   function saveEntity(model, entity, done) {
@@ -1512,6 +1542,36 @@ function SourceModel() {
   };
 }
 
+function MerkleLeafModel() {
+
+  Model.call(this);
+
+  this.table = 'merkle_leaf';
+  this.primary = 'id';
+  this.fields = [
+    'id',
+    'hash',
+    'tree',
+    'indexNb'
+  ];
+
+  this.aliases = {
+    'timestamp': 'on_timestamp'
+  };
+
+  this.sqlCreate = function() {
+    return 'CREATE TABLE IF NOT EXISTS merkle_leaf (' +
+      'id CHAR(36) NOT NULL,' +
+      'tree VARCHAR(20) NOT NULL,' +
+      'hash CHAR(40) NOT NULL,' +
+      'indexNb INTEGER DEFAULT NULL,' +
+      'created DATETIME DEFAULT NULL,' +
+      'updated DATETIME DEFAULT NULL,' +
+      'PRIMARY KEY (id)' +
+      ');';
+  };
+}
+
 util.inherits(EndpointModel, Model);
 util.inherits(PeerModel, Model);
 util.inherits(BlockModel, Model);
@@ -1528,3 +1588,4 @@ util.inherits(SignatoryModel, Model);
 util.inherits(InputModel, Model);
 util.inherits(OutputModel, Model);
 util.inherits(LinkModel, Model);
+util.inherits(MerkleLeafModel, Model);

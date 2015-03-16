@@ -10,8 +10,6 @@ module.exports = function (serverPubkey, conn, conf, dal) {
 
 function Router (serverPubkey, conn, conf, dal) {
 
-  var Merkle   = conn.model('Merkle');
-
   stream.Transform.call(this, { objectMode: true });
 
   var that = this;
@@ -32,7 +30,7 @@ function Router (serverPubkey, conn, conf, dal) {
           dal.setPeerDown(obj.peer.pubkey, next);
         },
         function (next) {
-          Merkle.updateForPeers(dal, next);
+          dal.updateMerkleForPeers(next);
         }
       ], function(err) {
         if (err) logger.error(err);

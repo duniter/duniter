@@ -21,8 +21,9 @@ module.exports = function Synchroniser (server, host, port, conf) {
   var PeeringService     = server.PeeringService;
   var BlockchainService  = server.BlockchainService;
 
+  var dal = server.dal;
+
   // Models
-  var Merkle        = server.conn.model('Merkle');
   var Configuration = server.conn.model('Configuration');
   
   this.sync = function (done) {
@@ -116,7 +117,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
         // Peers
         //=======
         function (next){
-          Merkle.peers(next);
+          dal.merkleForPeers(next);
         },
         function (merkle, next) {
           node.network.peering.peers.get({}, function (err, json) {

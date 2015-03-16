@@ -197,7 +197,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next){
         logger.info('Updating list of peers...');
-        that.conn.model('Merkle').updateForPeers(that.dal, next);
+        that.dal.updateMerkleForPeers(next);
       },
       function (next){
         logger.info('Broadcasting UP/NEW signals...');

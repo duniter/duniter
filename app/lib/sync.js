@@ -23,7 +23,6 @@ module.exports = function Synchroniser (server, host, port, conf) {
 
   // Models
   var Merkle        = server.conn.model('Merkle');
-  var Peer          = server.conn.model('Peer');
   var Configuration = server.conn.model('Configuration');
   
   this.sync = function (done) {

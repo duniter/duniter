@@ -3,14 +3,13 @@ var status    = require('../models/statusMessage');
 var parsers   = require('../lib/streams/parsers/doc');
 var constants = require('../lib/constants');
 
-module.exports.get = function (conn, currencyName) {
-  return new ParameterNamespace(conn, currencyName);
+module.exports.get = function () {
+  return new ParameterNamespace();
 };
 
-function ParameterNamespace (conn, currency) {
+function ParameterNamespace () {
 
   var that = this;
-  var Peer        = conn.model('Peer');
 
   this.getSearch = function (req, callback) {
     if(!req.params || !req.params.search){

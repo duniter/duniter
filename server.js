@@ -290,7 +290,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       that.servicesInited = true;
       that.HTTPService      = require("./app/service/HTTPService");
       that.MerkleService    = require("./app/service/MerkleService");
-      that.ParametersService = require("./app/service/ParametersService").get(that.conn, that.conf.currency);
+      that.ParametersService = require("./app/service/ParametersService").get();
       that._initServices(that.conn, done);
     } else {
       done();

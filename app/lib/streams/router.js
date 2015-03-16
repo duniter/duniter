@@ -11,7 +11,6 @@ module.exports = function (serverPubkey, conn, conf, dal) {
 function Router (serverPubkey, conn, conf, dal) {
 
   var Merkle   = conn.model('Merkle');
-  var Peer     = conn.model('Peer');
 
   stream.Transform.call(this, { objectMode: true });
 

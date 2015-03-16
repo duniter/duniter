@@ -8,10 +8,7 @@ var http2raw         = require('../lib/streams/parsers/http2raw');
 var jsoner           = require('../lib/streams/jsoner');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
-var extractSignature = require('../lib/streams/extractSignature');
-var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger')();
-var mlogger          = require('../lib/logger')('membership');
 var blockchainDao    = require('../lib/blockchainDao');
 var globalValidator  = require('../lib/globalValidator');
 
@@ -26,15 +23,12 @@ function BlockchainBinding (wotServer) {
   var conn = wotServer.conn;
 
   // Services
-  var http              = wotServer.HTTPService;
   var ParametersService = wotServer.ParametersService;
-  var PeeringService    = wotServer.PeeringService;
   var BlockchainService = wotServer.BlockchainService;
   var IdentityService   = wotServer.IdentityService;
 
   // Models
   var Block      = require('../lib/entity/block');
-  var Peer       = wotServer.conn.model('Peer');
   var BlockStat  = wotServer.conn.model('BlockStat');
 
   this.parseMembership = function (req, res) {
@@ -45,8 +39,6 @@ function BlockchainBinding (wotServer) {
       .pipe(parsers.parseMembership(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      // .pipe(extractSignature(onError))
-      // .pipe(verifySignature(onError))
       .pipe(wotServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
@@ -61,8 +53,6 @@ function BlockchainBinding (wotServer) {
       .pipe(parsers.parseBlock(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      // .pipe(extractSignature(onError))
-      // .pipe(verifySignature(onError))
       .pipe(wotServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
@@ -86,7 +76,7 @@ function BlockchainBinding (wotServer) {
       "avgGenTime": conf.avgGenTime,
       "dtDiffEval": conf.dtDiffEval,
       "blocksRot": conf.blocksRot,
-      "percentRot": conf.percentRot,
+      "percentRot": conf.percentRot
     }, null, "  "));
   };
 

@@ -30,7 +30,6 @@ function NetworkBinding (peerServer, conf) {
   var PeeringService    = peerServer.PeeringService;
 
   // Models
-  var Peer      = peerServer.conn.model('Peer');
   var Merkle    = peerServer.conn.model('Merkle');
 
   this.cert = PeeringService.cert;
@@ -51,16 +50,14 @@ function NetworkBinding (peerServer, conf) {
       },
       function (merkle, next){
         MerkleService.processForURL(req, merkle, function (hashes, done) {
-          Peer
-          .find({ hash: { $in: hashes } })
-          .sort('hash')
-          .exec(function (err, peers) {
-            var map = {};
-            peers.forEach(function (peer){
-              map[peer.hash] = peer.json();
-            });
-            done(null, map);
-          });
+          dal.findPeersWhoseHashIsIn(hashes)
+            .then(function(peers) {
+              var map = {};
+              peers.forEach(function (peer){
+                map[peer.hash] = peer.json();
+              });
+              done(null, map);
+            })
         }, next);
       }
     ], function (err, json) {

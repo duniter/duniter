@@ -1,4 +1,5 @@
 var _ = require('underscore');
+var rawer = require('../rawer');
 
 module.exports = Peer;
 

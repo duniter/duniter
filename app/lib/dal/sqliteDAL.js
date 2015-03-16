@@ -382,6 +382,10 @@ function SQLiteDAL(db) {
     return that.queryOne("SELECT * FROM identity WHERE pubkey = ? AND wasMember", [pubkey], done);
   };
 
+  this.findPeersWhoseHashIsIn = function(hashes, done) {
+    return that.queryOne("SELECT * FROM peer WHERE hash IN ('" + hashes.join('\',\'') + "')", [], done);
+  };
+
   this.getTxByHash = function(hash, done) {
     return that.nullIfError(that.queryOne("SELECT * FROM tx WHERE hash = ?", [hash]))
       .then(function(tx){
@@ -574,6 +578,10 @@ function SQLiteDAL(db) {
 
   this.listAllPeersWithStatusNewUP = function(minSigDate, done) {
     return that.query('SELECT * FROM peer WHERE status IN (\'NEW\', \'NEW_BACK\', \'UP\') AND statusTS >= ?', [minSigDate], done);
+  };
+
+  this.findPeers = function(pubkey, done) {
+    return that.query('SELECT * FROM peer WHERE pubkey = ?', [pubkey], done);
   };
 
   this.getRandomlyUPsWithout = function(pubkeys, minSigDate, done) {
@@ -808,6 +816,7 @@ function PeerModel() {
   this.primary = 'pubkey';
   this.fields = [
     'block',
+    'hash',
     'currency',
     'signature',
     'status',
@@ -836,6 +845,7 @@ function PeerModel() {
     return 'CREATE TABLE IF NOT EXISTS peer (' +
       'pubkey VARCHAR(50) NOT NULL,' +
       'block VARCHAR(60) DEFAULT NULL,' +
+      'hash CHAR(40) DEFAULT NULL,' +
       'currency VARCHAR(50) DEFAULT NULL,' +
       'signature VARCHAR(100) DEFAULT NULL,' +
       'status VARCHAR(10) DEFAULT NULL,' +

@@ -11,6 +11,7 @@ var signature   = require('./app/lib/signature');
 var parsers     = require('./app/lib/streams/parsers/doc');
 var multicaster = require('./app/lib/streams/multicaster');
 var constants   = require('./app/lib/constants');
+var Peer        = require('../ucoin/app/lib/entity/peer');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
@@ -219,7 +220,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
                 },
                 function (block, next) {
                   if (block) {
-                    var Peer = that.conn.model('Peer');
                     var peer = new Peer({endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')]});
                     multicaster().sendBlock(peer, block, next);
                   } else {
@@ -247,7 +247,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.initPeeringEntry = function (conn, conf, done) {
-    var Peer = conn.model('Peer');
     var currency = conf.currency;
     var current = null;
     async.waterfall([
@@ -256,7 +255,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (currentBlock, next) {
         current = currentBlock;
-        Peer.find({ pub: that.PeeringService.pubkey }, next);
+        that.dal.findPeers(that.PeeringService.pubkey, next);
       },
       function (peers, next) {
         var p1 = new Peer({});

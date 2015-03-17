@@ -1,16 +1,14 @@
 var async         = require('async');
 var should        = require('should');
 var assert        = require('assert');
-var mongoose      = require('mongoose');
 var parsers       = require('../../../app/lib/streams/parsers/doc');
 var blocks        = require('../../data/blocks');
 var validator     = require('../../../app/lib/globalValidator');
 var parser        = parsers.parseBlock();
 var Block         = require('../../../app/lib/entity/block');
-var Identity      = mongoose.model('Identity', require('../../../app/models/identity'));
-var Configuration = mongoose.model('Configuration', require('../../../app/models/configuration'));
+var Identity      = require('../../../app/lib/entity/identity');
 
-var conf = new Configuration({
+var conf = {
   sigDelay: 365.25*24*3600, // 1 year
   msValidity: 365.25*24*3600, // 1 year
   sigValidity: 365.25*24*3600, // 1 year
@@ -25,7 +23,7 @@ var conf = new Configuration({
   percentRot: 2/3,
   blockRot: 300,
   dtDiffEval: 500
-});
+};
 
 describe("Block global coherence:", function(){
 

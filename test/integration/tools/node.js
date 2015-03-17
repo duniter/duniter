@@ -1,7 +1,9 @@
+var Q = require('q');
 var async  = require('async');
 var request  = require('request');
 var vucoin = require('vucoin');
 var ucoin  = require('../../../index');
+var Configuration = require('../../../app/lib/entity/configuration');
 
 module.exports = function (dbName, options) {
 	return new Node(dbName, options);
@@ -111,29 +113,34 @@ function Node (dbName, options) {
   }
   
   this.start = function(done) {
-    if (started) return done();
-    async.waterfall([
-      function(next) {
-        service(ucoin.createTxServer, next)();
-      },
-      function (server, next){
-        // Launching server
-        that.server = server;
-        that.server.start(function (err, app) {
-          started = true;
-          next(err);
-        });
-      },
-      //function (next) {
-      //  var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf, server.dal);
-      //  var theCaster = multicaster();
-      //  server
-      //    .pipe(theRouter) // The router ask for multicasting of documents
-      //    .pipe(theCaster) // The multicaster may answer 'unreachable peer'
-      //    .pipe(theRouter);
-      //}
-    ], done);
-  }
+    return Q.Promise(function(resolve, reject){
+      if (started) return done();
+      async.waterfall([
+        function(next) {
+          service(ucoin.createTxServer, next)();
+        },
+        function (server, next){
+          // Launching server
+          that.server = server;
+          that.server.start(function (err, app) {
+            started = true;
+            next(err);
+          });
+        },
+        //function (next) {
+        //  var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf, server.dal);
+        //  var theCaster = multicaster();
+        //  server
+        //    .pipe(theRouter) // The router ask for multicasting of documents
+        //    .pipe(theCaster) // The multicaster may answer 'unreachable peer'
+        //    .pipe(theRouter);
+        //}
+      ], function(err) {
+        err ? reject(err) : resolve();
+        done && done(err);
+      });
+    });
+  };
 
   function service(serverFactory, callback) {
     if (arguments.length == 1) {
@@ -142,7 +149,7 @@ function Node (dbName, options) {
     }
     return function () {
       var cbArgs = arguments;
-      var server = serverFactory({ name: dbName }, options);
+      var server = serverFactory({ name: dbName }, Configuration.statics.complete(options));
 
       server.on('mongoFail', logErrorAndExit(server, 'Could not connect to MongoDB. Is it installed?'));
 

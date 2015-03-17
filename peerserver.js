@@ -158,10 +158,10 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   this.checkPeeringConf = function (conf, done) {
     var errors = [];
 
-    if (conf.passwd == null) {
+    if (!conf.pair && conf.passwd == null) {
       errors.push('No key password was given.');
     }
-    if (conf.salt == null) {
+    if (!conf.pair && conf.salt == null) {
       errors.push('No key salt was given.');
     }
     if (!conf.currency) {

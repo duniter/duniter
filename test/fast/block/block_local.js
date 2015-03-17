@@ -1,15 +1,14 @@
 var async          = require('async');
 var should         = require('should');
 var assert         = require('assert');
-var mongoose       = require('mongoose');
 var parsers        = require('../../../app/lib/streams/parsers/doc');
 var blocks         = require('../../data/blocks');
 var localValidator = require('../../../app/lib/localValidator');
 var parser         = parsers.parseBlock();
 var Block          = require('../../../app/lib/entity/block');
-var Configuration  = mongoose.model('Configuration', require('../../../app/models/configuration'));
+var Configuration  = require('../../../app/lib/entity/configuration');
 
-var conf = new Configuration({
+var conf = Configuration.statics.complete({
   sigDelay: 365.25*24*3600, // 1 year
   sigQty: 1,
   powZeroMin: 1,

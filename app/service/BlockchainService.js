@@ -63,7 +63,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var Link          = require('../lib/entity/link');
   var Source        = require('../lib/entity/source');
   var Transaction   = require('../lib/entity/transaction');
-  var Configuration = conn.model('Configuration');
   var BlockStat     = conn.model('BlockStat');
 
   this.load = function (done) {
@@ -599,7 +598,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       conf.blocksRot        = parseInt(sp[12]);
       conf.percentRot       = parseFloat(sp[13]);
       conf.currency         = block.currency;
-      conf.save(function (err) {
+      dal.saveConf(conf, function (err) {
         done(err);
       });
     }
@@ -1452,7 +1451,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       done(null, new Block(block));
     });
     block.nonce = 0;
-    //console.log(block.getRaw());
     powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, pair: BlockchainService.pair });
     logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
   };

@@ -23,9 +23,6 @@ module.exports = function Synchroniser (server, host, port, conf) {
 
   var dal = server.dal;
 
-  // Models
-  var Configuration = server.conn.model('Configuration');
-  
   this.sync = function (done) {
     logger.info('Connecting remote host...');
     vucoin(host, port, function (err, node) {

@@ -1,7 +1,9 @@
 var Q       = require('q');
 var _       = require('underscore');
 var async   = require('async');
+var mkdirp = require('mkdirp');
 var moment = require('moment');
+var fs = require('fs');
 var uuid = require('node-uuid').v4;
 var util = require('util');
 var sqlite3 = require('sqlite3');
@@ -10,17 +12,39 @@ var Identity = require('../entity/identity');
 var Certification = require('../entity/certification');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
+var Configuration = require('../entity/configuration');
+
+const DB_NAME = "db.sqlite";
 
 module.exports = {
-  memory: function() {
-    return new SQLiteDAL(new sqlite3.Database(':memory:'));
+  memory: function(profile) {
+    return Q(new SQLiteDAL(new sqlite3.Database(':memory:'), profile));
   },
-  file: function(fileName) {
-    return new SQLiteDAL(new sqlite3.Database(fileName));
+  file: function(profile) {
+    var home = getUCoinHomePath(profile);
+    return makeDir(profile)
+      .then(function(){
+        return new SQLiteDAL(new sqlite3.Database(home + '/' + DB_NAME), profile);
+      });
+  },
+  newFile: function(profile) {
+    var home = getUCoinHomePath(profile);
+    if(fs.existsSync(home + '/' + DB_NAME))
+      fs.unlinkSync(home + '/' + DB_NAME);
+    return this.file(profile);
   }
 };
 
-function SQLiteDAL(db) {
+function getUCoinHomePath(profile) {
+  var userHome = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+  return userHome + '/.ucoin/' + profile;
+}
+
+function makeDir(profile) {
+  return Q.nfcall(mkdirp, getUCoinHomePath(profile));
+}
+
+function SQLiteDAL(db, profile) {
 
   var that = this;
 
@@ -708,6 +732,44 @@ function SQLiteDAL(db) {
 
   this.saveMerkleLeaf = function(leaf, done) {
     return saveEntity(MerkleLeafModel, leaf, done);
+  };
+
+  this.loadConf = function(done) {
+    return Q.Promise(function(resolve){
+      fs.readFile(getUCoinHomePath(profile) + '/conf.json', function(err, data) {
+        if (err) {
+          data = "{}";
+        }
+        var conf = _(Configuration.statics.defaultConf()).extend(JSON.parse(data));
+        resolve(conf);
+      })
+    })
+      .then(function(conf){
+        done && done(null, conf);
+        return conf;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.saveConf = function(conf, done) {
+    return makeDir(profile)
+      .then(function(){
+        return Q.Promise(function(resolve, reject){
+          fs.writeFile(getUCoinHomePath(profile) + '/conf.json', JSON.stringify(conf, null, ' '), function(err) {
+            err ? reject(err) : resolve();
+          })
+        });
+      })
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
   };
 
   function saveEntity(model, entity, done) {

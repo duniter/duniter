@@ -18,7 +18,6 @@ module.exports = function(node) {
     toc.join(),
     node.commit(),
     node.commit(),
-    node.commit(),
     tic.send(51, toc),
     node.commit()
   ];

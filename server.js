@@ -144,27 +144,28 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           models.forEach(function (entity) {
             conn.model(entity, require(__dirname + '/app/models/' + entity.toLowerCase() + '.js'));
           });
-          conn.model('Configuration').find(next);
+          sqliteDAL.memory(dbConf.name || "default")
+            .then(function(dal){
+              that.dal = dal;
+              return that.dal.initDabase();
+            })
+            .then(function() {
+              return that.dal.loadConf();
+            })
+            .then(function(conf){
+              next(null, conf);
+            })
+            .fail(function(err){
+              next(err);
+            });
         },
         function (foundConf, next){
-          var Configuration = conn.model('Configuration');
-          that.conf = foundConf[0] || new Configuration();
-          if (overrideConf) {
-            _(overrideConf).keys().forEach(function(k){
-              that.conf[k] = overrideConf[k];
-            });
-          }
+          that.conf = _(foundConf).extend(overrideConf || {});
           if (reset) {
             that.reset(next);
             return;
           }
           next();
-        },
-        function(next) {
-          if(fs.existsSync(__dirname + '/' + dbConf.name))
-            fs.unlinkSync(__dirname + '/' + dbConf.name);
-          that.dal = sqliteDAL.memory(__dirname + '/' + dbConf.name);
-          that.dal.initDabase().done(next);
         }
       ], done);
     }
@@ -269,10 +270,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         that.connect(next);
       },
       function (next){
-        that.conn.model('Configuration').remove({}, function (err) {
+        that.dal.saveConf({}, function (err) {
           next(err);
         });
-      },
+      }
     ], done);
   };
 

@@ -11,128 +11,129 @@ require('log4js').configure({
    ]
 });
 
-var node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: true,
-  salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
-  sigQty: 1
-});
-var node2 = node('db2', { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: true,
-  pair: {
-    pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
-    sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
-  },
-  participate: false, rootoffset: 10,
-  sigQty: 1, dt: 1, ud0: 120
-});
-
-var node3 = node('db3', { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: true,
-  salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
-  sigQty: 1
-});
-
-before(function(done) {
-  async.parallel([
-    node1.start,
-    node2.start,
-    node3.start
-  ], done);
-});
-
 describe("Integration", function() {
 
-  describe("Testing technical API", function(){
+  describe("Node 1", function() {
+
+    var node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: true,
+      salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
+      sigQty: 1
+    });
 
     before(function(done) {
-      node1.before([])(done);
+      node1.start()
+        .then(function(){
+          node1.before([])(done);
+        });
     });
-    after(node1.after());
 
-    it('/node/summary should give package.json version', node1.summary(function(summary, done){
-      should.exists(summary);
-      should.exists(summary.ucoin);
-      should.exists(summary.ucoin.software);
-      should.exists(summary.ucoin.version);
-      assert.equal(summary.ucoin.software, "ucoind");
-      assert.equal(summary.ucoin.version, jspckg.version);
-      done();
-    }));
-  });
+    describe("Testing technical API", function(){
 
-  describe("Testing malformed documents", function(){
+      before(function(done) {
+        node1.before([])(done);
+      });
+      after(node1.after());
 
-    before(function(done) {
-      node1.before(require('./scenarios/malformed-documents')(node1))(done);
+      it('/node/summary should give package.json version', node1.summary(function(summary, done){
+        should.exists(summary);
+        should.exists(summary.ucoin);
+        should.exists(summary.ucoin.software);
+        should.exists(summary.ucoin.version);
+        assert.equal(summary.ucoin.software, "ucoind");
+        assert.equal(summary.ucoin.version, jspckg.version);
+        done();
+      }));
     });
-    after(node1.after());
 
-    it('should not have crashed because of wrong tx', function(){
-      assert.equal(true, true);
+    describe("Testing malformed documents", function(){
+
+      before(function(done) {
+        node1.before(require('./scenarios/malformed-documents')(node1))(done);
+      });
+      after(node1.after());
+
+      it('should not have crashed because of wrong tx', function(){
+        assert.equal(true, true);
+      });
     });
-  });
 
-  describe("Lookup on", function(){
+    describe("Lookup on", function(){
 
-    before(function(done) {
-      node1.before(require('./scenarios/wot-lookup')(node1))(done);
-    });
-    after(node1.after());
+      before(function(done) {
+        node1.before(require('./scenarios/wot-lookup')(node1))(done);
+      });
+      after(node1.after());
 
-    describe("user cat", function(){
+      describe("user cat", function(){
 
-      it('should give only 1 result', node1.lookup('cat', function(res, done){
+        it('should give only 1 result', node1.lookup('cat', function(res, done){
+          should.exists(res);
+          assert.equal(res.results.length, 1);
+          done();
+        }));
+
+        it('should have sent 1 signature', node1.lookup('cat', function(res, done){
+          should.exists(res);
+          assert.equal(res.results[0].signed.length, 1);
+          should.exists(res.results[0].signed[0].isMember);
+          should.exists(res.results[0].signed[0].wasMember);
+          assert.equal(res.results[0].signed[0].isMember, false);
+          assert.equal(res.results[0].signed[0].wasMember, false);
+          done();
+        }));
+      });
+
+      describe("user tac", function(){
+
+        it('should give only 1 result', node1.lookup('tac', function(res, done){
+          should.exists(res);
+          assert.equal(res.results.length, 1);
+          done();
+        }));
+
+        it('should have 1 signature', node1.lookup('tac', function(res, done){
+          should.exists(res);
+          assert.equal(res.results[0].uids[0].others.length, 1);
+          done();
+        }));
+
+        it('should have sent 0 signature', node1.lookup('tac', function(res, done){
+          should.exists(res);
+          assert.equal(res.results[0].signed.length, 0);
+          done();
+        }));
+      });
+
+      it('toc should give only 1 result', node1.lookup('toc', function(res, done){
         should.exists(res);
         assert.equal(res.results.length, 1);
         done();
       }));
 
-      it('should have sent 1 signature', node1.lookup('cat', function(res, done){
+      it('tic should give only 3 results', node1.lookup('tic', function(res, done){
         should.exists(res);
-        assert.equal(res.results[0].signed.length, 1);
-        should.exists(res.results[0].signed[0].isMember);
-        should.exists(res.results[0].signed[0].wasMember);
-        assert.equal(res.results[0].signed[0].isMember, false);
-        assert.equal(res.results[0].signed[0].wasMember, false);
+        assert.equal(res.results.length, 3);
         done();
       }));
     });
-
-    describe("user tac", function(){
-
-      it('should give only 1 result', node1.lookup('tac', function(res, done){
-        should.exists(res);
-        assert.equal(res.results.length, 1);
-        done();
-      }));
-
-      it('should have 1 signature', node1.lookup('tac', function(res, done){
-        should.exists(res);
-        assert.equal(res.results[0].uids[0].others.length, 1);
-        done();
-      }));
-
-      it('should have sent 0 signature', node1.lookup('tac', function(res, done){
-        should.exists(res);
-        assert.equal(res.results[0].signed.length, 0);
-        done();
-      }));
-    });
-
-    it('toc should give only 1 result', node1.lookup('toc', function(res, done){
-      should.exists(res);
-      assert.equal(res.results.length, 1);
-      done();
-    }));
-
-    it('tic should give only 3 results', node1.lookup('tic', function(res, done){
-      should.exists(res);
-      assert.equal(res.results.length, 3);
-      done();
-    }));
   });
 
   describe("Testing transactions", function(){
 
+    var node2 = node('db2', { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: true,
+      pair: {
+        pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+        sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
+      },
+      participate: false, rootoffset: 10,
+      sigQty: 1, dt: 0, ud0: 120
+    });
+
     before(function(done) {
-      node2.before(require('./scenarios/transactions')(node2))(done);
+      node2.start()
+        .then(function(){
+          node2.before(require('./scenarios/transactions')(node2))(done);
+        })
     });
     after(node2.after());
 
@@ -166,8 +167,16 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
+    var node3 = node('db3', { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: true,
+      salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
+      sigQty: 1
+    });
+
     before(function(done) {
-      node3.before(require('./scenarios/certifications')(node3))(done);
+      node3.start()
+        .then(function(){
+          node3.before(require('./scenarios/certifications')(node3))(done);
+        })
     });
     after(node3.after());
 
@@ -180,6 +189,9 @@ describe("Integration", function() {
 
     it('tic should give only 1 results', node3.lookup('tic', function(res, done){
       should.exists(res);
+      var uids = [res.results[0].signed[0].uid, res.results[0].signed[1].uid, res.results[0].signed[2].uid];
+      var uidsShould = ["cat", "tac", "toc"];
+      assert.deepEqual(uids, uidsShould);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].signed.length, 3);
       assert.equal(res.results[0].signed[0].uid, "cat");

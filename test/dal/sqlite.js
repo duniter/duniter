@@ -1,13 +1,7 @@
 var should   = require('should');
 var assert   = require('assert');
 var fs = require('fs');
-var Q = require('q');
-var sqlite    = require('../../app/lib/dal/sqliteDAL');
-
-if(fs.existsSync(__dirname + '/db0'))
-  fs.unlinkSync(__dirname + '/db0');
-var sqliteDAL = sqlite.memory(__dirname + '/db0');
-//var sqliteDAL = sqlite.file();
+var sqlite = require('../../app/lib/dal/sqliteDAL');
 
 //require('log4js').configure({
 //  "appenders": [
@@ -160,12 +154,21 @@ var mocks = {
   }
 };
 
+var sqliteDAL = null;
+
 describe("DAL", function(){
 
   before(function() {
-    return Q().
-      then(sqliteDAL.dropDabase)
-      .then(sqliteDAL.initDabase);
+    return sqlite.memory('db0')
+      .then(function(dal){
+        return sqliteDAL = dal;
+      })
+      .then(function() {
+        return sqliteDAL.dropDabase();
+      })
+      .then(function() {
+        return sqliteDAL.initDabase();
+      });
   });
 
   it('should have no peer in a first time', function(){

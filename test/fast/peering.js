@@ -3,9 +3,8 @@ var assert   = require('assert');
 var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
-var mongoose = require('mongoose');
 var parsers  = require('../../app/lib/streams/parsers/doc');
-var ucoin    = require('../..');
+var ucoin    = require('../../index');
 
 var rawPeer = "" +
   "Version: 1\n" +
@@ -18,7 +17,7 @@ var rawPeer = "" +
   "OTHER_PROTOCOL 88.163.127.43 9102\n" +
   "bvuKzc6+cGWMGC8FIkZHN8kdQhaRL/MK60KYyw5vJqkKEgxXbygQHAzfoojeSY4gPKIu4FggBkR1HndSEm2FAQ==\n";
 
-var Peer = mongoose.model('Peer', require('../../app/models/peer'));
+var Peer = require('../../app/lib/entity/peer');
 
 describe('Peer', function(){
 

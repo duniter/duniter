@@ -1,5 +1,4 @@
 var async     = require('async');
-var status    = require('../models/statusMessage');
 var parsers   = require('../lib/streams/parsers/doc');
 var constants = require('../lib/constants');
 

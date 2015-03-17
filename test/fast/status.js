@@ -4,9 +4,9 @@ var async    = require('async');
 var sha1     = require('sha1');
 var fs       = require('fs');
 var parsers  = require('../../app/lib/streams/parsers/doc');
-var ucoin    = require('../..');
+var ucoin    = require('../../index');
 
-var Status = require('../../app/models/statusMessage');
+var Status = require('../../app/lib/entity/status');
 var rawStatus = "" +
   "Version: 1\n" +
   "Type: Status\n" +
@@ -24,7 +24,7 @@ describe('Status', function(){
     var st;
 
     before(function(done) {
-      var parser = parsers.parseStatus().asyncWrite(rawStatus, function (err, obj) {
+      parsers.parseStatus().asyncWrite(rawStatus, function (err, obj) {
         st = new Status(obj);
         done(err);
       });

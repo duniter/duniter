@@ -2,7 +2,6 @@
 var async       = require('async');
 var _           = require('underscore');
 var program     = require('commander');
-var mongoose    = require('mongoose');
 var vucoin      = require('vucoin');
 var wizard      = require('../app/lib/wizard');
 var router      = require('../app/lib/streams/router');
@@ -14,7 +13,7 @@ var base58      = require('../app/lib/base58');
 var constants   = require('../app/lib/constants');
 var Synchroniser = require('../app/lib/sync');
 var pjson       = require('../package.json');
-var ucoin       = require('./../');
+var ucoin       = require('./../index');
 var webapp      = require('../web/app');
 var Peer        = require('../app/lib/entity/peer');
 
@@ -649,8 +648,6 @@ function connect(callback) {
 
     var server = ucoin.connect({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
 
-    server.on('mongoFail', logErrorAndExit(server, 'Could not connect to MongoDB. Is it installed?'));
-
     // Connecting to DB
     server.on('connected', function (err) {
 
@@ -683,7 +680,6 @@ function service(serverFactory, callback) {
 
     var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
 
-    server.on('mongoFail', logErrorAndExit(server, 'Could not connect to MongoDB. Is it installed?'));
     server.on('BMAFailed', logErrorAndExit(server));
 
     // Connecting to DB

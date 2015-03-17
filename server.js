@@ -3,7 +3,6 @@ var stream     = require('stream');
 var async      = require('async');
 var util       = require('util');
 var _          = require('underscore');
-var mongoose   = require('mongoose');
 var common     = require('./app/lib/common');
 var constants  = require('./app/lib/constants');
 var sqliteDAL  = require('./app/lib/dal/sqliteDAL');
@@ -14,7 +13,6 @@ var log4js     = require('log4js');
 var upnp       = require('nat-upnp');
 var jsonpckg   = require('./package.json');
 
-var models = ['Identity', 'Certification', 'Configuration', 'Link', 'Merkle', 'Peer', 'Transaction', 'TxMemory', 'Membership', 'Block', 'Source', 'BlockStat'];
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
@@ -84,7 +82,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
           that.emit('error', Error(err));
           next(err);
         }
-      },
+      }
     ], function (err, res) {
       if (err){
         switch (err) {
@@ -102,72 +100,26 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         done();
       }
     });
-  }
+  };
 
-  this.connect = function (reset, done) {
-    var databaseName = dbConf.name || "ucoin_default";
-    var host = dbConf.host || "localhost";
-    var port = dbConf.port;
-    if (arguments.length == 1) {
-      done = reset;
-      reset = dbConf.resetData;
-    }
+  this.connect = function (done) {
     // Init connection
-    if (!that.conn) {
-      // bad parameters
-      if(!host && !port && !done){
-        throw new Error('Bad parameters for database connection');
-      }
-      // host and port not provided
-      if(!done && !port){
-        done = host;
-        host = 'localhost';
-        port = undefined;
-      }
-      // port not provided
-      if(!done && !port){
-        done = port;
-        port = undefined;
-      }
-      host = host ? host : 'localhost';
-      // logger.debug('Connecting to database `%s`', databaseName);
-      var conn = that.conn = mongoose.createConnection('mongodb://' + host + (port ? ':' + port : '') + '/' + databaseName);
-      conn.on('error', function (err) {
-        logger.error(err);
-        that.emit('mongoFail', err);
-      });
-      async.waterfall([
-        function (next){
-          conn.once('open', next);
-        },
-        function (next){
-          models.forEach(function (entity) {
-            conn.model(entity, require(__dirname + '/app/models/' + entity.toLowerCase() + '.js'));
-          });
-          sqliteDAL.memory(dbConf.name || "default")
-            .then(function(dal){
-              that.dal = dal;
-              return that.dal.initDabase();
-            })
-            .then(function() {
-              return that.dal.loadConf();
-            })
-            .then(function(conf){
-              next(null, conf);
-            })
-            .fail(function(err){
-              next(err);
-            });
-        },
-        function (foundConf, next){
-          that.conf = _(foundConf).extend(overrideConf || {});
-          if (reset) {
-            that.reset(next);
-            return;
-          }
-          next();
-        }
-      ], done);
+    if (!that.dal) {
+      sqliteDAL.memory(dbConf.name || "default")
+        .then(function(dal){
+          that.dal = dal;
+          return that.dal.initDabase();
+        })
+        .then(function() {
+          return that.dal.loadConf();
+        })
+        .then(function(conf){
+          that.conf = _(conf).extend(overrideConf || {});
+          done();
+        })
+        .fail(function(err){
+          done(err);
+        });
     }
     else {
       done();
@@ -207,61 +159,20 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     serverListening = false;
   };
 
-  this.isListening = function () {
-    return serverListening;
-  };
-
   this.reset = function(done) {
-    return that.dal.dropModel('peer').then(function() {
-      that.resetDatas([
-        'identities',
-        'certifications',
-        'blocks',
-        'links',
-        'sources',
-        'merkles',
-        'peers',
-        'transactions',
-        'blockstats',
-        'txmemories',
-        'memberships'
-      ], done);
-    }).fail(done);
+    return that.dal.resetAll(done);
   };
 
   this.resetStats = function(done) {
-    that.resetDatas(['blockstats'], done);
+    return that.dal.resetStats(done);
   };
 
   this.resetPeers = function(done) {
-    return that.dal.dropModel('peer').then(function() {
-      that.resetDatas(['peers'], done);
-    });
+    return that.dal.resetPeers(done);
   };
 
   this.resetTxs = function(done) {
-    that.resetDatas(['transactions'], done);
-  };
-
-  this.resetDatas = function(collections, done) {
-    async.waterfall([
-      function (next){
-        that.connect(next);
-      },
-      function (next){
-        async.forEachSeries(collections, function(collectionName, next){
-          if (that.conn.collections[collectionName]) {
-            that.conn.collections[collectionName].drop(function (err) {
-              next();
-            });
-          } else {
-            next();
-          }
-        }, function (err) {
-          next(err);
-        });
-      }
-    ], done);
+    that.dal.resetTransactions(done);
   };
 
   this.resetConf = function(done) {

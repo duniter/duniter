@@ -1,5 +1,4 @@
 var async      = require('async');
-var mongoose   = require('mongoose');
 var crypto     = require('./crypto');
 var common     = require('./common');
 var rawer      = require('./rawer');

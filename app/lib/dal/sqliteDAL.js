@@ -881,12 +881,88 @@ function SQLiteDAL(db, profile) {
       async.forEachSeries(models, function(model, callback) {
         var modelInstance = new model();
         if (modelInstance.table == name) {
-          that.run(new model().sqlDrop(), [], callback);
+          that.run(new model().sqlDrop(), [])
+            .then(function(){
+              doCreate(model, callback);
+            });
         } else callback();
       }, function(err) {
         err ? reject(err) : resolve();
       });
     });
+  };
+
+  function doCreate(Model, done) {
+    var sqlValue = new Model().sqlCreate();
+    var sqls = typeof sqlValue == 'object' ? sqlValue : [sqlValue];
+    return Q.Promise(function(resolve, reject){
+      async.forEachSeries(sqls, function(sql, callback) {
+        db.run(sql, [], callback);
+      }, function(err) {
+        err ? reject(err) : resolve();
+        done && done(err);
+      });
+    });
+  }
+
+  this.resetAll = function(done) {
+    return Q.Promise(function(resolve, reject){
+      async.forEachSeries(models, function(model, callback) {
+        that.run(new model().sqlDrop(), [])
+          .then(function(){
+            doCreate(model, callback);
+          });
+      }, function(err) {
+        err ? reject(err) : resolve();
+      });
+    })
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.resetStats = function(done) {
+    return makeDir(profile)
+      .then(function(){
+        return Q.Promise(function(resolve, reject){
+          fs.writeFile(getUCoinHomePath(profile) + '/stats.json', JSON.stringify({}, null, ' '), function(err) {
+            err ? reject(err) : resolve();
+          })
+        });
+      })
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.resetPeers = function(done) {
+    return that.dropModel('peer')
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.resetTransactions = function(done) {
+    return that.dropModel('temp_tx')
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
   };
 }
 

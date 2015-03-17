@@ -3,7 +3,6 @@ var async         = require('async');
 var crypto        = require('./crypto');
 var common        = require('./common');
 var moment        = require('moment');
-var mongoose      = require('mongoose');
 var logger        = require('./logger')('validator');
 var Block         = require('../lib/entity/block');
 var Identity      = require('../lib/entity/identity');

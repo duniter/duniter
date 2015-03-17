@@ -1,7 +1,6 @@
 var async       = require('async');
 var _           = require('underscore');
 var program     = require('commander');
-var mongoose    = require('mongoose');
 var vucoin      = require('vucoin');
 var Q           = require('q');
 var wizard      = require('../app/lib/wizard');
@@ -37,8 +36,6 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
 
   // We get notified of server events
   theServer.pipe(that);
-  theServer.on('mongoFail', error.bind(null, 'Could not connect to MongoDB. Is it installed?'));
-  theServer.on('mongoFail', status.bind(null, 'DOWN'));
   theServer.on('BMAFailed', error.bind(null, 'Could not bind BMA API'));
   theServer.on('BMAFailed', status.bind(null, 'DOWN'));
   theServer.on('services',  status.bind(null, 'STARTING...'));

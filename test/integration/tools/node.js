@@ -151,8 +151,6 @@ function Node (dbName, options) {
       var cbArgs = arguments;
       var server = serverFactory({ name: dbName }, Configuration.statics.complete(options));
 
-      server.on('mongoFail', logErrorAndExit(server, 'Could not connect to MongoDB. Is it installed?'));
-
       // Connecting to DB
       server.on('services', function (err) {
 

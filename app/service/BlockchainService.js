@@ -63,7 +63,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var Link          = require('../lib/entity/link');
   var Source        = require('../lib/entity/source');
   var Transaction   = require('../lib/entity/transaction');
-  var BlockStat     = conn.model('BlockStat');
 
   this.load = function (done) {
     done();
@@ -532,12 +531,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       function (next) {
         // Saves the block (DAL)
         dal.saveBlock(block, next);
-      },
-      function (next) {
-        var b = new (conn.model('Block'))(block);
-        b.save(function(err) {
-          next(err);
-        })
       },
       function (next) {
         saveParametersForRootBlock(block, next);
@@ -1704,7 +1697,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           function (next) {
             async.parallel({
               stat: function (next) {
-                BlockStat.getStat(statName, next);
+                dal.getStat(statName, next);
               },
               current: function (next) {
                 BlockchainService.current(next);
@@ -1714,10 +1707,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           function (res, next) {
             var stat = res.stat;
             var current = res.current;
-            // Create stat if it does not exist
-            if (stat == null) {
-              stat = new BlockStat({ statName: statName, blocks: [], lastParsedBlock: -1 });
-            }
             // Compute new stat
             async.forEachSeries(_.range(stat.lastParsedBlock + 1, (current ? current.number : -1) + 1), function (blockNumber, callback) {
               // console.log('Stat', statName, ': tested block#' + blockNumber);
@@ -1742,7 +1731,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             });
           },
           function (stat, next) {
-            stat.save(function (err) {
+            dal.saveStat(stat, statName, function (err) {
               next(err);
             });
           }

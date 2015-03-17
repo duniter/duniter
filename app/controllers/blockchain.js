@@ -29,7 +29,6 @@ function BlockchainBinding (wotServer) {
 
   // Models
   var Block      = require('../lib/entity/block');
-  var BlockStat  = wotServer.conn.model('BlockStat');
 
   this.parseMembership = function (req, res) {
     res.type('application/json');
@@ -96,15 +95,12 @@ function BlockchainBinding (wotServer) {
     return function (req, res) {
       async.waterfall([
         function (next) {
-          BlockStat.getStat(statName, next);
+          wotServer.dal.getStat(statName, next);
         }
       ], function (err, stat) {
         if(err){
           res.send(400, err);
           return;
-        }
-        if (stat == null) {
-          stat = new BlockStat();
         }
         res.type('application/json');
         res.send(200, JSON.stringify({ result: stat.json() }, null, "  "));

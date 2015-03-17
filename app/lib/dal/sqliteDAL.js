@@ -772,6 +772,62 @@ function SQLiteDAL(db, profile) {
       });
   };
 
+  this.loadStats = function(done) {
+    return Q.Promise(function(resolve){
+      fs.readFile(getUCoinHomePath(profile) + '/stats.json', function(err, data) {
+        if (err) {
+          data = "{}";
+        }
+        var stats = JSON.parse(data);
+        resolve(stats);
+      })
+    })
+      .then(function(stats){
+        // Create stat if it does not exist
+        done && done(null, stats);
+        return stats;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.getStat = function(statName, done) {
+    return that.loadStats()
+      .then(function(conf){
+        // Create stat if it does not exist
+        done && done(null, conf[statName] || { statName: statName, blocks: [], lastParsedBlock: -1 });
+        return conf;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.saveStat = function(stat, name, done) {
+    return that.loadStats()
+      .then(function(stats){
+        return makeDir(profile).thenResolve(stats);
+      })
+      .then(function(stats){
+        stats[name] = stat;
+        return Q.Promise(function(resolve, reject){
+          fs.writeFile(getUCoinHomePath(profile) + '/stats.json', JSON.stringify(stats, null, ' '), function(err) {
+            err ? reject(err) : resolve();
+          })
+        });
+      })
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
   function saveEntity(model, entity, done) {
     return getEntityOrNull(model, entity)
       .then(function(found){

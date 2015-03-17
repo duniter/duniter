@@ -17,12 +17,4 @@ BlockSchema.methods = {
   }
 };
 
-BlockSchema.statics.getStat = function (name, done) {
-  this
-    .find({ statName: name })
-    .exec(function (err, stats) {
-      done(err, stats.length > 0 ? stats[0] : null);
-    });
-};
-
 module.exports = BlockSchema;

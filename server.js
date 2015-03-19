@@ -105,7 +105,8 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     return Q.Promise(function(resolve, reject){
       // Init connection
       if (!that.dal) {
-        sqliteDAL.file(dbConf.name || "default")
+        var dbType = dbConf && dbConf.memory ? sqliteDAL.memory : sqliteDAL.file;
+        dbType(dbConf.name || "default")
           .then(function(dal){
             that.dal = dal;
             return that.dal.initDabase();

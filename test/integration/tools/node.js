@@ -149,7 +149,7 @@ function Node (dbName, options) {
     }
     return function () {
       var cbArgs = arguments;
-      var server = serverFactory({ name: dbName }, Configuration.statics.complete(options));
+      var server = serverFactory({ name: dbName, memory: true }, Configuration.statics.complete(options));
 
       // Initialize server (db connection, ...)
       server.init(function (err) {

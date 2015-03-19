@@ -648,11 +648,11 @@ function connect(callback) {
 
     var server = ucoin.connect({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
 
-    // Connecting to DB
-    server.on('connected', function (err) {
+    // Initialize server (db connection, ...)
+    server.init(function (err) {
 
       if(err){
-        logger.warn(err);
+        logger.error(err);
         server.disconnect();
         process.exit(1);
         return;
@@ -663,9 +663,6 @@ function connect(callback) {
       cbArgs[cbArgs.length++] = server.conf;
       callback.apply(this, cbArgs);
     });
-
-    // Initialize server (db connection, ...)
-    server.init();
   };
 }
 
@@ -682,11 +679,12 @@ function service(serverFactory, callback) {
 
     server.on('BMAFailed', logErrorAndExit(server));
 
-    // Connecting to DB
-    server.on('services', function (err) {
+
+    // Initialize server (db connection, ...)
+    server.init(function (err) {
 
       if(err){
-        logger.warn(err);
+        logger.error(err);
         server.disconnect();
         process.exit(1);
         return;
@@ -697,9 +695,6 @@ function service(serverFactory, callback) {
       cbArgs[cbArgs.length++] = server.conf;
       callback.apply(this, cbArgs);
     });
-
-    // Initialize server (db connection, ...)
-    server.init();
   };
 }
 

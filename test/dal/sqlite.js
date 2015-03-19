@@ -204,9 +204,11 @@ describe("DAL", function(){
 
   it('should be able to save a Block', function(){
     return sqliteDAL.saveBlock(mocks.block0)
-      .then(sqliteDAL.listAllBlocks)
-      .then(function(blocks){
-        blocks.should.have.length(1);
+      .then(function() {
+        return sqliteDAL.getBlock(0);
+      })
+      .then(function(block){
+        var blocks = [block];
         blocks[0].should.have.property('hash').equal(mocks.block0.hash);
         blocks[0].should.have.property('signature').equal(mocks.block0.signature);
         blocks[0].should.have.property('version').equal(mocks.block0.version);
@@ -226,15 +228,14 @@ describe("DAL", function(){
         blocks[0].should.have.property('nonce').equal(mocks.block0.nonce);
 
         //assert.deepEqual(blocks[0], mocks.block0);
+        assert.deepEqual(blocks[0].identities, mocks.block0.identities);
+        assert.deepEqual(blocks[0].certifications, mocks.block0.certifications);
         assert.deepEqual(blocks[0].actives, mocks.block0.actives);
         assert.deepEqual(blocks[0].excluded, mocks.block0.excluded);
         assert.deepEqual(blocks[0].leavers, mocks.block0.leavers);
         assert.deepEqual(blocks[0].actives, mocks.block0.actives);
         assert.deepEqual(blocks[0].joiners, mocks.block0.joiners);
         assert.deepEqual(blocks[0].transactions, mocks.block0.transactions);
-        // DAL is not responsible for this
-        assert.deepEqual(blocks[0].identities, []);
-        assert.deepEqual(blocks[0].certifications, []);
     })
   });
 });

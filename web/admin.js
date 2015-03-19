@@ -38,7 +38,6 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
   theServer.pipe(that);
   theServer.on('BMAFailed', error.bind(null, 'Could not bind BMA API'));
   theServer.on('BMAFailed', status.bind(null, 'DOWN'));
-  theServer.on('services',  status.bind(null, 'STARTING...'));
   theServer.on('started',   status.bind(null, 'UP'));
   theServer.on('stopped',   status.bind(null, 'DOWN'));
   theServer.on('block',     setAsCurrentBlock);

@@ -151,11 +151,11 @@ function Node (dbName, options) {
       var cbArgs = arguments;
       var server = serverFactory({ name: dbName }, Configuration.statics.complete(options));
 
-      // Connecting to DB
-      server.on('services', function (err) {
+      // Initialize server (db connection, ...)
+      server.init(function (err) {
 
         if(err){
-          logger.warn(err);
+          logger.error(err);
           server.disconnect();
           process.exit(1);
           return;
@@ -166,9 +166,6 @@ function Node (dbName, options) {
         //cbArgs[cbArgs.length++] = server.conf;
         callback(null, server);
       });
-
-      // Initialize server (db connection, ...)
-      server.init();
     };
   }
 

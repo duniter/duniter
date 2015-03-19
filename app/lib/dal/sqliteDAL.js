@@ -15,6 +15,7 @@ var Merkle = require('../entity/merkle');
 var Configuration = require('../entity/configuration');
 
 const DB_NAME = "db.sqlite";
+const BLOCK_FILE_PREFIX = "0000000000";
 
 module.exports = {
   memory: function(profile) {
@@ -74,8 +75,9 @@ function SQLiteDAL(db, profile) {
 
   this.run = function(sql, params, done) {
     return Q.Promise(function(resolve, reject){
-      logger.debug('Query: %s | Params: %s', sql, JSON.stringify(params));
+      var start = new Date();
       db.run(sql, params || [], function(err) {
+        logger.debug('Time: %s ms | Query: %s | Params: %s', (new Date() - start), sql, JSON.stringify(params));
         err ? reject(err) : resolve();
         done && done(err);
       });
@@ -127,7 +129,7 @@ function SQLiteDAL(db, profile) {
           reject(err);
         else {
           if (rows.length == 0){
-            logger.warn('Time: %s ms | Query: %s | Params: %s | Not found', (new Date() - start), sql, JSON.stringify(params));
+            logger.debug('Time: %s ms | Query: %s | Params: %s | Not found', (new Date() - start), sql, JSON.stringify(params));
             reject('Cannot find single result: empty result');
             done && done(null, null);
           }
@@ -244,9 +246,24 @@ function SQLiteDAL(db, profile) {
   };
 
   this.getBlock = function(number, done) {
-    return that.queryEntityById(BlockModel, number, done);
+    return Q.Promise(function(resolve){
+      fs.readFile(getUCoinHomePath(profile) + '/blocks/' + blockFileName(number) + '.json', 'utf8', function(err, data) {
+        if (err) {
+          data = "{}";
+        }
+        resolve(JSON.parse(data));
+      })
+    })
+      .then(function(conf){
+        done && done(null, conf);
+        return conf;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
   };
-  
+
   this.queryEntityById = function(Model, id, done) {
     return that.queryForSingleEntity(Model, [new Model().primary], [id], done);
   };
@@ -315,7 +332,7 @@ function SQLiteDAL(db, profile) {
   // Block
   this.getLastBeforeOrAt = function (t, done) {
     return that.nullIfError(
-      that.fillInEntity(that.queryOne('SELECT * FROM block WHERE medianTime <= ? ORDER BY number DESC', [t]), BlockModel), done);
+      that.fillInEntity(that.query('SELECT * FROM block WHERE medianTime <= ? ORDER BY number DESC LIMIT 1', [t]), BlockModel), done);
   };
 
   this.lastUDBlock = function(done) {
@@ -343,14 +360,18 @@ function SQLiteDAL(db, profile) {
   };
 
   this.getBlocksBetween = function(start, end, done) {
-    return that.nullIfError(
-      that.fillInEntity(that.query('SELECT * FROM block WHERE number BETWEEN ? AND ? ORDER BY number DESC', [start, end]), BlockModel), done);
+    return that.query('SELECT * FROM block WHERE number BETWEEN ? AND ? ORDER BY number DESC', [start, end], done);
+  };
+
+  this.getCurrentNumber = function() {
+    return (currentNumber == null ? that.queryAggregate("SELECT MAX(number) as aggregate FROM block") : Q(currentNumber));
   };
 
   this.getBlockCurrent = function(done) {
-    return (currentNumber == null ? that.queryAggregate("SELECT MAX(number) as aggregate FROM block") : Q(currentNumber))
+    return that.getCurrentNumber()
       .then(function(number) {
         if (number == null) currentNumber = -1;
+        else currentNumber = number;
         return currentNumber != -1 ? that.getBlockOrNull(currentNumber) : null;
       })
       .then(function(block){
@@ -433,7 +454,7 @@ function SQLiteDAL(db, profile) {
 
   this.removeTxByHash = function(hash, done) {
     return Q.all([
-      that.run('DELETE FROM tx WHERE hash = ?', [hash]),
+      //that.run('DELETE FROM tx WHERE hash = ?', [hash]),
       that.run('DELETE FROM temp_tx WHERE hash = ?', [hash])
     ])
       .then(function(){
@@ -558,7 +579,7 @@ function SQLiteDAL(db, profile) {
   };
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
-    return that.run("UPDATE identity SET kick = ? WHERE pubkey = ? AND hash = ?", [notEnoughLinks ? 1 : 0, pubkey, hash], done);
+    return that.run("UPDATE identity SET kick = ? WHERE pubkey = ? AND hash = ? AND NOT kick = ?", [notEnoughLinks ? 1 : 0, pubkey, hash, notEnoughLinks ? 1 : 0], done);
   };
 
   this.deleteIfExists = function(ms, done) {
@@ -650,10 +671,10 @@ function SQLiteDAL(db, profile) {
   };
 
   this.saveBlock = function(block, done) {
-    return Q()
-      .then(function(){
-        return saveEntity(BlockModel, block);
-      })
+    return Q.all([
+      saveEntity(BlockModel, block),
+      that.saveBlockInFile(block)
+    ])
       .then(function(){
         currentNumber = block.number;
         done && done();
@@ -663,6 +684,28 @@ function SQLiteDAL(db, profile) {
         throw err;
       });
   };
+
+  this.saveBlockInFile = function (block, done) {
+    return makeDir(profile + '/blocks/')
+      .then(function(){
+        return Q.Promise(function(resolve, reject){
+          fs.writeFile(getUCoinHomePath(profile) + '/blocks/' + blockFileName(block.number) + '.json', JSON.stringify(block, null, ' '), function(err) {
+            err ? reject(err) : resolve();
+          })
+        });
+      })
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  }
+
+  function blockFileName(blockNumber) {
+    return BLOCK_FILE_PREFIX.substr(0, BLOCK_FILE_PREFIX.length - ("" + blockNumber).length) + blockNumber;
+  }
 
   this.merkleForPeers = function(done) {
     return that.query('SELECT * FROM merkle_leaf WHERE tree = ?', ['peer'])
@@ -736,7 +779,7 @@ function SQLiteDAL(db, profile) {
 
   this.loadConf = function(done) {
     return Q.Promise(function(resolve){
-      fs.readFile(getUCoinHomePath(profile) + '/conf.json', function(err, data) {
+      fs.readFile(getUCoinHomePath(profile) + '/conf.json', 'utf8', function(err, data) {
         if (err) {
           data = "{}";
         }
@@ -774,8 +817,8 @@ function SQLiteDAL(db, profile) {
 
   this.loadStats = function(done) {
     return Q.Promise(function(resolve){
-      fs.readFile(getUCoinHomePath(profile) + '/stats.json', function(err, data) {
-        if (err) {
+      fs.readFile(getUCoinHomePath(profile) + '/stats.json', 'uft8', function(err, data) {
+        if (err || !data) {
           data = "{}";
         }
         var stats = JSON.parse(data);
@@ -845,7 +888,7 @@ function SQLiteDAL(db, profile) {
         var sqlValue = new model().sqlCreate();
         var sqls = typeof sqlValue == 'object' ? sqlValue : [sqlValue];
         async.forEachSeries(sqls, function(sql, callback) {
-          db.run(sql, [], callback);
+          that.run(sql, [], callback);
         }, callback);
       }, function(err) {
         err ? reject(err) : resolve();
@@ -853,7 +896,7 @@ function SQLiteDAL(db, profile) {
     })
       .then(function(){
         return Q.Promise(function(resolve, reject){
-          db.run("CREATE VIEW certifications AS " +
+          that.run("CREATE VIEW IF NOT EXISTS certifications AS " +
             "select i1.uid as fromUID, c.fromKey, i2.uid as toUID, c.toKey, c.block, c.indexNb, c.linked, c.target, c.sig " +
             "from cert c " +
             "left join identity i1 ON i1.pubkey = c.fromKey " +
@@ -890,6 +933,10 @@ function SQLiteDAL(db, profile) {
         err ? reject(err) : resolve();
       });
     });
+  };
+
+  this.close = function() {
+    db.close();
   };
 
   function doCreate(Model, done) {
@@ -1109,116 +1156,117 @@ function BlockModel() {
     'nonce'
   ];
 
-  this.oneToManys = [{
-    property: 'identities',
-    model: IdentityModel,
-    fk: 'block',
-    cascade: {
-      persist: false
-    },
-    toDB: function(inline, index) {
-      var idty = Identity.statics.fromInline(inline);
-      idty.indexNb = index;
-      return idty;
-    },
-    toEntities: function(rows) {
-      return rows.map(function(row) {
-        row.time = new Date(row.time);
-        return Identity.statics.toInline(row);
-      })
-    }
-  },{
-    property: 'certifications',
-    model: CertificationModel,
-    fk: 'block',
-    cascade: {
-      persist: false
-    },
-    toDB: function(inline, index) {
-      var idty = Certification.statics.fromInline(inline);
-      idty.indexNb = index;
-      return idty;
-    },
-    toEntities: function(rows) {
-      return rows.map(function(row) {
-        return Certification.statics.toInline(row, CertificationModel);
-      })
-    }
-  },{
-    property: 'joiners',
-    model: JoinerModel,
-    fk: 'block',
-    toDB: function(inline, index) {
-      var ms = Membership.statics.fromInline(inline, 'IN');
-      ms.indexNb = index;
-      return ms;
-    },
-    toEntities: function(rows) {
-      return rows.map(function(row) {
-        row.certts = new Date(row.certts);
-        return Membership.statics.toInline(row);
-      })
-    }
-  },{
-    property: 'actives',
-    model: ActiveModel,
-    fk: 'block',
-    toDB: function(inline, index) {
-      var ms = Membership.statics.fromInline(inline, 'IN');
-      ms.indexNb = index;
-      return ms;
-    },
-    toEntities: function(rows) {
-      return rows.map(function(row) {
-        row.certts = new Date(row.certts);
-        return Membership.statics.toInline(row);
-      })
-    }
-  },{
-    property: 'leavers',
-    model: LeaverModel,
-    fk: 'block',
-    toDB: function(inline, index) {
-      var idty = Membership.statics.fromInline(inline, 'OUT');
-      idty.indexNb = index;
-      return idty;
-    },
-    toEntities: function(rows) {
-      return rows.map(function(row) {
-        row.certts = new Date(row.certts);
-        return Membership.statics.toInline(row);
-      })
-    }
-  },{
-    property: 'excluded',
-    model: ExcludedModel,
-    fk: 'block',
-    toDB: function(inline, index) {
-      var excluded = { pubkey: inline };
-      excluded.indexNb = index;
-      return excluded;
-    },
-    toEntities: function(rows) {
-      return rows.map(function(row) {
-        return row.pubkey;
-      })
-    }
-  },{
-    property: 'transactions',
-    model: TransactionModel,
-    fk: 'block',
-    toDB: function(tx, index) {
-      tx.indexNb = index;
-      return tx;
-    },
-    toEntities: function(rows) {
-      return rows.map(function(row) {
-        delete row.created;
-        delete row.updated;
-        return row;
-      });
-    }
-  }];
+  this.oneToManys = [];
+  //this.oneToManys = [{
+  //  property: 'identities',
+  //  model: IdentityModel,
+  //  fk: 'block',
+  //  cascade: {
+  //    persist: false
+  //  },
+  //  toDB: function(inline, index) {
+  //    var idty = Identity.statics.fromInline(inline);
+  //    idty.indexNb = index;
+  //    return idty;
+  //  },
+  //  toEntities: function(rows) {
+  //    return rows.map(function(row) {
+  //      row.time = new Date(row.time);
+  //      return Identity.statics.toInline(row);
+  //    })
+  //  }
+  //},{
+  //  property: 'certifications',
+  //  model: CertificationModel,
+  //  fk: 'block',
+  //  cascade: {
+  //    persist: false
+  //  },
+  //  toDB: function(inline, index) {
+  //    var idty = Certification.statics.fromInline(inline);
+  //    idty.indexNb = index;
+  //    return idty;
+  //  },
+  //  toEntities: function(rows) {
+  //    return rows.map(function(row) {
+  //      return Certification.statics.toInline(row, CertificationModel);
+  //    })
+  //  }
+  //},{
+  //  property: 'joiners',
+  //  model: JoinerModel,
+  //  fk: 'block',
+  //  toDB: function(inline, index) {
+  //    var ms = Membership.statics.fromInline(inline, 'IN');
+  //    ms.indexNb = index;
+  //    return ms;
+  //  },
+  //  toEntities: function(rows) {
+  //    return rows.map(function(row) {
+  //      row.certts = new Date(row.certts);
+  //      return Membership.statics.toInline(row);
+  //    })
+  //  }
+  //},{
+  //  property: 'actives',
+  //  model: ActiveModel,
+  //  fk: 'block',
+  //  toDB: function(inline, index) {
+  //    var ms = Membership.statics.fromInline(inline, 'IN');
+  //    ms.indexNb = index;
+  //    return ms;
+  //  },
+  //  toEntities: function(rows) {
+  //    return rows.map(function(row) {
+  //      row.certts = new Date(row.certts);
+  //      return Membership.statics.toInline(row);
+  //    })
+  //  }
+  //},{
+  //  property: 'leavers',
+  //  model: LeaverModel,
+  //  fk: 'block',
+  //  toDB: function(inline, index) {
+  //    var idty = Membership.statics.fromInline(inline, 'OUT');
+  //    idty.indexNb = index;
+  //    return idty;
+  //  },
+  //  toEntities: function(rows) {
+  //    return rows.map(function(row) {
+  //      row.certts = new Date(row.certts);
+  //      return Membership.statics.toInline(row);
+  //    })
+  //  }
+  //},{
+  //  property: 'excluded',
+  //  model: ExcludedModel,
+  //  fk: 'block',
+  //  toDB: function(inline, index) {
+  //    var excluded = { pubkey: inline };
+  //    excluded.indexNb = index;
+  //    return excluded;
+  //  },
+  //  toEntities: function(rows) {
+  //    return rows.map(function(row) {
+  //      return row.pubkey;
+  //    })
+  //  }
+  //},{
+  //  property: 'transactions',
+  //  model: TransactionModel,
+  //  fk: 'block',
+  //  toDB: function(tx, index) {
+  //    tx.indexNb = index;
+  //    return tx;
+  //  },
+  //  toEntities: function(rows) {
+  //    return rows.map(function(row) {
+  //      delete row.created;
+  //      delete row.updated;
+  //      return row;
+  //    });
+  //  }
+  //}];
 
   this.sqlCreate = function() {
     return ['CREATE TABLE IF NOT EXISTS block (' +
@@ -1227,8 +1275,8 @@ function BlockModel() {
       'currency VARCHAR(50) NOT NULL,' +
       'issuer VARCHAR(50) NOT NULL,' +
       'parameters VARCHAR(255) NOT NULL,' +
-      'previousHash VARCHAR(50) NOT NULL,' +
-      'previousIssuer VARCHAR(50) NOT NULL,' +
+      'previousHash VARCHAR(50) NULL,' +
+      'previousIssuer VARCHAR(50) NULL,' +
       'version INTEGER NOT NULL,' +
       'membersCount INTEGER NOT NULL,' +
       'monetaryMass INTEGER DEFAULT 0,' +
@@ -1243,7 +1291,8 @@ function BlockModel() {
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (number)' +
       ');',
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_block_number ON block (number);'
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_block_number ON block (number);',
+      'CREATE INDEX IF NOT EXISTS idx_block_medianTime ON block (medianTime);'
     ];
   }
 }
@@ -1294,7 +1343,9 @@ function IdentityModel() {
       'updated DATETIME DEFAULT NULL,' +
       'PRIMARY KEY (id), UNIQUE(pubkey, uid, hash)' +
       ');',
-      'CREATE INDEX IF NOT EXISTS idx_idty_block_number ON identity (block);'
+      'CREATE INDEX IF NOT EXISTS idx_idty_block_number ON identity (block);',
+      'CREATE INDEX IF NOT EXISTS idx_idty_pubkey ON identity (pubkey);',
+      'CREATE INDEX IF NOT EXISTS idx_idty_hash ON identity (hash);'
       ];
   };
 }

@@ -40,7 +40,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       treatment: function (server, obj, next) {
         async.waterfall([
           function (next){
-            server.BlockchainService.submitBlock(obj, next);
+            server.BlockchainService.submitBlock(obj, true, next);
           },
           function (kb, next){
             server.BlockchainService.addStatComputing();

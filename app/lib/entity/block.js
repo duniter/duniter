@@ -8,8 +8,24 @@ function Block(json) {
 
   _(json || {}).keys().forEach(function(key) {
     var value = json[key];
-    if (key == "number" || key == "dividend") {
-      value = typeof value == "string" && value == "" ? null : parseInt(value);
+    if (
+         key == "number"
+      || key == "dividend"
+      || key == "medianTime"
+      || key == "time"
+      || key == "version"
+      || key == "nonce"
+      || key == "powMin"
+      || key == "membersCount"
+      || key == "dividend"
+      || key == "UDTime"
+    ) {
+      if (typeof value == "string") {
+        value = parseInt(value);
+      }
+      if (isNaN(value) || value === null) {
+        value = 0;
+      }
     }
     that[key] = value;
   });

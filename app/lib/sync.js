@@ -1,5 +1,6 @@
 var async            = require('async');
 var _                = require('underscore');
+var Q                = require('q');
 var sha1             = require('sha1');
 var merkle           = require('merkle');
 var vucoin           = require('vucoin');
@@ -10,9 +11,15 @@ var parsers          = require('./streams/parsers/doc');
 var extractSignature = require('./streams/extractSignature');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
+var rawer            = require('../lib/rawer');
+var Peer             = require('../lib/entity/peer');
 
 var CONST_FORCE_TX_PROCESSING = false;
-var CONST_BLOCKS_CHUNK = 1000;
+var CONST_BLOCKS_CHUNK = 100;
+
+var blockReadQueue = async.queue(function (task, callback) {
+  task(callback);
+}, 1);
 
 module.exports = function Synchroniser (server, host, port, conf) {
   var that = this;
@@ -40,58 +47,145 @@ module.exports = function Synchroniser (server, host, port, conf) {
         //============
         // Blockchain
         //============
-        function (next){
-          logger.info('Downloading Blockchain...');
+        function (next) {
+          var availableNumber = -1;
+          var finishedDownload = false;
+          var finished = false;
           async.parallel({
-            localCurrent: function (next) {
-              BlockchainService.current(function (err, current) {
-                next(null, err ? null : current);
-              });
-            },
-            remoteCurrent: function (next) {
-              node.blockchain.current(function (err, current) {
-                next(null, err ? null : current);
-              });
-            }
-          }, next);
-        },
-        function (res, next) {
-          var lCurrent = res.localCurrent;
-          var rCurrent = res.remoteCurrent;
-          var i = lCurrent ? lCurrent.number + 1 : 0;
-          if (!rCurrent) {
-            next('No block found on remote node');
-            return;
-          }
-          async.whilst(
-            function () { return rCurrent ? i <= rCurrent.number : false; },
-            function (callback) {
-                async.waterfall([
-                  function (next) {
-                    logger.info('Blocks #%s to #%s...', i, (i+CONST_BLOCKS_CHUNK-1 >= rCurrent.number ? rCurrent.number : i + CONST_BLOCKS_CHUNK-1));
-                    node.blockchain.blocks(CONST_BLOCKS_CHUNK, i, next);
-                  },
-                  function (blocks, next) {
-                    async.forEachSeries(blocks, function (block, callback) {
-                      // Rawification of transactions
-                      block.transactions.forEach(function (tx) {
-                        tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
-                        tx.raw += tx.signatories.join('\n') + '\n';
-                        tx.raw += tx.inputs.join('\n') + '\n';
-                        tx.raw += tx.outputs.join('\n') + '\n';
-                        if (tx.comment)
-                          tx.raw += tx.comment + '\n';
-                        tx.raw += tx.signatures.join('\n') + '\n';
+            download: function(callback){
+              async.waterfall([
+
+                function (next){
+                  logger.info('Downloading Blockchain...');
+                  async.parallel({
+                    localCurrent: function (next) {
+                      BlockchainService.current(function (err, current) {
+                        next(null, err ? null : current);
                       });
-                      BlockchainService.submitBlock(block, callback);
-                    }, next);
-                  },
-                  function (next) {
-                    i += CONST_BLOCKS_CHUNK;
-                    next();
+                    },
+                    remoteCurrent: function (next) {
+                      node.blockchain.current(function (err, current) {
+                        next(null, err ? null : current);
+                      });
+                    }
+                  }, next);
+                },
+                function (res, next) {
+                  var lCurrent = res.localCurrent;
+                  var rCurrent = res.remoteCurrent;
+                  var i = lCurrent ? lCurrent.number + 1 : 0;
+                  if (!rCurrent) {
+                    next('No block found on remote node');
+                    return;
                   }
-                ], callback);
-            }, next);
+                  async.whilst(
+                    function () {
+                      finishedDownload = rCurrent ? i <= rCurrent.number : false;
+                      return finishedDownload;
+                    },
+                    function (callback) {
+                      var startBlock = i;
+                      var endBlock = (i + CONST_BLOCKS_CHUNK - 1 >= rCurrent.number ? rCurrent.number : i + CONST_BLOCKS_CHUNK - 1);
+                      server.dal.getBlock(endBlock)
+                        .then(function(block){
+                          if (block.number >= 0) return block;
+                          return Q.Promise(function(resolve, reject){
+                            async.waterfall([
+                              function (next) {
+                                logger.info('Blocks #%s to #%s...', startBlock, endBlock);
+                                node.blockchain.blocks(CONST_BLOCKS_CHUNK, i, next);
+                              },
+                              function (blocks, next) {
+                                async.forEachSeries(blocks, function (block, callback) {
+                                  server.dal.saveBlockInFile(block, function(err) {
+                                    if (!err)
+                                      availableNumber = block.number;
+                                    callback(err);
+                                  });
+                                }, next);
+                              }
+                            ], function(err) {
+                              err ? reject(err) : resolve();
+                            });
+                          });
+                        })
+                        .done(function() {
+                          i += CONST_BLOCKS_CHUNK;
+                          callback();
+                        });
+                    }, next);
+                }
+              ], callback);
+            },
+            process: function(processFinished){
+              async.whilst(
+                function () {
+                  return !finished;
+                },
+                function (callback) {
+                  async.waterfall([
+                    function (next) {
+                      setTimeout(next, 1000);
+                    },
+                    function (next) {
+                      var succeed;
+                      async.doWhilst(
+                        function (callback) {
+                          var currentNumber = -1;
+                          server.dal.getCurrentNumber()
+                            .then(function(theCurrentNumber){
+                              currentNumber = theCurrentNumber;
+                              return server.dal.getBlock(currentNumber + 1);
+                            })
+                            .then(function(block){
+                              if (block.number >= 0) {
+                                succeed = true;
+                                return Q.Promise(function(resolve, reject){
+                                  // Rawification of transactions
+                                  block.transactions.forEach(function (tx) {
+                                    tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+                                    tx.raw += tx.signatories.join('\n') + '\n';
+                                    tx.raw += tx.inputs.join('\n') + '\n';
+                                    tx.raw += tx.outputs.join('\n') + '\n';
+                                    if (tx.comment)
+                                      tx.raw += tx.comment + '\n';
+                                    tx.raw += tx.signatures.join('\n') + '\n';
+                                    tx.version = 1;
+                                    tx.currency = conf.currency;
+                                    tx.issuers = tx.signatories;
+                                    tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
+                                  });
+                                  BlockchainService.submitBlock(block, true, function(err) {
+                                    err ? reject(err) : resolve();
+                                  })
+                                });
+                              }
+                              else {
+                                succeed = false;
+                                return Q.Promise(function(resolve, reject){
+                                  node.blockchain.current(function (err, current) {
+                                    if (err) {
+                                      reject(err);
+                                    } else {
+                                      finished = current.number == currentNumber;
+                                      resolve();
+                                    }
+                                  });
+                                });
+                              }
+                            })
+                            .done(callback);
+                        },
+                        function () {
+                          return succeed;
+                        }, next);
+                    }
+                  ], callback);
+                }, processFinished);
+            }
+          }, function(err) {
+            next(err);
+          });
         },
 
         function (next) {
@@ -154,13 +248,13 @@ module.exports = function Synchroniser (server, host, port, conf) {
             }
             else next();
           });
-        },
+        }
       ], function (err, result) {
         logger.info('Sync finished.');
         done(err);
       });
     })
-  }
+  };
 
   //============
   // Peer

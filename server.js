@@ -3,6 +3,7 @@ var stream     = require('stream');
 var async      = require('async');
 var util       = require('util');
 var _          = require('underscore');
+var Q          = require('q');
 var common     = require('./app/lib/common');
 var constants  = require('./app/lib/constants');
 var sqliteDAL  = require('./app/lib/dal/sqliteDAL');
@@ -31,13 +32,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   var initFunctions = [
     function (done) {
       that.connect(function (err) {
-        that.emit('connected', err);
         done(err);
       });
     },
     function (done) {
       that.initServices(function (err) {
-        that.emit('services');
         done(err);
       });
     }
@@ -56,11 +55,11 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     });
   };
 
-  this.init = function () {
+  this.init = function (done) {
     // Launches the server
     async.forEachSeries(todoOnInit, function(f, cb){
       f(cb);
-    });
+    }, done);
   };
 
   this.submit = function (obj, isInnerWrite, done) {
@@ -103,27 +102,31 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.connect = function (done) {
-    // Init connection
-    if (!that.dal) {
-      sqliteDAL.memory(dbConf.name || "default")
-        .then(function(dal){
-          that.dal = dal;
-          return that.dal.initDabase();
-        })
-        .then(function() {
-          return that.dal.loadConf();
-        })
-        .then(function(conf){
-          that.conf = _(conf).extend(overrideConf || {});
-          done();
-        })
-        .fail(function(err){
-          done(err);
-        });
-    }
-    else {
-      done();
-    }
+    return Q.Promise(function(resolve, reject){
+      // Init connection
+      if (!that.dal) {
+        sqliteDAL.file(dbConf.name || "default")
+          .then(function(dal){
+            that.dal = dal;
+            return that.dal.initDabase();
+          })
+          .then(function() {
+            return that.dal.loadConf();
+          })
+          .then(function(conf){
+            that.conf = _(conf).extend(overrideConf || {});
+            done();
+          })
+          .fail(function(err){
+            done(err);
+            reject(err);
+          });
+      }
+      else {
+        done();
+        resolve();
+      }
+    });
   };
 
   this.start = function (done) {
@@ -189,7 +192,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.disconnect = function(done) {
-    that.conn.close(function (err) {
+    that.dal.close(function (err) {
       if(err)
         logger.error(err);
       if (typeof done == 'function')

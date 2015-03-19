@@ -131,7 +131,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     ], done);
   };
 
-  this.submitBlock = function (obj, done) {
+  this.submitBlock = function (obj, doCheck, done) {
     blockFifo.push(function (sent) {
       var block = new Block(obj);
       var currentBlock = null;
@@ -143,17 +143,25 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         },
         function (current, next){
           currentBlock = current;
-          localValidation.validate(block, next);
-        },
-        function (next){
-          globalValidation.validate(block, next);
-        },
-        function (next) {
-          // Check document's coherence
-          checkIssuer(block, next);
-        },
-        function (next) {
-          BlockchainService.stopPoWThenProcessAndRestartPoW(async.apply(saveBlockData, currentBlock, block), next);
+          if (doCheck) {
+            async.waterfall([
+              function (next){
+                localValidation.validate(block, next);
+              },
+              function (next){
+                globalValidation.validate(block, next);
+              },
+              function (next) {
+                // Check document's coherence
+                checkIssuer(block, next);
+              },
+              function (next) {
+                BlockchainService.stopPoWThenProcessAndRestartPoW(async.apply(saveBlockData, currentBlock, block), next);
+              }
+            ], next);
+          } else {
+            saveBlockData(currentBlock, block, next);
+          }
         }
       ], function (err) {
         var eligibleSelfBlock = currentBlock && currentBlock.number == block.number - 1 && block.issuer == PeeringService.pubkey;

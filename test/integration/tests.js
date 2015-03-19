@@ -5,11 +5,11 @@ var node   = require('./tools/node');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
 
-//require('log4js').configure({
-//   "appenders": [
-//     //{ category: "db1", type: "console" }
-//   ]
-//});
+require('log4js').configure({
+   "appenders": [
+     //{ category: "db1", type: "console" }
+   ]
+});
 
 describe("Integration", function() {
 

@@ -1,5 +1,6 @@
 var async       = require('async');
 var util        = require('util');
+var _           = require('underscore');
 var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
 var dos2unix    = require('./app/lib/dos2unix');
@@ -55,16 +56,16 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         return obj.endpoints ? true : false;
       },
       treatment: function (server, obj, next) {
-        plogger.debug('⬇ PEER %s', obj.pub);
+        plogger.debug('⬇ PEER %s', obj.pubkey);
         async.waterfall([
           function (next){
             that.PeeringService.submit(obj, next);
           },
           function (peer, next){
-            plogger.debug('✔ PEER %s %s:%s', peer.pub, peer.getIPv4() || peer.getIPv6(), peer.getPort());
+            plogger.debug('✔ PEER %s %s:%s', peer.pubkey, peer.getIPv4() || peer.getIPv6(), peer.getPort());
             that.emit('peer', peer);
             next(null, peer);
-          },
+          }
         ], next);
       }
     },{
@@ -258,9 +259,9 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.dal.findPeers(that.PeeringService.pubkey, next);
       },
       function (peers, next) {
-        var p1 = new Peer({});
+        var p1 = { version: 1, currency: currency };
         if(peers.length != 0){
-          p1 = peers[0];
+          p1 = _(peers[0]).extend({ version: 1, currency: currency });
         }
         var endpoint = 'BASIC_MERKLED_API';
         if (conf.remotehost) {
@@ -278,11 +279,11 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         var p2 = {
           version: 1,
           currency: currency,
-          pub: that.PeeringService.pubkey,
+          pubkey: that.PeeringService.pubkey,
           block: current ? [current.number, current.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
           endpoints: [endpoint]
         };
-        var raw1 = p1.getRaw().dos2unix();
+        var raw1 = new Peer(p1).getRaw().dos2unix();
         var raw2 = new Peer(p2).getRaw().dos2unix();
         if (raw1 != raw2) {
           logger.debug('Generating server\'s peering entry...');
@@ -294,7 +295,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
               p2.signature = signature;
               p2.pubkey = that.PeeringService.pubkey;
               that.submit(p2, false, next);
-            },
+            }
           ], function (err) {
             next(err);
           });
@@ -308,8 +309,8 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (peer, next){
         // Set peer's statut to UP
+        peer.status = 'UP';
         that.PeeringService.peer(peer);
-        that.PeeringService.peer().status = 'UP';
         that.dal.savePeer(that.PeeringService.peer(), function (err) {
           // Update it in memory
           next(err);

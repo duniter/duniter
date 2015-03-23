@@ -3,6 +3,7 @@ var util          = require('util');
 var split         = require('../../../split');
 var rawer         = require('../../../rawer');
 var sha1          = require('sha1');
+var moment        = require('moment');
 var unix2dos      = require('../../../unix2dos');
 var constants     = require('../../../constants');
 
@@ -54,7 +55,7 @@ function IdentityParser (onError) {
 
   this._clean = function (obj) {
     if (obj.uid && obj.time && obj.pubkey) {
-      obj.hash = sha1(obj.uid + obj.time.timestamp() + obj.pubkey).toUpperCase();
+      obj.hash = sha1(obj.uid + moment(obj.time).unix() + obj.pubkey).toUpperCase();
     }
   };
 

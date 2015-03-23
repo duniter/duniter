@@ -22,7 +22,7 @@ function Peer(json) {
   });
 
   this.keyID = function () {
-    return this.pub && this.pub.length > 10 ? this.pub.substring(0, 10) : "Unknown";
+    return this.pubkey && this.pubkey.length > 10 ? this.pubkey.substring(0, 10) : "Unknown";
   };
 
   this.setStatus = function (newStatus, dal, done) {
@@ -56,7 +56,7 @@ function Peer(json) {
       json[key] = obj[key];
     });
     json.raw = this.getRaw();
-    json.pubkey = this.pub;
+    json.pubkey = this.pubkey;
     return json;
   };
 
@@ -133,3 +133,9 @@ function Peer(json) {
     return this.getURL() ? true : false;
   }
 }
+
+Peer.statics = {};
+
+Peer.statics.peerize = function(p) {
+  return p != null ? new Peer(p) : null;
+};

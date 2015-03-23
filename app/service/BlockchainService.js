@@ -933,7 +933,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
               next();
             }
           ], function (err) {
-            logger.error(err);
+            if (err)
+              logger.error(err);
+            else
+              logger.info('Transaction added to block');
             callback();
           });
         }, next);

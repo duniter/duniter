@@ -14,6 +14,7 @@ var extractSignature = require('../lib/streams/extractSignature');
 var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger');
 var constants        = require('../lib/constants');
+var Peer             = require('../lib/entity/peer');
 var plogger          = logger('peering');
 var slogger          = logger('status');
 
@@ -51,7 +52,7 @@ function NetworkBinding (peerServer, conf) {
             .then(function(peers) {
               var map = {};
               peers.forEach(function (peer){
-                map[peer.hash] = peer.json();
+                map[peer.hash] = Peer.statics.peerize(peer).json();
               });
               done(null, map);
             })

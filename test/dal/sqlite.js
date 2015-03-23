@@ -1,7 +1,8 @@
-var should   = require('should');
-var assert   = require('assert');
-var fs = require('fs');
+var should = require('should');
+var assert = require('assert');
+var fs     = require('fs');
 var sqlite = require('../../app/lib/dal/sqliteDAL');
+var Peer   = require('../../app/lib/entity/peer');
 
 //require('log4js').configure({
 //  "appenders": [
@@ -178,7 +179,7 @@ describe("DAL", function(){
   });
 
   it('should have 1 peer if 1 is created', function(){
-    return sqliteDAL.savePeer(mocks.peer1)
+    return sqliteDAL.savePeer(new Peer(mocks.peer1))
       .then(sqliteDAL.listAllPeers)
       .then(function(peers){
         peers.should.have.length(1);

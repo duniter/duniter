@@ -154,7 +154,7 @@ function WOTBinding (wotServer) {
                   }
                   cert.uid = idty.uid;
                   cert.isMember = idty.member;
-                  server.dal.getBlock(cert.block_number, next);
+                  wotServer.dal.getBlock(cert.block_number, next);
                 },
                 function (block, next) {
                   cert.cert_time = {
@@ -228,7 +228,7 @@ function WOTBinding (wotServer) {
                   cert.pubkey = idty.pubkey;
                   cert.uid = idty.uid;
                   cert.isMember = idty.member;
-                  server.dal.getBlock(cert.block_number, next);
+                  wotServer.dal.getBlock(cert.block_number, next);
                 },
                 function (block, next) {
                   cert.cert_time = {

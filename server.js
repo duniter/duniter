@@ -239,8 +239,8 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
 
   function openPort (conf, client, done) {
     client.portMapping({
-      public: conf.remoteport,
-      private: conf.port,
+      public: parseInt(conf.remoteport),
+      private: parseInt(conf.port),
       ttl: constants.NETWORK.UPNP.TTL
     }, function(err) {
       return done && done(err);
@@ -264,6 +264,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m'
       }));
     }
+    //app.use(function(req, res, next) {
+    //  console.log('\x1b[90mDEBUG URL - %s\x1b[0m', req.url);
+    //  next();
+    //});
     app.use(express.urlencoded());
     app.use(express.json());
     async.waterfall([

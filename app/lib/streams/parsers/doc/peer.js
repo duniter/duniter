@@ -16,7 +16,7 @@ function PeerParser (onError) {
   var captures = [
     {prop: "version",           regexp: /Version: (.*)/},
     {prop: "currency",          regexp: /Currency: (.*)/},
-    {prop: "pub",               regexp: /PublicKey: (.*)/},
+    {prop: "pubkey",            regexp: /PublicKey: (.*)/},
     {prop: "block",             regexp: constants.PEER.BLOCK},
     {prop: "endpoints",         regexp: /Endpoints:\n([\s\S]*)/, parser: split("\n")},
   ];
@@ -69,7 +69,7 @@ function PeerParser (onError) {
     }
     if(!err){
       // PublicKey
-      if(!obj.pub || !obj.pub.match(constants.BASE58))
+      if(!obj.pubkey || !obj.pubkey.match(constants.BASE58))
         err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect PublicKey field"};
     }
     if(!err){

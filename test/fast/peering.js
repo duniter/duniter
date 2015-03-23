@@ -41,7 +41,7 @@ describe('Peer', function(){
     });
 
     it('should have public key', function(){
-      assert.equal(pr.pub, '3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu');
+      assert.equal(pr.pubkey, '3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu');
     });
 
     it('should have 2 endpoints', function(){

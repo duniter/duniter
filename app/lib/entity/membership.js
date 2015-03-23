@@ -10,6 +10,10 @@ var Membership = function(json) {
    that[key] = json[key];
   });
 
+  this.blockNumber = this.number;
+  this.blockHash = this.fpr;
+  this.version = "1";
+
   this.keyID = function () {
     return this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
   };

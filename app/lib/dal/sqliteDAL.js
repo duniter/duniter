@@ -1,8 +1,10 @@
 var Q       = require('q');
 var _       = require('underscore');
+var sha1    = require('sha1');
 var async   = require('async');
 var mkdirp = require('mkdirp');
 var moment = require('moment');
+var rimraf = require('rimraf');
 var fs = require('fs');
 var uuid = require('node-uuid').v4;
 var util = require('util');
@@ -246,10 +248,10 @@ function SQLiteDAL(db, profile) {
   };
 
   this.getBlock = function(number, done) {
-    return Q.Promise(function(resolve){
+    return Q.Promise(function(resolve, reject){
       fs.readFile(getUCoinHomePath(profile) + '/blocks/' + blockFileName(number) + '.json', 'utf8', function(err, data) {
         if (err) {
-          data = "{}";
+          return reject('Block not found');
         }
         resolve(JSON.parse(data));
       })
@@ -294,16 +296,16 @@ function SQLiteDAL(db, profile) {
           });
         });
         // LazyLoad
-        if(rows.length != undefined) {
+        if(rows && rows.length != undefined) {
           return Q.all(rows.map(function(row) {
             return Q.all(model.oneToManys.map(function(o2m) {
-              return model.lazyLoadCollection(that, row, o2m.property);
+              return o2m.cascade && o2m.cascade.lazyLoad ? model.lazyLoadCollection(that, row, o2m.property) : Q();
             }))
           }))
-        } else {
+        } else if (rows) {
           var row = rows;
           return Q.all(model.oneToManys.map(function(o2m) {
-            return model.lazyLoadCollection(that, row, o2m.property);
+            return o2m.cascade && o2m.cascade.lazyLoad ? model.lazyLoadCollection(that, row, o2m.property) : Q();
           }))
         }
       })
@@ -323,6 +325,10 @@ function SQLiteDAL(db, profile) {
 
   this.getCurrentBlockOrNull = function(done) {
     return that.nullIfError(that.getBlockCurrent(), done);
+  };
+
+  this.getCurrentBlockOrError = function(done) {
+    return that.getBlockCurrent(done);
   };
 
   this.getPromoted = function(number, done) {
@@ -372,7 +378,10 @@ function SQLiteDAL(db, profile) {
       .then(function(number) {
         if (number == null) currentNumber = -1;
         else currentNumber = number;
-        return currentNumber != -1 ? that.getBlockOrNull(currentNumber) : null;
+        if (currentNumber != -1)
+          return that.getBlock(currentNumber);
+        else
+          throw 'No current block';
       })
       .then(function(block){
         done && done(null, block);
@@ -426,11 +435,32 @@ function SQLiteDAL(db, profile) {
   };
 
   this.getWritten = function(pubkey, done) {
-    return that.queryOne("SELECT * FROM identity WHERE pubkey = ? AND wasMember", [pubkey], done);
+    return fillInMembershipsOfIdentity(that.queryOne("SELECT * FROM identity WHERE pubkey = ? AND wasMember", [pubkey]), done);
   };
 
+  function fillInMembershipsOfIdentity(queryPromise, done) {
+    return queryPromise
+      .tap(function(row){
+        return Q.all([
+            that.query('SELECT * FROM joiner WHERE issuer = ?', [row.pubkey]),
+            that.query('SELECT * FROM active WHERE issuer = ?', [row.pubkey]),
+            that.query('SELECT * FROM leaver WHERE issuer = ?', [row.pubkey])
+          ])
+          .spread(function(j, a, l) {
+            row.memberships = j.concat(a).concat(l);
+          });
+      })
+      .then(function(rows){
+        done && done(null, rows);
+        return rows;
+      })
+      .fail(function(){
+        done && done(null, null);
+      });
+  }
+
   this.findPeersWhoseHashIsIn = function(hashes, done) {
-    return that.queryOne("SELECT * FROM peer WHERE hash IN ('" + hashes.join('\',\'') + "')", [], done);
+    return that.fillInEntity(that.query("SELECT * FROM peer WHERE hash IN ('" + hashes.join('\',\'') + "')", []), PeerModel, done);
   };
 
   this.getTxByHash = function(hash, done) {
@@ -479,7 +509,7 @@ function SQLiteDAL(db, profile) {
   };
 
   this.getWrittenByUID = function(uid, done) {
-    return that.nullIfError(that.queryOne("SELECT * FROM identity WHERE wasMember AND uid = ?", [uid]), done);
+    return that.fillInEntity(that.nullIfError(that.queryOne("SELECT * FROM identity WHERE wasMember AND uid = ?", [uid])), IdentityModel, done);
   };
 
   this.searchIdentity = function(search, done) {
@@ -629,7 +659,7 @@ function SQLiteDAL(db, profile) {
   };
 
   this.findPeers = function(pubkey, done) {
-    return that.query('SELECT * FROM peer WHERE pubkey = ?', [pubkey], done);
+    return that.fillInEntity(that.query('SELECT * FROM peer WHERE pubkey = ?', [pubkey]), PeerModel, done);
   };
 
   this.getRandomlyUPsWithout = function(pubkeys, minSigDate, done) {
@@ -663,6 +693,7 @@ function SQLiteDAL(db, profile) {
   };
 
   this.savePeer = function(peer, done) {
+    peer.hash = (sha1(peer.getRawSigned()) + "").toUpperCase();
     return saveEntity(PeerModel, peer, done);
   };
 
@@ -701,17 +732,17 @@ function SQLiteDAL(db, profile) {
         done && done(err);
         throw err;
       });
-  }
+  };
 
   function blockFileName(blockNumber) {
     return BLOCK_FILE_PREFIX.substr(0, BLOCK_FILE_PREFIX.length - ("" + blockNumber).length) + blockNumber;
   }
 
   this.merkleForPeers = function(done) {
-    return that.query('SELECT * FROM merkle_leaf WHERE tree = ?', ['peer'])
+    return that.query('SELECT * FROM merkle_leaf WHERE tree = ?', ['peers'])
       .then(function(leaves){
         var merkle = new Merkle();
-        merkle.initialize(leaves);
+        merkle.initialize(leaves.map(function(l) { return l.hash }));
         done && done(null, merkle);
         return merkle;
       })
@@ -722,7 +753,7 @@ function SQLiteDAL(db, profile) {
   };
 
   that.updateMerkleForPeers = function(done) {
-    return that.run("DELETE FROM merkle_leaf WHERE tree = ?", ['peer'])
+    return that.run("DELETE FROM merkle_leaf WHERE tree = ?", ['peers'])
       .then(function(){
         return that.findAllPeersNEWUPBut([]);
       })
@@ -817,7 +848,7 @@ function SQLiteDAL(db, profile) {
 
   this.loadStats = function(done) {
     return Q.Promise(function(resolve){
-      fs.readFile(getUCoinHomePath(profile) + '/stats.json', 'uft8', function(err, data) {
+      fs.readFile(getUCoinHomePath(profile) + '/stats.json', 'utf8', function(err, data) {
         if (err || !data) {
           data = "{}";
         }
@@ -964,6 +995,9 @@ function SQLiteDAL(db, profile) {
       });
     })
       .then(function(){
+        return Q.nfcall(rimraf, getUCoinHomePath(profile) + '/blocks/');
+      })
+      .then(function(){
         done && done();
       })
       .fail(function(err){
@@ -991,7 +1025,10 @@ function SQLiteDAL(db, profile) {
   };
 
   this.resetPeers = function(done) {
-    return that.dropModel('peer')
+    return Q.all([
+      that.dropModel('peer'),
+      that.dropModel('endpoint')
+    ])
       .then(function(){
         done && done();
       })
@@ -1088,6 +1125,7 @@ function PeerModel() {
   this.fields = [
     'block',
     'hash',
+    'version',
     'currency',
     'signature',
     'status',
@@ -1098,6 +1136,10 @@ function PeerModel() {
     property: 'endpoints',
     model: EndpointModel,
     fk: 'pubkey',
+    cascade: {
+      persist: true,
+      lazyLoad: true
+    },
     toDB: function(str, index) {
       return {
         currency: '',
@@ -1116,6 +1158,7 @@ function PeerModel() {
     return 'CREATE TABLE IF NOT EXISTS peer (' +
       'pubkey VARCHAR(50) NOT NULL,' +
       'block VARCHAR(60) DEFAULT NULL,' +
+      'version INTEGER DEFAULT NULL,' +
       'hash CHAR(40) DEFAULT NULL,' +
       'currency VARCHAR(50) DEFAULT NULL,' +
       'signature VARCHAR(100) DEFAULT NULL,' +
@@ -1156,117 +1199,116 @@ function BlockModel() {
     'nonce'
   ];
 
-  this.oneToManys = [];
-  //this.oneToManys = [{
-  //  property: 'identities',
-  //  model: IdentityModel,
-  //  fk: 'block',
-  //  cascade: {
-  //    persist: false
-  //  },
-  //  toDB: function(inline, index) {
-  //    var idty = Identity.statics.fromInline(inline);
-  //    idty.indexNb = index;
-  //    return idty;
-  //  },
-  //  toEntities: function(rows) {
-  //    return rows.map(function(row) {
-  //      row.time = new Date(row.time);
-  //      return Identity.statics.toInline(row);
-  //    })
-  //  }
-  //},{
-  //  property: 'certifications',
-  //  model: CertificationModel,
-  //  fk: 'block',
-  //  cascade: {
-  //    persist: false
-  //  },
-  //  toDB: function(inline, index) {
-  //    var idty = Certification.statics.fromInline(inline);
-  //    idty.indexNb = index;
-  //    return idty;
-  //  },
-  //  toEntities: function(rows) {
-  //    return rows.map(function(row) {
-  //      return Certification.statics.toInline(row, CertificationModel);
-  //    })
-  //  }
-  //},{
-  //  property: 'joiners',
-  //  model: JoinerModel,
-  //  fk: 'block',
-  //  toDB: function(inline, index) {
-  //    var ms = Membership.statics.fromInline(inline, 'IN');
-  //    ms.indexNb = index;
-  //    return ms;
-  //  },
-  //  toEntities: function(rows) {
-  //    return rows.map(function(row) {
-  //      row.certts = new Date(row.certts);
-  //      return Membership.statics.toInline(row);
-  //    })
-  //  }
-  //},{
-  //  property: 'actives',
-  //  model: ActiveModel,
-  //  fk: 'block',
-  //  toDB: function(inline, index) {
-  //    var ms = Membership.statics.fromInline(inline, 'IN');
-  //    ms.indexNb = index;
-  //    return ms;
-  //  },
-  //  toEntities: function(rows) {
-  //    return rows.map(function(row) {
-  //      row.certts = new Date(row.certts);
-  //      return Membership.statics.toInline(row);
-  //    })
-  //  }
-  //},{
-  //  property: 'leavers',
-  //  model: LeaverModel,
-  //  fk: 'block',
-  //  toDB: function(inline, index) {
-  //    var idty = Membership.statics.fromInline(inline, 'OUT');
-  //    idty.indexNb = index;
-  //    return idty;
-  //  },
-  //  toEntities: function(rows) {
-  //    return rows.map(function(row) {
-  //      row.certts = new Date(row.certts);
-  //      return Membership.statics.toInline(row);
-  //    })
-  //  }
-  //},{
-  //  property: 'excluded',
-  //  model: ExcludedModel,
-  //  fk: 'block',
-  //  toDB: function(inline, index) {
-  //    var excluded = { pubkey: inline };
-  //    excluded.indexNb = index;
-  //    return excluded;
-  //  },
-  //  toEntities: function(rows) {
-  //    return rows.map(function(row) {
-  //      return row.pubkey;
-  //    })
-  //  }
-  //},{
-  //  property: 'transactions',
-  //  model: TransactionModel,
-  //  fk: 'block',
-  //  toDB: function(tx, index) {
-  //    tx.indexNb = index;
-  //    return tx;
-  //  },
-  //  toEntities: function(rows) {
-  //    return rows.map(function(row) {
-  //      delete row.created;
-  //      delete row.updated;
-  //      return row;
-  //    });
-  //  }
-  //}];
+  this.oneToManys = [{
+    property: 'identities',
+    model: IdentityModel,
+    fk: 'block',
+    cascade: {
+      persist: false
+    },
+    toDB: function(inline, index) {
+      var idty = Identity.statics.fromInline(inline);
+      idty.indexNb = index;
+      return idty;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.time = new Date(row.time);
+        return Identity.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'certifications',
+    model: CertificationModel,
+    fk: 'block',
+    cascade: {
+      persist: false
+    },
+    toDB: function(inline, index) {
+      var idty = Certification.statics.fromInline(inline);
+      idty.indexNb = index;
+      return idty;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return Certification.statics.toInline(row, CertificationModel);
+      })
+    }
+  },{
+    property: 'joiners',
+    model: JoinerModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var ms = Membership.statics.fromInline(inline, 'IN');
+      ms.indexNb = index;
+      return ms;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.certts = new Date(row.certts);
+        return Membership.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'actives',
+    model: ActiveModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var ms = Membership.statics.fromInline(inline, 'IN');
+      ms.indexNb = index;
+      return ms;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.certts = new Date(row.certts);
+        return Membership.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'leavers',
+    model: LeaverModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var idty = Membership.statics.fromInline(inline, 'OUT');
+      idty.indexNb = index;
+      return idty;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        row.certts = new Date(row.certts);
+        return Membership.statics.toInline(row);
+      })
+    }
+  },{
+    property: 'excluded',
+    model: ExcludedModel,
+    fk: 'block',
+    toDB: function(inline, index) {
+      var excluded = { pubkey: inline };
+      excluded.indexNb = index;
+      return excluded;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        return row.pubkey;
+      })
+    }
+  },{
+    property: 'transactions',
+    model: TransactionModel,
+    fk: 'block',
+    toDB: function(tx, index) {
+      tx.indexNb = index;
+      return tx;
+    },
+    toEntities: function(rows) {
+      return rows.map(function(row) {
+        delete row.created;
+        delete row.updated;
+        return row;
+      });
+    }
+  }];
 
   this.sqlCreate = function() {
     return ['CREATE TABLE IF NOT EXISTS block (' +
@@ -1523,6 +1565,10 @@ function TransactionModel() {
     property: 'signatories',
     model: SignatoryModel,
     fk: 'tx_id',
+    cascade: {
+      persist: true,
+      lazyLoad: true
+    },
     toDB: function(inline, index) {
       var signatory = { pubkey: inline };
       signatory.indexNb = index;
@@ -1537,6 +1583,10 @@ function TransactionModel() {
     property: 'signatures',
     model: TxSignatoryModel,
     fk: 'tx_id',
+    cascade: {
+      persist: true,
+      lazyLoad: true
+    },
     toDB: function(inline, index) {
       var signatory = { sig: inline };
       signatory.indexNb = index;
@@ -1551,6 +1601,10 @@ function TransactionModel() {
     property: 'inputs',
     model: InputModel,
     fk: 'tx_id',
+    cascade: {
+      persist: true,
+      lazyLoad: true
+    },
     toDB: function(inline, index) {
       var sp = inline.split(':');
       var input = {
@@ -1572,6 +1626,10 @@ function TransactionModel() {
     property: 'outputs',
     model: OutputModel,
     fk: 'tx_id',
+    cascade: {
+      persist: true,
+      lazyLoad: true
+    },
     toDB: function(inline, index) {
       var sp = inline.split(':');
       var output = {

@@ -605,7 +605,7 @@ function checkSingleTransactionSignature (tx, done) {
 function checkPeerSignature (peer, done) {
   var raw = rawer.getPeerWithoutSignature(peer);
   var sig = peer.signature;
-  var pub = peer.pubkey || peer.pub;
+  var pub = peer.pubkey;
   var signaturesMatching = crypto.verify(raw, sig, pub);
   done(signaturesMatching ? null : 'Signature from a peer must match');
 }

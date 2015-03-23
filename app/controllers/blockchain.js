@@ -1,6 +1,7 @@
 var async            = require('async');
 var _                = require('underscore');
 var es               = require('event-stream');
+var moment           = require('moment');
 var dos2unix         = require('../lib/dos2unix');
 var versionFilter    = require('../lib/streams/versionFilter');
 var currencyFilter   = require('../lib/streams/currencyFilter');
@@ -11,10 +12,11 @@ var parsers          = require('../lib/streams/parsers/doc');
 var logger           = require('../lib/logger')();
 var blockchainDao    = require('../lib/blockchainDao');
 var globalValidator  = require('../lib/globalValidator');
+var Membership       = require('../lib/entity/membership');
 
 module.exports = function (wotServer) {
   return new BlockchainBinding(wotServer);
-}
+};
 
 function BlockchainBinding (wotServer) {
 
@@ -29,6 +31,7 @@ function BlockchainBinding (wotServer) {
 
   // Models
   var Block      = require('../lib/entity/block');
+  var Stat       = require('../lib/entity/stat');
 
   this.parseMembership = function (req, res) {
     res.type('application/json');
@@ -56,7 +59,7 @@ function BlockchainBinding (wotServer) {
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
-  }
+  };
 
   this.parameters = function (req, res) {
     res.type('application/json');
@@ -103,7 +106,7 @@ function BlockchainBinding (wotServer) {
           return;
         }
         res.type('application/json');
-        res.send(200, JSON.stringify({ result: stat.json() }, null, "  "));
+        res.send(200, JSON.stringify({ result: new Stat(stat).json() }, null, "  "));
       });
     }
   }
@@ -124,7 +127,7 @@ function BlockchainBinding (wotServer) {
       }
       res.send(200, JSON.stringify(new Block(promoted).json(), null, "  "));
     });
-  }
+  };
 
   this.blocks = function (req, res) {
     res.type('application/json');
@@ -161,7 +164,7 @@ function BlockchainBinding (wotServer) {
                 blocks.push(new Block(block).json());
                 i++;
                 next();
-              },
+              }
             ], next);
           }, function (err) {
             next(err, blocks);
@@ -174,7 +177,7 @@ function BlockchainBinding (wotServer) {
       }
       res.send(200, JSON.stringify(blocks, null, "  "));
     });
-  }
+  };
 
   this.current = function (req, res) {
     res.type('application/json');
@@ -189,7 +192,7 @@ function BlockchainBinding (wotServer) {
       }
       res.send(200, JSON.stringify(new Block(current).json(), null, "  "));
     });
-  }
+  };
 
   this.hardship = function (req, res) {
     res.type('application/json');
@@ -214,7 +217,7 @@ function BlockchainBinding (wotServer) {
           nextBlockNumber = current ? current.number + 1 : 0;
         }
         globalValidator(conf, blockchainDao(conn, null, server.dal)).getTrialLevel(member, next);
-      },
+      }
     ], function (err, nbZeros) {
       if(err){
         res.send(404, err);
@@ -235,7 +238,7 @@ function BlockchainBinding (wotServer) {
       },
       function (search, next){
         IdentityService.findMember(search, next);
-      },
+      }
     ], function (err, idty) {
       if(err){
         res.send(400, err);
@@ -244,10 +247,11 @@ function BlockchainBinding (wotServer) {
       var json = {
         pubkey: idty.pubkey,
         uid: idty.uid,
-        sigDate: idty.time.timestamp(),
+        sigDate: moment(idty.time).unix(),
         memberships: []
       };
       idty.memberships.forEach(function(ms){
+        ms = new Membership(ms);
         json.memberships.push({
           version: ms.version,
           currency: conf.currency,

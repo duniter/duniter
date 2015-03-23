@@ -2,6 +2,7 @@ var async    = require('async');
 var sha1     = require('sha1');
 var util     = require('util');
 var stream   = require('stream');
+var Peer     = require('../entity/peer');
 var logger   = require('../../lib/logger')('router');
 
 module.exports = function (serverPubkey, conn, conf, dal) {
@@ -19,7 +20,7 @@ function Router (serverPubkey, conn, conf, dal) {
     // else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers(),                        done); }
     // else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers(),                        done); }
     else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers(),                        done); }
-    else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pub),              done); }
+    else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pubkey),           done); }
     else if (obj.from && obj.from == serverPubkey) {
       // Route ONLY status emitted by this node
       route('status', obj, getTargeted(obj.to), done);
@@ -47,19 +48,19 @@ function Router (serverPubkey, conn, conf, dal) {
       that.push({
         'type': type,
         'obj': obj,
-        'peers': peers || []
+        'peers': (peers || []).map(Peer.statics.peerize)
       });
       done();
     });
   }
 
-  function getRandomInUPPeers (done) {
+  function getRandomInUPPeers () {
     return getValidUpPeers([serverPubkey]);
-  };
+  }
 
   function getRandomInUPPeersBut (pubkey) {
     return getValidUpPeers([serverPubkey, pubkey]);
-  };
+  }
 
   function getValidUpPeers (without) {
     return function (done) {
@@ -76,7 +77,7 @@ function Router (serverPubkey, conn, conf, dal) {
           async.forEachSeries(peers, function (p, callback) {
             async.waterfall([
               function (next) {
-                dal.isMember(p.pub, next);
+                dal.isMember(p.pubkey, next);
               },
               function (isMember, next) {
                 isMember ? members.push(p) : nonmembers.push(p);
@@ -125,6 +126,6 @@ function Router (serverPubkey, conn, conf, dal) {
     }
     done(null, chosen);
   }
-};
+}
 
 util.inherits(Router, stream.Transform);

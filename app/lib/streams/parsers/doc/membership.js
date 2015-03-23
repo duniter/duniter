@@ -2,6 +2,7 @@ var GenericParser = require('./GenericParser');
 var rawer         = require('../../../rawer');
 var util          = require('util');
 var sha1          = require('sha1');
+var moment        = require('moment');
 var split         = require('../../../split');
 var unix2dos      = require('../../../unix2dos');
 var constants     = require('../../../constants');
@@ -68,7 +69,7 @@ function MembershipParser (onError) {
         err = {code: codes['BAD_USERID'], message: "UserID must match udid2 format"};
     }
     if(!err){
-      if(obj.certts && (typeof obj == 'string' ? !obj.certts.match(/^\d+$/) : obj.certts.timestamp() <= 0))
+      if(obj.certts && (typeof obj == 'string' ? !obj.certts.match(/^\d+$/) : moment(obj.certts).unix() <= 0))
         err = {code: codes['BAD_CERTTS'], message: "CertTS must be a valid timestamp"};
     }
     return err && err.message;

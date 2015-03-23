@@ -54,7 +54,7 @@ module.exports = new function() {
     raw += "Version: " + json.version + "\n";
     raw += "Type: Peer\n";
     raw += "Currency: " + json.currency + "\n";
-    raw += "PublicKey: " + json.pub + "\n";
+    raw += "PublicKey: " + json.pubkey + "\n";
     raw += "Block: " + json.block + "\n";
     raw += "Endpoints:" + "\n";
     (json.endpoints || []).forEach(function(ep){

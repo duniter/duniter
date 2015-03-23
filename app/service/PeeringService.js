@@ -38,13 +38,13 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
     if (newPeer) {
       peer = newPeer;
     }
-    return peer;
+    return Peer.statics.peerize(peer);
   };
 
   this.load = function (done) {
   };
 
-  this.submit = function(peering, callback){
+  this.submit = function(peering, done){
     var peer = new Peer(peering);
     var sp = peer.block.split('-');
     var number = sp[0];
@@ -62,10 +62,10 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
       },
       function (block, next){
         sigTime = block ? block.medianTime : 0;
-        dal.getPeerOrNull(peer.pub, next);
+        dal.getPeerOrNull(peer.pubkey, next);
       },
       function (found, next){
-        var peerEntity = peer;
+        var peerEntity = Peer.statics.peerize(found || peer);
         var previousHash = null;
         if(found){
           // Already existing peer
@@ -75,7 +75,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
             next(constants.ERROR.PEER.ALREADY_RECORDED);
             return;
           }
-          peerEntity = found;
+          peerEntity = Peer.statics.peerize(found);
           previousHash = peerEntity.hash;
           peer.copyValues(peerEntity);
           peerEntity.sigDate = new Date(sigTime*1000);
@@ -86,10 +86,10 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
       },
       function (recordedPR, previousHash, next) {
         dal.updateMerkleForPeers(function(err) {
-          next(err, recordedPR);
+          next(err, Peer.statics.peerize(recordedPR));
         });
       }
-    ], callback);
+    ], done);
   };
 
   this.submitStatus = function(obj, callback){
@@ -167,8 +167,8 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
     async.waterfall([
       function (next){
         var statusToSend = actionForReceived[peer.status] || 'NEW';
-        that.sendStatusTo(statusToSend, [peer.pub], next);
-      },
+        that.sendStatusTo(statusToSend, [peer.pubkey], next);
+      }
     ], function (err) {
       if (err) plogger.error(err);
       done();
@@ -194,7 +194,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         });
       }
     ], done);
-  }
+  };
 
   var statusUpfifo = async.queue(function (task, callback) {
     task(callback);
@@ -245,7 +245,10 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
       function (next) {
         dal.getCurrentBlockOrNull(next);
       },
-      function(next) {
+      function(block, next) {
+        if (block) {
+          current = block;
+        }
         dal.getPeers(pubs, next);
       },
       function (peers, next) {
@@ -257,7 +260,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
             status: statusStr,
             block: current ? [current.number, current.hash].join('-') : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709',
             from: selfPubkey,
-            to: peer.pub
+            to: peer.pubkey
           });
           async.waterfall([
             function (next){
@@ -266,7 +269,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
             function (signature, next) {
               status.signature = signature;
               if (statusStr == 'NEW') {
-                status.peer = _(that.peer()).extend({ peerTarget: peer.pub });
+                status.peer = _(that.peer()).extend({ peerTarget: peer.pubkey });
               }
               that.emit('status', status);
               peer.statusSent = status.status;

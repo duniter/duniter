@@ -16,6 +16,7 @@ var Identity = function(json) {
   this.wasMember = false;
   this.signed = [];
   this.certs = [];
+  this.memberships = [];
 
   _(json).keys().forEach(function(key) {
    that[key] = json[key];
@@ -23,6 +24,7 @@ var Identity = function(json) {
 
   this.written = this.written || this.member;
   this.hash = sha1(this.uid + moment(this.time).unix() + this.pubkey).toUpperCase();
+  this.memberships = this.memberships || [];
 
   this.json = function () {
     var others = [];

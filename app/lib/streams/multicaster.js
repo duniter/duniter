@@ -101,7 +101,7 @@ function Multicaster () {
         "timeout": 1000*10
       }, function (err, res, body) {
         if (err)
-          that.push({ unreachable: true, peer: { pubkey: peer.pub }});
+          that.push({ unreachable: true, peer: { pubkey: peer.pubkey }});
         done(err, res, body);
       });
       postReq.form(data);

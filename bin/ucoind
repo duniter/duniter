@@ -270,7 +270,7 @@ program
   .command('config')
   .description('Register configuration in database')
   .action(service(function (server, conf) {
-    conf.save(function (err) {
+    server.dal.saveConf(conf, function (err) {
       if(err){
         logger.error("Configuration could not be saved: " + err);
       }
@@ -279,7 +279,6 @@ program
       }
       server.disconnect();
       process.exit();
-      return;
     });
   }));
 
@@ -406,7 +405,7 @@ function startWizard(step, server, conf, done) {
       wizDo(conf, next);
     },
     function (next){
-      conf.save(function (err) {
+      server.dal.saveConf(conf, function (err) {
         !err && logger.debug("Configuration saved.");
         next(err);
       });
@@ -507,7 +506,7 @@ function bootstrapServer(host, port, server, conf) {
       }, next);
     },
     function(next) {
-      conf.save(function(err) {
+      server.dal.saveConf(conf, function(err) {
         next(err);
       });
     },

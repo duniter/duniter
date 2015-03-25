@@ -21,6 +21,8 @@ function Peer(json) {
    that[key] = json[key];
   });
 
+  this.endpoints = this.endpoints || [];
+
   this.keyID = function () {
     return this.pubkey && this.pubkey.length > 10 ? this.pubkey.substring(0, 10) : "Unknown";
   };

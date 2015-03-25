@@ -4,9 +4,6 @@ var _           = require('underscore');
 var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
 var dos2unix    = require('./app/lib/dos2unix');
-var logger      = require('./app/lib/logger')('peerserver');
-var plogger     = require('./app/lib/logger')('peer');
-var slogger     = require('./app/lib/logger')('status');
 var WOTServer   = require('./wotserver');
 var signature   = require('./app/lib/signature');
 var parsers     = require('./app/lib/streams/parsers/doc');
@@ -15,6 +12,8 @@ var constants   = require('./app/lib/constants');
 var Peer        = require('../ucoin/app/lib/entity/peer');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
+
+  var logger = require('./app/lib/logger')(dbConf.name);
 
   var selfInterceptors = [
     {
@@ -56,13 +55,13 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         return obj.endpoints ? true : false;
       },
       treatment: function (server, obj, next) {
-        plogger.debug('⬇ PEER %s', obj.pubkey);
+        logger.info('⬇ PEER %s', obj.pubkey);
         async.waterfall([
           function (next){
             that.PeeringService.submit(obj, next);
           },
           function (peer, next){
-            plogger.debug('✔ PEER %s %s:%s', peer.pubkey, peer.getIPv4() || peer.getIPv6(), peer.getPort());
+            logger.info('✔ PEER %s %s:%s', peer.pubkey, peer.getIPv4() || peer.getIPv6(), peer.getPort());
             that.emit('peer', peer);
             next(null, peer);
           }
@@ -74,13 +73,13 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         return obj.status ? true : false;
       },
       treatment: function (server, obj, next) {
-        slogger.debug('⬇ STATUS %s %s', obj.from, obj.status);
+        logger.info('⬇ STATUS %s %s', obj.from, obj.status);
         async.waterfall([
           function (next){
             that.PeeringService.submitStatus(obj, next);
           },
           function (status, peer, wasStatus, next){
-            slogger.debug('✔ STATUS %s %s', status.from, status.status);
+            logger.info('✔ STATUS %s %s', status.from, status.status);
             next(null, status);
           },
         ], next);

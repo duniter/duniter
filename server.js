@@ -13,6 +13,8 @@ var http       = require('http');
 var log4js     = require('log4js');
 var upnp       = require('nat-upnp');
 var jsonpckg   = require('./package.json');
+var router      = require('./app/lib/streams/router');
+var multicaster = require('./app/lib/streams/multicaster');
 
 var INNER_WRITE = true;
 
@@ -145,6 +147,17 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
             that.emit('BMAFailed', err);
           next(err);
         });
+      },
+      function(next) {
+        if (that.conf.routing) {
+          var theRouter = that.router();
+          var theCaster = multicaster();
+          that
+            .pipe(theRouter) // The router asks for multicasting of documents
+            .pipe(theCaster) // The multicaster may answer 'unreachable peer'
+            .pipe(theRouter);
+        }
+        next();
       }
     ], done);
   };
@@ -260,7 +273,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     app.set('port', port);
     if (conf.httplogs) {
       app.use(log4js.connectLogger(logger, {
-        level: 'debug',
         format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m'
       }));
     }
@@ -354,6 +366,15 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     this._read = function () {
     }
   }
+
+  var theRouter;
+
+  this.router = function() {
+    if (!theRouter) {
+      theRouter = router(that.PeeringService.pubkey, that.conf, that.dal);
+    }
+    return theRouter;
+  };
 
   util.inherits(TempStream, stream.Duplex);
 }

@@ -54,8 +54,11 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         localValidator(null).checkPeerSignature(peer, next);
       },
       function (next) {
-        if (peer.block == constants.PEER.SPECIAL_BLOCK)
+        if (peer.block == constants.PEER.SPECIAL_BLOCK) {
+          peer.statusTS = new Date(0);
+          peer.status = 'UP';
           next(null, null);
+        }
         else
           // Check if document is based upon an existing block as time reference
           dal.getBlockOrNull(number, next);

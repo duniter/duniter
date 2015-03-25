@@ -3,13 +3,14 @@ var sha1     = require('sha1');
 var util     = require('util');
 var stream   = require('stream');
 var Peer     = require('../entity/peer');
-var logger   = require('../../lib/logger')('router');
 
-module.exports = function (serverPubkey, conn, conf, dal) {
-  return new Router(serverPubkey, conn, conf, dal);
+module.exports = function (serverPubkey, conf, dal) {
+  return new Router(serverPubkey, conf, dal);
 };
 
-function Router (serverPubkey, conn, conf, dal) {
+function Router (serverPubkey, conf, dal) {
+
+  var logger   = require('../../lib/logger')(dal.profile);
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -17,8 +18,8 @@ function Router (serverPubkey, conn, conf, dal) {
 
   this._write = function (obj, enc, done) {
          if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers(),                        done); }
-    // else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers(),                        done); }
-    // else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers(),                        done); }
+    else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers(),                        done); }
+    else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers(),                        done); }
     else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers(),                        done); }
     else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pubkey),           done); }
     else if (obj.from && obj.from == serverPubkey) {
@@ -68,10 +69,11 @@ function Router (serverPubkey, conn, conf, dal) {
       var nonmembers = [];
       async.waterfall([
         function(next) {
-          dal.getCurrent(next);
+          dal.getCurrentBlockOrNull(next);
         },
         function (current, next) {
-          dal.getRandomlyUPsWithout(without, current.medianTime - conf.avgGenTime*10, next); // Peers with status UP
+          var minDate = current ? current.medianTime - conf.avgGenTime*10 : 0;
+          dal.getRandomlyUPsWithout(without, minDate, next); // Peers with status UP
         },
         function (peers, next) {
           async.forEachSeries(peers, function (p, callback) {
@@ -87,7 +89,7 @@ function Router (serverPubkey, conn, conf, dal) {
           }, next);
         },
         function (next) {
-          logger.debug('New document to send to %s member and %s non-member peers', members.length, nonmembers.length);
+          logger.info('New document to send to %s member and %s non-member peers', members.length, nonmembers.length);
           async.parallel({
             members: async.apply(choose4in, members), // Choose up to 4 member peers
             nonmembers: async.apply(choose4in, nonmembers) // Choose up to 4 non-member peers

@@ -4,7 +4,6 @@ var program     = require('commander');
 var vucoin      = require('vucoin');
 var Q           = require('q');
 var wizard      = require('../app/lib/wizard');
-var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
 var logger      = require('../app/lib/logger')('webapp');
 var signature   = require('../app/lib/signature');

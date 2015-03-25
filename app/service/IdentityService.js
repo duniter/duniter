@@ -3,13 +3,14 @@ var _               = require('underscore');
 var blockchainDao   = require('../lib/blockchainDao');
 var globalValidator = require('../lib/globalValidator');
 var crypto          = require('../lib/crypto');
-var logger          = require('../lib/logger')('pubkey');
 
 module.exports.get = function (conn, conf, dal) {
   return new IdentityService(conn, conf, dal);
 };
 
 function IdentityService (conn, conf, dal) {
+
+  var logger          = require('../lib/logger')(dal.profile);
 
   var Block         = require('../../app/lib/entity/block');
   var Identity      = require('../../app/lib/entity/identity');
@@ -72,7 +73,12 @@ function IdentityService (conn, conf, dal) {
     var selfCert = idty.selfCert();
     var certs = idty.othersCerts();
     var potentialNext;
+    var aCertWasSaved = false;
     fifo.push(function (cb) {
+      logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
+      certs.forEach(function(cert){
+        logger.info('⬇ CERT %s', cert.from);
+      });
       async.waterfall([
         function (next) {
           BlockchainService.current(next);
@@ -100,6 +106,8 @@ function IdentityService (conn, conf, dal) {
               function (existing, next){
                 if (existing) next();
                 else dal.saveCertification(new Certification(mCert), function (err) {
+                  logger.info('✔ CERT %s', mCert.from);
+                  aCertWasSaved = true;
                   next(err);
                 });
               }
@@ -110,12 +118,16 @@ function IdentityService (conn, conf, dal) {
           dal.getIdentityByHashOrNull(obj.hash, next);
         },
         function (existing, next){
-          if (existing)
+          if (existing && !aCertWasSaved) {
+            next('Already up-to-date');
+          }
+          else if (aCertWasSaved)
             next(null, new Identity(existing));
           else {
             // Create
             idty = new Identity(idty);
             dal.saveIdentity(idty, function (err) {
+              logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
               next(err, idty);
             });
           }

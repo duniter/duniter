@@ -4,7 +4,6 @@ var _           = require('underscore');
 var program     = require('commander');
 var vucoin      = require('vucoin');
 var wizard      = require('../app/lib/wizard');
-var router      = require('../app/lib/streams/router');
 var multicaster = require('../app/lib/streams/multicaster');
 var logger      = require('../app/lib/logger')('ucoind');
 var signature   = require('../app/lib/signature');
@@ -366,17 +365,7 @@ function serverStart(server, conf) {
   async.waterfall([
     function (next){
       // Launching server
-      server.start(function (err, app) {
-        next(err);
-      });
-    },
-    function (next) {
-      var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf, server.dal);
-      var theCaster = multicaster();
-      server
-        .pipe(theRouter) // The router ask for multicasting of documents
-        .pipe(theCaster) // The multicaster may answer 'unreachable peer'
-        .pipe(theRouter);
+      server.start(next);
     }
   ], function (err) {
     if(err){
@@ -637,7 +626,7 @@ function overrideConf(conf) {
 
   // Specific internal settings
   conf.createNext = true;
-  return conf;
+  return _(conf).extend({ routing: true });
 }
 
 function connect(callback) {

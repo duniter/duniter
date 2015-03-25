@@ -85,7 +85,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
     async.waterfall([
       function (next){
-        logger.debug('⬇ %s %s', entry.issuer, entry.membership);
+        logger.info('⬇ %s %s', entry.issuer, entry.membership);
         // Get already existing Membership with same parameters
         dal.getMembershipsForHashAndIssuer(entry.hash, entry.issuer, next);
       },
@@ -125,7 +125,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         });
       },
       function (next){
-        logger.debug('✔ %s %s', entry.issuer, entry.membership);
+        logger.info('✔ %s %s', entry.issuer, entry.membership);
         next(null, entry);
       }
     ], done);

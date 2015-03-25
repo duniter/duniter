@@ -37,7 +37,8 @@ var defaultConf = function() {
     "dtDiffEval": 10,
     "httplogs": false,
     "medianTimeBlocks": 20,
-    "udid2": false
+    "udid2": false,
+    "routing": false
   }
 };
 

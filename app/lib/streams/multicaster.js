@@ -21,8 +21,19 @@ function Multicaster () {
   this._write = function (obj, enc, done) {
     that.emit(obj.type, obj.obj, obj.peers);
     done();
-  }
+  };
   
+  that.on('identity', function(idty, peers) {
+    logger.debug('--> new Identity to be sent to %s peer(s)', peers.length);
+    peers.forEach(function(peer){
+      fifo.push(function (sent) {
+        sendIdentity(peer, idty, success(function (err) {
+        }));
+        sent();
+      });
+    });
+  });
+
   that.on('block', function(block, peers) {
     logger.debug('--> new Block to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
@@ -105,6 +116,16 @@ function Multicaster () {
         done(err, res, body);
       });
       postReq.form(data);
+    }, done);
+  }
+
+  function sendIdentity(peer, idty, done) {
+    var keyID = peer.keyID();
+    logger.info('POST identity to %s', keyID.match(/Unknown/) ? peer.getURL() : keyID);
+    post(peer, '/wot/add', {
+      "pubkey": idty.getRawPubkey(),
+      "self": idty.getRawSelf(),
+      "other": idty.getRawOther()
     }, done);
   }
 

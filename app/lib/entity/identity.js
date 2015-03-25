@@ -95,6 +95,18 @@ var Identity = function(json) {
   this.getTargetHash = function () {
     return sha1(this.uid + moment(this.time).unix() + this.pubkey).toUpperCase();
   }
+
+  this.getRawPubkey = function () {
+    return rawer.getIdentityPubkey(this);
+  };
+
+  this.getRawSelf = function () {
+    return rawer.getIdentitySelf(this);
+  };
+
+  this.getRawOther = function () {
+    return rawer.getIdentityOthers(this);
+  };
 };
 
 Identity.statics = {};

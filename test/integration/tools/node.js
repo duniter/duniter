@@ -4,6 +4,7 @@ var request  = require('request');
 var vucoin = require('vucoin');
 var ucoin  = require('../../../index');
 var Configuration = require('../../../app/lib/entity/configuration');
+var Peer          = require('../../../app/lib/entity/peer');
 
 module.exports = function (dbName, options) {
 	return new Node(dbName, options);
@@ -32,15 +33,20 @@ function Node (dbName, options) {
         },
         function (node, next) {
           that.http = node;
-          next();
-        },
-        function(next) {
-          async.forEachSeries(scenarios, function(useCase, callback) {
-            useCase(callback);
-          }, next);
+          that.executes(scenarios, next);
         }
       ], done);
     }
+  };
+
+  this.executes = function (scenarios, done) {
+    async.waterfall([
+      function(next) {
+        async.forEachSeries(scenarios, function(useCase, callback) {
+          useCase(callback);
+        }, next);
+      }
+    ], done);
   };
 
   /**
@@ -98,7 +104,7 @@ function Node (dbName, options) {
         post('/blockchain/block', {
           "block": block.getRawSigned()
         }, next);
-      },
+      }
     ], done);
   }
 
@@ -122,11 +128,18 @@ function Node (dbName, options) {
         function (server, next){
           // Launching server
           that.server = server;
-          that.server.start(function (err, app) {
+          that.server.start(function (err) {
             started = true;
             next(err);
           });
         },
+        function (next) {
+          vucoin(options.remoteipv4, options.remoteport, next);
+        },
+        function (node, next) {
+          that.http = node;
+          next();
+        }
         //function (next) {
         //  var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf, server.dal);
         //  var theCaster = multicaster();
@@ -239,5 +252,15 @@ function Node (dbName, options) {
         callback(res, done);
       });
     }
+  };
+
+  this.peering = function(done) {
+    that.http.network.peering.get(done);
+  };
+
+  this.submitPeer = function(peer, done) {
+    post('/network/peering/peers', {
+      "peer": Peer.statics.peerize(peer).getRawSigned()
+    }, done);
   };
 }

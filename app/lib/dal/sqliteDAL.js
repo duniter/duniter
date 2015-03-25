@@ -9,7 +9,6 @@ var fs = require('fs');
 var uuid = require('node-uuid').v4;
 var util = require('util');
 var sqlite3 = require('sqlite3');
-var logger  = require('../../lib/logger')('data');
 var Identity = require('../entity/identity');
 var Certification = require('../entity/certification');
 var Membership = require('../entity/membership');
@@ -51,7 +50,10 @@ function SQLiteDAL(db, profile) {
 
   var that = this;
 
+  this.profile = profile;
+
   var currentNumber = null;
+  var logger = require('../../lib/logger')(profile);
 
   var models = [
     EndpointModel,
@@ -427,7 +429,7 @@ function SQLiteDAL(db, profile) {
   };
 
   this.getIdentityByHashOrNull = function(hash, done) {
-    return that.nullIfError(that.queryOne("SELECT * FROM identity WHERE hash = ?", [hash]), done);
+    return that.nullIfError(that.fillInEntity(that.queryOne("SELECT * FROM identity WHERE hash = ?", [hash]), IdentityModel), done);
   };
 
   this.getMembers = function(done) {
@@ -669,15 +671,14 @@ function SQLiteDAL(db, profile) {
           return pubkeys.indexOf(peer.pubkey) == -1;
         });
       })
+      .then(function(peers){
+        return that.fillInEntity(Q(peers), PeerModel);
+      })
       .then(function(matchingPeers){
         done && done(null, matchingPeers);
         return matchingPeers;
       })
       .fail(done);
-    //var that = this;
-    //that.find({ pub: { $nin: pubs }, status: { $in: ['NEW', 'NEW_BACK', 'UP'] }, statusSigDate: { $gte: minSigDate } })
-    //  .sort({ 'updated': -1 })
-    //  .exec(done);
   };
 
   this.setDownWithStatusOlderThan = function(minSigTimestamp, done) {
@@ -1075,7 +1076,7 @@ function Model() {
     return Q.Promise(function(resolve, reject){
       async.forEachSeries(that.oneToManys, function(o2m, callback) {
         if (o2m.property == collectionProperty) {
-          dal.queryForEntity(o2m.model, dal.query, [o2m.fk], [entity[that.primary]])
+          dal.queryForEntity(o2m.model, dal.query, [o2m.fk], [entity[o2m.pk || that.primary]])
             .then(function(entities){
               entity[collectionProperty] = o2m.toEntities(entities);
             })
@@ -1390,6 +1391,20 @@ function IdentityModel() {
       'CREATE INDEX IF NOT EXISTS idx_idty_hash ON identity (hash);'
       ];
   };
+
+  this.oneToManys = [{
+    property: 'certs',
+    model: CertificationModel,
+    pk: 'hash',
+    fk: 'target',
+    cascade: {
+      persist: false,
+      lazyLoad: true
+    },
+    toEntities: function(rows) {
+      return rows;
+    }
+  }];
 }
 
 function CertificationModel() {

@@ -17,6 +17,28 @@ module.exports = new function() {
     return dos2unix(raw);
   };
 
+  this.getIdentityPubkey = function (json) {
+    var raw = "";
+    raw += json.pubkey + '\n';
+    return dos2unix(raw);
+  };
+
+  this.getIdentitySelf = function (json) {
+    var raw = "";
+    raw += "UID:" + json.uid + '\n';
+    raw += "META:TS:" + moment(json.time).unix() + '\n';
+    raw += json.sig + '\n';
+    return dos2unix(raw);
+  };
+
+  this.getIdentityOthers = function (json) {
+    var raw = "";
+    (json.certs || []).forEach(function(cert){
+      raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
+    });
+    return (raw && dos2unix(raw)) || raw;
+  };
+
   this.getSelfIdentity = function (json) {
     var raw = "";
     raw += "UID:" + json.uid + '\n';

@@ -2,10 +2,7 @@ var Q       = require('q');
 var _       = require('underscore');
 var sha1    = require('sha1');
 var async   = require('async');
-var mkdirp = require('mkdirp');
 var moment = require('moment');
-var rimraf = require('rimraf');
-var fs = require('fs');
 var uuid = require('node-uuid').v4;
 var util = require('util');
 var sqlite3 = require('sqlite3');
@@ -20,33 +17,35 @@ const BLOCK_FILE_PREFIX = "0000000000";
 
 module.exports = {
   memory: function(profile) {
-    return Q(new SQLiteDAL(new sqlite3.Database(':memory:'), profile));
-  },
-  file: function(profile) {
-    var home = getUCoinHomePath(profile);
-    return makeDir(profile)
-      .then(function(){
-        return new SQLiteDAL(new sqlite3.Database(home + '/' + DB_NAME), profile);
+    return getHomeFS(profile, true)
+      .then(function(params) {
+        return Q(new SQLiteDAL(new sqlite3.Database(':memory:'), profile, params.fs));
       });
   },
-  newFile: function(profile) {
-    var home = getUCoinHomePath(profile);
-    if(fs.existsSync(home + '/' + DB_NAME))
-      fs.unlinkSync(home + '/' + DB_NAME);
-    return this.file(profile);
+  file: function(profile) {
+    return getHomeFS(profile, false)
+      .then(function(params) {
+        return new SQLiteDAL(new sqlite3.Database(params.home + '/' + DB_NAME), profile, params.fs);
+      });
   }
 };
 
+function getHomeFS(profile, isMemory) {
+  var home = getUCoinHomePath(profile);
+  var fs = (isMemory ? require('q-io/fs-mock')({}) : require('q-io/fs'));
+  return fs
+    .makeTree(home)
+    .then(function(){
+      return { fs: fs, home: home };
+    });
+}
+
 function getUCoinHomePath(profile) {
   var userHome = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
-  return userHome + '/.ucoin/' + profile;
+  return userHome + '/.config/ucoin/' + profile;
 }
 
-function makeDir(profile) {
-  return Q.nfcall(mkdirp, getUCoinHomePath(profile));
-}
-
-function SQLiteDAL(db, profile) {
+function SQLiteDAL(db, profile, myFS) {
 
   var that = this;
 
@@ -54,6 +53,8 @@ function SQLiteDAL(db, profile) {
 
   var currentNumber = null;
   var logger = require('../../lib/logger')(profile);
+
+  var headers = [];
 
   var models = [
     EndpointModel,
@@ -95,8 +96,11 @@ function SQLiteDAL(db, profile) {
         async.forEachSeries(queries, function(query, callback) {
           var sql = query.sql;
           var params = query.params;
-          logger.debug('Batch Query: %s | Params: %s', sql, JSON.stringify(params));
-          db.run(sql, params || [], callback);
+          var start = new Date();
+          db.run(sql, params || [], function(err) {
+            logger.debug('Time: %s ms | Batch Query: %s | Params: %s', (new Date() - start), sql, JSON.stringify(params));
+            callback(err);
+          });
         }, function(err) {
           done && done(err);
           if(err) reject(err); else resolve();
@@ -150,6 +154,30 @@ function SQLiteDAL(db, profile) {
       });
     });
   };
+
+  // Wrap core DAL functions to wait for loading events
+  ['run','bacth','query','queryOne'].forEach(function(fname){
+    var f = that[fname];
+    that[fname] = function() {
+      var args = arguments;
+      return onceLoadedDAL().then(function(){
+        return f.apply(that, args);
+      })
+    }
+  });
+
+  var dalLoaded;
+  function onceLoadedDAL() {
+    return dalLoaded || (dalLoaded = (function () {
+        return myFS.read(getUCoinHomePath(profile) + '/headers.json')
+          .then(function (data) {
+            headers = JSON.parse(data);
+          })
+          .fail(function() {
+            headers = [];
+          });
+      })());
+  }
 
   this.queryAggregate = function(sql, params, done) {
     return that.queryOne(sql, params)
@@ -250,14 +278,13 @@ function SQLiteDAL(db, profile) {
   };
 
   this.getBlock = function(number, done) {
-    return Q.Promise(function(resolve, reject){
-      fs.readFile(getUCoinHomePath(profile) + '/blocks/' + blockFileName(number) + '.json', 'utf8', function(err, data) {
-        if (err) {
-          return reject('Block not found');
-        }
-        resolve(JSON.parse(data));
+    return myFS.read(getUCoinHomePath(profile) + '/blocks/' + blockFileName(number) + '.json')
+      .then(function(data) {
+        return JSON.parse(data);
       })
-    })
+      .fail(function(){
+        throw 'Block not found';
+      })
       .then(function(conf){
         done && done(null, conf);
         return conf;
@@ -703,10 +730,10 @@ function SQLiteDAL(db, profile) {
   };
 
   this.saveBlock = function(block, done) {
-    return Q.all([
-      saveEntity(BlockModel, block),
-      that.saveBlockInFile(block)
-    ])
+    return saveEntity(BlockModel, block)
+      .then(function() {
+        return that.saveBlockInFile(block);
+      })
       .then(function(){
         currentNumber = block.number;
         done && done();
@@ -718,13 +745,9 @@ function SQLiteDAL(db, profile) {
   };
 
   this.saveBlockInFile = function (block, done) {
-    return makeDir(profile + '/blocks/')
+    return myFS.makeTree(getUCoinHomePath(profile) + '/blocks/')
       .then(function(){
-        return Q.Promise(function(resolve, reject){
-          fs.writeFile(getUCoinHomePath(profile) + '/blocks/' + blockFileName(block.number) + '.json', JSON.stringify(block, null, ' '), function(err) {
-            err ? reject(err) : resolve();
-          })
-        });
+        return myFS.write(getUCoinHomePath(profile) + '/blocks/' + blockFileName(block.number) + '.json', JSON.stringify(block, null, ' '));
       })
       .then(function(){
         done && done();
@@ -810,34 +833,21 @@ function SQLiteDAL(db, profile) {
   };
 
   this.loadConf = function(done) {
-    return Q.Promise(function(resolve){
-      fs.readFile(getUCoinHomePath(profile) + '/conf.json', 'utf8', function(err, data) {
-        if (err) {
-          data = "{}";
-        }
-        var conf = _(Configuration.statics.defaultConf()).extend(JSON.parse(data));
-        resolve(conf);
+    return myFS.read(getUCoinHomePath(profile) + '/conf.json')
+      .then(function(data){
+        return _(Configuration.statics.defaultConf()).extend(JSON.parse(data));
       })
-    })
+      .fail(function(){
+        return {};
+      })
       .then(function(conf){
         done && done(null, conf);
         return conf;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
       });
   };
 
   this.saveConf = function(conf, done) {
-    return makeDir(profile)
-      .then(function(){
-        return Q.Promise(function(resolve, reject){
-          fs.writeFile(getUCoinHomePath(profile) + '/conf.json', JSON.stringify(conf, null, ' '), function(err) {
-            err ? reject(err) : resolve();
-          })
-        });
-      })
+    return myFS.write(getUCoinHomePath(profile) + '/conf.json', JSON.stringify(conf, null, ' '))
       .then(function(){
         done && done();
       })
@@ -848,23 +858,15 @@ function SQLiteDAL(db, profile) {
   };
 
   this.loadStats = function(done) {
-    return Q.Promise(function(resolve){
-      fs.readFile(getUCoinHomePath(profile) + '/stats.json', 'utf8', function(err, data) {
-        if (err || !data) {
-          data = "{}";
-        }
-        var stats = JSON.parse(data);
-        resolve(stats);
+    return myFS.read(getUCoinHomePath(profile) + '/stats.json')
+      .then(function(data) {
+        return JSON.parse(data);
       })
-    })
+      .fail(function(){
+        return {};
+      })
       .then(function(stats){
-        // Create stat if it does not exist
         done && done(null, stats);
-        return stats;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
       });
   };
 
@@ -884,15 +886,8 @@ function SQLiteDAL(db, profile) {
   this.saveStat = function(stat, name, done) {
     return that.loadStats()
       .then(function(stats){
-        return makeDir(profile).thenResolve(stats);
-      })
-      .then(function(stats){
         stats[name] = stat;
-        return Q.Promise(function(resolve, reject){
-          fs.writeFile(getUCoinHomePath(profile) + '/stats.json', JSON.stringify(stats, null, ' '), function(err) {
-            err ? reject(err) : resolve();
-          })
-        });
+        return myFS.write(getUCoinHomePath(profile) + '/stats.json', JSON.stringify(stats, null, ' '));
       })
       .then(function(){
         done && done();
@@ -996,7 +991,11 @@ function SQLiteDAL(db, profile) {
       });
     })
       .then(function(){
-        return Q.nfcall(rimraf, getUCoinHomePath(profile) + '/blocks/');
+        var path = getUCoinHomePath(profile) + '/blocks';
+        return myFS.exists(path)
+          .then(function(exists){
+            return exists ? myFS.removeTree(path) : Q();
+          });
       })
       .then(function(){
         done && done();
@@ -1008,14 +1007,7 @@ function SQLiteDAL(db, profile) {
   };
 
   this.resetStats = function(done) {
-    return makeDir(profile)
-      .then(function(){
-        return Q.Promise(function(resolve, reject){
-          fs.writeFile(getUCoinHomePath(profile) + '/stats.json', JSON.stringify({}, null, ' '), function(err) {
-            err ? reject(err) : resolve();
-          })
-        });
-      })
+    return myFS.write(getUCoinHomePath(profile) + '/stats.json', JSON.stringify({}, null, ' '))
       .then(function(){
         done && done();
       })

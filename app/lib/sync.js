@@ -59,9 +59,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
                   logger.info('Downloading Blockchain...');
                   async.parallel({
                     localCurrent: function (next) {
-                      BlockchainService.current(function (err, current) {
-                        next(null, err ? null : current);
-                      });
+                      dal.getCurrentBlockOrNull(next);
                     },
                     remoteCurrent: function (next) {
                       node.blockchain.current(function (err, current) {
@@ -86,9 +84,9 @@ module.exports = function Synchroniser (server, host, port, conf) {
                     function (callback) {
                       var startBlock = i;
                       var endBlock = (i + CONST_BLOCKS_CHUNK - 1 >= rCurrent.number ? rCurrent.number : i + CONST_BLOCKS_CHUNK - 1);
-                      server.dal.getBlock(endBlock)
+                      server.dal.getBlockOrNull(endBlock)
                         .then(function(block){
-                          if (block.number >= 0) return block;
+                          if (block) return block;
                           return Q.Promise(function(resolve, reject){
                             async.waterfall([
                               function (next) {
@@ -135,10 +133,10 @@ module.exports = function Synchroniser (server, host, port, conf) {
                           server.dal.getCurrentNumber()
                             .then(function(theCurrentNumber){
                               currentNumber = theCurrentNumber;
-                              return server.dal.getBlock(currentNumber + 1);
+                              return server.dal.getBlockOrNull(currentNumber + 1);
                             })
                             .then(function(block){
-                              if (block.number >= 0) {
+                              if (block) {
                                 succeed = true;
                                 return Q.Promise(function(resolve, reject){
                                   // Rawification of transactions
@@ -155,7 +153,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
                                     tx.issuers = tx.signatories;
                                     tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                   });
-                                  BlockchainService.submitBlock(block, true, function(err) {
+                                  BlockchainService.submitBlock(block, false, function(err) {
                                     err ? reject(err) : resolve();
                                   })
                                 });

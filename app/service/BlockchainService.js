@@ -347,7 +347,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         function (res, next) {
           var last = res.last;
           var root = res.root;
-          block.UDTime = conf.dt + (last ? last['UDTime'] : root['UDTime']);
+          block.UDTime = conf.dt + (last ? last['UDTime'] : root['medianTime']);
           next();
         }
       ], done);

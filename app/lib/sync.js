@@ -14,79 +14,65 @@ var rawer            = require('../lib/rawer');
 var Peer             = require('../lib/entity/peer');
 var multimeter = require('multimeter');
 
-var multi = multimeter(process);
-var charm = multi.charm;
-charm.on('^C', process.exit);
-charm.reset();
-
-multi.write('Progress:\n\n');
-
-multi.write("Download: \n");
-var downloadBar = multi("Download: \n".length, 3, {
-  width : 20,
-  solid : {
-    text : '|',
-    foreground : 'white',
-    background : 'blue'
-  },
-  empty : { text : ' ' }
-});
-
-multi.write("Apply:    \n");
-var appliedBar = multi("Apply:    \n".length, 4, {
-  width : 20,
-  solid : {
-    text : '|',
-    foreground : 'white',
-    background : 'blue'
-  },
-  empty : { text : ' ' }
-});
-
-multi.write('\nStatus: ');
-//var writeStatus;
-//charm.position(function (x, y) {
-//  writeStatus = function(str) {
-//    charm
-//      .position(x, y)
-//      .erase('end')
-//      .write(str)
-//    ;
-//  };
-//});
-var speed = 0, syncStart = new Date, blocksApplied = 0;
-var xPos, yPos;
-charm.position(function (x, y) {
-  xPos = x;
-  yPos = y;
-});
-var writeStatus = function(str) {
-  charm
-    .position(xPos, yPos)
-    .erase('end')
-    .write(str)
-  ;
-};
-
-downloadBar.percent(0);
-appliedBar.percent(0);
-
-var CONST_FORCE_TX_PROCESSING = false;
 var CONST_BLOCKS_CHUNK = 500;
 var EVAL_REMAINING_INTERVAL = 1000;
 
-var blockReadQueue = async.queue(function (task, callback) {
-  task(callback);
-}, 1);
-
-require('log4js').configure({
-  "appenders": [
-    //{ category: "db1", type: "console" }
-  ]
-});
-
 module.exports = function Synchroniser (server, host, port, conf) {
   var that = this;
+
+  require('log4js').configure({
+    "appenders": [
+      //{ category: "db1", type: "console" }
+    ]
+  });
+
+  var multi = multimeter(process);
+  var charm = multi.charm;
+  charm.on('^C', process.exit);
+  charm.reset();
+
+  multi.write('Progress:\n\n');
+
+  multi.write("Download: \n");
+  var downloadBar = multi("Download: \n".length, 3, {
+    width : 20,
+    solid : {
+      text : '|',
+      foreground : 'white',
+      background : 'blue'
+    },
+    empty : { text : ' ' }
+  });
+
+  multi.write("Apply:    \n");
+  var appliedBar = multi("Apply:    \n".length, 4, {
+    width : 20,
+    solid : {
+      text : '|',
+      foreground : 'white',
+      background : 'blue'
+    },
+    empty : { text : ' ' }
+  });
+
+  multi.write('\nStatus: ');
+
+  var speed = 0, syncStart = new Date, blocksApplied = 0;
+  var xPos, yPos;
+  charm.position(function (x, y) {
+    xPos = x;
+    yPos = y;
+  });
+  var writeStatus = function(str) {
+    charm
+      .position(xPos, yPos)
+      .erase('end')
+      .write(str)
+    ;
+  };
+
+  downloadBar.percent(0);
+  appliedBar.percent(0);
 
   // Services
   var PeeringService     = server.PeeringService;

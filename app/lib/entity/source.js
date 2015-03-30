@@ -1,8 +1,8 @@
 var _ = require('underscore');
 
-module.exports = Link;
+module.exports = Source;
 
-function Link(json) {
+function Source(json) {
 
   var that = this;
 
@@ -10,6 +10,9 @@ function Link(json) {
     var value = json[key];
     if (key == "number") {
       value = parseInt(value);
+    }
+    else if (key == "consumed") {
+      value = !!value;
     }
     that[key] = value;
   });

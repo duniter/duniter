@@ -22,6 +22,8 @@ var Identity = function(json) {
    that[key] = json[key];
   });
 
+  this.kick = !!this.kick;
+  this.wasMember = !!this.wasMember;
   this.written = this.written || this.member;
   this.hash = sha1(this.uid + moment(this.time).unix() + this.pubkey).toUpperCase();
   this.memberships = this.memberships || [];

@@ -24,7 +24,7 @@ function Multicaster () {
   };
   
   that.on('identity', function(idty, peers) {
-    logger.debug('--> new Identity to be sent to %s peer(s)', peers.length);
+    logger.debug('--> new Identity with %s certs to be sent to %s peer(s)', (idty.certs || []).length, peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendIdentity(peer, idty, success(function (err) {

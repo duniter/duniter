@@ -1,7 +1,7 @@
 var should = require('should');
 var assert = require('assert');
 var fs     = require('fs');
-var sqlite = require('../../app/lib/dal/sqliteDAL');
+var dal = require('../../app/lib/dal/fileDAL');
 var Peer   = require('../../app/lib/entity/peer');
 
 //require('log4js').configure({
@@ -155,32 +155,32 @@ var mocks = {
   }
 };
 
-var sqliteDAL = null;
+var fileDAL = null;
 
 describe("DAL", function(){
 
   before(function() {
-    return sqlite.memory('db0')
+    return dal.memory('db0')
       .then(function(dal){
-        return sqliteDAL = dal;
+        return fileDAL = dal;
       })
       .then(function() {
-        return sqliteDAL.dropDabase();
+        return fileDAL.dropDabase();
       })
       .then(function() {
-        return sqliteDAL.initDabase();
+        return fileDAL.initDabase();
       });
   });
 
   it('should have no peer in a first time', function(){
-    return sqliteDAL.listAllPeers().then(function(peers){
+    return fileDAL.listAllPeers().then(function(peers){
       peers.should.have.length(0);
     })
   });
 
   it('should have 1 peer if 1 is created', function(){
-    return sqliteDAL.savePeer(new Peer(mocks.peer1))
-      .then(sqliteDAL.listAllPeers)
+    return fileDAL.savePeer(new Peer(mocks.peer1))
+      .then(fileDAL.listAllPeers)
       .then(function(peers){
         peers.should.have.length(1);
         peers[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
@@ -192,21 +192,21 @@ describe("DAL", function(){
   });
 
   it('should have no current block', function(){
-    return sqliteDAL.getCurrentBlockOrNull().then(function(current){
+    return fileDAL.getCurrentBlockOrNull().then(function(current){
       should.not.exist(current);
     })
   });
 
   it('should have no blocks in first time', function(){
-    return sqliteDAL.listAllBlocks().then(function(blocks){
-      blocks.should.have.length(0);
+    return fileDAL.getCurrentBlockOrNull().then(function(block){
+      should.not.exist(block);
     })
   });
 
   it('should be able to save a Block', function(){
-    return sqliteDAL.saveBlock(mocks.block0)
+    return fileDAL.saveBlock(mocks.block0)
       .then(function() {
-        return sqliteDAL.getBlock(0);
+        return fileDAL.getBlock(0);
       })
       .then(function(block){
         block.should.have.property('hash').equal(mocks.block0.hash);

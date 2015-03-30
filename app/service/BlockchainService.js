@@ -133,6 +133,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
 
   this.submitBlock = function (obj, doCheck, done) {
     blockFifo.push(function (sent) {
+      var start = new Date();
       var block = new Block(obj);
       var currentBlock = null;
       var localValidation = localValidator(conf);
@@ -164,6 +165,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           }
         }
       ], function (err) {
+        logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
         var eligibleSelfBlock = currentBlock && currentBlock.number == block.number - 1 && block.issuer == PeeringService.pubkey;
         if (err && eligibleSelfBlock) {
           lastGeneratedWasWrong = true;
@@ -531,7 +533,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   }
 
   function saveBlockData (current, block, done) {
-    logger.info('Block #' + block.number + ' added to the blockchain');
     async.waterfall([
       function (next) {
         updateBlocksComputedVars(current, block, next);

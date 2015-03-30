@@ -206,6 +206,18 @@ function Node (dbName, options) {
     }
   };
 
+  this.until = function (eventName, count) {
+    var counted = 0;
+    var max = count == undefined ? 1 : count;
+    return Q.Promise(function (resolve) {
+      that.server.on(eventName, function (obj) {
+        counted++;
+        if (counted == max)
+          resolve();
+      });
+    });
+  };
+
   this.current = function(callback) {
     return function(done) {
       async.waterfall([

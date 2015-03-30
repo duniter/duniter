@@ -7,11 +7,11 @@ var node   = require('./tools/node');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
 
-require('log4js').configure({
-   "appenders": [
-     //{ category: "db1", type: "console" }
-   ]
-});
+//require('log4js').configure({
+//   "appenders": [
+//     //{ category: "db1", type: "console" }
+//   ]
+//});
 
 describe("Forwarding", function() {
 
@@ -50,11 +50,14 @@ describe("Forwarding", function() {
           });
         })
         .then(function(){
-          return Q.Promise(function(resolve, reject){
+          return Q.all([
+            node2.until('identity', 7),
+            Q.Promise(function(resolve, reject){
             node1.executes(require('./scenarios/wot-lookup')(node1), function(err) {
               err ? reject(err) : resolve();
             });
-          });
+            })
+          ]);
         })
         .then(function(){
           done();

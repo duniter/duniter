@@ -8,6 +8,6 @@ log4js.configure(__dirname + '/../../conf/logs.json', { reloadSecs: 60 });
 module.exports = function (name) {
 
   var logger = log4js.getLogger(name || 'default');
-  logger.setLevel('INFO');
+  logger.setLevel('DEBUG');
   return logger;
 }

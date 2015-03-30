@@ -2,24 +2,88 @@ var async            = require('async');
 var _                = require('underscore');
 var Q                = require('q');
 var sha1             = require('sha1');
+var moment           = require('moment');
 var merkle           = require('merkle');
 var vucoin           = require('vucoin');
-var eventStream      = require('event-stream');
 var inquirer         = require('inquirer');
 var dos2unix         = require('./dos2unix');
 var parsers          = require('./streams/parsers/doc');
-var extractSignature = require('./streams/extractSignature');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
 var rawer            = require('../lib/rawer');
 var Peer             = require('../lib/entity/peer');
+var multimeter = require('multimeter');
+
+var multi = multimeter(process);
+var charm = multi.charm;
+charm.on('^C', process.exit);
+charm.reset();
+
+multi.write('Progress:\n\n');
+
+multi.write("Download: \n");
+var downloadBar = multi("Download: \n".length, 3, {
+  width : 20,
+  solid : {
+    text : '|',
+    foreground : 'white',
+    background : 'blue'
+  },
+  empty : { text : ' ' }
+});
+
+multi.write("Apply:    \n");
+var appliedBar = multi("Apply:    \n".length, 4, {
+  width : 20,
+  solid : {
+    text : '|',
+    foreground : 'white',
+    background : 'blue'
+  },
+  empty : { text : ' ' }
+});
+
+multi.write('\nStatus: ');
+//var writeStatus;
+//charm.position(function (x, y) {
+//  writeStatus = function(str) {
+//    charm
+//      .position(x, y)
+//      .erase('end')
+//      .write(str)
+//    ;
+//  };
+//});
+var speed = 0, syncStart = new Date, blocksApplied = 0;
+var xPos, yPos;
+charm.position(function (x, y) {
+  xPos = x;
+  yPos = y;
+});
+var writeStatus = function(str) {
+  charm
+    .position(xPos, yPos)
+    .erase('end')
+    .write(str)
+  ;
+};
+
+downloadBar.percent(0);
+appliedBar.percent(0);
 
 var CONST_FORCE_TX_PROCESSING = false;
-var CONST_BLOCKS_CHUNK = 100;
+var CONST_BLOCKS_CHUNK = 500;
+var EVAL_REMAINING_INTERVAL = 1000;
 
 var blockReadQueue = async.queue(function (task, callback) {
   task(callback);
 }, 1);
+
+require('log4js').configure({
+  "appenders": [
+    //{ category: "db1", type: "console" }
+  ]
+});
 
 module.exports = function Synchroniser (server, host, port, conf) {
   var that = this;
@@ -51,12 +115,14 @@ module.exports = function Synchroniser (server, host, port, conf) {
           var availableNumber = -1;
           var finishedDownload = false;
           var finished = false;
+          var remoteCurrentNumber = 1;
           async.parallel({
             download: function(callback){
               async.waterfall([
 
                 function (next){
                   logger.info('Downloading Blockchain...');
+                  writeStatus('Connecting to ' + host + '...');
                   async.parallel({
                     localCurrent: function (next) {
                       dal.getCurrentBlockOrNull(next);
@@ -71,17 +137,32 @@ module.exports = function Synchroniser (server, host, port, conf) {
                 function (res, next) {
                   var lCurrent = res.localCurrent;
                   var rCurrent = res.remoteCurrent;
+                  var localStartNumber = lCurrent ? lCurrent.number : -1;
                   var i = lCurrent ? lCurrent.number + 1 : 0;
                   if (!rCurrent) {
                     next('No block found on remote node');
                     return;
                   }
+
+                  remoteCurrentNumber = rCurrent.number;
+                  writeStatus('Initializing sync...');
+                  setInterval(function() {
+                    if (remoteCurrentNumber > 1 && speed > 0) {
+                      var remain = (remoteCurrentNumber - (localStartNumber + 1 + blocksApplied));
+                      var secondsLeft = remain / speed;
+                      var momDuration = moment.duration(secondsLeft*1000);
+                      writeStatus('Remaining ' + momDuration.humanize() + '');
+                    }
+                  }, EVAL_REMAINING_INTERVAL);
+
                   async.whilst(
                     function () {
-                      finishedDownload = rCurrent ? i <= rCurrent.number : false;
-                      return finishedDownload;
+                      finishedDownload = rCurrent ? i > rCurrent.number : false;
+                      finishedDownload && downloadBar.percent(100);
+                      return !finishedDownload;
                     },
                     function (callback) {
+                      downloadBar.percent(Math.floor(i/remoteCurrentNumber*100));
                       var startBlock = i;
                       var endBlock = (i + CONST_BLOCKS_CHUNK - 1 >= rCurrent.number ? rCurrent.number : i + CONST_BLOCKS_CHUNK - 1);
                       server.dal.getBlockOrNull(endBlock)
@@ -95,7 +176,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
                               },
                               function (blocks, next) {
                                 async.forEachSeries(blocks, function (block, callback) {
-                                  server.dal.saveBlockInFile(block, function(err) {
+                                  server.dal.saveBlockInFile(block, false, function(err) {
                                     if (!err)
                                       availableNumber = block.number;
                                     callback(err);
@@ -126,6 +207,9 @@ module.exports = function Synchroniser (server, host, port, conf) {
                       setTimeout(next, 1000);
                     },
                     function (next) {
+                      if(blocksApplied == 0) {
+                        syncStart = new Date;
+                      }
                       var succeed;
                       async.doWhilst(
                         function (callback) {
@@ -153,6 +237,11 @@ module.exports = function Synchroniser (server, host, port, conf) {
                                     tx.issuers = tx.signatories;
                                     tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                   });
+                                  blocksApplied++;
+                                  speed = blocksApplied / Math.round(Math.max((new Date - syncStart) / 1000, 1));
+                                  if (appliedBar.percent() != Math.floor(block.number/remoteCurrentNumber*100)){
+                                    appliedBar.percent(Math.floor(block.number/remoteCurrentNumber*100));
+                                  }
                                   BlockchainService.submitBlock(block, false, function(err) {
                                     err ? reject(err) : resolve();
                                   })
@@ -179,14 +268,20 @@ module.exports = function Synchroniser (server, host, port, conf) {
                         }, next);
                     }
                   ], callback);
-                }, processFinished);
+                }, function(err) {
+                  appliedBar.percent(100);
+                  processFinished(err);
+                });
             }
           }, function(err) {
+            downloadBar.percent(100);
+            appliedBar.percent(100);
             next(err);
           });
         },
 
         function (next) {
+          writeStatus('Peers...');
           syncPeer(node, next);
         },
 
@@ -206,7 +301,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
         // Peers
         //=======
         function (next){
-          dal.merkleForPeers(next);
+          dal.merkleForPeers.now(next);
         },
         function (merkle, next) {
           node.network.peering.peers.get({}, function (err, json) {
@@ -233,7 +328,8 @@ module.exports = function Synchroniser (server, host, port, conf) {
                         entry[key] = jsonEntry[key];
                       });
                       entry.signature = sign;
-                      logger.info('Peer 0x' + entry.fingerprint);
+                      writeStatus('Peer ' + entry.pubkey);
+                      logger.info('Peer ' + entry.pubkey);
                       PeeringService.submit(entry, function (err) {
                         cb();
                       });
@@ -244,10 +340,17 @@ module.exports = function Synchroniser (server, host, port, conf) {
                 });
               });
             }
-            else next();
+            else {
+              writeStatus('Peers already known');
+              next();
+            }
           });
         }
       ], function (err, result) {
+
+        err && writeStatus(err);
+        multi.write('\nAll done.\n');
+        multi.destroy();
         logger.info('Sync finished.');
         done(err);
       });
@@ -326,7 +429,7 @@ function choose (question, defaultValue, ifOK, ifNotOK) {
     type: "confirm",
     name: "q",
     message: question,
-    default: defaultValue,
+    default: defaultValue
   }], function (answer) {
     answer.q ? ifOK() : ifNotOK();
   });

@@ -6,7 +6,7 @@ var _          = require('underscore');
 var Q          = require('q');
 var common     = require('./app/lib/common');
 var constants  = require('./app/lib/constants');
-var sqliteDAL  = require('./app/lib/dal/sqliteDAL');
+var fileDAL  = require('./app/lib/dal/fileDAL');
 var express    = require('express');
 var request    = require('request');
 var http       = require('http');
@@ -107,7 +107,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     return Q.Promise(function(resolve, reject){
       // Init connection
       if (!that.dal) {
-        var dbType = dbConf && dbConf.memory ? sqliteDAL.memory : sqliteDAL.file;
+        var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
         dbType(dbConf.name || "default")
           .then(function(dal){
             that.dal = dal;

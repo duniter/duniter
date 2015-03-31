@@ -1113,58 +1113,55 @@ function FileDAL(profile, myFS) {
   };
 
   this.resetAll = function(done) {
-    // TODO
-    return Q()
-      .then(function(){
-        var path = getUCoinHomePath(profile) + '/blocks';
-        return myFS.exists(path)
-          .then(function(exists){
-            return exists ? myFS.removeTree(path) : Q();
-          });
-      })
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
+    var files = ['peers','txs','stats','sources','memberships','links','identities','headers','global','certs'];
+    var dirs  = ['tx', 'blocks'];
+    return resetFiles(files, dirs, done);
   };
 
   this.resetStats = function(done) {
-    return myFS.write(getUCoinHomePath(profile) + '/stats.json', JSON.stringify({}, null, ' '))
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
+    var files = ['stats'];
+    var dirs  = [];
+    return resetFiles(files, dirs, done);
   };
 
   this.resetPeers = function(done) {
-    // TODO
-    return Q()
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
+    var files = ['peers'];
+    var dirs  = [];
+    return resetFiles(files, dirs, done);
   };
 
   this.resetTransactions = function(done) {
-    // TODO
-    return Q()
+    var files = ['txs'];
+    var dirs  = [];
+    return resetFiles(files, dirs, done);
+  };
+
+  function resetFiles(files, dirs, done) {
+    return Q.all([
+
+      // Remove files
+      Q.all(files.map(function(fName) {
+        return myFS.exists(getUCoinHomePath(profile) + '/' + fName + '.json')
+          .then(function(exists){
+            return exists ? myFS.remove(getUCoinHomePath(profile) + '/' + fName + '.json') : Q();
+          })
+      })),
+
+      // Remove directories
+      Q.all(dirs.map(function(dirName) {
+        return myFS.exists(getUCoinHomePath(profile) + '/' + dirName)
+          .then(function(exists){
+            return exists ? myFS.removeTree(getUCoinHomePath(profile) + '/' + dirName) : Q();
+          })
+      }))
+    ])
       .then(function(){
         done && done();
       })
       .fail(function(err){
         done && done(err);
-        throw err;
       });
-  };
+  }
 
   // INSTRUMENTALIZE ALL METHODS
   var f;

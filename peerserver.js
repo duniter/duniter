@@ -9,7 +9,7 @@ var signature   = require('./app/lib/signature');
 var parsers     = require('./app/lib/streams/parsers/doc');
 var multicaster = require('./app/lib/streams/multicaster');
 var constants   = require('./app/lib/constants');
-var Peer        = require('../ucoin/app/lib/entity/peer');
+var Peer        = require('./app/lib/entity/peer');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 

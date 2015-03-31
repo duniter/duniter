@@ -116,6 +116,9 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   this._start = function (done) {
     async.waterfall([
       function (next){
+        that.checkConfig(next);
+      },
+      function (next){
         // Extract key pair
         if (that.conf.pair)
           next(null, {

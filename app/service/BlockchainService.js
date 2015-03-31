@@ -934,11 +934,14 @@ function BlockchainService (conn, conf, dal, PeeringService) {
               next();
             }
           ], function (err) {
-            if (err)
+            if (err) {
               logger.error(err);
-            else
+              dal.removeTxByHash(extractedTX.hash, callback);
+            }
+            else {
               logger.info('Transaction added to block');
-            callback();
+              callback();
+            }
           });
         }, next);
       },

@@ -61,6 +61,7 @@ function FileDAL(profile, myFS) {
   var peers = [];
   var merkles = [];
   var global = { currentNumber: -1 };
+  var conf = {};
 
   var lastBlockFileNumber = -1;
 
@@ -77,6 +78,7 @@ function FileDAL(profile, myFS) {
           loadIntoArray(txs, 'txs.json'),
           loadIntoArray(peers, 'peers.json'),
           loadIntoArray(merkles, 'merkles.json'),
+          loadIntoObject(conf, 'conf.json'),
           loadIntoObject(global, 'global.json'),
           getCurrentMaxNumberInBlockFiles()
             .then(function(max){
@@ -450,21 +452,23 @@ function FileDAL(profile, myFS) {
   };
 
   this.fillInMembershipsOfIdentity = function(queryPromise, done) {
-    return queryPromise
+    return Q(queryPromise)
       .tap(function(row){
-        row.memberships = [].concat(
-          _.where(memberships, { type: 'join', issuer: row.pubkey })
-        ).concat(
-          _.where(memberships, { type: 'active', issuer: row.pubkey })
-        ).concat(
-          _.where(memberships, { type: 'leave', issuer: row.pubkey })
-        );
+        if (row) {
+          row.memberships = [].concat(
+            _.where(memberships, { type: 'join', issuer: row.pubkey })
+          ).concat(
+            _.where(memberships, { type: 'active', issuer: row.pubkey })
+          ).concat(
+            _.where(memberships, { type: 'leave', issuer: row.pubkey })
+          );
+        }
       })
       .then(function(rows){
         done && done(null, rows);
         return rows;
       })
-      .fail(function(){
+      .fail(function(err){
         done && done(null, null);
       });
   };
@@ -495,12 +499,10 @@ function FileDAL(profile, myFS) {
   };
 
   this.removeTxByHash = function(hash, done) {
-    return Q.Promise(function(resolve){
-        txs = _.chain(txs).
-            reject(function(tx){ return tx.hash == hash; }).
-            value();
-        resolve();
-      })
+    txs = _.chain(txs).
+      reject(function(tx){ return tx.hash == hash; }).
+      value();
+    return that.writeJSON(txs, 'txs.json')
       .then(function(){
         done && done();
       })
@@ -847,14 +849,21 @@ function FileDAL(profile, myFS) {
   };
 
   this.saveMemberships = function (type, mss) {
-    return Q.all(mss.map(function(ms) {
+    return Q.all(mss.map(function(msRaw) {
+      var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', conf.currency);
       ms.type = type;
+      ms.hash = sha1(ms.getRawSigned()).toUpperCase();
       return that.saveMembership(ms);
     }));
   };
 
   this.saveMembership = function(ms, done) {
-    memberships.push(ms);
+    var existing = _.where(memberships, { hash: ms.hash })[0];
+    if (!existing) {
+      memberships.push(ms);
+    } else {
+      _.extend(existing, ms);
+    }
     return that.writeJSON(memberships, 'memberships.json', done);
   };
 
@@ -917,9 +926,9 @@ function FileDAL(profile, myFS) {
   this.merkleForPeers = function(done) {
     return Q()
       .then(function(){
-        var leaves = _.where(merkles, { tree: 'peers' }) || [];
+        var leaves = (_.where(merkles, { tree: 'peers' })[0] || {}).leaves || [];
         var merkle = new Merkle();
-        merkle.initialize(leaves.map(function(l) { return l.hash }));
+        merkle.initialize(leaves);
         done && done(null, merkle);
         return merkle;
       })
@@ -941,7 +950,7 @@ function FileDAL(profile, myFS) {
         return merkle.leaves();
       })
       .then(function(leaves){
-        merkles = _.reject(merkles, function(m){ return m.tree == 'perrs'; });
+        merkles = _.reject(merkles, function(m){ return m.tree == 'peers'; });
         merkles.push({
           tree: 'peers',
           leaves: leaves
@@ -1013,7 +1022,12 @@ function FileDAL(profile, myFS) {
 
   this.savePeer = function(peer, done) {
     peer.hash = (sha1(peer.getRawSigned()) + "").toUpperCase();
-    peers.push(peer);
+    var existing = _.where(peers, { pubkey: peer.pubkey })[0];
+    if (!existing) {
+      peers.push(peer);
+    } else {
+      _.extend(existing, peer);
+    }
     return that.writeJSON(peers, 'peers.json', done);
   };
 
@@ -1052,6 +1066,7 @@ function FileDAL(profile, myFS) {
       })
       .then(function(stats){
         done && done(null, stats);
+        return stats;
       });
   };
 
@@ -1059,7 +1074,7 @@ function FileDAL(profile, myFS) {
     return that.loadStats()
       .then(function(conf){
         // Create stat if it does not exist
-        done && done(null, conf[statName] || { statName: statName, blocks: [], lastParsedBlock: -1 });
+        done && done(null, (conf && conf[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 });
         return conf;
       })
       .fail(function(err){

@@ -6,7 +6,7 @@ var rawer = require('../rawer');
 var defaultConf = function() {
   return {
     "currency": null,
-    "c": 0.7376575,
+    "c": 0.007376575,
     "dt": 30.4375*24*3600,
     "ud0": 100,
     "port": 8033,

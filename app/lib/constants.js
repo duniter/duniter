@@ -90,8 +90,8 @@ module.exports = {
       START: 15000
     },
     UPNP: {
-      INTERVAL: 20*60,
-      TTL: 30*60
+      INTERVAL: 300,
+      TTL: 600
     },
     SYNC: {
       MAX: 20

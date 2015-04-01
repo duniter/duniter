@@ -243,19 +243,22 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         });
       },
       function (ip, next) {
+        client.close();
         // Update UPnP IGD every INTERVAL seconds
-        setInterval(async.apply(openPort, conf, client), 1000*constants.NETWORK.UPNP.INTERVAL);
-        openPort(conf, client, next);
+        setInterval(async.apply(openPort, conf), 1000*constants.NETWORK.UPNP.INTERVAL);
+        openPort(conf, next);
       }
     ], done);
   };
 
-  function openPort (conf, client, done) {
+  function openPort (conf, done) {
+    var client = upnp.createClient();
     client.portMapping({
       public: parseInt(conf.remoteport),
       private: parseInt(conf.port),
       ttl: constants.NETWORK.UPNP.TTL
     }, function(err) {
+      client.close();
       return done && done(err);
     });
   }

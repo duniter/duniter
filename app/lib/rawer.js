@@ -172,7 +172,7 @@ module.exports = new function() {
     }
     raw += "Transactions:\n";
     for(var i = 0; i < json.transactions.length; i++){
-      raw += json.transactions[i].raw;
+      raw += json.transactions[i].raw || that.getCompactTransaction(json.transactions[i]);
     }
     return dos2unix(raw);
   };
@@ -206,10 +206,11 @@ module.exports = new function() {
   };
 
   this.getCompactTransaction = function (json) {
-    var raw = ["TX", 1, json.issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
-    (json.issuers || []).forEach(function (issuer) {
+    var issuers = (json.issuers || json.signatories);
+    var raw = ["TX", 1, issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
+    (issuers || []).forEach(function (issuer) {
       raw += issuer + '\n';
-    }); 
+    });
     (json.inputs || []).forEach(function (input) {
       raw += input + '\n';
     });

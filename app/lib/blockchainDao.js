@@ -102,7 +102,7 @@ module.exports = function(conn, block, dal) {
     };
 
     this.findBlock = function (number, fpr, done) {
-      dal.getBlock(number, done);
+      dal.getBlockByNumberAndHash(number, fpr, done);
     };
 
     this.getToBeKicked = function (blockNumber, done) {

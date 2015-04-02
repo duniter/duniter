@@ -246,6 +246,28 @@ function FileDAL(profile, myFS) {
       });
   };
 
+  this.getBlockByNumberAndHash = function(number, hash, done) {
+    return that.readFileOfBlock(number)
+      .then(function(data) {
+        return JSON.parse(data);
+      })
+      .then(function(block){
+        if (block.hash != hash) throw "Not found";
+        else return block;
+      })
+      .fail(function(){
+        throw 'Block not found';
+      })
+      .then(function(conf){
+        done && done(null, conf);
+        return conf;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
   this.getCurrent = function(done) {
     return that.getBlockCurrent(done);
   };

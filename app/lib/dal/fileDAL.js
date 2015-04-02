@@ -1182,8 +1182,8 @@ function FileDAL(profile, myFS) {
                 })
                 .then(function (o) {
                   var duration = (new Date() - start);
-                  if (duration >= 4)
-                    logger.warn('Time %s ms | %s', duration, fname);
+                  if (duration >= 30)
+                    logger.debug('Time %s ms | %s', duration, fname);
                   return o;
                 });
             });
@@ -1197,8 +1197,8 @@ function FileDAL(profile, myFS) {
             })
             .then(function (o) {
               var duration = (new Date() - start);
-              if (duration >= 4)
-                logger.warn('Time %s ms | %s', duration, fname);
+              if (duration >= 30)
+                logger.debug('Time %s ms | %s', duration, fname);
               return o;
             });
         };

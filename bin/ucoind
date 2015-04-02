@@ -15,6 +15,7 @@ var pjson       = require('../package.json');
 var ucoin       = require('./../index');
 var webapp      = require('../web/app');
 var Peer        = require('../app/lib/entity/peer');
+var Block       = require('../app/lib/entity/block');
 
 function keys (val) {
   return val.split(',');
@@ -147,7 +148,10 @@ program
         });
         async.forEachSeries(blocks, function (block, callback) {
           logger.info("Forwarding block#" + block.number);
-          multicaster().sendBlock(peer, block, callback);
+          server.dal.getBlock(block.number)
+            .then(function(fullBlock){
+              multicaster().sendBlock(peer, new Block(fullBlock), callback);
+            })
         }, next);
       },
     ], function (err) {

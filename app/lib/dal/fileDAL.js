@@ -820,13 +820,12 @@ function FileDAL(profile, myFS) {
 
   this.setDownWithStatusOlderThan = function(minSigTimestamp, done) {
     var matching = _.chain(peers).
-      filter(function(p){ return p.statusTS < minSigTimestamp; }).
+      filter(function(p){ return !p.statusTS || p.statusTS < minSigTimestamp; }).
       value();
     matching.forEach(function(p){
       p.status = 'DOWN';
     });
-    done && done();
-    return Q();
+    return that.writeJSON(peers, 'peers.json', done);
   };
 
   this.setPeerDown = function(pubkey, done) {

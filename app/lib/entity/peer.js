@@ -22,6 +22,7 @@ function Peer(json) {
   });
 
   this.endpoints = this.endpoints || [];
+  this.statusTS = this.statusTS || 0;
 
   this.keyID = function () {
     return this.pubkey && this.pubkey.length > 10 ? this.pubkey.substring(0, 10) : "Unknown";

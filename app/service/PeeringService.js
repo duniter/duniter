@@ -55,7 +55,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
       },
       function (next) {
         if (peer.block == constants.PEER.SPECIAL_BLOCK) {
-          peer.statusTS = new Date(0);
+          peer.statusTS = 0;
           peer.status = 'UP';
           next(null, null);
         }
@@ -65,6 +65,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
       },
       function (block, next){
         sigTime = block ? block.medianTime : 0;
+        peer.statusTS = sigTime;
         dal.getPeerOrNull(peer.pubkey, next);
       },
       function (found, next){
@@ -149,7 +150,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
               });
             }
             else callback();
-          },
+          }
         });
       }
     });

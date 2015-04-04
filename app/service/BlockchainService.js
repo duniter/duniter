@@ -11,7 +11,6 @@ var crypto          = require('../lib/crypto');
 var base64          = require('../lib/base64');
 var dos2unix        = require('../lib/dos2unix');
 var parsers         = require('../lib/streams/parsers/doc');
-var logger          = require('../lib/logger')('blockchain');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
 var localValidator  = require('../lib/localValidator');
@@ -52,6 +51,7 @@ var computationTimeoutDone = false;
 function BlockchainService (conn, conf, dal, PeeringService) {
 
   var BlockchainService = this;
+  var logger = require('../lib/logger')(dal.profile);
 
   var lastGeneratedWasWrong = false;
   this.pair = null;

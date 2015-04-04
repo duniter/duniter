@@ -51,9 +51,9 @@ describe("Forwarding", function() {
         })
         .then(function(){
           return Q.all([
-            node2.until('identity', 7),
+            node2.until('block', 1),
             Q.Promise(function(resolve, reject){
-            node1.executes(require('./scenarios/wot-lookup')(node1), function(err) {
+            node1.executes(require('./scenarios/new-community-4-members')(node1), function(err) {
               err ? reject(err) : resolve();
             });
             })
@@ -114,8 +114,8 @@ function doTests(node) {
         assert.equal(res.results[0].signed.length, 1);
         should.exists(res.results[0].signed[0].isMember);
         should.exists(res.results[0].signed[0].wasMember);
-        assert.equal(res.results[0].signed[0].isMember, false);
-        assert.equal(res.results[0].signed[0].wasMember, false);
+        assert.equal(res.results[0].signed[0].isMember, true);
+        assert.equal(res.results[0].signed[0].wasMember, true);
         done();
       }));
     });
@@ -134,9 +134,9 @@ function doTests(node) {
         done();
       }));
 
-      it('should have sent 0 signature', node.lookup('tac', function(res, done){
+      it('should have sent 1 signature', node.lookup('tac', function(res, done){
         should.exists(res);
-        assert.equal(res.results[0].signed.length, 0);
+        assert.equal(res.results[0].signed.length, 1);
         done();
       }));
     });
@@ -147,9 +147,9 @@ function doTests(node) {
       done();
     }));
 
-    it('tic should give only 3 results', node.lookup('tic', function(res, done){
+    it('tic should give only 1 results', node.lookup('tic', function(res, done){
       should.exists(res);
-      assert.equal(res.results.length, 3);
+      assert.equal(res.results.length, 1);
       done();
     }));
   }

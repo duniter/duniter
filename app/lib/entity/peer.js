@@ -40,7 +40,7 @@ function Peer(json) {
 
   this.copyValues = function(to) {
     var obj = this;
-    ["version", "currency", "pub", "endpoints", "hash", "status", "block", "signature"].forEach(function (key) {
+    ["version", "currency", "pub", "endpoints", "hash", "status", "statusTS", "block", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   };

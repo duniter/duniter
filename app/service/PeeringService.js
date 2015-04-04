@@ -48,7 +48,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
     var peer = new Peer(peering);
     var sp = peer.block.split('-');
     var number = sp[0];
-    var sigTime = new Date(0);
+    var sigTime = 0;
     async.waterfall([
       function (next) {
         localValidator(null).checkPeerSignature(peer, next);

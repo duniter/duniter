@@ -187,7 +187,7 @@ function WOTBinding (wotServer) {
       };
       idty.certs.forEach(function(cert){
         json.certifications.push({
-          pubkey: cert.pubkey,
+          pubkey: cert.from,
           uid: cert.uid,
           isMember: cert.isMember,
           cert_time: cert.cert_time,

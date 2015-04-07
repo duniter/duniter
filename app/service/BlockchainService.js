@@ -29,6 +29,8 @@ var powFifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 
+var cancels = [];
+
 var statQueue = async.queue(function (task, callback) {
   task(callback);
 }, 1);
@@ -157,7 +159,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                 checkIssuer(block, next);
               },
               function (next) {
-                BlockchainService.stopPoWThenProcessAndRestartPoW(async.apply(saveBlockData, currentBlock, block), next);
+                BlockchainService.stopPoWThenProcessAndRestartPoW(next);
+              },
+              function (next) {
+                saveBlockData(currentBlock, block, next);
               }
             ], next);
           } else {
@@ -165,7 +170,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           }
         }
       ], function (err) {
-        logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
+        !err && logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
         var eligibleSelfBlock = currentBlock && currentBlock.number == block.number - 1 && block.issuer == PeeringService.pubkey;
         if (err && eligibleSelfBlock) {
           lastGeneratedWasWrong = true;
@@ -177,34 +182,16 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     }, done);
   };
 
-  this.stopPoWThenProcessAndRestartPoW = function (task, done) {
-    powFifo.push(function (taskDone) {
-      async.waterfall([
-        function (next) {
-          // If computation is started, stop it and wait for stop event
-          var isComputeProcessWaiting = computeNextCallback ? true : false;
-          if (computationActivated && !isComputeProcessWaiting) {
-            // Next will be triggered by computation of the PoW process
-            newKeyblockCallback = next;
-          } else {
-            next();
-          }
-        },
-        function (next) {
-          newKeyblockCallback = null;
-          // Do the task, without passing parameters
-          task(function (err) {
-            next(err);
-          });
-        },
-        function (next) {
-          // If PoW computation process is waiting, trigger it
-          if (computeNextCallback)
-            computeNextCallback();
-          next();
-        }
-      ], taskDone);
-    }, done);
+  this.stopPoWThenProcessAndRestartPoW = function (done) {
+    // If PoW computation process is waiting, trigger it
+    if (computeNextCallback)
+      computeNextCallback();
+    if (conf.participate && !cancels.length) {
+      powFifo.push(function (taskDone) {
+        cancels.push(taskDone);
+      });
+    }
+    done();
   };
 
   function checkIssuer (block, done) {
@@ -1456,11 +1443,11 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     }
     // Start
     powWorker.setOnPoW(function(err, block) {
-      done(null, new Block(block));
+      done(null, (block && new Block(block)) || null);
     });
     block.nonce = 0;
     powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, pair: BlockchainService.pair });
-    logger.info('Generating proof-of-work with %s leading zeros... (CPU usage set to %s%)', nbZeros, (conf.cpu*100).toFixed(0));
+    logger.info('Generating proof-of-work of block #%s with %s leading zeros... (CPU usage set to %s%)', block.number, nbZeros, (conf.cpu*100).toFixed(0));
   };
 
   function Worker() {
@@ -1470,6 +1457,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.' };
     that.powProcess = childProcess.fork(__dirname + '/../lib/proof');
     var start = null;
+    var speedMesured = false;
 
     that.powProcess.on('message', function(msg) {
       var block = msg.block;
@@ -1488,25 +1476,30 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         onPoWFound(null, block);
       } else if (!stopped && msg.testsPerRound) {
         logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', msg.testsPerSecond, msg.testsPerRound);
+        speedMesured = true;
       } else if (!stopped && msg.nonce > block.nonce + constants.PROOF_OF_WORK.RELEASE_MEMORY) {
         // Reset fork process (release memory)...
         //logger.debug('Release mem... lastCount = %s, nonce = %s', block.nonce);
         block.nonce = msg.nonce;
+        speedMesured = false;
         that.powProcess.kill();
-        that.powProcess = childProcess.fork(__dirname + '/../lib/proof');
+        powWorker = new Worker();
         that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: BlockchainService.pair });
       } else if (!stopped) {
         // Continue...
         //console.log('Already made: %s tests...', msg.nonce);
         // Look for incoming block
-        if (newKeyblockCallback) {
+        if (speedMesured && cancels.length) {
+          speedMesured = false;
           stopped = true;
           that.powProcess.kill();
-          that.powProcess = childProcess.fork(__dirname + '/../lib/proof');
+          that.powProcess = null;
+          powWorker = null;
           onPoWFound();
           logger.debug('Proof-of-work computation canceled.');
           start = null;
-          newKeyblockCallback();
+          var cancelConfirm = cancels.shift();
+          cancelConfirm();
         }
       }
     });
@@ -1558,10 +1551,12 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         var lastIssuedByUs = current.issuer == PeeringService.pubkey;
         if (lastIssuedByUs && conf.powDelay && !computationTimeoutDone) {
           computationTimeoutDone = true;
-          computationTimeout = setTimeout(function () {
-            if (computeNextCallback)
-              computeNextCallback();
-          }, conf.powDelay*1000);
+          computationTimeout = function() {
+            computationTimeout = setTimeout(function () {
+              if (computeNextCallback)
+                computeNextCallback();
+            }, conf.powDelay*1000);
+          };
           next('Skipping', null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
         }
         else next();
@@ -1601,7 +1596,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             next(null, proofBlock, err);
           });
         }
-      },
+      }
     ], function (err, proofBlock, powCanceled) {
       if (powCanceled) {
         logger.warn(powCanceled);
@@ -1610,6 +1605,9 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           done(null, null);
         };
         computationActivated = false
+        if (computationTimeout && typeof computationTimeout == 'function') {
+          computationTimeout();
+        }
       } else {
         // Proof-of-work found
         computationActivated = false

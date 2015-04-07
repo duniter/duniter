@@ -843,7 +843,6 @@ function FileDAL(profile, myFS) {
     return Q()
       .then(function() {
         that.addHead(block);
-        global.currentNumber = block.number;
         return Q.all([
           that.saveBlockInFile(block, true),
           that.writeJSON(global, 'global.json'),
@@ -854,6 +853,7 @@ function FileDAL(profile, myFS) {
         ]);
       })
       .then(function(){
+        global.currentNumber = block.number;
         lastBlockFileNumber = Math.max(lastBlockFileNumber, block.number);
         done && done();
       })

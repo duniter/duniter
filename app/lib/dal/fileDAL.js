@@ -845,7 +845,6 @@ function FileDAL(profile, myFS) {
         that.addHead(block);
         return Q.all([
           that.saveBlockInFile(block, true),
-          that.writeJSON(global, 'global.json'),
           that.saveTxsInFiles(block.transactions),
           that.saveMemberships('join', block.joiners),
           that.saveMemberships('active', block.actives),
@@ -854,6 +853,9 @@ function FileDAL(profile, myFS) {
       })
       .then(function(){
         global.currentNumber = block.number;
+        return that.writeJSON(global, 'global.json');
+      })
+      .then(function(){
         lastBlockFileNumber = Math.max(lastBlockFileNumber, block.number);
         done && done();
       })

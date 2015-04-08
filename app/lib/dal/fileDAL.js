@@ -702,7 +702,7 @@ function FileDAL(profile, myFS) {
   };
 
   this.obsoletesLinks = function(minTimestamp, done) {
-    _.chain(identities).
+    _.chain(links).
       filter(function(link){ return link.timestamp <= minTimestamp; }).
       value().
       forEach(function(i){

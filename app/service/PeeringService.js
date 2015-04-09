@@ -133,6 +133,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
           }
         }
         wasStatus = peer.status;
+        peer.statusTS = sigTime;
         peer.statusSigDate = new Date(sigTime*1000);
         peer.setStatus(status.status, dal, next);
       },

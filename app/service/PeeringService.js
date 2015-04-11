@@ -210,7 +210,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
       clearInterval(statusUpInterval);
     statusUpInterval = setInterval(function () {
       statusUpfifo.push(upSignal);
-    }, 1000*conf.avgGenTime*10);
+    }, 1000*conf.avgGenTime*constants.NETWORK.STATUS_INTERVAL.UPDATE);
     upSignal(done);
   };
 

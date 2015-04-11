@@ -3,6 +3,7 @@ var sha1     = require('sha1');
 var util     = require('util');
 var stream   = require('stream');
 var Peer     = require('../entity/peer');
+var constants = require('../constants');
 
 module.exports = function (serverPubkey, conf, dal) {
   return new Router(serverPubkey, conf, dal);
@@ -72,7 +73,7 @@ function Router (serverPubkey, conf, dal) {
           dal.getCurrentBlockOrNull(next);
         },
         function (current, next) {
-          var minDate = current && current.number > 0 ? current.medianTime - conf.avgGenTime*10 : 0;
+          var minDate = current && current.number > 0 ? current.medianTime - conf.avgGenTime*constants.NETWORK.STATUS_INTERVAL.MAX : 0;
           dal.getRandomlyUPsWithout(without, minDate, next); // Peers with status UP
         },
         function (peers, next) {

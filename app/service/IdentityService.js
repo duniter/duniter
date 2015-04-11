@@ -45,7 +45,7 @@ function IdentityService (conn, conf, dal) {
         dal.getWrittenByUID(search, next);
       }
     }, function (err, res) {
-      done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, new Identity(res.pubkey || res.uid));
+      done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, new Identity(res.pubkey || res.uid || {}));
     });
   };
 

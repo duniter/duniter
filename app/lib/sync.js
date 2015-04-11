@@ -80,7 +80,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
 
   var dal = server.dal;
 
-  this.sync = function (done) {
+  this.sync = function (to, done) {
     logger.info('Connecting remote host...');
     vucoin(host, port, function (err, node) {
       if(err){
@@ -131,6 +131,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
                   }
 
                   remoteCurrentNumber = rCurrent.number;
+                  remoteCurrentNumber = Math.min(remoteCurrentNumber, to || remoteCurrentNumber);
                   writeStatus('Initializing sync...');
                   setInterval(function() {
                     if (remoteCurrentNumber > 1 && speed > 0) {
@@ -143,14 +144,14 @@ module.exports = function Synchroniser (server, host, port, conf) {
 
                   async.whilst(
                     function () {
-                      finishedDownload = rCurrent ? i > rCurrent.number : false;
+                      finishedDownload = rCurrent ? i > Math.min(to || remoteCurrentNumber, remoteCurrentNumber) : false;
                       finishedDownload && downloadBar.percent(100);
                       return !finishedDownload;
                     },
                     function (callback) {
                       downloadBar.percent(Math.floor(i/remoteCurrentNumber*100));
                       var startBlock = i;
-                      var endBlock = (i + CONST_BLOCKS_CHUNK - 1 >= rCurrent.number ? rCurrent.number : i + CONST_BLOCKS_CHUNK - 1);
+                      var endBlock = (i + CONST_BLOCKS_CHUNK - 1 >= remoteCurrentNumber ? remoteCurrentNumber : i + CONST_BLOCKS_CHUNK - 1);
                       server.dal.getBlockOrNull(endBlock)
                         .then(function(block){
                           if (block) return block;
@@ -158,7 +159,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
                             async.waterfall([
                               function (next) {
                                 logger.info('Blocks #%s to #%s...', startBlock, endBlock);
-                                node.blockchain.blocks(CONST_BLOCKS_CHUNK, i, next);
+                                node.blockchain.blocks(Math.min(remoteCurrentNumber - i + 1, CONST_BLOCKS_CHUNK), i, next);
                               },
                               function (blocks, next) {
                                 async.forEachSeries(blocks, function (block, callback) {
@@ -240,7 +241,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
                                     if (err) {
                                       reject(err);
                                     } else {
-                                      finished = current.number == currentNumber;
+                                      finished = Math.min(to || current.number, current.number) == currentNumber;
                                       resolve();
                                     }
                                   });

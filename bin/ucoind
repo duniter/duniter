@@ -99,15 +99,15 @@ program
   });
 
 program
-  .command('sync [host] [port]')
+  .command('sync [host] [port] [to]')
   .description('Synchronize blockchain from a remote uCoin node')
-  .action(service(ucoin.createTxServer, function (host, port, server, conf) {
+  .action(service(ucoin.createTxServer, function (host, port, to, server, conf) {
 
     async.series([
       function (next){
         // Synchronize
         var remote = new Synchroniser(server, host, port, conf);
-        remote.sync(next);
+        remote.sync(parseInt(to), next);
       }
     ], logIfErrorAndExit(server, 'Error during sync: '));
   }));

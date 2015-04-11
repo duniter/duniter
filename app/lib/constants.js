@@ -97,8 +97,8 @@ module.exports = {
       MAX: 20
     },
     STATUS_INTERVAL: {
-      UPDATE: 5,
-      MAX: 10 // Every 10 blocks
+      UPDATE: 10, // Every X blocks
+      MAX: 20 // MAX Y blocks
     }
   },
   PROOF_OF_WORK: {

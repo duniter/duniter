@@ -702,13 +702,13 @@ function FileDAL(profile, myFS) {
   };
 
   this.obsoletesLinks = function(minTimestamp, done) {
-    _.chain(links).
+    var matching = _.chain(links).
       filter(function(link){ return link.timestamp <= minTimestamp; }).
-      value().
-      forEach(function(i){
+      value();
+    matching.forEach(function(i){
         i.obsolete = true;
       });
-    done && done();
+    return matching.length ? that.writeJSON(links, 'links.json', done) : that.donable(Q(), done);
   };
 
   this.setConsumedSource = function(type, pubkey, number, fingerprint, amount, done) {
@@ -717,21 +717,22 @@ function FileDAL(profile, myFS) {
       sortBy(function(src){ return -src.number; }).
       value();
     matching[0].consumed = true;
-    done && done();
+    return that.writeJSON(sources, 'sources.json', done);
   };
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
     var kicked = notEnoughLinks ? true : false;
     var matching =_.chain(identities).
-      where({ pubkey: pubkey, hash: hash, kick: kicked }).
+      where({ pubkey: pubkey, hash: hash }).
       value();
     matching.forEach(function(i){
-      i.kick = kicked;
+      i.kick = i.kick || kicked;
     });
-    done && done();
+    return matching.length ? saveIdentitiesInFile(identities, done) : that.donable(Q(), done);
   };
 
   this.deleteIfExists = function(ms, done) {
+    var prevCount = memberships.length;
     memberships = _.reject(memberships, function(aMS) {
       return aMS.membership == ms.membership
         && aMS.issuer == ms.issuer
@@ -740,7 +741,7 @@ function FileDAL(profile, myFS) {
         && aMS.number == ms.number
         && aMS.fpr == ms.fpr;
     });
-    done && done();
+    return memberships.length != prevCount ? that.writeJSON(memberships, 'memberships.json', done) : that.donable(Q(), done);
   };
 
   this.kickWithOutdatedMemberships = function(maxNumber, done) {
@@ -751,7 +752,7 @@ function FileDAL(profile, myFS) {
     matching.forEach(function(i){
       i.kick = true;
     });
-    done && done();
+    return matching.length ? saveIdentitiesInFile(identities, done) : that.donable(Q(), done);
   };
 
   this.getPeerOrNull = function(pubkey, done) {
@@ -835,8 +836,7 @@ function FileDAL(profile, myFS) {
     matching.forEach(function(p){
       p.status = 'DOWN';
     });
-    done && done();
-    return Q();
+    return that.writeJSON(peers, 'peers.json', done);
   };
 
   this.saveBlock = function(block, done) {
@@ -1010,12 +1010,16 @@ function FileDAL(profile, myFS) {
       idty.block_number = parseInt(idty.block_number);
       _.extend(existing, idty);
     }
+    return saveIdentitiesInFile(identities, done);
+  };
+
+  function saveIdentitiesInFile(identities, done) {
     return that.writeJSON(identities.map(function(idty) {
       return _.omit(idty, 'certs');
     }), 'identities.json', function(err, obj) {
       done(err, obj);
     });
-  };
+  }
 
   this.saveCertification = function(cert, done) {
     var existing = _.where(certs, {

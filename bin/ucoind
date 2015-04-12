@@ -64,6 +64,7 @@ program
   .option('--httplogs',                'Enable HTTP logs')
   .option('--nohttplogs',              'Disable HTTP logs')
   .option('--autostart',               'With webapp command: ask to start the node automatically')
+  .option('--nointeractive',           'Disable interactive sync UI')
   ;
 
 program
@@ -106,7 +107,7 @@ program
     async.series([
       function (next){
         // Synchronize
-        var remote = new Synchroniser(server, host, port, conf);
+        var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
         remote.sync(parseInt(to), next);
       }
     ], logIfErrorAndExit(server, 'Error during sync: '));

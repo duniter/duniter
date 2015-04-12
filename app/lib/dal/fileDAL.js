@@ -8,6 +8,7 @@ var Identity = require('../entity/identity');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
 var Configuration = require('../entity/configuration');
+var constants = require('../constants');
 
 const BLOCK_FILE_PREFIX = "0000000000";
 const BLOCK_FOLDER_SIZE = 500;
@@ -725,10 +726,14 @@ function FileDAL(profile, myFS) {
     var matching =_.chain(identities).
       where({ pubkey: pubkey, hash: hash }).
       value();
+    var oneChanged = false;
     matching.forEach(function(i){
+      oneChanged = oneChanged || (!i.kick && kicked);
       i.kick = i.kick || kicked;
     });
-    return matching.length ? saveIdentitiesInFile(identities, done) : that.donable(Q(), done);
+    return oneChanged ? saveIdentitiesInFile(identities, function(err) {
+      done && done(err);
+    }) : that.donable(Q(), done);
   };
 
   this.deleteIfExists = function(ms, done) {
@@ -752,7 +757,9 @@ function FileDAL(profile, myFS) {
     matching.forEach(function(i){
       i.kick = true;
     });
-    return matching.length ? saveIdentitiesInFile(identities, done) : that.donable(Q(), done);
+    return matching.length ? saveIdentitiesInFile(identities, function(err) {
+      done && done(err);
+    }) : that.donable(Q(), done);
   };
 
   this.getPeerOrNull = function(pubkey, done) {
@@ -1209,7 +1216,7 @@ function FileDAL(profile, myFS) {
                 })
                 .then(function (o) {
                   var duration = (new Date() - start);
-                  if (duration >= 30)
+                  if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
                     logger.debug('Time %s ms | %s', duration, fname);
                   return o;
                 });
@@ -1224,7 +1231,7 @@ function FileDAL(profile, myFS) {
             })
             .then(function (o) {
               var duration = (new Date() - start);
-              if (duration >= 30)
+              if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
                 logger.debug('Time %s ms | %s', duration, fname);
               return o;
             });

@@ -26,6 +26,10 @@ module.exports = {
     }
   },
 
+  DEBUG: {
+    LONG_DAL_PROCESS: 5
+  },
+
   SALT: exact(".+"),
   PASSWORD: exact(".*"),
 

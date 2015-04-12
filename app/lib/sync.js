@@ -17,62 +17,19 @@ var multimeter = require('multimeter');
 var CONST_BLOCKS_CHUNK = 500;
 var EVAL_REMAINING_INTERVAL = 1000;
 
-module.exports = function Synchroniser (server, host, port, conf) {
+module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var that = this;
 
-  require('log4js').configure({
-    "appenders": [
-      //{ category: "db1", type: "console" }
-    ]
-  });
-
-  var multi = multimeter(process);
-  var charm = multi.charm;
-  charm.on('^C', process.exit);
-  charm.reset();
-
-  multi.write('Progress:\n\n');
-
-  multi.write("Download: \n");
-  var downloadBar = multi("Download: \n".length, 3, {
-    width : 20,
-    solid : {
-      text : '|',
-      foreground : 'white',
-      background : 'blue'
-    },
-    empty : { text : ' ' }
-  });
-
-  multi.write("Apply:    \n");
-  var appliedBar = multi("Apply:    \n".length, 4, {
-    width : 20,
-    solid : {
-      text : '|',
-      foreground : 'white',
-      background : 'blue'
-    },
-    empty : { text : ' ' }
-  });
-
-  multi.write('\nStatus: ');
-
   var speed = 0, syncStart = new Date, blocksApplied = 0;
-  var xPos, yPos;
-  charm.position(function (x, y) {
-    xPos = x;
-    yPos = y;
-  });
-  var writeStatus = function(str) {
-    charm
-      .position(xPos, yPos)
-      .erase('end')
-      .write(str)
-    ;
-  };
+  var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
 
-  downloadBar.percent(0);
-  appliedBar.percent(0);
+  if (interactive) {
+    require('log4js').configure({
+      "appenders": [
+        //{ category: "db1", type: "console" }
+      ]
+    });
+  }
 
   // Services
   var PeeringService     = server.PeeringService;
@@ -108,7 +65,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
 
                 function (next){
                   logger.info('Downloading Blockchain...');
-                  writeStatus('Connecting to ' + host + '...');
+                  watcher.writeStatus('Connecting to ' + host + '...');
                   async.parallel({
                     localCurrent: function (next) {
                       dal.getCurrentBlockOrNull(next);
@@ -132,24 +89,24 @@ module.exports = function Synchroniser (server, host, port, conf) {
 
                   remoteCurrentNumber = rCurrent.number;
                   remoteCurrentNumber = Math.min(remoteCurrentNumber, to || remoteCurrentNumber);
-                  writeStatus('Initializing sync...');
+                  watcher.writeStatus('Initializing sync...');
                   setInterval(function() {
                     if (remoteCurrentNumber > 1 && speed > 0) {
                       var remain = (remoteCurrentNumber - (localStartNumber + 1 + blocksApplied));
                       var secondsLeft = remain / speed;
                       var momDuration = moment.duration(secondsLeft*1000);
-                      writeStatus('Remaining ' + momDuration.humanize() + '');
+                      watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
                     }
                   }, EVAL_REMAINING_INTERVAL);
 
                   async.whilst(
                     function () {
                       finishedDownload = rCurrent ? i > Math.min(to || remoteCurrentNumber, remoteCurrentNumber) : false;
-                      finishedDownload && downloadBar.percent(100);
+                      finishedDownload && watcher.downloadPercent(100);
                       return !finishedDownload;
                     },
                     function (callback) {
-                      downloadBar.percent(Math.floor(i/remoteCurrentNumber*100));
+                      watcher.downloadPercent(Math.floor(i/remoteCurrentNumber*100));
                       var startBlock = i;
                       var endBlock = (i + CONST_BLOCKS_CHUNK - 1 >= remoteCurrentNumber ? remoteCurrentNumber : i + CONST_BLOCKS_CHUNK - 1);
                       server.dal.getBlockOrNull(endBlock)
@@ -226,8 +183,8 @@ module.exports = function Synchroniser (server, host, port, conf) {
                                   });
                                   blocksApplied++;
                                   speed = blocksApplied / Math.round(Math.max((new Date - syncStart) / 1000, 1));
-                                  if (appliedBar.percent() != Math.floor(block.number/remoteCurrentNumber*100)){
-                                    appliedBar.percent(Math.floor(block.number/remoteCurrentNumber*100));
+                                  if (watcher.appliedPercent() != Math.floor(block.number/remoteCurrentNumber*100)){
+                                    watcher.appliedPercent(Math.floor(block.number/remoteCurrentNumber*100));
                                   }
                                   BlockchainService.submitBlock(block, false, function(err) {
                                     err ? reject(err) : resolve();
@@ -256,19 +213,19 @@ module.exports = function Synchroniser (server, host, port, conf) {
                     }
                   ], callback);
                 }, function(err) {
-                  appliedBar.percent(100);
+                  watcher.appliedPercent(100);
                   processFinished(err);
                 });
             }
           }, function(err) {
-            downloadBar.percent(100);
-            appliedBar.percent(100);
+            watcher.downloadPercent(100);
+            watcher.appliedPercent(100);
             next(err);
           });
         },
 
         function (next) {
-          writeStatus('Peers...');
+          watcher.writeStatus('Peers...');
           syncPeer(node, next);
         },
 
@@ -315,7 +272,7 @@ module.exports = function Synchroniser (server, host, port, conf) {
                         entry[key] = jsonEntry[key];
                       });
                       entry.signature = sign;
-                      writeStatus('Peer ' + entry.pubkey);
+                      watcher.writeStatus('Peer ' + entry.pubkey);
                       logger.info('Peer ' + entry.pubkey);
                       PeeringService.submit(entry, function (err) {
                         cb();
@@ -328,16 +285,15 @@ module.exports = function Synchroniser (server, host, port, conf) {
               });
             }
             else {
-              writeStatus('Peers already known');
+              watcher.writeStatus('Peers already known');
               next();
             }
           });
         }
       ], function (err, result) {
 
-        err && writeStatus(err);
-        multi.write('\nAll done.\n');
-        multi.destroy();
+        err && watcher.writeStatus(err);
+        watcher.end();
         logger.info('Sync finished.');
         done(err);
       });
@@ -420,4 +376,91 @@ function choose (question, defaultValue, ifOK, ifNotOK) {
   }], function (answer) {
     answer.q ? ifOK() : ifNotOK();
   });
+}
+
+function MultimeterWatcher() {
+
+  var multi = multimeter(process);
+  var charm = multi.charm;
+  charm.on('^C', process.exit);
+  charm.reset();
+
+  multi.write('Progress:\n\n');
+
+  multi.write("Download: \n");
+  var downloadBar = multi("Download: \n".length, 3, {
+    width : 20,
+    solid : {
+      text : '|',
+      foreground : 'white',
+      background : 'blue'
+    },
+    empty : { text : ' ' }
+  });
+
+  multi.write("Apply:    \n");
+  var appliedBar = multi("Apply:    \n".length, 4, {
+    width : 20,
+    solid : {
+      text : '|',
+      foreground : 'white',
+      background : 'blue'
+    },
+    empty : { text : ' ' }
+  });
+
+  multi.write('\nStatus: ');
+
+  var xPos, yPos;
+  charm.position(function (x, y) {
+    xPos = x;
+    yPos = y;
+  });
+
+  this.writeStatus = function(str) {
+    charm
+      .position(xPos, yPos)
+      .erase('end')
+      .write(str)
+    ;
+  };
+
+  this.downloadPercent = function(pct) {
+    return downloadBar.percent(pct);
+  };
+
+  this.appliedPercent = function(pct) {
+    return appliedBar.percent(pct);
+  };
+
+  this.end = function() {
+    multi.write('\nAll done.\n');
+    multi.destroy();
+  };
+
+  downloadBar.percent(0);
+  appliedBar.percent(0);
+}
+
+function LoggerWatcher() {
+
+  var downPct = 0, appliedPct = 0;
+
+  this.writeStatus = function(str) {
+    logger.info(str);
+  };
+
+  this.downloadPercent = function(pct) {
+    downPct = pct;
+    return downPct;
+  };
+
+  this.appliedPercent = function(pct) {
+    appliedPct = pct;
+    return appliedPct;
+  };
+
+  this.end = function() {
+  };
+
 }

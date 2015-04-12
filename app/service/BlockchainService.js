@@ -1133,7 +1133,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
               }, next);
             },
             function (res, next){
-              if (res.identity && res.block && res.identity.currentMSN < join.ms.number) {
+              if (res.identity && res.block && res.identity.currentMSN < parseInt(join.ms.number)) {
                 // MS + matching cert are found
                 join.identity = res.identity;
                 join.certs = res.certs;

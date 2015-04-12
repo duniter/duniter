@@ -15,7 +15,7 @@ var Transaction = function(json, currency) {
   });
 
   this.version = 1;
-  this.currency = currency;
+  this.currency = currency || this.currency;
 
   if (this.signatories && this.signatories.length)
     this.issuers = this.signatories;
@@ -75,8 +75,8 @@ var Transaction = function(json, currency) {
     return rawer.getTransaction(this);
   };
 
-  this.getHash = function () {
-    return this.hash || sha1(rawer.getTransaction(this)).toUpperCase();
+  this.getHash = function (recompute) {
+    return (!recompute && this.hash) || sha1(rawer.getTransaction(this)).toUpperCase();
   };
 
   this.compact = function () {

@@ -8,6 +8,7 @@ var Identity = require('../entity/identity');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
 var Configuration = require('../entity/configuration');
+var Transaction = require('../entity/transaction');
 var constants = require('../constants');
 
 const BLOCK_FILE_PREFIX = "0000000000";
@@ -918,7 +919,9 @@ function FileDAL(profile, myFS) {
     return myFS.makeTree(getUCoinHomePath(profile) + '/tx/')
       .then(function(){
         return Q.all(txs.map(function(tx) {
-          return myFS.write(getUCoinHomePath(profile) + '/tx/' + tx.hash + '.json', JSON.stringify(tx, null, ' '));
+          tx.currency = conf.currency;
+          var hash = new Transaction(tx).getHash(true);
+          return myFS.write(getUCoinHomePath(profile) + '/tx/' + hash + '.json', JSON.stringify(tx, null, ' '));
         }));
       })
       .then(function(){
@@ -1054,6 +1057,61 @@ function FileDAL(profile, myFS) {
     return that.writeJSON(txs, 'txs.json', done);
   };
 
+  this.saveTxInHistory = function(type, pubkey, tx) {
+    return myFS.makeTree(getUCoinHomePath(profile) + '/tx_history/')
+      .then(function(){
+        return myFS.read(getUCoinHomePath(profile) + '/tx_history/' + pubkey + '.json')
+          .then(function(data){
+            return JSON.parse(data);
+          });
+      })
+      .fail(function(){
+        return { sent: [], received: [] };
+      })
+      .then(function(history){
+        tx.currency = conf.currency;
+        history[type].push(new Transaction(tx).getHash());
+        return myFS.write(getUCoinHomePath(profile) + '/tx_history/' + pubkey + '.json', JSON.stringify(history, null, ' '));
+      });
+  };
+
+  this.getTransactionsHistory = function(pubkey, done) {
+    return myFS.makeTree(getUCoinHomePath(profile) + '/tx_history/')
+      .then(function(){
+        return myFS.read(getUCoinHomePath(profile) + '/tx_history/' + pubkey + '.json')
+          .then(function(data){
+            return JSON.parse(data);
+          });
+      })
+      .fail(function(){
+        return { sent: [], received: [] };
+      })
+      .then(function(history){
+        return Q.all([
+          Q.all(history.sent.map(function(hash, index) {
+            return that.getTxByHash(hash)
+              .then(function(tx){
+                history.sent[index] = (tx && JSON.parse(tx)) || null;
+              });
+          })),
+          Q.all(history.received.map(function(hash, index) {
+            return that.getTxByHash(hash)
+              .then(function(tx){
+                history.received[index] = (tx && JSON.parse(tx)) || null;
+              });
+          }))
+        ]).thenResolve(history);
+      })
+      .then(function(history){
+        done && done(null, history);
+        return history;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
   this.savePeer = function(peer, done) {
     peer.hash = (sha1(peer.getRawSigned()) + "").toUpperCase();
     var existing = _.where(peers, { pubkey: peer.pubkey })[0];
@@ -1079,7 +1137,8 @@ function FileDAL(profile, myFS) {
       });
   };
 
-  this.saveConf = function(conf, done) {
+  this.saveConf = function(confToSave, done) {
+    _.extend(conf, confToSave);
     return myFS.write(getUCoinHomePath(profile) + '/conf.json', JSON.stringify(conf, null, ' '))
       .then(function(){
         done && done();

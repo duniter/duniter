@@ -169,6 +169,9 @@ describe("DAL", function(){
       })
       .then(function() {
         return fileDAL.initDabase();
+      })
+      .then(function() {
+        return fileDAL.saveConf({ currency: "meta_brouzouf" });
       });
   });
 

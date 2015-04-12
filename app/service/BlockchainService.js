@@ -1,5 +1,6 @@
 var async           = require('async');
 var _               = require('underscore');
+var Q               = require('q');
 var merkle          = require('merkle');
 var sha1            = require('sha1');
 var moment          = require('moment');
@@ -1701,11 +1702,12 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       'leavers': 'leavers',
       'excluded': 'excluded',
       'ud': 'dividend',
-      'tx': 'transactions'
+      'tx': 'transactions',
+      'tx_history': saveHistory
     };
     statQueue.push(function (sent) {
       //logger.debug('Computing stats...');
-      async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx'], function (statName, callback) {
+      async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx', 'tx_history'], function (statName, callback) {
         async.waterfall([
           function (next) {
             async.parallel({
@@ -1729,14 +1731,25 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                 },
                 function (block, next) {
                   var testProperty = tests[statName];
-                  var value = block[testProperty];
-                  var isPositiveValue = value && typeof value != 'object';
-                  var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
-                  if (isPositiveValue || isNonEmptyArray) {
-                    stat.blocks.push(blockNumber);
+                  if (typeof testProperty === 'function') {
+                    saveHistory(block)
+                      .then(function(){
+                        stat.lastParsedBlock = blockNumber;
+                        next();
+                      })
+                      .fail(function(err){
+                        next(err);
+                      });
+                  } else {
+                    var value = block[testProperty];
+                    var isPositiveValue = value && typeof value != 'object';
+                    var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+                    if (isPositiveValue || isNonEmptyArray) {
+                      stat.blocks.push(blockNumber);
+                    }
+                    stat.lastParsedBlock = blockNumber;
+                    next();
                   }
-                  stat.lastParsedBlock = blockNumber;
-                  next();
                 }
               ], callback);
             }, function (err) {
@@ -1754,5 +1767,31 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         sent();
       });
     });
+  };
+
+  function saveHistory(block) {
+    return block.transactions.reduce(function(promise, tx) {
+      return promise
+        .then(function(){
+          var issuers = [], recipients = [];
+          tx.signatories.forEach(function(issuer){
+            issuers.push(issuer);
+          });
+          tx.outputs.forEach(function(out){
+            var recip = out.split(':')[0];
+            if (issuers.indexOf(recip) === -1) {
+              recipients.push(recip);
+            }
+          });
+          return Q.all(issuers.map(function(issuer) {
+            return dal.saveTxInHistory('sent', issuer, tx);
+          }))
+            .then(function(){
+            return Q.all(recipients.map(function(receipient) {
+              return dal.saveTxInHistory('received', receipient, tx);
+            }));
+          })
+        });
+    }, Q());
   }
 }

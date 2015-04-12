@@ -27,7 +27,7 @@ module.exports = {
   },
 
   DEBUG: {
-    LONG_DAL_PROCESS: 5
+    LONG_DAL_PROCESS: 50
   },
 
   SALT: exact(".+"),

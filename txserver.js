@@ -46,6 +46,7 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
     var transactions = require('./app/controllers/transactions')(that);
     app.post('/tx/process',           transactions.parseTransaction);
     app.get( '/tx/sources/:pubkey',   transactions.getSources);
+    app.get( '/tx/history/:pubkey',   transactions.getHistory);
   };
 }
 

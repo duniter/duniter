@@ -12,6 +12,7 @@ var link2pubkey      = require('../lib/streams/link2pubkey');
 var extractSignature = require('../lib/streams/extractSignature');
 var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger')('transaction');
+var Transaction      = require('../lib/entity/transaction');
 
 module.exports = function (txServer) {
   return new TransactionBinding(txServer);
@@ -43,7 +44,7 @@ function TransactionBinding(txServer) {
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
-  }
+  };
 
   this.getSources = function (req, res) {
     res.type('application/json');
@@ -74,7 +75,41 @@ function TransactionBinding(txServer) {
         res.send(200, JSON.stringify(result, null, "  "));
       }
     });
-  }
+  };
+
+  this.getHistory = function (req, res) {
+    res.type('application/json');
+    var pubkey = "";
+    async.waterfall([
+      function (next) {
+        ParametersService.getPubkey(req, next);
+      },
+      function (pPubkey, next) {
+        pubkey = pPubkey;
+        txServer.dal.getTransactionsHistory(pubkey, next);
+      },
+      function (history, next) {
+        var result = {
+          "currency": conf.currency,
+          "pubkey": pubkey,
+          "history": history
+        };
+        history.sent.map(function (tx, index) {
+          history.sent[index] = new Transaction(tx).json();
+        });
+        history.received.map(function (tx, index) {
+          history.received[index] = new Transaction(tx).json();
+        });
+        next(null, result);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
+  };
   
   return this;
 }

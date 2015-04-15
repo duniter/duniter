@@ -2,9 +2,10 @@ var _ = require('underscore');
 var rawer = require('../rawer');
 var sha1 = require('sha1');
 
-var Transaction = function(json, currency) {
+var Transaction = function(obj, currency) {
 
   var that = this;
+  var json = obj || {};
 
   this.inputs = [];
   this.outputs = [];

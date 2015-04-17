@@ -58,6 +58,11 @@ function BlockParser (onError) {
     obj.previousHash = obj.previousHash || '';
     obj.previousIssuer = obj.previousIssuer || '';
     obj.membersCount = obj.membersCount || '';
+    obj.transactions.map(function(tx) {
+      tx.version = obj.version;
+      tx.currency = obj.currency;
+      tx.currency = sha1(rawer.getTransaction(tx)).toUpperCase();
+    })
   };
 
   this._verify = function(obj){

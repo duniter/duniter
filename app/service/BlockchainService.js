@@ -675,7 +675,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           obj.issuers = json.signatories;
           var tx = new Transaction(obj);
           var txObj = tx.getTransaction();
-          var txHash = tx.getHash();
+          var txHash = tx.getHash(true);
           async.parallel({
             consume: function (next) {
               async.forEachSeries(txObj.inputs, function (input, callback) {

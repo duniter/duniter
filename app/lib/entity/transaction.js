@@ -77,7 +77,10 @@ var Transaction = function(obj, currency) {
   };
 
   this.getHash = function (recompute) {
-    return (!recompute && this.hash) || sha1(rawer.getTransaction(this)).toUpperCase();
+    if (recompute || !this.hash) {
+      this.hash = sha1(rawer.getTransaction(this)).toUpperCase();
+    }
+    return this.hash;
   };
 
   this.compact = function () {

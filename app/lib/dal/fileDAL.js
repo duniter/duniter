@@ -1082,18 +1082,45 @@ function FileDAL(profile, myFS) {
         return { sent: [], received: [] };
       })
       .then(function(history){
+        history.sending = [];
+        history.receiving = [];
         return Q.all([
+          // Sent
           Q.all(history.sent.map(function(hash, index) {
             return that.getTxByHash(hash)
               .then(function(tx){
                 history.sent[index] = (tx && JSON.parse(tx)) || null;
               });
           })),
+          // Received
           Q.all(history.received.map(function(hash, index) {
             return that.getTxByHash(hash)
               .then(function(tx){
                 history.received[index] = (tx && JSON.parse(tx)) || null;
               });
+          })),
+          // Sending
+          Q.all(txs.map(function(tx) {
+            if (~tx.issuers.indexOf(pubkey)) {
+              history.sending.push(tx || null);
+            }
+          })),
+          // Receiving
+          Q.all(txs.map(function(tx, index) {
+            if (~tx.issuers.indexOf(pubkey)) {
+              return;
+            }
+            var isRecipient = false;
+            for (var i = 0; i < tx.outputs.length; i++) {
+              var output = tx.outputs[i];
+              if (output.match(new RegExp('^' + pubkey))) {
+                isRecipient = true;
+                break;
+              }
+            }
+            if (isRecipient) {
+              history.receiving.push(tx || null);
+            }
           }))
         ]).thenResolve(history);
       })

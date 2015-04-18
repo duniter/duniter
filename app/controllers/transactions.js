@@ -94,11 +94,10 @@ function TransactionBinding(txServer) {
           "pubkey": pubkey,
           "history": history
         };
-        history.sent.map(function (tx, index) {
-          history.sent[index] = new Transaction(tx).json();
-        });
-        history.received.map(function (tx, index) {
-          history.received[index] = new Transaction(tx).json();
+        _.keys(history).map(function(key) {
+          history[key].map(function (tx, index) {
+            history[key][index] = _.omit(new Transaction(tx).json(), 'currency');
+          });
         });
         next(null, result);
       }

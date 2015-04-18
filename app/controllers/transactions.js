@@ -111,8 +111,8 @@ function TransactionBinding(txServer) {
         var pubkey = res.pubkey, from = res.from, to = res.to;
         getHistory(pubkey, function(res) {
           var histo = res.history;
-          histo.sent =     _.filter(histo.sent, function(tx){ return tx.block_number >= from && tx.block_number <= to; });
-          histo.received = _.filter(histo.received, function(tx){ return tx.block_number >= from && tx.block_number <= to; });
+          histo.sent =     _.filter(histo.sent, function(tx){ return tx && tx.block_number >= from && tx.block_number <= to; });
+          histo.received = _.filter(histo.received, function(tx){ return tx && tx.block_number >= from && tx.block_number <= to; });
           _.extend(histo, { sending: [], receiving: [] });
           return res;
         }, next);
@@ -140,8 +140,8 @@ function TransactionBinding(txServer) {
         var pubkey = res.pubkey, from = res.from, to = res.to;
         getHistory(pubkey, function(res) {
           var histo = res.history;
-          histo.sent =     _.filter(histo.sent, function(tx){ return tx.time >= from && tx.time <= to; });
-          histo.received = _.filter(histo.received, function(tx){ return tx.time >= from && tx.time <= to; });
+          histo.sent =     _.filter(histo.sent, function(tx){ return tx && tx.time >= from && tx.time <= to; });
+          histo.received = _.filter(histo.received, function(tx){ return tx && tx.time >= from && tx.time <= to; });
           _.extend(histo, { sending: [], receiving: [] });
           return res;
         }, next);
@@ -169,7 +169,7 @@ function TransactionBinding(txServer) {
         _.keys(history).map(function(key) {
           history[key].map(function (tx, index) {
             history[key][index] = _.omit(new Transaction(tx).json(), 'currency', 'raw');
-            _.extend(history[key][index], { block_number: tx.block_number, time: tx.time });
+            _.extend(history[key][index], { block_number: tx && tx.block_number, time: tx && tx.time });
           });
         });
         next(null, filter(result));

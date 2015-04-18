@@ -945,25 +945,21 @@ function GlobalValidator (conf, dao) {
   }
 
   function checkKickedMembersAreExcluded (block, done) {
-    var wotPubkeys = [];
     async.waterfall([
       function (next){
         dao.getToBeKicked(block.number, next);
       },
       function (identities, next){
-        var remainingKeys = [];
-        identities.forEach(function (idty) {
-          remainingKeys.push(idty.pubkey);
+        var remainingKeys = identities.map(function (idty) {
+          return idty.pubkey;
         });
-        block.excluded.forEach(function (excluded) {
-          remainingKeys = _(remainingKeys).difference(excluded);
-        });
+        remainingKeys = _(remainingKeys).difference(block.excluded);
         if (remainingKeys.length > 0) {
           next('All kicked members must be present under Excluded members')
         } else {
           next();
         }
-      },
+      }
     ], done);
   }
 

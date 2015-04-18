@@ -600,22 +600,18 @@ function FileDAL(profile, myFS) {
     return matching;
   };
 
-  this.certsNotLinkedToTarget = function(hash, done) {
-    var matching =_.chain(certs).
+  this.certsNotLinkedToTarget = function(hash) {
+    return _.chain(certs).
       where({ linked: false, target: hash }).
       sortBy(function(c){ return -c.block; }).
       value();
-    done && done(null, matching);
-    return matching;
   };
 
-  this.certsTo = function(pubkey, done) {
-    var matching =_.chain(certs).
+  this.certsTo = function(pubkey) {
+    return _.chain(certs).
       where({ to: pubkey }).
       sortBy(function(c){ return -c.block; }).
       value();
-    done && done(null, matching);
-    return matching;
   };
 
   this.getMembershipsForHashAndIssuer = function(hash, issuer, done) {
@@ -645,12 +641,11 @@ function FileDAL(profile, myFS) {
     return matching;
   };
 
-  this.existsLinkFromOrAfterDate = function(from, to, maxDate, done) {
+  this.existsLinkFromOrAfterDate = function(from, to, maxDate) {
     var matching =_.chain(links).
       where({ source: from, target: to}).
       filter(function(lnk){ return lnk.timestamp >= maxDate; }).
       value();
-    done && done(null, matching.length ? true : false);
     return matching.length ? true : false;
   };
 

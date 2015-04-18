@@ -172,7 +172,7 @@ program
 program
   .command('gen-root [host] [port] [diff]')
   .description('Tries to generate root block, with choice of root members')
-  .action(service(ucoin.createPeerServer, generateAndSend("generateNewcomers")));
+  .action(service(ucoin.createPeerServer, generateAndSend("generateManualRoot")));
 
 function generateAndSend (generationMethod) {
   return function (host, port, difficulty, server, conf) {
@@ -224,6 +224,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
       var peer = new Peer({
         endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
       });
+      program.show && console.log(block.getRawSigned());
       logger.info('Posted block ' + block.quickDescription());
       multicaster().sendBlock(peer, block, next);
     },

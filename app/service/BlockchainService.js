@@ -1,7 +1,6 @@
 var async           = require('async');
 var _               = require('underscore');
 var Q               = require('q');
-var merkle          = require('merkle');
 var sha1            = require('sha1');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
@@ -228,31 +227,12 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     return found;
   }
 
-  function checkWoTConstraints (block, newLinks, done) {
+  function checkWoTConstraints (sentries, block, newLinks, done) {
     if (block.number >= 0) {
       var newcomers = [];
-      var ofMembers = [];
+      var ofMembers = [].concat(sentries);
       // other blocks may introduce unstability with new members
       async.waterfall([
-        function (next) {
-          dal.getMembers(next);
-        },
-        function (members, next) {
-          async.forEachSeries(members, function (m, callback) {
-            async.waterfall([
-              function (next) {
-                dal.getValidLinksFrom(m.pubkey, next);
-              },
-              function (links, next) {
-                // Only test agains members who make enough signatures
-                if (links.length >= conf.sigWoT) {
-                  ofMembers.push(m.pubkey);
-                }
-                next();
-              }
-            ], callback);
-          }, next);
-        },
         function (next) {
           block.joiners.forEach(function (inlineMS) {
             var fpr = inlineMS.split(':')[0];
@@ -294,6 +274,27 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         }
       ], done);
     }
+    else done('Cannot compute WoT constraint for negative block number');
+  }
+
+  function getSentryMembers(members, done) {
+    var sentries = [];
+    async.forEachSeries(members, function (m, callback) {
+      async.waterfall([
+        function (next) {
+          dal.getValidLinksFrom(m.pubkey, next);
+        },
+        function (links, next) {
+          // Only test agains members who make enough signatures
+          if (links.length >= conf.sigWoT) {
+            sentries.push(m.pubkey);
+          }
+          next();
+        }
+      ], callback);
+    }, function(err) {
+      done(err, sentries);
+    });
   }
 
   function checkHaveEnoughLinks(target, newLinks, done) {
@@ -642,8 +643,8 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   }
 
   function updateTransactionSources (block, done) {
-    async.parallel({
-      newDividend: function (next) {
+    async.parallel([
+      function (next) {
         if (block.dividend) {
           async.waterfall([
             function (next) {
@@ -667,7 +668,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         }
         else next();
       },
-      transactions: function (next) {
+      function (next) {
         async.forEachSeries(block.transactions, function (json, callback) {
           var obj = json;
           obj.version = 1;
@@ -676,13 +677,13 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           var tx = new Transaction(obj);
           var txObj = tx.getTransaction();
           var txHash = tx.getHash(true);
-          async.parallel({
-            consume: function (next) {
+          async.parallel([
+            function (next) {
               async.forEachSeries(txObj.inputs, function (input, callback) {
                 dal.setConsumedSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount, callback);
               }, next);
             },
-            create: function (next) {
+            function (next) {
               async.forEachSeries(txObj.outputs, function (output, callback) {
                 dal.saveSource(new Source({
                   'pubkey': output.pubkey,
@@ -696,10 +697,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                 });
               }, next);
             }
-          }, callback);
+          ], callback);
         }, next);
       }
-    }, function (err) {
+    ], function (err) {
       done(err);
     });
   }
@@ -716,115 +717,23 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     }, done);
   }
 
-  function findUpdates (done) {
-    var updates = {};
-    var updatesToFrom = {};
-    var current;
-    async.waterfall([
-      function (next) {
-        BlockchainService.current(next);
-      },
-      function (theCurrent, next){
-        current = theCurrent;
-        dal.certsFindNew(next);
-      },
-      function (certs, next){
-        async.forEachSeries(certs, function(cert, callback){
-          async.waterfall([
-            function (next) {
-              if (current) {
-                // Already exists a link not replayable yet?
-                dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
-              }
-              else next(null, false);
-            },
-            function (exists, next) {
-              if (exists)
-                next('It already exists a similar certification written, which is not replayable yet');
-              else {
-                // Signatory must be a member
-                dal.isMemberOrError(cert.from, next);
-              }
-            },
-            function (next){
-              // Certified must be a member and non-leaver
-              dal.isMembeAndNonLeaverOrError(cert.to, next);
-            },
-            function (next){
-              updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
-              updates[cert.to] = updates[cert.to] || [];
-              if (updatesToFrom[cert.to].indexOf(cert.pubkey) == -1) {
-                updates[cert.to].push(cert);
-                updatesToFrom[cert.to].push(cert.pubkey);
-              }
-              next();
-            }
-          ], function () {
-            callback();
-          });
-        }, next);
-      }
-    ], function (err) {
-      done(err, updates);
-    });
-  }
-
   /**
-  this.generateNewcomers = function (done) {
-  * Generate a "newcomers" block
-  */
-  this.generateNewcomers = function (done) {
-    var filteringFunc = function (preJoinData, next) {
-      var joinData = {};
-      var newcomers = _(preJoinData).keys();
-      var uids = [];
-      newcomers.forEach(function(newcomer){
-        uids.push(preJoinData[newcomer].ms.userid);
-      });
-      if (newcomers.length > 0) {
-        inquirer.prompt([{
-          type: "checkbox",
-          name: "uids",
-          message: "Newcomers to add",
-          choices: uids,
-          default: uids[0]
-        }], function (answers) {
-          newcomers.forEach(function(newcomer){
-            if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
-              joinData[newcomer] = preJoinData[newcomer];
-          });
-          if (answers.uids.length == 0)
-            next('No newcomer selected');
-          else
-            next(null, joinData);
-        });
-      } else {
-        next('No newcomer found');
-      }
-    };
-    var checkingWoTFunc = function (newcomers, checkWoTForNewcomers, done) {
-      checkWoTForNewcomers(newcomers, function (err) {
-        // If success, simply add all newcomers. Otherwise, stop everything.
-        done(err, newcomers);
-      });
-    };
+   * Generates root block with manual selection of root members.
+   * @param done
+   */
+  this.generateManualRoot = function (done) {
     async.waterfall([
       function (next) {
         BlockchainService.current(next);
       },
       function (block, next) {
         if (!block)
-          BlockchainService.generateNewcomersBlock(filteringFunc, checkingWoTFunc, next);
+        BlockchainService.generateNextBlock(new ManualRootGenerator(), next);
         else
           next('Cannot generate root block: it already exists.');
       }
     ], done);
   };
-
-  function noFiltering(preJoinData, next) {
-    // No manual filtering, takes all
-    next(null, preJoinData);
-  }
 
   function iteratedChecking(newcomers, checkWoTForNewcomers, done) {
     var passingNewcomers = [];
@@ -840,156 +749,136 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     });
   }
 
-  this.generateNext = function (done) {
-    BlockchainService.generateNextBlock(findUpdates, noFiltering, iteratedChecking, done);
-  };
-
   /**
-  * Generate a "newcomers" block
-  */
-  this.generateNewcomersBlock = function (filteringFunc, checkingWoTFunc, done) {
-    var withoutUpdates = function(updatesDone) {
-      updatesDone(null, {});
-    };
-    BlockchainService.generateNextBlock(withoutUpdates, filteringFunc, checkingWoTFunc, done);
+   * Generates next block, finding newcomers, renewers, leavers, certs, transactions, etc.
+   * @param done Callback.
+   */
+  this.generateNext = function (done) {
+    BlockchainService.generateNextBlock(new NextBlockGenerator(conf, dal), done);
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
-  this.generateNextBlock = function (findUpdateFunc, filteringFunc, checkingWoTFunc, done) {
-    var updates = {};
-    var exclusions = [];
-    var current = null;
-    var lastUDBlock = null;
-    var transactions = [];
-    var joinData, leaveData;
-    async.waterfall([
-      function (next){
-        dal.getCurrentBlockOrNull(next);
-      },
-      function (currentBlock, next){
-        current = currentBlock;
-        dal.lastUDBlock(next);
-      },
-      function (theLastUDBlock, next) {
-        lastUDBlock = theLastUDBlock;
-        // First, check for members' exclusions
-        dal.getToBeKicked(next);
-      },
-      function (toBeKicked, next) {
-        toBeKicked.forEach(function (idty) {
-          exclusions.push(idty.pubkey);
-        });
-        // Second, check for WoT inner certifications
-        findUpdateFunc(next);
-      },
-      function (theUpdates, next) {
-        updates = theUpdates;
-        // Third, check for newcomers
-        findNewcomersAndLeavers(current, filteringFunc, checkingWoTFunc, next);
-      },
-      function (current, newWoT, theJoinData, theLeaveData, otherUpdates, next){
-        joinData = theJoinData;
-        leaveData = theLeaveData;
-        // Merges updates
-        _(otherUpdates).keys().forEach(function(fpr){
-          if (!updates[fpr])
-            updates[fpr] = otherUpdates[fpr];
-          else
-            updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
-        });
-        // Finally look for transactions
-        dal.findAllWaitingTransactions(next);
-      },
-      function (txs, next) {
-        var passingTxs = [];
-        var localValidation = localValidator(conf);
-        var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
-        async.forEachSeries(txs, function (rawtx, callback) {
-          var tx = new Transaction(rawtx, conf.currency);
-          var extractedTX = tx.getTransaction();
-          async.waterfall([
-            function (next) {
-              localValidation.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
-            },
-            function (next) {
-              globalValidation.checkSingleTransaction(extractedTX, next);
-            },
-            function (next) {
-              transactions.push(tx);
-              passingTxs.push(extractedTX);
-              next();
-            }
-          ], function (err) {
-            if (err) {
-              logger.error(err);
-              dal.removeTxByHash(extractedTX.hash, callback);
-            }
-            else {
-              logger.info('Transaction added to block');
-              callback();
-            }
+  this.generateNextBlock = function (generator, done) {
+    return prepareNextBlock()
+      .spread(function(current, lastUDBlock, exclusions){
+        return Q.all([
+          generator.findNewCertsFromWoT(current),
+          findNewcomersAndLeavers(current, generator.filterJoiners),
+          findTransactions()
+        ])
+          .spread(function(newCertsFromWoT, newcomersLeavers, transactions) {
+             var joinData = newcomersLeavers[2];
+             var leaveData = newcomersLeavers[3];
+             var newCertsFromNewcomers = newcomersLeavers[4];
+             // Merges updates
+             _(newCertsFromNewcomers).keys().forEach(function(newcomer){
+               // TODO: Bizarre ..
+               if (!newCertsFromWoT[newcomer]){
+                 newCertsFromWoT[newcomer] = newCertsFromNewcomers[newcomer];
+               }
+               else {
+                 newCertsFromWoT[newcomer] = newCertsFromWoT[newcomer].concat(newCertsFromNewcomers[newcomer]);
+               }
+             });
+            // Create the block
+            return Q.Promise(function(resolve, reject){
+              createBlock(current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions, function(err, block) {
+                err ? reject(err) : resolve(block);
+              });
+            });
           });
-        }, next);
-      },
-      function (next) {
-        // Create the block
-        createNewcomerBlock(current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, next);
-      }
-    ], done);
+      })
+      .then(function(block) {
+        done(null, block);
+      })
+      .fail(done);
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
   this.generateEmptyNextBlock = function (done) {
-    var updates = {};
-    var exclusions = [];
-    var current = null;
-    var lastUDBlock = null;
-    var transactions = [];
-    var joinData = {}, leaveData = {};
-    async.waterfall([
-      function (){
-        dal.getCurrentBlockOrNull(done);
-      },
-      function (currentBlock, next){
-        current = currentBlock;
-        dal.lastUDBlock(next);
-      },
-      function (theLastUDBlock, next) {
-        lastUDBlock = theLastUDBlock;
-        // First, check for members' exclusions
-        dal.getToBeKicked(next);
-      },
-      function (toBeKicked, next) {
-        toBeKicked.forEach(function (idty) {
-          exclusions.push(idty.pubkey);
-        });
-        next();
-      },
-      function (next) {
-        // Create the block
-        createNewcomerBlock(current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, next);
-      }
-    ], done);
+    return prepareNextBlock()
+      .spread(function(current, lastUDBlock, exclusions){
+        createBlock(current, {}, {}, {}, exclusions, lastUDBlock, [], next);
+      })
+      .fail(done);
   };
 
-  function findNewcomersAndLeavers (current, filteringFunc, checkingWoTFunc, done) {
-    async.parallel({
-      newcomers: function(callback){
-        findNewcomers(current, filteringFunc, checkingWoTFunc, callback);
-      },
-      leavers: function(callback){
-        findLeavers(current, callback);
-      }
-    }, function(err, res) {
-      var current = res.newcomers[0];
-      var newWoTMembers = res.newcomers[1];
-      var finalJoinData = res.newcomers[2];
-      var updates = res.newcomers[3];
-      done(err, current, newWoTMembers, finalJoinData, res.leavers, updates);
+  function prepareNextBlock() {
+    return Q.all([
+      dal.getCurrentBlockOrNull(),
+      dal.lastUDBlock(),
+      dal.getToBeKicked()
+    ])
+      .spread(function(current, lastUDBlock, exclusions) {
+        return Q.all([
+          current,
+          lastUDBlock,
+          _.pluck(exclusions, 'pubkey')
+        ]);
+      });
+  }
+
+  function findTransactions() {
+    return dal.findAllWaitingTransactions()
+      .then(function (txs) {
+        var transactions = [];
+        var passingTxs = [];
+        var localValidation = localValidator(conf);
+        var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
+        return Q.Promise(function(resolve, reject){
+
+          async.forEachSeries(txs, function (rawtx, callback) {
+            var tx = new Transaction(rawtx, conf.currency);
+            var extractedTX = tx.getTransaction();
+            async.waterfall([
+              function (next) {
+                localValidation.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
+              },
+              function (next) {
+                globalValidation.checkSingleTransaction(extractedTX, next);
+              },
+              function (next) {
+                transactions.push(tx);
+                passingTxs.push(extractedTX);
+                next();
+              }
+            ], function (err) {
+              if (err) {
+                logger.error(err);
+                dal.removeTxByHash(extractedTX.hash, callback);
+              }
+              else {
+                logger.info('Transaction added to block');
+                callback();
+              }
+            });
+          }, function(err) {
+            err ? reject(err) : resolve(transactions);
+          });
+        });
+      });
+  }
+
+  function findNewcomersAndLeavers (current, filteringFunc) {
+    return Q.Promise(function(resolve, reject){
+      async.parallel({
+        newcomers: function(callback){
+          findNewcomers(current, filteringFunc, callback);
+        },
+        leavers: function(callback){
+          findLeavers(current, callback);
+        }
+      }, function(err, res) {
+        var current = res.newcomers[0];
+        var newWoTMembers = res.newcomers[1];
+        var finalJoinData = res.newcomers[2];
+        var updates = res.newcomers[3];
+        err ? reject(err) : resolve([current, newWoTMembers, finalJoinData, res.leavers, updates]);
+      });
     });
   }
 
@@ -1041,112 +930,15 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     ], done);
   }
 
-  function findNewcomers (current, filteringFunc, checkingWoTFunc, done) {
+  function findNewcomers (current, filteringFunc, done) {
     var wotMembers = [];
-    var preJoinData = {};
     var joinData = {};
     var updates = {};
     async.waterfall([
-      function (next){
-        dal.findNewcomers(next);
+      function (next) {
+        getPreJoinData(current, next);
       },
-      function (mss, next){
-        var joiners = [];
-        mss.forEach(function (ms) {
-          joiners.push(ms.issuer);
-        });
-        async.forEach(mss, function(ms, callback){
-          var join = { identity: null, ms: ms, key: null, idHash: '' };
-          join.idHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
-          async.waterfall([
-            function (next){
-              async.parallel({
-                block: function (callback) {
-                  if (current) {
-                    dal.getBlockOrNull(ms.number, function (err, basedBlock) {
-                      callback(null, err ? null : basedBlock);
-                    });
-                  } else {
-                    callback(null, {});
-                  }
-                },
-                identity: function(callback){
-                  dal.getIdentityByHashOrNull(join.idHash, callback);
-                },
-                certs: function(callback){
-                  if (!current) {
-                    // Look for certifications from initial joiners
-                    async.waterfall([
-                      function (next) {
-                        dal.certsTo(ms.issuer, next);
-                      },
-                      function (certs, next) {
-                        var finalCerts = [];
-                        certs.forEach(function (cert) {
-                          if (~joiners.indexOf(cert.pubkey))
-                            finalCerts.push(cert);
-                        });
-                        next(null, finalCerts);
-                      }
-                    ], callback);
-                  } else {
-                    // Look for certifications from WoT members
-                    async.waterfall([
-                      function (next) {
-                        dal.certsNotLinkedToTarget(join.idHash, next);
-                      },
-                      function (certs, next) {
-                        var finalCerts = [];
-                        var certifiers = [];
-                        async.forEachSeries(certs, function (cert, callback) {
-                          async.waterfall([
-                            function (next) {
-                              if (current) {
-                                // Already exists a link not replayable yet?
-                                dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay, next);
-                              }
-                              else next(null, false);
-                            },
-                            function (exists, next) {
-                              if (exists)
-                                next('It already exists a similar certification written, which is not replayable yet');
-                              else
-                                dal.isMember(cert.pubkey, next);
-                            },
-                            function (isMember, next) {
-                              var doubleSignature = ~certifiers.indexOf(cert.pubkey) ? true : false;
-                              if (isMember && !doubleSignature) {
-                                certifiers.push(cert.pubkey);
-                                finalCerts.push(cert);
-                              }
-                              next();
-                            }
-                          ], function () {
-                            callback();
-                          });
-                        }, function () {
-                          next(null, finalCerts);
-                        });
-                      }
-                    ], callback);
-                  }
-                }
-              }, next);
-            },
-            function (res, next){
-              if (res.identity && res.block && res.identity.currentMSN < parseInt(join.ms.number)) {
-                // MS + matching cert are found
-                join.identity = res.identity;
-                join.certs = res.certs;
-                // join.wotCerts = res.wotCerts;
-                preJoinData[res.identity.pubkey] = join;
-              }
-              next();
-            }
-          ], callback);
-        }, next);
-      },
-      function (next){
+      function (preJoinData, next){
         filteringFunc(preJoinData, next);
       },
       function (filteredJoinData, next) {
@@ -1154,24 +946,28 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         // Cache the members
         dal.getMembers(next);
       },
-      function (membersKeys, next) {
-        membersKeys.forEach(function (mKey) {
-          wotMembers.push(mKey.pubkey);
+      function (members, next) {
+        getSentryMembers(members, function(err, sentries) {
+          next(err, members, sentries);
         });
-        next();
       },
-      function (next) {
+      function (members, sentries, next) {
+        wotMembers = _.pluck(members, 'pubkey');
         // Checking step
         var newcomers = _(joinData).keys();
         // Checking algo is defined by 'checkingWoTFunc'
-        checkingWoTFunc(newcomers, function (theNewcomers, onceChecked) {
+        iteratedChecking(newcomers, function (someNewcomers, onceChecked) {
+          var nextBlock = {
+            number: current ? current.number + 1 : 0,
+            joiners: someNewcomers
+          };
           // Check WoT stability
           async.waterfall([
             function (next){
-              computeNewLinks(theNewcomers, joinData, updates, next);
+              computeNewLinks(someNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
-              checkWoTConstraints({ number: current ? current.number + 1 : 0, joiners: theNewcomers }, newLinks, next);
+              checkWoTConstraints(sentries, nextBlock, newLinks, next);
             }
           ], onceChecked);
         }, function (err, realNewcomers) {
@@ -1207,15 +1003,113 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     ], done);
   }
 
+  function getPreJoinData(current, done) {
+    var preJoinData = {};
+    async.waterfall([
+      function (next){
+        dal.findNewcomers(next);
+      },
+      function (mss, next){
+        var joiners = [];
+        mss.forEach(function (ms) {
+          joiners.push(ms.issuer);
+        });
+        async.forEach(mss, function(ms, callback){
+          var join = { identity: null, ms: ms, key: null, idHash: '' };
+          join.idHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
+          async.waterfall([
+            function (next){
+              async.parallel({
+                block: function (callback) {
+                  if (current) {
+                    dal.getBlockOrNull(ms.number, callback);
+                  } else {
+                    callback(null, {});
+                  }
+                },
+                identity: function(callback){
+                  dal.getIdentityByHashOrNull(join.idHash, callback);
+                },
+                certs: function(callback){
+                  if (!current) {
+                    // Look for certifications from initial joiners
+                    dal.certsTo(ms.issuer)
+                      .then(function(certs){
+                        callback(null, _.filter(certs, function(cert){
+                          return ~joiners.indexOf(cert.pubkey);
+                        }));
+                      })
+                      .fail(callback);
+                  } else {
+                    // Look for certifications from WoT members
+                    dal.certsNotLinkedToTarget(join.idHash)
+                      .then(function(certs){
+                        var finalCerts = [];
+                        var certifiers = [];
+                        async.forEachSeries(certs, function (cert, callback) {
+                          async.waterfall([
+                            function (next) {
+                              if (current) {
+                                // Already exists a link not replayable yet?
+                                dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay)
+                                  .then(function(exists) {
+                                    if (exists)
+                                      next('It already exists a similar certification written, which is not replayable yet');
+                                    else
+                                      dal.isMember(cert.pubkey, next);
+                                  })
+                                  .fail(next);
+                              }
+                              else next(null, false);
+                            },
+                            function (isMember, next) {
+                              var doubleSignature = ~certifiers.indexOf(cert.pubkey) ? true : false;
+                              if (isMember && !doubleSignature) {
+                                certifiers.push(cert.pubkey);
+                                finalCerts.push(cert);
+                              }
+                              next();
+                            }
+                          ], function () {
+                            callback();
+                          });
+                        }, function () {
+                          callback(null, finalCerts);
+                        });
+                      })
+                      .fail(callback);
+                  }
+                }
+              }, next);
+            },
+            function (res, next){
+              if (res.identity && res.block && res.identity.currentMSN < parseInt(join.ms.number)) {
+                // MS + matching cert are found
+                join.identity = res.identity;
+                join.certs = res.certs;
+                // join.wotCerts = res.wotCerts;
+                preJoinData[res.identity.pubkey] = join;
+              }
+              next();
+            }
+          ], callback);
+        }, next);
+      }
+    ], function(err) {
+      done(err, preJoinData);
+    });
+  }
+
   function computeNewLinks (theNewcomers, joinData, updates, done) {
     var newLinks = {};
+    var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
     async.waterfall([
       function (next){
         async.forEach(theNewcomers, function(newcomer, callback){
           // New array of certifiers
           newLinks[newcomer] = newLinks[newcomer] || [];
           // Check wether each certification of the block is from valid newcomer/member
-          async.forEach(joinData[newcomer].certs, function(cert, callback){
+          async.forEach(certsByKey[newcomer], function(cert, callback){
             if (~theNewcomers.indexOf(cert.pubkey)) {
               // Newcomer to newcomer => valid link
               newLinks[newcomer].push(cert.pubkey);
@@ -1237,11 +1131,8 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         }, next);
       },
       function (next){
-        _(updates).keys().forEach(function(signedFPR){
-          updates[signedFPR].forEach(function(certif){
-            newLinks[signedFPR] = newLinks[signedFPR] || [];
-            newLinks[signedFPR].push(certif.pubkey);
-          });
+        _.mapObject(updates, function(certs, pubkey) {
+          newLinks[pubkey] = (newLinks[pubkey] || []).concat(_.pluck(certs, 'pubkey'))
         });
         next();
       }
@@ -1250,7 +1141,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     });
   }
 
-  function createNewcomerBlock (current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, done) {
+  function createBlock (current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, done) {
     // Prevent writing joins/updates for excluded members
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
@@ -1344,9 +1235,9 @@ function BlockchainService (conn, conf, dal, PeeringService) {
     _(updates).keys().forEach(function(certifiedMember){
       var certs = updates[certifiedMember];
       certs.forEach(function(cert){
-        if (certifiers.indexOf(cert.pubkey) == -1) {
+        if (certifiers.indexOf(cert.from) == -1) {
           block.certifications.push(new Certification(cert).inline());
-          certifiers.push(cert.pubkey);
+          certifiers.push(cert.from);
         }
       });
     });
@@ -1567,9 +1458,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           next(null, null);
         } else {
           async.parallel({
-            // data: function(callback){
-            //   findNewData(callback);
-            // },
             block: function(callback){
               if (lastGeneratedWasWrong) {
                 BlockchainService.generateEmptyNextBlock(callback);
@@ -1616,57 +1504,6 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       }
     });
   };
-
-  function findNewData (done) {
-    var updates = {};
-    var joinData = {};
-    var exclusions = [];
-    var current = null;
-    async.waterfall([
-      function (next){
-        // Second, check for newcomers
-        dal.getCurrentBlockOrNull(function (err, currentBlock) {
-          current = currentBlock;
-            next();
-        });
-      },
-      function (next) {
-        // First, check for members' key updates
-        findUpdates(next);
-      },
-      function (theUpdates, next) {
-        updates = theUpdates;
-        var checkingWoTFunc = function (newcomers, checkWoTForNewcomers, done) {
-          checkWoTForNewcomers(newcomers, function (err) {
-            // If success, simply add all newcomers. Otherwise, stop everything.
-            done(err, newcomers);
-          });
-        };
-        findNewcomersAndLeavers(current, withEnoughCerts, checkingWoTFunc, next);
-      },
-      function (current, newWoT, theJoinData, otherUpdates, next){
-        // Merges updates
-        _(otherUpdates).keys().forEach(function(fpr){
-          if (!updates[fpr])
-            updates[fpr] = otherUpdates[fpr];
-          else
-            updates[fpr] = updates[fpr].concat(otherUpdates[fpr]);
-        });
-        joinData = theJoinData;
-        next();
-      },
-      function (next) {
-        // First, check for members' exclusions
-        dal.getToBeKicked(next);
-      },
-      function (toBeKicked, next) {
-        toBeKicked.forEach(function (idty) {
-          exclusions.push(idty.pubkey);
-        });
-        next(null, { "joinData": joinData, "updates": updates, "exclusions": exclusions });
-      }
-    ], done);
-  }
 
   function withEnoughCerts (preJoinData, done) {
     var joinData = {};
@@ -1794,4 +1631,110 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         });
     }, Q());
   }
+}
+
+/**
+ * Class to implement strategy of automatic selection of incoming data for next block.
+ * @constructor
+ */
+function NextBlockGenerator(conf, dal) {
+
+  this.findNewCertsFromWoT = function(current) {
+    return Q.Promise(function(resolve, reject){
+      var updates = {};
+      var updatesToFrom = {};
+      async.waterfall([
+        function (next) {
+          dal.certsFindNew(next);
+        },
+        function (certs, next){
+          async.forEachSeries(certs, function(cert, callback){
+            async.waterfall([
+              function (next) {
+                if (current) {
+                  // Already exists a link not replayable yet?
+                  dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay)
+                    .then(function(exists) {
+                      next(null, exists);
+                    })
+                    .fail(next);
+                }
+                else next(null, false);
+              },
+              function (exists, next) {
+                if (exists)
+                  next('It already exists a similar certification written, which is not replayable yet');
+                else {
+                  // Signatory must be a member
+                  dal.isMemberOrError(cert.from, next);
+                }
+              },
+              function (next){
+                // Certified must be a member and non-leaver
+                dal.isMembeAndNonLeaverOrError(cert.to, next);
+              },
+              function (next){
+                updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
+                updates[cert.to] = updates[cert.to] || [];
+                if (updatesToFrom[cert.to].indexOf(cert.pubkey) == -1) {
+                  updates[cert.to].push(cert);
+                  updatesToFrom[cert.to].push(cert.pubkey);
+                }
+                next();
+              }
+            ], function () {
+              callback();
+            });
+          }, next);
+        }
+      ], function (err) {
+        err ? reject(err) : resolve(updates);
+      });
+    });
+  };
+
+  this.filterJoiners = function takeAllJoiners(preJoinData, next) {
+    // No manual filtering, takes all
+    next(null, preJoinData);
+  };
+}
+
+/**
+ * Class to implement strategy of manual selection of root members for root block.
+ * @constructor
+ */
+function ManualRootGenerator() {
+
+  this.findNewCertsFromWoT = function() {
+    return Q({});
+  };
+
+  this.filterJoiners = function(preJoinData, next) {
+    var joinData = {};
+    var newcomers = _(preJoinData).keys();
+    var uids = [];
+    newcomers.forEach(function(newcomer){
+      uids.push(preJoinData[newcomer].ms.userid);
+    });
+    if (newcomers.length > 0) {
+      inquirer.prompt([{
+        type: "checkbox",
+        name: "uids",
+        message: "Newcomers to add",
+        choices: uids,
+        default: uids[0]
+      }], function (answers) {
+        newcomers.forEach(function(newcomer){
+          if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
+            joinData[newcomer] = preJoinData[newcomer];
+        });
+        if (answers.uids.length == 0)
+          next('No newcomer selected');
+        else
+          next(null, joinData);
+      });
+    } else {
+      next('No newcomer found');
+    }
+  };
 }

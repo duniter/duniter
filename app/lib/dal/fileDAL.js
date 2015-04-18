@@ -848,7 +848,7 @@ function FileDAL(profile, myFS) {
         that.addHead(block);
         return Q.all([
           that.saveBlockInFile(block, true),
-          that.saveTxsInFiles(block.transactions),
+          that.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime }),
           that.saveMemberships('join', block.joiners),
           that.saveMemberships('active', block.actives),
           that.saveMemberships('leave', block.leavers)
@@ -910,21 +910,15 @@ function FileDAL(profile, myFS) {
       });
   };
 
-  this.saveTxsInFiles = function (txs, done) {
+  this.saveTxsInFiles = function (txs, extraProps) {
     return myFS.makeTree(getUCoinHomePath(profile) + '/tx/')
       .then(function(){
         return Q.all(txs.map(function(tx) {
-          tx.currency = conf.currency;
+          _.extend(tx, extraProps);
+          _.extend(tx, { currency: conf.currency });
           var hash = new Transaction(tx).getHash(true);
           return myFS.write(getUCoinHomePath(profile) + '/tx/' + hash + '.json', JSON.stringify(tx, null, ' '));
         }));
-      })
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
       });
   };
 

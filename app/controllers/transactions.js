@@ -96,7 +96,8 @@ function TransactionBinding(txServer) {
         };
         _.keys(history).map(function(key) {
           history[key].map(function (tx, index) {
-            history[key][index] = _.omit(new Transaction(tx).json(), 'currency');
+            history[key][index] = _.omit(new Transaction(tx).json(), 'currency', 'raw');
+            _.extend(history[key][index], { block_number: tx.block_number, time: tx.time });
           });
         });
         next(null, result);

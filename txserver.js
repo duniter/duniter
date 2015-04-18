@@ -44,9 +44,11 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.listenTX = function (app) {
     var transactions = require('./app/controllers/transactions')(that);
-    app.post('/tx/process',           transactions.parseTransaction);
-    app.get( '/tx/sources/:pubkey',   transactions.getSources);
-    app.get( '/tx/history/:pubkey',   transactions.getHistory);
+    app.post('/tx/process',                           transactions.parseTransaction);
+    app.get( '/tx/sources/:pubkey',                   transactions.getSources);
+    app.get( '/tx/history/:pubkey',                   transactions.getHistory);
+    app.get( '/tx/history/:pubkey/blocks/:from/:to',  transactions.getHistoryBetweenBlocks);
+    app.get( '/tx/history/:pubkey/times/:from/:to',   transactions.getHistoryBetweenTimes);
   };
 }
 

@@ -79,13 +79,85 @@ function TransactionBinding(txServer) {
 
   this.getHistory = function (req, res) {
     res.type('application/json');
-    var pubkey = "";
     async.waterfall([
       function (next) {
         ParametersService.getPubkey(req, next);
       },
-      function (pPubkey, next) {
-        pubkey = pPubkey;
+      function (pubkey, next) {
+        getHistory(pubkey, function(results) {
+          return results;
+        }, next);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
+  };
+
+  this.getHistoryBetweenBlocks = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next) {
+        async.parallel({
+          pubkey: ParametersService.getPubkey.bind(ParametersService, req),
+          from:   ParametersService.getFrom.bind(ParametersService, req),
+          to:     ParametersService.getTo.bind(ParametersService, req)
+        }, next);
+      },
+      function (res, next) {
+        var pubkey = res.pubkey, from = res.from, to = res.to;
+        getHistory(pubkey, function(res) {
+          var histo = res.history;
+          histo.sent =     _.filter(histo.sent, function(tx){ return tx.block_number >= from && tx.block_number <= to; });
+          histo.received = _.filter(histo.received, function(tx){ return tx.block_number >= from && tx.block_number <= to; });
+          _.extend(histo, { sending: [], receiving: [] });
+          return res;
+        }, next);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
+  };
+
+  this.getHistoryBetweenTimes = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next) {
+        async.parallel({
+          pubkey: ParametersService.getPubkey.bind(ParametersService, req),
+          from:   ParametersService.getFrom.bind(ParametersService, req),
+          to:     ParametersService.getTo.bind(ParametersService, req)
+        }, next);
+      },
+      function (res, next) {
+        var pubkey = res.pubkey, from = res.from, to = res.to;
+        getHistory(pubkey, function(res) {
+          var histo = res.history;
+          histo.sent =     _.filter(histo.sent, function(tx){ return tx.time >= from && tx.time <= to; });
+          histo.received = _.filter(histo.received, function(tx){ return tx.time >= from && tx.time <= to; });
+          _.extend(histo, { sending: [], receiving: [] });
+          return res;
+        }, next);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
+  };
+
+  function getHistory(pubkey, filter, done) {
+    async.waterfall([
+      function (next) {
         txServer.dal.getTransactionsHistory(pubkey, next);
       },
       function (history, next) {
@@ -100,16 +172,10 @@ function TransactionBinding(txServer) {
             _.extend(history[key][index], { block_number: tx.block_number, time: tx.time });
           });
         });
-        next(null, result);
+        next(null, filter(result));
       }
-    ], function (err, result) {
-      if (err) {
-        res.send(500, err);
-      } else {
-        res.send(200, JSON.stringify(result, null, "  "));
-      }
-    });
-  };
+    ], done);
+  }
   
   return this;
 }

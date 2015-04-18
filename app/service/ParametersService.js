@@ -53,6 +53,32 @@ function ParameterNamespace () {
     callback(null, matches[0]);
   };
 
+  this.getFrom = function (req, callback){
+    if(!req.params.from){
+      callback('Parameter `from` is required');
+      return;
+    }
+    var matches = req.params.from.match(/^(\d+)$/);
+    if(!matches){
+      callback("From format is incorrect, must be a positive or zero integer");
+      return;
+    }
+    callback(null, matches[0]);
+  };
+
+  this.getTo = function (req, callback){
+    if(!req.params.to){
+      callback('Parameter `to` is required');
+      return;
+    }
+    var matches = req.params.to.match(/^(\d+)$/);
+    if(!matches){
+      callback("To format is incorrect, must be a positive or zero integer");
+      return;
+    }
+    callback(null, matches[0]);
+  };
+
   this.getFingerprint = function (req, callback){
     if(!req.params.fpr){
       callback("Fingerprint is required");

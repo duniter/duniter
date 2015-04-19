@@ -990,7 +990,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           // Only keep certifications from final members
           var keptCerts = [];
           joinData[newcomer].certs.forEach(function(cert){
-            var issuer = cert.pubkey;
+            var issuer = cert.from;
             if (~newWoT.indexOf(issuer) && ~newLinks[cert.to].indexOf(issuer)) {
               keptCerts.push(cert);
             }
@@ -1036,7 +1036,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                     dal.certsTo(ms.issuer)
                       .then(function(certs){
                         callback(null, _.filter(certs, function(cert){
-                          return ~joiners.indexOf(cert.pubkey);
+                          return ~joiners.indexOf(cert.from);
                         }));
                       })
                       .fail(callback);
@@ -1051,21 +1051,21 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                             function (next) {
                               if (current) {
                                 // Already exists a link not replayable yet?
-                                dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay)
+                                dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay)
                                   .then(function(exists) {
                                     if (exists)
                                       next('It already exists a similar certification written, which is not replayable yet');
                                     else
-                                      dal.isMember(cert.pubkey, next);
+                                      dal.isMember(cert.from, next);
                                   })
                                   .fail(next);
                               }
                               else next(null, false);
                             },
                             function (isMember, next) {
-                              var doubleSignature = ~certifiers.indexOf(cert.pubkey) ? true : false;
+                              var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
                               if (isMember && !doubleSignature) {
-                                certifiers.push(cert.pubkey);
+                                certifiers.push(cert.from);
                                 finalCerts.push(cert);
                               }
                               next();
@@ -1110,19 +1110,19 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           newLinks[newcomer] = newLinks[newcomer] || [];
           // Check wether each certification of the block is from valid newcomer/member
           async.forEach(certsByKey[newcomer], function(cert, callback){
-            if (~theNewcomers.indexOf(cert.pubkey)) {
+            if (~theNewcomers.indexOf(cert.from)) {
               // Newcomer to newcomer => valid link
-              newLinks[newcomer].push(cert.pubkey);
+              newLinks[newcomer].push(cert.from);
               callback();
             } else {
               async.waterfall([
                 function (next){
-                  dal.isMember(cert.pubkey, next);
+                  dal.isMember(cert.from, next);
                 },
                 function (isMember, next){
                   // Member to newcomer => valid link
                   if (isMember)
-                    newLinks[newcomer].push(cert.pubkey);
+                    newLinks[newcomer].push(cert.from);
                   next();
                 }
               ], callback);
@@ -1222,12 +1222,12 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       var data = joinData[joiner];
       var doubleCerts = false;
       data.certs.forEach(function(cert){
-        doubleCerts = doubleCerts || (~certifiers.indexOf(cert.pubkey) ? true : false);
+        doubleCerts = doubleCerts || (~certifiers.indexOf(cert.from) ? true : false);
       });
       if (!doubleCerts || block.number == 0) {
         data.certs.forEach(function(cert){
           block.certifications.push(new Certification(cert).inline());
-          certifiers.push(cert.pubkey);
+          certifiers.push(cert.from);
         });
       }
     });
@@ -1514,7 +1514,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           var newLinks = {};
           newLinks[newcomer] = [];
           preJoinData[newcomer].certs.forEach(function (cert) {
-            newLinks[newcomer].push(cert.pubkey);
+            newLinks[newcomer].push(cert.from);
           });
           checkHaveEnoughLinks(newcomer, newLinks, next);
         },
@@ -1653,7 +1653,7 @@ function NextBlockGenerator(conf, dal) {
               function (next) {
                 if (current) {
                   // Already exists a link not replayable yet?
-                  dal.existsLinkFromOrAfterDate(cert.pubkey, cert.to, current.medianTime - conf.sigDelay)
+                  dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay)
                     .then(function(exists) {
                       next(null, exists);
                     })
@@ -1676,9 +1676,9 @@ function NextBlockGenerator(conf, dal) {
               function (next){
                 updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
                 updates[cert.to] = updates[cert.to] || [];
-                if (updatesToFrom[cert.to].indexOf(cert.pubkey) == -1) {
+                if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
                   updates[cert.to].push(cert);
-                  updatesToFrom[cert.to].push(cert.pubkey);
+                  updatesToFrom[cert.to].push(cert.from);
                 }
                 next();
               }

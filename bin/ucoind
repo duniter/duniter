@@ -71,7 +71,7 @@ program
   .command('webapp')
   .description('Start uCoin web interface.')
   .action(function() {
-    webapp(program.whost || 'localhost', program.wport || 3050, overrideConf(), program.autostart);
+    webapp(program.whost || 'localhost', program.wport || 3050, commandLineConf(), program.autostart);
   });
 
 program
@@ -536,7 +536,7 @@ function bootstrapServer(host, port, server, conf) {
   });
 }
 
-function overrideConf(conf) {
+function commandLineConf(conf) {
 
   conf = conf || {};
   conf.sync = conf.sync || {};
@@ -640,7 +640,7 @@ function connect(callback) {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = ucoin.connect({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
+    var server = ucoin.connect({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
 
     // Initialize server (db connection, ...)
     server.init(function (err) {
@@ -669,7 +669,7 @@ function service(serverFactory, callback) {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, overrideConf({}));
+    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
 
     server.on('BMAFailed', logErrorAndExit(server));
 

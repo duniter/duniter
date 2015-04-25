@@ -99,23 +99,13 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._initServices = function(conn, done) {
-    that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf, that.dal);
-    that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.dal);
-    that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.dal, that.PeeringService);
-    that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf, that.dal);
-    that.IdentityService.setBlockchainService(that.BlockchainService);
-    done();
-  };
-
-  this.setPair = function(pair) {
-    that.pair = pair;
-    that.BlockchainService.setKeyPair(pair);
-    that.PeeringService.setKeyPair(pair);
-  };
-
-  this._start = function (done) {
     async.waterfall([
-      function (next){
+      function(next) {
+        that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf, that.dal);
+        that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.dal);
+        that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.dal, that.PeeringService);
+        that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf, that.dal);
+        that.IdentityService.setBlockchainService(that.BlockchainService);
         that.checkConfig(next);
       },
       function (next){
@@ -131,7 +121,18 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       function (pair, next){
         that.setPair(pair);
         that.createSignFunction(pair, next);
-      },
+      }
+    ], done);
+  };
+
+  this.setPair = function(pair) {
+    that.pair = pair;
+    that.BlockchainService.setKeyPair(pair);
+    that.PeeringService.setKeyPair(pair);
+  };
+
+  this._start = function (done) {
+    async.waterfall([
       function (next){
         // Add signing & public key functions to PeeringService
         that.PeeringService.setSignFunc(that.sign);

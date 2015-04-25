@@ -58,10 +58,15 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.init = function (done) {
-    // Launches the server
-    async.forEachSeries(todoOnInit, function(f, cb){
-      f(cb);
-    }, done);
+    return Q.Promise(function(resolve, reject){
+      // Launches the server
+      async.forEachSeries(todoOnInit, function(f, cb){
+        f(cb);
+      }, function(err) {
+        done && done(err);
+        err ? reject(err) : resolve();
+      });
+    });
   };
 
   this.submit = function (obj, isInnerWrite, done) {

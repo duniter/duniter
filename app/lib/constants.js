@@ -103,7 +103,8 @@ module.exports = {
     STATUS_INTERVAL: {
       UPDATE: 10, // Every X blocks
       MAX: 20 // MAX Y blocks
-    }
+    },
+    SYNC_BLOCK_INTERVAL: 1 // Every 1 block average generation time
   },
   PROOF_OF_WORK: {
     EVALUATION: 200,

@@ -66,6 +66,8 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   var Source        = require('../lib/entity/source');
   var Transaction   = require('../lib/entity/transaction');
 
+  PeeringService.setBlockchainService(this);
+
   this.load = function (done) {
     done();
   };

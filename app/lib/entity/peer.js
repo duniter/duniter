@@ -1,4 +1,5 @@
 var _ = require('underscore');
+var vucoin = require('vucoin');
 var rawer = require('../rawer');
 
 module.exports = Peer;
@@ -119,6 +120,17 @@ function Peer(json) {
     return base;
   };
 
+  this.getNamedURL = function() {
+    var bma = this.getBMA();
+    var base =
+      (bma.dns ? bma.dns :
+        (bma.ipv4 ? bma.ipv4 :
+          (bma.ipv6 ? '[' + bma.ipv6 + ']' : '')));
+    if(bma.port)
+      base += ':' + bma.port;
+    return base;
+  };
+
   this.getRaw = function() {
     return rawer.getPeerWithoutSignature(this);
   };
@@ -128,8 +140,7 @@ function Peer(json) {
   };
 
   this.connect = function (done){
-    var WITH_SIGNATURE_PARAM = false;
-    vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), true, WITH_SIGNATURE_PARAM, done);
+    vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), done);
   };
 
   this.isReachable = function () {

@@ -2,11 +2,13 @@ var util           = require('util');
 var async          = require('async');
 var request        = require('request');
 var _              = require('underscore');
+var Q              = require('q');
 var events         = require('events');
 var Status         = require('../lib/entity/status');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/base58');
 var moment         = require('moment');
+var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 
@@ -19,7 +21,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
   var selfPubkey = undefined;
   this.pubkey = selfPubkey;
 
-  var peer = null;
+  var peer = null, BlockchainService = null;
   var that = this;
 
   this.setKeyPair = function(keypair) {
@@ -32,6 +34,10 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
 
   this.setSignFunc = function(f) {
     signFunc = f;
+  };
+
+  this.setBlockchainService = function(service) {
+    BlockchainService = service;
   };
 
   this.peer = function (newPeer) {
@@ -214,6 +220,19 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
     upSignal(done);
   };
 
+  var syncBlockFifo = async.queue(function (task, callback) {
+    task(callback);
+  }, 1);
+  var syncBlockInterval = null;
+  this.regularSyncBlock = function (done) {
+    if (syncBlockInterval)
+      clearInterval(syncBlockInterval);
+    syncBlockInterval = setInterval(function () {
+      syncBlockFifo.push(syncBlock);
+    }, 1000*conf.avgGenTime*constants.NETWORK.SYNC_BLOCK_INTERVAL);
+    syncBlock(done);
+  };
+
   function upSignal(callback) {
     async.waterfall([
       function (next) {
@@ -233,6 +252,66 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
               that.sendUpSignal(next);
             }
           ], next);
+        }
+        else next();
+      }
+    ], callback);
+  }
+
+  function syncBlock(callback) {
+    async.waterfall([
+      function (next) {
+        dal.getCurrentBlockOrNull(next);
+      },
+      function(current, next) {
+        if (current) {
+          logger.info("Check network for new blocks...");
+          dal.findAllPeersNEWUPBut([selfPubkey])
+            .then(function(peers){
+              peers = _.shuffle(peers);
+              return peers.reduce(function(promise, peer) {
+                return promise
+                  .fail(function(){
+                    var p = new Peer(peer);
+                    return Q.Promise(function(resolve, reject){
+                      async.waterfall([
+                        function(next) {
+                          p.connect(next);
+                        },
+                        function(node, next) {
+                          node.blockchain.block(current.number + 1, next);
+                        },
+                        function(block, next) {
+                          // Rawification of transactions
+                          block.transactions.forEach(function (tx) {
+                            tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+                            tx.raw += tx.signatories.join('\n') + '\n';
+                            tx.raw += tx.inputs.join('\n') + '\n';
+                            tx.raw += tx.outputs.join('\n') + '\n';
+                            if (tx.comment)
+                              tx.raw += tx.comment + '\n';
+                            tx.raw += tx.signatures.join('\n') + '\n';
+                            tx.version = 1;
+                            tx.currency = conf.currency;
+                            tx.issuers = tx.signatories;
+                            tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
+                          });
+                          logger.info("Downloaded block #%s from peer ", block.number, peer.getNamedURL());
+                          BlockchainService.submitBlock(block, true, next);
+                        }
+                      ], function(err) {
+                        err ? reject(err) : resolve();
+                      });
+                    });
+                  })
+              }, Q.reject())
+                .fail(function(){
+                  logger.info("No new block found");
+                })
+                .then(function(){
+                  next();
+                });
+            });
         }
         else next();
       }

@@ -215,6 +215,9 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.PeeringService.regularUpSignal(next);
       },
       function (next){
+        that.PeeringService.regularSyncBlock(next);
+      },
+      function (next){
         if (conf.participate) {
           async.forever(
             function tryToGenerateNextBlock(next) {

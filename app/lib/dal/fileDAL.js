@@ -222,6 +222,28 @@ function FileDAL(profile, myFS) {
       });
   };
 
+  this.getParameters = function(done) {
+    var parameters = {
+      "currency": conf.currency,
+      "c": conf.c,
+      "dt": conf.dt,
+      "ud0": conf.ud0,
+      "sigDelay": conf.sigDelay,
+      "sigValidity": conf.sigValidity,
+      "sigQty": conf.sigQty,
+      "sigWoT": conf.sigWoT,
+      "msValidity": conf.msValidity,
+      "stepMax": 3, // uCoin only handles 3 step currencies for now
+      "medianTimeBlocks": conf.medianTimeBlocks,
+      "avgGenTime": conf.avgGenTime,
+      "dtDiffEval": conf.dtDiffEval,
+      "blocksRot": conf.blocksRot,
+      "percentRot": conf.percentRot
+    };
+    done && done(null, parameters);
+    return Q(parameters);
+  };
+
   this.getPeer = function(pubkey, done) {
     var matching = _.chain(peers).
       where({ pubkey: pubkey }).

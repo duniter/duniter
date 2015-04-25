@@ -49,6 +49,8 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
     app.get( '/tx/history/:pubkey',                   transactions.getHistory);
     app.get( '/tx/history/:pubkey/blocks/:from/:to',  transactions.getHistoryBetweenBlocks);
     app.get( '/tx/history/:pubkey/times/:from/:to',   transactions.getHistoryBetweenTimes);
+    app.get( '/tx/history/:pubkey/pending',           transactions.getPendingForPubkey);
+    app.get( '/tx/pending',                           transactions.getPending);
   };
 }
 

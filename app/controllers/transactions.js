@@ -155,6 +155,46 @@ function TransactionBinding(txServer) {
     });
   };
 
+  this.getPendingForPubkey = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next) {
+        async.parallel({
+          pubkey: ParametersService.getPubkey.bind(ParametersService, req)
+        }, next);
+      },
+      function (res, next) {
+        var pubkey = res.pubkey;
+        getHistory(pubkey, function(res) {
+          var histo = res.history;
+          _.extend(histo, { sent: [], received: [] });
+          return res;
+        }, next);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
+  };
+
+  this.getPending = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next) {
+        getPending(next);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
+  };
+
   function getHistory(pubkey, filter, done) {
     async.waterfall([
       function (next) {
@@ -175,6 +215,25 @@ function TransactionBinding(txServer) {
         next(null, filter(result));
       }
     ], done);
+  }
+
+  function getPending(done) {
+    txServer.dal.getTransactionsPending()
+      .then(function(pending){
+        var res = {
+          "currency": conf.currency,
+          "pending": pending
+        };
+        pending.map(function(tx, index) {
+          pending[index] = _.omit(new Transaction(tx).json(), 'currency', 'raw');
+        });
+        done && done(null, res);
+        return res;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
   }
   
   return this;

@@ -1150,6 +1150,10 @@ function FileDAL(profile, myFS) {
       });
   };
 
+  this.getTransactionsPending = function() {
+    return txs;
+  };
+
   this.savePeer = function(peer, done) {
     peer.hash = (sha1(peer.getRawSigned()) + "").toUpperCase();
     var existing = _.where(peers, { pubkey: peer.pubkey })[0];

@@ -1,37 +1,37 @@
 var async       = require('async');
 var _           = require('underscore');
-var program     = require('commander');
 var vucoin      = require('vucoin');
 var Q           = require('q');
-var wizard      = require('../app/lib/wizard');
 var multicaster = require('../app/lib/streams/multicaster');
 var logger      = require('../app/lib/logger')('webapp');
 var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
 var constants   = require('../app/lib/constants');
-var Synchroniser = require('../app/lib/sync');
-var pjson       = require('../package.json');
 var ucoin       = require('./../index');
 var webapp      = require('../web/app');
+var Stat    = require('../app/lib/entity/stat');
 var stream  = require('stream');
 var util    = require('util');
 var request = require('request');
 
-var fifo = async.queue(function (task, callback) {
-  task(callback);
-}, 10);
-
-module.exports = function (conf, mdb, mhost, mport, autoStart) {
-  return new ServerHandler(conf, mdb, mhost, mport, autoStart);
+module.exports = function (conf, mdb, autoStart) {
+  return new ServerHandler(conf, mdb, autoStart);
 };
 
-function ServerHandler(conf, mdb, mhost, mport, autoStart) {
+/**
+ * Utility stream that generates data events depending on its state.
+ * @param cliConf Configuration given by the CLI.
+ * @param mdb Database to use.
+ * @param autoStart Flag: if true, automatically start the inner ucoin node process.
+ * @constructor
+ */
+function ServerHandler(cliConf, mdb, autoStart) {
 
   stream.Transform.call(this, { objectMode: true });
 
   var that = this;
-  var theServer = ucoin.createTxServer({ name: mdb || "ucoin_default", host: mhost, port: mport }, conf);
+  var theServer = ucoin.createTxServer({ name: mdb || "ucoin_default" }, cliConf);
 
   // We get notified of server events
   theServer.pipe(that);
@@ -54,33 +54,29 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
     done();
   };
 
-  this.start = function(req, res) {
-    getReadyServer()
+  this.start = function() {
+    return getReadyServer()
       .then(function(){
         theServer.start();
       })
       .then(function(){
         return Q.nbind(theServer.dal.getBlockCurrent, theServer.dal)();
       })
-      .then(setAsCurrentBlock)
-      .then(onSuccess(res))
-      .fail(onError(res));
+      .then(setAsCurrentBlock);
   };
 
-  this.stop = function(req, res) {
-    getReadyServer()
+  this.stop = function() {
+    return getReadyServer()
       .then(function(){
         return Q.nbind(theServer.BlockchainService.stopProof, theServer.BlockchainService)();
       })
       .then(function(){
         theServer.stop();
-      })
-      .then(onSuccess(res))
-      .fail(onError(res));
+      });
   };
 
-  this.restart = function(req, res) {
-    getReadyServer()
+  this.restart = function() {
+    return getReadyServer()
       .then(function(){
         theServer.stop();
         theServer.start();
@@ -88,22 +84,18 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
       .then(function(){
         return Q.nbind(theServer.dal.getBlockCurrent, theServer.dal)();
       })
-      .then(setAsCurrentBlock)
-      .then(onSuccess(res))
-      .fail(onError(res));
+      .then(setAsCurrentBlock);
   };
 
-  this.reset = function(req, res) {
-    getReadyServer()
+  this.reset = function() {
+    return getReadyServer()
       .then(function(){
         return Q.nbind(theServer.reset, theServer)();
       })
       .then(function(){
         return Q.nbind(theServer.dal.getBlockCurrent, theServer.dal)();
       })
-      .then(setAsCurrentBlock)
-      .then(onSuccess(res))
-      .fail(onError(res));
+      .then(setAsCurrentBlock);
   };
 
   this.getPoWStats = function(done) {
@@ -128,12 +120,8 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
   function getReadyServer() {
     readyServerPromise = readyServerPromise || Q()
       .then(function(){
-        theServer.init();
+        return theServer.init();
       })
-      .then(function(){
-        return Q.nbind(theServer.on, theServer, 'services')();
-      })
-      .then(getNode)
       .then(getHomeData)
       .then(function(overview){
         that.overview = overview;
@@ -144,11 +132,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
     return readyServerPromise;
   }
 
-  function getNode() {
-    return Q.nfcall(vucoin, theServer.conf.ipv4, theServer.conf.port);
-  }
-
-  function getHomeData(node) {
+  function getHomeData() {
     var auth = false;
     return Q.Promise(function(resolve, reject){
       var data = {
@@ -162,33 +146,12 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
 
 
       this.knownPeers = function(done){
-        async.waterfall([
-          function (next){
-            node.network.peering.peers.get({ leaves: true }, next);
-          },
-          function (merkle, next) {
-            var peers = [];
-            async.forEach(merkle.leaves, function(fingerprint, callback){
-              async.waterfall([
-                function (next){
-                  node.network.peering.peers.get({ leaf: fingerprint }, next);
-                },
-                function(json, next){
-                  var peer = (json.leaf && json.leaf.value) || {};
-                  peers.push(peer);
-                  next();
-                }
-              ], callback);
-            }, function () {
-              next(null, peers);
-            });
-          }
-        ], done);
+        theServer.dal.findAllPeersNEWUPBut([], done);
       };
 
       async.waterfall([
         function (next){
-          node.network.peering.get(next);
+          theServer.dal.getPeer(theServer.PeeringService.pubkey, next);
         },
         function (json, next){
           data["currency"] = json.currency;
@@ -200,25 +163,26 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
           data["peers"] = peers || [];
           async.parallel({
             current: function (next) {
-              node.blockchain.current(next);
+              theServer.dal.getCurrent(next);
             },
             parameters: function (next) {
-              node.currency.parameters(function (err, json) {
+              theServer.dal.getParameters(function (err, json) {
                 next(err, json);
               });
             },
             uds: function (next) {
               async.waterfall([
                 function (next) {
-                  node.blockchain.with.ud(next);
+                  theServer.dal.getStat('ud', next);
                 },
-                function (json, next) {
-                  var blockNumbers = json.result.blocks;
+                function (stat, next) {
+                  var json = new Stat(stat).json();
+                  var blockNumbers = json.blocks;
                   var blocks = [];
                   async.forEachSeries(blockNumbers, function (blockNumber, callback) {
                     async.waterfall([
                       function (next) {
-                        node.blockchain.block(blockNumber, next);
+                        theServer.dal.getPromoted(blockNumber, next);
                       },
                       function (block, next) {
                         blocks.push(block);
@@ -232,7 +196,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
               ], next);
             },
             root: function (next) {
-              node.blockchain.block(0, next);
+              theServer.dal.getPromoted(0, next);
             }
           }, next);
         },
@@ -243,7 +207,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
           var c = res.parameters.c;
           var lastUDblock = uds.length > 0 ? uds[uds.length-1] : null;
           var prevUDblock = uds.length > 1 ? uds[uds.length-2] : null;
-          data["currency_acronym"] = 'ZB';
+          data["currency_acronym"] = 'MB';
           data["amendmentsCount"] = current.number + 1;
           data["membersCount"] = current.membersCount || 0;
           data["membersJoining"] = 0; // TODO
@@ -263,6 +227,7 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
           data["M_1surN"] = data.M_1 / data.N;
           data["blocks"] = res.uds;
           data["parameters"] = res.parameters;
+          data["T"] = current.medianTime;
           // ....
           // var start = new Date();
           // start.setTime(parseInt(parameters.AMStart)*1000);
@@ -284,17 +249,23 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
     });
   }
 
-  this.graphs = function(req, res){
-    getReadyServer()
+  this.graphs = function(){
+    return getReadyServer()
       .then(function(){
-        return Q.nbind(theServer.dal.listAllBlocks, theServer.dal)();
+        return Q.all([
+          theServer.dal.getCurrentBlockOrNull(),
+          theServer.dal.getRootBlock()
+        ]);
       })
-      .then(function(blocks) {
+      .spread(function(current, root) {
         return Q.Promise(function(resolve, reject){
+          var from = current ? Math.max(0, current.number - 200) : 0;
+          var to   = current ? current.number + 1 : 0;
+          var lastBlocks = _.range(from, to);
           async.waterfall([
             function (next) {
-              if (blocks.length == 0) return next('No block');
-              var sp = blocks[0].parameters.split(':');
+              if (lastBlocks.length == 0) return next('No block');
+              var sp = root.parameters.split(':');
               var parameters = {
                 "c":                parseFloat(sp[0]),
                 "dt":               parseInt(sp[1]),
@@ -327,95 +298,89 @@ function ServerHandler(conf, mdb, mhost, mport, autoStart) {
               var nbDifferentIssuers = [];
               var difficulties = [];
               var blockchainTime = 0;
-              blocks.forEach(function (block, index) {
-                members.push(block.membersCount);
-                certifications.push(block.certifications.length);
-                newcomers.push(block.identities.length);
-                actives.push(block.actives.length);
-                leavers.push(block.leavers.length);
-                excluded.push(block.excluded.length);
-                transactions.push(block.transactions.length);
-                medianTimes.push(block.medianTime);
-                accelerations.push(block.time - block.medianTime);
-                difficulties.push(block.powMin);
-                increments.push(block.medianTime - (index ? blocks[index-1].medianTime : block.medianTime));
-                // Accumulation of last medianTimeBlocks variation
-                var acc = 0;
-                for (var i = Math.max(0, index - parameters.dtDiffEval); i < index; i++) {
-                  acc += increments[i+1];
-                }
-                speed.push(acc / parameters.dtDiffEval);
-                // Volume
-                var outputVolume = 0;
-                block.transactions.forEach(function (tx) {
-                  tx.outputs.forEach(function (out) {
-                    var amount = parseInt(out.split(':')[1]);
-                    outputVolume += amount;
+              return lastBlocks.reduce(function(promise, blockNumber, index) {
+                return promise
+                  .then(function(previousBlock){
+                    return theServer.dal.getPromoted(blockNumber)
+                      .then(function(block){
+                        members.push(block.membersCount);
+                        certifications.push(block.certifications.length);
+                        newcomers.push(block.identities.length);
+                        actives.push(block.actives.length);
+                        leavers.push(block.leavers.length);
+                        excluded.push(block.excluded.length);
+                        transactions.push(block.transactions.length);
+                        medianTimes.push(block.medianTime);
+                        accelerations.push(block.time - block.medianTime);
+                        difficulties.push(block.powMin);
+                        increments.push(block.medianTime - (index ? previousBlock.medianTime : block.medianTime));
+                        // Accumulation of last medianTimeBlocks variation
+                        var acc = 0;
+                        for (var i = Math.max(0, index - parameters.dtDiffEval); i < index; i++) {
+                          acc += increments[i+1];
+                        }
+                        speed.push(acc / parameters.dtDiffEval);
+                        // Volume
+                        var outputVolume = 0;
+                        block.transactions.forEach(function (tx) {
+                          tx.outputs.forEach(function (out) {
+                            var amount = parseInt(out.split(':')[1]);
+                            outputVolume += amount;
+                          });
+                        });
+                        outputs.push(outputVolume);
+                        // Volume without money change
+                        var outputVolumeEstimated = 0;
+                        block.transactions.forEach(function (tx) {
+                          tx.outputs.forEach(function (out) {
+                            var sp = out.split(':');
+                            var recipient = sp[0];
+                            var amount = parseInt(sp[1]);
+                            if (tx.signatories.indexOf(recipient) == -1)
+                              outputVolumeEstimated += amount;
+                          });
+                        });
+                        outputsEstimated.push(outputVolumeEstimated);
+                        // Number of different issuers
+                        var issuers = [];
+                        for (var i = Math.max(0, index - 1 - parameters.blocksRot); i <= index - 1; i++) {
+                          issuers.push(block.issuer);
+                        }
+                        nbDifferentIssuers.push(_(issuers).uniq().length);
+                        blockchainTime = block.medianTime;
+                        return block;
+                      });
+                  })
+              }, Q())
+                .then(function(){
+                  next(null, {
+                    'parameters': parameters,
+                    'blockchainTime': blockchainTime,
+                    'medianTimes': medianTimes,
+                    'speed': speed,
+                    'accelerations': accelerations,
+                    'medianTimeIncrements': increments,
+                    'certifications': certifications,
+                    'members': members,
+                    'newcomers': newcomers,
+                    'actives': actives,
+                    'leavers': leavers,
+                    'excluded': excluded,
+                    'outputs': outputs,
+                    'outputsEstimated': outputsEstimated,
+                    'transactions': transactions,
+                    'difficulties': difficulties,
+                    'nbDifferentIssuers': nbDifferentIssuers
                   });
-                });
-                outputs.push(outputVolume);
-                // Volume without money change
-                var outputVolumeEstimated = 0;
-                block.transactions.forEach(function (tx) {
-                  tx.outputs.forEach(function (out) {
-                    var sp = out.split(':');
-                    var recipient = sp[0];
-                    var amount = parseInt(sp[1]);
-                    if (tx.signatories.indexOf(recipient) == -1)
-                      outputVolumeEstimated += amount;
-                  });
-                });
-                outputsEstimated.push(outputVolumeEstimated);
-                // Number of different issuers
-                var issuers = [];
-                for (var i = Math.max(0, index - 1 - parameters.blocksRot); i <= index - 1; i++) {
-                  issuers.push(blocks[i].issuer);
-                }
-                nbDifferentIssuers.push(_(issuers).uniq().length);
-                blockchainTime = block.medianTime;
-              });
-              next(null, {
-                'parameters': parameters,
-                'blockchainTime': blockchainTime,
-                'medianTimes': medianTimes,
-                'speed': speed,
-                'accelerations': accelerations,
-                'medianTimeIncrements': increments,
-                'certifications': certifications,
-                'members': members,
-                'newcomers': newcomers,
-                'actives': actives,
-                'leavers': leavers,
-                'excluded': excluded,
-                'outputs': outputs,
-                'outputsEstimated': outputsEstimated,
-                'transactions': transactions,
-                'difficulties': difficulties,
-                'nbDifferentIssuers': nbDifferentIssuers
-              });
+                })
+                .fail(next);
             }
           ], function(err, data) {
             if (err) reject(err); else resolve(data);
           });
         });
-      })
-      .then(onSuccess(res))
-      .fail(onError(res));
+      });
   };
-}
-
-function onSuccess(res) {
-  return function(data) {
-    res.type('application/json');
-    res.send(JSON.stringify(data || {}));
-  }
-}
-
-function onError(res) {
-  return function(err) {
-    res.type('application/json');
-    res.send(500, JSON.stringify({ message: err.message || err }));
-  }
 }
 
 util.inherits(ServerHandler, stream.Transform);

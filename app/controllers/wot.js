@@ -154,6 +154,7 @@ function WOTBinding (wotServer) {
                   }
                   cert.uid = idty.uid;
                   cert.isMember = idty.member;
+                  cert.wasMember = idty.wasMember;
                   wotServer.dal.getBlock(cert.block_number, next);
                 },
                 function (block, next) {
@@ -190,6 +191,7 @@ function WOTBinding (wotServer) {
           pubkey: cert.from,
           uid: cert.uid,
           isMember: cert.isMember,
+          wasMember: cert.wasMember,
           cert_time: cert.cert_time,
           written: cert.linked,
           signature: cert.sig
@@ -228,6 +230,7 @@ function WOTBinding (wotServer) {
                   cert.pubkey = idty.pubkey;
                   cert.uid = idty.uid;
                   cert.isMember = idty.member;
+                  cert.wasMember = idty.wasMember;
                   wotServer.dal.getBlock(cert.block_number, next);
                 },
                 function (block, next) {
@@ -265,6 +268,7 @@ function WOTBinding (wotServer) {
           uid: cert.uid,
           cert_time: cert.cert_time,
           isMember: cert.isMember,
+          wasMember: cert.wasMember,
           written: cert.linked,
           signature: cert.sig
         });

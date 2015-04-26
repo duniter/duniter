@@ -232,6 +232,10 @@ ucoinControllers.controller('homeController', function ($scope, $route, $locatio
       $.each(data, function (key, value) {
         $scope[key] = value;
       });
+      $scope.Mformat = numeral($scope.M).format('0,0');
+      $scope.MUDformat = numeral(data.M / data.UD).format('0,0.00');
+      $scope.UDformat = numeral(data.UD).format('0,0');
+      $scope.Tformat = moment(data.T).format('YYYY-MM-DD hh:mm:ss');
     }
   });
 
@@ -423,9 +427,6 @@ ucoinControllers.controller('contractController', function ($scope, $route, $loc
         '/contract/votes'].indexOf($location.path())) {
     $http.get($location.path()).success(function (data) {
       console.log(data);
-      $.each(data, function (key, value) {
-        $scope[key] = value;
-      });
 
       $scope.blockchainTime = moment($scope.blockchainTime*1000).format('LLL');
 

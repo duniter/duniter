@@ -106,21 +106,23 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.dal, that.PeeringService);
         that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf, that.dal);
         that.IdentityService.setBlockchainService(that.BlockchainService);
-        that.checkConfig(next);
-      },
-      function (next){
         // Extract key pair
         if (that.conf.pair)
           next(null, {
             publicKey: base58.decode(that.conf.pair.pub),
             secretKey: base58.decode(that.conf.pair.sec)
           });
-        else
+        else if (that.conf.passwd || that.conf.salt)
           crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
+        else
+          next(null, null);
       },
       function (pair, next){
-        that.setPair(pair);
-        that.createSignFunction(pair, next);
+        if (pair) {
+          that.setPair(pair);
+          that.createSignFunction(pair, next);
+        }
+        else next();
       }
     ], done);
   };
@@ -133,6 +135,9 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   this._start = function (done) {
     async.waterfall([
+      function(next) {
+        that.checkConfig(next);
+      },
       function (next){
         // Add signing & public key functions to PeeringService
         that.PeeringService.setSignFunc(that.sign);

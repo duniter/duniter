@@ -121,7 +121,7 @@ function IdentityService (conn, conf, dal) {
           if (existing && !aCertWasSaved) {
             next('Already up-to-date');
           }
-          else if (aCertWasSaved)
+          else if (existing)
             next(null, new Identity(existing));
           else {
             // Create
@@ -133,7 +133,10 @@ function IdentityService (conn, conf, dal) {
           }
         }
       ], cb);
-    }, done);
+    }, function(err, idty) {
+      err && logger.warn(err);
+      done(err, idty);
+    });
   };
 
   this.submitRevocation = function(obj, done) {

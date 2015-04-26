@@ -259,6 +259,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
   }
 
   function syncBlock(callback) {
+    var blockFound = true;
     async.waterfall([
       function (next) {
         dal.getCurrentBlockOrNull(next);
@@ -307,9 +308,16 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
               }, Q.reject())
                 .fail(function(){
                   logger.info("No new block found");
+                  blockFound = false;
                 })
                 .then(function(){
-                  next();
+                  if (blockFound) {
+                    // Try to sync next
+                    syncBlock(next);
+                  }
+                  else {
+                    next();
+                  }
                 });
             });
         }

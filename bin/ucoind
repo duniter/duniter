@@ -514,7 +514,7 @@ function bootstrapServer(host, port, server, conf) {
       var remote = new Synchroniser(server, host, port, conf, INTERACTIVE_SYNC);
       async.doWhilst(function(next){
         start = new Date().getTime();
-        remote.sync(100, next);
+        remote.sync(null, next);
       }, function(){
         var now = new Date().getTime();
         return (now - start)/1000 > constants.NETWORK.SYNC.MAX;

@@ -7,6 +7,7 @@ var events         = require('events');
 var Status         = require('../lib/entity/status');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/base58');
+var sha1           = require('sha1');
 var moment         = require('moment');
 var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');

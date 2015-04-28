@@ -21,6 +21,8 @@ function keys (val) {
   return val.split(',');
 }
 
+const INTERACTIVE_SYNC = true;
+
 program
   .version(pjson.version)
   .usage('<command> [options]')
@@ -114,8 +116,8 @@ program
   }));
 
 program
-  .command('bootstrap [host] [port]')
-  .description('Synchronize blockchain from a remote uCoin node')
+  .command('init [host] [port]')
+  .description('Setup a node configuration and sync data with given node')
   .action(service(ucoin.createTxServer, bootstrapServer));
 
 program
@@ -447,8 +449,8 @@ function bootstrapServer(host, port, server, conf) {
             if (!program.member && !conf.salt && !conf.passwd) {
               wiz.choose('You need a keypair to identify your node on the network. Would you like to automatically generate it?', true,
                 function(){
-                  conf.salt = ~~(Math.random() * 2147483647);
-                  conf.passwd = ~~(Math.random() * 2147483647);
+                  conf.salt = ~~(Math.random() * 2147483647) + "";
+                  conf.passwd = ~~(Math.random() * 2147483647) + "";
                   next();
                 },
                 function(){
@@ -509,10 +511,10 @@ function bootstrapServer(host, port, server, conf) {
       logger.info('Configuration saved.');
       // Sync
       var start = 0;
-      var remote = new Synchroniser(server, host, port, conf);
+      var remote = new Synchroniser(server, host, port, conf, INTERACTIVE_SYNC);
       async.doWhilst(function(next){
         start = new Date().getTime();
-        remote.sync(next);
+        remote.sync(100, next);
       }, function(){
         var now = new Date().getTime();
         return (now - start)/1000 > constants.NETWORK.SYNC.MAX;
@@ -522,10 +524,6 @@ function bootstrapServer(host, port, server, conf) {
         }
         next(err);
       });
-    },
-    function() {
-      // Start
-      serverStart(server, conf);
     }
   ], function (err) {
     if (err) {

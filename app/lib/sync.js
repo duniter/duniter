@@ -198,7 +198,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                                     if (err) {
                                       reject(err);
                                     } else {
-                                      finished = Math.min(to || current.number, current.number) == currentNumber;
+                                      finished = Math.min(to || current.number, current.number) >= currentNumber;
                                       resolve();
                                     }
                                   });

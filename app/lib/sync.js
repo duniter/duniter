@@ -37,7 +37,8 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
   var dal = server.dal;
 
-  this.sync = function (to, done) {
+  this.sync = function (to, cautiousMode, done) {
+    var cautious = typeof cautiousMode == 'undefined' ? false : cautiousMode;
     logger.info('Connecting remote host...');
     vucoin(host, port, function (err, node) {
       if(err){
@@ -186,7 +187,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                                   if (watcher.appliedPercent() != Math.floor(block.number/remoteCurrentNumber*100)){
                                     watcher.appliedPercent(Math.floor(block.number/remoteCurrentNumber*100));
                                   }
-                                  BlockchainService.submitBlock(block, true, function(err) {
+                                  BlockchainService.submitBlock(block, cautious, function(err) {
                                     err ? reject(err) : resolve();
                                   })
                                 });

@@ -658,6 +658,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                   'pubkey': idty.pubkey,
                   'type': 'D',
                   'number': block.number,
+                  'time': block.medianTime,
                   'fingerprint': block.hash,
                   'amount': block.dividend,
                   'consumed': 0

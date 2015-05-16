@@ -9,6 +9,7 @@ var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
 var Configuration = require('../entity/configuration');
 var Transaction = require('../entity/transaction');
+var Source = require('../entity/source');
 var constants = require('../constants');
 
 const BLOCK_FILE_PREFIX = "0000000000";
@@ -1016,7 +1017,10 @@ function FileDAL(profile, myFS) {
 
   this.saveSource = function(src, done) {
     sources.push(src);
-    return that.writeJSON(sources, 'sources.json', done);
+    return (src.type == "D" ? that.saveUDInHistory(src.pubkey, src) : Q())
+      .then(function(){
+        return that.writeJSON(sources, 'sources.json', done);
+      });
   };
 
   this.saveIdentity = function(idty, done) {
@@ -1086,6 +1090,23 @@ function FileDAL(profile, myFS) {
       });
   };
 
+  this.saveUDInHistory = function(pubkey, ud) {
+    return myFS.makeTree(getUCoinHomePath(profile) + '/ud_history/')
+      .then(function(){
+        return myFS.read(getUCoinHomePath(profile) + '/ud_history/' + pubkey + '.json')
+          .then(function(data){
+            return JSON.parse(data);
+          });
+      })
+      .fail(function(){
+        return { history: [] };
+      })
+      .then(function(obj){
+        obj.history.push(new Source(ud).UDjson());
+        return myFS.write(getUCoinHomePath(profile) + '/ud_history/' + pubkey + '.json', JSON.stringify(obj, null, ' '));
+      });
+  };
+
   this.getTransactionsHistory = function(pubkey, done) {
     return myFS.makeTree(getUCoinHomePath(profile) + '/tx_history/')
       .then(function(){
@@ -1143,6 +1164,32 @@ function FileDAL(profile, myFS) {
       .then(function(history){
         done && done(null, history);
         return history;
+      })
+      .fail(function(err){
+        done && done(err);
+        throw err;
+      });
+  };
+
+  this.getUDHistory = function(pubkey, done) {
+    return myFS.makeTree(getUCoinHomePath(profile) + '/ud_history/')
+      .then(function(){
+        return myFS.read(getUCoinHomePath(profile) + '/ud_history/' + pubkey + '.json')
+          .then(function(data){
+            return JSON.parse(data);
+          });
+      })
+      .fail(function(){
+        return { history: [] };
+      })
+      .then(function(obj){
+        obj.history = obj.history.map(function(src) {
+          var completeSrc = _.extend({}, src);
+          _.extend(completeSrc, _.findWhere(sources, { type: 'D', pubkey: pubkey, number: src.block_number }));
+          return completeSrc;
+        });
+        done && done(null, obj);
+        return obj;
       })
       .fail(function(err){
         done && done(err);

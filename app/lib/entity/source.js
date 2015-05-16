@@ -25,5 +25,14 @@ function Source(json) {
       "fingerprint": this.fingerprint,
       "amount": this.amount
     };
+  };
+
+  this.UDjson = function () {
+    return {
+      "block_number": this.number,
+      "consumed": this.consumed,
+      "time": this.time,
+      "amount": this.amount
+    };
   }
 }

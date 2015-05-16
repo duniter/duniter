@@ -44,6 +44,7 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
 
   this.listenTX = function (app) {
     var transactions = require('./app/controllers/transactions')(that);
+    var dividend     = require('./app/controllers/uds')(that);
     app.post('/tx/process',                           transactions.parseTransaction);
     app.get( '/tx/sources/:pubkey',                   transactions.getSources);
     app.get( '/tx/history/:pubkey',                   transactions.getHistory);
@@ -51,6 +52,7 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
     app.get( '/tx/history/:pubkey/times/:from/:to',   transactions.getHistoryBetweenTimes);
     app.get( '/tx/history/:pubkey/pending',           transactions.getPendingForPubkey);
     app.get( '/tx/pending',                           transactions.getPending);
+    app.get( '/ud/history/:pubkey',                   dividend.getHistory);
   };
 }
 

@@ -1,31 +1,29 @@
-var fs         = require('fs');
+"use strict";
 var stream     = require('stream');
 var async      = require('async');
 var util       = require('util');
 var _          = require('underscore');
 var Q          = require('q');
-var common     = require('./app/lib/common');
+var log4js = require('log4js');
 var constants  = require('./app/lib/constants');
 var fileDAL  = require('./app/lib/dal/fileDAL');
 var express    = require('express');
-var request    = require('request');
 var http       = require('http');
-var log4js     = require('log4js');
 var upnp       = require('nat-upnp');
 var jsonpckg   = require('./package.json');
 var router      = require('./app/lib/streams/router');
 var multicaster = require('./app/lib/streams/multicaster');
-
 var INNER_WRITE = true;
+
 
 function Server (dbConf, overrideConf, interceptors, onInit) {
 
-  stream.Duplex.call(this, { objectMode : true });
+  stream.Duplex.call(this, { objectMode: true });
 
-  var logger  = require('./app/lib/logger')(dbConf.name);
+  var httpLogger  = log4js.getLogger(dbConf.name);
+  var logger = require('./app/lib/logger')('server');
   var that = this;
   var server4, server6;
-  var serverListening = false;
   that.conn = null;
   that.conf = null;
   that.dal = null;
@@ -178,7 +176,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     server6 && server6.close();
     that.emit('stopped');
     logger.info('Server DOWN');
-    serverListening = false;
   };
 
   this.reset = function(done) {
@@ -280,7 +277,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     // all environments
     app.set('port', port);
     if (conf.httplogs) {
-      app.use(log4js.connectLogger(logger, {
+      app.use(log4js.connectLogger(httpLogger, {
         format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m'
       }));
     }
@@ -297,7 +294,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         app.use(app.router);
 
         // development only
-        if ('development' == app.get('env')) {
+        if (app.get('env') == 'development') {
           app.use(express.errorHandler());
         }
         next();
@@ -316,7 +313,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       function (next) {
         if(conf.ipv4){
           server4 = http.createServer(app);
-          serverListening = true;
           server4.listen(conf.port, conf.ipv4, function(){
             logger.info('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
             next();
@@ -327,7 +323,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       function (next) {
         if(conf.ipv6){
           server6 = http.createServer(app);
-          serverListening = true;
           server6.createServer(app).listen(conf.port, conf.ipv6, function(){
             logger.info('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
             next();
@@ -360,10 +355,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
 
   function TempStream (parentStream, onError) {
 
-    stream.Duplex.call(this, { objectMode : true });
+    stream.Duplex.call(this, { objectMode: true });
 
     var self = this;
-    this._write = function (obj, enc, done) {
+    self._write = function (obj, enc, done) {
       parentStream._write(obj, enc, function (err, res) {
         if (err && typeof onError == 'function') onError(err);
         if (res) self.push(res);
@@ -371,8 +366,8 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
         done();
       }, INNER_WRITE);
     };
-    this._read = function () {
-    }
+    self._read = function () {
+    };
   }
 
   var theRouter;

@@ -28,7 +28,7 @@ function Multicaster () {
     logger.debug('--> new Identity with %s certs to be sent to %s peer(s)', (idty.certs || []).length, peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendIdentity(peer, idty, success(function (err) {
+        sendIdentity(peer, idty, success(function () {
         }));
         sent();
       });
@@ -39,7 +39,7 @@ function Multicaster () {
     logger.debug('--> new Block to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendBlock(peer, block, success(function (err) {
+        sendBlock(peer, block, success(function () {
         }));
         sent();
       });
@@ -50,7 +50,7 @@ function Multicaster () {
     logger.debug('--> new Transaction to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendTransaction(peer, transaction, success(function (err) {
+        sendTransaction(peer, transaction, success(function () {
           sent();
         }));
       });
@@ -75,7 +75,7 @@ function Multicaster () {
     //  });
     //});
   });
-  
+
   that.on('status', function(status, peers) {
     //logger.debug('--> new Status to be sent to %s peer(s)', peers.length);
     //peers.forEach(function(peer){
@@ -97,7 +97,7 @@ function Multicaster () {
     logger.debug('--> new Membership to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendMembership(peer, membership, success(function (err) {
+        sendMembership(peer, membership, success(function () {
           sent();
         }));
       });
@@ -169,15 +169,6 @@ function Multicaster () {
       }
       done(err, res, body);
     };
-  }
-
-  function get(peer, url, done) {
-    reach(peer, function(){
-      logger.debug('GET http://' + peer.getURL() + url);
-      request
-      .get('http://' + peer.getURL() + url)
-      .end(done);
-    }, done);
   }
 
   function reach (peer, onSuccess, done) {

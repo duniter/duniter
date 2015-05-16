@@ -2,13 +2,14 @@
 var _ = require('underscore');
 var moment = require('moment');
 var rawer = require('../rawer');
+var dos2unix = require('../dos2unix');
 
 var Membership = function(json) {
 
   var that = this;
 
   _(json).keys().forEach(function(key) {
-   that[key] = json[key];
+    that[key] = json[key];
   });
 
   this.blockNumber = this.number;

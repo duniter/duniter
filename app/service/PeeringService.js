@@ -180,8 +180,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
         var statusToSend = actionForReceived[peer.status] || 'NEW';
         that.sendStatusTo(statusToSend, [peer.pubkey], next);
       }
-    ], function (err) {
-      if (err) plogger.error(err);
+    ], function () {
       done();
     });
   };

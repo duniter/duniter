@@ -1,21 +1,15 @@
+"use strict";
+
 var should = require('should');
 var assert = require('assert');
-var async  = require('async');
 var node   = require('./tools/node');
-var user   = require('./tools/user');
 var jspckg = require('../../package');
-
-require('log4js').configure({
-   "appenders": [
-     //{ category: "db1", type: "console" }
-   ]
-});
 
 describe("Integration", function() {
 
   describe("Node 1", function() {
 
-    var node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: true,
+    var node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: false,
       salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
       sigQty: 1
     });
@@ -120,7 +114,7 @@ describe("Integration", function() {
 
   describe("Testing transactions", function(){
 
-    var node2 = node('db2', { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: true,
+    var node2 = node('db2', { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: false,
       pair: {
         pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
         sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
@@ -133,7 +127,7 @@ describe("Integration", function() {
       node2.start()
         .then(function(){
           node2.before(require('./scenarios/transactions')(node2))(done);
-        })
+        });
     });
     after(node2.after());
 
@@ -167,7 +161,7 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
-    var node3 = node('db3', { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: true,
+    var node3 = node('db3', { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
       salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
       sigQty: 1
     });
@@ -176,7 +170,7 @@ describe("Integration", function() {
       node3.start()
         .then(function(){
           node3.before(require('./scenarios/certifications')(node3))(done);
-        })
+        });
     });
     after(node3.after());
 

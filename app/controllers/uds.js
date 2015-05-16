@@ -9,8 +9,6 @@ var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
-var logger           = require('../lib/logger')('transaction');
-var Transaction      = require('../lib/entity/transaction');
 
 module.exports = function (txServer) {
   return new UDBinding(txServer);
@@ -18,12 +16,10 @@ module.exports = function (txServer) {
 
 function UDBinding(txServer) {
 
-  var that = this;
   var conf = txServer.conf;
 
   // Services
   var ParametersService = txServer.ParametersService;
-  var BlockchainService = txServer.BlockchainService;
 
   // Models
   var Source = require('../lib/entity/source');
@@ -36,8 +32,6 @@ function UDBinding(txServer) {
       .pipe(parsers.parseTransaction(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      // .pipe(extractSignature(onError))
-      // .pipe(verifySignature(onError))
       .pipe(txServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())

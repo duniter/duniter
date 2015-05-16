@@ -321,7 +321,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         var signature = dos2unix(remotePeer.signature);
         // Parameters
         if(!(entry && signature)){
-          callback('Requires a peering entry + signature');
+          next('Requires a peering entry + signature');
           return;
         }
 
@@ -336,19 +336,18 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
             PeeringService.submit(remoteJsonPeer, function (err) {
               next(err == 'Peer document is older than currently recorded' ? null : err);
             });
-          },
+          }
         ], function (err) {
           next(err);
         });
-      },
+      }
     ], done);
   }
-}
+};
 
 function NodesMerkle (json) {
   
   var that = this;
-  var merkleRoot = null;
   ["depth", "nodesCount", "leavesCount"].forEach(function (key) {
     that[key] = json[key];
   });
@@ -364,18 +363,7 @@ function NodesMerkle (json) {
 
   this.root = function () {
     return this.merkleRoot;
-  }
-}
-
-function choose (question, defaultValue, ifOK, ifNotOK) {
-  inquirer.prompt([{
-    type: "confirm",
-    name: "q",
-    message: question,
-    default: defaultValue
-  }], function (answer) {
-    answer.q ? ifOK() : ifNotOK();
-  });
+  };
 }
 
 function MultimeterWatcher() {

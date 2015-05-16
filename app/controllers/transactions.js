@@ -9,9 +9,6 @@ var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
-var link2pubkey      = require('../lib/streams/link2pubkey');
-var extractSignature = require('../lib/streams/extractSignature');
-var verifySignature  = require('../lib/streams/verifySignature');
 var logger           = require('../lib/logger')('transaction');
 var Transaction      = require('../lib/entity/transaction');
 
@@ -21,12 +18,10 @@ module.exports = function (txServer) {
 
 function TransactionBinding(txServer) {
 
-  var that = this;
   var conf = txServer.conf;
 
   // Services
   var ParametersService = txServer.ParametersService;
-  var BlockchainService = txServer.BlockchainService;
 
   // Models
   var Source = require('../lib/entity/source');
@@ -39,8 +34,6 @@ function TransactionBinding(txServer) {
       .pipe(parsers.parseTransaction(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      // .pipe(extractSignature(onError))
-      // .pipe(verifySignature(onError))
       .pipe(txServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())

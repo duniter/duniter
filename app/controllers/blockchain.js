@@ -205,7 +205,7 @@ function BlockchainBinding (wotServer) {
         if (current) {
           nextBlockNumber = current ? current.number + 1 : 0;
         }
-        globalValidator(conf, blockchainDao(conn, null, server.dal)).getTrialLevel(member, next);
+        globalValidator(conf, blockchainDao(conn, null, wotServer.dal)).getTrialLevel(member, next);
       }
     ], function (err, nbZeros) {
       if(err){

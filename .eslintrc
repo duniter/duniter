@@ -1,0 +1,46 @@
+{
+  "plugins": [
+    "mocha"
+  ],
+  "rules": {
+
+    "camelcase": false,
+    "new-cap": false,
+    "eqeqeq": false,
+    "key-spacing": false,
+    "no-multi-spaces": false,
+    "no-use-before-define": false,
+    "no-underscore-dangle": false,
+    "no-extend-native": false,
+    "no-loop-func": false,
+    "no-redeclare": false,
+    "no-trailing-spaces": false,
+    "no-unused-expressions": false,
+
+    "quotes": ["quotes", "double"],
+    "linebreak-style": [2,"unix"],
+    "mocha/no-exclusive-tests": 2,
+    "no-undef": [2],
+
+    "indent": [1,2],
+    "comma-spacing": [1],
+    "comma-dangle": [1],
+    "eol-last": [1],
+    "curly": [1],
+    "no-shadow": [1],
+    "no-unused-vars": [1],
+    "space-infix-ops": [1],
+    "handle-callback-err": [1],
+    "semi": [1,"always"],
+    "no-extra-semi": [1]
+  },
+  "env": {
+    "node": true
+  },
+  "globals": {
+    "before": true,
+    "after": true,
+    "describe": true,
+    "it": true
+  }
+}

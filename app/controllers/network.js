@@ -1,7 +1,5 @@
 "use strict";
 var async            = require('async');
-var vucoin           = require('vucoin');
-var _                = require('underscore');
 var es               = require('event-stream');
 var dos2unix         = require('../lib/dos2unix');
 var versionFilter    = require('../lib/streams/versionFilter');
@@ -10,14 +8,8 @@ var http2raw         = require('../lib/streams/parsers/http2raw');
 var jsoner           = require('../lib/streams/jsoner');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
-var link2pubkey      = require('../lib/streams/link2pubkey');
-var extractSignature = require('../lib/streams/extractSignature');
-var verifySignature  = require('../lib/streams/verifySignature');
-var logger           = require('../lib/logger');
 var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
-var plogger          = logger('peering');
-var slogger          = logger('status');
 
 module.exports = function (peerServer, conf) {
   return new NetworkBinding(peerServer, conf);
@@ -26,14 +18,10 @@ module.exports = function (peerServer, conf) {
 function NetworkBinding (peerServer, conf) {
 
   // Services
-  var http              = peerServer.HTTPService;
   var MerkleService     = peerServer.MerkleService;
-  var ParametersService = peerServer.ParametersService;
   var PeeringService    = peerServer.PeeringService;
 
   this.cert = PeeringService.cert;
-
-  var that = this;
 
   this.peer = function (req, res) {
     res.type('application/json');
@@ -56,7 +44,7 @@ function NetworkBinding (peerServer, conf) {
                 map[peer.hash] = Peer.statics.peerize(peer).json();
               });
               done(null, map);
-            })
+            });
         }, next);
       }
     ], function (err, json) {
@@ -76,12 +64,11 @@ function NetworkBinding (peerServer, conf) {
       .pipe(parsers.parsePeer(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      // .pipe(verifySignature(onError))
       .pipe(peerServer.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
-  }
+  };
 
   this.statusPOST = function(req, res) {
     res.type('application/json');
@@ -101,11 +88,10 @@ function NetworkBinding (peerServer, conf) {
             .pipe(parsers.parsePeer(errorPeer))
             .pipe(versionFilter(errorPeer))
             .pipe(currencyFilter(conf.currency, errorPeer))
-            // .pipe(verifySignature(errorPeer))
             .pipe(peerServer.singleWriteStream(errorPeer))
-            .pipe(es.mapSync(function (data) {
+            .pipe(es.mapSync(function () {
               next();
-            }))
+            }));
         }
         else next();
       },
@@ -115,9 +101,6 @@ function NetworkBinding (peerServer, conf) {
           .pipe(parsers.parseStatus(next))
           .pipe(versionFilter(next))
           .pipe(currencyFilter(conf.currency, next))
-          // .pipe(extractSignature(next))
-          // .pipe(link2pubkey(peerServer.PublicKeyService, next))
-          // .pipe(verifySignature(next))
           .pipe(peerServer.singleWriteStream(next))
           .pipe(jsoner())
           .pipe(es.stringify())
@@ -128,5 +111,5 @@ function NetworkBinding (peerServer, conf) {
       if (err)
         onError(err);
     });
-  }
+  };
 }

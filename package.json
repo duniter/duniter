@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:c-geek/ucoin.git"
+    "url": "git@github.com:ucoin-io/ucoin.git"
   },
   "keywords": [
     "openudc",
@@ -24,7 +24,7 @@
   "license": "MIT",
   "readmeFilename": "readme.md",
   "bugs": {
-    "url": "https://github.com/c-geek/ucoin/issues"
+    "url": "https://github.com/ucoin-io/ucoin/issues"
   },
   "dependencies": {
     "async": "0.2.9",

@@ -1,3 +1,5 @@
+"use strict";
+
 var _             = require('underscore');
 var async         = require('async');
 var crypto        = require('./crypto');
@@ -455,16 +457,17 @@ function GlobalValidator (conf, dao) {
         timeValues.sort();
         // console.log(timeValues);
         var times = [0];
+        var middle;
         if (blocksCount % 2 == 0) {
           // Even number of blocks
-          var middle = blocksCount / 2;
+          middle = blocksCount / 2;
           times = [timeValues[middle - 1], timeValues[middle]];
           // console.log('middle', middle);
           // console.log('times = ', times);
         }
         else {
           // Odd number of blocks
-          var middle = (blocksCount - 1) / 2;
+          middle = (blocksCount - 1) / 2;
           times = [timeValues[middle]];
           // console.log('middle', middle);
           // console.log('times = ', times);
@@ -472,13 +475,11 @@ function GlobalValidator (conf, dao) {
         // Content
         if (times.length == 2) {
           // Even number of times
-          median = Math.ceil((times[0] + times[1]) / 2);
-          next(null, median);
+          next(null, Math.ceil((times[0] + times[1]) / 2));
         }
         else if (times.length == 1) {
           // Odd number of times
-          median = times[0];
-          next(null, median);
+          next(null, times[0]);
         }
         else {
           next('No block found for MedianTime comparison');
@@ -794,7 +795,7 @@ function GlobalValidator (conf, dao) {
       async.waterfall([
         function (next) {
           dao.findBlock(ms.number, ms.fpr, function (err, basedBlock) {
-            next(err || (basedBlock == null && 'Membership based on an unexisting block') || null, basedBlock);
+            next(err || (basedBlock == null && 'Membership based on an unexisting block') || null, basedBlock);
           });
         },
         function (basedBlock, next) {

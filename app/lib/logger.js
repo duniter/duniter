@@ -1,6 +1,8 @@
+"use strict";
 var log4js = require('log4js');
+var path = require('path');
 
-log4js.configure(__dirname + '/../../conf/logs.json', { reloadSecs: 60 });
+log4js.configure(path.join(__dirname, '/../../conf/logs.json'), { reloadSecs: 60 });
 
 /**
 * Convenience function to get logger directly

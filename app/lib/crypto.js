@@ -1,9 +1,10 @@
+"use strict";
 var nacl        = require('tweetnacl');
 var scrypt      = require('scrypt');
 var base58      = require('./base58');
 var naclBinding = require('naclb');
 
-const crypto_sign_BYTES = 64;
+var crypto_sign_BYTES = 64;
 var SEED_LENGTH = 32; // Length of the key
 // TODO: change key parameters
 var TEST_PARAMS = {
@@ -70,7 +71,7 @@ module.exports = {
     for (i = 0; i < msg.length; i++) sm[i+crypto_sign_BYTES] = msg[i];
 
     // Call to verification lib...
-    verified = naclBinding.verify(m, sm, pub);
+    var verified = naclBinding.verify(m, sm, pub);
     if (typeof done == 'function') done(null, verified);
     return verified;
   },

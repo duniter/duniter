@@ -1,3 +1,4 @@
+"use strict";
 var sha1                 = require('sha1');
 var util                 = require('util');
 var stream               = require('stream');
@@ -77,6 +78,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
   };
 
   this._parse = function (str, obj) {
+    var error;
     if(!str){
       error = "No document given";
     } else {
@@ -105,6 +107,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
         }
       }
     }
+    return error;
   };
 };
 

@@ -1,3 +1,4 @@
+"use strict";
 var async            = require('async');
 var vucoin           = require('vucoin');
 var _                = require('underscore');

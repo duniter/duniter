@@ -1,3 +1,6 @@
+"use strict";
+
+var path            = require('path');
 var async           = require('async');
 var _               = require('underscore');
 var Q               = require('q');
@@ -7,17 +10,13 @@ var inquirer        = require('inquirer');
 var childProcess    = require('child_process');
 var usage           = require('usage');
 var rawer           = require('../lib/rawer');
-var crypto          = require('../lib/crypto');
-var base64          = require('../lib/base64');
-var dos2unix        = require('../lib/dos2unix');
-var parsers         = require('../lib/streams/parsers/doc');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports.get = function (conn, conf, dal, PeeringService) {
+module.exports = function (conn, conf, dal, PeeringService) {
   return new BlockchainService(conn, conf, dal, PeeringService);
 };
 
@@ -40,9 +39,6 @@ var newKeyblockCallback = null;
 
 // Callback used to start again computation of next PoW
 var computeNextCallback = null;
-
-// Flag telling if computation has started
-var computationActivated = false;
 
 // Timeout var for delaying computation of next block
 var computationTimeout = null;
@@ -112,7 +108,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           if (isJoin)
             // RENEW
             next();
-          else 
+          else
             next('A non-member cannot leave.');
         }
       },
@@ -316,7 +312,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   function updateBlocksComputedVars (current, block, done) {
     // Monetary Mass update
     if (current) {
-      block.monetaryMass = (current.monetaryMass || 0) + block.dividend*block.membersCount;
+      block.monetaryMass = (current.monetaryMass || 0) + block.dividend * block.membersCount;
     }
     // UD Time update
     if (block.number == 0) {
@@ -338,7 +334,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         function (res, next) {
           var last = res.last;
           var root = res.root;
-          block.UDTime = conf.dt + (last ? last['UDTime'] : root['medianTime']);
+          block.UDTime = conf.dt + (last ? last.UDTime : root.medianTime);
           next();
         }
       ], done);
@@ -772,19 +768,19 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           findTransactions()
         ])
           .spread(function(newCertsFromWoT, newcomersLeavers, transactions) {
-             var joinData = newcomersLeavers[2];
-             var leaveData = newcomersLeavers[3];
-             var newCertsFromNewcomers = newcomersLeavers[4];
-             // Merges updates
-             _(newCertsFromNewcomers).keys().forEach(function(newcomer){
-               // TODO: Bizarre ..
-               if (!newCertsFromWoT[newcomer]){
-                 newCertsFromWoT[newcomer] = newCertsFromNewcomers[newcomer];
-               }
-               else {
-                 newCertsFromWoT[newcomer] = newCertsFromWoT[newcomer].concat(newCertsFromNewcomers[newcomer]);
-               }
-             });
+            var joinData = newcomersLeavers[2];
+            var leaveData = newcomersLeavers[3];
+            var newCertsFromNewcomers = newcomersLeavers[4];
+            // Merges updates
+            _(newCertsFromNewcomers).keys().forEach(function(newcomer){
+              // TODO: Bizarre ..
+              if (!newCertsFromWoT[newcomer]){
+                newCertsFromWoT[newcomer] = newCertsFromNewcomers[newcomer];
+              }
+              else {
+                newCertsFromWoT[newcomer] = newCertsFromWoT[newcomer].concat(newCertsFromNewcomers[newcomer]);
+              }
+            });
             // Create the block
             return Q.Promise(function(resolve, reject){
               createBlock(current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions, function(err, block) {
@@ -805,7 +801,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
   this.generateEmptyNextBlock = function (done) {
     return prepareNextBlock()
       .spread(function(current, lastUDBlock, exclusions){
-        createBlock(current, {}, {}, {}, exclusions, lastUDBlock, [], next);
+        createBlock(current, {}, {}, {}, exclusions, lastUDBlock, [], done);
       })
       .fail(done);
   };
@@ -1135,7 +1131,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       },
       function (next){
         _.mapObject(updates, function(certs, pubkey) {
-          newLinks[pubkey] = (newLinks[pubkey] || []).concat(_.pluck(certs, 'pubkey'))
+          newLinks[pubkey] = (newLinks[pubkey] || []).concat(_.pluck(certs, 'pubkey'));
         });
         next();
       }
@@ -1164,7 +1160,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       conf.sigDelay, conf.sigValidity,
       conf.sigQty, conf.sigWoT, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
-      conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot) 
+      conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
     ].join(':');
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
@@ -1289,7 +1285,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             var N = block.membersCount;
             var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
             block.dividend = Math.ceil(Math.max(previousUD, c * M / N));
-          } 
+          }
         }
         next(null, block);
       }
@@ -1322,7 +1318,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           powWorker.kill();
         }
         done();
-      }
+      };
     }
     else done();
   };
@@ -1349,8 +1345,8 @@ function BlockchainService (conn, conf, dal, PeeringService) {
 
     var stopped = true;
     var that = this;
-    var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.' };
-    that.powProcess = childProcess.fork(__dirname + '/../lib/proof');
+    var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.'; };
+    that.powProcess = childProcess.fork(path.join(__dirname, '/../lib/proof'));
     var start = null;
     var speedMesured = false;
 
@@ -1418,12 +1414,11 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       return;
     }
     askedStop = null;
-    computationActivated = true;
     if (computationTimeout) {
       clearTimeout(computationTimeout);
       computationTimeout = null;
     }
-    var block, difficulty, current;
+    var block, current;
     async.waterfall([
       function (next) {
         dal.isMember(PeeringService.pubkey, function (err, isMember) {
@@ -1450,7 +1445,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             computationTimeout = setTimeout(function () {
               if (computeNextCallback)
                 computeNextCallback();
-            }, conf.powDelay*1000);
+            }, conf.powDelay * 1000);
           };
           next('Skipping', null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
         }
@@ -1496,42 +1491,15 @@ function BlockchainService (conn, conf, dal, PeeringService) {
           computeNextCallback = null;
           done(null, null);
         };
-        computationActivated = false
         if (computationTimeout && typeof computationTimeout == 'function') {
           computationTimeout();
         }
       } else {
         // Proof-of-work found
-        computationActivated = false
         done(err || askedStop, proofBlock);
       }
     });
   };
-
-  function withEnoughCerts (preJoinData, done) {
-    var joinData = {};
-    var newcomers = _(preJoinData).keys();
-    async.forEachSeries(newcomers, function (newcomer, callback) {
-      async.waterfall([
-        function (next){
-          var newLinks = {};
-          newLinks[newcomer] = [];
-          preJoinData[newcomer].certs.forEach(function (cert) {
-            newLinks[newcomer].push(cert.from);
-          });
-          checkHaveEnoughLinks(newcomer, newLinks, next);
-        },
-        function (next){
-          joinData[newcomer] = preJoinData[newcomer];
-          next();
-        }
-      ], function () {
-        callback(null);
-      });
-    }, function () {
-      done(null, joinData);
-    });
-  }
 
   this.addStatComputing = function () {
     var tests = {
@@ -1630,7 +1598,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
             return Q.all(recipients.map(function(receipient) {
               return dal.saveTxInHistory('received', receipient, tx);
             }));
-          })
+          });
         });
     }, Q());
   }

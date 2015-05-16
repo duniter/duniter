@@ -1,3 +1,4 @@
+"use strict";
 var GenericParser = require('./GenericParser');
 var util          = require('util');
 var split         = require('../../../split');

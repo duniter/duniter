@@ -1,3 +1,4 @@
+"use strict";
 var _ = require('underscore');
 
 module.exports = Block;
@@ -174,7 +175,7 @@ function Block(json) {
         var sp = input.split(':');
         tx.inputs.push({
           index: parseInt(sp[0]),
-          pubkey: tx.issuers[parseInt(sp[0])] || '',
+          pubkey: tx.issuers[parseInt(sp[0])] || '',
           type: sp[1],
           number: parseInt(sp[2]),
           fingerprint: sp[3],

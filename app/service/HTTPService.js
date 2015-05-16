@@ -1,3 +1,4 @@
+"use strict";
 var log4js   = require('log4js');
 var logger   =  require('../lib/logger')('http');
 

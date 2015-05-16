@@ -1,6 +1,6 @@
+"use strict";
 var util           = require('util');
 var async          = require('async');
-var request        = require('request');
 var _              = require('underscore');
 var Q              = require('q');
 var events         = require('events');
@@ -19,7 +19,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
 
   var Peer        = require('../lib/entity/peer');
 
-  var selfPubkey = undefined;
+  var selfPubkey;
   this.pubkey = selfPubkey;
 
   var peer = null, BlockchainService = null;
@@ -66,9 +66,8 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
           peer.status = 'UP';
           next(null, null);
         }
-        else
-          // Check if document is based upon an existing block as time reference
-          dal.getBlockOrNull(number, next);
+        // Check if document is based upon an existing block as time reference
+        else dal.getBlockOrNull(number, next);
       },
       function (block, next){
         sigTime = block ? block.medianTime : 0;
@@ -380,6 +379,6 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
 
 util.inherits(PeeringService, events.EventEmitter);
 
-module.exports.get = function (conn, conf, pair, signFunc, dal) {
+module.exports = function (conn, conf, pair, signFunc, dal) {
   return new PeeringService(conn, conf, pair, signFunc, dal);
 };

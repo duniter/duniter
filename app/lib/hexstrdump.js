@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = function hexstrdump(str) {
   if (str == null)
     return "";

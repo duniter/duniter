@@ -1,3 +1,4 @@
+"use strict";
 var _ = require('underscore');
 var moment = require('moment');
 var sha1 = require('sha1');
@@ -24,7 +25,7 @@ var Identity = function(json) {
 
   this.kick = !!this.kick;
   this.wasMember = !!this.wasMember;
-  this.written = this.written || this.member;
+  this.written = this.written || this.member;
   this.hash = sha1(this.uid + moment(this.time).unix() + this.pubkey).toUpperCase();
   this.memberships = this.memberships || [];
 

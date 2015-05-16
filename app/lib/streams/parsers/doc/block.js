@@ -1,3 +1,4 @@
+"use strict";
 var util          = require('util');
 var sha1          = require('sha1');
 var _             = require('underscore');
@@ -38,13 +39,13 @@ function BlockParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getBlock, onError);
 
   this._clean = function (obj) {
-    obj.identities = obj.identities || [];
-    obj.joiners = obj.joiners || [];
-    obj.actives = obj.actives || [];
-    obj.leavers = obj.leavers || [];
-    obj.excluded = obj.excluded || [];
-    obj.certifications = obj.certifications || [];
-    obj.transactions = obj.transactions || [];
+    obj.identities = obj.identities || [];
+    obj.joiners = obj.joiners || [];
+    obj.actives = obj.actives || [];
+    obj.leavers = obj.leavers || [];
+    obj.excluded = obj.excluded || [];
+    obj.certifications = obj.certifications || [];
+    obj.transactions = obj.transactions || [];
     obj.version = obj.version || '';
     obj.type = obj.type || '';
     obj.currency = obj.currency || '';
@@ -81,50 +82,50 @@ function BlockParser (onError) {
       'BAD_PREV_ISSUER_ABSENT': 159,
       'BAD_DIVIDEND': 160,
       'BAD_TIME': 161,
-      'BAD_MEDIAN_TIME': 162,
+      'BAD_MEDIAN_TIME': 162
     }
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(/^1$/))
-        err = {code: codes['BAD_VERSION'], message: "Version unknown"};
+        err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){
       // Type
       if(!obj.type || !obj.type.match(/^Block$/))
-        err = {code: codes['BAD_TYPE'], message: "Not a Block type"};
+        err = {code: codes.BAD_TYPE, message: "Not a Block type"};
     }
     if(!err){
       // Nonce
       if(!obj.nonce || !obj.nonce.match(constants.INTEGER))
-        err = {code: codes['BAD_NONCE'], message: "Nonce must be an integer value"};
+        err = {code: codes.BAD_NONCE, message: "Nonce must be an integer value"};
     }
     if(!err){
       // Number
       if(!obj.number || !obj.number.match(constants.INTEGER))
-        err = {code: codes['BAD_NUMBER'], message: "Incorrect Number field"};
+        err = {code: codes.BAD_NUMBER, message: "Incorrect Number field"};
     }
     if(!err){
       // Time
       if(!obj.time || !obj.time.match(constants.INTEGER))
-        err = {code: codes['BAD_TIME'], message: "Time must be an integer"};
+        err = {code: codes.BAD_TIME, message: "Time must be an integer"};
     }
     if(!err){
       // MedianTime
       if(!obj.medianTime || !obj.medianTime.match(constants.INTEGER))
-        err = {code: codes['BAD_MEDIAN_TIME'], message: "MedianTime must be an integer"};
+        err = {code: codes.BAD_MEDIAN_TIME, message: "MedianTime must be an integer"};
     }
     if(!err){
       if(obj.dividend && !obj.dividend.match(constants.INTEGER))
-        err = {code: codes['BAD_DIVIDEND'], message: "Incorrect UniversalDividend field"};
+        err = {code: codes.BAD_DIVIDEND, message: "Incorrect UniversalDividend field"};
     }
     if(!err){
       if(!obj.issuer || !obj.issuer.match(constants.BASE58))
-        err = {code: codes['BAD_ISSUER'], message: "Incorrect Issuer field"};
+        err = {code: codes.BAD_ISSUER, message: "Incorrect Issuer field"};
     }
     if(!err){
       // MembersCount
       if(!obj.nonce || !obj.nonce.match(constants.INTEGER))
-        err = {code: codes['BAD_MEMBERS_COUNT'], message: "MembersCount must be an integer value"};
+        err = {code: codes.BAD_MEMBERS_COUNT, message: "MembersCount must be an integer value"};
     }
     return err && err.message;
   };
@@ -186,7 +187,7 @@ function extractTransactions(raw) {
         }
       };
       ['signatories', 'inputs', 'outputs', 'comments', 'signatures'].forEach(function(prop){
-        currentTX[prop] = currentTX[prop] || [];
+        currentTX[prop] = currentTX[prop] || [];
         for (var j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
           var line = lines[i + j];
           if (line.match(regexps[prop])) {

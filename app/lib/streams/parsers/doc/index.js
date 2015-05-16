@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = {
   parseIdentity:    instanciate.bind(instanciate, require('./identity')),
   parseRevocation:  instanciate.bind(instanciate, require('./revocation')),

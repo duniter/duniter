@@ -1,3 +1,4 @@
+"use strict";
 var logger = require('../logger')('http');
 
 module.exports = function http400 (res) {

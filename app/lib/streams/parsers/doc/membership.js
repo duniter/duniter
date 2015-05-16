@@ -1,3 +1,4 @@
+"use strict";
 var GenericParser = require('./GenericParser');
 var rawer         = require('../../../rawer');
 var util          = require('util');
@@ -50,27 +51,27 @@ function MembershipParser (onError) {
     }
     if(!err){
       if(!obj.version || !obj.version.match(/^1$/))
-        err = {code: codes['BAD_VERSION'], message: "Version unknown"};
+        err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){
       if(obj.issuer && !obj.issuer.match(constants.BASE58))
-        err = {code: codes['BAD_ISSUER'], message: "Incorrect issuer field"};
+        err = {code: codes.BAD_ISSUER, message: "Incorrect issuer field"};
     }
     if(!err){
       if(obj.membership && !obj.membership.match(/^(IN|OUT)$/))
-        err = {code: codes['BAD_MEMBERSHIP'], message: "Incorrect Membership field: must be either IN or OUT"};
+        err = {code: codes.BAD_MEMBERSHIP, message: "Incorrect Membership field: must be either IN or OUT"};
     }
     if(!err){
       if(obj.block && !obj.block.match(constants.MEMBERSHIP.BLOCK))
-        err = {code: codes['BAD_BLOCK'], message: "Incorrect Block field: must be a positive or zero integer, a dash and an uppercased SHA1 hash"};
+        err = {code: codes.BAD_BLOCK, message: "Incorrect Block field: must be a positive or zero integer, a dash and an uppercased SHA1 hash"};
     }
     if(!err){
       if(obj.userid && !obj.userid.match(constants.USER_ID))
-        err = {code: codes['BAD_USERID'], message: "UserID must match udid2 format"};
+        err = {code: codes.BAD_USERID, message: "UserID must match udid2 format"};
     }
     if(!err){
       if(obj.certts && (typeof obj == 'string' ? !obj.certts.match(/^\d+$/) : moment(obj.certts).unix() <= 0))
-        err = {code: codes['BAD_CERTTS'], message: "CertTS must be a valid timestamp"};
+        err = {code: codes.BAD_CERTTS, message: "CertTS must be a valid timestamp"};
     }
     return err && err.message;
   };

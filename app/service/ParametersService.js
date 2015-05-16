@@ -1,8 +1,9 @@
+"use strict";
 var async     = require('async');
 var parsers   = require('../lib/streams/parsers/doc');
 var constants = require('../lib/constants');
 
-module.exports.get = function () {
+module.exports = function () {
   return new ParameterNamespace();
 };
 

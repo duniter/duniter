@@ -1,3 +1,4 @@
+"use strict";
 
 var CURRENCY     = "[a-zA-Z0-9-_ ]+";
 var META_TS      = "META:TS:[1-9][0-9]*";

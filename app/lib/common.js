@@ -1,3 +1,4 @@
+"use strict";
 var sha1    = require('sha1');
 var constants = require('./constants');
 

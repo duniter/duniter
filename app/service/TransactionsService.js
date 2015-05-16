@@ -1,11 +1,10 @@
+"use strict";
 var async           = require('async');
-var _               = require('underscore');
-var logger          = require('../lib/logger')();
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports.get = function (conn, conf, dal) {
+module.exports = function (conn, conf, dal) {
   return new TransactionService(conn, conf, dal);
 };
 

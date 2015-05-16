@@ -52,7 +52,10 @@
     "vucoin": "0.23.8"
   },
   "devDependencies": {
+    "eslint": "^0.21.1",
+    "eslint-plugin-mocha": "^0.2.2",
     "mocha": "",
+    "mocha-eslint": "^0.1.7",
     "sha1": "",
     "should": "",
     "supertest": ""

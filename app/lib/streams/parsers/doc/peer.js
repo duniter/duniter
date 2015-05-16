@@ -1,3 +1,4 @@
+"use strict";
 var GenericParser = require('./GenericParser');
 var rawer         = require('../../../rawer');
 var util          = require('util');
@@ -65,44 +66,44 @@ function PeerParser (onError) {
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(/^1$/))
-        err = {code: codes['BAD_VERSION'], message: "Version unknown"};
+        err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){
       // PublicKey
       if(!obj.pubkey || !obj.pubkey.match(constants.BASE58))
-        err = {code: codes['BAD_FINGERPRINT'], message: "Incorrect PublicKey field"};
+        err = {code: codes.BAD_FINGERPRINT, message: "Incorrect PublicKey field"};
     }
     if(!err){
       // Block
       if(!obj.block)
-        err = {code: codes['BAD_BLOCK'], message: "Incorrect Block field"};
+        err = {code: codes.BAD_BLOCK, message: "Incorrect Block field"};
     }
     // Basic Merkled API requirements
     var bma = obj.getBMA();
     if(!err){
       // DNS
       if(bma.dns && !bma.dns.match(/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/))
-        err = {code: codes['BAD_DNS'], message: "Incorrect Dns field"};
+        err = {code: codes.BAD_DNS, message: "Incorrect Dns field"};
     }
     if(!err){
       // IPv4
       if(bma.ipv4 && !bma.ipv4.match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/))
-        err = {code: codes['BAD_IPV4'], message: "Incorrect IPv4 field"};
+        err = {code: codes.BAD_IPV4, message: "Incorrect IPv4 field"};
     }
     if(!err){
       // IPv6
       if(bma.ipv6 && !bma.ipv6.match(/^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/))
-        err = {code: codes['BAD_IPV6'], message: "Incorrect IPv6 field"};
+        err = {code: codes.BAD_IPV6, message: "Incorrect IPv6 field"};
     }
     if(!err){
       // IP
       if(!bma.ipv4 && !bma.ipv6)
-        err = {code: codes['NO_IP_GIVEN'], message: "It must be given at least one IP, either v4 or v6"};
+        err = {code: codes.NO_IP_GIVEN, message: "It must be given at least one IP, either v4 or v6"};
     }
     if(!err){
       // Port
       if(bma.port && !(bma.port + "").match(/^\d+$/))
-        err = {code: codes['BAD_PORT'], message: "Port must be provided and match an integer format"};
+        err = {code: codes.BAD_PORT, message: "Port must be provided and match an integer format"};
     }
     return err && err.message;
   };

@@ -1,13 +1,12 @@
+"use strict";
 var async            = require('async');
 var _                = require('underscore');
 var Q                = require('q');
 var sha1             = require('sha1');
 var moment           = require('moment');
-var merkle           = require('merkle');
 var vucoin           = require('vucoin');
 var inquirer         = require('inquirer');
 var dos2unix         = require('./dos2unix');
-var parsers          = require('./streams/parsers/doc');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
 var rawer            = require('../lib/rawer');
@@ -20,7 +19,7 @@ var EVAL_REMAINING_INTERVAL = 1000;
 module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var that = this;
 
-  var speed = 0, syncStart = new Date, blocksApplied = 0;
+  var speed = 0, syncStart = new Date(), blocksApplied = 0;
   var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
 
   if (interactive) {
@@ -89,7 +88,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                   }
 
                   remoteCurrentNumber = rCurrent.number;
-                  remoteCurrentNumber = Math.min(remoteCurrentNumber, to || remoteCurrentNumber);
+                  remoteCurrentNumber = Math.min(remoteCurrentNumber, to || remoteCurrentNumber);
                   watcher.writeStatus('Initializing sync...');
                   setInterval(function() {
                     if (remoteCurrentNumber > 1 && speed > 0) {
@@ -153,7 +152,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                     },
                     function (next) {
                       if(blocksApplied == 0) {
-                        syncStart = new Date;
+                        syncStart = new Date();
                       }
                       var succeed;
                       async.doWhilst(
@@ -183,7 +182,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                                     tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                   });
                                   blocksApplied++;
-                                  speed = blocksApplied / Math.round(Math.max((new Date - syncStart) / 1000, 1));
+                                  speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
                                   if (watcher.appliedPercent() != Math.floor(block.number/remoteCurrentNumber*100)){
                                     watcher.appliedPercent(Math.floor(block.number/remoteCurrentNumber*100));
                                   }
@@ -354,7 +353,7 @@ function NodesMerkle (json) {
     that[key] = json[key];
   });
 
-  this.merkleRoot = json["root"];
+  this.merkleRoot = json.root;
 
   // var i = 0;
   // this.levels = [];

@@ -1,5 +1,6 @@
+"use strict";
+
 var async            = require('async');
-var _                = require('underscore');
 var es               = require('event-stream');
 var moment           = require('moment');
 var dos2unix         = require('../lib/dos2unix');
@@ -9,7 +10,6 @@ var http2raw         = require('../lib/streams/parsers/http2raw');
 var jsoner           = require('../lib/streams/jsoner');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
-var logger           = require('../lib/logger')();
 var blockchainDao    = require('../lib/blockchainDao');
 var globalValidator  = require('../lib/globalValidator');
 var Membership       = require('../lib/entity/membership');
@@ -20,7 +20,6 @@ module.exports = function (wotServer) {
 
 function BlockchainBinding (wotServer) {
 
-  var that = this;
   var conf = wotServer.conf;
   var conn = wotServer.conn;
 

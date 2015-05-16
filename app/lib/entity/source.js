@@ -1,3 +1,4 @@
+"use strict";
 var _ = require('underscore');
 
 module.exports = Source;
@@ -34,5 +35,5 @@ function Source(json) {
       "time": this.time,
       "amount": this.amount
     };
-  }
+  };
 }

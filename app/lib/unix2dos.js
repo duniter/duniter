@@ -1,3 +1,4 @@
+"use strict";
 var dos2unix = require('./dos2unix');
 var util     = require('util');
 var stream   = require('stream');

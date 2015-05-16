@@ -1,3 +1,4 @@
+"use strict";
 var fs       = require('fs');
 var util     = require('util');
 var async    = require('async');
@@ -34,7 +35,7 @@ function WOTBinding (wotServer) {
       },
       function (identities, next){
         identities.forEach(function(idty, index){
-          identities[index] = new Identity(idty);
+          identities[index] = new Identity(idty);
         });
         async.forEach(identities, function(idty, callback){
           async.waterfall([

@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = function simpleLineExtraction(pr, rawEntry, cap, parser) {
   var fieldValue = rawEntry.match(cap.regexp);
   if(fieldValue && fieldValue.length >= 2){

@@ -1,3 +1,4 @@
+"use strict";
 var async    = require('async');
 var sha1     = require('sha1');
 var rawer    = require('../../lib/rawer');

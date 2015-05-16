@@ -51,7 +51,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._initServices = function(conn, done) {
-    this.IdentityService = require('./app/service/IdentityService').get(that.conn, that.conf);
+    this.IdentityService = require('./app/service/IdentityService')(that.conn, that.conf);
     done();
   };
 

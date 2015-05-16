@@ -1,3 +1,4 @@
+"use strict";
 var _ = require('underscore');
 var moment = require('moment');
 var sha1 = require('sha1');

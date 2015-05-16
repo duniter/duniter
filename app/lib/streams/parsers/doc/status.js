@@ -1,3 +1,4 @@
+"use strict";
 var GenericParser = require('./GenericParser');
 var rawer         = require('../../../rawer');
 var util          = require('util');
@@ -38,22 +39,22 @@ function StatusParser (onError) {
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(/^1$/))
-        err = {code: codes['BAD_VERSION'], message: "Version unknown"};
+        err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){
       // Status
       if(obj.status && !(obj.status + "").match(/^(ASK|NEW|NEW_BACK|UP|DOWN)$/))
-        err = {code: codes['BAD_STATUS'], message: "Status must be provided and match either ASK, NEW, NEW_BACK, UP or DOWN"};
+        err = {code: codes.BAD_STATUS, message: "Status must be provided and match either ASK, NEW, NEW_BACK, UP or DOWN"};
     }
     if(!err){
       // From
       if(obj.from && !obj.from.match(constants.PUBLIC_KEY))
-        err = {code: codes['BAD_FROM_FINGERPRINT'], message: "Incorrect From field"};
+        err = {code: codes.BAD_FROM_FINGERPRINT, message: "Incorrect From field"};
     }
     if(!err){
       // To
       if(obj.to && !obj.to.match(constants.PUBLIC_KEY))
-        err = {code: codes['BAD_TO_FINGERPRINT'], message: "Incorrect To field"};
+        err = {code: codes.BAD_TO_FINGERPRINT, message: "Incorrect To field"};
     }
     return err && err.message;
   };

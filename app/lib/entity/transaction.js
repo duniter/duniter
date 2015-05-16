@@ -1,3 +1,4 @@
+"use strict";
 var _ = require('underscore');
 var rawer = require('../rawer');
 var sha1 = require('sha1');
@@ -50,7 +51,7 @@ var Transaction = function(obj, currency) {
       var sp = input.split(':');
       tx.inputs.push({
         index: parseInt(sp[0]),
-        pubkey: tx.issuers[parseInt(sp[0])] || '',
+        pubkey: tx.issuers[parseInt(sp[0])] || '',
         type: sp[1],
         number: parseInt(sp[2]),
         fingerprint: sp[3],

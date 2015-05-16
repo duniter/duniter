@@ -1,3 +1,4 @@
+"use strict";
 var GenericParser = require('./GenericParser');
 var rawer         = require('../../../rawer');
 var constants     = require('../../../constants');
@@ -37,7 +38,7 @@ function TransactionParser (onError) {
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(/^1$/))
-        err = {code: codes['BAD_VERSION'], message: "Version unknown"};
+        err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     return err && err.message;
   };

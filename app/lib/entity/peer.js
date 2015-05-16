@@ -1,3 +1,4 @@
+"use strict";
 var _ = require('underscore');
 var vucoin = require('vucoin');
 var rawer = require('../rawer');

@@ -1,3 +1,4 @@
+"use strict";
 var dos2unix = require('./dos2unix');
 var moment = require('moment');
 
@@ -198,7 +199,7 @@ module.exports = new function() {
     (json.outputs || []).forEach(function (output) {
       raw += output + '\n';
     });
-    raw += "Comment: " + (json.comment || "") + "\n";
+    raw += "Comment: " + (json.comment || "") + "\n";
     (json.signatures || []).forEach(function (signature) {
       raw += signature + '\n';
     });
@@ -206,7 +207,7 @@ module.exports = new function() {
   };
 
   this.getCompactTransaction = function (json) {
-    var issuers = (json.issuers || json.signatories);
+    var issuers = (json.issuers || json.signatories);
     var raw = ["TX", 1, issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
     (issuers || []).forEach(function (issuer) {
       raw += issuer + '\n';

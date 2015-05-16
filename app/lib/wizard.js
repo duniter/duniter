@@ -1,3 +1,4 @@
+"use strict";
 var wizard    = require('./wizard');
 var constants = require('./constants');
 var os        = require('os');

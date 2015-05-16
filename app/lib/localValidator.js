@@ -1,3 +1,4 @@
+"use strict";
 var async      = require('async');
 var crypto     = require('./crypto');
 var common     = require('./common');
@@ -452,10 +453,11 @@ function hasEachIdentityMatchesANewcomer (block) {
 function hasMultipleTimesAPubkeyForKeyChanges (block) {
   var pubkeys = [];
   var conflict = false;
+  var pubk;
   // Joiners
   var i = 0;
   while (!conflict && i < block.joiners.length) {
-    var pubk = block.joiners[i].split(':')[0];
+    pubk = block.joiners[i].split(':')[0];
     conflict = ~pubkeys.indexOf(pubk);
     pubkeys.push(pubk);
     i++;
@@ -463,7 +465,7 @@ function hasMultipleTimesAPubkeyForKeyChanges (block) {
   // Actives
   i = 0;
   while (!conflict && i < block.actives.length) {
-    var pubk = block.actives[i].split(':')[0];
+    pubk = block.actives[i].split(':')[0];
     conflict = ~pubkeys.indexOf(pubk);
     pubkeys.push(pubk);
     i++;
@@ -471,7 +473,7 @@ function hasMultipleTimesAPubkeyForKeyChanges (block) {
   // Leavers
   i = 0;
   while (!conflict && i < block.leavers.length) {
-    var pubk = block.leavers[i].split(':')[0];
+    pubk = block.leavers[i].split(':')[0];
     conflict = ~pubkeys.indexOf(pubk);
     pubkeys.push(pubk);
     i++;
@@ -479,7 +481,7 @@ function hasMultipleTimesAPubkeyForKeyChanges (block) {
   // Excluded
   i = 0;
   while (!conflict && i < block.excluded.length) {
-    var pubk = block.excluded[i].split(':')[0];
+    pubk = block.excluded[i].split(':')[0];
     conflict = ~pubkeys.indexOf(pubk);
     pubkeys.push(pubk);
     i++;
@@ -530,24 +532,24 @@ function hasWrongSignatureForIdentities (block) {
 
 function hasWrongSignatureForMemberships (block) {
   var i = 0;
-  var wrongSig = false;
+  var wrongSig = false, ms;
   // Joiners
   while (!wrongSig && i < block.joiners.length) {
-    var ms = Membership.statics.fromInline(block.joiners[i], 'IN', block.currency);
+    ms = Membership.statics.fromInline(block.joiners[i], 'IN', block.currency);
     wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }
   // Actives
   i = 0;
   while (!wrongSig && i < block.actives.length) {
-    var ms = Membership.statics.fromInline(block.actives[i], 'IN', block.currency);
+    ms = Membership.statics.fromInline(block.actives[i], 'IN', block.currency);
     wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }
   // Leavers
   i = 0;
   while (!wrongSig && i < block.leavers.length) {
-    var ms = Membership.statics.fromInline(block.leavers[i], 'OUT', block.currency);
+    ms = Membership.statics.fromInline(block.leavers[i], 'OUT', block.currency);
     wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
     i++;
   }

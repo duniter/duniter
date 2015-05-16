@@ -1,3 +1,4 @@
+"use strict";
 var Q       = require('q');
 var _       = require('underscore');
 var sha1    = require('sha1');
@@ -12,9 +13,9 @@ var Transaction = require('../entity/transaction');
 var Source = require('../entity/source');
 var constants = require('../constants');
 
-const BLOCK_FILE_PREFIX = "0000000000";
-const BLOCK_FOLDER_SIZE = 500;
-const SAVE_HEADERS_INTERVAL = 3000;
+var BLOCK_FILE_PREFIX = "0000000000";
+var BLOCK_FOLDER_SIZE = 500;
+var SAVE_HEADERS_INTERVAL = 3000;
 
 module.exports = {
   memory: function(profile) {
@@ -99,7 +100,7 @@ function FileDAL(profile, myFS) {
                   })
                   .fail(function(err){
                     throw err;
-                  })
+                  });
               }, Q());
             }
           })
@@ -113,7 +114,7 @@ function FileDAL(profile, myFS) {
             }
             saveHeaders();
             setInterval(saveHeaders, SAVE_HEADERS_INTERVAL);
-          })
+          });
       })());
   }
 
@@ -132,7 +133,7 @@ function FileDAL(profile, myFS) {
         .then(function(maxNumber){
           lastBlockFileNumber = maxNumber;
           return blockNumber <= lastBlockFileNumber;
-        })
+        });
     } else {
       return true;
     }
@@ -164,7 +165,7 @@ function FileDAL(profile, myFS) {
               }
             });
         }
-      })
+      });
   }
 
   this.readFileOfBlock = function(blockNumber) {
@@ -180,7 +181,7 @@ function FileDAL(profile, myFS) {
     var folder = folderOfBlock(blockNumber);
     if (!blocksTreeLoaded[folder]) {
       blocksTreeLoaded[folder] = ((function () {
-        return myFS.makeTree(getUCoinHomePath(profile) + '/blocks/' + folderOfBlock(blockNumber))
+        return myFS.makeTree(getUCoinHomePath(profile) + '/blocks/' + folderOfBlock(blockNumber));
       })());
     }
     return blocksTreeLoaded[folder];
@@ -354,8 +355,8 @@ function FileDAL(profile, myFS) {
 
   this.getBlocksBetween = function(start, end, done) {
     var blocks =_.chain(headers).
-      filter(function(b){ return b.number >= start }).
-      filter(function(b){ return b.number <= end }).
+      filter(function(b){ return b.number >= start; }).
+      filter(function(b){ return b.number <= end; }).
       sortBy(function(b){ return -b.number; }).
       value();
     done && done(null, blocks);
@@ -415,7 +416,7 @@ function FileDAL(profile, myFS) {
   };
 
   this.currentValidLinks = function(fpr, done) {
-    var matching =_.chain(links).
+    var matching = _.chain(links).
       where({ target: fpr, obsolete: false }).
       value();
     done && done(null, matching);
@@ -1138,13 +1139,13 @@ function FileDAL(profile, myFS) {
           })),
           // Sending
           Q.all(txs.map(function(tx) {
-            if (~tx.issuers.indexOf(pubkey)) {
+            if (~tx.issuers.indexOf(pubkey)) {
               history.sending.push(tx || null);
             }
           })),
           // Receiving
           Q.all(txs.map(function(tx, index) {
-            if (~tx.issuers.indexOf(pubkey)) {
+            if (~tx.issuers.indexOf(pubkey)) {
               return;
             }
             var isRecipient = false;
@@ -1155,7 +1156,7 @@ function FileDAL(profile, myFS) {
                 break;
               }
             }
-            if (isRecipient) {
+            if (isRecipient) {
               history.receiving.push(tx || null);
             }
           }))
@@ -1268,7 +1269,7 @@ function FileDAL(profile, myFS) {
   this.saveStat = function(stat, name, done) {
     return that.loadStats()
       .then(function(stats){
-        stats[name] = stat;
+        stats[name] = stat;
         return myFS.write(getUCoinHomePath(profile) + '/stats.json', JSON.stringify(stats, null, ' '));
       })
       .then(function(){

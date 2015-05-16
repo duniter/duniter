@@ -101,10 +101,10 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   this._initServices = function(conn, done) {
     async.waterfall([
       function(next) {
-        that.IdentityService     = require('./app/service/IdentityService').get(that.conn, that.conf, that.dal);
-        that.PeeringService      = require('./app/service/PeeringService').get(conn, that.conf, null, null, that.dal);
-        that.BlockchainService   = require('./app/service/BlockchainService').get(conn, that.conf, that.dal, that.PeeringService);
-        that.TransactionsService = require('./app/service/TransactionsService').get(conn, that.conf, that.dal);
+        that.IdentityService     = require('./app/service/IdentityService')(that.conn, that.conf, that.dal);
+        that.PeeringService      = require('./app/service/PeeringService')(conn, that.conf, null, null, that.dal);
+        that.BlockchainService   = require('./app/service/BlockchainService')(conn, that.conf, that.dal, that.PeeringService);
+        that.TransactionsService = require('./app/service/TransactionsService')(conn, that.conf, that.dal);
         that.IdentityService.setBlockchainService(that.BlockchainService);
         // Extract key pair
         if (that.conf.pair)

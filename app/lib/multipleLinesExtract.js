@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = function multipleLinesExtraction(am, wholeAmend, cap) {
   var fieldValue = wholeAmend.match(cap.regexp);
   am[cap.prop] = [];
@@ -17,5 +19,4 @@ module.exports = function multipleLinesExtraction(am, wholeAmend, cap) {
     }
     else return "Wrong structure for line: '" + line + "'";
   }
-  return;
 };

@@ -1,10 +1,11 @@
+"use strict";
 var async           = require('async');
 var _               = require('underscore');
 var blockchainDao   = require('../lib/blockchainDao');
 var globalValidator = require('../lib/globalValidator');
 var crypto          = require('../lib/crypto');
 
-module.exports.get = function (conn, conf, dal) {
+module.exports = function (conn, conf, dal) {
   return new IdentityService(conn, conf, dal);
 };
 
@@ -181,7 +182,7 @@ function IdentityService (conn, conf, dal) {
 
 function jsonResultTrue () {
   return {
-    json: function () {
+    json: {
       result: true
     }
   };

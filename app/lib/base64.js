@@ -11,6 +11,8 @@
  * provided with the application or distribution.
  */
 
+"use strict";
+
 /**
  * @module encoding/base64
  */

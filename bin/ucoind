@@ -13,7 +13,6 @@ var constants   = require('../app/lib/constants');
 var Synchroniser = require('../app/lib/sync');
 var pjson       = require('../package.json');
 var ucoin       = require('./../index');
-var webapp      = require('../web/app');
 var Peer        = require('../app/lib/entity/peer');
 var Block       = require('../app/lib/entity/block');
 
@@ -28,8 +27,6 @@ program
   .usage('<command> [options]')
   .option('-p, --port <port>',         'Port to listen for requests', parseInt)
   .option('-c, --currency <name>',     'Name of the currency managed by this node.')
-  .option('--whost <host>',            'WebApp host.')
-  .option('--wport <port>',            'WebApp port.')
   .option('--mhost <host>',            'MongoDB host.')
   .option('--mport <port>',            'MongoDB port.')
   .option('-d, --mdb <name>',          'MongoDB database name (defaults to "ucoin_default").')
@@ -65,17 +62,9 @@ program
   .option('--member',                  'With `bootstrap` command, ensures we have a member keypair')
   .option('--httplogs',                'Enable HTTP logs')
   .option('--nohttplogs',              'Disable HTTP logs')
-  .option('--autostart',               'With webapp command: ask to start the node automatically')
   .option('--nointeractive',           'Disable interactive sync UI')
   .option('--cautious',                'Cautious with sync & init commands: checks each block\'s validity')
   ;
-
-program
-  .command('webapp')
-  .description('Start uCoin web interface.')
-  .action(function() {
-    webapp(program.whost || 'localhost', program.wport || 3050, commandLineConf(), program.autostart);
-  });
 
 program
   .command('start')

@@ -1,3 +1,4 @@
+"use strict";
 var async         = require('async');
 var should        = require('should');
 var assert        = require('assert');
@@ -583,7 +584,7 @@ function BlockCheckerDao (block) {
         { pubkey: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' },
       ]);
     }
-  },
+  }
 
   this.lastBlocksOfIssuer = function (issuer, count, done) {
     if (block.number == 60 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
@@ -593,7 +594,7 @@ function BlockCheckerDao (block) {
       }]);
     } else if (block.number == 61 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
       done(null, [{
-        number: 60, // 3 issuers, 0 block since, 2/3 percent, 1 powMin = 2 required zeros
+        number: 60 // 3 issuers, 0 block since, 2/3 percent, 1 powMin = 2 required zeros
       }]);
     } else if (block.number == 66 && issuer == 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
       done(null, [{

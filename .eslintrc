@@ -24,6 +24,7 @@
     "no-undef": [2],
 
     "indent": [1,2],
+    "no-eval": [1],
     "comma-spacing": [1],
     "comma-dangle": [1],
     "eol-last": [1],

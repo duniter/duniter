@@ -1,3 +1,4 @@
+"use strict";
 var Q = require('q');
 var async  = require('async');
 var request  = require('request');
@@ -168,10 +169,8 @@ function Node (dbName, options) {
       server.init(function (err) {
 
         if(err){
-          logger.error(err);
           server.disconnect();
-          process.exit(1);
-          return;
+          throw err;
         }
 
         //cbArgs.length--;
@@ -179,14 +178,6 @@ function Node (dbName, options) {
         //cbArgs[cbArgs.length++] = server.conf;
         callback(null, server);
       });
-    };
-  }
-
-  function logErrorAndExit (server, errMsg) {
-    return function (err) {
-      (err || errMsg) && logger.error(errMsg ? errMsg : (err.message || err));
-      server.disconnect();
-      process.exit(1);
     };
   }
 

@@ -1,3 +1,4 @@
+"use strict";
 var wallet = require('./../tools/wallet');
 
 module.exports = function(node1) {

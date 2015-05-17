@@ -1,3 +1,4 @@
+"use strict";
 var should   = require('should');
 var assert   = require('assert');
 var sha1     = require('sha1');

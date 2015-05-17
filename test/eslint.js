@@ -5,8 +5,8 @@ var lint = require('mocha-eslint');
 // matches a glob pattern
 var paths = [
   'app',
-  'bin',
-  'tests/**/*.js'
+  'bin/ucoind',
+  'test'
 ];
 
 // Specify style of output

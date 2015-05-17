@@ -1,3 +1,4 @@
+"use strict";
 var async		= require('async');
 var request	= require('request');
 var crypto	= require('../../../app/lib/crypto');

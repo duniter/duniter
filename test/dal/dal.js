@@ -1,3 +1,4 @@
+"use strict";
 var should = require('should');
 var assert = require('assert');
 var fs     = require('fs');
@@ -162,7 +163,7 @@ describe("DAL", function(){
   before(function() {
     return dal.memory('db0')
       .then(function(dal){
-        return fileDAL = dal;
+        fileDAL = dal;
       })
       .then(function() {
         return fileDAL.dropDabase();

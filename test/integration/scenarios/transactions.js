@@ -1,3 +1,4 @@
+"use strict";
 var user   = require('./../tools/user');
 
 module.exports = function(node) {

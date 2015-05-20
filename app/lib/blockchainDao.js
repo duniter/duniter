@@ -140,10 +140,6 @@ module.exports = function(conn, block, dal) {
       ], done);
     };
 
-    this.getLastBlocks = function (count, done) {
-      dal.getLastBlocks(count, done);
-    };
-
     this.getIssuersBetween = function (bStart, bEnd, done) {
       async.waterfall([
         function (next) {

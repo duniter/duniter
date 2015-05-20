@@ -607,22 +607,7 @@ function BlockCheckerDao (block) {
     } else {
       done(null, null);
     }
-  }
-
-  this.getLastBlocks = function (count, done) {
-    if (block.number == 66) {
-      done(null, [
-        { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
-        { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
-        { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
-        { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
-        { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
-        { issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
-      ]);
-    } else {
-      done(null, null);
-    }
-  }
+  };
 
   this.getLastUDBlock = function (done) {
     if (block.number == 0) {

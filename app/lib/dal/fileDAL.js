@@ -337,16 +337,7 @@ function FileDAL(profile, myFS) {
   this.lastBlocksOfIssuer = function(issuer, count, done) {
     var blocks =_.chain(headers).
       where({ issuer: issuer }).
-      sortBy(function(b){ return -b.number; }).
-      last(count).
-      value();
-    done && done(null, blocks);
-    return blocks;
-  };
-
-  this.getLastBlocks = function(count, done) {
-    var blocks =_.chain(headers).
-      sortBy(function(b){ return -b.number; }).
+      sortBy(function(b){ return b.number; }).
       last(count).
       value();
     done && done(null, blocks);
@@ -427,7 +418,7 @@ function FileDAL(profile, myFS) {
     var matching =_.chain(links).
       where({ source: from, target: to, obsolete: true }).
       sortBy(function(lnk){ return -lnk.timestamp; }).
-      last(1).
+      first(1).
       value();
     done && done(null, matching);
     return matching;

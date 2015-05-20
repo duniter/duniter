@@ -1,28 +1,15 @@
 "use strict";
-var winston = require('winston');
-var loggers = [];
-var currentLevel = 'error';
+var log4js = require('log4js');
+var path = require('path');
+
+log4js.configure(path.join(__dirname, '/../../conf/logs.json'), { reloadSecs: 60 });
 
 /**
 * Convenience function to get logger directly
 */
+module.exports = function (name) {
 
-var newLogger = function () {
-  var newInstance = new (winston.Logger)({
-    transports: [
-      new (winston.transports.Console)({ level: 'debug' })
-    ]
-  });
-  newInstance.level = currentLevel || 'debug';
-  loggers.push(newInstance);
-  return newInstance;
+  var logger = log4js.getLogger(name || 'default');
+  logger.setLevel('DEBUG');
+  return logger;
 };
-
-newLogger.setLevel = function(level) {
-  currentLevel = level;
-  loggers.forEach(function(logger){
-    logger.level = level;
-  });
-};
-
-module.exports = newLogger;

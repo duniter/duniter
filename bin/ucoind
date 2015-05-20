@@ -295,7 +295,7 @@ program
         else
           logger.warn('Data successfuly reseted.');
         server.disconnect();
-        throw err;
+        process.exit();
       });
     }
     if(type == 'peers'){
@@ -305,7 +305,7 @@ program
         else
           logger.warn('Peers successfuly reseted.');
         server.disconnect();
-        throw err;
+        //process.exit();
       });
     }
     if(type == 'tx'){
@@ -315,7 +315,7 @@ program
         else
           logger.warn('Transactions successfuly reseted.');
         server.disconnect();
-        throw err;
+        process.exit();
       });
     }
     if(type == 'stats'){
@@ -325,7 +325,7 @@ program
         else
           logger.warn('Stats successfuly reseted.');
         server.disconnect();
-        throw err;
+        process.exit();
       });
     }
     if(type == 'config'){
@@ -335,7 +335,7 @@ program
         else
           logger.warn('Configuration successfuly reseted.');
         server.disconnect();
-        throw err;
+        process.exit();
       });
     }
     if(type == 'all'){
@@ -348,7 +348,7 @@ program
         else
           logger.warn('Data & Configuration successfuly reseted.');
         server.disconnect();
-        throw err;
+        process.exit();
       });
     }
   }));
@@ -369,7 +369,7 @@ function serverStart(server, conf) {
     if(err){
       logger.error(err);
       server.disconnect();
-      throw err;
+      process.exit();
     }
     logger.debug('Server ready!');
   });
@@ -519,7 +519,7 @@ function bootstrapServer(host, port, server, conf) {
       logger.error(err);
     }
     server.disconnect();
-    throw err;
+    process.exit();
   });
 }
 
@@ -635,7 +635,7 @@ function connect(callback) {
       if(err){
         logger.error(err);
         server.disconnect();
-        throw err;
+        process.exit();
       }
 
       cbArgs.length--;
@@ -666,7 +666,7 @@ function service(serverFactory, callback) {
       if(err){
         logger.error(err);
         server.disconnect();
-        throw err;
+        process.exit();
       }
 
       cbArgs.length--;
@@ -681,7 +681,7 @@ function logIfErrorAndExit (server, prefix) {
   return function (err) {
     err && logger.error((prefix ? prefix : "") + (err.message || err));
     server.disconnect();
-    throw err;
+    process.exit();
   };
 }
 
@@ -689,7 +689,7 @@ function logErrorAndExit (server, errMsg) {
   return function (err) {
     (err || errMsg) && logger.error(errMsg ? errMsg : (err.message || err));
     server.disconnect();
-    throw err;
+    process.exit();
   };
 }
 

@@ -1288,7 +1288,7 @@ function FileDAL(profile, myFS) {
 
   this.resetAll = function(done) {
     var files = ['peers','txs','stats','sources','memberships','links','identities','headers','global','certs'];
-    var dirs  = ['tx', 'blocks'];
+    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history'];
     return resetFiles(files, dirs, done);
   };
 

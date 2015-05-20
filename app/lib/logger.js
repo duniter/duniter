@@ -10,12 +10,10 @@ var currentLevel = 'error';
 var newLogger = function () {
   var newInstance = new (winston.Logger)({
     transports: [
-      new (winston.transports.Console)()
+      new (winston.transports.Console)({ level: 'debug' })
     ]
   });
-  if (currentLevel) {
-    newInstance.level = currentLevel;
-  }
+  newInstance.level = currentLevel || 'debug';
   loggers.push(newInstance);
   return newInstance;
 };

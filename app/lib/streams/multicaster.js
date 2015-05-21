@@ -58,39 +58,39 @@ function Multicaster () {
   });
   
   that.on('peer', function(peering, peers, done) {
-    //logger.debug('--> new Peer to be sent to %s peer(s)', peers.length);
-    //peers.forEach(function(peer){
-    //  fifo.push(function (sent) {
-    //    // Do propagating
-    //    logger.debug('sending peer %s to peer %s', peering.keyID(), peer.keyID());
-    //    post(peer, "/network/peering/peers", {
-    //      peer: peering.getRawSigned()
-    //    }, function (err, res, body) {
-    //      // Sent!
-    //      sent();
-    //      if (typeof done == 'function') {
-    //        done(err, res, body);
-    //      }
-    //    });
-    //  });
-    //});
+    logger.debug('--> new Peer to be sent to %s peer(s)', peers.length);
+    peers.forEach(function(peer){
+      fifo.push(function (sent) {
+        // Do propagating
+        logger.debug('sending peer %s to peer %s', peering.keyID(), peer.keyID());
+        post(peer, "/network/peering/peers", {
+          peer: peering.getRawSigned()
+        }, function (err, res, body) {
+          // Sent!
+          sent();
+          if (typeof done == 'function') {
+            done(err, res, body);
+          }
+        });
+      });
+    });
   });
 
   that.on('status', function(status, peers) {
-    //logger.debug('--> new Status to be sent to %s peer(s)', peers.length);
-    //peers.forEach(function(peer){
-    //  fifo.push(function (sent) {
-    //    // Do propagating
-    //    logger.debug('sending %s status to peer %s', status.status, peer.keyID());
-    //    post(peer, "/network/peering/status", {
-    //      status: status.getRawSigned(),
-    //      peer: status.peer ? status.peer.getRawSigned() : null
-    //    }, function (err, res, body) {
-    //      // Sent!
-    //      sent(err);
-    //    });
-    //  });
-    //});
+    logger.debug('--> new Status to be sent to %s peer(s)', peers.length);
+    peers.forEach(function(peer){
+      fifo.push(function (sent) {
+        // Do propagating
+        logger.debug('sending %s status to peer %s', status.status, peer.keyID());
+        post(peer, "/network/peering/status", {
+          status: status.getRawSigned(),
+          peer: status.peer ? status.peer.getRawSigned() : null
+        }, function (err, res, body) {
+          // Sent!
+          sent(err);
+        });
+      });
+    });
   });
   
   that.on('membership', function(membership, peers) {

@@ -271,8 +271,12 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
               peers = _.shuffle(peers);
               return peers.reduce(function(promise, peer) {
                 return promise
-                  .fail(function(){
+                  .fail(function(err){
+                    if (err) {
+                      logger.warn(err.message || err);
+                    }
                     var p = new Peer(peer);
+                    logger.info("Try with %s", p.getURL());
                     return Q.Promise(function(resolve, reject){
                       async.waterfall([
                         function(next) {

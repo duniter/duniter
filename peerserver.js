@@ -1,5 +1,6 @@
 var async       = require('async');
 var util        = require('util');
+var Q           = require('q');
 var _           = require('underscore');
 var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
@@ -93,8 +94,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   var that = this;
 
-  that.peerInited = false;
-
   this._read = function (size) {
   };
 
@@ -134,58 +133,43 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._start = function (done) {
-    async.waterfall([
-      function(next) {
-        that.checkConfig(next);
-      },
-      function (next){
+    return that.checkConfig()
+      .then(function (){
         // Add signing & public key functions to PeeringService
         that.PeeringService.setSignFunc(that.sign);
         logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
-        async.waterfall([
-          function (next) {
-            that.initPeer(that.conn, that.conf, next);
-          },
-          function (next) {
-            that.emit('peerInited');
-            next();
-          }
-        ], next);
-      }
-    ], done);
+        done();
+      })
+      .fail(done);
   };
 
-  this.checkConfig = function (done) {
-    async.waterfall([
-      function (next){
-        that.checkPeeringConf(that.conf, next);
-      }
-    ], done);
+  this.checkConfig = function () {
+    return that.checkPeeringConf(that.conf);
   };
 
-  this.checkPeeringConf = function (conf, done) {
-    var errors = [];
-
-    if (!conf.pair && conf.passwd == null) {
-      errors.push('No key password was given.');
-    }
-    if (!conf.pair && conf.salt == null) {
-      errors.push('No key salt was given.');
-    }
-    if (!conf.currency) {
-      errors.push('No currency name was given.');
-    }
-    if(!conf.ipv4 && !conf.ipv6){
-      errors.push("No interface to listen to.");
-    }
-    if(!conf.remoteipv4 && !conf.remoteipv6){
-      errors.push('No interface for remote contact.');
-    }
-    if (!conf.remoteport) {
-      errors.push('No port for remote contact.');
-    }
-    done(errors[0]);
+  this.checkPeeringConf = function (conf) {
+    return Q()
+      .then(function(){
+        if (!conf.pair && conf.passwd == null) {
+          throw new Error('No key password was given.');
+        }
+        if (!conf.pair && conf.salt == null) {
+          throw new Error('No key salt was given.');
+        }
+        if (!conf.currency) {
+          throw new Error('No currency name was given.');
+        }
+        if(!conf.ipv4 && !conf.ipv6){
+          throw new Error("No interface to listen to.");
+        }
+        if(!conf.remoteipv4 && !conf.remoteipv6){
+          throw new Error('No interface for remote contact.');
+        }
+        if (!conf.remoteport) {
+          throw new Error('No port for remote contact.');
+        }
+      });
   };
 
   this.createSignFunction = function (pair, done) {
@@ -195,10 +179,11 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     });
   };
 
-  this.initPeer = function (conn, conf, done) {
+  this.initPeer = function (done) {
+    var conf = that.conf, conn = that.conn;
     async.waterfall([
       function (next){
-        that.checkConfig(next);
+        that.checkConfig().then(next).fail(next);
       },
       function (next){
         logger.info('Storing self peer...');

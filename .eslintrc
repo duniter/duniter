@@ -23,6 +23,7 @@
     "mocha/no-exclusive-tests": 2,
     "no-undef": [2],
 
+    "no-process-exit": [1],
     "indent": [1,2],
     "no-eval": [1],
     "comma-spacing": [1],

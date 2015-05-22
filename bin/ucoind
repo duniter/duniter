@@ -153,7 +153,7 @@ program
         logger.error('Error during forwarding:', err);
       }
       server.disconnect();
-      throw err;
+      process.exit();
     });
   }));
 
@@ -245,7 +245,7 @@ program
         logger.error(err);
       }
       server.disconnect();
-      throw err;
+      process.exit();
     });
   }));
 
@@ -253,14 +253,17 @@ program
   .command('check-config')
   .description('Checks the node\'s configuration')
   .action(service(ucoin.createPeerServer, function (server) {
-    server.checkConfig(function (err) {
-      if (err)
-        logger.warn(err);
-      else
+    server.checkConfig()
+      .then(function () {
         logger.warn('Configuration seems correct.');
-      server.disconnect();
-      throw err;
-    });
+      })
+      .fail(function(err) {
+        logger.warn(err.message || err);
+      })
+      .finally(function() {
+        server.disconnect();
+        process.exit();
+      });
   }));
 
 program
@@ -275,7 +278,7 @@ program
         logger.debug("Configuration saved.");
       }
       server.disconnect();
-      throw err;
+      process.exit();
     });
   }));
 
@@ -364,6 +367,12 @@ function serverStart(server, conf) {
     function (next){
       // Launching server
       server.start(next);
+    },
+    function(next) {
+      if (server.initPeer) {
+        return server.initPeer(next);
+      }
+      next();
     }
   ], function (err) {
     if(err){

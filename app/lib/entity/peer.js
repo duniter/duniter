@@ -141,7 +141,9 @@ function Peer(json) {
   };
 
   this.connect = function (done){
-    vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), done);
+    vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), done, {
+      timeout: 2000
+    });
   };
 
   this.isReachable = function () {

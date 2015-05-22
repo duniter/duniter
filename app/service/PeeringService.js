@@ -283,25 +283,47 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
                           p.connect(next);
                         },
                         function(node, next) {
-                          node.blockchain.block(current.number + 1, next);
-                        },
-                        function(block, next) {
-                          // Rawification of transactions
-                          block.transactions.forEach(function (tx) {
-                            tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
-                            tx.raw += tx.signatories.join('\n') + '\n';
-                            tx.raw += tx.inputs.join('\n') + '\n';
-                            tx.raw += tx.outputs.join('\n') + '\n';
-                            if (tx.comment)
-                              tx.raw += tx.comment + '\n';
-                            tx.raw += tx.signatures.join('\n') + '\n';
-                            tx.version = 1;
-                            tx.currency = conf.currency;
-                            tx.issuers = tx.signatories;
-                            tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
-                          });
-                          logger.info("Downloaded block #%s from peer ", block.number, peer.getNamedURL());
-                          BlockchainService.submitBlock(block, true, next);
+                          var errorWithPeer = false;
+                          async.whilst(
+                            function () {
+                              return !errorWithPeer;
+                            },
+                            function (callback) {
+                              async.waterfall([
+                                function (next) {
+                                  node.blockchain.block(current.number + 1, next);
+                                },
+                                function (block, next) {
+                                  // Rawification of transactions
+                                  block.transactions.forEach(function (tx) {
+                                    tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+                                    tx.raw += tx.signatories.join('\n') + '\n';
+                                    tx.raw += tx.inputs.join('\n') + '\n';
+                                    tx.raw += tx.outputs.join('\n') + '\n';
+                                    if (tx.comment)
+                                      tx.raw += tx.comment + '\n';
+                                    tx.raw += tx.signatures.join('\n') + '\n';
+                                    tx.version = 1;
+                                    tx.currency = conf.currency;
+                                    tx.issuers = tx.signatories;
+                                    tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
+                                  });
+                                  logger.info("Downloaded block #%s from peer ", block.number, peer.getNamedURL());
+                                  BlockchainService.submitBlock(block, true, next);
+                                },
+                                function(block, next) {
+                                  current = block;
+                                  next();
+                                }
+                              ], callback);
+                            },
+                            function (err) {
+                              errorWithPeer = err ? true : false;
+                              if (errorWithPeer) {
+                                next(err);
+                              }
+                            }
+                          );
                         }
                       ], function(err) {
                         err ? reject(err) : resolve();
@@ -312,15 +334,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
                 .fail(function(){
                   logger.info("No new block found");
                   blockFound = false;
-                })
-                .then(function(){
-                  if (blockFound) {
-                    // Try to sync next
-                    syncBlock(next);
-                  }
-                  else {
-                    next();
-                  }
+                  next();
                 });
             });
         }

@@ -41,6 +41,11 @@
   * [tx/](#tx)
       * [process](#txprocess)
       * [sources/[pubkey]](#txsourcespubkey)
+      * [history/[pubkey]](#txhistorypubkey)
+      * [history/[pubkey]/blocks/[from]/[to]](#txhistorypubkeyblocksfromto)
+      * [history/[pubkey]/times/[from]/[to]](#txhistorypubkeytimesfromto)
+  * [ud/](#ud)
+      * [history/[pubkey]](#udhistorypubkey)
 
 ## Overview
 
@@ -73,9 +78,12 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   `-- peering
     |       |-- status
     |       `-- peers
-    `-- tx/
-        |-- process
-        `-- sources
+    |-- tx/
+    |   |-- process
+    |   |-- sources
+    |   `-- history
+    `-- ud/
+        `-- history
 
 ## Merkle URLs
 
@@ -1091,5 +1099,439 @@ A list of available sources for the given `pubkey`.
       "amount": 30
     }
   ]
+}
+```
+
+
+#### `tx/history/[pubkey]`
+
+**Goal**
+
+Get the wallet transaction history
+
+**parameters**
+
+Name              | Value							| Method
+----              | -----							| ------
+`pubkey`          | Wallet public key.				| URL
+
+**Returns**
+
+The full transaction history for the given `pubkey`
+```json
+{
+  "currency": "meta_brouzouf",
+  "pubkey": "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
+  "history": {
+    "sent": [
+      {
+        "version": 1,
+        "issuers": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
+        ],
+        "inputs": [
+          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+        ],
+        "outputs": [
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:5",
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:95"
+        ],
+        "comment": "Essai",
+        "signatures": [
+          "8zzWSU+GNSNURnH1NKPT/TBoxngEc/0wcpPSbs7FqknGxud+94knvT+dpe99k6NwyB5RXvOVnKAr4p9/KEluCw=="
+        ],
+        "hash": "FC7BAC2D94AC9C16AFC5C0150C2C9E7FBB2E2A09",
+        "block_number": 173,
+        "time": 1421932545
+      }
+    ],
+    "received": [
+      {
+        "version": 1,
+        "issuers": [
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
+        ],
+        "inputs": [
+          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:7",
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:93"
+        ],
+        "comment": "",
+        "signatures": [
+          "1Mn8q3K7N+R4GZEpAUm+XSyty1Uu+BuOy5t7BIRqgZcKqiaxfhAUfDBOcuk2i4TJy1oA5Rntby8hDN+cUCpvDg=="
+        ],
+        "hash": "5FB3CB80A982E2BDFBB3EA94673A74763F58CB2A",
+        "block_number": 207,
+        "time": 1421955525
+      },
+      {
+        "version": 1,
+        "issuers": [
+          "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
+        ],
+        "inputs": [
+          "0:T:15128:6A50FF82410387B239489CE38B34E0FDDE1697FE:10000"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:42",
+          "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3:9958"
+        ],
+        "comment": "",
+        "signatures": [
+          "XhBcCPizPiWdKeXWg1DX/FTQst6DppEjsYEtoAZNA0P11reXtgc9IduiIxNWzNjt/KvTw8APkSI8/Uf31QQVDA=="
+        ],
+        "hash": "ADE7D1C4002D6BC10013C34CE22733A55173BAD4",
+        "block_number": 15778,
+        "time": 1432314584
+      }
+    ],
+    "sending": [
+	  {
+        "version": 1,
+        "issuers": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
+        ],
+        "inputs": [
+          "0:D:8196:000022AD426FE727C707D847EC2168A64C577706:5872"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:5871"
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX:1",
+        ],
+        "comment": "some comment",
+        "signatures": [
+          "kLOAAy7/UldQk7zz4I7Jhv9ICuGYRx7upl8wH8RYL43MMF6+7MbPh3QRN1qNFGpAfa3XMWIQmbUWtjZKP6OfDA=="
+        ],
+        "hash": "BA41013F2CD38EDFFA9D38A275F8532DD906A2DE"
+      }
+    ],
+    "receiving": [
+	 {
+        "version": 1,
+        "issuers": [
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX"
+        ],
+        "inputs": [
+          "0:D:8196:000022AD426FE727C707D847EC2168A64C577706:4334"
+        ],
+        "outputs": [
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX:1",
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:4333"
+        ],
+        "comment": "some comment",
+        "signatures": [
+          "DRiZinUEKrrLiJNogtydzwEbmETrvWiLNYXCiJsRekxTLyU5g4LjnwiLp/XlvmIekjJK5n/gullLWrHUBvFSAw==
+        ],
+        "hash": "A0A511131CD0E837204A9441B3354918AC4CE671"
+      }
+	]
+  }
+}
+```
+
+#### `tx/history/[PUBKEY]/blocks/[from]/to]`
+
+**Goal**
+
+Get the wallet transaction history
+
+**parameters**
+
+Name				| Value							| Method
+----				| -----							| ------
+`pubkey`			| Wallet public key.			| URL
+`from`				| The starting block.			| URL
+`to`				| the ending block.				| URL
+
+**Returns**
+
+The transaction history for the given `pubkey` and between the given `from` and `to` blocks. 
+```json
+{
+  "currency": "meta_brouzouf",
+  "pubkey": "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
+  "history": {
+    "sent": [
+      {
+        "version": 1,
+        "issuers": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
+        ],
+        "inputs": [
+          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+        ],
+        "outputs": [
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:5",
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:95"
+        ],
+        "comment": "Essai",
+        "signatures": [
+          "8zzWSU+GNSNURnH1NKPT/TBoxngEc/0wcpPSbs7FqknGxud+94knvT+dpe99k6NwyB5RXvOVnKAr4p9/KEluCw=="
+        ],
+        "hash": "FC7BAC2D94AC9C16AFC5C0150C2C9E7FBB2E2A09",
+        "block_number": 173,
+        "time": 1421932545
+      }
+    ],
+    "received": [
+      {
+        "version": 1,
+        "issuers": [
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
+        ],
+        "inputs": [
+          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:7",
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:93"
+        ],
+        "comment": "",
+        "signatures": [
+          "1Mn8q3K7N+R4GZEpAUm+XSyty1Uu+BuOy5t7BIRqgZcKqiaxfhAUfDBOcuk2i4TJy1oA5Rntby8hDN+cUCpvDg=="
+        ],
+        "hash": "5FB3CB80A982E2BDFBB3EA94673A74763F58CB2A",
+        "block_number": 207,
+        "time": 1421955525
+      },
+      {
+        "version": 1,
+        "issuers": [
+          "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
+        ],
+        "inputs": [
+          "0:T:15128:6A50FF82410387B239489CE38B34E0FDDE1697FE:10000"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:42",
+          "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3:9958"
+        ],
+        "comment": "",
+        "signatures": [
+          "XhBcCPizPiWdKeXWg1DX/FTQst6DppEjsYEtoAZNA0P11reXtgc9IduiIxNWzNjt/KvTw8APkSI8/Uf31QQVDA=="
+        ],
+        "hash": "ADE7D1C4002D6BC10013C34CE22733A55173BAD4",
+        "block_number": 15778,
+        "time": 1432314584
+      }
+    ],
+    "sending": [
+	  {
+        "version": 1,
+        "issuers": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
+        ],
+        "inputs": [
+          "0:D:8196:000022AD426FE727C707D847EC2168A64C577706:5872"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:5871"
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX:1",
+        ],
+        "comment": "some comment",
+        "signatures": [
+          "kLOAAy7/UldQk7zz4I7Jhv9ICuGYRx7upl8wH8RYL43MMF6+7MbPh3QRN1qNFGpAfa3XMWIQmbUWtjZKP6OfDA=="
+        ],
+        "hash": "BA41013F2CD38EDFFA9D38A275F8532DD906A2DE"
+      }
+    ],
+    "receiving": [
+	 {
+        "version": 1,
+        "issuers": [
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX"
+        ],
+        "inputs": [
+          "0:D:8196:000022AD426FE727C707D847EC2168A64C577706:4334"
+        ],
+        "outputs": [
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX:1",
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:4333"
+        ],
+        "comment": "some comment",
+        "signatures": [
+          "DRiZinUEKrrLiJNogtydzwEbmETrvWiLNYXCiJsRekxTLyU5g4LjnwiLp/XlvmIekjJK5n/gullLWrHUBvFSAw==
+        ],
+        "hash": "A0A511131CD0E837204A9441B3354918AC4CE671"
+      }
+	]
+  }
+}
+```
+
+#### `tx/history/[pubkey]/times/[from]/[to]`
+
+**Goal**
+
+Get the wallet transaction history
+
+**parameters**
+
+Name              | Value							| Method
+----              | -----							| ------
+`pubkey`          | Wallet public key.				| URL
+`from` | The starting timestamp limit. (optionnal) | URL
+`to`        | The ending timestamp. (optionnal)	| URL
+
+**Returns**
+
+The transaction history for the given `pubkey` and between the given `from` and `to` dates. 
+```json
+{
+  "currency": "meta_brouzouf",
+  "pubkey": "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
+  "history": {
+    "sent": [
+      {
+        "version": 1,
+        "issuers": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
+        ],
+        "inputs": [
+          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+        ],
+        "outputs": [
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:5",
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:95"
+        ],
+        "comment": "Essai",
+        "signatures": [
+          "8zzWSU+GNSNURnH1NKPT/TBoxngEc/0wcpPSbs7FqknGxud+94knvT+dpe99k6NwyB5RXvOVnKAr4p9/KEluCw=="
+        ],
+        "hash": "FC7BAC2D94AC9C16AFC5C0150C2C9E7FBB2E2A09",
+        "block_number": 173,
+        "time": 1421932545
+      }
+    ],
+    "received": [
+      {
+        "version": 1,
+        "issuers": [
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
+        ],
+        "inputs": [
+          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:7",
+          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:93"
+        ],
+        "comment": "",
+        "signatures": [
+          "1Mn8q3K7N+R4GZEpAUm+XSyty1Uu+BuOy5t7BIRqgZcKqiaxfhAUfDBOcuk2i4TJy1oA5Rntby8hDN+cUCpvDg=="
+        ],
+        "hash": "5FB3CB80A982E2BDFBB3EA94673A74763F58CB2A",
+        "block_number": 207,
+        "time": 1421955525
+      },
+      {
+        "version": 1,
+        "issuers": [
+          "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
+        ],
+        "inputs": [
+          "0:T:15128:6A50FF82410387B239489CE38B34E0FDDE1697FE:10000"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:42",
+          "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3:9958"
+        ],
+        "comment": "",
+        "signatures": [
+          "XhBcCPizPiWdKeXWg1DX/FTQst6DppEjsYEtoAZNA0P11reXtgc9IduiIxNWzNjt/KvTw8APkSI8/Uf31QQVDA=="
+        ],
+        "hash": "ADE7D1C4002D6BC10013C34CE22733A55173BAD4",
+        "block_number": 15778,
+        "time": 1432314584
+      }
+    ],
+    "sending": [
+	  {
+        "version": 1,
+        "issuers": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
+        ],
+        "inputs": [
+          "0:D:8196:000022AD426FE727C707D847EC2168A64C577706:5872"
+        ],
+        "outputs": [
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:5871"
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX:1",
+        ],
+        "comment": "some comment",
+        "signatures": [
+          "kLOAAy7/UldQk7zz4I7Jhv9ICuGYRx7upl8wH8RYL43MMF6+7MbPh3QRN1qNFGpAfa3XMWIQmbUWtjZKP6OfDA=="
+        ],
+        "hash": "BA41013F2CD38EDFFA9D38A275F8532DD906A2DE"
+      }
+    ],
+    "receiving": [
+	 {
+        "version": 1,
+        "issuers": [
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX"
+        ],
+        "inputs": [
+          "0:D:8196:000022AD426FE727C707D847EC2168A64C577706:4334"
+        ],
+        "outputs": [
+          "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX:1",
+          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:4333"
+        ],
+        "comment": "some comment",
+        "signatures": [
+          "DRiZinUEKrrLiJNogtydzwEbmETrvWiLNYXCiJsRekxTLyU5g4LjnwiLp/XlvmIekjJK5n/gullLWrHUBvFSAw==
+        ],
+        "hash": "A0A511131CD0E837204A9441B3354918AC4CE671"
+      }
+	]
+  }
+}
+```
+### ud/*
+
+#### `ud/history/[pubkey]`
+
+**Goal**
+
+Get the wallet universal dividend history
+
+**parameters**
+
+Name              | Value							| Method
+----              | -----							| ------
+`pubkey`          | Wallet public key.				| URL
+
+**Returns**
+
+The universal dividend history for the given `pubkey`. 
+```json
+{
+  "currency": "meta_brouzouf",
+  "pubkey": "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
+  "history": {
+    "history": [
+      {
+        "block_number": 125,
+        "consumed": true,
+        "time": 1421927007,
+        "amount": 100
+      },
+      {
+        "block_number": 410,
+        "consumed": false,
+        "time": 1422012828,
+        "amount": 100
+      },
+      {
+        "block_number": 585,
+        "consumed": true,
+        "time": 1422098800,
+        "amount": 100
+      }
+    ]
+  }
 }
 ```

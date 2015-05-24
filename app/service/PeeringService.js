@@ -13,8 +13,9 @@ var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 
-function PeeringService(conn, conf, pair, signFunc, dal) {
-  
+function PeeringService(peerserver, pair, signFunc, dal) {
+
+  var conf = peerserver.conf;
   var currency = conf.currency;
 
   var Peer        = require('../lib/entity/peer');
@@ -258,7 +259,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
   }
 
   function syncBlock(callback) {
-    var blockFound = true;
+    var lastAdded = null;
     async.waterfall([
       function (next) {
         dal.getCurrentBlockOrNull(next);
@@ -313,6 +314,7 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
                                 },
                                 function(block, next) {
                                   current = block;
+                                  lastAdded = block;
                                   next();
                                 }
                               ], callback);
@@ -333,7 +335,9 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
               }, Q.reject())
                 .fail(function(){
                   logger.info("No new block found");
-                  blockFound = false;
+                  if (lastAdded) {
+                    peerserver.router().write(_.extend({ type: 'Block' }, lastAdded));
+                  }
                   next();
                 });
             });
@@ -396,6 +400,6 @@ function PeeringService(conn, conf, pair, signFunc, dal) {
 
 util.inherits(PeeringService, events.EventEmitter);
 
-module.exports = function (conn, conf, pair, signFunc, dal) {
-  return new PeeringService(conn, conf, pair, signFunc, dal);
+module.exports = function (peerserver, pair, signFunc, dal) {
+  return new PeeringService(peerserver, pair, signFunc, dal);
 };

@@ -101,7 +101,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     async.waterfall([
       function(next) {
         that.IdentityService     = require('./app/service/IdentityService')(that.conn, that.conf, that.dal);
-        that.PeeringService      = require('./app/service/PeeringService')(conn, that.conf, null, null, that.dal);
+        that.PeeringService      = require('./app/service/PeeringService')(that, null, null, that.dal);
         that.BlockchainService   = require('./app/service/BlockchainService')(conn, that.conf, that.dal, that.PeeringService);
         that.TransactionsService = require('./app/service/TransactionsService')(conn, that.conf, that.dal);
         that.IdentityService.setBlockchainService(that.BlockchainService);

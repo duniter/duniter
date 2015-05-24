@@ -279,7 +279,7 @@ Remove an identity from Identity pool.
 Name  | Value | Method
 ----  | ----- | ------
 `pubkey` | The [public key](./Protocol.md#publickey) signing the revokation. | POST
-`self` | The raw self-revocation, *without trailing signature*. No trailing newline character is required. | POST
+`self` | The raw self-certification. | POST
 `sig` | The signature of the revokation, without any line-ending. | POST
 
 **Returns**

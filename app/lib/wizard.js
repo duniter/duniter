@@ -108,7 +108,7 @@ var tasks = {
         });
       },
       function (next) {
-        var obfuscated = conf.passwd.replace(/./g, '*');
+        var obfuscated = (conf.passwd || "").replace(/./g, '*');
         inquirer.prompt([{
           type: "password",
           name: "passwd",

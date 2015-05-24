@@ -139,7 +139,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
         that.PeeringService.setSignFunc(that.sign);
         logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
-        done();
+        that.initPeer(done);
       })
       .fail(done);
   };

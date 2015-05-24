@@ -42,7 +42,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     }
   ];
 
-  var todoOnInit = initFunctions.concat(onInit).concat([
+  var todoOnInit = initFunctions.concat(onInit || []).concat([
   ]);
 
   this._write = function (obj, enc, writeDone, isInnerWrite) {
@@ -228,8 +228,9 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     }
   };
 
-  this._initServices = function(conn) {
+  this._initServices = function(conn, done) {
     // To override in child classes
+    done();
   };
 
   this.initUPnP = function (conn, conf, done) {

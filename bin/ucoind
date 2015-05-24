@@ -422,21 +422,7 @@ function bootstrapServer(host, port, server, conf) {
       server.reset(next);
     },
     function(next) {
-      wiz.automaticNetworkConfiguration(conf, function(err) {
-        if (err) {
-          wiz.choose('UPnP does not seem available. Switch to manual network configuration?', true,
-            function() {
-              conf.autoconf = false;
-              wiz.manualNetworkConfiguration(conf, next);
-            },
-            function() {
-              next();
-            });
-        } else {
-          conf.autoconf = true;
-          next();
-        }
-      });
+      wiz.networkConfiguration(conf, next);
     },
     function(next) {
       // PublicKey

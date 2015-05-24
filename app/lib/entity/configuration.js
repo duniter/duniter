@@ -13,7 +13,6 @@ var defaultConf = function() {
     "port": 8033,
     "ipv4": "127.0.0.1",
     "ipv6": null,
-    "autoconf": false,
     "upnp": true,
     "remotehost": null,
     "remoteipv4": null,

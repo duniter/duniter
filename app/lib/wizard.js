@@ -50,8 +50,7 @@ function Wizard () {
   };
 
   this.choose = choose;
-  this.automaticNetworkConfiguration = automaticNetworkConfiguration;
-  this.manualNetworkConfiguration = manualNetworkConfiguration;
+  this.networkConfiguration = networkConfiguration;
 }
 
 function doTasks (todos, conf, done) {
@@ -82,13 +81,7 @@ var tasks = {
   },
 
   network: function (conf, done) {
-    async.waterfall([
-      function(next) {
-        choose("Network: use automatic configuration?", conf.autoconf,
-          async.apply(automaticNetworkConfiguration, conf, next),
-          async.apply(manualNetworkConfiguration, conf, next));
-      }
-    ], done);
+    networkConfiguration(conf, done);
   },
 
   key: function (conf, done) {
@@ -172,7 +165,7 @@ function choose (question, defaultValue, ifOK, ifNotOK) {
     type: "confirm",
     name: "q",
     message: question,
-    default: defaultValue,
+    default: defaultValue
   }], function (answer) {
     answer.q ? ifOK() : ifNotOK();
   });
@@ -209,70 +202,97 @@ function simplePercentOrPositiveInteger (question, property, conf, done) {
   }, done);
 }
 
-function automaticNetworkConfiguration(conf, done) {
-  if(conf.autoconf) {
-    done();
-  } else {
-    conf.autoconf = true;
-    var client = upnp.createClient();
-    var privateIP = null, publicIP = null;
-    // Look for 2 random ports
-    var privatePort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
-    var publicPort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
-    async.waterfall([
-      function (next) {
-        client.externalIp(next);
-      },
-      function (ip, next) {
-        publicIP = ip;
-        next();
-      },
-      function(next) {
-        client.portMapping({
-          public: publicPort,
-          private: privatePort,
-          ttl: 120
-        }, next);
-      },
-      function(res, next) {
-        client.findGateway(next);
-      },
-      function(res, localIP, next) {
-        privateIP = localIP;
-        console.log('-----------');
-        console.log('Remote access:', [publicIP, publicPort].join(':'));
-        console.log('Local access:', [privateIP, privatePort].join(':'));
-        console.log('-----------');
-        conf.remoteipv4 = publicIP.match(IPV4_REGEXP) ? publicIP : null;
-        conf.remoteipv6 = publicIP.match(IPV6_REGEXP) ? publicIP : null;
-        conf.remoteport = publicPort;
-        conf.port = privatePort;
-        conf.ipv4 = privateIP.match(IPV4_REGEXP) ? privateIP : null;
-        conf.ipv6 = privateIP.match(IPV6_REGEXP) ? privateIP : null;
-        next();
-      }
-    ], done);
-  }
+function upnpResolve(done) {
+  var conf = {};
+  var client = upnp.createClient();
+  var privateIP = null, publicIP = null;
+  // Look for 2 random ports
+  var privatePort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
+  var publicPort = privatePort;
+  async.waterfall([
+    function (next) {
+      client.externalIp(next);
+    },
+    function (ip, next) {
+      publicIP = ip;
+      next("errrr");
+    },
+    function(next) {
+      client.portMapping({
+        public: publicPort,
+        private: privatePort,
+        ttl: 120
+      }, next);
+    },
+    function(res, next) {
+      client.findGateway(next);
+    },
+    function(res, localIP, next) {
+      privateIP = localIP;
+      conf.remoteipv4 = publicIP.match(IPV4_REGEXP) ? publicIP : null;
+      conf.remoteipv6 = publicIP.match(IPV6_REGEXP) ? publicIP : null;
+      conf.remoteport = publicPort;
+      conf.port = privatePort;
+      conf.ipv4 = privateIP.match(IPV4_REGEXP) ? privateIP : null;
+      conf.ipv6 = privateIP.match(IPV6_REGEXP) ? privateIP : null;
+      next();
+    }
+  ], function(err) {
+    done(null, !err, conf);
+  });
 }
 
-function manualNetworkConfiguration(conf, done) {
-  var remoteipv4 = null, remoteipv6 = null;
-  var client = upnp.createClient();
-  conf.autoconf = false;
-
-  // Tries to discover remote IPv4 address in background
-  async.parallel({
-    ipv4: function(callback){
-      client.externalIp(function (err, remoteIp) {
-        var ip = !err && remoteIp;
-        remoteipv4 = ip && ip.match(IPV4_REGEXP) && ip;
-        callback();
-      });
-    }
-  });
-
-  // Starts config
+function networkConfiguration(conf, done) {
   async.waterfall([
+    upnpResolve,
+    function(upnpSuccess, upnpConf, next) {
+      var localOperations = getLocalNetworkOperations(conf);
+      var remoteOpertions = getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6);
+      var useUPnPOperations = getUseUPnPOperations(conf);
+
+      if (upnpSuccess) {
+        _.extend(conf, upnpConf);
+        var local = [conf.ipv4, conf.port].join(':');
+        var remote = [conf.remoteipv4, conf.remoteport].join(':');
+        choose("UPnP is available: ucoin will be bound: \n  from " + local + "\n  to " + remote + "\nKeep this configuration?", true,
+          function () {
+            // Yes: not network changes
+            async.waterfall(useUPnPOperations, next);
+          },
+          function () {
+            // No: want to change
+            async.waterfall(
+              localOperations
+                .concat(remoteOpertions)
+                .concat(useUPnPOperations), next);
+          });
+      } else {
+        conf.upnp = false;
+        choose("UPnP is *not* available: is this a public server (like a VPS)?", true,
+          function () {
+            // Yes: local configuration = remote configuration
+            async.waterfall(
+              remoteOpertions
+                .concat([function(confDone) {
+                  conf.ipv4 = conf.remoteipv4;
+                  conf.ipv6 = conf.remoteipv6;
+                  conf.port = conf.remoteport;
+                  confDone();
+                }]), next);
+          },
+          function () {
+            // No: must give all details
+            async.waterfall(
+              localOperations
+                .concat(remoteOpertions), next);
+          });
+      }
+    }
+  ], done);
+}
+
+function getLocalNetworkOperations(conf) {
+  return [
     function (next){
       var osInterfaces = os.networkInterfaces();
       var interfaces = [{ name: "None", value: null }];
@@ -321,7 +341,12 @@ function manualNetworkConfiguration(conf, done) {
         next();
       });
     },
-    async.apply(simpleInteger, "Port", "port", conf),
+    async.apply(simpleInteger, "Port", "port", conf)
+  ];
+}
+
+function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6) {
+  return [
     function (next){
       var choices = [{ name: "None", value: null }];
       // Local interfaces
@@ -336,12 +361,12 @@ function manualNetworkConfiguration(conf, done) {
           });
         });
       });
-      // Remote interfaces
       if (conf.remoteipv4) {
         choices.push({ name: conf.remoteipv4, value: conf.remoteipv4 });
       }
-      if (remoteipv4)
+      if (remoteipv4 && remoteipv4 != conf.remoteipv4) {
         choices.push({ name: remoteipv4, value: remoteipv4 });
+      }
       choices.push({ name: "Enter new one", value: "new" });
       inquirer.prompt([{
         type: "list",
@@ -374,8 +399,9 @@ function manualNetworkConfiguration(conf, done) {
       if (conf.remoteipv6) {
         choices.push({ name: conf.remoteipv6, value: conf.remoteipv6 });
       }
-      if (remoteipv6)
+      if (remoteipv6 && remoteipv6 != conf.remoteipv6) {
         choices.push({ name: remoteipv6, value: remoteipv6 });
+      }
       choices.push({ name: "Enter new one", value: "new" });
       inquirer.prompt([{
         type: "list",
@@ -407,15 +433,29 @@ function manualNetworkConfiguration(conf, done) {
     },
     async.apply(simpleInteger, "Remote port", "remoteport", conf),
     function(next) {
-      choose("Network: use UPnP to open remote port? (easier)", conf.upnp,
+      choose("Does this server has a DNS name?", !!conf.remotehost,
         function() {
-          conf.upnp = true;
-          next();
+          // Yes
+          simpleValue("DNS name:", "remotehost", "", conf, function(){ return true; }, next);
         },
         function() {
-          conf.upnp = false;
+          conf.remotehost = null;
           next();
         });
     }
-  ], done);
+  ];
+}
+
+function getUseUPnPOperations(conf) {
+  return [function(next) {
+    choose("UPnP is available: use automatic port mapping? (easier)", conf.upnp,
+      function() {
+        conf.upnp = true;
+        next();
+      },
+      function() {
+        conf.upnp = false;
+        next();
+      });
+  }];
 }

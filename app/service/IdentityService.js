@@ -182,8 +182,10 @@ function IdentityService (conn, conf, dal) {
 
 function jsonResultTrue () {
   return {
-    json: {
-      result: true
+    json: function() {
+      return {
+        result: true
+      };
     }
   };
 }

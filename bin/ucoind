@@ -696,4 +696,15 @@ function parsePercent(s) {
   return isNaN(f) ? 0 : f;
 }
 
+program
+  .on('*', function(cmd) {
+    console.log("Unknown command '%s'. Try --help for a listing of commands & options.", cmd);
+    process.exit();
+  });
+
 program.parse(process.argv);
+
+if (program.args.length == 0) {
+  console.log("No command provided.");
+  process.exit();
+}

@@ -10,6 +10,7 @@ var dos2unix         = require('./dos2unix');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
 var rawer            = require('../lib/rawer');
+var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
 var multimeter = require('multimeter');
 
@@ -297,7 +298,9 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         logger.info('Sync finished.');
         done(err);
       });
-    })
+    }, {
+      timeout: conf.timeout || constants.NETWORK.DEFAULT_TIMEOUT
+    });
   };
 
   //============

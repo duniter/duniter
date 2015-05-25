@@ -59,6 +59,7 @@ program
   .option('--udid2',                   'Enable udid2 format for user id')
   .option('--rootoffset <number>',     'Allow to give a time offset for first block (offset in the past)')
   .option('--cpu <percent>',           'Percent of CPU usage for proof-of-work computation', parsePercent)
+  .option('--timeout <milliseconds>',  'Timeout to use when contacting peers', parseInt)
   .option('--show',                    'With gen-next or gen-root commands, displays the generated block')
   .option('--member',                  'With `bootstrap` command, ensures we have a member keypair')
   .option('--httplogs',                'Enable HTTP logs')
@@ -121,7 +122,7 @@ program
     var remoteCurrent;
     async.waterfall([
       function(next) {
-        vucoin(host, port, next);
+        vucoin(host, port, next, { timeout: server.conf.timeout });
       },
       function (node, next) {
         node.blockchain.current(next);
@@ -446,7 +447,7 @@ function bootstrapServer(host, port, server, conf) {
                 function(next) {
                   async.parallel({
                     node: function(callback){
-                      vucoin(host, port, callback);
+                      vucoin(host, port, callback, { timeout: server.conf.timeout });
                     },
                     keys: function(callback){
                       crypto.getKeyPair(conf.passwd, conf.salt, callback);
@@ -572,7 +573,8 @@ function commandLineConf(conf) {
       dtdiffeval:  program.dtdiffeval,
       avgGenTime:  program.avgGenTime
     },
-    isolate: program.isolate
+    isolate: program.isolate,
+    timeout: program.timeout
   };
 
   // Update conf
@@ -614,6 +616,7 @@ function commandLineConf(conf) {
   if (cli.db.mport)                         conf.mport          = cli.db.mport;
   if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
   if (cli.isolate)                          conf.isolate        = cli.isolate;
+  if (cli.timeout)                          conf.timeout        = cli.timeout;
 
   // Specific internal settings
   conf.createNext = true;

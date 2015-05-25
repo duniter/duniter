@@ -281,7 +281,12 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                     return Q.Promise(function(resolve, reject){
                       async.waterfall([
                         function(next) {
-                          p.connect(next);
+                          p.connect(function(err, node) {
+                            if (err) {
+                              return dal.setPeerDown(p.pubkey, next);
+                            }
+                            next(null, node);
+                          });
                         },
                         function(node, next) {
                           var errorWithPeer = false;

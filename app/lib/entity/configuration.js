@@ -38,6 +38,7 @@ var defaultConf = function() {
     "httplogs": false,
     "medianTimeBlocks": 20,
     "udid2": false,
+    "timeout": 3000,
     "routing": false,
     "isolate": false
   };

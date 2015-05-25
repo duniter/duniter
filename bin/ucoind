@@ -297,7 +297,7 @@ program
       return;
     }
     if(type == 'data'){
-      server.reset(resetDone(server, 'Data successfuly reseted.'));
+      server.resetData(resetDone(server, 'Data successfuly reseted.'));
     }
     if(type == 'peers'){
       server.resetPeers(resetDone(server, 'Peers successfuly reseted.'));

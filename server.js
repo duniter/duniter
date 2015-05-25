@@ -182,6 +182,10 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     return that.dal.resetAll(done);
   };
 
+  this.resetData = function(done) {
+    return that.dal.resetData(done);
+  };
+
   this.resetStats = function(done) {
     return that.dal.resetStats(done);
   };

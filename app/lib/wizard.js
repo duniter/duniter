@@ -272,11 +272,12 @@ function networkConfiguration(conf, done) {
           function () {
             // Yes: local configuration = remote configuration
             async.waterfall(
-              remoteOpertions
+              localOperations
+                .concat(getHostnameOperations(conf))
                 .concat([function(confDone) {
-                  conf.ipv4 = conf.remoteipv4;
-                  conf.ipv6 = conf.remoteipv6;
-                  conf.port = conf.remoteport;
+                  conf.remoteipv4 = conf.ipv4;
+                  conf.remoteipv6 = conf.ipv6;
+                  conf.remoteport = conf.port;
                   confDone();
                 }]), next);
           },
@@ -431,19 +432,22 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6) {
         }
       });
     },
-    async.apply(simpleInteger, "Remote port", "remoteport", conf),
-    function(next) {
-      choose("Does this server has a DNS name?", !!conf.remotehost,
-        function() {
-          // Yes
-          simpleValue("DNS name:", "remotehost", "", conf, function(){ return true; }, next);
-        },
-        function() {
-          conf.remotehost = null;
-          next();
-        });
-    }
-  ];
+    async.apply(simpleInteger, "Remote port", "remoteport", conf)
+  ].concat(getHostnameOperations(conf));
+}
+
+function getHostnameOperations(conf) {
+  return [function(next) {
+    choose("Does this server has a DNS name?", !!conf.remotehost,
+      function() {
+        // Yes
+        simpleValue("DNS name:", "remotehost", "", conf, function(){ return true; }, next);
+      },
+      function() {
+        conf.remotehost = null;
+        next();
+      });
+  }];
 }
 
 function getUseUPnPOperations(conf) {

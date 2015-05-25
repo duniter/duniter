@@ -32,11 +32,20 @@ module.exports = {
   }
 };
 
+function someDelayFix() {
+  return Q.Promise(function(resolve){
+    setTimeout(resolve, 100);
+  });
+}
+
 function getHomeFS(profile, isMemory) {
   var home = getUCoinHomePath(profile);
-  var fs = (isMemory ? require('q-io/fs-mock')({}) : require('q-io/fs'));
-  return fs
-    .makeTree(home)
+  var fs;
+  return someDelayFix()
+    .then(function() {
+      fs = (isMemory ? require('q-io/fs-mock')({}) : require('q-io/fs'));
+      return fs.makeTree(home);
+    })
     .then(function(){
       return { fs: fs, home: home };
     });
@@ -1287,8 +1296,14 @@ function FileDAL(profile, myFS) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers','txs','stats','sources','memberships','links','identities','headers','global','certs'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'certs', 'conf'];
     var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history'];
+    return resetFiles(files, dirs, done);
+  };
+
+  this.resetConf = function(done) {
+    var files = ['conf'];
+    var dirs  = [];
     return resetFiles(files, dirs, done);
   };
 

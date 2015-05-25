@@ -195,16 +195,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.resetConf = function(done) {
-    async.waterfall([
-      function (next){
-        that.connect(next);
-      },
-      function (next){
-        that.dal.saveConf({}, function (err) {
-          next(err);
-        });
-      }
-    ], done);
+    return that.dal.resetConf(done);
   };
 
   this.disconnect = function(done) {

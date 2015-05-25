@@ -1,3 +1,4 @@
+"use strict";
 
 var Server     = require('./server');
 var WOTServer  = require('./wotserver');

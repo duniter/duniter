@@ -287,76 +287,42 @@ program
 program
   .command('reset [config|data|peers|tx|stats|all]')
   .description('Reset configuration, data, peers, transactions or everything in the database')
-  .action(service(function (type, server) {
+  .action(connect(function (type, server) {
     if(!~['config', 'data', 'peers', 'tx', 'stats', 'all'].indexOf(type)){
       logger.error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset tx`, `reset stats` or `reset all`');
       server.disconnect();
       return;
     }
     if(type == 'data'){
-      server.reset(function (err) {
-        if(err)
-          logger.error(err);
-        else
-          logger.warn('Data successfuly reseted.');
-        server.disconnect();
-        process.exit();
-      });
+      server.reset(resetDone(server, 'Data successfuly reseted.'));
     }
     if(type == 'peers'){
-      server.resetPeers(function (err) {
-        if(err)
-          logger.error(err);
-        else
-          logger.warn('Peers successfuly reseted.');
-        server.disconnect();
-        //process.exit();
-      });
+      server.resetPeers(resetDone(server, 'Peers successfuly reseted.'));
     }
     if(type == 'tx'){
-      server.resetTxs(function (err) {
-        if(err)
-          logger.error(err);
-        else
-          logger.warn('Transactions successfuly reseted.');
-        server.disconnect();
-        process.exit();
-      });
+      server.resetTxs(resetDone(server, 'Transactions successfuly reseted.'));
     }
     if(type == 'stats'){
-      server.resetStats(function (err) {
-        if(err)
-          logger.error(err);
-        else
-          logger.warn('Stats successfuly reseted.');
-        server.disconnect();
-        process.exit();
-      });
+      server.resetStats(resetDone(server, 'Stats successfuly reseted.'));
     }
     if(type == 'config'){
-      server.resetConf(function (err) {
-        if(err)
-          logger.error(err);
-        else
-          logger.warn('Configuration successfuly reseted.');
-        server.disconnect();
-        process.exit();
-      });
+      server.resetConf(resetDone(server, 'Configuration successfuly reseted.'));
     }
     if(type == 'all'){
-      async.parallel({
-        data: server.reset,
-        config: server.resetConf
-        }, function (err) {
-        if(err)
-          logger.error(err);
-        else
-          logger.warn('Data & Configuration successfuly reseted.');
-        server.disconnect();
-        process.exit();
-      });
+      server.reset(resetDone(server, 'Data & Configuration successfuly reseted.'));
     }
   }));
+
+function resetDone(server, msg) {
+  return function(err) {
+    if(err)
+      logger.error(err);
+    else
+      logger.warn(msg);
+    server.disconnect();
+    process.exit();
+  }
+}
 
 function serverStart(server, conf) {
 
@@ -708,6 +674,6 @@ program
 program.parse(process.argv);
 
 if (program.args.length == 0) {
-  console.log("No command provided.");
+  program.help();
   process.exit();
 }

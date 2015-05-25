@@ -65,7 +65,7 @@ program
   .option('--httplogs',                'Enable HTTP logs')
   .option('--nohttplogs',              'Disable HTTP logs')
   .option('--nointeractive',           'Disable interactive sync UI')
-  .option('--cautious',                'Cautious with sync & init commands: checks each block\'s validity')
+  .option('--nocautious',              'Disable cautious mode with with sync command: checks each block\'s validity')
   .option('--isolate',                 'Avoid the node to send peering or status informations to the network')
   ;
 
@@ -106,7 +106,7 @@ function sync(server, host, port, conf, to) {
     function (next){
       // Synchronize
       var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
-      remote.sync(parseInt(to), program.cautious, next);
+      remote.sync(parseInt(to), program.nocautious, next);
     }
   ], logIfErrorAndExit(server, 'Error during sync: '));
 }

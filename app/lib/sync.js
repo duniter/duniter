@@ -37,8 +37,8 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
   var dal = server.dal;
 
-  this.sync = function (to, cautiousMode, done) {
-    var cautious = cautiousMode !== false;
+  this.sync = function (to, nocautious, done) {
+    var cautious = !nocautious;
     logger.info('Connecting remote host...');
     vucoin(host, port, function (err, node) {
       if(err){

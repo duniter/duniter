@@ -215,7 +215,7 @@ function upnpResolve(done) {
     },
     function (ip, next) {
       publicIP = ip;
-      next("errrr");
+      next();
     },
     function(next) {
       client.portMapping({

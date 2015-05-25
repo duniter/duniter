@@ -315,7 +315,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       function (next) {
         if(conf.ipv6){
           server6 = http.createServer(app);
-          server6.createServer(app).listen(conf.port, conf.ipv6, function(){
+          server6.listen(conf.port, conf.ipv6, function(){
             logger.info('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
             next();
           });

@@ -1493,6 +1493,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         };
         if (computationTimeout && typeof computationTimeout == 'function') {
           computationTimeout();
+        } else {
+          setTimeout(function() {
+            done(null, null);
+          }, 1000 * 60);
         }
       } else {
         // Proof-of-work found

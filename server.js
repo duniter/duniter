@@ -154,7 +154,7 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       function(next) {
         if (that.conf.routing) {
           var theRouter = that.router();
-          var theCaster = multicaster();
+          var theCaster = multicaster(that.conf.isolate);
           that
             .pipe(theRouter) // The router asks for multicasting of documents
             .pipe(theCaster) // The multicaster may answer 'unreachable peer'

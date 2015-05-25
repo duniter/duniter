@@ -9,11 +9,11 @@ var fifo = async.queue(function (task, callback) {
   task(callback);
 }, 10);
 
-module.exports = function () {
-  return new Multicaster();
+module.exports = function (isolate) {
+  return new Multicaster(isolate);
 };
 
-function Multicaster () {
+function Multicaster (isolate) {
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -58,39 +58,50 @@ function Multicaster () {
   });
   
   that.on('peer', function(peering, peers, done) {
-    logger.debug('--> new Peer to be sent to %s peer(s)', peers.length);
-    peers.forEach(function(peer){
-      fifo.push(function (sent) {
-        // Do propagating
-        logger.debug('sending peer %s to peer %s', peering.keyID(), peer.keyID());
-        post(peer, "/network/peering/peers", {
-          peer: peering.getRawSigned()
-        }, function (err, res, body) {
-          // Sent!
-          sent();
-          if (typeof done == 'function') {
-            done(err, res, body);
-          }
+    if(!isolate) {
+      logger.debug('--> new Peer to be sent to %s peer(s)', peers.length);
+      peers.forEach(function(peer){
+        fifo.push(function (sent) {
+          // Do propagating
+          logger.debug('sending peer %s to peer %s', peering.keyID(), peer.keyID());
+          post(peer, "/network/peering/peers", {
+            peer: peering.getRawSigned()
+          }, function (err, res, body) {
+            // Sent!
+            sent();
+            if (typeof done == 'function') {
+              done(err, res, body);
+            }
+          });
         });
       });
-    });
+    } else {
+      logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
+      if (typeof done == 'function') {
+        done();
+      }
+    }
   });
 
   that.on('status', function(status, peers) {
-    logger.debug('--> new Status to be sent to %s peer(s)', peers.length);
-    peers.forEach(function(peer){
-      fifo.push(function (sent) {
-        // Do propagating
-        logger.debug('sending %s status to peer %s', status.status, peer.keyID());
-        post(peer, "/network/peering/status", {
-          status: status.getRawSigned(),
-          peer: status.peer ? status.peer.getRawSigned() : null
-        }, function (err, res, body) {
-          // Sent!
-          sent(err);
+    if (!isolate) {
+      logger.debug('--> new Status to be sent to %s peer(s)', peers.length);
+      peers.forEach(function(peer){
+        fifo.push(function (sent) {
+          // Do propagating
+          logger.debug('sending %s status to peer %s', status.status, peer.keyID());
+          post(peer, "/network/peering/status", {
+            status: status.getRawSigned(),
+            peer: status.peer ? status.peer.getRawSigned() : null
+          }, function (err, res, body) {
+            // Sent!
+            sent(err);
+          });
         });
       });
-    });
+    } else {
+      logger.debug('[ISOLATE] Prevent --> new Status to be sent to %s peer(s)', peers.length);
+    }
   });
   
   that.on('membership', function(membership, peers) {

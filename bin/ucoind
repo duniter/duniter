@@ -65,6 +65,7 @@ program
   .option('--nohttplogs',              'Disable HTTP logs')
   .option('--nointeractive',           'Disable interactive sync UI')
   .option('--cautious',                'Cautious with sync & init commands: checks each block\'s validity')
+  .option('--isolate',                 'Avoid the node to send peering or status informations to the network')
   ;
 
 program
@@ -144,7 +145,7 @@ program
           logger.info("Forwarding block#" + block.number);
           server.dal.getBlock(block.number)
             .then(function(fullBlock){
-              multicaster().sendBlock(peer, new Block(fullBlock), callback);
+              multicaster(server.conf.isolate).sendBlock(peer, new Block(fullBlock), callback);
             })
         }, next);
       },
@@ -219,7 +220,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
       });
       program.show && console.log(block.getRawSigned());
       logger.info('Posted block ' + block.quickDescription());
-      multicaster().sendBlock(peer, block, next);
+      multicaster(server.conf.isolate).sendBlock(peer, block, next);
     }
   ], done);
 }
@@ -570,7 +571,8 @@ function commandLineConf(conf) {
       medtblocks:  program.medtblocks,
       dtdiffeval:  program.dtdiffeval,
       avgGenTime:  program.avgGenTime
-    }
+    },
+    isolate: program.isolate
   };
 
   // Update conf
@@ -611,6 +613,7 @@ function commandLineConf(conf) {
   if (cli.db.mhost)                         conf.mhost          = cli.db.mhost;
   if (cli.db.mport)                         conf.mport          = cli.db.mport;
   if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
+  if (cli.isolate)                          conf.isolate        = cli.isolate;
 
   // Specific internal settings
   conf.createNext = true;

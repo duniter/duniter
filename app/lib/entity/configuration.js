@@ -38,8 +38,9 @@ var defaultConf = function() {
     "httplogs": false,
     "medianTimeBlocks": 20,
     "udid2": false,
-    "routing": false
-  }
+    "routing": false,
+    "isolate": false
+  };
 };
 
 var Configuration = function(json) {

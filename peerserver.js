@@ -218,7 +218,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
                 function (block, next) {
                   if (block) {
                     var peer = new Peer({endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')]});
-                    multicaster().sendBlock(peer, block, next);
+                    multicaster(conf.isolate).sendBlock(peer, block, next);
                   } else {
                     next();
                   }

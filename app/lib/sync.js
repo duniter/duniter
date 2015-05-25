@@ -38,7 +38,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var dal = server.dal;
 
   this.sync = function (to, cautiousMode, done) {
-    var cautious = typeof cautiousMode == 'undefined' ? false : cautiousMode;
+    var cautious = cautiousMode !== false;
     logger.info('Connecting remote host...');
     vucoin(host, port, function (err, node) {
       if(err){
@@ -199,7 +199,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                                     if (err) {
                                       reject(err);
                                     } else {
-                                      finished = Math.min(to || current.number, current.number) >= currentNumber;
+                                      finished = currentNumber >= 0 && Math.min(to || current.number, current.number) >= currentNumber;
                                       resolve();
                                     }
                                   });

@@ -72,7 +72,7 @@ module.exports = {
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
-    EXCLUDED: exact(PUBKEY),
+    EXCLUDED: exact(PUBKEY)
   },
   TRANSACTION: {
     HEADER:  exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN),
@@ -80,7 +80,7 @@ module.exports = {
     SOURCE:  exact(INTEGER + ":(T|D):" + POSITIVE_INT + ":" + FINGERPRINT + ":" + POSITIVE_INT),
     TARGET:  exact(PUBKEY + ":" + POSITIVE_INT),
     COMMENT: find("Comment: (" + COMMENT + ")"),
-    INLINE_COMMENT: exact(COMMENT),
+    INLINE_COMMENT: exact(COMMENT)
   },
   PEER: {
     BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
@@ -92,6 +92,7 @@ module.exports = {
   },
   NETWORK: {
     DEFAULT_TIMEOUT: 3000,
+    DEFAULT_PORT: 8999,
     PORT: {
       START: 15000
     },

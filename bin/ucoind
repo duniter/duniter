@@ -98,15 +98,18 @@ program
   .command('sync [host] [port] [to]')
   .description('Synchronize blockchain from a remote uCoin node')
   .action(service(ucoin.createTxServer, function (host, port, to, server, conf) {
-
-    async.series([
-      function (next){
-        // Synchronize
-        var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
-        remote.sync(parseInt(to), program.cautious, next);
-      }
-    ], logIfErrorAndExit(server, 'Error during sync: '));
+    sync(server, host, port, conf, to);
   }));
+
+function sync(server, host, port, conf, to) {
+  async.series([
+    function (next){
+      // Synchronize
+      var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
+      remote.sync(parseInt(to), program.cautious, next);
+    }
+  ], logIfErrorAndExit(server, 'Error during sync: '));
+}
 
 program
   .command('init [host] [port]')
@@ -383,8 +386,19 @@ function startWizard(step, server, conf, done) {
 }
 
 function bootstrapServer(host, port, server, conf) {
+  async.series(getBootstrapOperations(host, port, server, conf), function (err) {
+    if (err) {
+      logger.error(err);
+    }
+    server.disconnect();
+    process.exit();
+  });
+}
+
+function getBootstrapOperations(host, port, server, conf) {
+  var ops = [];
   var wiz = wizard(server);
-  async.series([
+  ops = ops.concat([
     function(next) {
       // Reset data
       server.reset(next);
@@ -458,32 +472,12 @@ function bootstrapServer(host, port, server, conf) {
       server.dal.saveConf(conf, function(err) {
         next(err);
       });
-    },
-    function (next){
-      logger.info('Configuration saved.');
-      // Sync
-      var start = 0;
-      var remote = new Synchroniser(server, host, port, conf, INTERACTIVE_SYNC);
-      async.doWhilst(function(next){
-        start = new Date().getTime();
-        remote.sync(null, program.cautious, next);
-      }, function(){
-        var now = new Date().getTime();
-        return (now - start)/1000 > constants.NETWORK.SYNC.MAX;
-      }, function(err) {
-        if(err){
-          err = 'Error during sync: ' + err;
-        }
-        next(err);
-      });
-    }
-  ], function (err) {
-    if (err) {
-      logger.error(err);
-    }
-    server.disconnect();
-    process.exit();
+    }]);
+  ops.push(function (next){
+    logger.info('Configuration saved.');
+    next();
   });
+  return ops;
 }
 
 function commandLineConf(conf) {

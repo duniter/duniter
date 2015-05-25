@@ -246,6 +246,11 @@ function networkConfiguration(conf, done) {
   async.waterfall([
     upnpResolve,
     function(upnpSuccess, upnpConf, next) {
+
+      // Default values
+      conf.port = conf.port || constants.NETWORK.DEFAULT_PORT;
+      conf.remoteport = conf.remoteport || constants.NETWORK.DEFAULT_PORT;
+
       var localOperations = getLocalNetworkOperations(conf);
       var remoteOpertions = getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6);
       var useUPnPOperations = getUseUPnPOperations(conf);

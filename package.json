@@ -36,7 +36,7 @@
     "log4js": "0.6.9",
     "merkle": "0.1.0",
     "moment": "2.6.0",
-    "multimeter": "0.1.0",
+    "multimeter": "0.1.1",
     "naclb": "0.0.1",
     "nan": "1.3.0",
     "nat-upnp": "0.2.11",

@@ -806,7 +806,7 @@ function FileDAL(profile, myFS) {
     return that.listAllPeers()
       .then(function(peers){
         return peers.filter(function(peer) {
-          return pubkeys.indexOf(peer.pubkey) == -1;
+          return pubkeys.indexOf(peer.pubkey) == -1 && ['NOTHING', 'NEW', 'NEW_BACK', 'UP'].indexOf(peer.status) !== -1;
         });
       })
       .then(function(matchingPeers){

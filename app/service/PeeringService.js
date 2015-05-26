@@ -281,12 +281,7 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                     return Q.Promise(function(resolve, reject){
                       async.waterfall([
                         function(next) {
-                          p.connect(function(err, node) {
-                            if (err) {
-                              return dal.setPeerDown(p.pubkey, next);
-                            }
-                            next(null, node);
-                          });
+                          p.connect(next);
                         },
                         function(node, next) {
                           var errorWithPeer = false;
@@ -297,7 +292,14 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                             function (callback) {
                               async.waterfall([
                                 function (next) {
-                                  node.blockchain.block(current.number + 1, next);
+                                  node.blockchain.block(current.number + 1, function(err, block) {
+                                    if (err) {
+                                      return dal.setPeerDown(p.pubkey, function(err2) {
+                                        next(err2 || err);
+                                      });
+                                    }
+                                    next(null, block);
+                                  });
                                 },
                                 function (block, next) {
                                   // Rawification of transactions

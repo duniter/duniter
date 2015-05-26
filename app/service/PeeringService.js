@@ -292,14 +292,17 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                             function (callback) {
                               async.waterfall([
                                 function (next) {
-                                  node.blockchain.block(current.number + 1, function(err, block) {
+                                  node.blockchain.current(function(err) {
                                     if (err) {
                                       return dal.setPeerDown(p.pubkey, function(err2) {
                                         next(err2 || err);
                                       });
                                     }
-                                    next(null, block);
+                                    next();
                                   });
+                                },
+                                function (next) {
+                                  node.blockchain.block(current.number + 1, next);
                                 },
                                 function (block, next) {
                                   // Rawification of transactions

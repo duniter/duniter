@@ -16,11 +16,11 @@ var multicaster = require('./app/lib/streams/multicaster');
 var INNER_WRITE = true;
 
 
-function Server (dbConf, overrideConf, interceptors, onInit) {
+function Server (overrideConf, interceptors, onInit) {
 
   stream.Duplex.call(this, { objectMode: true });
 
-  var httpLogger  = log4js.getLogger(dbConf.name);
+  var httpLogger  = log4js.getLogger();
   var logger = require('./app/lib/logger')('server');
   var that = this;
   var server4, server6;

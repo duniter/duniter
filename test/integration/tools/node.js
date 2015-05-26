@@ -7,11 +7,11 @@ var ucoin  = require('../../../index');
 var Configuration = require('../../../app/lib/entity/configuration');
 var Peer          = require('../../../app/lib/entity/peer');
 
-module.exports = function (dbName, options) {
-	return new Node(dbName, options);
+module.exports = function (options) {
+	return new Node(options);
 };
 
-function Node (dbName, options) {
+function Node (options) {
 
   var that = this;
   var started = false;
@@ -163,15 +163,7 @@ function Node (dbName, options) {
     }
     return function () {
       var cbArgs = arguments;
-      var server = serverFactory({ name: dbName, memory: true }, Configuration.statics.complete(options));
-
-      // Initialize server (db connection, ...)
-      server.init(function (err) {
-
-        if(err){
-          server.disconnect();
-          throw err;
-        }
+      var server = serverFactory({ memory: true }, Configuration.statics.complete(options));
 
         //cbArgs.length--;
         cbArgs[cbArgs.length++] = server;

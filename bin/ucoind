@@ -338,12 +338,6 @@ function serverStart(server, conf) {
     function (next){
       // Launching server
       server.start(next);
-    },
-    function(next) {
-      if (server.initPeer) {
-        return server.initPeer(next);
-      }
-      next();
     }
   ], function (err) {
     if(err){

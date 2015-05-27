@@ -4,7 +4,6 @@ var async          = require('async');
 var _              = require('underscore');
 var Q              = require('q');
 var events         = require('events');
-var Status         = require('../lib/entity/status');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/base58');
 var sha1           = require('sha1');
@@ -91,6 +90,8 @@ function PeeringService(peerserver, pair, signFunc, dal) {
           peer.copyValues(peerEntity);
           peerEntity.sigDate = new Date(sigTime*1000);
         }
+        // Set the peer as UP again
+        peerEntity.status = 'UP';
         dal.savePeer(peerEntity, function (err) {
           next(err, peerEntity, previousHash);
         });
@@ -103,121 +104,17 @@ function PeeringService(peerserver, pair, signFunc, dal) {
     ], done);
   };
 
-  this.submitStatus = function(obj, callback){
-    var status = new Status(obj);
-    var peer;
-    var wasStatus = null;
-    var sp = status.block.split('-');
-    var number = sp[0], fpr = sp[1];
-    var sigTime = new Date(0);
-    async.waterfall([
-      function (next) {
-        if (status.to != that.pubkey) {
-          next('Node is not concerned by this status');
-          return;
-        }
-        localValidator(null).checkStatusSignature(status, next);
-      },
-      function (next) {
-        if (status.block == constants.STATUS.SPECIAL_BLOCK)
-          next(null, null);
-        else
-          // Check if document is based upon an existing block as time reference
-          dal.getBlockOrNull(number, next);
-      },
-      function (block, next){
-        sigTime = block ? block.medianTime : 0;
-        dal.getPeer(status.from, next);
-      },
-      function (theOne, next){
-        peer = theOne;
-        if (peer.statusBlock) {
-          var sp2 = peer.statusBlock.split('-');
-          var number2 = sp2[0];
-          if(number <= number2){
-            next('Old status given');
-            return;
-          }
-        }
-        wasStatus = peer.status;
-        peer.statusTS = sigTime;
-        peer.statusSigDate = new Date(sigTime*1000);
-        peer.setStatus(status.status, dal, next);
-      },
-      function (next) {
-        dal.updateMerkleForPeers(next);
-      }
-    ], function (err) {
-      callback(err, status, peer, wasStatus);
-      if (!err) {
-        async.parallel({
-          statusBack: function(callback){
-            if (~['NEW', 'NEW_BACK'].indexOf(status.status)) {
-              that.helloToPeer(peer, function (err) {
-                callback();
-              });
-            }
-            else callback();
-          }
-        });
-      }
-    });
-  };
-
-  /**
-  * Send status to a peer according to his last sent status to us
-  **/
-  this.helloToPeer = function (peer, done) {
-    var actionForReceived = {
-      'NOTHING':  'NEW',
-      'NEW':      'NEW_BACK',
-      'NEW_BACK': 'UP',
-      'UP':       'UP',
-      'DOWN':     'UP',
-      'ASK':      peer.statusSent == 'NOTHING' ? 'NEW' : peer.statusSent || 'NEW'
-    };
-    async.waterfall([
-      function (next){
-        var statusToSend = actionForReceived[peer.status] || 'NEW';
-        that.sendStatusTo(statusToSend, [peer.pubkey], next);
-      }
-    ], function () {
-      done();
-    });
-  };
-
-  /**
-  * Send status to ALL known peers, for UP event
-  */
-  this.sendUpSignal = function (done) {
-    async.waterfall([
-      function (next){
-        dal.findAllPeersNEWUPBut([selfPubkey], next);
-      },
-      function (allPeers, next) {
-        async.forEachSeries(allPeers, function(peer, callback){
-          that.helloToPeer(peer, function(err){
-            if (err) logger.warn(err);
-            callback();
-          });
-        }, function(err){
-          next(err);
-        });
-      }
-    ], done);
-  };
-
-  var statusUpfifo = async.queue(function (task, callback) {
+  var peerFifo = async.queue(function (task, callback) {
     task(callback);
   }, 1);
-  var statusUpInterval = null;
-  this.regularUpSignal = function (done) {
-    if (statusUpInterval)
-      clearInterval(statusUpInterval);
-    statusUpInterval = setInterval(function () {
-      statusUpfifo.push(upSignal);
+  var peerInterval = null;
+  this.regularPeerSignal = function (done) {
+    if (peerInterval)
+      clearInterval(peerInterval);
+    peerInterval = setInterval(function () {
+      peerFifo.push(_.partial(generateSelfPeer, peerserver.conf));
     }, 1000*conf.avgGenTime*constants.NETWORK.STATUS_INTERVAL.UPDATE);
-    upSignal(done);
+    generateSelfPeer(peerserver.conf, done);
   };
 
   var syncBlockFifo = async.queue(function (task, callback) {
@@ -233,34 +130,116 @@ function PeeringService(peerserver, pair, signFunc, dal) {
     syncBlock(done);
   };
 
-  function upSignal(callback) {
+  function generateSelfPeer(conf, done) {
+    var currency = conf.currency;
+    var current = null;
     async.waterfall([
       function (next) {
-        dal.getCurrentBlockOrNull(next);
+        peerserver.BlockchainService.current(next);
       },
-      function(current, next) {
-        if (current) {
-          async.waterfall([
-            function (next) {
-              // set DOWN for peers with too old status
-              dal.setDownWithStatusOlderThan(current.medianTime - conf.avgGenTime*4*conf.medianTimeBlocks, next);
-            },
-            function (next) {
-              dal.updateMerkleForPeers(next);
-            },
-            function (next) {
-              that.sendUpSignal(next);
-            }
-          ], next);
+      function (currentBlock, next) {
+        current = currentBlock;
+        peerserver.dal.findPeers(peerserver.PeeringService.pubkey, next);
+      },
+      function (peers, next) {
+        var p1 = { version: 1, currency: currency };
+        if(peers.length != 0){
+          p1 = _(peers[0]).extend({ version: 1, currency: currency });
         }
-        else next();
+        var endpoint = 'BASIC_MERKLED_API';
+        if (conf.remotehost) {
+          endpoint += ' ' + conf.remotehost;
+        }
+        if (conf.remoteipv4) {
+          endpoint += ' ' + conf.remoteipv4;
+        }
+        if (conf.remoteipv6) {
+          endpoint += ' ' + conf.remoteipv6;
+        }
+        if (conf.remoteport) {
+          endpoint += ' ' + conf.remoteport;
+        }
+        var p2 = {
+          version: 1,
+          currency: currency,
+          pubkey: peerserver.PeeringService.pubkey,
+          block: current ? [current.number, current.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
+          endpoints: [endpoint]
+        };
+        var raw1 = new Peer(p1).getRaw().dos2unix();
+        var raw2 = new Peer(p2).getRaw().dos2unix();
+        if (raw1 != raw2) {
+          logger.debug('Generating server\'s peering entry...');
+          async.waterfall([
+            function (next){
+              peerserver.sign(raw2, next);
+            },
+            function (signature, next) {
+              p2.signature = signature;
+              p2.pubkey = peerserver.PeeringService.pubkey;
+              peerserver.submit(p2, false, next);
+            }
+          ], function (err) {
+            next(err);
+          });
+        } else {
+          peerserver.push(p1);
+          next();
+        }
+      },
+      function (next){
+        peerserver.dal.getPeer(peerserver.PeeringService.pubkey, next);
+      },
+      function (peer, next){
+        // Set peer's statut to UP
+        peerserver.PeeringService.peer(peer);
+        peerserver.push(peer);
+        next();
       }
-    ], callback);
+    ], function(err) {
+      done(err);
+    });
   }
+
+  this.testPeers = function(done) {
+    dal.getAllPeers()
+      .then(function(peers){
+        peers = _.filter(peers, function(p){ return p.pubkey != selfPubkey; });
+        return Q.all(peers.map(function(p) {
+          var peer = new Peer(p);
+          return Q.nfcall(peer.connect)
+            .then(function(node){
+              // Get peering record of each peer
+              return Q.nfcall(node.network.peering.get)
+                .then(function(peering){
+                  // Submit the peering
+                  return Q.nfcall(that.submit, peering)
+                    .fail(function(err) {
+                      // Not a problem!
+                      logger.warn("Peer record %s: %s", peer.pubkey, err.code || err.message || err);
+                    });
+                })
+                .fail(function(err){
+                  logger.warn("Peer %s: %s", peer.pubkey, err.code || err.message || err);
+                  // The peer is unreachable: set it DOWN
+                  peer.status = 'DOWN';
+                  return dal.savePeer(peer);
+                });
+            });
+        }));
+      })
+      .then(function(){
+        done();
+      })
+      .fail(done);
+  };
 
   function syncBlock(callback) {
     var lastAdded = null;
     async.waterfall([
+      function(next) {
+        next('Do not want to sync');
+      },
       function (next) {
         dal.getCurrentBlockOrNull(next);
       },
@@ -319,7 +298,7 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                                     tx.issuers = tx.signatories;
                                     tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                   });
-                                  logger.info("Downloaded block #%s from peer ", block.number, peer.getNamedURL());
+                                  logger.info("Downloaded block #%s from peer ", block.number, p.getNamedURL());
                                   BlockchainService.submitBlock(block, true, next);
                                 },
                                 function(block, next) {
@@ -354,57 +333,12 @@ function PeeringService(peerserver, pair, signFunc, dal) {
         }
         else next();
       }
-    ], callback);
-  }
-
-  /**
-  * Send given status to a list of peers.
-  * @param statusStr Status string to send
-  * @param pubs List of peers' pubs to which status is to be sent
-  */
-  this.sendStatusTo = function (statusStr, pubs, done) {
-    var current = null;
-    async.waterfall([
-      function (next) {
-        dal.getCurrentBlockOrNull(next);
-      },
-      function(block, next) {
-        if (block) {
-          current = block;
-        }
-        dal.getPeers(pubs, next);
-      },
-      function (peers, next) {
-        async.forEach(peers, function(peer, callback){
-          var status = new Status({
-            version: 1,
-            currency: currency,
-            time: new Date(moment.utc().unix()*1000),
-            status: statusStr,
-            block: current ? [current.number, current.hash].join('-') : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709',
-            from: selfPubkey,
-            to: peer.pubkey
-          });
-          async.waterfall([
-            function (next){
-              signFunc(status.getRaw(), next);
-            },
-            function (signature, next) {
-              status.signature = signature;
-              if (statusStr == 'NEW') {
-                status.peer = _(that.peer()).extend({ peerTarget: peer.pubkey });
-              }
-              that.emit('status', status);
-              peer.statusSent = status.status;
-              dal.savePeer(new Peer(peer), function (err) {
-                if (err) logger.error(err);
-                next();
-              });
-            }
-          ], callback);
-        }, next);
+    ], function(err) {
+      if (err) {
+        logger.warn(err.code || err.message || err);
       }
-    ], done);
+      callback();
+    });
   }
 }
 

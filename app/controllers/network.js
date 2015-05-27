@@ -69,47 +69,4 @@ function NetworkBinding (peerServer, conf) {
       .pipe(es.stringify())
       .pipe(res);
   };
-
-  this.statusPOST = function(req, res) {
-    res.type('application/json');
-    var onError = http400(res);
-    async.waterfall([
-      function (next) {
-        function errorPeer (err) {
-          if (err == constants.ERROR.PEER.ALREADY_RECORDED)
-            next();
-          else
-            next(err);
-        }
-        // If peer is provided, parse it first
-        if (req.body && req.body.peer) {
-          http2raw.peer(req, errorPeer)
-            .pipe(dos2unix())
-            .pipe(parsers.parsePeer(errorPeer))
-            .pipe(versionFilter(errorPeer))
-            .pipe(currencyFilter(conf.currency, errorPeer))
-            .pipe(peerServer.singleWriteStream(errorPeer))
-            .pipe(es.mapSync(function () {
-              next();
-            }));
-        }
-        else next();
-      },
-      function (next) {
-        http2raw.status(req, next)
-          .pipe(dos2unix())
-          .pipe(parsers.parseStatus(next))
-          .pipe(versionFilter(next))
-          .pipe(currencyFilter(conf.currency, next))
-          .pipe(peerServer.singleWriteStream(next))
-          .pipe(jsoner())
-          .pipe(es.stringify())
-          .pipe(res);
-        next();
-      }
-    ], function (err) {
-      if (err)
-        onError(err);
-    });
-  };
 }

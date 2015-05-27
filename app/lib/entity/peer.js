@@ -23,51 +23,41 @@ function Peer(json) {
    that[key] = json[key];
   });
 
-  this.endpoints = this.endpoints || [];
-  this.statusTS = this.statusTS || 0;
+  that.endpoints = that.endpoints || [];
+  that.statusTS = that.statusTS || 0;
 
-  this.keyID = function () {
-    return this.pubkey && this.pubkey.length > 10 ? this.pubkey.substring(0, 10) : "Unknown";
+  that.keyID = function () {
+    return that.pubkey && that.pubkey.length > 10 ? that.pubkey.substring(0, 10) : "Unknown";
   };
 
-  this.setStatus = function (newStatus, dal, done) {
-    if(this.status != newStatus){
-      this.status = newStatus;
-      dal.savePeer(this, function (err) {
-        done(err);
-      });
-    }
-    else done();
-  };
-
-  this.copyValues = function(to) {
-    var obj = this;
+  that.copyValues = function(to) {
+    var obj = that;
     ["version", "currency", "pub", "endpoints", "hash", "status", "statusTS", "block", "signature"].forEach(function (key) {
       to[key] = obj[key];
     });
   };
 
-  this.copyValuesFrom = function(from) {
-    var obj = this;
+  that.copyValuesFrom = function(from) {
+    var obj = that;
     ["version", "currency", "pub", "endpoints", "block", "signature"].forEach(function (key) {
       obj[key] = from[key];
     });
   };
 
-  this.json = function() {
-    var obj = this;
+  that.json = function() {
+    var obj = that;
     var json = {};
     ["version", "currency", "endpoints", "status", "block", "signature"].forEach(function (key) {
       json[key] = obj[key];
     });
-    json.raw = this.getRaw();
-    json.pubkey = this.pubkey;
+    json.raw = that.getRaw();
+    json.pubkey = that.pubkey;
     return json;
   };
 
-  this.getBMA = function() {
+  that.getBMA = function() {
     var bma = null;
-    this.endpoints.forEach(function(ep){
+    that.endpoints.forEach(function(ep){
       var matches = !bma && ep.match(BMA_REGEXP);
       if (matches) {
         bma = {
@@ -81,28 +71,28 @@ function Peer(json) {
     return bma || {};
   };
 
-  this.getDns = function() {
-    var bma = this.getBMA();
+  that.getDns = function() {
+    var bma = that.getBMA();
     return bma.dns ? bma.dns : null;
   };
 
-  this.getIPv4 = function() {
-    var bma = this.getBMA();
+  that.getIPv4 = function() {
+    var bma = that.getBMA();
     return bma.ipv4 ? bma.ipv4 : null;
   };
 
-  this.getIPv6 = function() {
-    var bma = this.getBMA();
+  that.getIPv6 = function() {
+    var bma = that.getBMA();
     return bma.ipv6 ? bma.ipv6 : null;
   };
 
-  this.getPort = function() {
-    var bma = this.getBMA();
+  that.getPort = function() {
+    var bma = that.getBMA();
     return bma.port ? bma.port : null;
   };
 
-  this.getHost = function() {
-    var bma = this.getBMA();
+  that.getHost = function() {
+    var bma = that.getBMA();
     var host =
       (bma.ipv6 ? bma.ipv6 :
         (bma.ipv4 ? bma.ipv4 :
@@ -110,8 +100,8 @@ function Peer(json) {
     return host;
   };
 
-  this.getURL = function() {
-    var bma = this.getBMA();
+  that.getURL = function() {
+    var bma = that.getBMA();
     var base =
       (bma.ipv6 ? '[' + bma.ipv6 + ']' :
         (bma.ipv4 ? bma.ipv4 :
@@ -121,8 +111,8 @@ function Peer(json) {
     return base;
   };
 
-  this.getNamedURL = function() {
-    var bma = this.getBMA();
+  that.getNamedURL = function() {
+    var bma = that.getBMA();
     var base =
       (bma.dns ? bma.dns :
         (bma.ipv4 ? bma.ipv4 :
@@ -132,23 +122,23 @@ function Peer(json) {
     return base;
   };
 
-  this.getRaw = function() {
-    return rawer.getPeerWithoutSignature(this);
+  that.getRaw = function() {
+    return rawer.getPeerWithoutSignature(that);
   };
 
-  this.getRawSigned = function() {
-    return rawer.getPeer(this);
+  that.getRawSigned = function() {
+    return rawer.getPeer(that);
   };
 
-  this.connect = function (done){
-    vucoin(this.getIPv6() || this.getIPv4() || this.getDns(), this.getPort(), done, {
+  that.connect = function (done){
+    vucoin(that.getIPv6() || that.getIPv4() || that.getDns(), that.getPort(), done, {
       timeout: 2000
     });
   };
 
-  this.isReachable = function () {
-    return this.getURL() ? true : false;
-  }
+  that.isReachable = function () {
+    return that.getURL() ? true : false;
+  };
 }
 
 Peer.statics = {};

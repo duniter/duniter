@@ -68,23 +68,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           }
         ], next);
       }
-    },{
-      // Status
-      matches: function (obj) {
-        return obj.status ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        logger.info('⬇ STATUS %s %s', obj.from, obj.status);
-        async.waterfall([
-          function (next){
-            that.PeeringService.submitStatus(obj, next);
-          },
-          function (status, peer, wasStatus, next){
-            logger.info('✔ STATUS %s %s', status.from, status.status);
-            next(null, status);
-          },
-        ], next);
-      }
     }
   ];
 
@@ -187,22 +170,14 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       },
       function (next){
         logger.info('Storing self peer...');
-        that.initPeeringEntry(conn, conf, next);
+        that.PeeringService.regularPeerSignal(next);
+      },
+      function(next) {
+        that.PeeringService.testPeers(next);
       },
       function (next){
         logger.info('Updating list of peers...');
         that.dal.updateMerkleForPeers(next);
-      },
-      function (next){
-        logger.info('Broadcasting UP/NEW signals...');
-        that.PeeringService.on('status', function (status) {
-          // Readable status to be multicasted
-          that.push(status);
-        });
-        that.PeeringService.sendUpSignal(next);
-      },
-      function (next){
-        that.PeeringService.regularUpSignal(next);
       },
       function (next){
         that.PeeringService.regularSyncBlock(next);
@@ -243,80 +218,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     ], done);
   };
 
-  this.initPeeringEntry = function (conn, conf, done) {
-    var currency = conf.currency;
-    var current = null;
-    async.waterfall([
-      function (next) {
-        that.BlockchainService.current(next);
-      },
-      function (currentBlock, next) {
-        current = currentBlock;
-        that.dal.findPeers(that.PeeringService.pubkey, next);
-      },
-      function (peers, next) {
-        var p1 = { version: 1, currency: currency };
-        if(peers.length != 0){
-          p1 = _(peers[0]).extend({ version: 1, currency: currency });
-        }
-        var endpoint = 'BASIC_MERKLED_API';
-        if (conf.remotehost) {
-          endpoint += ' ' + conf.remotehost;
-        }
-        if (conf.remoteipv4) {
-          endpoint += ' ' + conf.remoteipv4;
-        }
-        if (conf.remoteipv6) {
-          endpoint += ' ' + conf.remoteipv6;
-        }
-        if (conf.remoteport) {
-          endpoint += ' ' + conf.remoteport;
-        }
-        var p2 = {
-          version: 1,
-          currency: currency,
-          pubkey: that.PeeringService.pubkey,
-          block: current ? [current.number, current.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-          endpoints: [endpoint]
-        };
-        var raw1 = new Peer(p1).getRaw().dos2unix();
-        var raw2 = new Peer(p2).getRaw().dos2unix();
-        if (raw1 != raw2) {
-          logger.debug('Generating server\'s peering entry...');
-          async.waterfall([
-            function (next){
-              that.sign(raw2, next);
-            },
-            function (signature, next) {
-              p2.signature = signature;
-              p2.pubkey = that.PeeringService.pubkey;
-              that.submit(p2, false, next);
-            }
-          ], function (err) {
-            next(err);
-          });
-        } else {
-          that.push(p1);
-          next();
-        }
-      },
-      function (next){
-        that.dal.getPeer(that.PeeringService.pubkey, next);
-      },
-      function (peer, next){
-        // Set peer's statut to UP
-        peer.status = 'UP';
-        that.PeeringService.peer(peer);
-        that.dal.savePeer(that.PeeringService.peer(), function (err) {
-          // Update it in memory
-          next(err);
-        });
-      }
-    ], function(err) {
-      done(err);
-    });
-  };
-
   this._listenBMA = function (app) {
     this.listenNode(app);
     this.listenWOT(app);
@@ -349,7 +250,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
     app.get(    '/network/peering',             net.peer);
     app.get(    '/network/peering/peers',       net.peersGet);
     app.post(   '/network/peering/peers',       net.peersPost);
-    app.post(   '/network/peering/status',      net.statusPOST);
   }
 }
 

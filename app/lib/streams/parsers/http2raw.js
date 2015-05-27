@@ -8,9 +8,8 @@ module.exports = {
   revocation:    instanciate.bind(null, Http2RawRevocation),
   transaction:   instanciate.bind(null, Http2RawTransaction),
   peer:          instanciate.bind(null, Http2RawPeer),
-  status:        instanciate.bind(null, Http2RawStatus),
   membership:    instanciate.bind(null, Http2RawMembership),
-  block:         instanciate.bind(null, Http2RawBlock),
+  block:         instanciate.bind(null, Http2RawBlock)
 };
 
 function instanciate (constructorFunc, req, onError) {
@@ -109,21 +108,6 @@ function Http2RawPeer (req, onError) {
   }
 }
 
-function Http2RawStatus (req, onError) {
-  
-  stream.Readable.call(this);
-
-  this._read = function () {
-    if(!(req.body && req.body.status)){
-      onError('Requires a status');
-    }
-    else {
-      this.push(req.body.status);
-    }
-    this.push(null);
-  }
-}
-
 function Http2RawMembership (req, onError) {
   
   stream.Readable.call(this);
@@ -158,6 +142,5 @@ util.inherits(Http2RawIdentity,    stream.Readable);
 util.inherits(Http2RawRevocation,  stream.Readable);
 util.inherits(Http2RawTransaction, stream.Readable);
 util.inherits(Http2RawPeer,        stream.Readable);
-util.inherits(Http2RawStatus,      stream.Readable);
 util.inherits(Http2RawMembership,  stream.Readable);
 util.inherits(Http2RawBlock,       stream.Readable);

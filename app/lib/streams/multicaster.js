@@ -82,27 +82,6 @@ function Multicaster (isolate) {
       }
     }
   });
-
-  that.on('status', function(status, peers) {
-    if (!isolate) {
-      logger.debug('--> new Status to be sent to %s peer(s)', peers.length);
-      peers.forEach(function(peer){
-        fifo.push(function (sent) {
-          // Do propagating
-          logger.debug('sending %s status to peer %s', status.status, peer.keyID());
-          post(peer, "/network/peering/status", {
-            status: status.getRawSigned(),
-            peer: status.peer ? status.peer.getRawSigned() : null
-          }, function (err, res, body) {
-            // Sent!
-            sent(err);
-          });
-        });
-      });
-    } else {
-      logger.debug('[ISOLATE] Prevent --> new Status to be sent to %s peer(s)', peers.length);
-    }
-  });
   
   that.on('membership', function(membership, peers) {
     logger.debug('--> new Membership to be sent to %s peer(s)', peers.length);

@@ -365,14 +365,6 @@ function LocalValidator (conf) {
     });
   };
 
-  this.checkStatusSignature = function (peer, done) {
-    async.series([
-      async.apply(checkStatusSignature, peer)
-    ], function (err) {
-      done(err);
-    });
-  };
-
   /**
   * Function for testing constraints.
   * Useful for function signature reason: it won't give any result in final callback.
@@ -610,12 +602,4 @@ function checkPeerSignature (peer, done) {
   var pub = peer.pubkey;
   var signaturesMatching = crypto.verify(raw, sig, pub);
   done(signaturesMatching ? null : 'Signature from a peer must match');
-}
-
-function checkStatusSignature (status, done) {
-  var raw = rawer.getStatusWithoutSignature(status);
-  var sig = status.signature;
-  var pub = status.from;
-  var signaturesMatching = crypto.verify(raw, sig, pub);
-  done(signaturesMatching ? null : 'Signature from a status must match');
 }

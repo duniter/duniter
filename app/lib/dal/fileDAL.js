@@ -259,7 +259,7 @@ function FileDAL(profile, myFS) {
     var matching = _.chain(peers).
       where({ pubkey: pubkey }).
       value();
-    done && done(null, matching[0] || null);
+    done && done(!matching[0] && 'Unknown peer ' + pubkey, matching[0] || null);
     return Q(matching[0] || null);
   };
 
@@ -802,11 +802,16 @@ function FileDAL(profile, myFS) {
     }).fail(done);
   };
 
+  this.getAllPeers = function(done) {
+    done && done(null, peers);
+    return peers;
+  };
+
   this.findAllPeersNEWUPBut = function(pubkeys, done) {
     return that.listAllPeers()
       .then(function(peers){
         return peers.filter(function(peer) {
-          return pubkeys.indexOf(peer.pubkey) == -1 && ['NOTHING', 'NEW', 'NEW_BACK', 'UP'].indexOf(peer.status) !== -1;
+          return pubkeys.indexOf(peer.pubkey) == -1 && ['UP'].indexOf(peer.status) !== -1;
         });
       })
       .then(function(matchingPeers){
@@ -816,9 +821,9 @@ function FileDAL(profile, myFS) {
       .fail(done);
   };
 
-  this.listAllPeersWithStatusNewUP = function(minSigDate, done) {
+  this.listAllPeersWithStatusNewUP = function(done) {
     var matching = _.chain(peers).
-      filter(function(p){ return p.statusTS >= minSigDate && ['NEW', 'NEW_BACK', 'UP'].indexOf(p.status) !== -1; }).
+      filter(function(p){ return ['UP'].indexOf(p.status) !== -1; }).
       value();
     done && done(null, matching);
     return Q(matching);
@@ -832,8 +837,8 @@ function FileDAL(profile, myFS) {
     return matching;
   };
 
-  this.getRandomlyUPsWithout = function(pubkeys, minSigDate, done) {
-    return that.listAllPeersWithStatusNewUP(minSigDate)
+  this.getRandomlyUPsWithout = function(pubkeys, done) {
+    return that.listAllPeersWithStatusNewUP()
       .then(function(peers){
         return peers.filter(function(peer) {
           return pubkeys.indexOf(peer.pubkey) == -1;

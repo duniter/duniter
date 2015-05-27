@@ -75,8 +75,7 @@ function Router (serverPubkey, conf, dal) {
           dal.getCurrentBlockOrNull(next);
         },
         function (current, next) {
-          var minDate = current && current.number > 0 ? current.medianTime - conf.avgGenTime*constants.NETWORK.STATUS_INTERVAL.MAX : 0;
-          dal.getRandomlyUPsWithout(without, minDate, next); // Peers with status UP
+          dal.getRandomlyUPsWithout(without, next); // Peers with status UP
         },
         function (peers, next) {
           async.forEachSeries(peers, function (p, callback) {

@@ -37,7 +37,6 @@
       * [peering](#networkpeering)
       * [peering/peers (GET)](#networkpeeringpeers-get)
       * [peering/peers (POST)](#networkpeeringpeers-post)
-      * [peering/status](#networkpeeringstatus)
   * [tx/](#tx)
       * [process](#txprocess)
       * [sources/[pubkey]](#txsourcespubkey)
@@ -76,7 +75,6 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   `-- current
     |-- network/
     |   `-- peering
-    |       |-- status
     |       `-- peers
     |-- tx/
     |   |-- process
@@ -984,29 +982,6 @@ The posted entry.
     "OTHER_PROTOCOL 88.77.66.55 9001",
   ],
   "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
-}
-```
-
-#### `network/peering/status`
-**Goal**
-
-POST a Status document to this node in order notify of its status. Eventually, the Status document may be posted with a Peer document that is to be processed just before the Status.
-
-**Parameters**
-
-Name        | Value                                  | Method
------------ | -------------------------------------- | ------
-`status`    | Status document.                        | POST
-`peer`      | Peer document.                          | POST
-
-**Returns**
-
-The posted status.
-```json
-{
-  "version": "1",
-  "currency": "beta_brousouf",
-  "status": "UP"
 }
 ```
 

@@ -330,7 +330,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
         remoteJsonPeer = json;
         remoteJsonPeer.pubkey = json.pubkey;
-        remoteJsonPeer.status = "NOTHING";
         localValidator().checkPeerSignature(remoteJsonPeer, next);
       },
       function (next) {

@@ -90,22 +90,6 @@ module.exports = new function() {
     return dos2unix(signed(that.getPeerWithoutSignature(json), json));
   };
 
-  this.getStatusWithoutSignature = function (json) {
-    var raw = "";
-    raw += "Version: " + json.version + "\n";
-    raw += "Type: Status\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "Status: " + json.status + "\n";
-    raw += "Block: " + json.block + "\n";
-    raw += "From: " + json.from + "\n";
-    raw += "To: " + json.to + "\n";
-    return dos2unix(raw);
-  };
-
-  this.getStatus = function (json) {
-    return dos2unix(signed(that.getStatusWithoutSignature(json), json));
-  };
-
   this.getMembershipWithoutSignature = function (json) {
     var raw = "";
     raw += "Version: " + json.version + "\n";

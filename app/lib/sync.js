@@ -14,7 +14,7 @@ var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
 var multimeter = require('multimeter');
 
-var CONST_BLOCKS_CHUNK = 500;
+var CONST_BLOCKS_CHUNK = 50;
 var EVAL_REMAINING_INTERVAL = 1000;
 
 module.exports = function Synchroniser (server, host, port, conf, interactive) {
@@ -199,7 +199,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                                     if (err) {
                                       reject(err);
                                     } else {
-                                      finished = currentNumber >= 0 && Math.min(to || current.number, current.number) >= currentNumber;
+                                      finished = currentNumber >= 0 && Math.min(to || current.number, current.number) <= currentNumber;
                                       resolve();
                                     }
                                   });

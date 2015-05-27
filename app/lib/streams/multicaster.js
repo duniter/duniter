@@ -3,6 +3,7 @@ var stream  = require('stream');
 var util    = require('util');
 var request = require('request');
 var async   = require('async');
+var Peer    = require('../../lib/entity/peer');
 var logger  = require('../../lib/logger')('multicaster');
 
 var fifo = async.queue(function (task, callback) {
@@ -63,7 +64,7 @@ function Multicaster (isolate) {
       peers.forEach(function(peer){
         fifo.push(function (sent) {
           // Do propagating
-          logger.debug('sending peer %s to peer %s', peering.keyID(), peer.keyID());
+          logger.debug('sending peer %s to peer %s', Peer.statics.peerize(peering).keyID(), Peer.statics.peerize(peer).keyID());
           post(peer, "/network/peering/peers", {
             peer: peering.getRawSigned()
           }, function (err, res, body) {

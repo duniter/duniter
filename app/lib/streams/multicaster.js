@@ -64,9 +64,10 @@ function Multicaster (isolate) {
       peers.forEach(function(peer){
         fifo.push(function (sent) {
           // Do propagating
-          logger.debug('sending peer %s to peer %s', Peer.statics.peerize(peering).keyID(), Peer.statics.peerize(peer).keyID());
+          var thePeering = Peer.statics.peerize(peering);
+          logger.debug('sending peer %s to peer %s', thePeering.keyID(), Peer.statics.peerize(peer).keyID());
           post(peer, "/network/peering/peers", {
-            peer: peering.getRawSigned()
+            peer: thePeering.getRawSigned()
           }, function (err, res, body) {
             // Sent!
             sent();

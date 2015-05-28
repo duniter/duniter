@@ -37,6 +37,10 @@ function Wizard () {
     doTasks(['network'], conf, done);
   };
 
+  this.configNetworkReconfigure = function (conf, done) {
+    doTasks(['networkReconfigure'], conf, done);
+  };
+
   this.configKey = function (conf, done) {
     doTasks(['key'], conf, done);
   };
@@ -82,6 +86,10 @@ var tasks = {
 
   network: function (conf, done) {
     networkConfiguration(conf, done);
+  },
+
+  networkReconfigure: function (conf, done) {
+    networkReconfiguration(conf, done);
   },
 
   key: function (conf, done) {
@@ -209,6 +217,7 @@ function upnpResolve(done) {
   // Look for 2 random ports
   var privatePort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
   var publicPort = privatePort;
+  console.log('Checking UPnP features...');
   async.waterfall([
     function (next) {
       client.externalIp(next);
@@ -247,12 +256,30 @@ function networkConfiguration(conf, done) {
     upnpResolve,
     function(upnpSuccess, upnpConf, next) {
 
+      var operations = getLocalNetworkOperations(conf)
+        .concat(getRemoteNetworkOperations(conf));
+
+      if (upnpSuccess) {
+        operations = operations.concat(getUseUPnPOperations(conf));
+      }
+
+      async.waterfall(operations, next);
+    }
+  ], done);
+}
+
+function networkReconfiguration(conf, done) {
+  async.waterfall([
+    upnpResolve,
+    function(upnpSuccess, upnpConf, next) {
+
       // Default values
       conf.port = conf.port || constants.NETWORK.DEFAULT_PORT;
       conf.remoteport = conf.remoteport || constants.NETWORK.DEFAULT_PORT;
 
       var localOperations = getLocalNetworkOperations(conf);
       var remoteOpertions = getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6);
+      var dnsOperations = getHostnameOperations(conf);
       var useUPnPOperations = getUseUPnPOperations(conf);
 
       if (upnpSuccess) {
@@ -262,14 +289,16 @@ function networkConfiguration(conf, done) {
         choose("UPnP is available: ucoin will be bound: \n  from " + local + "\n  to " + remote + "\nKeep this configuration?", true,
           function () {
             // Yes: not network changes
-            async.waterfall(useUPnPOperations, next);
+            async.waterfall(useUPnPOperations
+              .concat(dnsOperations), next);
           },
           function () {
             // No: want to change
             async.waterfall(
               localOperations
                 .concat(remoteOpertions)
-                .concat(useUPnPOperations), next);
+                .concat(useUPnPOperations)
+                .concat(dnsOperations), next);
           });
       } else {
         conf.upnp = false;
@@ -290,7 +319,8 @@ function networkConfiguration(conf, done) {
             // No: must give all details
             async.waterfall(
               localOperations
-                .concat(remoteOpertions), next);
+                .concat(remoteOpertions)
+                .concat(dnsOperations), next);
           });
       }
     }
@@ -438,7 +468,7 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6) {
       });
     },
     async.apply(simpleInteger, "Remote port", "remoteport", conf)
-  ].concat(getHostnameOperations(conf));
+  ];
 }
 
 function getHostnameOperations(conf) {

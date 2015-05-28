@@ -596,7 +596,7 @@ Name               | Value                          | Method
 
 **Returns**
 
-The promoted block if successfuly added to the blockchain (see [block/[number]](#blockchainblocknumber) return object).
+The promoted block if successfully added to the blockchain (see [block/[number]](#blockchainblocknumber) return object).
 
 #### `blockchain/block/[NUMBER]`
 

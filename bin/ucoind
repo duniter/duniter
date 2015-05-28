@@ -297,22 +297,22 @@ program
       return;
     }
     if(type == 'data'){
-      server.resetData(resetDone(server, 'Data successfuly reseted.'));
+      server.resetData(resetDone(server, 'Data successfully reseted.'));
     }
     if(type == 'peers'){
-      server.resetPeers(resetDone(server, 'Peers successfuly reseted.'));
+      server.resetPeers(resetDone(server, 'Peers successfully reseted.'));
     }
     if(type == 'tx'){
-      server.resetTxs(resetDone(server, 'Transactions successfuly reseted.'));
+      server.resetTxs(resetDone(server, 'Transactions successfully reseted.'));
     }
     if(type == 'stats'){
-      server.resetStats(resetDone(server, 'Stats successfuly reseted.'));
+      server.resetStats(resetDone(server, 'Stats successfully reseted.'));
     }
     if(type == 'config'){
-      server.resetConf(resetDone(server, 'Configuration successfuly reseted.'));
+      server.resetConf(resetDone(server, 'Configuration successfully reseted.'));
     }
     if(type == 'all'){
-      server.reset(resetDone(server, 'Data & Configuration successfuly reseted.'));
+      server.reset(resetDone(server, 'Data & Configuration successfully reseted.'));
     }
   }));
 
@@ -356,6 +356,7 @@ function startWizard(step, server, conf, done) {
     'basic': wiz.configBasic,
     'pow': wiz.configPoW,
     'network': wiz.configNetwork,
+    'network-reconfigure': wiz.configNetworkReconfigure,
     'key': wiz.configKey,
     'ucp': wiz.configUCP
   };

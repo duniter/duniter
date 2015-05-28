@@ -104,7 +104,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
           that.setPair(pair);
           that.createSignFunction(pair, next);
         }
-        else next();
+        else next('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
       }
     ], done);
   };

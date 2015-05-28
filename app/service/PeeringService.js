@@ -130,6 +130,8 @@ function PeeringService(peerserver, pair, signFunc, dal) {
     syncBlock(done);
   };
 
+  this.generateSelfPeer = generateSelfPeer;
+
   function generateSelfPeer(conf, done) {
     var currency = conf.currency;
     var current = null;

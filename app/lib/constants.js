@@ -23,7 +23,7 @@ module.exports = {
       ALREADY_UPDATED: 1
     },
     PEER: {
-      ALREADY_RECORDED: 'Peer document is older than currently recorded'
+      ALREADY_RECORDED: 'A more recent peering document is already recorded.'
     }
   },
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 var async       = require('async');
+var Q           = require('q');
 var _           = require('underscore');
 var program     = require('commander');
 var vucoin      = require('vucoin');
@@ -110,6 +111,55 @@ function sync(server, host, port, conf, to) {
     }
   ], logIfErrorAndExit(server, 'Error during sync: '));
 }
+
+program
+  .command('peer [host] [port]')
+  .description('Exchange peerings with another node')
+  .action(service(ucoin.createPeerServer, function(host, port, server) {
+    Q.nfcall(vucoin, host, port)
+      .then(function(node){
+        logger.info('Fetching peering record at %s:%s...', host, port);
+        return Q.nfcall(node.network.peering.get)
+          .then(function(peering){
+            logger.info('Apply peering ...');
+            return Q.nfcall(server.PeeringService.submit, peering)
+              .fail(function(err){
+                if (err != constants.ERROR.PEER.ALREADY_RECORDED) {
+                  throw err;
+                }
+              })
+              .then(function() {
+                logger.info('Applied');
+                return server.dal.getPeer(server.PeeringService.pubkey)
+                  .then(function(selfPeer){
+                    if (!selfPeer) {
+                      throw 'Generate self peer';
+                    }
+                    return selfPeer;
+                  })
+                  .fail(function(){
+                    return Q.nfcall(server.PeeringService.generateSelfPeer, server.conf)
+                      .then(function(){
+                        return server.dal.getPeer(server.PeeringService.pubkey);
+                      });
+                  });
+              })
+              .then(function(selfPeer){
+                logger.info('Send self peering ...');
+                var caster = multicaster();
+                return Q.nfcall(caster.sendPeering, Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer))
+                  .then(function(){
+                    logger.info('Sent.');
+                    process.exit();
+                  });
+              });
+          });
+      })
+      .fail(function(err){
+        logger.error(err.code || err.message || err);
+        process.exit();
+      });
+  }));
 
 program
   .command('init [host] [port]')

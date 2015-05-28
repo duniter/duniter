@@ -97,6 +97,7 @@ function Multicaster (isolate) {
   });
 
   this.sendBlock = sendBlock;
+  this.sendPeering = sendPeering;
 
   function post(peer, url, data, done) {
     reach(peer, function(){
@@ -139,10 +140,9 @@ function Multicaster (isolate) {
   }
 
   function sendPeering(toPeer, peer, done) {
-    logger.info('POST peering to %s', toPeer.keyID());
+    logger.info('POST peering to %s (%s)', toPeer.keyID(), toPeer.getURL());
     post(toPeer, '/network/peering/peers', {
-      "entry": peer.getRaw(),
-      "signature": peer.signature
+      "peer": peer.getRawSigned()
     }, done);
   }
 

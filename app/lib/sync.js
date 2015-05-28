@@ -338,7 +338,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         async.waterfall([
           function (next){
             PeeringService.submit(remoteJsonPeer, function (err) {
-              next(err == 'Peer document is older than currently recorded' ? null : err);
+              next(err == constants.ERROR.PEER.ALREADY_RECORDED ? null : err);
             });
           }
         ], function (err) {

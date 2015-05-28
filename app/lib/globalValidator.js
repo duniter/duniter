@@ -182,7 +182,7 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
-  function checkCertificationIsValid (block, cert, findIdtyFunc, done) {
+  function checkCertificationIsValid (block, cert, findIdtyFunc, done, doNotThrowExpiration) {
     async.waterfall([
       function (next) {
         if (block.number == 0 && cert.block_number != 0) {
@@ -216,7 +216,7 @@ function GlobalValidator (conf, dao) {
           next('Identity does not exist for certified');
           return;
         }
-        else if (res.current && res.current.medianTime > res.target.medianTime + conf.sigValidity) {
+        else if (!doNotThrowExpiration && res.current && res.current.medianTime > res.target.medianTime + conf.sigValidity) {
           next('Certification has expired');
         }
         else if (cert.from == res.idty.pubkey)

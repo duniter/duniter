@@ -5,6 +5,8 @@ var blockchainDao   = require('../lib/blockchainDao');
 var globalValidator = require('../lib/globalValidator');
 var crypto          = require('../lib/crypto');
 
+var DO_NOT_THROW_ABOUT_EXPIRATION = true;
+
 module.exports = function (conn, conf, dal) {
   return new IdentityService(conn, conf, dal);
 };
@@ -77,8 +79,9 @@ function IdentityService (conn, conf, dal) {
     var aCertWasSaved = false;
     fifo.push(function (cb) {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
+      certs = _.sortBy(certs, function(c){ return parseInt(c.block_number); });
       certs.forEach(function(cert){
-        logger.info('⬇ CERT %s', cert.from);
+        logger.info('⬇ CERT %s block#%s', cert.from, cert.block_number);
       });
       async.waterfall([
         function (next) {
@@ -94,10 +97,14 @@ function IdentityService (conn, conf, dal) {
           async.forEachSeries(certs, function(cert, cb){
             globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
               next(null, idty);
-            }, next);
+            }, function(err) {
+              cert.err = err;
+              cb();
+            }, DO_NOT_THROW_ABOUT_EXPIRATION);
           }, next);
         },
         function (next){
+          certs = _.filter(certs, function(cert){ return !cert.err; });
           async.forEachSeries(certs, function(cert, cb){
             var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, block_number: cert.block_number, target: obj.hash, to: idty.pubkey });
             async.waterfall([

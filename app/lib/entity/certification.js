@@ -13,7 +13,7 @@ var Certification = function(json) {
 
   this.from = this.fromKey       = this.pubkey = this.from || this.fromKey || this.pubkey;
   this.to = this.toKey           = this.to || this.toKey;
-  this.block = this.block_number = this.block || this.block_number;
+  this.block = this.block_number = parseInt(this.block || this.block_number);
 
   this.inline = function () {
     return [this.pubkey, this.to, this.block_number, this.sig].join(':');

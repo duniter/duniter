@@ -1320,7 +1320,7 @@ function FileDAL(profile, myFS) {
 
   this.resetStats = function(done) {
     var files = ['stats'];
-    var dirs  = [];
+    var dirs  = ['ud_history','tx_history'];
     return resetFiles(files, dirs, done);
   };
 

@@ -17,6 +17,7 @@
     "no-redeclare": false,
     "no-trailing-spaces": false,
     "no-unused-expressions": false,
+    "comma-spacing": false,
 
     "quotes": ["quotes", "double"],
     "linebreak-style": [2,"unix"],
@@ -26,7 +27,6 @@
     "no-process-exit": [1],
     "indent": [1,2],
     "no-eval": [1],
-    "comma-spacing": [1],
     "comma-dangle": [1],
     "eol-last": [1],
     "no-shadow": [1],

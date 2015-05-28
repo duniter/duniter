@@ -1,14 +1,16 @@
 "use strict";
+var Q       = require('q');
 var stream  = require('stream');
 var util    = require('util');
 var request = require('request');
 var async   = require('async');
+var constants = require('../../lib/constants');
 var Peer    = require('../../lib/entity/peer');
 var logger  = require('../../lib/logger')('multicaster');
 
 var fifo = async.queue(function (task, callback) {
   task(callback);
-}, 10);
+}, constants.NETWORK.MAX_CONCURRENT_POST);
 
 module.exports = function (isolate) {
   return new Multicaster(isolate);
@@ -29,9 +31,7 @@ function Multicaster (isolate) {
     logger.debug('--> new Identity with %s certs to be sent to %s peer(s)', (idty.certs || []).length, peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendIdentity(peer, idty, success(function () {
-        }));
-        sent();
+        sendIdentity(peer, idty).finally(sent);
       });
     });
   });
@@ -40,9 +40,7 @@ function Multicaster (isolate) {
     logger.debug('--> new Block to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendBlock(peer, block, success(function () {
-        }));
-        sent();
+        sendBlock(peer, block).finally(sent);
       });
     });
   });
@@ -51,37 +49,21 @@ function Multicaster (isolate) {
     logger.debug('--> new Transaction to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendTransaction(peer, transaction, success(function () {
-          sent();
-        }));
+        sendTransaction(peer, transaction).finally(sent);
       });
     });
   });
   
-  that.on('peer', function(peering, peers, done) {
+  that.on('peer', function(peering, peers) {
     if(!isolate) {
       logger.debug('--> new Peer to be sent to %s peer(s)', peers.length);
       peers.forEach(function(peer){
         fifo.push(function (sent) {
-          // Do propagating
-          var thePeering = Peer.statics.peerize(peering);
-          logger.debug('sending peer %s to peer %s', thePeering.keyID(), Peer.statics.peerize(peer).keyID());
-          post(peer, "/network/peering/peers", {
-            peer: thePeering.getRawSigned()
-          }, function (err, res, body) {
-            // Sent!
-            sent();
-            if (typeof done == 'function') {
-              done(err, res, body);
-            }
-          });
+          sendPeer(Peer.statics.peerize(peer), Peer.statics.peerize(peering)).finally(sent);
         });
       });
     } else {
       logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
-      if (typeof done == 'function') {
-        done();
-      }
     }
   });
   
@@ -89,9 +71,7 @@ function Multicaster (isolate) {
     logger.debug('--> new Membership to be sent to %s peer(s)', peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
-        sendMembership(peer, membership, success(function () {
-          sent();
-        }));
+        sendMembership(peer, membership).finally(sent);
       });
     });
   });
@@ -99,77 +79,71 @@ function Multicaster (isolate) {
   this.sendBlock = sendBlock;
   this.sendPeering = sendPeering;
 
-  function post(peer, url, data, done) {
-    reach(peer, function(){
+  function post(peer, url, data) {
+    if (!peer.isReachable()) {
+      return Q();
+    }
+    return Q.Promise(function(resolve, reject){
       var postReq = request.post({
         "uri": 'http://' + peer.getURL() + url,
-        "timeout": 1000*10
-      }, function (err, res, body) {
-        if (err)
+        "timeout": 1000 * 10
+      }, function (err, res) {
+        if (err) {
           that.push({ unreachable: true, peer: { pubkey: peer.pubkey }});
-        done(err, res, body);
+          return reject(err);
+        }
+        resolve(res);
       });
       postReq.form(data);
-    }, done);
+    });
   }
 
-  function sendIdentity(peer, idty, done) {
+  function sendIdentity(peer, idty) {
     var keyID = peer.keyID();
     logger.info('POST identity to %s', keyID.match(/Unknown/) ? peer.getURL() : keyID);
-    post(peer, '/wot/add', {
+    return post(peer, '/wot/add', {
       "pubkey": idty.getRawPubkey(),
       "self": idty.getRawSelf(),
       "other": idty.getRawOther()
-    }, done);
+    });
   }
 
-  function sendBlock(peer, block, done) {
+  function sendBlock(peer, block) {
     var keyID = peer.keyID();
     logger.info('POST block to %s', keyID.match(/Unknown/) ? peer.getURL() : keyID);
-    post(peer, '/blockchain/block', {
+    return post(peer, '/blockchain/block', {
       "block": block.getRawSigned()
-    }, done);
+    });
   }
 
-  function sendTransaction(peer, transaction, done) {
+  function sendTransaction(peer, transaction) {
     logger.info('POST transaction to %s', peer.keyID());
-    post(peer, '/tx/process', {
+    return post(peer, '/tx/process', {
       "transaction": transaction.getRaw(),
       "signature": transaction.signature
-    }, done);
+    });
   }
 
-  function sendPeering(toPeer, peer, done) {
+  function sendPeering(toPeer, peer) {
     logger.info('POST peering to %s (%s)', toPeer.keyID(), toPeer.getURL());
-    post(toPeer, '/network/peering/peers', {
+    return post(toPeer, '/network/peering/peers', {
       "peer": peer.getRawSigned()
-    }, done);
+    });
   }
 
-  function sendMembership(peer, membership, done) {
+  function sendMembership(peer, membership) {
     logger.info('POST membership to %s', peer.keyID());
-    post(peer, '/blockchain/membership', {
+    return post(peer, '/blockchain/membership', {
       "membership": membership.getRaw(),
       "signature": membership.signature
-    }, done);
+    });
   }
 
-  function success (done) {
-    return function (err, res, body) {
-      if (err) {
-        logger.error(err);
-      }
-      done(err, res, body);
-    };
-  }
-
-  function reach (peer, onSuccess, done) {
-    if (!peer.isReachable()) {
-      logger.debug('Host is not reachable through HTTP API');
-      done();
-    } else {
-      onSuccess();
-    }
+  function sendPeer(peer, thePeering) {
+    logger.info('POST peering %s to peer %s', thePeering.keyID(), peer.keyID());
+    return post(peer, "/network/peering/peers", {
+      peer: thePeering.getRawSigned()
+    });
   }
 }
 

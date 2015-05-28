@@ -237,9 +237,6 @@ function PeeringService(peerserver, pair, signFunc, dal) {
   function syncBlock(callback) {
     var lastAdded = null;
     async.waterfall([
-      function(next) {
-        next('Do not want to sync');
-      },
       function (next) {
         dal.getCurrentBlockOrNull(next);
       },

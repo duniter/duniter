@@ -14,7 +14,7 @@ var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
 var multimeter = require('multimeter');
 
-var CONST_BLOCKS_CHUNK = 50;
+var CONST_BLOCKS_CHUNK = 500;
 var EVAL_REMAINING_INTERVAL = 1000;
 
 module.exports = function Synchroniser (server, host, port, conf, interactive) {
@@ -36,6 +36,10 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var BlockchainService  = server.BlockchainService;
 
   var dal = server.dal;
+
+  var vucoinOptions = {
+    timeout: conf.timeout || constants.NETWORK.DEFAULT_TIMEOUT
+  };
 
   this.sync = function (to, nocautious, done) {
     var cautious = !nocautious;
@@ -298,9 +302,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         logger.info('Sync finished.');
         done(err);
       });
-    }, {
-      timeout: conf.timeout || constants.NETWORK.DEFAULT_TIMEOUT
-    });
+    }, vucoinOptions);
   };
 
   //============

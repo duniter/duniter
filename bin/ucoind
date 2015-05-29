@@ -23,6 +23,7 @@ function keys (val) {
 }
 
 var INTERACTIVE_SYNC = true;
+var ERASE_IF_ALREADY_RECORDED = true;
 
 program
   .version(pjson.version)
@@ -122,12 +123,7 @@ program
         return Q.nfcall(node.network.peering.get)
           .then(function(peering){
             logger.info('Apply peering ...');
-            return Q.nfcall(server.PeeringService.submit, peering)
-              .fail(function(err){
-                if (err != constants.ERROR.PEER.ALREADY_RECORDED) {
-                  throw err;
-                }
-              })
+            return Q.nfcall(server.PeeringService.submit, peering, ERASE_IF_ALREADY_RECORDED)
               .then(function() {
                 logger.info('Applied');
                 return server.dal.getPeer(server.PeeringService.pubkey)

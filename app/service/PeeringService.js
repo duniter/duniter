@@ -51,7 +51,11 @@ function PeeringService(peerserver, pair, signFunc, dal) {
   this.load = function (done) {
   };
 
-  this.submit = function(peering, done){
+  this.submit = function(peering, eraseIfAlreadyRecorded, done){
+    if (arguments.length == 2) {
+      done = eraseIfAlreadyRecorded;
+      eraseIfAlreadyRecorded = false;
+    }
     var peer = new Peer(peering);
     var sp = peer.block.split('-');
     var number = sp[0];
@@ -81,7 +85,7 @@ function PeeringService(peerserver, pair, signFunc, dal) {
           // Already existing peer
           var sp2 = found.block.split('-');
           var number2 = sp2[0];
-          if(number <= number2){
+          if(number <= number2 && !eraseIfAlreadyRecorded){
             next(constants.ERROR.PEER.ALREADY_RECORDED);
             return;
           }

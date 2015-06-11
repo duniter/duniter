@@ -160,7 +160,7 @@ program
 program
   .command('init [host] [port]')
   .description('Setup a node configuration and sync data with given node')
-  .action(service(ucoin.createTxServer, bootstrapServer));
+  .action(service(ucoin.connect, bootstrapServer));
 
 program
   .command('forward [host] [port] [what]')
@@ -445,7 +445,7 @@ function getBootstrapOperations(host, port, server, conf) {
       server.reset(next);
     },
     function(next) {
-      wiz.networkConfiguration(conf, next);
+      wiz.networkReconfiguration(conf, next);
     },
     function(next) {
       // PublicKey

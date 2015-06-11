@@ -55,6 +55,7 @@ function Wizard () {
 
   this.choose = choose;
   this.networkConfiguration = networkConfiguration;
+  this.networkReconfiguration = networkReconfiguration;
 }
 
 function doTasks (todos, conf, done) {

@@ -3,9 +3,9 @@ var util       = require('util');
 var parsers    = require('./app/lib/streams/parsers/doc');
 var PeerServer = require('./peerserver');
 
-function TxServer (dbConf, overrideConf, interceptors, onInit) {
+function TxServer (overrideConf, interceptors, onInit) {
 
-  var logger  = require('./app/lib/logger')(dbConf.name);
+  var logger  = require('./app/lib/logger')();
 
   var selfInterceptors = [
     {
@@ -27,7 +27,7 @@ function TxServer (dbConf, overrideConf, interceptors, onInit) {
     }
   ];
 
-  PeerServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
+  PeerServer.call(this, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
 
   var that = this;
 

@@ -12,9 +12,9 @@ var multicaster = require('./app/lib/streams/multicaster');
 var constants   = require('./app/lib/constants');
 var Peer        = require('./app/lib/entity/peer');
 
-function PeerServer (dbConf, overrideConf, interceptors, onInit) {
+function PeerServer (overrideConf, interceptors, onInit) {
 
-  var logger = require('./app/lib/logger')(dbConf.name);
+  var logger = require('./app/lib/logger')();
 
   var selfInterceptors = [
     {
@@ -73,7 +73,7 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
 
   var initFunctions = onInit || [];
 
-  WOTServer.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
+  WOTServer.call(this, overrideConf, selfInterceptors.concat(interceptors || []), initFunctions);
 
   var that = this;
 

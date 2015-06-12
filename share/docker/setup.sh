@@ -30,9 +30,6 @@ gpg2 --no-default-keyring --secret-keyring ./key.sec \
 echo "(2) Configure ucoind thanks to the new created pgp secret key and the provided environment variables"
 
 ucoind config \
-    --mhost $MONGO_PORT_27017_TCP_ADDR \
-    --mport $MONGO_PORT_27017_TCP_PORT \
-    --mdb $MONGO_DB_NAME \
     --currency $CURRENCY_NAME \
     --port $PORT_NUMBER \
     --ipv4 `hostname -i` \

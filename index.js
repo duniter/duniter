@@ -6,16 +6,16 @@ var PeerServer = require('./peerserver');
 var TxServer   = require('./txserver');
 
 module.exports = {
-  connect: function (dbConf, overConf) {
-    return new Server(dbConf, overConf);
+  connect: function (overConf) {
+    return new Server(overConf);
   },
-  createWOTServer: function (dbConf, overConf) {
-    return new WOTServer(dbConf, overConf);
+  createWOTServer: function (overConf) {
+    return new WOTServer(overConf);
   },
-  createPeerServer: function (dbConf, overConf) {
-    return new PeerServer(dbConf, overConf);
+  createPeerServer: function (overConf) {
+    return new PeerServer(overConf);
   },
-  createTxServer: function (dbConf, overConf) {
-    return new TxServer(dbConf, overConf);
+  createTxServer: function (overConf) {
+    return new TxServer(overConf);
   }
 }

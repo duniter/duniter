@@ -3,9 +3,9 @@ var util    = require('util');
 var parsers = require('./app/lib/streams/parsers/doc');
 var Server  = require('./server');
 
-function WOTServer (dbConf, overrideConf, interceptors, onInit) {
+function WOTServer (overrideConf, interceptors, onInit) {
 
-  var logger  = require('./app/lib/logger')(dbConf.name);
+  var logger  = require('./app/lib/logger')();
 
   var selfInterceptors = [
     {
@@ -43,7 +43,7 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
     }
   ];
 
-  Server.call(this, dbConf, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
+  Server.call(this, overrideConf, selfInterceptors.concat(interceptors || []), onInit || []);
 
   var that = this;
 

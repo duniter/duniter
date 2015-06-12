@@ -12,7 +12,7 @@ module.exports = {
   },
 
   sync: function (pair, done) {
-    var sec = base58.decode(base58.encode(pair.secretKey)); // Weird... TODO: check why need this
+    var sec = (pair.secretKeyEnc && base58.decode(pair.secretKeyEnc)) || pair.secretKey;
     done(null, function (msg) {
       return crypto.signSync(msg, sec);
     });

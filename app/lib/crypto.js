@@ -32,7 +32,7 @@ module.exports = {
 
   signSync: function (msg, sec) {
     var m = nacl.util.decodeUTF8(msg);
-    var signedMsg = naclBinding.sign(m, sec);
+    var signedMsg = naclBinding.sign(m, base58.decode(base58.encode(sec))); // TODO: super weird
     var sig = new Uint8Array(crypto_sign_BYTES);
     for (var i = 0; i < sig.length; i++) sig[i] = signedMsg[i];
     return nacl.util.encodeBase64(sig);

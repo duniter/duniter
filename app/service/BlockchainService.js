@@ -10,6 +10,7 @@ var inquirer        = require('inquirer');
 var childProcess    = require('child_process');
 var usage           = require('usage');
 var rawer           = require('../lib/rawer');
+var base58          = require('../lib/base58');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
 var localValidator  = require('../lib/localValidator');
@@ -1337,7 +1338,11 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       done(null, (block && new Block(block)) || null);
     });
     block.nonce = 0;
-    powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, pair: BlockchainService.pair });
+    powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros,
+      pair: {
+        secretKeyEnc: base58.encode(BlockchainService.pair.secretKey)
+      }
+    });
     logger.info('Generating proof-of-work of block #%s with %s leading zeros... (CPU usage set to %s%)', block.number, nbZeros, (conf.cpu*100).toFixed(0));
   };
 
@@ -1375,7 +1380,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         speedMesured = false;
         that.powProcess.kill();
         powWorker = new Worker();
-        that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: BlockchainService.pair });
+        that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: {
+            secretKeyEnc: base58.encode(BlockchainService.pair.secretKey)
+          }
+        });
       } else if (!stopped) {
         // Continue...
         //console.log('Already made: %s tests...', msg.nonce);

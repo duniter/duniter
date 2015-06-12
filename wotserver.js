@@ -1,11 +1,10 @@
 var async   = require('async');
 var util    = require('util');
-var parsers = require('./app/lib/streams/parsers/doc');
 var Server  = require('./server');
 
 function WOTServer (dbConf, overrideConf, interceptors, onInit) {
 
-  var logger  = require('./app/lib/logger')(dbConf.name);
+  "use strict";
 
   var selfInterceptors = [
     {
@@ -53,21 +52,6 @@ function WOTServer (dbConf, overrideConf, interceptors, onInit) {
   this._initServices = function(conn, done) {
     this.IdentityService = require('./app/service/IdentityService')(that.conn, that.conf);
     done();
-  };
-
-  this._listenBMA = function (app) {
-    this.listenNode(app);
-    this.listenWOT(app);
-  };
-
-  this.listenWOT = function (app) {
-    var wot = require('./app/controllers/wot')(that);
-    app.post('/wot/add',                   wot.add);
-    app.post('/wot/revoke',                wot.revoke);
-    app.get( '/wot/lookup/:search',        wot.lookup);
-    app.get( '/wot/members',               wot.members);
-    app.get( '/wot/certifiers-of/:search', wot.certifiersOf);
-    app.get( '/wot/certified-by/:search',  wot.certifiedBy);
   };
 }
 

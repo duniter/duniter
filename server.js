@@ -4,12 +4,8 @@ var async      = require('async');
 var util       = require('util');
 var _          = require('underscore');
 var Q          = require('q');
-var log4js = require('log4js');
 var constants  = require('./app/lib/constants');
 var fileDAL  = require('./app/lib/dal/fileDAL');
-var express    = require('express');
-var http       = require('http');
-var upnp       = require('nat-upnp');
 var jsonpckg   = require('./package.json');
 var router      = require('./app/lib/streams/router');
 var multicaster = require('./app/lib/streams/multicaster');
@@ -20,7 +16,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
 
   stream.Duplex.call(this, { objectMode: true });
 
-  var httpLogger  = log4js.getLogger(dbConf.name);
   var logger = require('./app/lib/logger')('server');
   var that = this;
   var server4, server6;
@@ -136,33 +131,27 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this.start = function (done) {
-    async.waterfall([
-      function (next){
-        that._start(next);
-      },
-      function (next) {
-        listenBMA(function (err, app) {
-          if (!err) {
-            that.emit('BMALoaded', app);
-            that.emit('started');
+    return Q.Promise(function(resolve, reject){
+      async.waterfall([
+        function (next){
+          that._start(next);
+        },
+        function(next) {
+          if (that.conf.routing) {
+            var theRouter = that.router();
+            var theCaster = multicaster(that.conf.isolate);
+            that
+              .pipe(theRouter) // The router asks for multicasting of documents
+              .pipe(theCaster) // The multicaster may answer 'unreachable peer'
+              .pipe(theRouter);
           }
-          else
-            that.emit('BMAFailed', err);
-          next(err);
-        });
-      },
-      function(next) {
-        if (that.conf.routing) {
-          var theRouter = that.router();
-          var theCaster = multicaster(that.conf.isolate);
-          that
-            .pipe(theRouter) // The router asks for multicasting of documents
-            .pipe(theCaster) // The multicaster may answer 'unreachable peer'
-            .pipe(theRouter);
+          next();
         }
-        next();
-      }
-    ], done);
+      ], function(err) {
+        err ? reject(err) : resolve();
+        done && done(err);
+      });
+    });
   };
 
   this._start = function (done) {
@@ -226,123 +215,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   this._initServices = function(conn, done) {
     // To override in child classes
     done();
-  };
-
-  this.initUPnP = function (conn, conf, done) {
-    logger.info('Configuring UPnP...');
-    var client = upnp.createClient();
-    async.waterfall([
-      function (next) {
-        client.externalIp(function(err, ip) {
-          if (err && err.message == 'timeout') {
-            err = 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.';
-          }
-          next(err, ip);
-        });
-      },
-      function (ip, next) {
-        client.close();
-        // Update UPnP IGD every INTERVAL seconds
-        setInterval(async.apply(openPort, conf), 1000*constants.NETWORK.UPNP.INTERVAL);
-        openPort(conf, next);
-      }
-    ], done);
-  };
-
-  function openPort (conf, done) {
-    var client = upnp.createClient();
-    client.portMapping({
-      public: parseInt(conf.remoteport),
-      private: parseInt(conf.port),
-      ttl: constants.NETWORK.UPNP.TTL
-    }, function(err) {
-      client.close();
-      return done && done(err);
-    });
-  }
-
-  function listenBMA (overConf, onLoaded) {
-    if (arguments.length == 1) {
-      onLoaded = overConf;
-      overConf = undefined;
-    }
-    var app = express();
-    var conf = _.extend(that.conf, overConf || {});
-    var port = process.env.PORT || conf.port;
-
-    // all environments
-    app.set('port', port);
-    if (conf.httplogs) {
-      app.use(log4js.connectLogger(httpLogger, {
-        format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m'
-      }));
-    }
-    //app.use(function(req, res, next) {
-    //  console.log('\x1b[90mDEBUG URL - %s\x1b[0m', req.url);
-    //  next();
-    //});
-    app.use(express.urlencoded());
-    app.use(express.json());
-    async.waterfall([
-      function (next){
-
-        // Routing
-        app.use(app.router);
-
-        // development only
-        if (app.get('env') == 'development') {
-          app.use(express.errorHandler());
-        }
-        next();
-      },
-      function (next) {
-        // Listen to interfaces
-        that._listenBMA(app);
-        next();
-      },
-      function (next){
-        if (conf.upnp) {
-          that.initUPnP(that.conn, conf, next);
-        }
-        else next();
-      },
-      function (next) {
-        if(conf.ipv4){
-          server4 = http.createServer(app);
-          server4.listen(conf.port, conf.ipv4, function(){
-            logger.info('uCoin server listening on ' + conf.ipv4 + ' port ' + conf.port);
-            next();
-          });
-        }
-        else next();
-      },
-      function (next) {
-        if(conf.ipv6){
-          server6 = http.createServer(app);
-          server6.listen(conf.port, conf.ipv6, function(){
-            logger.info('uCoin server listening on ' + conf.ipv6 + ' port ' + conf.port);
-            next();
-          });
-        }
-        else next();
-      },
-      function(next) {
-        logger.info('External access:', [conf.remoteipv4, conf.remoteport].join(':'));
-        next();
-      }
-    ], function (err) {
-      if (typeof onLoaded == 'function')
-        onLoaded.call(that, err, app);
-    });
-  };
-
-  this._listenBMA = function (app) {
-    this.listenNode(app);
-  };
-
-  this.listenNode= function (app) {
-    var node = require('./app/controllers/node')(that);
-    app.get( '/node/summary',  node.summary);
   };
 
   this.singleWriteStream = function (onError) {

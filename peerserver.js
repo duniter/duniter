@@ -1,18 +1,16 @@
 var async       = require('async');
 var util        = require('util');
 var Q           = require('q');
-var _           = require('underscore');
 var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
-var dos2unix    = require('./app/lib/dos2unix');
 var WOTServer   = require('./wotserver');
 var signature   = require('./app/lib/signature');
-var parsers     = require('./app/lib/streams/parsers/doc');
 var multicaster = require('./app/lib/streams/multicaster');
-var constants   = require('./app/lib/constants');
 var Peer        = require('./app/lib/entity/peer');
 
 function PeerServer (dbConf, overrideConf, interceptors, onInit) {
+
+  "use strict";
 
   var logger = require('./app/lib/logger')(dbConf.name);
 
@@ -217,40 +215,6 @@ function PeerServer (dbConf, overrideConf, interceptors, onInit) {
       }
     ], done);
   };
-
-  this._listenBMA = function (app) {
-    this.listenNode(app);
-    this.listenWOT(app);
-    this.listenBlock(app);
-    this.listenNET(app);
-  };
-
-  this.listenBlock = function (app) {
-    var blockchain = require('./app/controllers/blockchain')(that);
-    app.get(    '/blockchain/parameters',       blockchain.parameters);
-    app.post(   '/blockchain/membership',       blockchain.parseMembership);
-    app.get(    '/blockchain/memberships/:search', blockchain.memberships);
-    app.post(   '/blockchain/block',            blockchain.parseBlock);
-    app.get(    '/blockchain/block/:number',    blockchain.promoted);
-    app.get(    '/blockchain/blocks/:count/:from',    blockchain.blocks);
-    app.get(    '/blockchain/current',          blockchain.current);
-    app.get(    '/blockchain/hardship/:pubkey', blockchain.hardship);
-    app.get(    '/blockchain/with/newcomers',   blockchain.with.newcomers);
-    app.get(    '/blockchain/with/certs',       blockchain.with.certs);
-    app.get(    '/blockchain/with/joiners',     blockchain.with.joiners);
-    app.get(    '/blockchain/with/actives',     blockchain.with.actives);
-    app.get(    '/blockchain/with/leavers',     blockchain.with.leavers);
-    app.get(    '/blockchain/with/excluded',    blockchain.with.excluded);
-    app.get(    '/blockchain/with/ud',          blockchain.with.ud);
-    app.get(    '/blockchain/with/tx',          blockchain.with.tx);
-  };
-
-  this.listenNET = function (app) {
-    var net = require('./app/controllers/network')(that, that.conf);
-    app.get(    '/network/peering',             net.peer);
-    app.get(    '/network/peering/peers',       net.peersGet);
-    app.post(   '/network/peering/peers',       net.peersPost);
-  }
 }
 
 util.inherits(PeerServer, WOTServer);

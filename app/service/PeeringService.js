@@ -174,6 +174,7 @@ function PeeringService(peerserver, pair, signFunc, dal) {
         };
         var raw1 = new Peer(p1).getRaw().dos2unix();
         var raw2 = new Peer(p2).getRaw().dos2unix();
+        logger.info('External access:', new Peer(p1).getURL());
         if (raw1 != raw2) {
           logger.debug('Generating server\'s peering entry...');
           async.waterfall([

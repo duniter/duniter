@@ -13,6 +13,8 @@ var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
 var constants   = require('../app/lib/constants');
 var Synchroniser = require('../app/lib/sync');
+var bma         = require('../app/lib/streams/bma');
+var upnp        = require('../app/lib/upnp');
 var pjson       = require('../package.json');
 var ucoin       = require('./../index');
 var Peer        = require('../app/lib/entity/peer');
@@ -383,7 +385,22 @@ function serverStart(server, conf) {
   async.waterfall([
     function (next){
       // Launching server
-      server.start(next);
+      server.start()
+        .then(function(){
+          if (conf.upnp) {
+            return upnp(server.conf.port, server.conf.remoteport);
+          }
+        })
+        .then(function(){
+          return bma(server, [{
+            ip: server.conf.ipv4,
+            port: server.conf.port
+          }]);
+        })
+        .then(function(){
+          next();
+        })
+        .fail(next);
     }
   ], function (err) {
     if(err){
@@ -658,9 +675,6 @@ function service(serverFactory, callback) {
     var dbName = program.mdb || "ucoin_default";
 
     var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
-
-    server.on('BMAFailed', logErrorAndExit(server));
-
 
     // Initialize server (db connection, ...)
     server.init(function (err) {

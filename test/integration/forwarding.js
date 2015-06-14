@@ -26,7 +26,7 @@ describe("Forwarding", function() {
     before(function(done) {
       Q.all([node1, node2].map(function(node) {
         return node
-          .start();
+          .startTesting();
       }))
         .then(function() {
           return Q.Promise(function(resolve, reject){

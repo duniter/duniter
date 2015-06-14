@@ -105,40 +105,15 @@ function Server (dbConf, overrideConf) {
       });
   };
 
-  this.start = function (done) {
-    return Q.Promise(function(resolve, reject){
-      async.waterfall([
-        function (next){
-          that._start(next);
-        },
-        function(next) {
-          if (that.conf.routing) {
-            var theRouter = that.router();
-            var theCaster = multicaster(that.conf.isolate);
-            that
-              .pipe(theRouter) // The router asks for multicasting of documents
-              .pipe(theCaster) // The multicaster may answer 'unreachable peer'
-              .pipe(theRouter);
-          }
-          next();
-        }
-      ], function(err) {
-        err ? reject(err) : resolve();
-        done && done(err);
-      });
-    });
-  };
-
-  this._start = function (done) {
+  this.start = function () {
     return that.checkConfig()
       .then(function (){
         // Add signing & public key functions to PeeringService
         that.PeeringService.setSignFunc(that.sign);
         logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
-        that.initPeer(done);
-      })
-      .fail(done);
+        return Q.nfcall(that.initPeer);
+      });
   };
 
   this.initPeer = function (done) {

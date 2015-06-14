@@ -20,7 +20,7 @@ describe("Integration", function() {
     });
 
     before(function(done) {
-      node1.start()
+      node1.startTesting()
         .then(function(){
           node1.before([])(done);
         });
@@ -129,7 +129,7 @@ describe("Integration", function() {
     });
 
     before(function(done) {
-      node2.start()
+      node2.startTesting()
         .then(function(){
           node2.before(require('./scenarios/transactions')(node2))(done);
         });
@@ -172,7 +172,7 @@ describe("Integration", function() {
     });
 
     before(function(done) {
-      node3.start()
+      node3.startTesting()
         .then(function(){
           node3.before(require('./scenarios/certifications')(node3))(done);
         });

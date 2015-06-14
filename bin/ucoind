@@ -387,17 +387,29 @@ function serverStart(server, conf) {
       // Launching server
       server.start()
         .then(function(){
+          // Enabling UPnP
           if (conf.upnp) {
             return upnp(server.conf.port, server.conf.remoteport);
           }
         })
         .then(function(){
+          // Enabling HTTP
           return bma(server, [{
             ip: server.conf.ipv4,
             port: server.conf.port
           }]);
         })
         .then(function(){
+          // Enabling Routing
+          if (server.conf.routing) {
+            server
+              // The router asks for multicasting of documents
+              .pipe(server.router())
+              // The documents get sent to peers
+              .pipe(multicaster(server.conf.isolate))
+              // The multicaster may answer 'unreachable peer'
+              .pipe(server.router());
+          }
           next();
         })
         .fail(next);

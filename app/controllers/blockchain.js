@@ -14,18 +14,18 @@ var blockchainDao    = require('../lib/blockchainDao');
 var globalValidator  = require('../lib/globalValidator');
 var Membership       = require('../lib/entity/membership');
 
-module.exports = function (wotServer) {
-  return new BlockchainBinding(wotServer);
+module.exports = function (server) {
+  return new BlockchainBinding(server);
 };
 
-function BlockchainBinding (wotServer) {
+function BlockchainBinding (server) {
 
-  var conf = wotServer.conf;
+  var conf = server.conf;
 
   // Services
-  var ParametersService = wotServer.ParametersService;
-  var BlockchainService = wotServer.BlockchainService;
-  var IdentityService   = wotServer.IdentityService;
+  var ParametersService = server.ParametersService;
+  var BlockchainService = server.BlockchainService;
+  var IdentityService   = server.IdentityService;
 
   // Models
   var Block      = require('../lib/entity/block');
@@ -39,7 +39,7 @@ function BlockchainBinding (wotServer) {
       .pipe(parsers.parseMembership(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(wotServer.singleWriteStream(onError))
+      .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
@@ -53,7 +53,7 @@ function BlockchainBinding (wotServer) {
       .pipe(parsers.parseBlock(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(wotServer.singleWriteStream(onError))
+      .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
@@ -61,7 +61,7 @@ function BlockchainBinding (wotServer) {
 
   this.parameters = function (req, res) {
     res.type('application/json');
-    wotServer.dal.getParameters()
+    server.dal.getParameters()
       .then(function(parameters){
         res.send(200, JSON.stringify(parameters, null, "  "));
       })
@@ -86,7 +86,7 @@ function BlockchainBinding (wotServer) {
     return function (req, res) {
       async.waterfall([
         function (next) {
-          wotServer.dal.getStat(statName, next);
+          server.dal.getStat(statName, next);
         }
       ], function (err, stat) {
         if(err){
@@ -192,7 +192,7 @@ function BlockchainBinding (wotServer) {
       },
       function (pubkey, next){
         member = pubkey;
-        wotServer.dal.isMember(pubkey, next);
+        server.dal.isMember(pubkey, next);
       },
       function (isMember, next){
         if (!isMember)
@@ -204,7 +204,7 @@ function BlockchainBinding (wotServer) {
         if (current) {
           nextBlockNumber = current ? current.number + 1 : 0;
         }
-        globalValidator(conf, blockchainDao(null, wotServer.dal)).getTrialLevel(member, next);
+        globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(member, next);
       }
     ], function (err, nbZeros) {
       if(err){

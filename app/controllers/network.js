@@ -11,15 +11,15 @@ var parsers          = require('../lib/streams/parsers/doc');
 var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
 
-module.exports = function (peerServer, conf) {
-  return new NetworkBinding(peerServer, conf);
+module.exports = function (server, conf) {
+  return new NetworkBinding(server, conf);
 };
 
-function NetworkBinding (peerServer, conf) {
+function NetworkBinding (server, conf) {
 
   // Services
-  var MerkleService     = peerServer.MerkleService;
-  var PeeringService    = peerServer.PeeringService;
+  var MerkleService     = server.MerkleService;
+  var PeeringService    = server.PeeringService;
 
   this.cert = PeeringService.cert;
 
@@ -33,11 +33,11 @@ function NetworkBinding (peerServer, conf) {
     res.type('application/json');
     async.waterfall([
       function (next){
-        peerServer.dal.merkleForPeers(next);
+        server.dal.merkleForPeers(next);
       },
       function (merkle, next){
         MerkleService.processForURL(req, merkle, function (hashes, done) {
-          peerServer.dal.findPeersWhoseHashIsIn(hashes)
+          server.dal.findPeersWhoseHashIsIn(hashes)
             .then(function(peers) {
               var map = {};
               peers.forEach(function (peer){
@@ -64,7 +64,7 @@ function NetworkBinding (peerServer, conf) {
       .pipe(parsers.parsePeer(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(peerServer.singleWriteStream(onError))
+      .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);

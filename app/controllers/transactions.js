@@ -12,16 +12,16 @@ var parsers          = require('../lib/streams/parsers/doc');
 var logger           = require('../lib/logger')('transaction');
 var Transaction      = require('../lib/entity/transaction');
 
-module.exports = function (txServer) {
-  return new TransactionBinding(txServer);
+module.exports = function (server) {
+  return new TransactionBinding(server);
 };
 
-function TransactionBinding(txServer) {
+function TransactionBinding(server) {
 
-  var conf = txServer.conf;
+  var conf = server.conf;
 
   // Services
-  var ParametersService = txServer.ParametersService;
+  var ParametersService = server.ParametersService;
 
   // Models
   var Source = require('../lib/entity/source');
@@ -34,7 +34,7 @@ function TransactionBinding(txServer) {
       .pipe(parsers.parseTransaction(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(txServer.singleWriteStream(onError))
+      .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
@@ -49,7 +49,7 @@ function TransactionBinding(txServer) {
       },
       function (pPubkey, next) {
         pubkey = pPubkey;
-        txServer.dal.getAvailableSourcesByPubkey(pubkey, next);
+        server.dal.getAvailableSourcesByPubkey(pubkey, next);
       },
       function (sources, next) {
         var result = {
@@ -192,7 +192,7 @@ function TransactionBinding(txServer) {
   function getHistory(pubkey, filter, done) {
     async.waterfall([
       function (next) {
-        txServer.dal.getTransactionsHistory(pubkey, next);
+        server.dal.getTransactionsHistory(pubkey, next);
       },
       function (history, next) {
         var result = {
@@ -212,7 +212,7 @@ function TransactionBinding(txServer) {
   }
 
   function getPending(done) {
-    txServer.dal.getTransactionsPending()
+    server.dal.getTransactionsPending()
       .then(function(pending){
         var res = {
           "currency": conf.currency,

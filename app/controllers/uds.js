@@ -10,8 +10,8 @@ var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
 
-module.exports = function (txServer) {
-  return new UDBinding(txServer);
+module.exports = function (server) {
+  return new UDBinding(server);
 };
 
 function UDBinding(txServer) {

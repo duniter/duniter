@@ -76,7 +76,7 @@ program
 program
   .command('start')
   .description('Start uCoin server.')
-  .action(service(ucoin.createTxServer, serverStart));
+  .action(service(serverStart));
 
 program
   .command('wizard [step]')
@@ -101,7 +101,7 @@ program
 program
   .command('sync [host] [port] [to]')
   .description('Synchronize blockchain from a remote uCoin node')
-  .action(service(ucoin.createTxServer, function (host, port, to, server, conf) {
+  .action(service(function (host, port, to, server, conf) {
     sync(server, host, port, conf, to);
   }));
 
@@ -118,7 +118,7 @@ function sync(server, host, port, conf, to) {
 program
   .command('peer [host] [port]')
   .description('Exchange peerings with another node')
-  .action(service(ucoin.createPeerServer, function(host, port, server) {
+  .action(service(function(host, port, server) {
     Q.nfcall(vucoin, host, port)
       .then(function(node){
         logger.info('Fetching peering record at %s:%s...', host, port);
@@ -162,12 +162,12 @@ program
 program
   .command('init [host] [port]')
   .description('Setup a node configuration and sync data with given node')
-  .action(service(ucoin.connect, bootstrapServer));
+  .action(connect(bootstrapServer));
 
 program
   .command('forward [host] [port] [what]')
   .description('Forward local blockchain to a remote uCoin node')
-  .action(service(ucoin.createTxServer, function (host, port, what, server, conf) {
+  .action(service(function (host, port, what, server, conf) {
 
     var localCurrent;
     var remoteCurrent;
@@ -213,12 +213,12 @@ program
 program
   .command('gen-next [host] [port] [diff]')
   .description('Tries to generate the next block of the blockchain')
-  .action(service(ucoin.createPeerServer, generateAndSend("generateNext")));
+  .action(service(generateAndSend("generateNext")));
 
 program
   .command('gen-root [host] [port] [diff]')
   .description('Tries to generate root block, with choice of root members')
-  .action(service(ucoin.createPeerServer, generateAndSend("generateManualRoot")));
+  .action(service(generateAndSend("generateManualRoot")));
 
 function generateAndSend (generationMethod) {
   return function (host, port, difficulty, server, conf) {
@@ -280,7 +280,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
 program
   .command('export-bc [upto]')
   .description('Exports the whole blockchain as JSON array, up to [upto] block number (excluded).')
-  .action(service(ucoin.createPeerServer, function (upto, server) {
+  .action(service(function (upto, server) {
     async.waterfall([
       function (next){
         server.dal.getBlocksUntil(upto, next);
@@ -305,7 +305,7 @@ program
 program
   .command('check-config')
   .description('Checks the node\'s configuration')
-  .action(service(ucoin.createPeerServer, function (server) {
+  .action(service(function (server) {
     server.checkConfig()
       .then(function () {
         logger.warn('Configuration seems correct.');
@@ -436,7 +436,7 @@ function startWizard(step, server, conf, done) {
     },
     function (next) {
       // Check config
-      service(ucoin.createPeerServer, function (key, server, conf) {
+      service(function (key, server, conf) {
         next();
       })(null, null);
     }
@@ -646,64 +646,50 @@ function connect(callback) {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = ucoin.connect({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
+    var server = ucoin({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
 
     // Initialize server (db connection, ...)
-    server.init(function (err) {
-
-      if(err){
+    server.connectDB()
+      .then(function(){
+        cbArgs.length--;
+        cbArgs[cbArgs.length++] = server;
+        cbArgs[cbArgs.length++] = server.conf;
+        callback.apply(this, cbArgs);
+      })
+      .fail(function(err){
         logger.error(err);
         server.disconnect();
         process.exit();
-      }
-
-      cbArgs.length--;
-      cbArgs[cbArgs.length++] = server;
-      cbArgs[cbArgs.length++] = server.conf;
-      callback.apply(this, cbArgs);
-    });
+      });
   };
 }
 
-function service(serverFactory, callback) {
-  if (arguments.length == 1) {
-    callback = serverFactory;
-    serverFactory = ucoin.createTxServer;
-  }
+function service(callback) {
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = serverFactory({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
+    var server = ucoin({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
 
     // Initialize server (db connection, ...)
-    server.init(function (err) {
-
-      if(err){
+    server.initWithServices()
+      .then(function(){
+        cbArgs.length--;
+        cbArgs[cbArgs.length++] = server;
+        cbArgs[cbArgs.length++] = server.conf;
+        callback.apply(this, cbArgs);
+      })
+      .fail(function(err){
         logger.error(err);
         server.disconnect();
         process.exit();
-      }
-
-      cbArgs.length--;
-      cbArgs[cbArgs.length++] = server;
-      cbArgs[cbArgs.length++] = server.conf;
-      callback.apply(this, cbArgs);
-    });
+      });
   };
 }
 
 function logIfErrorAndExit (server, prefix) {
   return function (err) {
     err && logger.error((prefix ? prefix : "") + (err.message || err));
-    server.disconnect();
-    process.exit();
-  };
-}
-
-function logErrorAndExit (server, errMsg) {
-  return function (err) {
-    (err || errMsg) && logger.error(errMsg ? errMsg : (err.message || err));
     server.disconnect();
     process.exit();
   };

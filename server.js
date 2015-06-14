@@ -4,41 +4,136 @@ var async      = require('async');
 var util       = require('util');
 var _          = require('underscore');
 var Q          = require('q');
-var constants  = require('./app/lib/constants');
 var fileDAL  = require('./app/lib/dal/fileDAL');
 var jsonpckg   = require('./package.json');
 var router      = require('./app/lib/streams/router');
 var multicaster = require('./app/lib/streams/multicaster');
+var base58      = require('./app/lib/base58');
+var crypto      = require('./app/lib/crypto');
+var Peer        = require('./app/lib/entity/peer');
+var signature   = require('./app/lib/signature');
 var INNER_WRITE = true;
 
 
-function Server (dbConf, overrideConf, interceptors, onInit) {
+function Server (dbConf, overrideConf) {
 
   stream.Duplex.call(this, { objectMode: true });
 
   var logger = require('./app/lib/logger')('server');
   var that = this;
-  var server4, server6;
+  var connectionPromise;
   that.conn = null;
   that.conf = null;
   that.dal = null;
   that.version = jsonpckg.version;
 
-  var initFunctions = [
-    function (done) {
-      that.connect(function (err) {
-        done(err);
-      });
+  var interceptors = [
+    {
+      // Identity
+      matches: function (obj) {
+        return obj.pubkey && obj.uid && !obj.revocation ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.IdentityService.submitIdentity(obj, next);
+          },
+          function (identity, next){
+            that.emit('identity', identity);
+            next(null, identity);
+          }
+        ], next);
+      }
     },
-    function (done) {
-      that.initServices(function (err) {
-        done(err);
-      });
-    }
-  ];
+    {
+      // Revocation
+      matches: function (obj) {
+        return obj.pubkey && obj.uid && obj.revocation ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.IdentityService.submitRevocation(obj, next);
+          },
+          function (revocation, next){
+            next(null, revocation);
+          }
+        ], next);
+      }
+    },
+    {
+      // Membership
+      matches: function (obj) {
+        return obj.userid ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            that.BlockchainService.submitMembership(obj, next);
+          },
+          function (membership, next){
+            that.emit('membership', membership);
+            next(null, membership);
+          }
+        ], next);
+      }
+    },{
+      // Block
+      matches: function (obj) {
+        return obj.type && obj.type == 'Block' ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            server.BlockchainService.submitBlock(obj, true, next);
+          },
+          function (kb, next){
+            server.BlockchainService.addStatComputing();
+            server.emit('block', kb);
+            next(null, kb);
+          }
+        ], next);
+      }
+    },{
+      // Peer
+      matches: function (obj) {
+        return obj.endpoints ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        logger.info('⬇ PEER %s', obj.pubkey);
+        async.waterfall([
+          function (next){
+            that.PeeringService.submit(obj, next);
+          },
+          function (peer, next){
+            logger.info('✔ PEER %s %s:%s', peer.pubkey, peer.getIPv4() || peer.getIPv6(), peer.getPort());
+            that.emit('peer', peer);
+            next(null, peer);
+          }
+        ], next);
+      }
+    },
+    {
+      // Transaction
+      matches: function (obj) {
+        return obj.inputs ? true : false;
+      },
+      treatment: function (server, obj, next) {
+        async.waterfall([
+          function (next){
+            server.TransactionsService.processTx(obj, next);
+          },
+          function (tx, next){
+            server.emit('transaction', tx);
+            next(null, tx);
+          }
+        ], next);
+      }
+    }];
 
-  var todoOnInit = initFunctions.concat(onInit || []).concat([
-  ]);
+  // Unused, but made mandatory by Duplex interface
+  this._read = function () {
+  };
 
   this._write = function (obj, enc, writeDone, isInnerWrite) {
     that.submit(obj, isInnerWrite, function (err, res) {
@@ -50,16 +145,18 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     });
   };
 
-  this.init = function (done) {
-    return Q.Promise(function(resolve, reject){
-      // Launches the server
-      async.forEachSeries(todoOnInit, function(f, cb){
-        f(cb);
-      }, function(err) {
+  this.connectDB = function () {
+    // Connect only once
+    return connectionPromise || (connectionPromise = that.connect());
+  };
+
+  this.initWithServices = function (done) {
+    return that.connectDB()
+      .then(that.initServices)
+      .then(function(err) {
         done && done(err);
-        err ? reject(err) : resolve();
-      });
-    });
+      })
+      .fail(done);
   };
 
   this.submit = function (obj, isInnerWrite, done) {
@@ -84,9 +181,6 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
       }
     ], function (err, res) {
       if (err){
-        switch (err) {
-          case constants.ERROR.PUBKEY.ALREADY_UPDATED: err = 'Key already up-to-date'; break;
-        }
         logger.debug(err);
       }
       if (res != null && res != undefined && !err) {
@@ -101,33 +195,23 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     });
   };
 
-  this.connect = function (done) {
-    return Q.Promise(function(resolve, reject){
-      // Init connection
-      if (!that.dal) {
-        var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
-        dbType(dbConf.name || "default")
-          .then(function(dal){
-            that.dal = dal;
-            return that.dal.initDabase();
-          })
-          .then(function() {
-            return that.dal.loadConf();
-          })
-          .then(function(conf){
-            that.conf = _(conf).extend(overrideConf || {});
-            done();
-          })
-          .fail(function(err){
-            done(err);
-            reject(err);
-          });
-      }
-      else {
-        done();
-        resolve();
-      }
-    });
+  this.connect = function () {
+    // Init connection
+    if (that.dal) {
+      return Q();
+    }
+    var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
+    return dbType(dbConf.name || "default")
+      .then(function(dal){
+        that.dal = dal;
+        return that.dal.initDabase();
+      })
+      .then(function() {
+        return that.dal.loadConf();
+      })
+      .then(function(conf){
+        that.conf = _(conf).extend(overrideConf || {});
+      });
   };
 
   this.start = function (done) {
@@ -155,16 +239,112 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
   };
 
   this._start = function (done) {
-    // Method to override
-    done();
+    return that.checkConfig()
+      .then(function (){
+        // Add signing & public key functions to PeeringService
+        that.PeeringService.setSignFunc(that.sign);
+        logger.info('Node version: ' + that.version);
+        logger.info('Node pubkey: ' + that.PeeringService.pubkey);
+        that.initPeer(done);
+      })
+      .fail(done);
   };
 
-  this.stop = function () {
-    logger.info('Shutting down server...');
-    server4 && server4.close();
-    server6 && server6.close();
-    that.emit('stopped');
-    logger.info('Server DOWN');
+  this.initPeer = function (done) {
+    var conf = that.conf;
+    async.waterfall([
+      function (next){
+        that.checkConfig().then(next).fail(next);
+      },
+      function (next){
+        logger.info('Storing self peer...');
+        that.PeeringService.regularPeerSignal(next);
+      },
+      function(next) {
+        that.PeeringService.testPeers(next);
+      },
+      function (next){
+        logger.info('Updating list of peers...');
+        that.dal.updateMerkleForPeers(next);
+      },
+      function (next){
+        that.PeeringService.regularSyncBlock(next);
+      },
+      function (next){
+        if (conf.participate) {
+          async.forever(
+            function tryToGenerateNextBlock(next) {
+              async.waterfall([
+                function (next) {
+                  that.BlockchainService.startGeneration(next);
+                },
+                function (block, next) {
+                  if (block) {
+                    var peer = new Peer({endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')]});
+                    multicaster(conf.isolate).sendBlock(peer, block, next);
+                  } else {
+                    next();
+                  }
+                }
+              ], function (err) {
+                next(err);
+              });
+            },
+            function onError(err) {
+              logger.error(err);
+              logger.error('Block generation STOPPED.');
+            }
+          );
+        }
+        next();
+      },
+      function (next) {
+        // Launch a block analysis
+        that.BlockchainService.addStatComputing();
+        next();
+      }
+    ], done);
+  };
+
+  this.setPair = function(pair) {
+    that.pair = pair;
+    that.BlockchainService.setKeyPair(pair);
+    that.PeeringService.setKeyPair(pair);
+  };
+
+  this.checkConfig = function () {
+    return that.checkPeeringConf(that.conf);
+  };
+
+  this.checkPeeringConf = function (conf) {
+    return Q()
+      .then(function(){
+        if (!conf.pair && conf.passwd == null) {
+          throw new Error('No key password was given.');
+        }
+        if (!conf.pair && conf.salt == null) {
+          throw new Error('No key salt was given.');
+        }
+        if (!conf.currency) {
+          throw new Error('No currency name was given.');
+        }
+        if(!conf.ipv4 && !conf.ipv6){
+          throw new Error("No interface to listen to.");
+        }
+        if(!conf.remoteipv4 && !conf.remoteipv6){
+          throw new Error('No interface for remote contact.');
+        }
+        if (!conf.remoteport) {
+          throw new Error('No port for remote contact.');
+        }
+      });
+  };
+
+  this.createSignFunction = function (pair, done) {
+    signature.async(pair, function (err, sigFunc) {
+      that.sign = sigFunc;
+      done(err);
+    });
   };
 
   this.reset = function(done) {
@@ -200,21 +380,49 @@ function Server (dbConf, overrideConf, interceptors, onInit) {
     });
   };
 
-  this.initServices = function(done) {
-    if (!that.servicesInited) {
-      that.servicesInited = true;
-      that.HTTPService      = require("./app/service/HTTPService");
-      that.MerkleService    = require("./app/service/MerkleService");
-      that.ParametersService = require("./app/service/ParametersService")();
-      that._initServices(that.conn, done);
-    } else {
-      done();
-    }
+  this.initServices = function() {
+    return Q.Promise(function(resolve, reject){
+      if (!that.servicesInited) {
+        that.servicesInited = true;
+        that.HTTPService      = require("./app/service/HTTPService");
+        that.MerkleService    = require("./app/service/MerkleService");
+        that.ParametersService = require("./app/service/ParametersService")();
+        that._initServices(that.conn, function(err) {
+          err ? reject(err) : resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
   };
 
   this._initServices = function(conn, done) {
-    // To override in child classes
-    done();
+    async.waterfall([
+      function(next) {
+        that.IdentityService     = require('./app/service/IdentityService')(that.conn, that.conf, that.dal);
+        that.PeeringService      = require('./app/service/PeeringService')(that, null, null, that.dal);
+        that.BlockchainService   = require('./app/service/BlockchainService')(conn, that.conf, that.dal, that.PeeringService);
+        that.TransactionsService = require('./app/service/TransactionsService')(conn, that.conf, that.dal);
+        that.IdentityService.setBlockchainService(that.BlockchainService);
+        // Extract key pair
+        if (that.conf.pair)
+          next(null, {
+            publicKey: base58.decode(that.conf.pair.pub),
+            secretKey: base58.decode(that.conf.pair.sec)
+          });
+        else if (that.conf.passwd || that.conf.salt)
+          crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
+        else
+          next(null, null);
+      },
+      function (pair, next){
+        if (pair) {
+          that.setPair(pair);
+          that.createSignFunction(pair, next);
+        }
+        else next('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
+      }
+    ], done);
   };
 
   this.singleWriteStream = function (onError) {

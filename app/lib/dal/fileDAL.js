@@ -1373,34 +1373,38 @@ function FileDAL(profile, myFS) {
         // Instrumentalize the function
         that[fname] = function() {
           var args = arguments;
-          var start = new Date();
+          //var start = new Date();
           return onceLoadedDAL()
             .then(function() {
               return Q()
                 .then(function(){
                   return func.apply(that, args);
                 })
-                .then(function (o) {
-                  var duration = (new Date() - start);
-                  if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
-                    logger.debug('Time %s ms | %s', duration, fname);
-                  return o;
-                });
+                // TODO: add a parameter to enable/disable performance logging
+                //.then(function (o) {
+                //  var duration = (new Date() - start);
+                //  if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
+                //    logger.debug('Time %s ms | %s', duration, fname);
+                //  return o;
+                //})
+                ;
             });
         };
         that[fname].now = function() {
           var args = arguments;
-          var start = new Date();
+          //var start = new Date();
           return Q()
             .then(function(){
               return func.apply(that, args);
             })
-            .then(function (o) {
-              var duration = (new Date() - start);
-              if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
-                logger.debug('Time %s ms | %s', duration, fname);
-              return o;
-            });
+            // TODO: add a parameter to enable/disable performance logging
+            //.then(function (o) {
+            //  var duration = (new Date() - start);
+            //  //if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
+            //  //  logger.debug('Time %s ms | %s', duration, fname);
+            //  return o;
+            //})
+          ;
         };
       })();
     }

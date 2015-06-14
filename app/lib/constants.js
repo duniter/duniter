@@ -19,9 +19,6 @@ module.exports = {
   
   ERROR: {
 
-    PUBKEY: {
-      ALREADY_UPDATED: 1
-    },
     PEER: {
       ALREADY_RECORDED: 'A more recent peering document is already recorded.'
     }

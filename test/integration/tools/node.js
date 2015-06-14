@@ -9,7 +9,7 @@ var Configuration = require('../../../app/lib/entity/configuration');
 var Peer          = require('../../../app/lib/entity/peer');
 
 module.exports = function (dbName, options) {
-	return new Node(dbName, options);
+  return new Node(dbName, options);
 };
 
 function Node (dbName, options) {
@@ -38,7 +38,7 @@ function Node (dbName, options) {
           that.executes(scenarios, next);
         }
       ], done);
-    }
+    };
   };
 
   this.executes = function (scenarios, done) {
@@ -63,7 +63,7 @@ function Node (dbName, options) {
           next();
         }
       ], done);
-    }
+    };
   };
 
   /**
@@ -92,7 +92,7 @@ function Node (dbName, options) {
       ], function(err) {
         done(err);
       });
-    }
+    };
   };
 
   function proveAndSend (server, block, sigFunc, issuer, difficulty, done) {
@@ -102,9 +102,9 @@ function Node (dbName, options) {
         block.issuer = issuer;
         BlockchainService.prove(block, sigFunc, difficulty, next);
       },
-      function (block, next){
+      function (provenBlock, next){
         post('/blockchain/block', {
-          "block": block.getRawSigned()
+          "block": provenBlock.getRawSigned()
         }, next);
       }
     ], done);
@@ -113,7 +113,7 @@ function Node (dbName, options) {
   function post(uri, data, done) {
     var postReq = request.post({
       "uri": 'http://' + [that.server.conf.remoteipv4, that.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000*10
+      "timeout": 1000 * 10
     }, function (err, res, body) {
       done(err, res, body);
     });
@@ -125,7 +125,7 @@ function Node (dbName, options) {
       if (started) return done();
       async.waterfall([
         function(next) {
-          service(ucoin.createTxServer, next)();
+          service(next)();
         },
         function (server, next){
           // Launching server
@@ -142,14 +142,6 @@ function Node (dbName, options) {
           that.http = node;
           next();
         }
-        //function (next) {
-        //  var theRouter = router(server.PeeringService.pubkey, server.conn, server.conf, server.dal);
-        //  var theCaster = multicaster();
-        //  server
-        //    .pipe(theRouter) // The router ask for multicasting of documents
-        //    .pipe(theCaster) // The multicaster may answer 'unreachable peer'
-        //    .pipe(theRouter);
-        //}
       ], function(err) {
         err ? reject(err) : resolve(that.server);
         done && done(err);
@@ -163,28 +155,23 @@ function Node (dbName, options) {
       });
   };
 
-  function service(serverFactory, callback) {
-    if (arguments.length == 1) {
-      callback = serverFactory;
-      serverFactory = ucoin.createTxServer;
-    }
+  function service(callback) {
     return function () {
       var cbArgs = arguments;
-      var server = serverFactory({ name: dbName, memory: true }, Configuration.statics.complete(options));
+      var server = ucoin({ name: dbName, memory: true }, Configuration.statics.complete(options));
 
       // Initialize server (db connection, ...)
-      server.init(function (err) {
-
-        if(err){
+      server.initWithServices()
+        .then(function(){
+          //cbArgs.length--;
+          cbArgs[cbArgs.length++] = server;
+          //cbArgs[cbArgs.length++] = server.conf;
+          callback(null, server);
+        })
+        .fail(function(err){
           server.disconnect();
           throw err;
-        }
-
-        //cbArgs.length--;
-        cbArgs[cbArgs.length++] = server;
-        //cbArgs[cbArgs.length++] = server.conf;
-        callback(null, server);
-      });
+        });
     };
   }
 
@@ -201,14 +188,14 @@ function Node (dbName, options) {
       ], function(err, res) {
         callback(res, done);
       });
-    }
+    };
   };
 
   this.until = function (eventName, count) {
     var counted = 0;
     var max = count == undefined ? 1 : count;
     return Q.Promise(function (resolve) {
-      that.server.on(eventName, function (obj) {
+      that.server.on(eventName, function () {
         counted++;
         if (counted == max)
           resolve();
@@ -225,7 +212,7 @@ function Node (dbName, options) {
       ], function(err, current) {
         callback(current, done);
       });
-    }
+    };
   };
 
   this.block = function(number, callback) {
@@ -237,7 +224,7 @@ function Node (dbName, options) {
       ], function(err, block) {
         callback(block, done);
       });
-    }
+    };
   };
 
   this.summary = function(callback) {
@@ -249,7 +236,7 @@ function Node (dbName, options) {
       ], function(err, summary) {
         callback(summary, done);
       });
-    }
+    };
   };
 
   this.sourcesOf = function(pub, callback) {
@@ -261,7 +248,7 @@ function Node (dbName, options) {
       ], function(err, res) {
         callback(res, done);
       });
-    }
+    };
   };
 
   this.peering = function(done) {

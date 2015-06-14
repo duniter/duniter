@@ -58,12 +58,7 @@ function Node (dbName, options) {
    */
   this.after = function () {
     return function (done) {
-      async.waterfall([
-        function(next) {
-          //that.server.conn.db.dropDatabase(next);
-          next();
-        }
-      ], done);
+      done();
     };
   };
 

@@ -22,7 +22,6 @@ function Server (dbConf, overrideConf) {
   var logger = require('./app/lib/logger')('server');
   var that = this;
   var connectionPromise;
-  that.conn = null;
   that.conf = null;
   that.dal = null;
   that.version = jsonpckg.version;
@@ -253,61 +252,57 @@ function Server (dbConf, overrideConf) {
         that.HTTPService      = require("./app/service/HTTPService");
         that.MerkleService    = require("./app/service/MerkleService");
         that.ParametersService = require("./app/service/ParametersService")();
-        that._initServices(that.conn, function(err) {
+        async.waterfall([
+          function(next) {
+            that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);
+            that.PeeringService      = require('./app/service/PeeringService')(that, null, null, that.dal);
+            that.BlockchainService   = require('./app/service/BlockchainService')(that.conf, that.dal, that.PeeringService);
+            that.TransactionsService = require('./app/service/TransactionsService')(that.conf, that.dal);
+            that.IdentityService.setBlockchainService(that.BlockchainService);
+            // Create document mapping
+            documentsMapping = {
+              'identity':    that.IdentityService.submitIdentity,
+              'revocation':  that.IdentityService.submitRevocation,
+              'membership':  that.BlockchainService.submitMembership,
+              'peer':        that.PeeringService.submit,
+              'transaction': that.TransactionsService.processTx,
+              'block':       function (obj, done) {
+                async.waterfall([
+                  function (next){
+                    that.BlockchainService.submitBlock(obj, true, next);
+                  },
+                  function (block, next){
+                    that.BlockchainService.addStatComputing();
+                    next(null, block);
+                  }
+                ], done);
+              }
+            };
+            // Extract key pair
+            if (that.conf.pair)
+              next(null, {
+                publicKey: base58.decode(that.conf.pair.pub),
+                secretKey: base58.decode(that.conf.pair.sec)
+              });
+            else if (that.conf.passwd || that.conf.salt)
+              crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
+            else
+              next(null, null);
+          },
+          function (pair, next){
+            if (pair) {
+              that.setPair(pair);
+              that.createSignFunction(pair, next);
+            }
+            else next('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
+          }
+        ], function(err) {
           err ? reject(err) : resolve();
         });
       } else {
         resolve();
       }
     });
-  };
-
-  this._initServices = function(conn, done) {
-    async.waterfall([
-      function(next) {
-        that.IdentityService     = require('./app/service/IdentityService')(that.conn, that.conf, that.dal);
-        that.PeeringService      = require('./app/service/PeeringService')(that, null, null, that.dal);
-        that.BlockchainService   = require('./app/service/BlockchainService')(conn, that.conf, that.dal, that.PeeringService);
-        that.TransactionsService = require('./app/service/TransactionsService')(conn, that.conf, that.dal);
-        that.IdentityService.setBlockchainService(that.BlockchainService);
-        // Create document mapping
-        documentsMapping = {
-          'identity':    that.IdentityService.submitIdentity,
-          'revocation':  that.IdentityService.submitRevocation,
-          'membership':  that.BlockchainService.submitMembership,
-          'peer':        that.PeeringService.submit,
-          'transaction': that.TransactionsService.processTx,
-          'block':       function (obj, done) {
-            async.waterfall([
-              function (next){
-                that.BlockchainService.submitBlock(obj, true, next);
-              },
-              function (block, next){
-                that.BlockchainService.addStatComputing();
-                next(null, block);
-              }
-            ], done);
-          }
-        };
-        // Extract key pair
-        if (that.conf.pair)
-          next(null, {
-            publicKey: base58.decode(that.conf.pair.pub),
-            secretKey: base58.decode(that.conf.pair.sec)
-          });
-        else if (that.conf.passwd || that.conf.salt)
-          crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
-        else
-          next(null, null);
-      },
-      function (pair, next){
-        if (pair) {
-          that.setPair(pair);
-          that.createSignFunction(pair, next);
-        }
-        else next('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
-      }
-    ], done);
   };
 
   this.singleWriteStream = function (onError) {

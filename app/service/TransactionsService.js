@@ -4,11 +4,11 @@ var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports = function (conn, conf, dal) {
-  return new TransactionService(conn, conf, dal);
+module.exports = function (conf, dal) {
+  return new TransactionService(conf, dal);
 };
 
-function TransactionService (conn, conf, dal) {
+function TransactionService (conf, dal) {
 
   var Transaction = require('../lib/entity/transaction');
 
@@ -28,7 +28,7 @@ function TransactionService (conn, conf, dal) {
       },
       function (current, next) {
         // Validator OK
-        globalValidation = globalValidator(conf, blockchainDao(conn, current, dal));
+        globalValidation = globalValidator(conf, blockchainDao(current, dal));
         // Start checks...
         localValidation.checkSingleTransaction(tx.getTransaction(), next);
       },

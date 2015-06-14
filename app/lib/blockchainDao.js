@@ -2,7 +2,7 @@
 var async = require('async');
 var _     = require('underscore');
 
-module.exports = function(conn, block, dal) {
+module.exports = function(block, dal) {
 
   function BlockCheckerDao () {
 

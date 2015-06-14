@@ -21,7 +21,6 @@ module.exports = function (wotServer) {
 function BlockchainBinding (wotServer) {
 
   var conf = wotServer.conf;
-  var conn = wotServer.conn;
 
   // Services
   var ParametersService = wotServer.ParametersService;
@@ -205,7 +204,7 @@ function BlockchainBinding (wotServer) {
         if (current) {
           nextBlockNumber = current ? current.number + 1 : 0;
         }
-        globalValidator(conf, blockchainDao(conn, null, wotServer.dal)).getTrialLevel(member, next);
+        globalValidator(conf, blockchainDao(null, wotServer.dal)).getTrialLevel(member, next);
       }
     ], function (err, nbZeros) {
       if(err){

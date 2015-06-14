@@ -17,8 +17,8 @@ var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
-module.exports = function (conn, conf, dal, PeeringService) {
-  return new BlockchainService(conn, conf, dal, PeeringService);
+module.exports = function (conf, dal, PeeringService) {
+  return new BlockchainService(conf, dal, PeeringService);
 };
 
 var blockFifo = async.queue(function (task, callback) {
@@ -47,7 +47,7 @@ var computationTimeout = null;
 // Flag for saying if timeout was already waited
 var computationTimeoutDone = false;
 
-function BlockchainService (conn, conf, dal, PeeringService) {
+function BlockchainService (conf, dal, PeeringService) {
 
   var BlockchainService = this;
   var logger = require('../lib/logger')(dal.profile);
@@ -83,7 +83,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
 
   this.submitMembership = function (ms, done) {
     var entry = new Membership(ms);
-    var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
+    var globalValidation = globalValidator(conf, blockchainDao(null, dal));
     async.waterfall([
       function (next){
         logger.info('⬇ %s %s', entry.issuer, entry.membership);
@@ -138,7 +138,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
       var block = new Block(obj);
       var currentBlock = null;
       var localValidation = localValidator(conf);
-      var globalValidation = globalValidator(conf, blockchainDao(conn, block, dal));
+      var globalValidation = globalValidator(conf, blockchainDao(block, dal));
       async.waterfall([
         function (next) {
           BlockchainService.current(next);
@@ -250,7 +250,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
                 // Check the newcomer IS RECOGNIZED BY the WoT
                 // (check we have a path for each WoT member => newcomer)
                 if (block.number > 0)
-                  globalValidator(conf, blockchainDao(conn, block, dal)).isOver3Hops(newcomer, ofMembers, newLinks, next);
+                  globalValidator(conf, blockchainDao(block, dal)).isOver3Hops(newcomer, ofMembers, newLinks, next);
                 else
                   next(null, []);
               },
@@ -325,10 +325,10 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         function (next) {
           async.parallel({
             last: function (next) {
-              blockchainDao(conn, block, dal).getLastUDBlock(next);
+              blockchainDao(block, dal).getLastUDBlock(next);
             },
             root: function (next) {
-              blockchainDao(conn, block, dal).getBlock(0, next);
+              blockchainDao(block, dal).getBlock(0, next);
             }
           }, next);
         },
@@ -828,7 +828,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         var transactions = [];
         var passingTxs = [];
         var localValidation = localValidator(conf);
-        var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
+        var globalValidation = globalValidator(conf, blockchainDao(null, dal));
         return Q.Promise(function(resolve, reject){
 
           async.forEachSeries(txs, function (rawtx, callback) {
@@ -1252,7 +1252,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         if (block.number == 0)
           next(null, 0); // Root difficulty is given by manually written block
         else
-          globalValidator(conf, blockchainDao(conn, block, dal)).getPoWMin(block.number, next);
+          globalValidator(conf, blockchainDao(block, dal)).getPoWMin(block.number, next);
       },
       function (powMin, next) {
         block.powMin = powMin;
@@ -1260,7 +1260,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
         if (block.number == 0)
           next(null, 0);
         else
-          globalValidator(conf, blockchainDao(conn, block, dal)).getMedianTime(block.number, next);
+          globalValidator(conf, blockchainDao(block, dal)).getMedianTime(block.number, next);
       },
       function (medianTime, next) {
         block.medianTime = current ? medianTime : moment.utc().unix() - conf.rootoffset;
@@ -1475,7 +1475,7 @@ function BlockchainService (conn, conf, dal, PeeringService) {
               signature.sync(BlockchainService.pair, callback);
             },
             trial: function (callback) {
-              globalValidator(conf, blockchainDao(conn, block, dal)).getTrialLevel(PeeringService.pubkey, callback);
+              globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(PeeringService.pubkey, callback);
             }
           }, next);
         }

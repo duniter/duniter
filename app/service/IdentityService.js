@@ -7,11 +7,11 @@ var crypto          = require('../lib/crypto');
 
 var DO_NOT_THROW_ABOUT_EXPIRATION = true;
 
-module.exports = function (conn, conf, dal) {
-  return new IdentityService(conn, conf, dal);
+module.exports = function (conf, dal) {
+  return new IdentityService(conf, dal);
 };
 
-function IdentityService (conn, conf, dal) {
+function IdentityService (conf, dal) {
 
   var logger          = require('../lib/logger')(dal.profile);
 
@@ -29,7 +29,7 @@ function IdentityService (conn, conf, dal) {
   var BlockchainService = null;
   
   // Validator for certifications
-  var globalValidation = globalValidator(conf, blockchainDao(conn, null, dal));
+  var globalValidation = globalValidator(conf, blockchainDao(null, dal));
 
   this.search = function(search, done) {
     async.waterfall([

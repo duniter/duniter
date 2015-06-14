@@ -25,6 +25,7 @@ function PeerParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getPeer, onError);
 
   this._clean = function (obj) {
+    obj.documentType = 'peer';
     obj.endpoints = obj.endpoints || [];
     // Removes trailing space
     if (obj.endpoints.length > 0)

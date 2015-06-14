@@ -39,6 +39,7 @@ function BlockParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getBlock, onError);
 
   this._clean = function (obj) {
+    obj.documentType = 'block';
     obj.identities = obj.identities || [];
     obj.joiners = obj.joiners || [];
     obj.actives = obj.actives || [];
@@ -63,7 +64,7 @@ function BlockParser (onError) {
       tx.version = obj.version;
       tx.currency = obj.currency;
       tx.currency = sha1(rawer.getTransaction(tx)).toUpperCase();
-    })
+    });
   };
 
   this._verify = function(obj){

@@ -27,109 +27,7 @@ function Server (dbConf, overrideConf) {
   that.dal = null;
   that.version = jsonpckg.version;
 
-  var interceptors = [
-    {
-      // Identity
-      matches: function (obj) {
-        return obj.pubkey && obj.uid && !obj.revocation ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        async.waterfall([
-          function (next){
-            that.IdentityService.submitIdentity(obj, next);
-          },
-          function (identity, next){
-            that.emit('identity', identity);
-            next(null, identity);
-          }
-        ], next);
-      }
-    },
-    {
-      // Revocation
-      matches: function (obj) {
-        return obj.pubkey && obj.uid && obj.revocation ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        async.waterfall([
-          function (next){
-            that.IdentityService.submitRevocation(obj, next);
-          },
-          function (revocation, next){
-            next(null, revocation);
-          }
-        ], next);
-      }
-    },
-    {
-      // Membership
-      matches: function (obj) {
-        return obj.userid ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        async.waterfall([
-          function (next){
-            that.BlockchainService.submitMembership(obj, next);
-          },
-          function (membership, next){
-            that.emit('membership', membership);
-            next(null, membership);
-          }
-        ], next);
-      }
-    },{
-      // Block
-      matches: function (obj) {
-        return obj.type && obj.type == 'Block' ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        async.waterfall([
-          function (next){
-            server.BlockchainService.submitBlock(obj, true, next);
-          },
-          function (kb, next){
-            server.BlockchainService.addStatComputing();
-            server.emit('block', kb);
-            next(null, kb);
-          }
-        ], next);
-      }
-    },{
-      // Peer
-      matches: function (obj) {
-        return obj.endpoints ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        logger.info('⬇ PEER %s', obj.pubkey);
-        async.waterfall([
-          function (next){
-            that.PeeringService.submit(obj, next);
-          },
-          function (peer, next){
-            logger.info('✔ PEER %s %s:%s', peer.pubkey, peer.getIPv4() || peer.getIPv6(), peer.getPort());
-            that.emit('peer', peer);
-            next(null, peer);
-          }
-        ], next);
-      }
-    },
-    {
-      // Transaction
-      matches: function (obj) {
-        return obj.inputs ? true : false;
-      },
-      treatment: function (server, obj, next) {
-        async.waterfall([
-          function (next){
-            server.TransactionsService.processTx(obj, next);
-          },
-          function (tx, next){
-            server.emit('transaction', tx);
-            next(null, tx);
-          }
-        ], next);
-      }
-    }];
+  var documentsMapping = {};
 
   // Unused, but made mandatory by Duplex interface
   this._read = function () {
@@ -162,29 +60,22 @@ function Server (dbConf, overrideConf) {
   this.submit = function (obj, isInnerWrite, done) {
     async.waterfall([
       function (next){
-        var i = 0;
-        var treatment = null;
-        while (i < interceptors.length && !treatment) {
-          if (interceptors[i].matches(obj)) {
-            treatment = interceptors[i].treatment;
-          }
-          i++;
+        if (!obj.documentType) {
+          return next('Document type not given');
         }
-        if (typeof treatment == 'function') {
+        var action = documentsMapping[obj.documentType];
+        if (typeof action == 'function') {
           // Handle the incoming object
-          treatment(that, obj, next);
+          action(obj, next);
         } else {
-          var err = 'Unknown document type ' + JSON.stringify(obj);
-          that.emit('error', Error(err));
-          next(err);
+          next('Unknown document type ' + JSON.stringify(obj));
         }
       }
     ], function (err, res) {
-      if (err){
-        logger.debug(err);
-      }
+      err && logger.debug(err);
       if (res != null && res != undefined && !err) {
         // Only emit valid documents
+        that.emit(obj.documentType, res);
         that.push(res);
       }
       if (isInnerWrite) {
@@ -404,6 +295,25 @@ function Server (dbConf, overrideConf) {
         that.BlockchainService   = require('./app/service/BlockchainService')(conn, that.conf, that.dal, that.PeeringService);
         that.TransactionsService = require('./app/service/TransactionsService')(conn, that.conf, that.dal);
         that.IdentityService.setBlockchainService(that.BlockchainService);
+        // Create document mapping
+        documentsMapping = {
+          'identity':    that.IdentityService.submitIdentity,
+          'revocation':  that.IdentityService.submitRevocation,
+          'membership':  that.BlockchainService.submitMembership,
+          'peer':        that.PeeringService.submit,
+          'transaction': that.TransactionsService.processTx,
+          'block':       function (obj, done) {
+            async.waterfall([
+              function (next){
+                that.BlockchainService.submitBlock(obj, true, next);
+              },
+              function (block, next){
+                that.BlockchainService.addStatComputing();
+                next(null, block);
+              }
+            ], done);
+          }
+        };
         // Extract key pair
         if (that.conf.pair)
           next(null, {

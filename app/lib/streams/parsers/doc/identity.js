@@ -55,6 +55,7 @@ function IdentityParser (onError) {
   };
 
   this._clean = function (obj) {
+    obj.documentType = 'identity';
     if (obj.uid && obj.time && obj.pubkey) {
       obj.hash = sha1(obj.uid + moment(obj.time).unix() + obj.pubkey).toUpperCase();
     }

@@ -25,6 +25,7 @@ function TransactionParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getTransaction, onError);
 
   this._clean = function (obj) {
+    obj.documentType = 'transaction';
     obj.coins = obj.coins || [];
     obj.comment = obj.comment || "";
   };

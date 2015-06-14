@@ -184,12 +184,14 @@ function PeeringService(peerserver, pair, signFunc, dal) {
             function (signature, next) {
               p2.signature = signature;
               p2.pubkey = peerserver.PeeringService.pubkey;
+              p2.documentType = 'peer';
               peerserver.submit(p2, false, next);
             }
           ], function (err) {
             next(err);
           });
         } else {
+          p1.documentType = 'peer';
           peerserver.push(p1);
           next();
         }
@@ -199,6 +201,7 @@ function PeeringService(peerserver, pair, signFunc, dal) {
       },
       function (peer, next){
         // Set peer's statut to UP
+        peer.documentType = 'peer';
         peerserver.PeeringService.peer(peer);
         peerserver.push(peer);
         next();

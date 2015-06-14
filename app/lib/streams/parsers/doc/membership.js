@@ -27,6 +27,7 @@ function MembershipParser (onError) {
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
 
   this._clean = function (obj) {
+    obj.documentType = 'membership';
     if (obj.block) {
       obj.number = obj.block.split('-')[0];
       obj.fpr = obj.block.split('-')[1];

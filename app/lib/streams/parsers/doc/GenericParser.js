@@ -7,8 +7,6 @@ var multipleLinesExtract = require('../../../multipleLinesExtract');
 
 module.exports = GenericParser;
 
-var SIGNATURE_END_LENGTH = '-----END PGP SIGNATURE-----\r\n'.length;
-
 function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
 
   stream.Transform.call(this, { decodeStrings: false, objectMode: true });

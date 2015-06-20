@@ -94,9 +94,6 @@ function Server (dbConf, overrideConf) {
     return dbType(dbConf.name || "default")
       .then(function(dal){
         that.dal = dal;
-        return that.dal.initDabase();
-      })
-      .then(function() {
         return that.dal.loadConf();
       })
       .then(function(conf){
@@ -267,15 +264,12 @@ function Server (dbConf, overrideConf) {
               'peer':        that.PeeringService.submit,
               'transaction': that.TransactionsService.processTx,
               'block':       function (obj, done) {
-                async.waterfall([
-                  function (next){
-                    that.BlockchainService.submitBlock(obj, true, next);
-                  },
-                  function (block, next){
+                that.BlockchainService.submitBlock(obj, true)
+                  .then(function(block){
                     that.BlockchainService.addStatComputing();
-                    next(null, block);
-                  }
-                ], done);
+                    done(null, block);
+                  })
+                  .fail(done);
               }
             };
             // Extract key pair

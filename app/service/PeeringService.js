@@ -306,7 +306,9 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                                     tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                   });
                                   logger.info("Downloaded block #%s from peer ", block.number, p.getNamedURL());
-                                  BlockchainService.submitBlock(block, true, next);
+                                  BlockchainService.submitBlock(block, true)
+                                    .then(next)
+                                    .fail(next);
                                 },
                                 function(block, next) {
                                   current = block;

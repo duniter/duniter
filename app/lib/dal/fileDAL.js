@@ -1286,16 +1286,6 @@ function FileDAL(profile, myFS) {
       });
   };
 
-  this.initDabase = function() {
-    // TODO
-    return Q();
-  };
-
-  this.dropDabase = function() {
-    // TODO
-    return Q();
-  };
-
   this.close = function() {
     // TODO
   };

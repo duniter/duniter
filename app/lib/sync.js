@@ -171,30 +171,26 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                             .then(function(block){
                               if (block) {
                                 succeed = true;
-                                return Q.Promise(function(resolve, reject){
-                                  // Rawification of transactions
-                                  block.transactions.forEach(function (tx) {
-                                    tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
-                                    tx.raw += tx.signatories.join('\n') + '\n';
-                                    tx.raw += tx.inputs.join('\n') + '\n';
-                                    tx.raw += tx.outputs.join('\n') + '\n';
-                                    if (tx.comment)
-                                      tx.raw += tx.comment + '\n';
-                                    tx.raw += tx.signatures.join('\n') + '\n';
-                                    tx.version = 1;
-                                    tx.currency = conf.currency;
-                                    tx.issuers = tx.signatories;
-                                    tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
-                                  });
-                                  blocksApplied++;
-                                  speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
-                                  if (watcher.appliedPercent() != Math.floor(block.number/remoteCurrentNumber*100)){
-                                    watcher.appliedPercent(Math.floor(block.number/remoteCurrentNumber*100));
-                                  }
-                                  BlockchainService.submitBlock(block, cautious, function(err) {
-                                    err ? reject(err) : resolve();
-                                  })
+                                // Rawification of transactions
+                                block.transactions.forEach(function (tx) {
+                                  tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+                                  tx.raw += tx.signatories.join('\n') + '\n';
+                                  tx.raw += tx.inputs.join('\n') + '\n';
+                                  tx.raw += tx.outputs.join('\n') + '\n';
+                                  if (tx.comment)
+                                    tx.raw += tx.comment + '\n';
+                                  tx.raw += tx.signatures.join('\n') + '\n';
+                                  tx.version = 1;
+                                  tx.currency = conf.currency;
+                                  tx.issuers = tx.signatories;
+                                  tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                 });
+                                blocksApplied++;
+                                speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
+                                if (watcher.appliedPercent() != Math.floor(block.number/remoteCurrentNumber*100)){
+                                  watcher.appliedPercent(Math.floor(block.number/remoteCurrentNumber*100));
+                                }
+                                return BlockchainService.submitBlock(block, cautious);
                               }
                               else {
                                 succeed = false;

@@ -11,44 +11,26 @@ var moment         = require('moment');
 var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
+var blockchainCtx   = require('../lib/blockchainContext');
 
-function PeeringService(peerserver, pair, signFunc, dal) {
+function PeeringService(server, pair, dal) {
 
-  var conf = peerserver.conf;
-  var currency = conf.currency;
+  var conf = server.conf;
+  var mainContext = blockchainCtx(conf, dal);
 
   var Peer        = require('../lib/entity/peer');
 
-  var selfPubkey;
+  var selfPubkey = base58.encode(pair.publicKey);
   this.pubkey = selfPubkey;
 
-  var peer = null, BlockchainService = null;
+  var peer = null;
   var that = this;
-
-  this.setKeyPair = function(keypair) {
-    if (keypair) {
-      pair = keypair;
-      selfPubkey = base58.encode(pair.publicKey);
-      that.pubkey = selfPubkey;
-    }
-  };
-
-  this.setSignFunc = function(f) {
-    signFunc = f;
-  };
-
-  this.setBlockchainService = function(service) {
-    BlockchainService = service;
-  };
 
   this.peer = function (newPeer) {
     if (newPeer) {
       peer = newPeer;
     }
     return Peer.statics.peerize(peer);
-  };
-
-  this.load = function (done) {
   };
 
   this.submit = function(peering, eraseIfAlreadyRecorded, done){
@@ -116,9 +98,9 @@ function PeeringService(peerserver, pair, signFunc, dal) {
     if (peerInterval)
       clearInterval(peerInterval);
     peerInterval = setInterval(function () {
-      peerFifo.push(_.partial(generateSelfPeer, peerserver.conf));
+      peerFifo.push(_.partial(generateSelfPeer, conf));
     }, 1000*conf.avgGenTime*constants.NETWORK.STATUS_INTERVAL.UPDATE);
-    generateSelfPeer(peerserver.conf, done);
+    generateSelfPeer(conf, done);
   };
 
   var syncBlockFifo = async.queue(function (task, callback) {
@@ -141,11 +123,11 @@ function PeeringService(peerserver, pair, signFunc, dal) {
     var current = null;
     async.waterfall([
       function (next) {
-        peerserver.BlockchainService.current(next);
+        mainContext.current(next);
       },
       function (currentBlock, next) {
         current = currentBlock;
-        peerserver.dal.findPeers(peerserver.PeeringService.pubkey, next);
+        dal.findPeers(selfPubkey, next);
       },
       function (peers, next) {
         var p1 = { version: 1, currency: currency };
@@ -168,7 +150,7 @@ function PeeringService(peerserver, pair, signFunc, dal) {
         var p2 = {
           version: 1,
           currency: currency,
-          pubkey: peerserver.PeeringService.pubkey,
+          pubkey: selfPubkey,
           block: current ? [current.number, current.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
           endpoints: [endpoint]
         };
@@ -179,31 +161,31 @@ function PeeringService(peerserver, pair, signFunc, dal) {
           logger.debug('Generating server\'s peering entry...');
           async.waterfall([
             function (next){
-              peerserver.sign(raw2, next);
+              server.sign(raw2, next);
             },
             function (signature, next) {
               p2.signature = signature;
-              p2.pubkey = peerserver.PeeringService.pubkey;
+              p2.pubkey = selfPubkey;
               p2.documentType = 'peer';
-              peerserver.submit(p2, false, next);
+              server.submit(p2, false, next);
             }
           ], function (err) {
             next(err);
           });
         } else {
           p1.documentType = 'peer';
-          peerserver.push(p1);
+          server.push(p1);
           next();
         }
       },
       function (next){
-        peerserver.dal.getPeer(peerserver.PeeringService.pubkey, next);
+        dal.getPeer(selfPubkey, next);
       },
       function (peer, next){
         // Set peer's statut to UP
         peer.documentType = 'peer';
-        peerserver.PeeringService.peer(peer);
-        peerserver.push(peer);
+        that.peer(peer);
+        server.push(peer);
         next();
       }
     ], function(err) {
@@ -306,8 +288,10 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                                     tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                   });
                                   logger.info("Downloaded block #%s from peer ", block.number, p.getNamedURL());
-                                  BlockchainService.submitBlock(block, true)
-                                    .then(next)
+                                  server.BlockchainService.submitBlock(block, true)
+                                    .then(function(block){
+                                      return next(null, block);
+                                    })
                                     .fail(next);
                                 },
                                 function(block, next) {
@@ -334,7 +318,7 @@ function PeeringService(peerserver, pair, signFunc, dal) {
                 .fail(function(){
                   logger.info("No new block found");
                   if (lastAdded) {
-                    peerserver.router().write(_.extend({ type: 'Block' }, lastAdded));
+                    server.router().write(_.extend({ type: 'Block' }, lastAdded));
                   }
                   next();
                 });
@@ -353,6 +337,6 @@ function PeeringService(peerserver, pair, signFunc, dal) {
 
 util.inherits(PeeringService, events.EventEmitter);
 
-module.exports = function (peerserver, pair, signFunc, dal) {
-  return new PeeringService(peerserver, pair, signFunc, dal);
+module.exports = function (peerserver, pair, dal) {
+  return new PeeringService(peerserver, pair, dal);
 };

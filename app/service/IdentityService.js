@@ -23,11 +23,6 @@ function IdentityService (conf, dal) {
     task(callback);
   }, 1);
 
-  var that = this;
-
-  // Reference to BlockchainService
-  var BlockchainService = null;
-  
   // Validator for certifications
   var globalValidation = globalValidator(conf, blockchainDao(null, dal));
 
@@ -63,10 +58,6 @@ function IdentityService (conf, dal) {
     }, done);
   };
 
-  this.setBlockchainService = function (service) {
-    BlockchainService = service;
-  };
-
   /**
   * Tries to persist a public key given in ASCII-armored format.
   * Returns the database stored public key.
@@ -85,7 +76,7 @@ function IdentityService (conf, dal) {
       });
       async.waterfall([
         function (next) {
-          BlockchainService.current(next);
+          dal.getCurrentBlockOrNull(next);
         },
         function (current, next) {
           // Prepare validator for certifications

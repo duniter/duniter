@@ -1,0 +1,73 @@
+"use strict";
+
+var async           = require('async');
+var globalValidator = require('../lib/globalValidator');
+var blockchainDao   = require('../lib/blockchainDao');
+
+module.exports = function (conf, dal) {
+  return new MembershipService(conf, dal);
+};
+
+function MembershipService (conf, dal) {
+
+  var logger = require('../lib/logger')(dal.profile);
+
+  this.pair = null;
+
+  var Membership    = require('../lib/entity/membership');
+
+  this.current = function (done) {
+    dal.getCurrentBlockOrNull(done);
+  };
+
+  this.submitMembership = function (ms, done) {
+    var entry = new Membership(ms);
+    var globalValidation = globalValidator(conf, blockchainDao(null, dal));
+    async.waterfall([
+      function (next){
+        logger.info('⬇ %s %s', entry.issuer, entry.membership);
+        // Get already existing Membership with same parameters
+        dal.getMembershipsForHashAndIssuer(entry.hash, entry.issuer, next);
+      },
+      function (entries, next){
+        if (entries.length > 0) {
+          next('Already received membership');
+        }
+        else dal.isMember(entry.issuer, next);
+      },
+      function (isMember, next){
+        var isJoin = entry.membership == 'IN';
+        if (!isMember && isJoin) {
+          // JOIN
+          next();
+        }
+        else if (isMember && !isJoin) {
+          // LEAVE
+          next();
+        } else {
+          if (isJoin)
+            // RENEW
+            next();
+          else
+            next('A non-member cannot leave.');
+        }
+      },
+      function (next) {
+        dal.getCurrentBlockOrNull(next);
+      },
+      function (current, next) {
+        globalValidation.checkMembershipBlock(entry, current, next);
+      },
+      function (next){
+        // Saves entry
+        dal.saveMembership(entry, function (err) {
+          next(err);
+        });
+      },
+      function (next){
+        logger.info('✔ %s %s', entry.issuer, entry.membership);
+        next(null, entry);
+      }
+    ], done);
+  };
+}

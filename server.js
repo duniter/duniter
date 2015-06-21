@@ -105,7 +105,6 @@ function Server (dbConf, overrideConf) {
     return that.checkConfig()
       .then(function (){
         // Add signing & public key functions to PeeringService
-        that.PeeringService.setSignFunc(that.sign);
         logger.info('Node version: ' + that.version);
         logger.info('Node pubkey: ' + that.PeeringService.pubkey);
         return Q.nfcall(that.initPeer);
@@ -166,12 +165,6 @@ function Server (dbConf, overrideConf) {
         next();
       }
     ], done);
-  };
-
-  this.setPair = function(pair) {
-    that.pair = pair;
-    that.BlockchainService.setKeyPair(pair);
-    that.PeeringService.setKeyPair(pair);
   };
 
   this.checkConfig = function () {
@@ -245,33 +238,8 @@ function Server (dbConf, overrideConf) {
   this.initServices = function() {
     return Q.Promise(function(resolve, reject){
       if (!that.servicesInited) {
-        that.servicesInited = true;
-        that.HTTPService      = require("./app/service/HTTPService");
-        that.MerkleService    = require("./app/service/MerkleService");
-        that.ParametersService = require("./app/service/ParametersService")();
         async.waterfall([
           function(next) {
-            that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);
-            that.PeeringService      = require('./app/service/PeeringService')(that, null, null, that.dal);
-            that.BlockchainService   = require('./app/service/BlockchainService')(that.conf, that.dal, that.PeeringService);
-            that.TransactionsService = require('./app/service/TransactionsService')(that.conf, that.dal);
-            that.IdentityService.setBlockchainService(that.BlockchainService);
-            // Create document mapping
-            documentsMapping = {
-              'identity':    that.IdentityService.submitIdentity,
-              'revocation':  that.IdentityService.submitRevocation,
-              'membership':  that.BlockchainService.submitMembership,
-              'peer':        that.PeeringService.submit,
-              'transaction': that.TransactionsService.processTx,
-              'block':       function (obj, done) {
-                that.BlockchainService.submitBlock(obj, true)
-                  .then(function(block){
-                    that.BlockchainService.addStatComputing();
-                    done(null, block);
-                  })
-                  .fail(done);
-              }
-            };
             // Extract key pair
             if (that.conf.pair)
               next(null, {
@@ -285,10 +253,38 @@ function Server (dbConf, overrideConf) {
           },
           function (pair, next){
             if (pair) {
-              that.setPair(pair);
+              that.pair = pair;
               that.createSignFunction(pair, next);
             }
             else next('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
+          },
+          function(next) {
+            that.servicesInited = true;
+            that.HTTPService         = require("./app/service/HTTPService");
+            that.MerkleService       = require("./app/service/MerkleService");
+            that.ParametersService   = require("./app/service/ParametersService")();
+            that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);
+            that.MembershipService   = require('./app/service/MembershipService')(that.conf, that.dal);
+            that.PeeringService      = require('./app/service/PeeringService')(that, that.pair, that.dal);
+            that.BlockchainService   = require('./app/service/BlockchainService')(that.conf, that.dal, that.pair);
+            that.TransactionsService = require('./app/service/TransactionsService')(that.conf, that.dal);
+            // Create document mapping
+            documentsMapping = {
+              'identity':    that.IdentityService.submitIdentity,
+              'revocation':  that.IdentityService.submitRevocation,
+              'membership':  that.MembershipService.submitMembership,
+              'peer':        that.PeeringService.submit,
+              'transaction': that.TransactionsService.processTx,
+              'block':       function (obj, done) {
+                that.BlockchainService.submitBlock(obj, true)
+                  .then(function(block){
+                    that.BlockchainService.addStatComputing();
+                    done(null, block);
+                  })
+                  .fail(done);
+              }
+            };
+            next();
           }
         ], function(err) {
           err ? reject(err) : resolve();

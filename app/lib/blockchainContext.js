@@ -113,6 +113,8 @@ function BlockchainContext(conf, dal) {
     dal.getCurrentBlockOrNull(done);
   }
 
+  that.current = getCurrentBlock;
+
   function saveBlockData (current, block, done) {
     async.waterfall([
       function (next) {

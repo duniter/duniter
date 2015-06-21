@@ -18,16 +18,16 @@ var BLOCK_FOLDER_SIZE = 500;
 var SAVE_HEADERS_INTERVAL = 3000;
 
 module.exports = {
-  memory: function(profile) {
-    return getHomeFS(profile, true)
+  memory: function(profile, subPath) {
+    return getHomeFS(profile, subPath, true)
       .then(function(params) {
-        return Q(new FileDAL(profile, params.fs));
+        return Q(new FileDAL(profile, subPath, params.fs));
       });
   },
-  file: function(profile) {
-    return getHomeFS(profile, false)
+  file: function(profile, subPath) {
+    return getHomeFS(profile, subPath, false)
       .then(function(params) {
-        return new FileDAL(profile, params.fs);
+        return new FileDAL(profile, subPath, params.fs);
       });
   }
 };
@@ -38,8 +38,8 @@ function someDelayFix() {
   });
 }
 
-function getHomeFS(profile, isMemory) {
-  var home = getUCoinHomePath(profile);
+function getHomeFS(profile, subpath, isMemory) {
+  var home = getUCoinHomePath(profile, subpath);
   var fs;
   return someDelayFix()
     .then(function() {
@@ -56,12 +56,13 @@ function getUCoinHomePath(profile) {
   return userHome + '/.config/ucoin/' + profile;
 }
 
-function FileDAL(profile, myFS) {
+function FileDAL(profile, subPath, myFS) {
 
   var that = this;
 
   this.profile = profile;
 
+  var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
   var logger = require('../../lib/logger')(profile);
 
   var headers = [];
@@ -132,7 +133,7 @@ function FileDAL(profile, myFS) {
   }
 
   function pathOfBlock(blockNumber) {
-    return getUCoinHomePath(profile) + '/blocks/' + folderOfBlock(blockNumber) + '/' + blockFileName(blockNumber) + '.json';
+    return rootPath + '/blocks/' + folderOfBlock(blockNumber) + '/' + blockFileName(blockNumber) + '.json';
   }
 
   this.hasFileOfBlock = function(blockNumber) {
@@ -152,16 +153,16 @@ function FileDAL(profile, myFS) {
 
   function getCurrentMaxNumberInBlockFiles() {
     // Look in local files
-    return myFS.makeTree(getUCoinHomePath(profile) + '/blocks/')
+    return myFS.makeTree(rootPath + '/blocks/')
       .then(function(){
-        return myFS.list(getUCoinHomePath(profile) + '/blocks/');
+        return myFS.list(rootPath + '/blocks/');
       })
       .then(function(files){
         if(files.length == 0){
           return -1;
         } else {
           var maxDir = _.max(files, function(dir){ return parseInt(dir); });
-          return myFS.list(getUCoinHomePath(profile) + '/blocks/' + maxDir + '/')
+          return myFS.list(rootPath + '/blocks/' + maxDir + '/')
             .then(function(files){
               if(files.length > 0) {
                 return parseInt(_.max(files, function (f) {
@@ -190,14 +191,14 @@ function FileDAL(profile, myFS) {
     var folder = folderOfBlock(blockNumber);
     if (!blocksTreeLoaded[folder]) {
       blocksTreeLoaded[folder] = ((function () {
-        return myFS.makeTree(getUCoinHomePath(profile) + '/blocks/' + folderOfBlock(blockNumber));
+        return myFS.makeTree(rootPath + '/blocks/' + folderOfBlock(blockNumber));
       })());
     }
     return blocksTreeLoaded[folder];
   };
 
   function loadIntoArray(theArray, fileName) {
-    return myFS.read(getUCoinHomePath(profile) + '/' + fileName)
+    return myFS.read(rootPath + '/' + fileName)
       .then(function (data) {
         JSON.parse(data).forEach(function(item){
           theArray.push(item);
@@ -208,7 +209,7 @@ function FileDAL(profile, myFS) {
   }
 
   function loadIntoObject(obj, fileName) {
-    return myFS.read(getUCoinHomePath(profile) + '/' + fileName)
+    return myFS.read(rootPath + '/' + fileName)
       .then(function (data) {
         _.extend(obj, JSON.parse(data));
       })
@@ -530,7 +531,7 @@ function FileDAL(profile, myFS) {
   };
 
   this.getTxByHash = function(hash, done) {
-    return myFS.read(getUCoinHomePath(profile) + '/tx/' + hash + '.json')
+    return myFS.read(rootPath + '/tx/' + hash + '.json')
       .fail(function(){
         return _.chain(txs).
           where({ hash: hash }).
@@ -940,13 +941,13 @@ function FileDAL(profile, myFS) {
   };
 
   this.saveTxsInFiles = function (txs, extraProps) {
-    return myFS.makeTree(getUCoinHomePath(profile) + '/tx/')
+    return myFS.makeTree(rootPath + '/tx/')
       .then(function(){
         return Q.all(txs.map(function(tx) {
           _.extend(tx, extraProps);
           _.extend(tx, { currency: conf.currency });
           var hash = new Transaction(tx).getHash(true);
-          return myFS.write(getUCoinHomePath(profile) + '/tx/' + hash + '.json', JSON.stringify(tx, null, ' '));
+          return myFS.write(rootPath + '/tx/' + hash + '.json', JSON.stringify(tx, null, ' '));
         }));
       });
   };
@@ -956,7 +957,7 @@ function FileDAL(profile, myFS) {
   };
 
   this.writeJSON = function(obj, fileName, done) {
-    return that.donable(myFS.write(getUCoinHomePath(profile) + '/' + fileName, JSON.stringify(obj, null, ' ')), done);
+    return that.donable(myFS.write(rootPath + '/' + fileName, JSON.stringify(obj, null, ' ')), done);
   };
 
   this.donable = function(promise, done) {
@@ -1079,9 +1080,9 @@ function FileDAL(profile, myFS) {
   };
 
   this.saveTxInHistory = function(type, pubkey, tx) {
-    return myFS.makeTree(getUCoinHomePath(profile) + '/tx_history/')
+    return myFS.makeTree(rootPath + '/tx_history/')
       .then(function(){
-        return myFS.read(getUCoinHomePath(profile) + '/tx_history/' + pubkey + '.json')
+        return myFS.read(rootPath + '/tx_history/' + pubkey + '.json')
           .then(function(data){
             return JSON.parse(data);
           });
@@ -1092,14 +1093,14 @@ function FileDAL(profile, myFS) {
       .then(function(history){
         tx.currency = conf.currency;
         history[type].push(new Transaction(tx).getHash());
-        return myFS.write(getUCoinHomePath(profile) + '/tx_history/' + pubkey + '.json', JSON.stringify(history, null, ' '));
+        return myFS.write(rootPath + '/tx_history/' + pubkey + '.json', JSON.stringify(history, null, ' '));
       });
   };
 
   this.saveUDInHistory = function(pubkey, ud) {
-    return myFS.makeTree(getUCoinHomePath(profile) + '/ud_history/')
+    return myFS.makeTree(rootPath + '/ud_history/')
       .then(function(){
-        return myFS.read(getUCoinHomePath(profile) + '/ud_history/' + pubkey + '.json')
+        return myFS.read(rootPath + '/ud_history/' + pubkey + '.json')
           .then(function(data){
             return JSON.parse(data);
           });
@@ -1109,14 +1110,14 @@ function FileDAL(profile, myFS) {
       })
       .then(function(obj){
         obj.history.push(new Source(ud).UDjson());
-        return myFS.write(getUCoinHomePath(profile) + '/ud_history/' + pubkey + '.json', JSON.stringify(obj, null, ' '));
+        return myFS.write(rootPath + '/ud_history/' + pubkey + '.json', JSON.stringify(obj, null, ' '));
       });
   };
 
   this.getTransactionsHistory = function(pubkey, done) {
-    return myFS.makeTree(getUCoinHomePath(profile) + '/tx_history/')
+    return myFS.makeTree(rootPath + '/tx_history/')
       .then(function(){
-        return myFS.read(getUCoinHomePath(profile) + '/tx_history/' + pubkey + '.json')
+        return myFS.read(rootPath + '/tx_history/' + pubkey + '.json')
           .then(function(data){
             return JSON.parse(data);
           });
@@ -1178,9 +1179,9 @@ function FileDAL(profile, myFS) {
   };
 
   this.getUDHistory = function(pubkey, done) {
-    return myFS.makeTree(getUCoinHomePath(profile) + '/ud_history/')
+    return myFS.makeTree(rootPath + '/ud_history/')
       .then(function(){
-        return myFS.read(getUCoinHomePath(profile) + '/ud_history/' + pubkey + '.json')
+        return myFS.read(rootPath + '/ud_history/' + pubkey + '.json')
           .then(function(data){
             return JSON.parse(data);
           });
@@ -1219,7 +1220,7 @@ function FileDAL(profile, myFS) {
   };
 
   this.loadConf = function(done) {
-    return myFS.read(getUCoinHomePath(profile) + '/conf.json')
+    return myFS.read(rootPath + '/conf.json')
       .then(function(data){
         return _(Configuration.statics.defaultConf()).extend(JSON.parse(data));
       })
@@ -1234,7 +1235,7 @@ function FileDAL(profile, myFS) {
 
   this.saveConf = function(confToSave, done) {
     _.extend(conf, confToSave);
-    return myFS.write(getUCoinHomePath(profile) + '/conf.json', JSON.stringify(conf, null, ' '))
+    return myFS.write(rootPath + '/conf.json', JSON.stringify(conf, null, ' '))
       .then(function(){
         done && done();
       })
@@ -1245,7 +1246,7 @@ function FileDAL(profile, myFS) {
   };
 
   this.loadStats = function (done) {
-    return myFS.read(getUCoinHomePath(profile) + '/stats.json')
+    return myFS.read(rootPath + '/stats.json')
       .then(function(data) {
         return JSON.parse(data);
       })
@@ -1275,7 +1276,7 @@ function FileDAL(profile, myFS) {
     return that.loadStats()
       .then(function(stats){
         stats[name] = stat;
-        return myFS.write(getUCoinHomePath(profile) + '/stats.json', JSON.stringify(stats, null, ' '));
+        return myFS.write(rootPath + '/stats.json', JSON.stringify(stats, null, ' '));
       })
       .then(function(){
         done && done();
@@ -1331,17 +1332,17 @@ function FileDAL(profile, myFS) {
 
       // Remove files
       Q.all(files.map(function(fName) {
-        return myFS.exists(getUCoinHomePath(profile) + '/' + fName + '.json')
+        return myFS.exists(rootPath + '/' + fName + '.json')
           .then(function(exists){
-            return exists ? myFS.remove(getUCoinHomePath(profile) + '/' + fName + '.json') : Q();
+            return exists ? myFS.remove(rootPath + '/' + fName + '.json') : Q();
           })
       })),
 
       // Remove directories
       Q.all(dirs.map(function(dirName) {
-        return myFS.exists(getUCoinHomePath(profile) + '/' + dirName)
+        return myFS.exists(rootPath + '/' + dirName)
           .then(function(exists){
-            return exists ? myFS.removeTree(getUCoinHomePath(profile) + '/' + dirName) : Q();
+            return exists ? myFS.removeTree(rootPath + '/' + dirName) : Q();
           })
       }))
     ])

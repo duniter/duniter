@@ -9,7 +9,6 @@ var moment          = require('moment');
 var inquirer        = require('inquirer');
 var childProcess    = require('child_process');
 var usage           = require('usage');
-var rawer           = require('../lib/rawer');
 var base58          = require('../lib/base58');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
@@ -44,28 +43,20 @@ var computationTimeout = null;
 // Flag for saying if timeout was already waited
 var computationTimeoutDone = false;
 
-function BlockchainService (conf, dal, PeeringService) {
+function BlockchainService (conf, dal, pair) {
 
-  var BlockchainService = this;
-  var blockchainContext = blockchainCtx(conf, dal);
+  var that = this;
+  var mainContext = blockchainCtx(conf, dal);
   var logger = require('../lib/logger')(dal.profile);
+  var selfPubkey = base58.encode(pair.publicKey);
 
   var lastGeneratedWasWrong = false;
-  this.pair = null;
 
   var Identity      = require('../lib/entity/identity');
   var Certification = require('../lib/entity/certification');
   var Membership    = require('../lib/entity/membership');
   var Block         = require('../lib/entity/block');
-  var Link          = require('../lib/entity/link');
-  var Source        = require('../lib/entity/source');
   var Transaction   = require('../lib/entity/transaction');
-
-  PeeringService.setBlockchainService(this);
-
-  this.load = function (done) {
-    done();
-  };
 
   this.current = function (done) {
     dal.getCurrentBlockOrNull(done);
@@ -75,65 +66,10 @@ function BlockchainService (conf, dal, PeeringService) {
     dal.getPromoted(number, done);
   };
 
-  this.setKeyPair = function(keypair) {
-    this.pair = keypair;
-  };
-
-  this.submitMembership = function (ms, done) {
-    var entry = new Membership(ms);
-    var globalValidation = globalValidator(conf, blockchainDao(null, dal));
-    async.waterfall([
-      function (next){
-        logger.info('⬇ %s %s', entry.issuer, entry.membership);
-        // Get already existing Membership with same parameters
-        dal.getMembershipsForHashAndIssuer(entry.hash, entry.issuer, next);
-      },
-      function (entries, next){
-        if (entries.length > 0) {
-          next('Already received membership');
-        }
-        else dal.isMember(entry.issuer, next);
-      },
-      function (isMember, next){
-        var isJoin = entry.membership == 'IN';
-        if (!isMember && isJoin) {
-          // JOIN
-          next();
-        }
-        else if (isMember && !isJoin) {
-          // LEAVE
-          next();
-        } else {
-          if (isJoin)
-            // RENEW
-            next();
-          else
-            next('A non-member cannot leave.');
-        }
-      },
-      function (next) {
-        BlockchainService.current(next);
-      },
-      function (current, next) {
-        globalValidation.checkMembershipBlock(entry, current, next);
-      },
-      function (next){
-        // Saves entry
-        dal.saveMembership(entry, function (err) {
-          next(err);
-        });
-      },
-      function (next){
-        logger.info('✔ %s %s', entry.issuer, entry.membership);
-        next(null, entry);
-      }
-    ], done);
-  };
-
   this.submitBlock = function (obj, doCheck) {
-    return blockchainContext.addBlock(obj, doCheck)
+    return mainContext.addBlock(obj, doCheck)
       .tap(function(){
-        return Q.nfcall(BlockchainService.stopPoWThenProcessAndRestartPoW.bind(BlockchainService));
+        return Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
       })
       .then(function(block){
         return block;
@@ -169,7 +105,7 @@ function BlockchainService (conf, dal, PeeringService) {
             async.waterfall([
               function (next) {
                 if (block.number > 0)
-                  blockchainContext.checkHaveEnoughLinks(newcomer, newLinks, next);
+                  mainContext.checkHaveEnoughLinks(newcomer, newLinks, next);
                 else
                   next();
               },
@@ -230,11 +166,11 @@ function BlockchainService (conf, dal, PeeringService) {
   this.generateManualRoot = function (done) {
     async.waterfall([
       function (next) {
-        BlockchainService.current(next);
+        that.current(next);
       },
       function (block, next) {
         if (!block)
-        BlockchainService.generateNextBlock(new ManualRootGenerator(), next);
+        that.generateNextBlock(new ManualRootGenerator(), next);
         else
           next('Cannot generate root block: it already exists.');
       }
@@ -260,7 +196,7 @@ function BlockchainService (conf, dal, PeeringService) {
    * @param done Callback.
    */
   this.generateNext = function (done) {
-    BlockchainService.generateNextBlock(new NextBlockGenerator(conf, dal), done);
+    that.generateNextBlock(new NextBlockGenerator(conf, dal), done);
   };
 
   /**
@@ -671,8 +607,8 @@ function BlockchainService (conf, dal, PeeringService) {
     ].join(':');
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
-    if (PeeringService)
-      block.issuer = PeeringService.pubkey;
+    if (selfPubkey)
+      block.issuer = selfPubkey;
     // Members merkle
     var joiners = _(joinData).keys();
     var previousCount = current ? current.membersCount : 0;
@@ -846,7 +782,7 @@ function BlockchainService (conf, dal, PeeringService) {
     block.nonce = 0;
     powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros,
       pair: {
-        secretKeyEnc: base58.encode(BlockchainService.pair.secretKey)
+        secretKeyEnc: base58.encode(pair.secretKey)
       }
     });
     logger.info('Generating proof-of-work of block #%s with %s leading zeros... (CPU usage set to %s%)', block.number, nbZeros, (conf.cpu*100).toFixed(0));
@@ -887,7 +823,7 @@ function BlockchainService (conf, dal, PeeringService) {
         that.powProcess.kill();
         powWorker = new Worker();
         that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: {
-            secretKeyEnc: base58.encode(BlockchainService.pair.secretKey)
+            secretKeyEnc: base58.encode(pair.secretKey)
           }
         });
       } else if (!stopped) {
@@ -923,8 +859,8 @@ function BlockchainService (conf, dal, PeeringService) {
 
   this.startGeneration = function (done) {
     if (!conf.participate) return;
-    if (!PeeringService) {
-      done('Needed peering service activated.');
+    if (!selfPubkey) {
+      done('No self pubkey found.');
       return;
     }
     askedStop = null;
@@ -935,7 +871,7 @@ function BlockchainService (conf, dal, PeeringService) {
     var block, current;
     async.waterfall([
       function (next) {
-        dal.isMember(PeeringService.pubkey, function (err, isMember) {
+        dal.isMember(selfPubkey, function (err, isMember) {
           if (err || !isMember)
             next('Skipping', null, 'Local node is not a member. Waiting to be a member before computing a block.');
           else
@@ -952,7 +888,7 @@ function BlockchainService (conf, dal, PeeringService) {
       },
       function (theCurrent, next) {
         current = theCurrent;
-        var lastIssuedByUs = current.issuer == PeeringService.pubkey;
+        var lastIssuedByUs = current.issuer == selfPubkey;
         if (lastIssuedByUs && conf.powDelay && !computationTimeoutDone) {
           computationTimeoutDone = true;
           computationTimeout = function() {
@@ -972,16 +908,16 @@ function BlockchainService (conf, dal, PeeringService) {
           async.parallel({
             block: function(callback){
               if (lastGeneratedWasWrong) {
-                BlockchainService.generateEmptyNextBlock(callback);
+                that.generateEmptyNextBlock(callback);
               } else {
-                BlockchainService.generateNext(callback);
+                that.generateNext(callback);
               }
             },
             signature: function(callback){
-              signature.sync(BlockchainService.pair, callback);
+              signature.sync(pair, callback);
             },
             trial: function (callback) {
-              globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(PeeringService.pubkey, callback);
+              globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey, callback);
             }
           }, next);
         }
@@ -993,7 +929,7 @@ function BlockchainService (conf, dal, PeeringService) {
           next(null, null, 'Too high difficulty: waiting for other members to write next block');
         } else {
           computationTimeoutDone = false;
-          BlockchainService.prove(res.block, res.signature, res.trial, function (err, proofBlock) {
+          that.prove(res.block, res.signature, res.trial, function (err, proofBlock) {
             next(null, proofBlock, err);
           });
         }
@@ -1041,7 +977,7 @@ function BlockchainService (conf, dal, PeeringService) {
                 dal.getStat(statName, next);
               },
               current: function (next) {
-                BlockchainService.current(next);
+                that.current(next);
               }
             }, next);
           },

@@ -337,6 +337,6 @@ function PeeringService(server, pair, dal) {
 
 util.inherits(PeeringService, events.EventEmitter);
 
-module.exports = function (peerserver, pair, dal) {
-  return new PeeringService(peerserver, pair, dal);
+module.exports = function (server, pair, dal) {
+  return new PeeringService(server, pair, dal);
 };

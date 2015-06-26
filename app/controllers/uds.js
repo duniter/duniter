@@ -14,12 +14,12 @@ module.exports = function (server) {
   return new UDBinding(server);
 };
 
-function UDBinding(txServer) {
+function UDBinding(server) {
 
-  var conf = txServer.conf;
+  var conf = server.conf;
 
   // Services
-  var ParametersService = txServer.ParametersService;
+  var ParametersService = server.ParametersService;
 
   // Models
   var Source = require('../lib/entity/source');
@@ -32,7 +32,7 @@ function UDBinding(txServer) {
       .pipe(parsers.parseTransaction(onError))
       .pipe(versionFilter(onError))
       .pipe(currencyFilter(conf.currency, onError))
-      .pipe(txServer.singleWriteStream(onError))
+      .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
@@ -47,7 +47,7 @@ function UDBinding(txServer) {
       },
       function (pPubkey, next) {
         pubkey = pPubkey;
-        txServer.dal.getAvailableSourcesByPubkey(pubkey, next);
+        server.dal.getAvailableSourcesByPubkey(pubkey, next);
       },
       function (sources, next) {
         var result = {
@@ -92,7 +92,7 @@ function UDBinding(txServer) {
   function getUDSources(pubkey, filter, done) {
     async.waterfall([
       function (next) {
-        txServer.dal.getUDHistory(pubkey, next);
+        server.dal.getUDHistory(pubkey, next);
       },
       function (history, next) {
         var result = {

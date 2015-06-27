@@ -49,13 +49,14 @@
     "underscore": "1.8.3",
     "usage": "0.6.0",
     "vucoin": "0.25.0",
-    "winston": "^1.0.0"
+    "winston": "1.0.0"
   },
   "devDependencies": {
-    "eslint": "^0.21.1",
-    "eslint-plugin-mocha": "^0.2.2",
+    "eslint": "0.21.1",
+    "eslint-plugin-mocha": "0.2.2",
     "mocha": "",
-    "mocha-eslint": "^0.1.7",
+    "mocha-eslint": "0.1.7",
+    "request-promise": "0.4.2",
     "sha1": "",
     "should": "",
     "supertest": ""

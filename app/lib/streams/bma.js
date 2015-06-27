@@ -6,12 +6,19 @@ var Q = require('q');
 
 var logger = require('../../lib/logger')('bma');
 
-module.exports = function(ucoinNode, interfaces, httpLogs) {
+module.exports = function(server, interfaces, httpLogs) {
 
   "use strict";
 
   var httpLogger  = log4js.getLogger();
   var app = express();
+
+  if (!interfaces) {
+    interfaces = [{
+      ip: server.conf.ipv4,
+      port: server.conf.port
+    }];
+  }
 
   // all environments
   if (httpLogs) {
@@ -34,10 +41,10 @@ module.exports = function(ucoinNode, interfaces, httpLogs) {
     app.use(express.errorHandler());
   }
 
-  var node = require('../../controllers/node')(ucoinNode);
+  var node = require('../../controllers/node')(server);
   app.get('/node/summary',  node.summary);
 
-  var blockchain = require('../../controllers/blockchain')(ucoinNode);
+  var blockchain = require('../../controllers/blockchain')(server);
   app.get( '/blockchain/parameters',       blockchain.parameters);
   app.post('/blockchain/membership',       blockchain.parseMembership);
   app.get( '/blockchain/memberships/:search', blockchain.memberships);
@@ -55,12 +62,12 @@ module.exports = function(ucoinNode, interfaces, httpLogs) {
   app.get( '/blockchain/with/ud',          blockchain.with.ud);
   app.get( '/blockchain/with/tx',          blockchain.with.tx);
 
-  var net = require('../../controllers/network')(ucoinNode, ucoinNode.conf);
+  var net = require('../../controllers/network')(server, server.conf);
   app.get( '/network/peering',             net.peer);
   app.get( '/network/peering/peers',       net.peersGet);
   app.post('/network/peering/peers',       net.peersPost);
 
-  var wot = require('../../controllers/wot')(ucoinNode);
+  var wot = require('../../controllers/wot')(server);
   app.post('/wot/add',                   wot.add);
   app.post('/wot/revoke',                wot.revoke);
   app.get( '/wot/lookup/:search',        wot.lookup);
@@ -68,8 +75,8 @@ module.exports = function(ucoinNode, interfaces, httpLogs) {
   app.get( '/wot/certifiers-of/:search', wot.certifiersOf);
   app.get( '/wot/certified-by/:search',  wot.certifiedBy);
 
-  var transactions = require('../../controllers/transactions')(ucoinNode);
-  var dividend     = require('../../controllers/uds')(ucoinNode);
+  var transactions = require('../../controllers/transactions')(server);
+  var dividend     = require('../../controllers/uds')(server);
   app.post('/tx/process',                           transactions.parseTransaction);
   app.get( '/tx/sources/:pubkey',                   transactions.getSources);
   app.get( '/tx/history/:pubkey',                   transactions.getHistory);
@@ -92,8 +99,8 @@ module.exports = function(ucoinNode, interfaces, httpLogs) {
 function listenInterface(app, netInterface, port) {
   "use strict";
   return Q.Promise(function(resolve, reject){
-    var server = http.createServer(app);
-    server.listen(port, netInterface, function(err){
+    var httpServer = http.createServer(app);
+    httpServer.listen(port, netInterface, function(err){
       err ? reject(err) : resolve();
     });
   });

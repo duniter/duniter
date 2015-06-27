@@ -394,10 +394,7 @@ function serverStart(server, conf) {
         })
         .then(function(){
           // Enabling HTTP
-          return bma(server, [{
-            ip: server.conf.ipv4,
-            port: server.conf.port
-          }]);
+          return bma(server);
         })
         .then(function(){
           // Enabling Routing

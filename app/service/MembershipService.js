@@ -1,6 +1,7 @@
 "use strict";
 
 var async           = require('async');
+var localValidator = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
@@ -26,6 +27,9 @@ function MembershipService (conf, dal) {
     async.waterfall([
       function (next){
         logger.info('⬇ %s %s', entry.issuer, entry.membership);
+        if (!localValidator().checkSingleMembershipSignature(entry)) {
+          return next('wrong signature for membership');
+        }
         // Get already existing Membership with same parameters
         dal.getMembershipsForHashAndIssuer(entry.hash, entry.issuer, next);
       },

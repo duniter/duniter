@@ -83,6 +83,8 @@ function LocalValidator (conf) {
     return conf.avgGenTime * 4 * (Math.ceil((conf.medianTimeBlocks + 1) / 2));
   }
 
+  this.checkSingleMembershipSignature = checkSingleMembershipSignature;
+
   this.checkParameters = check(function (block, done) {
     if (block.number == 0 && !block.parameters)
       done('Parameters must be provided for root block');
@@ -528,21 +530,21 @@ function hasWrongSignatureForMemberships (block) {
   // Joiners
   while (!wrongSig && i < block.joiners.length) {
     ms = Membership.statics.fromInline(block.joiners[i], 'IN', block.currency);
-    wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
+    wrongSig = !checkSingleMembershipSignature(ms);
     i++;
   }
   // Actives
   i = 0;
   while (!wrongSig && i < block.actives.length) {
     ms = Membership.statics.fromInline(block.actives[i], 'IN', block.currency);
-    wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
+    wrongSig = !checkSingleMembershipSignature(ms);
     i++;
   }
   // Leavers
   i = 0;
   while (!wrongSig && i < block.leavers.length) {
     ms = Membership.statics.fromInline(block.leavers[i], 'OUT', block.currency);
-    wrongSig = !crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
+    wrongSig = !checkSingleMembershipSignature(ms);
     i++;
   }
   return wrongSig;
@@ -602,4 +604,8 @@ function checkPeerSignature (peer, done) {
   var pub = peer.pubkey;
   var signaturesMatching = crypto.verify(raw, sig, pub);
   done(signaturesMatching ? null : 'Signature from a peer must match');
+}
+
+function checkSingleMembershipSignature(ms) {
+  return crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
 }

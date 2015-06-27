@@ -14,6 +14,7 @@ var BOOLEAN      = "[01]";
 var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 var FINGERPRINT  = "[A-F0-9]{40}";
 var COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
+var BLOCK_REFERENCE = INTEGER + "-" + FINGERPRINT;
 
 module.exports = {
   
@@ -38,6 +39,7 @@ module.exports = {
   BASE58: exact(BASE58),
   PUBLIC_KEY: exact(PUBKEY),
   SIG: exact(SIGNATURE),
+  BLOCK_REFERENCE: exact(BLOCK_REFERENCE),
   CERT: {
     SELF: {
       UID: exact("UID:" + USER_ID),
@@ -53,7 +55,12 @@ module.exports = {
     INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + USER_ID)
   },
   MEMBERSHIP: {
-    BLOCK: exact(INTEGER + "-" + FINGERPRINT)
+    BLOCK:      find('Block: (' + BLOCK_REFERENCE + ')'),
+    VERSION:    find('Version: (1)'),
+    CURRENCY:   find('Currency: (' + CURRENCY + ')'),
+    ISSUER:     find('Issuer: (' + PUBKEY + ')'),
+    MEMBERSHIP: find('Membership: (IN|OUT)'),
+    USERID:     find('UserID: (' + USER_ID + ')')
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + INTEGER + ")"),

@@ -14,14 +14,13 @@ module.exports = MembershipParser;
 function MembershipParser (onError) {
   
   var captures = [
-    {prop: "version",           regexp: /Version: (.*)/},
-    {prop: "currency",          regexp: /Currency: (.*)/},
-    {prop: "issuer",            regexp: /Issuer: (.*)/},
-    {prop: "membership",        regexp: /Membership: (.*)/},
-    {prop: "userid",            regexp: /UserID: (.*)/},
+    {prop: "version",           regexp: constants.MEMBERSHIP.VERSION },
+    {prop: "currency",          regexp: constants.MEMBERSHIP.CURRENCY },
+    {prop: "issuer",            regexp: constants.MEMBERSHIP.ISSUER },
+    {prop: "membership",        regexp: constants.MEMBERSHIP.MEMBERSHIP },
+    {prop: "userid",            regexp: constants.MEMBERSHIP.USERID },
     {prop: "block",             regexp: constants.MEMBERSHIP.BLOCK},
-    {prop: "certts",            regexp: /CertTS: (.*)/, parser: parseDateFromTimestamp},
-    {prop: "block",             regexp: /Block: (.*)/}
+    {prop: "certts",            regexp: /CertTS: (.*)/, parser: parseDateFromTimestamp}
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
@@ -63,7 +62,7 @@ function MembershipParser (onError) {
         err = {code: codes.BAD_MEMBERSHIP, message: "Incorrect Membership field: must be either IN or OUT"};
     }
     if(!err){
-      if(obj.block && !obj.block.match(constants.MEMBERSHIP.BLOCK))
+      if(obj.block && !obj.block.match(constants.BLOCK_REFERENCE))
         err = {code: codes.BAD_BLOCK, message: "Incorrect Block field: must be a positive or zero integer, a dash and an uppercased SHA1 hash"};
     }
     if(!err){

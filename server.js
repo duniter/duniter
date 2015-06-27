@@ -52,6 +52,7 @@ function Server (dbConf, overrideConf) {
       .then(that.initServices)
       .then(function(err) {
         done && done(err);
+        return that;
       })
       .fail(done);
   };

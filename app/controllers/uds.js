@@ -1,14 +1,6 @@
 "use strict";
 var async            = require('async');
 var _                = require('underscore');
-var es               = require('event-stream');
-var jsoner           = require('../lib/streams/jsoner');
-var dos2unix         = require('../lib/dos2unix');
-var localValidator   = require('../lib/localValidator');
-var globalValidator  = require('../lib/globalValidator');
-var http2raw         = require('../lib/streams/parsers/http2raw');
-var http400          = require('../lib/http/http400');
-var parsers          = require('../lib/streams/parsers/doc');
 
 module.exports = function (server) {
   return new UDBinding(server);
@@ -17,8 +9,6 @@ module.exports = function (server) {
 function UDBinding(server) {
 
   var conf = server.conf;
-  var local = localValidator(conf);
-  var global = globalValidator(conf);
 
   // Services
   var ParametersService = server.ParametersService;
@@ -26,41 +16,16 @@ function UDBinding(server) {
   // Models
   var Source = require('../lib/entity/source');
 
-  this.parseTransaction = function (req, res) {
+  this.getHistory = function (req, res) {
     res.type('application/json');
-    var onError = http400(res);
-    http2raw.transaction(req, onError)
-      .pipe(dos2unix())
-      .pipe(parsers.parseTransaction(onError))
-      .pipe(local.versionFilter(onError))
-      .pipe(global.currencyFilter(onError))
-      .pipe(server.singleWriteStream(onError))
-      .pipe(jsoner())
-      .pipe(es.stringify())
-      .pipe(res);
-  };
-
-  this.getSources = function (req, res) {
-    res.type('application/json');
-    var pubkey = "";
     async.waterfall([
       function (next) {
         ParametersService.getPubkey(req, next);
       },
-      function (pPubkey, next) {
-        pubkey = pPubkey;
-        server.dal.getAvailableSourcesByPubkey(pubkey, next);
-      },
-      function (sources, next) {
-        var result = {
-          "currency": conf.currency,
-          "pubkey": pubkey,
-          "sources": []
-        };
-        sources.forEach(function (src) {
-          result.sources.push(new Source(src).UDjson());
-        });
-        next(null, result);
+      function (pubkey, next) {
+        getUDSources(pubkey, function(results) {
+          return results;
+        }, next);
       }
     ], function (err, result) {
       if (err) {
@@ -71,14 +36,46 @@ function UDBinding(server) {
     });
   };
 
-  this.getHistory = function (req, res) {
+  this.getHistoryBetweenBlocks = function (req, res) {
     res.type('application/json');
     async.waterfall([
       function (next) {
-        ParametersService.getPubkey(req, next);
+        async.parallel({
+          pubkey: ParametersService.getPubkey.bind(ParametersService, req),
+          from:   ParametersService.getFrom.bind(ParametersService, req),
+          to:     ParametersService.getTo.bind(ParametersService, req)
+        }, next);
       },
-      function (pubkey, next) {
+      function (params, next) {
+        var pubkey = params.pubkey, from = params.from, to = params.to;
         getUDSources(pubkey, function(results) {
+          results.history.history = _.filter(results.history.history, function(ud){ return ud.block_number >= from && ud.block_number <= to; });
+          return results;
+        }, next);
+      }
+    ], function (err, result) {
+      if (err) {
+        res.send(500, err);
+      } else {
+        res.send(200, JSON.stringify(result, null, "  "));
+      }
+    });
+  };
+
+  this.getHistoryBetweenTimes = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next) {
+        async.parallel({
+          pubkey: ParametersService.getPubkey.bind(ParametersService, req),
+          from:   ParametersService.getFrom.bind(ParametersService, req),
+          to:     ParametersService.getTo.bind(ParametersService, req)
+        }, next);
+      },
+      function (params, next) {
+        var pubkey = params.pubkey, from = params.from, to = params.to;
+        getUDSources(pubkey, function(results) {
+          results.history.history = _.filter(results.history.history, function(ud){ return ud.time >= from && ud.time <= to; });
           return results;
         }, next);
       }

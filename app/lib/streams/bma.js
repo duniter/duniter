@@ -85,6 +85,8 @@ module.exports = function(server, interfaces, httpLogs) {
   app.get( '/tx/history/:pubkey/pending',           transactions.getPendingForPubkey);
   app.get( '/tx/pending',                           transactions.getPending);
   app.get( '/ud/history/:pubkey',                   dividend.getHistory);
+  app.get( '/ud/history/:pubkey/blocks/:from/:to',  dividend.getHistoryBetweenBlocks);
+  app.get( '/ud/history/:pubkey/times/:from/:to',   dividend.getHistoryBetweenTimes);
 
   return interfaces.reduce(function(promise, netInterface) {
     return promise.then(function() {

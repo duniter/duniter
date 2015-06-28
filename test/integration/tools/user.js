@@ -1,6 +1,8 @@
 "use strict";
+var Q		    = require('q');
 var async		= require('async');
 var request	= require('request');
+var vucoin	= require('vucoin');
 var crypto	= require('../../../app/lib/crypto');
 var rawer		= require('../../../app/lib/rawer');
 var base58	= require('../../../app/lib/base58');
@@ -15,6 +17,12 @@ function User (uid, options, node) {
   var pub, sec;
   var selfCert = "";
   var selfTime = new Date();
+
+  // For sync code
+  if (options.pub && options.sec) {
+    pub = that.pub = options.pub;
+    sec = base58.decode(options.sec);
+  }
 
   function init(done) {
     if (options.salt && options.passwd) {
@@ -60,7 +68,23 @@ function User (uid, options, node) {
       ], function(err) {
         done(err);
       });
-    }
+    };
+  };
+
+  this.selfCertPromise = function(whenTimestamp) {
+    return Q.Promise(function(resolve, reject){
+      that.selfCert(whenTimestamp)(function(err) {
+        err ? reject(err) : resolve();
+      });
+    });
+  };
+
+  this.certPromise = function(user) {
+    return Q.Promise(function(resolve, reject){
+      that.cert(user)(function(err) {
+        err ? reject(err) : resolve();
+      });
+    });
   };
 
   this.cert = function (user) {
@@ -68,7 +92,7 @@ function User (uid, options, node) {
       async.waterfall([
         function(next) {
           async.parallel({
-            lookup: node.lookup(user.pub, function(res, callback) {
+            lookup: lookup(user.pub, function(res, callback) {
               callback(null, res);
             }),
             current: function(callback){
@@ -103,8 +127,16 @@ function User (uid, options, node) {
     return that.sendMembership("IN");
   };
 
+  this.joinPromise = function () {
+    return that.sendMembershipPromise("IN");
+  };
+
   this.leave = function () {
     return that.sendMembership("OUT");
+  };
+
+  this.sendMembershipPromise = function(type) {
+    return Q.nfcall(that.sendMembership(type));
   };
 
   this.sendMembership = function (type) {
@@ -152,7 +184,11 @@ function User (uid, options, node) {
             next('Amount and recipient are required');
             return;
           }
-          node.http.tx.sources(pub, next);
+          getVucoin()
+            .then(function(http){
+              http.tx.sources(pub, next);
+            })
+            .fail(next);
         },
         function (json, next) {
           currency = json.currency;
@@ -211,10 +247,15 @@ function User (uid, options, node) {
         function (raw, next) {
           var sig = crypto.signSync(raw, sec);
           raw += sig + '\n';
-          node.http.tx.process(raw, function (err) {
-            if (err) console.error('Error:', err);
-            next(err);
-          });
+
+          getVucoin()
+            .then(function(http){
+              http.tx.process(raw, function (err) {
+                if (err) console.error('Error:', err);
+                next(err);
+              })
+            })
+            .fail(next);
         }
       ], done);
     }
@@ -225,8 +266,25 @@ function User (uid, options, node) {
       "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
       "timeout": 1000*10
     }, function (err, res, body) {
+      err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
       done(err, res, body);
     });
     postReq.form(data);
+  }
+
+  function getVucoin() {
+    return Q.nfcall(vucoin, node.server.conf.ipv4, node.server.conf.port);
+  }
+
+  function lookup(pubkey, done) {
+    return function(calback) {
+      getVucoin()
+        .then(function(node){
+          node.wot.lookup(pubkey, function(err, res) {
+            done(res, calback);
+          });
+        })
+        .fail(done);
+    };
   }
 }

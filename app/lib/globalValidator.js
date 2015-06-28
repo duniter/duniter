@@ -1,5 +1,6 @@
 "use strict";
 
+var Q             = require('q');
 var _             = require('underscore');
 var async         = require('async');
 var crypto        = require('./crypto');
@@ -121,7 +122,7 @@ function GlobalValidator (conf, dao) {
   };
 
   this.getTrialLevel = function (issuer, done) {
-    getTrialLevel(issuer, done);
+    return getTrialLevel(issuer, done);
   };
 
   this.getPoWMin = function (blockNumber, done) {
@@ -594,49 +595,54 @@ function GlobalValidator (conf, dao) {
     // Compute exactly how much zeros are required for this block's issuer
     var powMin = 0;
     var percentRot = conf.percentRot;
-    async.waterfall([
-      function (next) {
-        dao.getCurrent(next);
-      },
-      function (current, next) {
-        if (!current) {
-          next(null, 0);
-          return;
-        }
-        var last;
-        async.waterfall([
-          function (next){
-            async.parallel({
-              lasts: function (next) {
-                dao.lastBlocksOfIssuer(issuer, 1, next);
-              },
-              powMin: function (next) {
-                getPoWMinFor(current.number + 1, next);
-              }
-            }, function (err, res) {
-              next(err, res);
-            });
-          },
-          function (res, next){
-            powMin = res.powMin;
-            last = (res.lasts && res.lasts[0]) || null;
-            if (last) {
-              dao.getIssuersBetween(last.number - 1 - conf.blocksRot, last.number - 1, next);
-            } else {
-              // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
-              last = { number: current.number };
-              next(null, []);
-            }
-          },
-          function (issuers, next) {
-            var nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
-            var nbBlocksSince = current.number - last.number;
-            var nbZeros = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
-            next(null, nbZeros);
+    return Q.Promise(function(resolve, reject){
+      async.waterfall([
+        function (next) {
+          dao.getCurrent(next);
+        },
+        function (current, next) {
+          if (!current) {
+            next(null, 0);
+            return;
           }
-        ], next);
-      }
-    ], done);
+          var last;
+          async.waterfall([
+            function (next){
+              async.parallel({
+                lasts: function (next) {
+                  dao.lastBlocksOfIssuer(issuer, 1, next);
+                },
+                powMin: function (next) {
+                  getPoWMinFor(current.number + 1, next);
+                }
+              }, function (err, res) {
+                next(err, res);
+              });
+            },
+            function (res, next){
+              powMin = res.powMin;
+              last = (res.lasts && res.lasts[0]) || null;
+              if (last) {
+                dao.getIssuersBetween(last.number - 1 - conf.blocksRot, last.number - 1, next);
+              } else {
+                // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
+                last = { number: current.number };
+                next(null, []);
+              }
+            },
+            function (issuers, next) {
+              var nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
+              var nbBlocksSince = current.number - last.number;
+              var nbZeros = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
+              next(null, nbZeros);
+            }
+          ], next);
+        }
+      ], function(err, level) {
+        done && done(err, level);
+        err ? reject(err) : resolve(level);
+      });
+    });
   }
 
   function checkIdentityUnicity (block, done) {

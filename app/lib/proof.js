@@ -15,6 +15,7 @@ process.on('message', function(stuff){
   var block = stuff.block;
   var nbZeros = stuff.zeros;
   var pair = stuff.pair;
+  var cpu = conf.cpu || 1;
   async.waterfall([
     function(next) {
       if (signatureFunc)
@@ -31,10 +32,14 @@ process.on('message', function(stuff){
       block.time = getBlockTime(block, conf);
       // Test CPU speed
       var testsPerSecond = nbZeros > 0 ? computeSpeed(block, sigFunc) : 1;
-      var testsPerRound = Math.max(Math.round(testsPerSecond*conf.cpu), 1);
+      var testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1);
       process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound });
       // Really start now
       var testsCount = 0;
+      if (nbZeros == 0) {
+        block.nonce = 0;
+        block.time = block.medianTime;
+      }
       async.whilst(
         function(){ return !pow.match(powRegexp); },
         function (next) {

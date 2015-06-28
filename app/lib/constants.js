@@ -119,6 +119,26 @@ module.exports = {
     RELEASE_MEMORY: 10000
   },
 
+  CONTRACT: {
+    DEFAULT: {
+      C: 0.007376575,
+      DT: 30.4375 * 24 * 3600,
+      UD0: 100,
+      STEPMAX: 3,
+      SIGDELAY: 3600 * 24 * 365 * 5,
+      SIGVALIDITY: 3600 * 24 * 365,
+      MSVALIDITY: 3600 * 24 * 365,
+      SIGQTY: 5,
+      SIGWOT: 5,
+      PERCENTROT: 2 / 3,
+      BLOCKSROT: 20,
+      POWDELAY: 10,
+      AVGGENTIME: 16 * 60,
+      DTDIFFEVAL: 10,
+      MEDIANTIMEBLOCKS: 20
+    }
+  },
+
   setUDID2Format: function () {
     module.exports.USER_ID = module.exports.UDID2_FORMAT;
     module.exports.CERT.SELF.UID = exact("UID:" + UDID2);

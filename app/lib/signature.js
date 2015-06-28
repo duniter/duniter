@@ -13,8 +13,10 @@ module.exports = {
 
   sync: function (pair, done) {
     var sec = (pair.secretKeyEnc && base58.decode(pair.secretKeyEnc)) || pair.secretKey;
-    done(null, function (msg) {
+    var sigF = function (msg) {
       return crypto.signSync(msg, sec);
-    });
+    };
+    done && done(null, sigF);
+    return sigF;
   }
 };

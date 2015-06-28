@@ -1,10 +1,14 @@
 "use strict";
 
-var should = require('should');
-var assert = require('assert');
-var ucoin  = require('./../../index');
-var bma    = require('./../../app/lib/streams/bma');
-var rp     = require('request-promise');
+var Q         = require('q');
+var _         = require('underscore');
+var should    = require('should');
+var assert    = require('assert');
+var ucoin     = require('./../../index');
+var bma       = require('./../../app/lib/streams/bma');
+var user      = require('./tools/user');
+var constants = require('../../app/lib/constants');
+var rp        = require('request-promise');
 
 require('log4js').configure({
   "appenders": [
@@ -17,30 +21,60 @@ var server = ucoin({
   ipv4: '127.0.0.1',
   port: '7777',
   currency: 'bb',
+  httpLogs: true,
+  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   }
 });
 
+var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
+var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
+
+var now = Math.round(new Date().getTime()/1000);
+
 describe("HTTP API", function() {
 
   before(function() {
-    return server.initWithServices().then(bma);
+    return server.initWithServices().then(bma)
+
+      .then(function(){
+        return Q()
+          .then(function() {
+            return cat.selfCertPromise(now);
+          })
+          .then(function() {
+            return toc.selfCertPromise(now);
+          })
+          .then(_.partial(toc.certPromise, cat))
+          .then(_.partial(cat.certPromise, toc))
+          .then(cat.joinPromise)
+          .then(toc.joinPromise)
+          .then(server.makeNextBlock)
+          .then(postBlock(server));
+      })
+      ;
   });
 
   describe("/blockchain", function() {
 
-    it('/block/88 should not exist', function() {
-      return expectHttpError(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
+    it('/block/0 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/0', { json: true }), {
+        number: 0
+      });
     });
 
-    it('/current should not exist', function() {
-      return expectHttpError(404, rp('http://127.0.0.1:7777/blockchain/current'));
+    it('/block/88 should not exist', function() {
+      return expectHttpCode(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
+    });
+
+    it('/current should exist', function() {
+      return expectHttpCode(200, rp('http://127.0.0.1:7777/blockchain/current'));
     });
 
     it('/membership should not accept wrong signature', function() {
-      return expectHttpError(400, 'wrong signature for membership', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+      return expectHttpCode(400, 'wrong signature for membership', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 1\n' +
           'Type: Membership\n' +
@@ -56,7 +90,7 @@ describe("HTTP API", function() {
     });
 
     it('/membership should not accept wrong signature', function() {
-      return expectHttpError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+      return expectHttpCode(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 1\n' +
           'Type: Membership\n' +
@@ -71,7 +105,7 @@ describe("HTTP API", function() {
     });
 
     it('/membership should not accept wrong signature', function() {
-      return expectHttpError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+      return expectHttpCode(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 1\n' +
           'Type: Membership\n' +
@@ -88,7 +122,7 @@ describe("HTTP API", function() {
   });
 });
 
-function expectHttpError(code, message, promise) {
+function expectHttpCode(code, message, promise) {
   if (arguments.length == 2) {
     promise = arguments[1];
     message = undefined;
@@ -106,4 +140,35 @@ function expectHttpError(code, message, promise) {
       }
       else throw err;
     });
+}
+
+function expectJSON(promise, json) {
+  return promise
+    .then(function(resJson){
+      _.keys(json).forEach(function(key){
+        resJson.should.have.property(key).equal(json[key]);
+      });
+    })
+    .catch(function(err){
+      if (err.response) {
+        assert.equal(err.response.statusCode, 200);
+      }
+      else throw err;
+    });
+}
+
+function postBlock(server) {
+  return function(block) {
+    return post(server, '/blockchain/block')({
+      block: typeof block == 'string' ? block : block.getRawSigned()
+    });
+  };
+}
+
+function post(server, uri) {
+  return function(data) {
+    return rp.post('http://' + [server.conf.ipv4, server.conf.port].join(':') + uri, {
+      form: data
+    });
+  };
 }

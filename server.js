@@ -1,18 +1,19 @@
 "use strict";
-var stream     = require('stream');
-var async      = require('async');
-var util       = require('util');
-var _          = require('underscore');
-var Q          = require('q');
-var fileDAL  = require('./app/lib/dal/fileDAL');
-var jsonpckg   = require('./package.json');
+var stream      = require('stream');
+var async       = require('async');
+var util        = require('util');
+var _           = require('underscore');
+var Q           = require('q');
+var constants   = require('./app/lib/constants');
+var fileDAL     = require('./app/lib/dal/fileDAL');
+var jsonpckg    = require('./package.json');
 var router      = require('./app/lib/streams/router');
 var multicaster = require('./app/lib/streams/multicaster');
 var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
 var Peer        = require('./app/lib/entity/peer');
 var signature   = require('./app/lib/signature');
-var common       = require('./app/lib/common');
+var common      = require('./app/lib/common');
 var INNER_WRITE = true;
 
 // Add methods to String and Date
@@ -24,7 +25,7 @@ function Server (dbConf, overrideConf) {
 
   var logger = require('./app/lib/logger')('server');
   var that = this;
-  var connectionPromise;
+  var connectionPromise, servicesPromise;
   that.conf = null;
   that.dal = null;
   that.version = jsonpckg.version;
@@ -51,13 +52,14 @@ function Server (dbConf, overrideConf) {
   };
 
   this.initWithServices = function (done) {
-    return that.connectDB()
-      .then(that.initServices)
-      .then(function(err) {
-        done && done(err);
-        return that;
-      })
-      .fail(done);
+    // Init services only once
+    return servicesPromise || (servicesPromise = that.connectDB()
+        .then(that.initServices)
+        .then(function(err) {
+          done && done(err);
+          return that;
+        })
+        .fail(done));
   };
 
   this.submit = function (obj, isInnerWrite, done) {
@@ -71,7 +73,7 @@ function Server (dbConf, overrideConf) {
           // Handle the incoming object
           action(obj, next);
         } else {
-          next('Unknown document type ' + JSON.stringify(obj));
+          next('Unknown document type ' + obj.documentType);
         }
       }
     ], function (err, res) {
@@ -102,6 +104,34 @@ function Server (dbConf, overrideConf) {
       })
       .then(function(conf){
         that.conf = _(conf).extend(overrideConf || {});
+        // Default values
+        var defaultValues = {
+          remoteipv4:       that.conf.ipv4,
+          remoteipv6:       that.conf.ipv6,
+          remoteport:       that.conf.port,
+          cpu:              1,
+          c:                constants.CONTRACT.DEFAULT.C,
+          dt:               constants.CONTRACT.DEFAULT.DT,
+          ud0:              constants.CONTRACT.DEFAULT.UD0,
+          stepMax:          constants.CONTRACT.DEFAULT.STEPMAX,
+          sigDelay:         constants.CONTRACT.DEFAULT.SIGDELAY,
+          sigValidity:      constants.CONTRACT.DEFAULT.SIGVALIDITY,
+          msValidity:       constants.CONTRACT.DEFAULT.MSVALIDITY,
+          sigQty:           constants.CONTRACT.DEFAULT.SIGQTY,
+          sigWoT:           constants.CONTRACT.DEFAULT.SIGWOT,
+          percentRot:       constants.CONTRACT.DEFAULT.PERCENTROT,
+          blocksRot:        constants.CONTRACT.DEFAULT.BLOCKSROT,
+          powDelay:         constants.CONTRACT.DEFAULT.POWDELAY,
+          avgGenTime:       constants.CONTRACT.DEFAULT.AVGGENTIME,
+          dtDiffEval:       constants.CONTRACT.DEFAULT.DTDIFFEVAL,
+          medianTimeBlocks: constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
+          rootoffset:       0
+        };
+        _.keys(defaultValues).forEach(function(key){
+          if (that.conf[key] == undefined) {
+            that.conf[key] = defaultValues[key];
+          }
+        });
       });
   };
 
@@ -299,11 +329,18 @@ function Server (dbConf, overrideConf) {
     });
   };
 
-  this.singleWriteStream = function (onError) {
-    return new TempStream(that, onError);
+  this.makeNextBlock = function() {
+    return that.initWithServices()
+      .then(function(){
+        return that.BlockchainService.makeNextBlock();
+      });
   };
 
-  function TempStream (parentStream, onError) {
+  this.singleWriteStream = function (onError, onSuccess) {
+    return new TempStream(that, onError, onSuccess);
+  };
+
+  function TempStream (parentStream, onError, onSuccess) {
 
     stream.Duplex.call(this, { objectMode: true });
 
@@ -311,6 +348,7 @@ function Server (dbConf, overrideConf) {
     self._write = function (obj, enc, done) {
       parentStream._write(obj, enc, function (err, res) {
         if (err && typeof onError == 'function') onError(err);
+        if (!err && typeof onSuccess == 'function') onSuccess(res);
         if (res) self.push(res);
         self.push(null);
         done();

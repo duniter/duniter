@@ -3,9 +3,9 @@
 var _             = require('underscore');
 var async         = require('async');
 var crypto        = require('./crypto');
-var common        = require('./common');
 var moment        = require('moment');
-var logger        = require('./logger')('validator');
+var util          = require('util');
+var stream        = require('stream');
 var Block         = require('../lib/entity/block');
 var Identity      = require('../lib/entity/identity');
 var Membership    = require('../lib/entity/membership');
@@ -24,6 +24,10 @@ function GlobalValidator (conf, dao) {
     ], function (err) {
       done(err);
     });
+  };
+
+  this.currencyFilter = function (onError) {
+    return new CurrencyFilter(conf.currency, onError);
   };
 
   var that = this;
@@ -1120,3 +1124,20 @@ function isOver3Hops (pubkey, ofMembers, newLinks, dao, done) {
     done(err, remainingKeys);
   });
 }
+
+function CurrencyFilter (currency, onError) {
+
+  stream.Transform.call(this, { objectMode: true });
+
+  var that = this;
+
+  this._write = function (json) {
+    if (json && json.currency && json.currency == currency)
+      that.push(json);
+    else
+      onError("Document currency must be '" + currency + "'");
+    that.push(null);
+  };
+}
+
+util.inherits(CurrencyFilter, stream.Transform);

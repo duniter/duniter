@@ -2,8 +2,8 @@
 var async            = require('async');
 var es               = require('event-stream');
 var dos2unix         = require('../lib/dos2unix');
-var versionFilter    = require('../lib/streams/versionFilter');
-var currencyFilter   = require('../lib/streams/currencyFilter');
+var localValidator   = require('../lib/localValidator');
+var globalValidator  = require('../lib/globalValidator');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var jsoner           = require('../lib/streams/jsoner');
 var http400          = require('../lib/http/http400');
@@ -16,6 +16,9 @@ module.exports = function (server, conf) {
 };
 
 function NetworkBinding (server, conf) {
+
+  var local = localValidator(conf);
+  var global = globalValidator(conf);
 
   // Services
   var MerkleService     = server.MerkleService;
@@ -62,8 +65,8 @@ function NetworkBinding (server, conf) {
     http2raw.peer(req, onError)
       .pipe(dos2unix())
       .pipe(parsers.parsePeer(onError))
-      .pipe(versionFilter(onError))
-      .pipe(currencyFilter(conf.currency, onError))
+      .pipe(local.versionFilter(onError))
+      .pipe(global.currencyFilter(onError))
       .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())

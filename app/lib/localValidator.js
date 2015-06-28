@@ -1,9 +1,9 @@
 "use strict";
 var async      = require('async');
+var util       = require('util');
+var stream     = require('stream');
 var crypto     = require('./crypto');
-var common     = require('./common');
 var rawer      = require('./rawer');
-var constants  = require('./constants');
 var Block      = require('../lib/entity/block');
 var Identity   = require('../lib/entity/identity');
 var Membership = require('../lib/entity/membership');
@@ -84,6 +84,10 @@ function LocalValidator (conf) {
   }
 
   this.checkSingleMembershipSignature = checkSingleMembershipSignature;
+
+  this.versionFilter = function (onError) {
+    return new VersionFilter(onError);
+  };
 
   this.checkParameters = check(function (block, done) {
     if (block.number == 0 && !block.parameters)
@@ -609,3 +613,20 @@ function checkPeerSignature (peer, done) {
 function checkSingleMembershipSignature(ms) {
   return crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
 }
+
+function VersionFilter (onError) {
+
+  stream.Transform.call(this, { objectMode: true });
+
+  var that = this;
+
+  this._write = function (json) {
+    if (json && json.version && parseInt(json.version) == 1)
+      that.push(json);
+    else
+      onError("Document version must be 1");
+    that.push(null);
+  };
+}
+
+util.inherits(VersionFilter, stream.Transform);

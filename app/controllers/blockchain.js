@@ -4,13 +4,12 @@ var async            = require('async');
 var es               = require('event-stream');
 var moment           = require('moment');
 var dos2unix         = require('../lib/dos2unix');
-var versionFilter    = require('../lib/streams/versionFilter');
-var currencyFilter   = require('../lib/streams/currencyFilter');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var jsoner           = require('../lib/streams/jsoner');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
 var blockchainDao    = require('../lib/blockchainDao');
+var localValidator   = require('../lib/localValidator');
 var globalValidator  = require('../lib/globalValidator');
 var Membership       = require('../lib/entity/membership');
 
@@ -21,6 +20,8 @@ module.exports = function (server) {
 function BlockchainBinding (server) {
 
   var conf = server.conf;
+  var local = localValidator(conf);
+  var global = globalValidator(conf);
 
   // Services
   var ParametersService = server.ParametersService;
@@ -37,8 +38,8 @@ function BlockchainBinding (server) {
     http2raw.membership(req, onError)
       .pipe(dos2unix())
       .pipe(parsers.parseMembership(onError))
-      .pipe(versionFilter(onError))
-      .pipe(currencyFilter(conf.currency, onError))
+      .pipe(local.versionFilter(onError))
+      .pipe(global.currencyFilter(onError))
       .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())
@@ -51,8 +52,8 @@ function BlockchainBinding (server) {
     http2raw.block(req, onError)
       .pipe(dos2unix())
       .pipe(parsers.parseBlock(onError))
-      .pipe(versionFilter(onError))
-      .pipe(currencyFilter(conf.currency, onError))
+      .pipe(local.versionFilter(onError))
+      .pipe(global.currencyFilter(onError))
       .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())

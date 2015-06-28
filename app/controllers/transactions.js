@@ -4,8 +4,8 @@ var _                = require('underscore');
 var es               = require('event-stream');
 var jsoner           = require('../lib/streams/jsoner');
 var dos2unix         = require('../lib/dos2unix');
-var versionFilter    = require('../lib/streams/versionFilter');
-var currencyFilter   = require('../lib/streams/currencyFilter');
+var localValidator   = require('../lib/localValidator');
+var globalValidator  = require('../lib/globalValidator');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
@@ -19,6 +19,8 @@ module.exports = function (server) {
 function TransactionBinding(server) {
 
   var conf = server.conf;
+  var local = localValidator(conf);
+  var global = globalValidator(conf);
 
   // Services
   var ParametersService = server.ParametersService;
@@ -32,8 +34,8 @@ function TransactionBinding(server) {
     http2raw.transaction(req, onError)
       .pipe(dos2unix())
       .pipe(parsers.parseTransaction(onError))
-      .pipe(versionFilter(onError))
-      .pipe(currencyFilter(conf.currency, onError))
+      .pipe(local.versionFilter(onError))
+      .pipe(global.currencyFilter(onError))
       .pipe(server.singleWriteStream(onError))
       .pipe(jsoner())
       .pipe(es.stringify())

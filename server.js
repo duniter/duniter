@@ -12,8 +12,11 @@ var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
 var Peer        = require('./app/lib/entity/peer');
 var signature   = require('./app/lib/signature');
+var common       = require('./app/lib/common');
 var INNER_WRITE = true;
 
+// Add methods to String and Date
+common.shim();
 
 function Server (dbConf, overrideConf) {
 

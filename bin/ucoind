@@ -32,8 +32,6 @@ program
   .usage('<command> [options]')
   .option('-p, --port <port>',         'Port to listen for requests', parseInt)
   .option('-c, --currency <name>',     'Name of the currency managed by this node.')
-  .option('--mhost <host>',            'MongoDB host.')
-  .option('--mport <port>',            'MongoDB port.')
   .option('-d, --mdb <name>',          'MongoDB database name (defaults to "ucoin_default").')
   .option('--salt <salt>',             'Key salt to generate this key\'s secret key')
   .option('--passwd <password>',       'Password to generate this key\'s secret key')
@@ -571,7 +569,6 @@ function commandLineConf(conf) {
       }
     },
     db: {
-      mhost: program.mhost,
       mport: program.mport,
       mdb: program.mdb
     },
@@ -640,7 +637,6 @@ function commandLineConf(conf) {
   if (cli.cpu)                              conf.cpu            = Math.max(0.01, Math.min(1.0, cli.cpu));
   if (cli.logs.http)                        conf.httplogs       = true;
   if (cli.logs.nohttp)                      conf.httplogs       = false;
-  if (cli.db.mhost)                         conf.mhost          = cli.db.mhost;
   if (cli.db.mport)                         conf.mport          = cli.db.mport;
   if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
   if (cli.isolate)                          conf.isolate        = cli.isolate;
@@ -656,7 +652,7 @@ function connect(callback) {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = ucoin({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
+    var server = ucoin({ name: dbName }, commandLineConf());
 
     // Initialize server (db connection, ...)
     server.connectDB()
@@ -679,7 +675,7 @@ function service(callback) {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = ucoin({ name: dbName, host: program.mhost, port: program.mport }, commandLineConf());
+    var server = ucoin({ name: dbName }, commandLineConf());
 
     // Initialize server (db connection, ...)
     server.initWithServices()

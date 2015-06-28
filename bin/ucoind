@@ -407,6 +407,11 @@ function serverStart(server, conf) {
           }
           next();
         })
+        .then(function(){
+          if (conf.participate) {
+            return server.startBlockComputation();
+          }
+        })
         .fail(next);
     }
   ], function (err) {

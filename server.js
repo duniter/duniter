@@ -167,29 +167,6 @@ function Server (dbConf, overrideConf) {
       },
       function (next){
         if (conf.participate) {
-          async.forever(
-            function tryToGenerateNextBlock(next) {
-              async.waterfall([
-                function (next) {
-                  that.BlockchainService.startGeneration(next);
-                },
-                function (block, next) {
-                  if (block) {
-                    var peer = new Peer({endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')]});
-                    multicaster(conf.isolate).sendBlock(peer, block, next);
-                  } else {
-                    next();
-                  }
-                }
-              ], function (err) {
-                next(err);
-              });
-            },
-            function onError(err) {
-              logger.error(err);
-              logger.error('Block generation STOPPED.');
-            }
-          );
         }
         next();
       },
@@ -199,6 +176,32 @@ function Server (dbConf, overrideConf) {
         next();
       }
     ], done);
+  };
+
+  this.startBlockComputation = function() {
+    async.forever(
+      function tryToGenerateNextBlock(next) {
+        async.waterfall([
+          function (next) {
+            that.BlockchainService.startGeneration(next);
+          },
+          function (block, next) {
+            if (block) {
+              var peer = new Peer({endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')]});
+              multicaster(conf.isolate).sendBlock(peer, block, next);
+            } else {
+              next();
+            }
+          }
+        ], function (err) {
+          next(err);
+        });
+      },
+      function onError(err) {
+        logger.error(err);
+        logger.error('Block generation STOPPED.');
+      }
+    );
   };
 
   this.checkConfig = function () {

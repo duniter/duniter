@@ -33,7 +33,6 @@ var defaultConf = function() {
     "dtDiffEval": constants.CONTRACT.DEFAULT.DTDIFFEVAL,
     "medianTimeBlocks": constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
     "participate": true,
-    "tsInterval": 30,
     "httplogs": false,
     "udid2": false,
     "timeout": 3000,

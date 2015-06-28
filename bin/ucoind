@@ -56,7 +56,6 @@ program
   .option('--participate <Y|N>',       'Participate to writing the blockchain')
   .option('--upnp',                    'Use UPnP to open remote port')
   .option('--noupnp',                  'Do not use UPnP to open remote port')
-  .option('--tsInterval <number>',     'Number of seconds as acceptable offset when receiving a block')
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RMT')
   .option('--ud0 <number>',            'Universal Dividend initial value')
   .option('--dt <number>',             'Number of seconds between two UD')
@@ -590,7 +589,6 @@ function commandLineConf(conf) {
       powPeriod:   program.powPeriod,
       powDelay:    program.powDelay,
       participate: program.participate,
-      tsInterval:  program.tsInterval,
       ud0:         program.ud0,
       c:           program.growth,
       dt:          program.dt,
@@ -625,7 +623,6 @@ function commandLineConf(conf) {
   if (cli.ucp.powPeriod)                    conf.powPeriod      = cli.ucp.powPeriod;
   if (cli.ucp.powDelay)                     conf.powDelay       = cli.ucp.powDelay;
   if (cli.ucp.participate)                  conf.participate    = cli.ucp.participate == 'Y';
-  if (cli.ucp.tsInterval)                   conf.tsInterval     = cli.ucp.tsInterval;
   if (cli.ucp.dt)                           conf.dt             = cli.ucp.dt;
   if (cli.ucp.c)                            conf.c              = cli.ucp.c;
   if (cli.ucp.ud0)                          conf.ud0            = cli.ucp.ud0;

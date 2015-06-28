@@ -99,6 +99,12 @@ program
   .command('sync [host] [port] [to]')
   .description('Synchronize blockchain from a remote uCoin node')
   .action(service(function (host, port, to, server, conf) {
+    if (!host) {
+      throw 'Host is required.';
+    }
+    if (!port) {
+      throw 'Port is required.';
+    }
     sync(server, host, port, conf, to);
   }));
 

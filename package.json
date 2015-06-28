@@ -24,7 +24,7 @@
     "crypto-currency"
   ],
   "author": "Cedric Moreau <cem.moreau@gmail.com>",
-  "license": "MIT",
+  "license": "GPLv3",
   "readmeFilename": "readme.md",
   "bugs": {
     "url": "https://github.com/ucoin-io/ucoin/issues"

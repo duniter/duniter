@@ -1206,7 +1206,7 @@ The full transaction history for the given `pubkey`
 }
 ```
 
-#### `tx/history/[PUBKEY]/blocks/[from]/to]`
+#### `tx/history/[PUBKEY]/blocks/[from]/[to]`
 
 **Goal**
 

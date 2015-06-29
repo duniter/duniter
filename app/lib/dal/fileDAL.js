@@ -1087,6 +1087,15 @@ function FileDAL(profile, subPath, myFS) {
     return that.writeJSON(txs, 'txs.json', done);
   };
 
+  this.dropTxHistory = function(pubkey) {
+    return myFS.makeTree(rootPath + '/tx_history/')
+      .then(function(){
+        return myFS.remove(rootPath + '/tx_history/' + pubkey + '.json');
+      })
+      .fail(function(){
+      });
+  };
+
   this.saveTxInHistory = function(type, pubkey, tx) {
     return myFS.makeTree(rootPath + '/tx_history/')
       .then(function(){
@@ -1100,7 +1109,8 @@ function FileDAL(profile, subPath, myFS) {
       })
       .then(function(history){
         tx.currency = conf.currency;
-        history[type].push(new Transaction(tx).getHash());
+        var hash = new Transaction(tx).getHash();
+        history[type].push(hash);
         return myFS.write(rootPath + '/tx_history/' + pubkey + '.json', JSON.stringify(history, null, ' '));
       });
   };
@@ -1271,8 +1281,9 @@ function FileDAL(profile, subPath, myFS) {
     return that.loadStats()
       .then(function(conf){
         // Create stat if it does not exist
-        done && done(null, (conf && conf[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 });
-        return conf;
+        var res = (conf && conf[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 };
+        done && done(null, res);
+        return res;
       })
       .fail(function(err){
         done && done(err);

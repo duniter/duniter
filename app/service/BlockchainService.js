@@ -992,6 +992,23 @@ function BlockchainService (conf, dal, pair) {
       });
   };
 
+  this.recomputeTxHistory = function(pubkey) {
+    return dal.dropTxHistory(pubkey)
+      .then(function(){
+        return dal.getStat('tx');
+      })
+      .then(function(stat){
+        return stat.blocks.reduce(function(p, number) {
+          return p.then(function() {
+            return dal.getBlockOrNull(number)
+              .then(function(block){
+                return saveHistory(block, pubkey);
+              });
+          });
+        }, Q());
+      });
+  };
+
   this.addStatComputing = function () {
     var tests = {
       'newcomers': 'identities',
@@ -1068,18 +1085,22 @@ function BlockchainService (conf, dal, pair) {
     });
   };
 
-  function saveHistory(block) {
+  function saveHistory(block, forPubkey) {
     return block.transactions.reduce(function(promise, tx) {
       return promise
         .then(function(){
           var issuers = [], recipients = [];
           tx.signatories.forEach(function(issuer){
-            issuers.push(issuer);
+            if (!forPubkey || issuer == forPubkey) {
+              issuers.push(issuer);
+            }
           });
           tx.outputs.forEach(function(out){
             var recip = out.split(':')[0];
             if (issuers.indexOf(recip) === -1) {
-              recipients.push(recip);
+              if (!forPubkey || recip == forPubkey) {
+                recipients.push(recip);
+              }
             }
           });
           return Q.all(issuers.map(function(issuer) {

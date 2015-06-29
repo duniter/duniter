@@ -345,6 +345,13 @@ function Server (dbConf, overrideConf) {
       });
   };
 
+  this.recomputeTxHistory = function(pubkey) {
+    return that.initWithServices()
+      .then(function(){
+        return that.BlockchainService.recomputeTxHistory(pubkey);
+      });
+  };
+
   this.singleWriteStream = function (onError, onSuccess) {
     return new TempStream(that, onError, onSuccess);
   };

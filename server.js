@@ -147,7 +147,6 @@ function Server (dbConf, overrideConf) {
   };
 
   this.initPeer = function (done) {
-    var conf = that.conf;
     async.waterfall([
       function (next){
         that.checkConfig().then(next).fail(next);
@@ -167,8 +166,6 @@ function Server (dbConf, overrideConf) {
         that.PeeringService.regularSyncBlock(next);
       },
       function (next){
-        if (conf.participate) {
-        }
         next();
       },
       function (next) {
@@ -183,15 +180,15 @@ function Server (dbConf, overrideConf) {
     async.forever(
       function tryToGenerateNextBlock(next) {
         async.waterfall([
-          function (next) {
-            that.BlockchainService.startGeneration(next);
+          function (nextOne) {
+            that.BlockchainService.startGeneration(nextOne);
           },
-          function (block, next) {
+          function (block, nextOne) {
             if (block) {
-              var peer = new Peer({endpoints: [['BASIC_MERKLED_API', conf.ipv4, conf.port].join(' ')]});
-              multicaster(conf.isolate).sendBlock(peer, block, next);
+              var peer = new Peer({endpoints: [['BASIC_MERKLED_API', that.conf.ipv4, that.conf.port].join(' ')]});
+              multicaster(that.conf.isolate).sendBlock(peer, block, nextOne);
             } else {
-              next();
+              nextOne();
             }
           }
         ], function (err) {

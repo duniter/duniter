@@ -183,7 +183,11 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   that.writeFileOfBlock = function(block) {
-    return myFS.write(pathOfBlock(block.number), JSON.stringify(block, null, ' '));
+    return myFS.write(pathOfBlock(block.number), JSON.stringify(block, null, ' '))
+      .then(function(){
+        global.lastSavedBlockFile = Math.max(global.lastSavedBlockFile || 0, block.number);
+        return that.writeJSON(global, 'global.json');
+      });
   };
 
   var blocksTreeLoaded = {};
@@ -366,6 +370,10 @@ function FileDAL(profile, subPath, myFS) {
 
   this.getCurrentNumber = function() {
     return Q(global.currentNumber);
+  };
+
+  this.getLastSavedBlockFileNumber = function() {
+    return Q(global.lastSavedBlockFile || -1);
   };
 
   this.getBlockCurrent = function(done) {

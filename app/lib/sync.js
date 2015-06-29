@@ -60,169 +60,129 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         // Blockchain
         //============
         function (next) {
-          var availableNumber = -1;
-          var finishedDownload = false;
-          var finished = false;
-          var remoteCurrentNumber = 1;
-          async.parallel({
-            download: function(callback){
-              async.waterfall([
 
-                function (next){
-                  logger.info('Downloading Blockchain...');
-                  watcher.writeStatus('Connecting to ' + host + '...');
-                  async.parallel({
-                    localCurrent: function (next) {
-                      dal.getCurrentBlockOrNull(next);
-                    },
-                    remoteCurrent: function (next) {
-                      node.blockchain.current(function (err, current) {
-                        next(null, err ? null : current);
-                      });
-                    }
-                  }, next);
-                },
-                function (res, next) {
-                  var lCurrent = res.localCurrent;
-                  var rCurrent = res.remoteCurrent;
-                  var localStartNumber = lCurrent ? lCurrent.number : -1;
-                  var i = lCurrent ? lCurrent.number + 1 : 0;
-                  if (!rCurrent) {
-                    next('No block found on remote node');
-                    return;
+          Q.Promise(function(resolve, reject){
+            async.waterfall([
+
+              function (next){
+                logger.info('Downloading Blockchain...');
+                watcher.writeStatus('Connecting to ' + host + '...');
+                async.parallel({
+                  lastSavedNumber: function (next) {
+                    dal.getLastSavedBlockFileNumber()
+                      .then(function(number){
+                        next(null, number);
+                      })
+                      .fail(next);
+                  },
+                  localCurrent: function (next) {
+                    dal.getCurrentBlockOrNull(next);
+                  },
+                  remoteCurrent: function (next) {
+                    node.blockchain.current(function (err, current) {
+                      next(null, err ? null : current);
+                    });
                   }
-
-                  remoteCurrentNumber = rCurrent.number;
-                  remoteCurrentNumber = Math.min(remoteCurrentNumber, to || remoteCurrentNumber);
-                  watcher.writeStatus('Initializing sync...');
-                  setInterval(function() {
-                    if (remoteCurrentNumber > 1 && speed > 0) {
-                      var remain = (remoteCurrentNumber - (localStartNumber + 1 + blocksApplied));
-                      var secondsLeft = remain / speed;
-                      var momDuration = moment.duration(secondsLeft*1000);
-                      watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
-                    }
-                  }, EVAL_REMAINING_INTERVAL);
-
-                  async.whilst(
-                    function () {
-                      finishedDownload = rCurrent ? i > Math.min(to || remoteCurrentNumber, remoteCurrentNumber) : false;
-                      finishedDownload && watcher.downloadPercent(100);
-                      return !finishedDownload;
-                    },
-                    function (callback) {
-                      watcher.downloadPercent(Math.floor(i/remoteCurrentNumber*100));
-                      var startBlock = i;
-                      var endBlock = (i + CONST_BLOCKS_CHUNK - 1 >= remoteCurrentNumber ? remoteCurrentNumber : i + CONST_BLOCKS_CHUNK - 1);
-                      server.dal.getBlockOrNull(endBlock)
-                        .then(function(block){
-                          if (block) return block;
-                          return Q.Promise(function(resolve, reject){
-                            async.waterfall([
-                              function (next) {
-                                logger.info('Blocks #%s to #%s...', startBlock, endBlock);
-                                node.blockchain.blocks(Math.min(remoteCurrentNumber - i + 1, CONST_BLOCKS_CHUNK), i, next);
-                              },
-                              function (blocks, next) {
-                                async.forEachSeries(blocks, function (block, callback) {
-                                  server.dal.saveBlockInFile(block, false, function(err) {
-                                    if (!err)
-                                      availableNumber = block.number;
-                                    callback(err);
-                                  });
-                                }, next);
-                              }
-                            ], function(err) {
-                              err ? reject(err) : resolve();
-                            });
-                          });
-                        })
-                        .done(function() {
-                          i += CONST_BLOCKS_CHUNK;
-                          callback();
-                        });
-                    }, next);
+                }, next);
+              },
+              function (res, next) {
+                var lCurrent = res.localCurrent;
+                var rCurrent = res.remoteCurrent;
+                var localStartNumber = lCurrent ? lCurrent.number : -1;
+                if (!rCurrent) {
+                  next('No block found on remote node');
+                  return;
                 }
-              ], callback);
-            },
-            process: function(processFinished){
-              async.whilst(
-                function () {
-                  return !finished;
-                },
-                function (callback) {
-                  async.waterfall([
-                    function (next) {
-                      setTimeout(next, 1000);
-                    },
-                    function (next) {
-                      if(blocksApplied == 0) {
-                        syncStart = new Date();
-                      }
-                      var succeed;
-                      async.doWhilst(
-                        function (callback) {
-                          var currentNumber = -1;
-                          server.dal.getCurrentNumber()
-                            .then(function(theCurrentNumber){
-                              currentNumber = theCurrentNumber;
-                              return server.dal.getBlockOrNull(currentNumber + 1);
-                            })
-                            .then(function(block){
-                              if (block) {
-                                succeed = true;
-                                // Rawification of transactions
-                                block.transactions.forEach(function (tx) {
-                                  tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
-                                  tx.raw += tx.signatories.join('\n') + '\n';
-                                  tx.raw += tx.inputs.join('\n') + '\n';
-                                  tx.raw += tx.outputs.join('\n') + '\n';
-                                  if (tx.comment)
-                                    tx.raw += tx.comment + '\n';
-                                  tx.raw += tx.signatures.join('\n') + '\n';
-                                  tx.version = 1;
-                                  tx.currency = conf.currency;
-                                  tx.issuers = tx.signatories;
-                                  tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
+
+                watcher.writeStatus('Initializing sync...');
+                next(null, localStartNumber, Math.min(rCurrent.number, to || rCurrent.number), res.lastSavedNumber);
+              }
+            ], function(err, localStartNumber, remoteCurrentNumber,lastSavedNumber) {
+              err ? reject(err) : resolve([localStartNumber, remoteCurrentNumber, lastSavedNumber]);
+            });
+          })
+
+            .spread(function(localNumber, remoteNumber, lastSavedNumber){
+
+              setInterval(function() {
+                if (remoteNumber > 1 && speed > 0) {
+                  var remain = (remoteNumber - (localNumber + 1 + blocksApplied));
+                  var secondsLeft = remain / speed;
+                  var momDuration = moment.duration(secondsLeft*1000);
+                  watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
+                }
+              }, EVAL_REMAINING_INTERVAL);
+
+              var chunks = [];
+              for (var i = lastSavedNumber + 1; i <= remoteNumber; i = i + CONST_BLOCKS_CHUNK) {
+                chunks.push([i, Math.min(i + CONST_BLOCKS_CHUNK - 1, remoteNumber)]);
+              }
+
+              // Already downloaded blocks handling
+              var appliedPromise = _.range(localNumber + 1, lastSavedNumber + 1).reduce(function (promise, blockNumber) {
+                  return promise.then(function () {
+                    return server.dal.getBlock(blockNumber)
+                      .then(function(block){
+                        return applyGivenBlock(cautious, remoteNumber)(block);
+                      });
+                  });
+                }, Q());
+
+              var downloadedBlocks = _.range(1, remoteNumber - lastSavedNumber + 1).map(function(){ return Q.defer(); });
+
+              // Blocks to download
+              chunks.reduce(function(previous, chunk) {
+                return previous.then(function() {
+                  watcher.downloadPercent(Math.floor(chunk[0] / remoteNumber * 100));
+                  logger.info('Blocks #%s to #%s...', chunk[0], chunk[1]);
+                  return Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0])
+
+                    // Save blocks
+                    .then(function(blocks){
+                      watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
+                      return blocks.reduce(function(saveProm, block) {
+                        return saveProm.then(function() {
+                          return server.dal.saveBlockInFile(block, false)
+                            .then(function(){
+                              var pos = block.number - lastSavedNumber - 1;
+                              var previousPromise = pos == 0 ? appliedPromise : downloadedBlocks[pos - 1].promise;
+                              var thisBlockPromise = downloadedBlocks[pos];
+                              previousPromise
+                                .then(function(){
+                                  return applyGivenBlock(cautious, remoteNumber)(block)
+                                    .fail(function(errAddBlock){
+                                      thisBlockPromise.reject(errAddBlock);
+                                    })
+                                    .then(function(){
+                                      thisBlockPromise.resolve();
+                                    });
                                 });
-                                blocksApplied++;
-                                speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
-                                if (watcher.appliedPercent() != Math.floor(block.number/remoteCurrentNumber*100)){
-                                  watcher.appliedPercent(Math.floor(block.number/remoteCurrentNumber*100));
-                                }
-                                return BlockchainService.submitBlock(block, cautious);
-                              }
-                              else {
-                                succeed = false;
-                                return Q.Promise(function(resolve, reject){
-                                  node.blockchain.current(function (err, current) {
-                                    if (err) {
-                                      reject(err);
-                                    } else {
-                                      finished = currentNumber >= 0 && Math.min(to || current.number, current.number) <= currentNumber;
-                                      resolve();
-                                    }
-                                  });
-                                });
-                              }
-                            })
-                            .done(callback);
-                        },
-                        function () {
-                          return succeed;
-                        }, next);
-                    }
-                  ], callback);
-                }, function(err) {
-                  watcher.appliedPercent(100);
-                  processFinished(err);
+                            });
+                        });
+                      }, Q());
+                    });
                 });
-            }
-          }, function(err) {
-            watcher.downloadPercent(100);
-            watcher.appliedPercent(100);
-            next(err);
-          });
+              }, Q())
+                .then(function(){
+                  watcher.downloadPercent(100.0);
+                });
+
+              return appliedPromise
+                .then(function(){
+                  return Q.all(downloadedBlocks.map(function(defer) {
+                    return defer.promise;
+                  }))
+                    .then(function(){
+                      watcher.appliedPercent(100.0);
+                    });
+                });
+            }, Q.reject)
+            .then(function(){
+              next();
+            })
+            .fail(function(err) {
+              next(err);
+            });
         },
 
         function (next) {
@@ -300,6 +260,31 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       });
     }, vucoinOptions);
   };
+
+  function applyGivenBlock(cautious, remoteCurrentNumber) {
+    return function (block) {
+      // Rawification of transactions
+      block.transactions.forEach(function (tx) {
+        tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+        tx.raw += tx.signatories.join('\n') + '\n';
+        tx.raw += tx.inputs.join('\n') + '\n';
+        tx.raw += tx.outputs.join('\n') + '\n';
+        if (tx.comment)
+          tx.raw += tx.comment + '\n';
+        tx.raw += tx.signatures.join('\n') + '\n';
+        tx.version = 1;
+        tx.currency = conf.currency;
+        tx.issuers = tx.signatories;
+        tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
+      });
+      blocksApplied++;
+      speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
+      if (watcher.appliedPercent() != Math.floor(block.number / remoteCurrentNumber * 100)) {
+        watcher.appliedPercent(Math.floor(block.number / remoteCurrentNumber * 100));
+      }
+      return BlockchainService.submitBlock(block, cautious);
+    };
+  }
 
   //============
   // Peer
@@ -405,7 +390,10 @@ function MultimeterWatcher() {
     yPos = y;
   });
 
+  var writtens = [];
   this.writeStatus = function(str) {
+    writtens.push(str);
+    require('fs').writeFileSync('writtens.json', JSON.stringify(writtens));
     charm
       .position(xPos, yPos)
       .erase('end')

@@ -2,7 +2,12 @@
 var async = require('async');
 var _     = require('underscore');
 
-module.exports = function(block, dal) {
+module.exports = function(dal) {
+
+  // For old function signature
+  if (arguments.length == 2) {
+    dal = arguments[1];
+  }
 
   function BlockCheckerDao () {
 
@@ -163,5 +168,5 @@ module.exports = function(block, dal) {
     };
   }
 
-  return new BlockCheckerDao(block);
+  return new BlockCheckerDao();
 };

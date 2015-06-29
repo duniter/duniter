@@ -31,6 +31,9 @@ function GlobalValidator (conf, dao) {
     return new CurrencyFilter(conf.currency, onError);
   };
 
+  this.checkExistsUserID = checkExistsUserID;
+  this.checkExistsPubkey = checkExistsPubkey;
+
   var that = this;
 
   var testFunctions = [
@@ -662,13 +665,17 @@ function GlobalValidator (conf, dao) {
       var idty = Identity.statics.fromInline(inlineIdentity);
       async.waterfall([
         function (next){
-          dao.existsUserID(idty.uid, next);
+          checkExistsUserID(idty.uid, next);
         },
         function (exists, next){
           next(exists ? 'Identity already used' : null);
-        },
+        }
       ], callback);
     }, done);
+  }
+
+  function checkExistsUserID(uid, done) {
+    dao.existsUserID(uid, done);
   }
 
   function checkPubkeyUnicity (block, done) {
@@ -676,13 +683,17 @@ function GlobalValidator (conf, dao) {
       var idty = Identity.statics.fromInline(inlineIdentity);
       async.waterfall([
         function (next){
-          dao.existsPubkey(idty.pubkey, next);
+          checkExistsPubkey(idty.pubkey, next);
         },
         function (exists, next){
           next(exists ? 'Pubkey already used' : null);
-        },
+        }
       ], callback);
     }, done);
+  }
+
+  function checkExistsPubkey(pubkey, done) {
+    dao.existsPubkey(pubkey, done);
   }
 
   function checkIssuerIsMember (block, done) {

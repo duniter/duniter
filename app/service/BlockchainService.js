@@ -1155,9 +1155,36 @@ function NextBlockGenerator(conf, dal) {
     });
   };
 
-  this.filterJoiners = function takeAllJoiners(preJoinData, next) {
-    // No manual filtering, takes all
-    next(null, preJoinData);
+  this.filterJoiners = function takeAllJoiners(preJoinData, done) {
+    var validator = globalValidator(conf, blockchainDao(dal));
+    // No manual filtering, takes all BUT already used UID or pubkey
+    var filtered = {};
+    async.forEach(_.keys(preJoinData), function(pubkey, callback) {
+      async.waterfall([
+        function(next) {
+          validator.checkExistsUserID(preJoinData[pubkey].identity.uid, next);
+        },
+        function(exists, next) {
+          if (exists) {
+            return next('UID already taken');
+          }
+          validator.checkExistsPubkey(pubkey, next);
+        },
+        function(exists, next) {
+          if (exists) {
+            return next('Pubkey already taken');
+          }
+          next();
+        }
+      ], function(err) {
+        if (!err) {
+          filtered[pubkey] = preJoinData[pubkey];
+        }
+        callback();
+      });
+    }, function(err) {
+      done(err, filtered);
+    });
   };
 }
 

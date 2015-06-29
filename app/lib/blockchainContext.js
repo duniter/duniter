@@ -11,6 +11,8 @@ var localValidator  = require('./localValidator');
 var globalValidator = require('./globalValidator');
 var blockchainDao   = require('./blockchainDao');
 
+var FULL_CHECK = true;
+
 module.exports = function(conf, dal) {
   return new BlockchainContext(conf, dal);
 };
@@ -32,14 +34,40 @@ function BlockchainContext(conf, dal) {
   var Source        = require('./entity/source');
   var Transaction   = require('./entity/transaction');
 
+  this.checkBlock = function(block, withPoWAndSignature, done) {
+    return Q.Promise(function(resolve, reject){
+      var localValidation = localValidator(conf);
+      var globalValidation = globalValidator(conf, blockchainDao(block, dal));
+      async.waterfall([
+        function (nextOne){
+          if (withPoWAndSignature) {
+            return localValidation.validate(block, nextOne);
+          }
+          localValidation.validateWithoutPoWAndSignature(block, nextOne);
+        },
+        function (nextOne){
+          if (withPoWAndSignature) {
+            return globalValidation.validate(block, nextOne);
+          }
+          globalValidation.validateWithoutPoW(block, nextOne);
+        },
+        function (nextOne) {
+          // Check document's coherence
+          checkIssuer(block, nextOne);
+        }
+      ], function(err) {
+        err ? reject(err) : resolve();
+        done && done(err);
+      });
+    });
+  };
+
   this.addBlock = function (obj, doCheck) {
     return Q.Promise(function(resolve, reject){
       blockFifo.push(function (sent) {
         var start = new Date();
         var block = new Block(obj);
         var currentBlock = null;
-        var localValidation = localValidator(conf);
-        var globalValidation = globalValidator(conf, blockchainDao(block, dal));
         async.waterfall([
           function (next) {
             getCurrentBlock(next);
@@ -49,14 +77,7 @@ function BlockchainContext(conf, dal) {
             if (doCheck) {
               async.waterfall([
                 function (nextOne){
-                  localValidation.validate(block, nextOne);
-                },
-                function (nextOne){
-                  globalValidation.validate(block, nextOne);
-                },
-                function (nextOne) {
-                  // Check document's coherence
-                  checkIssuer(block, nextOne);
+                  that.checkBlock(block, FULL_CHECK, nextOne);
                 },
                 function (nextOne) {
                   saveBlockData(currentBlock, block, nextOne);

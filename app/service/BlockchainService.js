@@ -66,8 +66,10 @@ function BlockchainService (conf, dal, pair) {
     dal.getPromoted(number, done);
   };
 
-  this.submitBlock = function (obj, doCheck) {
-    return mainContext.addBlock(obj, doCheck)
+  this.checkBlock = mainContext.checkBlock;
+
+  this.submitBlock = function (obj, doCheck, simulation) {
+    return mainContext.addBlock(obj, doCheck, simulation)
       .tap(function(){
         return Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
       })

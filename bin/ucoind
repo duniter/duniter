@@ -68,6 +68,7 @@ program
   .option('--nointeractive',           'Disable interactive sync UI')
   .option('--nocautious',              'Disable cautious mode with with sync command: checks each block\'s validity')
   .option('--isolate',                 'Avoid the node to send peering or status informations to the network')
+  .option('--check',                   'With gen-next: just check validity of generated block')
   ;
 
 program
@@ -231,30 +232,42 @@ function generateAndSend (generationMethod) {
         method(next);
       },
       function (block, next){
-        logger.debug('Block to be sent: %s', block.quickDescription());
-        var wiz = wizard(server);
-        var doSign = null;
-        async.waterfall([
-          function (next){
-            if (!conf.salt && !conf.passwd)
-              wiz.configKey(conf, next);
-            else
+        if (program.check) {
+          block.time = block.medianTime;
+          program.show && console.log(block.getRawSigned());
+          server.checkBlock(block)
+            .then(function(){
+              logger.info('Acceptable block');
               next();
-          },
-          function (next){
-            // Extract key pair
-            crypto.getKeyPair(conf.passwd, conf.salt, next);
-          },
-          function (pair, next){
-            signature.sync(pair, function(err, sigFunc) {
-              doSign = sigFunc;
-              next(err, pair);
-            });
-          },
-          function (pair, next){
-            proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
-          }
-        ], next);
+            })
+            .fail(next);
+        }
+        else {
+          logger.debug('Block to be sent: %s', block.quickDescription());
+          var wiz = wizard(server);
+          var doSign = null;
+          async.waterfall([
+            function (next){
+              if (!conf.salt && !conf.passwd)
+                wiz.configKey(conf, next);
+              else
+                next();
+            },
+            function (next){
+              // Extract key pair
+              crypto.getKeyPair(conf.passwd, conf.salt, next);
+            },
+            function (pair, next){
+              signature.sync(pair, function(err, sigFunc) {
+                doSign = sigFunc;
+                next(err, pair);
+              });
+            },
+            function (pair, next){
+              proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
+            }
+          ], next);
+        }
       }
     ], logIfErrorAndExit(server));
   };

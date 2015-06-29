@@ -87,6 +87,18 @@ function GlobalValidator (conf, dao) {
     });
   };
 
+  this.validateWithoutPoW = function (block, done) {
+    var testFunctionsPrepared = [];
+    _.filter(testFunctions, function(test) {
+      return test.name != 'checkProofOfWork';
+    }).forEach(function (obj) {
+      testFunctionsPrepared.push(async.apply(obj.func, new Block(block)));
+    });
+    async.series(testFunctionsPrepared, function (err) {
+      done(err);
+    });
+  };
+
   /**
   * Function for testing constraints.
   * Useful for function signature reason: it won't give any result in final callback.

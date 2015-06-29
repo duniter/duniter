@@ -4,6 +4,7 @@ var async       = require('async');
 var util        = require('util');
 var _           = require('underscore');
 var Q           = require('q');
+var parsers     = require('./app/lib/streams/parsers/doc');
 var constants   = require('./app/lib/constants');
 var fileDAL     = require('./app/lib/dal/fileDAL');
 var jsonpckg    = require('./package.json');
@@ -336,6 +337,14 @@ function Server (dbConf, overrideConf) {
     return that.initWithServices()
       .then(function(){
         return that.BlockchainService.makeNextBlock();
+      });
+  };
+
+  this.checkBlock = function(block) {
+    return that.initWithServices()
+      .then(function(){
+        var parsed = parsers.parseBlock().syncWrite(block.getRawSigned());
+        return that.BlockchainService.checkBlock(parsed, false);
       });
   };
 

@@ -49,6 +49,37 @@ function LocalValidator (conf) {
   };
 
   /**
+  * Compilation of all local tests BUT signature & PoW
+  */
+  this.validateWithoutPoWAndSignature = function (b, done) {
+    var block = new Block(b);
+    var that = this;
+    async.series([
+      async.apply(that.checkParameters,                           block),
+      async.apply(that.checkPreviousHash,                         block),
+      async.apply(that.checkPreviousIssuer,                       block),
+      async.apply(that.checkBlockTimes,                           block),
+      async.apply(that.checkIdentitiesSignature,                  block),
+      async.apply(that.checkIdentitiesUserIDConflict,             block),
+      async.apply(that.checkIdentitiesPubkeyConflict,             block),
+      async.apply(that.checkIdentitiesMatchJoin,                  block),
+      async.apply(that.checkMembershipsSignature,                 block),
+      async.apply(that.checkPubkeyUnicity,                        block),
+      async.apply(that.checkCertificationOneByIssuer,             block),
+      async.apply(that.checkCertificationUnicity,                 block),
+      async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
+      async.apply(that.checkTxIssuers,                            block),
+      async.apply(that.checkTxSources,                            block),
+      async.apply(that.checkTxRecipients,                         block),
+      async.apply(that.checkTxSums,                               block),
+      async.apply(that.checkTxIndexes,                            block),
+      async.apply(that.checkTxSignature,                          block)
+    ], function (err) {
+      done(err);
+    });
+  };
+
+  /**
   * Compilation of all local tests, BUT signatures testing
   */
   this.validateWithoutSignatures = function (block, done) {

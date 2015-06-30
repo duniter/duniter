@@ -946,8 +946,8 @@ function BlockchainService (conf, dal, pair) {
               nextOne(null, proofBlock, err);
             });
           }
-        ], function(err) {
-          next(null, null, err);
+        ], function(err, proofBlock) {
+          next(null, proofBlock, err);
         });
       }
     ], function (err, proofBlock, powCanceled) {

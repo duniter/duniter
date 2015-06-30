@@ -215,6 +215,18 @@ program
   }));
 
 program
+  .command('index-transactions')
+  .description('Recompute the transaction history of a pubkey')
+  .action(service(function (server) {
+    server.recomputeTxRecords()
+      .then(function () {
+        logger.info('Records computed again.');
+        exit(server);
+      })
+      .fail(logIfErrorAndExit(server))
+  }));
+
+program
   .command('gen-history [pubkey]')
   .description('Recompute the transaction history of a pubkey')
   .action(service(function (pubkey, server) {

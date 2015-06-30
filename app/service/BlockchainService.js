@@ -1009,6 +1009,23 @@ function BlockchainService (conf, dal, pair) {
       });
   };
 
+  this.recomputeTxRecords = function() {
+    return dal.dropTxRecords()
+      .then(function(){
+        return dal.getStat('tx');
+      })
+      .then(function(stat){
+        return stat.blocks.reduce(function(p, number) {
+          return p.then(function() {
+            return dal.getBlockOrNull(number)
+              .then(function(block){
+                return dal.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
+              });
+          });
+        }, Q());
+      });
+  };
+
   this.addStatComputing = function () {
     var tests = {
       'newcomers': 'identities',

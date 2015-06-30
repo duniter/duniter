@@ -1087,6 +1087,10 @@ function FileDAL(profile, subPath, myFS) {
     return that.writeJSON(txs, 'txs.json', done);
   };
 
+  this.dropTxRecords = function(pubkey) {
+    return myFS.removeTree(rootPath + '/tx/');
+  };
+
   this.dropTxHistory = function(pubkey) {
     return myFS.makeTree(rootPath + '/tx_history/')
       .then(function(){

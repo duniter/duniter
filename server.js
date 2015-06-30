@@ -352,6 +352,13 @@ function Server (dbConf, overrideConf) {
       });
   };
 
+  this.recomputeTxRecords = function() {
+    return that.initWithServices()
+      .then(function(){
+        return that.BlockchainService.recomputeTxRecords();
+      });
+  };
+
   this.singleWriteStream = function (onError, onSuccess) {
     return new TempStream(that, onError, onSuccess);
   };

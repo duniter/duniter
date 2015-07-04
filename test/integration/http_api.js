@@ -10,10 +10,10 @@ var user      = require('./tools/user');
 var constants = require('../../app/lib/constants');
 var rp        = require('request-promise');
 
-require('log4js').configure({
-  "appenders": [
-  ]
-});
+//require('log4js').configure({
+//  "appenders": [
+//  ]
+//});
 
 var server = ucoin({
   memory: true
@@ -23,6 +23,7 @@ var server = ucoin({
   currency: 'bb',
   httpLogs: true,
   parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
+  sigQty: 1,
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -37,6 +38,9 @@ var now = Math.round(new Date().getTime()/1000);
 describe("HTTP API", function() {
 
   before(function() {
+
+    var commit = makeBlockAndPost(server);
+
     return server.initWithServices().then(bma)
 
       .then(function(){
@@ -51,11 +55,21 @@ describe("HTTP API", function() {
           .then(_.partial(cat.certPromise, toc))
           .then(cat.joinPromise)
           .then(toc.joinPromise)
-          .then(server.makeNextBlock)
-          .then(postBlock(server));
+          .then(commit)
+          .then(commit)
+          .then(commit)
+          .then(commit)
+          .then(commit);
       })
       ;
   });
+
+  function makeBlockAndPost(theServer) {
+    return function() {
+      return theServer.makeNextBlock()
+        .then(postBlock(theServer));
+    };
+  }
 
   describe("/blockchain", function() {
 
@@ -65,12 +79,20 @@ describe("HTTP API", function() {
       });
     });
 
+    it('/block/1 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/1', { json: true }), {
+        number: 1
+      });
+    });
+
     it('/block/88 should not exist', function() {
       return expectHttpCode(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
     });
 
     it('/current should exist', function() {
-      return expectHttpCode(200, rp('http://127.0.0.1:7777/blockchain/current'));
+      return expectJSON(rp('http://127.0.0.1:7777/blockchain/current', { json: true }), {
+        number: 4
+      });
     });
 
     it('/membership should not accept wrong signature', function() {
@@ -159,6 +181,7 @@ function expectJSON(promise, json) {
 
 function postBlock(server) {
   return function(block) {
+    console.log(block.getRawSigned());
     return post(server, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     });

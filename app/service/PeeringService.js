@@ -26,6 +26,10 @@ function PeeringService(server, pair, dal) {
   var peer = null;
   var that = this;
 
+  this.setDAL = function(theDAL) {
+    dal = theDAL;
+  };
+
   this.peer = function (newPeer) {
     if (newPeer) {
       peer = newPeer;

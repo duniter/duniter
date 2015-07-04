@@ -139,6 +139,10 @@ module.exports = {
     }
   },
 
+  BLOCKCHAIN: {
+    FORK_WINDOW_SIZE: 3
+  },
+
   setUDID2Format: function () {
     module.exports.USER_ID = module.exports.UDID2_FORMAT;
     module.exports.CERT.SELF.UID = exact("UID:" + UDID2);

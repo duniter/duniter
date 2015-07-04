@@ -5,10 +5,10 @@ var assert = require('assert');
 var node   = require('./tools/node');
 var jspckg = require('../../package');
 
-require('log4js').configure({
-  "appenders": [
-  ]
-});
+//require('log4js').configure({
+//  "appenders": [
+//  ]
+//});
 
 describe("Integration", function() {
 

@@ -17,6 +17,10 @@ var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
 var SAVE_HEADERS_INTERVAL = 3000;
 
+var writeFileFifo = async.queue(function (task, callback) {
+  task(callback);
+}, 1);
+
 module.exports = {
   memory: function(profile, subPath) {
     return getHomeFS(profile, subPath, true)
@@ -29,7 +33,8 @@ module.exports = {
       .then(function(params) {
         return new FileDAL(profile, subPath, params.fs);
       });
-  }
+  },
+  FileDAL: FileDAL
 };
 
 function someDelayFix() {
@@ -56,10 +61,11 @@ function getUCoinHomePath(profile) {
   return userHome + '/.config/ucoin/' + profile;
 }
 
-function FileDAL(profile, subPath, myFS) {
+function FileDAL(profile, subPath, myFS, rootDAL) {
 
   var that = this;
 
+  this.name = 'fileDal';
   this.profile = profile;
 
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
@@ -74,31 +80,43 @@ function FileDAL(profile, subPath, myFS) {
   var txs = [];
   var peers = [];
   var merkles = [];
+  var cores = [];
   var global = { currentNumber: -1 };
   var conf = {};
 
   var lastBlockFileNumber = -1;
+  var lastSavedHeader = -1;
 
   var dalLoaded;
   function onceLoadedDAL() {
     return dalLoaded || (dalLoaded = (function () {
-        return Q.all([
-          loadIntoArray(headers, 'headers.json'),
-          loadIntoArray(links, 'links.json'),
-          loadIntoArray(certs, 'certs.json'),
-          loadIntoArray(sources, 'sources.json'),
-          loadIntoArray(memberships, 'memberships.json'),
-          loadIntoArray(identities, 'identities.json'),
-          loadIntoArray(txs, 'txs.json'),
-          loadIntoArray(peers, 'peers.json'),
-          loadIntoArray(merkles, 'merkles.json'),
-          loadIntoObject(conf, 'conf.json'),
-          loadIntoObject(global, 'global.json'),
-          getCurrentMaxNumberInBlockFiles()
-            .then(function(max){
-              lastBlockFileNumber = max;
-            })
-        ])
+        return myFS.makeTree(rootPath)
+          .then(function(){
+            return (rootDAL ? rootDAL.copyFiles.now(rootPath) : Q.resolve());
+          })
+          .fail(function(err){
+            throw err;
+          })
+          .then(function(){
+            return Q.all([
+              loadIntoArray(headers, 'headers.json'),
+              loadIntoArray(links, 'links.json'),
+              loadIntoArray(certs, 'certs.json'),
+              loadIntoArray(sources, 'sources.json'),
+              loadIntoArray(memberships, 'memberships.json'),
+              loadIntoArray(identities, 'identities.json'),
+              loadIntoArray(txs, 'txs.json'),
+              loadIntoArray(peers, 'peers.json'),
+              loadIntoArray(merkles, 'merkles.json'),
+              loadIntoArray(cores, 'cores.json'),
+              loadIntoObject(conf, 'conf.json'),
+              loadIntoObject(global, 'global.json'),
+              getCurrentMaxNumberInBlockFiles()
+                .then(function(max){
+                  lastBlockFileNumber = max;
+                })
+            ]);
+          })
           .then(function(){
             if (lastBlockFileNumber + 1 > headers.length) {
               return _.range(headers.length, Math.min(global.currentNumber + 1, lastBlockFileNumber + 1)).reduce(function(promise, number){
@@ -115,18 +133,45 @@ function FileDAL(profile, subPath, myFS) {
             }
           })
           .then(function(){
-            var lastSavedHeader = -1;
-            function saveHeaders() {
-              if (headers.length > 0 && lastSavedHeader < headers[headers.length - 1].number) {
-                lastSavedHeader = headers[headers.length - 1].number;
-                that.saveHeadsInFile(headers);
-              }
-            }
-            saveHeaders();
-            setInterval(saveHeaders, SAVE_HEADERS_INTERVAL);
+            return saveHeaders()
+              .then(function(){
+                setInterval(saveHeaders, SAVE_HEADERS_INTERVAL);
+              });
           });
       })());
   }
+
+  function saveHeaders() {
+    if (headers.length > 0 && lastSavedHeader < headers[headers.length - 1].number) {
+      lastSavedHeader = headers[headers.length - 1].number;
+      return myFS.write(rootPath + '/headers.json', JSON.stringify(headers, null, ' '));
+    }
+    return Q();
+  }
+
+  this.copyFiles = function(newRoot) {
+    return Q.all([
+      'headers.json',
+      'links.json',
+      'certs.json',
+      'sources.json',
+      'memberships.json',
+      'identities.json',
+      'txs.json',
+      'peers.json',
+      'merkles.json',
+      'cores.json',
+      'conf.json'
+    ].map(function(fileName) {
+        //console.log('Copy from %s to %s', rootPath + '/' + fileName, newRoot + '/' + fileName);
+      var source = rootPath + '/' + fileName;
+      var dest = newRoot + '/' + fileName;
+      return myFS.exists(source)
+        .then(function(exists){
+          return exists ? myFS.copy(source, dest) : Q();
+        });
+    }));
+  };
 
   function folderOfBlock(blockNumber) {
     return (Math.floor(blockNumber / BLOCK_FOLDER_SIZE) + 1) * BLOCK_FOLDER_SIZE;
@@ -135,6 +180,10 @@ function FileDAL(profile, subPath, myFS) {
   function pathOfBlock(blockNumber) {
     return rootPath + '/blocks/' + folderOfBlock(blockNumber) + '/' + blockFileName(blockNumber) + '.json';
   }
+
+  this.removeHome = function() {
+    return myFS.removeTree(rootPath);
+  };
 
   this.hasFileOfBlock = function(blockNumber) {
     if(blockNumber > lastBlockFileNumber) {
@@ -202,13 +251,16 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   function loadIntoArray(theArray, fileName) {
-    return myFS.read(rootPath + '/' + fileName)
-      .then(function (data) {
-        JSON.parse(data).forEach(function(item){
-          theArray.push(item);
-        });
-      })
-      .fail(function() {
+    return myFS.exists(rootPath + '/' + fileName)
+      .then(function(exists){
+        if (exists) {
+          return myFS.read(rootPath + '/' + fileName)
+            .then(function (data) {
+              JSON.parse(data).forEach(function(item){
+                theArray.push(item);
+              });
+            });
+        }
       });
   }
 
@@ -220,6 +272,47 @@ function FileDAL(profile, subPath, myFS) {
       .fail(function() {
       });
   }
+
+  this.getCores = function() {
+    return Q(cores);
+  };
+
+  this.loadCore = function(core) {
+    return require('./coreDAL')(profile, core.forkPointNumber, core.forkPointHash, myFS, that);
+  };
+
+  this.fork = function(newBlock) {
+    var core = {
+      forkPointNumber: parseInt(newBlock.number),
+      forkPointHash: newBlock.hash,
+      forkPointPreviousHash: newBlock.previousHash
+    };
+    var existing = _.findWhere(cores, core);
+    if (existing) {
+      throw 'Fork ' + [core.forkPointNumber, core.forkPointHash].join('-') + ' already exists';
+    }
+    cores.push(core);
+    return that.saveCoresInFile(cores)
+      .then(function(){
+        return that.loadCore(core);
+      });
+  };
+
+  this.unfork = function(loadedCore) {
+    return loadedCore.getCurrent()
+      .then(function(current){
+        var core = {
+          forkPointNumber: current.number,
+          forkPointHash: current.hash
+        };
+        var existing = _.findWhere(cores, core);
+        cores = _.without(cores, existing);
+        return that.saveCoresInFile(cores)
+          .then(function(){
+            return that.removeHome();
+          });
+      });
+  };
 
   this.listAllPeers = function(done) {
     done && done(null, peers);
@@ -276,9 +369,9 @@ function FileDAL(profile, subPath, myFS) {
       .fail(function(){
         throw 'Block not found';
       })
-      .then(function(conf){
-        done && done(null, conf);
-        return conf;
+      .then(function(block){
+        done && done(null, block);
+        return block;
       })
       .fail(function(err){
         done && done(err);
@@ -296,7 +389,7 @@ function FileDAL(profile, subPath, myFS) {
         else return block;
       })
       .fail(function(){
-        throw 'Block not found';
+        throw 'Block ' + [number, hash].join('-') + ' not found';
       })
       .then(function(conf){
         done && done(null, conf);
@@ -883,14 +976,17 @@ function FileDAL(profile, subPath, myFS) {
   this.saveBlock = function(block, done) {
     return Q()
       .then(function() {
-        that.addHead(block);
-        return Q.all([
-          that.saveBlockInFile(block, true),
-          that.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime }),
-          that.saveMemberships('join', block.joiners),
-          that.saveMemberships('active', block.actives),
-          that.saveMemberships('leave', block.leavers)
-        ]);
+        return that.addHead(block)
+          .then(function(){
+            return Q.all([
+              rootDAL ? saveHeaders() : Q(),
+              that.saveBlockInFile(block, true),
+              that.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime }),
+              that.saveMemberships('join', block.joiners),
+              that.saveMemberships('active', block.actives),
+              that.saveMemberships('leave', block.leavers)
+            ]);
+          });
       })
       .then(function(){
         global.currentNumber = block.number;
@@ -960,12 +1056,30 @@ function FileDAL(profile, subPath, myFS) {
       });
   };
 
+  this.saveCoresInFile = function (cores, done) {
+    return that.writeJSON(cores, 'cores.json', done);
+  };
+
   this.saveHeadsInFile = function (headers, done) {
     return that.writeJSON(headers, 'headers.json', done);
   };
 
   this.writeJSON = function(obj, fileName, done) {
-    return that.donable(myFS.write(rootPath + '/' + fileName, JSON.stringify(obj, null, ' ')), done);
+    //console.log('Write %s', fileName);
+    var fullPath = rootPath + '/' + fileName;
+    return that.donable(Q.Promise(function(resolve, reject){
+      writeFileFifo.push(function(writeFinished) {
+        return myFS.write(fullPath, JSON.stringify(obj, null, ' '))
+          .then(function(){
+            resolve();
+            writeFinished();
+          })
+          .fail(function(err){
+            reject(err);
+            writeFinished();
+          });
+      });
+    }), done);
   };
 
   this.donable = function(promise, done) {
@@ -1386,21 +1500,23 @@ function FileDAL(profile, subPath, myFS) {
         var func = that[fname];
         // Instrumentalize the function
         that[fname] = function() {
-          var args = arguments;
+          var args = arguments, start;
           //var start = new Date();
           return onceLoadedDAL()
             .then(function() {
               return Q()
                 .then(function(){
+                  start = new Date();
+                  //logger.debug('Call %s.%s(%s)', that.name, fname, JSON.stringify(args));
                   return func.apply(that, args);
                 })
                 // TODO: add a parameter to enable/disable performance logging
-                //.then(function (o) {
-                //  var duration = (new Date() - start);
-                //  if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
-                //    logger.debug('Time %s ms | %s', duration, fname);
-                //  return o;
-                //})
+                .then(function (o) {
+                  var duration = (new Date() - start);
+                  if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
+                    logger.debug('Time %s ms | %s', duration, fname);
+                  return o;
+                })
                 ;
             });
         };

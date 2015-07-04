@@ -12,6 +12,10 @@ function TransactionService (conf, dal) {
 
   var Transaction = require('../lib/entity/transaction');
 
+  this.setDAL = function(theDAL) {
+    dal = theDAL;
+  };
+
   this.processTx = function (txObj, done) {
     var tx = new Transaction(txObj, conf.currency);
     var localValidation = localValidator(conf);

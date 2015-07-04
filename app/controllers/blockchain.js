@@ -111,7 +111,7 @@ function BlockchainBinding (server) {
       }
     ], function (err, promoted) {
       if(err){
-        res.send(404, err);
+        res.send(404, err && (err.message || err));
         return;
       }
       res.send(200, JSON.stringify(new Block(promoted).json(), null, "  "));

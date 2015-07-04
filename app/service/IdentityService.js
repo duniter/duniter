@@ -26,6 +26,10 @@ function IdentityService (conf, dal) {
   // Validator for certifications
   var globalValidation = globalValidator(conf, blockchainDao(null, dal));
 
+  this.setDAL = function(theDAL) {
+    dal = theDAL;
+  };
+
   this.search = function(search, done) {
     async.waterfall([
       function (next){

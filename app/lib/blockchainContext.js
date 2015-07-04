@@ -17,10 +17,6 @@ module.exports = function(conf, dal) {
   return new BlockchainContext(conf, dal);
 };
 
-var blockFifo = async.queue(function (task, callback) {
-  task(callback);
-}, 1);
-
 function BlockchainContext(conf, dal) {
 
   var that = this;
@@ -33,6 +29,8 @@ function BlockchainContext(conf, dal) {
   var Link          = require('./entity/link');
   var Source        = require('./entity/source');
   var Transaction   = require('./entity/transaction');
+
+  this.dal = dal;
 
   this.checkBlock = function(block, withPoWAndSignature, done) {
     return Q.Promise(function(resolve, reject){
@@ -64,37 +62,36 @@ function BlockchainContext(conf, dal) {
 
   this.addBlock = function (obj, doCheck) {
     return Q.Promise(function(resolve, reject){
-      blockFifo.push(function (sent) {
-        var start = new Date();
-        var block = new Block(obj);
-        var currentBlock = null;
-        async.waterfall([
-          function (next) {
-            getCurrentBlock(next);
-          },
-          function (current, next){
-            currentBlock = current;
-            if (doCheck) {
-              async.waterfall([
-                function (nextOne){
-                  that.checkBlock(block, FULL_CHECK, nextOne);
-                },
-                function (nextOne) {
-                  saveBlockData(currentBlock, block, nextOne);
-                }
-              ], next);
-            } else {
-              saveBlockData(currentBlock, block, next);
-            }
+      var start = new Date();
+      var block = new Block(obj);
+      var currentBlock = null;
+      async.waterfall([
+        function (next) {
+          getCurrentBlock(next);
+        },
+        function (current, next){
+          currentBlock = current;
+          if (doCheck) {
+            async.waterfall([
+              function (nextOne){
+                that.checkBlock(block, FULL_CHECK, nextOne);
+              },
+              function (nextOne) {
+                saveBlockData(currentBlock, block, nextOne);
+              }
+            ], next);
+          } else {
+            saveBlockData(currentBlock, block, next);
           }
-        ], function (err) {
-          !err && logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
-          sent(err, !err && block);
-        });
-      }, function(err, block) {
+        }
+      ], function (err) {
+        !err && logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
         err ? reject(err) : resolve(block);
       });
-    });
+    })
+      .fail(function(err){
+        throw err;
+      });
   };
 
   function checkIssuer (block, done) {

@@ -313,12 +313,21 @@ function Server (dbConf, overrideConf) {
               'block':       function (obj, done) {
                 that.BlockchainService.submitBlock(obj, true)
                   .then(function(block){
+                    that.dal = that.BlockchainService.currentDal;
+                    that.IdentityService.setDAL(that.dal);
+                    that.MembershipService.setDAL(that.dal);
+                    that.PeeringService.setDAL(that.dal);
+                    that.TransactionsService.setDAL(that.dal);
                     that.BlockchainService.addStatComputing();
                     done(null, block);
                   })
                   .fail(done);
               }
             };
+            that.BlockchainService.init(next);
+          },
+          function(next) {
+            that.dal = that.BlockchainService.currentDal;
             next();
           }
         ], function(err) {

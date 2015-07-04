@@ -16,7 +16,6 @@ var blockchainCtx   = require('../lib/blockchainContext');
 function PeeringService(server, pair, dal) {
 
   var conf = server.conf;
-  var mainContext = blockchainCtx(conf, dal);
 
   var Peer        = require('../lib/entity/peer');
 
@@ -127,7 +126,7 @@ function PeeringService(server, pair, dal) {
     var current = null;
     async.waterfall([
       function (next) {
-        mainContext.current(next);
+        blockchainCtx(conf, dal).current(next);
       },
       function (currentBlock, next) {
         current = currentBlock;

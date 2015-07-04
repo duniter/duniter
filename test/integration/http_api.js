@@ -10,10 +10,10 @@ var user      = require('./tools/user');
 var constants = require('../../app/lib/constants');
 var rp        = require('request-promise');
 
-//require('log4js').configure({
-//  "appenders": [
-//  ]
-//});
+require('log4js').configure({
+  "appenders": [
+  ]
+});
 
 var server = ucoin({
   memory: true
@@ -181,7 +181,6 @@ function expectJSON(promise, json) {
 
 function postBlock(server) {
   return function(block) {
-    console.log(block.getRawSigned());
     return post(server, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     });

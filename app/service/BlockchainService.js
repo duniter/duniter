@@ -130,6 +130,19 @@ function BlockchainService (conf, mainDAL, pair) {
       })));
   }
 
+  this.branches = function() {
+    return getCores()
+      .then(function(cores){
+        var leaves = [];
+        cores.forEach(function(core){
+          if(_.where(cores, { forkPointNumber: core.forkPointNumber + 1, forkPointPreviousHash: core.forkPointHash }).length == 0) {
+            leaves.push(core);
+          }
+        });
+        return leaves;
+      });
+  };
+
   this.submitBlock = function (obj, doCheck) {
     return Q.Promise(function(resolve, reject){
       // FIFO: only admit one block at a time

@@ -153,6 +153,7 @@ function Server (dbConf, overrideConf) {
         that.checkConfig().then(next).fail(next);
       },
       function (next){
+        logger.info('Starting core: %s', that.dal.name);
         logger.info('Storing self peer...');
         that.PeeringService.regularPeerSignal(next);
       },
@@ -161,7 +162,7 @@ function Server (dbConf, overrideConf) {
       },
       function (next){
         logger.info('Updating list of peers...');
-        that.dal.updateMerkleForPeers(next);
+        that.dal.updateMerkleForPeers(next).done();
       },
       function (next){
         that.PeeringService.regularSyncBlock(next);

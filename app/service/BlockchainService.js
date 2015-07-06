@@ -121,12 +121,22 @@ function BlockchainService (conf, mainDAL, pair) {
   function getCores() {
     return (coresLoaded || (coresLoaded = mainDAL.getCores()
       .then(function(cores){
-        return Q.all(cores.map(function(core) {
-          return mainDAL.loadCore(core)
-            .then(function(coreDAL){
-              return blockchainCtx(conf, coreDAL);
-            });
-        }));
+        cores = _.sortBy(cores, function(core) { return core.forkPointNumber; });
+        return cores.reduce(function(p, core) {
+          return p.then(function(){
+            var basedCore = getCore(cores, core.forkPointNumber - 1, core.forkPointPreviousHash);
+            var dal = basedCore ? basedCore.dal : mainDAL;
+            return dal.loadCore(core)
+              .then(function(coreDAL){
+                return blockchainCtx(conf, coreDAL);
+              })
+              .then(function(ctx){
+                _.extend(core, ctx);
+                return core;
+              });
+          });
+        }, Q())
+          .thenResolve(cores);
       })));
   }
 
@@ -142,6 +152,10 @@ function BlockchainService (conf, mainDAL, pair) {
         return leaves;
       });
   };
+
+  function getCore(cores, number, hash) {
+    return  _.findWhere(cores, { forkPointNumber: number, forkPointHash: hash });
+  }
 
   this.submitBlock = function (obj, doCheck) {
     return Q.Promise(function(resolve, reject){
@@ -165,7 +179,7 @@ function BlockchainService (conf, mainDAL, pair) {
              *  - else if cores exist: check the block virtually against the core it is based upon
              *  - if OK (one core matches): create a core for this block
              */
-            var basedCore = cores.length == 0 ? mainContext : _.findWhere(cores, { forkPointNumber: obj.number - 1, forkPointHash: obj.previousHash });
+            var basedCore = cores.length == 0 ? mainContext : getCore(cores, obj.number - 1, obj.previousHash);
             if (!basedCore) {
               throw 'Previous block not found';
             }

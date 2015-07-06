@@ -37,7 +37,8 @@ var defaultConf = function() {
     "udid2": false,
     "timeout": 3000,
     "routing": false,
-    "isolate": false
+    "isolate": false,
+    "branchesWindowSize": constants.BRANCHES.DEFAULT_WINDOW_SIZE
   };
 };
 

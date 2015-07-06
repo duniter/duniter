@@ -192,21 +192,23 @@ function BlockchainService (conf, mainDAL, pair) {
                 return mainDAL.getCurrentBlockOrNull()
                   .then(function(current){
                     var highest = highestCores[0];
-                    if (!current || current.number - highest.forkPointNumber < constants.BLOCKCHAIN.FORK_WINDOW_SIZE) {
+                    var distanceFromMain = (current && highest.forkPointNumber - current.number) || highest.forkPointNumber + 1;
+                    if (distanceFromMain <= conf.branchesWindowSize) {
                       return false;
                     }
                     var lowest = highest;
-                    for (var i = lowest.forkPointNumber; i > current.number; i--) {
-                      lowest = _.findWhere(cores, { forkPointNumber: lowest.number - 1, forkPointHash: lowest.forkPointPreviousHash });
+                    var threshold = lowest.forkPointNumber - conf.branchesWindowSize;
+                    for (var i = lowest.forkPointNumber; i > threshold; i--) {
+                      lowest = _.findWhere(cores, { forkPointNumber: lowest.forkPointNumber - 1, forkPointHash: lowest.forkPointPreviousHash });
                     }
-                    return lowest.getCurrent()
+                    return lowest.current()
                       .then(function(currentOfCore){
                         return mainContext.addBlock(currentOfCore, doCheck);
                       })
                       .then(removeCore(lowest, cores));
                   })
 
-                  .then(function(deleted){
+                  .tap(function(deleted){
                     if (deleted) {
                       /**
                        * 3. Prune
@@ -216,6 +218,15 @@ function BlockchainService (conf, mainDAL, pair) {
                        *     * Delete these forks
                        */
                       return pruneForks(deleted, cores);
+                    }
+                  })
+
+                  .tap(function(deleted){
+                    if (deleted) {
+                      /**
+                       * 4. Bind cores previously bound to deleted core to mainDAL
+                       */
+                      return bindUnboundsToMainDAL(deleted, cores);
                     }
                   });
               });
@@ -232,14 +243,20 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   };
 
+  function bindUnboundsToMainDAL(deleted, cores) {
+    var unbounds = _.filter(cores, function(core) { return core.forkPointNumber == deleted.forkPointNumber + 1 && core.forkPointPreviousHash == deleted.forkPointHash; });
+    unbounds.forEach(function(unbound) {
+      unbound.dal.setRootDAL(mainDAL);
+    });
+    return Q();
+  }
+
   function pruneForks(deleted, cores) {
-    return function() {
-      var orphans = _.where(cores, { forkPointNumber: deleted.forkPointNumber + 1, forkPointPreviousHash: deleted.forkPointHash });
-      return Q.all(orphans.map(function(orphan) {
-        cores = _.without(cores, orphan);
-        return pruneForks(orphan, cores);
-      }));
-    };
+    var orphans = _.filter(cores, function(core) { return core.forkPointNumber == deleted.forkPointNumber + 1 && core.forkPointPreviousHash != deleted.forkPointHash; });
+    return Q.all(orphans.map(function(orphan) {
+      cores = _.without(cores, orphan);
+      return pruneForks(orphan, cores);
+    }));
   }
 
   function removeCore(core, cores) {
@@ -254,6 +271,11 @@ function BlockchainService (conf, mainDAL, pair) {
   }
 
   function forkAndAddCore(cores, obj, doCheck) {
+    var coreObj = {
+      forkPointNumber: parseInt(obj.number),
+      forkPointHash: obj.hash,
+      forkPointPreviousHash: obj.previousHash
+    };
     return that.mainForkDAL()
       .then(function(forkDAL){
         return forkDAL.fork(obj);
@@ -263,16 +285,15 @@ function BlockchainService (conf, mainDAL, pair) {
         return blockchainCtx(conf, coreDAL);
       })
       .tap(function(ctx) {
-        _.extend(ctx, {
-          forkPointNumber: parseInt(obj.number),
-          forkPointHash: obj.hash,
-          forkPointPreviousHash: obj.previousHash
-        });
+        _.extend(ctx, coreObj);
       })
       .then(function(core){
         return core.addBlock(obj, doCheck)
           .fail(function(err){
             throw err;
+          })
+          .tap(function(){
+            return mainDAL.addCore(coreObj);
           })
           .then(function(block){
             cores.push(core);

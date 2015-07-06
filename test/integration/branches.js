@@ -19,7 +19,7 @@ var server = ucoin({
   memory: true
 }, {
   ipv4: '127.0.0.1',
-  port: '7777',
+  port: '7778',
   currency: 'bb',
   httpLogs: true,
   branchesWindowSize: 3,
@@ -75,23 +75,23 @@ describe("Branches", function() {
   describe("/blockchain", function() {
 
     it('/block/0 should exist', function() {
-      return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/0', { json: true }), {
+      return expectJSON(rp('http://127.0.0.1:7778/blockchain/block/0', { json: true }), {
         number: 0
       });
     });
 
     it('/block/1 should exist', function() {
-      return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/1', { json: true }), {
+      return expectJSON(rp('http://127.0.0.1:7778/blockchain/block/1', { json: true }), {
         number: 1
       });
     });
 
     it('/block/88 should not exist', function() {
-      return expectHttpCode(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
+      return expectHttpCode(404, rp('http://127.0.0.1:7778/blockchain/block/88'));
     });
 
     it('/current should exist', function() {
-      return expectJSON(rp('http://127.0.0.1:7777/blockchain/current', { json: true }), {
+      return expectJSON(rp('http://127.0.0.1:7778/blockchain/current', { json: true }), {
         number: 4
       });
     });
@@ -100,7 +100,7 @@ describe("Branches", function() {
       return server.BlockchainService.branches()
         .then(function(branches){
           branches.should.have.length(1);
-        })
+        });
     });
   });
 });

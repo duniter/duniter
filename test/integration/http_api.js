@@ -10,11 +10,6 @@ var user      = require('./tools/user');
 var constants = require('../../app/lib/constants');
 var rp        = require('request-promise');
 
-require('log4js').configure({
-  "appenders": [
-  ]
-});
-
 var server = ucoin({
   memory: true
 }, {

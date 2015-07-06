@@ -139,8 +139,8 @@ module.exports = {
     }
   },
 
-  BLOCKCHAIN: {
-    FORK_WINDOW_SIZE: 3
+  BRANCHES: {
+    DEFAULT_WINDOW_SIZE: 10
   },
 
   setUDID2Format: function () {

@@ -281,6 +281,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return require('./coreDAL')(profile, core.forkPointNumber, core.forkPointHash, myFS, that);
   };
 
+  this.addCore = function(core) {
+    var existing = _.findWhere(cores, core);
+    if (!existing) {
+      cores.push(core);
+      return that.saveCoresInFile(cores);
+    }
+  };
+
   this.fork = function(newBlock) {
     var core = {
       forkPointNumber: parseInt(newBlock.number),
@@ -291,15 +299,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     if (existing) {
       throw 'Fork ' + [core.forkPointNumber, core.forkPointHash].join('-') + ' already exists';
     }
-    cores.push(core);
-    return that.saveCoresInFile(cores)
+    return that.addCore(core)
       .then(function(){
         return that.loadCore(core);
       });
   };
 
   this.unfork = function(loadedCore) {
-    return loadedCore.getCurrent()
+    return loadedCore.current()
       .then(function(current){
         var core = {
           forkPointNumber: current.number,
@@ -309,7 +316,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         cores = _.without(cores, existing);
         return that.saveCoresInFile(cores)
           .then(function(){
-            return that.removeHome();
+            return loadedCore.dal.removeHome();
           });
       });
   };

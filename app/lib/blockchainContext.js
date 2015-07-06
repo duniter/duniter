@@ -128,7 +128,7 @@ function BlockchainContext(conf, dal) {
   }
 
   function getCurrentBlock(done) {
-    dal.getCurrentBlockOrNull(done);
+    return dal.getCurrentBlockOrNull(done);
   }
 
   that.current = getCurrentBlock;

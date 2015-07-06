@@ -14,6 +14,10 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
 
   this.name = ['coreDal', blockNumber, blockHash].join('_');
 
+  this.setRootDAL = function(dal) {
+    rootDAL = dal;
+  };
+
   // Encapsulate rootDAL to redirect getBlock
   var originalGetBlock = this.getBlock;
 

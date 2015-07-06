@@ -107,26 +107,27 @@ function Server (dbConf, overrideConf) {
         that.conf = _(conf).extend(overrideConf || {});
         // Default values
         var defaultValues = {
-          remoteipv4:       that.conf.ipv4,
-          remoteipv6:       that.conf.ipv6,
-          remoteport:       that.conf.port,
-          cpu:              1,
-          c:                constants.CONTRACT.DEFAULT.C,
-          dt:               constants.CONTRACT.DEFAULT.DT,
-          ud0:              constants.CONTRACT.DEFAULT.UD0,
-          stepMax:          constants.CONTRACT.DEFAULT.STEPMAX,
-          sigDelay:         constants.CONTRACT.DEFAULT.SIGDELAY,
-          sigValidity:      constants.CONTRACT.DEFAULT.SIGVALIDITY,
-          msValidity:       constants.CONTRACT.DEFAULT.MSVALIDITY,
-          sigQty:           constants.CONTRACT.DEFAULT.SIGQTY,
-          sigWoT:           constants.CONTRACT.DEFAULT.SIGWOT,
-          percentRot:       constants.CONTRACT.DEFAULT.PERCENTROT,
-          blocksRot:        constants.CONTRACT.DEFAULT.BLOCKSROT,
-          powDelay:         constants.CONTRACT.DEFAULT.POWDELAY,
-          avgGenTime:       constants.CONTRACT.DEFAULT.AVGGENTIME,
-          dtDiffEval:       constants.CONTRACT.DEFAULT.DTDIFFEVAL,
-          medianTimeBlocks: constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
-          rootoffset:       0
+          remoteipv4:         that.conf.ipv4,
+          remoteipv6:         that.conf.ipv6,
+          remoteport:         that.conf.port,
+          cpu:                1,
+          c:                  constants.CONTRACT.DEFAULT.C,
+          dt:                 constants.CONTRACT.DEFAULT.DT,
+          ud0:                constants.CONTRACT.DEFAULT.UD0,
+          stepMax:            constants.CONTRACT.DEFAULT.STEPMAX,
+          sigDelay:           constants.CONTRACT.DEFAULT.SIGDELAY,
+          sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
+          msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
+          sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,
+          sigWoT:             constants.CONTRACT.DEFAULT.SIGWOT,
+          percentRot:         constants.CONTRACT.DEFAULT.PERCENTROT,
+          blocksRot:          constants.CONTRACT.DEFAULT.BLOCKSROT,
+          powDelay:           constants.CONTRACT.DEFAULT.POWDELAY,
+          avgGenTime:         constants.CONTRACT.DEFAULT.AVGGENTIME,
+          dtDiffEval:         constants.CONTRACT.DEFAULT.DTDIFFEVAL,
+          medianTimeBlocks:   constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
+          rootoffset:         0,
+          branchesWindowSize: constants.BRANCHES.DEFAULT_WINDOW_SIZE
         };
         _.keys(defaultValues).forEach(function(key){
           if (that.conf[key] == undefined) {
@@ -318,6 +319,7 @@ function Server (dbConf, overrideConf) {
                     that.MembershipService.setDAL(that.dal);
                     that.PeeringService.setDAL(that.dal);
                     that.TransactionsService.setDAL(that.dal);
+                    (theRouter && theRouter.setDAL(that.dal));
                     that.BlockchainService.addStatComputing();
                     done(null, block);
                   })

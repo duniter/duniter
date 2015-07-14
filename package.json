@@ -35,6 +35,7 @@
     "commander": "2.1.0",
     "event-stream": "3.1.5",
     "express": "3.4.7",
+    "express-cors": "0.0.3",
     "inquirer": "0.8.5",
     "log4js": "0.6.9",
     "merkle": "0.1.0",

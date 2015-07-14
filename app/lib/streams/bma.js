@@ -3,6 +3,7 @@ var express = require('express');
 var async = require('async');
 var log4js = require('log4js');
 var Q = require('q');
+var cors = require('express-cors');
 
 var logger = require('../../lib/logger')('bma');
 
@@ -30,6 +31,14 @@ module.exports = function(server, interfaces, httpLogs) {
   //  console.log('\x1b[90mDEBUG URL - %s\x1b[0m', req.url);
   //  next();
   //});
+
+  app.use(cors({
+    allowedOrigins: [
+      '*:*'
+    ]
+  }));
+
+
   app.use(express.urlencoded());
   app.use(express.json());
 
@@ -42,51 +51,65 @@ module.exports = function(server, interfaces, httpLogs) {
   }
 
   var node = require('../../controllers/node')(server);
-  app.get('/node/summary',  node.summary);
+  answerForGet('/node/summary',  node.summary);
 
   var blockchain = require('../../controllers/blockchain')(server);
-  app.get( '/blockchain/parameters',       blockchain.parameters);
-  app.post('/blockchain/membership',       blockchain.parseMembership);
-  app.get( '/blockchain/memberships/:search', blockchain.memberships);
-  app.post('/blockchain/block',            blockchain.parseBlock);
-  app.get( '/blockchain/block/:number',    blockchain.promoted);
-  app.get( '/blockchain/blocks/:count/:from',    blockchain.blocks);
-  app.get( '/blockchain/current',          blockchain.current);
-  app.get( '/blockchain/hardship/:pubkey', blockchain.hardship);
-  app.get( '/blockchain/with/newcomers',   blockchain.with.newcomers);
-  app.get( '/blockchain/with/certs',       blockchain.with.certs);
-  app.get( '/blockchain/with/joiners',     blockchain.with.joiners);
-  app.get( '/blockchain/with/actives',     blockchain.with.actives);
-  app.get( '/blockchain/with/leavers',     blockchain.with.leavers);
-  app.get( '/blockchain/with/excluded',    blockchain.with.excluded);
-  app.get( '/blockchain/with/ud',          blockchain.with.ud);
-  app.get( '/blockchain/with/tx',          blockchain.with.tx);
+  answerForGet( '/blockchain/parameters',       blockchain.parameters);
+  answerForPost('/blockchain/membership',       blockchain.parseMembership);
+  answerForGet( '/blockchain/memberships/:search', blockchain.memberships);
+  answerForPost('/blockchain/block',            blockchain.parseBlock);
+  answerForGet( '/blockchain/block/:number',    blockchain.promoted);
+  answerForGet( '/blockchain/blocks/:count/:from',    blockchain.blocks);
+  answerForGet( '/blockchain/current',          blockchain.current);
+  answerForGet( '/blockchain/hardship/:pubkey', blockchain.hardship);
+  answerForGet( '/blockchain/with/newcomers',   blockchain.with.newcomers);
+  answerForGet( '/blockchain/with/certs',       blockchain.with.certs);
+  answerForGet( '/blockchain/with/joiners',     blockchain.with.joiners);
+  answerForGet( '/blockchain/with/actives',     blockchain.with.actives);
+  answerForGet( '/blockchain/with/leavers',     blockchain.with.leavers);
+  answerForGet( '/blockchain/with/excluded',    blockchain.with.excluded);
+  answerForGet( '/blockchain/with/ud',          blockchain.with.ud);
+  answerForGet( '/blockchain/with/tx',          blockchain.with.tx);
 
   var net = require('../../controllers/network')(server, server.conf);
-  app.get( '/network/peering',             net.peer);
-  app.get( '/network/peering/peers',       net.peersGet);
-  app.post('/network/peering/peers',       net.peersPost);
+  answerForGet( '/network/peering',             net.peer);
+  answerForGet( '/network/peering/peers',       net.peersGet);
+  answerForPost('/network/peering/peers',       net.peersPost);
 
   var wot = require('../../controllers/wot')(server);
-  app.post('/wot/add',                   wot.add);
-  app.post('/wot/revoke',                wot.revoke);
-  app.get( '/wot/lookup/:search',        wot.lookup);
-  app.get( '/wot/members',               wot.members);
-  app.get( '/wot/certifiers-of/:search', wot.certifiersOf);
-  app.get( '/wot/certified-by/:search',  wot.certifiedBy);
+  answerForPost('/wot/add',                   wot.add);
+  answerForPost('/wot/revoke',                wot.revoke);
+  answerForGet( '/wot/lookup/:search',        wot.lookup);
+  answerForGet( '/wot/members',               wot.members);
+  answerForGet( '/wot/certifiers-of/:search', wot.certifiersOf);
+  answerForGet( '/wot/certified-by/:search',  wot.certifiedBy);
 
   var transactions = require('../../controllers/transactions')(server);
   var dividend     = require('../../controllers/uds')(server);
-  app.post('/tx/process',                           transactions.parseTransaction);
-  app.get( '/tx/sources/:pubkey',                   transactions.getSources);
-  app.get( '/tx/history/:pubkey',                   transactions.getHistory);
-  app.get( '/tx/history/:pubkey/blocks/:from/:to',  transactions.getHistoryBetweenBlocks);
-  app.get( '/tx/history/:pubkey/times/:from/:to',   transactions.getHistoryBetweenTimes);
-  app.get( '/tx/history/:pubkey/pending',           transactions.getPendingForPubkey);
-  app.get( '/tx/pending',                           transactions.getPending);
-  app.get( '/ud/history/:pubkey',                   dividend.getHistory);
-  app.get( '/ud/history/:pubkey/blocks/:from/:to',  dividend.getHistoryBetweenBlocks);
-  app.get( '/ud/history/:pubkey/times/:from/:to',   dividend.getHistoryBetweenTimes);
+  answerForPost('/tx/process',                           transactions.parseTransaction);
+  answerForGet( '/tx/sources/:pubkey',                   transactions.getSources);
+  answerForGet( '/tx/history/:pubkey',                   transactions.getHistory);
+  answerForGet( '/tx/history/:pubkey/blocks/:from/:to',  transactions.getHistoryBetweenBlocks);
+  answerForGet( '/tx/history/:pubkey/times/:from/:to',   transactions.getHistoryBetweenTimes);
+  answerForGet( '/tx/history/:pubkey/pending',           transactions.getPendingForPubkey);
+  answerForGet( '/tx/pending',                           transactions.getPending);
+  answerForGet( '/ud/history/:pubkey',                   dividend.getHistory);
+  answerForGet( '/ud/history/:pubkey/blocks/:from/:to',  dividend.getHistoryBetweenBlocks);
+  answerForGet( '/ud/history/:pubkey/times/:from/:to',   dividend.getHistoryBetweenTimes);
+
+  function answerForGet(uri, callback) {
+    app.get(uri, function(req, res) {
+      res.set('Access-Control-Allow-Origin', '*');
+      callback(req, res);
+    });
+  }
+
+  function answerForPost(uri, callback) {
+    app.post(uri, function(req, res) {
+      res.set('Access-Control-Allow-Origin', '*');
+      callback(req, res);
+    });
+  }
 
   return interfaces.reduce(function(promise, netInterface) {
     return promise.then(function() {

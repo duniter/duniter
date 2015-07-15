@@ -701,7 +701,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return that.fillIdentityWithCerts(
       Q(_.chain(identities).
         where({ revoked: false }).
-        filter(function(idty){ return idty.pubkey.match(new RegExp(search)) || idty.uid.match(new RegExp(search)); }).
+        filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
         value()), done);
   };
 

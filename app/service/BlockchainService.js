@@ -1203,13 +1203,13 @@ function NextBlockGenerator(conf, dal) {
           validator.checkExistsUserID(preJoinData[pubkey].identity.uid, next);
         },
         function(exists, next) {
-          if (exists) {
+          if (exists && !preJoinData[pubkey].identity.wasMember) {
             return next('UID already taken');
           }
           validator.checkExistsPubkey(pubkey, next);
         },
         function(exists, next) {
-          if (exists) {
+          if (exists && !preJoinData[pubkey].identity.wasMember) {
             return next('Pubkey already taken');
           }
           next();

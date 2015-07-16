@@ -1436,14 +1436,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'certs', 'conf'];
-    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'certs', 'conf', 'cores'];
+    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'certs'];
-    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'certs', 'cores'];
+    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches'];
     return resetFiles(files, dirs, done);
   };
 

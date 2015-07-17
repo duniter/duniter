@@ -158,6 +158,7 @@ function BlockchainService (conf, mainDAL, pair) {
   }
 
   this.submitBlock = function (obj, doCheck) {
+    var forkWindowSize = conf.branchesWindowSize;
     return Q.Promise(function(resolve, reject){
       // FIFO: only admit one block at a time
       blockFifo.push(function(blockIsProcessed) {
@@ -185,64 +186,32 @@ function BlockchainService (conf, mainDAL, pair) {
             }
             return basedCore.checkBlock(obj, doCheck)
               .then(function() {
-                return forkAndAddCore(cores, obj, doCheck);
-              })
-              .tap(function(){
+                if (cores.length == 0 && forkWindowSize == 0) {
+                  return mainContext.addBlock(obj, doCheck);
+                } else {
+                  return forkAndAddCore(cores, obj, doCheck)
+                    .tap(function(){
 
-                /**
-                 * 2. Shift
-                 *  - take the highest core number
-                 *  - if more than one core matches: stop Shift
-                 *  - else if core number - blockchain current block number = FORK_WINDOW_SIZE then
-                 *    * travel from highest core to its lowest core
-                 *    * add lowest core's block to the blockchain
-                 *    * delete this core
-                 */
-                var maxNumber = _.max(cores, function(core) { return core.forkPointNumber; }).forkPointNumber;
-                var highestCores = _.where(cores, { forkPointNumber: maxNumber });
-                if (highestCores.length > 1) {
-                  return false;
+                      /**
+                       * 2. Shift
+                       *  - take the highest core number
+                       *  - if more than one core matches: stop Shift
+                       *  - else if core number - blockchain current block number = FORK_WINDOW_SIZE then
+                       *    * travel from highest core to its lowest core
+                       *    * add lowest core's block to the blockchain
+                       *    * delete this core
+                       */
+                      var maxNumber = _.max(cores, function(core) { return core.forkPointNumber; }).forkPointNumber;
+                      var highestCores = _.where(cores, { forkPointNumber: maxNumber });
+                      if (highestCores.length > 1) {
+                        return false;
+                      }
+                      return mainDAL.getCurrentBlockOrNull()
+                        .then(function(current){
+                          return startPruning(highestCores[0], cores, current, forkWindowSize, doCheck);
+                        });
+                    });
                 }
-                return mainDAL.getCurrentBlockOrNull()
-                  .then(function(current){
-                    var highest = highestCores[0];
-                    var distanceFromMain = (current && highest.forkPointNumber - current.number) || highest.forkPointNumber + 1;
-                    if (distanceFromMain <= conf.branchesWindowSize) {
-                      return false;
-                    }
-                    var lowest = highest;
-                    var threshold = lowest.forkPointNumber - conf.branchesWindowSize;
-                    for (var i = lowest.forkPointNumber; i > threshold; i--) {
-                      lowest = _.findWhere(cores, { forkPointNumber: lowest.forkPointNumber - 1, forkPointHash: lowest.forkPointPreviousHash });
-                    }
-                    return lowest.current()
-                      .then(function(currentOfCore){
-                        return mainContext.addBlock(currentOfCore, doCheck);
-                      })
-                      .then(removeCore(lowest, cores));
-                  })
-
-                  .tap(function(deleted){
-                    if (deleted) {
-                      /**
-                       * 3. Prune
-                       *   - if no core was deleted: stop Prune
-                       *   - else
-                       *     * Select all forks based on deleted core
-                       *     * Delete these forks
-                       */
-                      return pruneForks(deleted, cores);
-                    }
-                  })
-
-                  .tap(function(deleted){
-                    if (deleted) {
-                      /**
-                       * 4. Bind cores previously bound to deleted core to mainDAL
-                       */
-                      return bindUnboundsToMainDAL(deleted, cores);
-                    }
-                  });
               });
           })
           .tap(function(){
@@ -256,6 +225,73 @@ function BlockchainService (conf, mainDAL, pair) {
       });
     });
   };
+
+  /**
+   * Prune given branch until its size is less or equal to `forkWindowSize`, adding pruned blocks to main blokchain.
+   * Resursively prune or delete other branches becoming uncompliant with main blockchain.
+   * @param highest The highest core of the branch.
+   * @param cores Cores managed by the node.
+   * @param current Current block of main blockchain.
+   * @param forkWindowSize Maximum size of the
+   * @param doCheck
+   * @returns {*}
+   */
+  function startPruning(highest, cores, current, forkWindowSize, doCheck) {
+    var distanceFromMain = current && highest.forkPointNumber - current.number;
+    var distanceFromVoid = highest.forkPointNumber + 1;
+    var branchSize = distanceFromMain || distanceFromVoid;
+    var toPruneCount = Math.max(0, branchSize - forkWindowSize);
+    if (!toPruneCount) {
+      // Fork window still has some room or is just full
+      return Q();
+    }
+    // Fork window overflow, we have to prune some branches
+    var currentTop = highest;
+    var branch = [highest];
+    var bottomNumber = currentTop.forkPointNumber - branchSize + 1;
+    for (var i = currentTop.forkPointNumber; i > bottomNumber; i--) {
+      currentTop = _.findWhere(cores, { forkPointNumber: currentTop.forkPointNumber - 1, forkPointHash: currentTop.forkPointPreviousHash });
+      branch.push(currentTop);
+    }
+    branch = _.sortBy(branch, function(core) { return core.forkPointNumber; });
+    branch = branch.slice(0, toPruneCount);
+    // For each core to be pruned
+    return branch.reduce(function(promise, core) {
+      return promise
+        .then(function(){
+          return core.current()
+            .then(function(currentOfCore){
+              // Add the core to the main blockchain
+              return mainContext.addBlock(currentOfCore, doCheck);
+            })
+
+            // Remove the core from cores
+            .then(removeCore(core, cores))
+
+            .tap(function(deleted){
+              if (deleted) {
+                /**
+                 * 3. Prune
+                 *   - if no core was deleted: stop Prune
+                 *   - else
+                 *     * Select all forks based on deleted core
+                 *     * Delete these forks
+                 */
+                return pruneForks(deleted, cores);
+              }
+            })
+
+            .tap(function(deleted){
+              if (deleted) {
+                /**
+                 * 4. Bind cores previously bound to deleted core to mainDAL
+                 */
+                return bindUnboundsToMainDAL(deleted, cores);
+              }
+            });
+        });
+    }, Q());
+  }
 
   function bindUnboundsToMainDAL(deleted, cores) {
     var unbounds = _.filter(cores, function(core) { return core.forkPointNumber == deleted.forkPointNumber + 1 && core.forkPointPreviousHash == deleted.forkPointHash; });

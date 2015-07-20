@@ -189,7 +189,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 if (cores.length == 0 && forkWindowSize == 0) {
                   return mainContext.addBlock(obj, doCheck);
                 } else {
-                  return forkAndAddCore(cores, obj, doCheck)
+                  return forkAndAddCore(basedCore, cores, obj, doCheck)
                     .tap(function(){
 
                       /**
@@ -320,16 +320,13 @@ function BlockchainService (conf, mainDAL, pair) {
     };
   }
 
-  function forkAndAddCore(cores, obj, doCheck) {
+  function forkAndAddCore(basedCore, cores, obj, doCheck) {
     var coreObj = {
       forkPointNumber: parseInt(obj.number),
       forkPointHash: obj.hash,
       forkPointPreviousHash: obj.previousHash
     };
-    return that.mainForkDAL()
-      .then(function(forkDAL){
-        return forkDAL.fork(obj);
-      })
+    return basedCore.dal.fork(obj)
       .then(function(coreDAL){
         that.currentDal = coreDAL;
         return blockchainCtx(conf, coreDAL);

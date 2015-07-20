@@ -22,6 +22,10 @@ module.exports = {
 
     PEER: {
       ALREADY_RECORDED: 'A more recent peering document is already recorded.'
+    },
+
+    BLOCK: {
+      NO_CURRENT_BLOCK: 'No current block'
     }
   },
 

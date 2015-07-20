@@ -12,6 +12,7 @@ var Configuration = require('../entity/configuration');
 var Transaction = require('../entity/transaction');
 var Source = require('../entity/source');
 var constants = require('../constants');
+var fsMock = require('q-io/fs-mock')({});
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
@@ -48,7 +49,7 @@ function getHomeFS(profile, subpath, isMemory) {
   var fs;
   return someDelayFix()
     .then(function() {
-      fs = (isMemory ? require('q-io/fs-mock')({}) : require('q-io/fs'));
+      fs = (isMemory ? fsMock : require('q-io/fs'));
       return fs.makeTree(home);
     })
     .then(function(){
@@ -89,56 +90,48 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   var dalLoaded;
   function onceLoadedDAL() {
-    return dalLoaded || (dalLoaded = (function () {
-        return myFS.makeTree(rootPath)
-          .then(function(){
-            return (rootDAL ? rootDAL.copyFiles.now(rootPath) : Q.resolve());
-          })
-          .fail(function(err){
-            throw err;
-          })
-          .then(function(){
-            return Q.all([
-              loadIntoArray(headers, 'headers.json'),
-              loadIntoArray(links, 'links.json'),
-              loadIntoArray(certs, 'certs.json'),
-              loadIntoArray(sources, 'sources.json'),
-              loadIntoArray(memberships, 'memberships.json'),
-              loadIntoArray(identities, 'identities.json'),
-              loadIntoArray(txs, 'txs.json'),
-              loadIntoArray(peers, 'peers.json'),
-              loadIntoArray(merkles, 'merkles.json'),
-              loadIntoArray(cores, 'cores.json'),
-              loadIntoObject(conf, 'conf.json'),
-              loadIntoObject(global, 'global.json'),
-              getCurrentMaxNumberInBlockFiles()
-                .then(function(max){
-                  lastBlockFileNumber = max;
-                })
-            ]);
-          })
-          .then(function(){
-            if (lastBlockFileNumber + 1 > headers.length) {
-              return _.range(headers.length, Math.min(global.currentNumber + 1, lastBlockFileNumber + 1)).reduce(function(promise, number){
-                return promise.then(function(){
-                    return that.readFileOfBlock.now(number);
-                  })
-                  .then(function(block){
-                    return that.addHead.now(JSON.parse(block));
-                  })
-                  .fail(function(err){
-                    throw err;
-                  });
-              }, Q());
-            }
-          })
-          .then(function(){
-            return saveHeaders()
-              .then(function(){
-                setInterval(saveHeaders, SAVE_HEADERS_INTERVAL);
+    return dalLoaded || (dalLoaded = myFS.makeTree(rootPath)
+      .then(function(){
+        return (rootDAL ? rootDAL.copyFiles.now(rootPath) : Q.resolve());
+      })
+      .then(function(){
+        return Q.all([
+          loadIntoArray(headers, 'headers.json'),
+          loadIntoArray(links, 'links.json'),
+          loadIntoArray(certs, 'certs.json'),
+          loadIntoArray(sources, 'sources.json'),
+          loadIntoArray(memberships, 'memberships.json'),
+          loadIntoArray(identities, 'identities.json'),
+          loadIntoArray(txs, 'txs.json'),
+          loadIntoArray(peers, 'peers.json'),
+          loadIntoArray(merkles, 'merkles.json'),
+          loadIntoArray(cores, 'cores.json'),
+          loadIntoObject(conf, 'conf.json'),
+          loadIntoObject(global, 'global.json'),
+          getCurrentMaxNumberInBlockFiles()
+            .then(function(max){
+              lastBlockFileNumber = max;
+            })
+        ]);
+      })
+      .then(function(){
+        if (lastBlockFileNumber + 1 > headers.length) {
+          return _.range(headers.length, Math.min(global.currentNumber + 1, lastBlockFileNumber + 1)).reduce(function(promise, number){
+            return promise.then(function(){
+                return that.readFileOfBlock.now(number);
+              })
+              .then(function(block){
+                return that.addHead.now(JSON.parse(block));
               });
+          }, Q());
+        }
+      })
+      .then(function(){
+        return saveHeaders()
+          .then(function(){
+            setInterval(saveHeaders, SAVE_HEADERS_INTERVAL);
           });
-      })());
+      }));
   }
 
   function saveHeaders() {
@@ -150,7 +143,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   }
 
   this.copyFiles = function(newRoot) {
-    return Q.all([
+    return [
       'headers.json',
       'links.json',
       'certs.json',
@@ -162,15 +155,34 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       'merkles.json',
       'cores.json',
       'conf.json'
-    ].map(function(fileName) {
-        //console.log('Copy from %s to %s', rootPath + '/' + fileName, newRoot + '/' + fileName);
+    ].reduce(function(p, fileName) {
       var source = rootPath + '/' + fileName;
       var dest = newRoot + '/' + fileName;
-      return myFS.exists(source)
+      return p
+        .then(function(){
+          return myFS.exists(source);
+        })
         .then(function(exists){
-          return exists ? myFS.copy(source, dest) : Q();
+          if (exists) {
+            //console.log('Copy from %s to %s', rootPath + '/' + fileName, newRoot + '/' + fileName);
+            return myFS.read(source)
+              .then(function(content){
+                return myFS.write(dest, content);
+              })
+              .then(function(){
+                return myFS.read(dest);
+              });
+          }
+          else if (fileName == 'cores.json' || fileName == 'conf.json') {
+            //console.log('Create empty object file %s', newRoot + '/' + fileName);
+            return writeJSONToPath({}, newRoot + '/' + fileName);
+          }
+          else {
+            //console.log('Create empty array file %s', newRoot + '/' + fileName);
+            return writeJSONToPath([], newRoot + '/' + fileName);
+          }
         });
-    }));
+    }, Q());
   };
 
   function folderOfBlock(blockNumber) {
@@ -265,11 +277,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   }
 
   function loadIntoObject(obj, fileName) {
-    return myFS.read(rootPath + '/' + fileName)
-      .then(function (data) {
-        _.extend(obj, JSON.parse(data));
-      })
-      .fail(function() {
+    return myFS.exists(rootPath + '/' + fileName)
+      .then(function(exists){
+        if (exists) {
+          return myFS.read(rootPath + '/' + fileName)
+            .then(function (data) {
+              _.extend(obj, JSON.parse(data));
+            });
+        }
       });
   }
 
@@ -326,7 +341,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return Q(peers);
   };
 
-  this.nullIfError = function(promise, done) {
+  function nullIfError(promise, done) {
     return promise
       .then(function(p){
         done && done(null, p);
@@ -336,7 +351,22 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         done && done(null, null);
         return null;
       });
-  };
+  }
+
+  function nullIfErrorIs(promise, expectedError, done) {
+    return promise
+      .then(function(p){
+        done && done(null, p);
+        return p;
+      })
+      .fail(function(err){
+        if (err == expectedError) {
+          done && done(null, null);
+          return null;
+        }
+        throw err;
+      });
+  }
 
   this.getParameters = function(done) {
     var parameters = {
@@ -413,7 +443,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.getCurrentBlockOrNull = function(done) {
-    return that.nullIfError(that.getBlockCurrent(), done);
+    return nullIfErrorIs(that.getBlockCurrent(), constants.ERROR.BLOCK.NO_CURRENT_BLOCK, done);
   };
 
   this.getPromoted = function(number, done) {
@@ -892,11 +922,11 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.getPeerOrNull = function(pubkey, done) {
-    return that.nullIfError(that.getPeer(pubkey), done);
+    return nullIfError(that.getPeer(pubkey), done);
   };
 
   this.getBlockOrNull = function(number, done) {
-    return that.nullIfError(that.getBlock(number), done);
+    return nullIfError(that.getBlock(number), done);
   };
 
   this.getPeers = function(pubkeys, done) {
@@ -1071,10 +1101,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return that.writeJSON(headers, 'headers.json', done);
   };
 
-  this.writeJSON = function(obj, fileName, done) {
+  function writeJSON(obj, fileName, done) {
     //console.log('Write %s', fileName);
     var fullPath = rootPath + '/' + fileName;
-    return that.donable(Q.Promise(function(resolve, reject){
+    return writeJSONToPath(obj, fullPath, done);
+  }
+
+  function writeJSONToPath(obj, fullPath, done) {
+    return donable(Q.Promise(function(resolve, reject){
       writeFileFifo.push(function(writeFinished) {
         return myFS.write(fullPath, JSON.stringify(obj, null, ' '))
           .then(function(){
@@ -1087,9 +1121,11 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           });
       });
     }), done);
-  };
+  }
 
-  this.donable = function(promise, done) {
+  this.writeJSON = writeJSON;
+
+  function donable(promise, done) {
     return promise
       .then(function(){
         done && done();
@@ -1098,7 +1134,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         done && done(err);
         throw err;
       });
-  };
+  }
+
+  this.donable = donable;
 
   function blockFileName(blockNumber) {
     return BLOCK_FILE_PREFIX.substr(0, BLOCK_FILE_PREFIX.length - ("" + blockNumber).length) + blockNumber;
@@ -1509,12 +1547,29 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         that[fname] = function() {
           var args = arguments, start;
           //var start = new Date();
-          return onceLoadedDAL()
+          return Q()
+            .then(function(){
+              return onceLoadedDAL();
+            })
+            .fail(function(err) {
+              logger.error('Could not call %s()', fname);
+              logger.error(err);
+              if (typeof args[args.length - 1] == 'function') {
+                args[args.length - 1](err);
+              }
+              throw err;
+            })
             .then(function() {
               return Q()
                 .then(function(){
-                  start = new Date();
-                  //logger.debug('Call %s.%s(%s)', that.name, fname, JSON.stringify(args));
+                  //start = new Date();
+                  //try {
+                  //  //logger.debug('Call %s.%s(%s)', that.name, fname, JSON.stringify(args));
+                  //}
+                  //catch (e) {
+                  //  //logger.error(e);
+                  //  logger.debug('Call %s.%s(... [circular structure] ...)', that.name, fname);
+                  //}
                   return func.apply(that, args);
                 })
                 // TODO: add a parameter to enable/disable performance logging

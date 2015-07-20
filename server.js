@@ -375,6 +375,12 @@ function Server (dbConf, overrideConf) {
     return new TempStream(that, onError, onSuccess);
   };
 
+  this.singleWritePromise = function (obj) {
+    return Q.Promise(function(resolve, reject){
+      new TempStream(that, reject, resolve).write(obj);
+    });
+  };
+
   function TempStream (parentStream, onError, onSuccess) {
 
     stream.Duplex.call(this, { objectMode: true });

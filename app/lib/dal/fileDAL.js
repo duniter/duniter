@@ -364,6 +364,10 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           done && done(null, null);
           return null;
         }
+        if (done) {
+          done(err);
+          return null;
+        }
         throw err;
       });
   }

@@ -143,6 +143,20 @@ describe("Branches", function() {
       })
 
       .then(function(){
+        // Confirmed of S2 from S3
+        return Q()
+          .then(function(){
+            return sync(1, 1, s3, s2)
+              .then(function(){
+                throw 'Should have thrown an error since it is not forkable';
+              })
+              .fail(function(err){
+                err.should.equal('Block not found');
+              });
+          });
+      })
+
+      .then(function(){
         // Forking S2 from S3
         return Q()
           .then(function(){

@@ -58,7 +58,7 @@
   "devDependencies": {
     "eslint": "0.21.1",
     "eslint-plugin-mocha": "0.2.2",
-    "mocha": "",
+    "mocha": "2.2.5",
     "mocha-eslint": "0.1.7",
     "request-promise": "0.4.2",
     "sha1": "",

@@ -10,14 +10,17 @@ module.exports = function makeBlockAndPost(fromBlock, toBlock, fromServer, toSer
     return p.then(function(){
       return Q.Promise(function(resolve, reject){
         return rp('http://' + fromServer.conf.ipv4 + ':' + fromServer.conf.port + '/blockchain/block/' + number, { json: true })
-          .then(function(json){
-            return toServer.singleWritePromise(_.extend(json, { documentType: 'block' }));
-          })
-          .then(function(){
-            resolve();
-          })
           .catch(function(err){
             reject(err);
+          })
+          .then(function(json){
+            return toServer.singleWritePromise(_.extend(json, { documentType: 'block' }))
+              .then(function(){
+                resolve();
+              })
+              .catch(function(err){
+                reject(err);
+              });
           });
       });
     });

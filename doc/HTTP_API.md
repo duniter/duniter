@@ -887,6 +887,30 @@ Block numbers.
 }
 ```
 
+#### `blockchain/branches`
+
+**Goal**
+
+GET current branches of the node.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Top block of each branch, i.e. the last received block of each branch. An array of 4 blocks would mean the node has 4 branches,
+3 would mean 3 branches, and so on.
+
+```json
+{
+  "blocks": [
+    { number: 2, ... },
+    { number: 3, ... }
+  ]
+}
+```
+
 ### network/*
 
 This URL is used for uCoin Gossip protocol (exchanging UCG messages).

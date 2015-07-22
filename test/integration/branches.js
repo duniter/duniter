@@ -12,6 +12,7 @@ var commit    = require('./tools/commit');
 var sync      = require('./tools/sync');
 
 var expectJSON     = httpTest.expectJSON;
+var expectAnswer   = httpTest.expectAnswer;
 var expectHttpCode = httpTest.expectHttpCode;
 
 require('log4js').configure({
@@ -191,10 +192,9 @@ describe("Branches", function() {
     });
 
     it('should have 3 branch', function() {
-      return s1.BlockchainService.branches()
-        .then(function(branches){
-          branches.should.have.length(3);
-        });
+      return expectAnswer(rp('http://127.0.0.1:7778/blockchain/branches', { json: true }), function(res) {
+        res.should.have.property('blocks').length(3);
+      });
     });
   });
 
@@ -223,10 +223,9 @@ describe("Branches", function() {
     });
 
     it('should have 2 branch', function() {
-      return s2.BlockchainService.branches()
-        .then(function(branches){
-          branches.should.have.length(2);
-        });
+      return expectAnswer(rp('http://127.0.0.1:7779/blockchain/branches', { json: true }), function(res) {
+        res.should.have.property('blocks').length(2);
+      });
     });
   });
 
@@ -255,10 +254,9 @@ describe("Branches", function() {
     });
 
     it('should have 1 branch', function() {
-      return s3.BlockchainService.branches()
-        .then(function(branches){
-          branches.should.have.length(1);
-        });
+      return expectAnswer(rp('http://127.0.0.1:7780/blockchain/branches', { json: true }), function(res) {
+        res.should.have.property('blocks').length(1);
+      });
     });
   });
 });

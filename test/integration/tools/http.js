@@ -12,7 +12,7 @@ module.exports = {
       message = undefined;
     }
     return promise
-      .then(function(){
+      .then(function(res){
         assert.equal(200, code);
       })
       .catch(function(err){
@@ -32,6 +32,19 @@ module.exports = {
         _.keys(json).forEach(function(key){
           resJson.should.have.property(key).equal(json[key]);
         });
+      })
+      .catch(function(err){
+        if (err.response) {
+          assert.equal(err.response.statusCode, 200);
+        }
+        else throw err;
+      });
+  },
+
+  expectAnswer: function expectJSON(promise, testFunc) {
+    return promise
+      .then(function(res) {
+        return testFunc(res);
       })
       .catch(function(err){
         if (err.response) {

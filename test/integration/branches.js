@@ -2,6 +2,7 @@
 
 var Q         = require('q');
 var _         = require('underscore');
+var should    = require('should');
 var ucoin     = require('./../../index');
 var bma       = require('./../../app/lib/streams/bma');
 var user      = require('./tools/user');
@@ -174,6 +175,17 @@ describe("Branches", function() {
         res.should.have.property('ucoin').property('software').equal('ucoind');
         res.should.have.property('ucoin').property('version').equal('0.11.12');
         res.should.have.property('ucoin').property('forkWindowSize').equal(3);
+      });
+    });
+
+    it('should have an open websocket on /websocket/block', function() {
+      var socket = require('socket.io-client')('http://127.0.0.1:7778/websocket/block');
+      return Q.Promise(function(resolve, reject){
+        socket.on('block', function(data){
+          should.exist(data);
+          resolve(data);
+        });
+        socket.on('error', reject);
       });
     });
 

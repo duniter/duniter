@@ -33,6 +33,7 @@
           * [excluded](#blockchainwithexcluded)
           * [ud](#blockchainwithud)
           * [tx](#blockchainwithtx)
+      * [branches](#blockchainbranches)
   * [network/](#network)
       * [peering](#networkpeering)
       * [peering/peers (GET)](#networkpeeringpeers-get)
@@ -45,6 +46,9 @@
       * [history/[pubkey]/times/[from]/[to]](#txhistorypubkeytimesfromto)
   * [ud/](#ud)
       * [history/[pubkey]](#udhistorypubkey)
+  * [websocket/](#websocket)
+      * [block](#websocketblock)
+      * [peer](#websocketpeer)
 
 ## Overview
 
@@ -80,8 +84,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |-- process
     |   |-- sources
     |   `-- history
-    `-- ud/
-        `-- history
+    |-- ud/
+    |   `-- history
+    `-- websocket/
+        |-- block
+        `-- peer
 
 ## Merkle URLs
 
@@ -1535,3 +1542,34 @@ The universal dividend history for the given `pubkey`.
   }
 }
 ```
+
+
+### websocket/*
+
+#### `websocket/block`
+
+**Goal**
+
+A websocket entry point for receiving blocks.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Websocket connection.
+
+#### `websocket/peer`
+
+**Goal**
+
+A websocket entry point for receiving peers.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Websocket connection.

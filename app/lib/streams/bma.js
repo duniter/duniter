@@ -4,6 +4,7 @@ var async = require('async');
 var log4js = require('log4js');
 var Q = require('q');
 var cors = require('express-cors');
+var es = require('event-stream');
 
 var logger = require('../../lib/logger')('bma');
 
@@ -115,7 +116,8 @@ module.exports = function(server, interfaces, httpLogs) {
   return interfaces.reduce(function(promise, netInterface) {
     return promise.then(function() {
       return listenInterface(app, netInterface.ip, netInterface.port)
-        .then(function(){
+        .then(function(httpServer){
+          listenWebSocket(server, httpServer);
           logger.info('uCoin server listening on ' + netInterface.ip + ' port ' + netInterface.port);
         });
     });
@@ -127,7 +129,31 @@ function listenInterface(app, netInterface, port) {
   return Q.Promise(function(resolve, reject){
     var httpServer = http.createServer(app);
     httpServer.listen(port, netInterface, function(err){
-      err ? reject(err) : resolve();
+      err ? reject(err) : resolve(httpServer);
     });
   });
+}
+
+function listenWebSocket(server, httpServer) {
+  "use strict";
+  var io = require('socket.io')(httpServer);
+  var currentBlock = {};
+  var blockSocket = io
+    .of('/websocket/block')
+    .on('connection', function (socket) {
+      socket.emit('block', currentBlock);
+    });
+  var peerSocket = io
+    .of('/websocket/peer');
+
+  server
+    .pipe(es.mapSync(function(data) {
+      if (data.joiners) {
+        currentBlock = data;
+        blockSocket.emit('block', currentBlock);
+      }
+      if (data.endpoints) {
+        peerSocket.emit('peer', data);
+      }
+    }));
 }

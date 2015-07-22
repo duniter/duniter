@@ -214,7 +214,8 @@ Technical informations about the node.
 {
   "ucoin": {
     "software": "ucoind",
-    "version": "0.10.3"
+    "version": "0.10.3",
+    "forkWindowSize": 10
   }
 }
 ```

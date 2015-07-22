@@ -11,7 +11,8 @@ function NodeBinding (server) {
     res.send(200, JSON.stringify({
       "ucoin": {
         "software": "ucoind",
-        "version": server.version
+        "version": server.version,
+        "forkWindowSize": server.conf.branchesWindowSize
       }
     }, null, "  "));
   };

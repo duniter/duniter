@@ -17,6 +17,10 @@ function MembershipService (conf, dal) {
 
   var Membership    = require('../lib/entity/membership');
 
+  this.setDAL = function(theDAL) {
+    dal = theDAL;
+  };
+
   this.current = function (done) {
     dal.getCurrentBlockOrNull(done);
   };

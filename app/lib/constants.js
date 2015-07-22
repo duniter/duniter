@@ -22,6 +22,10 @@ module.exports = {
 
     PEER: {
       ALREADY_RECORDED: 'A more recent peering document is already recorded.'
+    },
+
+    BLOCK: {
+      NO_CURRENT_BLOCK: 'No current block'
     }
   },
 
@@ -137,6 +141,10 @@ module.exports = {
       DTDIFFEVAL: 10,
       MEDIANTIMEBLOCKS: 20
     }
+  },
+
+  BRANCHES: {
+    DEFAULT_WINDOW_SIZE: 10
   },
 
   setUDID2Format: function () {

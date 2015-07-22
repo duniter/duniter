@@ -70,6 +70,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGet( '/blockchain/with/excluded',    blockchain.with.excluded);
   answerForGet( '/blockchain/with/ud',          blockchain.with.ud);
   answerForGet( '/blockchain/with/tx',          blockchain.with.tx);
+  answerForGet( '/blockchain/branches',         blockchain.branches);
 
   var net = require('../../controllers/network')(server, server.conf);
   answerForGet( '/network/peering',             net.peer);

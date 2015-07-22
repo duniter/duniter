@@ -44,7 +44,7 @@
     "naclb": "0.2.2",
     "nat-upnp": "0.2.11",
     "q": "1.1.2",
-    "q-io": "1.12.0",
+    "q-io": "1.13.1",
     "request": "2.31.0",
     "scrypt": "4.0.7",
     "sha1": "1.1.0",
@@ -58,7 +58,7 @@
   "devDependencies": {
     "eslint": "0.21.1",
     "eslint-plugin-mocha": "0.2.2",
-    "mocha": "",
+    "mocha": "2.2.5",
     "mocha-eslint": "0.1.7",
     "request-promise": "0.4.2",
     "sha1": "",

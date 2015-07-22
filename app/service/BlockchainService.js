@@ -43,11 +43,15 @@ var computationTimeout = null;
 // Flag for saying if timeout was already waited
 var computationTimeoutDone = false;
 
-function BlockchainService (conf, dal, pair) {
+var blockFifo = async.queue(function (task, callback) {
+  task(callback);
+}, 1);
+
+function BlockchainService (conf, mainDAL, pair) {
 
   var that = this;
-  var mainContext = blockchainCtx(conf, dal);
-  var logger = require('../lib/logger')(dal.profile);
+  var mainContext = blockchainCtx(conf, mainDAL);
+  var logger = require('../lib/logger')(mainDAL.profile);
   var selfPubkey = base58.encode(pair.publicKey);
 
   var lastGeneratedWasWrong = false;
@@ -58,26 +62,292 @@ function BlockchainService (conf, dal, pair) {
   var Block         = require('../lib/entity/block');
   var Transaction   = require('../lib/entity/transaction');
 
+  this.init = function(done) {
+    return that.mainForkDAL()
+      .then(function(dal){
+        that.currentDal = dal;
+        done();
+      })
+      .fail(done);
+  };
+
+  this.mainForkDAL = function() {
+    return getCores()
+      .then(function(cores){
+        if (cores.length == 0) {
+          // No cores yet: directly confirmed blockchain
+          return mainDAL;
+        }
+        return Q(that.getMainFork(cores))
+          .then(function(mainFork){
+            return mainFork.dal;
+          });
+      });
+  };
+
+  this.getMainFork = function(cores) {
+    var maxNumber = _.max(cores, function(core) { return core.forkPointNumber; }).forkPointNumber;
+    var highestCores = _.where(cores, { forkPointNumber: maxNumber });
+    highestCores = _.sortBy(highestCores, function(core) { return core.forkPointHash; });
+    return highestCores[highestCores.length - 1];
+  };
+
   this.current = function (done) {
-    dal.getCurrentBlockOrNull(done);
+    return that.mainForkDAL()
+      .then(function(forkDAL){
+        return forkDAL.getCurrentBlockOrNull(done);
+      })
+      .then(function(bb){
+        return bb;
+      })
+      .fail(done);
   };
 
   this.promoted = function (number, done) {
-    dal.getPromoted(number, done);
+    return that.mainForkDAL()
+      .then(function(forkDAL){
+        return forkDAL.getPromoted(number, done);
+      })
+      .then(function(bb){
+        return bb;
+      })
+      .fail(done);
   };
 
   this.checkBlock = mainContext.checkBlock;
 
-  this.submitBlock = function (obj, doCheck, simulation) {
-    return mainContext.addBlock(obj, doCheck, simulation)
-      .tap(function(){
-        return Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
-      })
-      .then(function(block){
-        return block;
-      })
-      ;
+  var coresLoaded;
+
+  function getCores() {
+    return (coresLoaded || (coresLoaded = mainDAL.getCores()
+      .then(function(cores){
+        cores = _.sortBy(cores, function(core) { return core.forkPointNumber; });
+        return cores.reduce(function(p, core) {
+          return p.then(function(){
+            var basedCore = getCore(cores, core.forkPointNumber - 1, core.forkPointPreviousHash);
+            var dal = basedCore ? basedCore.dal : mainDAL;
+            return dal.loadCore(core)
+              .then(function(coreDAL){
+                return blockchainCtx(conf, coreDAL);
+              })
+              .then(function(ctx){
+                _.extend(core, ctx);
+                return core;
+              });
+          });
+        }, Q())
+          .thenResolve(cores);
+      })));
+  }
+
+  this.branches = function() {
+    return getCores()
+      .then(function(cores){
+        var leaves = [];
+        cores.forEach(function(core){
+          if(_.where(cores, { forkPointNumber: core.forkPointNumber + 1, forkPointPreviousHash: core.forkPointHash }).length == 0) {
+            leaves.push(core);
+          }
+        });
+        return leaves;
+      });
   };
+
+  function getCore(cores, number, hash) {
+    return  _.findWhere(cores, { forkPointNumber: number, forkPointHash: hash });
+  }
+
+  this.submitBlock = function (obj, doCheck) {
+    var forkWindowSize = conf.branchesWindowSize;
+    return Q.Promise(function(resolve, reject){
+      // FIFO: only admit one block at a time
+      blockFifo.push(function(blockIsProcessed) {
+        return getCores()
+
+          /**
+           * Glossary:
+           *  - 1 core = 1 block
+           *  - 1 fork = 1 chain of cores
+           *  - main fork = longest fork (if several, the one with highest hash)
+           *  - main blockchain = confirmed blockchain + main fork
+           */
+
+          .then(function(cores){
+
+            /**
+             * 1. Check applicability
+             *  - if no core exit:check block virtually against the blockchain
+             *  - else if cores exist: check the block virtually against the core it is based upon
+             *  - if OK (one core matches): create a core for this block
+             */
+            var basedCore = cores.length == 0 ? mainContext : getCore(cores, obj.number - 1, obj.previousHash);
+            if (!basedCore) {
+              throw 'Previous block not found';
+            }
+            return basedCore.checkBlock(obj, doCheck)
+              .then(function() {
+                if (cores.length == 0 && forkWindowSize == 0) {
+                  return mainContext.addBlock(obj, doCheck);
+                } else {
+                  return forkAndAddCore(basedCore, cores, obj, doCheck)
+                    .tap(function(){
+
+                      /**
+                       * 2. Shift
+                       *  - take the highest core number
+                       *  - if more than one core matches: stop Shift
+                       *  - else if core number - blockchain current block number = FORK_WINDOW_SIZE then
+                       *    * travel from highest core to its lowest core
+                       *    * add lowest core's block to the blockchain
+                       *    * delete this core
+                       */
+                      var maxNumber = _.max(cores, function(core) { return core.forkPointNumber; }).forkPointNumber;
+                      var highestCores = _.where(cores, { forkPointNumber: maxNumber });
+                      if (highestCores.length > 1) {
+                        return false;
+                      }
+                      return mainDAL.getCurrentBlockOrNull()
+                        .then(function(current){
+                          return startPruning(highestCores[0], cores, current, forkWindowSize, doCheck);
+                        });
+                    });
+                }
+              });
+          })
+          .tap(function(){
+            return Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+          })
+          .then(resolve)
+          .fail(reject)
+          .finally(function() {
+            blockIsProcessed();
+          });
+      });
+    });
+  };
+
+  /**
+   * Prune given branch until its size is less or equal to `forkWindowSize`, adding pruned blocks to main blokchain.
+   * Resursively prune or delete other branches becoming uncompliant with main blockchain.
+   * @param highest The highest core of the branch.
+   * @param cores Cores managed by the node.
+   * @param current Current block of main blockchain.
+   * @param forkWindowSize Maximum size of the
+   * @param doCheck
+   * @returns {*}
+   */
+  function startPruning(highest, cores, current, forkWindowSize, doCheck) {
+    var distanceFromMain = current && highest.forkPointNumber - current.number;
+    var distanceFromVoid = highest.forkPointNumber + 1;
+    var branchSize = distanceFromMain || distanceFromVoid;
+    var toPruneCount = Math.max(0, branchSize - forkWindowSize);
+    if (!toPruneCount) {
+      // Fork window still has some room or is just full
+      return Q();
+    }
+    // Fork window overflow, we have to prune some branches
+    var currentTop = highest;
+    var branch = [highest];
+    var bottomNumber = currentTop.forkPointNumber - branchSize + 1;
+    for (var i = currentTop.forkPointNumber; i > bottomNumber; i--) {
+      currentTop = _.findWhere(cores, { forkPointNumber: currentTop.forkPointNumber - 1, forkPointHash: currentTop.forkPointPreviousHash });
+      branch.push(currentTop);
+    }
+    branch = _.sortBy(branch, function(core) { return core.forkPointNumber; });
+    branch = branch.slice(0, toPruneCount);
+    // For each core to be pruned
+    return branch.reduce(function(promise, core) {
+      return promise
+        .then(function(){
+          return core.current()
+            .then(function(currentOfCore){
+              // Add the core to the main blockchain
+              return mainContext.addBlock(currentOfCore, doCheck);
+            })
+
+            // Remove the core from cores
+            .then(removeCore(core, cores))
+
+            .tap(function(deleted){
+              if (deleted) {
+                /**
+                 * 3. Prune
+                 *   - if no core was deleted: stop Prune
+                 *   - else
+                 *     * Select all forks based on deleted core
+                 *     * Delete these forks
+                 */
+                return pruneForks(deleted, cores);
+              }
+            })
+
+            .tap(function(deleted){
+              if (deleted) {
+                /**
+                 * 4. Bind cores previously bound to deleted core to mainDAL
+                 */
+                return bindUnboundsToMainDAL(deleted, cores);
+              }
+            });
+        });
+    }, Q());
+  }
+
+  function bindUnboundsToMainDAL(deleted, cores) {
+    var unbounds = _.filter(cores, function(core) { return core.forkPointNumber == deleted.forkPointNumber + 1 && core.forkPointPreviousHash == deleted.forkPointHash; });
+    unbounds.forEach(function(unbound) {
+      unbound.dal.setRootDAL(mainDAL);
+    });
+    return Q();
+  }
+
+  function pruneForks(deleted, cores) {
+    var orphans = _.filter(cores, function(core) { return core.forkPointNumber == deleted.forkPointNumber + 1 && core.forkPointPreviousHash != deleted.forkPointHash; });
+    return Q.all(orphans.map(function(orphan) {
+      cores = _.without(cores, orphan);
+      return pruneForks(orphan, cores);
+    }));
+  }
+
+  function removeCore(core, cores) {
+    return function() {
+      return mainDAL.unfork(core)
+        .then(function(){
+          cores = _.without(cores, core);
+          // A core was removed
+          return core;
+        });
+    };
+  }
+
+  function forkAndAddCore(basedCore, cores, obj, doCheck) {
+    var coreObj = {
+      forkPointNumber: parseInt(obj.number),
+      forkPointHash: obj.hash,
+      forkPointPreviousHash: obj.previousHash
+    };
+    return basedCore.dal.fork(obj)
+      .then(function(coreDAL){
+        that.currentDal = coreDAL;
+        return blockchainCtx(conf, coreDAL);
+      })
+      .tap(function(ctx) {
+        _.extend(ctx, coreObj);
+      })
+      .then(function(core){
+        return core.addBlock(obj, doCheck)
+          .fail(function(err){
+            throw err;
+          })
+          .tap(function(){
+            return mainDAL.addCore(coreObj);
+          })
+          .then(function(block){
+            cores.push(core);
+            return block;
+          });
+      });
+  }
 
   this.stopPoWThenProcessAndRestartPoW = function (done) {
     // If PoW computation process is waiting, trigger it
@@ -91,7 +361,7 @@ function BlockchainService (conf, dal, pair) {
     done();
   };
 
-  function checkWoTConstraints (sentries, block, newLinks, done) {
+  function checkWoTConstraints (dal, sentries, block, newLinks, done) {
     if (block.number >= 0) {
       var newcomers = [];
       var ofMembers = [].concat(sentries);
@@ -141,7 +411,7 @@ function BlockchainService (conf, dal, pair) {
     else done('Cannot compute WoT constraint for negative block number');
   }
 
-  function getSentryMembers(members, done) {
+  function getSentryMembers(dal, members, done) {
     var sentries = [];
     async.forEachSeries(members, function (m, callback) {
       async.waterfall([
@@ -198,19 +468,26 @@ function BlockchainService (conf, dal, pair) {
    * @param done Callback.
    */
   this.generateNext = function (done) {
-    return that.generateNextBlock(new NextBlockGenerator(conf, dal), done);
+    return that.mainForkDAL()
+      .fail(function(err) {
+        done && done(err);
+        throw err;
+      })
+      .then(function(dal){
+        return that.generateNextBlock(dal, new NextBlockGenerator(conf, dal), done);
+      });
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
-  this.generateNextBlock = function (generator, done) {
-    return prepareNextBlock()
+  this.generateNextBlock = function (dal, generator, done) {
+    return prepareNextBlock(dal)
       .spread(function(current, lastUDBlock, exclusions){
         return Q.all([
           generator.findNewCertsFromWoT(current),
-          findNewcomersAndLeavers(current, generator.filterJoiners),
-          findTransactions()
+          findNewcomersAndLeavers(dal, current, generator.filterJoiners),
+          findTransactions(dal)
         ])
           .spread(function(newCertsFromWoT, newcomersLeavers, transactions) {
             var joinData = newcomersLeavers[2];
@@ -228,7 +505,7 @@ function BlockchainService (conf, dal, pair) {
             });
             // Create the block
             return Q.Promise(function(resolve, reject){
-              createBlock(current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions, function(err, block) {
+              createBlock(dal, current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions, function(err, block) {
                 err ? reject(err) : resolve(block);
               });
             });
@@ -248,14 +525,17 @@ function BlockchainService (conf, dal, pair) {
   * Generate next block, gathering both updates & newcomers
   */
   this.generateEmptyNextBlock = function (done) {
-    return prepareNextBlock()
-      .spread(function(current, lastUDBlock, exclusions){
-        createBlock(current, {}, {}, {}, exclusions, lastUDBlock, [], done);
-      })
-      .fail(done);
+    return that.mainForkDAL()
+      .then(function(dal){
+        return prepareNextBlock(dal)
+          .spread(function(current, lastUDBlock, exclusions){
+            createBlock(dal, current, {}, {}, {}, exclusions, lastUDBlock, [], done);
+          })
+          .fail(done);
+      });
   };
 
-  function prepareNextBlock() {
+  function prepareNextBlock(dal) {
     return Q.all([
       dal.getCurrentBlockOrNull(),
       dal.lastUDBlock(),
@@ -270,7 +550,7 @@ function BlockchainService (conf, dal, pair) {
       });
   }
 
-  function findTransactions() {
+  function findTransactions(dal) {
     return dal.findAllWaitingTransactions()
       .then(function (txs) {
         var transactions = [];
@@ -311,14 +591,14 @@ function BlockchainService (conf, dal, pair) {
       });
   }
 
-  function findNewcomersAndLeavers (current, filteringFunc) {
+  function findNewcomersAndLeavers (dal, current, filteringFunc) {
     return Q.Promise(function(resolve, reject){
       async.parallel({
         newcomers: function(callback){
-          findNewcomers(current, filteringFunc, callback);
+          findNewcomers(dal, current, filteringFunc, callback);
         },
         leavers: function(callback){
-          findLeavers(current, callback);
+          findLeavers(dal, current, callback);
         }
       }, function(err, res) {
         var current = res.newcomers[0];
@@ -330,7 +610,7 @@ function BlockchainService (conf, dal, pair) {
     });
   }
 
-  function findLeavers (current, done) {
+  function findLeavers (dal, current, done) {
     var leaveData = {};
     async.waterfall([
       function (next){
@@ -378,13 +658,13 @@ function BlockchainService (conf, dal, pair) {
     ], done);
   }
 
-  function findNewcomers (current, filteringFunc, done) {
+  function findNewcomers (dal, current, filteringFunc, done) {
     var wotMembers = [];
     var joinData = {};
     var updates = {};
     async.waterfall([
       function (next) {
-        getPreJoinData(current, next);
+        getPreJoinData(dal, current, next);
       },
       function (preJoinData, next){
         filteringFunc(preJoinData, next);
@@ -395,7 +675,7 @@ function BlockchainService (conf, dal, pair) {
         dal.getMembers(next);
       },
       function (members, next) {
-        getSentryMembers(members, function(err, sentries) {
+        getSentryMembers(dal, members, function(err, sentries) {
           next(err, members, sentries);
         });
       },
@@ -412,16 +692,16 @@ function BlockchainService (conf, dal, pair) {
           // Check WoT stability
           async.waterfall([
             function (next){
-              computeNewLinks(someNewcomers, joinData, updates, next);
+              computeNewLinks(dal, someNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
-              checkWoTConstraints(sentries, nextBlock, newLinks, next);
+              checkWoTConstraints(dal, sentries, nextBlock, newLinks, next);
             }
           ], onceChecked);
         }, function (err, realNewcomers) {
           async.waterfall([
             function (next){
-              computeNewLinks(realNewcomers, joinData, updates, next);
+              computeNewLinks(dal, realNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
               var newWoT = wotMembers.concat(realNewcomers);
@@ -451,7 +731,7 @@ function BlockchainService (conf, dal, pair) {
     ], done);
   }
 
-  function getPreJoinData(current, done) {
+  function getPreJoinData(dal, current, done) {
     var preJoinData = {};
     async.waterfall([
       function (next){
@@ -548,7 +828,7 @@ function BlockchainService (conf, dal, pair) {
     });
   }
 
-  function computeNewLinks (theNewcomers, joinData, updates, done) {
+  function computeNewLinks (dal, theNewcomers, joinData, updates, done) {
     var newLinks = {};
     var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
     async.waterfall([
@@ -589,7 +869,7 @@ function BlockchainService (conf, dal, pair) {
     });
   }
 
-  function createBlock (current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, done) {
+  function createBlock (dal, current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, done) {
     // Prevent writing joins/updates for excluded members
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
@@ -881,23 +1161,30 @@ function BlockchainService (conf, dal, pair) {
     }
     var block, current;
     async.waterfall([
-      function (next) {
+      function(next) {
+        that.mainForkDAL()
+          .then(function(dal){
+            next(null, dal);
+          })
+          .fail(next);
+      },
+      function (dal, next) {
         dal.isMember(selfPubkey, function (err, isMember) {
           if (err || !isMember)
             next('Skipping', null, 'Local node is not a member. Waiting to be a member before computing a block.');
           else
-            next();
+            next(null, dal);
         });
       },
-      function (next) {
+      function (dal, next) {
         dal.getCurrentBlockOrNull(function (err, current) {
           if (err)
             next('Skipping', null, 'Waiting for a root block before computing new blocks');
           else
-            next(null, current);
+            next(null, dal, current);
         });
       },
-      function (theCurrent, next) {
+      function (dal, theCurrent, next) {
         current = theCurrent;
         var lastIssuedByUs = current.issuer == selfPubkey;
         if (lastIssuedByUs && conf.powDelay && !computationTimeoutDone) {
@@ -910,9 +1197,9 @@ function BlockchainService (conf, dal, pair) {
           };
           next('Skipping', null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
         }
-        else next();
+        else next(null, dal);
       },
-      function (next){
+      function (dal, next){
         if (!current) {
           return next(null, null, 'Waiting for a root block before computing new blocks');
         }
@@ -972,57 +1259,66 @@ function BlockchainService (conf, dal, pair) {
   };
 
   this.makeNextBlock = function(block, sigFunc, trial, done) {
-    return Q.all([
-      block ? Q(block) : that.generateNext(),
-      sigFunc ? Q(sigFunc) : signature.sync(pair),
-      trial ? Q(trial) : globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey)
-    ])
-      .spread(function(unsignedBlock, sigF, trialLevel){
-        return that.prove(unsignedBlock, sigF, trialLevel)
-          .then(function(signedBlock){
-            done && done(null, signedBlock);
-            return signedBlock;
-          })
-          .fail(function(err){
-            if (done) {
-              return done(err);
-            }
-            throw err;
-          });
+    return that.mainForkDAL()
+      .then(function(dal){
+        return Q.all([
+          block ? Q(block) : that.generateNext(),
+          sigFunc ? Q(sigFunc) : signature.sync(pair),
+          trial ? Q(trial) : globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey)
+        ])
+          .spread(function(unsignedBlock, sigF, trialLevel){
+            return that.prove(unsignedBlock, sigF, trialLevel)
+              .then(function(signedBlock){
+                done && done(null, signedBlock);
+                return signedBlock;
+              })
+              .fail(function(err){
+                if (done) {
+                  return done(err);
+                }
+                throw err;
+              });
+          }, Q.reject);
       });
   };
 
   this.recomputeTxHistory = function(pubkey) {
-    return dal.dropTxHistory(pubkey)
-      .then(function(){
-        return dal.getStat('tx');
-      })
-      .then(function(stat){
-        return stat.blocks.reduce(function(p, number) {
-          return p.then(function() {
-            return dal.getBlockOrNull(number)
-              .then(function(block){
-                return saveHistory(block, pubkey);
+    return that.mainForkDAL()
+      .then(function(dal){
+        return dal.dropTxHistory(pubkey)
+          .then(function(){
+            return dal.getStat('tx');
+          })
+          .then(function(stat){
+            return stat.blocks.reduce(function(p, number) {
+              return p.then(function() {
+                return dal.getBlockOrNull(number)
+                  .then(function(block){
+                    return saveHistory(dal, block, pubkey);
+                  });
               });
+            }, Q());
           });
-        }, Q());
       });
   };
 
   this.recomputeTxRecords = function() {
-    return dal.dropTxRecords()
-      .then(function(){
-        return dal.getStat('tx');
-      })
-      .then(function(stat){
-        return stat.blocks.reduce(function(p, number) {
-          return p.then(function() {
-            return dal.getBlockOrNull(number)
-              .then(function(block){
-                return dal.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
+    return that.mainForkDAL()
+      .then(function(dal){
+        return dal.dropTxRecords()
+          .then(function(){
+            return dal.getStat('tx');
+          })
+          .then(function(stat){
+            return stat.blocks.reduce(function(p, number) {
+              return p.then(function() {
+                return dal.getBlockOrNull(number)
+                  .then(function(block){
+                    return dal.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
+                  });
               });
+            }, Q());
           });
-        }, Q());
       });
   };
 
@@ -1041,60 +1337,63 @@ function BlockchainService (conf, dal, pair) {
     statQueue.push(function (sent) {
       //logger.debug('Computing stats...');
       async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx', 'tx_history'], function (statName, callback) {
-        async.waterfall([
-          function (next) {
-            async.parallel({
-              stat: function (next) {
-                dal.getStat(statName, next);
+        that.mainForkDAL()
+          .then(function(forkDAL){
+            async.waterfall([
+              function (next) {
+                async.parallel({
+                  stat: function (next) {
+                    forkDAL.getStat(statName, next);
+                  },
+                  current: function (next) {
+                    that.current(next);
+                  }
+                }, next);
               },
-              current: function (next) {
-                that.current(next);
-              }
-            }, next);
-          },
-          function (res, next) {
-            var stat = res.stat;
-            var current = res.current;
-            // Compute new stat
-            async.forEachSeries(_.range(stat.lastParsedBlock + 1, (current ? current.number : -1) + 1), function (blockNumber, callback) {
-              // console.log('Stat', statName, ': tested block#' + blockNumber);
-              async.waterfall([
-                function (next) {
-                  dal.getBlockOrNull(blockNumber, next);
-                },
-                function (block, next) {
-                  var testProperty = tests[statName];
-                  if (typeof testProperty === 'function') {
-                    saveHistory(block)
-                      .then(function(){
+              function (res, next) {
+                var stat = res.stat;
+                var current = res.current;
+                // Compute new stat
+                async.forEachSeries(_.range(stat.lastParsedBlock + 1, (current ? current.number : -1) + 1), function (blockNumber, callback) {
+                  // console.log('Stat', statName, ': tested block#' + blockNumber);
+                  async.waterfall([
+                    function (next) {
+                      forkDAL.getBlockOrNull(blockNumber, next);
+                    },
+                    function (block, next) {
+                      var testProperty = tests[statName];
+                      if (typeof testProperty === 'function') {
+                        saveHistory(forkDAL, block)
+                          .then(function(){
+                            stat.lastParsedBlock = blockNumber;
+                            next();
+                          })
+                          .fail(function(err){
+                            next(err);
+                          });
+                      } else {
+                        var value = block[testProperty];
+                        var isPositiveValue = value && typeof value != 'object';
+                        var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+                        if (isPositiveValue || isNonEmptyArray) {
+                          stat.blocks.push(blockNumber);
+                        }
                         stat.lastParsedBlock = blockNumber;
                         next();
-                      })
-                      .fail(function(err){
-                        next(err);
-                      });
-                  } else {
-                    var value = block[testProperty];
-                    var isPositiveValue = value && typeof value != 'object';
-                    var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
-                    if (isPositiveValue || isNonEmptyArray) {
-                      stat.blocks.push(blockNumber);
+                      }
                     }
-                    stat.lastParsedBlock = blockNumber;
-                    next();
-                  }
-                }
-              ], callback);
-            }, function (err) {
-              next(err, stat);
-            });
-          },
-          function (stat, next) {
-            dal.saveStat(stat, statName, function (err) {
-              next(err);
-            });
-          }
-        ], callback);
+                  ], callback);
+                }, function (err) {
+                  next(err, stat);
+                });
+              },
+              function (stat, next) {
+                forkDAL.saveStat(stat, statName, function (err) {
+                  next(err);
+                });
+              }
+            ], callback);
+          });
       }, function () {
         //logger.debug('Computing stats: done!');
         sent();
@@ -1102,7 +1401,7 @@ function BlockchainService (conf, dal, pair) {
     });
   };
 
-  function saveHistory(block, forPubkey) {
+  function saveHistory(dal, block, forPubkey) {
     return block.transactions.reduce(function(promise, tx) {
       return promise
         .then(function(){
@@ -1145,7 +1444,13 @@ function NextBlockGenerator(conf, dal) {
       var updatesToFrom = {};
       async.waterfall([
         function (next) {
-          dal.certsFindNew(next);
+          dal.certsFindNew()
+            .then(function(dd){
+              next(null, dd);
+            })
+            .fail(function(err){
+              next(err);
+            });
         },
         function (certs, next){
           async.forEachSeries(certs, function(cert, callback){

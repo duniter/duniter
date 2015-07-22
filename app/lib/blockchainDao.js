@@ -12,6 +12,8 @@ module.exports = function(dal) {
   function BlockCheckerDao () {
 
     var dao = this;
+
+    this.dal = dal;
     
     this.existsUserID = function (uid, done) {
       async.waterfall([

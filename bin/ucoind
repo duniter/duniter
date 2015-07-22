@@ -69,6 +69,8 @@ program
   .option('--nocautious',              'Disable cautious mode with with sync command: checks each block\'s validity')
   .option('--isolate',                 'Avoid the node to send peering or status informations to the network')
   .option('--check',                   'With gen-next: just check validity of generated block')
+  .option('--forksize <size>',         'Maximum size of fork branches', parseInt)
+  .option('--nofork',                  'Equivalent to --forksize 0')
   ;
 
 program
@@ -643,6 +645,7 @@ function commandLineConf(conf) {
       avgGenTime:  program.avgGenTime
     },
     isolate: program.isolate,
+    forksize: program.forksize,
     timeout: program.timeout
   };
 
@@ -684,6 +687,7 @@ function commandLineConf(conf) {
   if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
   if (cli.isolate)                          conf.isolate        = cli.isolate;
   if (cli.timeout)                          conf.timeout        = cli.timeout;
+  if (cli.forksize != null)                 conf.branchesWindowSize = cli.forksize;
 
   // Specific internal settings
   conf.createNext = true;

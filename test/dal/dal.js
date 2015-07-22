@@ -1,15 +1,8 @@
 "use strict";
 var should = require('should');
 var assert = require('assert');
-var fs     = require('fs');
 var dal = require('../../app/lib/dal/fileDAL');
 var Peer   = require('../../app/lib/entity/peer');
-
-//require('log4js').configure({
-//  "appenders": [
-//    //{ category: "db1", type: "console" }
-//  ]
-//});
 
 var mocks = {
   peer1: {

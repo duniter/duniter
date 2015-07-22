@@ -26,6 +26,11 @@ function IdentityService (conf, dal) {
   // Validator for certifications
   var globalValidation = globalValidator(conf, blockchainDao(null, dal));
 
+  this.setDAL = function(theDAL) {
+    dal = theDAL;
+    globalValidation = globalValidator(conf, blockchainDao(null, dal));
+  };
+
   this.search = function(search, done) {
     async.waterfall([
       function (next){
@@ -71,8 +76,12 @@ function IdentityService (conf, dal) {
     fifo.push(function (cb) {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       certs = _.sortBy(certs, function(c){ return parseInt(c.block_number); });
+      var hasCert2 = false;
       certs.forEach(function(cert){
         logger.info('⬇ CERT %s block#%s', cert.from, cert.block_number);
+        if (cert.block_number == 2) {
+          hasCert2 = true;
+        }
       });
       async.waterfall([
         function (next) {

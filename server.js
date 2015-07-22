@@ -107,26 +107,27 @@ function Server (dbConf, overrideConf) {
         that.conf = _(conf).extend(overrideConf || {});
         // Default values
         var defaultValues = {
-          remoteipv4:       that.conf.ipv4,
-          remoteipv6:       that.conf.ipv6,
-          remoteport:       that.conf.port,
-          cpu:              1,
-          c:                constants.CONTRACT.DEFAULT.C,
-          dt:               constants.CONTRACT.DEFAULT.DT,
-          ud0:              constants.CONTRACT.DEFAULT.UD0,
-          stepMax:          constants.CONTRACT.DEFAULT.STEPMAX,
-          sigDelay:         constants.CONTRACT.DEFAULT.SIGDELAY,
-          sigValidity:      constants.CONTRACT.DEFAULT.SIGVALIDITY,
-          msValidity:       constants.CONTRACT.DEFAULT.MSVALIDITY,
-          sigQty:           constants.CONTRACT.DEFAULT.SIGQTY,
-          sigWoT:           constants.CONTRACT.DEFAULT.SIGWOT,
-          percentRot:       constants.CONTRACT.DEFAULT.PERCENTROT,
-          blocksRot:        constants.CONTRACT.DEFAULT.BLOCKSROT,
-          powDelay:         constants.CONTRACT.DEFAULT.POWDELAY,
-          avgGenTime:       constants.CONTRACT.DEFAULT.AVGGENTIME,
-          dtDiffEval:       constants.CONTRACT.DEFAULT.DTDIFFEVAL,
-          medianTimeBlocks: constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
-          rootoffset:       0
+          remoteipv4:         that.conf.ipv4,
+          remoteipv6:         that.conf.ipv6,
+          remoteport:         that.conf.port,
+          cpu:                1,
+          c:                  constants.CONTRACT.DEFAULT.C,
+          dt:                 constants.CONTRACT.DEFAULT.DT,
+          ud0:                constants.CONTRACT.DEFAULT.UD0,
+          stepMax:            constants.CONTRACT.DEFAULT.STEPMAX,
+          sigDelay:           constants.CONTRACT.DEFAULT.SIGDELAY,
+          sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
+          msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
+          sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,
+          sigWoT:             constants.CONTRACT.DEFAULT.SIGWOT,
+          percentRot:         constants.CONTRACT.DEFAULT.PERCENTROT,
+          blocksRot:          constants.CONTRACT.DEFAULT.BLOCKSROT,
+          powDelay:           constants.CONTRACT.DEFAULT.POWDELAY,
+          avgGenTime:         constants.CONTRACT.DEFAULT.AVGGENTIME,
+          dtDiffEval:         constants.CONTRACT.DEFAULT.DTDIFFEVAL,
+          medianTimeBlocks:   constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
+          rootoffset:         0,
+          branchesWindowSize: constants.BRANCHES.DEFAULT_WINDOW_SIZE
         };
         _.keys(defaultValues).forEach(function(key){
           if (that.conf[key] == undefined) {
@@ -152,6 +153,7 @@ function Server (dbConf, overrideConf) {
         that.checkConfig().then(next).fail(next);
       },
       function (next){
+        logger.info('Starting core: %s', that.dal.name);
         logger.info('Storing self peer...');
         that.PeeringService.regularPeerSignal(next);
       },
@@ -160,7 +162,7 @@ function Server (dbConf, overrideConf) {
       },
       function (next){
         logger.info('Updating list of peers...');
-        that.dal.updateMerkleForPeers(next);
+        that.dal.updateMerkleForPeers(next).done();
       },
       function (next){
         that.PeeringService.regularSyncBlock(next);
@@ -313,12 +315,22 @@ function Server (dbConf, overrideConf) {
               'block':       function (obj, done) {
                 that.BlockchainService.submitBlock(obj, true)
                   .then(function(block){
+                    that.dal = that.BlockchainService.currentDal;
+                    that.IdentityService.setDAL(that.dal);
+                    that.MembershipService.setDAL(that.dal);
+                    that.PeeringService.setDAL(that.dal);
+                    that.TransactionsService.setDAL(that.dal);
+                    (theRouter && theRouter.setDAL(that.dal));
                     that.BlockchainService.addStatComputing();
                     done(null, block);
                   })
                   .fail(done);
               }
             };
+            that.BlockchainService.init(next);
+          },
+          function(next) {
+            that.dal = that.BlockchainService.currentDal;
             next();
           }
         ], function(err) {
@@ -361,6 +373,12 @@ function Server (dbConf, overrideConf) {
 
   this.singleWriteStream = function (onError, onSuccess) {
     return new TempStream(that, onError, onSuccess);
+  };
+
+  this.singleWritePromise = function (obj) {
+    return Q.Promise(function(resolve, reject){
+      new TempStream(that, reject, resolve).write(obj);
+    });
   };
 
   function TempStream (parentStream, onError, onSuccess) {

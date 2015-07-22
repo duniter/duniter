@@ -1,5 +1,6 @@
 "use strict";
 
+var Q                = require('q');
 var async            = require('async');
 var es               = require('event-stream');
 var moment           = require('moment');
@@ -111,7 +112,7 @@ function BlockchainBinding (server) {
       }
     ], function (err, promoted) {
       if(err){
-        res.send(404, err);
+        res.send(404, err && (err.message || err));
         return;
       }
       res.send(200, JSON.stringify(new Block(promoted).json(), null, "  "));
@@ -251,5 +252,26 @@ function BlockchainBinding (server) {
       });
       res.send(200, JSON.stringify(json, null, "  "));
     });
+  };
+
+  this.branches = function (req, res) {
+    res.type('application/json');
+    BlockchainService.branches()
+      .then(function(cores){
+        return Q.all(cores.map(function(core) {
+          return core.current()
+            .then(function(current){
+              return new Block(current).json();
+            });
+        }));
+      })
+      .then(function(blocks){
+        res.send(200, JSON.stringify({
+          blocks: blocks
+        }, null, "  "));
+      })
+      .fail(function(err){
+        res.send(404, err && (err.message || err));
+      });
   };
 }

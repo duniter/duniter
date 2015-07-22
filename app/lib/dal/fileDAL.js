@@ -153,6 +153,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       'txs.json',
       'peers.json',
       'merkles.json',
+      'stats.json',
       'cores.json',
       'conf.json'
     ].reduce(function(p, fileName) {

@@ -508,15 +508,23 @@ function BlockchainService (conf, mainDAL, pair) {
             var joinData = newcomersLeavers[2];
             var leaveData = newcomersLeavers[3];
             var newCertsFromNewcomers = newcomersLeavers[4];
+            var certifiersOfNewcomers = _.uniq(_.keys(joinData).reduce(function(certifiers, newcomer) {
+              return certifiers.concat(_.pluck(joinData[newcomer].certs, 'from'));
+            }, []));
+            var certifiers = [].concat(certifiersOfNewcomers);
             // Merges updates
-            _(newCertsFromNewcomers).keys().forEach(function(newcomer){
-              // TODO: Bizarre ..
-              if (!newCertsFromWoT[newcomer]){
-                newCertsFromWoT[newcomer] = newCertsFromNewcomers[newcomer];
-              }
-              else {
-                newCertsFromWoT[newcomer] = newCertsFromWoT[newcomer].concat(newCertsFromNewcomers[newcomer]);
-              }
+            _(newCertsFromWoT).keys().forEach(function(certified){
+              newCertsFromWoT[certified] = newCertsFromWoT[certified].filter(function(cert) {
+                // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
+                var isCertifier = certifiers.indexOf(cert.from) != -1;
+                if (!isCertifier) {
+                  certifiers.push(cert.from);
+                }
+                return !isCertifier;
+              });
+            });
+            _(newCertsFromNewcomers).keys().forEach(function(certified){
+              newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
             });
             // Create the block
             return Q.Promise(function(resolve, reject){
@@ -708,7 +716,7 @@ function BlockchainService (conf, mainDAL, pair) {
           // Check WoT stability
           async.waterfall([
             function (next){
-              computeNewLinks(dal, someNewcomers, joinData, updates, next);
+              computeNewLinks(nextBlockNumber, dal, someNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
               checkWoTConstraints(dal, sentries, nextBlock, newLinks, next);
@@ -717,7 +725,7 @@ function BlockchainService (conf, mainDAL, pair) {
         }, function (err, realNewcomers) {
           async.waterfall([
             function (next){
-              computeNewLinks(dal, realNewcomers, joinData, updates, next);
+              computeNewLinks(nextBlockNumber, dal, realNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
               var newWoT = wotMembers.concat(realNewcomers);
@@ -844,7 +852,7 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   }
 
-  function computeNewLinks (dal, theNewcomers, joinData, updates, done) {
+  function computeNewLinks (forBlock, dal, theNewcomers, joinData, updates, done) {
     var newLinks = {}, certifiers = [];
     var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
     async.waterfall([

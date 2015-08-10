@@ -450,17 +450,32 @@ function BlockchainService (conf, mainDAL, pair) {
   };
 
   function iteratedChecking(newcomers, checkWoTForNewcomers, done) {
-    var passingNewcomers = [];
-    async.forEachSeries(newcomers, function(newcomer, callback){
-      checkWoTForNewcomers(passingNewcomers.concat(newcomer), function (err) {
-        // If success, add this newcomer to the valid newcomers. Otherwise, reject him.
-        if (!err)
-          passingNewcomers.push(newcomer);
-        callback();
+    return Q.Promise(function(resolve){
+      var passingNewcomers = [], hadError = false;
+      async.forEachSeries(newcomers, function(newcomer, callback){
+        checkWoTForNewcomers(passingNewcomers.concat(newcomer), function (err) {
+          // If success, add this newcomer to the valid newcomers. Otherwise, reject him.
+          if (!err) {
+            passingNewcomers.push(newcomer);
+          }
+          hadError = hadError || err;
+          callback();
+        });
+      }, function(){
+        if (hadError) {
+          // If at least one newcomer was rejected, test the whole new bunch
+          resolve(iteratedChecking(passingNewcomers, checkWoTForNewcomers));
+        }
+        else {
+          resolve(passingNewcomers);
+        }
       });
-    }, function(){
-      done(null, passingNewcomers);
-    });
+    })
+      .then(function(passingNewcomers) {
+        done && done(null, passingNewcomers);
+        return passingNewcomers;
+      })
+      .fail(done);
   }
 
   /**
@@ -683,10 +698,11 @@ function BlockchainService (conf, mainDAL, pair) {
         wotMembers = _.pluck(members, 'pubkey');
         // Checking step
         var newcomers = _(joinData).keys();
+        var nextBlockNumber = current ? current.number + 1 : 0;
         // Checking algo is defined by 'checkingWoTFunc'
         iteratedChecking(newcomers, function (someNewcomers, onceChecked) {
           var nextBlock = {
-            number: current ? current.number + 1 : 0,
+            number: nextBlockNumber,
             joiners: someNewcomers
           };
           // Check WoT stability
@@ -829,7 +845,7 @@ function BlockchainService (conf, mainDAL, pair) {
   }
 
   function computeNewLinks (dal, theNewcomers, joinData, updates, done) {
-    var newLinks = {};
+    var newLinks = {}, certifiers = [];
     var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
     async.waterfall([
       function (next){
@@ -838,9 +854,14 @@ function BlockchainService (conf, mainDAL, pair) {
           newLinks[newcomer] = newLinks[newcomer] || [];
           // Check wether each certification of the block is from valid newcomer/member
           async.forEach(certsByKey[newcomer], function(cert, callback){
+            var isAlreadyCertifying = certifiers.indexOf(cert.from) !== -1;
+            if (isAlreadyCertifying && forBlock > 0) {
+              return callback();
+            }
             if (~theNewcomers.indexOf(cert.from)) {
               // Newcomer to newcomer => valid link
               newLinks[newcomer].push(cert.from);
+              certifiers.push(cert.from);
               callback();
             } else {
               async.waterfall([
@@ -849,8 +870,10 @@ function BlockchainService (conf, mainDAL, pair) {
                 },
                 function (isMember, next){
                   // Member to newcomer => valid link
-                  if (isMember)
+                  if (isMember) {
                     newLinks[newcomer].push(cert.from);
+                    certifiers.push(cert.from);
+                  }
                   next();
                 }
               ], callback);
@@ -942,31 +965,20 @@ function BlockchainService (conf, mainDAL, pair) {
     block.membersCount = previousCount + block.joiners.length - block.excluded.length;
 
     //----- Certifications -----
-    var certifiers = []; // Since we cannot have two certifications from same issuer/block, unless block# == 0
 
     // Certifications from the WoT, to newcomers
     block.certifications = [];
     joiners.forEach(function(joiner){
-      var data = joinData[joiner];
-      var doubleCerts = false;
+      var data = joinData[joiner] || [];
       data.certs.forEach(function(cert){
-        doubleCerts = doubleCerts || (~certifiers.indexOf(cert.from) ? true : false);
+        block.certifications.push(new Certification(cert).inline());
       });
-      if (!doubleCerts || block.number == 0) {
-        data.certs.forEach(function(cert){
-          block.certifications.push(new Certification(cert).inline());
-          certifiers.push(cert.from);
-        });
-      }
     });
     // Certifications from the WoT, to the WoT
     _(updates).keys().forEach(function(certifiedMember){
-      var certs = updates[certifiedMember];
+      var certs = updates[certifiedMember] || [];
       certs.forEach(function(cert){
-        if (certifiers.indexOf(cert.from) == -1) {
-          block.certifications.push(new Certification(cert).inline());
-          certifiers.push(cert.from);
-        }
+        block.certifications.push(new Certification(cert).inline());
       });
     });
     // Transactions

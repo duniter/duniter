@@ -409,7 +409,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         return JSON.parse(data);
       })
       .fail(function(){
-        throw 'Block not found';
+        throw 'Block ' + number + ' not found on DAL ' + that.name;
       })
       .then(function(block){
         done && done(null, block);

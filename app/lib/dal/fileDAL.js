@@ -12,6 +12,7 @@ var Transaction = require('../entity/transaction');
 var Source = require('../entity/source');
 var constants = require('../constants');
 var fsMock = require('q-io/fs-mock')({});
+var GlobalDAL = require('./fileDALs/GlobalDAL');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 
@@ -76,6 +77,12 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
   var logger = require('../../lib/logger')(profile);
 
+  // DALs
+  var globalDAL = new GlobalDAL(profile);
+  var confDAL = new ConfDAL(profile);
+  var statDAL = new StatDAL(profile);
+  var dals = [confDAL, statDAL, globalDAL];
+
   var headers = [];
   var links = [];
   var certs = [];
@@ -86,7 +93,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var peers = [];
   var merkles = [];
   var cores = [];
-  var global = { currentNumber: -1 };
   var currency = '';
 
   var lastBlockFileNumber = -1;
@@ -110,7 +116,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           loadIntoArray(peers, 'peers.json'),
           loadIntoArray(merkles, 'merkles.json'),
           loadIntoArray(cores, 'cores.json'),
-          loadIntoObject(global, 'global.json'),
           getCurrentMaxNumberInBlockFiles()
             .then(function(max){
               lastBlockFileNumber = max;
@@ -119,14 +124,17 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       })
       .then(function(){
         if (lastBlockFileNumber + 1 > headers.length) {
-          return _.range(headers.length, Math.min(global.currentNumber + 1, lastBlockFileNumber + 1)).reduce(function(promise, number){
-            return promise.then(function(){
-                return that.readFileOfBlock.now(number);
-              })
-              .then(function(block){
-                return that.addHead.now(JSON.parse(block));
-              });
-          }, Q());
+          return globalDAL.getGlobal()
+            .then(function(global){
+              return _.range(headers.length, Math.min(global.currentNumber + 1, lastBlockFileNumber + 1)).reduce(function(promise, number){
+                return promise.then(function(){
+                  return that.readFileOfBlock.now(number);
+                })
+                  .then(function(block){
+                    return that.addHead.now(JSON.parse(block));
+                  });
+              }, Q());
+            });
         }
       })
       .then(function(){
@@ -248,8 +256,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   that.writeFileOfBlock = function(block) {
     return myFS.write(pathOfBlock(block.number), JSON.stringify(block, null, ' '))
       .then(function(){
-        global.lastSavedBlockFile = Math.max(global.lastSavedBlockFile || 0, block.number);
-        return that.writeJSON(global, 'global.json');
+        return globalDAL.setLastSavedBlockFile(block.number);
       });
   };
 
@@ -483,11 +490,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.getCurrentNumber = function() {
-    return Q(global.currentNumber);
+    return globalDAL.getGlobal().get('currentNumber');
   };
 
   this.getLastSavedBlockFileNumber = function() {
-    return Q(global.lastSavedBlockFile || -1);
+    return globalDAL.getGlobal()
+      .then(function(global){
+        return global.lastSavedBlockFile || -1;
+      });
   };
 
   this.getBlockCurrent = function(done) {
@@ -1010,8 +1020,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           });
       })
       .then(function(){
-        global.currentNumber = block.number;
-        return that.writeJSON(global, 'global.json');
+        return globalDAL.setCurrentNumber(block.number);
       })
       .then(function(){
         lastBlockFileNumber = Math.max(lastBlockFileNumber, block.number);
@@ -1413,22 +1422,19 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return myFS.write(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
   }
 
-  var confDAL = new ConfDAL(profile);
-  var statDAL = new StatDAL(profile);
-
   this.path = function(filePath) {
     return rootPath + '/' + filePath;
   };
 
   this.setRead = function(readF) {
-    [confDAL, statDAL].forEach(function(dal){
+    dals.forEach(function(dal){
       dal.setRead(readF);
     });
     that.readFile = readF;
   };
 
   this.setWrite = function(writeF) {
-    [confDAL, statDAL].forEach(function(dal){
+    dals.forEach(function(dal){
       dal.setWrite(writeF);
     });
     that.writeFile = writeF;

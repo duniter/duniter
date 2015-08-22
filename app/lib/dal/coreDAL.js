@@ -1,4 +1,5 @@
 "use strict";
+
 var fileDAL = require('./fileDAL');
 var util = require('util');
 
@@ -8,9 +9,32 @@ module.exports = function(profile, blockNumber, blockHash, myFS, rootDAL) {
 
 function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
 
-  fileDAL.FileDAL.call(this, profile, 'branches/' + [blockNumber, blockHash].join('-'), myFS, rootDAL);
-
   var that = this;
+  var coreName = [blockNumber, blockHash].join('-');
+
+  fileDAL.FileDAL.call(this, profile, 'branches/' + coreName, myFS, rootDAL);
+
+  var oldReadFile = that.readFile;
+  that.setRead(function readFileFromFork() {
+    var args = Array.prototype.slice.call(arguments);
+    return oldReadFile.apply(that, args)
+      .tap(function(){
+        console.warn('Found in ' + args[0]);
+      })
+      .fail(function(err){
+        if (err.path) {
+          var argsStr = JSON.stringify(args).substr(1);
+          argsStr = argsStr.substr(0, argsStr.length - 1);
+          console.warn('Failed to read: %s', argsStr, err.path);
+        }
+        //console.log('Did not find the file for core ' + coreName + '.' + readFunc.surname);
+        // Failed in core context, try in root
+        return rootDAL.readFile.apply(rootDAL, args)
+          .tap(function(){
+            console.warn('Found in ' + rootDAL.name);
+          });
+      });
+  });
 
   this.name = ['coreDal', blockNumber, blockHash].join('_');
 

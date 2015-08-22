@@ -2,15 +2,17 @@
  * Created by cgeek on 22/08/15.
  */
 
+var AbstractDAL = require('./AbstractDAL');
 var Configuration = require('../../entity/configuration');
 var _       = require('underscore');
 
 module.exports = ParametersDAL;
 
-function ParametersDAL(profile, readFile, writeFile) {
+function ParametersDAL(profile) {
 
   "use strict";
 
+  AbstractDAL.call(this);
   var logger = require('../../../lib/logger')(profile);
   var that = this;
 
@@ -38,7 +40,7 @@ function ParametersDAL(profile, readFile, writeFile) {
   };
 
   this.loadConf = function() {
-    return readFile('conf.json')
+    return that.read('conf.json')
       .then(function(data){
         return _(Configuration.statics.defaultConf()).extend(data);
       })
@@ -50,7 +52,7 @@ function ParametersDAL(profile, readFile, writeFile) {
   };
 
   this.saveConf = function(confToSave, done) {
-    return writeFile('conf.json', confToSave)
+    return that.write('conf.json', confToSave)
       .then(function(){
         done && done();
       })

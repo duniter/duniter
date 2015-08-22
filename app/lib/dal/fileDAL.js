@@ -13,6 +13,7 @@ var Source = require('../entity/source');
 var constants = require('../constants');
 var fsMock = require('q-io/fs-mock')({});
 var ConfDAL = require('./fileDALs/confDAL');
+var StatDAL = require('./fileDALs/statDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
@@ -68,6 +69,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.name = 'fileDal';
   this.profile = profile;
+  this.readFunctions = [];
+  this.writeFunctions = [];
+  this.existsFunc = existsFunc;
 
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
   var logger = require('../../lib/logger')(profile);
@@ -152,7 +156,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       'txs.json',
       'peers.json',
       'merkles.json',
-      'stats.json',
       'cores.json'
     ].reduce(function(p, fileName) {
       var source = rootPath + '/' + fileName;
@@ -1381,10 +1384,23 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return that.writeJSON(peers, 'peers.json', done);
   };
 
-
   /***********************
    *    IO functions
    **********************/
+
+  function ioRead(someFunction) {
+    that.readFunctions.push(someFunction);
+    return someFunction;
+  }
+
+  function ioWrite(someFunction) {
+    that.writeFunctions.push(someFunction);
+    return someFunction;
+  }
+
+  function existsFunc(filePath) {
+    return myFS.exists(rootPath + '/' + filePath);
+  }
 
   function readFunc(filePath) {
     return myFS.read(rootPath + '/' + filePath)
@@ -1397,66 +1413,54 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return myFS.write(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
   }
 
+  var confDAL = new ConfDAL(profile);
+  var statDAL = new StatDAL(profile);
+
+  this.path = function(filePath) {
+    return rootPath + '/' + filePath;
+  };
+
+  this.setRead = function(readF) {
+    [confDAL, statDAL].forEach(function(dal){
+      dal.setRead(readF);
+    });
+    that.readFile = readF;
+  };
+
+  this.setWrite = function(writeF) {
+    [confDAL, statDAL].forEach(function(dal){
+      dal.setWrite(writeF);
+    });
+    that.writeFile = writeF;
+  };
+
+  this.setRead(readFunc);
+  this.setWrite(writeFunc);
+
   /***********************
    *    CONFIGURATION
    **********************/
-  var confDAL = new ConfDAL(profile, readFunc, writeFunc);
 
-  this.loadConf = function() {
+  this.loadConf = ioRead(function() {
     return confDAL.loadConf()
       .then(function(conf){
         currency = conf.currency;
         return conf;
       });
-  };
+  });
 
-  this.saveConf = function(confToSave) {
+  this.saveConf = ioWrite(function(confToSave) {
     currency = confToSave.currency;
     return confDAL.saveConf(confToSave);
-  };
+  });
 
-  this.loadStats = function (done) {
-    return myFS.read(rootPath + '/stats.json')
-      .then(function(data) {
-        return JSON.parse(data);
-      })
-      .fail(function(){
-        return {};
-      })
-      .then(function(stats){
-        done && done(null, stats);
-        return stats;
-      });
-  };
+  /***********************
+   *     STATISTICS
+   **********************/
 
-  this.getStat = function(statName, done) {
-    return that.loadStats()
-      .then(function(stat){
-        // Create stat if it does not exist
-        var res = (stat && stat[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 };
-        done && done(null, res);
-        return res;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
-
-  this.saveStat = function(stat, name, done) {
-    return that.loadStats()
-      .then(function(stats){
-        stats[name] = stat;
-        return myFS.write(rootPath + '/stats.json', JSON.stringify(stats, null, ' '));
-      })
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+  this.loadStats = ioRead(statDAL.loadStats);
+  this.getStat = ioRead(statDAL.getStat);
+  this.saveStat = ioWrite(statDAL.saveStat);
 
   this.close = function() {
     // TODO
@@ -1532,6 +1536,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       (function() {
         var fname = f + "";
         var func = that[fname];
+        func.surname = fname;
         // Instrumentalize the function
         that[fname] = function() {
           var args = arguments, start;

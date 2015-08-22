@@ -1363,7 +1363,7 @@ function BlockchainService (conf, mainDAL, pair) {
               function (next) {
                 async.parallel({
                   stat: function (next) {
-                    forkDAL.getStat(statName, next);
+                    forkDAL.getStat(statName).then(_.partial(next, null)).fail(next);
                   },
                   current: function (next) {
                     that.current(next);
@@ -1408,9 +1408,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 });
               },
               function (stat, next) {
-                forkDAL.saveStat(stat, statName, function (err) {
-                  next(err);
-                });
+                forkDAL.saveStat(stat, statName).then(_.partial(next, null)).fail(next);
               }
             ], callback);
           });

@@ -1,5 +1,6 @@
 "use strict";
 
+var _                = require('underscore');
 var Q                = require('q');
 var async            = require('async');
 var es               = require('event-stream');
@@ -88,7 +89,7 @@ function BlockchainBinding (server) {
     return function (req, res) {
       async.waterfall([
         function (next) {
-          server.dal.getStat(statName, next);
+          server.dal.getStat(statName).then(_.partial(next, null)).fail(next);
         }
       ], function (err, stat) {
         if(err){

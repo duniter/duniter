@@ -411,9 +411,7 @@ function BlockchainContext(conf, dal) {
       conf.blocksRot        = parseInt(sp[12]);
       conf.percentRot       = parseFloat(sp[13]);
       conf.currency         = block.currency;
-      dal.saveConf(conf, function (err) {
-        done(err);
-      });
+      return dal.saveConf(conf).then(done).fail(done);
     }
     else done();
   }

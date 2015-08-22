@@ -364,16 +364,17 @@ program
   .command('config')
   .description('Register configuration in database')
   .action(service(function (server, conf) {
-    server.dal.saveConf(conf, function (err) {
-      if(err){
-        logger.error("Configuration could not be saved: " + err);
-      }
-      else{
+    return server.dal.saveConf(conf)
+      .then(function() {
         logger.debug("Configuration saved.");
-      }
-      server.disconnect();
-      process.exit();
-    });
+      })
+      .fail(function(err) {
+        logger.error("Configuration could not be saved: " + err);
+      })
+      .finally(function() {
+        server.disconnect();
+        process.exit();
+      });
   }));
 
 program
@@ -484,10 +485,12 @@ function startWizard(step, server, conf, done) {
       wizDo(conf, next);
     },
     function (next){
-      server.dal.saveConf(conf, function (err) {
-        !err && logger.debug("Configuration saved.");
-        next(err);
-      });
+      return server.dal.saveConf(conf)
+        .then(function() {
+          logger.debug("Configuration saved.");
+          next();
+        })
+        .fail(next);
     },
     function (next) {
       // Check config
@@ -582,9 +585,7 @@ function getBootstrapOperations(host, port, server, conf) {
       }, next);
     },
     function(next) {
-      server.dal.saveConf(conf, function(err) {
-        next(err);
-      });
+      return server.dal.saveConf(conf).fail(next);
     }]);
   ops.push(function (next){
     logger.info('Configuration saved.');

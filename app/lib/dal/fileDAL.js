@@ -8,11 +8,11 @@ var util = require('util');
 var Identity = require('../entity/identity');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
-var Configuration = require('../entity/configuration');
 var Transaction = require('../entity/transaction');
 var Source = require('../entity/source');
 var constants = require('../constants');
 var fsMock = require('q-io/fs-mock')({});
+var ConfDAL = require('./fileDALs/confDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
@@ -83,7 +83,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var merkles = [];
   var cores = [];
   var global = { currentNumber: -1 };
-  var conf = {};
+  var currency = '';
 
   var lastBlockFileNumber = -1;
   var lastSavedHeader = -1;
@@ -106,7 +106,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           loadIntoArray(peers, 'peers.json'),
           loadIntoArray(merkles, 'merkles.json'),
           loadIntoArray(cores, 'cores.json'),
-          loadIntoObject(conf, 'conf.json'),
           loadIntoObject(global, 'global.json'),
           getCurrentMaxNumberInBlockFiles()
             .then(function(max){
@@ -154,8 +153,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       'peers.json',
       'merkles.json',
       'stats.json',
-      'cores.json',
-      'conf.json'
+      'cores.json'
     ].reduce(function(p, fileName) {
       var source = rootPath + '/' + fileName;
       var dest = newRoot + '/' + fileName;
@@ -174,7 +172,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
                 return myFS.read(dest);
               });
           }
-          else if (fileName == 'cores.json' || fileName == 'conf.json') {
+          else if (fileName == 'cores.json') {
             //console.log('Create empty object file %s', newRoot + '/' + fileName);
             return writeJSONToPath({}, newRoot + '/' + fileName);
           }
@@ -373,28 +371,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   }
 
-  this.getParameters = function(done) {
-    var parameters = {
-      "currency": conf.currency,
-      "c": conf.c,
-      "dt": conf.dt,
-      "ud0": conf.ud0,
-      "sigDelay": conf.sigDelay,
-      "sigValidity": conf.sigValidity,
-      "sigQty": conf.sigQty,
-      "sigWoT": conf.sigWoT,
-      "msValidity": conf.msValidity,
-      "stepMax": 3, // uCoin only handles 3 step currencies for now
-      "medianTimeBlocks": conf.medianTimeBlocks,
-      "avgGenTime": conf.avgGenTime,
-      "dtDiffEval": conf.dtDiffEval,
-      "blocksRot": conf.blocksRot,
-      "percentRot": conf.percentRot
-    };
-    done && done(null, parameters);
-    return Q(parameters);
-  };
-
   this.getPeer = function(pubkey, done) {
     var matching = _.chain(peers).
       where({ pubkey: pubkey }).
@@ -433,9 +409,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       .fail(function(){
         throw 'Block ' + [number, hash].join('-') + ' not found';
       })
-      .then(function(conf){
-        done && done(null, conf);
-        return conf;
+      .then(function(block){
+        done && done(null, block);
+        return block;
       })
       .fail(function(err){
         done && done(err);
@@ -1052,7 +1028,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.saveMemberships = function (type, mss) {
     return Q.all(mss.map(function(msRaw) {
-      var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', conf.currency);
+      var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', currency);
       ms.type = type;
       ms.hash = sha1(ms.getRawSigned()).toUpperCase();
       return that.saveMembership(ms);
@@ -1091,7 +1067,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       .then(function(){
         return Q.all(txs.map(function(tx) {
           _.extend(tx, extraProps);
-          _.extend(tx, { currency: conf.currency });
+          _.extend(tx, { currency: currency });
           var hash = new Transaction(tx).getHash(true);
           return myFS.write(rootPath + '/tx/' + hash + '.json', JSON.stringify(tx, null, ' '));
         }));
@@ -1276,7 +1252,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         return { sent: [], received: [] };
       })
       .then(function(history){
-        tx.currency = conf.currency;
+        tx.currency = currency;
         var hash = new Transaction(tx).getHash();
         history[type].push(hash);
         return myFS.write(rootPath + '/tx_history/' + pubkey + '.json', JSON.stringify(history, null, ' '));
@@ -1405,30 +1381,38 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return that.writeJSON(peers, 'peers.json', done);
   };
 
-  this.loadConf = function(done) {
-    return myFS.read(rootPath + '/conf.json')
+
+  /***********************
+   *    IO functions
+   **********************/
+
+  function readFunc(filePath) {
+    return myFS.read(rootPath + '/' + filePath)
       .then(function(data){
-        return _(Configuration.statics.defaultConf()).extend(JSON.parse(data));
-      })
-      .fail(function(){
-        return {};
-      })
+        return JSON.parse(data);
+      });
+  }
+
+  function writeFunc(filePath, what) {
+    return myFS.write(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
+  }
+
+  /***********************
+   *    CONFIGURATION
+   **********************/
+  var confDAL = new ConfDAL(profile, readFunc, writeFunc);
+
+  this.loadConf = function() {
+    return confDAL.loadConf()
       .then(function(conf){
-        done && done(null, conf);
+        currency = conf.currency;
         return conf;
       });
   };
 
-  this.saveConf = function(confToSave, done) {
-    _.extend(conf, confToSave);
-    return myFS.write(rootPath + '/conf.json', JSON.stringify(conf, null, ' '))
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
+  this.saveConf = function(confToSave) {
+    currency = confToSave.currency;
+    return confDAL.saveConf(confToSave);
   };
 
   this.loadStats = function (done) {
@@ -1447,9 +1431,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.getStat = function(statName, done) {
     return that.loadStats()
-      .then(function(conf){
+      .then(function(stat){
         // Create stat if it does not exist
-        var res = (conf && conf[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 };
+        var res = (stat && stat[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 };
         done && done(null, res);
         return res;
       })

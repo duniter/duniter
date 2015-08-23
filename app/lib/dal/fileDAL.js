@@ -15,6 +15,7 @@ var fsMock = require('q-io/fs-mock')({});
 var GlobalDAL = require('./fileDALs/GlobalDAL');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
+var CertDAL = require('./fileDALs/CertDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
@@ -78,14 +79,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var logger = require('../../lib/logger')(profile);
 
   // DALs
-  var globalDAL = new GlobalDAL(profile);
-  var confDAL = new ConfDAL(profile);
-  var statDAL = new StatDAL(profile);
-  var dals = [confDAL, statDAL, globalDAL];
+  var globalDAL = new GlobalDAL(that);
+  var confDAL = new ConfDAL(that);
+  var statDAL = new StatDAL(that);
+  var certDAL = new CertDAL(that);
+  var dals = [confDAL, statDAL, globalDAL, certDAL];
 
   var headers = [];
   var links = [];
-  var certs = [];
   var sources = [];
   var memberships = [];
   var identities = [];
@@ -108,7 +109,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         return Q.all([
           loadIntoArray(headers, 'headers.json'),
           loadIntoArray(links, 'links.json'),
-          loadIntoArray(certs, 'certs.json'),
           loadIntoArray(sources, 'sources.json'),
           loadIntoArray(memberships, 'memberships.json'),
           loadIntoArray(identities, 'identities.json'),
@@ -157,7 +157,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return [
       'headers.json',
       'links.json',
-      'certs.json',
       'sources.json',
       'memberships.json',
       'identities.json',
@@ -605,16 +604,23 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   this.fillIdentityWithCerts = function(idtyPromise, done) {
     return idtyPromise
       .then(function(idty){
-        if (idty) {
-          idty.certs = _.chain(certs).where({target: idty.hash}).value();
+        if (idty && !idty.length) {
+          return certDAL.getToTarget(idty.hash)
+            .then(function(certs){
+              idty.certs = certs;
+              return idty;
+            });
         }
+        return idty;
+      })
+      .then(function(idty){
         done && done(null, idty);
         return idty;
       })
       .fail(function(){
         done && done(null, null);
         return null;
-      })
+      });
   };
 
   this.getMembers = function(done) {
@@ -722,53 +728,54 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.searchIdentity = function(search, done) {
-    return that.fillIdentityWithCerts(
-      Q(_.chain(identities).
-        where({ revoked: false }).
-        filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
-        value()), done);
+    var idties = _.chain(identities).
+      where({ revoked: false }).
+      filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
+      value();
+    return that.fillIdentityWithCerts(Q(idties), done);
   };
 
-  this.certsToTarget = function(hash, done) {
-    var matching =_.chain(certs).
-      where({ target: hash }).
-      sortBy(function(c){ return -c.block; }).
-      value();
-    matching.reverse();
-    done && done(null, matching);
-    return matching;
+  this.certsToTarget = function(hash) {
+    return certDAL.getToTarget(hash)
+      .then(function(certs){
+        var matching = _.chain(certs).
+          sortBy(function(c){ return -c.block; }).
+          value();
+        matching.reverse();
+        return matching;
+      })
+      .fail(function(err){
+        throw err;
+      });
   };
 
-  this.certsFrom = function(pubkey, done) {
-    var matching =_.chain(certs).
-      where({ from: pubkey }).
-      sortBy(function(c){ return c.block; }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.certsFrom = function(pubkey) {
+    return certDAL.getFromPubkey(pubkey)
+      .then(function(certs){
+        return _.chain(certs).
+          where({ from: pubkey }).
+          sortBy(function(c){ return c.block; }).
+          value();
+      });
   };
 
-  this.certsFindNew = function(done) {
-    var matching =_.chain(certs).
-      where({ linked: false }).
-      sortBy(function(c){ return -c.block; }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.certsFindNew = function() {
+    return certDAL.getNotLinked()
+      .then(function(certs){
+        return _.chain(certs).
+          where({ linked: false }).
+          sortBy(function(c){ return -c.block; }).
+          value();
+      });
   };
 
   this.certsNotLinkedToTarget = function(hash) {
-    return _.chain(certs).
-      where({ linked: false, target: hash }).
-      sortBy(function(c){ return -c.block; }).
-      value();
-  };
-
-  this.certsTo = function(pubkey) {
-    return _.chain(certs).
-      where({ to: pubkey }).
-      sortBy(function(c){ return -c.block; }).
-      value();
+    return certDAL.getNotLinkedToTarget(hash)
+      .then(function(certs){
+        return _.chain(certs).
+          sortBy(function(c){ return -c.block; }).
+          value();
+      });
   };
 
   this.getMembershipsForHashAndIssuer = function(hash, issuer, done) {
@@ -847,12 +854,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return matching.length > 0;
   };
 
-  this.existsCert = function(cert, done) {
-    var matching =_.chain(certs).
-      where({ from: cert.pubkey, sig: cert.sig, block_number: cert.block_number, target: cert.target }).
-      value();
-    done && done(null, matching[0]);
-    return matching[0];
+  this.existsCert = function(cert) {
+    return certDAL.existsGivenCert(cert);
   };
 
   this.obsoletesLinks = function(minTimestamp, done) {
@@ -1213,25 +1216,15 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     });
   }
 
-  this.saveCertification = function(cert, done) {
-    var existing = _.where(certs, {
-      from: cert.from,
-      to: cert.to,
-      target: cert.target,
-      sig: cert.sig
-    })[0];
-    if (!existing) {
-      cert.block_number = parseInt(cert.block_number);
-      certs.push(cert);
-    } else {
-      cert.block_number = parseInt(cert.block_number);
-      _.extend(existing, cert);
-    }
-    return that.writeJSON(certs.map(function(cert) {
-      return _.omit(cert, 'identity','idty');
-    }), 'certs.json', function(err, obj) {
-      done(err, obj);
-    });
+  this.officializeCertification = function(cert) {
+    return certDAL.saveOfficial(cert)
+      .then(function(){
+        return certDAL.removeNotLinked(cert);
+      });
+  };
+
+  this.registerNewCertification = function(cert) {
+    return certDAL.saveNewCertification(cert);
   };
 
   this.saveTransaction = function(tx, done) {
@@ -1411,6 +1404,18 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return myFS.exists(rootPath + '/' + filePath);
   }
 
+  function listFunc(filePath) {
+    return myFS.list(rootPath + '/' + filePath)
+      .then(function(files){
+        return files.map(function(fileName) {
+          return { core: that.name, file: fileName };
+        });
+      })
+      .fail(function() {
+        return [];
+      });
+  }
+
   function readFunc(filePath) {
     return myFS.read(rootPath + '/' + filePath)
       .then(function(data){
@@ -1422,8 +1427,30 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return myFS.write(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
   }
 
+  function removeFunc(filePath, what) {
+    return myFS.remove(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
+  }
+
+  function makeTreeFunc(filePath) {
+    return myFS.makeTree(rootPath + '/' + filePath);
+  }
+
   this.path = function(filePath) {
     return rootPath + '/' + filePath;
+  };
+
+  this.setExists = function(existsF) {
+    dals.forEach(function(dal){
+      dal.setExists(existsF);
+    });
+    that.existsFile = existsF;
+  };
+
+  this.setList = function(listF) {
+    dals.forEach(function(dal){
+      dal.setList(listF);
+    });
+    that.listFile = listF;
   };
 
   this.setRead = function(readF) {
@@ -1440,8 +1467,26 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     that.writeFile = writeF;
   };
 
+  this.setRemove = function(removeF) {
+    dals.forEach(function(dal){
+      dal.setRemove(removeF);
+    });
+    that.removeFile = removeF;
+  };
+
+  this.setMakeTree = function(makeTreeF) {
+    dals.forEach(function(dal){
+      dal.setMakeTree(makeTreeF);
+    });
+    that.makeTreeFile = makeTreeF;
+  };
+
+  this.setExists(existsFunc);
+  this.setList(listFunc);
   this.setRead(readFunc);
   this.setWrite(writeFunc);
+  this.setRemove(removeFunc);
+  this.setMakeTree(makeTreeFunc);
 
   /***********************
    *    CONFIGURATION
@@ -1473,14 +1518,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'certs', 'conf', 'cores'];
-    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'conf', 'cores'];
+    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'certs', 'cores'];
-    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'cores'];
+    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
     return resetFiles(files, dirs, done);
   };
 

@@ -109,15 +109,22 @@ function IdentityService (conf, dal) {
             var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, block_number: cert.block_number, target: obj.hash, to: idty.pubkey });
             async.waterfall([
               function (next){
-                dal.existsCert(mCert, next);
+                dal.existsCert(mCert).then(_.partial(next, null)).fail(next);
               },
               function (existing, next){
                 if (existing) next();
-                else dal.saveCertification(new Certification(mCert), function (err) {
-                  logger.info('✔ CERT %s', mCert.from);
-                  aCertWasSaved = true;
-                  next(err);
-                });
+                else dal.registerNewCertification(new Certification(mCert))
+                  .then(function(){
+                    logger.info('✔ CERT %s', mCert.from);
+                    aCertWasSaved = true;
+                    next();
+                  })
+                  .fail(function(err){
+                    // TODO: This is weird...
+                    logger.info('✔ CERT %s', mCert.from);
+                    aCertWasSaved = true;
+                    next(err);
+                  });
               }
             ], cb);
           }, next);

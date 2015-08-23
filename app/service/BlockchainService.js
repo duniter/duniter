@@ -785,7 +785,8 @@ function BlockchainService (conf, mainDAL, pair) {
                 certs: function(callback){
                   if (!current) {
                     // Look for certifications from initial joiners
-                    dal.certsTo(ms.issuer)
+                    // TODO: check if this is still working
+                    dal.certsNotLinkedToTarget(join.idHash)
                       .then(function(certs){
                         callback(null, _.filter(certs, function(cert){
                           return ~joiners.indexOf(cert.from);

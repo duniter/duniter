@@ -40,7 +40,7 @@ function WOTBinding (server) {
         async.forEach(identities, function(idty, callback){
           async.waterfall([
             function (next){
-              server.dal.certsToTarget(idty.getTargetHash(), next);
+              server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).fail(next);
             },
             function (certs, next){
               async.forEachSeries(certs, function(cert, callback) {
@@ -69,7 +69,7 @@ function WOTBinding (server) {
               });
             },
             function (next) {
-              server.dal.certsFrom(idty.pubkey, next);
+              server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).fail(next);
             },
             function (signed, next){
               idty.signed = signed;
@@ -139,7 +139,7 @@ function WOTBinding (server) {
       function (idty, next){
         async.waterfall([
           function (next){
-            server.dal.certsToTarget(idty.getTargetHash(), next);
+            server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).fail(next);
           },
           function (certs, next){
             idty.certs = [];
@@ -214,7 +214,7 @@ function WOTBinding (server) {
       function (idty, next){
         async.waterfall([
           function (next){
-            server.dal.certsFrom(idty.pubkey, next);
+            server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).fail(next);
           },
           function (certs, next){
             idty.certs = [];

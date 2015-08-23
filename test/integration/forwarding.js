@@ -14,14 +14,16 @@ var jspckg = require('../../package');
 //   ]
 //});
 
+var MEMORY_MODE = true;
+
 describe("Forwarding", function() {
 
   describe("Nodes", function() {
 
     var common = { currency: 'bb', ipv4: '127.0.0.1', remoteipv4: '127.0.0.1', upnp: false, participate: false, rootoffset: 0, sigQty: 1 };
 
-    var node1 = node('db_1', _({ httplogs: false, port: 9600, remoteport: 9600, salt: 'abc', passwd: 'abc', routing: true }).extend(common));
-    var node2 = node('db_2', _({ httplogs: false, port: 9601, remoteport: 9601, salt: 'abc', passwd: 'def', routing: true }).extend(common));
+    var node1 = node({ name: 'db_1', memory: MEMORY_MODE }, _({ httplogs: false, port: 9600, remoteport: 9600, salt: 'abc', passwd: 'abc', routing: true }).extend(common));
+    var node2 = node({ name: 'db_2', memory: MEMORY_MODE }, _({ httplogs: false, port: 9601, remoteport: 9601, salt: 'abc', passwd: 'def', routing: true }).extend(common));
 
     before(function(done) {
       Q.all([node1, node2].map(function(node) {
@@ -153,5 +155,5 @@ function doTests(node) {
       assert.equal(res.results.length, 1);
       done();
     }));
-  }
+  };
 }

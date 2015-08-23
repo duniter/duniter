@@ -2,6 +2,7 @@
 
 var fileDAL = require('./fileDAL');
 var util = require('util');
+var _ = require('underscore');
 
 module.exports = function(profile, blockNumber, blockHash, myFS, rootDAL) {
   return new CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL);
@@ -14,24 +15,29 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
 
   fileDAL.FileDAL.call(this, profile, 'branches/' + coreName, myFS, rootDAL);
 
+  // Reading file = tree traversal reading
   var oldReadFile = that.readFile;
   that.setRead(function readFileFromFork() {
     var args = Array.prototype.slice.call(arguments);
     return oldReadFile.apply(that, args)
-      .tap(function(){
-        console.warn('Found in ' + args[0]);
-      })
-      .fail(function(err){
-        if (err.path) {
-          var argsStr = JSON.stringify(args).substr(1);
-          argsStr = argsStr.substr(0, argsStr.length - 1);
-          console.warn('Failed to read: %s', argsStr, err.path);
-        }
-        //console.log('Did not find the file for core ' + coreName + '.' + readFunc.surname);
+      .fail(function(){
         // Failed in core context, try in root
-        return rootDAL.readFile.apply(rootDAL, args)
-          .tap(function(){
-            console.warn('Found in ' + rootDAL.name);
+        return rootDAL.readFile.apply(rootDAL, args);
+      });
+  });
+
+  // Listing files = tree traversal listing
+  var oldListFile = that.listFile;
+  that.setList(function listFilesFromFork() {
+    var args = Array.prototype.slice.call(arguments);
+    // Look at previous core, may be a recursive call of this function 'listFilesFromFork'
+    // or a simple call to 'oldListFile' to end the recursion
+    return rootDAL.listFile.apply(rootDAL, args)
+      .then(function(files){
+        // Call for this level
+        return oldListFile.apply(that, args)
+          .then(function(files2){
+            return files.concat(files2);
           });
       });
   });

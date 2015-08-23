@@ -6,13 +6,13 @@ var AbstractDAL = require('./AbstractDAL');
 
 module.exports = StatDAL;
 
-function StatDAL(profile) {
+function StatDAL(dal) {
 
   "use strict";
 
-  AbstractDAL.call(this);
+  AbstractDAL.call(this, dal);
 
-  var logger = require('../../../lib/logger')(profile);
+  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
 
   this.loadStats = function () {

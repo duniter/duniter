@@ -7,12 +7,12 @@ var _= require('underscore');
 
 module.exports = GlobalDAL;
 
-function GlobalDAL(profile) {
+function GlobalDAL(dal) {
 
   "use strict";
 
-  AbstractDAL.call(this);
-  var logger = require('../../../lib/logger')(profile);
+  AbstractDAL.call(this, dal);
+  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
 
   this.getGlobal = function() {

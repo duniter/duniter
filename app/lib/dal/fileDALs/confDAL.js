@@ -8,12 +8,12 @@ var _       = require('underscore');
 
 module.exports = ParametersDAL;
 
-function ParametersDAL(profile) {
+function ParametersDAL(dal) {
 
   "use strict";
 
-  AbstractDAL.call(this);
-  var logger = require('../../../lib/logger')(profile);
+  AbstractDAL.call(this, dal);
+  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
 
   this.getParameters = function() {

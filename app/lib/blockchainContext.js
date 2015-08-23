@@ -328,24 +328,31 @@ function BlockchainContext(conf, dal) {
     async.forEachSeries(block.certifications, function(inlineCert, callback){
       var cert = Certification.statics.fromInline(inlineCert);
       var indexNb = block.certifications.indexOf(inlineCert);
+      var from_uid, to_uid;
       async.waterfall([
         function (next) {
           dal.getWritten(cert.to, next);
         },
         function (idty, next){
           cert.target = new Identity(idty).getTargetHash();
-          dal.existsCert(cert, next);
+          to_uid = idty.uid;
+          dal.getWritten(cert.from, next);
+        },
+        function (idty, next){
+          from_uid = idty.uid;
+          dal.existsCert(cert).then(_.partial(next, null)).fail(next);
         },
         function (existing, next) {
           if (existing) {
             cert = existing;
           }
+          cert.from_uid = from_uid;
+          cert.to_uid = to_uid;
           cert.linked = true;
-          cert.block = block.number;
           cert.indexNb = indexNb;
-          dal.saveCertification(new Certification(cert), function (err) {
-            next(err);
-          });
+          dal.officializeCertification(new Certification(cert))
+            .then(_.partial(next, null))
+            .fail(next);
         }
       ], callback);
     }, done);

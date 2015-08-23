@@ -1,9 +1,11 @@
 "use strict";
 
+var _ = require('underscore');
 var should = require('should');
 var assert = require('assert');
 var node   = require('./tools/node');
 var jspckg = require('../../package');
+var MEMORY_MODE = true;
 
 describe("Integration", function() {
 
@@ -161,7 +163,7 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
-    var node3 = node('db3', { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
+    var node3 = node({ name: 'db3', memory: MEMORY_MODE }, { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
       salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
       sigQty: 1
     });
@@ -183,20 +185,25 @@ describe("Integration", function() {
 
     it('tic should give only 1 results', node3.lookup('tic', function(res, done){
       should.exists(res);
-      var uids = [res.results[0].signed[0].uid, res.results[0].signed[1].uid, res.results[0].signed[2].uid];
+      var uids = _.pluck(res.results[0].signed, 'uid');
       var uidsShould = ["cat", "tac", "toc"];
+      uids.sort();
+      uidsShould.sort();
       assert.deepEqual(uids, uidsShould);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].signed.length, 3);
-      assert.equal(res.results[0].signed[0].uid, "cat");
-      assert.equal(res.results[0].signed[0].isMember, true);
-      assert.equal(res.results[0].signed[0].wasMember, true);
-      assert.equal(res.results[0].signed[1].uid, "tac");
-      assert.equal(res.results[0].signed[1].isMember, true);
-      assert.equal(res.results[0].signed[1].wasMember, true);
-      assert.equal(res.results[0].signed[2].uid, "toc");
-      assert.equal(res.results[0].signed[2].isMember, true);
-      assert.equal(res.results[0].signed[2].wasMember, true);
+      var cat_signed = _.findWhere(res.results[0].signed, { uid: 'cat'});
+      var tac_signed = _.findWhere(res.results[0].signed, { uid: 'tac'});
+      var toc_signed = _.findWhere(res.results[0].signed, { uid: 'toc'});
+      assert.equal(cat_signed.uid, "cat");
+      assert.equal(cat_signed.isMember, true);
+      assert.equal(cat_signed.wasMember, true);
+      assert.equal(tac_signed.uid, "tac");
+      assert.equal(tac_signed.isMember, true);
+      assert.equal(tac_signed.wasMember, true);
+      assert.equal(toc_signed.uid, "toc");
+      assert.equal(toc_signed.isMember, true);
+      assert.equal(toc_signed.wasMember, true);
       assert.equal(res.results[0].uids[0].others.length, 3);
       assert.equal(res.results[0].uids[0].others[0].uids.length, 1);
       assert.equal(res.results[0].uids[0].others[0].isMember, true);

@@ -117,12 +117,12 @@ module.exports = function(dal) {
       dal.getToBeKicked(done);
     };
 
-    this.lastBlocksOfIssuer = function (issuer, count, done) {
-      dal.lastBlocksOfIssuer(issuer, count, done);
+    this.lastBlockOfIssuer = function (issuer) {
+      return dal.lastBlockOfIssuer(issuer);
     };
 
     this.getLastUDBlock = function (done) {
-      dal.lastUDBlock(done);
+      dal.lastUDBlock().then(_.partial(done, null)).fail(done);
     };
 
     this.isAvailableUDSource = function (pubkey, number, fingerprint, amount, done) {
@@ -150,7 +150,7 @@ module.exports = function(dal) {
     this.getIssuersBetween = function (bStart, bEnd, done) {
       async.waterfall([
         function (next) {
-          dal.getBlocksBetween(bStart, bEnd, next);
+          dal.getBlocksBetween(bStart, bEnd).then(_.partial(next, null)).fail(next);
         },
         function (blocks, next) {
           next(null, _.pluck(blocks, 'issuer'));
@@ -161,7 +161,7 @@ module.exports = function(dal) {
     this.getTimesBetween = function (bStart, bEnd, done) {
       async.waterfall([
         function (next) {
-          dal.getBlocksBetween(bStart, bEnd, next);
+          dal.getBlocksBetween(bStart, bEnd).then(_.partial(next, null)).fail(next);
         },
         function (blocks, next) {
           next(null, _.pluck(blocks, 'time'));

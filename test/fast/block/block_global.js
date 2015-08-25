@@ -1,4 +1,5 @@
 "use strict";
+var Q             = require('q');
 var async         = require('async');
 var should        = require('should');
 var assert        = require('assert');
@@ -586,26 +587,26 @@ function BlockCheckerDao (block) {
     }
   }
 
-  this.lastBlocksOfIssuer = function (issuer, count, done) {
+  this.lastBlockOfIssuer = function (issuer) {
     if (block.number == 60 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
-      done(null, [{
+      return Q({
         number: 59,
         hash: '0000AB8A955B2196FB8560DCDA7A70B19DDB3433' // 4 zeros + 0 interblock - 0 block since = 4 required zeros
-      }]);
+      });
     } else if (block.number == 61 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
-      done(null, [{
+      return Q({
         number: 60 // 3 issuers, 0 block since, 2/3 percent, 1 powMin = 2 required zeros
-      }]);
+      });
     } else if (block.number == 66 && issuer == 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
-      done(null, [{
+      return Q({
         number: 63 // 18 issuers, 2 blocks since, 2/3 percent + 10 powMin ==> 10 * (2/3 * 18 / (1 + 2)) ==> 10 * 12/3 ==> 40
-      }]);
+      });
     } else if (block.number == 67 && issuer == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
-      done(null, [{
+      return Q({
         number: 62 // 18 issuers, 11 blocks since, 1 powMin = 1 required zeros
-      }]);
+      });
     } else {
-      done(null, null);
+      return Q(null);
     }
   };
 

@@ -167,7 +167,11 @@ function BlockchainContext(conf, dal) {
       },
       function (next){
         // Compute obsolete memberships (active, joiner)
-        computeObsoleteMemberships(block, next);
+        computeObsoleteMemberships(block)
+          .then(function() {
+            next();
+          })
+          .fail(next);
       },
       function (next){
         // Update consumed sources & create new ones
@@ -469,18 +473,13 @@ function BlockchainContext(conf, dal) {
     ], done);
   }
 
-  function computeObsoleteMemberships (block, done) {
-    async.waterfall([
-      function (next){
-        dal.getLastBeforeOrAt(block.medianTime - conf.msValidity, next);
-      },
-      function (last, next){
-        if (last)
-          dal.kickWithOutdatedMemberships(last.number, next);
-        else
-          next();
-      }
-    ], done);
+  function computeObsoleteMemberships (block) {
+    return dal.getMembershipExcludingBlock(block, conf.msValidity)
+      .then(function(last){
+        if (last) {
+          return dal.kickWithOutdatedMemberships(last.number);
+        }
+      });
   }
 
   function updateTransactionSources (block, done) {

@@ -191,7 +191,7 @@ program
           localCurrent = current;
           if (!localCurrent) return next('Local node is dropped behind');
           if (localCurrent.hash != remoteCurrent.hash) return next('Remote node has forked');
-          server.dal.getBlockFrom(localCurrent.number, next);
+          server.dal.getBlockFrom(localCurrent.number).then(_.partial(next, null)).fail(next);
         });
       },
       function (blocks, next){
@@ -324,7 +324,7 @@ program
   .action(service(function (upto, server) {
     async.waterfall([
       function (next){
-        server.dal.getBlocksUntil(upto, next);
+        server.dal.getBlocksUntil(upto).then(_.partial(next, null)).fail(next);
       },
       function (blocks, next){
         var jsoned = [];

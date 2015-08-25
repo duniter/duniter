@@ -18,7 +18,6 @@ function CertDAL(dal) {
   var that = this;
   var treeMade;
 
-  // TODO: use initTree
   this.initTree = function() {
     if (!treeMade) {
       treeMade = Q.all([

@@ -16,10 +16,10 @@ var GlobalDAL = require('./fileDALs/GlobalDAL');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
+var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
-var SAVE_HEADERS_INTERVAL = 3000;
 
 var writeFileFifo = async.queue(function (task, callback) {
   task(callback);
@@ -83,9 +83,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
   var certDAL = new CertDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL];
+  var indicatorsDAL = new IndicatorsDAL(that);
+  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL];
 
-  var headers = [];
   var links = [];
   var sources = [];
   var memberships = [];
@@ -97,7 +97,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var currency = '';
 
   var lastBlockFileNumber = -1;
-  var lastSavedHeader = -1;
 
   var dalLoaded;
   function onceLoadedDAL() {
@@ -107,7 +106,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       })
       .then(function(){
         return Q.all([
-          loadIntoArray(headers, 'headers.json'),
           loadIntoArray(links, 'links.json'),
           loadIntoArray(sources, 'sources.json'),
           loadIntoArray(memberships, 'memberships.json'),
@@ -121,41 +119,11 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
               lastBlockFileNumber = max;
             })
         ]);
-      })
-      .then(function(){
-        if (lastBlockFileNumber + 1 > headers.length) {
-          return globalDAL.getGlobal()
-            .then(function(global){
-              return _.range(headers.length, Math.min(global.currentNumber + 1, lastBlockFileNumber + 1)).reduce(function(promise, number){
-                return promise.then(function(){
-                  return that.readFileOfBlock.now(number);
-                })
-                  .then(function(block){
-                    return that.addHead.now(JSON.parse(block));
-                  });
-              }, Q());
-            });
-        }
-      })
-      .then(function(){
-        return saveHeaders()
-          .then(function(){
-            setInterval(saveHeaders, SAVE_HEADERS_INTERVAL);
-          });
       }));
-  }
-
-  function saveHeaders() {
-    if (headers.length > 0 && lastSavedHeader < headers[headers.length - 1].number) {
-      lastSavedHeader = headers[headers.length - 1].number;
-      return myFS.write(rootPath + '/headers.json', JSON.stringify(headers, null, ' '));
-    }
-    return Q();
   }
 
   this.copyFiles = function(newRoot) {
     return [
-      'headers.json',
       'links.json',
       'sources.json',
       'memberships.json',
@@ -441,51 +409,31 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   // Block
-  this.getLastBeforeOrAt = function (t, done) {
-    var blocks =_.chain(headers).
-      filter(function(b) { return b.medianTime <= t; }).
-      sortBy(function(b){ return -b.number; }).
-      value();
-    done && done(null, blocks[0]);
-    return blocks[0];
-  };
-
-  this.lastUDBlock = function(done) {
-    var blocks =_.chain(headers).
-      filter(function(b) { return b.dividend > 0; }).
-      sortBy(function(b){ return -b.number; }).
-      value();
-    done && done(null, blocks[0]);
-    return blocks[0];
+  this.lastUDBlock = function() {
+    return indicatorsDAL.getLastUDBlock();
   };
 
   this.getRootBlock = function(done) {
-    var blocks =_.chain(headers).
-      where({ number: 0 }).
-      sortBy(function(b){ return -b.number; }).
-      value();
-    done && done(null, blocks[0]);
-    return blocks[0];
+    return that.getBlock(0, done);
   };
 
-  this.lastBlocksOfIssuer = function(issuer, count, done) {
-    var blocks =_.chain(headers).
-      where({ issuer: issuer }).
-      sortBy(function(b){ return b.number; }).
-      last(count).
-      value();
-    done && done(null, blocks);
-    return blocks;
+  this.lastBlockOfIssuer = function(issuer) {
+    return indicatorsDAL.getLastBlockOfIssuer(issuer);
   };
 
-  this.getBlocksBetween = function(start, end, done) {
-    var blocks =_.chain(headers).
-      filter(function(b){ return b.number >= start; }).
-      filter(function(b){ return b.number <= end; }).
-      sortBy(function(b){ return -b.number; }).
-      value();
-    done && done(null, blocks);
-    return blocks;
+  this.getBlocksBetween = function(start, end) {
+    var s = Math.max(0, start);
+    return Q.all(_.range(s, end + 1).map(function(number) {
+      return that.getBlock(number);
+    }))
+      .then(function(results){
+        return results.reduce(function(blocks, block) {
+          if (block) {
+            return blocks.concat(block);
+          }
+          return blocks;
+        }, [])
+      });
   };
 
   this.getCurrentNumber = function() {
@@ -513,22 +461,15 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.getBlockFrom = function(number, done) {
-    var blocks =_.chain(headers).
-      filter(function(b){ return b.number >= number; }).
-      sortBy(function(b){ return b.number; }).
-      value();
-    done && done(null, blocks);
-    return blocks;
+  this.getBlockFrom = function(number) {
+    return that.getCurrent()
+      .then(function(current){
+        return that.getBlocksBetween(number, current.number);
+      });
   };
 
-  this.getBlocksUntil = function(number, done) {
-    var blocks =_.chain(headers).
-      filter(function(b){ return b.number < number; }).
-      sortBy(function(b){ return b.number; }).
-      value();
-    done && done(null, blocks);
-    return blocks;
+  this.getBlocksUntil = function(number) {
+    return that.getBlocksBetween(0, number);
   };
 
   this.getValidLinksFrom = function(from, done) {
@@ -905,7 +846,34 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return memberships.length != prevCount ? that.writeJSON(memberships, 'memberships.json', done) : that.donable(Q(), done);
   };
 
-  this.kickWithOutdatedMemberships = function(maxNumber, done) {
+  this.getMembershipExcludingBlock = function(current, msValidtyTime) {
+    var currentExcluding = current.number == 0 ?
+      Q(null) :
+      indicatorsDAL.getCurrentMembershipExcludingBlock()
+        .fail(function() { return null; });
+    return currentExcluding
+      .then(function(excluding){
+        var reachedMax = false;
+        return _.range((excluding && excluding.number) || 0, current.number + 1).reduce(function(p, number) {
+          return p.then(function(previous){
+            if (reachedMax) return Q(previous);
+            return that.getBlock(number)
+              .then(function(block){
+                if (block.medianTime <= current.medianTime - msValidtyTime) {
+                  return block;
+                }
+                reachedMax = true;
+                return previous;
+              });
+          });
+        }, Q(excluding));
+      })
+      .then(function(newExcluding){
+        return indicatorsDAL.writeCurrentExcluding(newExcluding).thenResolve(newExcluding);
+      });
+  };
+
+  this.kickWithOutdatedMemberships = function(maxNumber) {
     var matching =_.chain(identities).
       where({ member: true }).
       filter(function(i){ return i.currentMSN <= maxNumber; }).
@@ -914,8 +882,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       i.kick = true;
     });
     return matching.length ? saveIdentitiesInFile(identities, function(err) {
-      done && done(err);
-    }) : that.donable(Q(), done);
+    }) : Q();
   };
 
   this.getPeerOrNull = function(pubkey, done) {
@@ -1010,20 +977,24 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   this.saveBlock = function(block, done) {
     return Q()
       .then(function() {
-        return that.addHead(block)
-          .then(function(){
-            return Q.all([
-              rootDAL ? saveHeaders() : Q(),
-              that.saveBlockInFile(block, true),
-              that.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime }),
-              that.saveMemberships('join', block.joiners),
-              that.saveMemberships('active', block.actives),
-              that.saveMemberships('leave', block.leavers)
-            ]);
-          });
+        return Q.all([
+          that.saveBlockInFile(block, true),
+          that.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime }),
+          that.saveMemberships('join', block.joiners),
+          that.saveMemberships('active', block.actives),
+          that.saveMemberships('leave', block.leavers)
+        ]);
       })
       .then(function(){
         return globalDAL.setCurrentNumber(block.number);
+      })
+      .then(function(){
+        if (block.dividend) {
+          return indicatorsDAL.setLastUDBlock(block);
+        }
+      })
+      .then(function(){
+        return indicatorsDAL.setLastBlockForIssuer(block);
       })
       .then(function(){
         lastBlockFileNumber = Math.max(lastBlockFileNumber, block.number);
@@ -1033,12 +1004,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         done && done(err);
         throw err;
       });
-  };
-
-  this.addHead = function(block) {
-    headers.push(_.omit(block, 'identities','certifications','joiners','actives','leavers','excluded',
-      'transactions','raw','membersChanges'));
-    return Q();
   };
 
   this.saveMemberships = function (type, mss) {
@@ -1091,10 +1056,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.saveCoresInFile = function (cores, done) {
     return that.writeJSON(cores, 'cores.json', done);
-  };
-
-  this.saveHeadsInFile = function (headers, done) {
-    return that.writeJSON(headers, 'headers.json', done);
   };
 
   function writeJSON(obj, fileName, done) {
@@ -1518,13 +1479,13 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'conf', 'cores'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'conf', 'cores'];
     var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'headers', 'global', 'cores'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores'];
     var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
     return resetFiles(files, dirs, done);
   };

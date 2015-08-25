@@ -395,7 +395,7 @@ function GlobalValidator (conf, dao) {
               getMedianTime(blockNumber, next);
             },
             lastDistant: function (next) {
-              dao.getBlock(blockNumber - conf.dtDiffEval, next);
+              dao.getBlock(Math.max(0, blockNumber - conf.dtDiffEval), next);
             }
           }, next);
         },
@@ -625,7 +625,7 @@ function GlobalValidator (conf, dao) {
             function (next){
               async.parallel({
                 lasts: function (next) {
-                  dao.lastBlocksOfIssuer(issuer, 1, next);
+                  dao.lastBlockOfIssuer(issuer).then(_.partial(next, null)).fail(next);
                 },
                 powMin: function (next) {
                   getPoWMinFor(current.number + 1, next);
@@ -636,7 +636,7 @@ function GlobalValidator (conf, dao) {
             },
             function (res, next){
               powMin = res.powMin;
-              last = (res.lasts && res.lasts[0]) || null;
+              last = res.lasts || null;
               if (last) {
                 dao.getIssuersBetween(last.number - 1 - conf.blocksRot, last.number - 1, next);
               } else {

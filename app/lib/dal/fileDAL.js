@@ -16,6 +16,7 @@ var GlobalDAL = require('./fileDALs/GlobalDAL');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
+var MerkleDAL = require('./fileDALs/MerkleDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
@@ -83,8 +84,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
   var certDAL = new CertDAL(that);
+  var merkleDAL = new MerkleDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL];
+  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL];
 
   var links = [];
   var sources = [];
@@ -92,7 +94,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var identities = [];
   var txs = [];
   var peers = [];
-  var merkles = [];
   var cores = [];
   var currency = '';
 
@@ -112,7 +113,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           loadIntoArray(identities, 'identities.json'),
           loadIntoArray(txs, 'txs.json'),
           loadIntoArray(peers, 'peers.json'),
-          loadIntoArray(merkles, 'merkles.json'),
           loadIntoArray(cores, 'cores.json'),
           getCurrentMaxNumberInBlockFiles()
             .then(function(max){
@@ -130,7 +130,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       'identities.json',
       'txs.json',
       'peers.json',
-      'merkles.json',
       'cores.json'
     ].reduce(function(p, fileName) {
       var source = rootPath + '/' + fileName;
@@ -1100,9 +1099,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   }
 
   this.merkleForPeers = function(done) {
-    return Q()
-      .then(function(){
-        var leaves = (_.where(merkles, { tree: 'peers' })[0] || {}).leaves || [];
+    return merkleDAL.getLeaves('peers')
+      .then(function(leaves){
         var merkle = new Merkle();
         merkle.initialize(leaves);
         done && done(null, merkle);
@@ -1126,11 +1124,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         return merkle.leaves();
       })
       .then(function(leaves){
-        merkles = _.reject(merkles, function(m){ return m.tree == 'peers'; });
-        merkles.push({
-          tree: 'peers',
-          leaves: leaves
-        });
+        return merkleDAL.pushMerkle('peers', leaves);
       })
       .then(function(){
         done && done();
@@ -1479,13 +1473,13 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'conf', 'cores'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles', 'conf'];
     var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores'];
+    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles'];
     var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
     return resetFiles(files, dirs, done);
   };

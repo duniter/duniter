@@ -229,18 +229,6 @@ program
   }));
 
 program
-  .command('gen-history [pubkey]')
-  .description('Recompute the transaction history of a pubkey')
-  .action(service(function (pubkey, server) {
-    server.recomputeTxHistory(pubkey)
-      .then(function(){
-        logger.info('History computed again.');
-        exit(server);
-      })
-      .fail(logIfErrorAndExit(server));
-  }));
-
-program
   .command('gen-next [host] [port] [diff]')
   .description('Tries to generate the next block of the blockchain')
   .action(service(generateAndSend("generateNext")));

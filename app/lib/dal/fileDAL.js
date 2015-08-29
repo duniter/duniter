@@ -17,6 +17,7 @@ var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
 var MerkleDAL = require('./fileDALs/MerkleDAL');
+var TxsDAL = require('./fileDALs/TxsDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
@@ -86,13 +87,13 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var certDAL = new CertDAL(that);
   var merkleDAL = new MerkleDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL];
+  var txsDAL = new TxsDAL(that);
+  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL];
 
   var links = [];
   var sources = [];
   var memberships = [];
   var identities = [];
-  var txs = [];
   var peers = [];
   var cores = [];
   var currency = '';
@@ -111,7 +112,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           loadIntoArray(sources, 'sources.json'),
           loadIntoArray(memberships, 'memberships.json'),
           loadIntoArray(identities, 'identities.json'),
-          loadIntoArray(txs, 'txs.json'),
           loadIntoArray(peers, 'peers.json'),
           loadIntoArray(cores, 'cores.json'),
           getCurrentMaxNumberInBlockFiles()
@@ -128,7 +128,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       'sources.json',
       'memberships.json',
       'identities.json',
-      'txs.json',
       'peers.json',
       'cores.json'
     ].reduce(function(p, fileName) {
@@ -246,18 +245,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
               JSON.parse(data).forEach(function(item){
                 theArray.push(item);
               });
-            });
-        }
-      });
-  }
-
-  function loadIntoObject(obj, fileName) {
-    return myFS.exists(rootPath + '/' + fileName)
-      .then(function(exists){
-        if (exists) {
-          return myFS.read(rootPath + '/' + fileName)
-            .then(function (data) {
-              _.extend(obj, JSON.parse(data));
             });
         }
       });
@@ -608,40 +595,16 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return matching;
   };
 
-  this.getTxByHash = function(hash, done) {
-    return myFS.read(rootPath + '/tx/' + hash + '.json')
-      .fail(function(){
-        return _.chain(txs).
-          where({ hash: hash }).
-          value()[0] || null;
-      })
-      .then(function(tx){
-        done && done(null, tx);
-        return tx;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
+  this.getTxByHash = function(hash) {
+    return txsDAL.getTX(hash);
   };
 
-  this.removeTxByHash = function(hash, done) {
-    txs = _.chain(txs).
-      reject(function(tx){ return tx.hash == hash; }).
-      value();
-    return that.writeJSON(txs, 'txs.json')
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
+  this.removeTxByHash = function(hash) {
+    return txsDAL.removeTX(hash);
   };
 
-  this.findAllWaitingTransactions = function(done) {
-    done && done(null, txs);
-    return txs;
+  this.getTransactionsPending = function() {
+    return txsDAL.getAllPending();
   };
 
   this.getNonWritten = function(pubkey, done) {
@@ -892,18 +855,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return nullIfError(that.getBlock(number), done);
   };
 
-  this.getPeers = function(pubkeys, done) {
-    return Q.all(pubkeys.map(function(pubkey) {
-      return that.getPeerOrNull(pubkey);
-    })).spread(function(){
-      var peers = Array.prototype.slice.call(arguments).filter(function(p) {
-        return !!p;
-      });
-      done(null, peers);
-      return peers;
-    }).fail(done);
-  };
-
   this.getAllPeers = function(done) {
     done && done(null, peers);
     return peers;
@@ -1042,15 +993,11 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.saveTxsInFiles = function (txs, extraProps) {
-    return myFS.makeTree(rootPath + '/tx/')
-      .then(function(){
-        return Q.all(txs.map(function(tx) {
-          _.extend(tx, extraProps);
-          _.extend(tx, { currency: currency });
-          var hash = new Transaction(tx).getHash(true);
-          return myFS.write(rootPath + '/tx/' + hash + '.json', JSON.stringify(tx, null, ' '));
-        }));
-      });
+    return Q.all(txs.map(function(tx) {
+      _.extend(tx, extraProps);
+      _.extend(tx, { currency: currency });
+      return txsDAL.addLinked(new Transaction(tx));
+    }));
   };
 
   this.saveCoresInFile = function (cores, done) {
@@ -1182,41 +1129,12 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return certDAL.saveNewCertification(cert);
   };
 
-  this.saveTransaction = function(tx, done) {
-    txs.push(tx);
-    return that.writeJSON(txs, 'txs.json', done);
+  this.saveTransaction = function(tx) {
+    return txsDAL.addPending(tx);
   };
 
-  this.dropTxRecords = function(pubkey) {
-    return myFS.removeTree(rootPath + '/tx/');
-  };
-
-  this.dropTxHistory = function(pubkey) {
-    return myFS.makeTree(rootPath + '/tx_history/')
-      .then(function(){
-        return myFS.remove(rootPath + '/tx_history/' + pubkey + '.json');
-      })
-      .fail(function(){
-      });
-  };
-
-  this.saveTxInHistory = function(type, pubkey, tx) {
-    return myFS.makeTree(rootPath + '/tx_history/')
-      .then(function(){
-        return myFS.read(rootPath + '/tx_history/' + pubkey + '.json')
-          .then(function(data){
-            return JSON.parse(data);
-          });
-      })
-      .fail(function(){
-        return { sent: [], received: [] };
-      })
-      .then(function(history){
-        tx.currency = currency;
-        var hash = new Transaction(tx).getHash();
-        history[type].push(hash);
-        return myFS.write(rootPath + '/tx_history/' + pubkey + '.json', JSON.stringify(history, null, ' '));
-      });
+  this.dropTxRecords = function() {
+    return myFS.removeTree(rootPath + '/txs/');
   };
 
   this.saveUDInHistory = function(pubkey, ud) {
@@ -1236,67 +1154,23 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.getTransactionsHistory = function(pubkey, done) {
-    return myFS.makeTree(rootPath + '/tx_history/')
-      .then(function(){
-        return myFS.read(rootPath + '/tx_history/' + pubkey + '.json')
-          .then(function(data){
-            return JSON.parse(data);
-          });
-      })
-      .fail(function(){
-        return { sent: [], received: [] };
-      })
+  this.getTransactionsHistory = function(pubkey) {
+    return Q({ sent: [], received: [] })
       .then(function(history){
         history.sending = [];
         history.receiving = [];
         return Q.all([
-          // Sent
-          Q.all(history.sent.map(function(hash, index) {
-            return that.getTxByHash(hash)
-              .then(function(tx){
-                history.sent[index] = (tx && JSON.parse(tx)) || null;
-              });
-          })),
-          // Received
-          Q.all(history.received.map(function(hash, index) {
-            return that.getTxByHash(hash)
-              .then(function(tx){
-                history.received[index] = (tx && JSON.parse(tx)) || null;
-              });
-          })),
-          // Sending
-          Q.all(txs.map(function(tx) {
-            if (~tx.issuers.indexOf(pubkey)) {
-              history.sending.push(tx || null);
-            }
-          })),
-          // Receiving
-          Q.all(txs.map(function(tx, index) {
-            if (~tx.issuers.indexOf(pubkey)) {
-              return;
-            }
-            var isRecipient = false;
-            for (var i = 0; i < tx.outputs.length; i++) {
-              var output = tx.outputs[i];
-              if (output.match(new RegExp('^' + pubkey))) {
-                isRecipient = true;
-                break;
-              }
-            }
-            if (isRecipient) {
-              history.receiving.push(tx || null);
-            }
-          }))
-        ]).thenResolve(history);
-      })
-      .then(function(history){
-        done && done(null, history);
-        return history;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
+          txsDAL.getLinkedWithIssuer(pubkey),
+          txsDAL.getLinkedWithRecipient(pubkey),
+          txsDAL.getPendingWithIssuer(pubkey),
+          txsDAL.getPendingWithRecipient(pubkey)
+        ])
+          .then(function(sent, received, sending, pending){
+            history.sent = sent;
+            history.received = received;
+            history.sending = sending;
+            history.pending = pending;
+          }).thenResolve(history);
       });
   };
 
@@ -1324,10 +1198,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         done && done(err);
         throw err;
       });
-  };
-
-  this.getTransactionsPending = function() {
-    return txs;
   };
 
   this.savePeer = function(peer, done) {
@@ -1473,14 +1343,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
+    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles', 'conf'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'txs', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'tx_history', 'ud_history', 'branches', 'certs'];
+    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs'];
     return resetFiles(files, dirs, done);
   };
 
@@ -1492,7 +1362,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.resetStats = function(done) {
     var files = ['stats'];
-    var dirs  = ['ud_history','tx_history'];
+    var dirs  = ['ud_history'];
     return resetFiles(files, dirs, done);
   };
 
@@ -1503,8 +1373,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetTransactions = function(done) {
-    var files = ['txs'];
-    var dirs  = [];
+    var files = [];
+    var dirs  = ['txs'];
     return resetFiles(files, dirs, done);
   };
 

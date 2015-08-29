@@ -99,6 +99,7 @@ function Node (dbName, options) {
         BlockchainService.prove(block, sigFunc, difficulty, next);
       },
       function (provenBlock, next){
+        console.log(provenBlock.getRawSigned());
         post('/blockchain/block', {
           "block": provenBlock.getRawSigned()
         }, next);

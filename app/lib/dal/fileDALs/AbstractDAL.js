@@ -2,6 +2,7 @@
  * Created by cgeek on 22/08/15.
  */
 
+var Q = require('q');
 
 module.exports = AbstractDAL;
 
@@ -61,4 +62,20 @@ function AbstractDAL(dal) {
   this.makeTree = function(path) {
     return makeTreeFunc(path);
   };
+
+  this.reduceTo = function reduceTo(subpath, certs) {
+      return function(files){
+        return files.reduce(function(p, file) {
+          return p.then(function(){
+            return that.read(subpath + file)
+              .then(function(data){
+                certs.push(data);
+              })
+              .fail(function(err){
+                throw err;
+              });
+          });
+        }, Q());
+      };
+    };
 }

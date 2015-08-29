@@ -1,4 +1,6 @@
 "use strict";
+
+var _               = require('underscore');
 var async           = require('async');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
@@ -22,7 +24,7 @@ function TransactionService (conf, dal) {
     var globalValidation = null;
     async.waterfall([
       function (next) {
-        transactionAlreadyProcessed(tx, next);
+        dal.getTxByHash(tx.hash).then(_.partial(next, null)).fail(next);
       },
       function (alreadyProcessed, next) {
         if (alreadyProcessed)
@@ -41,14 +43,11 @@ function TransactionService (conf, dal) {
       },
       function (next) {
         // Save the transaction
-        dal.saveTransaction(tx, function (err) {
-          next(err, tx);
-        });
+        dal.saveTransaction(tx).then(function() {
+          next(null, tx);
+        })
+          .fail(next);
       }
     ], done);
   };
-
-  function transactionAlreadyProcessed (tx, done) {
-    dal.getTxByHash(tx.hash, done);
-  }
 }

@@ -574,7 +574,7 @@ function BlockchainService (conf, mainDAL, pair) {
   }
 
   function findTransactions(dal) {
-    return dal.findAllWaitingTransactions()
+    return dal.getTransactionsPending()
       .then(function (txs) {
         var transactions = [];
         var passingTxs = [];
@@ -600,7 +600,7 @@ function BlockchainService (conf, mainDAL, pair) {
             ], function (err) {
               if (err) {
                 logger.error(err);
-                dal.removeTxByHash(extractedTX.hash, callback);
+                dal.removeTxByHash(extractedTX.hash).then(_.partial(callback, null)).fail(callback);
               }
               else {
                 logger.info('Transaction added to block');
@@ -1303,26 +1303,6 @@ function BlockchainService (conf, mainDAL, pair) {
       });
   };
 
-  this.recomputeTxHistory = function(pubkey) {
-    return that.mainForkDAL()
-      .then(function(dal){
-        return dal.dropTxHistory(pubkey)
-          .then(function(){
-            return dal.getStat('tx');
-          })
-          .then(function(stat){
-            return stat.blocks.reduce(function(p, number) {
-              return p.then(function() {
-                return dal.getBlockOrNull(number)
-                  .then(function(block){
-                    return saveHistory(dal, block, pubkey);
-                  });
-              });
-            }, Q());
-          });
-      });
-  };
-
   this.recomputeTxRecords = function() {
     return that.mainForkDAL()
       .then(function(dal){
@@ -1352,12 +1332,11 @@ function BlockchainService (conf, mainDAL, pair) {
       'leavers': 'leavers',
       'excluded': 'excluded',
       'ud': 'dividend',
-      'tx': 'transactions',
-      'tx_history': saveHistory
+      'tx': 'transactions'
     };
     statQueue.push(function (sent) {
       //logger.debug('Computing stats...');
-      async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx', 'tx_history'], function (statName, callback) {
+      async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx'], function (statName, callback) {
         that.mainForkDAL()
           .then(function(forkDAL){
             async.waterfall([
@@ -1383,25 +1362,14 @@ function BlockchainService (conf, mainDAL, pair) {
                     },
                     function (block, next) {
                       var testProperty = tests[statName];
-                      if (typeof testProperty === 'function') {
-                        saveHistory(forkDAL, block)
-                          .then(function(){
-                            stat.lastParsedBlock = blockNumber;
-                            next();
-                          })
-                          .fail(function(err){
-                            next(err);
-                          });
-                      } else {
-                        var value = block[testProperty];
-                        var isPositiveValue = value && typeof value != 'object';
-                        var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
-                        if (isPositiveValue || isNonEmptyArray) {
-                          stat.blocks.push(blockNumber);
-                        }
-                        stat.lastParsedBlock = blockNumber;
-                        next();
+                      var value = block[testProperty];
+                      var isPositiveValue = value && typeof value != 'object';
+                      var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+                      if (isPositiveValue || isNonEmptyArray) {
+                        stat.blocks.push(blockNumber);
                       }
+                      stat.lastParsedBlock = blockNumber;
+                      next();
                     }
                   ], callback);
                 }, function (err) {
@@ -1419,36 +1387,6 @@ function BlockchainService (conf, mainDAL, pair) {
       });
     });
   };
-
-  function saveHistory(dal, block, forPubkey) {
-    return block.transactions.reduce(function(promise, tx) {
-      return promise
-        .then(function(){
-          var issuers = [], recipients = [];
-          tx.signatories.forEach(function(issuer){
-            if (!forPubkey || issuer == forPubkey) {
-              issuers.push(issuer);
-            }
-          });
-          tx.outputs.forEach(function(out){
-            var recip = out.split(':')[0];
-            if (issuers.indexOf(recip) === -1) {
-              if (!forPubkey || recip == forPubkey) {
-                recipients.push(recip);
-              }
-            }
-          });
-          return Q.all(issuers.map(function(issuer) {
-            return dal.saveTxInHistory('sent', issuer, tx);
-          }))
-            .then(function(){
-            return Q.all(recipients.map(function(receipient) {
-              return dal.saveTxInHistory('received', receipient, tx);
-            }));
-          });
-        });
-    }, Q());
-  }
 }
 
 /**

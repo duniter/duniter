@@ -129,7 +129,7 @@ function CertDAL(dal) {
       .then(function(files){
         return _.pluck(files, 'file');
       })
-      .then(reduceTo('certs/pending/from/' + pubkey + '/', certs))
+      .then(that.reduceTo('certs/pending/from/' + pubkey + '/', certs))
       .thenResolve(certs);
   };
 
@@ -149,7 +149,7 @@ function CertDAL(dal) {
               .then(function(files){
                 return _.pluck(files, 'file');
               })
-              .then(reduceTo('certs/linked/from/' + pubkey + '/' + file + '/', certs));
+              .then(that.reduceTo('certs/linked/from/' + pubkey + '/' + file + '/', certs));
           });
         }, Q());
       })
@@ -165,7 +165,7 @@ function CertDAL(dal) {
       .then(function(files){
         return _.pluck(files, 'file');
       })
-      .then(reduceTo('certs/pending/target/' + hash + '/', certs))
+      .then(that.reduceTo('certs/pending/target/' + hash + '/', certs))
       .thenResolve(certs);
   };
 
@@ -178,7 +178,7 @@ function CertDAL(dal) {
       .then(function(files){
         return _.pluck(files, 'file');
       })
-      .then(reduceTo('certs/linked/target/' + hash + '/', certs))
+      .then(that.reduceTo('certs/linked/target/' + hash + '/', certs))
       .thenResolve(certs);
   };
 
@@ -250,21 +250,5 @@ function CertDAL(dal) {
   function getCertID(cert) {
     var sigHash = (sha1(cert.sig) + "").toUpperCase();
     return [cert.from, cert.target, cert.block, sigHash].join('-');
-  }
-
-  function reduceTo(subpath, certs) {
-    return function(files){
-      return files.reduce(function(p, file) {
-        return p.then(function(){
-          return that.read(subpath + file)
-            .then(function(data){
-              certs.push(data);
-            })
-            .fail(function(err){
-              throw err;
-            });
-        });
-      }, Q());
-    };
   }
 }

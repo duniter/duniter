@@ -194,7 +194,7 @@ function TransactionBinding(server) {
   function getHistory(pubkey, filter, done) {
     async.waterfall([
       function (next) {
-        server.dal.getTransactionsHistory(pubkey, next);
+        server.dal.getTransactionsHistory(pubkey).then(_.partial(next, null)).fail(next);
       },
       function (history, next) {
         var result = {

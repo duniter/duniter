@@ -554,7 +554,7 @@ function BlockchainContext(conf, dal) {
       obj.issuers = json.signatories;
       var tx = new Transaction(obj);
       var txHash = tx.getHash();
-      dal.removeTxByHash(txHash, callback);
+      dal.removeTxByHash(txHash).then(_.partial(callback, null)).fail(callback);
     }, done);
   }
 }

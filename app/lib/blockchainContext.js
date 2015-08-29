@@ -500,9 +500,7 @@ function BlockchainContext(conf, dal) {
                   'fingerprint': block.hash,
                   'amount': block.dividend,
                   'consumed': 0
-                }), function (err) {
-                  callback(err);
-                });
+                })).then(_.partial(callback, null)).fail(callback);
               }, nextOne);
             }
           ], next);
@@ -521,7 +519,7 @@ function BlockchainContext(conf, dal) {
           async.parallel([
             function (nextOne) {
               async.forEachSeries(txObj.inputs, function (input, callback2) {
-                dal.setConsumedSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount, callback2);
+                dal.setConsumedSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount).then(_.partial(callback2, null)).fail(callback2);
               }, nextOne);
             },
             function (nextOne) {
@@ -533,9 +531,7 @@ function BlockchainContext(conf, dal) {
                   'fingerprint': txHash,
                   'amount': output.amount,
                   'consumed': 0
-                }), function (err) {
-                  callback2(err);
-                });
+                })).then(_.partial(callback2, null)).fail(callback2);
               }, nextOne);
             }
           ], callback);

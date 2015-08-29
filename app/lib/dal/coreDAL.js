@@ -42,6 +42,22 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
       });
   });
 
+  // Removing a file = tree traversal remove IF SAID TO
+  var oldRemoveFile = that.removeFile;
+  that.setRemove(function removeFileFromFork() {
+    var args = Array.prototype.slice.call(arguments);
+    var recursive = args[1];
+    return oldRemoveFile.apply(that, args)
+      .fail(function(err){
+        // Failed in core context, try in root IF SAID TO
+        if (recursive) {
+          return rootDAL.removeFile.apply(rootDAL, args);
+        }
+        // Otherwise, just throw the error
+        throw err;
+      });
+  });
+
   this.name = ['coreDal', blockNumber, blockHash].join('_');
 
   this.setRootDAL = function(dal) {

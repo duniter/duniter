@@ -126,11 +126,11 @@ module.exports = function(dal) {
     };
 
     this.isAvailableUDSource = function (pubkey, number, fingerprint, amount, done) {
-      dal.existsNotConsumed('D', pubkey, number, fingerprint, amount, done);
+      dal.existsNotConsumed('D', pubkey, number, fingerprint, amount).then(_.partial(done, null)).fail(done);
     };
 
     this.isAvailableTXSource = function (pubkey, number, fingerprint, amount, done) {
-      dal.existsNotConsumed('T', pubkey, number, fingerprint, amount, done);
+      dal.existsNotConsumed('T', pubkey, number, fingerprint, amount).then(_.partial(done, null)).fail(done);
     };
 
     this.getCurrentMembershipNumber = function (pubkey, done) {

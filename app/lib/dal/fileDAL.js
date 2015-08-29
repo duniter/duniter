@@ -18,6 +18,7 @@ var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
 var MerkleDAL = require('./fileDALs/MerkleDAL');
 var TxsDAL = require('./fileDALs/TxsDAL');
+var SourcesDAL = require('./fileDALs/SourcesDAL');
 var CoresDAL = require('./fileDALs/CoresDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
@@ -89,11 +90,11 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var merkleDAL = new MerkleDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
   var txsDAL = new TxsDAL(that);
+  var sourcesDAL = new SourcesDAL(that);
   var coresDAL = new CoresDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL];
+  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL];
 
   var links = [];
-  var sources = [];
   var memberships = [];
   var identities = [];
   var peers = [];
@@ -110,7 +111,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       .then(function(){
         return Q.all([
           loadIntoArray(links, 'links.json'),
-          loadIntoArray(sources, 'sources.json'),
           loadIntoArray(memberships, 'memberships.json'),
           loadIntoArray(identities, 'identities.json'),
           loadIntoArray(peers, 'peers.json'),
@@ -125,7 +125,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   this.copyFiles = function(newRoot) {
     return [
       'links.json',
-      'sources.json',
       'memberships.json',
       'identities.json',
       'peers.json',
@@ -494,12 +493,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return matching;
   };
 
-  this.getAvailableSourcesByPubkey = function(pubkey, done) {
-    var matching =_.chain(sources).
-      where({ pubkey: pubkey, consumed: false }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.getAvailableSourcesByPubkey = function(pubkey) {
+    return sourcesDAL.getAvailableForPubkey(pubkey);
   };
 
   this.getIdentityByPubkeyAndHashOrNull = function(pubkey, hash, done) {
@@ -710,13 +705,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return matching.length ? true : false;
   };
 
-  this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount, done) {
-    var matching =_.chain(sources).
-      where({ type: type, pubkey: pubkey, number: number, fingerprint: fingerprint, amount: amount, consumed: false }).
-      sortBy(function(src){ return -src.number; }).
-      value();
-    done && done(null, matching.length > 0);
-    return matching.length > 0;
+  this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount) {
+    return sourcesDAL.isAvailableSource(pubkey, type, number, fingerprint, amount);
   };
 
   this.isMember = function(pubkey, done) {
@@ -765,13 +755,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return matching.length ? that.writeJSON(links, 'links.json', done) : that.donable(Q(), done);
   };
 
-  this.setConsumedSource = function(type, pubkey, number, fingerprint, amount, done) {
-    var matching =_.chain(sources).
-      where({ type: type, pubkey: pubkey, number: number, fingerprint: fingerprint, amount: amount }).
-      sortBy(function(src){ return -src.number; }).
-      value();
-    matching[0].consumed = true;
-    return that.writeJSON(sources, 'sources.json', done);
+  this.setConsumedSource = function(type, pubkey, number, fingerprint, amount) {
+    return sourcesDAL.consumeSource(pubkey, type, number, fingerprint, amount);
   };
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
@@ -1077,11 +1062,10 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return that.writeJSON(links, 'links.json', done);
   };
 
-  this.saveSource = function(src, done) {
-    sources.push(src);
+  this.saveSource = function(src) {
     return (src.type == "D" ? that.saveUDInHistory(src.pubkey, src) : Q())
       .then(function(){
-        return that.writeJSON(sources, 'sources.json', done);
+        return sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount);
       });
   };
 
@@ -1176,13 +1160,17 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         return { history: [] };
       })
       .then(function(obj){
-        obj.history = obj.history.map(function(src) {
+        return Q.all(obj.history.map(function(src) {
           var completeSrc = _.extend({}, src);
-          _.extend(completeSrc, _.findWhere(sources, { type: 'D', pubkey: pubkey, number: src.block_number }));
-          return completeSrc;
-        });
-        done && done(null, obj);
-        return obj;
+          return sourcesDAL.getSource(pubkey, 'D', src.block_number)
+            .then(function(foundSrc){
+              _.extend(completeSrc, foundSrc);
+            });
+        }))
+          .then(function(){
+            done && done(null, obj);
+            return obj;
+          });
       })
       .fail(function(err){
         done && done(err);
@@ -1333,14 +1321,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores'];
+    var files = ['peers', 'stats', 'memberships', 'links', 'identities', 'global', 'merkles', 'conf'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores'];
+    var files = ['peers', 'stats', 'memberships', 'links', 'identities', 'global', 'merkles'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources'];
     return resetFiles(files, dirs, done);
   };
 

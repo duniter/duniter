@@ -51,7 +51,7 @@ function TransactionBinding(server) {
       },
       function (pPubkey, next) {
         pubkey = pPubkey;
-        server.dal.getAvailableSourcesByPubkey(pubkey, next);
+        server.dal.getAvailableSourcesByPubkey(pubkey).then(_.partial(next, null)).fail(next);
       },
       function (sources, next) {
         var result = {

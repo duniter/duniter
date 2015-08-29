@@ -153,12 +153,14 @@ describe("Integration", function() {
     it('toc should have 151 of sources', node2.sourcesOf('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', function(res, done){
       should.exists(res);
       assert.equal(res.sources.length, 3);
-      assert.equal(res.sources[0].type, 'D');
-      assert.equal(res.sources[0].amount, 120);
-      assert.equal(res.sources[1].type, 'T');
-      assert.equal(res.sources[1].amount, 51);
-      assert.equal(res.sources[2].type, 'D');
-      assert.equal(res.sources[2].amount, 120);
+      var txRes = _.findWhere(res.sources, { type: 'T' });
+      var duRes = _.filter(res.sources, { type: 'D' });
+      assert.equal(txRes.type, 'T');
+      assert.equal(txRes.amount, 51);
+      assert.equal(duRes[0].type, 'D');
+      assert.equal(duRes[0].amount, 120);
+      assert.equal(duRes[1].type, 'D');
+      assert.equal(duRes[1].amount, 120);
       done();
     }));
   });

@@ -12,6 +12,7 @@ function AbstractDAL(dal) {
 
   var that = this;
   this.dal = dal;
+  this.RECURSIVE = true;
 
   var existsFileFunc, readFileFunc, writeFileFunc, removeFileFunc, listFilesFunc, makeTreeFunc;
 
@@ -55,8 +56,8 @@ function AbstractDAL(dal) {
     return writeFileFunc(path, what);
   };
 
-  this.remove = function(path) {
-    return removeFileFunc(path);
+  this.remove = function(path, recursive) {
+    return removeFileFunc(path, recursive);
   };
 
   this.makeTree = function(path) {

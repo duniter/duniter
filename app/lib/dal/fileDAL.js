@@ -18,6 +18,7 @@ var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
 var MerkleDAL = require('./fileDALs/MerkleDAL');
 var TxsDAL = require('./fileDALs/TxsDAL');
+var CoresDAL = require('./fileDALs/CoresDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
@@ -88,14 +89,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var merkleDAL = new MerkleDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
   var txsDAL = new TxsDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL];
+  var coresDAL = new CoresDAL(that);
+  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL];
 
   var links = [];
   var sources = [];
   var memberships = [];
   var identities = [];
   var peers = [];
-  var cores = [];
   var currency = '';
 
   var lastBlockFileNumber = -1;
@@ -113,7 +114,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           loadIntoArray(memberships, 'memberships.json'),
           loadIntoArray(identities, 'identities.json'),
           loadIntoArray(peers, 'peers.json'),
-          loadIntoArray(cores, 'cores.json'),
           getCurrentMaxNumberInBlockFiles()
             .then(function(max){
               lastBlockFileNumber = max;
@@ -129,7 +129,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       'memberships.json',
       'identities.json',
       'peers.json',
-      'cores.json'
     ].reduce(function(p, fileName) {
       var source = rootPath + '/' + fileName;
       var dest = newRoot + '/' + fileName;
@@ -147,10 +146,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
               .then(function(){
                 return myFS.read(dest);
               });
-          }
-          else if (fileName == 'cores.json') {
-            //console.log('Create empty object file %s', newRoot + '/' + fileName);
-            return writeJSONToPath({}, newRoot + '/' + fileName);
           }
           else {
             //console.log('Create empty array file %s', newRoot + '/' + fileName);
@@ -251,7 +246,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   }
 
   this.getCores = function() {
-    return Q(cores);
+    return coresDAL.getCores();
   };
 
   this.loadCore = function(core) {
@@ -259,11 +254,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.addCore = function(core) {
-    var existing = _.findWhere(cores, core);
-    if (!existing) {
-      cores.push(core);
-      return that.saveCoresInFile(cores);
-    }
+    return coresDAL.addCore(core);
   };
 
   this.fork = function(newBlock) {
@@ -272,13 +263,18 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       forkPointHash: newBlock.hash,
       forkPointPreviousHash: newBlock.previousHash
     };
-    var existing = _.findWhere(cores, core);
-    if (existing) {
-      throw 'Fork ' + [core.forkPointNumber, core.forkPointHash].join('-') + ' already exists';
-    }
-    return that.addCore(core)
-      .then(function(){
-        return that.loadCore(core);
+    return coresDAL.getCore(core)
+      .fail(function(){
+        return null;
+      })
+      .then(function(existing){
+        if (existing) {
+          throw 'Fork ' + [core.forkPointNumber, core.forkPointHash].join('-') + ' already exists';
+        }
+        return that.addCore(core)
+          .then(function(){
+            return that.loadCore(core);
+          });
       });
   };
 
@@ -289,9 +285,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
           forkPointNumber: current.number,
           forkPointHash: current.hash
         };
-        var existing = _.findWhere(cores, core);
-        cores = _.without(cores, existing);
-        return that.saveCoresInFile(cores)
+        return coresDAL.removeCore(core)
           .then(function(){
             return loadedCore.dal.removeHome();
           });
@@ -1000,10 +994,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     }));
   };
 
-  this.saveCoresInFile = function (cores, done) {
-    return that.writeJSON(cores, 'cores.json', done);
-  };
-
   function writeJSON(obj, fileName, done) {
     //console.log('Write %s', fileName);
     var fullPath = rootPath + '/' + fileName;
@@ -1343,14 +1333,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs'];
+    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'merkles', 'conf'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'cores', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs'];
+    var files = ['peers', 'stats', 'sources', 'memberships', 'links', 'identities', 'global', 'merkles'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores'];
     return resetFiles(files, dirs, done);
   };
 

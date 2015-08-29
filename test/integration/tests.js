@@ -143,8 +143,10 @@ describe("Integration", function() {
     it('tic should be able to send 51 to toc', node2.sourcesOf('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', function(res, done){
       should.exists(res);
       assert.equal(res.sources.length, 2);
-      assert.equal(res.sources[0].type, 'T');
-      assert.equal(res.sources[0].amount, 69);
+      var txSrc = _.findWhere(res.sources, { type: 'T' });
+      var udSrc = _.findWhere(res.sources, { type: 'D' });
+      assert.equal(txSrc.amount, 69);
+      assert.equal(udSrc.amount, 120);
       done();
     }));
 

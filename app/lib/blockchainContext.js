@@ -379,9 +379,7 @@ function BlockchainContext(conf, dal) {
             }
             ms.userid = idty.uid;
             ms.certts = idty.time;
-            dal.deleteIfExists(ms, function (err2) {
-              next(err2);
-            });
+            next();
           }
         ], callback);
       }, callback1);

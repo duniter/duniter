@@ -21,6 +21,7 @@ var TxsDAL = require('./fileDALs/TxsDAL');
 var SourcesDAL = require('./fileDALs/SourcesDAL');
 var CoresDAL = require('./fileDALs/CoresDAL');
 var LinksDAL = require('./fileDALs/LinksDAL');
+var MembershipDAL = require('./fileDALs/MembershipDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
@@ -94,9 +95,10 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var sourcesDAL = new SourcesDAL(that);
   var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL];
+  var msDAL = new MembershipDAL(that);
+  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL,
+              msDAL];
 
-  var memberships = [];
   var identities = [];
   var peers = [];
   var currency = '';
@@ -111,7 +113,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       })
       .then(function(){
         return Q.all([
-          loadIntoArray(memberships, 'memberships.json'),
           loadIntoArray(identities, 'identities.json'),
           loadIntoArray(peers, 'peers.json'),
           getCurrentMaxNumberInBlockFiles()
@@ -124,7 +125,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.copyFiles = function(newRoot) {
     return [
-      'memberships.json',
       'identities.json',
       'peers.json',
     ].reduce(function(p, fileName) {
@@ -540,22 +540,19 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.fillInMembershipsOfIdentity = function(queryPromise, done) {
     return Q(queryPromise)
-      .tap(function(row){
-        if (row) {
-          row.memberships = [].concat(
-            _.where(memberships, { type: 'join', issuer: row.pubkey })
-          ).concat(
-            _.where(memberships, { type: 'active', issuer: row.pubkey })
-          ).concat(
-            _.where(memberships, { type: 'leave', issuer: row.pubkey })
-          );
+      .tap(function(idty){
+        if (idty) {
+          return msDAL.getMembershipsOfIssuer(idty.pubkey)
+            .then(function(mss){
+              idty.memberships = mss;
+            });
         }
       })
-      .then(function(rows){
-        done && done(null, rows);
-        return rows;
+      .then(function(idty){
+        done && done(null, idty);
+        return idty;
       })
-      .fail(function(err){
+      .fail(function(){
         done && done(null, null);
       });
   };
@@ -654,31 +651,29 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.getMembershipsForHashAndIssuer = function(hash, issuer, done) {
-    var matching =_.chain(memberships).
-      where({ issuer: issuer, fpr: hash }).
-      sortBy(function(c){ return -c.sigDate; }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.getMembershipForHashAndIssuer = function(ms) {
+    return msDAL.getMembershipOfIssuer(ms)
+      .fail(function(){
+        return null;
+      });
   };
 
-  this.findNewcomers = function(done) {
-    var matching =_.chain(memberships).
-      where({ membership: 'IN' }).
-      sortBy(function(c){ return -c.sigDate; }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.findNewcomers = function() {
+    return msDAL.getPendingIN()
+      .then(function(mss){
+        return _.chain(mss).
+          sortBy(function(ms){ return -ms.sigDate; }).
+          value();
+      });
   };
 
-  this.findLeavers = function(done) {
-    var matching =_.chain(memberships).
-      where({ membership: 'OUT' }).
-      sortBy(function(c){ return -c.sigDate; }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.findLeavers = function() {
+    return msDAL.getPendingOUT()
+      .then(function(mss){
+        return _.chain(mss).
+          sortBy(function(ms){ return -ms.sigDate; }).
+          value();
+      });
   };
 
   this.existsLinkFromOrAfterDate = function(from, to, maxDate) {
@@ -753,19 +748,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return oneChanged ? saveIdentitiesInFile(identities, function(err) {
       done && done(err);
     }) : that.donable(Q(), done);
-  };
-
-  this.deleteIfExists = function(ms, done) {
-    var prevCount = memberships.length;
-    memberships = _.reject(memberships, function(aMS) {
-      return aMS.membership == ms.membership
-        && aMS.issuer == ms.issuer
-        && aMS.userid == ms.userid
-        && aMS.certts == ms.certts
-        && aMS.number == ms.number
-        && aMS.fpr == ms.fpr;
-    });
-    return memberships.length != prevCount ? that.writeJSON(memberships, 'memberships.json', done) : that.donable(Q(), done);
   };
 
   this.getMembershipExcludingBlock = function(current, msValidtyTime) {
@@ -917,22 +899,19 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.saveMemberships = function (type, mss) {
-    return Q.all(mss.map(function(msRaw) {
-      var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', currency);
-      ms.type = type;
-      ms.hash = sha1(ms.getRawSigned()).toUpperCase();
-      return that.saveMembership(ms);
-    }));
+    var msType = type == 'leave' ? 'out' : 'in';
+    return mss.reduce(function(p, msRaw) {
+      return p.then(function(){
+        var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', currency);
+        ms.type = type;
+        ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
+        return msDAL.saveOfficialMS(msType, ms);
+      });
+    }, Q());
   };
 
-  this.saveMembership = function(ms, done) {
-    var existing = _.where(memberships, { hash: ms.hash })[0];
-    if (!existing) {
-      memberships.push(ms);
-    } else {
-      _.extend(existing, ms);
-    }
-    return that.writeJSON(memberships, 'memberships.json', done);
+  this.savePendingMembership = function(ms) {
+    return msDAL.savePendingMembership(ms);
   };
 
   that.saveBlockInFile = function(block, check, done) {
@@ -1301,14 +1280,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'stats', 'memberships', 'identities', 'global', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links'];
+    var files = ['peers', 'stats', 'identities', 'global', 'merkles', 'conf'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'stats', 'memberships', 'identities', 'global', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links'];
+    var files = ['peers', 'stats', 'identities', 'global', 'merkles'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms'];
     return resetFiles(files, dirs, done);
   };
 

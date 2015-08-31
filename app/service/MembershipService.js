@@ -1,5 +1,6 @@
 "use strict";
 
+var _ = require('underscore');
 var async           = require('async');
 var localValidator = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
@@ -35,10 +36,10 @@ function MembershipService (conf, dal) {
           return next('wrong signature for membership');
         }
         // Get already existing Membership with same parameters
-        dal.getMembershipsForHashAndIssuer(entry.hash, entry.issuer, next);
+        dal.getMembershipForHashAndIssuer(entry).then(_.partial(next, null)).fail(next);
       },
-      function (entries, next){
-        if (entries.length > 0) {
+      function (found, next){
+        if (found) {
           next('Already received membership');
         }
         else dal.isMember(entry.issuer, next);
@@ -68,9 +69,9 @@ function MembershipService (conf, dal) {
       },
       function (next){
         // Saves entry
-        dal.saveMembership(entry, function (err) {
-          next(err);
-        });
+        dal.savePendingMembership(entry).then(function() {
+          next();
+        }).fail(next);
       },
       function (next){
         logger.info('✔ %s %s', entry.issuer, entry.membership);

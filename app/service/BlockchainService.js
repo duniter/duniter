@@ -637,7 +637,7 @@ function BlockchainService (conf, mainDAL, pair) {
     var leaveData = {};
     async.waterfall([
       function (next){
-        dal.findLeavers(next);
+        dal.findLeavers().then(_.partial(next, null)).fail(next);
       },
       function (mss, next){
         var leavers = [];
@@ -759,7 +759,7 @@ function BlockchainService (conf, mainDAL, pair) {
     var preJoinData = {};
     async.waterfall([
       function (next){
-        dal.findNewcomers(next);
+        dal.findNewcomers().then(_.partial(next, null)).fail(next);
       },
       function (mss, next){
         var joiners = [];

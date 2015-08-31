@@ -397,9 +397,7 @@ function BlockchainContext(conf, dal) {
           target: cert.to,
           timestamp: block.medianTime,
           obsolete: false
-        }), function (err) {
-          callback(err);
-        });
+        })).then(_.partial(callback, null)).fail(callback);
     }, done);
   }
 
@@ -430,7 +428,9 @@ function BlockchainContext(conf, dal) {
   function computeObsoleteLinks (block, done) {
     async.waterfall([
       function (next){
-        dal.obsoletesLinks(block.medianTime - conf.sigValidity, next);
+        dal.obsoletesLinks(block.medianTime - conf.sigValidity).then(function() {
+          next();
+        }).fail(next);
       },
       function (next){
         dal.getMembers(next);
@@ -462,7 +462,7 @@ function BlockchainContext(conf, dal) {
   this.checkHaveEnoughLinks = function(target, newLinks, done) {
     async.waterfall([
       function (next){
-        dal.currentValidLinks(target, next);
+        dal.getValidLinksTo(target).then(_.partial(next, null)).fail(next);
       },
       function (links, next){
         var count = links.length;

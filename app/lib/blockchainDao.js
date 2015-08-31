@@ -52,7 +52,7 @@ module.exports = function(dal) {
     this.getPreviousLinkFor = function (from, to, done) {
       async.waterfall([
         function (next){
-          dal.getObsoletesFromTo(from, to, next);
+          dal.getObsoletesFromTo(from, to).then(_.partial(next, null)).fail(next);
         },
         function (links, next){
           next(null, links.length > 0 ? links[0] : null);
@@ -61,7 +61,7 @@ module.exports = function(dal) {
     };
 
     this.getValidLinksTo = function (to, done) {
-      dal.getValidLinksTo(to, done);
+      dal.getValidLinksTo(to).then(_.partial(done, null)).fail(done);
     };
 
     this.getMembers = function (done) {
@@ -94,11 +94,11 @@ module.exports = function(dal) {
     };
 
     this.getPreviousLinkFromTo = function (from, to, done) {
-      dal.getValidFromTo(from, to, done);
+      dal.getValidFromTo(from, to).then(_.partial(done, null)).fail(done);
     };
 
     this.getValidLinksFrom = function (member, done) {
-      dal.getValidLinksFrom(member, done);
+      dal.getValidLinksFrom(member).then(_.partial(done, null)).fail(done);
     };
 
     this.getCurrent = function (done) {

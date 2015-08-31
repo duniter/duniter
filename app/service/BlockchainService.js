@@ -416,7 +416,7 @@ function BlockchainService (conf, mainDAL, pair) {
     async.forEachSeries(members, function (m, callback) {
       async.waterfall([
         function (next) {
-          dal.getValidLinksFrom(m.pubkey, next);
+          dal.getValidLinksFrom(m.pubkey).then(_.partial(next, null)).fail(next);
         },
         function (links, next) {
           // Only test agains members who make enough signatures

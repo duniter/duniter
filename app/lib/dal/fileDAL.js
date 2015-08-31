@@ -20,6 +20,7 @@ var MerkleDAL = require('./fileDALs/MerkleDAL');
 var TxsDAL = require('./fileDALs/TxsDAL');
 var SourcesDAL = require('./fileDALs/SourcesDAL');
 var CoresDAL = require('./fileDALs/CoresDAL');
+var LinksDAL = require('./fileDALs/LinksDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
@@ -92,9 +93,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var txsDAL = new TxsDAL(that);
   var sourcesDAL = new SourcesDAL(that);
   var coresDAL = new CoresDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL];
+  var linksDAL = new LinksDAL(that);
+  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL];
 
-  var links = [];
   var memberships = [];
   var identities = [];
   var peers = [];
@@ -110,7 +111,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       })
       .then(function(){
         return Q.all([
-          loadIntoArray(links, 'links.json'),
           loadIntoArray(memberships, 'memberships.json'),
           loadIntoArray(identities, 'identities.json'),
           loadIntoArray(peers, 'peers.json'),
@@ -124,7 +124,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.copyFiles = function(newRoot) {
     return [
-      'links.json',
       'memberships.json',
       'identities.json',
       'peers.json',
@@ -451,46 +450,31 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return that.getBlocksBetween(0, number);
   };
 
-  this.getValidLinksFrom = function(from, done) {
-    var matching =_.chain(links).
-      where({ source: from, obsolete: false }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.getValidLinksFrom = function(from) {
+    return linksDAL.getValidLinksFrom(from);
   };
 
-  this.getValidLinksTo = function(to, done) {
-    var matching =_.chain(links).
-      where({ target: to, obsolete: false }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.getValidLinksTo = function(to) {
+    return linksDAL.getValidLinksTo(to);
   };
 
-  this.currentValidLinks = function(fpr, done) {
-    var matching = _.chain(links).
-      where({ target: fpr, obsolete: false }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.getObsoletesFromTo = function(from, to) {
+    return linksDAL.getObsoleteLinksFrom(from)
+      .then(function(links){
+        return _.chain(links).
+          where({ target: to }).
+          sortBy(function(lnk){ return -lnk.timestamp; }).
+          value();
+      });
   };
 
-  this.getObsoletesFromTo = function(from, to, done) {
-    var matching =_.chain(links).
-      where({ source: from, target: to, obsolete: true }).
-      sortBy(function(lnk){ return -lnk.timestamp; }).
-      first(1).
-      value();
-    done && done(null, matching);
-    return matching;
-  };
-
-  this.getValidFromTo = function(from, to, done) {
-    var matching =_.chain(links).
-      where({ source: from, target: to, obsolete: false }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.getValidFromTo = function(from, to) {
+    return that.getValidLinksFrom(from)
+      .then(function(links){
+        return _.chain(links).
+          where({ target: to }).
+          value();
+      });
   };
 
   this.getAvailableSourcesByPubkey = function(pubkey) {
@@ -698,11 +682,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.existsLinkFromOrAfterDate = function(from, to, maxDate) {
-    var matching =_.chain(links).
-      where({ source: from, target: to}).
-      filter(function(lnk){ return lnk.timestamp >= maxDate; }).
-      value();
-    return matching.length ? true : false;
+    return linksDAL.getValidLinksFrom(from)
+      .then(function(links){
+        var matching = _.chain(links).
+          where({ target: to }).
+          filter(function(lnk){ return lnk.timestamp >= maxDate; }).
+          value();
+        return matching.length ? true : false;
+      });
   };
 
   this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount) {
@@ -745,14 +732,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return certDAL.existsGivenCert(cert);
   };
 
-  this.obsoletesLinks = function(minTimestamp, done) {
-    var matching = _.chain(links).
-      filter(function(link){ return link.timestamp <= minTimestamp; }).
-      value();
-    matching.forEach(function(i){
-        i.obsolete = true;
-      });
-    return matching.length ? that.writeJSON(links, 'links.json', done) : that.donable(Q(), done);
+  this.obsoletesLinks = function(minTimestamp) {
+    return linksDAL.obsoletesLinks(minTimestamp);
   };
 
   this.setConsumedSource = function(type, pubkey, number, fingerprint, amount) {
@@ -1057,9 +1038,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.saveLink = function(link, done) {
-    links.push(link);
-    return that.writeJSON(links, 'links.json', done);
+  this.saveLink = function(link) {
+    return linksDAL.addLink(link);
   };
 
   this.saveSource = function(src) {
@@ -1321,14 +1301,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'stats', 'memberships', 'links', 'identities', 'global', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources'];
+    var files = ['peers', 'stats', 'memberships', 'identities', 'global', 'merkles', 'conf'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'stats', 'memberships', 'links', 'identities', 'global', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources'];
+    var files = ['peers', 'stats', 'memberships', 'identities', 'global', 'merkles'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links'];
     return resetFiles(files, dirs, done);
   };
 

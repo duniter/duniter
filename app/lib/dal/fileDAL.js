@@ -22,6 +22,7 @@ var SourcesDAL = require('./fileDALs/SourcesDAL');
 var CoresDAL = require('./fileDALs/CoresDAL');
 var LinksDAL = require('./fileDALs/LinksDAL');
 var MembershipDAL = require('./fileDALs/MembershipDAL');
+var IdentityDAL = require('./fileDALs/IdentityDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
@@ -96,37 +97,34 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
+  var idtyDAL = new IdentityDAL(that);
   var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL,
-              msDAL];
+              msDAL, idtyDAL];
 
-  var identities = [];
   var peers = [];
   var currency = '';
 
   var lastBlockFileNumber = -1;
 
-  var dalLoaded;
-  function onceLoadedDAL() {
-    return dalLoaded || (dalLoaded = myFS.makeTree(rootPath)
+  var peersPromise;
+  function peersLoaded() {
+    return peersPromise || (peersPromise = myFS.makeTree(rootPath)
       .then(function(){
-        return (rootDAL ? rootDAL.copyFiles.now(rootPath) : Q.resolve());
+        return (rootDAL ? rootDAL.copyFiles(rootPath) : Q.resolve());
       })
       .then(function(){
-        return Q.all([
-          loadIntoArray(identities, 'identities.json'),
-          loadIntoArray(peers, 'peers.json'),
-          getCurrentMaxNumberInBlockFiles()
-            .then(function(max){
-              lastBlockFileNumber = max;
-            })
-        ]);
+        return loadIntoArray(peers, 'peers.json');
       }));
   }
 
+  var getMaxNumberInFilesPromise = getCurrentMaxNumberInBlockFiles()
+    .then(function(max){
+      lastBlockFileNumber = max;
+    });
+
   this.copyFiles = function(newRoot) {
     return [
-      'identities.json',
-      'peers.json',
+      'peers.json'
     ].reduce(function(p, fileName) {
       var source = rootPath + '/' + fileName;
       var dest = newRoot + '/' + fileName;
@@ -166,16 +164,19 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.hasFileOfBlock = function(blockNumber) {
-    if(blockNumber > lastBlockFileNumber) {
-      // Update the current last number
-      return that.getCurrentMaxNumberInBlockFilesMember()
-        .then(function(maxNumber){
-          lastBlockFileNumber = maxNumber;
-          return blockNumber <= lastBlockFileNumber;
-        });
-    } else {
-      return true;
-    }
+    return getMaxNumberInFilesPromise
+      .then(function(){
+        if(blockNumber > lastBlockFileNumber) {
+          // Update the current last number
+          return that.getCurrentMaxNumberInBlockFilesMember()
+            .then(function(maxNumber){
+              lastBlockFileNumber = maxNumber;
+              return blockNumber <= lastBlockFileNumber;
+            });
+        } else {
+          return true;
+        }
+      });
   };
 
   this.getCurrentMaxNumberInBlockFilesMember = getCurrentMaxNumberInBlockFiles;
@@ -291,8 +292,11 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.listAllPeers = function(done) {
-    done && done(null, peers);
-    return Q(peers);
+    return peersLoaded()
+      .then(function(){
+        done && done(null, peers);
+        return peers;
+      });
   };
 
   function nullIfError(promise, done) {
@@ -327,11 +331,20 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   }
 
   this.getPeer = function(pubkey, done) {
-    var matching = _.chain(peers).
-      where({ pubkey: pubkey }).
-      value();
-    done && done(!matching[0] && 'Unknown peer ' + pubkey, matching[0] || null);
-    return Q(matching[0] || null);
+    return peersLoaded()
+      .then(function(){
+        var matching = _.chain(peers).
+          where({ pubkey: pubkey }).
+          value();
+        done && done(!matching[0] && 'Unknown peer ' + pubkey, matching[0] || null);
+        return Q(matching[0] || null);
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.getBlock = function(number, done) {
@@ -481,24 +494,22 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return sourcesDAL.getAvailableForPubkey(pubkey);
   };
 
-  this.getIdentityByPubkeyAndHashOrNull = function(pubkey, hash, done) {
-    var matching = _.chain(identities).
-      where({ pubkey: pubkey, hash: hash }).
-      value();
-    done && done(null, matching[0] || null);
-    return matching[0] || null;
-  };
-
   this.getIdentityByHashOrNull = function(hash, done) {
-    var matching = _.chain(identities).
-      where({ hash: hash }).
-      value();
-    done && done(null, matching[0] || null);
-    return matching[0] || null;
+    return idtyDAL.getByHash(hash)
+      .then(function(idty) {
+        done && done(null, idty);
+        return idty;
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.getIdentityByHashWithCertsOrNull = function(hash, done) {
-    return that.fillIdentityWithCerts(Q(that.getIdentityByHashOrNull(hash)), done);
+    return that.fillIdentityWithCerts(that.getIdentityByHashOrNull(hash), done);
   };
 
   this.fillIdentityWithCerts = function(idtyPromise, done) {
@@ -511,31 +522,46 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
               return idty;
             });
         }
+        else if (idty) {
+          return idty.reduce(function(p, aIdty) {
+            return certDAL.getToTarget(aIdty.hash)
+              .then(function(certs){
+                aIdty.certs = certs;
+                return Q();
+              });
+          }, Q())
+            .thenResolve(idty);
+        }
         return idty;
       })
       .then(function(idty){
         done && done(null, idty);
         return idty;
       })
-      .fail(function(){
+      .fail(function(err){
         done && done(null, null);
         return null;
       });
   };
 
   this.getMembers = function(done) {
-    var matching = _.chain(identities).
-      where({ member: true }).
-      value();
-    done && done(null, matching);
-    return matching;
+    return idtyDAL.getWhoIsOrWasMember()
+      .then(function(idties) {
+        return _.chain(idties).
+          where({ member: true }).
+          value();
+      })
+      .then(_.partial(done, null)).fail(done);
   };
 
   this.getWritten = function(pubkey, done) {
     return that.fillInMembershipsOfIdentity(
-      Q(_.chain(identities).
-        where({ pubkey: pubkey, wasMember: true }).
-        value()[0] || null), done);
+      idtyDAL.getFromPubkey(pubkey)
+        .then(function(idty){
+          return idty;
+        }).fail(function() {
+          return null;
+        }), done);
   };
 
   this.fillInMembershipsOfIdentity = function(queryPromise, done) {
@@ -558,11 +584,20 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.findPeersWhoseHashIsIn = function(hashes, done) {
-    var matching = _.chain(peers).
-      filter(function(p){ return hashes.indexOf(p.hash) !== -1; }).
-      value();
-    done && done(null, matching);
-    return matching;
+    return peersLoaded()
+      .then(function(){
+        var matching = _.chain(peers).
+          filter(function(p){ return hashes.indexOf(p.hash) !== -1; }).
+          value();
+        done && done(null, matching);
+        return matching;
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.getTxByHash = function(hash) {
@@ -577,35 +612,60 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return txsDAL.getAllPending();
   };
 
-  this.getNonWritten = function(pubkey, done) {
-    var matching = _.chain(identities).
-      where({ pubkey: pubkey, wasMember: false }).
-      value();
-    done && done(null, matching);
-    return matching;
+  this.getNonWritten = function(pubkey) {
+    return idtyDAL.getPending()
+      .then(function(pending){
+        return _.chain(pending).
+          where({ pubkey: pubkey }).
+          value();
+      });
   };
 
   this.getToBeKicked = function(done) {
-    var matching =_.chain(identities).
-      where({ kick: true }).
-      value();
-    done && done(null, matching);
-    return matching;
+    return idtyDAL.getWhoIsOrWasMember()
+      .then(function(membersOnce){
+        return _.chain(membersOnce).
+          where({ member: true, kick: true }).
+          value();
+      })
+      .then(function(res) {
+        done && done(null, res);
+        return res;
+      }).fail(done);
   };
 
-  this.getWrittenByUID = function(uid, done) {
-    return that.fillIdentityWithCerts(
-      Q(_.chain(identities).
-      where({ wasMember: true, uid: uid }).
-      value()[0] || null), done);
+  this.getWrittenByUID = function(uid) {
+    return that.fillIdentityWithCerts(idtyDAL.getFromUID(uid));
   };
 
-  this.searchIdentity = function(search, done) {
-    var idties = _.chain(identities).
-      where({ revoked: false }).
-      filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
-      value();
-    return that.fillIdentityWithCerts(Q(idties), done);
+  this.searchIdentity = function(search) {
+    return Q.all([
+      idtyDAL.getWhoIsOrWasMember(),
+      idtyDAL.getPending()
+    ])
+      .then(function(res){
+        var idties = _.chain(res[0]).
+          where({ revoked: false }).
+          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
+          value();
+        var pendings = _.chain(res[1]).
+          where({ revoked: false }).
+          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
+          value();
+        var hashes = _.pluck(idties, 'hash');
+        pendings.forEach(function(pending){
+          if (hashes.indexOf(pending.hash) == -1) {
+            idties.push(pending);
+          }
+        });
+        return idties;
+      })
+      .then(function(idties){
+        return that.fillIdentityWithCerts(Q(idties));
+      })
+      .then(function(idties){
+        return idties;
+      });
   };
 
   this.certsToTarget = function(hash) {
@@ -692,35 +752,55 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.isMember = function(pubkey, done) {
-    var matching = _.chain(identities).
-      where({ pubkey: pubkey, member: true }).
-      value();
-    done && done(null, matching.length > 0);
-    return matching.length > 0;
+    return idtyDAL.getFromPubkey(pubkey)
+      .then(function(idty){
+        done && done(null, idty.member);
+        return true;
+      })
+      .fail(function(){
+        done && done(null, false);
+        return false;
+      });
   };
 
   this.isMemberOrError = function(pubkey, done) {
-    var matching = _.chain(identities).
-      where({ pubkey: pubkey, member: true }).
-      value();
-    done && done((!matching.length && 'Is not a member') || null);
-    return matching.length > 0;
+    return idtyDAL.getFromPubkey(pubkey)
+      .then(function(idty){
+        if (!idty.member) throw 'Problem';
+        done && done();
+        return true;
+      })
+      .fail(function(){
+        done && done('Is not a member');
+        return false;
+      });
   };
 
   this.isLeaving = function(pubkey, done) {
-    var matching = _.chain(identities).
-      where({ pubkey: pubkey, member: true, leaving: true }).
-      value();
-    done && done(null, matching.length > 0);
-    return matching.length > 0;
+    return idtyDAL.getFromPubkey(pubkey)
+      .then(function(idty){
+        done && done(null, idty.leaving);
+        return true;
+      })
+      .fail(function(){
+        done && done(null, false);
+        return false;
+      });
   };
 
   this.isMembeAndNonLeaverOrError = function(pubkey, done) {
-    var matching = _.chain(identities).
-      where({ pubkey: pubkey, member: true, leaving: false }).
-      value();
-    done && done((!matching.length && 'Not a non-leaving member') || null);
-    return matching.length > 0;
+    return idtyDAL.getFromPubkey(pubkey)
+      .then(function(idty){
+        if (!idty.member || idty.leaving) throw 'Problem';
+        done && done(null);
+        return true;
+      })
+      .fail(function(){
+        done && done('Not a non-leaving member');
+        if (!done) {
+          throw 'Not a non-leaving member';
+        }
+      });
   };
 
   this.existsCert = function(cert) {
@@ -737,17 +817,27 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
     var kicked = notEnoughLinks ? true : false;
-    var matching =_.chain(identities).
-      where({ pubkey: pubkey, hash: hash }).
-      value();
-    var oneChanged = false;
-    matching.forEach(function(i){
-      oneChanged = oneChanged || (!i.kick && kicked);
-      i.kick = i.kick || kicked;
-    });
-    return oneChanged ? saveIdentitiesInFile(identities, function(err) {
-      done && done(err);
-    }) : that.donable(Q(), done);
+    return idtyDAL.getFromPubkey(pubkey)
+      .then(function(idty){
+        idty.kicked = kicked;
+        return idtyDAL.saveIdentity(idty);
+      })
+      .then(function(){
+        return that.donable(Q(), done);
+      })
+      .fail(done);
+  };
+
+  this.setRevoked = function(hash, done) {
+    return idtyDAL.getByHash(hash)
+      .then(function(idty){
+        idty.revoked = true;
+        return idtyDAL.saveIdentity(idty);
+      })
+      .then(function(){
+        done && done();
+      })
+      .fail(done);
   };
 
   this.getMembershipExcludingBlock = function(current, msValidtyTime) {
@@ -778,15 +868,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.kickWithOutdatedMemberships = function(maxNumber) {
-    var matching =_.chain(identities).
-      where({ member: true }).
-      filter(function(i){ return i.currentMSN <= maxNumber; }).
-      value();
-    matching.forEach(function(i){
-      i.kick = true;
-    });
-    return matching.length ? saveIdentitiesInFile(identities, function(err) {
-    }) : Q();
+    return that.getMembers()
+      .then(function(members){
+        return Q.all(members.map(function(member) {
+          if (member.currentMSN <= maxNumber) {
+            return that.setKicked(member.pubkey, null, true);
+          }
+        }));
+      });
   };
 
   this.getPeerOrNull = function(pubkey, done) {
@@ -798,8 +887,17 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.getAllPeers = function(done) {
-    done && done(null, peers);
-    return peers;
+    return peersLoaded()
+      .then(function(){
+        done && done(null, peers);
+        return Q(peers);
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.findAllPeersNEWUPBut = function(pubkeys, done) {
@@ -817,19 +915,37 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.listAllPeersWithStatusNewUP = function(done) {
-    var matching = _.chain(peers).
-      filter(function(p){ return ['UP'].indexOf(p.status) !== -1; }).
-      value();
-    done && done(null, matching);
-    return Q(matching);
+    return peersLoaded()
+      .then(function(){
+        var matching = _.chain(peers).
+          filter(function(p){ return ['UP'].indexOf(p.status) !== -1; }).
+          value();
+        done && done(null, matching);
+        return Q(matching);
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.findPeers = function(pubkey, done) {
-    var matching = _.chain(peers).
-      where({ pubkey: pubkey }).
-      value();
-    done && done(null, matching);
-    return matching;
+    return peersLoaded()
+      .then(function(){
+        var matching = _.chain(peers).
+          where({ pubkey: pubkey }).
+          value();
+        done && done(null, matching);
+        return matching;
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.getRandomlyUPsWithout = function(pubkeys, done) {
@@ -846,24 +962,26 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       .fail(done);
   };
 
-  this.setDownWithStatusOlderThan = function(minSigTimestamp, done) {
-    var matching = _.chain(peers).
-      filter(function(p){ return !p.statusTS || p.statusTS < minSigTimestamp; }).
-      value();
-    matching.forEach(function(p){
-      p.status = 'DOWN';
-    });
-    return that.writeJSON(peers, 'peers.json', done);
-  };
-
   this.setPeerDown = function(pubkey, done) {
-    var matching = _.chain(peers).
-      where({ pubkey: pubkey }).
-      value();
-    matching.forEach(function(p){
-      p.status = 'DOWN';
-    });
-    return that.writeJSON(peers, 'peers.json', done);
+    return peersLoaded()
+      .then(function(){
+        var matching = _.chain(peers).
+          where({ pubkey: pubkey }).
+          value();
+        matching.forEach(function(p){
+          p.status = 'DOWN';
+        });
+        return that.writeJSON(peers, 'peers.json', done);
+      })
+      .then(function(){
+        done && done();
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.saveBlock = function(block, done) {
@@ -887,6 +1005,9 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       })
       .then(function(){
         return indicatorsDAL.setLastBlockForIssuer(block);
+      })
+      .then(function(){
+        return getMaxNumberInFilesPromise;
       })
       .then(function(){
         lastBlockFileNumber = Math.max(lastBlockFileNumber, block.number);
@@ -1028,34 +1149,35 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.saveIdentity = function(idty, done) {
-    var existing = _.where(identities, {
-      pubkey: idty.pubkey,
-      hash: idty.hash
-    })[0];
-    if (!existing) {
-      idty.block_number = parseInt(idty.block_number);
-      identities.push(idty);
-    } else {
-      idty.block_number = parseInt(idty.block_number);
-      _.extend(existing, idty);
-    }
-    return saveIdentitiesInFile(identities, done);
-  };
-
-  function saveIdentitiesInFile(identities, done) {
-    return that.writeJSON(identities.map(function(idty) {
-      return _.omit(idty, 'certs');
-    }), 'identities.json', function(err, obj) {
-      done(err, obj);
-    });
-  }
-
   this.officializeCertification = function(cert) {
     return certDAL.saveOfficial(cert)
       .then(function(){
         return certDAL.removeNotLinked(cert);
       });
+  };
+
+  this.savePendingIdentity = function(idty) {
+    return idtyDAL.savePendingIdentity(idty);
+  };
+
+  this.excludeIdentity = function(pubkey) {
+    return idtyDAL.excludeIdentity(pubkey);
+  };
+
+  this.newIdentity = function(idty, onBlock) {
+    return idtyDAL.newIdentity(idty, onBlock);
+  };
+
+  this.joinIdentity = function(pubkey, onBlock) {
+    return idtyDAL.joinIdentity(pubkey, onBlock);
+  };
+
+  this.activeIdentity = function(pubkey, onBlock) {
+    return idtyDAL.activeIdentity(pubkey, onBlock);
+  };
+
+  this.leaveIdentity = function(pubkey, onBlock) {
+    return idtyDAL.leaveIdentity(pubkey, onBlock);
   };
 
   this.registerNewCertification = function(cert) {
@@ -1138,14 +1260,20 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.savePeer = function(peer, done) {
-    peer.hash = (sha1(peer.getRawSigned()) + "").toUpperCase();
-    var existing = _.where(peers, { pubkey: peer.pubkey })[0];
-    if (!existing) {
-      peers.push(peer);
-    } else {
-      _.extend(existing, peer);
-    }
-    return that.writeJSON(peers, 'peers.json', done);
+    return peersLoaded()
+      .then(function(){
+        peer.hash = (sha1(peer.getRawSigned()) + "").toUpperCase();
+        var existing = _.where(peers, { pubkey: peer.pubkey })[0];
+        if (!existing) {
+          peers.push(peer);
+        } else {
+          _.extend(existing, peer);
+        }
+        return that.writeJSON(peers, 'peers.json', done);
+      })
+      .then(function(){
+        done && done();
+      });
   };
 
   /***********************
@@ -1280,14 +1408,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'stats', 'identities', 'global', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms'];
+    var files = ['peers', 'stats', 'global', 'merkles', 'conf'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'stats', 'identities', 'global', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms'];
+    var files = ['peers', 'stats', 'global', 'merkles'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities'];
     return resetFiles(files, dirs, done);
   };
 
@@ -1342,70 +1470,70 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   }
 
-  // INSTRUMENTALIZE ALL METHODS
-  var f;
-  for (f in this) {
-    if (that.hasOwnProperty(f) && typeof that[f] == 'function') {
-      (function() {
-        var fname = f + "";
-        var func = that[fname];
-        func.surname = fname;
-        // Instrumentalize the function
-        that[fname] = function() {
-          var args = arguments, start;
-          //var start = new Date();
-          return Q()
-            .then(function(){
-              return onceLoadedDAL();
-            })
-            .fail(function(err) {
-              logger.error('Could not call %s()', fname);
-              logger.error(err);
-              if (typeof args[args.length - 1] == 'function') {
-                args[args.length - 1](err);
-              }
-              throw err;
-            })
-            .then(function() {
-              return Q()
-                .then(function(){
-                  //start = new Date();
-                  //try {
-                  //  //logger.debug('Call %s.%s(%s)', that.name, fname, JSON.stringify(args));
-                  //}
-                  //catch (e) {
-                  //  //logger.error(e);
-                  //  logger.debug('Call %s.%s(... [circular structure] ...)', that.name, fname);
-                  //}
-                  return func.apply(that, args);
-                })
-                // TODO: add a parameter to enable/disable performance logging
-                .then(function (o) {
-                  var duration = (new Date() - start);
-                  if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
-                    logger.debug('Time %s ms | %s', duration, fname);
-                  return o;
-                })
-                ;
-            });
-        };
-        that[fname].now = function() {
-          var args = arguments;
-          //var start = new Date();
-          return Q()
-            .then(function(){
-              return func.apply(that, args);
-            })
-            // TODO: add a parameter to enable/disable performance logging
-            //.then(function (o) {
-            //  var duration = (new Date() - start);
-            //  //if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
-            //  //  logger.debug('Time %s ms | %s', duration, fname);
-            //  return o;
-            //})
-          ;
-        };
-      })();
-    }
-  }
+  //// INSTRUMENTALIZE ALL METHODS
+  //var f;
+  //for (f in this) {
+  //  if (that.hasOwnProperty(f) && typeof that[f] == 'function') {
+  //    (function() {
+  //      var fname = f + "";
+  //      var func = that[fname];
+  //      func.surname = fname;
+  //      // Instrumentalize the function
+  //      that[fname] = function() {
+  //        var args = arguments, start;
+  //        //var start = new Date();
+  //        return Q()
+  //          .then(function(){
+  //            return onceLoadedDAL();
+  //          })
+  //          .fail(function(err) {
+  //            logger.error('Could not call %s()', fname);
+  //            logger.error(err);
+  //            if (typeof args[args.length - 1] == 'function') {
+  //              args[args.length - 1](err);
+  //            }
+  //            throw err;
+  //          })
+  //          .then(function() {
+  //            return Q()
+  //              .then(function(){
+  //                //start = new Date();
+  //                //try {
+  //                //  //logger.debug('Call %s.%s(%s)', that.name, fname, JSON.stringify(args));
+  //                //}
+  //                //catch (e) {
+  //                //  //logger.error(e);
+  //                //  logger.debug('Call %s.%s(... [circular structure] ...)', that.name, fname);
+  //                //}
+  //                return func.apply(that, args);
+  //              })
+  //              // TODO: add a parameter to enable/disable performance logging
+  //              .then(function (o) {
+  //                var duration = (new Date() - start);
+  //                if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
+  //                  logger.debug('Time %s ms | %s', duration, fname);
+  //                return o;
+  //              })
+  //              ;
+  //          });
+  //      };
+  //      that[fname].now = function() {
+  //        var args = arguments;
+  //        //var start = new Date();
+  //        return Q()
+  //          .then(function(){
+  //            return func.apply(that, args);
+  //          })
+  //          // TODO: add a parameter to enable/disable performance logging
+  //          //.then(function (o) {
+  //          //  var duration = (new Date() - start);
+  //          //  //if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
+  //          //  //  logger.debug('Time %s ms | %s', duration, fname);
+  //          //  return o;
+  //          //})
+  //        ;
+  //      };
+  //    })();
+  //  }
+  //}
 }

@@ -18,7 +18,7 @@ module.exports = function(dal) {
     this.existsUserID = function (uid, done) {
       async.waterfall([
         function (next){
-          dal.getWrittenByUID(uid, next);
+          dal.getWrittenByUID(uid).then(_.partial(next, null)).fail(next);
         },
         function (idty, next){
           next(null, idty != null);

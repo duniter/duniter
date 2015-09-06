@@ -226,103 +226,38 @@ function BlockchainContext(conf, dal) {
         async.forEachSeries(block.identities, function(identity, callback){
           var idty = Identity.statics.fromInline(identity);
           var indexNb = block.identities.indexOf(identity);
-          async.waterfall([
-            function (nextOne){
-              // Computes the hash if not done yet
-              if (!idty.hash)
-                idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
-              dal.getIdentityByPubkeyAndHashOrNull(idty.pubkey, idty.getTargetHash(), nextOne);
-            },
-            function (existing, nextOne){
-              if (existing) {
-                idty = existing;
-              }
-              idty.currentMSN = block.number;
-              idty.member = true;
-              idty.wasMember = true;
-              idty.kick = false;
-              idty.indexNb = indexNb;
-              dal.saveIdentity(new Identity(idty), function (err) {
-                nextOne(err);
-              });
-            }
-          ], callback);
+          // Computes the hash if not done yet
+          if (!idty.hash)
+            idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
+          idty.indexNb = indexNb;
+          dal.newIdentity(idty, block.number).then(_.partial(callback, null)).fail(callback);
         }, next);
       },
       function (next) {
         // Joiners (come back)
         async.forEachSeries(block.joiners, function(inlineMS, callback){
           var ms = Identity.statics.fromInline(inlineMS);
-          async.waterfall([
-            function (nextOne){
-              // Necessarily exists, since we've just created them in the worst case
-              dal.getWritten(ms.pubkey, nextOne);
-            },
-            function (idty, nextOne){
-              idty.currentMSN = block.number;
-              idty.member = true;
-              idty.kick = false;
-              dal.saveIdentity(new Identity(idty), function (err) {
-                nextOne(err);
-              });
-            }
-          ], callback);
+          dal.joinIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).fail(callback);
         }, next);
       },
       function (next) {
         // Actives
         async.forEachSeries(block.actives, function(inlineMS, callback){
           var ms = Identity.statics.fromInline(inlineMS);
-          async.waterfall([
-            function (nextOne){
-              dal.getWritten(ms.pubkey, nextOne);
-            },
-            function (idty, nextOne){
-              idty.currentMSN = block.number;
-              idty.member = true;
-              idty.kick = false;
-              dal.saveIdentity(new Identity(idty), function (err) {
-                nextOne(err);
-              });
-            }
-          ], callback);
+          dal.activeIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).fail(callback);
         }, next);
       },
       function (next) {
         // Leavers
         async.forEachSeries(block.leavers, function(inlineMS, callback){
           var ms = Identity.statics.fromInline(inlineMS);
-          async.waterfall([
-            function (nextOne){
-              dal.getWritten(ms.pubkey, nextOne);
-            },
-            function (idty, nextOne){
-              idty.currentMSN = block.number;
-              idty.member = true;
-              idty.leaving = true;
-              idty.kick = false;
-              dal.saveIdentity(new Identity(idty), function (err) {
-                nextOne(err);
-              });
-            }
-          ], callback);
+          dal.leaveIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).fail(callback);
         }, next);
       },
       function (next) {
         // Excluded
-        async.forEach(block.excluded, function (pubkey, callback) {
-          async.waterfall([
-            function (nextOne) {
-              dal.getWritten(pubkey, nextOne);
-            },
-            function (idty, nextOne) {
-              idty.member = false;
-              idty.kick = false;
-              dal.saveIdentity(new Identity(idty), function (err) {
-                nextOne(err);
-              });
-            }
-          ], callback);
+        async.forEachSeries(block.excluded, function (pubkey, callback) {
+          dal.excludeIdentity(pubkey).then(_.partial(callback, null)).fail(callback);
         }, next);
       }
     ], done);

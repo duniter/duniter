@@ -31,7 +31,7 @@ function WOTBinding (server) {
         ParametersService.getSearch(req, next);
       },
       function (search, next){
-        IdentityService.search(search, next);
+        IdentityService.search(search).then(_.partial(next, null)).fail(next);
       },
       function (identities, next){
         identities.forEach(function(idty, index){

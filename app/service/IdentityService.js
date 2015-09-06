@@ -31,12 +31,8 @@ function IdentityService (conf, dal) {
     globalValidation = globalValidator(conf, blockchainDao(null, dal));
   };
 
-  this.search = function(search, done) {
-    async.waterfall([
-      function (next){
-        dal.searchIdentity(search, next);
-      }
-    ], done);
+  this.search = function(search) {
+    return dal.searchIdentity(search);
   };
 
   this.findMember = function(search, done) {
@@ -45,7 +41,7 @@ function IdentityService (conf, dal) {
         dal.getWritten(search, next);
       },
       uid: function (next) {
-        dal.getWrittenByUID(search, next);
+        dal.getWrittenByUID(search).then(_.partial(next, null)).fail(next);
       }
     }, function (err, res) {
       done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, new Identity(res.pubkey || res.uid || {}));
@@ -58,7 +54,7 @@ function IdentityService (conf, dal) {
         dal.getWritten(pubkey, next);
       },
       nonWritten: function (next) {
-        dal.getNonWritten(pubkey, next);
+        dal.getNonWritten(pubkey).then(_.partial(next, null)).fail(next);
       }
     }, done);
   };
@@ -141,10 +137,10 @@ function IdentityService (conf, dal) {
           else {
             // Create
             idty = new Identity(idty);
-            dal.saveIdentity(idty, function (err) {
+            dal.savePendingIdentity(idty).then(function() {
               logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
-              next(err, idty);
-            });
+              next(null, idty);
+            }).fail(next);
           }
         }
       ], cb);
@@ -157,7 +153,6 @@ function IdentityService (conf, dal) {
   this.submitRevocation = function(obj, done) {
     var idty = new Identity(obj);
     var selfCert = idty.selfCert();
-    var certs = idty.othersCerts();
     fifo.push(function (cb) {
       async.waterfall([
         function (next) {
@@ -177,16 +172,18 @@ function IdentityService (conf, dal) {
               next('This identity cannot be revoked since it is present in the blockchain.');
             } else {
               existing.revoked = true;
-              dal.saveIdentity(new Identity(existing), function (err) {
-                next(err, jsonResultTrue());
-              });
+              dal.setRevoked(obj.hash).then(function () {
+                next(null, jsonResultTrue());
+              })
+                .fail(next);
             }
           }
           else {
             // Create
-            dal.saveIdentity(new Identity(idty), function (err) {
-              next(err, jsonResultTrue());
-            });
+            idty.revoked = true;
+            dal.savePendingIdentity(idty).then(function() {
+              next(null, jsonResultTrue());
+            }).fail(next);
           }
         }
       ], cb);

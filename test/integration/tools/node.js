@@ -13,6 +13,8 @@ module.exports = function (dbName, options) {
   return new Node(dbName, options);
 };
 
+var UNTIL_TIMEOUT = 115000;
+
 function Node (dbName, options) {
 
   var that = this;
@@ -99,7 +101,7 @@ function Node (dbName, options) {
         BlockchainService.prove(block, sigFunc, difficulty, next);
       },
       function (provenBlock, next){
-        console.log(provenBlock.getRawSigned());
+        //console.log(provenBlock.getRawSigned());
         post('/blockchain/block', {
           "block": provenBlock.getRawSigned()
         }, next);
@@ -199,12 +201,23 @@ function Node (dbName, options) {
   this.until = function (eventName, count) {
     var counted = 0;
     var max = count == undefined ? 1 : count;
-    return Q.Promise(function (resolve) {
+    return Q.Promise(function (resolve, reject) {
+      var finished = false;
       that.server.on(eventName, function () {
         counted++;
-        if (counted == max)
-          resolve();
+        if (counted == max) {
+          if (!finished) {
+            finished = true;
+            resolve();
+          }
+        }
       });
+      setTimeout(function() {
+        if (!finished) {
+          finished = true;
+          reject('Received ' + counted + '/' + count + ' ' + eventName + ' after ' + UNTIL_TIMEOUT + ' ms');
+        }
+      }, UNTIL_TIMEOUT);
     });
   };
 

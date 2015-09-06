@@ -54,6 +54,7 @@ describe("Forwarding", function() {
         })
         .then(function(){
           return Q.all([
+            node2.until('identity', 4),
             node2.until('block', 1),
             Q.Promise(function(resolve, reject){
             node1.executes(require('./scenarios/new-community-4-members')(node1), function(err) {

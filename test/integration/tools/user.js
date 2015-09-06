@@ -281,6 +281,9 @@ function User (uid, options, node) {
       getVucoin()
         .then(function(node){
           node.wot.lookup(pubkey, function(err, res) {
+            if (err) {
+              console.error(err);
+            }
             done(res, calback);
           });
         })

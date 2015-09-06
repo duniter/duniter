@@ -37,7 +37,7 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
         // Call for this level
         return oldListFile.apply(that, args)
           .then(function(files2){
-            return files.concat(files2);
+            return _.uniq(files.concat(files2), false, function(file) { return file.file; });
           });
       });
   });

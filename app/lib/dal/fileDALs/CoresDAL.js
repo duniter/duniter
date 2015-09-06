@@ -51,6 +51,9 @@ function CoresDAL(dal) {
     return that.initTree()
       .then(function(){
         return that.list('cores/')
+          .then(function(files){
+            return _.pluck(files, 'file');
+          })
           .then(that.reduceTo('cores/', cores))
           .thenResolve(cores);
       });

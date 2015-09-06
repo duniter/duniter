@@ -13,6 +13,7 @@ function AbstractDAL(dal) {
   var that = this;
   this.dal = dal;
   this.RECURSIVE = true;
+  this.DEEP_WRITE = true;
 
   var existsFileFunc, readFileFunc, writeFileFunc, removeFileFunc, listFilesFunc, makeTreeFunc;
 

@@ -153,7 +153,7 @@ describe("Branches", function() {
                 throw 'Should have thrown an error since it is not forkable';
               })
               .fail(function(err){
-                err.should.match(/^Block \d not found/);
+                err.should.match(/^Previous block not found/);
               });
           });
       })

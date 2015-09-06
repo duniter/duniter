@@ -126,7 +126,7 @@ function BlockchainService (conf, mainDAL, pair) {
           return p.then(function(){
             var basedCore = getCore(cores, core.forkPointNumber - 1, core.forkPointPreviousHash);
             var dal = basedCore ? basedCore.dal : mainDAL;
-            return dal.loadCore(core)
+            return Q(dal.loadCore(core))
               .then(function(coreDAL){
                 return blockchainCtx(conf, coreDAL);
               })
@@ -176,7 +176,7 @@ function BlockchainService (conf, mainDAL, pair) {
 
             /**
              * 1. Check applicability
-             *  - if no core exit:check block virtually against the blockchain
+             *  - if no core exist: check block virtually against the blockchain
              *  - else if cores exist: check the block virtually against the core it is based upon
              *  - if OK (one core matches): create a core for this block
              */
@@ -266,7 +266,14 @@ function BlockchainService (conf, mainDAL, pair) {
             })
 
             // Remove the core from cores
-            .then(removeCore(core, cores))
+            .then(function() {
+              return mainDAL.unfork(core)
+                .then(function(){
+                  cores.splice(cores.indexOf(core), 1);
+                  // A core was removed
+                  return core;
+                });
+            })
 
             .tap(function(deleted){
               if (deleted) {
@@ -307,17 +314,6 @@ function BlockchainService (conf, mainDAL, pair) {
       cores = _.without(cores, orphan);
       return pruneForks(orphan, cores);
     }));
-  }
-
-  function removeCore(core, cores) {
-    return function() {
-      return mainDAL.unfork(core)
-        .then(function(){
-          cores = _.without(cores, core);
-          // A core was removed
-          return core;
-        });
-    };
   }
 
   function forkAndAddCore(basedCore, cores, obj, doCheck) {

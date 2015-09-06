@@ -22,13 +22,7 @@ var MembershipDAL = require('./fileDALs/MembershipDAL');
 var IdentityDAL = require('./fileDALs/IdentityDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 var PeerDAL = require('./fileDALs/PeerDAL');
-
-var BLOCK_FILE_PREFIX = "0000000000";
-var BLOCK_FOLDER_SIZE = 500;
-
-var writeFileFifo = async.queue(function (task, callback) {
-  task(callback);
-}, 1);
+var BlockDAL = require('./fileDALs/BlockDAL');
 
 module.exports = {
   memory: function(profile, subPath) {
@@ -78,10 +72,8 @@ function FileDAL(profile, subPath, myFS) {
   this.profile = profile;
   this.readFunctions = [];
   this.writeFunctions = [];
-  this.existsFunc = existsFunc;
 
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
-  var logger = require('../../lib/logger')(profile);
 
   // DALs
   var globalDAL = new GlobalDAL(that);
@@ -97,94 +89,21 @@ function FileDAL(profile, subPath, myFS) {
   var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
   var peerDAL = new PeerDAL(that);
+  var blockDAL = new BlockDAL(that);
   var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL,
-              msDAL, idtyDAL, peerDAL];
+              msDAL, idtyDAL, peerDAL, blockDAL];
 
   var currency = '';
-  var lastBlockFileNumber = -1;
-
-  var getMaxNumberInFilesPromise = getCurrentMaxNumberInBlockFiles()
-    .then(function(max){
-      lastBlockFileNumber = max;
-    });
-
-  function folderOfBlock(blockNumber) {
-    return (Math.floor(blockNumber / BLOCK_FOLDER_SIZE) + 1) * BLOCK_FOLDER_SIZE;
-  }
-
-  function pathOfBlock(blockNumber) {
-    return rootPath + '/blocks/' + folderOfBlock(blockNumber) + '/' + blockFileName(blockNumber) + '.json';
-  }
 
   this.removeHome = function() {
     return myFS.removeTree(rootPath);
   };
 
-  this.hasFileOfBlock = function(blockNumber) {
-    return getMaxNumberInFilesPromise
-      .then(function(){
-        if(blockNumber > lastBlockFileNumber) {
-          // Update the current last number
-          return that.getCurrentMaxNumberInBlockFilesMember()
-            .then(function(maxNumber){
-              lastBlockFileNumber = maxNumber;
-              return blockNumber <= lastBlockFileNumber;
-            });
-        } else {
-          return true;
-        }
-      });
-  };
-
-  this.getCurrentMaxNumberInBlockFilesMember = getCurrentMaxNumberInBlockFiles;
-
-  function getCurrentMaxNumberInBlockFiles() {
-    // Look in local files
-    return myFS.makeTree(rootPath + '/blocks/')
-      .then(function(){
-        return myFS.list(rootPath + '/blocks/');
-      })
-      .then(function(files){
-        if(files.length == 0){
-          return -1;
-        } else {
-          var maxDir = _.max(files, function(dir){ return parseInt(dir); });
-          return myFS.list(rootPath + '/blocks/' + maxDir + '/')
-            .then(function(files){
-              if(files.length > 0) {
-                return parseInt(_.max(files, function (f) {
-                  return parseInt(f);
-                }).replace(/\.json/, ''));
-              }
-              else{
-                // Last number is the one of the directory, minus the chunk of director, minus 1
-                return maxDir - BLOCK_FOLDER_SIZE - 1;
-              }
-            });
-        }
-      });
-  }
-
-  this.readFileOfBlock = function(blockNumber) {
-    return myFS.read(pathOfBlock(blockNumber));
-  };
-
   that.writeFileOfBlock = function(block) {
-    return myFS.write(pathOfBlock(block.number), JSON.stringify(block, null, ' '))
+    return blockDAL.saveBlock(block)
       .then(function(){
         return globalDAL.setLastSavedBlockFile(block.number);
       });
-  };
-
-  var blocksTreeLoaded = {};
-  this.onceMadeTree = function(blockNumber) {
-    var folder = folderOfBlock(blockNumber);
-    if (!blocksTreeLoaded[folder]) {
-      blocksTreeLoaded[folder] = ((function () {
-        return myFS.makeTree(rootPath + '/blocks/' + folderOfBlock(blockNumber));
-      })());
-    }
-    return blocksTreeLoaded[folder];
   };
 
   this.getCores = function() {
@@ -271,16 +190,13 @@ function FileDAL(profile, subPath, myFS) {
 
   this.getPeer = function(pubkey) {
     return peerDAL.getPeer(pubkey)
-      .fail(function(err) {
+      .fail(function() {
         throw Error('Unknown peer ' + pubkey);
       });
   };
 
   this.getBlock = function(number, done) {
-    return that.readFileOfBlock(number)
-      .then(function(data) {
-        return JSON.parse(data);
-      })
+    return blockDAL.getBlock(number)
       .fail(function(){
         throw 'Block ' + number + ' not found on DAL ' + that.name;
       })
@@ -295,16 +211,13 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.getBlockByNumberAndHash = function(number, hash, done) {
-    return that.readFileOfBlock(number)
-      .then(function(data) {
-        return JSON.parse(data);
-      })
+    return that.getBlock(number)
       .then(function(block){
         if (block.hash != hash) throw "Not found";
         else return block;
       })
       .fail(function(){
-        throw 'Block ' + [number, hash].join('-') + ' not found';
+        throw 'Block ' + [number, hash].join('-') + ' not found in ' + that.name;
       })
       .then(function(block){
         done && done(null, block);
@@ -352,7 +265,7 @@ function FileDAL(profile, subPath, myFS) {
             return blocks.concat(block);
           }
           return blocks;
-        }, [])
+        }, []);
       });
   };
 
@@ -467,7 +380,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, idty);
         return idty;
       })
-      .fail(function(err){
+      .fail(function(){
         done && done(null, null);
         return null;
       });
@@ -889,10 +802,6 @@ function FileDAL(profile, subPath, myFS) {
         return indicatorsDAL.setLastBlockForIssuer(block);
       })
       .then(function(){
-        return getMaxNumberInFilesPromise;
-      })
-      .then(function(){
-        lastBlockFileNumber = Math.max(lastBlockFileNumber, block.number);
         done && done();
       })
       .fail(function(err){
@@ -918,9 +827,15 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   that.saveBlockInFile = function(block, check, done) {
-    return that.onceMadeTree(block.number)
+    return Q()
       .then(function(){
-        return check ? that.hasFileOfBlock(block.number) : false;
+        if (check) {
+          return that.getBlock(block.number)
+            .fail(function(){
+              return false;
+            });
+        }
+        return false;
       })
       .then(function(exists){
         return exists ? Q() : that.writeFileOfBlock(block);
@@ -942,30 +857,6 @@ function FileDAL(profile, subPath, myFS) {
     }));
   };
 
-  function writeJSON(obj, fileName, done) {
-    //console.log('Write %s', fileName);
-    var fullPath = rootPath + '/' + fileName;
-    return writeJSONToPath(obj, fullPath, done);
-  }
-
-  function writeJSONToPath(obj, fullPath, done) {
-    return donable(Q.Promise(function(resolve, reject){
-      writeFileFifo.push(function(writeFinished) {
-        return myFS.write(fullPath, JSON.stringify(obj, null, ' '))
-          .then(function(){
-            resolve();
-            writeFinished();
-          })
-          .fail(function(err){
-            reject(err);
-            writeFinished();
-          });
-      });
-    }), done);
-  }
-
-  this.writeJSON = writeJSON;
-
   function donable(promise, done) {
     return promise
       .then(function(){
@@ -978,10 +869,6 @@ function FileDAL(profile, subPath, myFS) {
   }
 
   this.donable = donable;
-
-  function blockFileName(blockNumber) {
-    return BLOCK_FILE_PREFIX.substr(0, BLOCK_FILE_PREFIX.length - ("" + blockNumber).length) + blockNumber;
-  }
 
   this.merkleForPeers = function(done) {
     return merkleDAL.getLeaves('peers')
@@ -1194,10 +1081,6 @@ function FileDAL(profile, subPath, myFS) {
     return myFS.makeTree(rootPath + '/' + filePath);
   }
 
-  this.path = function(filePath) {
-    return rootPath + '/' + filePath;
-  };
-
   this.setExists = function(existsF) {
     dals.forEach(function(dal){
       dal.setExists(existsF);
@@ -1277,14 +1160,14 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'global', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
+    var files = ['stats', 'global', 'merkles', 'cores', 'conf'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'global', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
+    var files = ['stats', 'global', 'merkles', 'cores'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
     return resetFiles(files, dirs, done);
   };
 
@@ -1301,8 +1184,8 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.resetPeers = function(done) {
-    var files = ['peers'];
-    var dirs  = [];
+    var files = [];
+    var dirs  = ['peers'];
     return resetFiles(files, dirs, done);
   };
 

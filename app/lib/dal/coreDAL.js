@@ -26,6 +26,20 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
       });
   });
 
+  // Writing a file = local writing, unless told to do a root writing
+  var oldWriteFile = that.writeFile;
+  that.setWrite(function writeFileFromFork() {
+    var args = Array.prototype.slice.call(arguments);
+    if (args[2]) {
+      return rootDAL.writeFile.apply(rootDAL, args);
+    }
+    return oldWriteFile.apply(that, args)
+      .fail(function(){
+        // Failed in core context, try in root
+        return rootDAL.writeFile.apply(rootDAL, args);
+      });
+  });
+
   // Listing files = tree traversal listing
   var oldListFile = that.listFile;
   that.setList(function listFilesFromFork() {
@@ -62,64 +76,6 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
 
   this.setRootDAL = function(dal) {
     rootDAL = dal;
-  };
-
-  // Encapsulate rootDAL to redirect getBlock
-  var originalGetBlock = this.getBlock;
-
-  // Redefine getBlock function
-  this.getBlock = function(number, done) {
-    var p = number < blockNumber ? rootDAL.getBlock(number) : originalGetBlock(number);
-    return p
-      .then(function(block){
-        done && done(null, block);
-        return block;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
-
-  // Encapsulate rootDAL to redirect getBlock
-  var originalGetBlockByNumberAndHash = this.getBlockByNumberAndHash;
-
-  // Redefine getBlock function
-
-  this.getBlockByNumberAndHash = function(number, hash, done) {
-    var p = number < blockNumber ? rootDAL.getBlockByNumberAndHash(number, hash) : originalGetBlockByNumberAndHash(number, hash);
-    return p
-      .then(function(block){
-        done && done(null, block);
-        return block;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
-
-  // Encapsulate rootDAL to redirect getBlock
-  var originalSaveBlock = this.saveBlock;
-
-  // Redefine getBlock function
-  this.saveBlock = function(block, done) {
-    return originalSaveBlock(block, done);
-  };
-
-  // Encapsulate rootDAL to redirect getBlock
-  var originalGetCurrentNumber = this.getCurrentNumber;
-
-  // Redefine getBlock function
-  this.getCurrentNumber = function() {
-    return originalGetCurrentNumber()
-      .then(function(currentNumber){
-        if (currentNumber == -1) {
-          // The core has not received its block yet
-          return blockNumber - 1;
-        }
-        return currentNumber;
-      });
   };
 }
 

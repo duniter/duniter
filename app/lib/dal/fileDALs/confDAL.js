@@ -52,7 +52,7 @@ function ParametersDAL(dal) {
   };
 
   this.saveConf = function(confToSave, done) {
-    return that.write('conf.json', confToSave)
+    return that.write('conf.json', confToSave, that.DEEP_WRITE)
       .then(function(){
         done && done();
       })

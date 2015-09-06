@@ -206,7 +206,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         // Peers
         //=======
         function (next){
-          dal.merkleForPeers.now(next);
+          dal.merkleForPeers(next);
         },
         function (merkle, next) {
           node.network.peering.peers.get({}, function (err, json) {

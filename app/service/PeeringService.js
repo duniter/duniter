@@ -81,9 +81,11 @@ function PeeringService(server, pair, dal) {
         }
         // Set the peer as UP again
         peerEntity.status = 'UP';
-        dal.savePeer(peerEntity, function (err) {
-          next(err, peerEntity, previousHash);
-        });
+        dal.savePeer(peerEntity)
+          .then(function(){
+            next(null, peerEntity, previousHash);
+          })
+          .fail(next);
       },
       function (recordedPR, previousHash, next) {
         dal.updateMerkleForPeers(function(err) {
@@ -130,7 +132,7 @@ function PeeringService(server, pair, dal) {
       },
       function (currentBlock, next) {
         current = currentBlock;
-        dal.findPeers(selfPubkey, next);
+        dal.findPeers(selfPubkey).then(_.partial(next, null)).fail(next);
       },
       function (peers, next) {
         var p1 = { version: 1, currency: currency };
@@ -182,7 +184,7 @@ function PeeringService(server, pair, dal) {
         }
       },
       function (next){
-        dal.getPeer(selfPubkey, next);
+        dal.getPeer(selfPubkey).then(_.partial(next, null)).fail(next);
       },
       function (peer, next){
         // Set peer's statut to UP
@@ -197,7 +199,7 @@ function PeeringService(server, pair, dal) {
   }
 
   this.testPeers = function(done) {
-    dal.getAllPeers()
+    dal.listAllPeers()
       .then(function(peers){
         peers = _.filter(peers, function(p){ return p.pubkey != selfPubkey; });
         return Q.all(peers.map(function(p) {
@@ -265,9 +267,10 @@ function PeeringService(server, pair, dal) {
                                 function (next) {
                                   node.blockchain.current(function(err) {
                                     if (err) {
-                                      return dal.setPeerDown(p.pubkey, function(err2) {
-                                        next(err2 || err);
-                                      });
+                                      return dal.setPeerDown(p.pubkey)
+                                        .fail(function(err2){
+                                          next(err2 || err);
+                                        });
                                     }
                                     next();
                                   });

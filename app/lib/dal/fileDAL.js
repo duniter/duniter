@@ -3,9 +3,6 @@ var Q       = require('q');
 var _       = require('underscore');
 var sha1    = require('sha1');
 var async   = require('async');
-var moment = require('moment');
-var util = require('util');
-var Identity = require('../entity/identity');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
 var Transaction = require('../entity/transaction');
@@ -24,6 +21,7 @@ var LinksDAL = require('./fileDALs/LinksDAL');
 var MembershipDAL = require('./fileDALs/MembershipDAL');
 var IdentityDAL = require('./fileDALs/IdentityDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
+var PeerDAL = require('./fileDALs/PeerDAL');
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
@@ -72,7 +70,7 @@ function getUCoinHomePath(profile) {
   return userHome + '/.config/ucoin/' + profile;
 }
 
-function FileDAL(profile, subPath, myFS, rootDAL) {
+function FileDAL(profile, subPath, myFS) {
 
   var that = this;
 
@@ -98,58 +96,17 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
+  var peerDAL = new PeerDAL(that);
   var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL,
-              msDAL, idtyDAL];
+              msDAL, idtyDAL, peerDAL];
 
-  var peers = [];
   var currency = '';
-
   var lastBlockFileNumber = -1;
-
-  var peersPromise;
-  function peersLoaded() {
-    return peersPromise || (peersPromise = myFS.makeTree(rootPath)
-      .then(function(){
-        return (rootDAL ? rootDAL.copyFiles(rootPath) : Q.resolve());
-      })
-      .then(function(){
-        return loadIntoArray(peers, 'peers.json');
-      }));
-  }
 
   var getMaxNumberInFilesPromise = getCurrentMaxNumberInBlockFiles()
     .then(function(max){
       lastBlockFileNumber = max;
     });
-
-  this.copyFiles = function(newRoot) {
-    return [
-      'peers.json'
-    ].reduce(function(p, fileName) {
-      var source = rootPath + '/' + fileName;
-      var dest = newRoot + '/' + fileName;
-      return p
-        .then(function(){
-          return myFS.exists(source);
-        })
-        .then(function(exists){
-          if (exists) {
-            //console.log('Copy from %s to %s', rootPath + '/' + fileName, newRoot + '/' + fileName);
-            return myFS.read(source)
-              .then(function(content){
-                return myFS.write(dest, content);
-              })
-              .then(function(){
-                return myFS.read(dest);
-              });
-          }
-          else {
-            //console.log('Create empty array file %s', newRoot + '/' + fileName);
-            return writeJSONToPath([], newRoot + '/' + fileName);
-          }
-        });
-    }, Q());
-  };
 
   function folderOfBlock(blockNumber) {
     return (Math.floor(blockNumber / BLOCK_FOLDER_SIZE) + 1) * BLOCK_FOLDER_SIZE;
@@ -230,20 +187,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return blocksTreeLoaded[folder];
   };
 
-  function loadIntoArray(theArray, fileName) {
-    return myFS.exists(rootPath + '/' + fileName)
-      .then(function(exists){
-        if (exists) {
-          return myFS.read(rootPath + '/' + fileName)
-            .then(function (data) {
-              JSON.parse(data).forEach(function(item){
-                theArray.push(item);
-              });
-            });
-        }
-      });
-  }
-
   this.getCores = function() {
     return coresDAL.getCores();
   };
@@ -291,12 +234,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.listAllPeers = function(done) {
-    return peersLoaded()
-      .then(function(){
-        done && done(null, peers);
-        return peers;
-      });
+  this.listAllPeers = function() {
+    return peerDAL.listAll();
   };
 
   function nullIfError(promise, done) {
@@ -330,20 +269,10 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   }
 
-  this.getPeer = function(pubkey, done) {
-    return peersLoaded()
-      .then(function(){
-        var matching = _.chain(peers).
-          where({ pubkey: pubkey }).
-          value();
-        done && done(!matching[0] && 'Unknown peer ' + pubkey, matching[0] || null);
-        return Q(matching[0] || null);
-      })
+  this.getPeer = function(pubkey) {
+    return peerDAL.getPeer(pubkey)
       .fail(function(err) {
-        if (done) {
-          return done(err);
-        }
-        throw err;
+        throw Error('Unknown peer ' + pubkey);
       });
   };
 
@@ -583,20 +512,12 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.findPeersWhoseHashIsIn = function(hashes, done) {
-    return peersLoaded()
-      .then(function(){
-        var matching = _.chain(peers).
+  this.findPeersWhoseHashIsIn = function(hashes) {
+    return peerDAL.listAll()
+      .then(function(peers){
+        return _.chain(peers).
           filter(function(p){ return hashes.indexOf(p.hash) !== -1; }).
           value();
-        done && done(null, matching);
-        return matching;
-      })
-      .fail(function(err) {
-        if (done) {
-          return done(err);
-        }
-        throw err;
       });
   };
 
@@ -886,20 +807,6 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
     return nullIfError(that.getBlock(number), done);
   };
 
-  this.getAllPeers = function(done) {
-    return peersLoaded()
-      .then(function(){
-        done && done(null, peers);
-        return Q(peers);
-      })
-      .fail(function(err) {
-        if (done) {
-          return done(err);
-        }
-        throw err;
-      });
-  };
-
   this.findAllPeersNEWUPBut = function(pubkeys, done) {
     return that.listAllPeers()
       .then(function(peers){
@@ -914,37 +821,23 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       .fail(done);
   };
 
-  this.listAllPeersWithStatusNewUP = function(done) {
-    return peersLoaded()
-      .then(function(){
+  this.listAllPeersWithStatusNewUP = function() {
+    return peerDAL.listAll()
+      .then(function(peers){
         var matching = _.chain(peers).
           filter(function(p){ return ['UP'].indexOf(p.status) !== -1; }).
           value();
-        done && done(null, matching);
         return Q(matching);
-      })
-      .fail(function(err) {
-        if (done) {
-          return done(err);
-        }
-        throw err;
       });
   };
 
-  this.findPeers = function(pubkey, done) {
-    return peersLoaded()
-      .then(function(){
-        var matching = _.chain(peers).
-          where({ pubkey: pubkey }).
-          value();
-        done && done(null, matching);
-        return matching;
+  this.findPeers = function(pubkey) {
+    return that.getPeer(pubkey)
+      .fail(function(){
+        return [];
       })
-      .fail(function(err) {
-        if (done) {
-          return done(err);
-        }
-        throw err;
+      .then(function(peer){
+        return [peer];
       });
   };
 
@@ -962,25 +855,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       .fail(done);
   };
 
-  this.setPeerDown = function(pubkey, done) {
-    return peersLoaded()
-      .then(function(){
-        var matching = _.chain(peers).
-          where({ pubkey: pubkey }).
-          value();
-        matching.forEach(function(p){
-          p.status = 'DOWN';
-        });
-        return that.writeJSON(peers, 'peers.json', done);
+  this.setPeerDown = function(pubkey) {
+    return that.getPeer(pubkey)
+      .then(function(p){
+        p.status = 'DOWN';
+        peerDAL.savePeer(p);
       })
-      .then(function(){
-        done && done();
-      })
-      .fail(function(err) {
-        if (done) {
-          return done(err);
-        }
-        throw err;
+      .fail(function() {
+        // Silent error
       });
   };
 
@@ -1259,21 +1141,8 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
       });
   };
 
-  this.savePeer = function(peer, done) {
-    return peersLoaded()
-      .then(function(){
-        peer.hash = (sha1(peer.getRawSigned()) + "").toUpperCase();
-        var existing = _.where(peers, { pubkey: peer.pubkey })[0];
-        if (!existing) {
-          peers.push(peer);
-        } else {
-          _.extend(existing, peer);
-        }
-        return that.writeJSON(peers, 'peers.json', done);
-      })
-      .then(function(){
-        done && done();
-      });
+  this.savePeer = function(peer) {
+    return peerDAL.savePeer(peer);
   };
 
   /***********************
@@ -1408,14 +1277,14 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
   };
 
   this.resetAll = function(done) {
-    var files = ['peers', 'stats', 'global', 'merkles', 'conf'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities'];
+    var files = ['stats', 'global', 'merkles', 'conf'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['peers', 'stats', 'global', 'merkles'];
-    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities'];
+    var files = ['stats', 'global', 'merkles'];
+    var dirs  = ['tx', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
     return resetFiles(files, dirs, done);
   };
 
@@ -1451,7 +1320,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         return myFS.exists(rootPath + '/' + fName + '.json')
           .then(function(exists){
             return exists ? myFS.remove(rootPath + '/' + fName + '.json') : Q();
-          })
+          });
       })),
 
       // Remove directories
@@ -1459,7 +1328,7 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         return myFS.exists(rootPath + '/' + dirName)
           .then(function(exists){
             return exists ? myFS.removeTree(rootPath + '/' + dirName) : Q();
-          })
+          });
       }))
     ])
       .then(function(){
@@ -1469,71 +1338,4 @@ function FileDAL(profile, subPath, myFS, rootDAL) {
         done && done(err);
       });
   }
-
-  //// INSTRUMENTALIZE ALL METHODS
-  //var f;
-  //for (f in this) {
-  //  if (that.hasOwnProperty(f) && typeof that[f] == 'function') {
-  //    (function() {
-  //      var fname = f + "";
-  //      var func = that[fname];
-  //      func.surname = fname;
-  //      // Instrumentalize the function
-  //      that[fname] = function() {
-  //        var args = arguments, start;
-  //        //var start = new Date();
-  //        return Q()
-  //          .then(function(){
-  //            return onceLoadedDAL();
-  //          })
-  //          .fail(function(err) {
-  //            logger.error('Could not call %s()', fname);
-  //            logger.error(err);
-  //            if (typeof args[args.length - 1] == 'function') {
-  //              args[args.length - 1](err);
-  //            }
-  //            throw err;
-  //          })
-  //          .then(function() {
-  //            return Q()
-  //              .then(function(){
-  //                //start = new Date();
-  //                //try {
-  //                //  //logger.debug('Call %s.%s(%s)', that.name, fname, JSON.stringify(args));
-  //                //}
-  //                //catch (e) {
-  //                //  //logger.error(e);
-  //                //  logger.debug('Call %s.%s(... [circular structure] ...)', that.name, fname);
-  //                //}
-  //                return func.apply(that, args);
-  //              })
-  //              // TODO: add a parameter to enable/disable performance logging
-  //              .then(function (o) {
-  //                var duration = (new Date() - start);
-  //                if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
-  //                  logger.debug('Time %s ms | %s', duration, fname);
-  //                return o;
-  //              })
-  //              ;
-  //          });
-  //      };
-  //      that[fname].now = function() {
-  //        var args = arguments;
-  //        //var start = new Date();
-  //        return Q()
-  //          .then(function(){
-  //            return func.apply(that, args);
-  //          })
-  //          // TODO: add a parameter to enable/disable performance logging
-  //          //.then(function (o) {
-  //          //  var duration = (new Date() - start);
-  //          //  //if (duration >= constants.DEBUG.LONG_DAL_PROCESS)
-  //          //  //  logger.debug('Time %s ms | %s', duration, fname);
-  //          //  return o;
-  //          //})
-  //        ;
-  //      };
-  //    })();
-  //  }
-  //}
 }

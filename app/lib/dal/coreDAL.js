@@ -13,7 +13,7 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
   var that = this;
   var coreName = [blockNumber, blockHash].join('-');
 
-  fileDAL.FileDAL.call(this, profile, 'branches/' + coreName, myFS, rootDAL);
+  fileDAL.FileDAL.call(this, profile, 'branches/' + coreName, myFS);
 
   // Reading file = tree traversal reading
   var oldReadFile = that.readFile;

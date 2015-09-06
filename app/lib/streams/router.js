@@ -1,5 +1,6 @@
 "use strict";
 
+var _ = require('underscore');
 var async    = require('async');
 var sha1     = require('sha1');
 var util     = require('util');
@@ -36,7 +37,7 @@ function Router (serverPubkey, conf, dal) {
     else if (obj.unreachable) {
       async.waterfall([
         function (next) {
-          dal.setPeerDown(obj.peer.pubkey, next);
+          dal.setPeerDown(obj.peer.pubkey).then(_.partial(next, null)).fail(next);
         },
         function (next) {
           dal.updateMerkleForPeers(next);
@@ -117,9 +118,13 @@ function Router (serverPubkey, conf, dal) {
       if (to == serverPubkey) {
         done(null, []);
       } else {
-        dal.getPeer(to, function (err, peer) {
-          done(err, [peer]);
-        });
+        dal.getPeer(to)
+          .then(function(peer){
+            done(null, [peer]);
+          })
+          .fail(function(err){
+            done(err);
+          });
       }
     };
   }

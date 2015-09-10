@@ -12,8 +12,12 @@ describe("Integration", function() {
   describe("Node 1", function() {
 
     var node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: false,
-      salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
-      sigQty: 1
+      participate: false, rootoffset: 0,
+      sigQty: 1,
+      pair: {
+        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+      }
     });
 
     before(function(done) {
@@ -121,6 +125,7 @@ describe("Integration", function() {
         pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
         sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
       },
+      branchesWindowSize: 3,
       participate: false, rootoffset: 10,
       sigQty: 1, dt: 0, ud0: 120
     });

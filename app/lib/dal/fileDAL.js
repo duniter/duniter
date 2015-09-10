@@ -9,7 +9,6 @@ var Transaction = require('../entity/transaction');
 var Source = require('../entity/source');
 var constants = require('../constants');
 var fsMock = require('q-io/fs-mock')({});
-var GlobalDAL = require('./fileDALs/GlobalDAL');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
@@ -76,7 +75,6 @@ function FileDAL(profile, subPath, myFS) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
 
   // DALs
-  var globalDAL = new GlobalDAL(that);
   var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
   var certDAL = new CertDAL(that);
@@ -90,7 +88,7 @@ function FileDAL(profile, subPath, myFS) {
   var idtyDAL = new IdentityDAL(that);
   var peerDAL = new PeerDAL(that);
   var blockDAL = new BlockDAL(that);
-  var dals = [confDAL, statDAL, globalDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL,
+  var dals = [confDAL, statDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL,
               msDAL, idtyDAL, peerDAL, blockDAL];
 
   var currency = '';
@@ -100,10 +98,7 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   that.writeFileOfBlock = function(block) {
-    return blockDAL.saveBlock(block)
-      .then(function(){
-        return globalDAL.setLastSavedBlockFile(block.number);
-      });
+    return blockDAL.saveBlock(block);
   };
 
   this.getCores = function() {
@@ -270,14 +265,14 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.getCurrentNumber = function() {
-    return globalDAL.getGlobal().get('currentNumber');
+    return blockDAL.getCurrent().get('number')
+      .fail(function() {
+        return -1;
+      });
   };
 
   this.getLastSavedBlockFileNumber = function() {
-    return globalDAL.getGlobal()
-      .then(function(global){
-        return global.lastSavedBlockFile || -1;
-      });
+    return blockDAL.getLastSavedBlockFileNumber();
   };
 
   this.getBlockCurrent = function(done) {
@@ -653,8 +648,10 @@ function FileDAL(profile, subPath, myFS) {
     var kicked = notEnoughLinks ? true : false;
     return idtyDAL.getFromPubkey(pubkey)
       .then(function(idty){
-        idty.kicked = kicked;
-        return idtyDAL.saveIdentity(idty);
+        if (idty.kicked != kicked) {
+          idty.kicked = kicked;
+          return idtyDAL.saveIdentity(idty);
+        }
       })
       .then(function(){
         return that.donable(Q(), done);
@@ -791,7 +788,7 @@ function FileDAL(profile, subPath, myFS) {
         ]);
       })
       .then(function(){
-        return globalDAL.setCurrentNumber(block.number);
+        return blockDAL.saveCurrent(block);
       })
       .then(function(){
         if (block.dividend) {
@@ -829,16 +826,7 @@ function FileDAL(profile, subPath, myFS) {
   that.saveBlockInFile = function(block, check, done) {
     return Q()
       .then(function(){
-        if (check) {
-          return that.getBlock(block.number)
-            .fail(function(){
-              return false;
-            });
-        }
-        return false;
-      })
-      .then(function(exists){
-        return exists ? Q() : that.writeFileOfBlock(block);
+        return that.writeFileOfBlock(block);
       })
       .then(function(){
         done && done();
@@ -989,11 +977,11 @@ function FileDAL(profile, subPath, myFS) {
           txsDAL.getPendingWithIssuer(pubkey),
           txsDAL.getPendingWithRecipient(pubkey)
         ])
-          .then(function(sent, received, sending, pending){
-            history.sent = sent;
-            history.received = received;
-            history.sending = sending;
-            history.pending = pending;
+          .then(function(res){
+            history.sent = res[0] || [];
+            history.received = res[1] || [];
+            history.sending = res[2] || [];
+            history.pending = res[3] || [];
           }).thenResolve(history);
       });
   };
@@ -1160,14 +1148,14 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'global', 'merkles', 'cores', 'conf'];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
+    var files = ['stats', 'merkles', 'cores', 'conf'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'global', 'merkles', 'cores'];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers'];
+    var files = ['stats', 'merkles', 'cores'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
     return resetFiles(files, dirs, done);
   };
 

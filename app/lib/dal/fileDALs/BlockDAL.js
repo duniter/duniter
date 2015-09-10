@@ -30,6 +30,13 @@ function BlockDAL(dal) {
     return treeMade;
   };
 
+  this.getCurrent = function() {
+    return that.initTree()
+      .then(function(){
+        return that.read('blocks/current.json');
+      });
+  };
+
   this.getBlock = function(number) {
     return that.initTree()
       .then(function(){
@@ -37,7 +44,7 @@ function BlockDAL(dal) {
       });
   };
 
-  this.getCurrentMaxNumber = function() {
+  this.getLastSavedBlockFileNumber = function() {
     return that.initTree()
       .then(function(){
         return that.list('blocks/');
@@ -58,7 +65,7 @@ function BlockDAL(dal) {
                 }).replace(/\.json/, ''));
               }
               else{
-                // Last number is the one of the directory, minus the chunk of director, minus 1
+                // Last number is the one of the directory, minus the chunk of directory, minus 1
                 return maxDir - BLOCK_FOLDER_SIZE - 1;
               }
             });
@@ -76,12 +83,19 @@ function BlockDAL(dal) {
       });
   };
 
+  this.saveCurrent = function(block) {
+    return that.initTree()
+      .then(function(){
+        return that.write('blocks/current.json', block);
+      });
+  };
+
   function folderOfBlock(blockNumber) {
     return (Math.floor(blockNumber / BLOCK_FOLDER_SIZE) + 1) * BLOCK_FOLDER_SIZE;
   }
 
   function pathOfBlock(blockNumber) {
-    return '/blocks/' + folderOfBlock(blockNumber) + '/';
+    return 'blocks/' + folderOfBlock(blockNumber) + '/';
   }
 
   function blockFileName(blockNumber) {

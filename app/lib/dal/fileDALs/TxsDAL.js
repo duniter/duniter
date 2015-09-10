@@ -76,7 +76,7 @@ function TxsDAL(dal) {
           }))
 
           .concat(recipients.map(function(recipient) {
-            return writeForPubkey('txs/linked/issuer/' + recipient + '/', hash, tx);
+            return writeForPubkey('txs/linked/recipient/' + recipient + '/', hash, tx);
           }))
         );
       }, Q.reject)

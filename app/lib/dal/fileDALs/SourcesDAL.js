@@ -39,16 +39,39 @@ function SourcesDAL(dal) {
         return _.pluck(files, 'file');
       })
       .then(that.reduceTo('sources/available/' + pubkey + '/', sources))
-      .thenResolve(sources)
+      .then(function(){
+        // For each known available source, check if it has been consumed or not
+        return sources.reduce(function(p, src) {
+          return p
+            .then(function(avail){
+              return that.getConsumedSource(src.pubkey, src.type, src.number, src.fingerprint, src.amount)
+                .then(function(isConsumed){
+                  if (!isConsumed) {
+                    avail.push(src);
+                  }
+                  return avail;
+                });
+            });
+        }, Q([]));
+      })
       .fail(function(err){
         throw err;
       });
   };
 
   this.getAvailableSource = function(pubkey, type, number, fingerprint, amount) {
-    return that.initTree()
-      .then(function(){
-        return that.read('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json');
+    return that.read('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
+      .thenResolve(true)
+      .fail(function() {
+        return false;
+      });
+  };
+
+  this.getConsumedSource = function(pubkey, type, number, fingerprint, amount) {
+    return that.read('sources/consumed/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
+      .thenResolve(true)
+      .fail(function() {
+        return false;
       });
   };
 
@@ -63,19 +86,21 @@ function SourcesDAL(dal) {
   };
 
   this.isAvailableSource = function(pubkey, type, number, fingerprint, amount) {
-    return that.getAvailableSource(pubkey, type, number, fingerprint, amount)
-      .thenResolve(true)
-      .fail(function(){
-        return false;
+    return Q.all([
+      that.getAvailableSource(pubkey, type, number, fingerprint, amount),
+      that.getConsumedSource(pubkey, type, number, fingerprint, amount)
+    ])
+      .then(function(){
+        return arguments[0] && !arguments[1];
       });
   };
 
   this.consumeSource = function(pubkey, type, number, fingerprint, amount) {
     return that.initTree()
       .then(function(){
-        return that.remove('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json', that.RECURSIVE)
-          .fail(function(err){
-            throw err;
+        return that.remove('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
+          .fail(function(){
+            // Silent error
           });
       })
       .then(function(){

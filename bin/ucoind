@@ -71,6 +71,7 @@ program
   .option('--check',                   'With gen-next: just check validity of generated block')
   .option('--forksize <size>',         'Maximum size of fork branches', parseInt)
   .option('--nofork',                  'Equivalent to --forksize 0')
+  .option('--memory',                  'Memory mode')
   ;
 
 program
@@ -573,7 +574,7 @@ function getBootstrapOperations(host, port, server, conf) {
       }, next);
     },
     function(next) {
-      return server.dal.saveConf(conf).fail(next);
+      return server.dal.saveConf(conf).then(_.partial(next, null)).fail(next);
     }]);
   ops.push(function (next){
     logger.info('Configuration saved.');
@@ -713,7 +714,7 @@ function service(callback) {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 
-    var server = ucoin({ name: dbName }, commandLineConf());
+    var server = ucoin({ name: dbName, memory: program.memory }, commandLineConf());
 
     // Initialize server (db connection, ...)
     server.initWithServices()

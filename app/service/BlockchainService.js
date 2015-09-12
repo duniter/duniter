@@ -184,7 +184,12 @@ function BlockchainService (conf, mainDAL, pair) {
             if (!basedCore) {
               throw 'Previous block not found';
             }
-            return basedCore.checkBlock(obj, doCheck)
+            return Q()
+              .then(function(){
+                if (doCheck) {
+                  return basedCore.checkBlock(obj, true);
+                }
+              })
               .then(function() {
                 if (cores.length == 0 && forkWindowSize == 0) {
                   return mainContext.addBlock(obj, doCheck);

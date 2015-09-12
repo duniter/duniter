@@ -388,7 +388,16 @@ function FileDAL(profile, subPath, myFS) {
           where({ member: true }).
           value();
       })
-      .then(_.partial(done, null)).fail(done);
+      .then(function(members) {
+        done && done(null, members);
+        return members;
+      })
+      .fail(function(err) {
+        if (done) {
+          return done(err);
+        }
+        throw err;
+      });
   };
 
   this.getWritten = function(pubkey, done) {
@@ -1050,20 +1059,36 @@ function FileDAL(profile, subPath, myFS) {
       });
   }
 
-  function readFunc(filePath) {
+  var readFunc = function readFunc(filePath) {
     return myFS.read(rootPath + '/' + filePath)
       .then(function(data){
         return JSON.parse(data);
       });
-  }
+  };
 
-  function writeFunc(filePath, what) {
+  var writeFunc = function writeFunc(filePath, what) {
     return myFS.write(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
-  }
+  };
 
-  function removeFunc(filePath, what) {
+  var removeFunc = function removeFunc(filePath, what) {
     return myFS.remove(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
-  }
+  };
+
+  //function profileFunc(f, name) {
+  //  return function() {
+  //    var start = new Date();
+  //    var args = Array.prototype.slice.call(arguments);
+  //    return f.apply(f, args)
+  //      .tap(function() {
+  //        console.log('%s %s (%sms)', name, args[0], (new Date().getTime() - start.getTime()));
+  //      });
+  //  };
+  //}
+  //
+  //// Log profiling for CRUD functions
+  //readFunc = profileFunc(readFunc, 'Read');
+  //writeFunc = profileFunc(writeFunc, 'Write');
+  //removeFunc = profileFunc(removeFunc, 'Remove');
 
   function makeTreeFunc(filePath) {
     return myFS.makeTree(rootPath + '/' + filePath);
@@ -1148,13 +1173,13 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'merkles', 'cores', 'conf'];
+    var files = ['stats', 'merkles', 'cores', 'current', 'conf'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'merkles', 'cores'];
+    var files = ['stats', 'merkles', 'cores', 'current'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
     return resetFiles(files, dirs, done);
   };

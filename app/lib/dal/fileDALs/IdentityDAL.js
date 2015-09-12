@@ -17,6 +17,9 @@ function IdentityDAL(dal) {
   var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
   var treeMade;
+  var cacheByPubkey = {};
+  var cacheByUID = {};
+  var cacheByHash = {};
 
   this.initTree = function() {
     if (!treeMade) {
@@ -26,7 +29,45 @@ function IdentityDAL(dal) {
         that.makeTree('identities/published/uid/'),
         that.makeTree('identities/published/pubkey/'),
         that.makeTree('identities/pending/')
-      ]);
+      ])
+        .then(function(){
+          // TODO: not really proud of that, has to be refactored for more generic code
+          if (that.dal.name == 'fileDal') {
+            // Load in cache
+            return Q.all([
+              that.list('identities/published/pubkey/')
+                .then(function (files) {
+                  return Q.all(files.map(function (file) {
+                    var pubkey = file.file;
+                    return that.read('identities/published/pubkey/' + pubkey)
+                      .then(function (idty) {
+                        cacheByPubkey[idty.pubkey] = idty;
+                        cacheByHash[getIdentityID(idty)] = idty;
+                      });
+                  }));
+                }),
+              that.list('identities/published/uid/')
+                .then(function (files) {
+                  return Q.all(files.map(function (file) {
+                    var uid = file.file;
+                    return that.read('identities/published/uid/' + uid)
+                      .then(function (idty) {
+                        cacheByUID[idty.uid] = idty;
+                      });
+                  }));
+                }),
+              that.list('identities/pending/')
+                .then(function (files) {
+                  return Q.all(files.map(function (file) {
+                    return that.read('identities/pending/' + file.file)
+                      .then(function (idty) {
+                        cacheByHash[getIdentityID(idty)] = idty;
+                      });
+                  }));
+                })
+            ]);
+          }
+        });
     }
     return treeMade;
   };
@@ -47,6 +88,12 @@ function IdentityDAL(dal) {
     return that.initTree()
       .then(function(){
         return that.write('identities/pending/' + getIdentityID(idty), idty);
+      })
+      .tap(function() {
+        // TODO: not really proud of that, has to be refactored for more generic code
+        if (that.dal.name == 'fileDal') {
+          cacheByHash[getIdentityID(idty)] = idty;
+        }
       });
   };
 
@@ -109,6 +156,12 @@ function IdentityDAL(dal) {
   };
 
   this.getFromPubkey = function(pubkey) {
+    // TODO: not really proud of that, has to be refactored for more generic code
+    if (that.dal.name == 'fileDal') {
+      if (cacheByPubkey[pubkey]) {
+        return Q(cacheByPubkey[pubkey]);
+      }
+    }
     return that.initTree()
       .then(function(){
         return that.read('identities/published/pubkey/' + pubkey + '.json');
@@ -116,6 +169,12 @@ function IdentityDAL(dal) {
   };
 
   this.getFromUID = function(uid) {
+    // TODO: not really proud of that, has to be refactored for more generic code
+    if (that.dal.name == 'fileDal') {
+      if (cacheByUID[uid]) {
+        return Q(cacheByUID[uid]);
+      }
+    }
     return that.initTree()
       .then(function(){
         return that.read('identities/published/uid/' + uid + '.json');
@@ -123,6 +182,12 @@ function IdentityDAL(dal) {
   };
 
   this.getByHash = function(hash) {
+    // TODO: not really proud of that, has to be refactored for more generic code
+    if (that.dal.name == 'fileDal') {
+      if (cacheByHash[hash]) {
+        return Q(cacheByHash[hash]);
+      }
+    }
     return that.initTree()
       .then(function(){
         return that.read('identities/pending/' + hash);
@@ -143,10 +208,22 @@ function IdentityDAL(dal) {
       })
       .then(function(){
         return that.write('identities/pending/' + getIdentityID(idty), idty);
+      })
+      .tap(function() {
+        // TODO: not really proud of that, has to be refactored for more generic code
+        if (that.dal.name == 'fileDal') {
+          cacheByPubkey[idty.pubkey] = idty;
+          cacheByUID[idty.uid] = idty;
+          cacheByHash[getIdentityID(idty)] = idty;
+        }
       });
   };
 
   this.getWhoIsOrWasMember = function() {
+    // TODO: not really proud of that, has to be refactored for more generic code
+    if (that.dal.name == 'fileDal') {
+      return Q(_.values(cacheByPubkey));
+    }
     var idties = [];
     return that.initTree()
       .then(function(){

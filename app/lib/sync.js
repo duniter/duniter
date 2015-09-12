@@ -76,7 +76,13 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                       .fail(next);
                   },
                   localCurrent: function (next) {
-                    dal.getCurrentBlockOrNull(next);
+                    dal.getCurrentBlockOrNull()
+                      .then(function(block){
+                        next(null, block);
+                      })
+                      .fail(function(err) {
+                        next(err);
+                      });
                   },
                   remoteCurrent: function (next) {
                     node.blockchain.current(function (err, current) {

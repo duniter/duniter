@@ -1163,6 +1163,10 @@ function FileDAL(profile, subPath, myFS) {
    *    CONFIGURATION
    **********************/
 
+  this.getParameters = function() {
+    return confDAL.getParameters();
+  };
+
   this.loadConf = ioRead(function(overrideConf) {
     return confDAL.loadConf()
       .then(function(conf){

@@ -178,6 +178,10 @@ function WOTBinding (server) {
       }
     ], function (err, idty) {
       if(err){
+        if (err == 'No member matching this pubkey or uid') {
+          res.send(404, err);
+          return;
+        }
         res.send(400, err);
         return;
       }
@@ -254,6 +258,10 @@ function WOTBinding (server) {
       }
     ], function (err, idty) {
       if(err){
+        if (err == 'No member matching this pubkey or uid') {
+          res.send(404, err);
+          return;
+        }
         res.send(400, err);
         return;
       }

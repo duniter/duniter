@@ -169,6 +169,27 @@ function CertDAL(dal) {
       .thenResolve(certs);
   };
 
+  this.listLocalPending = function() {
+    var certs = [];
+    return that.initTree()
+      .then(function(){
+        return that.list('certs/pending/target/', that.LOCAL_LEVEL);
+      })
+      .then(function(files){
+        return _.pluck(files, 'file');
+      })
+      .then(function(files){
+        return Q.all(files.map(function(target) {
+          return that.list('certs/pending/target/' + target + '/', that.LOCAL_LEVEL)
+            .then(function(files2){
+              return _.pluck(files2, 'file');
+            })
+            .then(that.reduceTo('certs/pending/target/' + target + '/', certs));
+        }));
+      })
+      .thenResolve(certs);
+  };
+
   this.getLinkedToTarget = function(hash) {
     var certs = [];
     return that.initTree()

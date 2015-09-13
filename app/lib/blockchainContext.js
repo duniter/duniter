@@ -297,6 +297,7 @@ function BlockchainContext(conf, dal) {
     }, done);
   }
 
+  // TODO: no more needed
   function updateMemberships (block, done) {
     async.forEachSeries(['joiners', 'actives', 'leavers'], function (prop, callback1) {
       async.forEach(block[prop], function(inlineJoin, callback){

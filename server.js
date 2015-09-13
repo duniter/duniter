@@ -101,10 +101,10 @@ function Server (dbConf, overrideConf) {
     return dbType(dbConf.name || "default")
       .then(function(dal){
         that.dal = dal;
-        return that.dal.loadConf();
+        return that.dal.loadConf(overrideConf);
       })
       .then(function(conf){
-        that.conf = _(conf).extend(overrideConf || {});
+        that.conf = conf;
         // Default values
         var defaultValues = {
           remoteipv4:         that.conf.ipv4,

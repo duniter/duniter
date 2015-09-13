@@ -265,9 +265,37 @@ function BlockchainService (conf, mainDAL, pair) {
       return promise
         .then(function(){
           return core.current()
+
             .then(function(currentOfCore){
               // Add the core to the main blockchain
               return mainContext.addBlock(currentOfCore, doCheck);
+            })
+            .then(function(){
+              // Transfer the new identities
+              return core.dal.listLocalPendingIdentities()
+                .then(function(identities){
+                  return Q.all(identities.map(function(idty) {
+                    return mainContext.dal.savePendingIdentity(idty);
+                  }));
+                });
+            })
+            .then(function(){
+              // Transfer pending certifications
+              return core.dal.listLocalPendingCerts()
+                .then(function(certs){
+                  return Q.all(certs.map(function(cert) {
+                    return mainContext.dal.registerNewCertification(cert);
+                  }));
+                });
+            })
+            .then(function(){
+              // Transfer pending memberships
+              return core.dal.listPendingLocalMemberships()
+                .then(function(mss){
+                  return Q.all(mss.map(function(ms) {
+                    return mainContext.dal.savePendingMembership(ms);
+                  }));
+                });
             })
 
             // Remove the core from cores

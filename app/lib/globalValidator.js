@@ -1164,7 +1164,7 @@ function CurrencyFilter (currency, onError) {
     if (json && json.currency && json.currency == currency)
       that.push(json);
     else
-      onError("Document currency must be '" + currency + "'");
+      onError("Document currency must be '" + currency + "', was '" + json.currency + "'");
     that.push(null);
   };
 }

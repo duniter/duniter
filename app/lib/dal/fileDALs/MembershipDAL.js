@@ -61,17 +61,27 @@ function MembershipDAL(dal) {
       .then(that.reduceTo('ms/written/' + issuer + '/' + type + '/', mss));
   }
 
-  this.getPending = function(type) {
+  this.getPending = function(type, local_level) {
     var mss = [];
     return that.initTree()
       .then(function(){
-        return that.list('ms/pending/' + type);
+        return that.list('ms/pending/' + type, local_level);
       })
       .then(function(files){
         return _.pluck(files, 'file');
       })
       .then(that.reduceTo('ms/pending/' + type + '/', mss))
       .thenResolve(mss);
+  };
+
+  this.getPendingLocal = function() {
+    return Q.all([
+      that.getPending('in', that.LOCAL_LEVEL),
+      that.getPending('out', that.LOCAL_LEVEL)
+    ])
+      .then(function(res){
+        return res[0].concat(res[1]);
+      });
   };
 
   this.getPendingIN = function() {

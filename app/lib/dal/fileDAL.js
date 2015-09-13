@@ -93,6 +93,10 @@ function FileDAL(profile, subPath, myFS) {
 
   var currency = '';
 
+  this.getCurrency = function() {
+    return currency;
+  };
+
   this.removeHome = function() {
     return myFS.removeTree(rootPath);
   };
@@ -556,6 +560,10 @@ function FileDAL(profile, subPath, myFS) {
       });
   };
 
+  this.listPendingLocalMemberships = function() {
+    return msDAL.getPendingLocal();
+  };
+
   this.findNewcomers = function() {
     return msDAL.getPendingIN()
       .then(function(mss){
@@ -820,7 +828,7 @@ function FileDAL(profile, subPath, myFS) {
     var msType = type == 'leave' ? 'out' : 'in';
     return mss.reduce(function(p, msRaw) {
       return p.then(function(){
-        var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', currency);
+        var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', that.getCurrency());
         ms.type = type;
         ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
         return msDAL.saveOfficialMS(msType, ms);
@@ -849,7 +857,7 @@ function FileDAL(profile, subPath, myFS) {
   this.saveTxsInFiles = function (txs, extraProps) {
     return Q.all(txs.map(function(tx) {
       _.extend(tx, extraProps);
-      _.extend(tx, { currency: currency });
+      _.extend(tx, { currency: that.getCurrency() });
       return txsDAL.addLinked(new Transaction(tx));
     }));
   };
@@ -922,6 +930,10 @@ function FileDAL(profile, subPath, myFS) {
       });
   };
 
+  this.listLocalPendingIdentities = function() {
+    return idtyDAL.listLocalPending();
+  };
+
   this.savePendingIdentity = function(idty) {
     return idtyDAL.savePendingIdentity(idty);
   };
@@ -944,6 +956,10 @@ function FileDAL(profile, subPath, myFS) {
 
   this.leaveIdentity = function(pubkey, onBlock) {
     return idtyDAL.leaveIdentity(pubkey, onBlock);
+  };
+
+  this.listLocalPendingCerts = function() {
+    return certDAL.listLocalPending();
   };
 
   this.registerNewCertification = function(cert) {
@@ -1147,9 +1163,10 @@ function FileDAL(profile, subPath, myFS) {
    *    CONFIGURATION
    **********************/
 
-  this.loadConf = ioRead(function() {
+  this.loadConf = ioRead(function(overrideConf) {
     return confDAL.loadConf()
       .then(function(conf){
+        conf = _(conf).extend(overrideConf || {});
         currency = conf.currency;
         return conf;
       });

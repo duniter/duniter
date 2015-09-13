@@ -249,6 +249,19 @@ function IdentityDAL(dal) {
       .thenResolve(idties);
   };
 
+  this.listLocalPending = function() {
+    var idties = [];
+    return that.initTree()
+      .then(function(){
+        return that.list('identities/pending/', that.LOCAL_LEVEL);
+      })
+      .then(function(files){
+        return _.pluck(files, 'file');
+      })
+      .then(that.reduceTo('identities/pending/', idties))
+      .thenResolve(idties);
+  };
+
   function getIdentityID(idty) {
     return [idty.hash].join('-');
   }

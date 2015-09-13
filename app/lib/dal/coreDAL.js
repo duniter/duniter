@@ -15,6 +15,11 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
 
   fileDAL.FileDAL.call(this, profile, 'branches/' + coreName, myFS);
 
+  //// Get currency = tree traversal reading
+  //that.getCurrency = function() {
+  //  return rootDAL.getCurrency();
+  //};
+
   // Reading file = tree traversal reading
   var oldReadFile = that.readFile;
   that.setRead(function readFileFromFork() {
@@ -44,6 +49,13 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
   var oldListFile = that.listFile;
   that.setList(function listFilesFromFork() {
     var args = Array.prototype.slice.call(arguments);
+    if (args[1]) {
+      // Only local listing
+      return oldListFile.apply(that, args)
+        .then(function(files2){
+          return _.uniq(files2, false, function(file) { return file.file; });
+        });
+    }
     // Look at previous core, may be a recursive call of this function 'listFilesFromFork'
     // or a simple call to 'oldListFile' to end the recursion
     return rootDAL.listFile.apply(rootDAL, args)

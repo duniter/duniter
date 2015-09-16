@@ -831,6 +831,33 @@ function BlockchainService (conf, mainDAL, pair) {
                         async.forEachSeries(certs, function (cert, callback) {
                           async.waterfall([
                             function (next) {
+                              if (!current && cert.block_number != 0) {
+                                next('Number must be 0 for root block\'s certifications');
+                              } else if (!current && cert.block_number == 0) {
+                                next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
+                              } else {
+                                dal.getBlock(cert.block_number, function (err, basedBlock) {
+                                  next(err && 'Certification based on an unexisting block', basedBlock);
+                                });
+                              }
+                            },
+                            function (basedBlock, next){
+                              async.parallel({
+                                target: function (next) {
+                                  next(null, basedBlock);
+                                },
+                                current: function (next) {
+                                  if (!current)
+                                    next(null, null);
+                                  else
+                                    dal.getCurrent(next);
+                                }
+                              }, next);
+                            },
+                            function (res, next) {
+                              if (res.current && res.current.medianTime > res.target.medianTime + conf.sigValidity) {
+                                return next('Too old certification');
+                              }
                               if (current) {
                                 // Already exists a link not replayable yet?
                                 dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay)

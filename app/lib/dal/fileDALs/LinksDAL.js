@@ -19,6 +19,11 @@ function LinksDAL(dal) {
   var treeMade;
   var validCacheFrom = {}, validCacheTo = {};
 
+  this.cachedLists = {
+    'linksFrom': ['getValidLinksFrom'],
+    'linksTo': ['getValidLinksTo']
+  };
+
   this.initTree = function() {
     if (!treeMade) {
       treeMade = Q.all([
@@ -109,30 +114,34 @@ function LinksDAL(dal) {
       .thenResolve(links);
   };
 
-  // TODO: this is buggy!!
   this.obsoletesLinks = function(minTimestamp) {
     return that.initTree()
       .then(function(){
-        return that.list('sources/available/from/')
-          .then(function(files){
-            return Q.all(files.map(function(file) {
+        return that.list('links/valid/from/')
+          .then(function (files) {
+            return Q.all(files.map(function (file) {
               var pubkey = file.file;
-              return that.list('sources/available/from/' + pubkey + '/')
+              return that.list('links/valid/from/' + pubkey + '/')
                 .then(function (files2) {
-                  var ts = files2.file.split('-')[0];
-                  if (parseInt(ts, 10) <= minTimestamp) {
-                    return that.read('sources/available/from/' + pubkey)
-                      .then(function (link) {
-                        return that.remove('sources/available/from/' + pubkey + '/' + files2.file)
-                          .then(function () {
-                            return that.write('sources/obsolete/' + getLinkID(link) + '.json', link)
-                              .tap(function() {
-                                delete validCacheFrom[link.source][link.target];
-                                delete validCacheTo[link.target][link.source];
-                              });
-                          });
-                      });
-                  }
+                  return Q.all(files2.map(function (file2) {
+                    var ts = file2.file.split('-')[1].replace(/\.json/, '');
+                    if (parseInt(ts, 10) <= minTimestamp) {
+                      return that.read('links/valid/from/' + pubkey + '/' + file2.file)
+                        .then(function (link) {
+                          return Q.all([
+                            that.remove('links/valid/from/' + link.source + '/' + getLinkIDTo(link) + '.json'),
+                            that.remove('links/valid/to/' + link.target + '/' + getLinkIDFrom(link) + '.json')
+                          ])
+                            .then(function () {
+                              return that.write('links/obsolete/' + getLinkID(link) + '.json', link)
+                                .tap(function () {
+                                  delete validCacheFrom[link.source][link.target];
+                                  delete validCacheTo[link.target][link.source];
+                                });
+                            });
+                        });
+                    }
+                  }));
                 });
             }));
           });
@@ -160,6 +169,10 @@ function LinksDAL(dal) {
           validCacheFrom[link.source][link.target] = link;
           validCacheTo[link.target] = validCacheTo[link.target] || {};
           validCacheTo[link.target][link.source] = link;
+        }
+        else {
+          that.invalidateCache('linksFrom', link.source);
+          that.invalidateCache('linksTo', link.target);
         }
       });
   };

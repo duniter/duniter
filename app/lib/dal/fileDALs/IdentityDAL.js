@@ -21,6 +21,16 @@ function IdentityDAL(dal) {
   var cacheByUID = {};
   var cacheByHash = {};
 
+  this.cached = {
+    'pubkey': ['getFromPubkey'],
+    'uid': ['getFromUID'],
+    'hash': ['getByHash']
+  };
+
+  this.cachedLists = {
+    'members': ['getWhoIsOrWasMember']
+  };
+
   this.initTree = function() {
     if (!treeMade) {
       treeMade = Q.all([
@@ -93,6 +103,9 @@ function IdentityDAL(dal) {
         // TODO: not really proud of that, has to be refactored for more generic code
         if (that.dal.name == 'fileDal') {
           cacheByHash[getIdentityID(idty)] = idty;
+        }
+        else {
+          that.notifyCache('hash', getIdentityID(idty), idty);
         }
       });
   };
@@ -215,6 +228,12 @@ function IdentityDAL(dal) {
           cacheByPubkey[idty.pubkey] = idty;
           cacheByUID[idty.uid] = idty;
           cacheByHash[getIdentityID(idty)] = idty;
+        }
+        else {
+          that.notifyCache('pubkey', idty.pubkey, idty);
+          that.notifyCache('uid', idty.uid, idty);
+          that.notifyCache('hash', getIdentityID(idty), idty);
+          that.invalidateCache('members');
         }
       });
   };

@@ -60,7 +60,7 @@ function BlockchainContext(conf, dal) {
     });
   };
 
-  this.addBlock = function (obj, doCheck) {
+  this.addBlock = function (obj) {
     return Q.Promise(function(resolve, reject){
       var start = new Date();
       var block = new Block(obj);
@@ -71,18 +71,7 @@ function BlockchainContext(conf, dal) {
         },
         function (current, next){
           currentBlock = current;
-          if (doCheck) {
-            async.waterfall([
-              function (nextOne){
-                that.checkBlock(block, FULL_CHECK, nextOne);
-              },
-              function (nextOne) {
-                saveBlockData(currentBlock, block, nextOne);
-              }
-            ], next);
-          } else {
-            saveBlockData(currentBlock, block, next);
-          }
+          saveBlockData(currentBlock, block, next);
         }
       ], function (err) {
         !err && logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));

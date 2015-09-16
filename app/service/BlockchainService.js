@@ -126,7 +126,7 @@ function BlockchainService (conf, mainDAL, pair) {
           return p.then(function(){
             var basedCore = getCore(cores, core.forkPointNumber - 1, core.forkPointPreviousHash);
             var dal = basedCore ? basedCore.dal : mainDAL;
-            return Q(dal.loadCore(core))
+            return Q(dal.loadCore(core, constants.INVALIDATE_CORE_CACHE))
               .then(function(coreDAL){
                 return blockchainCtx(conf, coreDAL);
               })
@@ -187,14 +187,14 @@ function BlockchainService (conf, mainDAL, pair) {
             return Q()
               .then(function(){
                 if (doCheck) {
-                  return basedCore.checkBlock(obj, true);
+                  return basedCore.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
                 }
               })
               .then(function() {
                 if (cores.length == 0 && forkWindowSize == 0) {
                   return mainContext.addBlock(obj, doCheck);
                 } else {
-                  return forkAndAddCore(basedCore, cores, obj, doCheck)
+                  return forkAndAddCore(basedCore, cores, obj)
                     .tap(function(){
 
                       /**
@@ -349,7 +349,7 @@ function BlockchainService (conf, mainDAL, pair) {
     }));
   }
 
-  function forkAndAddCore(basedCore, cores, obj, doCheck) {
+  function forkAndAddCore(basedCore, cores, obj) {
     var coreObj = {
       forkPointNumber: parseInt(obj.number),
       forkPointHash: obj.hash,
@@ -364,7 +364,7 @@ function BlockchainService (conf, mainDAL, pair) {
         _.extend(ctx, coreObj);
       })
       .then(function(core){
-        return core.addBlock(obj, doCheck)
+        return core.addBlock(obj)
           .fail(function(err){
             throw err;
           })

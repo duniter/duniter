@@ -3,12 +3,13 @@
 var fileDAL = require('./fileDAL');
 var util = require('util');
 var _ = require('underscore');
+var Q = require('q');
 
 module.exports = function(profile, blockNumber, blockHash, myFS, rootDAL) {
   return new CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL);
 };
 
-function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
+function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL, considerCacheInvalidateByDefault) {
 
   var that = this;
   var coreName = [blockNumber, blockHash].join('-');
@@ -89,6 +90,77 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL) {
   this.setRootDAL = function(dal) {
     rootDAL = dal;
   };
+
+  var coreCache = {}, cacheValidation = {};
+
+  _.keys(that.dals).forEach(function(dalName){
+
+    coreCache[dalName] = coreCache[dalName] || {};
+    cacheValidation[dalName] = cacheValidation[dalName] || {};
+
+    var simpleDAL = that.dals[dalName], rootSimpleDAL = rootDAL.dals[dalName];
+
+    // Read cache
+    (_.keys(simpleDAL.cached) || []).forEach(function(cacheKey){
+
+      coreCache[dalName][cacheKey] = {};
+
+      simpleDAL.cached[cacheKey].forEach(function(pickerName) {
+
+        // Decorates function with cache
+        //var originalFunc = simpleDAL[pickerName];
+        simpleDAL[pickerName] = function() {
+          var args = Array.prototype.slice.call(arguments);
+          // Check cache
+          if (coreCache[dalName][cacheKey][args[0]]) {
+            return Q(coreCache[dalName][cacheKey][args[0]]);
+          }
+          // Otherwise call the root dal function
+          return rootSimpleDAL[pickerName].apply(rootSimpleDAL, args);
+        };
+      });
+    });
+
+    // List cache
+    (_.keys(simpleDAL.cachedLists) || []).forEach(function(cacheKey){
+
+      coreCache[dalName][cacheKey] = {};
+      cacheValidation[dalName][cacheKey] = {};
+
+      simpleDAL.cachedLists[cacheKey].forEach(function(pickerName) {
+
+        // Decorates function with cache
+        var originalFunc = simpleDAL[pickerName];
+        simpleDAL[pickerName] = function() {
+          var args = Array.prototype.slice.call(arguments);
+          // Check cache
+          if (coreCache[dalName][cacheKey][args[0]]) {
+            return Q(coreCache[dalName][cacheKey][args[0]]);
+          }
+          // Otherwise check if the cache has been invalidated (due to some writing).
+          if (cacheValidation[dalName][cacheKey][args[0]] === false || (cacheValidation[dalName][cacheKey][args[0]] === undefined && considerCacheInvalidateByDefault)) {
+            // If invalidated -> recompute the listing values
+            return originalFunc.apply(simpleDAL, args)
+              .then(function(result){
+                cacheValidation[dalName][cacheKey][args[0]] = true;
+                coreCache[dalName][cacheKey][args[0]] = result;
+                return result;
+              });
+          }
+          // Else -> forward to root DAL
+          return rootSimpleDAL[pickerName].apply(rootSimpleDAL, args);
+        };
+      });
+    });
+
+    // Write cache
+    simpleDAL.notifyCache = function(cacheKey, key, value) {
+      coreCache[dalName][cacheKey][key] = value;
+    };
+    simpleDAL.invalidateCache = function(cacheKey, arg) {
+      cacheValidation[dalName][cacheKey][arg] = false;
+    };
+  });
 }
 
 util.inherits(CoreDAL, fileDAL.FileDAL);

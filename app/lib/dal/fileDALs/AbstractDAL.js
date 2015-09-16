@@ -54,8 +54,8 @@ function AbstractDAL(dal) {
     return readFileFunc(path);
   };
 
-  this.write = function(path, what) {
-    return writeFileFunc(path, what);
+  this.write = function(path, what, deep) {
+    return writeFileFunc(path, what, deep);
   };
 
   this.remove = function(path, recursive) {

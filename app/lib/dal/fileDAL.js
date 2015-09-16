@@ -88,8 +88,22 @@ function FileDAL(profile, subPath, myFS) {
   var idtyDAL = new IdentityDAL(that);
   var peerDAL = new PeerDAL(that);
   var blockDAL = new BlockDAL(that);
-  var dals = [confDAL, statDAL, certDAL, indicatorsDAL, merkleDAL, txsDAL, coresDAL, sourcesDAL, linksDAL,
-              msDAL, idtyDAL, peerDAL, blockDAL];
+
+  this.dals = {
+    'confDAL': confDAL,
+    'statDAL': statDAL,
+    'certDAL': certDAL,
+    'indicatorsDAL': indicatorsDAL,
+    'merkleDAL': merkleDAL,
+    'txsDAL': txsDAL,
+    'coresDAL': coresDAL,
+    'sourcesDAL': sourcesDAL,
+    'linksDAL': linksDAL,
+    'msDAL': msDAL,
+    'idtyDAL': idtyDAL,
+    'peerDAL': peerDAL,
+    'blockDAL': blockDAL
+  };
 
   var currency = '';
 
@@ -109,8 +123,8 @@ function FileDAL(profile, subPath, myFS) {
     return coresDAL.getCores();
   };
 
-  this.loadCore = function(core) {
-    return require('./coreDAL')(profile, core.forkPointNumber, core.forkPointHash, myFS, that);
+  this.loadCore = function(core, invalidateCache) {
+    return require('./coreDAL')(profile, core.forkPointNumber, core.forkPointHash, myFS, that, invalidateCache);
   };
 
   this.addCore = function(core) {
@@ -1111,42 +1125,42 @@ function FileDAL(profile, subPath, myFS) {
   }
 
   this.setExists = function(existsF) {
-    dals.forEach(function(dal){
+    _.values(that.dals).forEach(function(dal){
       dal.setExists(existsF);
     });
     that.existsFile = existsF;
   };
 
   this.setList = function(listF) {
-    dals.forEach(function(dal){
+    _.values(that.dals).forEach(function(dal){
       dal.setList(listF);
     });
     that.listFile = listF;
   };
 
   this.setRead = function(readF) {
-    dals.forEach(function(dal){
+    _.values(that.dals).forEach(function(dal){
       dal.setRead(readF);
     });
     that.readFile = readF;
   };
 
   this.setWrite = function(writeF) {
-    dals.forEach(function(dal){
+    _.values(that.dals).forEach(function(dal){
       dal.setWrite(writeF);
     });
     that.writeFile = writeF;
   };
 
   this.setRemove = function(removeF) {
-    dals.forEach(function(dal){
+    _.values(that.dals).forEach(function(dal){
       dal.setRemove(removeF);
     });
     that.removeFile = removeF;
   };
 
   this.setMakeTree = function(makeTreeF) {
-    dals.forEach(function(dal){
+    _.values(that.dals).forEach(function(dal){
       dal.setMakeTree(makeTreeF);
     });
     that.makeTreeFile = makeTreeF;

@@ -147,6 +147,9 @@ module.exports = {
     DEFAULT_WINDOW_SIZE: 10
   },
 
+  INVALIDATE_CORE_CACHE: true,
+  WITH_SIGNATURES_AND_POW: true,
+
   setUDID2Format: function () {
     module.exports.USER_ID = module.exports.UDID2_FORMAT;
     module.exports.CERT.SELF.UID = exact("UID:" + UDID2);

@@ -164,9 +164,9 @@ function Server (dbConf, overrideConf) {
         logger.info('Updating list of peers...');
         that.dal.updateMerkleForPeers(next).done();
       },
-      function (next){
-        that.PeeringService.regularSyncBlock(next);
-      },
+      //function (next){
+      //  that.PeeringService.regularSyncBlock(next);
+      //},
       function (next){
         next();
       },
@@ -331,6 +331,11 @@ function Server (dbConf, overrideConf) {
           },
           function(next) {
             that.dal = that.BlockchainService.currentDal;
+            that.IdentityService.setDAL(that.dal);
+            that.MembershipService.setDAL(that.dal);
+            that.PeeringService.setDAL(that.dal);
+            that.TransactionsService.setDAL(that.dal);
+            (theRouter && theRouter.setDAL(that.dal));
             next();
           }
         ], function(err) {

@@ -21,20 +21,20 @@ function ParametersDAL(dal) {
       .then(function(conf){
         return {
           "currency": conf.currency,
-          "c": conf.c,
-          "dt": conf.dt,
-          "ud0": conf.ud0,
-          "sigDelay": conf.sigDelay,
-          "sigValidity": conf.sigValidity,
-          "sigQty": conf.sigQty,
-          "sigWoT": conf.sigWoT,
-          "msValidity": conf.msValidity,
-          "stepMax": 3, // uCoin only handles 3 step currencies for now
-          "medianTimeBlocks": conf.medianTimeBlocks,
-          "avgGenTime": conf.avgGenTime,
-          "dtDiffEval": conf.dtDiffEval,
-          "blocksRot": conf.blocksRot,
-          "percentRot": conf.percentRot
+          "c": parseFloat(conf.c),
+          "dt": parseInt(conf.dt,10),
+          "ud0": parseInt(conf.ud0,10),
+          "sigDelay": parseInt(conf.sigDelay,10),
+          "sigValidity": parseInt(conf.sigValidity,10),
+          "sigQty": parseInt(conf.sigQty,10),
+          "sigWoT": parseInt(conf.sigWoT,10),
+          "msValidity": parseInt(conf.msValidity,10),
+          "stepMax": parseInt(3,10), // uCoin only handles 3 step currencies for now
+          "medianTimeBlocks": parseInt(conf.medianTimeBlocks,10),
+          "avgGenTime": parseInt(conf.avgGenTime,10),
+          "dtDiffEval": parseInt(conf.dtDiffEval,10),
+          "blocksRot": parseInt(conf.blocksRot,10),
+          "percentRot": parseFloat(conf.percentRot)
         };
       });
   };

@@ -47,9 +47,9 @@ function LinksDAL(dal) {
                         return that.read('links/valid/from/' + pubkey + '/' + file2.file)
                           .then(function (link) {
                             validCacheFrom[link.source] = validCacheFrom[link.source] || {};
-                            validCacheFrom[link.source][link.target] = link;
+                            validCacheFrom[link.source][getLinkID(link)] = link;
                             validCacheTo[link.target] = validCacheTo[link.target] || {};
-                            validCacheTo[link.target][link.source] = link;
+                            validCacheTo[link.target][getLinkID(link)] = link;
                           });
                       }));
                     });
@@ -86,7 +86,7 @@ function LinksDAL(dal) {
     if (that.dal.name == 'fileDal') {
       return that.initTree()
         .then(function() {
-          return _.values(validCacheTo[pubkey]);
+          return _.values(validCacheTo[pubkey] || []);
         });
     }
     var links = [];
@@ -136,7 +136,7 @@ function LinksDAL(dal) {
                               return that.write('links/obsolete/' + getLinkID(link) + '.json', link)
                                 .tap(function () {
                                   delete validCacheFrom[link.source][link.target];
-                                  delete validCacheTo[link.target][link.source];
+                                  delete validCacheTo[link.target][getLinkID(link)];
                                 });
                             });
                         });
@@ -166,9 +166,9 @@ function LinksDAL(dal) {
         // TODO: refactor for more generic code
         if (that.dal.name == 'fileDal') {
           validCacheFrom[link.source] = validCacheFrom[link.source] || {};
-          validCacheFrom[link.source][link.target] = link;
+          validCacheFrom[link.source][getLinkID(link)] = link;
           validCacheTo[link.target] = validCacheTo[link.target] || {};
-          validCacheTo[link.target][link.source] = link;
+          validCacheTo[link.target][getLinkID(link)] = link;
         }
         else {
           that.invalidateCache('linksFrom', link.source);

@@ -81,6 +81,7 @@ function PeeringService(server, pair, dal) {
         }
         // Set the peer as UP again
         peerEntity.status = 'UP';
+        peerEntity.hash = String(sha1(peerEntity.getRawSigned())).toUpperCase();
         dal.savePeer(peerEntity)
           .then(function(){
             next(null, peerEntity, previousHash);

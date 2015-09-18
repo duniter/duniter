@@ -164,9 +164,9 @@ function Server (dbConf, overrideConf) {
         logger.info('Updating list of peers...');
         that.dal.updateMerkleForPeers(next).done();
       },
-      //function (next){
-      //  that.PeeringService.regularSyncBlock(next);
-      //},
+      function (next){
+        that.PeeringService.regularSyncBlock(next);
+      },
       function (next){
         next();
       },

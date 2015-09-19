@@ -37,7 +37,7 @@ function Multicaster (isolate) {
   });
 
   that.on('block', function(block, peers) {
-    logger.debug('--> new Block to be sent to %s peer(s)', peers.length);
+    logger.debug('--> new Block#%s to be sent to %s peer(s)', block.number, peers.length);
     peers.forEach(function(peer){
       fifo.push(function (sent) {
         sendBlock(peer, block).finally(sent);
@@ -117,7 +117,7 @@ function Multicaster (isolate) {
 
   function sendBlock(peer, block, done) {
     var keyID = peer.keyID();
-    logger.info('POST block to %s', keyID.match(/Unknown/) ? peer.getURL() : keyID);
+    logger.info('POST block#%s to %s', block.number, keyID.match(/Unknown/) ? peer.getURL() : keyID);
     return post(peer, '/blockchain/block', {
       "block": block.getRawSigned()
     }, done);

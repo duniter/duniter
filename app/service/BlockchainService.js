@@ -297,6 +297,15 @@ function BlockchainService (conf, mainDAL, pair) {
                   }));
                 });
             })
+            .then(function(){
+              // Transfer the peers
+              return core.dal.listAllPeers()
+                .then(function(peers){
+                  return Q.all(peers.map(function(peer) {
+                    return mainContext.dal.savePeer(peer);
+                  }));
+                });
+            })
 
             // Remove the core from cores
             .then(function() {

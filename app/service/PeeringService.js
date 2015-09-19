@@ -65,7 +65,6 @@ function PeeringService(server, pair, dal) {
       },
       function (found, next){
         var peerEntity = Peer.statics.peerize(found || peer);
-        var previousHash = null;
         if(found){
           // Already existing peer
           var sp2 = found.block.split('-');
@@ -75,7 +74,6 @@ function PeeringService(server, pair, dal) {
             return;
           }
           peerEntity = Peer.statics.peerize(found);
-          previousHash = peerEntity.hash;
           peer.copyValues(peerEntity);
           peerEntity.sigDate = new Date(sigTime*1000);
         }
@@ -84,14 +82,9 @@ function PeeringService(server, pair, dal) {
         peerEntity.hash = String(sha1(peerEntity.getRawSigned())).toUpperCase();
         dal.savePeer(peerEntity)
           .then(function(){
-            next(null, peerEntity, previousHash);
+            next(null, Peer.statics.peerize(peerEntity));
           })
           .fail(next);
-      },
-      function (recordedPR, previousHash, next) {
-        dal.updateMerkleForPeers(function(err) {
-          next(err, Peer.statics.peerize(recordedPR));
-        });
       }
     ], done);
   };
@@ -162,7 +155,7 @@ function PeeringService(server, pair, dal) {
         };
         var raw1 = new Peer(p1).getRaw().dos2unix();
         var raw2 = new Peer(p2).getRaw().dos2unix();
-        logger.info('External access:', new Peer(p1).getURL());
+        logger.info('External access:', new Peer(raw1 == raw2 ? p1 : p2).getURL());
         if (raw1 != raw2) {
           logger.debug('Generating server\'s peering entry...');
           async.waterfall([

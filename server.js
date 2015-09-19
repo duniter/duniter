@@ -147,6 +147,10 @@ function Server (dbConf, overrideConf) {
       });
   };
 
+  this.recomputeSelfPeer = function() {
+    return Q.nbind(that.PeeringService.generateSelfPeer, that.PeeringService)(that.conf);
+  };
+
   this.initPeer = function (done) {
     async.waterfall([
       function (next){
@@ -159,10 +163,6 @@ function Server (dbConf, overrideConf) {
       },
       function(next) {
         that.PeeringService.testPeers(next);
-      },
-      function (next){
-        logger.info('Updating list of peers...');
-        that.dal.updateMerkleForPeers(next).done();
       },
       function (next){
         that.PeeringService.regularSyncBlock(next);

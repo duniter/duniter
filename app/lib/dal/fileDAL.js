@@ -2,7 +2,6 @@
 var Q       = require('q');
 var _       = require('underscore');
 var sha1    = require('sha1');
-var async   = require('async');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
 var Transaction = require('../entity/transaction');
@@ -12,7 +11,6 @@ var fsMock = require('q-io/fs-mock')({});
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
-var MerkleDAL = require('./fileDALs/MerkleDAL');
 var TxsDAL = require('./fileDALs/TxsDAL');
 var SourcesDAL = require('./fileDALs/SourcesDAL');
 var CoresDAL = require('./fileDALs/CoresDAL');
@@ -78,7 +76,6 @@ function FileDAL(profile, subPath, myFS) {
   var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
   var certDAL = new CertDAL(that);
-  var merkleDAL = new MerkleDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
   var txsDAL = new TxsDAL(that);
   var sourcesDAL = new SourcesDAL(that);
@@ -94,7 +91,6 @@ function FileDAL(profile, subPath, myFS) {
     'statDAL': statDAL,
     'certDAL': certDAL,
     'indicatorsDAL': indicatorsDAL,
-    'merkleDAL': merkleDAL,
     'txsDAL': txsDAL,
     'coresDAL': coresDAL,
     'sourcesDAL': sourcesDAL,
@@ -800,7 +796,7 @@ function FileDAL(profile, subPath, myFS) {
     return that.getPeer(pubkey)
       .then(function(p){
         p.status = 'DOWN';
-        peerDAL.savePeer(p);
+        return peerDAL.savePeer(p);
       })
       .fail(function() {
         // Silent error
@@ -890,35 +886,13 @@ function FileDAL(profile, subPath, myFS) {
   this.donable = donable;
 
   this.merkleForPeers = function(done) {
-    return merkleDAL.getLeaves('peers')
-      .then(function(leaves){
+    return that.listAllPeersWithStatusNewUP()
+      .then(function(peers){
+        var leaves = peers.map(function(peer) { return peer.hash; });
         var merkle = new Merkle();
         merkle.initialize(leaves);
         done && done(null, merkle);
         return merkle;
-      })
-      .fail(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
-
-  this.updateMerkleForPeers = function(done) {
-    return that.findAllPeersNEWUPBut([])
-      .then(function(peers){
-        var merkle = new Merkle();
-        var leaves = [];
-        peers.forEach(function (p) {
-          leaves.push(p.hash);
-        });
-        merkle.initialize(leaves);
-        return merkle.leaves();
-      })
-      .then(function(leaves){
-        return merkleDAL.pushMerkle('peers', leaves);
-      })
-      .then(function(){
-        done && done();
       })
       .fail(function(err){
         done && done(err);
@@ -1208,13 +1182,13 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'merkles', 'cores', 'current', 'conf'];
+    var files = ['stats', 'cores', 'current', 'conf'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'merkles', 'cores', 'current'];
+    var files = ['stats', 'cores', 'current'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
     return resetFiles(files, dirs, done);
   };

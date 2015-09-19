@@ -37,14 +37,16 @@ function Router (serverPubkey, conf, dal) {
     else if (obj.unreachable) {
       async.waterfall([
         function (next) {
-          dal.setPeerDown(obj.peer.pubkey).then(_.partial(next, null)).fail(next);
+          dal.setPeerDown(obj.peer.pubkey)
+            .then(function(){
+              next();
+            })
+            .fail(next);
         },
-        function (next) {
-          dal.updateMerkleForPeers(next);
-        }
       ], function(err) {
         if (err) logger.error(err);
         else logger.info("Peer %s unreachable: now considered as DOWN.", obj.peer.pubkey);
+        done();
       });
     }
     else {

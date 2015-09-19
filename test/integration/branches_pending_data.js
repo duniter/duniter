@@ -14,11 +14,6 @@ var sync      = require('./tools/sync');
 var expectJSON     = httpTest.expectJSON;
 var expectAnswer   = httpTest.expectAnswer;
 
-require('log4js').configure({
-  "appenders": [
-  ]
-});
-
 var MEMORY_MODE = true;
 var commonConf = {
   ipv4: '127.0.0.1',

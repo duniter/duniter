@@ -119,15 +119,42 @@ module.exports = function(server, interfaces, httpLogs) {
     });
   }
 
+  var httpServers = [];
+
   return interfaces.reduce(function(promise, netInterface) {
     return promise.then(function() {
       return listenInterface(app, netInterface.ip, netInterface.port)
         .then(function(httpServer){
           listenWebSocket(server, httpServer);
+          httpServers.push(httpServer);
           logger.info('uCoin server listening on ' + netInterface.ip + ' port ' + netInterface.port);
         });
     });
-  }, Q.resolve());
+  }, Q.resolve())
+
+    .then(function(){
+      return {
+
+        closeConnections: function () {
+          return Q.all(httpServers.map(function (httpServer) {
+            return Q.nbind(httpServer.close, httpServer)();
+          }));
+        },
+
+        reopenConnections: function () {
+          return Q.all(httpServers.map(function (httpServer, index) {
+            return Q.Promise(function (resolve, reject) {
+              var netInterface = interfaces[index].ip;
+              var port = interfaces[index].port;
+              httpServer.listen(port, netInterface, function (err) {
+                err ? reject(err) : resolve(httpServer);
+                logger.info('uCoin server listening again on ' + netInterface + ' port ' + port);
+              });
+            });
+          }));
+        }
+      };
+    });
 };
 
 function listenInterface(app, netInterface, port) {

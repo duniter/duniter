@@ -402,6 +402,9 @@ function BlockchainContext(conf, dal) {
         if (last) {
           return dal.kickWithOutdatedMemberships(last.number);
         }
+      })
+      .then(function(){
+        return dal.getCertificationExcludingBlock(block, conf.sigValidity);
       });
   }
 

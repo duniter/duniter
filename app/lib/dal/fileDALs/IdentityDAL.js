@@ -28,7 +28,8 @@ function IdentityDAL(dal) {
   };
 
   this.cachedLists = {
-    'members': ['getWhoIsOrWasMember']
+    'members': ['getWhoIsOrWasMember'],
+    'nonmembers': ['getPendingIdentities']
   };
 
   this.initTree = function() {
@@ -38,6 +39,7 @@ function IdentityDAL(dal) {
         that.makeTree('identities/published/'),
         that.makeTree('identities/published/uid/'),
         that.makeTree('identities/published/pubkey/'),
+        that.makeTree('identities/hash/'),
         that.makeTree('identities/pending/')
       ])
         .then(function(){
@@ -66,10 +68,10 @@ function IdentityDAL(dal) {
                       });
                   }));
                 }),
-              that.list('identities/pending/')
+              that.list('identities/hash/')
                 .then(function (files) {
                   return Q.all(files.map(function (file) {
-                    return that.read('identities/pending/' + file.file)
+                    return that.read('identities/hash/' + file.file)
                       .then(function (idty) {
                         cacheByHash[getIdentityID(idty)] = idty;
                       });
@@ -106,6 +108,7 @@ function IdentityDAL(dal) {
         }
         else {
           that.notifyCache('hash', getIdentityID(idty), idty);
+          that.invalidateCache('nonmembers');
         }
       });
   };
@@ -118,9 +121,6 @@ function IdentityDAL(dal) {
         idty.wasMember = true;
         idty.kick = false;
         return that.saveIdentity(idty);
-      })
-      .then(function(){
-        return that.savePendingIdentity(idty);
       });
   };
 
@@ -203,7 +203,7 @@ function IdentityDAL(dal) {
     }
     return that.initTree()
       .then(function(){
-        return that.read('identities/pending/' + hash);
+        return that.read('identities/hash/' + hash);
       });
   };
 
@@ -220,7 +220,13 @@ function IdentityDAL(dal) {
         return that.write('identities/published/uid/' + idty.uid + '.json', idty);
       })
       .then(function(){
-        return that.write('identities/pending/' + getIdentityID(idty), idty);
+        return that.write('identities/hash/' + getIdentityID(idty), idty);
+      })
+      .then(function(){
+        return that.remove('identities/pending/' + getIdentityID(idty))
+          .fail(function() {
+            // Silent error
+          });
       })
       .tap(function() {
         // TODO: not really proud of that, has to be refactored for more generic code
@@ -234,6 +240,7 @@ function IdentityDAL(dal) {
           that.notifyCache('uid', idty.uid, idty);
           that.notifyCache('hash', getIdentityID(idty), idty);
           that.invalidateCache('members');
+          that.invalidateCache('nonmembers');
         }
       });
   };
@@ -255,8 +262,8 @@ function IdentityDAL(dal) {
       .thenResolve(idties);
   };
 
-  this.getPending = function() {
-    var idties = [];
+  this.getPendingIdentities = function() {
+    var idties = [], tmpIdities = [];
     return that.initTree()
       .then(function(){
         return that.list('identities/pending/');
@@ -264,7 +271,15 @@ function IdentityDAL(dal) {
       .then(function(files){
         return _.pluck(files, 'file');
       })
-      .then(that.reduceTo('identities/pending/', idties))
+      .then(that.reduceTo('identities/pending/', tmpIdities))
+      .then(function(){
+        return Q.all(tmpIdities.map(function(idty) {
+          return that.getFromPubkey(idty.pubkey)
+            .fail(function(){
+              idties.push(idty);
+            });
+        }));
+      })
       .thenResolve(idties);
   };
 

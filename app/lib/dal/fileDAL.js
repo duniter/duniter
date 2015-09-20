@@ -465,7 +465,7 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.getNonWritten = function(pubkey) {
-    return idtyDAL.getPending()
+    return idtyDAL.getPendingIdentities()
       .then(function(pending){
         return _.chain(pending).
           where({ pubkey: pubkey }).
@@ -493,7 +493,7 @@ function FileDAL(profile, subPath, myFS) {
   this.searchIdentity = function(search) {
     return Q.all([
       idtyDAL.getWhoIsOrWasMember(),
-      idtyDAL.getPending()
+      idtyDAL.getPendingIdentities()
     ])
       .then(function(res){
         var idties = _.chain(res[0]).

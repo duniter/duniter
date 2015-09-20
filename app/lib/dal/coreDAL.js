@@ -158,8 +158,11 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL, considerCacheIn
       coreCache[dalName][cacheKey][key] = value;
     };
     simpleDAL.invalidateCache = function(cacheKey, arg) {
-      cacheValidation[dalName][cacheKey][arg] = false;
+      if (cacheValidation[dalName][cacheKey]) {
+        cacheValidation[dalName][cacheKey][arg] = false;
+      }
     };
+    simpleDAL.invalidateCache('nonmembers');
   });
 }
 

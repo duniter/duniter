@@ -725,6 +725,33 @@ function FileDAL(profile, subPath, myFS) {
       });
   };
 
+  this.getCertificationExcludingBlock = function(current, certValidtyTime) {
+    var currentExcluding = current.number == 0 ?
+      Q(null) :
+      indicatorsDAL.getCurrentCertificationExcludingBlock()
+        .fail(function() { return null; });
+    return currentExcluding
+      .then(function(excluding){
+        var reachedMax = false;
+        return _.range((excluding && excluding.number) || 0, current.number + 1).reduce(function(p, number) {
+          return p.then(function(previous){
+            if (reachedMax) return Q(previous);
+            return that.getBlock(number)
+              .then(function(block){
+                if (block.medianTime <= current.medianTime - certValidtyTime) {
+                  return block;
+                }
+                reachedMax = true;
+                return previous;
+              });
+          });
+        }, Q(excluding));
+      })
+      .then(function(newExcluding){
+        return indicatorsDAL.writeCurrentExcludingForCert(newExcluding).thenResolve(newExcluding);
+      });
+  };
+
   this.kickWithOutdatedMemberships = function(maxNumber) {
     return that.getMembers()
       .then(function(members){

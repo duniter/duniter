@@ -1452,6 +1452,16 @@ function BlockchainService (conf, mainDAL, pair) {
       });
     });
   };
+  
+  this.getCertificationsExludingBlock = function() {
+    return that.currentDal.getCurrent()
+      .then(function(current){
+        return that.currentDal.getCertificationExcludingBlock(current, conf.sigValidity);
+      })
+      .fail(function(){
+        return { number: -1 };
+      });
+  };
 }
 
 /**

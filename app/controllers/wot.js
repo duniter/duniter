@@ -21,6 +21,7 @@ function WOTBinding (server) {
 
   var ParametersService = server.ParametersService;
   var IdentityService   = server.IdentityService;
+  var BlockchainService   = server.BlockchainService;
 
   var Identity = require('../lib/entity/identity');
 
@@ -37,58 +38,79 @@ function WOTBinding (server) {
         identities.forEach(function(idty, index){
           identities[index] = new Identity(idty);
         });
-        async.forEach(identities, function(idty, callback){
-          async.waterfall([
-            function (next){
-              server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).fail(next);
-            },
-            function (certs, next){
-              async.forEachSeries(certs, function(cert, callback) {
-                async.waterfall([
-                  function(next) {
-                    IdentityService.findIdentities(cert.from, next);
-                  },
-                  function(res, next) {
-                    var writtens = res.written ? [res.written] : [];
-                    var nonWrittens = res.nonWritten || [];
-                    if (writtens.length > 0) {
-                      cert.uids = [writtens[0].uid];
-                      cert.isMember = writtens[0].member;
-                      cert.wasMember = writtens[0].wasMember;
-                    } else {
-                      cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
-                      cert.isMember = false;
-                      cert.wasMember = false;
+        BlockchainService.getCertificationsExludingBlock()
+          .fail(function(err){
+            next(err);
+            throw err;
+          })
+          .then(function(excluding) {
+            async.forEach(identities, function(idty, callback){
+              async.waterfall([
+                function (next){
+                  server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).fail(next);
+                },
+                function (certs, next){
+                  var validCerts = [];
+                  async.forEachSeries(certs, function(cert, callback2) {
+                    if (excluding && cert.block <= excluding.number) {
+                      // Exclude the cert from result
+                      return callback2();
                     }
-                    next();
-                  }
-                ], callback);
-              }, function(err) {
-                idty.certs = certs;
-                next(err);
-              });
-            },
-            function (next) {
-              server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).fail(next);
-            },
-            function (signed, next){
-              idty.signed = signed;
-              async.forEachSeries(idty.signed, function(cert, callback) {
-                async.waterfall([
-                  function(next) {
-                    server.dal.getIdentityByHashOrNull(cert.target, next);
-                  },
-                  function(idty, next) {
-                    cert.idty = idty;
-                    next();
-                  }
-                ], callback);
-              }, next);
-            }
-          ], callback);
-        }, function (err) {
-          next(err, identities);
-        });
+                    async.waterfall([
+                      function(next) {
+                        IdentityService.findIdentities(cert.from, next);
+                      },
+                      function(res, next) {
+                        var writtens = res.written ? [res.written] : [];
+                        var nonWrittens = res.nonWritten || [];
+                        if (writtens.length > 0) {
+                          cert.uids = [writtens[0].uid];
+                          cert.isMember = writtens[0].member;
+                          cert.wasMember = writtens[0].wasMember;
+                        } else {
+                          cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
+                          cert.isMember = false;
+                          cert.wasMember = false;
+                        }
+                        validCerts.push(cert);
+                        next();
+                      }
+                    ], callback2);
+                  }, function(err) {
+                    idty.certs = validCerts;
+                    next(err);
+                  });
+                },
+                function (next) {
+                  server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).fail(next);
+                },
+                function (signed, next){
+                  var validSigned = [];
+                  async.forEachSeries(signed, function(cert, callback) {
+                    if (excluding && cert.block <= excluding.number) {
+                      // Exclude the cert from result
+                      return callback();
+                    }
+                    async.waterfall([
+                      function(next) {
+                        server.dal.getIdentityByHashOrNull(cert.target, next);
+                      },
+                      function(idty, next) {
+                        cert.idty = idty;
+                        validSigned.push(cert);
+                        next();
+                      }
+                    ], callback);
+                  }, function(err) {
+                    idty.signed = validSigned;
+                    next(err);
+                  });
+                }
+              ], callback);
+            }, function (err) {
+              next(err, identities);
+            });
+          });
       }
     ], function (err, identities) {
       if(err){

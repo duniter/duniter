@@ -35,10 +35,24 @@ function IndicatorsDAL(dal) {
       });
   };
 
+  this.writeCurrentExcludingForCert = function(excluding) {
+    return that.initTree()
+      .then(function(){
+        return that.write('indicators/excludingCRT.json', excluding);
+      });
+  };
+
   this.getCurrentMembershipExcludingBlock = function() {
     return that.initTree()
       .then(function(){
         return that.read('indicators/excludingMS.json');
+      });
+  };
+
+  this.getCurrentCertificationExcludingBlock = function() {
+    return that.initTree()
+      .then(function(){
+        return that.read('indicators/excludingCRT.json');
       });
   };
 

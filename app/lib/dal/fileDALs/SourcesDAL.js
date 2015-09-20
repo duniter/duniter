@@ -91,7 +91,9 @@ function SourcesDAL(dal) {
       that.getConsumedSource(pubkey, type, number, fingerprint, amount)
     ])
       .then(function(){
-        return arguments[0] && !arguments[1];
+        var available = arguments[0][0];
+        var consumed = arguments[0][1];
+        return available && !consumed;
       });
   };
 

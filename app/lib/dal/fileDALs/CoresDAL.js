@@ -26,7 +26,7 @@ function CoresDAL(dal) {
   this.addCore = function(core) {
     return that.initTree()
       .then(function(){
-        return that.write('cores/' + getCoreID(core) + '.json', core);
+        return that.write('cores/' + getCoreID(core) + '.json', core, that.DEEP_WRITE);
       });
   };
 
@@ -40,7 +40,7 @@ function CoresDAL(dal) {
   this.removeCore = function(core) {
     return that.initTree()
       .then(function(){
-        return that.remove('cores/' + getCoreID(core) + '.json')
+        return that.remove('cores/' + getCoreID(core) + '.json', that.RECURSIVE)
           .fail(function(){
           });
       });

@@ -21,7 +21,8 @@ function LinksDAL(dal) {
 
   this.cachedLists = {
     'linksFrom': ['getValidLinksFrom'],
-    'linksTo': ['getValidLinksTo']
+    'linksTo': ['getValidLinksTo'],
+    'obsoletes': ['getObsoletes']
   };
 
   this.initTree = function() {
@@ -101,16 +102,16 @@ function LinksDAL(dal) {
       .thenResolve(links);
   };
 
-  this.getObsoleteLinksFrom = function(pubkey) {
+  this.getObsoletes = function() {
     var links = [];
     return that.initTree()
       .then(function(){
-        return that.list('links/obsolete/' + pubkey + '/');
+        return that.list('links/obsolete/');
       })
       .then(function(files){
         return _.pluck(files, 'file');
       })
-      .then(that.reduceTo('links/obsolete/' + pubkey + '/', links))
+      .then(that.reduceTo('links/obsolete/', links))
       .thenResolve(links);
   };
 
@@ -132,11 +133,19 @@ function LinksDAL(dal) {
                             that.remove('links/valid/from/' + link.source + '/' + getLinkIDTo(link) + '.json'),
                             that.remove('links/valid/to/' + link.target + '/' + getLinkIDFrom(link) + '.json')
                           ])
+                            .fail(function() {
+                              // Silent error, fileDal is the only one which will work
+                            })
                             .then(function () {
                               return that.write('links/obsolete/' + getLinkID(link) + '.json', link)
                                 .tap(function () {
-                                  delete validCacheFrom[link.source][link.target];
-                                  delete validCacheTo[link.target][getLinkID(link)];
+                                  if (validCacheFrom[link.source]) {
+                                    delete validCacheFrom[link.source][link.target];
+                                  }
+                                  if (validCacheTo[link.target]) {
+                                    delete validCacheTo[link.target][getLinkID(link)];
+                                  }
+                                  that.invalidateCache('obsoletes');
                                 });
                             });
                         });

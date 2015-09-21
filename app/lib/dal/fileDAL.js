@@ -323,10 +323,10 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.getObsoletesFromTo = function(from, to) {
-    return linksDAL.getObsoleteLinksFrom(from)
+    return linksDAL.getObsoletes()
       .then(function(links){
         return _.chain(links).
-          where({ target: to }).
+          where({ target: to, source: from }).
           sortBy(function(lnk){ return -lnk.timestamp; }).
           value();
       });

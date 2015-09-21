@@ -85,6 +85,17 @@ function BlockchainService (conf, mainDAL, pair) {
       });
   };
 
+  this.mainFork = function() {
+    return getCores()
+      .then(function(cores){
+        if (cores.length == 0) {
+          // No cores yet: directly confirmed blockchain
+          return mainContext;
+        }
+        return Q(that.getMainFork(cores));
+      });
+  };
+
   this.getMainFork = function(cores) {
     var maxNumber = _.max(cores, function(core) { return core.forkPointNumber; }).forkPointNumber;
     var highestCores = _.where(cores, { forkPointNumber: maxNumber });
@@ -114,7 +125,12 @@ function BlockchainService (conf, mainDAL, pair) {
       .fail(done);
   };
 
-  this.checkBlock = mainContext.checkBlock;
+  this.checkBlock = function(block) {
+    return that.mainFork()
+      .then(function(mainFork){
+        return mainFork.checkBlock(block);
+      });
+  };
 
   var coresLoaded;
 

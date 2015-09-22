@@ -145,7 +145,9 @@ function LinksDAL(dal) {
                                   if (validCacheTo[link.target]) {
                                     delete validCacheTo[link.target][getLinkID(link)];
                                   }
-                                  that.invalidateCache('obsoletes');
+                                  if (that.dal.name != 'fileDal') {
+                                    that.invalidateCache('obsoletes');
+                                  }
                                 });
                             });
                         });

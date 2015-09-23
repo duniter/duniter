@@ -705,23 +705,26 @@ function FileDAL(profile, subPath, myFS) {
         .fail(function() { return null; });
     return currentExcluding
       .then(function(excluding){
-        var reachedMax = false;
-        return _.range((excluding && excluding.number) || 0, current.number + 1).reduce(function(p, number) {
-          return p.then(function(previous){
-            if (reachedMax) return Q(previous);
-            return that.getBlock(number)
-              .then(function(block){
-                if (block.medianTime <= current.medianTime - msValidtyTime) {
-                  return block;
-                }
-                reachedMax = true;
-                return previous;
-              });
+        // Case not block was excluding yet
+        if (!excluding) {
+          return that.getRootBlock()
+            .then(function(root){
+              var delaySinceStart = current.medianTime - root.medianTime;
+              if (delaySinceStart > msValidtyTime) {
+                return indicatorsDAL.writeCurrentExcluding(root).thenResolve(root);
+              }
+            })
+            .fail(function(){
+              // No possible excluding block
+            });
+        }
+        return that.getBlock(excluding.number + 1)
+          .then(function(nextPotential){
+            var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
+            if (delaySinceNextOfExcluding > msValidtyTime) {
+              return indicatorsDAL.writeCurrentExcluding(nextPotential).thenResolve(nextPotential);
+            }
           });
-        }, Q(excluding));
-      })
-      .then(function(newExcluding){
-        return indicatorsDAL.writeCurrentExcluding(newExcluding).thenResolve(newExcluding);
       });
   };
 
@@ -732,23 +735,26 @@ function FileDAL(profile, subPath, myFS) {
         .fail(function() { return null; });
     return currentExcluding
       .then(function(excluding){
-        var reachedMax = false;
-        return _.range((excluding && excluding.number) || 0, current.number + 1).reduce(function(p, number) {
-          return p.then(function(previous){
-            if (reachedMax) return Q(previous);
-            return that.getBlock(number)
-              .then(function(block){
-                if (block.medianTime <= current.medianTime - certValidtyTime) {
-                  return block;
-                }
-                reachedMax = true;
-                return previous;
-              });
+        // Case not block was excluding yet
+        if (!excluding) {
+          return that.getRootBlock()
+            .then(function(root){
+              var delaySinceStart = current.medianTime - root.medianTime;
+              if (delaySinceStart > certValidtyTime) {
+                return indicatorsDAL.writeCurrentExcludingForCert(root).thenResolve(root);
+              }
+            })
+            .fail(function(){
+              // No possible excluding block
+            });
+        }
+        return that.getBlock(excluding.number + 1)
+          .then(function(nextPotential){
+            var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
+            if (delaySinceNextOfExcluding > certValidtyTime) {
+              return indicatorsDAL.writeCurrentExcludingForCert(nextPotential).thenResolve(nextPotential);
+            }
           });
-        }, Q(excluding));
-      })
-      .then(function(newExcluding){
-        return indicatorsDAL.writeCurrentExcludingForCert(newExcluding).thenResolve(newExcluding);
       });
   };
 

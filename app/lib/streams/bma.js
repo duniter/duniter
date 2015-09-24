@@ -89,6 +89,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForPost('/wot/revoke',                wot.revoke);
   answerForGet( '/wot/lookup/:search',        wot.lookup);
   answerForGet( '/wot/members',               wot.members);
+  answerForGet( '/wot/requirements/:pubkey',  wot.requirements);
   answerForGet( '/wot/certifiers-of/:search', wot.certifiersOf);
   answerForGet( '/wot/certified-by/:search',  wot.certifiedBy);
 

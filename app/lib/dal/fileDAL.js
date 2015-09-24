@@ -443,6 +443,10 @@ function FileDAL(profile, subPath, myFS) {
       });
   };
 
+  this.getMembershipsForIssuer = function(pubkey) {
+    return msDAL.getMembershipsOfIssuer(pubkey);
+  };
+
   this.findPeersWhoseHashIsIn = function(hashes) {
     return peerDAL.listAll()
       .then(function(peers){

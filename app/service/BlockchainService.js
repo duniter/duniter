@@ -821,110 +821,27 @@ function BlockchainService (conf, mainDAL, pair) {
           joiners.push(ms.issuer);
         });
         async.forEach(mss, function(ms, callback){
-          var join = { identity: null, ms: ms, key: null, idHash: '' };
-          join.idHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
           async.waterfall([
-            function (next){
-              async.parallel({
-                block: function (callback) {
-                  if (current) {
-                    dal.getBlockOrNull(ms.number, callback);
-                  } else {
-                    callback(null, {});
-                  }
-                },
-                identity: function(callback){
-                  dal.getIdentityByHashOrNull(join.idHash, callback);
-                },
-                certs: function(callback){
-                  if (!current) {
-                    // Look for certifications from initial joiners
-                    // TODO: check if this is still working
-                    dal.certsNotLinkedToTarget(join.idHash)
-                      .then(function(certs){
-                        callback(null, _.filter(certs, function(cert){
-                          return ~joiners.indexOf(cert.from);
-                        }));
-                      })
-                      .fail(callback);
-                  } else {
-                    // Look for certifications from WoT members
-                    dal.certsNotLinkedToTarget(join.idHash)
-                      .then(function(certs){
-                        var finalCerts = [];
-                        var certifiers = [];
-                        async.forEachSeries(certs, function (cert, callback) {
-                          async.waterfall([
-                            function (next) {
-                              if (!current && cert.block_number != 0) {
-                                next('Number must be 0 for root block\'s certifications');
-                              } else if (!current && cert.block_number == 0) {
-                                next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
-                              } else {
-                                dal.getBlock(cert.block_number, function (err, basedBlock) {
-                                  next(err && 'Certification based on an unexisting block', basedBlock);
-                                });
-                              }
-                            },
-                            function (basedBlock, next){
-                              async.parallel({
-                                target: function (next) {
-                                  next(null, basedBlock);
-                                },
-                                current: function (next) {
-                                  if (!current)
-                                    next(null, null);
-                                  else
-                                    dal.getCurrent(next);
-                                }
-                              }, next);
-                            },
-                            function (res, next) {
-                              if (res.current && res.current.medianTime > res.target.medianTime + conf.sigValidity) {
-                                return next('Too old certification');
-                              }
-                              if (current) {
-                                // Already exists a link not replayable yet?
-                                dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay)
-                                  .then(function(exists) {
-                                    if (exists)
-                                      next('It already exists a similar certification written, which is not replayable yet');
-                                    else
-                                      dal.isMember(cert.from, next);
-                                  })
-                                  .fail(next);
-                              }
-                              else next(null, false);
-                            },
-                            function (isMember, next) {
-                              var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
-                              if (isMember && !doubleSignature) {
-                                certifiers.push(cert.from);
-                                finalCerts.push(cert);
-                              }
-                              next();
-                            }
-                          ], function () {
-                            callback();
-                          });
-                        }, function () {
-                          callback(null, finalCerts);
-                        });
-                      })
-                      .fail(callback);
-                  }
-                }
-              }, next);
-            },
-            function (res, next){
-              if (res.identity && res.block && res.identity.currentMSN < parseInt(join.ms.number)) {
-                // MS + matching cert are found
-                join.identity = res.identity;
-                join.certs = res.certs;
-                // join.wotCerts = res.wotCerts;
-                preJoinData[res.identity.pubkey] = join;
+            function(nextOne) {
+              if (current) {
+                dal.getBlockOrNull(ms.number, nextOne);
+              } else {
+                nextOne(null, {});
               }
-              next();
+            },
+            function(block, nextOne) {
+              if (!block) {
+                return nextOne('Block not found for membership');
+              }
+              var idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
+              getSinglePreJoinData(dal, current, idtyHash, nextOne, joiners);
+            },
+            function(join, nextOne) {
+              join.ms = ms;
+              if (join.identity.currentMSN < parseInt(join.ms.number)) {
+                preJoinData[join.identity.pubkey] = join;
+              }
+              nextOne();
             }
           ], callback);
         }, next);
@@ -932,6 +849,178 @@ function BlockchainService (conf, mainDAL, pair) {
     ], function(err) {
       done(err, preJoinData);
     });
+  }
+
+  this.requirementsOfIdentity = function(idty) {
+    return Q.all([
+      that.currentDal.getMembershipsForIssuer(idty.pubkey),
+      that.currentDal.getCurrent(),
+      that.currentDal.getMembers()
+        .then(function(members){
+          return Q.Promise(function(resolve, reject){
+            getSentryMembers(that.currentDal, members, function(err, sentries) {
+              if (err) return reject(err);
+              resolve(sentries);
+            });
+          });
+        })
+    ])
+      .spread(function(mss, current, sentries){
+        var ms = _.chain(mss).where({ membership: 'IN' }).sortBy(function(ms) { return -ms.number; }).value()[0];
+        return Q.nfcall(getSinglePreJoinData, that.currentDal, current, idty.hash)
+          .then(function(join){
+            join.ms = ms;
+            var joinData = {};
+            joinData[join.identity.pubkey] = join;
+            return joinData;
+          })
+          .then(function(joinData){
+            var pubkey = _.keys(joinData)[0];
+            var join = joinData[pubkey];
+            // Check WoT stability
+            var someNewcomers = [join.identity.pubkey];
+            var nextBlockNumber = current ? current.number + 1 : 0;
+            return Q.nfcall(computeNewLinks, nextBlockNumber, that.currentDal, someNewcomers, joinData, {})
+              .then(function(newLinks){
+                return Q.all([
+                  that.getValidCertsCount(pubkey, newLinks),
+                  that.isOver3Hops(pubkey, newLinks, sentries, current)
+                ])
+                  .spread(function(certs, outdistanced) {
+                    return {
+                      uid: join.ms.userid,
+                      meta: {
+                        timestamp: parseInt(new Date(join.identity.time).getTime() / 1000)
+                      },
+                      outdistanced: outdistanced,
+                      certifications: certs,
+                      membershipMissing: !join.ms
+                    };
+                  });
+              });
+          });
+      }, Q.reject);
+  };
+
+  this.getValidCertsCount = function(newcomer, newLinks) {
+    return that.currentDal.getValidLinksTo(newcomer)
+      .then(function(links){
+        var count = links.length;
+        if (newLinks && newLinks.length)
+          count += newLinks.length;
+        return count;
+      });
+  };
+
+  this.isOver3Hops = function(newcomer, newLinks, sentries, current) {
+    if (!current) {
+      return Q([]);
+    }
+    return Q.Promise(function(resolve, reject){
+      globalValidator(conf, blockchainDao(null, that.currentDal)).isOver3Hops(newcomer, sentries, newLinks, function(err, remainings) {
+        if (err) return reject(err);
+        resolve(remainings);
+      });
+    });
+  };
+
+  function getSinglePreJoinData(dal, current, idHash, done, joiners) {
+    var join = { identity: null, key: null, idHash: idHash };
+    async.waterfall([
+      function (next){
+        async.parallel({
+          identity: function(callback){
+            dal.getIdentityByHashOrNull(idHash, callback);
+          },
+          certs: function(callback){
+            if (!current) {
+              // Look for certifications from initial joiners
+              // TODO: check if this is still working
+              dal.certsNotLinkedToTarget(idHash)
+                .then(function(certs){
+                  callback(null, _.filter(certs, function(cert){
+                    return ~joiners.indexOf(cert.from);
+                  }));
+                })
+                .fail(callback);
+            } else {
+              // Look for certifications from WoT members
+              dal.certsNotLinkedToTarget(idHash)
+                .then(function(certs){
+                  var finalCerts = [];
+                  var certifiers = [];
+                  async.forEachSeries(certs, function (cert, callback) {
+                    async.waterfall([
+                      function (next) {
+                        if (!current && cert.block_number != 0) {
+                          next('Number must be 0 for root block\'s certifications');
+                        } else if (!current && cert.block_number == 0) {
+                          next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
+                        } else {
+                          dal.getBlock(cert.block_number, function (err, basedBlock) {
+                            next(err && 'Certification based on an unexisting block', basedBlock);
+                          });
+                        }
+                      },
+                      function (basedBlock, next){
+                        async.parallel({
+                          target: function (next) {
+                            next(null, basedBlock);
+                          },
+                          current: function (next) {
+                            if (!current)
+                              next(null, null);
+                            else
+                              dal.getCurrent(next);
+                          }
+                        }, next);
+                      },
+                      function (res, next) {
+                        if (res.current && res.current.medianTime > res.target.medianTime + conf.sigValidity) {
+                          return next('Too old certification');
+                        }
+                        if (current) {
+                          // Already exists a link not replayable yet?
+                          dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay)
+                            .then(function(exists) {
+                              if (exists)
+                                next('It already exists a similar certification written, which is not replayable yet');
+                              else
+                                dal.isMember(cert.from, next);
+                            })
+                            .fail(next);
+                        }
+                        else next(null, false);
+                      },
+                      function (isMember, next) {
+                        var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
+                        if (isMember && !doubleSignature) {
+                          certifiers.push(cert.from);
+                          finalCerts.push(cert);
+                        }
+                        next();
+                      }
+                    ], function () {
+                      callback();
+                    });
+                  }, function () {
+                    callback(null, finalCerts);
+                  });
+                })
+                .fail(callback);
+            }
+          }
+        }, next);
+      },
+      function (res, next){
+        if (res.identity) {
+          // MS + matching cert are found
+          join.identity = res.identity;
+          join.certs = res.certs;
+        }
+        next(null, join);
+      }
+    ], done);
   }
 
   function computeNewLinks (forBlock, dal, theNewcomers, joinData, updates, done) {

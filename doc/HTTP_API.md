@@ -12,6 +12,7 @@
       * [add](#wotadd)
       * [revoke](#wotrevoke)
       * [lookup/[search]](#wotlookupsearch)
+      * [requirements/[PUBKEY]](#wotrequirementspubkey)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)
   * [currency/](#currency)
@@ -56,6 +57,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 
     http[s]://Node[:port]/...
     |-- wot/
+    |   |-- requirements/[pubkey]
     |   |-- certifiers-of/[uid|pubkey]
     |   |-- certified-by/[uid|pubkey]
     |   |-- members
@@ -396,6 +398,42 @@ A list of public key + uid.
     { "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY", "uid": "cat" },
     { "pubkey": "9kNEiyseUNoPn3pmNUhWpvCCwPRgavsLu7YFKZuzzd1L", "uid": "tac" },
     { "pubkey": "9HJ9VXa9wc6EKC6NkCi8b5TKWBot68VhYDg7kDk5T8Cz", "uid": "toc" }
+  ]
+}
+```
+
+#### `wot/requirements/[pubkey]`
+
+
+**Goal**
+
+GET requirements to be filled by pubkey to become a member.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`pbkey` | Public key to check. | URL
+
+**Returns**
+
+A list of identities matching this pubkey and the requirements of each identities to become a member.
+
+> If the pubkey is matching a member, only one identity may be displayed: the one which is a member.
+
+```json
+{
+  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "identities": [{
+      "uid": "tobi",
+      "meta": {
+        "timestamp": 1409990782
+      },
+      "outdistanced": ['G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU'],
+      "certifications": 2,
+      "membershipMissing": true
+    }
+    ...
   ]
 }
 ```

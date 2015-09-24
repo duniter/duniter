@@ -3,6 +3,7 @@ var fs       = require('fs');
 var util     = require('util');
 var async    = require('async');
 var _        = require('underscore');
+var Q        = require('q');
 var stream   = require('stream');
 var unix2dos = require('../lib/unix2dos');
 var dos2unix = require('../lib/dos2unix');
@@ -224,6 +225,51 @@ function WOTBinding (server) {
           signature: cert.sig
         });
       });
+      res.send(200, JSON.stringify(json, null, "  "));
+    });
+  };
+
+  this.requirements = function (req, res) {
+    res.type('application/json');
+    async.waterfall([
+      function (next){
+        ParametersService.getPubkey(req, next);
+      },
+      function (search, next){
+        IdentityService.search(search).then(_.partial(next, null)).fail(next);
+      },
+      function (identities, next){
+        return identities.reduce(function(p, identity) {
+          return p
+            .then(function(all){
+              return BlockchainService.requirementsOfIdentity(new Identity(identity))
+                .then(function(requirements){
+                  return all.concat([requirements]);
+                });
+            });
+        }, Q([]))
+          .then(function(all){
+            if (!all || !all.length) {
+              return next('No member matching this pubkey or uid');
+            }
+            next(null, {
+              pubkey: all[0].pubkey,
+              identities: all.map(function(idty) {
+                return _.omit(idty, 'pubkey');
+              })
+            });
+          })
+          .fail(next);
+      }
+    ], function (err, json) {
+      if(err){
+        if (err == 'No member matching this pubkey or uid') {
+          res.send(404, err);
+          return;
+        }
+        res.send(400, err);
+        return;
+      }
       res.send(200, JSON.stringify(json, null, "  "));
     });
   };

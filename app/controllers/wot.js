@@ -245,6 +245,10 @@ function WOTBinding (server) {
               return BlockchainService.requirementsOfIdentity(new Identity(identity))
                 .then(function(requirements){
                   return all.concat([requirements]);
+                })
+                .fail(function(err){
+                  logger.warn(err);
+                  return all;
                 });
             });
         }, Q([]))

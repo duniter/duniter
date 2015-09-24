@@ -101,6 +101,9 @@ function IdentityDAL(dal) {
       .then(function(){
         return that.write('identities/pending/' + getIdentityID(idty), idty);
       })
+      .then(function(){
+        return that.write('identities/hash/' + getIdentityID(idty), idty);
+      })
       .tap(function() {
         // TODO: not really proud of that, has to be refactored for more generic code
         if (that.dal.name == 'fileDal') {

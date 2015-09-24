@@ -888,7 +888,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 ])
                   .spread(function(certs, outdistanced) {
                     return {
-                      uid: join.ms.userid,
+                      uid: join.identity.uid,
                       meta: {
                         timestamp: parseInt(new Date(join.identity.time).getTime() / 1000)
                       },

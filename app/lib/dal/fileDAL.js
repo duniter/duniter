@@ -676,11 +676,11 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
-    var kicked = notEnoughLinks ? true : false;
+    var kick = notEnoughLinks ? true : false;
     return idtyDAL.getFromPubkey(pubkey)
       .then(function(idty){
-        if (idty.kicked != kicked) {
-          idty.kicked = kicked;
+        if (idty.kick != kick) {
+          idty.kick = kick;
           return idtyDAL.saveIdentity(idty);
         }
       })

@@ -66,7 +66,7 @@ describe("Forwarding", function() {
         .then(function(){
           done();
         })
-        .fail(function(err){
+        .catch(function(err){
           done(err);
         })
         .done();

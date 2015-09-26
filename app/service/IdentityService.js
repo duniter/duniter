@@ -41,7 +41,7 @@ function IdentityService (conf, dal) {
         dal.getWritten(search, next);
       },
       uid: function (next) {
-        dal.getWrittenByUID(search).then(_.partial(next, null)).fail(next);
+        dal.getWrittenByUID(search).then(_.partial(next, null)).catch(next);
       }
     }, function (err, res) {
       done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, new Identity(res.pubkey || res.uid || {}));
@@ -54,7 +54,7 @@ function IdentityService (conf, dal) {
         dal.getWritten(pubkey, next);
       },
       nonWritten: function (next) {
-        dal.getNonWritten(pubkey).then(_.partial(next, null)).fail(next);
+        dal.getNonWritten(pubkey).then(_.partial(next, null)).catch(next);
       }
     }, done);
   };
@@ -105,7 +105,7 @@ function IdentityService (conf, dal) {
             var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, block_number: cert.block_number, target: obj.hash, to: idty.pubkey });
             async.waterfall([
               function (next){
-                dal.existsCert(mCert).then(_.partial(next, null)).fail(next);
+                dal.existsCert(mCert).then(_.partial(next, null)).catch(next);
               },
               function (existing, next){
                 if (existing) next();
@@ -115,7 +115,7 @@ function IdentityService (conf, dal) {
                     aCertWasSaved = true;
                     next();
                   })
-                  .fail(function(err){
+                  .catch(function(err){
                     // TODO: This is weird...
                     logger.info('✔ CERT %s', mCert.from);
                     aCertWasSaved = true;
@@ -140,7 +140,7 @@ function IdentityService (conf, dal) {
             dal.savePendingIdentity(idty).then(function() {
               logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
               next(null, idty);
-            }).fail(next);
+            }).catch(next);
           }
         }
       ], cb);
@@ -175,7 +175,7 @@ function IdentityService (conf, dal) {
               dal.setRevoked(obj.hash).then(function () {
                 next(null, jsonResultTrue());
               })
-                .fail(next);
+                .catch(next);
             }
           }
           else {
@@ -183,7 +183,7 @@ function IdentityService (conf, dal) {
             idty.revoked = true;
             dal.savePendingIdentity(idty).then(function() {
               next(null, jsonResultTrue());
-            }).fail(next);
+            }).catch(next);
           }
         }
       ], cb);

@@ -54,7 +54,7 @@ function SourcesDAL(dal) {
             });
         }, Q([]));
       })
-      .fail(function(err){
+      .catch(function(err){
         throw err;
       });
   };
@@ -62,7 +62,7 @@ function SourcesDAL(dal) {
   this.getAvailableSource = function(pubkey, type, number, fingerprint, amount) {
     return that.read('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
       .thenResolve(true)
-      .fail(function() {
+      .catch(function() {
         return false;
       });
   };
@@ -70,7 +70,7 @@ function SourcesDAL(dal) {
   this.getConsumedSource = function(pubkey, type, number, fingerprint, amount) {
     return that.read('sources/consumed/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
       .thenResolve(true)
-      .fail(function() {
+      .catch(function() {
         return false;
       });
   };
@@ -101,7 +101,7 @@ function SourcesDAL(dal) {
     return that.initTree()
       .then(function(){
         return that.remove('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
-          .fail(function(){
+          .catch(function(){
             // Silent error
           });
       })

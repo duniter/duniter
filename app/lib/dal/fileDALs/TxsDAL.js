@@ -50,17 +50,17 @@ function TxsDAL(dal) {
 
   this.getTX = initable(function(hash) {
     return that.read('txs/linked/hash/' + hash + '.json')
-      .fail(function(){
+      .catch(function(){
         return that.read('txs/pending/hash/' + hash + '.json');
       })
-      .fail(function(){
+      .catch(function(){
         return null;
       });
   });
 
   this.removeTX = initable(function(hash) {
     return that.remove('txs/pending/hash/' + hash + '.json')
-      .fail(function() {
+      .catch(function() {
       });
   });
 
@@ -80,7 +80,7 @@ function TxsDAL(dal) {
           }))
         );
       }, Q.reject)
-      .fail(function(err){
+      .catch(function(err){
         throw err;
       });
   });

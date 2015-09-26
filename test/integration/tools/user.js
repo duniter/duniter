@@ -188,7 +188,7 @@ function User (uid, options, node) {
             .then(function(http){
               http.tx.sources(pub, next);
             })
-            .fail(next);
+            .catch(next);
         },
         function (json, next) {
           currency = json.currency;
@@ -255,7 +255,7 @@ function User (uid, options, node) {
                 next(err);
               })
             })
-            .fail(next);
+            .catch(next);
         }
       ], done);
     }
@@ -287,7 +287,7 @@ function User (uid, options, node) {
             done(res, calback);
           });
         })
-        .fail(done);
+        .catch(done);
     };
   }
 }

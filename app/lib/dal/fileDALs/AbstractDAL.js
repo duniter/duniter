@@ -74,7 +74,7 @@ function AbstractDAL(dal) {
               .then(function(data){
                 certs.push(data);
               })
-              .fail(function(err){
+              .catch(function(err){
                 throw err;
               });
           });

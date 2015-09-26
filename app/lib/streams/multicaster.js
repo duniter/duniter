@@ -99,7 +99,7 @@ function Multicaster (isolate) {
       .then(function(){
         done && done();
       })
-      .fail(function(err) {
+      .catch(function(err) {
         done && done(err);
         throw err;
       });

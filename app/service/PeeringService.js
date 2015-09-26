@@ -84,7 +84,7 @@ function PeeringService(server, pair, dal) {
           .then(function(){
             next(null, Peer.statics.peerize(peerEntity));
           })
-          .fail(next);
+          .catch(next);
       }
     ], done);
   };
@@ -126,7 +126,7 @@ function PeeringService(server, pair, dal) {
       },
       function (currentBlock, next) {
         current = currentBlock;
-        dal.findPeers(selfPubkey).then(_.partial(next, null)).fail(next);
+        dal.findPeers(selfPubkey).then(_.partial(next, null)).catch(next);
       },
       function (peers, next) {
         var p1 = { version: 1, currency: currency };
@@ -178,7 +178,7 @@ function PeeringService(server, pair, dal) {
         }
       },
       function (next){
-        dal.getPeer(selfPubkey).then(_.partial(next, null)).fail(next);
+        dal.getPeer(selfPubkey).then(_.partial(next, null)).catch(next);
       },
       function (peer, next){
         // Set peer's statut to UP
@@ -205,12 +205,12 @@ function PeeringService(server, pair, dal) {
                 .then(function(peering){
                   // Submit the peering
                   return Q.nfcall(that.submit, peering)
-                    .fail(function(err) {
+                    .catch(function(err) {
                       // Not a problem!
                       logger.warn("Peer record %s: %s", peer.pubkey, err.code || err.message || err);
                     });
                 })
-                .fail(function(err){
+                .catch(function(err){
                   logger.warn("Peer %s: %s", peer.pubkey, err.code || err.message || err);
                   // The peer is unreachable: set it DOWN
                   peer.status = 'DOWN';
@@ -222,7 +222,7 @@ function PeeringService(server, pair, dal) {
       .then(function(){
         done();
       })
-      .fail(done);
+      .catch(done);
   };
 
   function syncBlock(callback) {
@@ -239,7 +239,7 @@ function PeeringService(server, pair, dal) {
               peers = _.shuffle(peers);
               return peers.reduce(function(promise, peer) {
                 return promise
-                  .fail(function(err){
+                  .catch(function(err){
                     if (err) {
                       logger.warn(err.message || err);
                     }
@@ -262,7 +262,7 @@ function PeeringService(server, pair, dal) {
                                   node.blockchain.current(function(err) {
                                     if (err) {
                                       return dal.setPeerDown(p.pubkey)
-                                        .fail(function(err2){
+                                        .catch(function(err2){
                                           next(err2 || err);
                                         });
                                     }
@@ -292,7 +292,7 @@ function PeeringService(server, pair, dal) {
                                     .then(function(block){
                                       return next(null, block);
                                     })
-                                    .fail(next);
+                                    .catch(next);
                                 },
                                 function(block, next) {
                                   current = block;
@@ -315,7 +315,7 @@ function PeeringService(server, pair, dal) {
                     });
                   })
               }, Q.reject())
-                .fail(function(){
+                .catch(function(){
                   logger.info("No new block found");
                   if (lastAdded) {
                     server.router().write(_.extend({ type: 'Block' }, lastAdded));

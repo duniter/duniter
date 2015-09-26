@@ -2,6 +2,10 @@
   "plugins": [
     "mocha"
   ],
+//  "ecmaFeatures": {
+//    "arrowFunctions": true,
+//    "generators": true
+//  },
   "rules": {
 
     "curly": false,
@@ -37,7 +41,8 @@
     "no-extra-semi": [1]
   },
   "env": {
-    "node": true
+    "node": true,
+    "es6": true
   },
   "globals": {
     "before": true,

@@ -26,7 +26,7 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL, considerCacheIn
   that.setRead(function readFileFromFork() {
     var args = Array.prototype.slice.call(arguments);
     return oldReadFile.apply(that, args)
-      .fail(function(){
+      .catch(function(){
         // Failed in core context, try in root
         return rootDAL.readFile.apply(rootDAL, args);
       });
@@ -40,7 +40,7 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL, considerCacheIn
       return rootDAL.writeFile.apply(rootDAL, args);
     }
     return oldWriteFile.apply(that, args)
-      .fail(function(){
+      .catch(function(){
         // Failed in core context, try in root
         return rootDAL.writeFile.apply(rootDAL, args);
       });
@@ -75,7 +75,7 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL, considerCacheIn
     var args = Array.prototype.slice.call(arguments);
     var recursive = args[1];
     return oldRemoveFile.apply(that, args)
-      .fail(function(err){
+      .catch(function(err){
         // Failed in core context, try in root IF SAID TO
         if (recursive) {
           return rootDAL.removeFile.apply(rootDAL, args);

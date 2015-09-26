@@ -227,7 +227,7 @@ function IdentityDAL(dal) {
       })
       .then(function(){
         return that.remove('identities/pending/' + getIdentityID(idty))
-          .fail(function() {
+          .catch(function() {
             // Silent error
           });
       })
@@ -278,7 +278,7 @@ function IdentityDAL(dal) {
       .then(function(){
         return Q.all(tmpIdities.map(function(idty) {
           return that.getFromPubkey(idty.pubkey)
-            .fail(function(){
+            .catch(function(){
               idties.push(idty);
             });
         }));

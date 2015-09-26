@@ -67,7 +67,7 @@ function IndicatorsDAL(dal) {
     return that.initTree()
       .then(function(){
         return that.read('indicators/ud_block.json')
-          .fail(function() {
+          .catch(function() {
             return null;
           });
       });
@@ -85,6 +85,6 @@ function IndicatorsDAL(dal) {
       .then(function(){
         return that.read('indicators/issuers/' + pubkey + '.json');
       })
-      .fail(function() { return null; });
+      .catch(function() { return null; });
   };
 }

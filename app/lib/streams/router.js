@@ -41,7 +41,7 @@ function Router (serverPubkey, conf, dal) {
             .then(function(){
               next();
             })
-            .fail(next);
+            .catch(next);
         },
       ], function(err) {
         if (err) logger.error(err);
@@ -124,7 +124,7 @@ function Router (serverPubkey, conf, dal) {
           .then(function(peer){
             done(null, [peer]);
           })
-          .fail(function(err){
+          .catch(function(err){
             done(err);
           });
       }

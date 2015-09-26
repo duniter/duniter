@@ -35,7 +35,7 @@ function MembershipDAL(dal) {
     return that.initTree()
       .then(function(){
         return that.read('ms/written/' + ms.issuer + '/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json')
-          .fail(function(){
+          .catch(function(){
             return that.read('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json');
           });
       });
@@ -106,7 +106,7 @@ function MembershipDAL(dal) {
       })
       .then(function(){
         return that.remove('ms/pending/' + type + '/' + getMSID(ms) + '.json')
-          .fail(function() {
+          .catch(function() {
           });
       });
   };

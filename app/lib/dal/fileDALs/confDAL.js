@@ -44,7 +44,7 @@ function ParametersDAL(dal) {
       .then(function(data){
         return _(Configuration.statics.defaultConf()).extend(data);
       })
-      .fail(function(){
+      .catch(function(){
         // Silent error
         logger.warn('No configuration loaded');
         return {};
@@ -56,7 +56,7 @@ function ParametersDAL(dal) {
       .then(function(){
         done && done();
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });

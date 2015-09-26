@@ -41,7 +41,7 @@ function CoresDAL(dal) {
     return that.initTree()
       .then(function(){
         return that.remove('cores/' + getCoreID(core) + '.json', that.RECURSIVE)
-          .fail(function(){
+          .catch(function(){
           });
       });
   };

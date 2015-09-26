@@ -3,6 +3,7 @@
 var path            = require('path');
 var async           = require('async');
 var _               = require('underscore');
+var co               = require('co');
 var Q               = require('q');
 var sha1            = require('sha1');
 var moment          = require('moment');
@@ -37,11 +38,8 @@ var newKeyblockCallback = null;
 // Callback used to start again computation of next PoW
 var computeNextCallback = null;
 
-// Timeout var for delaying computation of next block
-var computationTimeout = null;
-
-// Flag for saying if timeout was already waited
-var computationTimeoutDone = false;
+// Flag indicating the PoW has begun
+var computing = false;
 
 var blockFifo = async.queue(function (task, callback) {
   task(callback);
@@ -68,7 +66,7 @@ function BlockchainService (conf, mainDAL, pair) {
         that.currentDal = dal;
         done();
       })
-      .fail(done);
+      .catch(done);
   };
 
   this.mainForkDAL = function() {
@@ -111,7 +109,7 @@ function BlockchainService (conf, mainDAL, pair) {
       .then(function(bb){
         return bb;
       })
-      .fail(done);
+      .catch(done);
   };
 
   this.promoted = function (number, done) {
@@ -122,7 +120,7 @@ function BlockchainService (conf, mainDAL, pair) {
       .then(function(bb){
         return bb;
       })
-      .fail(done);
+      .catch(done);
   };
 
   this.checkBlock = function(block) {
@@ -239,7 +237,7 @@ function BlockchainService (conf, mainDAL, pair) {
             return Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
           })
           .then(resolve)
-          .fail(reject)
+          .catch(reject)
           .finally(function() {
             blockIsProcessed();
           });
@@ -390,7 +388,7 @@ function BlockchainService (conf, mainDAL, pair) {
       })
       .then(function(core){
         return core.addBlock(obj)
-          .fail(function(err){
+          .catch(function(err){
             throw err;
           })
           .tap(function(){
@@ -407,7 +405,7 @@ function BlockchainService (conf, mainDAL, pair) {
     // If PoW computation process is waiting, trigger it
     if (computeNextCallback)
       computeNextCallback();
-    if (conf.participate && !cancels.length) {
+    if (conf.participate && !cancels.length && computing) {
       powFifo.push(function (taskDone) {
         cancels.push(taskDone);
       });
@@ -470,7 +468,7 @@ function BlockchainService (conf, mainDAL, pair) {
     async.forEachSeries(members, function (m, callback) {
       async.waterfall([
         function (next) {
-          dal.getValidLinksFrom(m.pubkey).then(_.partial(next, null)).fail(next);
+          dal.getValidLinksFrom(m.pubkey).then(_.partial(next, null)).catch(next);
         },
         function (links, next) {
           // Only test agains members who make enough signatures
@@ -529,7 +527,7 @@ function BlockchainService (conf, mainDAL, pair) {
         done && done(null, passingNewcomers);
         return passingNewcomers;
       })
-      .fail(done);
+      .catch(done);
   }
 
   /**
@@ -538,7 +536,7 @@ function BlockchainService (conf, mainDAL, pair) {
    */
   this.generateNext = function (done) {
     return that.mainForkDAL()
-      .fail(function(err) {
+      .catch(function(err) {
         done && done(err);
         throw err;
       })
@@ -581,18 +579,14 @@ function BlockchainService (conf, mainDAL, pair) {
               newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
             });
             // Create the block
-            return Q.Promise(function(resolve, reject){
-              createBlock(dal, current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions, function(err, block) {
-                err ? reject(err) : resolve(block);
-              });
-            });
+            return createBlock(dal, current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions);
           }, Q.reject);
       }, Q.reject)
       .then(function(block) {
         done && done(null, block);
         return block;
       })
-      .fail(function(err) {
+      .catch(function(err) {
         if (!done) throw err;
         else done(err);
       });
@@ -606,9 +600,13 @@ function BlockchainService (conf, mainDAL, pair) {
       .then(function(dal){
         return prepareNextBlock(dal)
           .spread(function(current, lastUDBlock, exclusions){
-            createBlock(dal, current, {}, {}, {}, exclusions, lastUDBlock, [], done);
+            return createBlock(dal, current, {}, {}, {}, exclusions, lastUDBlock, [])
+              .then(function(block){
+                done && done(null, block);
+                return block;
+              });
           })
-          .fail(done);
+          .catch(done);
       });
   };
 
@@ -654,7 +652,7 @@ function BlockchainService (conf, mainDAL, pair) {
             ], function (err) {
               if (err) {
                 logger.error(err);
-                dal.removeTxByHash(extractedTX.hash).then(_.partial(callback, null)).fail(callback);
+                dal.removeTxByHash(extractedTX.hash).then(_.partial(callback, null)).catch(callback);
               }
               else {
                 logger.info('Transaction added to block');
@@ -691,7 +689,7 @@ function BlockchainService (conf, mainDAL, pair) {
     var leaveData = {};
     async.waterfall([
       function (next){
-        dal.findLeavers().then(_.partial(next, null)).fail(next);
+        dal.findLeavers().then(_.partial(next, null)).catch(next);
       },
       function (mss, next){
         var leavers = [];
@@ -813,7 +811,7 @@ function BlockchainService (conf, mainDAL, pair) {
     var preJoinData = {};
     async.waterfall([
       function (next){
-        dal.findNewcomers().then(_.partial(next, null)).fail(next);
+        dal.findNewcomers().then(_.partial(next, null)).catch(next);
       },
       function (mss, next){
         var joiners = [];
@@ -942,7 +940,7 @@ function BlockchainService (conf, mainDAL, pair) {
                     return ~joiners.indexOf(cert.from);
                   }));
                 })
-                .fail(callback);
+                .catch(callback);
             } else {
               // Look for certifications from WoT members
               dal.certsNotLinkedToTarget(idHash)
@@ -988,7 +986,7 @@ function BlockchainService (conf, mainDAL, pair) {
                               else
                                 dal.isMember(cert.from, next);
                             })
-                            .fail(next);
+                            .catch(next);
                         }
                         else next(null, false);
                       },
@@ -1007,7 +1005,7 @@ function BlockchainService (conf, mainDAL, pair) {
                     callback(null, finalCerts);
                   });
                 })
-                .fail(callback);
+                .catch(callback);
             }
           }
         }, next);
@@ -1071,7 +1069,7 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   }
 
-  function createBlock (dal, current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions, done) {
+  function createBlock (dal, current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions) {
     // Prevent writing joins/updates for excluded members
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
@@ -1101,8 +1099,7 @@ function BlockchainService (conf, mainDAL, pair) {
     var joiners = _(joinData).keys();
     var previousCount = current ? current.membersCount : 0;
     if (joiners.length == 0 && !current) {
-      done('Wrong new block: cannot make a root block without members');
-      return;
+      throw 'Wrong new block: cannot make a root block without members';
     }
     // Newcomers
     block.identities = [];
@@ -1165,51 +1162,31 @@ function BlockchainService (conf, mainDAL, pair) {
     transactions.forEach(function (tx) {
       block.transactions.push({ raw: tx.compact() });
     });
-    async.waterfall([
-      function (next) {
-        // PoWMin
-        if (block.number == 0)
-          next(null, 0); // Root difficulty is given by manually written block
-        else
-          globalValidator(conf, blockchainDao(block, dal)).getPoWMin(block.number, next);
-      },
-      function (powMin, next) {
-        block.powMin = powMin;
-        // MedianTime
-        if (block.number == 0)
-          next(null, 0);
-        else
-          globalValidator(conf, blockchainDao(block, dal)).getMedianTime(block.number, next);
-      },
-      function (medianTime, next) {
-        block.medianTime = current ? medianTime : moment.utc().unix() - conf.rootoffset;
-        next();
-      },
-      function (next) {
-        // Universal Dividend
-        if (lastUDBlock)
-          next(null, lastUDBlock.UDTime);
-        else
-          dal.getRootBlock(function (err, root) {
-            if (root)
-              next(null, root.medianTime);
-            else
-              next(null, null);
-          });
-      },
-      function (lastUDTime, next) {
-        if (lastUDTime != null) {
-          if (current && lastUDTime + conf.dt <= block.medianTime) {
-            var M = current.monetaryMass || 0;
-            var c = conf.c;
-            var N = block.membersCount;
-            var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-            block.dividend = Math.ceil(Math.max(previousUD, c * M / N));
-          }
-        }
-        next(null, block);
+    return co(function *() {
+      block.powMin = block.number == 0 ? 0 : yield globalValidator(conf, blockchainDao(block, dal)).getPoWMin(block.number);
+      if (block.number == 0) {
+        block.medianTime = moment.utc().unix() - conf.rootoffset;
       }
-    ], done);
+      else {
+        block.medianTime = yield globalValidator(conf, blockchainDao(block, dal)).getMedianTime(block.number);
+      }
+      // Universal Dividend
+      var lastUDTime = lastUDBlock && lastUDBlock.UDTime;
+      if (!lastUDTime) {
+        let rootBlock = yield dal.getBlockOrNull(0);
+        lastUDTime = rootBlock && rootBlock.UDTime;
+      }
+      if (lastUDTime != null) {
+        if (current && lastUDTime + conf.dt <= block.medianTime) {
+          var M = current.monetaryMass || 0;
+          var c = conf.c;
+          var N = block.membersCount;
+          var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+          block.dividend = Math.ceil(Math.max(previousUD, c * M / N));
+        }
+      }
+      return block;
+    });
   }
 
   var debug = process.execArgv.toString().indexOf('--debug') !== -1;
@@ -1313,6 +1290,7 @@ function BlockchainService (conf, mainDAL, pair) {
         //console.log('Already made: %s tests...', msg.nonce);
         // Look for incoming block
         if (speedMesured && cancels.length) {
+          console.log(cancels);
           speedMesured = false;
           stopped = true;
           that.powProcess.kill();
@@ -1339,114 +1317,75 @@ function BlockchainService (conf, mainDAL, pair) {
     };
   }
 
-  this.startGeneration = function (done) {
-    if (!conf.participate) return;
-    if (!selfPubkey) {
-      done('No self pubkey found.');
-      return;
-    }
-    askedStop = null;
-    if (computationTimeout) {
-      clearTimeout(computationTimeout);
-      computationTimeout = null;
-    }
-    var block, current;
-    async.waterfall([
-      function(next) {
-        that.mainForkDAL()
-          .then(function(dal){
-            next(null, dal);
-          })
-          .fail(next);
-      },
-      function (dal, next) {
-        dal.isMember(selfPubkey, function (err, isMember) {
-          if (err || !isMember)
-            next('Skipping', null, 'Local node is not a member. Waiting to be a member before computing a block.');
-          else
-            next(null, dal);
-        });
-      },
-      function (dal, next) {
-        dal.getCurrentBlockOrNull(function (err, current) {
-          if (err)
-            next('Skipping', null, 'Waiting for a root block before computing new blocks');
-          else
-            next(null, dal, current);
-        });
-      },
-      function (dal, theCurrent, next) {
-        current = theCurrent;
-        var lastIssuedByUs = current.issuer == selfPubkey;
-        if (lastIssuedByUs && conf.powDelay && !computationTimeoutDone) {
-          computationTimeoutDone = true;
-          computationTimeout = function() {
-            computationTimeout = setTimeout(function () {
-              if (computeNextCallback)
-                computeNextCallback();
-            }, conf.powDelay * 1000);
-          };
-          next('Skipping', null, 'Waiting ' + conf.powDelay + 's before starting computing next block...');
-        }
-        else next(null, dal);
-      },
-      function (dal, next){
-        if (!current) {
-          return next(null, null, 'Waiting for a root block before computing new blocks');
-        }
-        async.waterfall([
-          function(nextOne) {
-            globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey, nextOne);
-          },
-          function(trial, nextOne) {
-            if (trial > (current.powMin + 1)) {
-              return nextOne('Too high difficulty: waiting for other members to write next block');
-            }
-            async.parallel({
-              block: function(callback){
-                if (lastGeneratedWasWrong) {
-                  that.generateEmptyNextBlock(callback);
-                } else {
-                  that.generateNext(callback);
-                }
-              },
-              signature: function(callback){
-                signature.sync(pair, callback);
-              },
-              trial: function (callback) {
-                globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey, callback);
-              }
-            }, nextOne);
-          },
-          function (res, nextOne){
-            computationTimeoutDone = false;
-            that.makeNextBlock(res.block, res.signature, res.trial, function (err, proofBlock) {
-              nextOne(null, proofBlock, err);
-            });
-          }
-        ], function(err, proofBlock) {
-          next(null, proofBlock, err);
-        });
+  this.startGeneration = function () {
+    return co(function *() {
+      if (!conf.participate) {
+        throw 'This node is configured for not participating to computing blocks.';
       }
-    ], function (err, proofBlock, powCanceled) {
+      if (!selfPubkey) {
+        throw 'No self pubkey found.';
+      }
+      askedStop = null;
+      var block, current;
+      var dal = yield that.mainForkDAL();
+      var isMember = yield dal.isMember(selfPubkey);
+      var powCanceled = '';
+      if (!isMember) {
+        powCanceled = 'Local node is not a member. Waiting to be a member before computing a block.';
+      }
+      else {
+        current = yield dal.getCurrentBlockOrNull();
+        if (!current) {
+          powCanceled = 'Waiting for a root block before computing new blocks';
+        }
+        else {
+          var lastIssuedByUs = current.issuer == selfPubkey;
+          if (lastIssuedByUs) {
+            logger.warn('Waiting ' + conf.powDelay + 's before starting computing next block...');
+            yield Q.Promise(function(resolve){
+              var timeoutToClear = setTimeout(function() {
+                clearTimeout(timeoutToClear);
+                computeNextCallback = null;
+                resolve();
+              }, (conf.powDelay || 1) * 1000);
+              // Offer the possibility to break waiting
+              computeNextCallback = function() {
+                powCanceled = 'Waiting canceled.';
+                clearTimeout(timeoutToClear);
+                resolve();
+              };
+            });
+            if (powCanceled) {
+              logger.warn(powCanceled);
+              return null;
+            }
+          }
+          var trial = yield globalValidator(conf, blockchainDao(null, dal)).getTrialLevel(selfPubkey);
+          if (trial > (current.powMin + 1)) {
+            powCanceled = 'Too high difficulty: waiting for other members to write next block';
+          }
+          else {
+            var block2 = lastGeneratedWasWrong ?
+              yield that.generateEmptyNextBlock() :
+              yield that.generateNext();
+            var signature2 = signature.sync(pair);
+            var trial2 = yield globalValidator(conf, blockchainDao(block2, dal)).getTrialLevel(selfPubkey);
+            computing = true;
+            return yield that.makeNextBlock(block2, signature2, trial2);
+          }
+        }
+      }
       if (powCanceled) {
         logger.warn(powCanceled);
-        computeNextCallback = function () {
-          computeNextCallback = null;
-          done(null, null);
-        };
-        if (computationTimeout && typeof computationTimeout == 'function') {
-          computationTimeout();
-        } else {
-          setTimeout(function() {
-            done(null, null);
-          }, 1000 * 60);
-        }
-      } else {
-        // Proof-of-work found
-        done(err || askedStop, proofBlock);
+        return Q.Promise(function(resolve){
+          computeNextCallback = resolve;
+        });
       }
-    });
+    })
+      .then(function(block){
+        computing = false;
+        return block;
+      });
   };
 
   this.makeNextBlock = function(block, sigFunc, trial, done) {
@@ -1463,7 +1402,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 done && done(null, signedBlock);
                 return signedBlock;
               })
-              .fail(function(err){
+              .catch(function(err){
                 if (done) {
                   return done(err);
                 }
@@ -1513,7 +1452,7 @@ function BlockchainService (conf, mainDAL, pair) {
               function (next) {
                 async.parallel({
                   stat: function (next) {
-                    forkDAL.getStat(statName).then(_.partial(next, null)).fail(next);
+                    forkDAL.getStat(statName).then(_.partial(next, null)).catch(next);
                   },
                   current: function (next) {
                     that.current(next);
@@ -1547,7 +1486,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 });
               },
               function (stat, next) {
-                forkDAL.saveStat(stat, statName).then(_.partial(next, null)).fail(next);
+                forkDAL.saveStat(stat, statName).then(_.partial(next, null)).catch(next);
               }
             ], callback);
           });
@@ -1563,7 +1502,7 @@ function BlockchainService (conf, mainDAL, pair) {
       .then(function(current){
         return that.currentDal.getCertificationExcludingBlock(current, conf.sigValidity);
       })
-      .fail(function(){
+      .catch(function(){
         return { number: -1 };
       });
   };
@@ -1585,7 +1524,7 @@ function NextBlockGenerator(conf, dal) {
             .then(function(dd){
               next(null, dd);
             })
-            .fail(function(err){
+            .catch(function(err){
               next(err);
             });
         },
@@ -1599,7 +1538,7 @@ function NextBlockGenerator(conf, dal) {
                     .then(function(exists) {
                       next(null, exists);
                     })
-                    .fail(next);
+                    .catch(next);
                 }
                 else next(null, false);
               },

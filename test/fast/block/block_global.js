@@ -544,37 +544,56 @@ function BlockCheckerDao (block) {
   }
 
   this.getBlock = function (number, done) {
-    if (number == 0)      
-      done(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: 1411773000, powMin: 1 });
-    else if (number == 2)
-      done(null, { number: 3, powMin: 1 });
-    else if (block.number == 3 && number == 1)      
-      done(null, { time: 1411776000, powMin: 1 });
-    else if (number == 70)      
-      done(null, { medianTime: 1411775000, powMin: 1 });
-    else if (number == 59)      
-      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 });
-    else if (number == 60)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 });
-    else if (number == 61)      
-      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 });
-    else if (number == 63)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 });
-    else if (number == 64)      
-      done(null, { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 });
-    else if (number == 65)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 10 });
-    else if (number == 66)      
-      done(null, { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 });
-    else if (number == 50)      
-      done(null, { time: 160, powMin: 1 });
-    else if (number == 51)      
-      done(null, { time: 161, powMin: 1 });
-    else if (number == 52)      
-      done(null, { time: 162, powMin: 1 });
-    else
-      done('No block found', null);
-  }
+    var block2;
+    if (number == 0) {
+      block2 = { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: 1411773000, powMin: 1 };
+    }
+    else if (number == 2) {
+      block2 = { number: 3, powMin: 1 };
+    }
+    else if (block.number == 3 && number == 1) {
+      block2 = { time: 1411776000, powMin: 1 };
+    }
+    else if (number == 70) {
+      block2 = { medianTime: 1411775000, powMin: 1 };
+    }
+    else if (number == 59) {
+      block2 = { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 };
+    }
+    else if (number == 60) {
+      block2 = { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 };
+    }
+    else if (number == 61) {
+      block2 = { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 };
+    }
+    else if (number == 63) {
+      block2 = { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 };
+    }
+    else if (number == 64) {
+      block2 = { issuer: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', powMin: 1 };
+    }
+    else if (number == 65) {
+      block2 = { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 10 };
+    }
+    else if (number == 66) {
+      block2 = { issuer: 'AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', powMin: 1 };
+    }
+    else if (number == 50) {
+      block2 = { time: 160, powMin: 1 };
+    }
+    else if (number == 51) {
+      block2 = { time: 161, powMin: 1 };
+    }
+    else if (number == 52) {
+      block2 = { time: 162, powMin: 1 };
+    }
+    else {
+      done && done('No block found');
+      throw 'No block found';
+    }
+    done && done(null, block2);
+    return Q(block2);
+  };
 
   this.getToBeKicked = function (blockNumber, done) {
     if (block.number != 4)

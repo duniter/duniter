@@ -36,7 +36,7 @@ function MembershipService (conf, dal) {
           return next('wrong signature for membership');
         }
         // Get already existing Membership with same parameters
-        dal.getMembershipForHashAndIssuer(entry).then(_.partial(next, null)).fail(next);
+        dal.getMembershipForHashAndIssuer(entry).then(_.partial(next, null)).catch(next);
       },
       function (found, next){
         if (found) {
@@ -71,7 +71,7 @@ function MembershipService (conf, dal) {
         // Saves entry
         dal.savePendingMembership(entry).then(function() {
           next();
-        }).fail(next);
+        }).catch(next);
       },
       function (next){
         logger.info('✔ %s %s', entry.issuer, entry.membership);

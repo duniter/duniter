@@ -11,7 +11,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --growl --timeout 20000 test test/fast test/fast/block test/medium test/integration test/",
+    "test": "mocha --harmony --growl --timeout 20000 test test/fast test/fast/block test/medium test/integration test/",
     "start": "bin/ucoin"
   },
   "repository": {
@@ -32,6 +32,7 @@
   "dependencies": {
     "async": "0.2.9",
     "bindings": "1.2.1",
+    "co": "^4.6.0",
     "commander": "2.1.0",
     "event-stream": "3.1.5",
     "express": "3.4.7",

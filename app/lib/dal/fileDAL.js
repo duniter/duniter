@@ -134,7 +134,7 @@ function FileDAL(profile, subPath, myFS) {
       forkPointPreviousHash: newBlock.previousHash
     };
     return coresDAL.getCore(core)
-      .fail(function(){
+      .catch(function(){
         return null;
       })
       .then(function(existing){
@@ -172,7 +172,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, p);
         return p;
       })
-      .fail(function(){
+      .catch(function(){
         done && done(null, null);
         return null;
       });
@@ -184,7 +184,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, p);
         return p;
       })
-      .fail(function(err){
+      .catch(function(err){
         if (err == expectedError) {
           done && done(null, null);
           return null;
@@ -199,21 +199,21 @@ function FileDAL(profile, subPath, myFS) {
 
   this.getPeer = function(pubkey) {
     return peerDAL.getPeer(pubkey)
-      .fail(function() {
+      .catch(function() {
         throw Error('Unknown peer ' + pubkey);
       });
   };
 
   this.getBlock = function(number, done) {
     return blockDAL.getBlock(number)
-      .fail(function(){
+      .catch(function(){
         throw 'Block ' + number + ' not found on DAL ' + that.name;
       })
       .then(function(block){
         done && done(null, block);
         return block;
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });
@@ -225,14 +225,14 @@ function FileDAL(profile, subPath, myFS) {
         if (block.hash != hash) throw "Not found";
         else return block;
       })
-      .fail(function(){
+      .catch(function(){
         throw 'Block ' + [number, hash].join('-') + ' not found in ' + that.name;
       })
       .then(function(block){
         done && done(null, block);
         return block;
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });
@@ -280,7 +280,7 @@ function FileDAL(profile, subPath, myFS) {
 
   this.getCurrentNumber = function() {
     return blockDAL.getCurrent().get('number')
-      .fail(function() {
+      .catch(function() {
         return -1;
       });
   };
@@ -351,7 +351,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, idty);
         return idty;
       })
-      .fail(function(err) {
+      .catch(function(err) {
         if (done) {
           return done(err);
         }
@@ -389,7 +389,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, idty);
         return idty;
       })
-      .fail(function(){
+      .catch(function(){
         done && done(null, null);
         return null;
       });
@@ -406,7 +406,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, members);
         return members;
       })
-      .fail(function(err) {
+      .catch(function(err) {
         if (done) {
           return done(err);
         }
@@ -419,7 +419,7 @@ function FileDAL(profile, subPath, myFS) {
       idtyDAL.getFromPubkey(pubkey)
         .then(function(idty){
           return idty;
-        }).fail(function() {
+        }).catch(function() {
           return null;
         }), done);
   };
@@ -438,7 +438,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, idty);
         return idty;
       })
-      .fail(function(){
+      .catch(function(){
         done && done(null, null);
       });
   };
@@ -487,7 +487,7 @@ function FileDAL(profile, subPath, myFS) {
       .then(function(res) {
         done && done(null, res);
         return res;
-      }).fail(done);
+      }).catch(done);
   };
 
   this.getWrittenByUID = function(uid) {
@@ -533,7 +533,7 @@ function FileDAL(profile, subPath, myFS) {
         matching.reverse();
         return matching;
       })
-      .fail(function(err){
+      .catch(function(err){
         throw err;
       });
   };
@@ -569,7 +569,7 @@ function FileDAL(profile, subPath, myFS) {
 
   this.getMembershipForHashAndIssuer = function(ms) {
     return msDAL.getMembershipOfIssuer(ms)
-      .fail(function(){
+      .catch(function(){
         return null;
       });
   };
@@ -617,7 +617,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, idty.member);
         return true;
       })
-      .fail(function(){
+      .catch(function(){
         done && done(null, false);
         return false;
       });
@@ -630,7 +630,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done();
         return true;
       })
-      .fail(function(){
+      .catch(function(){
         done && done('Is not a member');
         return false;
       });
@@ -642,7 +642,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, idty.leaving);
         return true;
       })
-      .fail(function(){
+      .catch(function(){
         done && done(null, false);
         return false;
       });
@@ -655,7 +655,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null);
         return true;
       })
-      .fail(function(){
+      .catch(function(){
         done && done('Not a non-leaving member');
         if (!done) {
           throw 'Not a non-leaving member';
@@ -687,7 +687,7 @@ function FileDAL(profile, subPath, myFS) {
       .then(function(){
         return that.donable(Q(), done);
       })
-      .fail(done);
+      .catch(done);
   };
 
   this.setRevoked = function(hash, done) {
@@ -699,14 +699,14 @@ function FileDAL(profile, subPath, myFS) {
       .then(function(){
         done && done();
       })
-      .fail(done);
+      .catch(done);
   };
 
   this.getMembershipExcludingBlock = function(current, msValidtyTime) {
     var currentExcluding = current.number == 0 ?
       Q(null) :
       indicatorsDAL.getCurrentMembershipExcludingBlock()
-        .fail(function() { return null; });
+        .catch(function() { return null; });
     return currentExcluding
       .then(function(excluding){
         // Case not block was excluding yet
@@ -718,7 +718,7 @@ function FileDAL(profile, subPath, myFS) {
                 return indicatorsDAL.writeCurrentExcluding(root).thenResolve(root);
               }
             })
-            .fail(function(){
+            .catch(function(){
               // No possible excluding block
             });
         }
@@ -736,7 +736,7 @@ function FileDAL(profile, subPath, myFS) {
     var currentExcluding = current.number == 0 ?
       Q(null) :
       indicatorsDAL.getCurrentCertificationExcludingBlock()
-        .fail(function() { return null; });
+        .catch(function() { return null; });
     return currentExcluding
       .then(function(excluding){
         // Case not block was excluding yet
@@ -748,7 +748,7 @@ function FileDAL(profile, subPath, myFS) {
                 return indicatorsDAL.writeCurrentExcludingForCert(root).thenResolve(root);
               }
             })
-            .fail(function(){
+            .catch(function(){
               // No possible excluding block
             });
         }
@@ -792,7 +792,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, matchingPeers);
         return matchingPeers;
       })
-      .fail(done);
+      .catch(done);
   };
 
   this.listAllPeersWithStatusNewUP = function() {
@@ -807,7 +807,7 @@ function FileDAL(profile, subPath, myFS) {
 
   this.findPeers = function(pubkey) {
     return that.getPeer(pubkey)
-      .fail(function(){
+      .catch(function(){
         return [];
       })
       .then(function(peer){
@@ -826,7 +826,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, matchingPeers);
         return matchingPeers;
       })
-      .fail(done);
+      .catch(done);
   };
 
   this.setPeerDown = function(pubkey) {
@@ -835,7 +835,7 @@ function FileDAL(profile, subPath, myFS) {
         p.status = 'DOWN';
         return peerDAL.savePeer(p);
       })
-      .fail(function() {
+      .catch(function() {
         // Silent error
       });
   };
@@ -865,7 +865,7 @@ function FileDAL(profile, subPath, myFS) {
       .then(function(){
         done && done();
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });
@@ -895,7 +895,7 @@ function FileDAL(profile, subPath, myFS) {
       .then(function(){
         done && done();
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });
@@ -914,7 +914,7 @@ function FileDAL(profile, subPath, myFS) {
       .then(function(){
         done && done();
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });
@@ -931,7 +931,7 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, merkle);
         return merkle;
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });
@@ -1007,7 +1007,7 @@ function FileDAL(profile, subPath, myFS) {
             return JSON.parse(data);
           });
       })
-      .fail(function(){
+      .catch(function(){
         return { history: [] };
       })
       .then(function(obj){
@@ -1044,7 +1044,7 @@ function FileDAL(profile, subPath, myFS) {
             return JSON.parse(data);
           });
       })
-      .fail(function(){
+      .catch(function(){
         return { history: [] };
       })
       .then(function(obj){
@@ -1060,7 +1060,7 @@ function FileDAL(profile, subPath, myFS) {
             return obj;
           });
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });
@@ -1095,7 +1095,7 @@ function FileDAL(profile, subPath, myFS) {
           return { core: that.name, file: fileName };
         });
       })
-      .fail(function() {
+      .catch(function() {
         return [];
       });
   }
@@ -1276,7 +1276,7 @@ function FileDAL(profile, subPath, myFS) {
       .then(function(){
         done && done();
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
       });
   }

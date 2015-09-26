@@ -17,7 +17,7 @@ function StatDAL(dal) {
 
   this.loadStats = function () {
     return that.read('stats.json')
-      .fail(function(){
+      .catch(function(){
         return {};
       });
   };

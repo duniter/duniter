@@ -24,7 +24,7 @@ function TransactionService (conf, dal) {
     var globalValidation = null;
     async.waterfall([
       function (next) {
-        dal.getTxByHash(tx.hash).then(_.partial(next, null)).fail(next);
+        dal.getTxByHash(tx.hash).then(_.partial(next, null)).catch(next);
       },
       function (alreadyProcessed, next) {
         if (alreadyProcessed)
@@ -46,7 +46,7 @@ function TransactionService (conf, dal) {
         dal.saveTransaction(tx).then(function() {
           next(null, tx);
         })
-          .fail(next);
+          .catch(next);
       }
     ], done);
   };

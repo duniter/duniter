@@ -2,6 +2,7 @@
 
 var Q             = require('q');
 var _             = require('underscore');
+var co            = require('co');
 var async         = require('async');
 var crypto        = require('./crypto');
 var moment        = require('moment');
@@ -140,12 +141,12 @@ function GlobalValidator (conf, dao) {
     return getTrialLevel(issuer, done);
   };
 
-  this.getPoWMin = function (blockNumber, done) {
-    getPoWMinFor(blockNumber, done);
+  this.getPoWMin = function (blockNumber) {
+    return getPoWMinFor(blockNumber);
   };
 
   this.getMedianTime = function (blockNumber, done) {
-    getMedianTime(blockNumber, done);
+    return getMedianTime(blockNumber, done);
   };
 
   /*****************************
@@ -351,7 +352,11 @@ function GlobalValidator (conf, dao) {
     }
     async.waterfall([
       function (next) {
-        getPoWMinFor(block.number, next);
+        getPoWMinFor(block.number)
+          .then(function(powmin) {
+            next(null, powmin);
+          })
+          .catch(next);
       },
       function (correctPowMin, next) {
         if (block.powMin < correctPowMin) {
@@ -364,45 +369,36 @@ function GlobalValidator (conf, dao) {
           next();
         }
       }
-    ], done);
+    ], function(err, powmin) {
+      done(err, powmin);
+    });
   }
 
   /**
   * Deduce the PoWMin field for a given block number
   */
-  function getPoWMinFor (blockNumber, done) {
-    if (blockNumber == 0) {
-      done('Cannot deduce PoWMin for block#0');
-    } else if (blockNumber % conf.dtDiffEval != 0) {
-      async.waterfall([
-        function (next) {
-          // Find dao
-          dao.getBlock(blockNumber - 1, next);
-        },
-        function (previous, next) {
-          next(null, previous.powMin);
-        }
-      ], done);
-    } else {
-      async.waterfall([
-        function (next){
-          async.parallel({
-            previous: function (next) {
-              dao.getBlock(blockNumber - 1, next);
-            },
-            medianTime: function (next) {
-              // Get Mediant time for "blockNumber"
-              getMedianTime(blockNumber, next);
-            },
-            lastDistant: function (next) {
-              dao.getBlock(Math.max(0, blockNumber - conf.dtDiffEval), next);
-            }
-          }, next);
-        },
-        function (res, next){
+  function getPoWMinFor (blockNumber) {
+    return Q.Promise(function(resolve, reject){
+      if (blockNumber == 0) {
+        reject('Cannot deduce PoWMin for block#0');
+      } else if (blockNumber % conf.dtDiffEval != 0) {
+        co(function *() {
+          var previous = yield dao.getBlock(blockNumber - 1);
+          return previous.powMin;
+        })
+          .then(resolve)
+        .catch(function(err) {
+          reject(err);
+          throw err;
+        });
+      } else {
+        co(function *() {
+          var previous = yield dao.getBlock(blockNumber - 1);
+          var medianTime = yield getMedianTime(blockNumber);
+          var lastDistant = yield dao.getBlock(Math.max(0, blockNumber - conf.dtDiffEval));
           // Compute PoWMin value
-          var duration = res.medianTime - res.lastDistant.medianTime;
-          var speed = conf.dtDiffEval*1.0 / duration*1.0;
+          var duration = medianTime - lastDistant.medianTime;
+          var speed = (conf.dtDiffEval * 1.0) / (duration * 1.0);
           var maxGenTime = conf.avgGenTime * 4;
           var minGenTime = conf.avgGenTime / 4;
           var maxSpeed = 1.0 / minGenTime;
@@ -410,19 +406,20 @@ function GlobalValidator (conf, dao) {
           // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');
           if (speed >= maxSpeed) {
             // Must increase difficulty
-            next(null, res.previous.powMin + 1);
+            resolve(previous.powMin + 1);
           }
           else if (speed <= minSpeed) {
             // Must decrease difficulty
-            next(null, Math.max(0, res.previous.powMin - 1));
+            resolve(Math.max(0, previous.powMin - 1));
           }
           else {
             // Must not change difficulty
-            next(null, res.previous.powMin);
+            resolve(previous.powMin);
           }
-        },
-      ], done);
-    }
+        })
+          .catch(reject);
+      }
+    });
   }
 
   function checkProofOfWork (block, done) {
@@ -461,51 +458,60 @@ function GlobalValidator (conf, dao) {
   function getMedianTime (blockNumber, done) {
     if (blockNumber == 0) {
       // No rule to check for block#0
-      done(null, 0);
-      return;
+      done && done(null, 0);
+      return Q(0);
     }
-    var blocksCount;
-    async.waterfall([
-      function (next){
-        // Get the number of blocks we can look back from this block
-        blocksCount = blockNumber < conf.medianTimeBlocks ? blockNumber : conf.medianTimeBlocks;
-        // Get their 'time' value
-        // console.log('Times between ', blockNumber - blocksCount, blockNumber - 1);
-        dao.getTimesBetween(blockNumber - blocksCount, blockNumber - 1, next);
-      },
-      function (timeValues, next) {
-        timeValues.sort();
-        // console.log(timeValues);
-        var times = [0];
-        var middle;
-        if (blocksCount % 2 == 0) {
-          // Even number of blocks
-          middle = blocksCount / 2;
-          times = [timeValues[middle - 1], timeValues[middle]];
-          // console.log('middle', middle);
-          // console.log('times = ', times);
+    return Q.Promise(function(resolve, reject){
+      var blocksCount;
+      async.waterfall([
+        function (next){
+          // Get the number of blocks we can look back from this block
+          blocksCount = blockNumber < conf.medianTimeBlocks ? blockNumber : conf.medianTimeBlocks;
+          // Get their 'time' value
+          // console.log('Times between ', blockNumber - blocksCount, blockNumber - 1);
+          dao.getTimesBetween(blockNumber - blocksCount, blockNumber - 1, next);
+        },
+        function (timeValues, next) {
+          timeValues.sort();
+          // console.log(timeValues);
+          var times = [0];
+          var middle;
+          if (blocksCount % 2 == 0) {
+            // Even number of blocks
+            middle = blocksCount / 2;
+            times = [timeValues[middle - 1], timeValues[middle]];
+            // console.log('middle', middle);
+            // console.log('times = ', times);
+          }
+          else {
+            // Odd number of blocks
+            middle = (blocksCount - 1) / 2;
+            times = [timeValues[middle]];
+            // console.log('middle', middle);
+            // console.log('times = ', times);
+          }
+          // Content
+          if (times.length == 2) {
+            // Even number of times
+            next(null, Math.ceil((times[0] + times[1]) / 2));
+          }
+          else if (times.length == 1) {
+            // Odd number of times
+            next(null, times[0]);
+          }
+          else {
+            next('No block found for MedianTime comparison');
+          }
         }
-        else {
-          // Odd number of blocks
-          middle = (blocksCount - 1) / 2;
-          times = [timeValues[middle]];
-          // console.log('middle', middle);
-          // console.log('times = ', times);
+      ], function(err, block) {
+        if (err) {
+          done && done(err);
+          return reject(err);
         }
-        // Content
-        if (times.length == 2) {
-          // Even number of times
-          next(null, Math.ceil((times[0] + times[1]) / 2));
-        }
-        else if (times.length == 1) {
-          // Odd number of times
-          next(null, times[0]);
-        }
-        else {
-          next('No block found for MedianTime comparison');
-        }
-      }
-    ], done);
+        done && done(null, block);
+        resolve(block);
+      });
+    });
   }
 
   function checkUD (block, done) {
@@ -625,10 +631,10 @@ function GlobalValidator (conf, dao) {
             function (next){
               async.parallel({
                 lasts: function (next) {
-                  dao.lastBlockOfIssuer(issuer).then(_.partial(next, null)).fail(next);
+                  dao.lastBlockOfIssuer(issuer).then(_.partial(next, null)).catch(next);
                 },
                 powMin: function (next) {
-                  getPoWMinFor(current.number + 1, next);
+                  getPoWMinFor(current.number + 1).then(_.partial(next, null)).catch(next);
                 }
               }, function (err, res) {
                 next(err, res);

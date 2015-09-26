@@ -139,7 +139,7 @@ function Node (dbName, options) {
               started = true;
               next();
             })
-            .fail(next);
+            .catch(next);
         },
         function (next) {
           vucoin(options.remoteipv4, options.remoteport, next);
@@ -175,7 +175,7 @@ function Node (dbName, options) {
           //cbArgs[cbArgs.length++] = server.conf;
           callback(null, server);
         })
-        .fail(function(err){
+        .catch(function(err){
           server.disconnect();
           throw err;
         });

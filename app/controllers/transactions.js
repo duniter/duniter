@@ -51,7 +51,7 @@ function TransactionBinding(server) {
       },
       function (pPubkey, next) {
         pubkey = pPubkey;
-        server.dal.getAvailableSourcesByPubkey(pubkey).then(_.partial(next, null)).fail(next);
+        server.dal.getAvailableSourcesByPubkey(pubkey).then(_.partial(next, null)).catch(next);
       },
       function (sources, next) {
         var result = {
@@ -194,7 +194,7 @@ function TransactionBinding(server) {
   function getHistory(pubkey, filter, done) {
     async.waterfall([
       function (next) {
-        server.dal.getTransactionsHistory(pubkey).then(_.partial(next, null)).fail(next);
+        server.dal.getTransactionsHistory(pubkey).then(_.partial(next, null)).catch(next);
       },
       function (history, next) {
         var result = {
@@ -226,7 +226,7 @@ function TransactionBinding(server) {
         done && done(null, res);
         return res;
       })
-      .fail(function(err){
+      .catch(function(err){
         done && done(err);
         throw err;
       });

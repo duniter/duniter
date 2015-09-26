@@ -108,7 +108,7 @@ function CertDAL(dal) {
               .then(function(data){
                 certs.push(data);
               })
-              .fail(function(err){
+              .catch(function(err){
                 throw err;
               });
           });
@@ -259,9 +259,9 @@ function CertDAL(dal) {
     return that.initTree()
       .then(function(){
         return that.read('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json')
-          .fail(function(){
+          .catch(function(){
             return that.read('certs/linked/target/' + cert.target + '/' + getCertID(cert) + '.json')
-              .fail(function() {
+              .catch(function() {
                 return false;
               });
           });

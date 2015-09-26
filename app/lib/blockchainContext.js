@@ -78,7 +78,7 @@ function BlockchainContext(conf, dal) {
         err ? reject(err) : resolve(block);
       });
     })
-      .fail(function(err){
+      .catch(function(err){
         throw err;
       });
   };
@@ -160,7 +160,7 @@ function BlockchainContext(conf, dal) {
           .then(function() {
             next();
           })
-          .fail(next);
+          .catch(next);
       },
       function (next){
         // Update consumed sources & create new ones
@@ -219,34 +219,34 @@ function BlockchainContext(conf, dal) {
           if (!idty.hash)
             idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
           idty.indexNb = indexNb;
-          dal.newIdentity(idty, block.number).then(_.partial(callback, null)).fail(callback);
+          dal.newIdentity(idty, block.number).then(_.partial(callback, null)).catch(callback);
         }, next);
       },
       function (next) {
         // Joiners (come back)
         async.forEachSeries(block.joiners, function(inlineMS, callback){
           var ms = Identity.statics.fromInline(inlineMS);
-          dal.joinIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).fail(callback);
+          dal.joinIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).catch(callback);
         }, next);
       },
       function (next) {
         // Actives
         async.forEachSeries(block.actives, function(inlineMS, callback){
           var ms = Identity.statics.fromInline(inlineMS);
-          dal.activeIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).fail(callback);
+          dal.activeIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).catch(callback);
         }, next);
       },
       function (next) {
         // Leavers
         async.forEachSeries(block.leavers, function(inlineMS, callback){
           var ms = Identity.statics.fromInline(inlineMS);
-          dal.leaveIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).fail(callback);
+          dal.leaveIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).catch(callback);
         }, next);
       },
       function (next) {
         // Excluded
         async.forEachSeries(block.excluded, function (pubkey, callback) {
-          dal.excludeIdentity(pubkey).then(_.partial(callback, null)).fail(callback);
+          dal.excludeIdentity(pubkey).then(_.partial(callback, null)).catch(callback);
         }, next);
       }
     ], done);
@@ -268,7 +268,7 @@ function BlockchainContext(conf, dal) {
         },
         function (idty, next){
           from_uid = idty.uid;
-          dal.existsCert(cert).then(_.partial(next, null)).fail(next);
+          dal.existsCert(cert).then(_.partial(next, null)).catch(next);
         },
         function (existing, next) {
           if (existing) {
@@ -280,7 +280,7 @@ function BlockchainContext(conf, dal) {
           cert.indexNb = indexNb;
           dal.officializeCertification(new Certification(cert))
             .then(_.partial(next, null))
-            .fail(next);
+            .catch(next);
         }
       ], callback);
     }, done);
@@ -320,7 +320,7 @@ function BlockchainContext(conf, dal) {
           target: cert.to,
           timestamp: block.medianTime,
           obsolete: false
-        })).then(_.partial(callback, null)).fail(callback);
+        })).then(_.partial(callback, null)).catch(callback);
     }, done);
   }
 
@@ -343,7 +343,7 @@ function BlockchainContext(conf, dal) {
       conf.blocksRot        = parseInt(sp[12]);
       conf.percentRot       = parseFloat(sp[13]);
       conf.currency         = block.currency;
-      return dal.saveConf(conf).then(done).fail(done);
+      return dal.saveConf(conf).then(done).catch(done);
     }
     else done();
   }
@@ -353,7 +353,7 @@ function BlockchainContext(conf, dal) {
       function (next){
         dal.obsoletesLinks(block.medianTime - conf.sigValidity).then(function() {
           next();
-        }).fail(next);
+        }).catch(next);
       },
       function (next){
         dal.getMembers(next);
@@ -385,7 +385,7 @@ function BlockchainContext(conf, dal) {
   this.checkHaveEnoughLinks = function(target, newLinks, done) {
     async.waterfall([
       function (next){
-        dal.getValidLinksTo(target).then(_.partial(next, null)).fail(next);
+        dal.getValidLinksTo(target).then(_.partial(next, null)).catch(next);
       },
       function (links, next){
         var count = links.length;
@@ -426,7 +426,7 @@ function BlockchainContext(conf, dal) {
                   'fingerprint': block.hash,
                   'amount': block.dividend,
                   'consumed': 0
-                })).then(_.partial(callback, null)).fail(callback);
+                })).then(_.partial(callback, null)).catch(callback);
               }, nextOne);
             }
           ], next);
@@ -445,7 +445,7 @@ function BlockchainContext(conf, dal) {
           async.parallel([
             function (nextOne) {
               async.forEachSeries(txObj.inputs, function (input, callback2) {
-                dal.setConsumedSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount).then(_.partial(callback2, null)).fail(callback2);
+                dal.setConsumedSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount).then(_.partial(callback2, null)).catch(callback2);
               }, nextOne);
             },
             function (nextOne) {
@@ -457,7 +457,7 @@ function BlockchainContext(conf, dal) {
                   'fingerprint': txHash,
                   'amount': output.amount,
                   'consumed': 0
-                })).then(_.partial(callback2, null)).fail(callback2);
+                })).then(_.partial(callback2, null)).catch(callback2);
               }, nextOne);
             }
           ], callback);
@@ -476,7 +476,7 @@ function BlockchainContext(conf, dal) {
       obj.issuers = json.signatories;
       var tx = new Transaction(obj);
       var txHash = tx.getHash();
-      dal.removeTxByHash(txHash).then(_.partial(callback, null)).fail(callback);
+      dal.removeTxByHash(txHash).then(_.partial(callback, null)).catch(callback);
     }, done);
   }
 }

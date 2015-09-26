@@ -68,7 +68,7 @@ function BlockchainBinding (server) {
       .then(function(parameters){
         res.send(200, JSON.stringify(parameters, null, "  "));
       })
-      .fail(function(){
+      .catch(function(){
         res.send(200, JSON.stringify({}, null, "  "));
       })
   };
@@ -89,7 +89,7 @@ function BlockchainBinding (server) {
     return function (req, res) {
       async.waterfall([
         function (next) {
-          server.dal.getStat(statName).then(_.partial(next, null)).fail(next);
+          server.dal.getStat(statName).then(_.partial(next, null)).catch(next);
         }
       ], function (err, stat) {
         if(err){
@@ -271,7 +271,7 @@ function BlockchainBinding (server) {
           blocks: blocks
         }, null, "  "));
       })
-      .fail(function(err){
+      .catch(function(err){
         res.send(404, err && (err.message || err));
       });
   };

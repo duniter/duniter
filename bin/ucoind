@@ -142,7 +142,7 @@ program
                     }
                     return selfPeer;
                   })
-                  .fail(function(){
+                  .catch(function(){
                     return Q.nfcall(server.PeeringService.generateSelfPeer, server.conf)
                       .then(function(){
                         return server.dal.getPeer(server.PeeringService.pubkey);
@@ -160,7 +160,7 @@ program
               });
           });
       })
-      .fail(function(err){
+      .catch(function(err){
         logger.error(err.code || err.message || err);
         process.exit();
       });
@@ -192,7 +192,7 @@ program
           localCurrent = current;
           if (!localCurrent) return next('Local node is dropped behind');
           if (localCurrent.hash != remoteCurrent.hash) return next('Remote node has forked');
-          server.dal.getBlockFrom(localCurrent.number).then(_.partial(next, null)).fail(next);
+          server.dal.getBlockFrom(localCurrent.number).then(_.partial(next, null)).catch(next);
         });
       },
       function (blocks, next){
@@ -226,7 +226,7 @@ program
         logger.info('Records computed again.');
         exit(server);
       })
-      .fail(logIfErrorAndExit(server))
+      .catch(logIfErrorAndExit(server))
   }));
 
 program
@@ -255,7 +255,7 @@ function generateAndSend (generationMethod) {
               logger.info('Acceptable block');
               next();
             })
-            .fail(next);
+            .catch(next);
         }
         else {
           logger.debug('Block to be sent: %s', block.quickDescription());
@@ -313,7 +313,7 @@ program
   .action(service(function (upto, server) {
     async.waterfall([
       function (next){
-        server.dal.getBlocksUntil(upto).then(_.partial(next, null)).fail(next);
+        server.dal.getBlocksUntil(upto).then(_.partial(next, null)).catch(next);
       },
       function (blocks, next){
         var jsoned = [];
@@ -340,7 +340,7 @@ program
       .then(function () {
         logger.warn('Configuration seems correct.');
       })
-      .fail(function(err) {
+      .catch(function(err) {
         logger.warn(err.message || err);
       })
       .finally(function() {
@@ -357,7 +357,7 @@ program
       .then(function() {
         logger.debug("Configuration saved.");
       })
-      .fail(function(err) {
+      .catch(function(err) {
         logger.error("Configuration could not be saved: " + err);
       })
       .finally(function() {
@@ -445,7 +445,7 @@ function serverStart(server, conf) {
             return server.startBlockComputation();
           }
         })
-        .fail(next);
+        .catch(next);
     }
   ], function (err) {
     if(err){
@@ -479,7 +479,7 @@ function startWizard(step, server, conf, done) {
           logger.debug("Configuration saved.");
           next();
         })
-        .fail(next);
+        .catch(next);
     },
     function (next) {
       // Check config
@@ -574,7 +574,7 @@ function getBootstrapOperations(host, port, server, conf) {
       }, next);
     },
     function(next) {
-      return server.dal.saveConf(conf).then(_.partial(next, null)).fail(next);
+      return server.dal.saveConf(conf).then(_.partial(next, null)).catch(next);
     }]);
   ops.push(function (next){
     logger.info('Configuration saved.');
@@ -701,7 +701,7 @@ function connect(callback) {
         cbArgs[cbArgs.length++] = server.conf;
         callback.apply(this, cbArgs);
       })
-      .fail(function(err){
+      .catch(function(err){
         logger.error(err);
         server.disconnect();
         process.exit();
@@ -724,7 +724,7 @@ function service(callback) {
         cbArgs[cbArgs.length++] = server.conf;
         callback.apply(this, cbArgs);
       })
-      .fail(function(err){
+      .catch(function(err){
         logger.error(err);
         server.disconnect();
         process.exit();

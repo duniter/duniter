@@ -73,14 +73,14 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                       .then(function(number){
                         next(null, number);
                       })
-                      .fail(next);
+                      .catch(next);
                   },
                   localCurrent: function (next) {
                     dal.getCurrentBlockOrNull()
                       .then(function(block){
                         next(null, block);
                       })
-                      .fail(function(err) {
+                      .catch(function(err) {
                         next(err);
                       });
                   },
@@ -156,7 +156,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
                               previousPromise
                                 .then(function(){
                                   return applyGivenBlock(cautious, remoteNumber)(block)
-                                    .fail(function(errAddBlock){
+                                    .catch(function(errAddBlock){
                                       thisBlockPromise.reject(errAddBlock);
                                     })
                                     .then(function(){
@@ -186,7 +186,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
             .then(function(){
               next();
             })
-            .fail(function(err) {
+            .catch(function(err) {
               next(err);
             });
         },

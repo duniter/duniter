@@ -33,14 +33,14 @@ function WOTBinding (server) {
         ParametersService.getSearch(req, next);
       },
       function (search, next){
-        IdentityService.search(search).then(_.partial(next, null)).fail(next);
+        IdentityService.search(search).then(_.partial(next, null)).catch(next);
       },
       function (identities, next){
         identities.forEach(function(idty, index){
           identities[index] = new Identity(idty);
         });
         BlockchainService.getCertificationsExludingBlock()
-          .fail(function(err){
+          .catch(function(err){
             next(err);
             throw err;
           })
@@ -48,7 +48,7 @@ function WOTBinding (server) {
             async.forEach(identities, function(idty, callback){
               async.waterfall([
                 function (next){
-                  server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).fail(next);
+                  server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).catch(next);
                 },
                 function (certs, next){
                   var validCerts = [];
@@ -83,7 +83,7 @@ function WOTBinding (server) {
                   });
                 },
                 function (next) {
-                  server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).fail(next);
+                  server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).catch(next);
                 },
                 function (signed, next){
                   var validSigned = [];
@@ -162,7 +162,7 @@ function WOTBinding (server) {
       function (idty, next){
         async.waterfall([
           function (next){
-            server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).fail(next);
+            server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).catch(next);
           },
           function (certs, next){
             idty.certs = [];
@@ -236,7 +236,7 @@ function WOTBinding (server) {
         ParametersService.getPubkey(req, next);
       },
       function (search, next){
-        IdentityService.search(search).then(_.partial(next, null)).fail(next);
+        IdentityService.search(search).then(_.partial(next, null)).catch(next);
       },
       function (identities, next){
         return identities.reduce(function(p, identity) {
@@ -246,7 +246,7 @@ function WOTBinding (server) {
                 .then(function(requirements){
                   return all.concat([requirements]);
                 })
-                .fail(function(err){
+                .catch(function(err){
                   logger.warn(err);
                   return all;
                 });
@@ -263,7 +263,7 @@ function WOTBinding (server) {
               })
             });
           })
-          .fail(next);
+          .catch(next);
       }
     ], function (err, json) {
       if(err){
@@ -290,7 +290,7 @@ function WOTBinding (server) {
       function (idty, next){
         async.waterfall([
           function (next){
-            server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).fail(next);
+            server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).catch(next);
           },
           function (certs, next){
             idty.certs = [];

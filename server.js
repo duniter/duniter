@@ -2,6 +2,7 @@
 var stream      = require('stream');
 var async       = require('async');
 var util        = require('util');
+var co          = require('co');
 var _           = require('underscore');
 var Q           = require('q');
 var parsers     = require('./app/lib/streams/parsers/doc');
@@ -60,7 +61,7 @@ function Server (dbConf, overrideConf) {
           done && done(err);
           return that;
         })
-        .fail(done));
+        .catch(done));
   };
 
   this.submit = function (obj, isInnerWrite, done) {
@@ -154,7 +155,7 @@ function Server (dbConf, overrideConf) {
   this.initPeer = function (done) {
     async.waterfall([
       function (next){
-        that.checkConfig().then(next).fail(next);
+        that.checkConfig().then(next).catch(next);
       },
       function (next){
         logger.info('Starting core: %s', that.dal.name);
@@ -178,30 +179,29 @@ function Server (dbConf, overrideConf) {
     ], done);
   };
 
+  let shouldContinue = true;
+
+  this.stopBlockComputation = function() {
+    shouldContinue = false;
+  };
+
   this.startBlockComputation = function() {
-    async.forever(
-      function tryToGenerateNextBlock(next) {
-        async.waterfall([
-          function (nextOne) {
-            that.BlockchainService.startGeneration(nextOne);
-          },
-          function (block, nextOne) {
-            if (block) {
-              var peer = new Peer({endpoints: [['BASIC_MERKLED_API', that.conf.ipv4, that.conf.port].join(' ')]});
-              multicaster(that.conf.isolate).sendBlock(peer, block, nextOne);
-            } else {
-              nextOne();
-            }
+    return co(function *() {
+      while (shouldContinue) {
+        try {
+          let block = yield that.BlockchainService.startGeneration();
+          if (block && shouldContinue) {
+            var peer = new Peer({endpoints: [['BASIC_MERKLED_API', that.conf.ipv4, that.conf.port].join(' ')]});
+            yield multicaster(that.conf.isolate).sendBlock(peer, block);
           }
-        ], function (err) {
-          next(err);
-        });
-      },
-      function onError(err) {
-        logger.error(err);
-        logger.error('Block generation STOPPED.');
+        }
+        catch (e) {
+          logger.error(e);
+          logger.error('Block generation STOPPED.');
+          shouldContinue = false;
+        }
       }
-    );
+    });
   };
 
   this.checkConfig = function () {
@@ -324,7 +324,7 @@ function Server (dbConf, overrideConf) {
                     that.BlockchainService.addStatComputing();
                     done(null, block);
                   })
-                  .fail(done);
+                  .catch(done);
               }
             };
             that.BlockchainService.init(next);

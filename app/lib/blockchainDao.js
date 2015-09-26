@@ -18,7 +18,7 @@ module.exports = function(dal) {
     this.existsUserID = function (uid, done) {
       async.waterfall([
         function (next){
-          dal.getWrittenByUID(uid).then(_.partial(next, null)).fail(next);
+          dal.getWrittenByUID(uid).then(_.partial(next, null)).catch(next);
         },
         function (idty, next){
           next(null, idty != null);
@@ -52,7 +52,7 @@ module.exports = function(dal) {
     this.getPreviousLinkFor = function (from, to, done) {
       async.waterfall([
         function (next){
-          dal.getObsoletesFromTo(from, to).then(_.partial(next, null)).fail(next);
+          dal.getObsoletesFromTo(from, to).then(_.partial(next, null)).catch(next);
         },
         function (links, next){
           next(null, links.length > 0 ? links[0] : null);
@@ -61,7 +61,7 @@ module.exports = function(dal) {
     };
 
     this.getValidLinksTo = function (to, done) {
-      dal.getValidLinksTo(to).then(_.partial(done, null)).fail(done);
+      dal.getValidLinksTo(to).then(_.partial(done, null)).catch(done);
     };
 
     this.getMembers = function (done) {
@@ -94,11 +94,11 @@ module.exports = function(dal) {
     };
 
     this.getPreviousLinkFromTo = function (from, to, done) {
-      dal.getValidFromTo(from, to).then(_.partial(done, null)).fail(done);
+      dal.getValidFromTo(from, to).then(_.partial(done, null)).catch(done);
     };
 
     this.getValidLinksFrom = function (member, done) {
-      dal.getValidLinksFrom(member).then(_.partial(done, null)).fail(done);
+      dal.getValidLinksFrom(member).then(_.partial(done, null)).catch(done);
     };
 
     this.getCurrent = function (done) {
@@ -106,7 +106,7 @@ module.exports = function(dal) {
     };
 
     this.getBlock = function (number, done) {
-      dal.getBlock(number, done);
+      return dal.getBlock(number, done);
     };
 
     this.findBlock = function (number, fpr, done) {
@@ -122,15 +122,15 @@ module.exports = function(dal) {
     };
 
     this.getLastUDBlock = function (done) {
-      dal.lastUDBlock().then(_.partial(done, null)).fail(done);
+      dal.lastUDBlock().then(_.partial(done, null)).catch(done);
     };
 
     this.isAvailableUDSource = function (pubkey, number, fingerprint, amount, done) {
-      dal.existsNotConsumed('D', pubkey, number, fingerprint, amount).then(_.partial(done, null)).fail(done);
+      dal.existsNotConsumed('D', pubkey, number, fingerprint, amount).then(_.partial(done, null)).catch(done);
     };
 
     this.isAvailableTXSource = function (pubkey, number, fingerprint, amount, done) {
-      dal.existsNotConsumed('T', pubkey, number, fingerprint, amount).then(_.partial(done, null)).fail(done);
+      dal.existsNotConsumed('T', pubkey, number, fingerprint, amount).then(_.partial(done, null)).catch(done);
     };
 
     this.getCurrentMembershipNumber = function (pubkey, done) {
@@ -150,7 +150,7 @@ module.exports = function(dal) {
     this.getIssuersBetween = function (bStart, bEnd, done) {
       async.waterfall([
         function (next) {
-          dal.getBlocksBetween(bStart, bEnd).then(_.partial(next, null)).fail(next);
+          dal.getBlocksBetween(bStart, bEnd).then(_.partial(next, null)).catch(next);
         },
         function (blocks, next) {
           next(null, _.pluck(blocks, 'issuer'));
@@ -161,7 +161,7 @@ module.exports = function(dal) {
     this.getTimesBetween = function (bStart, bEnd, done) {
       async.waterfall([
         function (next) {
-          dal.getBlocksBetween(bStart, bEnd).then(_.partial(next, null)).fail(next);
+          dal.getBlocksBetween(bStart, bEnd).then(_.partial(next, null)).catch(next);
         },
         function (blocks, next) {
           next(null, _.pluck(blocks, 'time'));

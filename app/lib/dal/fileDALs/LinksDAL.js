@@ -133,7 +133,7 @@ function LinksDAL(dal) {
                             that.remove('links/valid/from/' + link.source + '/' + getLinkIDTo(link) + '.json'),
                             that.remove('links/valid/to/' + link.target + '/' + getLinkIDFrom(link) + '.json')
                           ])
-                            .fail(function() {
+                            .catch(function() {
                               // Silent error, fileDal is the only one which will work
                             })
                             .then(function () {

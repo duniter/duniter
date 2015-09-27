@@ -8,9 +8,9 @@ skinparam sequence {
 }
 
 participant "System" as S
-participant "Folder 3\n /A.json" as F3
-participant "Folder 2\n /B.json" as F2
-participant "Folder 1\n /A.json\n /C.json" as F1
+participant "Folder of block **B5_a**\n /A.json" as F3
+participant "Folder of block **B4**\n /B.json" as F2
+participant "Folder of block **B3**\n /A.json\n /C.json" as F1
 
 == Direct READ ==
 

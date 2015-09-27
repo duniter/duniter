@@ -20,7 +20,7 @@ module.exports = function (localPort, remotePort) {
     client.close();
     // Update UPnP IGD every INTERVAL seconds
     setInterval(async.apply(openPort, localPort, remotePort), 1000 * constants.NETWORK.UPNP.INTERVAL);
-    openPort(localPort, remotePort);
+    return openPort(localPort, remotePort);
   });
 };
 

@@ -1,0 +1,209 @@
+@startuml
+
+skinparam sequence {
+	ArrowColor DeepSkyBlue
+	ActorBorderColor DeepSkyBlue
+	LifeLineBorderColor blue
+	LifeLineBackgroundColor #A9DCDF
+}
+
+participant "System" as S
+participant "Folder 3\n /A.json" as F3
+participant "Folder 2\n /B.json" as F2
+participant "Folder 1\n /A.json\n /C.json" as F1
+
+== Direct READ ==
+
+
+autonumber
+S ->o F3 : Read File A
+activate F3
+
+F3 --> S : Content of A
+deactivate F3
+
+
+
+== Traversal READ ==
+
+
+
+autonumber
+S ->x F3 : Read File B
+activate F3
+F3 ->o F2 : Read File B
+activate F2
+F2 --> F3 : Content of B
+deactivate F2
+F3 --> S : Content of B
+deactivate F3
+
+autonumber
+S ->x F3 : Read File C
+activate F3
+F3 ->x F2 : Read File C
+activate F2
+F2 ->o F1 : Read File C
+activate F1
+F1 --> F2 : Content of C
+deactivate F1
+F2 --> F3 : Content of C
+deactivate F2
+F3 --> S : Content of C
+deactivate F3
+
+... After some time... ...
+
+rnote over F3
+ WRITE of file **/C.json**
+endrnote
+
+... After some time... ...
+
+rnote over S
+ Want to read file C.json again
+endrnote
+
+autonumber
+S ->o F3 : Read File C
+activate F3
+
+F3 --> S : Content of C
+deactivate F3
+
+rnote over F1
+ File C.json won't be read here
+endrnote
+
+... After some time... ...
+
+rnote over F2
+ WRITE of file **/D.json**
+endrnote
+
+... After some time... ...
+
+autonumber
+S ->x F3 : Read File D
+activate F3
+
+F3 ->o F2 : Read File D
+activate F2
+
+F2 --> F3 : Content of D
+deactivate F2
+
+F3 --> S : Content of D
+deactivate F3
+
+
+
+== LIST ==
+
+rnote over F3
+ WRITE of file **/DIR/G.json**
+endrnote
+
+rnote over F2
+ WRITE of file **/DIR/H.json**
+endrnote
+
+rnote over F1
+ WRITE of file **/DIR/I.json**
+endrnote
+
+
+autonumber
+S -> F3 : List files in DIR
+activate F3
+F3 -> F2 : List files in DIR
+activate F2
+F2 ->o F1 : List files in DIR
+activate F1
+F1 --> F2 : Returns I
+deactivate F1
+F2 --> F3 : Returns I,H
+deactivate F2
+F3 --> S : Returns G,H,I
+deactivate F3
+
+rnote over F1
+ WRITE of file **/DIR2/I.json**
+endrnote
+
+autonumber
+S -> F3 : List files in DIR2
+activate F3
+F3 -> F2 : List files in DIR2
+activate F2
+F2 ->o F1 : List files in DIR2
+activate F1
+F1 --> F2 : Returns I
+deactivate F1
+F2 --> F3 : Returns I
+deactivate F2
+F3 --> S : Returns I
+deactivate F3
+
+... ...
+
+rnote over F2
+ WRITE of file **/DIR2/I.json**
+endrnote
+
+... ...
+
+autonumber
+S -> F3 : List files in DIR2
+activate F3
+F3 -> F2 : List files in DIR2
+activate F2
+F2 ->o F1 : List files in DIR2
+activate F1
+F1 -->x F2 : Returns I
+deactivate F1
+
+rnote over F2
+ File /DIR2/I.json of folder 1 is
+ overriden by Folder 2
+endrnote
+F2 --> F3 : Returns I\n**of Folder 2**
+deactivate F2
+F3 --> S : Returns I
+deactivate F3
+
+... ...
+
+
+rnote over F3
+ **REMOVE** file **/DIR2/I.json**
+endrnote
+
+... ...
+
+autonumber
+S -> F3 : List files in DIR2
+activate F3
+F3 -> F2 : List files in DIR2
+activate F2
+F2 ->o F1 : List files in DIR2
+activate F1
+F1 -->x F2 : Returns I
+
+rnote over F2
+ File /DIR2/I.json of folder 1 is
+ overriden by Folder 2
+endrnote
+deactivate F1
+F2 -->x F3 : Returns I\n**of Folder 2**
+
+rnote over F3
+ But finally /DIR2/I.json has been
+ removed in Folder 3, so it
+ won't be returned at all.
+endrnote
+deactivate F2
+F3 --> S : Returns empty list
+deactivate F3
+
+@enduml

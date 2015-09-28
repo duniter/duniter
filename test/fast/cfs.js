@@ -12,6 +12,9 @@ var mockFS = require('q-io/fs-mock')({
   'B3': {
     'A.json': '{ "text": "Content of A from B3" }',
     'C.json': '{ "text": "Content of C from B3" }'
+  },
+  'OTHER': {
+    'X.json': '{ "text": "Content of X" }'
   }
 });
 
@@ -20,6 +23,8 @@ describe("CFS", () => {
   var coreB3 = cfs('/B3', mockFS);
   var coreB4 = cfs('/B4', mockFS, coreB3);
   var coreB5 = cfs('/B5_a', mockFS, coreB4);
+
+  var rootCore = cfs('/OTHER', mockFS);
 
   // ------------ Direct READ ------------
 
@@ -125,6 +130,33 @@ describe("CFS", () => {
       // Check its contents
       var contents = yield coreB5.listJSON('/DIR2');
       contents.should.have.length(0);
+    });
+  });
+
+  describe("Root core", () => {
+
+    it('should have 1 file in /OTHER folder', () => {
+      return co(function *() {
+        var files = yield rootCore.list('/');
+        files.should.have.length(1);
+        // Check its contents
+        var contents = yield rootCore.listJSON('/');
+        contents.should.have.length(1);
+        contents.should.deepEqual([{ text: 'Content of X' }]);
+      });
+    });
+
+    // REMOVE of file /OTHER/X.json in rootCore
+
+    it('should have no files from /OTHER after file DELETION', () => {
+      return co(function *() {
+        yield rootCore.remove('/X.json');
+        var files = yield rootCore.list('/');
+        files.should.have.length(0);
+        // Check its contents
+        var contents = yield rootCore.listJSON('/');
+        contents.should.have.length(0);
+      });
     });
   });
 });

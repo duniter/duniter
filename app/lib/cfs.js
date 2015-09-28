@@ -79,8 +79,11 @@ function CFSCore(rootPath, qfs, parent) {
    */
   this.remove = (filePath) => {
     return co(function *() {
-      yield createDeletionFolder();
-      return yield qfs.write(path.join(rootPath, '.deleted', toRemoveFileName(filePath)), '');
+      if (parent) {
+        yield createDeletionFolder();
+        return yield qfs.write(path.join(rootPath, '.deleted', toRemoveFileName(filePath)), '');
+      }
+      return qfs.remove(path.join(rootPath, filePath));
     });
   };
 

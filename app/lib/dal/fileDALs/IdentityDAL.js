@@ -251,7 +251,10 @@ function IdentityDAL(dal) {
   this.getWhoIsOrWasMember = function() {
     // TODO: not really proud of that, has to be refactored for more generic code
     if (that.dal.name == 'fileDal') {
-      return Q(_.values(cacheByPubkey));
+      return that.initTree()
+        .then(function(){
+          return _.values(cacheByPubkey);
+        });
     }
     var idties = [];
     return that.initTree()

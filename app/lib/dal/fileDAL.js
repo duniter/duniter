@@ -1,5 +1,6 @@
 "use strict";
 var Q       = require('q');
+var co      = require('co');
 var _       = require('underscore');
 var sha1    = require('sha1');
 var Membership = require('../entity/membership');
@@ -703,33 +704,35 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.getMembershipExcludingBlock = function(current, msValidtyTime) {
-    var currentExcluding = current.number == 0 ?
-      Q(null) :
-      indicatorsDAL.getCurrentMembershipExcludingBlock()
-        .catch(function() { return null; });
-    return currentExcluding
-      .then(function(excluding){
-        // Case not block was excluding yet
-        if (!excluding) {
-          return that.getRootBlock()
-            .then(function(root){
-              var delaySinceStart = current.medianTime - root.medianTime;
-              if (delaySinceStart > msValidtyTime) {
-                return indicatorsDAL.writeCurrentExcluding(root).thenResolve(root);
-              }
-            })
-            .catch(function(){
-              // No possible excluding block
-            });
+    return co(function *() {
+      var currentExcluding;
+      if (current.number > 0) {
+        try {
+          currentExcluding = yield indicatorsDAL.getCurrentMembershipExcludingBlock();
+        } catch(e){
+          currentExcluding = null;
         }
-        return that.getBlock(excluding.number + 1)
-          .then(function(nextPotential){
-            var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
-            if (delaySinceNextOfExcluding > msValidtyTime) {
-              return indicatorsDAL.writeCurrentExcluding(nextPotential).thenResolve(nextPotential);
-            }
-          });
-      });
+      }
+      if (!currentExcluding) {
+        var root = yield that.getRootBlock();
+        var delaySinceStart = current.medianTime - root.medianTime;
+        if (delaySinceStart > msValidtyTime) {
+          return indicatorsDAL.writeCurrentExcluding(root).thenResolve(root);
+        }
+      } else {
+        var start = currentExcluding.number;
+        var nextPotential;
+        do {
+          nextPotential = yield that.getBlock(start + 1);
+          var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
+          if (delaySinceNextOfExcluding > msValidtyTime) {
+            yield indicatorsDAL.writeCurrentExcluding(nextPotential).thenResolve(nextPotential);
+            start++;
+          }
+        } while (delaySinceNextOfExcluding > msValidtyTime);
+        return nextPotential;
+      }
+    });
   };
 
   this.getCertificationExcludingBlock = function(current, certValidtyTime) {

@@ -736,33 +736,35 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.getCertificationExcludingBlock = function(current, certValidtyTime) {
-    var currentExcluding = current.number == 0 ?
-      Q(null) :
-      indicatorsDAL.getCurrentCertificationExcludingBlock()
-        .catch(function() { return null; });
-    return currentExcluding
-      .then(function(excluding){
-        // Case not block was excluding yet
-        if (!excluding) {
-          return that.getRootBlock()
-            .then(function(root){
-              var delaySinceStart = current.medianTime - root.medianTime;
-              if (delaySinceStart > certValidtyTime) {
-                return indicatorsDAL.writeCurrentExcludingForCert(root).thenResolve(root);
-              }
-            })
-            .catch(function(){
-              // No possible excluding block
-            });
+    return co(function *() {
+      var currentExcluding;
+      if (current.number > 0) {
+        try {
+          currentExcluding = yield indicatorsDAL.getCurrentCertificationExcludingBlock();
+        } catch(e){
+          currentExcluding = null;
         }
-        return that.getBlock(excluding.number + 1)
-          .then(function(nextPotential){
-            var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
-            if (delaySinceNextOfExcluding > certValidtyTime) {
-              return indicatorsDAL.writeCurrentExcludingForCert(nextPotential).thenResolve(nextPotential);
-            }
-          });
-      });
+      }
+      if (!currentExcluding) {
+        var root = yield that.getRootBlock();
+        var delaySinceStart = current.medianTime - root.medianTime;
+        if (delaySinceStart > certValidtyTime) {
+          return indicatorsDAL.writeCurrentExcludingForCert(root).thenResolve(root);
+        }
+      } else {
+        var start = currentExcluding.number;
+        var nextPotential;
+        do {
+          nextPotential = yield that.getBlock(start + 1);
+          var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
+          if (delaySinceNextOfExcluding > certValidtyTime) {
+            yield indicatorsDAL.writeCurrentExcludingForCert(nextPotential).thenResolve(nextPotential);
+            start++;
+          }
+        } while (delaySinceNextOfExcluding > certValidtyTime);
+        return nextPotential;
+      }
+    });
   };
 
   this.kickWithOutdatedMemberships = function(maxNumber) {

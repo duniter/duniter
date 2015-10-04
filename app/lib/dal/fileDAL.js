@@ -82,9 +82,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
-  var blockDAL = new BlockDAL(that);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
   this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
+  this.blockDAL = new BlockDAL(rootPath, myFS, parentFileDAL && parentFileDAL.blockDAL.coreFS, that);
 
   this.dals = {
     'confDAL': confDAL,
@@ -95,13 +95,13 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'coresDAL': coresDAL,
     'linksDAL': linksDAL,
     'msDAL': msDAL,
-    'idtyDAL': idtyDAL,
-    'blockDAL': blockDAL
+    'idtyDAL': idtyDAL
   };
 
   this.newDals = {
     'peerDAL': that.peerDAL,
-    'sourcesDAL': that.sourcesDAL
+    'sourcesDAL': that.sourcesDAL,
+    'blockDAL': that.blockDAL
   };
 
   var currency = '';
@@ -122,7 +122,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   that.writeFileOfBlock = function(block) {
-    return blockDAL.saveBlock(block);
+    return that.blockDAL.saveBlock(block);
   };
 
   this.getCores = function() {
@@ -219,7 +219,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.getBlock = function(number, done) {
-    return blockDAL.getBlock(number)
+    return that.blockDAL.getBlock(number)
       .catch(function(){
         throw 'Block ' + number + ' not found on DAL ' + that.name;
       })
@@ -293,14 +293,15 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.getCurrentNumber = function() {
-    return blockDAL.getCurrent().get('number')
+    return that.blockDAL.getCurrent()
+      .then((block) => block.number)
       .catch(function() {
         return -1;
       });
   };
 
   this.getLastSavedBlockFileNumber = function() {
-    return blockDAL.getLastSavedBlockFileNumber();
+    return that.blockDAL.getLastSavedBlockFileNumber();
   };
 
   this.getBlockCurrent = function(done) {
@@ -873,7 +874,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
         ]);
       })
       .then(function(){
-        return blockDAL.saveCurrent(block);
+        return that.blockDAL.saveCurrent(block);
       })
       .then(function(){
         if (block.dividend) {

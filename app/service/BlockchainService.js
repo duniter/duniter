@@ -331,26 +331,32 @@ function BlockchainService (conf, mainDAL, pair) {
                 });
             })
 
-            .tap(function(deleted){
-              if (deleted) {
-                /**
-                 * 3. Prune
-                 *   - if no core was deleted: stop Prune
-                 *   - else
-                 *     * Select all forks based on deleted core
-                 *     * Delete these forks
-                 */
-                return pruneForks(deleted, cores);
-              }
+            .then(function(deleted){
+              return co(function *() {
+                if (deleted) {
+                  /**
+                   * 3. Prune
+                   *   - if no core was deleted: stop Prune
+                   *   - else
+                   *     * Select all forks based on deleted core
+                   *     * Delete these forks
+                   */
+                  yield pruneForks(deleted, cores);
+                }
+                return deleted;
+              });
             })
 
-            .tap(function(deleted){
-              if (deleted) {
-                /**
-                 * 4. Bind cores previously bound to deleted core to mainDAL
-                 */
-                return bindUnboundsToMainDAL(deleted, cores);
-              }
+            .then(function(deleted){
+              return co(function *() {
+                if (deleted) {
+                  /**
+                   * 4. Bind cores previously bound to deleted core to mainDAL
+                   */
+                  yield bindUnboundsToMainDAL(deleted, cores);
+                }
+                return deleted;
+              });
             });
         });
     }, Q());

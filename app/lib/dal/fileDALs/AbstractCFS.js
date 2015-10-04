@@ -6,11 +6,12 @@ var cfs = require('../../cfs');
 
 module.exports = AbstractDAL;
 
-function AbstractDAL(rootPath, qioFS, parentCore) {
+function AbstractDAL(rootPath, qioFS, parentDAL, localDAL) {
 
   "use strict";
 
-  this.coreFS = cfs(rootPath, qioFS, parentCore);
+  this.coreFS = cfs(rootPath, qioFS, parentDAL);
+  this.dal = localDAL;
 
   this.changeParentCore = (newParent) => this.coreFS.changeParent(newParent);
 }

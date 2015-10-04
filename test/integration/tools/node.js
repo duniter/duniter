@@ -278,4 +278,6 @@ function Node (dbName, options) {
       "peer": Peer.statics.peerize(peer).getRawSigned()
     }, done);
   };
+
+  this.commitP = () => Q.nfcall(this.commit());
 }

@@ -357,11 +357,12 @@ function BlockchainService (conf, mainDAL, pair) {
   }
 
   function bindUnboundsToMainDAL(deleted, cores) {
-    var unbounds = _.filter(cores, function(core) { return core.forkPointNumber == deleted.forkPointNumber + 1 && core.forkPointPreviousHash == deleted.forkPointHash; });
-    unbounds.forEach(function(unbound) {
-      unbound.dal.setRootDAL(mainDAL);
+    return co(function *() {
+      var unbounds = _.filter(cores, function(core) { return core.forkPointNumber == deleted.forkPointNumber + 1 && core.forkPointPreviousHash == deleted.forkPointHash; });
+      return unbounds.map(function(unbound) {
+        return unbound.dal.setRootDAL(mainDAL);
+      });
     });
-    return Q();
   }
 
   function pruneForks(deleted, cores) {

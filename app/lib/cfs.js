@@ -1,5 +1,6 @@
 "use strict";
 
+var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
 var path = require('path');
@@ -11,8 +12,12 @@ module.exports = function(rootPath, qfs, parent) {
 function CFSCore(rootPath, qfs, parent) {
 
   var that = this;
+
+  this.parent = parent;
   var deletedFolder = path.join(rootPath, '.deleted');
   var deletionFolderPromise;
+
+  this.changeParent = (newParent) => this.parent = newParent;
 
   /**
    * Creates the deletion folder before effective deletion.
@@ -32,8 +37,8 @@ function CFSCore(rootPath, qfs, parent) {
       try {
         return yield qfs.read(path.join(rootPath, filePath));
       } catch (e) {
-        if (!parent) return null;
-        return parent.read(filePath);
+        if (!that.parent) return null;
+        return that.parent.read(filePath);
       }
     });
   };
@@ -47,8 +52,8 @@ function CFSCore(rootPath, qfs, parent) {
     var dirPath = path.normalize(ofPath);
     return co(function *() {
       var files = [], folder = path.join(rootPath, dirPath);
-      if (parent) {
-        files = yield parent.list(dirPath);
+      if (that.parent) {
+        files = yield that.parent.list(dirPath);
       }
       var hasDir = yield qfs.exists(folder);
       if (hasDir) {
@@ -79,7 +84,7 @@ function CFSCore(rootPath, qfs, parent) {
    */
   this.remove = (filePath) => {
     return co(function *() {
-      if (parent) {
+      if (that.parent) {
         yield createDeletionFolder();
         return yield qfs.write(path.join(rootPath, '.deleted', toRemoveFileName(filePath)), '');
       }
@@ -104,7 +109,19 @@ function CFSCore(rootPath, qfs, parent) {
    * Read a file and parse its content as JSON.
    * @param filePath File to read.
    */
-  this.readJSON = (filePath) => this.read(filePath).then(JSON.parse);
+  this.readJSON = (filePath) => this.read(filePath).then(function(data) {
+    return Q()
+      .then(function(){
+        return JSON.parse(data);
+      })
+      .catch(function(err){
+        if (err.message.match(/^Unexpected token {/)) {
+          // TODO: this is a bug thrown during Unit Tests with MEMORY_MODE true...
+          return JSON.parse(data.match(/^(.*)}{.*/)[1] + '}');
+        }
+        throw err;
+      });
+  });
 
   /**
    * Read contents of files at given path and parse it as JSON.

@@ -8,7 +8,6 @@ var Merkle = require('../entity/merkle');
 var Transaction = require('../entity/transaction');
 var Source = require('../entity/source');
 var constants = require('../constants');
-var fsMock = require('q-io/fs-mock')({});
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
@@ -49,7 +48,7 @@ function getHomeFS(profile, subpath, isMemory) {
   var fs;
   return someDelayFix()
     .then(function() {
-      fs = (isMemory ? fsMock : require('q-io/fs'));
+      fs = (isMemory ? require('q-io/fs-mock')({}) : require('q-io/fs'));
       return fs.makeTree(home);
     })
     .then(function(){
@@ -62,7 +61,7 @@ function getUCoinHomePath(profile) {
   return userHome + '/.config/ucoin/' + profile;
 }
 
-function FileDAL(profile, subPath, myFS) {
+function FileDAL(profile, subPath, myFS, parentFileDAL) {
 
   var that = this;
 
@@ -84,7 +83,7 @@ function FileDAL(profile, subPath, myFS) {
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
-  var peerDAL = new PeerDAL(that);
+  this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
   var blockDAL = new BlockDAL(that);
 
   this.dals = {
@@ -98,11 +97,21 @@ function FileDAL(profile, subPath, myFS) {
     'linksDAL': linksDAL,
     'msDAL': msDAL,
     'idtyDAL': idtyDAL,
-    'peerDAL': peerDAL,
     'blockDAL': blockDAL
   };
 
+  this.newDals = {
+    'peerDAL': that.peerDAL
+  };
+
   var currency = '';
+
+  this.init = (overrideConf) => {
+    return co(function *() {
+      yield _.values(that.newDals).map((dal) => dal.init());
+      return yield that.loadConf(overrideConf);
+    });
+  };
 
   this.getCurrency = function() {
     return currency;
@@ -121,7 +130,11 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.loadCore = function(core, invalidateCache) {
-    return require('./coreDAL')(profile, core.forkPointNumber, core.forkPointHash, myFS, that, invalidateCache);
+    return co(function *() {
+      var theCore = require('./coreDAL')(profile, core.forkPointNumber, core.forkPointHash, myFS, that, invalidateCache);
+      yield theCore.init();
+      return theCore;
+    });
   };
 
   this.addCore = function(core) {
@@ -164,7 +177,7 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.listAllPeers = function() {
-    return peerDAL.listAll();
+    return that.peerDAL.listAll();
   };
 
   function nullIfError(promise, done) {
@@ -199,7 +212,7 @@ function FileDAL(profile, subPath, myFS) {
   }
 
   this.getPeer = function(pubkey) {
-    return peerDAL.getPeer(pubkey)
+    return that.peerDAL.getPeer(pubkey)
       .catch(function() {
         throw Error('Unknown peer ' + pubkey);
       });
@@ -449,7 +462,7 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.findPeersWhoseHashIsIn = function(hashes) {
-    return peerDAL.listAll()
+    return that.peerDAL.listAll()
       .then(function(peers){
         return _.chain(peers).
           filter(function(p){ return hashes.indexOf(p.hash) !== -1; }).
@@ -801,7 +814,7 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.listAllPeersWithStatusNewUP = function() {
-    return peerDAL.listAll()
+    return that.peerDAL.listAll()
       .then(function(peers){
         var matching = _.chain(peers).
           filter(function(p){ return ['UP'].indexOf(p.status) !== -1; }).
@@ -831,14 +844,17 @@ function FileDAL(profile, subPath, myFS) {
         done && done(null, matchingPeers);
         return matchingPeers;
       })
-      .catch(done);
+      .catch(function(err) {
+        done && done(err);
+        throw err;
+      });
   };
 
   this.setPeerDown = function(pubkey) {
     return that.getPeer(pubkey)
       .then(function(p){
         p.status = 'DOWN';
-        return peerDAL.savePeer(p);
+        return that.peerDAL.savePeer(p);
       })
       .catch(function() {
         // Silent error
@@ -1072,7 +1088,7 @@ function FileDAL(profile, subPath, myFS) {
   };
 
   this.savePeer = function(peer) {
-    return peerDAL.savePeer(peer);
+    return that.peerDAL.savePeer(peer);
   };
 
   /***********************

@@ -102,7 +102,7 @@ function Server (dbConf, overrideConf) {
     return dbType(dbConf.name || "default")
       .then(function(dal){
         that.dal = dal;
-        return that.dal.loadConf(overrideConf);
+        return that.dal.init(overrideConf);
       })
       .then(function(conf){
         that.conf = conf;

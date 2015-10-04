@@ -157,6 +157,7 @@ describe("DAL", function(){
     return dal.memory('db0')
       .then(function(dal){
         fileDAL = dal;
+        return dal.init();
       })
       .then(function() {
         return fileDAL.saveConf({ currency: "meta_brouzouf" });

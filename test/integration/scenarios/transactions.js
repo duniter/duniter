@@ -1,5 +1,7 @@
 "use strict";
 var user   = require('./../tools/user');
+var co = require('co');
+var Q = require('q');
 
 module.exports = function(node) {
 
@@ -9,17 +11,22 @@ module.exports = function(node) {
   var now = Math.round(new Date().getTime()/1000);
 
   return [
-    // Self certifications
-    tic.selfCert(now),
-    toc.selfCert(now),
-    // Certifications
-    tic.cert(toc),
-    toc.cert(tic),
-    tic.join(),
-    toc.join(),
-    node.commit(),
-    node.commit(),
-    tic.send(51, toc),
-    node.commit()
+    function(done) {
+      return co(function *() {
+        // Self certifications
+        yield tic.selfCertP(now);
+        yield toc.selfCertP(now);
+        // Certification;
+        yield tic.certP(toc);
+        yield toc.certP(tic);
+        yield tic.joinP();
+        yield toc.joinP();
+        yield node.commitP();
+        yield node.commitP();
+        yield tic.sendP(51, toc);
+        yield node.commitP();
+      })
+        .then(done).catch(done);
+    }
   ];
 };

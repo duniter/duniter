@@ -1,5 +1,7 @@
 "use strict";
 
+var co = require('co');
+var Q = require('q');
 var _               = require('underscore');
 var async           = require('async');
 var localValidator  = require('../lib/localValidator');
@@ -22,32 +24,27 @@ function TransactionService (conf, dal) {
     var tx = new Transaction(txObj, conf.currency);
     var localValidation = localValidator(conf);
     var globalValidation = null;
-    async.waterfall([
-      function (next) {
-        dal.getTxByHash(tx.hash).then(_.partial(next, null)).catch(next);
-      },
-      function (alreadyProcessed, next) {
-        if (alreadyProcessed)
-          next('Transaction already processed');
-        else
-          dal.getCurrent(next);
-      },
-      function (current, next) {
-        // Validator OK
-        globalValidation = globalValidator(conf, blockchainDao(current, dal));
-        // Start checks...
-        localValidation.checkSingleTransaction(tx.getTransaction(), next);
-      },
-      function (next) {
-        globalValidation.checkSingleTransaction(tx.getTransaction(), next);
-      },
-      function (next) {
-        // Save the transaction
-        dal.saveTransaction(tx).then(function() {
-          next(null, tx);
-        })
-          .catch(next);
+    return co(function *() {
+      var existing = yield dal.getTxByHash(tx.hash);
+      if (existing) {
+        throw 'Transaction already processed';
       }
-    ], done);
+      var current = yield dal.getCurrent();
+      // Validator OK
+      globalValidation = globalValidator(conf, blockchainDao(current, dal));
+      // Start checks...
+      var transaction = tx.getTransaction();
+      yield Q.nbind(localValidation.checkSingleTransaction, localValidation)(transaction);
+      yield Q.nbind(globalValidation.checkSingleTransaction, globalValidation)(transaction);
+      return dal.saveTransaction(tx);
+    })
+      .then(function(){
+        done && done(null, tx);
+        return tx;
+      })
+      .catch(function(err){
+        done && done(err);
+        throw err;
+      });
   };
 }

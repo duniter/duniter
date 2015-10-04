@@ -78,13 +78,13 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   var certDAL = new CertDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
   var txsDAL = new TxsDAL(that);
-  var sourcesDAL = new SourcesDAL(that);
   var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
-  this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
   var blockDAL = new BlockDAL(that);
+  this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
+  this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
 
   this.dals = {
     'confDAL': confDAL,
@@ -93,7 +93,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'indicatorsDAL': indicatorsDAL,
     'txsDAL': txsDAL,
     'coresDAL': coresDAL,
-    'sourcesDAL': sourcesDAL,
     'linksDAL': linksDAL,
     'msDAL': msDAL,
     'idtyDAL': idtyDAL,
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.newDals = {
-    'peerDAL': that.peerDAL
+    'peerDAL': that.peerDAL,
+    'sourcesDAL': that.sourcesDAL
   };
 
   var currency = '';
@@ -356,7 +356,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.getAvailableSourcesByPubkey = function(pubkey) {
-    return sourcesDAL.getAvailableForPubkey(pubkey);
+    return that.sourcesDAL.getAvailableForPubkey(pubkey);
   };
 
   this.getIdentityByHashOrNull = function(hash, done) {
@@ -622,7 +622,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount) {
-    return sourcesDAL.isAvailableSource(pubkey, type, number, fingerprint, amount);
+    return that.sourcesDAL.isAvailableSource(pubkey, type, number, fingerprint, amount);
   };
 
   this.isMember = function(pubkey, done) {
@@ -686,7 +686,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.setConsumedSource = function(type, pubkey, number, fingerprint, amount) {
-    return sourcesDAL.consumeSource(pubkey, type, number, fingerprint, amount);
+    return that.sourcesDAL.consumeSource(pubkey, type, number, fingerprint, amount);
   };
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
@@ -965,7 +965,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.saveSource = function(src) {
     return (src.type == "D" ? that.saveUDInHistory(src.pubkey, src) : Q())
       .then(function(){
-        return sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount);
+        return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount);
       });
   };
 
@@ -1071,7 +1071,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       .then(function(obj){
         return Q.all(obj.history.map(function(src) {
           var completeSrc = _.extend({}, src);
-          return sourcesDAL.getSource(pubkey, 'D', src.block_number)
+          return that.sourcesDAL.getSource(pubkey, 'D', src.block_number)
             .then(function(foundSrc){
               _.extend(completeSrc, foundSrc);
             });

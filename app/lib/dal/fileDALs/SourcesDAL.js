@@ -2,127 +2,90 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractDAL = require('./AbstractDAL');
+var AbstractCFS = require('./AbstractCFS');
 var Q = require('q');
 var _ = require('underscore');
-var sha1 = require('sha1');
+var co = require('co');
 
 module.exports = SourcesDAL;
 
-function SourcesDAL(dal) {
+function SourcesDAL(rootPath, qioFS, parentCore) {
 
   "use strict";
 
-  AbstractDAL.call(this, dal);
-  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
-  var treeMade;
 
-  this.initTree = function() {
-    if (!treeMade) {
-      treeMade = Q.all([
-        that.makeTree('sources/'),
-        that.makeTree('sources/consumed/'),
-        that.makeTree('sources/available/')
-      ]);
-    }
-    return treeMade;
-  };
+  AbstractCFS.call(this, rootPath, qioFS, parentCore);
 
-  this.getAvailableForPubkey = function(pubkey) {
-    var sources = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('sources/available/' + pubkey + '/');
-      })
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(that.reduceTo('sources/available/' + pubkey + '/', sources))
-      .then(function(){
-        // For each known available source, check if it has been consumed or not
-        return sources.reduce(function(p, src) {
-          return p
-            .then(function(avail){
-              return that.getConsumedSource(src.pubkey, src.type, src.number, src.fingerprint, src.amount)
-                .then(function(isConsumed){
-                  if (!isConsumed) {
-                    avail.push(src);
-                  }
-                  return avail;
-                });
-            });
-        }, Q([]));
-      })
-      .catch(function(err){
-        throw err;
-      });
-  };
+  this.init = () => Q.all([
+    that.coreFS.makeTree('sources/'),
+    that.coreFS.makeTree('sources/consumed/'),
+    that.coreFS.makeTree('sources/available/')
+  ]);
+
+  this.getAvailableForPubkey = (pubkey) =>
+    that.coreFS.listJSON('sources/available/' + pubkey + '/')
+  .catch(function(err){
+    throw err;
+  });
 
   this.getAvailableSource = function(pubkey, type, number, fingerprint, amount) {
-    return that.read('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
-      .thenResolve(true)
+    return that.coreFS.read('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
+      .then(() => true)
       .catch(function() {
         return false;
       });
   };
 
   this.getConsumedSource = function(pubkey, type, number, fingerprint, amount) {
-    return that.read('sources/consumed/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
-      .thenResolve(true)
+    return that.coreFS.read('sources/consumed/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
+      .then((tx) =>
+        !!tx)
       .catch(function() {
         return false;
       });
   };
 
-  this.getSource = function(pubkey, type, number) {
-    return that.initTree()
-      .then(function(){
-        return that.getAvailableForPubkey(pubkey)
-          .then(function(sources){
-            return _.findWhere(sources, { type: type, number: number });
-          });
-      });
-  };
+  this.getSource = (pubkey, type, number) => that.getAvailableForPubkey(pubkey)
+    .then(function(sources){
+      return _.findWhere(sources, { type: type, number: number });
+    });
 
   this.isAvailableSource = function(pubkey, type, number, fingerprint, amount) {
-    return Q.all([
-      that.getAvailableSource(pubkey, type, number, fingerprint, amount),
-      that.getConsumedSource(pubkey, type, number, fingerprint, amount)
-    ])
-      .then(function(){
-        var available = arguments[0][0];
-        var consumed = arguments[0][1];
-        return available && !consumed;
-      });
+    return co(function *() {
+      var available = yield that.getAvailableSource(pubkey, type, number, fingerprint, amount);
+      var consumed = yield that.getConsumedSource(pubkey, type, number, fingerprint, amount);
+      return available && !consumed;
+    });
   };
 
   this.consumeSource = function(pubkey, type, number, fingerprint, amount) {
-    return that.initTree()
-      .then(function(){
-        return that.remove('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
-          .catch(function(){
-            // Silent error
-          });
-      })
-      .then(function(){
-        that.addSource('consumed', pubkey, type, number, fingerprint, amount);
+    return co(function *() {
+      yield that.coreFS.remove('sources/available/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json')
+        .catch(function(){
+          // Silent error
+        });
+      // TODO: with CFS, this line should not be required. To be tested.
+      return that.addSource('consumed', pubkey, type, number, fingerprint, amount);
+    })
+      .catch(function(err){
+        throw err;
       });
   };
 
-  this.addSource = function(state, pubkey, type, number, fingerprint, amount) {
-    return that.initTree()
-      .then(function(){
-        return that.makeTree('sources/' + state + '/' + pubkey + '/');
-      })
-      .then(function(){
-        return that.write('sources/' + state + '/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json', {
-          pubkey: pubkey,
-          type: type,
-          number: number,
-          fingerprint: fingerprint,
-          amount: amount
-        });
+  this.addSource = (state, pubkey, type, number, fingerprint, amount) => {
+    return co(function *() {
+      yield that.coreFS.makeTree('sources/' + state + '/' + pubkey + '/');
+      return that.coreFS.writeJSON('sources/' + state + '/' + pubkey + '/' + getSourceID(type, number, fingerprint, amount) + '.json', {
+        pubkey: pubkey,
+        type: type,
+        number: number,
+        fingerprint: fingerprint,
+        amount: amount
+      });
+    })
+      .catch(function(err){
+        throw err;
       });
   };
 

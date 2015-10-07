@@ -1,5 +1,6 @@
 "use strict";
 
+var assert = require('assert');
 var co = require('co');
 var cfs = require('./../../app/lib/cfs');
 var mockFS = require('q-io/fs-mock')({
@@ -68,6 +69,18 @@ describe("CFS", () => {
       yield coreB4.writeJSON('D.json', { text: 'Content of D'});
       var content = yield coreB5.readJSON('D.json');
       content.should.have.property('text').equal('Content of D');
+    });
+  });
+
+  // REMOVE file /D.json
+
+  it('should have the content of C.json modified from B5 (direct read)', () => {
+    return co(function *() {
+      yield coreB4.remove('D.json');
+      var exists = yield coreB5.exists('D.json');
+      var content = yield coreB5.read('D.json');
+      assert.equal(exists, false);
+      assert.equal(content, null);
     });
   });
 

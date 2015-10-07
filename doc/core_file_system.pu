@@ -96,7 +96,23 @@ deactivate F2
 F3 --> S : Content of D
 deactivate F3
 
+... After some time... ...
 
+rnote over F2
+ REMOVE file **/D.json**
+endrnote
+
+... After some time... ...
+
+autonumber
+S ->x F3 : Read File D
+
+F3 ->X F2 : Read File D
+
+rnote over F2
+ File **/D.json** NOT FOUND.
+ Traversal STOPS here.
+endrnote
 
 == LIST ==
 

@@ -1,15 +1,14 @@
 "use strict";
 
+var co = require('co');
 var Q         = require('q');
 var _         = require('underscore');
 var ucoin     = require('./../../index');
 var bma       = require('./../../app/lib/streams/bma');
 var user      = require('./tools/user');
-var constants = require('../../app/lib/constants');
 var rp        = require('request-promise');
 var httpTest  = require('./tools/http');
 var commit    = require('./tools/commit');
-var sync      = require('./tools/sync');
 
 var expectJSON     = httpTest.expectJSON;
 var expectAnswer   = httpTest.expectAnswer;
@@ -48,41 +47,26 @@ describe("Branches pending data", function() {
 
     var commitS1 = commit(s1);
 
-    return Q.all([
-      s1.initWithServices().then(bma)
-    ])
-
-      .then(function(){
-        // Server 1
-        return Q()
-          .then(function() {
-            return cat.selfCertPromise(now);
-          })
-          .then(function() {
-            return toc.selfCertPromise(now);
-          })
-          .then(_.partial(toc.certPromise, cat))
-          .then(_.partial(cat.certPromise, toc))
-          .then(cat.joinPromise)
-          .then(toc.joinPromise)
-          .then(commitS1)
-          .then(commitS1)
-          .then(function() {
-            return tic.selfCertPromise(now);
-          })
-          .then(_.partial(cat.certPromise, tic))
-          .then(_.partial(toc.certPromise, tic))
-          .then(function() {
-            return tuc.selfCertPromise(now);
-          })
-          .then(tuc.joinPromise)
-          .then(commitS1)
-          .then(commitS1)
-          .then(commitS1)
-          .then(commitS1);
-      })
-
-      ;
+    return co(function *() {
+      yield s1.initWithServices().then(bma);
+      yield cat.selfCertPromise(now);
+      yield toc.selfCertPromise(now);
+      yield toc.certPromise(cat);
+      yield cat.certPromise(toc);
+      yield cat.joinPromise();
+      yield toc.joinPromise();
+      yield commitS1();
+      yield commitS1();
+      yield tic.selfCertPromise(now);
+      yield cat.certPromise(tic);
+      yield toc.certPromise(tic);
+      yield tuc.selfCertPromise(now);
+      yield tuc.joinPromise();
+      yield commitS1();
+      yield commitS1();
+      yield commitS1();
+      yield commitS1();
+    });
   });
 
   describe("Server 1 /blockchain", function() {

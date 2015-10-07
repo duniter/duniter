@@ -75,7 +75,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   // DALs
   var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
-  var certDAL = new CertDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
   var txsDAL = new TxsDAL(that);
   var coresDAL = new CoresDAL(that);
@@ -85,11 +84,11 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
   this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
   this.blockDAL = new BlockDAL(rootPath, myFS, parentFileDAL && parentFileDAL.blockDAL.coreFS, that);
+  this.certDAL = new CertDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.coreFS, that);
 
   this.dals = {
     'confDAL': confDAL,
     'statDAL': statDAL,
-    'certDAL': certDAL,
     'indicatorsDAL': indicatorsDAL,
     'txsDAL': txsDAL,
     'coresDAL': coresDAL,
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.newDals = {
     'peerDAL': that.peerDAL,
     'sourcesDAL': that.sourcesDAL,
-    'blockDAL': that.blockDAL
+    'blockDAL': that.blockDAL,
+    'certDAL': that.certDAL
   };
 
   var currency = '';
@@ -374,39 +374,35 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       });
   };
 
-  this.getIdentityByHashWithCertsOrNull = function(hash, done) {
-    return that.fillIdentityWithCerts(that.getIdentityByHashOrNull(hash), done);
+  this.getIdentityByHashWithCertsOrNull = function(hash) {
+    return that.getIdentityByHashOrNull(hash)
+      .catch(function(){
+        return null;
+      })
+      .then(function(idty){
+        return that.fillIdentityWithCerts(idty);
+      });
   };
 
-  this.fillIdentityWithCerts = function(idtyPromise, done) {
-    return idtyPromise
-      .then(function(idty){
-        if (idty && !idty.length) {
-          return certDAL.getToTarget(idty.hash)
-            .then(function(certs){
-              idty.certs = certs;
-              return idty;
-            });
-        }
-        else if (idty) {
-          return idty.reduce(function(p, aIdty) {
-            return certDAL.getToTarget(aIdty.hash)
-              .then(function(certs){
-                aIdty.certs = certs;
-                return Q();
-              });
-          }, Q())
-            .thenResolve(idty);
-        }
+  this.fillIdentitiesWithCerts = function(idties) {
+    return idties.reduce(function(p, aIdty) {
+      return that.certDAL.getToTarget(aIdty.hash)
+        .then(function(certs){
+          aIdty.certs = certs;
+          return Q();
+        });
+    }, Q())
+      .then(() => idties);
+  };
+
+  this.fillIdentityWithCerts = function(idty) {
+    if (!idty) {
+      return Q(null);
+    }
+    return that.certDAL.getToTarget(idty.hash)
+      .then(function(certs){
+        idty.certs = certs;
         return idty;
-      })
-      .then(function(idty){
-        done && done(null, idty);
-        return idty;
-      })
-      .catch(function(){
-        done && done(null, null);
-        return null;
       });
   };
 
@@ -505,8 +501,21 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       }).catch(done);
   };
 
+  this.getToBeKickedPubkeys = function() {
+    return co(function *() {
+      var exclusions = yield that.getToBeKicked();
+      return _.pluck(exclusions, 'pubkey');
+    });
+  };
+
   this.getWrittenByUID = function(uid) {
-    return that.fillIdentityWithCerts(idtyDAL.getFromUID(uid));
+    return idtyDAL.getFromUID(uid)
+      .catch(function(){
+        return null;
+      })
+      .then(function(idty){
+        return that.fillIdentityWithCerts(idty);
+      });
   };
 
   this.searchIdentity = function(search) {
@@ -529,18 +538,12 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
             idties.push(pending);
           }
         });
-        return idties;
-      })
-      .then(function(idties){
-        return that.fillIdentityWithCerts(Q(idties));
-      })
-      .then(function(idties){
-        return idties;
+        return that.fillIdentitiesWithCerts(idties);
       });
   };
 
   this.certsToTarget = function(hash) {
-    return certDAL.getToTarget(hash)
+    return that.certDAL.getToTarget(hash)
       .then(function(certs){
         var matching = _.chain(certs).
           sortBy(function(c){ return -c.block; }).
@@ -554,7 +557,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.certsFrom = function(pubkey) {
-    return certDAL.getFromPubkey(pubkey)
+    return that.certDAL.getFromPubkey(pubkey)
       .then(function(certs){
         return _.chain(certs).
           where({ from: pubkey }).
@@ -564,7 +567,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.certsFindNew = function() {
-    return certDAL.getNotLinked()
+    return that.certDAL.getNotLinked()
       .then(function(certs){
         return _.chain(certs).
           where({ linked: false }).
@@ -574,7 +577,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.certsNotLinkedToTarget = function(hash) {
-    return certDAL.getNotLinkedToTarget(hash)
+    return that.certDAL.getNotLinkedToTarget(hash)
       .then(function(certs){
         return _.chain(certs).
           sortBy(function(c){ return -c.block; }).
@@ -630,23 +633,10 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     return idtyDAL.getFromPubkey(pubkey)
       .then(function(idty){
         done && done(null, idty.member);
-        return true;
+        return idty.member;
       })
       .catch(function(){
         done && done(null, false);
-        return false;
-      });
-  };
-
-  this.isMemberOrError = function(pubkey, done) {
-    return idtyDAL.getFromPubkey(pubkey)
-      .then(function(idty){
-        if (!idty.member) throw 'Problem';
-        done && done();
-        return true;
-      })
-      .catch(function(){
-        done && done('Is not a member');
         return false;
       });
   };
@@ -678,8 +668,18 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       });
   };
 
+  this.isMemberAndNonLeaver = function(pubkey) {
+    return idtyDAL.getFromPubkey(pubkey)
+      .catch(function(){
+        return false;
+      })
+      .then(function(idty){
+        return idty.member && !idty.leaving;
+      });
+  };
+
   this.existsCert = function(cert) {
-    return certDAL.existsGivenCert(cert);
+    return that.certDAL.existsGivenCert(cert);
   };
 
   this.obsoletesLinks = function(minTimestamp) {
@@ -971,9 +971,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.officializeCertification = function(cert) {
-    return certDAL.saveOfficial(cert)
+    return that.certDAL.saveOfficial(cert)
       .then(function(){
-        return certDAL.removeNotLinked(cert);
+        return that.certDAL.removeNotLinked(cert);
       });
   };
 
@@ -1006,11 +1006,11 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.listLocalPendingCerts = function() {
-    return certDAL.listLocalPending();
+    return that.certDAL.listLocalPending();
   };
 
   this.registerNewCertification = function(cert) {
-    return certDAL.saveNewCertification(cert);
+    return that.certDAL.saveNewCertification(cert);
   };
 
   this.saveTransaction = function(tx) {

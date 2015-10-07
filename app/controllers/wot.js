@@ -1,5 +1,5 @@
 "use strict";
-var fs       = require('fs');
+var co = require('co');
 var util     = require('util');
 var async    = require('async');
 var _        = require('underscore');
@@ -28,105 +28,69 @@ function WOTBinding (server) {
 
   this.lookup = function (req, res) {
     res.type('application/json');
-    async.waterfall([
-      function (next){
-        ParametersService.getSearch(req, next);
-      },
-      function (search, next){
-        IdentityService.search(search).then(_.partial(next, null)).catch(next);
-      },
-      function (identities, next){
-        identities.forEach(function(idty, index){
-          identities[index] = new Identity(idty);
-        });
-        BlockchainService.getCertificationsExludingBlock()
-          .catch(function(err){
-            next(err);
-            throw err;
-          })
-          .then(function(excluding) {
-            async.forEach(identities, function(idty, callback){
-              async.waterfall([
-                function (next){
-                  server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).catch(next);
-                },
-                function (certs, next){
-                  var validCerts = [];
-                  async.forEachSeries(certs, function(cert, callback2) {
-                    if (excluding && cert.block <= excluding.number) {
-                      // Exclude the cert from result
-                      return callback2();
-                    }
-                    async.waterfall([
-                      function(next) {
-                        IdentityService.findIdentities(cert.from, next);
-                      },
-                      function(res, next) {
-                        var writtens = res.written ? [res.written] : [];
-                        var nonWrittens = res.nonWritten || [];
-                        if (writtens.length > 0) {
-                          cert.uids = [writtens[0].uid];
-                          cert.isMember = writtens[0].member;
-                          cert.wasMember = writtens[0].wasMember;
-                        } else {
-                          cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
-                          cert.isMember = false;
-                          cert.wasMember = false;
-                        }
-                        validCerts.push(cert);
-                        next();
-                      }
-                    ], callback2);
-                  }, function(err) {
-                    idty.certs = validCerts;
-                    next(err);
-                  });
-                },
-                function (next) {
-                  server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).catch(next);
-                },
-                function (signed, next){
-                  var validSigned = [];
-                  async.forEachSeries(signed, function(cert, callback) {
-                    if (excluding && cert.block <= excluding.number) {
-                      // Exclude the cert from result
-                      return callback();
-                    }
-                    async.waterfall([
-                      function(next) {
-                        server.dal.getIdentityByHashOrNull(cert.target, next);
-                      },
-                      function(idty, next) {
-                        cert.idty = idty;
-                        validSigned.push(cert);
-                        next();
-                      }
-                    ], callback);
-                  }, function(err) {
-                    idty.signed = validSigned;
-                    next(err);
-                  });
-                }
-              ], callback);
-            }, function (err) {
-              next(err, identities);
+    return co(function *() {
+      var search = yield ParametersService.getSearchP(req);
+      var identities = yield IdentityService.search(search);
+      identities.forEach(function(idty, index){
+        identities[index] = new Identity(idty);
+      });
+      var excluding = yield BlockchainService.getCertificationsExludingBlock();
+      yield identities.map((idty) => {
+        return co(function *() {
+          var certs = yield server.dal.certsToTarget(idty.getTargetHash());
+          var validCerts = [];
+          yield certs.map((cert) => {
+            return co(function *() {
+              if (excluding && cert.block <= excluding.number) {
+                // Exclude the cert from result
+                return;
+              }
+              var res2 = yield Q.nbind(IdentityService.findIdentities, IdentityService)(cert.from);
+              var writtens = res2.written ? [res2.written] : [];
+              var nonWrittens = res2.nonWritten || [];
+              if (writtens.length > 0) {
+                cert.uids = [writtens[0].uid];
+                cert.isMember = writtens[0].member;
+                cert.wasMember = writtens[0].wasMember;
+              } else {
+                cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
+                cert.isMember = false;
+                cert.wasMember = false;
+              }
+              validCerts.push(cert);
             });
           });
-      }
-    ], function (err, identities) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      var json = {
-        partial: false,
-        results: []
-      };
-      identities.forEach(function(identity){
-        json.results.push(identity.json());
+          idty.certs = validCerts;
+          var signed = yield server.dal.certsFrom(idty.pubkey);
+          var validSigned = [];
+          yield signed.map((cert) => {
+            return co(function *() {
+              if (excluding && cert.block <= excluding.number) {
+                // Exclude the cert from result
+                return;
+              }
+              cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
+              validSigned.push(cert);
+            });
+          });
+          idty.signed = validSigned;
+        });
       });
-      res.send(200, JSON.stringify(json, null, "  "));
-    });
+      return identities;
+    })
+      .then(function(identities){
+        var json = {
+          partial: false,
+          results: []
+        };
+        identities.forEach(function(identity){
+          json.results.push(identity.json());
+        });
+        res.send(200, JSON.stringify(json, null, "  "));
+      })
+      .catch(function(err){
+        res.send(400, err);
+      });
   };
 
   this.members = function (req, res) {

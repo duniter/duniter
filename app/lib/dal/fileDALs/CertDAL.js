@@ -2,269 +2,183 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractDAL = require('./AbstractDAL');
+var AbstractCFS = require('./AbstractCFS');
 var Q = require('q');
 var _ = require('underscore');
+var co = require('co');
 var sha1 = require('sha1');
 
 module.exports = CertDAL;
 
-function CertDAL(dal) {
+function CertDAL(rootPath, qioFS, parentCore, localDAL) {
 
   "use strict";
 
-  AbstractDAL.call(this, dal);
-  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
-  var treeMade;
 
-  this.initTree = function() {
-    if (!treeMade) {
-      treeMade = Q.all([
-        that.makeTree('certs/'),
-        that.makeTree('certs/linked/'),
-        that.makeTree('certs/linked/from/'),
-        that.makeTree('certs/linked/target/'),
-        that.makeTree('certs/pending/from/'),
-        that.makeTree('certs/pending/target/')
-      ]);
-    }
-    return treeMade;
+  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+
+  this.init = () => {
+    return Q.all([
+      that.coreFS.makeTree('certs/'),
+      that.coreFS.makeTree('certs/linked/'),
+      that.coreFS.makeTree('certs/linked/from/'),
+      that.coreFS.makeTree('certs/linked/target/'),
+      that.coreFS.makeTree('certs/pending/from/'),
+      that.coreFS.makeTree('certs/pending/target/')
+    ]);
   };
 
   this.getToTarget = function(hash) {
-    var certs = [];
-    return that.initTree()
-      .then(function(){
-        return that.getLinkedToTarget(hash);
-      })
-      .then(function(linked){
-        certs = certs.concat(linked);
-        return that.getNotLinkedToTarget(hash);
-      })
-      .then(function(notLinked){
-        certs = certs.concat(notLinked);
-        // Merge all results. Override unlinked certifications by their linked version
-        var mapOfCert = {};
-        certs.forEach(function(cert){
-          var cid = getCertID(cert);
-          if (!mapOfCert[cid] || !mapOfCert[cid].linked) {
-            mapOfCert[cid] = cert;
-          }
-        });
-        return _.values(mapOfCert);
+    return co(function *() {
+      var linked = yield that.getLinkedToTarget(hash);
+      var notLinked = yield that.getNotLinkedToTarget(hash);
+      // Merge all results. Override unlinked certifications by their linked version
+      var mapOfCert = {};
+      linked.concat(notLinked).forEach(function(cert){
+        var cid = getCertID(cert);
+        if (!mapOfCert[cid] || !mapOfCert[cid].linked) {
+          mapOfCert[cid] = cert;
+        }
       });
+      return _.values(mapOfCert);
+    });
   };
 
   this.getFromPubkey = function(pubkey) {
-    var certs = [];
-    return that.initTree()
-      .then(function(){
-        return that.getLinkedFrom(pubkey);
-      })
-      .then(function(linked){
-        certs = certs.concat(linked);
-        return that.getNotLinkedFrom(pubkey);
-      })
-      .then(function(notLinked){
-        certs = certs.concat(notLinked);
-        // Merge all results. Override unlinked certifications by their linked version
-        var mapOfCert = {};
-        certs.forEach(function(cert){
-          var cid = getCertID(cert);
-          if (!mapOfCert[cid] || !mapOfCert[cid].linked) {
-            mapOfCert[cid] = cert;
-          }
-        });
-        return _.values(mapOfCert);
+    return co(function *() {
+      var linked = yield that.getLinkedFrom(pubkey);
+      var notLinked = yield that.getNotLinkedFrom(pubkey);
+      // Merge all results. Override unlinked certifications by their linked version
+      var mapOfCert = {};
+      linked.concat(notLinked).forEach(function(cert){
+        var cid = getCertID(cert);
+        if (!mapOfCert[cid] || !mapOfCert[cid].linked) {
+          mapOfCert[cid] = cert;
+        }
       });
+      return _.values(mapOfCert);
+    });
   };
 
   this.getNotLinked = function() {
-    var certs = [], filesFound = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('certs/pending/target');
-      })
-      .then(function(files) {
-        return files.reduce(function (p, file) {
-          return p.then(function () {
-            return that.list('certs/pending/target/' + file.file + '/')
-              .then(function(files2) {
-                filesFound = _.uniq(filesFound.concat(files2.map(function(f2) {
-                  return 'certs/pending/target/' + file.file + '/' + f2.file;
-                })));
-              });
+    return co(function *() {
+      var certs = [], filesFound = [];
+      var files = yield that.coreFS.list('certs/pending/target');
+      yield files.map((file) => {
+        return co(function *() {
+          var files2 = yield that.coreFS.list('certs/pending/target/' + file + '/');
+          filesFound = _.uniq(filesFound.concat(files2.map(function(f2) {
+            return 'certs/pending/target/' + file + '/' + f2;
+          })));
+        });
+      });
+      files = _.uniq(filesFound);
+      yield files.map((file) => {
+        return that.coreFS.readJSON(file)
+          .then(function(data){
+            certs.push(data);
           });
-        }, Q());
-      })
-      .then(function(){
-        return _.uniq(filesFound);
-      })
-      .then(function(files) {
-        return files.reduce(function(p, file) {
-          return p.then(function(){
-            return that.read(file)
-              .then(function(data){
-                certs.push(data);
-              })
-              .catch(function(err){
-                throw err;
-              });
-          });
-        }, Q());
-      })
-      .then(function(){
-        return filesFound;
-      })
-      .thenResolve(certs);
-  };
-
-  this.getNotLinkedFrom = function(pubkey) {
-    var certs = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('certs/pending/from/' + pubkey + '/');
-      })
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(that.reduceTo('certs/pending/from/' + pubkey + '/', certs))
-      .thenResolve(certs);
-  };
-
-  this.getLinkedFrom = function(pubkey) {
-    var certs = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('certs/linked/from/' + pubkey + '/');
-      })
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(function(files){
-        return files.reduce(function (p, file) {
-          return p.then(function () {
-            return that.list('certs/linked/from/' + pubkey + '/' + file + '/')
-              .then(function(files){
-                return _.pluck(files, 'file');
-              })
-              .then(that.reduceTo('certs/linked/from/' + pubkey + '/' + file + '/', certs));
-          });
-        }, Q());
-      })
-      .thenResolve(certs);
-  };
-
-  this.getNotLinkedToTarget = function(hash) {
-    var certs = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('certs/pending/target/' + hash + '/');
-      })
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(that.reduceTo('certs/pending/target/' + hash + '/', certs))
-      .thenResolve(certs);
-  };
-
-  this.listLocalPending = function() {
-    var certs = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('certs/pending/target/', that.LOCAL_LEVEL);
-      })
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(function(files){
-        return Q.all(files.map(function(target) {
-          return that.list('certs/pending/target/' + target + '/', that.LOCAL_LEVEL)
-            .then(function(files2){
-              return _.pluck(files2, 'file');
-            })
-            .then(that.reduceTo('certs/pending/target/' + target + '/', certs));
-        }));
-      })
-      .thenResolve(certs);
-  };
-
-  this.getLinkedToTarget = function(hash) {
-    var certs = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('certs/linked/target/' + hash + '/');
-      })
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(that.reduceTo('certs/linked/target/' + hash + '/', certs))
-      .thenResolve(certs);
-  };
-
-  this.saveOfficial = function(cert) {
-    return that.initTree()
-      .then(function(){
-        return Q.all([
-          that.makeTree('certs/linked/from/' + cert.from + '/' + cert.to + '/'),
-          that.makeTree('certs/linked/target/' + cert.target + '/'),
-          that.makeTree('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/', cert)
-        ]);
-      })
-      .then(function(){
-        return that.write('certs/linked/from/' + cert.from + '/' + cert.to + '/' + cert.block_number + '.json', cert);
-      })
-      .then(function(){
-        return that.write('certs/linked/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
-      })
-      .then(function(){
-        return that.write('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/' + getCertID(cert) + '.json', cert);
+      });
+      return certs;
+    })
+      .catch(function(err){
+        throw err;
       });
   };
 
+  this.getNotLinkedFrom = (pubkey) => that.coreFS.listJSON('certs/pending/from/' + pubkey + '/');
+
+  this.getLinkedFrom = function(pubkey) {
+    return co(function *() {
+      var certs = [];
+      var files = yield that.coreFS.list('certs/linked/from/' + pubkey + '/');
+      yield files.map((file) => {
+        return that.coreFS.listJSON('certs/linked/from/' + pubkey + '/' + file + '/').then(found => certs = certs.concat(found));
+      });
+      return certs;
+    });
+  };
+
+  this.getNotLinkedToTarget = (hash) =>
+    that.coreFS.listJSON('certs/pending/target/' + hash + '/')
+      .catch(function(err){
+        throw err;
+      });
+
+  this.listLocalPending = function() {
+    return co(function *() {
+      var certs = [];
+      var files = yield that.coreFS.listLocal('certs/pending/target/');
+      yield files.map((target) => {
+        return that.coreFS.listJSON('certs/pending/target/' + target + '/').then(found => certs = certs.concat(found));
+      });
+      return certs;
+    })
+      .catch(function(err){
+        throw err;
+      });
+  };
+
+  this.getLinkedToTarget = (hash) => that.coreFS.listJSON('certs/linked/target/' + hash + '/');
+
+  this.saveOfficial = function(cert) {
+    return co(function *() {
+      yield [
+        that.coreFS.makeTree('certs/linked/from/' + cert.from + '/' + cert.to + '/'),
+        that.coreFS.makeTree('certs/linked/target/' + cert.target + '/'),
+        that.coreFS.makeTree('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/', cert)
+      ];
+      yield that.coreFS.writeJSON('certs/linked/from/' + cert.from + '/' + cert.to + '/' + cert.block_number + '.json', cert);
+      yield that.coreFS.writeJSON('certs/linked/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
+      yield that.coreFS.writeJSON('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/' + getCertID(cert) + '.json', cert);
+      return cert;
+    });
+  };
+
   this.saveNewCertification = function(cert) {
-    return that.initTree()
-      .then(function(){
-        return Q.all([
-          that.makeTree('certs/pending/target/' + cert.target + '/'),
-          that.makeTree('certs/pending/from/' + cert.from + '/')
-        ]);
-      })
-      .then(function(){
-        return that.write('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
-      })
-      .then(function(){
-        return that.write('certs/pending/from/' + cert.from + '/' + getCertID(cert) + '.json', cert);
+    return co(function *() {
+      yield [
+        that.coreFS.makeTree('certs/pending/target/' + cert.target + '/'),
+        that.coreFS.makeTree('certs/pending/from/' + cert.from + '/')
+      ];
+      yield that.coreFS.writeJSON('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
+      yield that.coreFS.writeJSON('certs/pending/from/' + cert.from + '/' + getCertID(cert) + '.json', cert);
+      return cert;
+    })
+      .catch(function(err){
+        throw err;
       });
   };
 
   this.removeNotLinked = function(cert) {
-    return that.initTree()
-      .then(function(){
-        return that.exists('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json')
-          .then(function(exists){
-            if (exists) return that.remove('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json');
-          });
-      })
-      .then(function(){
-        return that.exists('certs/pending/from/' + cert.from + '/' + getCertID(cert) + '.json')
-          .then(function(exists){
-            if (exists) return that.remove('certs/pending/from/' + cert.from + '/' + getCertID(cert) + '.json');
-          });
-      });
+    return co(function *() {
+      var pendingTarget = 'certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json';
+      var pendingFromG = 'certs/pending/from/' + cert.from + '/' + getCertID(cert) + '.json';
+      var existsFrom = yield that.coreFS.exists(pendingFromG);
+      var existsTarget = yield that.coreFS.exists(pendingTarget);
+      if (existsTarget) {
+        yield that.coreFS.remove(pendingTarget);
+      }
+      if (existsFrom) {
+        yield that.coreFS.remove(pendingFromG);
+      }
+    });
   };
 
   this.existsGivenCert = function(cert) {
-    return that.initTree()
-      .then(function(){
-        return that.read('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json')
-          .catch(function(){
-            return that.read('certs/linked/target/' + cert.target + '/' + getCertID(cert) + '.json')
-              .catch(function() {
-                return false;
-              });
-          });
+    return co(function *() {
+      var found = yield that.coreFS.read('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json');
+      if (!found) {
+        found = yield that.coreFS.read('certs/linked/target/' + cert.target + '/' + getCertID(cert) + '.json');
+      }
+      if (found) {
+        found = JSON.parse(found);
+      }
+      return found;
+    })
+      .catch(function(err){
+        throw err;
       });
   };
 

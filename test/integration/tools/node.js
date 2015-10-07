@@ -1,5 +1,6 @@
 "use strict";
 var Q = require('q');
+var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
 var vucoin = require('vucoin');
@@ -74,7 +75,7 @@ function Node (dbName, options) {
         function(next) {
           async.parallel({
             block: function(callback){
-              that.server.BlockchainService.generateNext(callback);
+              that.server.BlockchainService.generateNext().then(_.partial(callback, null)).catch(callback);
             },
             sigFunc: function(callback){
               require('../../../app/lib/signature').sync(that.server.pair, callback);

@@ -126,7 +126,7 @@ function IdentityService (conf, dal) {
           }, next);
         },
         function (next){
-          dal.getIdentityByHashWithCertsOrNull(obj.hash, next);
+          dal.getIdentityByHashWithCertsOrNull(obj.hash).then(_.partial(next, null)).fail(next);
         },
         function (existing, next){
           if (existing && !aCertWasSaved) {

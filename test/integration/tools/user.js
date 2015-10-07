@@ -294,5 +294,6 @@ function User (uid, options, node) {
   this.selfCertP = (when) => Q.nfcall(this.selfCert(when));
   this.certP = (user) => Q.nfcall(this.cert(user));
   this.joinP = () => Q.nfcall(this.join());
+  this.leaveP = () => Q.nfcall(this.leave());
   this.sendP = () => Q.nfcall(this.send.apply(this, arguments));
 }

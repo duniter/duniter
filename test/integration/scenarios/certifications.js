@@ -1,5 +1,6 @@
 "use strict";
 var user   = require('./../tools/user');
+var co = require('co');
 
 module.exports = function(node1) {
 
@@ -11,33 +12,37 @@ module.exports = function(node1) {
   var now = Math.round(new Date().getTime()/1000);
 
   return [
-    // Self certifications
-    cat.selfCert(now),
-    tac.selfCert(now),
-    tic.selfCert(now),
-    toc.selfCert(now),
-    // Certifications
-    cat.cert(tac),
-    cat.cert(tic),
-    cat.cert(toc),
-    tac.cert(cat),
-    tac.cert(tic),
-    tic.cert(cat),
-    tic.cert(tac),
-    toc.cert(cat),
-    cat.join(),
-    tac.join(),
-    tic.join(),
-    toc.join(),
-    node1.commit(),
-    node1.commit(),
-    toc.leave(),
-    node1.commit(),
-    tac.cert(toc),
-    tic.cert(toc),
-    toc.cert(tic), // Should be taken in 1 block
-    toc.cert(tac), // Should be taken in 1 other block
-    node1.commit(),
-    node1.commit()
+    function(done) {
+      return co(function *() {
+        // Self certifications
+        yield cat.selfCertP(now);
+        yield tac.selfCertP(now);
+        yield tic.selfCertP(now);
+        yield toc.selfCertP(now);
+        yield cat.certP(tac);
+        yield cat.certP(tic);
+        yield cat.certP(toc);
+        yield tac.certP(cat);
+        yield tac.certP(tic);
+        yield tic.certP(cat);
+        yield tic.certP(tac);
+        yield toc.certP(cat);
+        yield cat.joinP();
+        yield tac.joinP();
+        yield tic.joinP();
+        yield toc.joinP();
+        yield node1.commitP();
+        yield node1.commitP();
+        yield toc.leaveP();
+        yield node1.commitP();
+        yield tac.certP(toc);
+        yield tic.certP(toc);
+        yield toc.certP(tic); // Should be taken in 1 block
+        yield toc.certP(tac); // Should be taken in 1 other block
+        yield node1.commitP();
+        yield node1.commitP();
+      })
+        .then(done).catch(done);
+    }
   ];
 };

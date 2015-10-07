@@ -500,8 +500,13 @@ function BlockchainService (conf, mainDAL, pair) {
         that.current(next);
       },
       function (block, next) {
-        if (!block)
-        that.generateNextBlock(new ManualRootGenerator(), next);
+        if (!block) {
+          return that.mainForkDAL()
+            .then(function(dal){
+              return that.generateNextBlock(dal, new ManualRootGenerator());
+            })
+            .then(_.partial(next, null)).catch(next);
+        }
         else
           next('Cannot generate root block: it already exists.');
       }
@@ -539,98 +544,63 @@ function BlockchainService (conf, mainDAL, pair) {
 
   /**
    * Generates next block, finding newcomers, renewers, leavers, certs, transactions, etc.
-   * @param done Callback.
    */
-  this.generateNext = function (done) {
-    return that.mainForkDAL()
-      .catch(function(err) {
-        done && done(err);
-        throw err;
-      })
-      .then(function(dal){
-        return that.generateNextBlock(dal, new NextBlockGenerator(conf, dal), done);
-      });
+  this.generateNext = function () {
+    return co(function *() {
+      var dal = yield that.mainForkDAL();
+      return that.generateNextBlock(dal, new NextBlockGenerator(conf, dal));
+    });
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
-  this.generateNextBlock = function (dal, generator, done) {
-    return prepareNextBlock(dal)
-      .spread(function(current, lastUDBlock, exclusions){
-        return Q.all([
-          generator.findNewCertsFromWoT(current),
-          findNewcomersAndLeavers(dal, current, generator.filterJoiners),
-          findTransactions(dal)
-        ])
-          .spread(function(newCertsFromWoT, newcomersLeavers, transactions) {
-            var joinData = newcomersLeavers[2];
-            var leaveData = newcomersLeavers[3];
-            var newCertsFromNewcomers = newcomersLeavers[4];
-            var certifiersOfNewcomers = _.uniq(_.keys(joinData).reduce(function(certifiers, newcomer) {
-              return certifiers.concat(_.pluck(joinData[newcomer].certs, 'from'));
-            }, []));
-            var certifiers = [].concat(certifiersOfNewcomers);
-            // Merges updates
-            _(newCertsFromWoT).keys().forEach(function(certified){
-              newCertsFromWoT[certified] = newCertsFromWoT[certified].filter(function(cert) {
-                // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
-                var isCertifier = certifiers.indexOf(cert.from) != -1;
-                if (!isCertifier) {
-                  certifiers.push(cert.from);
-                }
-                return !isCertifier;
-              });
-            });
-            _(newCertsFromNewcomers).keys().forEach(function(certified){
-              newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
-            });
-            // Create the block
-            return createBlock(dal, current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions);
-          }, Q.reject);
-      }, Q.reject)
-      .then(function(block) {
-        done && done(null, block);
-        return block;
-      })
-      .catch(function(err) {
-        if (!done) throw err;
-        else done(err);
+  this.generateNextBlock = function (dal, generator) {
+    return co(function *() {
+      var current = yield dal.getCurrentBlockOrNull();
+      var lastUDBlock = yield dal.lastUDBlock();
+      var exclusions = yield dal.getToBeKickedPubkeys();
+      var newCertsFromWoT = yield generator.findNewCertsFromWoT(current);
+      var newcomersLeavers = yield findNewcomersAndLeavers(dal, current, generator.filterJoiners);
+      var transactions = yield findTransactions(dal);
+      var joinData = newcomersLeavers[2];
+      var leaveData = newcomersLeavers[3];
+      var newCertsFromNewcomers = newcomersLeavers[4];
+      var certifiersOfNewcomers = _.uniq(_.keys(joinData).reduce(function(certifiers, newcomer) {
+        return certifiers.concat(_.pluck(joinData[newcomer].certs, 'from'));
+      }, []));
+      var certifiers = [].concat(certifiersOfNewcomers);
+      // Merges updates
+      _(newCertsFromWoT).keys().forEach(function(certified){
+        newCertsFromWoT[certified] = newCertsFromWoT[certified].filter(function(cert) {
+          // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
+          var isCertifier = certifiers.indexOf(cert.from) != -1;
+          if (!isCertifier) {
+            certifiers.push(cert.from);
+          }
+          return !isCertifier;
+        });
       });
+      _(newCertsFromNewcomers).keys().forEach(function(certified){
+        newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
+      });
+      // Create the block
+      return createBlock(dal, current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions);
+    });
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
-  this.generateEmptyNextBlock = function (done) {
-    return that.mainForkDAL()
-      .then(function(dal){
-        return prepareNextBlock(dal)
-          .spread(function(current, lastUDBlock, exclusions){
-            return createBlock(dal, current, {}, {}, {}, exclusions, lastUDBlock, [])
-              .then(function(block){
-                done && done(null, block);
-                return block;
-              });
-          })
-          .catch(done);
-      });
+  this.generateEmptyNextBlock = function () {
+    return co(function *() {
+      var dal = yield that.mainForkDAL();
+      var current = yield dal.getCurrentBlockOrNull();
+      var lastUDBlock = dal.lastUDBlock();
+      var exclusions = yield dal.getToBeKickedPubkeys();
+      return createBlock(dal, current, {}, {}, {}, exclusions, lastUDBlock, []);
+    });
   };
-
-  function prepareNextBlock(dal) {
-    return Q.all([
-      dal.getCurrentBlockOrNull(),
-      dal.lastUDBlock(),
-      dal.getToBeKicked()
-    ])
-      .spread(function(current, lastUDBlock, exclusions) {
-        return Q.all([
-          current,
-          lastUDBlock,
-          _.pluck(exclusions, 'pubkey')
-        ]);
-      });
-  }
 
   function findTransactions(dal) {
     return dal.getTransactionsPending()
@@ -1395,28 +1365,14 @@ function BlockchainService (conf, mainDAL, pair) {
       });
   };
 
-  this.makeNextBlock = function(block, sigFunc, trial, done) {
-    return that.mainForkDAL()
-      .then(function(dal){
-        return Q.all([
-          block ? Q(block) : that.generateNext(),
-          sigFunc ? Q(sigFunc) : signature.sync(pair),
-          trial ? Q(trial) : globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey)
-        ])
-          .spread(function(unsignedBlock, sigF, trialLevel){
-            return that.prove(unsignedBlock, sigF, trialLevel)
-              .then(function(signedBlock){
-                done && done(null, signedBlock);
-                return signedBlock;
-              })
-              .catch(function(err){
-                if (done) {
-                  return done(err);
-                }
-                throw err;
-              });
-          }, Q.reject);
-      });
+  this.makeNextBlock = function(block, sigFunc, trial) {
+    return co(function *() {
+      var dal = yield that.mainForkDAL();
+      var unsignedBlock = block || (yield that.generateNext());
+      var sigF = sigFunc || signature.sync(pair);
+      var trialLevel = trial || (yield globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey));
+      return that.prove(unsignedBlock, sigF, trialLevel);
+    });
   };
 
   this.recomputeTxRecords = function() {
@@ -1522,62 +1478,34 @@ function BlockchainService (conf, mainDAL, pair) {
 function NextBlockGenerator(conf, dal) {
 
   this.findNewCertsFromWoT = function(current) {
-    return Q.Promise(function(resolve, reject){
+    return co(function *() {
       var updates = {};
       var updatesToFrom = {};
-      async.waterfall([
-        function (next) {
-          dal.certsFindNew()
-            .then(function(dd){
-              next(null, dd);
-            })
-            .catch(function(err){
-              next(err);
-            });
-        },
-        function (certs, next){
-          async.forEachSeries(certs, function(cert, callback){
-            async.waterfall([
-              function (next) {
-                if (current) {
-                  // Already exists a link not replayable yet?
-                  dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay)
-                    .then(function(exists) {
-                      next(null, exists);
-                    })
-                    .catch(next);
-                }
-                else next(null, false);
-              },
-              function (exists, next) {
-                if (exists)
-                  next('It already exists a similar certification written, which is not replayable yet');
-                else {
-                  // Signatory must be a member
-                  dal.isMemberOrError(cert.from, next);
-                }
-              },
-              function (next){
-                // Certified must be a member and non-leaver
-                dal.isMembeAndNonLeaverOrError(cert.to, next);
-              },
-              function (next){
-                updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
-                updates[cert.to] = updates[cert.to] || [];
-                if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
-                  updates[cert.to].push(cert);
-                  updatesToFrom[cert.to].push(cert.from);
-                }
-                next();
-              }
-            ], function () {
-              callback();
-            });
-          }, next);
+      var certs = yield dal.certsFindNew();
+      for (var i = 0; i < certs.length; i++) {
+        var cert = certs[i];
+        var exists = false;
+        if (current) {
+          // Already exists a link not replayable yet?
+          exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay);
         }
-      ], function (err) {
-        err ? reject(err) : resolve(updates);
-      });
+        if (exists) {
+          throw 'It already exists a similar certification written, which is not replayable yet';
+        }
+        // Signatory must be a member
+        var isSignatoryAMember = yield dal.isMember(cert.from);
+        var isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
+        // Certified must be a member and non-leaver
+        if (isSignatoryAMember && isCertifiedANonLeavingMember) {
+          updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
+          updates[cert.to] = updates[cert.to] || [];
+          if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
+            updates[cert.to].push(cert);
+            updatesToFrom[cert.to].push(cert.from);
+          }
+        }
+      }
+      return updates;
     });
   };
 

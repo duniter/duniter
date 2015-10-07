@@ -1,6 +1,6 @@
 "use strict";
 var async     = require('async');
-var parsers   = require('../lib/streams/parsers/doc');
+var Q = require('q');
 var constants = require('../lib/constants');
 
 module.exports = function () {
@@ -18,6 +18,8 @@ function ParameterNamespace () {
     }
     callback(null, req.params.search);
   };
+
+  this.getSearchP = (req) => Q.nbind(this.getSearch, this)(req);
 
   this.getCountAndFrom = function (req, callback){
     if(!req.params.from){

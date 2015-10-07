@@ -2,142 +2,98 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractDAL = require('./AbstractDAL');
-var Q = require('q');
-var _ = require('underscore');
-var sha1 = require('sha1');
+var AbstractCFS = require('./AbstractCFS');
+var co = require('co');
 
 module.exports = TxsDAL;
 
-function TxsDAL(dal) {
+function TxsDAL(rootPath, qioFS, parentCore, localDAL) {
 
   "use strict";
 
-  AbstractDAL.call(this, dal);
-  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
-  var treeMade;
 
-  this.initTree = function() {
-    if (!treeMade) {
-      treeMade = Q.all([
-        that.makeTree('txs/'),
-        that.makeTree('txs/linked/'),
-        that.makeTree('txs/linked/hash/'),
-        that.makeTree('txs/linked/issuer/'),
-        that.makeTree('txs/linked/recipient/'),
-        that.makeTree('txs/pending/'),
-        that.makeTree('txs/pending/hash/'),
-        that.makeTree('txs/pending/issuer/'),
-        that.makeTree('txs/pending/recipient/')
-      ]);
-    }
-    return treeMade;
+  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+
+  this.init = () => {
+    return co(function *() {
+      yield [
+        that.coreFS.makeTree('txs/'),
+        that.coreFS.makeTree('txs/linked/'),
+        that.coreFS.makeTree('txs/linked/hash/'),
+        that.coreFS.makeTree('txs/linked/issuer/'),
+        that.coreFS.makeTree('txs/linked/recipient/'),
+        that.coreFS.makeTree('txs/pending/'),
+        that.coreFS.makeTree('txs/pending/hash/'),
+        that.coreFS.makeTree('txs/pending/issuer/'),
+        that.coreFS.makeTree('txs/pending/recipient/')
+      ];
+    });
   };
 
-  function initable(f) {
-    return function() {
-      var args = Array.prototype.slice.call(arguments);
-      return that.initTree().then(function() {
-        return f.apply(that, args);
-      });
-    };
-  }
+  this.getAllPending = () => that.coreFS.listJSON('txs/pending/hash/');
 
-  this.getAllPending = initable(function() {
-    return getList('txs/pending/hash/');
-  });
-
-  this.getTX = initable(function(hash) {
-    return that.read('txs/linked/hash/' + hash + '.json')
+  this.getTX = (hash) => {
+    return that.coreFS.readJSON('txs/linked/hash/' + hash + '.json')
       .catch(function(){
-        return that.read('txs/pending/hash/' + hash + '.json');
+        return that.coreFS.readJSON('txs/pending/hash/' + hash + '.json');
       })
       .catch(function(){
         return null;
       });
-  });
+  };
 
-  this.removeTX = initable(function(hash) {
-    return that.remove('txs/pending/hash/' + hash + '.json')
-      .catch(function() {
+  this.removeTX = (hash) => that.coreFS.remove('txs/pending/hash/' + hash + '.json').catch(() => null);
+
+  this.addLinked = (tx) => {
+    return co(function *() {
+      var hash = tx.getHash(true);
+      var issuers = tx.issuers;
+      var recipients = tx.outputs.map(function(out) {
+        return out.match('(.*):')[1];
       });
-  });
+      yield [
+        that.coreFS.writeJSON('txs/linked/hash/' + hash + '.json', tx)
+      ]
+        .concat(issuers.map(function(issuer) {
+          return writeForPubkey('txs/linked/issuer/' + issuer + '/', hash, tx);
+        }))
 
-  this.addLinked = initable(function(tx) {
-    var hash = tx.getHash(true);
-    return extractTX(tx)
-      .spread(function(issuers, recipients){
-        return Q.all([
-          that.write('txs/linked/hash/' + hash + '.json', tx)
-        ]
-          .concat(issuers.map(function(issuer) {
-            return writeForPubkey('txs/linked/issuer/' + issuer + '/', hash, tx);
-          }))
+        .concat(recipients.map(function(recipient) {
+          return writeForPubkey('txs/linked/recipient/' + recipient + '/', hash, tx);
+        }));
+    });
+  };
 
-          .concat(recipients.map(function(recipient) {
-            return writeForPubkey('txs/linked/recipient/' + recipient + '/', hash, tx);
-          }))
-        );
-      }, Q.reject)
-      .catch(function(err){
-        throw err;
+  this.addPending = (tx) => {
+    return co(function *() {
+      var hash = tx.getHash(true);
+      var issuers = tx.issuers;
+      var recipients = tx.outputs.map(function(out) {
+        return out.match('(.*):')[1];
       });
-  });
-
-  this.addPending = initable(function(tx) {
-    var hash = tx.getHash(true);
-    return extractTX(tx)
-      .spread(function(issuers, recipients){
-        return Q.all([
-          that.write('txs/pending/hash/' + hash + '.json', tx)
-        ].concat(issuers.map(function(issuer) {
-            return writeForPubkey('txs/pending/issuer/' + issuer + '/', hash, tx);
-          })).concat(recipients.map(function(recipient) {
-            return writeForPubkey('txs/pending/recipient/' + recipient + '/', hash, tx);
-          })));
-      }, Q.reject);
-  });
+      yield [
+        that.coreFS.writeJSON('txs/pending/hash/' + hash + '.json', tx)
+      ].concat(issuers.map(function(issuer) {
+          return writeForPubkey('txs/pending/issuer/' + issuer + '/', hash, tx);
+        })).concat(recipients.map(function(recipient) {
+          return writeForPubkey('txs/pending/recipient/' + recipient + '/', hash, tx);
+        }));
+    });
+  };
 
   function writeForPubkey(path, fileName, tx) {
-    return that.makeTree(path)
-      .then(function(){
-        return that.write(path + fileName + '.json', tx);
-      });
+    return co(function *() {
+      yield that.coreFS.makeTree(path);
+      return that.coreFS.writeJSON(path + fileName + '.json', tx);
+    });
   }
 
-  this.getLinkedWithIssuer = initable(function(pubkey) {
-    return getList('txs/linked/issuer/' + pubkey + '/');
-  });
+  this.getLinkedWithIssuer = (pubkey) => this.coreFS.listJSON('txs/linked/issuer/' + pubkey + '/');
 
-  this.getLinkedWithRecipient = initable(function(pubkey) {
-    return getList('txs/linked/recipient/' + pubkey + '/');
-  });
+  this.getLinkedWithRecipient = (pubkey) => this.coreFS.listJSON('txs/linked/recipient/' + pubkey + '/');
 
-  this.getPendingWithIssuer = initable(function(pubkey) {
-    return getList('txs/pending/issuer/' + pubkey + '/');
-  });
+  this.getPendingWithIssuer = (pubkey) => this.coreFS.listJSON('txs/pending/issuer/' + pubkey + '/');
 
-  this.getPendingWithRecipient = initable(function(pubkey) {
-    return getList('txs/pending/recipient/' + pubkey + '/');
-  });
-
-  function getList(path) {
-    var txs = [];
-    return that.list(path)
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(that.reduceTo(path, txs))
-      .thenResolve(txs);
-  }
-
-  function extractTX(tx) {
-    return Q.all([
-      Q(tx.issuers),
-      Q(tx.outputs.map(function(out) {
-        return out.match('(.*):')[1];
-      }))
-    ]);
-  }
+  this.getPendingWithRecipient = (pubkey) => this.coreFS.listJSON('txs/pending/recipient/' + pubkey + '/');
 }

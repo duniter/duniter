@@ -76,7 +76,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
   var indicatorsDAL = new IndicatorsDAL(that);
-  var txsDAL = new TxsDAL(that);
   var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
@@ -85,12 +84,12 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
   this.blockDAL = new BlockDAL(rootPath, myFS, parentFileDAL && parentFileDAL.blockDAL.coreFS, that);
   this.certDAL = new CertDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.coreFS, that);
+  this.txsDAL = new TxsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.txsDAL, that);
 
   this.dals = {
     'confDAL': confDAL,
     'statDAL': statDAL,
     'indicatorsDAL': indicatorsDAL,
-    'txsDAL': txsDAL,
     'coresDAL': coresDAL,
     'linksDAL': linksDAL,
     'msDAL': msDAL,
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'peerDAL': that.peerDAL,
     'sourcesDAL': that.sourcesDAL,
     'blockDAL': that.blockDAL,
-    'certDAL': that.certDAL
+    'certDAL': that.certDAL,
+    'txsDAL': that.txsDAL
   };
 
   var currency = '';
@@ -468,15 +468,15 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.getTxByHash = function(hash) {
-    return txsDAL.getTX(hash);
+    return that.txsDAL.getTX(hash);
   };
 
   this.removeTxByHash = function(hash) {
-    return txsDAL.removeTX(hash);
+    return that.txsDAL.removeTX(hash);
   };
 
   this.getTransactionsPending = function() {
-    return txsDAL.getAllPending();
+    return that.txsDAL.getAllPending();
   };
 
   this.getNonWritten = function(pubkey) {
@@ -927,7 +927,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     return Q.all(txs.map(function(tx) {
       _.extend(tx, extraProps);
       _.extend(tx, { currency: that.getCurrency() });
-      return txsDAL.addLinked(new Transaction(tx));
+      return that.txsDAL.addLinked(new Transaction(tx));
     }));
   };
 
@@ -1014,7 +1014,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.saveTransaction = function(tx) {
-    return txsDAL.addPending(tx);
+    return that.txsDAL.addPending(tx);
   };
 
   this.dropTxRecords = function() {
@@ -1044,10 +1044,10 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
         history.sending = [];
         history.receiving = [];
         return Q.all([
-          txsDAL.getLinkedWithIssuer(pubkey),
-          txsDAL.getLinkedWithRecipient(pubkey),
-          txsDAL.getPendingWithIssuer(pubkey),
-          txsDAL.getPendingWithRecipient(pubkey)
+          that.txsDAL.getLinkedWithIssuer(pubkey),
+          that.txsDAL.getLinkedWithRecipient(pubkey),
+          that.txsDAL.getPendingWithIssuer(pubkey),
+          that.txsDAL.getPendingWithRecipient(pubkey)
         ])
           .then(function(res){
             history.sent = res[0] || [];

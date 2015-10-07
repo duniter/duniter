@@ -75,7 +75,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   // DALs
   var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
-  var indicatorsDAL = new IndicatorsDAL(that);
   var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
@@ -84,12 +83,12 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
   this.blockDAL = new BlockDAL(rootPath, myFS, parentFileDAL && parentFileDAL.blockDAL.coreFS, that);
   this.certDAL = new CertDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.coreFS, that);
-  this.txsDAL = new TxsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.txsDAL, that);
+  this.txsDAL = new TxsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.txsDAL.coreFS, that);
+  this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that);
 
   this.dals = {
     'confDAL': confDAL,
     'statDAL': statDAL,
-    'indicatorsDAL': indicatorsDAL,
     'coresDAL': coresDAL,
     'linksDAL': linksDAL,
     'msDAL': msDAL,
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'sourcesDAL': that.sourcesDAL,
     'blockDAL': that.blockDAL,
     'certDAL': that.certDAL,
-    'txsDAL': that.txsDAL
+    'txsDAL': that.txsDAL,
+    'indicatorsDAL': that.indicatorsDAL
   };
 
   var currency = '';
@@ -266,7 +266,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
 
   // Block
   this.lastUDBlock = function() {
-    return indicatorsDAL.getLastUDBlock();
+    return that.indicatorsDAL.getLastUDBlock();
   };
 
   this.getRootBlock = function(done) {
@@ -274,7 +274,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.lastBlockOfIssuer = function(issuer) {
-    return indicatorsDAL.getLastBlockOfIssuer(issuer);
+    return that.indicatorsDAL.getLastBlockOfIssuer(issuer);
   };
 
   this.getBlocksBetween = function(start, end) {
@@ -722,7 +722,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       var currentExcluding;
       if (current.number > 0) {
         try {
-          currentExcluding = yield indicatorsDAL.getCurrentMembershipExcludingBlock();
+          currentExcluding = yield that.indicatorsDAL.getCurrentMembershipExcludingBlock();
         } catch(e){
           currentExcluding = null;
         }
@@ -731,7 +731,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
         var root = yield that.getRootBlock();
         var delaySinceStart = current.medianTime - root.medianTime;
         if (delaySinceStart > msValidtyTime) {
-          return indicatorsDAL.writeCurrentExcluding(root).thenResolve(root);
+          return that.indicatorsDAL.writeCurrentExcluding(root).thenResolve(root);
         }
       } else {
         var start = currentExcluding.number;
@@ -740,7 +740,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
           nextPotential = yield that.getBlock(start + 1);
           var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
           if (delaySinceNextOfExcluding > msValidtyTime) {
-            yield indicatorsDAL.writeCurrentExcluding(nextPotential).thenResolve(nextPotential);
+            yield that.indicatorsDAL.writeCurrentExcluding(nextPotential).thenResolve(nextPotential);
             start++;
           }
         } while (delaySinceNextOfExcluding > msValidtyTime);
@@ -754,7 +754,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       var currentExcluding;
       if (current.number > 0) {
         try {
-          currentExcluding = yield indicatorsDAL.getCurrentCertificationExcludingBlock();
+          currentExcluding = yield that.indicatorsDAL.getCurrentCertificationExcludingBlock();
         } catch(e){
           currentExcluding = null;
         }
@@ -763,7 +763,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
         var root = yield that.getRootBlock();
         var delaySinceStart = current.medianTime - root.medianTime;
         if (delaySinceStart > certValidtyTime) {
-          return indicatorsDAL.writeCurrentExcludingForCert(root).thenResolve(root);
+          return that.indicatorsDAL.writeCurrentExcludingForCert(root).thenResolve(root);
         }
       } else {
         var start = currentExcluding.number;
@@ -772,7 +772,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
           nextPotential = yield that.getBlock(start + 1);
           var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
           if (delaySinceNextOfExcluding > certValidtyTime) {
-            yield indicatorsDAL.writeCurrentExcludingForCert(nextPotential).thenResolve(nextPotential);
+            yield that.indicatorsDAL.writeCurrentExcludingForCert(nextPotential).thenResolve(nextPotential);
             start++;
           }
         } while (delaySinceNextOfExcluding > certValidtyTime);
@@ -878,11 +878,11 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       })
       .then(function(){
         if (block.dividend) {
-          return indicatorsDAL.setLastUDBlock(block);
+          return that.indicatorsDAL.setLastUDBlock(block);
         }
       })
       .then(function(){
-        return indicatorsDAL.setLastBlockForIssuer(block);
+        return that.indicatorsDAL.setLastBlockForIssuer(block);
       })
       .then(function(){
         done && done();

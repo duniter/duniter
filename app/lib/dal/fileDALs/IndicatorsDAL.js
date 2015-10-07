@@ -2,89 +2,41 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractDAL = require('./AbstractDAL');
-var Q = require('q');
-var _ = require('underscore');
-var sha1 = require('sha1');
+var AbstractCFS = require('./AbstractCFS');
+var co = require('co');
 
 module.exports = IndicatorsDAL;
 
-function IndicatorsDAL(dal) {
+function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL) {
 
   "use strict";
 
-  AbstractDAL.call(this, dal);
-  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
-  var treeMade;
 
-  this.initTree = function() {
-    if (!treeMade) {
-      treeMade = Q.all([
-        that.makeTree('indicators/'),
-        that.makeTree('indicators/issuers')
-      ]);
-    }
-    return treeMade;
+  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+
+  this.init = () => {
+    return co(function *() {
+      yield [
+        that.coreFS.makeTree('indicators/'),
+        that.coreFS.makeTree('indicators/issuers')
+      ];
+    });
   };
 
-  this.writeCurrentExcluding = function(excluding) {
-    return that.initTree()
-      .then(function(){
-        return that.write('indicators/excludingMS.json', excluding);
-      });
-  };
+  this.writeCurrentExcluding = (excluding) => that.coreFS.writeJSON('indicators/excludingMS.json', excluding);
 
-  this.writeCurrentExcludingForCert = function(excluding) {
-    return that.initTree()
-      .then(function(){
-        return that.write('indicators/excludingCRT.json', excluding);
-      });
-  };
+  this.writeCurrentExcludingForCert = (excluding) => that.coreFS.writeJSON('indicators/excludingCRT.json', excluding);
 
-  this.getCurrentMembershipExcludingBlock = function() {
-    return that.initTree()
-      .then(function(){
-        return that.read('indicators/excludingMS.json');
-      });
-  };
+  this.getCurrentMembershipExcludingBlock = () => that.coreFS.readJSON('indicators/excludingMS.json');
 
-  this.getCurrentCertificationExcludingBlock = function() {
-    return that.initTree()
-      .then(function(){
-        return that.read('indicators/excludingCRT.json');
-      });
-  };
+  this.getCurrentCertificationExcludingBlock = () => that.coreFS.readJSON('indicators/excludingCRT.json');
 
-  this.setLastUDBlock = function(ud_block) {
-    return that.initTree()
-      .then(function(){
-        return that.write('indicators/ud_block.json', ud_block);
-      });
-  };
+  this.setLastUDBlock = (ud_block) => that.coreFS.writeJSON('indicators/ud_block.json', ud_block);
 
-  this.getLastUDBlock = function() {
-    return that.initTree()
-      .then(function(){
-        return that.read('indicators/ud_block.json')
-          .catch(function() {
-            return null;
-          });
-      });
-  };
+  this.getLastUDBlock = () => that.coreFS.readJSON('indicators/ud_block.json').catch(() => null);
 
-  this.setLastBlockForIssuer = function(block) {
-    return that.initTree()
-      .then(function(){
-        return that.write('indicators/issuers/' + block.issuer + '.json', block);
-      });
-  };
+  this.setLastBlockForIssuer = (block) => that.coreFS.writeJSON('indicators/issuers/' + block.issuer + '.json', block);
 
-  this.getLastBlockOfIssuer = function(pubkey) {
-    return that.initTree()
-      .then(function(){
-        return that.read('indicators/issuers/' + pubkey + '.json');
-      })
-      .catch(function() { return null; });
-  };
+  this.getLastBlockOfIssuer = (pubkey) => that.coreFS.readJSON('indicators/issuers/' + pubkey + '.json').catch(() => null);
 }

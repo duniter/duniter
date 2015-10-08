@@ -31,9 +31,6 @@ function Node (dbName, options) {
   this.before = function (scenarios) {
     return function(done) {
       async.waterfall([
-        function(next) {
-          that.server.reset(next);
-        },
         function (next) {
           vucoin(options.remoteipv4, options.remoteport, next);
         },

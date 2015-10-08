@@ -209,7 +209,7 @@ function BlockchainService (conf, mainDAL, pair) {
                   return mainContext.addBlock(obj, doCheck);
                 } else {
                   return forkAndAddCore(basedCore, cores, obj)
-                    .tap(function(){
+                    .then(function(res){
 
                       /**
                        * 2. Shift
@@ -228,17 +228,22 @@ function BlockchainService (conf, mainDAL, pair) {
                       return mainDAL.getCurrentBlockOrNull()
                         .then(function(current){
                           return startPruning(highestCores[0], cores, current, forkWindowSize, doCheck);
-                        });
+                        })
+                        .then(() => res);
                     });
                 }
               });
           })
-          .tap(function(){
-            return Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+          .then(function(res){
+            return Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that))
+              .then(() => res);
           })
-          .then(resolve)
-          .catch(reject)
-          .finally(function() {
+          .then((res) => {
+            resolve(res);
+            blockIsProcessed();
+          })
+          .catch((err) => {
+            reject(err);
             blockIsProcessed();
           });
       });
@@ -390,9 +395,7 @@ function BlockchainService (conf, mainDAL, pair) {
         that.currentDal = coreDAL;
         return blockchainCtx(conf, coreDAL);
       })
-      .tap(function(ctx) {
-        _.extend(ctx, coreObj);
-      })
+      .then((ctx) => _.extend(ctx, coreObj))
       .then(function(core){
         return core.addBlock(obj)
           .catch(function(err){

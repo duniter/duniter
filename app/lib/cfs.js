@@ -124,17 +124,31 @@ function CFSCore(rootPath, qfs, parent) {
   /**
    * REMOVE operation of CFS. Set given file as removed. Logical deletion since physical won't work due to the algorithm of CFS.
    * @param filePath File to set as removed.
+   * @param deep Wether to remove the file in the root core or not.
    * @returns {*} Promise of removal.
    */
-  this.remove = (filePath) => {
+  this.remove = (filePath, deep) => {
     return co(function *() {
+      // Make a deep physical deletion
+      if (deep && that.parent) {
+        return that.parent.remove(filePath, deep);
+      }
+      // Not the root core, make a logical deletion instead of physical
       if (that.parent) {
         yield createDeletionFolder();
-        return yield qfs.write(path.join(rootPath, '.deleted', toRemoveFileName(filePath)), '');
+        return qfs.write(path.join(rootPath, '.deleted', toRemoveFileName(filePath)), '');
       }
+      // Root core: physical deletion
       return qfs.remove(path.join(rootPath, filePath));
     });
   };
+
+  /**
+   * REMOVE operation of CFS. Set given file as removed. Logical deletion since physical won't work due to the algorithm of CFS.
+   * @param filePath File to set as removed.
+   * @returns {*} Promise of removal.
+   */
+  this.removeDeep = (filePath) => this.remove(filePath, DEEP_WRITE);
 
   /**
    * Create a directory tree.

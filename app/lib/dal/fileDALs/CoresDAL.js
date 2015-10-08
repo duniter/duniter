@@ -2,62 +2,30 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractDAL = require('./AbstractDAL');
+var AbstractCFS = require('./AbstractCFS');
 var Q = require('q');
-var _ = require('underscore');
 
 module.exports = CoresDAL;
 
-function CoresDAL(dal) {
+function CoresDAL(rootPath, qioFS, parentCore, localDAL) {
 
   "use strict";
 
-  AbstractDAL.call(this, dal);
-  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
-  var treeMade;
 
-  this.initTree = function() {
-    return Q.all([
-      that.makeTree('cores/')
-    ]);
-  };
+  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
 
-  this.addCore = function(core) {
-    return that.initTree()
-      .then(function(){
-        return that.write('cores/' + getCoreID(core) + '.json', core, that.DEEP_WRITE);
-      });
-  };
+  this.init = () => Q.all([
+    that.coreFS.makeTree('cores/')
+  ]);
 
-  this.getCore = function(core) {
-    return that.initTree()
-      .then(function(){
-        return that.read('cores/' + getCoreID(core) + '.json');
-      });
-  };
+  this.addCore = (core) => that.coreFS.writeJSONDeep('cores/' + getCoreID(core) + '.json', core);
 
-  this.removeCore = function(core) {
-    return that.initTree()
-      .then(function(){
-        return that.remove('cores/' + getCoreID(core) + '.json', that.RECURSIVE)
-          .catch(function(){
-          });
-      });
-  };
+  this.getCore = (core) => that.coreFS.readJSON('cores/' + getCoreID(core) + '.json');
 
-  this.getCores = function() {
-    var cores = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('cores/')
-          .then(function(files){
-            return _.pluck(files, 'file');
-          })
-          .then(that.reduceTo('cores/', cores))
-          .thenResolve(cores);
-      });
-  };
+  this.removeCore = (core) => that.coreFS.removeDeep('cores/' + getCoreID(core) + '.json');
+
+  this.getCores = () => that.coreFS.listJSON('cores/');
 
   function getCoreID(core) {
     return [core.forkPointNumber, core.forkPointHash].join('-');

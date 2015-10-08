@@ -73,7 +73,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
 
   // DALs
-  var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
@@ -85,9 +84,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that);
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that);
   this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that);
+  this.coresDAL = new CoresDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that);
 
   this.dals = {
-    'coresDAL': coresDAL,
     'linksDAL': linksDAL,
     'msDAL': msDAL,
     'idtyDAL': idtyDAL
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'txsDAL': that.txsDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
-    'statDAL': that.statDAL
+    'statDAL': that.statDAL,
+    'coresDAL': that.coresDAL
   };
 
   var currency = '';
@@ -126,7 +126,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.getCores = function() {
-    return coresDAL.getCores();
+    return that.coresDAL.getCores();
   };
 
   this.loadCore = function(core, invalidateCache) {
@@ -138,7 +138,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.addCore = function(core) {
-    return coresDAL.addCore(core);
+    return that.coresDAL.addCore(core);
   };
 
   this.fork = function(newBlock) {
@@ -147,7 +147,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
       forkPointHash: newBlock.hash,
       forkPointPreviousHash: newBlock.previousHash
     };
-    return coresDAL.getCore(core)
+    return that.coresDAL.getCore(core)
       .catch(function(){
         return null;
       })
@@ -169,7 +169,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
           forkPointNumber: current.number,
           forkPointHash: current.hash
         };
-        return coresDAL.removeCore(core)
+        return that.coresDAL.removeCore(core)
           .then(function(){
             return loadedCore.dal.removeHome();
           });

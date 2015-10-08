@@ -2,39 +2,30 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractDAL = require('./AbstractDAL');
+var AbstractCFS = require('./AbstractCFS');
+var co = require('co');
 
 module.exports = StatDAL;
 
-function StatDAL(dal) {
+function StatDAL(rootPath, qioFS, parentCore, localDAL) {
 
   "use strict";
 
-  AbstractDAL.call(this, dal);
-
-  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
 
-  this.loadStats = function () {
-    return that.read('stats.json')
-      .catch(function(){
-        return {};
-      });
-  };
+  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
 
-  this.getStat = function(statName) {
-    return that.loadStats()
-      .then(function(stat){
-        // Create stat if it does not exist
-        return (stat && stat[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 };
-      });
-  };
+  this.init = () => null;
 
-  this.saveStat = function(stat, name) {
-    return that.loadStats()
-      .then(function(stats){
-        stats[name] = stat;
-        return that.write('stats.json', stats);
-      });
+  this.loadStats = () => that.coreFS.readJSON('stats.json').catch(() => {});
+
+  this.getStat = (statName) => that.loadStats().then((stats) => (stats && stats[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 });
+
+  this.saveStat = (stat, name) => {
+    return co(function *() {
+      var stats = yield that.loadStats();
+      stats[name] = stat;
+      return that.coreFS.writeJSON('stats.json', stats);
+    });
   };
 }

@@ -73,7 +73,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
 
   // DALs
-  var statDAL = new StatDAL(that);
   var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
@@ -85,9 +84,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.txsDAL = new TxsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.txsDAL.coreFS, that);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that);
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that);
+  this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that);
 
   this.dals = {
-    'statDAL': statDAL,
     'coresDAL': coresDAL,
     'linksDAL': linksDAL,
     'msDAL': msDAL,
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'certDAL': that.certDAL,
     'txsDAL': that.txsDAL,
     'indicatorsDAL': that.indicatorsDAL,
-    'confDAL': that.confDAL
+    'confDAL': that.confDAL,
+    'statDAL': that.statDAL
   };
 
   var currency = '';
@@ -1232,9 +1232,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
    *     STATISTICS
    **********************/
 
-  this.loadStats = ioRead(statDAL.loadStats);
-  this.getStat = ioRead(statDAL.getStat);
-  this.saveStat = ioWrite(statDAL.saveStat);
+  this.loadStats = ioRead(that.statDAL.loadStats);
+  this.getStat = ioRead(that.statDAL.getStat);
+  this.saveStat = ioWrite(that.statDAL.saveStat);
 
   this.close = function() {
     // TODO

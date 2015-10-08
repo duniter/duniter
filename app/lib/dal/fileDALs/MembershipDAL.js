@@ -2,121 +2,73 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractDAL = require('./AbstractDAL');
+var AbstractCFS = require('./AbstractCFS');
 var Q = require('q');
 var _ = require('underscore');
+var co = require('co');
 var sha1 = require('sha1');
 
 module.exports = MembershipDAL;
 
-function MembershipDAL(dal) {
+function MembershipDAL(rootPath, qioFS, parentCore, localDAL) {
 
   "use strict";
 
-  AbstractDAL.call(this, dal);
-  var logger = require('../../../lib/logger')(dal.profile);
   var that = this;
-  var treeMade;
 
-  this.initTree = function() {
-    if (!treeMade) {
-      treeMade = Q.all([
-        that.makeTree('ms/'),
-        that.makeTree('ms/written/'),
-        that.makeTree('ms/pending/'),
-        that.makeTree('ms/pending/in/'),
-        that.makeTree('ms/pending/out/')
-      ]);
-    }
-    return treeMade;
+  // CFS facilities
+  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+
+  this.init = () => {
+    return co(function *() {
+      yield [
+        that.coreFS.makeTree('ms/'),
+        that.coreFS.makeTree('ms/written/'),
+        that.coreFS.makeTree('ms/pending/'),
+        that.coreFS.makeTree('ms/pending/in/'),
+        that.coreFS.makeTree('ms/pending/out/')
+      ];
+    });
   };
 
-  this.getMembershipOfIssuer = function(ms) {
-    return that.initTree()
-      .then(function(){
-        return that.read('ms/written/' + ms.issuer + '/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json')
-          .catch(function(){
-            return that.read('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json');
-          });
-      });
+  this.getMembershipOfIssuer = (ms) => {
+    return co(function *() {
+      try {
+        return that.coreFS.readJSON('ms/written/' + ms.issuer + '/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json');
+      } catch (e) {
+        return that.coreFS.readJSON('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json');
+      }
+    });
   };
 
-  this.getMembershipsOfIssuer = function(issuer) {
-    var mss = [];
-    return that.initTree()
-      .then(function(){
-        return Q.all([
-          mergeMSSOfIssuerInto(issuer, 'in', mss),
-          mergeMSSOfIssuerInto(issuer, 'out', mss)
-        ]);
-      })
-      .thenResolve(mss);
+  this.getMembershipsOfIssuer = (issuer) => {
+    return co(function *() {
+      var mssIN = yield that.coreFS.listJSON('ms/written/' + issuer + '/in/');
+      var mssOUT = yield that.coreFS.listJSON('ms/written/' + issuer + '/out/');
+      return mssIN.concat(mssOUT);
+    });
   };
 
-  function mergeMSSOfIssuerInto(issuer, type, mss) {
-    return that.list('ms/written/' + issuer + '/' + type + '/')
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(that.reduceTo('ms/written/' + issuer + '/' + type + '/', mss));
-  }
-
-  this.getPending = function(type, local_level) {
-    var mss = [];
-    return that.initTree()
-      .then(function(){
-        return that.list('ms/pending/' + type, local_level);
-      })
-      .then(function(files){
-        return _.pluck(files, 'file');
-      })
-      .then(that.reduceTo('ms/pending/' + type + '/', mss))
-      .thenResolve(mss);
+  this.getPendingLocal = () => {
+    return co(function *() {
+      var mssIN = yield that.coreFS.listJSONLocal('ms/pending/in/');
+      var mssOUT = yield that.coreFS.listJSONLocal('ms/pending/out/');
+      return mssIN.concat(mssOUT);
+    });
   };
 
-  this.getPendingLocal = function() {
-    return Q.all([
-      that.getPending('in', that.LOCAL_LEVEL),
-      that.getPending('out', that.LOCAL_LEVEL)
-    ])
-      .then(function(res){
-        return res[0].concat(res[1]);
-      });
+  this.getPendingIN = () => that.coreFS.listJSON('ms/pending/in/');
+  this.getPendingOUT = () => that.coreFS.listJSON('ms/pending/out/');
+
+  this.saveOfficialMS = (type, ms) => {
+    return co(function *() {
+      yield that.coreFS.makeTree('ms/written/' + ms.issuer + '/' + type);
+      yield that.coreFS.writeJSON('ms/written/' + ms.issuer + '/' + type + '/' + getMSID(ms) + '.json', ms);
+      yield that.coreFS.remove('ms/pending/' + type + '/' + getMSID(ms) + '.json').catch(() => null);
+    });
   };
 
-  this.getPendingIN = function() {
-    return that.getPending('in');
-  };
-
-  this.getPendingOUT = function() {
-    return that.getPending('out');
-  };
-
-  this.saveOfficialMS = function(type, ms) {
-    return that.initTree()
-      .then(function(){
-        return Q.all([
-          that.makeTree('ms/written/' + ms.issuer + '/' + type)
-        ]);
-      })
-      .then(function(){
-        return Q.all([
-          that.write('ms/written/' + ms.issuer + '/' + type + '/' + getMSID(ms) + '.json', ms)
-        ]);
-      })
-      .then(function(){
-        return that.remove('ms/pending/' + type + '/' + getMSID(ms) + '.json')
-          .catch(function() {
-          });
-      });
-  };
-
-  this.savePendingMembership = function(ms) {
-    return that.initTree()
-      .then(function(){
-        return that.write('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json', ms);
-      });
-  };
+  this.savePendingMembership = (ms) => that.coreFS.writeJSON('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json', ms);
 
   function getMSID(ms) {
     return [ms.membership, ms.issuer, ms.number, ms.hash].join('-');

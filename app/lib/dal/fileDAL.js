@@ -73,7 +73,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
 
   // DALs
-  var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
   this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
@@ -84,10 +83,10 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that);
   this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that);
   this.coresDAL = new CoresDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that);
-  this.linksDAL = new LinksDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, parentFileDAL, invalidateCache);
+  this.linksDAL = new LinksDAL(rootPath, myFS, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, parentFileDAL, invalidateCache);
+  this.msDAL = new MembershipDAL(rootPath, myFS, parentFileDAL && parentFileDAL.msDAL.coreFS, that);
 
   this.dals = {
-    'msDAL': msDAL,
     'idtyDAL': idtyDAL
   };
 
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
     'coresDAL': that.coresDAL,
-    'linksDAL': that.linksDAL
+    'linksDAL': that.linksDAL,
+    'msDAL': that.msDAL
   };
 
   var currency = '';
@@ -439,7 +439,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     return Q(queryPromise)
       .tap(function(idty){
         if (idty) {
-          return msDAL.getMembershipsOfIssuer(idty.pubkey)
+          return that.msDAL.getMembershipsOfIssuer(idty.pubkey)
             .then(function(mss){
               idty.memberships = mss;
             });
@@ -455,7 +455,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getMembershipsForIssuer = function(pubkey) {
-    return msDAL.getMembershipsOfIssuer(pubkey);
+    return that.msDAL.getMembershipsOfIssuer(pubkey);
   };
 
   this.findPeersWhoseHashIsIn = function(hashes) {
@@ -586,18 +586,18 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getMembershipForHashAndIssuer = function(ms) {
-    return msDAL.getMembershipOfIssuer(ms)
+    return that.msDAL.getMembershipOfIssuer(ms)
       .catch(function(){
         return null;
       });
   };
 
   this.listPendingLocalMemberships = function() {
-    return msDAL.getPendingLocal();
+    return that.msDAL.getPendingLocal();
   };
 
   this.findNewcomers = function() {
-    return msDAL.getPendingIN()
+    return that.msDAL.getPendingIN()
       .then(function(mss){
         return _.chain(mss).
           sortBy(function(ms){ return -ms.sigDate; }).
@@ -606,7 +606,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.findLeavers = function() {
-    return msDAL.getPendingOUT()
+    return that.msDAL.getPendingOUT()
       .then(function(mss){
         return _.chain(mss).
           sortBy(function(ms){ return -ms.sigDate; }).
@@ -900,13 +900,13 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
         var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', that.getCurrency());
         ms.type = type;
         ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
-        return msDAL.saveOfficialMS(msType, ms);
+        return that.msDAL.saveOfficialMS(msType, ms);
       });
     }, Q());
   };
 
   this.savePendingMembership = function(ms) {
-    return msDAL.savePendingMembership(ms);
+    return that.msDAL.savePendingMembership(ms);
   };
 
   that.saveBlockInFile = function(block, check, done) {

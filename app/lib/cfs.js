@@ -192,12 +192,19 @@ function CFSCore(rootPath, qfs, parent) {
   /**
    * Read contents of files at given path and parse it as JSON.
    * @param dirPath Path to get the files' contents.
+   * @param localLevel Wether to read only local level or not.
    */
-  this.listJSON = (dirPath) => this.list(dirPath).then((files) => {
+  this.listJSON = (dirPath, localLevel) => this.list(dirPath, localLevel).then((files) => {
     return co(function *() {
       return yield files.map((f) => that.readJSON(path.join(dirPath, f)));
     });
   });
+
+  /**
+   * Read contents of files at given LOCAL path and parse it as JSON.
+   * @param dirPath Path to get the files' contents.
+   */
+  this.listJSONLocal = (dirPath) => this.listJSON(dirPath, LOCAL_LEVEL);
 
   /**
    * Normalize the path of a dir to be used for file deletion matching.

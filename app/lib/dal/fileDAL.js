@@ -73,7 +73,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
 
   // DALs
-  var confDAL = new ConfDAL(that);
   var statDAL = new StatDAL(that);
   var coresDAL = new CoresDAL(that);
   var linksDAL = new LinksDAL(that);
@@ -85,9 +84,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.certDAL = new CertDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.coreFS, that);
   this.txsDAL = new TxsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.txsDAL.coreFS, that);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that);
+  this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that);
 
   this.dals = {
-    'confDAL': confDAL,
     'statDAL': statDAL,
     'coresDAL': coresDAL,
     'linksDAL': linksDAL,
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'blockDAL': that.blockDAL,
     'certDAL': that.certDAL,
     'txsDAL': that.txsDAL,
-    'indicatorsDAL': that.indicatorsDAL
+    'indicatorsDAL': that.indicatorsDAL,
+    'confDAL': that.confDAL
   };
 
   var currency = '';
@@ -1211,11 +1211,11 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
    **********************/
 
   this.getParameters = function() {
-    return confDAL.getParameters();
+    return that.confDAL.getParameters();
   };
 
   this.loadConf = ioRead(function(overrideConf) {
-    return confDAL.loadConf()
+    return that.confDAL.loadConf()
       .then(function(conf){
         conf = _(conf).extend(overrideConf || {});
         currency = conf.currency;
@@ -1225,7 +1225,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
 
   this.saveConf = ioWrite(function(confToSave) {
     currency = confToSave.currency;
-    return confDAL.saveConf(confToSave);
+    return that.confDAL.saveConf(confToSave);
   });
 
   /***********************

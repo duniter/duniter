@@ -6,6 +6,7 @@ var co = require('co');
 var path = require('path');
 
 const LOCAL_LEVEL = true;
+const DEEP_WRITE = true;
 
 module.exports = function(rootPath, qfs, parent) {
   return new CFSCore(rootPath, qfs, parent);
@@ -109,8 +110,16 @@ function CFSCore(rootPath, qfs, parent) {
    * WRITE operation of CFS. Writes the file in local Core.
    * @param filePath Path to the file to write.
    * @param content String content to write.
+   * @param deep Wether to make a deep write or not.
    */
-  this.write = (filePath, content) => qfs.write(path.join(rootPath, filePath), content);
+  this.write = (filePath, content, deep) => {
+    return co(function *() {
+      if (deep && that.parent) {
+        return that.parent.write(filePath, content, deep);
+      }
+      return qfs.write(path.join(rootPath, filePath), content);
+    });
+  };
 
   /**
    * REMOVE operation of CFS. Set given file as removed. Logical deletion since physical won't work due to the algorithm of CFS.
@@ -137,8 +146,16 @@ function CFSCore(rootPath, qfs, parent) {
    * Write JSON object to given file.
    * @param filePath File path.
    * @param content JSON content to stringify and write.
+   * @param deep Wether to make a deep write or not.
    */
-  this.writeJSON = (filePath, content) => qfs.write(path.join(rootPath, filePath), JSON.stringify(content));
+  this.writeJSON = (filePath, content, deep) => this.write(filePath, JSON.stringify(content), deep);
+
+  /**
+   * Write JSON object to given file deeply in the core structure.
+   * @param filePath File path.
+   * @param content JSON content to stringify and write.
+   */
+  this.writeJSONDeep = (filePath, content) => this.writeJSON(filePath, JSON.stringify(content), DEEP_WRITE);
 
   /**
    * Read a file and parse its content as JSON.

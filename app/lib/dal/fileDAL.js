@@ -61,7 +61,7 @@ function getUCoinHomePath(profile) {
   return userHome + '/.config/ucoin/' + profile;
 }
 
-function FileDAL(profile, subPath, myFS, parentFileDAL) {
+function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
 
   var that = this;
 
@@ -73,7 +73,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
 
   // DALs
-  var linksDAL = new LinksDAL(that);
   var msDAL = new MembershipDAL(that);
   var idtyDAL = new IdentityDAL(that);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
@@ -85,9 +84,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that);
   this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that);
   this.coresDAL = new CoresDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that);
+  this.linksDAL = new LinksDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, parentFileDAL, invalidateCache);
 
   this.dals = {
-    'linksDAL': linksDAL,
     'msDAL': msDAL,
     'idtyDAL': idtyDAL
   };
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
-    'coresDAL': that.coresDAL
+    'coresDAL': that.coresDAL,
+    'linksDAL': that.linksDAL
   };
 
   var currency = '';
@@ -330,15 +330,15 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.getValidLinksFrom = function(from) {
-    return linksDAL.getValidLinksFrom(from);
+    return that.linksDAL.getValidLinksFrom(from);
   };
 
   this.getValidLinksTo = function(to) {
-    return linksDAL.getValidLinksTo(to);
+    return that.linksDAL.getValidLinksTo(to);
   };
 
   this.getObsoletesFromTo = function(from, to) {
-    return linksDAL.getObsoletes()
+    return that.linksDAL.getObsoletes()
       .then(function(links){
         return _.chain(links).
           where({ target: to, source: from }).
@@ -615,7 +615,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.existsLinkFromOrAfterDate = function(from, to, maxDate) {
-    return linksDAL.getValidLinksFrom(from)
+    return that.linksDAL.getValidLinksFrom(from)
       .then(function(links){
         var matching = _.chain(links).
           where({ target: to }).
@@ -683,7 +683,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.obsoletesLinks = function(minTimestamp) {
-    return linksDAL.obsoletesLinks(minTimestamp);
+    return that.linksDAL.obsoletesLinks(minTimestamp);
   };
 
   this.setConsumedSource = function(type, pubkey, number, fingerprint, amount) {
@@ -960,7 +960,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL) {
   };
 
   this.saveLink = function(link) {
-    return linksDAL.addLink(link);
+    return that.linksDAL.addLink(link);
   };
 
   this.saveSource = function(src) {

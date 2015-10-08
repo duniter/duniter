@@ -14,7 +14,7 @@ function CoreDAL(profile, blockNumber, blockHash, myFS, rootDAL, considerCacheIn
   var that = this;
   var coreName = [blockNumber, blockHash].join('-');
 
-  fileDAL.FileDAL.call(this, profile, 'branches/' + coreName, myFS, rootDAL);
+  fileDAL.FileDAL.call(this, profile, 'branches/' + coreName, myFS, rootDAL, considerCacheInvalidateByDefault);
 
   //// Get currency = tree traversal reading
   //that.getCurrency = function() {

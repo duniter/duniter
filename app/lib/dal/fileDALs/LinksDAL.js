@@ -19,8 +19,6 @@ function LinksDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheI
 
   // CFS facilities
   AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
-  // Cache facilities
-  AbstractCacheable.call(this, 'linksDAL', rootDAL, considerCacheInvalidateByDefault);
 
   var validCacheFrom = {}, validCacheTo = {};
 
@@ -147,4 +145,7 @@ function LinksDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheI
   function getLinkID(link) {
     return [link.source, link.target, link.timestamp].join('-');
   }
+
+  // Cache facilities
+  AbstractCacheable.call(this, 'linksDAL', rootDAL, considerCacheInvalidateByDefault);
 }

@@ -73,7 +73,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
 
   // DALs
-  var idtyDAL = new IdentityDAL(that);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
   this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
   this.blockDAL = new BlockDAL(rootPath, myFS, parentFileDAL && parentFileDAL.blockDAL.coreFS, that);
@@ -85,9 +84,9 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   this.coresDAL = new CoresDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that);
   this.linksDAL = new LinksDAL(rootPath, myFS, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, parentFileDAL, invalidateCache);
   this.msDAL = new MembershipDAL(rootPath, myFS, parentFileDAL && parentFileDAL.msDAL.coreFS, that);
+  this.idtyDAL = new IdentityDAL(rootPath, myFS, parentFileDAL && parentFileDAL.idtyDAL.coreFS, that, parentFileDAL, invalidateCache);
 
   this.dals = {
-    'idtyDAL': idtyDAL
   };
 
   this.newDals = {
@@ -101,7 +100,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     'statDAL': that.statDAL,
     'coresDAL': that.coresDAL,
     'linksDAL': that.linksDAL,
-    'msDAL': that.msDAL
+    'msDAL': that.msDAL,
+    'idtyDAL': that.idtyDAL
   };
 
   var currency = '';
@@ -361,7 +361,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getIdentityByHashOrNull = function(hash, done) {
-    return idtyDAL.getByHash(hash)
+    return that.idtyDAL.getByHash(hash)
       .then(function(idty) {
         done && done(null, idty);
         return idty;
@@ -407,7 +407,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getMembers = function(done) {
-    return idtyDAL.getWhoIsOrWasMember()
+    return that.idtyDAL.getWhoIsOrWasMember()
       .then(function(idties) {
         return _.chain(idties).
           where({ member: true }).
@@ -427,7 +427,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
 
   this.getWritten = function(pubkey, done) {
     return that.fillInMembershipsOfIdentity(
-      idtyDAL.getFromPubkey(pubkey)
+      that.idtyDAL.getFromPubkey(pubkey)
         .then(function(idty){
           return idty;
         }).catch(function() {
@@ -480,7 +480,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getNonWritten = function(pubkey) {
-    return idtyDAL.getPendingIdentities()
+    return that.idtyDAL.getPendingIdentities()
       .then(function(pending){
         return _.chain(pending).
           where({ pubkey: pubkey }).
@@ -489,7 +489,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getToBeKicked = function(done) {
-    return idtyDAL.getWhoIsOrWasMember()
+    return that.idtyDAL.getWhoIsOrWasMember()
       .then(function(membersOnce){
         return _.chain(membersOnce).
           where({ member: true, kick: true }).
@@ -509,7 +509,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getWrittenByUID = function(uid) {
-    return idtyDAL.getFromUID(uid)
+    return that.idtyDAL.getFromUID(uid)
       .catch(function(){
         return null;
       })
@@ -520,8 +520,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
 
   this.searchIdentity = function(search) {
     return Q.all([
-      idtyDAL.getWhoIsOrWasMember(),
-      idtyDAL.getPendingIdentities()
+      that.idtyDAL.getWhoIsOrWasMember(),
+      that.idtyDAL.getPendingIdentities()
     ])
       .then(function(res){
         var idties = _.chain(res[0]).
@@ -630,7 +630,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.isMember = function(pubkey, done) {
-    return idtyDAL.getFromPubkey(pubkey)
+    return that.idtyDAL.getFromPubkey(pubkey)
       .then(function(idty){
         done && done(null, idty.member);
         return idty.member;
@@ -642,7 +642,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.isLeaving = function(pubkey, done) {
-    return idtyDAL.getFromPubkey(pubkey)
+    return that.idtyDAL.getFromPubkey(pubkey)
       .then(function(idty){
         done && done(null, idty.leaving);
         return true;
@@ -653,29 +653,10 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
       });
   };
 
-  this.isMembeAndNonLeaverOrError = function(pubkey, done) {
-    return idtyDAL.getFromPubkey(pubkey)
-      .then(function(idty){
-        if (!idty.member || idty.leaving) throw 'Problem';
-        done && done(null);
-        return true;
-      })
-      .catch(function(){
-        done && done('Not a non-leaving member');
-        if (!done) {
-          throw 'Not a non-leaving member';
-        }
-      });
-  };
-
   this.isMemberAndNonLeaver = function(pubkey) {
-    return idtyDAL.getFromPubkey(pubkey)
-      .catch(function(){
-        return false;
-      })
-      .then(function(idty){
-        return idty.member && !idty.leaving;
-      });
+    return that.idtyDAL.getFromPubkey(pubkey)
+      .catch(() => false)
+      .then((idty) => (idty && idty.member && !idty.leaving) || false);
   };
 
   this.existsCert = function(cert) {
@@ -692,11 +673,11 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
     var kick = notEnoughLinks ? true : false;
-    return idtyDAL.getFromPubkey(pubkey)
+    return that.idtyDAL.getFromPubkey(pubkey)
       .then(function(idty){
         if (idty.kick != kick) {
           idty.kick = kick;
-          return idtyDAL.saveIdentity(idty);
+          return that.idtyDAL.saveIdentity(idty);
         }
       })
       .then(function(){
@@ -706,10 +687,10 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.setRevoked = function(hash, done) {
-    return idtyDAL.getByHash(hash)
+    return that.idtyDAL.getByHash(hash)
       .then(function(idty){
         idty.revoked = true;
-        return idtyDAL.saveIdentity(idty);
+        return that.idtyDAL.saveIdentity(idty);
       })
       .then(function(){
         done && done();
@@ -978,31 +959,31 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.listLocalPendingIdentities = function() {
-    return idtyDAL.listLocalPending();
+    return that.idtyDAL.listLocalPending();
   };
 
   this.savePendingIdentity = function(idty) {
-    return idtyDAL.savePendingIdentity(idty);
+    return that.idtyDAL.savePendingIdentity(idty);
   };
 
   this.excludeIdentity = function(pubkey) {
-    return idtyDAL.excludeIdentity(pubkey);
+    return that.idtyDAL.excludeIdentity(pubkey);
   };
 
   this.newIdentity = function(idty, onBlock) {
-    return idtyDAL.newIdentity(idty, onBlock);
+    return that.idtyDAL.newIdentity(idty, onBlock);
   };
 
   this.joinIdentity = function(pubkey, onBlock) {
-    return idtyDAL.joinIdentity(pubkey, onBlock);
+    return that.idtyDAL.joinIdentity(pubkey, onBlock);
   };
 
   this.activeIdentity = function(pubkey, onBlock) {
-    return idtyDAL.activeIdentity(pubkey, onBlock);
+    return that.idtyDAL.activeIdentity(pubkey, onBlock);
   };
 
   this.leaveIdentity = function(pubkey, onBlock) {
-    return idtyDAL.leaveIdentity(pubkey, onBlock);
+    return that.idtyDAL.leaveIdentity(pubkey, onBlock);
   };
 
   this.listLocalPendingCerts = function() {

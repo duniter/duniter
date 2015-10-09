@@ -86,9 +86,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   this.msDAL = new MembershipDAL(rootPath, myFS, parentFileDAL && parentFileDAL.msDAL.coreFS, that);
   this.idtyDAL = new IdentityDAL(rootPath, myFS, parentFileDAL && parentFileDAL.idtyDAL.coreFS, that, parentFileDAL, invalidateCache);
 
-  this.dals = {
-  };
-
   this.newDals = {
     'peerDAL': that.peerDAL,
     'sourcesDAL': that.sourcesDAL,
@@ -1074,120 +1071,6 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   /***********************
-   *    IO functions
-   **********************/
-
-  function ioRead(someFunction) {
-    that.readFunctions.push(someFunction);
-    return someFunction;
-  }
-
-  function ioWrite(someFunction) {
-    that.writeFunctions.push(someFunction);
-    return someFunction;
-  }
-
-  function existsFunc(filePath) {
-    return myFS.exists(rootPath + '/' + filePath);
-  }
-
-  function listFunc(filePath) {
-    return myFS.list(rootPath + '/' + filePath)
-      .then(function(files){
-        return files.map(function(fileName) {
-          return { core: that.name, file: fileName };
-        });
-      })
-      .catch(function() {
-        return [];
-      });
-  }
-
-  var readFunc = function readFunc(filePath) {
-    return myFS.read(rootPath + '/' + filePath)
-      .then(function(data){
-        return JSON.parse(data);
-      });
-  };
-
-  var writeFunc = function writeFunc(filePath, what) {
-    return myFS.write(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
-  };
-
-  var removeFunc = function removeFunc(filePath, what) {
-    return myFS.remove(rootPath + '/' + filePath, JSON.stringify(what, null, ' '));
-  };
-
-  //function profileFunc(f, name) {
-  //  return function() {
-  //    var start = new Date();
-  //    var args = Array.prototype.slice.call(arguments);
-  //    return f.apply(f, args)
-  //      .tap(function() {
-  //        console.log('%s %s (%sms)', name, args[0], (new Date().getTime() - start.getTime()));
-  //      });
-  //  };
-  //}
-  //
-  //// Log profiling for CRUD functions
-  //readFunc = profileFunc(readFunc, 'Read');
-  //writeFunc = profileFunc(writeFunc, 'Write');
-  //removeFunc = profileFunc(removeFunc, 'Remove');
-
-  function makeTreeFunc(filePath) {
-    return myFS.makeTree(rootPath + '/' + filePath);
-  }
-
-  this.setExists = function(existsF) {
-    _.values(that.dals).forEach(function(dal){
-      dal.setExists(existsF);
-    });
-    that.existsFile = existsF;
-  };
-
-  this.setList = function(listF) {
-    _.values(that.dals).forEach(function(dal){
-      dal.setList(listF);
-    });
-    that.listFile = listF;
-  };
-
-  this.setRead = function(readF) {
-    _.values(that.dals).forEach(function(dal){
-      dal.setRead(readF);
-    });
-    that.readFile = readF;
-  };
-
-  this.setWrite = function(writeF) {
-    _.values(that.dals).forEach(function(dal){
-      dal.setWrite(writeF);
-    });
-    that.writeFile = writeF;
-  };
-
-  this.setRemove = function(removeF) {
-    _.values(that.dals).forEach(function(dal){
-      dal.setRemove(removeF);
-    });
-    that.removeFile = removeF;
-  };
-
-  this.setMakeTree = function(makeTreeF) {
-    _.values(that.dals).forEach(function(dal){
-      dal.setMakeTree(makeTreeF);
-    });
-    that.makeTreeFile = makeTreeF;
-  };
-
-  this.setExists(existsFunc);
-  this.setList(listFunc);
-  this.setRead(readFunc);
-  this.setWrite(writeFunc);
-  this.setRemove(removeFunc);
-  this.setMakeTree(makeTreeFunc);
-
-  /***********************
    *    CONFIGURATION
    **********************/
 
@@ -1195,27 +1078,27 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     return that.confDAL.getParameters();
   };
 
-  this.loadConf = ioRead(function(overrideConf) {
+  this.loadConf = function(overrideConf) {
     return that.confDAL.loadConf()
       .then(function(conf){
         conf = _(conf).extend(overrideConf || {});
         currency = conf.currency;
         return conf;
       });
-  });
+  };
 
-  this.saveConf = ioWrite(function(confToSave) {
+  this.saveConf = function(confToSave) {
     currency = confToSave.currency;
     return that.confDAL.saveConf(confToSave);
-  });
+  };
 
   /***********************
    *     STATISTICS
    **********************/
 
-  this.loadStats = ioRead(that.statDAL.loadStats);
-  this.getStat = ioRead(that.statDAL.getStat);
-  this.saveStat = ioWrite(that.statDAL.saveStat);
+  this.loadStats = that.statDAL.loadStats;
+  this.getStat = that.statDAL.getStat;
+  this.saveStat = that.statDAL.saveStat;
 
   this.close = function() {
     // TODO

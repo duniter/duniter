@@ -5,9 +5,9 @@
 var _ = require('underscore');
 var Q = require('q');
 
-module.exports = AbstractDAL;
+module.exports = AbstractCacheable;
 
-function AbstractDAL(dalName, rootDAL, considerCacheInvalidateByDefault) {
+function AbstractCacheable(dalName, rootDAL, considerCacheInvalidateByDefault) {
 
   "use strict";
 

@@ -4,9 +4,9 @@
 
 var cfs = require('../../cfs');
 
-module.exports = AbstractDAL;
+module.exports = AbstractCFS;
 
-function AbstractDAL(rootPath, qioFS, parentDAL, localDAL) {
+function AbstractCFS(rootPath, qioFS, parentDAL, localDAL) {
 
   "use strict";
 

@@ -162,14 +162,14 @@ function CFSCore(rootPath, qfs, parent) {
    * @param content JSON content to stringify and write.
    * @param deep Wether to make a deep write or not.
    */
-  this.writeJSON = (filePath, content, deep) => this.write(filePath, JSON.stringify(content), deep);
+  this.writeJSON = (filePath, content, deep) => this.write(filePath, JSON.stringify(content, null, ' '), deep);
 
   /**
    * Write JSON object to given file deeply in the core structure.
    * @param filePath File path.
    * @param content JSON content to stringify and write.
    */
-  this.writeJSONDeep = (filePath, content) => this.writeJSON(filePath, JSON.stringify(content), DEEP_WRITE);
+  this.writeJSONDeep = (filePath, content) => this.writeJSON(filePath, content, DEEP_WRITE);
 
   /**
    * Read a file and parse its content as JSON.

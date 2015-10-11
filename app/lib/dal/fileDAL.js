@@ -434,11 +434,12 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
 
   this.fillInMembershipsOfIdentity = function(queryPromise, done) {
     return Q(queryPromise)
-      .tap(function(idty){
+      .then(function(idty){
         if (idty) {
           return that.msDAL.getMembershipsOfIssuer(idty.pubkey)
             .then(function(mss){
               idty.memberships = mss;
+              return idty;
             });
         }
       })
@@ -709,7 +710,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
         var root = yield that.getRootBlock();
         var delaySinceStart = current.medianTime - root.medianTime;
         if (delaySinceStart > msValidtyTime) {
-          return that.indicatorsDAL.writeCurrentExcluding(root).thenResolve(root);
+          return that.indicatorsDAL.writeCurrentExcluding(root).then(() => root);
         }
       } else {
         var start = currentExcluding.number;
@@ -718,7 +719,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
           nextPotential = yield that.getBlock(start + 1);
           var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
           if (delaySinceNextOfExcluding > msValidtyTime) {
-            yield that.indicatorsDAL.writeCurrentExcluding(nextPotential).thenResolve(nextPotential);
+            yield that.indicatorsDAL.writeCurrentExcluding(nextPotential).then(() => nextPotential);
             start++;
           }
         } while (delaySinceNextOfExcluding > msValidtyTime);
@@ -741,7 +742,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
         var root = yield that.getRootBlock();
         var delaySinceStart = current.medianTime - root.medianTime;
         if (delaySinceStart > certValidtyTime) {
-          return that.indicatorsDAL.writeCurrentExcludingForCert(root).thenResolve(root);
+          return that.indicatorsDAL.writeCurrentExcludingForCert(root).then(() => root);
         }
       } else {
         var start = currentExcluding.number;
@@ -750,7 +751,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
           nextPotential = yield that.getBlock(start + 1);
           var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
           if (delaySinceNextOfExcluding > certValidtyTime) {
-            yield that.indicatorsDAL.writeCurrentExcludingForCert(nextPotential).thenResolve(nextPotential);
+            yield that.indicatorsDAL.writeCurrentExcludingForCert(nextPotential).then(() => nextPotential);
             start++;
           }
         } while (delaySinceNextOfExcluding > certValidtyTime);
@@ -1032,7 +1033,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
             history.received = res[1] || [];
             history.sending = res[2] || [];
             history.pending = res[3] || [];
-          }).thenResolve(history);
+          }).then(() => history);
       });
   };
 

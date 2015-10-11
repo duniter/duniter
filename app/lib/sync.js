@@ -1,11 +1,11 @@
 "use strict";
+var co = require('co');
 var async            = require('async');
 var _                = require('underscore');
 var Q                = require('q');
 var sha1             = require('sha1');
 var moment           = require('moment');
 var vucoin           = require('vucoin');
-var inquirer         = require('inquirer');
 var dos2unix         = require('./dos2unix');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
@@ -41,231 +41,132 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
     timeout: conf.timeout || constants.NETWORK.DEFAULT_TIMEOUT
   };
 
-  this.sync = function (to, nocautious, done) {
+  this.sync = (to, nocautious, done) => {
     var cautious = !nocautious;
     logger.info('Connecting remote host...');
-    vucoin(host, port, function (err, node) {
-      if(err){
-        done('Cannot sync: ' + err);
-        return;
+    return co(function *() {
+      var node = yield getVucoin(host, port, vucoinOptions);
+      logger.info('Sync started.');
+      //============
+      // Blockchain
+      //============
+      logger.info('Downloading Blockchain...');
+      watcher.writeStatus('Connecting to ' + host + '...');
+      var lastSavedNumber = yield dal.getLastSavedBlockFileNumber();
+      var lCurrent = yield dal.getCurrentBlockOrNull();
+      var rCurrent = yield Q.nbind(node.blockchain.current, node)();
+      var localNumber = lCurrent ? lCurrent.number : -1;
+      var remoteNumber = Math.min(rCurrent.number, to || rCurrent.number);
+
+      // Recurrent checking
+      setInterval(() => {
+        if (remoteNumber > 1 && speed > 0) {
+          var remain = (remoteNumber - (localNumber + 1 + blocksApplied));
+          var secondsLeft = remain / speed;
+          var momDuration = moment.duration(secondsLeft*1000);
+          watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
+        }
+      }, EVAL_REMAINING_INTERVAL);
+
+      // Prepare chunks of blocks to be downloaded
+      var chunks = [];
+      for (let i = lastSavedNumber + 1; i <= remoteNumber; i = i + CONST_BLOCKS_CHUNK) {
+        chunks.push([i, Math.min(i + CONST_BLOCKS_CHUNK - 1, remoteNumber)]);
       }
 
-      async.waterfall([
-        function (next){
-          logger.info('Sync started.');
-          next();
-        },
+      // Prepare the array of download promises. The first is the promise of already downloaded blocks
+      // which has not been applied yet.
+      var toApply = [Q.defer()].concat(chunks.map(() => Q.defer()));
+      toApply[0].resolve([localNumber + 1, lastSavedNumber]);
 
-        //============
-        // Blockchain
-        //============
-        function (next) {
-
-          Q.Promise(function(resolve, reject){
-            async.waterfall([
-
-              function (next){
-                logger.info('Downloading Blockchain...');
-                watcher.writeStatus('Connecting to ' + host + '...');
-                async.parallel({
-                  lastSavedNumber: function (next) {
-                    dal.getLastSavedBlockFileNumber()
-                      .then(function(number){
-                        next(null, number);
-                      })
-                      .catch(next);
-                  },
-                  localCurrent: function (next) {
-                    dal.getCurrentBlockOrNull()
-                      .then(function(block){
-                        next(null, block);
-                      })
-                      .catch(function(err) {
-                        next(err);
-                      });
-                  },
-                  remoteCurrent: function (next) {
-                    node.blockchain.current(function (err, current) {
-                      next(null, err ? null : current);
-                    });
-                  }
-                }, next);
-              },
-              function (res, next) {
-                var lCurrent = res.localCurrent;
-                var rCurrent = res.remoteCurrent;
-                var localStartNumber = lCurrent ? lCurrent.number : -1;
-                if (!rCurrent) {
-                  next('No block found on remote node');
-                  return;
-                }
-
-                watcher.writeStatus('Initializing sync...');
-                next(null, localStartNumber, Math.min(rCurrent.number, to || rCurrent.number), res.lastSavedNumber);
+      // Chain download promises, and start download right now
+      chunks.map((chunk, index) =>
+        // When previous download is done
+        toApply[index].promise.then(() =>
+            co(function *() {
+              // Download blocks and save them
+              watcher.downloadPercent(Math.floor(chunk[0] / remoteNumber * 100));
+              logger.info('Blocks #%s to #%s...', chunk[0], chunk[1]);
+              var blocks = yield Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0]);
+              watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
+              for (let i = 0; i < blocks.length; i++) {
+                yield server.dal.saveBlockInFile(blocks[i], false);
               }
-            ], function(err, localStartNumber, remoteCurrentNumber,lastSavedNumber) {
-              err ? reject(err) : resolve([localStartNumber, remoteCurrentNumber, lastSavedNumber]);
-            });
-          })
-
-            .spread(function(localNumber, remoteNumber, lastSavedNumber){
-
-              setInterval(function() {
-                if (remoteNumber > 1 && speed > 0) {
-                  var remain = (remoteNumber - (localNumber + 1 + blocksApplied));
-                  var secondsLeft = remain / speed;
-                  var momDuration = moment.duration(secondsLeft*1000);
-                  watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
-                }
-              }, EVAL_REMAINING_INTERVAL);
-
-              var chunks = [];
-              for (var i = lastSavedNumber + 1; i <= remoteNumber; i = i + CONST_BLOCKS_CHUNK) {
-                chunks.push([i, Math.min(i + CONST_BLOCKS_CHUNK - 1, remoteNumber)]);
-              }
-
-              // Already downloaded blocks handling
-              var appliedPromise = _.range(localNumber + 1, lastSavedNumber + 1).reduce(function (promise, blockNumber) {
-                  return promise.then(function () {
-                    return server.dal.getBlock(blockNumber)
-                      .then(function(block){
-                        return applyGivenBlock(cautious, remoteNumber)(block);
-                      });
-                  });
-                }, Q());
-
-              var downloadedBlocks = _.range(1, remoteNumber - lastSavedNumber + 1).map(function(){ return Q.defer(); });
-
-              // Blocks to download
-              chunks.reduce(function(previous, chunk) {
-                return previous.then(function() {
-                  watcher.downloadPercent(Math.floor(chunk[0] / remoteNumber * 100));
-                  logger.info('Blocks #%s to #%s...', chunk[0], chunk[1]);
-                  return Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0])
-
-                    // Save blocks
-                    .then(function(blocks){
-                      watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
-                      return blocks.reduce(function(saveProm, block) {
-                        return saveProm.then(function() {
-                          return server.dal.saveBlockInFile(block, false)
-                            .then(function(){
-                              var pos = block.number - lastSavedNumber - 1;
-                              var previousPromise = pos == 0 ? appliedPromise : downloadedBlocks[pos - 1].promise;
-                              var thisBlockPromise = downloadedBlocks[pos];
-                              previousPromise
-                                .then(function(){
-                                  return applyGivenBlock(cautious, remoteNumber)(block)
-                                    .catch(function(errAddBlock){
-                                      thisBlockPromise.reject(errAddBlock);
-                                    })
-                                    .then(function(){
-                                      thisBlockPromise.resolve();
-                                    });
-                                });
-                            });
-                        });
-                      }, Q());
-                    });
-                });
-              }, Q())
-                .then(function(){
-                  watcher.downloadPercent(100.0);
-                });
-
-              return appliedPromise
-                .then(function(){
-                  return Q.all(downloadedBlocks.map(function(defer) {
-                    return defer.promise;
-                  }))
-                    .then(function(){
-                      watcher.appliedPercent(100.0);
-                    });
-                });
-            }, Q.reject)
-            .then(function(){
-              next();
             })
-            .catch(function(err) {
-              next(err);
-            });
-        },
+              // Resolve the promise
+              .then(() => toApply[index + 1].resolve(chunk))
+              .catch((err) => toApply[index + 1].reject(err))
+      ));
 
-        function (next) {
-          watcher.writeStatus('Peers...');
-          syncPeer(node, next);
-        },
-
-        //==============
-        // Transactions
-        //==============
-        // function (next){
-        //   Key.find({ managed: true }, next);
-        // },
-        // function (keys, next) {
-        //   async.forEachSeries(keys, function (key, onKeyDone) {
-        //     syncTransactionsOfKey(node, key.fingerprint, onKeyDone);
-        //   }, next);
-        // },
-
-        //=======
-        // Peers
-        //=======
-        function (next){
-          dal.merkleForPeers(next);
-        },
-        function (merkle, next) {
-          node.network.peering.peers.get({}, function (err, json) {
-            var rm = new NodesMerkle(json);
-            if(rm.root() != merkle.root()){
-              var leavesToAdd = [];
-              node.network.peering.peers.get({ leaves: true }, function (err, json) {
-                _(json.leaves).forEach(function(leaf){
-                  if(merkle.leaves().indexOf(leaf) == -1){
-                    leavesToAdd.push(leaf);
-                  }
-                });
-                var hashes = [];
-                async.forEachSeries(leavesToAdd, function(leaf, callback){
-                  async.waterfall([
-                    function (cb) {
-                      node.network.peering.peers.get({ "leaf": leaf }, cb);
-                    },
-                    function (json, cb) {
-                      var jsonEntry = json.leaf.value;
-                      var sign = json.leaf.value.signature;
-                      var entry = {};
-                      ["version", "currency", "pubkey", "endpoints", "block"].forEach(function (key) {
-                        entry[key] = jsonEntry[key];
-                      });
-                      entry.signature = sign;
-                      watcher.writeStatus('Peer ' + entry.pubkey);
-                      logger.info('Peer ' + entry.pubkey);
-                      PeeringService.submit(entry, function (err) {
-                        cb();
-                      });
-                    }
-                  ], callback);
-                }, function(err, result){
-                  next(err);
-                });
-              });
-            }
-            else {
-              watcher.writeStatus('Peers already known');
-              next();
-            }
-          });
+      for (let i = 0; i < toApply.length; i++) {
+        // Wait for download chunk to be completed
+        let range = yield toApply[i].promise;
+        // Apply downloaded blocks
+        for (var j = range[0]; j < range[1] + 1; j++) {
+          yield server.dal.getBlock(j).then((block) => applyGivenBlock(cautious, remoteNumber)(block));
         }
-      ], function (err, result) {
+      }
+      yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
 
+      //=======
+      // Peers
+      //=======
+      watcher.writeStatus('Peers...');
+      yield syncPeer(node);
+      var merkle = yield dal.merkleForPeers();
+      var getPeers = Q.nbind(node.network.peering.peers.get, node);
+      var json2 = yield getPeers({});
+      var rm = new NodesMerkle(json2);
+      if(rm.root() != merkle.root()){
+        var leavesToAdd = [];
+        var json = yield getPeers({ leaves: true });
+        _(json.leaves).forEach((leaf) => {
+          if(merkle.leaves().indexOf(leaf) == -1){
+            leavesToAdd.push(leaf);
+          }
+        });
+        for (let i = 0; i < leavesToAdd.length; i++) {
+          var leaf = leavesToAdd[i];
+          var json3 = yield getPeers({ "leaf": leaf });
+          var jsonEntry = json3.leaf.value;
+          var sign = json3.leaf.value.signature;
+          var entry = {};
+          ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
+            entry[key] = jsonEntry[key];
+          });
+          entry.signature = sign;
+          watcher.writeStatus('Peer ' + entry.pubkey);
+          logger.info('Peer ' + entry.pubkey);
+          return Q.nbind(PeeringService.submit, PeeringService, entry);
+        }
+      }
+      else {
+        watcher.writeStatus('Peers already known');
+      }
+    })
+      .then(() => {
+        watcher.end();
+        logger.info('Sync finished.');
+        done();
+      })
+      .catch((err) => {
         err && watcher.writeStatus(err);
         watcher.end();
         logger.info('Sync finished.');
         done(err);
       });
-    }, vucoinOptions);
   };
+
+  function getVucoin(theHost, thePort, options) {
+    return Q.Promise(function(resolve, reject){
+      vucoin(theHost, thePort, function (err, node) {
+        if(err){
+          return reject('Cannot sync: ' + err);
+        }
+        resolve(node);
+      }, options);
+    });
+  }
 
   function applyGivenBlock(cautious, remoteCurrentNumber) {
     return function (block) {
@@ -288,6 +189,14 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       if (watcher.appliedPercent() != Math.floor(block.number / remoteCurrentNumber * 100)) {
         watcher.appliedPercent(Math.floor(block.number / remoteCurrentNumber * 100));
       }
+      if (block.number % 100 == 0) {
+        if (conf.forkWindowSize != 0) {
+          conf.forkWindowSize = 0;
+        }
+        else {
+          conf.forkWindowSize = 3;
+        }
+      }
       return BlockchainService.submitBlock(block, cautious);
     };
   }
@@ -295,44 +204,49 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   //============
   // Peer
   //============
-  function syncPeer (node, done) {
+  function syncPeer (node) {
+    return Q.Promise(function(resolve, reject){
 
-    // Global sync vars
-    var remotePeer = new Peer({});
-    var remoteJsonPeer = {};
-    var remotePubkey;
+      // Global sync vars
+      var remotePeer = new Peer({});
+      var remoteJsonPeer = {};
 
-    async.waterfall([
-      function (next){
-        node.network.peering.get(next);
-      },
-      function (json, next){
-        remotePubkey = json.pubkey;
-        remotePeer.copyValuesFrom(json);
-        var entry = remotePeer.getRaw();
-        var signature = dos2unix(remotePeer.signature);
-        // Parameters
-        if(!(entry && signature)){
-          next('Requires a peering entry + signature');
-          return;
-        }
-
-        remoteJsonPeer = json;
-        remoteJsonPeer.pubkey = json.pubkey;
-        localValidator().checkPeerSignature(remoteJsonPeer, next);
-      },
-      function (next) {
-        async.waterfall([
-          function (next){
-            PeeringService.submit(remoteJsonPeer, function (err) {
-              next(err == constants.ERROR.PEER.ALREADY_RECORDED ? null : err);
-            });
+      async.waterfall([
+        function (next){
+          node.network.peering.get(next);
+        },
+        function (json, next){
+          remotePeer.copyValuesFrom(json);
+          var entry = remotePeer.getRaw();
+          var signature = dos2unix(remotePeer.signature);
+          // Parameters
+          if(!(entry && signature)){
+            next('Requires a peering entry + signature');
+            return;
           }
-        ], function (err) {
-          next(err);
-        });
-      }
-    ], done);
+
+          remoteJsonPeer = json;
+          remoteJsonPeer.pubkey = json.pubkey;
+          localValidator().checkPeerSignature(remoteJsonPeer, next);
+        },
+        function (next) {
+          async.waterfall([
+            function (next){
+              PeeringService.submit(remoteJsonPeer, function (err) {
+                next(err == constants.ERROR.PEER.ALREADY_RECORDED ? null : err);
+              });
+            }
+          ], function (err) {
+            next(err);
+          });
+        }
+      ], (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(res);
+      });
+    });
   }
 };
 

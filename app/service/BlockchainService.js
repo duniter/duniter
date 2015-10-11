@@ -150,7 +150,7 @@ function BlockchainService (conf, mainDAL, pair) {
               });
           });
         }, Q())
-          .thenResolve(cores);
+          .then(() => cores);
       })));
   }
 
@@ -401,8 +401,8 @@ function BlockchainService (conf, mainDAL, pair) {
           .catch(function(err){
             throw err;
           })
-          .tap(function(){
-            return mainDAL.addCore(coreObj);
+          .then(function(block){
+            return mainDAL.addCore(coreObj).then(() => block);
           })
           .then(function(block){
             cores.push(core);

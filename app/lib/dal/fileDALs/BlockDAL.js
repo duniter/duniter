@@ -30,7 +30,7 @@ function BlockDAL(rootPath, qioFS, parentCore, localDAL) {
       // TODO: not really proud of that, has to be refactored for more generic code
       if (that.dal.name == 'fileDal') {
         var dirs = yield that.coreFS.list('blocks/');
-        dirs = dirs.map(parseInt);
+        dirs = dirs.map((dir) => parseInt(dir,10));
         dirs = dirs.sort();
         var maxDir = _.max(dirs);
         var toNOTcache = dirs.filter(function(dir) { return dir <= maxDir - CACHE_SIZE; });
@@ -77,7 +77,7 @@ function BlockDAL(rootPath, qioFS, parentCore, localDAL) {
         var maxDir = _.max(files, function(dir){ return parseInt(dir); });
         var files2 = yield that.coreFS.list('blocks/' + maxDir + '/');
         if(files2.length > 0) {
-          var theFiles = _.pluck(files2, 'file').map(function(fileName) { return parseInt(fileName.replace(/\.json/, '')); });
+          var theFiles = files2.map(function(fileName) { return parseInt(fileName.replace(/\.json/, '')); });
           return _.max(theFiles);
         }
         else{

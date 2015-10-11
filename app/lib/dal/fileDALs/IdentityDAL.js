@@ -47,18 +47,18 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCac
       ];
       if (that.dal.name == 'fileDal') {
         // TODO: not really proud of that, has to be refactored for more generic code
-        var publishedByPubkey = that.coreFS.listJSON('identities/published/pubkey/');
+        var publishedByPubkey = yield that.coreFS.listJSON('identities/published/pubkey/');
         for (let i = 0; i < publishedByPubkey.length; i++) {
           let idty = publishedByPubkey[i];
           cacheByPubkey[idty.pubkey] = idty;
           cacheByHash[getIdentityID(idty)] = idty;
         }
-        var publishedByUID = that.coreFS.listJSON('identities/published/uid/');
+        var publishedByUID = yield that.coreFS.listJSON('identities/published/uid/');
         for (let i = 0; i < publishedByUID.length; i++) {
           let idty = publishedByUID[i];
           cacheByUID[idty.uid] = idty;
         }
-        var publishedByHash = that.coreFS.listJSON('identities/hash/');
+        var publishedByHash = yield that.coreFS.listJSON('identities/hash/');
         for (let i = 0; i < publishedByHash.length; i++) {
           let idty = publishedByHash[i];
           cacheByHash[getIdentityID(idty)] = idty;

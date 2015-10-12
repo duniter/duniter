@@ -86,7 +86,7 @@ function Multicaster (isolate) {
     return Q.Promise(function(resolve, reject){
       var postReq = request.post({
         "uri": 'http://' + peer.getURL() + url,
-        "timeout": 1000 * 10
+        "timeout": 1000 * 15
       }, function (err, res) {
         if (err) {
           that.push({ unreachable: true, peer: { pubkey: peer.pubkey }});

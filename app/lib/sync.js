@@ -41,7 +41,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var dal = server.dal;
 
   var vucoinOptions = {
-    timeout: conf.timeout || constants.NETWORK.DEFAULT_TIMEOUT
+    timeout: conf.timeout || constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
   this.sync = (to, nocautious, done) => {

@@ -101,6 +101,7 @@ module.exports = {
   NETWORK: {
     MAX_CONCURRENT_POST: 3,
     DEFAULT_TIMEOUT: 5000,
+    SYNC_LONG_TIMEOUT: 30 * 1000, // 30 seconds
     DEFAULT_PORT: 8999,
     PORT: {
       START: 15000

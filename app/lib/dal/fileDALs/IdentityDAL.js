@@ -72,6 +72,7 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCac
       var idty = yield that.getFromPubkey(pubkey);
       idty.member = false;
       idty.kick = false;
+      idty.leaving = false;
       return that.saveIdentity(idty);
     });
   };
@@ -104,6 +105,7 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCac
       var idty = yield that.getFromPubkey(pubkey);
       idty.currentMSN = onBlockNumber;
       idty.member = true;
+      idty.leaving = false;
       // TODO: previously had
       //idty.kick = false;
       return that.saveIdentity(idty);
@@ -116,6 +118,7 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCac
       idty.currentMSN = onBlockNumber;
       idty.member = true;
       idty.kick = false;
+      idty.leaving = false;
       // TODO: previously had
       //idty.kick = false;
       return that.saveIdentity(idty);

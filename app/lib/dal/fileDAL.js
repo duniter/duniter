@@ -613,14 +613,14 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.existsLinkFromOrAfterDate = function(from, to, maxDate) {
-    return that.linksDAL.getValidLinksFrom(from)
-      .then(function(links){
-        var matching = _.chain(links).
-          where({ target: to }).
-          filter(function(lnk){ return lnk.timestamp >= maxDate; }).
-          value();
-        return matching.length ? true : false;
-      });
+    return co(function *() {
+      var links = yield that.linksDAL.getValidLinksFrom(from);
+      var matching = _.chain(links).
+        where({ target: to }).
+        filter(function(lnk){ return lnk.timestamp >= maxDate; }).
+        value();
+      return matching.length ? true : false;
+    });
   };
 
   this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount) {

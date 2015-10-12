@@ -203,6 +203,15 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
+  this.checkCertificationIsValidForBlock = function(cert, block, idty) {
+    return co(function *() {
+      var isValid = yield Q.nfcall(checkCertificationIsValid, block, cert, function(block, pubkey, done) {
+        done(null, idty);
+      });
+      return isValid;
+    });
+  };
+
   function checkCertificationIsValid (block, cert, findIdtyFunc, done, doNotThrowExpiration) {
     async.waterfall([
       function (next) {

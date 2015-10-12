@@ -904,6 +904,7 @@ function BlockchainService (conf, mainDAL, pair) {
 
   function getSinglePreJoinData(dal, current, idHash, done, joiners) {
     return co(function *() {
+      var gValidator = globalValidator(conf, blockchainDao(null, that.currentDal));
       var identity = yield dal.getIdentityByHashOrNull(idHash);
       var foundCerts = [];
       if (!identity.leaving) {
@@ -933,8 +934,11 @@ function BlockchainService (conf, mainDAL, pair) {
               var isMember = yield dal.isMember(cert.from);
               var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
               if (isMember && !doubleSignature) {
-                certifiers.push(cert.from);
-                foundCerts.push(cert);
+                var isValid = yield gValidator.checkCertificationIsValidForBlock(cert, { number: current.number + 1 }, identity);
+                if (isValid) {
+                  certifiers.push(cert.from);
+                  foundCerts.push(cert);
+                }
               }
             } catch (e) {
               // Go on

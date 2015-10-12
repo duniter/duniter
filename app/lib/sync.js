@@ -18,10 +18,13 @@ var CONST_BLOCKS_CHUNK = 500;
 var EVAL_REMAINING_INTERVAL = 1000;
 
 module.exports = function Synchroniser (server, host, port, conf, interactive) {
-  var that = this;
 
   var speed = 0, syncStart = new Date(), blocksApplied = 0;
   var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
+  var initialForkSize = conf.branchesWindowSize;
+
+  // Disable branching for the main synchronization parts
+  conf.branchesWindowSize = 0;
 
   if (interactive) {
     require('log4js').configure({
@@ -189,13 +192,9 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       if (watcher.appliedPercent() != Math.floor(block.number / remoteCurrentNumber * 100)) {
         watcher.appliedPercent(Math.floor(block.number / remoteCurrentNumber * 100));
       }
-      if (block.number % 100 == 0) {
-        if (conf.forkWindowSize != 0) {
-          conf.forkWindowSize = 0;
-        }
-        else {
-          conf.forkWindowSize = 3;
-        }
+      if (block.number >= remoteCurrentNumber - initialForkSize) {
+        // Enables again branching for the lasts blocks
+        conf.branchesWindowSize = initialForkSize;
       }
       return BlockchainService.submitBlock(block, cautious);
     };

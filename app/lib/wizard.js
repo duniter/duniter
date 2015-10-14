@@ -7,10 +7,11 @@ var _         = require('underscore');
 var inquirer  = require('inquirer');
 var request   = require('request');
 var upnp      = require('nat-upnp');
+var logger    = require('../lib/logger')('wizard');
 
 module.exports = function () {
   return new Wizard();
-}
+};
 
 var IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
@@ -211,16 +212,19 @@ function simplePercentOrPositiveInteger (question, property, conf, done) {
   }, done);
 }
 
-function upnpResolve(done) {
+function upnpResolve(noupnp, done) {
   var conf = {};
   var client = upnp.createClient();
   var privateIP = null, publicIP = null;
   // Look for 2 random ports
   var privatePort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
   var publicPort = privatePort;
-  console.log('Checking UPnP features...');
+  logger.info('Checking UPnP features...');
   async.waterfall([
     function (next) {
+      if (noupnp) {
+        return next('No UPnP');
+      }
       client.externalIp(next);
     },
     function (ip, next) {
@@ -269,24 +273,31 @@ function networkConfiguration(conf, done) {
   ], done);
 }
 
-function networkReconfiguration(conf, done) {
+function networkReconfiguration(conf, autoconf, noupnp, done) {
   async.waterfall([
-    upnpResolve,
+    upnpResolve.bind(this, noupnp),
     function(upnpSuccess, upnpConf, next) {
 
       // Default values
       conf.port = conf.port || constants.NETWORK.DEFAULT_PORT;
       conf.remoteport = conf.remoteport || constants.NETWORK.DEFAULT_PORT;
 
-      var localOperations = getLocalNetworkOperations(conf);
-      var remoteOpertions = getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6);
-      var dnsOperations = getHostnameOperations(conf);
-      var useUPnPOperations = getUseUPnPOperations(conf);
+      var localOperations = getLocalNetworkOperations(conf, autoconf);
+      var remoteOpertions = getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6, autoconf);
+      var dnsOperations = getHostnameOperations(conf, autoconf);
+      var useUPnPOperations = getUseUPnPOperations(conf, autoconf);
 
       if (upnpSuccess) {
         _.extend(conf, upnpConf);
         var local = [conf.ipv4, conf.port].join(':');
         var remote = [conf.remoteipv4, conf.remoteport].join(':');
+        if (autoconf) {
+          logger.info('Local IPv4: %s', local);
+          logger.info('Remote IPv4: %s', remote);
+          // Use proposed local + remote with UPnP binding
+          return async.waterfall(useUPnPOperations
+            .concat(dnsOperations), next);
+        }
         choose("UPnP is available: ucoin will be bound: \n  from " + local + "\n  to " + remote + "\nKeep this configuration?", true,
           function () {
             // Yes: not network changes
@@ -303,6 +314,20 @@ function networkReconfiguration(conf, done) {
           });
       } else {
         conf.upnp = false;
+        if (autoconf) {
+          // Yes: local configuration = remote configuration
+          return async.waterfall(
+            localOperations
+              .concat(getHostnameOperations(conf, autoconf))
+              .concat([function (confDone) {
+                conf.remoteipv4 = conf.ipv4;
+                conf.remoteipv6 = conf.ipv6;
+                conf.remoteport = conf.port;
+                logger.info('Local & Remote IPv4: %s', [conf.ipv4, conf.port].join(':'));
+                logger.info('Local & Remote IPv6: %s', [conf.ipv6, conf.port].join(':'));
+                confDone();
+              }]), next);
+        }
         choose("UPnP is *not* available: is this a public server (like a VPS)?", true,
           function () {
             // Yes: local configuration = remote configuration
@@ -328,7 +353,7 @@ function networkReconfiguration(conf, done) {
   ], done);
 }
 
-function getLocalNetworkOperations(conf) {
+function getLocalNetworkOperations(conf, autoconf) {
   return [
     function (next){
       var osInterfaces = os.networkInterfaces();
@@ -343,6 +368,20 @@ function getLocalNetworkOperations(conf) {
           });
         });
       });
+      if (autoconf) {
+        conf.ipv4 = _.sortBy(interfaces, function(entry) {
+          if (entry.name.match(/^eth0/)) return 0;
+          if (entry.name.match(/^eth1/)) return 1;
+          if (entry.name.match(/^eth2/)) return 2;
+          if (entry.name.match(/^wlan0/)) return 3;
+          if (entry.name.match(/^wlan1/)) return 4;
+          if (entry.name.match(/^wlan2/)) return 5;
+          if (entry.name.match(/^lo/)) return 6;
+          if (entry.name.match(/^None/)) return 7;
+          return 10;
+        })[0].value;
+        return next();
+      }
       inquirer.prompt([{
         type: "list",
         name: "ipv4",
@@ -367,6 +406,20 @@ function getLocalNetworkOperations(conf) {
           });
         });
       });
+      if (autoconf) {
+        conf.ipv6 = _.sortBy(interfaces, function(entry) {
+          if (entry.name.match(/^eth0/)) return 0;
+          if (entry.name.match(/^eth1/)) return 1;
+          if (entry.name.match(/^eth2/)) return 2;
+          if (entry.name.match(/^wlan0/)) return 3;
+          if (entry.name.match(/^wlan1/)) return 4;
+          if (entry.name.match(/^wlan2/)) return 5;
+          if (entry.name.match(/^lo/)) return 6;
+          if (entry.name.match(/^None/)) return 7;
+          return 10;
+        })[0].value;
+        return next();
+      }
       inquirer.prompt([{
         type: "list",
         name: "ipv6",
@@ -378,11 +431,11 @@ function getLocalNetworkOperations(conf) {
         next();
       });
     },
-    async.apply(simpleInteger, "Port", "port", conf)
+    autoconf ? (done) => done() : async.apply(simpleInteger, "Port", "port", conf)
   ];
 }
 
-function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6) {
+function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
   return [
     function (next){
       var choices = [{ name: "None", value: null }];
@@ -472,8 +525,12 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6) {
   ];
 }
 
-function getHostnameOperations(conf) {
+function getHostnameOperations(conf, autoconf) {
   return [function(next) {
+    if (autoconf) {
+      logger.info('DNS: %s', conf.remotehost || 'No');
+      return next();
+    }
     choose("Does this server has a DNS name?", !!conf.remotehost,
       function() {
         // Yes
@@ -486,8 +543,13 @@ function getHostnameOperations(conf) {
   }];
 }
 
-function getUseUPnPOperations(conf) {
+function getUseUPnPOperations(conf, autoconf) {
   return [function(next) {
+    if (autoconf) {
+      logger.info('UPnP: %s', 'Yes');
+      conf.upnp = true;
+      return next();
+    }
     choose("UPnP is available: use automatic port mapping? (easier)", conf.upnp,
       function() {
         conf.upnp = true;

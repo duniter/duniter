@@ -77,6 +77,7 @@ program
   .option('--forksize <size>',         'Maximum size of fork branches', parseInt)
   .option('--nofork',                  'Equivalent to --forksize 0')
   .option('--memory',                  'Memory mode')
+  .option('--autoconf',                'With `init` command, will guess the best network and key options witout aksing for confirmation')
   ;
 
 program
@@ -517,7 +518,8 @@ function getBootstrapOperations(host, port, server, conf) {
       server.reset(next);
     },
     function(next) {
-      wiz.networkReconfiguration(conf, next);
+      conf.upnp = !program.noupnp;
+      wiz.networkReconfiguration(conf, program.autoconf, program.noupnp, next);
     },
     function(next) {
       // PublicKey
@@ -526,6 +528,11 @@ function getBootstrapOperations(host, port, server, conf) {
         async.waterfall([
           function(next) {
             if (!program.member && !conf.salt && !conf.passwd) {
+              if (program.autoconf) {
+                conf.salt = ~~(Math.random() * 2147483647) + "";
+                conf.passwd = ~~(Math.random() * 2147483647) + "";
+                return next();
+              }
               wiz.choose('You need a keypair to identify your node on the network. Would you like to automatically generate it?', true,
                 function(){
                   conf.salt = ~~(Math.random() * 2147483647) + "";

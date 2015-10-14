@@ -41,11 +41,11 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var dal = server.dal;
 
   var vucoinOptions = {
-    timeout: conf.timeout || constants.NETWORK.SYNC_LONG_TIMEOUT
+    timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
   this.sync = (to, nocautious, done) => {
-    var cautious = !nocautious;
+    var cautious = !nocautious, logInterval;
     logger.info('Connecting remote host...');
     return co(function *() {
       var node = yield getVucoin(host, port, vucoinOptions);
@@ -62,7 +62,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       var remoteNumber = Math.min(rCurrent.number, to || rCurrent.number);
 
       // Recurrent checking
-      setInterval(() => {
+      logInterval = setInterval(() => {
         if (remoteNumber > 1 && speed > 0) {
           var remain = (remoteNumber - (localNumber + 1 + blocksApplied));
           var secondsLeft = remain / speed;
@@ -98,7 +98,10 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
             })
               // Resolve the promise
               .then(() => toApply[index + 1].resolve(chunk))
-              .catch((err) => toApply[index + 1].reject(err))
+              .catch((err) => {
+                toApply[index + 1].reject(err);
+                throw err;
+              })
       ));
 
       for (let i = 0; i < toApply.length; i++) {
@@ -153,7 +156,10 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         done();
       })
       .catch((err) => {
-        err && watcher.writeStatus(err);
+        if (logInterval) {
+          clearInterval(logInterval);
+        }
+        err && watcher.writeStatus(err.message || String(err));
         watcher.end();
         logger.info('Sync finished.');
         done(err);
@@ -312,7 +318,7 @@ function MultimeterWatcher() {
   var writtens = [];
   this.writeStatus = function(str) {
     writtens.push(str);
-    require('fs').writeFileSync('writtens.json', JSON.stringify(writtens));
+    //require('fs').writeFileSync('writtens.json', JSON.stringify(writtens));
     charm
       .position(xPos, yPos)
       .erase('end')

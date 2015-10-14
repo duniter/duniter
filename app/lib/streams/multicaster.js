@@ -12,11 +12,11 @@ var fifo = async.queue(function (task, callback) {
   task(callback);
 }, constants.NETWORK.MAX_CONCURRENT_POST);
 
-module.exports = function (isolate) {
-  return new Multicaster(isolate);
+module.exports = function (isolate, timeout) {
+  return new Multicaster(isolate, timeout);
 };
 
-function Multicaster (isolate) {
+function Multicaster (isolate, timeout) {
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -86,7 +86,7 @@ function Multicaster (isolate) {
     return Q.Promise(function(resolve, reject){
       var postReq = request.post({
         "uri": 'http://' + peer.getURL() + url,
-        "timeout": 1000 * 15
+        "timeout": timeout || constants.NETWORK.DEFAULT_TIMEOUT
       }, function (err, res) {
         if (err) {
           that.push({ unreachable: true, peer: { pubkey: peer.pubkey }});

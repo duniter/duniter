@@ -192,13 +192,12 @@ function Server (dbConf, overrideConf) {
           let block = yield that.BlockchainService.startGeneration();
           if (block && shouldContinue) {
             var peer = new Peer({endpoints: [['BASIC_MERKLED_API', that.conf.ipv4, that.conf.port].join(' ')]});
-            yield multicaster(that.conf.isolate).sendBlock(peer, block);
+            yield multicaster(that.conf.isolate, constants.NETWORK.SYNC_LONG_TIMEOUT).sendBlock(peer, block);
           }
         }
         catch (e) {
           logger.error(e);
-          logger.error('Block generation STOPPED.');
-          shouldContinue = false;
+          shouldContinue = true;
         }
       }
     });

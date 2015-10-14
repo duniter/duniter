@@ -434,7 +434,7 @@ function serverStart(server, conf) {
         })
         .then(function(){
           // Enabling HTTP
-          return bma(server);
+          return bma(server, null, conf.httplogs);
         })
         .then(function(){
           // Enabling Routing

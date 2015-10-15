@@ -764,7 +764,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     return that.getMembers()
       .then(function(members){
         return Q.all(members.map(function(member) {
-          if (member.currentMSN <= maxNumber) {
+          if (member.currentMSN < maxNumber) {
             return that.setKicked(member.pubkey, null, true);
           }
         }));

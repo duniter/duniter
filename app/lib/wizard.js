@@ -61,6 +61,9 @@ function Wizard () {
 
 function doTasks (todos, conf, done) {
   async.forEachSeries(todos, function(task, callback){
+    if (task == 'networkReconfigure') {
+      return tasks[task] && tasks[task](conf, false, false, callback);
+    }
     tasks[task] && tasks[task](conf, callback);
   }, done);
 }
@@ -90,8 +93,8 @@ var tasks = {
     networkConfiguration(conf, done);
   },
 
-  networkReconfigure: function (conf, done) {
-    networkReconfiguration(conf, done);
+  networkReconfigure: function (conf, autoconf, noupnp, done) {
+    networkReconfiguration(conf, autoconf, noupnp, done);
   },
 
   key: function (conf, done) {
@@ -258,7 +261,7 @@ function upnpResolve(noupnp, done) {
 
 function networkConfiguration(conf, done) {
   async.waterfall([
-    upnpResolve,
+    upnpResolve.bind(this, !conf.upnp),
     function(upnpSuccess, upnpConf, next) {
 
       var operations = getLocalNetworkOperations(conf)

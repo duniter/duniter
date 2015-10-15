@@ -345,11 +345,11 @@ program
     server.checkConfig()
       .then(function () {
         logger.warn('Configuration seems correct.');
+        server.disconnect();
+        process.exit();
       })
       .catch(function(err) {
         logger.warn(err.message || err);
-      })
-      .finally(function() {
         server.disconnect();
         process.exit();
       });
@@ -362,11 +362,11 @@ program
     return server.dal.saveConf(conf)
       .then(function() {
         logger.debug("Configuration saved.");
+        server.disconnect();
+        process.exit();
       })
       .catch(function(err) {
         logger.error("Configuration could not be saved: " + err);
-      })
-      .finally(function() {
         server.disconnect();
         process.exit();
       });

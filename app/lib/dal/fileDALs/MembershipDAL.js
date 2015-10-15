@@ -3,14 +3,12 @@
  */
 
 var AbstractCFS = require('./AbstractCFS');
-var Q = require('q');
-var _ = require('underscore');
+var AbstractCacheable = require('./AbstractCacheable');
 var co = require('co');
-var sha1 = require('sha1');
 
 module.exports = MembershipDAL;
 
-function MembershipDAL(rootPath, qioFS, parentCore, localDAL) {
+function MembershipDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheInvalidateByDefault) {
 
   "use strict";
 
@@ -18,6 +16,10 @@ function MembershipDAL(rootPath, qioFS, parentCore, localDAL) {
 
   // CFS facilities
   AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+
+  this.cachedLists = {
+    'membershipsOfIssuer': ['getMembershipsOfIssuer']
+  };
 
   this.init = () => {
     return co(function *() {
@@ -65,12 +67,23 @@ function MembershipDAL(rootPath, qioFS, parentCore, localDAL) {
       yield that.coreFS.makeTree('ms/written/' + ms.issuer + '/' + type);
       yield that.coreFS.writeJSON('ms/written/' + ms.issuer + '/' + type + '/' + getMSID(ms) + '.json', ms);
       yield that.coreFS.remove('ms/pending/' + type + '/' + getMSID(ms) + '.json').catch(() => null);
+      if (that.dal.name != 'fileDal') {
+        that.invalidateCache('membershipsOfIssuer', ms.issuer);
+      }
     });
   };
 
-  this.savePendingMembership = (ms) => that.coreFS.writeJSON('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json', ms);
+  this.savePendingMembership = (ms) => {
+    if (that.dal.name != 'fileDal') {
+      that.invalidateCache('membershipsOfIssuer', ms.issuer);
+    }
+    return that.coreFS.writeJSON('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json', ms);
+  };
 
   function getMSID(ms) {
     return [ms.membership, ms.issuer, ms.number, ms.hash].join('-');
   }
+
+  // Cache facilities
+  AbstractCacheable.call(this, 'msDAL', rootDAL, considerCacheInvalidateByDefault);
 }

@@ -76,15 +76,15 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
   this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
   this.blockDAL = new BlockDAL(rootPath, myFS, parentFileDAL && parentFileDAL.blockDAL.coreFS, that);
-  this.certDAL = new CertDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.coreFS, that);
   this.txsDAL = new TxsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.txsDAL.coreFS, that);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that);
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that);
   this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that);
   this.coresDAL = new CoresDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that);
   this.linksDAL = new LinksDAL(rootPath, myFS, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, parentFileDAL, invalidateCache);
-  this.msDAL = new MembershipDAL(rootPath, myFS, parentFileDAL && parentFileDAL.msDAL.coreFS, that);
   this.idtyDAL = new IdentityDAL(rootPath, myFS, parentFileDAL && parentFileDAL.idtyDAL.coreFS, that, parentFileDAL, invalidateCache);
+  this.certDAL = new CertDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.coreFS, that, parentFileDAL, invalidateCache);
+  this.msDAL = new MembershipDAL(rootPath, myFS, parentFileDAL && parentFileDAL.msDAL.coreFS, that, parentFileDAL, invalidateCache);
 
   this.newDals = {
     'peerDAL': that.peerDAL,
@@ -537,6 +537,30 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
           }
         });
         return that.fillIdentitiesWithCerts(idties);
+      });
+  };
+
+  this.searchJustIdentities = function(search) {
+    return Q.all([
+      that.idtyDAL.getWhoIsOrWasMember(),
+      that.idtyDAL.getPendingIdentities()
+    ])
+      .then(function(res){
+        var idties = _.chain(res[0]).
+          where({ revoked: false }).
+          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
+          value();
+        var pendings = _.chain(res[1]).
+          where({ revoked: false }).
+          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
+          value();
+        var hashes = _.pluck(idties, 'hash');
+        pendings.forEach(function(pending){
+          if (hashes.indexOf(pending.hash) == -1) {
+            idties.push(pending);
+          }
+        });
+        return idties;
       });
   };
 

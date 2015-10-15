@@ -31,8 +31,8 @@ function IdentityService (conf, dal) {
     globalValidation = globalValidator(conf, blockchainDao(null, dal));
   };
 
-  this.search = function(search) {
-    return dal.searchIdentity(search);
+  this.searchIdentities = function(search) {
+    return dal.searchJustIdentities(search);
   };
 
   this.findMember = function(search, done) {

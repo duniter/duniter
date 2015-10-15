@@ -3,6 +3,7 @@
  */
 
 var AbstractCFS = require('./AbstractCFS');
+var AbstractCacheable = require('./AbstractCacheable');
 var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
@@ -10,13 +11,18 @@ var sha1 = require('sha1');
 
 module.exports = CertDAL;
 
-function CertDAL(rootPath, qioFS, parentCore, localDAL) {
+function CertDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheInvalidateByDefault) {
 
   "use strict";
 
   var that = this;
 
   AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+
+  this.cachedLists = {
+    //'toTarget': ['getToTarget'],
+    'fromPubkey': ['getFromPubkey']
+  };
 
   this.init = () => {
     return Q.all([
@@ -81,10 +87,7 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL) {
           });
       });
       return certs;
-    })
-      .catch(function(err){
-        throw err;
-      });
+    });
   };
 
   this.getNotLinkedFrom = (pubkey) => that.coreFS.listJSON('certs/pending/from/' + pubkey + '/');
@@ -101,10 +104,7 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL) {
   };
 
   this.getNotLinkedToTarget = (hash) =>
-    that.coreFS.listJSON('certs/pending/target/' + hash + '/')
-      .catch(function(err){
-        throw err;
-      });
+    that.coreFS.listJSON('certs/pending/target/' + hash + '/');
 
   this.listLocalPending = function() {
     return co(function *() {
@@ -114,10 +114,7 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL) {
         return that.coreFS.listJSON('certs/pending/target/' + target + '/').then(found => certs = certs.concat(found));
       });
       return certs;
-    })
-      .catch(function(err){
-        throw err;
-      });
+    });
   };
 
   this.getLinkedToTarget = (hash) => that.coreFS.listJSON('certs/linked/target/' + hash + '/');
@@ -129,9 +126,17 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL) {
         that.coreFS.makeTree('certs/linked/target/' + cert.target + '/'),
         that.coreFS.makeTree('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/', cert)
       ];
+      if (that.dal.name != 'fileDal') {
+        that.invalidateCache('toTarget', cert.target);
+        that.invalidateCache('fromPubkey', cert.from);
+      }
       yield that.coreFS.writeJSON('certs/linked/from/' + cert.from + '/' + cert.to + '/' + cert.block_number + '.json', cert);
       yield that.coreFS.writeJSON('certs/linked/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
       yield that.coreFS.writeJSON('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/' + getCertID(cert) + '.json', cert);
+      if (that.dal.name != 'fileDal') {
+        that.invalidateCache('toTarget', cert.target);
+        that.invalidateCache('fromPubkey', cert.from);
+      }
       return cert;
     });
   };
@@ -142,13 +147,18 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL) {
         that.coreFS.makeTree('certs/pending/target/' + cert.target + '/'),
         that.coreFS.makeTree('certs/pending/from/' + cert.from + '/')
       ];
+      if (that.dal.name != 'fileDal') {
+        that.invalidateCache('toTarget', cert.target);
+        that.invalidateCache('fromPubkey', cert.from);
+      }
       yield that.coreFS.writeJSON('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
       yield that.coreFS.writeJSON('certs/pending/from/' + cert.from + '/' + getCertID(cert) + '.json', cert);
+      if (that.dal.name != 'fileDal') {
+        that.invalidateCache('toTarget', cert.target);
+        that.invalidateCache('fromPubkey', cert.from);
+      }
       return cert;
-    })
-      .catch(function(err){
-        throw err;
-      });
+    });
   };
 
   this.removeNotLinked = function(cert) {
@@ -159,9 +169,15 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL) {
       var existsTarget = yield that.coreFS.exists(pendingTarget);
       if (existsTarget) {
         yield that.coreFS.remove(pendingTarget);
+        if (that.dal.name != 'fileDal') {
+          that.invalidateCache('toTarget', cert.target);
+        }
       }
       if (existsFrom) {
         yield that.coreFS.remove(pendingFromG);
+        if (that.dal.name != 'fileDal') {
+          that.invalidateCache('fromPubkey', cert.from);
+        }
       }
     });
   };
@@ -176,14 +192,14 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL) {
         found = JSON.parse(found);
       }
       return found;
-    })
-      .catch(function(err){
-        throw err;
-      });
+    });
   };
 
   function getCertID(cert) {
     var sigHash = (sha1(cert.sig) + "").toUpperCase();
     return [cert.from, cert.target, cert.block, sigHash].join('-');
   }
+
+  // Cache facilities
+  AbstractCacheable.call(this, 'certDAL', rootDAL, considerCacheInvalidateByDefault);
 }

@@ -30,52 +30,45 @@ function WOTBinding (server) {
     res.type('application/json');
     return co(function *() {
       var search = yield ParametersService.getSearchP(req);
-      var identities = yield IdentityService.search(search);
+      var identities = yield IdentityService.searchIdentities(search);
       identities.forEach(function(idty, index){
         identities[index] = new Identity(idty);
       });
       var excluding = yield BlockchainService.getCertificationsExludingBlock();
-      yield identities.map((idty) => {
-        return co(function *() {
-          var certs = yield server.dal.certsToTarget(idty.getTargetHash());
-          var validCerts = [];
-          yield certs.map((cert) => {
-            return co(function *() {
-              if (excluding && cert.block <= excluding.number) {
-                // Exclude the cert from result
-                return;
-              }
-              var res2 = yield Q.nbind(IdentityService.findIdentities, IdentityService)(cert.from);
-              var writtens = res2.written ? [res2.written] : [];
-              var nonWrittens = res2.nonWritten || [];
-              if (writtens.length > 0) {
-                cert.uids = [writtens[0].uid];
-                cert.isMember = writtens[0].member;
-                cert.wasMember = writtens[0].wasMember;
-              } else {
-                cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
-                cert.isMember = false;
-                cert.wasMember = false;
-              }
-              validCerts.push(cert);
-            });
-          });
-          idty.certs = validCerts;
-          var signed = yield server.dal.certsFrom(idty.pubkey);
-          var validSigned = [];
-          yield signed.map((cert) => {
-            return co(function *() {
-              if (excluding && cert.block <= excluding.number) {
-                // Exclude the cert from result
-                return;
-              }
-              cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
-              validSigned.push(cert);
-            });
-          });
-          idty.signed = validSigned;
-        });
-      });
+      for (let i = 0; i < identities.length; i++) {
+        let idty = identities[i];
+        var certs = yield server.dal.certsToTarget(idty.getTargetHash());
+        var validCerts = [];
+        for (let j = 0; j < certs.length; j++) {
+          let cert = certs[j];
+          if (!(excluding && cert.block <= excluding.number)) {
+            var res2 = yield Q.nbind(IdentityService.findIdentities, IdentityService)(cert.from);
+            var writtens = res2.written ? [res2.written] : [];
+            var nonWrittens = res2.nonWritten || [];
+            if (writtens.length > 0) {
+              cert.uids = [writtens[0].uid];
+              cert.isMember = writtens[0].member;
+              cert.wasMember = writtens[0].wasMember;
+            } else {
+              cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
+              cert.isMember = false;
+              cert.wasMember = false;
+            }
+            validCerts.push(cert);
+          }
+        }
+        idty.certs = validCerts;
+        var signed = yield server.dal.certsFrom(idty.pubkey);
+        var validSigned = [];
+        for (let j = 0; j < signed.length; j++) {
+          let cert = signed[j];
+          if (!(excluding && cert.block <= excluding.number)) {
+            cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
+            validSigned.push(cert);
+          }
+        }
+        idty.signed = validSigned;
+      }
       return identities;
     })
       .then(function(identities){
@@ -89,7 +82,7 @@ function WOTBinding (server) {
         res.send(200, JSON.stringify(json, null, "  "));
       })
       .catch(function(err){
-        res.send(400, err);
+        res.send(400, ((err && err.message) || err));
       });
   };
 

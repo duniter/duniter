@@ -193,7 +193,7 @@ function WOTBinding (server) {
         ParametersService.getPubkey(req, next);
       },
       function (search, next){
-        IdentityService.search(search).then(_.partial(next, null)).catch(next);
+        IdentityService.searchIdentities(search).then(_.partial(next, null)).catch(next);
       },
       function (identities, next){
         return identities.reduce(function(p, identity) {

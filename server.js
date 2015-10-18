@@ -48,9 +48,9 @@ function Server (dbConf, overrideConf) {
     });
   };
 
-  this.connectDB = function () {
+  this.connectDB = function (forConf) {
     // Connect only once
-    return connectionPromise || (connectionPromise = that.connect());
+    return connectionPromise || (connectionPromise = that.connect(forConf));
   };
 
   this.initWithServices = function (done) {
@@ -93,13 +93,13 @@ function Server (dbConf, overrideConf) {
     });
   };
 
-  this.connect = function () {
+  this.connect = function (forConf) {
     // Init connection
     if (that.dal) {
       return Q();
     }
     var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
-    return dbType(dbConf.name || "default")
+    return dbType(dbConf.name || "default", forConf)
       .then(function(dal){
         that.dal = dal;
         return that.dal.init(overrideConf);

@@ -33,10 +33,14 @@ module.exports = {
         return Q(new FileDAL(profile, params.home, "", params.fs, null, levelupInstance));
       });
   },
-  file: function(profile) {
+  file: function(profile, forConf) {
     return getHomeFS(profile, false)
       .then(function(params) {
         let levelupInstance = (pathToLevelDB) => levelup(pathToLevelDB, { db: require('leveldown') });
+        if (forConf) {
+          // Memory only service dals
+          levelupInstance = () => levelup({ db: require('memdown') });
+        }
         return new FileDAL(profile, params.home, "", params.fs, null, levelupInstance);
       });
   },

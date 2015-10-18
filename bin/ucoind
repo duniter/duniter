@@ -346,7 +346,7 @@ program
 program
   .command('config')
   .description('Register configuration in database')
-  .action(service(function (server, conf) {
+  .action(connect(function (server, conf) {
     return server.dal.saveConf(conf)
       .then(function() {
         logger.debug("Configuration saved.");
@@ -358,7 +358,7 @@ program
         server.disconnect();
         process.exit();
       });
-  }));
+  }, true));
 
 program
   .command('reset [config|data|peers|tx|stats|all]')
@@ -689,7 +689,7 @@ function commandLineConf(conf) {
   return _(conf).extend({ routing: true });
 }
 
-function connect(callback) {
+function connect(callback, forConf) {
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
@@ -697,7 +697,7 @@ function connect(callback) {
     var server = ucoin({ name: dbName }, commandLineConf());
 
     // Initialize server (db connection, ...)
-    server.connectDB()
+    server.connectDB(forConf)
       .then(function(){
         cbArgs.length--;
         cbArgs[cbArgs.length++] = server;

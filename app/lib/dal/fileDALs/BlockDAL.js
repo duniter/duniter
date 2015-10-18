@@ -8,7 +8,7 @@ var co = require('co');
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
-var CACHE_SIZE = 0;
+var CACHE_SIZE = 1500;
 
 module.exports = BlockDAL;
 

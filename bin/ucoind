@@ -175,7 +175,7 @@ program
 program
   .command('init [host] [port]')
   .description('Setup a node configuration and sync data with given node')
-  .action(connect(bootstrapServer));
+  .action(connect(bootstrapServer, true));
 
 program
   .command('forward [host] [port] [what]')

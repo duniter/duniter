@@ -8,7 +8,7 @@ var co = require('co');
 
 var BLOCK_FILE_PREFIX = "0000000000";
 var BLOCK_FOLDER_SIZE = 500;
-var CACHE_SIZE = 1500;
+var CACHE_SIZE = 0;
 
 module.exports = BlockDAL;
 
@@ -100,7 +100,8 @@ function BlockDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
       // TODO: not really proud of that, has to be refactored for more generic code
       if (that.dal.name == 'fileDal') {
         if (cache.length != block.number) {
-          throw 'Block cache is concurrently written';
+          // Reset cache
+          cache = new Array(block.number - 1);
         }
         cache.push(block);
       }

@@ -3,7 +3,7 @@ var co = require('co');
 var async            = require('async');
 var _                = require('underscore');
 var Q                = require('q');
-var HTTP             = require("q-io/http");
+var superagent       = require("superagent");
 var sha1             = require('sha1');
 var moment           = require('moment');
 var vucoin           = require('vucoin');
@@ -61,13 +61,21 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       if (!cautious && !to && lastSavedNumber == -1 && lCurrent == null) {
         // We can try a LevelDB sync (very fast)
         try {
-          watcher.writeStatus('Trying to sync LevelDB data...');
-          let res = yield HTTP.request('http://' + host + ':' + port + '/node/dump').catch(() => null);
+          watcher.writeStatus('Dowloading LevelDB data...');
+          let res = yield Q.Promise(function(resolve, reject){superagent
+            .get('http://' + host + ':' + port + '/node/dump')
+            .on('progress', function(e) {
+              watcher.downloadPercent(Math.floor(e.percent));
+            })
+            .end(function(err, response) {
+              if (err) return reject(err);
+              resolve(response);
+            });
+          })
+            .catch(() => null);
           if (res) {
-            let str = yield res.body.read();
-            let obj = JSON.parse(str);
             watcher.writeStatus('Applying LevelDB data...');
-            yield dal.loadDump(obj.dump);
+            yield dal.loadDump(res.body.dump);
             yield server.BlockchainService.saveParametersForRootBlock();
             // Update local vars
             lastSavedNumber = yield dal.getLastSavedBlockFileNumber();

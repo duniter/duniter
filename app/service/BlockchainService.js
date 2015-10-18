@@ -69,6 +69,8 @@ function BlockchainService (conf, mainDAL, pair) {
       .catch(done);
   };
 
+  this.getMainContext = () => mainContext;
+
   this.mainForkDAL = function() {
     return getCores()
       .then(function(cores){

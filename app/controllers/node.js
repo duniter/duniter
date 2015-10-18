@@ -22,7 +22,8 @@ function NodeBinding (server) {
   this.dumpDB = function (req, res) {
     res.type('application/json');
     co(function *() {
-      let dump = yield server.dal.dumpDB();
+      let dal = server.BlockchainService.getMainContext().dal;
+      let dump = yield dal.dumpDB();
       res.send(200, JSON.stringify({
         "dump": dump
       }, null, "  "));

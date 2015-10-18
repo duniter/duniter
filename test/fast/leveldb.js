@@ -6,11 +6,20 @@ var Q = require('q');
 var leveldb = require('./../../app/lib/leveldb');
 var levelup = require('levelup');
 var leveldown = require('memdown');
-let db = levelup({
+let dbB3 = levelup({
+  db: leveldown
+});
+let dbB4 = levelup({
+  db: leveldown
+});
+let dbB5 = levelup({
+  db: leveldown
+});
+let dbBO = levelup({
   db: leveldown
 });
 
-function put(key, value) {
+function put(db, key, value) {
   return Q.nbind(db.put, db)(key, value);
 }
 
@@ -18,23 +27,24 @@ describe("LevelDB", () => {
 
   before(function() {
     return co(function *() {
-      yield put('/B3', JSON.stringify({ "files": ['A.json', 'C.json'] }));
-      yield put('/B4', JSON.stringify({ "files": ['B.json'] }));
-      yield put('/B5_a', JSON.stringify({ "files": ['A.json'] }));
-      yield put('/OTHER', JSON.stringify({ "files": ['X.json'] }));
-      yield put('/B3/A.json', JSON.stringify({ "text": "Content of A from B3" }));
-      yield put('/B3/C.json', JSON.stringify({ "text": "Content of C from B3" }));
-      yield put('/B4/B.json', JSON.stringify({ "text": "Content of B" }));
-      yield put('/B5_a/A.json', JSON.stringify({ "text": "Content of A from B5_a" }));
-      yield put('/OTHER/X.json', JSON.stringify({ "text": "Content of X" }));
+      yield put(dbB3, '/', JSON.stringify({ "files": ['A.json', 'C.json'] }));
+      yield put(dbB4, '/', JSON.stringify({ "files": ['B.json'] }));
+      yield put(dbB5, '/', JSON.stringify({ "files": ['A.json'] }));
+      yield put(dbBO, '/', JSON.stringify({ "files": ['X.json'] }));
+
+      yield put(dbB3, '/A.json', JSON.stringify({ "text": "Content of A from B3" }));
+      yield put(dbB3, '/C.json', JSON.stringify({ "text": "Content of C from B3" }));
+      yield put(dbB4, '/B.json', JSON.stringify({ "text": "Content of B" }));
+      yield put(dbB5, '/A.json', JSON.stringify({ "text": "Content of A from B5_a" }));
+      yield put(dbBO, '/X.json', JSON.stringify({ "text": "Content of X" }));
     });
   });
 
-  var coreB3 = leveldb('/B3', db);
-  var coreB4 = leveldb('/B4', db, coreB3);
-  var coreB5 = leveldb('/B5_a', db, coreB4);
+  var coreB3 = leveldb('/B3', dbB3);
+  var coreB4 = leveldb('/B4', dbB4, coreB3);
+  var coreB5 = leveldb('/B5_a', dbB5, coreB4);
 
-  var rootCore = leveldb('/OTHER', db);
+  var rootCore = leveldb('/OTHER', dbBO);
 
   // ------------ Direct READ ------------
 

@@ -15,8 +15,9 @@ module.exports = function(rootPath, db, parent) {
   return new LevelDBCore(rootPath, db, parent);
 };
 
-function LevelDBCore(rootPath, db, parent) {
+function LevelDBCore(basePath, db, parent) {
 
+  let rootPath = '/';
   var that = this;
 
   var qfs = new QFSAdapter(rootPath, db);

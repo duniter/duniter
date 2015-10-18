@@ -59,6 +59,7 @@ module.exports = function(server, interfaces, httpLogs) {
 
   var node = require('../../controllers/node')(server);
   answerForGet('/node/summary',  node.summary);
+  answerForGet('/node/dump',     node.dumpDB);
 
   var blockchain = require('../../controllers/blockchain')(server);
   answerForGet( '/blockchain/parameters',       blockchain.parameters);

@@ -1333,6 +1333,13 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   };
 
+  this.saveParametersForRootBlock = () => co(function *() {
+    let mainFork = yield that.mainFork();
+    let rootBlock = yield mainFork.dal.getBlockOrNull(0);
+    if (!rootBlock) throw 'Cannot registrer currency parameters since no root block exists';
+    return mainFork.saveParametersForRootBlock(rootBlock);
+  });
+
   this.addStatComputing = function () {
     var tests = {
       'newcomers': 'identities',

@@ -3,6 +3,7 @@ var co = require('co');
 var async            = require('async');
 var _                = require('underscore');
 var Q                = require('q');
+var HTTP             = require("q-io/http");
 var sha1             = require('sha1');
 var moment           = require('moment');
 var vucoin           = require('vucoin');
@@ -50,13 +51,38 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
     return co(function *() {
       var node = yield getVucoin(host, port, vucoinOptions);
       logger.info('Sync started.');
+
+      var lastSavedNumber = yield dal.getLastSavedBlockFileNumber();
+      var lCurrent = yield dal.getCurrentBlockOrNull();
+
+      //============
+      // LevelDB sync
+      //============
+      if (!cautious && !to && lastSavedNumber == -1 && lCurrent == null) {
+        // We can try a LevelDB sync (very fast)
+        try {
+          watcher.writeStatus('Trying to sync LevelDB data...');
+          let res = yield HTTP.request('http://' + host + ':' + port + '/node/dump').catch(() => null);
+          if (res) {
+            let str = yield res.body.read();
+            let obj = JSON.parse(str);
+            watcher.writeStatus('Applying LevelDB data...');
+            yield dal.loadDump(obj.dump);
+            yield server.BlockchainService.saveParametersForRootBlock();
+            // Update local vars
+            lastSavedNumber = yield dal.getLastSavedBlockFileNumber();
+            lCurrent = yield dal.getCurrentBlockOrNull();
+          }
+        } catch(e) {
+          console.log(e);
+        }
+      }
+
       //============
       // Blockchain
       //============
       logger.info('Downloading Blockchain...');
       watcher.writeStatus('Connecting to ' + host + '...');
-      var lastSavedNumber = yield dal.getLastSavedBlockFileNumber();
-      var lCurrent = yield dal.getCurrentBlockOrNull();
       var rCurrent = yield Q.nbind(node.blockchain.current, node)();
       var localNumber = lCurrent ? lCurrent.number : -1;
       var remoteNumber = Math.min(rCurrent.number, to || rCurrent.number);

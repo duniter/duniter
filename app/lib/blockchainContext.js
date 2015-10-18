@@ -132,7 +132,7 @@ function BlockchainContext(conf, dal) {
         dal.saveBlock(block, next);
       },
       function (next) {
-        saveParametersForRootBlock(block, next);
+        that.saveParametersForRootBlock(block, next);
       },
       function (next) {
         // Create/Update members (create new identities if do not exist)
@@ -324,7 +324,7 @@ function BlockchainContext(conf, dal) {
     }, done);
   }
 
-  function saveParametersForRootBlock (block, done) {
+  that.saveParametersForRootBlock = (block, done) => {
     if (block.parameters) {
       var sp = block.parameters.split(':');
 
@@ -345,8 +345,11 @@ function BlockchainContext(conf, dal) {
       conf.currency         = block.currency;
       return dal.saveConf(conf).then(done).catch(done);
     }
-    else done();
-  }
+    else {
+      done && done();
+      return Q();
+    }
+  };
 
   function computeObsoleteLinks (block, done) {
     async.waterfall([

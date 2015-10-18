@@ -1,5 +1,7 @@
 "use strict";
 
+var co = require('co');
+
 module.exports = function (server) {
   return new NodeBinding(server);
 };
@@ -15,5 +17,18 @@ function NodeBinding (server) {
         "forkWindowSize": server.conf.branchesWindowSize
       }
     }, null, "  "));
+  };
+
+  this.dumpDB = function (req, res) {
+    res.type('application/json');
+    co(function *() {
+      let dump = yield server.dal.dumpDB();
+      res.send(200, JSON.stringify({
+        "dump": dump
+      }, null, "  "));
+    })
+    .catch(function(){
+      res.send(500, 'Could not generate DB dump');
+    });
   };
 }

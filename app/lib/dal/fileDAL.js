@@ -26,15 +26,15 @@ var LevelDBStorage = require('./fileDALs/AbstractLevelDB');
 var CFSStorage = require('./fileDALs/AbstractCFS');
 
 module.exports = {
-  memory: function(profile, subPath) {
-    return getHomeFS(profile, subPath, true)
+  memory: function(profile) {
+    return getHomeFS(profile, true)
       .then(function(params) {
         let levelupInstance = () => levelup({ db: require('memdown') });
         return Q(new FileDAL(profile, params.home, "", params.fs, null, levelupInstance));
       });
   },
-  file: function(profile, subPath) {
-    return getHomeFS(profile, subPath, false)
+  file: function(profile) {
+    return getHomeFS(profile, false)
       .then(function(params) {
         let levelupInstance = (pathToLevelDB) => levelup(pathToLevelDB, { db: require('leveldown') });
         return new FileDAL(profile, params.home, "", params.fs, null, levelupInstance);
@@ -49,9 +49,10 @@ function someDelayFix() {
   });
 }
 
-function getHomeFS(profile, subpath, isMemory) {
-  var home = getUCoinHomePath(profile, subpath);
-  var fs;
+function getHomeFS(profile, isMemory) {
+  let userHome = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+  let home = userHome + '/.config/ucoin/' + profile;
+  let fs;
   return someDelayFix()
     .then(function() {
       fs = (isMemory ? require('q-io/fs-mock')({}) : require('q-io/fs'));
@@ -60,11 +61,6 @@ function getHomeFS(profile, subpath, isMemory) {
     .then(function(){
       return { fs: fs, home: home };
     });
-}
-
-function getUCoinHomePath(profile) {
-  var userHome = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
-  return userHome + '/.config/ucoin/' + profile;
 }
 
 function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) {
@@ -82,7 +78,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) 
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
-  this.peerDAL = new PeerDAL(rootPath, myDB, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, LevelDBStorage);
+  this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, CFSStorage);
   this.sourcesDAL = new SourcesDAL(rootPath, myDB, parentFileDAL && parentFileDAL.sourcesDAL.coreFS, that, LevelDBStorage);
   this.blockDAL = new BlockDAL(rootPath, myDB, parentFileDAL && parentFileDAL.blockDAL.coreFS, that, LevelDBStorage);
   this.txsDAL = new TxsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.txsDAL.coreFS, that, LevelDBStorage);
@@ -118,6 +114,43 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) 
       return yield that.loadConf(overrideConf);
     });
   };
+
+  this.dumpDB = () => co(function *() {
+    let dump = {};
+    return Q.Promise(function(resolve, reject){
+      myDB.createReadStream()
+        .on('data', function (data) {
+          dump[data.key] = data.value;
+        })
+        .on('error', function (err) {
+          reject(err);
+        })
+        .on('close', function () {
+          reject('Stream closed');
+        })
+        .on('end', function () {
+          resolve(dump);
+        });
+    });
+  });
+
+  this.loadDump = (dump) => co(function *() {
+    let keys = _.keys(dump);
+    let operations = keys.map((key) => { return {
+        type: 'put',
+        key: key,
+        value: dump[key]
+      };
+    });
+    return Q.Promise(function(resolve, reject){
+      myDB.batch(operations, null, function(err) {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  });
 
   this.getCurrency = function() {
     return currency;

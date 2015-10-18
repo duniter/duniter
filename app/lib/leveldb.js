@@ -255,45 +255,17 @@ function QFSAdapter(fullRootPath, db) {
     });
   };
 
-  let cleaned = (aPath) => {
-    let newPath = aPath.replace(/\/*$/g, '') || '/';
-    //let newPath = aPath.replace(rootPath, '').replace(/\/*$/g, '') || '/';
-    //if (!newPath.match(/^\//)) {
-    //  newPath = '/' + newPath;
-    //}
-    return newPath;
-  };
+  let cleaned = (aPath) => aPath.replace(/\/*$/g, '') || '/';
 
   let get = (key) => Q.nbind(db.get, db)(cleaned(key));
   let del = (key) => Q.nbind(db.del, db)(cleaned(key));
   let put = (key, value) => {
-    //console.log('PUT %s => %s', key, value);
     return Q.nbind(db.put, db)(cleaned(key), value);
   };
 
-  this.exists = (key) => co(function *() {
-    //let unlock = yield getLock();
-    try {
-      let res = get(key).then(() => true).catch(() => false);
-      //unlock();
-      return res;
-    } catch (e) {
-      //unlock();
-      throw e;
-    }
-  });
+  this.exists = (key) => get(key).then(() => true).catch(() => false);
 
-  this.read = (aPath) => co(function *() {
-    //let unlock = yield getLock();
-    try {
-      let res = get(aPath);
-      //unlock();
-      return res;
-    } catch (e) {
-      //unlock();
-      throw e;
-    }
-  });
+  this.read = (aPath) => get(aPath);
 
   this.makeTree = (aPath) => {
     return co(function *() {
@@ -339,22 +311,15 @@ function QFSAdapter(fullRootPath, db) {
     });
   };
 
-  this.read = (aPath) => co(function *() {
-    try {
-      let res = get(aPath);
-      return res;
-    } catch (e) {
-      throw e;
-    }
-  });
-
   this.write = (aPath, value) => {
     return co(function *() {
       let dir = path.dirname(aPath);
       let file = path.basename(aPath);
       let unlock = yield getLock();
       let files = yield that.listInternal(dir);
-      files.push(file);
+      if (!~files.indexOf(file)) {
+        files.push(file);
+      }
       yield put(dir, JSON.stringify({ files: files }));
       yield put(aPath, value);
       unlock();

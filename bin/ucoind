@@ -387,7 +387,7 @@ program
     if(type == 'all'){
       server.reset(resetDone(server, 'Data & Configuration successfully reseted.'));
     }
-  }));
+  }, true));
 
 function resetDone(server, msg) {
   return function(err) {

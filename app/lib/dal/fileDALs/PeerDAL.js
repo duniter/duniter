@@ -2,15 +2,13 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
-
 module.exports = PeerDAL;
 
-function PeerDAL(rootPath, qioFS, parentCore) {
+function PeerDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
-  AbstractCFS.call(this, rootPath, qioFS, parentCore);
+  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
   this.init = () => this.coreFS.makeTree('peers/');
 

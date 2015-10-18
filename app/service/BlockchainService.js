@@ -1226,7 +1226,6 @@ function BlockchainService (conf, mainDAL, pair) {
         //console.log('Already made: %s tests...', msg.nonce);
         // Look for incoming block
         if (speedMesured && cancels.length) {
-          console.log(cancels);
           speedMesured = false;
           stopped = true;
           that.powProcess.kill();
@@ -1332,26 +1331,6 @@ function BlockchainService (conf, mainDAL, pair) {
       var trialLevel = trial || (yield globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey));
       return that.prove(unsignedBlock, sigF, trialLevel);
     });
-  };
-
-  this.recomputeTxRecords = function() {
-    return that.mainForkDAL()
-      .then(function(dal){
-        return dal.dropTxRecords()
-          .then(function(){
-            return dal.getStat('tx');
-          })
-          .then(function(stat){
-            return stat.blocks.reduce(function(p, number) {
-              return p.then(function() {
-                return dal.getBlockOrNull(number)
-                  .then(function(block){
-                    return dal.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
-                  });
-              });
-            }, Q());
-          });
-      });
   };
 
   this.addStatComputing = function () {

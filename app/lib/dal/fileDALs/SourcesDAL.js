@@ -2,20 +2,19 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
 var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
 
 module.exports = SourcesDAL;
 
-function SourcesDAL(rootPath, qioFS, parentCore) {
+function SourcesDAL(rootPath, db, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
   var that = this;
 
-  AbstractCFS.call(this, rootPath, qioFS, parentCore);
+  AbstractStorage.call(this, rootPath, db, parentCore, localDAL);
 
   this.init = () => Q.all([
     that.coreFS.makeTree('sources/'),

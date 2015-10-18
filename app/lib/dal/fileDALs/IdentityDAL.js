@@ -2,37 +2,29 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
-var AbstractCacheable = require('./AbstractCacheable');
 var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
-var sha1 = require('sha1');
 
 module.exports = IdentityDAL;
 
-function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheInvalidateByDefault) {
+function IdentityDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
   var that = this;
 
   // CFS facilities
-  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
   var cacheByPubkey = {};
   var cacheByUID = {};
   var cacheByHash = {};
 
   this.cached = {
-    'pubkey': ['getFromPubkey'],
-    'uid': ['getFromUID'],
-    'hash': ['getByHash']
   };
 
   this.cachedLists = {
-    'members': ['getWhoIsOrWasMember'],
-    'nonmembers': ['getPendingIdentities']
   };
 
   this.init = () => {
@@ -84,10 +76,6 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCac
       // TODO: not really proud of that, has to be refactored for more generic code
       if (that.dal.name == 'fileDal') {
         cacheByHash[getIdentityID(idty)] = idty;
-      }
-      else {
-        that.notifyCache('hash', getIdentityID(idty), idty);
-        that.invalidateCache('nonmembers');
       }
     });
   };
@@ -179,13 +167,6 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCac
         cacheByUID[idty.uid] = idty;
         cacheByHash[getIdentityID(idty)] = idty;
       }
-      else {
-        that.notifyCache('pubkey', idty.pubkey, idty);
-        that.notifyCache('uid', idty.uid, idty);
-        that.notifyCache('hash', getIdentityID(idty), idty);
-        that.invalidateCache('members');
-        that.invalidateCache('nonmembers');
-      }
     });
   };
 
@@ -219,7 +200,4 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCac
   function getIdentityID(idty) {
     return [idty.hash].join('-');
   }
-
-  // Cache facilities
-  AbstractCacheable.call(this, 'idtyDAL', rootDAL, considerCacheInvalidateByDefault);
 }

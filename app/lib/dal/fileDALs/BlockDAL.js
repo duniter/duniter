@@ -2,7 +2,6 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
 var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
@@ -13,13 +12,13 @@ var CACHE_SIZE = 1500;
 
 module.exports = BlockDAL;
 
-function BlockDAL(rootPath, qioFS, parentCore, localDAL) {
+function BlockDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
   var that = this;
 
-  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
   var cache = [], current = null;
   var logger = require('../../../lib/logger')(this.dal.profile);

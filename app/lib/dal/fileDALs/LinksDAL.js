@@ -2,8 +2,6 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
-var AbstractCacheable = require('./AbstractCacheable');
 var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
@@ -11,21 +9,18 @@ var sha1 = require('sha1');
 
 module.exports = LinksDAL;
 
-function LinksDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheInvalidateByDefault) {
+function LinksDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
   var that = this;
 
   // CFS facilities
-  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
   var validCacheFrom = {}, validCacheTo = {};
 
   this.cachedLists = {
-    'linksFrom': ['getValidLinksFrom'],
-    'linksTo': ['getValidLinksTo'],
-    'obsoletes': ['getObsoletes']
   };
 
   this.init = () => {
@@ -101,9 +96,6 @@ function LinksDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheI
             if (validCacheTo[link.target]) {
               delete validCacheTo[link.target][getLinkID(link)];
             }
-            if (that.dal.name != 'fileDal') {
-              that.invalidateCache('obsoletes');
-            }
           }
         }
       }
@@ -127,10 +119,6 @@ function LinksDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheI
         validCacheTo[link.target] = validCacheTo[link.target] || {};
         validCacheTo[link.target][getLinkID(link)] = link;
       }
-      else {
-        that.invalidateCache('linksFrom', link.source);
-        that.invalidateCache('linksTo', link.target);
-      }
     });
   };
 
@@ -145,7 +133,4 @@ function LinksDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheI
   function getLinkID(link) {
     return [link.source, link.target, link.timestamp].join('-');
   }
-
-  // Cache facilities
-  AbstractCacheable.call(this, 'linksDAL', rootDAL, considerCacheInvalidateByDefault);
 }

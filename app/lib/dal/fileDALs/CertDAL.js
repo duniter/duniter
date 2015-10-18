@@ -2,8 +2,6 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
-var AbstractCacheable = require('./AbstractCacheable');
 var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
@@ -11,23 +9,19 @@ var sha1 = require('sha1');
 
 module.exports = CertDAL;
 
-function CertDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheInvalidateByDefault) {
+function CertDAL(rootPath, db, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
   var that = this;
 
-  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+  AbstractStorage.call(this, rootPath, db, parentCore, localDAL);
 
   this.cachedLists = {
-    //'toTarget': ['getToTarget'],
-    'fromPubkey': ['getFromPubkey']
   };
 
   this.init = () => {
     return Q.all([
-      that.coreFS.makeTree('certs/'),
-      that.coreFS.makeTree('certs/linked/'),
       that.coreFS.makeTree('certs/linked/from/'),
       that.coreFS.makeTree('certs/linked/target/'),
       that.coreFS.makeTree('certs/pending/from/'),
@@ -126,17 +120,9 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheIn
         that.coreFS.makeTree('certs/linked/target/' + cert.target + '/'),
         that.coreFS.makeTree('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/', cert)
       ];
-      if (that.dal.name != 'fileDal') {
-        that.invalidateCache('toTarget', cert.target);
-        that.invalidateCache('fromPubkey', cert.from);
-      }
       yield that.coreFS.writeJSON('certs/linked/from/' + cert.from + '/' + cert.to + '/' + cert.block_number + '.json', cert);
       yield that.coreFS.writeJSON('certs/linked/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
       yield that.coreFS.writeJSON('certs/linked/from_uid/' + cert.from_uid + '/' + cert.to_uid + '/' + getCertID(cert) + '.json', cert);
-      if (that.dal.name != 'fileDal') {
-        that.invalidateCache('toTarget', cert.target);
-        that.invalidateCache('fromPubkey', cert.from);
-      }
       return cert;
     });
   };
@@ -147,16 +133,8 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheIn
         that.coreFS.makeTree('certs/pending/target/' + cert.target + '/'),
         that.coreFS.makeTree('certs/pending/from/' + cert.from + '/')
       ];
-      if (that.dal.name != 'fileDal') {
-        that.invalidateCache('toTarget', cert.target);
-        that.invalidateCache('fromPubkey', cert.from);
-      }
       yield that.coreFS.writeJSON('certs/pending/target/' + cert.target + '/' + getCertID(cert) + '.json', cert);
       yield that.coreFS.writeJSON('certs/pending/from/' + cert.from + '/' + getCertID(cert) + '.json', cert);
-      if (that.dal.name != 'fileDal') {
-        that.invalidateCache('toTarget', cert.target);
-        that.invalidateCache('fromPubkey', cert.from);
-      }
       return cert;
     });
   };
@@ -169,15 +147,9 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheIn
       var existsTarget = yield that.coreFS.exists(pendingTarget);
       if (existsTarget) {
         yield that.coreFS.remove(pendingTarget);
-        if (that.dal.name != 'fileDal') {
-          that.invalidateCache('toTarget', cert.target);
-        }
       }
       if (existsFrom) {
         yield that.coreFS.remove(pendingFromG);
-        if (that.dal.name != 'fileDal') {
-          that.invalidateCache('fromPubkey', cert.from);
-        }
       }
     });
   };
@@ -199,7 +171,4 @@ function CertDAL(rootPath, qioFS, parentCore, localDAL, rootDAL, considerCacheIn
     var sigHash = (sha1(cert.sig) + "").toUpperCase();
     return [cert.from, cert.target, cert.block, sigHash].join('-');
   }
-
-  // Cache facilities
-  AbstractCacheable.call(this, 'certDAL', rootDAL, considerCacheInvalidateByDefault);
 }

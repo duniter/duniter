@@ -2,18 +2,17 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
 var co = require('co');
 
 module.exports = IndicatorsDAL;
 
-function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL) {
+function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
   var that = this;
 
-  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
   this.init = () => {
     return co(function *() {

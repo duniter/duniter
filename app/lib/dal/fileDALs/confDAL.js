@@ -2,20 +2,19 @@
  * Created by cgeek on 22/08/15.
  */
 
-var AbstractCFS = require('./AbstractCFS');
 var Configuration = require('../../entity/configuration');
 var co = require('co');
 var _ = require('underscore');
 
 module.exports = ConfDAL;
 
-function ConfDAL(rootPath, qioFS, parentCore, localDAL) {
+function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
   var that = this;
 
-  AbstractCFS.call(this, rootPath, qioFS, parentCore, localDAL);
+  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
   var logger = require('../../../lib/logger')(this.dal.profile);
 

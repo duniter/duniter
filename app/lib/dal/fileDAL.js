@@ -3,10 +3,11 @@ var Q       = require('q');
 var co      = require('co');
 var _       = require('underscore');
 var sha1    = require('sha1');
+var path    = require('path');
+var levelup = require('levelup');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
 var Transaction = require('../entity/transaction');
-var Source = require('../entity/source');
 var constants = require('../constants');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
@@ -20,18 +21,23 @@ var IdentityDAL = require('./fileDALs/IdentityDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 var PeerDAL = require('./fileDALs/PeerDAL');
 var BlockDAL = require('./fileDALs/BlockDAL');
+var DividendDAL = require('./fileDALs/DividendDAL');
+var LevelDBStorage = require('./fileDALs/AbstractLevelDB');
+var CFSStorage = require('./fileDALs/AbstractCFS');
 
 module.exports = {
   memory: function(profile, subPath) {
     return getHomeFS(profile, subPath, true)
       .then(function(params) {
-        return Q(new FileDAL(profile, subPath, params.fs));
+        let levelupInstance = () => levelup({ db: require('memdown') });
+        return Q(new FileDAL(profile, params.home, "", params.fs, null, levelupInstance));
       });
   },
   file: function(profile, subPath) {
     return getHomeFS(profile, subPath, false)
       .then(function(params) {
-        return new FileDAL(profile, subPath, params.fs);
+        let levelupInstance = (pathToLevelDB) => levelup(pathToLevelDB, { db: require('leveldown') });
+        return new FileDAL(profile, params.home, "", params.fs, null, levelupInstance);
       });
   },
   FileDAL: FileDAL
@@ -61,30 +67,33 @@ function getUCoinHomePath(profile) {
   return userHome + '/.config/ucoin/' + profile;
 }
 
-function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
+function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) {
 
   var that = this;
 
+  let localHome = path.join(home, localDir);
+  let levelDBPath = path.join(localHome, 'leveldb');
+  let myDB = levelupInstance(levelDBPath);
+
   this.name = 'fileDal';
   this.profile = profile;
-  this.readFunctions = [];
-  this.writeFunctions = [];
 
-  var rootPath = getUCoinHomePath(profile) + (subPath ? '/' + subPath : '');
+  var rootPath = home;
 
   // DALs
-  this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS);
-  this.sourcesDAL = new SourcesDAL(rootPath, myFS, parentFileDAL && parentFileDAL.sourcesDAL.coreFS);
-  this.blockDAL = new BlockDAL(rootPath, myFS, parentFileDAL && parentFileDAL.blockDAL.coreFS, that);
-  this.txsDAL = new TxsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.txsDAL.coreFS, that);
-  this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that);
-  this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that);
-  this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that);
-  this.coresDAL = new CoresDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that);
-  this.linksDAL = new LinksDAL(rootPath, myFS, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, parentFileDAL, invalidateCache);
-  this.idtyDAL = new IdentityDAL(rootPath, myFS, parentFileDAL && parentFileDAL.idtyDAL.coreFS, that, parentFileDAL, invalidateCache);
-  this.certDAL = new CertDAL(rootPath, myFS, parentFileDAL && parentFileDAL.certDAL.coreFS, that, parentFileDAL, invalidateCache);
-  this.msDAL = new MembershipDAL(rootPath, myFS, parentFileDAL && parentFileDAL.msDAL.coreFS, that, parentFileDAL, invalidateCache);
+  this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
+  this.peerDAL = new PeerDAL(rootPath, myDB, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, LevelDBStorage);
+  this.sourcesDAL = new SourcesDAL(rootPath, myDB, parentFileDAL && parentFileDAL.sourcesDAL.coreFS, that, LevelDBStorage);
+  this.blockDAL = new BlockDAL(rootPath, myDB, parentFileDAL && parentFileDAL.blockDAL.coreFS, that, LevelDBStorage);
+  this.txsDAL = new TxsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.txsDAL.coreFS, that, LevelDBStorage);
+  this.indicatorsDAL = new IndicatorsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, LevelDBStorage);
+  this.statDAL = new StatDAL(rootPath, myDB, parentFileDAL && parentFileDAL.statDAL.coreFS, that, LevelDBStorage);
+  this.coresDAL = new CoresDAL(rootPath, myDB, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, LevelDBStorage);
+  this.linksDAL = new LinksDAL(rootPath, myDB, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, LevelDBStorage);
+  this.idtyDAL = new IdentityDAL(rootPath, myDB, parentFileDAL && parentFileDAL.idtyDAL.coreFS, that, LevelDBStorage);
+  this.certDAL = new CertDAL(rootPath, myDB, parentFileDAL && parentFileDAL.certDAL.coreFS, that, LevelDBStorage);
+  this.msDAL = new MembershipDAL(rootPath, myDB, parentFileDAL && parentFileDAL.msDAL.coreFS, that, LevelDBStorage);
+  this.udDAL = new DividendDAL(rootPath, myDB, parentFileDAL && parentFileDAL.udDAL.coreFS, that, LevelDBStorage);
 
   this.newDals = {
     'peerDAL': that.peerDAL,
@@ -115,7 +124,12 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.removeHome = function() {
-    return myFS.removeTree(rootPath);
+    return myFS.removeTree(localHome)
+      .catch(function(){
+        if (myDB.destroy) {
+          //return Q.nbind(myDB.destroy, myDB)(levelDBPath);
+        }
+      });
   };
 
   that.writeFileOfBlock = function(block) {
@@ -126,9 +140,12 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     return that.coresDAL.getCores();
   };
 
-  this.loadCore = function(core, invalidateCache) {
+  this.loadCore = function(core) {
     return co(function *() {
-      var theCore = require('./coreDAL')(profile, core.forkPointNumber, core.forkPointHash, myFS, that, invalidateCache);
+      let coreName = [core.forkPointNumber, core.forkPointHash].join('-');
+      let coreHome = home + '/branches/' + coreName;
+      yield myFS.makeTree(coreHome);
+      var theCore = require('./coreDAL')(profile, home, coreName, myFS, that, levelupInstance);
       yield theCore.init();
       return theCore;
     });
@@ -602,7 +619,10 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     return that.certDAL.getNotLinkedToTarget(hash)
       .then(function(certs){
         return _.chain(certs).
-          sortBy(function(c){ return -c.block; }).
+          sortBy(function(c){
+            //console.log(hash);
+            //console.log(certs);
+            return -c.block; }).
           value();
       });
   };
@@ -1020,25 +1040,8 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
     return that.txsDAL.addPending(tx);
   };
 
-  this.dropTxRecords = function() {
-    return myFS.removeTree(rootPath + '/txs/');
-  };
-
   this.saveUDInHistory = function(pubkey, ud) {
-    return myFS.makeTree(rootPath + '/ud_history/')
-      .then(function(){
-        return myFS.read(rootPath + '/ud_history/' + pubkey + '.json')
-          .then(function(data){
-            return JSON.parse(data);
-          });
-      })
-      .catch(function(){
-        return { history: [] };
-      })
-      .then(function(obj){
-        obj.history.push(new Source(ud).UDjson());
-        return myFS.write(rootPath + '/ud_history/' + pubkey + '.json', JSON.stringify(obj, null, ' '));
-      });
+    return that.udDAL.saveUDInHistory(pubkey, ud);
   };
 
   this.getTransactionsHistory = function(pubkey) {
@@ -1062,16 +1065,7 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
   };
 
   this.getUDHistory = function(pubkey, done) {
-    return myFS.makeTree(rootPath + '/ud_history/')
-      .then(function(){
-        return myFS.read(rootPath + '/ud_history/' + pubkey + '.json')
-          .then(function(data){
-            return JSON.parse(data);
-          });
-      })
-      .catch(function(){
-        return { history: [] };
-      })
+    return that.udDAL.getUDHistory(pubkey)
       .then(function(obj){
         return Q.all(obj.history.map(function(src) {
           var completeSrc = _.extend({}, src);
@@ -1131,13 +1125,13 @@ function FileDAL(profile, subPath, myFS, parentFileDAL, invalidateCache) {
 
   this.resetAll = function(done) {
     var files = ['stats', 'cores', 'current', 'conf'];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
     var files = ['stats', 'cores', 'current'];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 

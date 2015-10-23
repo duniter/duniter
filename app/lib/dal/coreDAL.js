@@ -4,17 +4,15 @@ var fileDAL = require('./fileDAL');
 var util = require('util');
 var _ = require('underscore');
 
-module.exports = function(profile, home, coreName, myFS, myDB, rootDAL, levelUpInstance) {
-  return new CoreDAL(profile, home, coreName, myFS, myDB, rootDAL, levelUpInstance);
+module.exports = function(profile, home, coreName, myFS, rootDAL, levelUpInstance, core, loki) {
+  return new CoreDAL(profile, home, coreName, myFS, rootDAL, levelUpInstance, core, loki);
 };
 
-function CoreDAL(profile, home, coreName, myFS, rootDAL, levelUpInstance) {
+function CoreDAL(profile, home, coreName, myFS, rootDAL, levelUpInstance, core, loki) {
 
-  var that = this;
+  let that = this;
 
-  fileDAL.FileDAL.call(this, profile, home, '/branches/' + coreName, myFS, rootDAL, levelUpInstance);
-
-  this.name = coreName;
+  fileDAL.FileDAL.call(this, profile, home, '/branches/' + coreName, myFS, rootDAL, levelUpInstance, coreName, core, loki);
 
   this.setRootDAL = function(dal) {
     rootDAL = dal;

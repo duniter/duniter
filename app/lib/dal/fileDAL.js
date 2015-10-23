@@ -24,13 +24,15 @@ var BlockDAL = require('./fileDALs/BlockDAL');
 var DividendDAL = require('./fileDALs/DividendDAL');
 var LevelDBStorage = require('./fileDALs/AbstractLevelDB');
 var CFSStorage = require('./fileDALs/AbstractCFS');
+var lokijs = require('lokijs');
 
 module.exports = {
   memory: function(profile) {
     return getHomeFS(profile, true)
       .then(function(params) {
         let levelupInstance = () => levelup({ db: require('memdown') });
-        return Q(new FileDAL(profile, params.home, "", params.fs, null, levelupInstance));
+        let loki = new lokijs('ucoin', { autosave: false });
+        return Q(new FileDAL(profile, params.home, "", params.fs, null, levelupInstance, 'fileDal', null, loki));
       });
   },
   file: function(profile, forConf) {
@@ -67,7 +69,7 @@ function getHomeFS(profile, isMemory) {
     });
 }
 
-function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) {
+function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, dalName, core, loki) {
 
   var that = this;
 
@@ -75,8 +77,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) 
   let levelDBPath = path.join(localHome, 'leveldb');
   let myDB = levelupInstance(levelDBPath);
 
-  this.name = 'fileDal';
+  this.name = dalName;
   this.profile = profile;
+  this.parentDAL = parentFileDAL;
+  this.core = core;
 
   var rootPath = home;
 
@@ -84,7 +88,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) 
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, CFSStorage);
   this.sourcesDAL = new SourcesDAL(rootPath, myDB, parentFileDAL && parentFileDAL.sourcesDAL.coreFS, that, LevelDBStorage);
-  this.blockDAL = new BlockDAL(rootPath, myDB, parentFileDAL && parentFileDAL.blockDAL.coreFS, that, LevelDBStorage);
+  this.blockDAL = new BlockDAL(that, loki);
   this.txsDAL = new TxsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.txsDAL.coreFS, that, LevelDBStorage);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, LevelDBStorage);
   this.statDAL = new StatDAL(rootPath, myDB, parentFileDAL && parentFileDAL.statDAL.coreFS, that, LevelDBStorage);
@@ -98,7 +102,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) 
   this.newDals = {
     'peerDAL': that.peerDAL,
     'sourcesDAL': that.sourcesDAL,
-    'blockDAL': that.blockDAL,
     'certDAL': that.certDAL,
     'txsDAL': that.txsDAL,
     'indicatorsDAL': that.indicatorsDAL,
@@ -182,7 +185,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) 
       let coreName = [core.forkPointNumber, core.forkPointHash].join('-');
       let coreHome = home + '/branches/' + coreName;
       yield myFS.makeTree(coreHome);
-      var theCore = require('./coreDAL')(profile, home, coreName, myFS, that, levelupInstance);
+      var theCore = require('./coreDAL')(profile, home, coreName, myFS, that, levelupInstance, core, loki);
       yield theCore.init();
       return theCore;
     });
@@ -932,9 +935,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance) 
           that.saveMemberships('active', block.actives),
           that.saveMemberships('leave', block.leavers)
         ]);
-      })
-      .then(function(){
-        return that.blockDAL.saveCurrent(block);
       })
       .then(function(){
         if (block.dividend) {

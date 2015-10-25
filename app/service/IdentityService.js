@@ -4,6 +4,7 @@ var _               = require('underscore');
 var blockchainDao   = require('../lib/blockchainDao');
 var globalValidator = require('../lib/globalValidator');
 var crypto          = require('../lib/crypto');
+var co = require('co');
 
 var DO_NOT_THROW_ABOUT_EXPIRATION = true;
 
@@ -71,12 +72,8 @@ function IdentityService (conf, dal) {
     fifo.push(function (cb) {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       certs = _.sortBy(certs, function(c){ return parseInt(c.block_number); });
-      var hasCert2 = false;
       certs.forEach(function(cert){
         logger.info('⬇ CERT %s block#%s', cert.from, cert.block_number);
-        if (cert.block_number == 2) {
-          hasCert2 = true;
-        }
       });
       async.waterfall([
         function (next) {
@@ -98,10 +95,32 @@ function IdentityService (conf, dal) {
             }, DO_NOT_THROW_ABOUT_EXPIRATION);
           }, next);
         },
+        function (next) {
+          co(function *() {
+            for (let i = 0; i < certs.length; i++) {
+              let cert = certs[i];
+              let basedBlock = yield dal.getBlock(cert.block_number);
+              if (cert.block_number == 0 && !basedBlock) {
+                basedBlock = {
+                  number: 0,
+                  hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
+                };
+              }
+              cert.block_hash = basedBlock.hash;
+            }
+          }).then(() => next()).catch(next);
+        },
         function (next){
           certs = _.filter(certs, function(cert){ return !cert.err; });
           async.forEachSeries(certs, function(cert, cb){
-            var mCert = new Certification({ pubkey: cert.from, sig: cert.sig, block_number: cert.block_number, target: obj.hash, to: idty.pubkey });
+            var mCert = new Certification({
+              pubkey: cert.from,
+              sig: cert.sig,
+              block_number: cert.block_number,
+              block_hash: cert.block_hash,
+              target: obj.hash,
+              to: idty.pubkey
+            });
             async.waterfall([
               function (next){
                 dal.existsCert(mCert).then(_.partial(next, null)).catch(next);

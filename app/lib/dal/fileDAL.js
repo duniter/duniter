@@ -95,14 +95,13 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   this.coresDAL = new CoresDAL(rootPath, myDB, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, LevelDBStorage);
   this.linksDAL = new LinksDAL(rootPath, myDB, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, LevelDBStorage);
   this.idtyDAL = new IdentityDAL(that, loki);
-  this.certDAL = new CertDAL(rootPath, myDB, parentFileDAL && parentFileDAL.certDAL.coreFS, that, LevelDBStorage);
+  this.certDAL = new CertDAL(that, loki);
   this.msDAL = new MembershipDAL(rootPath, myDB, parentFileDAL && parentFileDAL.msDAL.coreFS, that, LevelDBStorage);
   this.udDAL = new DividendDAL(rootPath, myDB, parentFileDAL && parentFileDAL.udDAL.coreFS, that, LevelDBStorage);
 
   this.newDals = {
     'peerDAL': that.peerDAL,
     'sourcesDAL': that.sourcesDAL,
-    'certDAL': that.certDAL,
     'txsDAL': that.txsDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
@@ -1011,10 +1010,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   };
 
   this.officializeCertification = function(cert) {
-    return that.certDAL.saveOfficial(cert)
-      .then(function(){
-        return that.certDAL.removeNotLinked(cert);
-      });
+    return that.certDAL.saveOfficial(cert);
   };
 
   this.listLocalPendingIdentities = function() {

@@ -101,15 +101,19 @@ function AbstractLoki(collection, fileDAL) {
 
   this.metaKey = () => metaKey(fileDAL.core);
 
-  this.lokiSave = (entity) => {
+  this.lokiExisting = (entity) => {
     let uniqueFindConditions = this.idKeys.map((key) => {
       let cond = {};
       cond[key] = entity[key];
       return cond;
     });
-    let existing = collection.find({
+    return collection.find({
       $and: uniqueFindConditions
     })[0];
+  };
+
+  this.lokiSave = (entity) => {
+    let existing = this.lokiExisting(entity);
     if (existing) {
       if (!fileDAL.parentDAL) {
         // Save in main branch: overrides main data

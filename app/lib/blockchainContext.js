@@ -429,6 +429,7 @@ function BlockchainContext(conf, dal) {
                   'number': block.number,
                   'time': block.medianTime,
                   'fingerprint': block.hash,
+                  'block_hash': block.hash,
                   'amount': block.dividend,
                   'consumed': 0
                 })).then(_.partial(callback, null)).catch(callback);
@@ -459,6 +460,7 @@ function BlockchainContext(conf, dal) {
                   'pubkey': output.pubkey,
                   'type': 'T',
                   'number': block.number,
+                  'block_hash': block.hash,
                   'fingerprint': txHash,
                   'amount': output.amount,
                   'consumed': 0

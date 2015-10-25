@@ -87,8 +87,8 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, CFSStorage);
-  this.sourcesDAL = new SourcesDAL(rootPath, myDB, parentFileDAL && parentFileDAL.sourcesDAL.coreFS, that, LevelDBStorage);
   this.blockDAL = new BlockDAL(that, loki);
+  this.sourcesDAL = new SourcesDAL(that, loki);
   this.txsDAL = new TxsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.txsDAL.coreFS, that, LevelDBStorage);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, LevelDBStorage);
   this.statDAL = new StatDAL(rootPath, myDB, parentFileDAL && parentFileDAL.statDAL.coreFS, that, LevelDBStorage);
@@ -101,7 +101,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
 
   this.newDals = {
     'peerDAL': that.peerDAL,
-    'sourcesDAL': that.sourcesDAL,
     'txsDAL': that.txsDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
@@ -1004,7 +1003,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   this.saveSource = function(src) {
     return (src.type == "D" ? that.saveUDInHistory(src.pubkey, src) : Q())
       .then(function(){
-        return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount);
+        return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash);
       });
   };
 

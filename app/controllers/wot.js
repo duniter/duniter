@@ -42,15 +42,14 @@ function WOTBinding (server) {
         for (let j = 0; j < certs.length; j++) {
           let cert = certs[j];
           if (!(excluding && cert.block <= excluding.number)) {
-            var res2 = yield Q.nbind(IdentityService.findIdentities, IdentityService)(cert.from);
-            var writtens = res2.written ? [res2.written] : [];
-            var nonWrittens = res2.nonWritten || [];
-            if (writtens.length > 0) {
-              cert.uids = [writtens[0].uid];
-              cert.isMember = writtens[0].member;
-              cert.wasMember = writtens[0].wasMember;
+            let member = yield IdentityService.getWrittenByPubkey(cert.from);
+            if (member) {
+              cert.uids = [member.uid];
+              cert.isMember = member.member;
+              cert.wasMember = member.wasMember;
             } else {
-              cert.uids = _(writtens).pluck('uid').concat(_(nonWrittens).pluck('uid'));
+              let potentials = yield IdentityService.getPendingFromPubkey(cert.from);
+              cert.uids = _(potentials).pluck('uid');
               cert.isMember = false;
               cert.wasMember = false;
             }

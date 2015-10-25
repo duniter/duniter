@@ -94,7 +94,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   this.statDAL = new StatDAL(rootPath, myDB, parentFileDAL && parentFileDAL.statDAL.coreFS, that, LevelDBStorage);
   this.coresDAL = new CoresDAL(rootPath, myDB, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, LevelDBStorage);
   this.linksDAL = new LinksDAL(rootPath, myDB, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, LevelDBStorage);
-  this.idtyDAL = new IdentityDAL(rootPath, myDB, parentFileDAL && parentFileDAL.idtyDAL.coreFS, that, LevelDBStorage);
+  this.idtyDAL = new IdentityDAL(that, loki);
   this.certDAL = new CertDAL(rootPath, myDB, parentFileDAL && parentFileDAL.certDAL.coreFS, that, LevelDBStorage);
   this.msDAL = new MembershipDAL(rootPath, myDB, parentFileDAL && parentFileDAL.msDAL.coreFS, that, LevelDBStorage);
   this.udDAL = new DividendDAL(rootPath, myDB, parentFileDAL && parentFileDAL.udDAL.coreFS, that, LevelDBStorage);
@@ -109,8 +109,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
     'statDAL': that.statDAL,
     'coresDAL': that.coresDAL,
     'linksDAL': that.linksDAL,
-    'msDAL': that.msDAL,
-    'idtyDAL': that.idtyDAL
+    'msDAL': that.msDAL
   };
 
   var currency = '';
@@ -597,29 +596,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
       });
   };
 
-  this.searchJustIdentities = function(search) {
-    return Q.all([
-      that.idtyDAL.getWhoIsOrWasMember(),
-      that.idtyDAL.getPendingIdentities()
-    ])
-      .then(function(res){
-        var idties = _.chain(res[0]).
-          where({ revoked: false }).
-          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
-          value();
-        var pendings = _.chain(res[1]).
-          where({ revoked: false }).
-          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
-          value();
-        var hashes = _.pluck(idties, 'hash');
-        pendings.forEach(function(pending){
-          if (hashes.indexOf(pending.hash) == -1) {
-            idties.push(pending);
-          }
-        });
-        return idties;
-      });
-  };
+  this.searchJustIdentities = (search) => co(function *() {
+    let found = yield that.idtyDAL.searchThoseMatching(search);
+    return found;
+  });
 
   this.certsToTarget = function(hash) {
     return that.certDAL.getToTarget(hash)
@@ -1042,7 +1022,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   };
 
   this.savePendingIdentity = function(idty) {
-    return that.idtyDAL.savePendingIdentity(idty);
+    return that.idtyDAL.saveIdentity(idty);
   };
 
   this.excludeIdentity = function(pubkey) {

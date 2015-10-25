@@ -264,7 +264,7 @@ function User (uid, options, node) {
   function post(uri, data, done) {
     var postReq = request.post({
       "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000*10
+      "timeout": 1000*100000
     }, function (err, res, body) {
       err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
       done(err, res, body);
@@ -273,7 +273,14 @@ function User (uid, options, node) {
   }
 
   function getVucoin() {
-    return Q.nfcall(vucoin, node.server.conf.ipv4, node.server.conf.port);
+    return Q.Promise(function(resolve, reject){
+      vucoin(node.server.conf.ipv4, node.server.conf.port, function(err, node) {
+        if (err) return reject(err);
+        resolve(node);
+      }, {
+        timeout: 1000*100000
+      });
+    });
   }
 
   function lookup(pubkey, done) {

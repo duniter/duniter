@@ -5,59 +5,22 @@
 var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
+var AbstractLoki = require('./AbstractLoki');
 
 module.exports = IdentityDAL;
 
-function IdentityDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
+function IdentityDAL(fileDAL, loki) {
 
   "use strict";
 
-  var that = this;
+  let collection = loki.getCollection('identities') || loki.addCollection('identities', { indices: ['uid', 'pubkey', 'timestamp', 'member', 'written'] });
+  let that = this;
+  AbstractLoki.call(this, collection, fileDAL);
 
-  // CFS facilities
-  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
+  this.idKeys = ['pubkey', 'uid', 'hash'];
+  this.metaProps = ['kick', 'leaving', 'member', 'wasMember', 'written', 'currentMSN', 'revoked'];
 
-  var cacheByPubkey = {};
-  var cacheByUID = {};
-  var cacheByHash = {};
-
-  this.cached = {
-  };
-
-  this.cachedLists = {
-  };
-
-  this.init = () => {
-    return co(function *() {
-      yield [
-        that.coreFS.makeTree('identities/'),
-        that.coreFS.makeTree('identities/published/'),
-        that.coreFS.makeTree('identities/published/uid/'),
-        that.coreFS.makeTree('identities/published/pubkey/'),
-        that.coreFS.makeTree('identities/hash/'),
-        that.coreFS.makeTree('identities/pending/')
-      ];
-      if (that.dal.name == 'fileDal') {
-        // TODO: not really proud of that, has to be refactored for more generic code
-        var publishedByPubkey = yield that.coreFS.listJSON('identities/published/pubkey/');
-        for (let i = 0; i < publishedByPubkey.length; i++) {
-          let idty = publishedByPubkey[i];
-          cacheByPubkey[idty.pubkey] = idty;
-          cacheByHash[getIdentityID(idty)] = idty;
-        }
-        var publishedByUID = yield that.coreFS.listJSON('identities/published/uid/');
-        for (let i = 0; i < publishedByUID.length; i++) {
-          let idty = publishedByUID[i];
-          cacheByUID[idty.uid] = idty;
-        }
-        var publishedByHash = yield that.coreFS.listJSON('identities/hash/');
-        for (let i = 0; i < publishedByHash.length; i++) {
-          let idty = publishedByHash[i];
-          cacheByHash[getIdentityID(idty)] = idty;
-        }
-      }
-    });
-  };
+  this.init = () => null;
 
   this.excludeIdentity = (pubkey) => {
     return co(function *() {
@@ -69,22 +32,12 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
     });
   };
 
-  this.savePendingIdentity = function(idty) {
-    return co(function *() {
-      yield that.coreFS.writeJSON('identities/pending/' + getIdentityID(idty), idty);
-      yield that.coreFS.writeJSON('identities/hash/' + getIdentityID(idty), idty);
-      // TODO: not really proud of that, has to be refactored for more generic code
-      if (that.dal.name == 'fileDal') {
-        cacheByHash[getIdentityID(idty)] = idty;
-      }
-    });
-  };
-
   this.newIdentity = function(idty, onBlockNumber) {
     idty.currentMSN = onBlockNumber;
     idty.member = true;
     idty.wasMember = true;
     idty.kick = false;
+    idty.written = true;
     return that.saveIdentity(idty);
   };
 
@@ -93,6 +46,7 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
       var idty = yield that.getFromPubkey(pubkey);
       idty.currentMSN = onBlockNumber;
       idty.member = true;
+      idty.wasMember = true;
       idty.leaving = false;
       // TODO: previously had
       //idty.kick = false;
@@ -126,78 +80,50 @@ function IdentityDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
   };
 
   this.getFromPubkey = function(pubkey) {
-    // TODO: not really proud of that, has to be refactored for more generic code
-    if (that.dal.name == 'fileDal') {
-      if (cacheByPubkey[pubkey]) {
-        return Q(cacheByPubkey[pubkey]);
-      }
-    }
-    return that.coreFS.readJSON('identities/published/pubkey/' + pubkey + '.json');
+    return that.lokiFindOne({
+      pubkey: pubkey
+    }, {
+      wasMember: true
+    }, that.IMMUTABLE_FIELDS);
   };
 
   this.getFromUID = function(uid) {
-    // TODO: not really proud of that, has to be refactored for more generic code
-    if (that.dal.name == 'fileDal') {
-      if (cacheByUID[uid]) {
-        return Q(cacheByUID[uid]);
-      }
-    }
-    return that.coreFS.readJSON('identities/published/uid/' + uid + '.json');
+    return that.lokiFindOne({
+      uid: uid
+    }, {
+      wasMember: true
+    }, that.IMMUTABLE_FIELDS);
   };
 
   this.getByHash = function(hash) {
-    // TODO: not really proud of that, has to be refactored for more generic code
-    if (that.dal.name == 'fileDal') {
-      if (cacheByHash[hash]) {
-        return Q(cacheByHash[hash]);
-      }
-    }
-    return that.coreFS.readJSON('identities/hash/' + hash);
-  };
-
-  this.saveIdentity = function(idty) {
-    return co(function *() {
-      yield that.coreFS.writeJSON('identities/published/pubkey/' + idty.pubkey + '.json', idty);
-      yield that.coreFS.writeJSON('identities/published/uid/' + idty.uid + '.json', idty);
-      yield that.coreFS.writeJSON('identities/hash/' + getIdentityID(idty), idty);
-      yield that.coreFS.remove('identities/pending/' + getIdentityID(idty)).catch(() => null);
-      // TODO: not really proud of that, has to be refactored for more generic code
-      if (that.dal.name == 'fileDal') {
-        cacheByPubkey[idty.pubkey] = idty;
-        cacheByUID[idty.uid] = idty;
-        cacheByHash[getIdentityID(idty)] = idty;
-      }
+    return that.lokiFindOne({
+      hash: hash
     });
   };
 
+  this.saveIdentity = (idty) => this.lokiSave(idty);
+
   this.getWhoIsOrWasMember = function() {
-    return co(function *() {
-      // TODO: not really proud of that, has to be refactored for more generic code
-      if (that.dal.name == 'fileDal') {
-        return _.values(cacheByPubkey);
-      }
-      return that.coreFS.listJSON('identities/published/pubkey/');
+    return that.lokiFindInAll({
+      wasMember: true
     });
   };
 
   this.getPendingIdentities = function() {
-    return co(function *() {
-      var idties = [];
-      var tmpIdities = yield that.coreFS.listJSON('identities/pending/');
-      for (var i = 0; i < tmpIdities.length; i++) {
-        var idty = tmpIdities[i];
-        var foundMember = yield that.getFromPubkey(idty.pubkey);
-        if (!foundMember) {
-          idties.push(idty);
-        }
-      }
-      return idties;
+    return that.lokiFindInAll({
+      wasMember: false
     });
   };
 
-  this.listLocalPending = () => that.coreFS.listJSONLocal('identities/pending/');
+  this.listLocalPending = () => Q([]);
 
-  function getIdentityID(idty) {
-    return [idty.hash].join('-');
-  }
+  this.searchThoseMatching = function(search) {
+    return that.lokiFind({
+      $or: [{
+        pubkey: { $regex: new RegExp(search, 'i') }
+      },{
+        uid: { $regex: new RegExp(search, 'i') }
+      }]
+    });
+  };
 }

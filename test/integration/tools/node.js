@@ -18,6 +18,7 @@ var UNTIL_TIMEOUT = 115000;
 
 function Node (dbName, options) {
 
+  var logger = require('../../../app/lib/logger')(dbName);
   var that = this;
   var started = false;
   that.server = null;
@@ -99,7 +100,7 @@ function Node (dbName, options) {
         BlockchainService.prove(block, sigFunc, difficulty, next);
       },
       function (provenBlock, next){
-        //console.log(provenBlock.getRawSigned());
+        logger.debug(provenBlock.getRawSigned());
         post('/blockchain/block', {
           "block": provenBlock.getRawSigned()
         }, next);

@@ -18,6 +18,8 @@ function IdentityService (conf, dal) {
   var Block         = require('../../app/lib/entity/block');
   var Identity      = require('../../app/lib/entity/identity');
   var Certification = require('../../app/lib/entity/certification');
+
+  this.dal = dal;
   
   var fifo = async.queue(function (task, callback) {
     task(callback);
@@ -48,15 +50,12 @@ function IdentityService (conf, dal) {
     });
   };
 
-  this.findIdentities = function(pubkey, done) {
-    async.parallel({
-      written: function (next) {
-        dal.getWritten(pubkey, next);
-      },
-      nonWritten: function (next) {
-        dal.getNonWritten(pubkey).then(_.partial(next, null)).catch(next);
-      }
-    }, done);
+  this.getWrittenByPubkey = function(pubkey) {
+    return dal.getWritten(pubkey);
+  };
+
+  this.getPendingFromPubkey = function(pubkey) {
+    return dal.getNonWritten(pubkey);
   };
 
   /**
@@ -168,7 +167,7 @@ function IdentityService (conf, dal) {
         function (existing, next){
           if (existing) {
             // Modify
-            if (existing.written) {
+            if (existing.wasMember) {
               next('This identity cannot be revoked since it is present in the blockchain.');
             } else {
               existing.revoked = true;

@@ -319,6 +319,8 @@ function BlockchainContext(conf, dal) {
           source: cert.from,
           target: cert.to,
           timestamp: block.medianTime,
+          block_number: block.number,
+          block_hash: block.hash,
           obsolete: false
         })).then(_.partial(callback, null)).catch(callback);
     }, done);

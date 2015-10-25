@@ -93,7 +93,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, LevelDBStorage);
   this.statDAL = new StatDAL(rootPath, myDB, parentFileDAL && parentFileDAL.statDAL.coreFS, that, LevelDBStorage);
   this.coresDAL = new CoresDAL(rootPath, myDB, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, LevelDBStorage);
-  this.linksDAL = new LinksDAL(rootPath, myDB, parentFileDAL && parentFileDAL.linksDAL.coreFS, that, LevelDBStorage);
+  this.linksDAL = new LinksDAL(that, loki);
   this.idtyDAL = new IdentityDAL(that, loki);
   this.certDAL = new CertDAL(that, loki);
   this.msDAL = new MembershipDAL(rootPath, myDB, parentFileDAL && parentFileDAL.msDAL.coreFS, that, LevelDBStorage);
@@ -107,7 +107,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
     'coresDAL': that.coresDAL,
-    'linksDAL': that.linksDAL,
     'msDAL': that.msDAL
   };
 
@@ -390,7 +389,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   };
 
   this.getObsoletesFromTo = function(from, to) {
-    return that.linksDAL.getObsoletes()
+    return that.linksDAL.getObsoleteLinksFromTo()
       .then(function(links){
         return _.chain(links).
           where({ target: to, source: from }).

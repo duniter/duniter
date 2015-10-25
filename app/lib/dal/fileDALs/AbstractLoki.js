@@ -7,9 +7,16 @@ var _ = require('underscore');
 
 module.exports = AbstractLoki;
 
-function AbstractLoki(collection, fileDAL) {
+function AbstractLoki(collection, fileDAL, view) {
 
   "use strict";
+
+  function find(conditons) {
+    if (view) {
+      return view.branchResultset().find(conditons).data();
+    }
+    return collection.find(conditons);
+  }
 
   let that = this;
   let cores = [], p = fileDAL;
@@ -47,11 +54,11 @@ function AbstractLoki(collection, fileDAL) {
         $and: [baseConditions, metaConditions]
       };
     }
-    let found = collection.find(conditions);
+    let found = find(conditions);
     let searchFailed = false;
     if (found.length == 0) {
       searchFailed = true;
-      found = collection.find(baseConditions);
+      found = find(baseConditions);
     }
     found = found.map((idty) => {
       cores.forEach(function(core){
@@ -67,7 +74,7 @@ function AbstractLoki(collection, fileDAL) {
   };
 
   this.lokiFindInAll = function(metaConditions) {
-    let found = collection.find();
+    let found = find();
     found = found.map((idty) => {
       cores.forEach(function(core){
         let meta = idty.metaData[metaKey(core)];
@@ -107,7 +114,7 @@ function AbstractLoki(collection, fileDAL) {
       cond[key] = entity[key];
       return cond;
     });
-    return collection.find({
+    return find({
       $and: uniqueFindConditions
     })[0];
   };

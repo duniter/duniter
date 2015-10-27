@@ -96,7 +96,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   this.linksDAL = new LinksDAL(that, loki);
   this.idtyDAL = new IdentityDAL(that, loki);
   this.certDAL = new CertDAL(that, loki);
-  this.msDAL = new MembershipDAL(rootPath, myDB, parentFileDAL && parentFileDAL.msDAL.coreFS, that, LevelDBStorage);
+  this.msDAL = new MembershipDAL(that, loki);
   this.udDAL = new DividendDAL(rootPath, myDB, parentFileDAL && parentFileDAL.udDAL.coreFS, that, LevelDBStorage);
 
   this.newDals = {
@@ -105,8 +105,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
-    'coresDAL': that.coresDAL,
-    'msDAL': that.msDAL
+    'coresDAL': that.coresDAL
   };
 
   var currency = '';
@@ -475,6 +474,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
       });
   };
 
+  // TODO: this should definitely be reduced by removing fillInMembershipsOfIdentity
   this.getWritten = function(pubkey, done) {
     return that.fillInMembershipsOfIdentity(
       that.idtyDAL.getFromPubkey(pubkey)

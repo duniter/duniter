@@ -2,76 +2,87 @@
  * Created by cgeek on 22/08/15.
  */
 
-var co = require('co');
+var Q = require('q');
+var _ = require('underscore');
+var AbstractLoki = require('./AbstractLoki');
 
 module.exports = MembershipDAL;
 
-function MembershipDAL(rootPath, db, parentCore, localDAL, AbstractStorage) {
+function MembershipDAL(fileDAL, loki) {
 
   "use strict";
 
-  var that = this;
+  let collection = loki.getCollection('memberships') || loki.addCollection('memberships', { indices: ['membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'written', 'signature'] });
+  let blockCollection = loki.getCollection('blocks');
+  let current = blockCollection.chain().find({ fork: false }).simplesort('number', true).limit(1).data()[0];
+  let blocks = [], p = fileDAL;
+  let branchView;
+  while (p) {
+    if (p.core) {
+      blocks.push(p.core);
+    }
+    p = p.parentDAL;
+  }
+  let conditions = blocks.map((b) => {
+    return {
+      $and: [{
+        blockNumber: b.forkPointNumber
+      }, {
+        blockHash: b.forkPointHash
+      }]
+    };
+  });
+  conditions.unshift({
+    blockNumber: { $lte: current ? current.number : -1 }
+  });
+  conditions.unshift({
+    $and: [{
+      blockNumber: '0'
+    }, {
+      blockHash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
+    }]
+  });
+  branchView = collection.addDynamicView(['branch', fileDAL.name].join('_'));
+  branchView.applyFind({ '$or': conditions });
+  branchView.conditions = conditions;
 
-  // CFS facilities
-  AbstractStorage.call(this, rootPath, db, parentCore, localDAL);
+  AbstractLoki.call(this, collection, fileDAL, branchView);
 
-  this.cachedLists = {
-  };
+  this.idKeys = ['issuer', 'signature'];
+  this.metaProps = ['written'];
 
-  this.init = () => {
-    return co(function *() {
-      yield [
-        that.coreFS.makeTree('ms/'),
-        that.coreFS.makeTree('ms/written/'),
-        that.coreFS.makeTree('ms/pending/'),
-        that.coreFS.makeTree('ms/pending/in/'),
-        that.coreFS.makeTree('ms/pending/out/')
-      ];
-    });
-  };
+  this.init = () => null;
 
-  this.getMembershipOfIssuer = (ms) => {
-    return co(function *() {
-      try {
-        return that.coreFS.readJSON('ms/written/' + ms.issuer + '/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json');
-      } catch (e) {
-        return that.coreFS.readJSON('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json');
-      }
-    });
-  };
+  this.getMembershipOfIssuer = (ms) => Q(this.lokiExisting(ms));
 
-  this.getMembershipsOfIssuer = (issuer) => {
-    return co(function *() {
-      var mssIN = yield that.coreFS.listJSON('ms/written/' + issuer + '/in/');
-      var mssOUT = yield that.coreFS.listJSON('ms/written/' + issuer + '/out/');
-      return mssIN.concat(mssOUT);
-    });
-  };
+  this.getMembershipsOfIssuer = (issuer) => this.lokiFind({
+    issuer: issuer
+  });
 
-  this.getPendingLocal = () => {
-    return co(function *() {
-      var mssIN = yield that.coreFS.listJSONLocal('ms/pending/in/');
-      var mssOUT = yield that.coreFS.listJSONLocal('ms/pending/out/');
-      return mssIN.concat(mssOUT);
-    });
-  };
+  this.getPendingLocal = () => Q([]);
 
-  this.getPendingIN = () => that.coreFS.listJSON('ms/pending/in/');
-  this.getPendingOUT = () => that.coreFS.listJSON('ms/pending/out/');
+  this.getPendingIN = () => this.lokiFind({
+    membership: 'IN'
+  },{
+    written: false
+  });
+
+  this.getPendingOUT = () => this.lokiFind({
+    membership: 'OUT'
+  },{
+    written: false
+  });
 
   this.saveOfficialMS = (type, ms) => {
-    return co(function *() {
-      yield that.coreFS.makeTree('ms/written/' + ms.issuer + '/' + type);
-      yield that.coreFS.writeJSON('ms/written/' + ms.issuer + '/' + type + '/' + getMSID(ms) + '.json', ms);
-      yield that.coreFS.remove('ms/pending/' + type + '/' + getMSID(ms) + '.json').catch(() => null);
-    });
+    let obj = _.extend({}, ms);
+    obj.membership = type.toUpperCase();
+    obj.written = true;
+    return this.lokiSave(_.pick(obj, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'written', 'signature'));
   };
 
   this.savePendingMembership = (ms) => {
-    return that.coreFS.writeJSON('ms/pending/' + ms.membership.toLowerCase() + '/' + getMSID(ms) + '.json', ms);
+    ms.membership = ms.membership.toUpperCase();
+    ms.written = false;
+    return this.lokiSave(_.pick(ms, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'written', 'signature'));
   };
-
-  function getMSID(ms) {
-    return [ms.membership, ms.issuer, ms.number, ms.hash].join('-');
-  }
 }

@@ -1,98 +1,110 @@
 /**
  * Created by cgeek on 22/08/15.
  */
-
 var co = require('co');
+var Q = require('q');
+var _ = require('underscore');
+var AbstractLoki = require('./AbstractLoki');
 
 module.exports = TxsDAL;
 
-function TxsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
+function TxsDAL(fileDAL, loki) {
 
   "use strict";
 
-  var that = this;
+  let that = this;
+  let collection = loki.getCollection('txs') || loki.addCollection('txs', { indices: ['hash', 'block_number', 'written', 'signature', 'recipients'] });
+  let blockCollection = loki.getCollection('blocks');
+  let current = blockCollection.chain().find({ fork: false }).simplesort('number', true).limit(1).data()[0];
+  let blocks = [], p = fileDAL;
+  let branchView;
+  while (p) {
+    if (p.core) {
+      blocks.push(p.core);
+    }
+    p = p.parentDAL;
+  }
+  let conditions = blocks.map((b) => {
+    return {
+      block_number: b.forkPointNumber
+    };
+  });
+  conditions.unshift({
+    block_number: { $lte: current ? current.number : -1 }
+  });
+  branchView = collection.addDynamicView(['branch', fileDAL.name].join('_'));
+  branchView.applyFind({ '$or': conditions });
+  branchView.conditions = conditions;
 
-  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
+  AbstractLoki.call(this, collection, fileDAL, branchView);
 
-  this.init = () => {
-    return co(function *() {
-      yield [
-        that.coreFS.makeTree('txs/'),
-        that.coreFS.makeTree('txs/linked/'),
-        that.coreFS.makeTree('txs/linked/hash/'),
-        that.coreFS.makeTree('txs/linked/issuer/'),
-        that.coreFS.makeTree('txs/linked/recipient/'),
-        that.coreFS.makeTree('txs/pending/'),
-        that.coreFS.makeTree('txs/pending/hash/'),
-        that.coreFS.makeTree('txs/pending/issuer/'),
-        that.coreFS.makeTree('txs/pending/recipient/')
-      ];
+  this.idKeys = ['hash', 'block_number'];
+  this.metaProps = ['written', 'removed'];
+
+  this.init = () => null;
+
+  this.getAllPending = () =>
+    this.lokiFindInAll({
+    written: false,
+    removed: false
+  });
+
+  this.getTX = (hash) => this.lokiFindOne({
+    hash: hash
+  }, null, this.IMMUTABLE_FIELDS);
+
+  this.removeTX = (hash) => co(function *() {
+    let tx = yield that.lokiFindOne({
+      hash: hash
     });
-  };
-
-  this.getAllPending = () => that.coreFS.listJSON('txs/pending/hash/');
-
-  this.getTX = (hash) => {
-    return that.coreFS.readJSON('txs/linked/hash/' + hash + '.json')
-      .catch(function(){
-        return that.coreFS.readJSON('txs/pending/hash/' + hash + '.json');
-      })
-      .catch(function(){
-        return null;
-      });
-  };
-
-  this.removeTX = (hash) => that.coreFS.remove('txs/pending/hash/' + hash + '.json').catch(() => null);
+    if (tx) {
+      tx.removed = true;
+      return that.lokiSave(tx);
+    }
+    return Q(tx);
+  });
 
   this.addLinked = (tx) => {
-    return co(function *() {
-      var hash = tx.getHash(true);
-      var issuers = tx.issuers;
-      var recipients = tx.outputs.map(function(out) {
-        return out.match('(.*):')[1];
-      });
-      yield [
-        that.coreFS.writeJSON('txs/linked/hash/' + hash + '.json', tx)
-      ]
-        .concat(issuers.map(function(issuer) {
-          return writeForPubkey('txs/linked/issuer/' + issuer + '/', hash, tx);
-        }))
-
-        .concat(recipients.map(function(recipient) {
-          return writeForPubkey('txs/linked/recipient/' + recipient + '/', hash, tx);
-        }));
+    tx.written = true;
+    tx.removed = false;
+    tx.hash = tx.getHash(true);
+    tx.recipients = tx.outputs.map(function(out) {
+      return out.match('(.*):')[1];
     });
+    return that.lokiSave(tx);
   };
 
   this.addPending = (tx) => {
-    return co(function *() {
-      var hash = tx.getHash(true);
-      var issuers = tx.issuers;
-      var recipients = tx.outputs.map(function(out) {
-        return out.match('(.*):')[1];
-      });
-      yield [
-        that.coreFS.writeJSON('txs/pending/hash/' + hash + '.json', tx)
-      ].concat(issuers.map(function(issuer) {
-          return writeForPubkey('txs/pending/issuer/' + issuer + '/', hash, tx);
-        })).concat(recipients.map(function(recipient) {
-          return writeForPubkey('txs/pending/recipient/' + recipient + '/', hash, tx);
-        }));
+    tx.written = false;
+    tx.removed = false;
+    tx.hash = tx.getHash(true);
+    tx.recipients = tx.outputs.map(function(out) {
+      return out.match('(.*):')[1];
     });
+    return this.lokiSave(tx);
   };
 
-  function writeForPubkey(path, fileName, tx) {
-    return co(function *() {
-      yield that.coreFS.makeTree(path);
-      return that.coreFS.writeJSON(path + fileName + '.json', tx);
-    });
-  }
+  this.getLinkedWithIssuer = (pubkey) => this.lokiFind({
+    issuers: { $contains: pubkey }
+  },{
+    written: true
+  });
 
-  this.getLinkedWithIssuer = (pubkey) => this.coreFS.listJSON('txs/linked/issuer/' + pubkey + '/');
+  this.getLinkedWithRecipient = (pubkey) => this.lokiFind({
+    recipients: { $contains: pubkey }
+  },{
+    written: true
+  });
 
-  this.getLinkedWithRecipient = (pubkey) => this.coreFS.listJSON('txs/linked/recipient/' + pubkey + '/');
+  this.getPendingWithIssuer = (pubkey) => this.lokiFind({
+    issuers: { $contains: pubkey }
+  },{
+    written: false
+  });
 
-  this.getPendingWithIssuer = (pubkey) => this.coreFS.listJSON('txs/pending/issuer/' + pubkey + '/');
-
-  this.getPendingWithRecipient = (pubkey) => this.coreFS.listJSON('txs/pending/recipient/' + pubkey + '/');
+  this.getPendingWithRecipient = (pubkey) => this.lokiFind({
+    recipients: { $contains: pubkey }
+  },{
+    written: false
+  });
 }

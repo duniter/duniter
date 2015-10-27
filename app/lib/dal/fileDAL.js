@@ -89,7 +89,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, CFSStorage);
   this.blockDAL = new BlockDAL(that, loki);
   this.sourcesDAL = new SourcesDAL(that, loki);
-  this.txsDAL = new TxsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.txsDAL.coreFS, that, LevelDBStorage);
+  this.txsDAL = new TxsDAL(that, loki);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myDB, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, LevelDBStorage);
   this.statDAL = new StatDAL(rootPath, myDB, parentFileDAL && parentFileDAL.statDAL.coreFS, that, LevelDBStorage);
   this.coresDAL = new CoresDAL(rootPath, myDB, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, LevelDBStorage);
@@ -101,7 +101,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, levelupInstance, 
 
   this.newDals = {
     'peerDAL': that.peerDAL,
-    'txsDAL': that.txsDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,

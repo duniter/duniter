@@ -135,6 +135,9 @@ function AbstractLoki(collection, fileDAL, view) {
       if (fileDAL.parentDAL) {
         entity.metaData[that.metaKey()] = _.pick(entity, this.metaProps);
       }
+      _.pluck(entity, this.metaProps).forEach(function(metaProp){
+        entity[metaProp] = false;
+      });
       collection.insert(entity);
     }
     return Q(entity);

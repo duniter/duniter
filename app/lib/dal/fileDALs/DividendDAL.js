@@ -22,7 +22,7 @@ function DividendDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
       .then((res) => res || { history: [] })
       .catch(() => { return { history: [] }; });
     obj.history.push(new Source(ud).UDjson());
-    return that.coreFS.writeJSON('/ud_history/' + pubkey + '.json');
+    return that.coreFS.writeJSON('/ud_history/' + pubkey + '.json', obj);
   });
 
   this.getUDHistory = (pubkey) => this.coreFS.readJSON('/ud_history/' + pubkey + '.json').catch(() => { return { history: [] }; });

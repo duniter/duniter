@@ -7,9 +7,13 @@ var _ = require('underscore');
 
 module.exports = AbstractLoki;
 
-function AbstractLoki(collection, fileDAL, view) {
+function AbstractLoki(collection, fileDAL, viewFields, loki) {
 
   "use strict";
+
+  let that = this;
+  let cores = getCores();
+  let view = getView();
 
   function find(conditons) {
     if (view) {
@@ -17,16 +21,6 @@ function AbstractLoki(collection, fileDAL, view) {
     }
     return collection.find(conditons);
   }
-
-  let that = this;
-  let cores = [], p = fileDAL;
-  while (p) {
-    if (p.core) {
-      cores.push(p.core);
-    }
-    p = p.parentDAL;
-  }
-  cores = _.sortBy(cores, (b) => b.forkPointNumber);
 
   this.IMMUTABLE_FIELDS = true;
 
@@ -142,4 +136,51 @@ function AbstractLoki(collection, fileDAL, view) {
     }
     return Q(entity);
   };
+
+  function getCores() {
+    let theCores = [], p = fileDAL;
+    while (p) {
+      if (p.core) {
+        theCores.push(p.core);
+      }
+      p = p.parentDAL;
+    }
+    return _.sortBy(theCores, (b) => b.forkPointNumber);
+  }
+
+  function getView() {
+    let branchView;
+    if (viewFields && loki) {
+      let blockCollection = loki.getCollection('blocks');
+      let current = blockCollection.chain().find({ fork: false }).simplesort('number', true).limit(1).data()[0];
+      let conditions = cores.map((b) => {
+        let objNumber = {}, objHash = {};
+        objNumber[viewFields.block_number] = b.forkPointNumber;
+        objHash[viewFields.block_hash] = b.forkPointHash;
+        if (viewFields.block_number && viewFields.block_hash) {
+          return { $and: [objNumber, objHash] };
+        } else if (viewFields.block_hash) {
+          return objHash;
+        } else {
+          return objNumber;
+        }
+      });
+      if (!current) {
+        conditions.unshift({
+          $and: [{
+            block_number: 0
+          }, {
+            block_hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
+          }]
+        });
+      }
+      conditions.unshift({
+        block_number: { $lte: current ? current.number : -1 }
+      });
+      branchView = collection.addDynamicView(['branch', fileDAL.name].join('_'));
+      branchView.applyFind({ '$or': conditions });
+      branchView.conditions = conditions;
+    }
+    return branchView;
+  }
 }

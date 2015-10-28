@@ -14,29 +14,10 @@ function TxsDAL(fileDAL, loki) {
 
   let that = this;
   let collection = loki.getCollection('txs') || loki.addCollection('txs', { indices: ['hash', 'block_number', 'written', 'signature', 'recipients'] });
-  let blockCollection = loki.getCollection('blocks');
-  let current = blockCollection.chain().find({ fork: false }).simplesort('number', true).limit(1).data()[0];
-  let blocks = [], p = fileDAL;
-  let branchView;
-  while (p) {
-    if (p.core) {
-      blocks.push(p.core);
-    }
-    p = p.parentDAL;
-  }
-  let conditions = blocks.map((b) => {
-    return {
-      block_number: b.forkPointNumber
-    };
-  });
-  conditions.unshift({
-    block_number: { $lte: current ? current.number : -1 }
-  });
-  branchView = collection.addDynamicView(['branch', fileDAL.name].join('_'));
-  branchView.applyFind({ '$or': conditions });
-  branchView.conditions = conditions;
 
-  AbstractLoki.call(this, collection, fileDAL, branchView);
+  AbstractLoki.call(this, collection, fileDAL, {
+    block_number: 'block_number'
+  }, loki);
 
   this.idKeys = ['hash', 'block_number'];
   this.metaProps = ['written', 'removed'];

@@ -127,7 +127,6 @@ function AbstractLoki(collection, fileDAL, viewFields, loki) {
         // Save in fork branch: overrides meta data
         existing.metaData[that.metaKey()] = _.pick(entity, this.metaProps);
       }
-      console.log(existing);
       collection.update(existing);
     } else {
       entity.metaData = {};
@@ -137,7 +136,6 @@ function AbstractLoki(collection, fileDAL, viewFields, loki) {
       _.pluck(entity, this.metaProps).forEach(function(metaProp){
         entity[metaProp] = false;
       });
-      console.log(entity);
       collection.insert(entity);
     }
     return Q(entity);
@@ -151,7 +149,8 @@ function AbstractLoki(collection, fileDAL, viewFields, loki) {
       }
       p = p.parentDAL;
     }
-    return _.sortBy(theCores, (b) => b.forkPointNumber);
+    return _.sortBy(theCores, (b) =>
+      b.forkPointNumber);
   }
 
   function getView() {

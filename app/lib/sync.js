@@ -7,12 +7,14 @@ var superagent       = require("superagent");
 var sha1             = require('sha1');
 var moment           = require('moment');
 var vucoin           = require('vucoin');
+var lokijs           = require('lokijs');
 var dos2unix         = require('./dos2unix');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
 var rawer            = require('../lib/rawer');
 var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
+var BlockDAL         = require('../lib/dal/fileDALs/BlockDAL');
 var multimeter = require('multimeter');
 
 var CONST_BLOCKS_CHUNK = 500;
@@ -45,14 +47,17 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
     timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
-  this.sync = (to, nocautious, done) => {
+  this.sync = (to, nocautious) => {
     var cautious = !nocautious, logInterval;
     logger.info('Connecting remote host...');
     return co(function *() {
       var node = yield getVucoin(host, port, vucoinOptions);
       logger.info('Sync started.');
 
-      var lastSavedNumber = yield dal.getLastSavedBlockFileNumber();
+      let loki = new lokijs('download', { autosave: false });
+      let downloadedDAL = new BlockDAL({}, loki);
+      downloadedDAL.setConf({ branchesWindowSize: 0 });
+      var lastSavedNumber = yield server.dal.getLastSavedBlockFileNumber();
       var lCurrent = yield dal.getCurrentBlockOrNull();
 
       //============
@@ -127,7 +132,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
               var blocks = yield Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0]);
               watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
               for (let i = 0; i < blocks.length; i++) {
-                yield server.dal.saveBlockInFile(blocks[i], false);
+                yield downloadedDAL.saveBlock(blocks[i]);
               }
             })
               // Resolve the promise
@@ -143,7 +148,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         let range = yield toApply[i].promise;
         // Apply downloaded blocks
         for (var j = range[0]; j < range[1] + 1; j++) {
-          yield server.dal.getBlock(j).then((block) => applyGivenBlock(cautious, remoteNumber)(block));
+          yield downloadedDAL.getBlock(j).then((block) => applyGivenBlock(cautious, remoteNumber)(block));
         }
       }
       yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
@@ -187,7 +192,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       .then(() => {
         watcher.end();
         logger.info('Sync finished.');
-        done();
       })
       .catch((err) => {
         if (logInterval) {
@@ -195,8 +199,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         }
         err && watcher.writeStatus(err.message || String(err));
         watcher.end();
-        logger.info('Sync finished.');
-        done(err);
+        throw err;
       });
   };
 
@@ -236,7 +239,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         // Enables again branching for the lasts blocks
         conf.branchesWindowSize = initialForkSize;
       }
-      return BlockchainService.submitBlock(block, cautious);
+      return BlockchainService.submitBlock(_.omit(block, '$loki', 'meta'), cautious);
     };
   }
 

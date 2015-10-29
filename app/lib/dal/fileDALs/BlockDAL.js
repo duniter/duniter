@@ -23,22 +23,38 @@ function BlockDAL(fileDAL, loki) {
   this.blocksDB = blocksDB;
   this.collection = collection;
 
-  this.getLastSavedBlockFileNumber = () => Q(collection.chain().simplesort('number', true).limit(1).data()[0]);
+  this.getLastSavedBlockFileNumber = () => {
+    let last = collection.chain().simplesort('number', true).limit(1).data()[0];
+    if (last) return Q(last.number);
+    return Q(-1);
+  };
+
+  let conf;
+
+  this.setConf = (conf2) => conf = conf2;
 
   this.saveBlock = (block) => {
-    _.extend(block, { fork: !!fileDAL.parentDAL });
-    let existing = collection.find({
-      $and: [{
-        number: block.number
-      }, {
-        hash: block.hash
-      }]
-    })[0];
-    if (existing) {
-      existing = _.extend(existing, block);
-      collection.update(existing);
-    } else {
+    if (conf && conf.branchesWindowSize == 0) {
+      block.fork = false;
+      //console.log('--> MAIN -->', _.pick(block, 'number', 'hash'));
       collection.insert(block);
+    } else {
+      block.fork = !!fileDAL.parentDAL;
+      let existing;
+      existing = collection.find({
+        $and: [{
+          number: block.number
+        }, {
+          hash: block.hash
+        }]
+      })[0];
+      if (existing) {
+        existing.fork = block.fork;
+        collection.update(existing);
+      } else {
+        //console.log('--> BRAN -->', _.pick(block, 'number', 'hash'));
+        collection.insert(block);
+      }
     }
     return Q(block);
   };
@@ -59,7 +75,8 @@ function BlockDAL(fileDAL, loki) {
         p = p.parentDAL;
       }
       blocks = _.sortBy(blocks, (b) => b.number);
-      let conditions = blocks.map((b) => { return { $and: [{
+      let conditions = blocks.map((b) => {
+        return { $and: [{
         fork: true
       }, {
         number: b.forkPointNumber

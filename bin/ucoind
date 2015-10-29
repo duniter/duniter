@@ -115,17 +115,25 @@ program
     if (!port) {
       throw 'Port is required.';
     }
-    sync(server, host, port, conf, to);
+    sync(server, host, port, conf, to)
+      .then(function(){
+        logger.info('Sync finished.');
+      })
+      .catch(function(err){
+        console.error(err.stack || err.message);
+      })
+      .then(function(){
+        return server.disconnect().catch(() => null);
+      })
+      .then(function(){
+        process.exit();
+      });
   }));
 
 function sync(server, host, port, conf, to) {
-  async.series([
-    function (next){
-      // Synchronize
-      var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
-      remote.sync(parseInt(to), program.nocautious, next);
-    }
-  ], logIfErrorAndExit(server, 'Error during sync: '));
+  // Synchronize
+  var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
+  return remote.sync(parseInt(to), program.nocautious);
 }
 
 program
@@ -709,6 +717,16 @@ function connect(callback, forConf) {
         server.disconnect();
         process.exit();
       });
+
+    // If ever the process gets interrupted
+    process.on('SIGINT', function() {
+      // Save DB
+      server.disconnect()
+        .catch(() => null)
+        .then(function(){
+          process.exit();
+        });
+    });
   };
 }
 
@@ -732,6 +750,16 @@ function service(callback) {
         server.disconnect();
         process.exit();
       });
+
+    // If ever the process gets interrupted
+    process.on('SIGINT', function() {
+      // Save DB
+      server.disconnect()
+        .catch(() => null)
+        .then(function(){
+          process.exit();
+        });
+    });
   };
 }
 

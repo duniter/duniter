@@ -35,17 +35,26 @@ module.exports = {
   file: function(profile, forConf) {
     return getHomeFS(profile, false)
       .then(function(params) {
-        let loki;
-        if (forConf) {
-          // Memory only service dals
-          loki = new lokijs('temp', { autosave: false });
-        } else {
-          loki = new lokijs(path.join(params.home, 'ucoin.json'), {
-            autosave: true,
-            autosaveInterval: 300
+        return Q.Promise(function(resolve){
+          let loki;
+          if (forConf) {
+            // Memory only service dals
+            loki = new lokijs('temp', { autosave: false });
+            resolve(loki);
+          } else {
+            loki = new lokijs(path.join(params.home, 'ucoin.json'), {
+              autoload: true,
+              autosave: true,
+              autosaveInterval: 30000,
+              autoloadCallback: function() {
+                resolve(loki);
+              }
+            });
+          }
+        })
+          .then(function(loki){
+            return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', null, loki);
           });
-        }
-        return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', null, loki);
       });
   },
   FileDAL: FileDAL
@@ -1082,6 +1091,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
       .then(function(conf){
         conf = _(conf).extend(overrideConf || {});
         currency = conf.currency;
+        that.blockDAL.setConf(conf);
         return conf;
       });
   };
@@ -1100,17 +1110,17 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   this.saveStat = that.statDAL.saveStat;
 
   this.close = function() {
-    // TODO
+    return Q.nbind(loki.saveDatabase, loki)();
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf'];
+    var files = ['stats', 'cores', 'current', 'conf', 'ucoin'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'cores', 'current'];
+    var files = ['stats', 'cores', 'current', 'ucoin'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };

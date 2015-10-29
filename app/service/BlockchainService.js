@@ -265,7 +265,7 @@ function BlockchainService (conf, mainDAL, pair) {
   function startPruning(highest, cores, current, forkWindowSize, doCheck) {
     var distanceFromMain = current && highest.forkPointNumber - current.number;
     var distanceFromVoid = highest.forkPointNumber + 1;
-    var branchSize = distanceFromMain || distanceFromVoid;
+    var branchSize = distanceFromMain !== undefined ? distanceFromMain : distanceFromVoid;
     var toPruneCount = Math.max(0, branchSize - forkWindowSize);
     if (!toPruneCount) {
       // Fork window still has some room or is just full
@@ -395,6 +395,7 @@ function BlockchainService (conf, mainDAL, pair) {
     return basedCore.dal.fork(obj)
       .then(function(coreDAL){
         that.currentDal = coreDAL;
+        coreDAL.blockDAL.setConf(conf);
         return blockchainCtx(conf, coreDAL);
       })
       .then((ctx) => _.extend(ctx, coreObj))

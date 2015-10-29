@@ -262,13 +262,8 @@ function Server (dbConf, overrideConf) {
     return that.dal.resetConf(done);
   };
 
-  this.disconnect = function(done) {
-    that.dal.close(function (err) {
-      if(err)
-        logger.error(err);
-      if (typeof done == 'function')
-        done(err);
-    });
+  this.disconnect = function() {
+    return that.dal.close();
   };
 
   this.initServices = function() {

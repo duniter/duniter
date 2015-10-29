@@ -11,8 +11,7 @@ var Certification = function(json) {
    that[key] = json[key];
   });
 
-  this.from = this.fromKey       = this.pubkey = this.from || this.fromKey || this.pubkey;
-  this.to = this.toKey           = this.to || this.toKey;
+  this.from  = this.pubkey = this.from || this.pubkey;
   this.block = this.block_number = parseInt(this.block || this.block_number);
 
   this.inline = function () {

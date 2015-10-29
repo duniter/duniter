@@ -40,7 +40,10 @@ module.exports = {
           // Memory only service dals
           loki = new lokijs('temp', { autosave: false });
         } else {
-          loki = new lokijs('ucoin', { autosave: true, autosaveInterval: 300 });
+          loki = new lokijs(path.join(params.home, 'ucoin.json'), {
+            autosave: true,
+            autosaveInterval: 300
+          });
         }
         return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', null, loki);
       });

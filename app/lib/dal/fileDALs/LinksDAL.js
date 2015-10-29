@@ -20,6 +20,14 @@ function LinksDAL(fileDAL, loki) {
 
   this.idKeys = ['source', 'target', 'block_number', 'block_hash'];
   this.metaProps = ['obsolete'];
+  this.propsToSave = [
+    'source',
+    'target',
+    'timestamp',
+    'block_number',
+    'block_hash',
+    'obsolete'
+  ];
 
   this.init = () => null;
 

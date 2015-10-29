@@ -19,6 +19,20 @@ function IdentityDAL(fileDAL, loki) {
 
   this.idKeys = ['pubkey', 'uid', 'hash'];
   this.metaProps = ['kick', 'leaving', 'member', 'wasMember', 'written', 'currentMSN', 'revoked'];
+  this.propsToSave = [
+    'revoked',
+    'currentMSN',
+    'time',
+    'member',
+    'kick',
+    'leaving',
+    'wasMember',
+    'pubkey',
+    'uid',
+    'sig',
+    'hash',
+    'written'
+  ];
 
   this.init = () => null;
 

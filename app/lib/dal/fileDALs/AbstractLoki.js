@@ -113,7 +113,11 @@ function AbstractLoki(collection, fileDAL, viewFields, loki) {
     })[0];
   };
 
-  this.lokiSave = (entity) => {
+  this.lokiSave = (fullEntity) => {
+    let entity = fullEntity;
+    if (this.propsToSave) {
+      entity = _.pick(fullEntity, this.propsToSave || []);
+    }
     let existing = this.lokiExisting(entity);
     if (existing) {
       if (!fileDAL.parentDAL) {
@@ -123,6 +127,7 @@ function AbstractLoki(collection, fileDAL, viewFields, loki) {
         // Save in fork branch: overrides meta data
         existing.metaData[that.metaKey()] = _.pick(entity, this.metaProps);
       }
+      console.log(existing);
       collection.update(existing);
     } else {
       entity.metaData = {};
@@ -132,6 +137,7 @@ function AbstractLoki(collection, fileDAL, viewFields, loki) {
       _.pluck(entity, this.metaProps).forEach(function(metaProp){
         entity[metaProp] = false;
       });
+      console.log(entity);
       collection.insert(entity);
     }
     return Q(entity);

@@ -21,6 +21,19 @@ function MembershipDAL(fileDAL, loki) {
 
   this.idKeys = ['issuer', 'signature'];
   this.metaProps = ['written'];
+  this.propsToSave = [
+    'membership',
+    'issuer',
+    'number',
+    'blockNumber',
+    'blockHash',
+    'userid',
+    'certts',
+    'block',
+    'fpr',
+    'written',
+    'signature'
+  ];
 
   this.init = () => null;
 

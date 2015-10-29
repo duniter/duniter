@@ -20,6 +20,15 @@ function SourcesDAL(fileDAL, loki) {
 
   this.idKeys = ['pubkey', 'type', 'number', 'fingerprint', 'amount'];
   this.metaProps = ['consumed'];
+  this.propsToSave = [
+    'pubkey',
+    'type',
+    'number',
+    'fingerprint',
+    'amount',
+    'block_hash',
+    'consumed'
+  ];
 
   this.init = () => null;
 

@@ -20,6 +20,16 @@ function CertDAL(fileDAL, loki) {
 
   this.idKeys = ['sig', 'from', 'target'];
   this.metaProps = ['linked'];
+  this.propsToSave = [
+    'linked',
+    'sig',
+    'block_number',
+    'block_hash',
+    'target',
+    'to',
+    'from',
+    'block'
+  ];
 
   this.init = () => null;
 

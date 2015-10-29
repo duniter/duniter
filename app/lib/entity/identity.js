@@ -33,7 +33,7 @@ var Identity = function(json) {
     var others = [];
     this.certs.forEach(function(cert){
       others.push({
-        "pubkey": cert.pubkey,
+        "pubkey": cert.from,
         "meta": {
           "block_number": cert.block_number
         },

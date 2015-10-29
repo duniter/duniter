@@ -60,7 +60,7 @@ function WOTBinding (server) {
         var signed = yield server.dal.certsFrom(idty.pubkey);
         var validSigned = [];
         for (let j = 0; j < signed.length; j++) {
-          let cert = signed[j];
+          let cert = _.clone(signed[j]);
           if (!(excluding && cert.block <= excluding.number)) {
             cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
             validSigned.push(cert);
@@ -260,7 +260,6 @@ function WOTBinding (server) {
                     next('Not a member');
                     return;
                   }
-                  cert.pubkey = idty.pubkey;
                   cert.uid = idty.uid;
                   cert.isMember = idty.member;
                   cert.wasMember = idty.wasMember;
@@ -301,7 +300,7 @@ function WOTBinding (server) {
       };
       idty.certs.forEach(function(cert){
         json.certifications.push({
-          pubkey: cert.pubkey,
+          pubkey: cert.from,
           uid: cert.uid,
           cert_time: cert.cert_time,
           isMember: cert.isMember,

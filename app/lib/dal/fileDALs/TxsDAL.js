@@ -21,6 +21,22 @@ function TxsDAL(fileDAL, loki) {
 
   this.idKeys = ['hash', 'block_number'];
   this.metaProps = ['written', 'removed'];
+  this.propsToSave = [
+    'inputs',
+    'outputs',
+    'issuers',
+    'signatories',
+    'signatures',
+    'comment',
+    'hash',
+    'version',
+    'currency',
+    'block_number',
+    'time',
+    'recipients',
+    'written',
+    'removed'
+  ];
 
   this.init = () => null;
 

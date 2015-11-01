@@ -45,6 +45,9 @@ var blockFifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 
+const EMPTY_WINDOW = 0;
+const CHECK_BLOCKS = true;
+
 function BlockchainService (conf, mainDAL, pair) {
 
   var that = this;
@@ -173,6 +176,18 @@ function BlockchainService (conf, mainDAL, pair) {
     return  _.findWhere(cores, { forkPointNumber: number, forkPointHash: hash });
   }
 
+  this.pruneAllForks = () => co(function *() {
+    let current = yield mainDAL.getCurrentBlockOrNull();
+    let cores = yield getCores();
+    var maxNumber = _.max(cores, function(core) { return core.forkPointNumber; }).forkPointNumber;
+    var highestCores = _.where(cores, { forkPointNumber: maxNumber });
+    // Take the first existing top core
+    let topCore = highestCores[0];
+    if (topCore) {
+      return startPruning(topCore, cores, current, EMPTY_WINDOW, CHECK_BLOCKS);
+    }
+  });
+
   this.submitBlock = function (obj, doCheck) {
     var forkWindowSize = conf.branchesWindowSize;
     return Q.Promise(function(resolve, reject){
@@ -265,7 +280,7 @@ function BlockchainService (conf, mainDAL, pair) {
   function startPruning(highest, cores, current, forkWindowSize, doCheck) {
     var distanceFromMain = current && highest.forkPointNumber - current.number;
     var distanceFromVoid = highest.forkPointNumber + 1;
-    var branchSize = distanceFromMain !== undefined ? distanceFromMain : distanceFromVoid;
+    var branchSize = (distanceFromMain !== undefined && distanceFromMain !== null) ? distanceFromMain : distanceFromVoid;
     var toPruneCount = Math.max(0, branchSize - forkWindowSize);
     if (!toPruneCount) {
       // Fork window still has some room or is just full
@@ -395,7 +410,6 @@ function BlockchainService (conf, mainDAL, pair) {
     return basedCore.dal.fork(obj)
       .then(function(coreDAL){
         that.currentDal = coreDAL;
-        coreDAL.blockDAL.setConf(conf);
         return blockchainCtx(conf, coreDAL);
       })
       .then((ctx) => _.extend(ctx, coreObj))
@@ -1336,11 +1350,88 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   };
 
-  this.saveParametersForRootBlock = () => co(function *() {
+  this.saveParametersForRootBlock = (block) => co(function *() {
     let mainFork = yield that.mainFork();
-    let rootBlock = yield mainFork.dal.getBlockOrNull(0);
+    let rootBlock = block || (yield mainFork.dal.getBlockOrNull(0));
     if (!rootBlock) throw 'Cannot registrer currency parameters since no root block exists';
     return mainFork.saveParametersForRootBlock(rootBlock);
+  });
+
+  this.saveBlocksInMainBranch = (blocks) => co(function *() {
+    if (blocks[0].number == 0) {
+      // Save currency parameters
+      yield that.saveParametersForRootBlock(blocks[0]);
+    }
+    // Insert a bunch of blocks
+    let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
+    let lastUDBlock = mainDAL.blockDAL.lastBlockWithDividend();
+    for (let i = 0; i < blocks.length; i++) {
+      let previous = i > 0 ? blocks[i - 1] : lastPrevious;
+      let block = blocks[i];
+      block.fork = false;
+      //console.log('Block #%s', block.number);
+      // Monetary mass & UD Time recording before inserting elements
+      block.monetaryMass = (previous && previous.monetaryMass) || 0;
+      // UD Time update
+      if (block.number == 0) {
+        block.UDTime = block.medianTime; // Root = first UD time
+      }
+      else if (block.dividend) {
+        block.UDTime = conf.dt + (lastUDBlock ? lastUDBlock.UDTime : blocks[0].medianTime);
+        block.monetaryMass += block.dividend * block.membersCount;
+        lastUDBlock = block;
+      }
+      yield Q.Promise(function(resolve, reject){
+        // Compute resulting entities
+        async.waterfall([
+          function (next) {
+            // Create/Update members (create new identities if do not exist)
+            mainContext.updateMembers(block, next);
+          },
+          function (next) {
+            // Create/Update certifications
+            mainContext.updateCertifications(block, next);
+          },
+          function (next) {
+            // Create/Update memberships
+            mainContext.updateMemberships(block, next);
+          },
+          function (next){
+            // Save links
+            mainContext.updateLinks(block, next);
+          },
+          function (next){
+            // Update consumed sources & create new ones
+            mainContext.updateTransactionSources(block, next);
+          }
+        ], function (err) {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+    }
+    mainDAL.blockDAL.collection.insert(blocks);
+    //console.log('Saved');
+  });
+
+  this.obsoleteInMainBranch = (block) => Q.Promise(function(resolve, reject){
+    async.waterfall([
+      function (next){
+        // Compute obsolete links
+        mainContext.computeObsoleteLinks(block, next);
+      },
+      function (next){
+        // Compute obsolete memberships (active, joiner)
+        mainContext.computeObsoleteMemberships(block)
+          .then(function() {
+            next();
+          })
+          .catch(next);
+      }
+    ], function (err) {
+      if (err) return reject(err);
+      resolve();
+    });
   });
 
   this.addStatComputing = function () {

@@ -13,6 +13,14 @@ function BlockDAL(fileDAL, loki) {
 
   let collection = loki.getCollection('blocks') || loki.addCollection('blocks', { indices: ['fork', 'number', 'hash'] });
   let blocksDB = getView();
+  let udView = collection.addDynamicView('udView');
+  udView.applyFind({
+    $and: [{
+      fork: false,
+
+    }]
+  });
+  udView.applySimpleSort('number', true);
 
   this.init = () => null;
 
@@ -29,32 +37,29 @@ function BlockDAL(fileDAL, loki) {
     return Q(-1);
   };
 
-  let conf;
+  this.lastBlockWithDividend = () => blocksDB.branchResultset().find({ dividend: { $gt: 0 } }).data()[0];
 
-  this.setConf = (conf2) => conf = conf2;
+  this.lastBlockOfIssuer = (issuer) => {
+    let blocksOfIssuer = blocksDB.branchResultset().find({ issuer: issuer }).simplesort('number', true).limit(1).data();
+    return Q(blocksOfIssuer[0]);
+  };
 
   this.saveBlock = (block) => {
-    if (conf && conf.branchesWindowSize == 0) {
-      block.fork = false;
-      //console.log('--> MAIN -->', _.pick(block, 'number', 'hash'));
-      collection.insert(block);
+    block.fork = !!fileDAL.parentDAL;
+    let existing;
+    existing = collection.find({
+      $and: [{
+        number: block.number
+      }, {
+        hash: block.hash
+      }]
+    })[0];
+    if (existing) {
+      existing.fork = block.fork;
+      collection.update(existing);
     } else {
-      block.fork = !!fileDAL.parentDAL;
-      let existing;
-      existing = collection.find({
-        $and: [{
-          number: block.number
-        }, {
-          hash: block.hash
-        }]
-      })[0];
-      if (existing) {
-        existing.fork = block.fork;
-        collection.update(existing);
-      } else {
-        //console.log('--> BRAN -->', _.pick(block, 'number', 'hash'));
-        collection.insert(block);
-      }
+      //console.log('--> BRAN -->', _.pick(block, 'number', 'hash'));
+      collection.insert(block);
     }
     return Q(block);
   };

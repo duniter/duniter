@@ -71,7 +71,8 @@ program
   .option('--httplogs',                'Enable HTTP logs')
   .option('--nohttplogs',              'Disable HTTP logs')
   .option('--nointeractive',           'Disable interactive sync UI')
-  .option('--nocautious',              'Disable cautious mode with with sync command: checks each block\'s validity')
+  .option('--nocautious',              'Do not check blocks validity during sync')
+  .option('--nopeers',                 'Do not retrieve peers during sync')
   .option('--isolate',                 'Avoid the node to send peering or status informations to the network')
   .option('--check',                   'With gen-next: just check validity of generated block')
   .option('--forksize <size>',         'Maximum size of fork branches', parseInt)
@@ -133,7 +134,7 @@ program
 function sync(server, host, port, conf, to) {
   // Synchronize
   var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
-  return remote.sync(parseInt(to), program.nocautious);
+  return remote.sync(parseInt(to), program.nocautious, program.nopeers);
 }
 
 program
@@ -719,13 +720,20 @@ function connect(callback, forConf) {
       });
 
     // If ever the process gets interrupted
+    let isSaving = false;
     process.on('SIGINT', function() {
-      // Save DB
-      server.disconnect()
-        .catch(() => null)
-        .then(function(){
-          process.exit();
-        });
+      if (!isSaving) {
+        isSaving = true;
+        if (server.dal.needsSave()) {
+          logger.info('Saving DB and close...');
+        }
+        // Save DB
+        server.disconnect()
+          .catch(() => null)
+          .then(function(){
+            process.exit();
+          });
+      }
     });
   };
 }
@@ -752,13 +760,20 @@ function service(callback) {
       });
 
     // If ever the process gets interrupted
+    let isSaving = false;
     process.on('SIGINT', function() {
-      // Save DB
-      server.disconnect()
-        .catch(() => null)
-        .then(function(){
-          process.exit();
-        });
+      if (!isSaving) {
+        isSaving = true;
+        if (server.dal.needsSave()) {
+          logger.info('Saving DB and close...');
+        }
+        // Save DB
+        server.disconnect()
+          .catch(() => null)
+          .then(function(){
+            process.exit();
+          });
+      }
     });
   };
 }

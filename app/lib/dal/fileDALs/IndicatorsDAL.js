@@ -31,11 +31,5 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   this.getCurrentCertificationExcludingBlock = () => that.coreFS.readJSON('indicators/excludingCRT.json');
 
-  this.setLastUDBlock = (ud_block) => that.coreFS.writeJSON('indicators/ud_block.json', ud_block);
-
-  this.getLastUDBlock = () => that.coreFS.readJSON('indicators/ud_block.json').catch(() => null);
-
-  this.setLastBlockForIssuer = (block) => that.coreFS.writeJSON('indicators/issuers/' + block.issuer + '.json', block);
-
   this.getLastBlockOfIssuer = (pubkey) => that.coreFS.readJSON('indicators/issuers/' + pubkey + '.json').catch(() => null);
 }

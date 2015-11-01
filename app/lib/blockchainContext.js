@@ -1,17 +1,13 @@
 "use strict";
 var async           = require('async');
 var _               = require('underscore');
+var co              = require('co');
 var Q               = require('q');
 var sha1            = require('sha1');
 var rawer           = require('./rawer');
-var base58          = require('./base58');
-var signature       = require('./signature');
-var constants       = require('./constants');
 var localValidator  = require('./localValidator');
 var globalValidator = require('./globalValidator');
 var blockchainDao   = require('./blockchainDao');
-
-var FULL_CHECK = true;
 
 module.exports = function(conf, dal) {
   return new BlockchainContext(conf, dal);
@@ -207,6 +203,14 @@ function BlockchainContext(conf, dal) {
     }
     else done();
   }
+
+  this.updateMembers = updateMembers;
+  this.updateCertifications = updateCertifications;
+  this.updateMemberships = updateMemberships;
+  this.updateLinks = updateLinks;
+  this.updateTransactionSources = updateTransactionSources;
+  this.computeObsoleteLinks = computeObsoleteLinks;
+  this.computeObsoleteMemberships = computeObsoleteMemberships;
 
   function updateMembers (block, done) {
     async.waterfall([

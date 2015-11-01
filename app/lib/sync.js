@@ -47,7 +47,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
     timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
-  this.sync = (to, nocautious) => {
+  this.sync = (to, nocautious, nopeers) => {
     var cautious = !nocautious, logInterval;
     logger.info('Connecting remote host...');
     return co(function *() {
@@ -56,40 +56,8 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
       let loki = new lokijs('download', { autosave: false });
       let downloadedDAL = new BlockDAL({}, loki);
-      downloadedDAL.setConf({ branchesWindowSize: 0 });
       var lastSavedNumber = yield server.dal.getLastSavedBlockFileNumber();
       var lCurrent = yield dal.getCurrentBlockOrNull();
-
-      //============
-      // LevelDB sync
-      //============
-      if (!cautious && !to && lastSavedNumber == -1 && lCurrent == null) {
-        // We can try a LevelDB sync (very fast)
-        try {
-          watcher.writeStatus('Dowloading LevelDB data...');
-          let res = yield Q.Promise(function(resolve, reject){superagent
-            .get('http://' + host + ':' + port + '/node/dump')
-            .on('progress', function(e) {
-              watcher.downloadPercent(Math.floor(e.percent));
-            })
-            .end(function(err, response) {
-              if (err) return reject(err);
-              resolve(response);
-            });
-          })
-            .catch(() => null);
-          if (res) {
-            watcher.writeStatus('Applying LevelDB data...');
-            yield dal.loadDump(res.body.dump);
-            yield server.BlockchainService.saveParametersForRootBlock();
-            // Update local vars
-            lastSavedNumber = yield dal.getLastSavedBlockFileNumber();
-            lCurrent = yield dal.getCurrentBlockOrNull();
-          }
-        } catch(e) {
-          console.log(e);
-        }
-      }
 
       //============
       // Blockchain
@@ -131,62 +99,93 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
               logger.info('Blocks #%s to #%s...', chunk[0], chunk[1]);
               var blocks = yield Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0]);
               watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
-              for (let i = 0; i < blocks.length; i++) {
-                yield downloadedDAL.saveBlock(blocks[i]);
+              if (cautious) {
+                for (let i = 0; i < blocks.length; i++) {
+                  yield downloadedDAL.saveBlock(blocks[i]);
+                }
+              } else {
+                chunk[2] = blocks;
               }
             })
               // Resolve the promise
-              .then(() => toApply[index + 1].resolve(chunk))
+              .then(() =>
+                toApply[index + 1].resolve(chunk))
               .catch((err) => {
                 toApply[index + 1].reject(err);
                 throw err;
               })
       ));
 
-      for (let i = 0; i < toApply.length; i++) {
-        // Wait for download chunk to be completed
-        let range = yield toApply[i].promise;
-        // Apply downloaded blocks
-        for (var j = range[0]; j < range[1] + 1; j++) {
-          yield downloadedDAL.getBlock(j).then((block) => applyGivenBlock(cautious, remoteNumber)(block));
+      if (cautious) {
+        for (let i = 0; i < toApply.length; i++) {
+          // Wait for download chunk to be completed
+          let range = yield toApply[i].promise;
+          // Apply downloaded blocks
+          for (var j = range[0]; j < range[1] + 1; j++) {
+            yield downloadedDAL.getBlock(j).then((block) => applyGivenBlock(cautious, remoteNumber)(block));
+          }
         }
+      } else {
+        // Reduce fork window to zero
+        yield BlockchainService.pruneAllForks();
+        // Wait for all downloads to be done
+        // Do not use the first which stands for blocks applied before sync
+        let toApplyNoCautious = toApply.slice(1);
+        for (let i = 0; i < toApplyNoCautious.length; i++) {
+          // Wait for download chunk to be completed
+          let chunk = yield toApplyNoCautious[i].promise;
+          let blocks = chunk[2];
+          logger.info("Applying blocks #%s to #%s...", blocks[0].number, blocks[blocks.length - 1].number);
+          yield BlockchainService.saveBlocksInMainBranch(blocks);
+          blocksApplied += blocks.length;
+          speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
+          if (watcher.appliedPercent() != Math.floor(blocks[blocks.length - 1].number / remoteNumber * 100)) {
+            watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / remoteNumber * 100));
+          }
+        }
+        let lastChunk = yield toApplyNoCautious[toApplyNoCautious.length - 1].promise;
+        let lastBlocks = lastChunk[2];
+        let lastBlock = lastBlocks[lastBlocks.length - 1];
+        yield BlockchainService.obsoleteInMainBranch(lastBlock);
       }
       yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
 
       //=======
       // Peers
       //=======
-      watcher.writeStatus('Peers...');
-      yield syncPeer(node);
-      var merkle = yield dal.merkleForPeers();
-      var getPeers = Q.nbind(node.network.peering.peers.get, node);
-      var json2 = yield getPeers({});
-      var rm = new NodesMerkle(json2);
-      if(rm.root() != merkle.root()){
-        var leavesToAdd = [];
-        var json = yield getPeers({ leaves: true });
-        _(json.leaves).forEach((leaf) => {
-          if(merkle.leaves().indexOf(leaf) == -1){
-            leavesToAdd.push(leaf);
-          }
-        });
-        for (let i = 0; i < leavesToAdd.length; i++) {
-          var leaf = leavesToAdd[i];
-          var json3 = yield getPeers({ "leaf": leaf });
-          var jsonEntry = json3.leaf.value;
-          var sign = json3.leaf.value.signature;
-          var entry = {};
-          ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
-            entry[key] = jsonEntry[key];
+      if (!nopeers) {
+        watcher.writeStatus('Peers...');
+        yield syncPeer(node);
+        var merkle = yield dal.merkleForPeers();
+        var getPeers = Q.nbind(node.network.peering.peers.get, node);
+        var json2 = yield getPeers({});
+        var rm = new NodesMerkle(json2);
+        if(rm.root() != merkle.root()){
+          var leavesToAdd = [];
+          var json = yield getPeers({ leaves: true });
+          _(json.leaves).forEach((leaf) => {
+            if(merkle.leaves().indexOf(leaf) == -1){
+              leavesToAdd.push(leaf);
+            }
           });
-          entry.signature = sign;
-          watcher.writeStatus('Peer ' + entry.pubkey);
-          logger.info('Peer ' + entry.pubkey);
-          return Q.nbind(PeeringService.submit, PeeringService, entry);
+          for (let i = 0; i < leavesToAdd.length; i++) {
+            var leaf = leavesToAdd[i];
+            var json3 = yield getPeers({ "leaf": leaf });
+            var jsonEntry = json3.leaf.value;
+            var sign = json3.leaf.value.signature;
+            var entry = {};
+            ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
+              entry[key] = jsonEntry[key];
+            });
+            entry.signature = sign;
+            watcher.writeStatus('Peer ' + entry.pubkey);
+            logger.info('Peer ' + entry.pubkey);
+            return Q.nbind(PeeringService.submit, PeeringService, entry);
+          }
         }
-      }
-      else {
-        watcher.writeStatus('Peers already known');
+        else {
+          watcher.writeStatus('Peers already known');
+        }
       }
     })
       .then(() => {

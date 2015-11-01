@@ -23,6 +23,7 @@ var BlockDAL = require('./fileDALs/BlockDAL');
 var DividendDAL = require('./fileDALs/DividendDAL');
 var CFSStorage = require('./fileDALs/AbstractCFS');
 var lokijs = require('lokijs');
+var logger = require('../../lib/logger')('database');
 
 module.exports = {
   memory: function(profile) {
@@ -42,6 +43,7 @@ module.exports = {
             loki = new lokijs('temp', { autosave: false });
             resolve(loki);
           } else {
+            logger.info('Loading...');
             loki = new lokijs(path.join(params.home, 'ucoin.json'), {
               autoload: true,
               autosave: true,
@@ -53,6 +55,7 @@ module.exports = {
           }
         })
           .then(function(loki){
+            loki.autosaveClearFlags();
             return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', null, loki);
           });
       });
@@ -293,7 +296,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
 
   // Block
   this.lastUDBlock = function() {
-    return that.indicatorsDAL.getLastUDBlock();
+    return Q(that.blockDAL.lastBlockWithDividend());
   };
 
   this.getRootBlock = function(done) {
@@ -301,7 +304,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   };
 
   this.lastBlockOfIssuer = function(issuer) {
-    return that.indicatorsDAL.getLastBlockOfIssuer(issuer);
+    return that.blockDAL.lastBlockOfIssuer(issuer);
   };
 
   this.getBlocksBetween = function(start, end) {
@@ -892,14 +895,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
         ]);
       })
       .then(function(){
-        if (block.dividend) {
-          return that.indicatorsDAL.setLastUDBlock(block);
-        }
-      })
-      .then(function(){
-        return that.indicatorsDAL.setLastBlockForIssuer(block);
-      })
-      .then(function(){
         done && done();
       })
       .catch(function(err){
@@ -1091,7 +1086,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
       .then(function(conf){
         conf = _(conf).extend(overrideConf || {});
         currency = conf.currency;
-        that.blockDAL.setConf(conf);
         return conf;
       });
   };
@@ -1109,8 +1103,15 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   this.getStat = that.statDAL.getStat;
   this.saveStat = that.statDAL.saveStat;
 
+  this.needsSave = function() {
+    return loki.autosaveDirty();
+  };
+
   this.close = function() {
-    return Q.nbind(loki.saveDatabase, loki)();
+    if (that.needsSave()) {
+      return Q.nbind(loki.saveDatabase, loki)();
+    }
+    return Q();
   };
 
   this.resetAll = function(done) {

@@ -21,26 +21,25 @@ function ParameterNamespace () {
 
   this.getSearchP = (req) => Q.nbind(this.getSearch, this)(req);
 
-  this.getCountAndFrom = function (req, callback){
+  this.getCountAndFrom = function (req){
     if(!req.params.from){
-      callback("From is required");
-      return;
+      throw "From is required";
     }
     if(!req.params.count){
-      callback("Count is required");
-      return;
+      throw "Count is required";
     }
     var matches = req.params.from.match(/^(\d+)$/);
     if(!matches){
-      callback("From format is incorrect, must be a positive integer");
-      return;
+      throw "From format is incorrect, must be a positive integer";
     }
     var matches2 = req.params.count.match(/^(\d+)$/);
     if(!matches){
-      callback("Count format is incorrect, must be a positive integer");
-      return;
+      throw "Count format is incorrect, must be a positive integer";
     }
-    callback(null, matches2[1], matches[1]);
+    return {
+      count: matches2[1],
+      from: matches[1]
+    };
   };
 
   this.getPubkey = function (req, callback){

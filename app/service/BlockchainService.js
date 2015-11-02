@@ -1512,6 +1512,19 @@ function BlockchainService (conf, mainDAL, pair) {
         return { number: -1 };
       });
   };
+
+  this.blocksBetween = (from, count) => co(function *() {
+    if (count > 5000) {
+      throw 'Count is too high';
+    }
+    let current = yield that.current();
+    count = Math.min(current.number - from + 1, count);
+    if (!current || current.number < from) {
+      throw 'Starting block #' + from + ' does not exist';
+    }
+    let mainFork = yield that.mainFork();
+    return mainFork.dal.getBlocksBetween(from, from + count - 1);
+  });
 }
 
 /**

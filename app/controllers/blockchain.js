@@ -2,6 +2,7 @@
 
 var _                = require('underscore');
 var Q                = require('q');
+var co               = require('co');
 var async            = require('async');
 var es               = require('event-stream');
 var moment           = require('moment');
@@ -122,51 +123,17 @@ function BlockchainBinding (server) {
 
   this.blocks = function (req, res) {
     res.type('application/json');
-    async.waterfall([
-      function (next){
-        async.parallel({
-          params: async.apply(ParametersService.getCountAndFrom, req),
-          current: async.apply(BlockchainService.current)
-        }, next);
-      },
-      function (res, next){
-        var current = res.current;
-        var count = parseInt(res.params[0]);
-        var from = parseInt(res.params[1]);
-        if (count > 5000) {
-          next('Count is too high');
-          return;
-        }
-        if (!current || current.number < from) {
-          next('Starting block #' + from + ' does not exist');
-          return;
-        }
-        count = Math.min(current.number - from + 1, count);
-        var blocks = [];
-        var i = from;
-        async.whilst(
-          function(){ return i < from + count; },
-          function (next) {
-            async.waterfall([
-              function (next){
-                BlockchainService.promoted(i, next);
-              },
-              function (block, next){
-                blocks.push(new Block(block).json());
-                i++;
-                next();
-              }
-            ], next);
-          }, function (err) {
-            next(err, blocks);
-          });
+    co(function *() {
+      try {
+        let params = ParametersService.getCountAndFrom(req);
+        var count = parseInt(params.count);
+        var from = parseInt(params.from);
+        let blocks = yield BlockchainService.blocksBetween(from, count);
+        blocks = blocks.map((b) => (new Block(b).json()));
+        res.send(200, JSON.stringify(blocks, null, "  "));
+      } catch(e) {
+        res.send(400, e);
       }
-    ], function (err, blocks) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      res.send(200, JSON.stringify(blocks, null, "  "));
     });
   };
 

@@ -307,20 +307,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
     return that.blockDAL.lastBlockOfIssuer(issuer);
   };
 
-  this.getBlocksBetween = function(start, end) {
-    var s = Math.max(0, start);
-    return Q.all(_.range(s, end + 1).map(function(number) {
-      return that.getBlock(number);
-    }))
-      .then(function(results){
-        return results.reduce(function(blocks, block) {
-          if (block) {
-            return blocks.concat(block);
-          }
-          return blocks;
-        }, []);
-      });
-  };
+  this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
   this.getCurrentNumber = function() {
     return that.blockDAL.getCurrent()

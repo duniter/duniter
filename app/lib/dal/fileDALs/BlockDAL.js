@@ -37,6 +37,15 @@ function BlockDAL(fileDAL, loki) {
     return Q(-1);
   };
 
+  this.getBlocks = (start, end) =>
+    blocksDB.branchResultset().find({
+    $and: [{
+      number: { $gte: start }
+    }, {
+      number: { $lte: end }
+    }]
+  }).data();
+
   this.lastBlockWithDividend = () => blocksDB.branchResultset().find({ dividend: { $gt: 0 } }).data()[0];
 
   this.lastBlockOfIssuer = (issuer) => {

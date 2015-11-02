@@ -1381,6 +1381,10 @@ function BlockchainService (conf, mainDAL, pair) {
         block.monetaryMass += block.dividend * block.membersCount;
         lastUDBlock = block;
       }
+      yield mainDAL.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
+      yield mainDAL.saveMemberships('join', block.joiners);
+      yield mainDAL.saveMemberships('active', block.actives);
+      yield mainDAL.saveMemberships('leave', block.leavers);
       yield Q.Promise(function(resolve, reject){
         // Compute resulting entities
         async.waterfall([

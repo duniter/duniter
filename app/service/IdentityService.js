@@ -1,9 +1,11 @@
 "use strict";
 var async           = require('async');
 var _               = require('underscore');
+var Q = require('q');
 var blockchainDao   = require('../lib/blockchainDao');
 var globalValidator = require('../lib/globalValidator');
 var crypto          = require('../lib/crypto');
+var constants       = require('../lib/constants');
 var co = require('co');
 
 var DO_NOT_THROW_ABOUT_EXPIRATION = true;
@@ -38,18 +40,25 @@ function IdentityService (conf, dal) {
     return dal.searchJustIdentities(search);
   };
 
-  this.findMember = function(search, done) {
-    async.parallel({
-      pubkey: function (next) {
-        dal.getWritten(search, next);
-      },
-      uid: function (next) {
-        dal.getWrittenByUID(search).then(_.partial(next, null)).catch(next);
-      }
-    }, function (err, res) {
-      done((!(res.pubkey || res.uid) && 'No member matching this pubkey or uid') || null, new Identity(res.pubkey || res.uid || {}));
-    });
-  };
+  this.findMember = (search, done) => co(function *() {
+    let idty = null;
+    if (search.match(constants.PUBLIC_KEY)) {
+      idty = yield dal.getWrittenIdtyByPubkey(search);
+    }
+    else {
+      idty = yield dal.getWrittenIdtyByUID(search);
+    }
+    if (!idty) {
+      throw 'No member matching this pubkey or uid';
+    }
+    yield dal.fillInMembershipsOfIdentity(Q(idty));
+    return new Identity(idty);
+  })
+  .then(function(idty){
+    done && done(null, idty);
+    return idty;
+  })
+  .catch(done);
 
   this.getWrittenByPubkey = function(pubkey) {
     return dal.getWritten(pubkey);

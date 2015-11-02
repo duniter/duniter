@@ -466,6 +466,9 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
         }), done);
   };
 
+  this.getWrittenIdtyByPubkey = (pubkey) => this.idtyDAL.getFromPubkey(pubkey);
+  this.getWrittenIdtyByUID = (pubkey) => this.idtyDAL.getFromUID(pubkey);
+
   this.fillInMembershipsOfIdentity = function(queryPromise, done) {
     return Q(queryPromise)
       .then(function(idty){

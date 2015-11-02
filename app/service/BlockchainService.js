@@ -1414,7 +1414,7 @@ function BlockchainService (conf, mainDAL, pair) {
         });
       });
     }
-    mainDAL.blockDAL.collection.insert(blocks);
+    mainDAL.blockDAL.saveBunch(blocks);
     //console.log('Saved');
   });
 

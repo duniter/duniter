@@ -13,18 +13,16 @@ function BlockDAL(fileDAL, loki) {
 
   let collection = loki.getCollection('blocks') || loki.addCollection('blocks', { indices: ['fork', 'number', 'hash'] });
   let blocksDB = getView();
-  let udView = collection.addDynamicView('udView');
-  udView.applyFind({
-    $and: [{
-      fork: false,
-
-    }]
-  });
-  udView.applySimpleSort('number', true);
+  let current = null;
 
   this.init = () => null;
 
-  this.getCurrent = () => Q(blocksDB.branchResultset().simplesort('number', true).limit(1).data()[0]);
+  this.getCurrent = () => {
+    if (!current) {
+      current = blocksDB.branchResultset().simplesort('number', true).limit(1).data()[0];
+    }
+    return Q(current);
+  };
 
   this.getBlock = (number) => Q(blocksDB.branchResultset().find({ number: parseInt(number) }).data()[0]);
 
@@ -53,7 +51,14 @@ function BlockDAL(fileDAL, loki) {
     return Q(blocksOfIssuer[0]);
   };
 
+  this.saveBunch = (blocks) => {
+    collection.insert(blocks);
+  };
+
   this.saveBlock = (block) => {
+    if (!current || current.number < block.number) {
+      current = block;
+    }
     block.fork = !!fileDAL.parentDAL;
     let existing;
     existing = collection.find({

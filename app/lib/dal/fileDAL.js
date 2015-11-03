@@ -20,7 +20,6 @@ var IdentityDAL = require('./fileDALs/IdentityDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 var PeerDAL = require('./fileDALs/PeerDAL');
 var BlockDAL = require('./fileDALs/BlockDAL');
-var DividendDAL = require('./fileDALs/DividendDAL');
 var CFSStorage = require('./fileDALs/AbstractCFS');
 var lokijs = require('lokijs');
 var logger = require('../../lib/logger')('database');
@@ -109,15 +108,13 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   this.idtyDAL = new IdentityDAL(that, loki);
   this.certDAL = new CertDAL(that, loki);
   this.msDAL = new MembershipDAL(that, loki);
-  this.udDAL = new DividendDAL(rootPath, myFS, parentFileDAL && parentFileDAL.udDAL.coreFS, that, CFSStorage);
 
   this.newDals = {
     'peerDAL': that.peerDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
-    'coresDAL': that.coresDAL,
-    'udDAL': that.udDAL
+    'coresDAL': that.coresDAL
   };
 
   var currency = '';
@@ -1033,10 +1030,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   };
 
   this.saveSource = function(src) {
-    return (src.type == "D" ? that.saveUDInHistory(src.pubkey, src) : Q())
-      .then(function(){
-        return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash);
-      });
+    return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash, src.time);
   };
 
   this.officializeCertification = function(cert) {
@@ -1083,10 +1077,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
     return that.txsDAL.addPending(tx);
   };
 
-  this.saveUDInHistory = function(pubkey, ud) {
-    return that.udDAL.saveUDInHistory(pubkey, ud);
-  };
-
   this.getTransactionsHistory = function(pubkey) {
     return Q({ sent: [], received: [] })
       .then(function(history){
@@ -1108,19 +1098,17 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   };
 
   this.getUDHistory = function(pubkey, done) {
-    return that.udDAL.getUDHistory(pubkey)
+    return that.sourcesDAL.getUDSources(pubkey)
+      .then(function(sources){
+        return {
+          history: sources.map((src) => _.extend({
+            block_number: src.number
+          }, src))
+        };
+      })
       .then(function(obj){
-        return Q.all(obj.history.map(function(src) {
-          var completeSrc = _.extend({}, src);
-          return that.sourcesDAL.getSource(pubkey, 'D', src.block_number)
-            .then(function(foundSrc){
-              _.extend(completeSrc, foundSrc);
-            });
-        }))
-          .then(function(){
-            done && done(null, obj);
-            return obj;
-          });
+        done && done(null, obj);
+        return obj;
       })
       .catch(function(err){
         done && done(err);

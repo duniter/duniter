@@ -24,6 +24,7 @@ function SourcesDAL(fileDAL, loki) {
     'pubkey',
     'type',
     'number',
+    'time',
     'fingerprint',
     'amount',
     'block_hash',
@@ -36,6 +37,14 @@ function SourcesDAL(fileDAL, loki) {
     pubkey: pubkey
   },{
     consumed: false
+  });
+
+  this.getUDSources = (pubkey) => this.lokiFind({
+    $and: [{
+      pubkey: pubkey
+    },{
+      type: 'D'
+    }]
   });
 
   this.getSource = (pubkey, type, number) => this.lokiFindOne({
@@ -69,12 +78,13 @@ function SourcesDAL(fileDAL, loki) {
     return this.lokiSave(src);
   };
 
-  this.addSource = (state, pubkey, type, number, fingerprint, amount, block_hash) => this.lokiSave({
+  this.addSource = (state, pubkey, type, number, fingerprint, amount, block_hash, time) => this.lokiSave({
     pubkey: pubkey,
     type: type,
     number: number,
     fingerprint: fingerprint,
     amount: amount,
+    time: time,
     block_hash: block_hash,
     consumed: false
   });

@@ -135,6 +135,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
           // Wait for download chunk to be completed
           let chunk = yield toApplyNoCautious[i].promise;
           let blocks = chunk[2];
+          blocks = _.sortBy(blocks, 'number');
           logger.info("Applying blocks #%s to #%s...", blocks[0].number, blocks[blocks.length - 1].number);
           yield BlockchainService.saveBlocksInMainBranch(blocks);
           blocksApplied += blocks.length;

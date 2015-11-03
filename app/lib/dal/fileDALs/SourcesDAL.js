@@ -14,7 +14,7 @@ function SourcesDAL(fileDAL, loki) {
   let collection = loki.getCollection('sources') || loki.addCollection('sources', { indices: ['pubkey', 'type', 'number', 'fingerprint', 'amount', 'block_hash'] });
 
   AbstractLoki.call(this, collection, fileDAL, {
-    block_number: 'number',
+    number: 'number',
     block_hash: 'block_hash'
   }, loki);
 

@@ -746,21 +746,48 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
         }
       } else {
         var start = currentExcluding.number;
-        var nextPotential;
+        let newExcluding;
+        let top = current.number, bottom = start;
+        // Binary tree search
         do {
-          nextPotential = yield that.getBlock(start + 1);
-          var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
-          if (delaySinceNextOfExcluding > msValidtyTime) {
-            yield that.indicatorsDAL.writeCurrentExcluding(nextPotential).then(() => nextPotential);
-            start++;
+          let middle = top - bottom;
+          if (middle % 2 != 0) {
+            middle = middle + 1;
           }
-        } while (delaySinceNextOfExcluding > msValidtyTime);
-        return nextPotential;
+          middle /= 2;
+          middle += bottom;
+          if (middle == top) {
+            middle--;
+            bottom--; // Helps not being stuck looking at 'top'
+          }
+          let middleBlock = yield that.getBlock(middle);
+          let middleNextB = yield that.getBlock(middle + 1);
+          var delaySinceMiddle = current.medianTime - middleBlock.medianTime;
+          var delaySinceNextB = current.medianTime - middleNextB.medianTime;
+          let isValidPeriod = delaySinceMiddle <= msValidtyTime;
+          let isValidPeriodB = delaySinceNextB <= msValidtyTime;
+          let isExcludin = !isValidPeriod && isValidPeriodB;
+          //console.log('MS: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
+          if (isExcludin) {
+            // Found
+            yield that.indicatorsDAL.writeCurrentExcluding(middleBlock);
+            newExcluding = middleBlock;
+          }
+          else if (isValidPeriod) {
+            // Look down in the blockchain
+            top = middle;
+          }
+          else {
+            // Look up in the blockchain
+            bottom = middle;
+          }
+        } while (!newExcluding);
+        return newExcluding;
       }
     });
   };
 
-  this.getCertificationExcludingBlock = function(current, certValidtyTime) {
+  this.getCertificationExcludingBlock = function(current, certValidtyTime, certDelay) {
     return co(function *() {
       var currentExcluding;
       if (current.number > 0) {
@@ -773,24 +800,66 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
       if (!currentExcluding) {
         var root = yield that.getRootBlock();
         var delaySinceStart = current.medianTime - root.medianTime;
-        if (delaySinceStart > certValidtyTime) {
+        if (delaySinceStart > certValidtyTime + certDelay) {
           return that.indicatorsDAL.writeCurrentExcludingForCert(root).then(() => root);
         }
       } else {
-        var start = currentExcluding.number;
-        var nextPotential;
-        do {
-          nextPotential = yield that.getBlock(start + 1);
-          var delaySinceNextOfExcluding = current.medianTime - nextPotential.medianTime;
-          if (delaySinceNextOfExcluding > certValidtyTime) {
-            yield that.indicatorsDAL.writeCurrentExcludingForCert(nextPotential).then(() => nextPotential);
-            start++;
-          }
-        } while (delaySinceNextOfExcluding > certValidtyTime);
-        return nextPotential;
+        // Check current position
+        let currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
+        if (isExcluding(current, currentExcluding, currentNextBlock, certValidtyTime, certDelay)) {
+          return currentExcluding;
+        } else {
+          // Have to look for new one
+          var start = currentExcluding.number;
+          let newExcluding;
+          let top = current.number, bottom = start;
+          // Binary tree search
+          do {
+            let middle = top - bottom;
+            if (middle % 2 != 0) {
+              middle = middle + 1;
+            }
+            middle /= 2;
+            middle += bottom;
+            if (middle == top) {
+              middle--;
+              bottom--; // Helps not being stuck looking at 'top'
+            }
+            let middleBlock = yield that.getBlock(middle);
+            let middleNextB = yield that.getBlock(middle + 1);
+            var delaySinceMiddle = current.medianTime - middleBlock.medianTime;
+            var delaySinceNextB = current.medianTime - middleNextB.medianTime;
+            let isValidPeriod = delaySinceMiddle <= certValidtyTime + certDelay;
+            let isValidPeriodB = delaySinceNextB <= certValidtyTime + certDelay;
+            let isExcludin = !isValidPeriod && isValidPeriodB;
+            console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
+            if (isExcludin) {
+              // Found
+              yield that.indicatorsDAL.writeCurrentExcludingForCert(middleBlock);
+              newExcluding = middleBlock;
+            }
+            else if (isValidPeriod) {
+              // Look down in the blockchain
+              top = middle;
+            }
+            else {
+              // Look up in the blockchain
+              bottom = middle;
+            }
+          } while (!newExcluding);
+          return newExcluding;
+        }
       }
     });
   };
+
+  function isExcluding(current, excluding, nextBlock, certValidtyTime, certDelay) {
+    var delaySinceMiddle = current.medianTime - excluding.medianTime;
+    var delaySinceNextB = current.medianTime - nextBlock.medianTime;
+    let isValidPeriod = delaySinceMiddle <= certValidtyTime + certDelay;
+    let isValidPeriodB = delaySinceNextB <= certValidtyTime + certDelay;
+    return !isValidPeriod && isValidPeriodB;
+  }
 
   this.kickWithOutdatedMemberships = function(maxNumber) {
     return that.getMembers()

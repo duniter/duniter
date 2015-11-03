@@ -108,80 +108,58 @@ function WOTBinding (server) {
 
   this.certifiersOf = function (req, res) {
     res.type('application/json');
-    async.waterfall([
-      function (next){
-        ParametersService.getSearch(req, next);
-      },
-      function (search, next){
-        IdentityService.findMember(search, next);
-      },
-      function (idty, next){
-        async.waterfall([
-          function (next){
-            server.dal.certsToTarget(idty.getTargetHash()).then(_.partial(next, null)).catch(next);
-          },
-          function (certs, next){
-            idty.certs = [];
-            async.forEach(certs, function (cert, callback) {
-              async.waterfall([
-                function (next) {
-                  server.dal.getWritten(cert.from, next);
-                },
-                function (idty, next) {
-                  if (!idty) {
-                    next('Not a member');
-                    return;
-                  }
-                  cert.uid = idty.uid;
-                  cert.isMember = idty.member;
-                  cert.wasMember = idty.wasMember;
-                  server.dal.getBlock(cert.block_number, next);
-                },
-                function (block, next) {
-                  cert.cert_time = {
-                    block: block.number,
-                    medianTime: block.medianTime
-                  };
-                  idty.certs.push(cert);
-                  next();
-                }
-              ], function () {
-                callback();
-              });
-            }, next);
-          },
-          function (next) {
-            next(null, idty);
+    co(function *() {
+      try {
+        let search = yield ParametersService.getSearchP(req);
+        let idty = yield IdentityService.findMemberWithoutMemberships(search);
+        let excluding = yield BlockchainService.getCertificationsExludingBlock();
+        let certs = yield server.dal.certsToTarget(idty.getTargetHash());
+        idty.certs = [];
+        for (let i = 0; i < certs.length; i++) {
+          let cert = certs[i];
+          if (!(excluding && cert.block <= excluding.number)) {
+            let certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
+            if (certifier) {
+              cert.uid = certifier.uid;
+              cert.isMember = certifier.member;
+              cert.wasMember = true; // As we checked if(certified)
+              if (!cert.cert_time) {
+                // TODO: would be more efficient to save medianTime on certification reception
+                let certBlock = yield server.dal.getBlock(cert.block_number);
+                cert.cert_time = {
+                  block: certBlock.number,
+                  medianTime: certBlock.medianTime
+                };
+              }
+              idty.certs.push(cert);
+            }
           }
-        ], next);
-      }
-    ], function (err, idty) {
-      if(err){
+        }
+        var json = {
+          pubkey: idty.pubkey,
+          uid: idty.uid,
+          isMember: idty.member,
+          certifications: []
+        };
+        idty.certs.forEach(function(cert){
+          json.certifications.push({
+            pubkey: cert.from,
+            uid: cert.uid,
+            isMember: cert.isMember,
+            wasMember: cert.wasMember,
+            cert_time: cert.cert_time,
+            written: cert.linked,
+            signature: cert.sig
+          });
+        });
+        res.send(200, JSON.stringify(json, null, "  "));
+      } catch (err) {
         if (err == 'No member matching this pubkey or uid') {
           res.send(404, err);
           return;
         }
         res.send(400, err);
-        return;
       }
-      var json = {
-        pubkey: idty.pubkey,
-        uid: idty.uid,
-        isMember: idty.member,
-        certifications: []
-      };
-      idty.certs.forEach(function(cert){
-        json.certifications.push({
-          pubkey: cert.from,
-          uid: cert.uid,
-          isMember: cert.isMember,
-          wasMember: cert.wasMember,
-          cert_time: cert.cert_time,
-          written: cert.linked,
-          signature: cert.sig
-        });
-      });
-      res.send(200, JSON.stringify(json, null, "  "));
     });
   };
 
@@ -236,80 +214,58 @@ function WOTBinding (server) {
 
   this.certifiedBy = function (req, res) {
     res.type('application/json');
-    async.waterfall([
-      function (next){
-        ParametersService.getSearch(req, next);
-      },
-      function (search, next){
-        IdentityService.findMember(search, next);
-      },
-      function (idty, next){
-        async.waterfall([
-          function (next){
-            server.dal.certsFrom(idty.pubkey).then(_.partial(next, null)).catch(next);
-          },
-          function (certs, next){
-            idty.certs = [];
-            async.forEach(certs, function (cert, callback) {
-              async.waterfall([
-                function (next) {
-                  server.dal.getWritten(cert.to, next);
-                },
-                function (idty, next) {
-                  if (!idty) {
-                    next('Not a member');
-                    return;
-                  }
-                  cert.uid = idty.uid;
-                  cert.isMember = idty.member;
-                  cert.wasMember = idty.wasMember;
-                  server.dal.getBlock(cert.block_number, next);
-                },
-                function (block, next) {
-                  cert.cert_time = {
-                    block: block.number,
-                    medianTime: block.medianTime
-                  };
-                  idty.certs.push(cert);
-                  next();
-                }
-              ], function () {
-                callback();
-              });
-            }, next);
-          },
-          function (next) {
-            next(null, idty);
+    co(function *() {
+      try {
+        let search = yield ParametersService.getSearchP(req);
+        let idty = yield IdentityService.findMemberWithoutMemberships(search);
+        let excluding = yield BlockchainService.getCertificationsExludingBlock();
+        let certs = yield server.dal.certsFrom(idty.pubkey);
+        idty.certs = [];
+        for (let i = 0; i < certs.length; i++) {
+          let cert = certs[i];
+          if (!(excluding && cert.block <= excluding.number)) {
+            let certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
+            if (certified) {
+              cert.uid = certified.uid;
+              cert.isMember = certified.member;
+              cert.wasMember = true; // As we checked if(certified)
+              if (!cert.cert_time) {
+                // TODO: would be more efficient to save medianTime on certification reception
+                let certBlock = yield server.dal.getBlock(cert.block_number);
+                cert.cert_time = {
+                  block: certBlock.number,
+                  medianTime: certBlock.medianTime
+                };
+              }
+              idty.certs.push(cert);
+            }
           }
-        ], next);
-      }
-    ], function (err, idty) {
-      if(err){
+        }
+        var json = {
+          pubkey: idty.pubkey,
+          uid: idty.uid,
+          isMember: idty.member,
+          certifications: []
+        };
+        idty.certs.forEach(function(cert){
+          json.certifications.push({
+            pubkey: cert.from,
+            uid: cert.uid,
+            isMember: cert.isMember,
+            wasMember: cert.wasMember,
+            cert_time: cert.cert_time,
+            written: cert.linked,
+            signature: cert.sig
+          });
+        });
+        res.send(200, JSON.stringify(json, null, "  "));
+      } catch (err) {
         if (err == 'No member matching this pubkey or uid') {
           res.send(404, err);
           return;
         }
         res.send(400, err);
-        return;
       }
-      var json = {
-        pubkey: idty.pubkey,
-        uid: idty.uid,
-        isMember: idty.member,
-        certifications: []
-      };
-      idty.certs.forEach(function(cert){
-        json.certifications.push({
-          pubkey: cert.to,
-          uid: cert.uid,
-          cert_time: cert.cert_time,
-          isMember: cert.isMember,
-          wasMember: cert.wasMember,
-          written: cert.linked,
-          signature: cert.sig
-        });
-      });
-      res.send(200, JSON.stringify(json, null, "  "));
     });
   };
 

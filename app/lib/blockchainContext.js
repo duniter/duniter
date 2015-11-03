@@ -413,7 +413,7 @@ function BlockchainContext(conf, dal) {
         }
       })
       .then(function(){
-        return dal.getCertificationExcludingBlock(block, conf.sigValidity);
+        return dal.getCertificationExcludingBlock(block, conf.sigValidity, conf.sigDelay);
       });
   }
 

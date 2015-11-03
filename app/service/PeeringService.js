@@ -287,7 +287,7 @@ function PeeringService(server, pair, dal) {
                                     tx.issuers = tx.signatories;
                                     tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
                                   });
-                                  logger.info("Downloaded block #%s from peer ", block.number, p.getNamedURL());
+                                  logger.info("Downloaded block #%s from peer %s", block.number, p.getNamedURL());
                                   server.BlockchainService.submitBlock(block, true)
                                     .then(function(block){
                                       return next(null, block);

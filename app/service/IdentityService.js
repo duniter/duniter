@@ -60,8 +60,22 @@ function IdentityService (conf, dal) {
   })
   .catch(done);
 
+  this.findMemberWithoutMemberships = (search) => co(function *() {
+    let idty = null;
+    if (search.match(constants.PUBLIC_KEY)) {
+      idty = yield dal.getWrittenIdtyByPubkey(search);
+    }
+    else {
+      idty = yield dal.getWrittenIdtyByUID(search);
+    }
+    if (!idty) {
+      throw 'No member matching this pubkey or uid';
+    }
+    return new Identity(idty);
+  });
+
   this.getWrittenByPubkey = function(pubkey) {
-    return dal.getWritten(pubkey);
+    return dal.getWrittenIdtyByPubkey(pubkey);
   };
 
   this.getPendingFromPubkey = function(pubkey) {

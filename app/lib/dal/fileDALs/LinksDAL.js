@@ -2,6 +2,7 @@
  * Created by cgeek on 22/08/15.
  */
 
+var co = require('co');
 var Q = require('q');
 var AbstractLoki = require('./AbstractLoki');
 
@@ -11,6 +12,7 @@ function LinksDAL(fileDAL, loki) {
 
   "use strict";
 
+  let that = this;
   let collection = loki.getCollection('links') || loki.addCollection('links', { indices: ['source', 'target', 'block_number', 'block_hash', 'timestamp'] });
 
   AbstractLoki.call(this, collection, fileDAL, {
@@ -53,17 +55,18 @@ function LinksDAL(fileDAL, loki) {
     obsolete: true
   });
 
-  this.obsoletesLinks = (minTimestamp) => {
-    let toObsolete = this.lokiFind({
+  this.obsoletesLinks = (minTimestamp) => co(function *() {
+    let toObsolete = yield that.lokiFind({
       timestamp: { $lte: minTimestamp }
+    },{
+      obsolete: false
     });
     for (let i = 0; i < toObsolete.length; i++) {
       let link = toObsolete[i];
       link.obsolete = true;
       collection.update(link);
     }
-    return Q();
-  };
+  });
 
   this.addLink = (link) => {
     link.obsolete = false;

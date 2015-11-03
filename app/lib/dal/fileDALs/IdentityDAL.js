@@ -140,4 +140,18 @@ function IdentityDAL(fileDAL, loki) {
       }]
     });
   };
+
+  this.kickMembersForMembershipBelow = (maxNumber) => co(function *() {
+    let toKick = yield that.lokiFind({
+      currentMSN: { $lte: maxNumber }
+    },{
+      kick: false,
+      member: true
+    });
+    for (let i = 0; i < toKick.length; i++) {
+      let idty = toKick[i];
+      idty.kick = true;
+      collection.update(idty);
+    }
+  });
 }

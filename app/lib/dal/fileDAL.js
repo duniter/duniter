@@ -824,7 +824,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
             let isValidPeriod = delaySinceMiddle <= certValidtyTime + certDelay;
             let isValidPeriodB = delaySinceNextB <= certValidtyTime + certDelay;
             let isExcludin = !isValidPeriod && isValidPeriodB;
-            console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
+            //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
             if (isExcludin) {
               // Found
               yield that.indicatorsDAL.writeCurrentExcludingForCert(middleBlock);
@@ -853,16 +853,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
     return !isValidPeriod && isValidPeriodB;
   }
 
-  this.kickWithOutdatedMemberships = function(maxNumber) {
-    return that.getMembers()
-      .then(function(members){
-        return Q.all(members.map(function(member) {
-          if (member.currentMSN < maxNumber) {
-            return that.setKicked(member.pubkey, null, true);
-          }
-        }));
-      });
-  };
+  this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
 
   this.getPeerOrNull = function(pubkey, done) {
     return nullIfError(that.getPeer(pubkey), done);

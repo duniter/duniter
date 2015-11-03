@@ -18,18 +18,4 @@ function NodeBinding (server) {
       }
     }, null, "  "));
   };
-
-  this.dumpDB = function (req, res) {
-    res.type('application/json');
-    co(function *() {
-      let dal = server.BlockchainService.getMainContext().dal;
-      let dump = yield dal.dumpDB();
-      res.send(200, JSON.stringify({
-        "dump": dump
-      }, null, "  "));
-    })
-    .catch(function(){
-      res.send(500, 'Could not generate DB dump');
-    });
-  };
 }

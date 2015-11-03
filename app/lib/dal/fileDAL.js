@@ -126,11 +126,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
     });
   };
 
-  this.dumpDB = () => co(function *() {
-    let dump = {};
-    return Q(dump);
-  });
-
   this.loadDump = (dump) => co(function *() {
     return Q();
   });

@@ -218,11 +218,9 @@ function BlockchainContext(conf, dal) {
         // Newcomers
         async.forEachSeries(block.identities, function(identity, callback){
           var idty = Identity.statics.fromInline(identity);
-          var indexNb = block.identities.indexOf(identity);
           // Computes the hash if not done yet
           if (!idty.hash)
             idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
-          idty.indexNb = indexNb;
           dal.newIdentity(idty, block.number).then(_.partial(callback, null)).catch(callback);
         }, next);
       },
@@ -259,7 +257,6 @@ function BlockchainContext(conf, dal) {
   function updateCertifications (block, done) {
     async.forEachSeries(block.certifications, function(inlineCert, callback){
       var cert = Certification.statics.fromInline(inlineCert);
-      var indexNb = block.certifications.indexOf(inlineCert);
       var from_uid, to_uid;
       async.waterfall([
         function (next) {
@@ -278,10 +275,11 @@ function BlockchainContext(conf, dal) {
           if (existing) {
             cert = existing;
           }
+          cert.written_block = block.number;
+          cert.written_hash = block.hash;
           cert.from_uid = from_uid;
           cert.to_uid = to_uid;
           cert.linked = true;
-          cert.indexNb = indexNb;
           dal.officializeCertification(new Certification(cert))
             .then(_.partial(next, null))
             .catch(next);

@@ -22,6 +22,8 @@ function CertDAL(fileDAL, loki) {
   this.metaProps = ['linked'];
   this.propsToSave = [
     'linked',
+    'written_block',
+    'written_hash',
     'sig',
     'block_number',
     'block_hash',

@@ -148,7 +148,10 @@ function WOTBinding (server) {
             isMember: cert.isMember,
             wasMember: cert.wasMember,
             cert_time: cert.cert_time,
-            written: cert.linked,
+            written: cert.linked ? {
+              number: cert.written_block,
+              hash: cert.written_hash
+            } : null,
             signature: cert.sig
           });
         });
@@ -249,12 +252,15 @@ function WOTBinding (server) {
         };
         idty.certs.forEach(function(cert){
           json.certifications.push({
-            pubkey: cert.from,
+            pubkey: cert.to,
             uid: cert.uid,
             isMember: cert.isMember,
             wasMember: cert.wasMember,
             cert_time: cert.cert_time,
-            written: cert.linked,
+            written: cert.linked ? {
+              number: cert.written_block,
+              hash: cert.written_hash
+            } : null,
             signature: cert.sig
           });
         });

@@ -455,7 +455,11 @@ Name  | Value | Method
 
 A list of certifications issued to the member by other members (or who used to be members), with `written` data indicating wether the certification is written in the blockchain or not.
 
-Each certification also has a `isMember`  field to indicate wether the issuer of the certification is still a member or not.
+Each certification also has:
+
+* a `isMember` field to indicate wether the issuer of the certification is still a member or not.
+* a `written` field to indicate the block where the certification was written (or null if not written yet).
+
 ```json
 {
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
@@ -469,7 +473,10 @@ Each certification also has a `isMember`  field to indicate wether the issuer of
         "block": 88,
         "medianTime": 1509991044
       },
-      "written": true,
+      "written": {
+        "number": 872768,
+        "hash": "D30978C9D6C5A348A8188603F039423D90E50DC5"
+      },
       "isMember": true,
       "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
     },
@@ -495,7 +502,10 @@ Name  | Value | Method
 
 A list of certifications issued by the member to other members (or who used to be members), with `written` data indicating wether the certification is written in the blockchain or not.
 
-Each certification also has a `isMember`  field to indicate wether the issuer of the certification is still a member or not.
+Each certification also has:
+
+* a `isMember` field to indicate wether the issuer of the certification is still a member or not.
+* a `written` field to indicate the block where the certification was written (or null if not written yet).
 ```json
 {
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
@@ -509,7 +519,10 @@ Each certification also has a `isMember`  field to indicate wether the issuer of
         "block": 88,
         "medianTime": 1509991044
       },
-      "written": true,
+      "written": {
+        "number": 872768,
+        "hash": "D30978C9D6C5A348A8188603F039423D90E50DC5"
+      },
       "isMember": true,
       "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
     },

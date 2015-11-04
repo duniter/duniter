@@ -535,7 +535,7 @@ GET the blockchain parameters used by this node.
 The synchronization parameters.
 ```json
 {
-  currency: "beta_brousouf",
+  currency: "beta_brouzouf",
   c: 0.01,
   dt: 302400,
   ud0: 100,
@@ -584,7 +584,7 @@ The posted membership request.
   "signature": "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==",
   "membership": {
     "version": "1",
-    "currency": "beta_brousouf",
+    "currency": "beta_brouzouf",
     "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "membership": "IN",
     "sigDate": 1390739944,
@@ -617,7 +617,7 @@ A list of memberships issued by the *member* and written in the blockchain.
   "memberships": [
     {
 	  "version": "1",
-	  "currency": "beta_brousouf",
+	  "currency": "beta_brouzouf",
 	  "membership": "IN",
 	  "blockNumber": 678,
 	  "blockHash": "000007936DF3CC32BFCC1023D1258EC9E485D474"
@@ -662,7 +662,7 @@ The promoted block if it exists (otherwise return HTTP 404).
 ```json
 {
   "version": 1,
-  "currency": "beta_brousouf",
+  "currency": "beta_brouzouf",
   "nonce": 28,
   "number": 1,
   "timestamp": 1408996317,
@@ -696,7 +696,7 @@ The promoted block if it exists (otherwise return HTTP 404).
         "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk"
     ],
       "version": 1,
-      "currency": "beta_brousouf",
+      "currency": "beta_brouzouf",
       "issuers": [
         "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
         "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
@@ -976,7 +976,7 @@ Peering entry of the node.
 ```json
 {
   "version": "1",
-  "currency": "beta_brousouf",
+  "currency": "beta_brouzouf",
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "endpoints": [
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
@@ -1014,7 +1014,7 @@ Merkle URL leaf: peering entry
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
     "version": "1",
-    "currency": "beta_brousouf",
+    "currency": "beta_brouzouf",
     "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "endpoints": [
       "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
@@ -1029,14 +1029,13 @@ Merkle URL leaf: peering entry
 #### `network/peering/peers (POST)`
 **Goal**
 
-POST a UCG peering entry document to this node in order to alter UCG peering table.
+POST a peering entry document.
 
 **Parameters**
 
 Name        | Value                               | Method
 ----------- | ----------------------------------- | ------
-`entry`     | UCG peering entry document.         | POST
-`signature` | Signature of the UCG entry's value. | POST
+`peer`      | The peering entry document.         | POST
 
 **Returns**
 
@@ -1044,7 +1043,7 @@ The posted entry.
 ```json
 {
   "version": "1",
-  "currency": "beta_brousouf",
+  "currency": "beta_brouzouf",
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "endpoints": [
     "BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001",
@@ -1080,7 +1079,7 @@ The recorded transaction.
       "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
   ],
     "version": 1,
-    "currency": "beta_brousouf",
+    "currency": "beta_brouzouf",
     "issuers": [
       "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
       "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
@@ -1122,7 +1121,7 @@ Name              | Value                       | Method
 A list of available sources for the given `pubkey`.
 ```json
 {
-  "currency": "beta_brousouf",
+  "currency": "beta_brouzouf",
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "sources": [
     {

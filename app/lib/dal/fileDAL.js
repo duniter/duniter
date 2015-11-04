@@ -1135,6 +1135,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   this.loadStats = that.statDAL.loadStats;
   this.getStat = that.statDAL.getStat;
   this.saveStat = that.statDAL.saveStat;
+  this.pushStats = that.statDAL.pushStats;
 
   this.needsSave = function() {
     return loki.autosaveDirty();

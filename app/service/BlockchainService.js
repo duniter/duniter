@@ -63,6 +63,18 @@ function BlockchainService (conf, mainDAL, pair) {
   var Block         = require('../lib/entity/block');
   var Transaction   = require('../lib/entity/transaction');
 
+  var statTests = {
+    'newcomers': 'identities',
+    'certs': 'certifications',
+    'joiners': 'joiners',
+    'actives': 'actives',
+    'leavers': 'leavers',
+    'excluded': 'excluded',
+    'ud': 'dividend',
+    'tx': 'transactions'
+  };
+  let statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx'];
+
   this.init = function(done) {
     return that.mainForkDAL()
       .then(function(dal){
@@ -1365,6 +1377,7 @@ function BlockchainService (conf, mainDAL, pair) {
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
     let lastUDBlock = mainDAL.blockDAL.lastBlockWithDividend();
+    let stats = {};
     for (let i = 0; i < blocks.length; i++) {
       let previous = i > 0 ? blocks[i - 1] : lastPrevious;
       let block = blocks[i];
@@ -1381,6 +1394,23 @@ function BlockchainService (conf, mainDAL, pair) {
         block.monetaryMass += block.dividend * block.membersCount;
         lastUDBlock = block;
       }
+      // Stat
+      for (let j = 0; j < statNames.length; j++) {
+        let statName = statNames[j];
+        if (!stats[statName]) {
+          stats[statName] = { blocks: [] };
+        }
+        let stat = stats[statName];
+        var testProperty = statTests[statName];
+        var value = block[testProperty];
+        var isPositiveValue = value && typeof value != 'object';
+        var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+        if (isPositiveValue || isNonEmptyArray) {
+          stat.blocks.push(block.number);
+        }
+        stat.lastParsedBlock = block.number;
+      }
+      // Transactions & Memberships recording
       yield mainDAL.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
       yield mainDAL.saveMemberships('join', block.joiners);
       yield mainDAL.saveMemberships('active', block.actives);
@@ -1415,6 +1445,7 @@ function BlockchainService (conf, mainDAL, pair) {
       });
     }
     mainDAL.blockDAL.saveBunch(blocks);
+    yield mainDAL.pushStats(stats);
     //console.log('Saved');
   });
 
@@ -1439,70 +1470,40 @@ function BlockchainService (conf, mainDAL, pair) {
   });
 
   this.addStatComputing = function () {
-    var tests = {
-      'newcomers': 'identities',
-      'certs': 'certifications',
-      'joiners': 'joiners',
-      'actives': 'actives',
-      'leavers': 'leavers',
-      'excluded': 'excluded',
-      'ud': 'dividend',
-      'tx': 'transactions'
-    };
     statQueue.push(function (sent) {
-      //logger.debug('Computing stats...');
-      async.forEachSeries(['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx'], function (statName, callback) {
-        that.mainForkDAL()
-          .then(function(forkDAL){
-            async.waterfall([
-              function (next) {
-                async.parallel({
-                  stat: function (next) {
-                    forkDAL.getStat(statName).then(_.partial(next, null)).catch(next);
-                  },
-                  current: function (next) {
-                    that.current(next);
-                  }
-                }, next);
-              },
-              function (res, next) {
-                var stat = res.stat;
-                var current = res.current;
-                // Compute new stat
-                async.forEachSeries(_.range(stat.lastParsedBlock + 1, (current ? current.number : -1) + 1), function (blockNumber, callback) {
-                  // console.log('Stat', statName, ': tested block#' + blockNumber);
-                  async.waterfall([
-                    function (next) {
-                      forkDAL.getBlockOrNull(blockNumber, next);
-                    },
-                    function (block, next) {
-                      var testProperty = tests[statName];
-                      var value = block[testProperty];
-                      var isPositiveValue = value && typeof value != 'object';
-                      var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
-                      if (isPositiveValue || isNonEmptyArray) {
-                        stat.blocks.push(blockNumber);
-                      }
-                      stat.lastParsedBlock = blockNumber;
-                      next();
-                    }
-                  ], callback);
-                }, function (err) {
-                  next(err, stat);
-                });
-              },
-              function (stat, next) {
-                forkDAL.saveStat(stat, statName).then(_.partial(next, null)).catch(next);
-              }
-            ], callback);
-          });
-      }, function () {
-        //logger.debug('Computing stats: done!');
-        sent();
-      });
+      co(function *() {
+        logger.debug('Computing stats...');
+        let forkDAL = yield that.mainForkDAL();
+        for (let i = 0; i < statNames.length; i++) {
+          let statName = statNames[i];
+          let stat = yield forkDAL.getStat(statName);
+          let current = yield that.current();
+          let start = stat.lastParsedBlock + 1;
+          let end = (current ? current.number : -1);
+          for (let blockNumber = start; blockNumber <= end; blockNumber++) {
+            logger.debug('Stat', statName, ': testing block#' + blockNumber);
+            let block = yield forkDAL.getBlockOrNull(blockNumber);
+            var testProperty = statTests[statName];
+            var value = block[testProperty];
+            var isPositiveValue = value && typeof value != 'object';
+            var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+            if (isPositiveValue || isNonEmptyArray) {
+              stat.blocks.push(blockNumber);
+            }
+            stat.lastParsedBlock = blockNumber;
+          }
+          yield forkDAL.saveStat(stat, statName);
+        }
+        logger.debug('Computing stats: done!');
+      })
+        .then(() => sent())
+        .catch((err) => {
+          logger.error(err);
+          sent();
+        });
     });
   };
-  
+
   this.getCertificationsExludingBlock = function() {
     return that.currentDal.getCurrent()
       .then(function(current){

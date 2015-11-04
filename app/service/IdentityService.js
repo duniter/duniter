@@ -176,12 +176,22 @@ function IdentityService (conf, dal) {
           else if (existing)
             next(null, new Identity(existing));
           else {
-            // Create
-            idty = new Identity(idty);
-            dal.savePendingIdentity(idty).then(function() {
+            return co(function *() {
+              // Create if not already written uid/pubkey
+              let used = yield dal.getWrittenIdtyByPubkey(idty.pubkey);
+              if (used) {
+                throw 'Pubkey already used in the blockchain';
+              }
+              used = yield dal.getWrittenIdtyByUID(idty.uid);
+              if (used) {
+                throw 'UID already used in the blockchain';
+              }
+              idty = new Identity(idty);
+              yield dal.savePendingIdentity(idty);
               logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
               next(null, idty);
-            }).catch(next);
+            })
+              .catch(next);
           }
         }
       ], cb);

@@ -243,10 +243,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   this.getBlock = function(number, done) {
     return that.blockDAL.getBlock(number)
       .catch(function(){
-        throw 'Block ' + number + ' not found on DAL ' + that.name;
+        throw 'Block ' + number + ' not found';
       })
       .then(function(block){
-        done && done(null, block);
+        done && done(null, block || null);
         return block;
       })
       .catch(function(err){

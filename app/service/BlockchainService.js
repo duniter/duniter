@@ -132,12 +132,17 @@ function BlockchainService (conf, mainDAL, pair) {
   this.promoted = function (number, done) {
     return that.mainForkDAL()
       .then(function(forkDAL){
-        return forkDAL.getPromoted(number, done);
+        return forkDAL.getPromoted(number);
       })
       .then(function(bb){
+        if (!bb) throw 'Block not found';
+        done && done(null, bb);
         return bb;
       })
-      .catch(done);
+      .catch(function(err) {
+        done && done(err);
+        throw err;
+      });
   };
 
   this.checkBlock = function(block) {

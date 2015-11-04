@@ -301,29 +301,16 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
 
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
-  this.getCurrentNumber = function() {
-    return that.blockDAL.getCurrent()
-      .then((block) => block.number)
-      .catch(function() {
-        return -1;
-      });
-  };
-
   this.getLastSavedBlockFileNumber = function() {
     return that.blockDAL.getLastSavedBlockFileNumber();
   };
 
   this.getBlockCurrent = function(done) {
-    return that.getCurrentNumber()
-      .then(function(number) {
-        if (number != -1)
-          return that.getBlock(number);
-        else
-          throw 'No current block';
-      })
-      .then(function(block){
-        done && done(null, block);
-        return block;
+    return that.blockDAL.getCurrent()
+      .then(function(current) {
+        if (!current) throw 'No current block';
+        done && done(null, current);
+        return current;
       });
   };
 

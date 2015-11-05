@@ -184,12 +184,12 @@ program
 program
   .command('init [host] [port]')
   .description('Setup a node configuration and sync data with given node')
-  .action(connect(bootstrapServer, true));
+  .action(connect(bootstrapServer, true, true));
 
 program
   .command('forward [host] [port] [what]')
   .description('Forward local blockchain to a remote uCoin node')
-  .action(service(function (host, port, what, server, conf) {
+  .action(service(function (host, port, what, server) {
 
     var localCurrent;
     var remoteCurrent;
@@ -698,7 +698,7 @@ function commandLineConf(conf) {
   return _(conf).extend({ routing: true });
 }
 
-function connect(callback, forConf) {
+function connect(callback, forConf, useDefaultConf) {
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
@@ -706,7 +706,7 @@ function connect(callback, forConf) {
     var server = ucoin({ name: dbName }, commandLineConf());
 
     // Initialize server (db connection, ...)
-    server.connectDB(forConf)
+    server.connectDB(forConf, useDefaultConf)
       .then(function(){
         cbArgs.length--;
         cbArgs[cbArgs.length++] = server;

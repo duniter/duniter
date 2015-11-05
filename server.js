@@ -48,9 +48,9 @@ function Server (dbConf, overrideConf) {
     });
   };
 
-  this.connectDB = function (forConf) {
+  this.connectDB = function (forConf, useDefaultConf) {
     // Connect only once
-    return connectionPromise || (connectionPromise = that.connect(forConf));
+    return connectionPromise || (connectionPromise = that.connect(forConf, useDefaultConf));
   };
 
   this.initWithServices = function (done) {
@@ -93,7 +93,7 @@ function Server (dbConf, overrideConf) {
     });
   };
 
-  this.connect = function (forConf) {
+  this.connect = function (forConf, useDefaultConf) {
     // Init connection
     if (that.dal) {
       return Q();
@@ -102,7 +102,7 @@ function Server (dbConf, overrideConf) {
     return dbType(dbConf.name || "default", forConf)
       .then(function(dal){
         that.dal = dal;
-        return that.dal.init(overrideConf);
+        return that.dal.init(overrideConf, useDefaultConf);
       })
       .then(function(conf){
         that.conf = conf;

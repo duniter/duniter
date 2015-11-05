@@ -209,10 +209,8 @@ function simpleFloat (question, property, conf, done) {
   }, done);
 }
 
-function simplePercentOrPositiveInteger (question, property, conf, done) {
-  simpleValue(question, property, conf[property], conf, function (input) {
-    return input && (input.toString().match(/^[1-9][0-9]*$/) || input.toString().match(/^0\.[0-9]+$/)) ? true : false;
-  }, done);
+function getRandomPort() {
+  return ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
 }
 
 function upnpResolve(noupnp, done) {
@@ -220,7 +218,7 @@ function upnpResolve(noupnp, done) {
   var client = upnp.createClient();
   var privateIP = null, publicIP = null;
   // Look for 2 random ports
-  var privatePort = ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
+  var privatePort = getRandomPort();
   var publicPort = privatePort;
   logger.info('Checking UPnP features...');
   async.waterfall([
@@ -434,7 +432,10 @@ function getLocalNetworkOperations(conf, autoconf) {
         next();
       });
     },
-    autoconf ? (done) => done() : async.apply(simpleInteger, "Port", "port", conf)
+    autoconf ? (done) => {
+      conf.port = getRandomPort();
+      done();
+    } : async.apply(simpleInteger, "Port", "port", conf)
   ];
 }
 

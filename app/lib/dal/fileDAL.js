@@ -4,6 +4,7 @@ var co      = require('co');
 var _       = require('underscore');
 var sha1    = require('sha1');
 var path    = require('path');
+var Configuration = require('../entity/configuration');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
 var Transaction = require('../entity/transaction');
@@ -119,10 +120,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
 
   var currency = '';
 
-  this.init = (overrideConf) => {
+  this.init = (overrideConf, defaultConf) => {
     return co(function *() {
       yield _.values(that.newDals).map((dal) => dal.init());
-      return yield that.loadConf(overrideConf);
+      return that.loadConf(overrideConf, defaultConf);
     });
   };
 
@@ -1101,14 +1102,15 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
     return that.confDAL.getParameters();
   };
 
-  this.loadConf = function(overrideConf) {
-    return that.confDAL.loadConf()
-      .then(function(conf){
-        conf = _(conf).extend(overrideConf || {});
-        currency = conf.currency;
-        return conf;
-      });
-  };
+  this.loadConf = (overrideConf, defaultConf) => co(function *() {
+    let conf = Configuration.statics.complete(overrideConf || {});
+    if (!defaultConf) {
+      let savedConf = yield that.confDAL.loadConf();
+      conf = _(savedConf).extend(overrideConf || {});
+    }
+    currency = conf.currency;
+    return conf;
+  });
 
   this.saveConf = function(confToSave) {
     currency = confToSave.currency;

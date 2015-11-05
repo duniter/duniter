@@ -1375,10 +1375,6 @@ function BlockchainService (conf, mainDAL, pair) {
   });
 
   this.saveBlocksInMainBranch = (blocks) => co(function *() {
-    if (blocks[0].number == 0) {
-      // Save currency parameters
-      yield that.saveParametersForRootBlock(blocks[0]);
-    }
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
     let lastUDBlock = mainDAL.blockDAL.lastBlockWithDividend();

@@ -151,6 +151,11 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       }
       yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
 
+      // Save currency parameters given by root block
+      conf.branchesWindowSize = initialForkSize;
+      let rootBlock = yield server.dal.getBlock(0);
+      yield BlockchainService.saveParametersForRootBlock(rootBlock);
+
       //=======
       // Peers
       //=======

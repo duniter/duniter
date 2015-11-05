@@ -1374,10 +1374,39 @@ function BlockchainService (conf, mainDAL, pair) {
     return mainFork.saveParametersForRootBlock(rootBlock);
   });
 
-  this.saveBlocksInMainBranch = (blocks) => co(function *() {
+  function getParameters(block) {
+    var sp = block.parameters.split(':');
+    let theConf = {};
+    theConf.c                = parseFloat(sp[0]);
+    theConf.dt               = parseInt(sp[1]);
+    theConf.ud0              = parseInt(sp[2]);
+    theConf.sigDelay         = parseInt(sp[3]);
+    theConf.sigValidity      = parseInt(sp[4]);
+    theConf.sigQty           = parseInt(sp[5]);
+    theConf.sigWoT           = parseInt(sp[6]);
+    theConf.msValidity       = parseInt(sp[7]);
+    theConf.stepMax          = parseInt(sp[8]);
+    theConf.medianTimeBlocks = parseInt(sp[9]);
+    theConf.avgGenTime       = parseInt(sp[10]);
+    theConf.dtDiffEval       = parseInt(sp[11]);
+    theConf.blocksRot        = parseInt(sp[12]);
+    theConf.percentRot       = parseFloat(sp[13]);
+    theConf.currency         = block.currency;
+    return theConf;
+  }
+
+  function getMaxBlocksToStoreAsFile(aConf) {
+    return Math.floor(Math.max(aConf.dt / aConf.avgGenTime, aConf.medianTimeBlocks, aConf.dtDiffEval, aConf.blocksRot) * constants.SAFE_FACTOR);
+  }
+
+  this.saveBlocksInMainBranch = (blocks, targetLastNumber) => co(function *() {
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
     let lastUDBlock = mainDAL.blockDAL.lastBlockWithDividend();
+    let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield mainDAL.getBlockOrNull(0));
+    let rootConf = getParameters(rootBlock);
+    let maxBlock = getMaxBlocksToStoreAsFile(rootConf);
+    let lastBlockToSave = blocks[blocks.length - 1];
     let stats = {};
     for (let i = 0; i < blocks.length; i++) {
       let previous = i > 0 ? blocks[i - 1] : lastPrevious;
@@ -1445,7 +1474,7 @@ function BlockchainService (conf, mainDAL, pair) {
         });
       });
     }
-    mainDAL.blockDAL.saveBunch(blocks);
+    yield mainDAL.blockDAL.saveBunch(blocks, (targetLastNumber - lastBlockToSave.number) > maxBlock);
     yield mainDAL.pushStats(stats);
     //console.log('Saved');
   });

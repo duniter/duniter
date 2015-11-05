@@ -4,10 +4,15 @@
 
 var Q = require('q');
 var _ = require('underscore');
+var co = require('co');
+var constants = require('../../constants');
+
+const BLOCK_FILE_PREFIX = "0000000000";
+const BLOCK_FOLDER_SIZE = 500;
 
 module.exports = BlockDAL;
 
-function BlockDAL(fileDAL, loki) {
+function BlockDAL(fileDAL, loki, rootFS, getLowerWindowBlock) {
 
   "use strict";
 
@@ -15,7 +20,9 @@ function BlockDAL(fileDAL, loki) {
   let blocksDB = getView();
   let current = null;
 
-  this.init = () => null;
+  this.init = () => co(function *() {
+    yield rootFS.makeTree('blocks/');
+  });
 
   this.getCurrent = () => {
     if (!current) {
@@ -24,7 +31,17 @@ function BlockDAL(fileDAL, loki) {
     return Q(current);
   };
 
-  this.getBlock = (number) => Q(blocksDB.branchResultset().find({ number: parseInt(number) }).data()[0]);
+  this.getBlock = (number) => co(function *() {
+    let block = blocksDB.branchResultset().find({ number: parseInt(number) }).data()[0];
+    if (!block) {
+      try {
+        block = yield rootFS.readJSON(pathOfBlock(number) + blockFileName(number) + '.json');
+      } catch(e) {
+        block = null;
+      }
+    }
+    return block;
+  });
 
   this.blocksDB = blocksDB;
   this.collection = collection;
@@ -35,14 +52,24 @@ function BlockDAL(fileDAL, loki) {
     return Q(-1);
   };
 
-  this.getBlocks = (start, end) =>
-    blocksDB.branchResultset().find({
-    $and: [{
-      number: { $gte: start }
-    }, {
-      number: { $lte: end }
-    }]
-  }).data();
+  this.getBlocks = (start, end) => {
+    let lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
+    let lokiBlocks = blocksDB.branchResultset().find({
+      $and: [{
+        number: { $gte: start }
+      }, {
+        number: { $lte: end }
+      }]
+    }).data();
+    if (lowerInLoki.number <= start) {
+      return Q(lokiBlocks);
+    }
+    return co(function *() {
+      let filesBlocks = yield Q.all(_.range(start, Math.min(lowerInLoki.number, end + 1)).map((number) => rootFS.readJSON(pathOfBlock(number) + blockFileName(number) + '.json')));
+      yield migrateOldBlocks();
+      return filesBlocks.concat(lokiBlocks);
+    });
+  };
 
   this.lastBlockWithDividend = () => blocksDB.branchResultset().find({ dividend: { $gt: 0 } }).data()[0];
 
@@ -51,8 +78,24 @@ function BlockDAL(fileDAL, loki) {
     return Q(blocksOfIssuer[0]);
   };
 
-  this.saveBunch = (blocks) => {
-    collection.insert(blocks);
+  this.saveBunch = (blocks, inFiles) => {
+    if (!inFiles) {
+      collection.insert(blocks);
+      return Q();
+    } else {
+      // Save in files
+      return co(function *() {
+        let trees = [];
+        blocks.forEach(function(block){
+          let pathForBlock = pathOfBlock(block.number);
+          if (!~trees.indexOf(pathForBlock)) {
+            trees.push(pathForBlock);
+          }
+        });
+        yield trees.map((tree) => rootFS.makeTree(tree));
+        yield blocks.map((block) => rootFS.writeJSON(pathOfBlock(block.number) + blockFileName(block.number) + '.json', block));
+      });
+    }
   };
 
   this.saveBlock = (block) => {
@@ -77,6 +120,32 @@ function BlockDAL(fileDAL, loki) {
     }
     return Q(block);
   };
+
+  function migrateOldBlocks() {
+    return co(function *() {
+      let number = yield getLowerWindowBlock();
+      let lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
+      if (!lowerInLoki) {
+        return;
+      }
+      let deadBlocksInLoki = number - lowerInLoki.number;
+      if (deadBlocksInLoki >= constants.BLOCKS_COLLECT_THRESHOLD) {
+        let blocksToPersist = blocksDB.branchResultset().find({
+          $and: [{
+            number: { $gte: lowerInLoki.number }
+          }, {
+            number: { $lte: number }
+          }]
+        }).simplesort('number').data();
+        for (let i = 0; i < blocksToPersist.length; i++) {
+          let block = blocksToPersist[i];
+          yield rootFS.makeTree(pathOfBlock(block.number));
+          yield rootFS.writeJSON(pathOfBlock(block.number) + blockFileName(block.number) + '.json', block);
+          collection.remove(block);
+        }
+      }
+    });
+  }
 
   function getView() {
     let view;
@@ -108,5 +177,17 @@ function BlockDAL(fileDAL, loki) {
       view.conditions = conditions;
     }
     return view;
+  }
+
+  function folderOfBlock(blockNumber) {
+    return (Math.floor(blockNumber / BLOCK_FOLDER_SIZE) + 1) * BLOCK_FOLDER_SIZE;
+  }
+
+  function pathOfBlock(blockNumber) {
+    return 'blocks/' + folderOfBlock(blockNumber) + '/';
+  }
+
+  function blockFileName(blockNumber) {
+    return BLOCK_FILE_PREFIX.substr(0, BLOCK_FILE_PREFIX.length - ("" + blockNumber).length) + blockNumber;
   }
 }

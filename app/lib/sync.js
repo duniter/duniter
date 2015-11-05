@@ -137,7 +137,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
           let blocks = chunk[2];
           blocks = _.sortBy(blocks, 'number');
           logger.info("Applying blocks #%s to #%s...", blocks[0].number, blocks[blocks.length - 1].number);
-          yield BlockchainService.saveBlocksInMainBranch(blocks);
+          yield BlockchainService.saveBlocksInMainBranch(blocks, remoteNumber);
           blocksApplied += blocks.length;
           speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
           if (watcher.appliedPercent() != Math.floor(blocks[blocks.length - 1].number / remoteNumber * 100)) {

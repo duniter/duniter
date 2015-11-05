@@ -96,10 +96,12 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
 
   var rootPath = home;
 
+  let blocksCFS = require('../cfs')(rootPath, myFS);
+
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, CFSStorage);
-  this.blockDAL = new BlockDAL(that, loki);
+  this.blockDAL = new BlockDAL(that, loki, blocksCFS, getLowerWindowBlock);
   this.sourcesDAL = new SourcesDAL(that, loki);
   this.txsDAL = new TxsDAL(that, loki);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, CFSStorage);
@@ -127,9 +129,44 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
     });
   };
 
-  this.loadDump = (dump) => co(function *() {
-    return Q();
-  });
+  function getLowerWindowBlock() {
+    return co(function *() {
+      let rootBlock = yield that.getRootBlock();
+      if (!rootBlock) {
+        return -1;
+      }
+      let conf = getParameters(rootBlock);
+      let maxBlock = getMaxBlocksToStoreAsFile(conf);
+      let current = yield that.getCurrentBlockOrNull();
+      let currentNumber = current ? current.number : -1;
+      return currentNumber - maxBlock;
+    });
+  }
+
+  function getParameters(block) {
+    var sp = block.parameters.split(':');
+    let theConf = {};
+    theConf.c                = parseFloat(sp[0]);
+    theConf.dt               = parseInt(sp[1]);
+    theConf.ud0              = parseInt(sp[2]);
+    theConf.sigDelay         = parseInt(sp[3]);
+    theConf.sigValidity      = parseInt(sp[4]);
+    theConf.sigQty           = parseInt(sp[5]);
+    theConf.sigWoT           = parseInt(sp[6]);
+    theConf.msValidity       = parseInt(sp[7]);
+    theConf.stepMax          = parseInt(sp[8]);
+    theConf.medianTimeBlocks = parseInt(sp[9]);
+    theConf.avgGenTime       = parseInt(sp[10]);
+    theConf.dtDiffEval       = parseInt(sp[11]);
+    theConf.blocksRot        = parseInt(sp[12]);
+    theConf.percentRot       = parseFloat(sp[13]);
+    theConf.currency         = block.currency;
+    return theConf;
+  }
+
+  function getMaxBlocksToStoreAsFile(aConf) {
+    return Math.floor(Math.max(aConf.dt / aConf.avgGenTime, aConf.medianTimeBlocks, aConf.dtDiffEval, aConf.blocksRot) * constants.SAFE_FACTOR);
+  }
 
   this.getCurrency = function() {
     return currency;

@@ -1402,7 +1402,6 @@ function BlockchainService (conf, mainDAL, pair) {
   this.saveBlocksInMainBranch = (blocks, targetLastNumber) => co(function *() {
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
-    let lastUDBlock = mainDAL.blockDAL.lastBlockWithDividend();
     let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield mainDAL.getBlockOrNull(0));
     let rootConf = getParameters(rootBlock);
     let maxBlock = getMaxBlocksToStoreAsFile(rootConf);
@@ -1416,13 +1415,15 @@ function BlockchainService (conf, mainDAL, pair) {
       // Monetary mass & UD Time recording before inserting elements
       block.monetaryMass = (previous && previous.monetaryMass) || 0;
       // UD Time update
+      let previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;
       if (block.number == 0) {
         block.UDTime = block.medianTime; // Root = first UD time
       }
       else if (block.dividend) {
-        block.UDTime = conf.dt + (lastUDBlock ? lastUDBlock.UDTime : blocks[0].medianTime);
+        block.UDTime = conf.dt + previousBlock.UDTime;
         block.monetaryMass += block.dividend * block.membersCount;
-        lastUDBlock = block;
+      } else {
+        block.UDTime = previousBlock.UDTime;
       }
       // Stat
       for (let j = 0; j < statNames.length; j++) {

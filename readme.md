@@ -45,4 +45,4 @@ If you wish to participate/debate on uCoin, you can:
 
 # License
 
-This software is provided under [GPLv3](https://raw.github.com/ucoin-io/ucoin/master/LICENSE).
+This software is distributed under [GNU GPLv3](https://raw.github.com/ucoin-io/ucoin/master/LICENSE).

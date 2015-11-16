@@ -34,14 +34,14 @@ If you wish to participate/debate on uCoin, you can:
 # References
 
 ## Theoretical
-* [Relative theory of money](http://vit.free.fr/TRM/en_US/)
-* [Relative Money Theory v2.718, Stephane Laborde - Nov. 2012](http://wiki.creationmonetaire.info/index.php?title=Main_Page)
+* [[en] Relative theory of money](http://vit.free.fr/TRM/en_US/)
+* [[fr] Théorie relative de la monaie](http://trm.creationmonetaire.info/)
 
 ## OpenUDC
 
-* Official OpenUDC project website: <http://www.openudc.org>
-* Official OpenUDC repository: <https://github.com/Open-UDC/open-udc>
-* Other project trying to implement OpenUDC in python: <https://github.com/canercandan/django-openudc>
+* [Official OpenUDC project website](http://www.openudc.org)
+* [Official OpenUDC repository](https://github.com/Open-UDC/open-udc)
+* [Other project trying to implement OpenUDC in python](https://github.com/canercandan/django-openudc)
 
 # License
 

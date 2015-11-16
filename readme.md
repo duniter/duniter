@@ -34,7 +34,7 @@ If you wish to participate/debate on uCoin, you can:
 # References
 
 ## Theoretical
-
+* [Relative theory of money](http://vit.free.fr/TRM/en_US/)
 * [Relative Money Theory v2.718, Stephane Laborde - Nov. 2012](http://wiki.creationmonetaire.info/index.php?title=Main_Page)
 
 ## OpenUDC

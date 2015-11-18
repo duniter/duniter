@@ -56,6 +56,9 @@ function CertDAL(loki) {
     return this.lokiSave(cert);
   };
 
+  this.saveCert = (cert) =>
+    this.lokiSave(cert);
+
   this.saveNewCertification = (cert) =>
     this.lokiSave(cert);
 

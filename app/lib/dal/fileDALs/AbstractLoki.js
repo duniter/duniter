@@ -55,6 +55,22 @@ function AbstractLoki(collection) {
     return Q(entity);
   };
 
+  this.lokiRemove = (fullEntity) => {
+    let entity = fullEntity;
+    if (this.propsToSave) {
+      entity = _.pick(fullEntity, this.propsToSave || []);
+    }
+    let existing = this.lokiExisting(entity);
+    if (existing) {
+      collection.remove(existing);
+      return true;
+    }
+    return false;
+  };
+
+  this.lokiRemoveWhere = (conditions) =>
+    collection.removeWhere(conditions);
+
   function getConditions(baseConditions, metaConditions) {
     let conditions = {
       $and: [baseConditions, metaConditions]

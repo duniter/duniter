@@ -189,6 +189,22 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   };
 
+  this.revertCurrentBlock = () =>
+    Q.Promise(function(resolve, reject){
+      // FIFO: only admit one block at a time
+      blockFifo.push(function(blockIsProcessed) {
+        return co(function *() {
+          yield mainContext.revertCurrentBlock();
+          resolve();
+          blockIsProcessed();
+        })
+          .catch((err) => {
+            reject(err);
+            blockIsProcessed();
+          });
+      });
+    });
+
   this.stopPoWThenProcessAndRestartPoW = function (done) {
     // If PoW computation process is waiting, trigger it
     if (computeNextCallback)

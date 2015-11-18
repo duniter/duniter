@@ -145,7 +145,8 @@ module.exports = {
   },
 
   BRANCHES: {
-    DEFAULT_WINDOW_SIZE: 10
+    DEFAULT_WINDOW_SIZE: 10,
+    SWITCH_ON_BRANCH_AHEAD_BY: 3
   },
 
   INVALIDATE_CORE_CACHE: true,

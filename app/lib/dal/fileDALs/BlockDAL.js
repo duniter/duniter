@@ -122,6 +122,21 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
     return Q(block);
   };
 
+  this.setSideBlock = (block, previousBlock) => {
+    let existing = collection.find({
+      $and: [{
+        number: block.number
+      }, {
+        hash: block.hash
+      }]
+    });
+    (existing || []).forEach(function(found){
+      found.fork = true;
+      collection.update(found);
+    });
+    current = previousBlock;
+  };
+
   function migrateOldBlocks() {
     return co(function *() {
       let number = yield getLowerWindowBlock();

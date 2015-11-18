@@ -21,6 +21,7 @@ function IdentityDAL(loki) {
   this.propsToSave = [
     'revoked',
     'currentMSN',
+    'memberships',
     'time',
     'member',
     'kick',
@@ -45,8 +46,62 @@ function IdentityDAL(loki) {
     });
   };
 
+  this.unacceptIdentity = (pubkey) => {
+    return co(function *() {
+      var idty = yield that.getFromPubkey(pubkey);
+      idty.currentMSN = -1;
+      idty.memberships = [];
+      idty.written = false;
+      idty.wasMember = false;
+      idty.member = false;
+      idty.kick = false;
+      idty.leaving = false;
+      return that.saveIdentity(idty);
+    });
+  };
+
+  this.unJoinIdentity = (ms) => {
+    return co(function *() {
+      var idty = yield that.getFromPubkey(ms.issuer);
+      idty.memberships.pop();
+      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      idty.member = false;
+      return that.saveIdentity(idty);
+    });
+  };
+
+  this.unRenewIdentity = (pubkey) => {
+    return co(function *() {
+      var idty = yield that.getFromPubkey(pubkey);
+      idty.memberships.pop();
+      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      return that.saveIdentity(idty);
+    });
+  };
+
+  this.unLeaveIdentity = (pubkey) => {
+    return co(function *() {
+      var idty = yield that.getFromPubkey(pubkey);
+      idty.memberships.pop();
+      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      idty.leaving = false;
+      return that.saveIdentity(idty);
+    });
+  };
+
+  this.unExcludeIdentity = (pubkey) => {
+    return co(function *() {
+      var idty = yield that.getFromPubkey(pubkey);
+      idty.memberships.pop();
+      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      idty.leaving = false;
+      return that.saveIdentity(idty);
+    });
+  };
+
   this.newIdentity = function(idty, onBlockNumber) {
     idty.currentMSN = onBlockNumber;
+    idty.memberships = [onBlockNumber];
     idty.member = true;
     idty.wasMember = true;
     idty.kick = false;
@@ -57,6 +112,7 @@ function IdentityDAL(loki) {
   this.joinIdentity = (pubkey, onBlockNumber) => {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
+      idty.memberships.push(onBlockNumber);
       idty.currentMSN = onBlockNumber;
       idty.member = true;
       idty.wasMember = true;
@@ -70,6 +126,7 @@ function IdentityDAL(loki) {
   this.activeIdentity = (pubkey, onBlockNumber) => {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
+      idty.memberships.push(onBlockNumber);
       idty.currentMSN = onBlockNumber;
       idty.member = true;
       idty.kick = false;
@@ -83,6 +140,7 @@ function IdentityDAL(loki) {
   this.leaveIdentity = (pubkey, onBlockNumber) => {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
+      idty.memberships.push(onBlockNumber);
       idty.currentMSN = onBlockNumber;
       idty.leaving = true;
       // TODO: previously had

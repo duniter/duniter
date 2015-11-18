@@ -356,6 +356,8 @@ function Server (dbConf, overrideConf) {
       });
   };
 
+  this.revert = () => this.BlockchainService.revertCurrentBlock();
+
   this.singleWriteStream = function (onError, onSuccess) {
     return new TempStream(that, onError, onSuccess);
   };

@@ -64,8 +64,22 @@ function LinksDAL(loki) {
     }
   });
 
+  this.unObsoletesLinks = (minTimestamp) => co(function *() {
+    let toObsolete = yield that.lokiFind({
+      timestamp: { $gte: minTimestamp }
+    });
+    for (let i = 0; i < toObsolete.length; i++) {
+      let link = toObsolete[i];
+      link.obsolete = false;
+      collection.update(link);
+    }
+  });
+
   this.addLink = (link) => {
     link.obsolete = false;
     return this.lokiSave(link);
   };
+
+  this.removeLink = (link) =>
+    this.lokiRemove(link);
 }

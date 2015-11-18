@@ -84,4 +84,33 @@ function SourcesDAL(loki) {
     block_hash: block_hash,
     consumed: false
   });
+
+  this.unConsumeSource = (type, pubkey, number, fingerprint, amount, time, block_hash) => {
+    let src = this.lokiExisting({
+      pubkey: pubkey,
+      type: type,
+      number: number,
+      fingerprint: fingerprint,
+      amount: amount
+    });
+    if (src) {
+      src.consumed = false;
+      collection.update(src);
+    } else {
+      this.lokiSave({
+        pubkey: pubkey,
+        type: type,
+        number: number,
+        fingerprint: fingerprint,
+        amount: amount,
+        time: time,
+        block_hash: block_hash,
+        consumed: false
+      });
+    }
+  };
+
+  this.removeAllSourcesOfBlock = (number) => this.lokiRemoveWhere({
+    number: number
+  });
 }

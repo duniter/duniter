@@ -94,6 +94,28 @@ function BlockchainContext(conf, dal) {
     }
   });
 
+  this.revertCurrentBlock = () => co(function *() {
+    let current = yield that.current();
+    logger.debug('Reverting block #%s...', current.number);
+    let res = yield that.revertBlock(current);
+    logger.debug('Reverted block #%s', current.number);
+    return res;
+  });
+
+  this.revertBlock = (block) => co(function *() {
+    let previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
+    // Set the block as SIDE block (equivalent to removal from main branch)
+    dal.blockDAL.setSideBlock(block, previousBlock);
+    yield undoCertifications(block);
+    yield undoLinks(block);
+    if (previousBlock) {
+      yield dal.undoObsoleteLinks(previousBlock.medianTime - conf.sigValidity);
+    }
+    yield undoMembersUpdate(block);
+    yield undoTransactionSources(block);
+    yield undoDeleteTransactions(block);
+  });
+
   function checkIssuer (block, done) {
     async.waterfall([
       function (next){
@@ -267,6 +289,107 @@ function BlockchainContext(conf, dal) {
         }, next);
       }
     ], done);
+  }
+
+  function undoMembersUpdate (block) {
+    return co(function *() {
+      // Undo 'join' which can be either newcomers or comebackers
+      for (let i = 0, len = block.joiners.length; i < len; i++) {
+        let msRaw = block.joiners[i];
+        let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
+        yield dal.unJoinIdentity(ms);
+      }
+      // Undo newcomers (may strengthen the undo 'join')
+      for (let i = 0, len = block.identities.length; i < len; i++) {
+        let identity = block.identities[i];
+        let idty = Identity.statics.fromInline(identity);
+        yield dal.unacceptIdentity(idty.pubkey);
+      }
+      // Undo renew (only remove last membership IN document)
+      for (let i = 0, len = block.actives.length; i < len; i++) {
+        let msRaw = block.joiners[i];
+        let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
+        yield dal.unRenewIdentity(ms.issuer);
+      }
+      // Undo leavers (forget about their last membership OUT document)
+      for (let i = 0, len = block.leavers.length; i < len; i++) {
+        let msRaw = block.joiners[i];
+        let ms = Membership.statics.fromInline(msRaw, 'OUT', conf.currency);
+        yield dal.unLeaveIdentity(ms.issuer);
+      }
+      // Undo excluded (make them become members again, but set them as 'to be kicked')
+      for (let i = 0, len = block.excluded.length; i < len; i++) {
+        let pubkey = block.excluded[i];
+        yield dal.unExcludeIdentity(pubkey);
+      }
+    });
+  }
+
+  function undoCertifications(block) {
+    return co(function *() {
+      for (let i = 0, len = block.certifications.length; i < len; i++) {
+        let inlineCert = block.certifications[i];
+        let cert = Certification.statics.fromInline(inlineCert);
+        let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
+        cert.target = new Identity(toIdty).getTargetHash();
+        let existing = yield dal.existsCert(cert);
+        existing.written_block = null;
+        existing.written_hash = null;
+        existing.linked = false;
+        existing.written = false;
+        yield dal.saveCert(new Certification(cert));
+      }
+    });
+  }
+
+  function undoLinks(block) {
+    return co(function *() {
+      for (let i = 0, len = block.certifications.length; i < len; i++) {
+        let inlineCert = block.certifications[i];
+        let cert = Certification.statics.fromInline(inlineCert);
+        dal.removeLink(
+          new Link({
+            source: cert.from,
+            target: cert.to,
+            timestamp: block.medianTime,
+            block_number: block.number,
+            block_hash: block.hash,
+            obsolete: false
+          }));
+      }
+    });
+  }
+
+  function undoTransactionSources(block) {
+    return co(function *() {
+      // Remove any source created for this block (both Dividend and Transaction)
+      dal.removeAllSourcesOfBlock(block.number);
+      for (let i = 0, len = block.transactions.length; i < len; i++) {
+        let obj = block.transactions[i];
+        obj.version = 1;
+        obj.currency = block.currency;
+        obj.issuers = obj.signatories;
+        let tx = new Transaction(obj);
+        let txObj = tx.getTransaction();
+        for (let j = 0, len2 = txObj.inputs.length; j < len2; j++) {
+          let input = txObj.inputs[j];
+          dal.unConsumeSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount, block.medianTime, block.hash);
+        }
+      }
+    });
+  }
+
+  function undoDeleteTransactions(block) {
+    return co(function *() {
+      for (let i = 0, len = block.transactions.length; i < len; i++) {
+        let obj = block.transactions[i];
+        obj.version = 1;
+        obj.currency = block.currency;
+        obj.issuers = obj.signatories;
+        let tx = new Transaction(obj);
+        yield dal.saveTransaction(tx);
+      }
+    });
   }
 
   function updateCertifications (block, done) {

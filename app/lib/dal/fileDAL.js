@@ -664,6 +664,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return that.linksDAL.obsoletesLinks(minTimestamp);
   };
 
+  this.undoObsoleteLinks = function(minTimestamp) {
+    return that.linksDAL.unObsoletesLinks(minTimestamp);
+  };
+
   this.setConsumedSource = function(type, pubkey, number, fingerprint, amount) {
     return that.sourcesDAL.consumeSource(pubkey, type, number, fingerprint, amount);
   };
@@ -985,6 +989,15 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return that.linksDAL.addLink(link);
   };
 
+  this.removeLink = (link) =>
+    that.linksDAL.removeLink(link);
+
+  this.removeAllSourcesOfBlock = (number) =>
+    that.sourcesDAL.removeAllSourcesOfBlock(number);
+
+  this.unConsumeSource = (type, pubkey, number, fingerprint, amount, time, block_hash) =>
+    that.sourcesDAL.unConsumeSource(type, pubkey, number, fingerprint, amount, time, block_hash);
+
   this.saveSource = function(src) {
     return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash, src.time);
   };
@@ -992,6 +1005,9 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   this.officializeCertification = function(cert) {
     return that.certDAL.saveOfficial(cert);
   };
+
+  this.saveCert = (cert) =>
+    that.certDAL.saveCert(cert);
 
   this.listLocalPendingIdentities = function() {
     return that.idtyDAL.listLocalPending();
@@ -1020,6 +1036,26 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   this.leaveIdentity = function(pubkey, onBlock) {
     return that.idtyDAL.leaveIdentity(pubkey, onBlock);
   };
+
+  this.unacceptIdentity = that.idtyDAL.unacceptIdentity;
+
+  this.unJoinIdentity = (ms) => co(function *() {
+    yield that.idtyDAL.unJoinIdentity(ms);
+    that.msDAL.unwriteMS(ms);
+  });
+
+  this.unRenewIdentity = (ms) => co(function *() {
+    yield that.idtyDAL.unRenewIdentity(ms);
+    that.msDAL.unwriteMS(ms);
+  });
+
+  this.unLeaveIdentity = (ms) => co(function *() {
+    yield that.idtyDAL.unLeaveIdentity(ms);
+    that.msDAL.unwriteMS(ms);
+  });
+
+  this.unExcludeIdentity = that.idtyDAL.unExcludeIdentity;
+
 
   this.listLocalPendingCerts = function() {
     return that.certDAL.listLocalPending();

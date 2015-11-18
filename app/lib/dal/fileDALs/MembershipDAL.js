@@ -53,6 +53,17 @@ function MembershipDAL(loki) {
     written: false
   });
 
+  this.unwriteMS = (ms) => {
+    let existing = this.lokiExisting({
+      issuer: ms.issuer,
+      signature: ms.signature
+    });
+    if (existing) {
+      existing.written = false;
+      collection.update(existing);
+    }
+  };
+
   this.saveOfficialMS = (type, ms) => {
     let obj = _.extend({}, ms);
     obj.membership = type.toUpperCase();

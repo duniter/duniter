@@ -12,7 +12,7 @@ const BLOCK_FOLDER_SIZE = 500;
 
 module.exports = BlockDAL;
 
-function BlockDAL(fileDAL, loki, rootFS, getLowerWindowBlock) {
+function BlockDAL(loki, rootFS, getLowerWindowBlock) {
 
   "use strict";
 
@@ -78,6 +78,9 @@ function BlockDAL(fileDAL, loki, rootFS, getLowerWindowBlock) {
     return Q(blocksOfIssuer[0]);
   };
 
+  this.getForkBlocks = () =>
+    Q(this.collection.find({ fork: true }));
+
   this.saveBunch = (blocks, inFiles) => {
     if (!inFiles) {
       collection.insert(blocks);
@@ -102,7 +105,6 @@ function BlockDAL(fileDAL, loki, rootFS, getLowerWindowBlock) {
     if (!current || current.number < block.number) {
       current = block;
     }
-    block.fork = !!fileDAL.parentDAL;
     let existing;
     existing = collection.find({
       $and: [{
@@ -112,10 +114,9 @@ function BlockDAL(fileDAL, loki, rootFS, getLowerWindowBlock) {
       }]
     })[0];
     if (existing) {
-      existing.fork = block.fork;
-      collection.update(existing);
+      // Updates
+      collection.update(_.extend(existing, block));
     } else {
-      //console.log('--> BRAN -->', _.pick(block, 'number', 'hash'));
       collection.insert(block);
     }
     return Q(block);
@@ -149,33 +150,9 @@ function BlockDAL(fileDAL, loki, rootFS, getLowerWindowBlock) {
 
   function getView() {
     let view;
-    if (!fileDAL.parentDAL) {
-      // Main branch
-      view = collection.addDynamicView('mainBranch');
-      view.applyFind({ fork: false });
-    }
-    else {
-      let blocks = [], p = fileDAL;
-      while (p) {
-        if (p.core) {
-          blocks.push(p.core);
-        }
-        p = p.parentDAL;
-      }
-      blocks = _.sortBy(blocks, (b) => b.number);
-      let conditions = blocks.map((b) => {
-        return { $and: [{
-        fork: true
-      }, {
-        number: b.forkPointNumber
-      }, {
-        hash: b.forkPointHash
-      }] }; });
-      conditions.unshift({ fork: false });
-      view = collection.addDynamicView(['branch', fileDAL.name].join('_'));
-      view.applyFind({ '$or': conditions });
-      view.conditions = conditions;
-    }
+    // Main branch
+    view = collection.addDynamicView('mainBranch');
+    view.applyFind({ fork: false });
     return view;
   }
 

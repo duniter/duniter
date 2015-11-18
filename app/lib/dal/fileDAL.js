@@ -14,7 +14,6 @@ var StatDAL = require('./fileDALs/statDAL');
 var CertDAL = require('./fileDALs/CertDAL');
 var TxsDAL = require('./fileDALs/TxsDAL');
 var SourcesDAL = require('./fileDALs/SourcesDAL');
-var CoresDAL = require('./fileDALs/CoresDAL');
 var LinksDAL = require('./fileDALs/LinksDAL');
 var MembershipDAL = require('./fileDALs/MembershipDAL');
 var IdentityDAL = require('./fileDALs/IdentityDAL');
@@ -30,7 +29,7 @@ module.exports = {
     return getHomeFS(profile, true)
       .then(function(params) {
         let loki = new lokijs('ucoin', { autosave: false });
-        return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', null, loki));
+        return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki));
       });
   },
   file: function(profile, forConf) {
@@ -56,7 +55,7 @@ module.exports = {
         })
           .then(function(loki){
             loki.autosaveClearFlags();
-            return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', null, loki);
+            return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki);
           });
       });
   },
@@ -83,7 +82,7 @@ function getHomeFS(profile, isMemory) {
     });
 }
 
-function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, loki) {
+function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   var that = this;
 
@@ -92,7 +91,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   this.name = dalName;
   this.profile = profile;
   this.parentDAL = parentFileDAL;
-  this.core = core;
 
   var rootPath = home;
 
@@ -101,23 +99,21 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
   this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, CFSStorage);
-  this.blockDAL = new BlockDAL(that, loki, blocksCFS, getLowerWindowBlock);
-  this.sourcesDAL = new SourcesDAL(that, loki);
-  this.txsDAL = new TxsDAL(that, loki);
+  this.blockDAL = new BlockDAL(loki, blocksCFS, getLowerWindowBlock);
+  this.sourcesDAL = new SourcesDAL(loki);
+  this.txsDAL = new TxsDAL(loki);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that, CFSStorage);
-  this.coresDAL = new CoresDAL(rootPath, myFS, parentFileDAL && parentFileDAL.coresDAL.coreFS, that, CFSStorage);
-  this.linksDAL = new LinksDAL(that, loki);
-  this.idtyDAL = new IdentityDAL(that, loki);
-  this.certDAL = new CertDAL(that, loki);
-  this.msDAL = new MembershipDAL(that, loki);
+  this.linksDAL = new LinksDAL(loki);
+  this.idtyDAL = new IdentityDAL(loki);
+  this.certDAL = new CertDAL(loki);
+  this.msDAL = new MembershipDAL(loki);
 
   this.newDals = {
     'peerDAL': that.peerDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
-    'statDAL': that.statDAL,
-    'coresDAL': that.coresDAL
+    'statDAL': that.statDAL
   };
 
   var currency = '';
@@ -180,60 +176,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
 
   that.writeFileOfBlock = function(block) {
     return that.blockDAL.saveBlock(block);
-  };
-
-  this.getCores = function() {
-    return that.coresDAL.getCores();
-  };
-
-  this.loadCore = function(core) {
-    return co(function *() {
-      let coreName = [core.forkPointNumber, core.forkPointHash].join('-');
-      let coreHome = home + '/branches/' + coreName;
-      yield myFS.makeTree(coreHome);
-      var theCore = require('./coreDAL')(profile, home, coreName, myFS, that, core, loki);
-      yield theCore.init();
-      return theCore;
-    });
-  };
-
-  this.addCore = function(core) {
-    return that.coresDAL.addCore(core);
-  };
-
-  this.fork = function(newBlock) {
-    var core = {
-      forkPointNumber: parseInt(newBlock.number),
-      forkPointHash: newBlock.hash,
-      forkPointPreviousHash: newBlock.previousHash
-    };
-    return that.coresDAL.getCore(core)
-      .catch(function(){
-        return null;
-      })
-      .then(function(existing){
-        if (existing) {
-          throw 'Fork ' + [core.forkPointNumber, core.forkPointHash].join('-') + ' already exists';
-        }
-        return that.addCore(core)
-          .then(function(){
-            return that.loadCore(core);
-          });
-      });
-  };
-
-  this.unfork = function(loadedCore) {
-    return loadedCore.current()
-      .then(function(current){
-        var core = {
-          forkPointNumber: current.number,
-          forkPointHash: current.hash
-        };
-        return that.coresDAL.removeCore(core)
-          .then(function(){
-            return loadedCore.dal.removeHome();
-          });
-      });
   };
 
   this.listAllPeers = function() {
@@ -310,6 +252,14 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
         done && done(err);
         throw err;
       });
+  };
+
+  this.getBlockByNumberAndHashOrNull = function(number, hash) {
+    return nullIfError(that.getBlock(number)
+      .then(function(block){
+        if (block.hash != hash) throw "Not found";
+        else return block;
+      }));
   };
 
   this.getCurrent = function(done) {
@@ -986,19 +936,14 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, core, lo
     return that.msDAL.savePendingMembership(ms);
   };
 
-  that.saveBlockInFile = function(block, check, done) {
-    return Q()
-      .then(function(){
-        return that.writeFileOfBlock(block);
-      })
-      .then(function(){
-        done && done();
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+  that.saveBlockInFile = (block, check, done) => co(function *() {
+    yield that.writeFileOfBlock(block);
+    done && done();
+  })
+    .catch(function(err){
+      done && done(err);
+      throw err;
+    });
 
   this.saveTxsInFiles = function (txs, extraProps) {
     return Q.all(txs.map(function(tx) {

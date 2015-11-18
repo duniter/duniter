@@ -16,10 +16,10 @@ var expectJSON     = httpTest.expectJSON;
 var expectAnswer   = httpTest.expectAnswer;
 var expectHttpCode = httpTest.expectHttpCode;
 
-require('log4js').configure({
-  "appenders": [
-  ]
-});
+//require('log4js').configure({
+//  "appenders": [
+//  ]
+//});
 
 var MEMORY_MODE = true;
 var commonConf = {
@@ -64,6 +64,17 @@ var s3 = ucoin({
   }
 }, commonConf));
 
+var s4 = ucoin({
+  memory: MEMORY_MODE,
+  name: 'bb4'
+}, _.extend({
+  port: '7755',
+  pair: {
+    pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+    sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
+  }
+}, commonConf));
+
 var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
 var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
@@ -77,11 +88,13 @@ describe("Branches", function() {
     var commitS1 = commit(s1);
     var commitS2 = commit(s2);
     var commitS3 = commit(s3);
+    var commitS4 = commit(s4);
 
     return Q.all([
       s1.initWithServices().then(bma),
       s2.initWithServices().then(bma),
-      s3.initWithServices().then(bma)
+      s3.initWithServices().then(bma),
+      s4.initWithServices().then(bma)
     ])
 
       .then(function(){
@@ -129,9 +142,27 @@ describe("Branches", function() {
       })
 
       .then(function(){
+        // Server 4
+        return Q()
+          .then(function(){
+            return sync(0, 0, s1, s4);
+          })
+          .then(commitS4);
+      })
+
+      // So we now have blocks:
+      // S1 11111
+      // S2 11122
+      // S3 11113
+      // S4 14
+
+      .then(function(){
         // Forking S1 from S2
         return Q()
           .then(function(){
+            // We try to have:
+            // S1 11111
+            //      `2
             return sync(3, 3, s2, s1);
           });
       })
@@ -140,6 +171,10 @@ describe("Branches", function() {
         // Forking S1 from S3
         return Q()
           .then(function(){
+            // We try to have:
+            // S1 11111
+            //      |`3
+            //      `2
             return sync(4, 4, s3, s1);
           });
       })
@@ -148,12 +183,32 @@ describe("Branches", function() {
         // Confirmed of S2 from S3
         return Q()
           .then(function(){
+            // We try to have:
+            // S2 11122
+            //    `3
             return sync(1, 1, s3, s2)
               .then(function(){
                 throw 'Should have thrown an error since it is not forkable';
               })
               .catch(function(err){
-                err.should.match(/^Previous block not found/);
+                err.should.match(/^Already processed/);
+              });
+          });
+      })
+
+      .then(function(){
+        // Confirmed of S2 from S4
+        return Q()
+          .then(function(){
+            // We try to have:
+            // S2 11122
+            //    `4
+            return sync(1, 1, s4, s2)
+              .then(function(){
+                throw 'Should have thrown an error since it is not forkable';
+              })
+              .catch(function(err){
+                err.should.match(/^Block out of fork window/);
               });
           });
       })
@@ -219,7 +274,7 @@ describe("Branches", function() {
   });
 
   describe("Server 2 /blockchain", function() {
-
+  //
     it('/block/0 should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7779/blockchain/block/0', { json: true }), {
         number: 0

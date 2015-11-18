@@ -1,5 +1,6 @@
 "use strict";
 
+var co        = require('co');
 var Q         = require('q');
 var _         = require('underscore');
 var ucoin     = require('./../../index');
@@ -67,73 +68,45 @@ describe("Generation", function() {
 
     var commitS1 = commit(s1);
 
-    return [s1, s2].reduce(function(p, server) {
-      return p
-        .then(function(){
-          return server
-            .initWithServices()
-            .then(bma)
-            .then(function(bmaAPI){
-              server.bma = bmaAPI;
-              server
-                .pipe(server.router()) // The router asks for multicasting of documents
-                .pipe(multicaster())
-                .pipe(server.router());
-            })
-            .then(function(){
-              return server.start();
-            });
-        });
-    }, Q())
-
-      .then(function(){
-        nodeS1 = vucoin_p('127.0.0.1', s1.conf.port);
-        nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
-        // Server 1
-        return Q()
-          .then(function() {
-            return cat.selfCertPromise(now);
-          })
-          .then(function() {
-            return toc.selfCertPromise(now);
-          })
-          .then(_.partial(toc.certPromise, cat))
-          .then(_.partial(cat.certPromise, toc))
-          .then(cat.joinPromise)
-          .then(toc.joinPromise)
-          .then(commitS1)
-          .then(function(){
-            // Server 2 syncs block 0
-            return sync(0, 0, s1, s2);
-          })
-          .then(function(){
-            return nodeS1.getPeer().then(function(peer) {
-              return nodeS2.postPeer(new Peer(peer).getRawSigned());
-            });
-          })
-          .then(function(){
-            return nodeS2.getPeer().then(function(peer) {
-              return nodeS1.postPeer(new Peer(peer).getRawSigned());
-            });
-          })
-          .then(function(){
-            s1.startBlockComputation();
-            return until(s2, 'block', 1);
-          })
-          .then(function(){
-            s2.startBlockComputation();
-            return Q.all([
-              until(s1, 'block', 2),
-              until(s2, 'block', 2)
-            ]);
-          })
-          .then(function(){
-            s1.stopBlockComputation();
-            s2.stopBlockComputation();
-          });
-      })
-
-      ;
+    return co(function *() {
+      let servers = [s1, s2];
+      for (let i = 0; i < servers.length; i++) {
+        let server = servers[i];
+        yield server.initWithServices();
+        server.bma = yield bma(server);
+        server
+          .pipe(server.router()) // The router asks for multicasting of documents
+          .pipe(multicaster())
+          .pipe(server.router());
+        yield server.start();
+      }
+      nodeS1 = vucoin_p('127.0.0.1', s1.conf.port);
+      nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
+      // Server 1
+      yield cat.selfCertPromise(now);
+      yield toc.selfCertPromise(now);
+      yield toc.certPromise(cat);
+      yield cat.certPromise(toc);
+      yield cat.joinPromise();
+      yield toc.joinPromise();
+      yield commitS1();
+      // Server 2 syncs block 0
+      yield sync(0, 0, s1, s2);
+      // Let each node know each other
+      let peer1 = yield nodeS1.getPeer();
+      yield nodeS2.postPeer(new Peer(peer1).getRawSigned());
+      let peer2 = yield nodeS2.getPeer();
+      yield nodeS1.postPeer(new Peer(peer2).getRawSigned());
+      s1.startBlockComputation();
+      yield until(s2, 'block', 1);
+      s2.startBlockComputation();
+      yield [
+        until(s1, 'block', 2),
+        until(s2, 'block', 2)
+      ];
+      s1.stopBlockComputation();
+      s2.stopBlockComputation();
+    });
   });
 
   describe("Server 1 /blockchain", function() {

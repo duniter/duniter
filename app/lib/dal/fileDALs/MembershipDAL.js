@@ -8,19 +8,15 @@ var AbstractLoki = require('./AbstractLoki');
 
 module.exports = MembershipDAL;
 
-function MembershipDAL(fileDAL, loki) {
+function MembershipDAL(loki) {
 
   "use strict";
 
   let collection = loki.getCollection('memberships') || loki.addCollection('memberships', { indices: ['membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'written', 'signature'] });
 
-  AbstractLoki.call(this, collection, fileDAL, {
-    block_number: 'blockNumber',
-    block_hash: 'blockHash'
-  }, loki);
+  AbstractLoki.call(this, collection);
 
   this.idKeys = ['issuer', 'signature'];
-  this.metaProps = ['written'];
   this.propsToSave = [
     'membership',
     'issuer',

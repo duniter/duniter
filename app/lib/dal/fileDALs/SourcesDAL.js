@@ -7,19 +7,15 @@ var AbstractLoki = require('./AbstractLoki');
 
 module.exports = SourcesDAL;
 
-function SourcesDAL(fileDAL, loki) {
+function SourcesDAL(loki) {
 
   "use strict";
 
   let collection = loki.getCollection('sources') || loki.addCollection('sources', { indices: ['pubkey', 'type', 'number', 'fingerprint', 'amount', 'block_hash'] });
 
-  AbstractLoki.call(this, collection, fileDAL, {
-    number: 'number',
-    block_hash: 'block_hash'
-  }, loki);
+  AbstractLoki.call(this, collection);
 
   this.idKeys = ['pubkey', 'type', 'number', 'fingerprint', 'amount'];
-  this.metaProps = ['consumed'];
   this.propsToSave = [
     'pubkey',
     'type',

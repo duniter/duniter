@@ -9,16 +9,15 @@ var AbstractLoki = require('./AbstractLoki');
 
 module.exports = IdentityDAL;
 
-function IdentityDAL(fileDAL, loki) {
+function IdentityDAL(loki) {
 
   "use strict";
 
   let collection = loki.getCollection('identities') || loki.addCollection('identities', { indices: ['uid', 'pubkey', 'timestamp', 'member', 'written'] });
   let that = this;
-  AbstractLoki.call(this, collection, fileDAL);
+  AbstractLoki.call(this, collection);
 
   this.idKeys = ['pubkey', 'uid', 'hash'];
-  this.metaProps = ['kick', 'leaving', 'member', 'wasMember', 'written', 'currentMSN', 'revoked'];
   this.propsToSave = [
     'revoked',
     'currentMSN',

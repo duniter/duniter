@@ -77,10 +77,7 @@ describe("Identities", function() {
   it('should have 3 identities', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/members', { json: true }), function(res) {
       res.should.have.property('results').length(3);
-      let identities = res.results;
-      identities[0].should.have.property('uid').equal('cat');
-      identities[1].should.have.property('uid').equal('toc');
-      identities[2].should.have.property('uid').equal('tic');
+      _.pluck(res.results, 'uid').sort().should.deepEqual(['cat', 'tic', 'toc']);
     });
   });
 

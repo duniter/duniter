@@ -224,21 +224,15 @@ function BlockchainBinding (server) {
 
   this.branches = function (req, res) {
     res.type('application/json');
-    BlockchainService.branches()
-      .then(function(cores){
-        return Q.all(cores.map(function(core) {
-          return core.current()
-            .then(function(current){
-              return new Block(current).json();
-            });
-        }));
-      })
-      .then(function(blocks){
-        res.send(200, JSON.stringify({
-          blocks: blocks
-        }, null, "  "));
-      })
+    co(function *() {
+      let branches = yield BlockchainService.branches();
+      let blocks = branches.map((b) => new Block(b).json());
+      res.send(200, JSON.stringify({
+        blocks: blocks
+      }, null, "  "));
+    })
       .catch(function(err){
+        console.error(err.stack || err.message || err);
         res.send(404, err && (err.message || err));
       });
   };

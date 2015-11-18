@@ -1,4 +1,6 @@
 "use strict";
+var co = require('co');
+var _ = require('underscore');
 var should = require('should');
 var assert = require('assert');
 var dal = require('../../app/lib/dal/fileDAL');
@@ -196,38 +198,36 @@ describe("DAL", function(){
   });
 
   it('should be able to save a Block', function(){
-    return fileDAL.saveBlock(mocks.block0)
-      .then(function() {
-        return fileDAL.getBlock(0);
-      })
-      .then(function(block){
-        block.should.have.property('hash').equal(mocks.block0.hash);
-        block.should.have.property('signature').equal(mocks.block0.signature);
-        block.should.have.property('version').equal(mocks.block0.version);
-        block.should.have.property('currency').equal(mocks.block0.currency);
-        block.should.have.property('issuer').equal(mocks.block0.issuer);
-        block.should.have.property('parameters').equal(mocks.block0.parameters);
-        block.should.have.property('previousHash').equal(mocks.block0.previousHash);
-        block.should.have.property('previousIssuer').equal(mocks.block0.previousIssuer);
-        block.should.have.property('membersCount').equal(mocks.block0.membersCount);
-        block.should.have.property('monetaryMass').equal(mocks.block0.monetaryMass);
-        block.should.have.property('UDTime').equal(mocks.block0.UDTime);
-        block.should.have.property('medianTime').equal(mocks.block0.medianTime);
-        block.should.have.property('dividend').equal(mocks.block0.dividend);
-        block.should.have.property('time').equal(mocks.block0.time);
-        block.should.have.property('powMin').equal(mocks.block0.powMin);
-        block.should.have.property('number').equal(mocks.block0.number);
-        block.should.have.property('nonce').equal(mocks.block0.nonce);
+    return co(function *() {
+      yield fileDAL.saveBlock(_.extend({ fork: false }, mocks.block0));
+      let block = yield fileDAL.getBlock(0);
+      block.should.have.property('hash').equal(mocks.block0.hash);
+      block.should.have.property('signature').equal(mocks.block0.signature);
+      block.should.have.property('version').equal(mocks.block0.version);
+      block.should.have.property('currency').equal(mocks.block0.currency);
+      block.should.have.property('issuer').equal(mocks.block0.issuer);
+      block.should.have.property('parameters').equal(mocks.block0.parameters);
+      block.should.have.property('previousHash').equal(mocks.block0.previousHash);
+      block.should.have.property('previousIssuer').equal(mocks.block0.previousIssuer);
+      block.should.have.property('membersCount').equal(mocks.block0.membersCount);
+      block.should.have.property('monetaryMass').equal(mocks.block0.monetaryMass);
+      block.should.have.property('UDTime').equal(mocks.block0.UDTime);
+      block.should.have.property('medianTime').equal(mocks.block0.medianTime);
+      block.should.have.property('dividend').equal(mocks.block0.dividend);
+      block.should.have.property('time').equal(mocks.block0.time);
+      block.should.have.property('powMin').equal(mocks.block0.powMin);
+      block.should.have.property('number').equal(mocks.block0.number);
+      block.should.have.property('nonce').equal(mocks.block0.nonce);
 
-        //assert.deepEqual(block, mocks.block0);
-        assert.deepEqual(block.identities, mocks.block0.identities);
-        assert.deepEqual(block.certifications, mocks.block0.certifications);
-        assert.deepEqual(block.actives, mocks.block0.actives);
-        assert.deepEqual(block.excluded, mocks.block0.excluded);
-        assert.deepEqual(block.leavers, mocks.block0.leavers);
-        assert.deepEqual(block.actives, mocks.block0.actives);
-        assert.deepEqual(block.joiners, mocks.block0.joiners);
-        assert.deepEqual(block.transactions, mocks.block0.transactions);
-    })
+      //assert.deepEqual(block, mocks.block0);
+      assert.deepEqual(block.identities, mocks.block0.identities);
+      assert.deepEqual(block.certifications, mocks.block0.certifications);
+      assert.deepEqual(block.actives, mocks.block0.actives);
+      assert.deepEqual(block.excluded, mocks.block0.excluded);
+      assert.deepEqual(block.leavers, mocks.block0.leavers);
+      assert.deepEqual(block.actives, mocks.block0.actives);
+      assert.deepEqual(block.joiners, mocks.block0.joiners);
+      assert.deepEqual(block.transactions, mocks.block0.transactions);
+    });
   });
 });

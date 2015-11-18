@@ -48,6 +48,7 @@ module.exports = {
       })
       .catch(function(err){
         if (err.response) {
+          console.error(err.error);
           assert.equal(err.response.statusCode, 200);
         }
         else throw err;

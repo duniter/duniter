@@ -67,6 +67,7 @@ function BlockchainContext(conf, dal) {
         },
         function (current, next){
           currentBlock = current;
+          block.fork = false;
           saveBlockData(currentBlock, block, next);
         }
       ], function (err) {
@@ -78,6 +79,20 @@ function BlockchainContext(conf, dal) {
         throw err;
       });
   };
+
+  this.addSideBlock = (obj) => co(function *() {
+    var start = new Date();
+    var block = new Block(obj);
+    block.fork = true;
+    try {
+      // Saves the block (DAL)
+      yield dal.saveBlockInFile(block);
+      logger.info('SIDE Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
+      return block;
+    } catch (err) {
+      throw err;
+    }
+  });
 
   function checkIssuer (block, done) {
     async.waterfall([

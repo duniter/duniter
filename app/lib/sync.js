@@ -55,7 +55,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       logger.info('Sync started.');
 
       let loki = new lokijs('download', { autosave: false });
-      let downloadedDAL = new BlockDAL({}, loki);
+      let downloadedDAL = new BlockDAL(loki);
       var lastSavedNumber = yield server.dal.getLastSavedBlockFileNumber();
       var lCurrent = yield dal.getCurrentBlockOrNull();
 

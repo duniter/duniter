@@ -8,19 +8,16 @@ var AbstractLoki = require('./AbstractLoki');
 
 module.exports = TxsDAL;
 
-function TxsDAL(fileDAL, loki) {
+function TxsDAL(loki) {
 
   "use strict";
 
   let that = this;
   let collection = loki.getCollection('txs') || loki.addCollection('txs', { indices: ['hash', 'block_number', 'written', 'signature', 'recipients'] });
 
-  AbstractLoki.call(this, collection, fileDAL, {
-    block_number: 'block_number'
-  }, loki);
+  AbstractLoki.call(this, collection);
 
   this.idKeys = ['hash', 'block_number'];
-  this.metaProps = ['written', 'removed'];
   this.propsToSave = [
     'inputs',
     'outputs',

@@ -7,19 +7,15 @@ var AbstractLoki = require('./AbstractLoki');
 
 module.exports = CertDAL;
 
-function CertDAL(fileDAL, loki) {
+function CertDAL(loki) {
 
   "use strict";
 
   let collection = loki.getCollection('certs') || loki.addCollection('certs', { indices: ['from', 'target', 'linked', 'written'] });
 
-  AbstractLoki.call(this, collection, fileDAL, {
-    block_number: 'block_number',
-    block_hash: 'block_hash'
-  }, loki);
+  AbstractLoki.call(this, collection);
 
   this.idKeys = ['sig', 'from', 'target'];
-  this.metaProps = ['linked'];
   this.propsToSave = [
     'linked',
     'written_block',

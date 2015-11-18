@@ -41,7 +41,7 @@ var tuc = user('tuc', { pub: '3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk', sec
 
 var now = Math.round(new Date().getTime()/1000);
 
-describe("Branches pending data", function() {
+describe("Pending data", function() {
 
   before(function() {
 

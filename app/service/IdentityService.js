@@ -98,44 +98,33 @@ function IdentityService (conf, dal) {
       certs.forEach(function(cert){
         logger.info('⬇ CERT %s block#%s', cert.from, cert.block_number);
       });
-      async.waterfall([
-        function (next) {
-          dal.getCurrentBlockOrNull(next);
-        },
-        function (current, next) {
-          // Prepare validator for certifications
-          potentialNext = new Block({ identities: [], number: current ? current.number + 1 : 0 });
-          // Check signature's validity
-          crypto.verifyCbErr(selfCert, idty.sig, idty.pubkey, next);
-        },
-        function (next) {
-          async.forEachSeries(certs, function(cert, cb){
-            globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
-              next(null, idty);
-            }, function(err) {
+      return co(function *() {
+        let current = yield dal.getCurrentBlockOrNull();
+        // Prepare validator for certifications
+        potentialNext = new Block({ identities: [], number: current ? current.number + 1 : 0 });
+        // Check signature's validity
+        let verified = crypto.verify(selfCert, idty.sig, idty.pubkey);
+        if (!verified) {
+          throw 'Signature does not match';
+        }
+        // CERTS
+        for (let i = 0; i < certs.length; i++) {
+          let cert = certs[i];
+          yield Q.Promise(function(resolve){
+            globalValidation.checkCertificationIsValid(cert, potentialNext, resolve, function(err) {
               cert.err = err;
-              cb();
+              resolve();
             }, DO_NOT_THROW_ABOUT_EXPIRATION);
-          }, next);
-        },
-        function (next) {
-          co(function *() {
-            for (let i = 0; i < certs.length; i++) {
-              let cert = certs[i];
-              let basedBlock = yield dal.getBlock(cert.block_number);
-              if (cert.block_number == 0 && !basedBlock) {
-                basedBlock = {
-                  number: 0,
-                  hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
-                };
-              }
-              cert.block_hash = basedBlock.hash;
+          });
+          if (!cert.err) {
+            let basedBlock = yield dal.getBlock(cert.block_number);
+            if (cert.block_number == 0 && !basedBlock) {
+              basedBlock = {
+                number: 0,
+                hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
+              };
             }
-          }).then(() => next()).catch(next);
-        },
-        function (next){
-          certs = _.filter(certs, function(cert){ return !cert.err; });
-          async.forEachSeries(certs, function(cert, cb){
+            cert.block_hash = basedBlock.hash;
             var mCert = new Certification({
               pubkey: cert.from,
               sig: cert.sig,
@@ -144,57 +133,41 @@ function IdentityService (conf, dal) {
               target: obj.hash,
               to: idty.pubkey
             });
-            async.waterfall([
-              function (next){
-                dal.existsCert(mCert).then(_.partial(next, null)).catch(next);
-              },
-              function (existing, next){
-                if (existing) next();
-                else dal.registerNewCertification(new Certification(mCert))
-                  .then(function(){
-                    logger.info('✔ CERT %s', mCert.from);
-                    aCertWasSaved = true;
-                    next();
-                  })
-                  .catch(function(err){
-                    // TODO: This is weird...
-                    logger.info('✔ CERT %s', mCert.from);
-                    aCertWasSaved = true;
-                    next(err);
-                  });
+            let existingCert = yield dal.existsCert(mCert);
+            if (!existingCert) {
+              try {
+                yield dal.registerNewCertification(new Certification(mCert));
+                logger.info('✔ CERT %s', mCert.from);
+                aCertWasSaved = true;
+              } catch (e) {
+                // TODO: This is weird...
+                logger.info('✔ CERT %s', mCert.from);
+                aCertWasSaved = true;
               }
-            ], cb);
-          }, next);
-        },
-        function (next){
-          dal.getIdentityByHashWithCertsOrNull(obj.hash).then(_.partial(next, null)).catch(next);
-        },
-        function (existing, next){
-          if (existing && !aCertWasSaved) {
-            next('Already up-to-date');
-          }
-          else if (existing)
-            next(null, new Identity(existing));
-          else {
-            return co(function *() {
-              // Create if not already written uid/pubkey
-              let used = yield dal.getWrittenIdtyByPubkey(idty.pubkey);
-              if (used) {
-                throw 'Pubkey already used in the blockchain';
-              }
-              used = yield dal.getWrittenIdtyByUID(idty.uid);
-              if (used) {
-                throw 'UID already used in the blockchain';
-              }
-              idty = new Identity(idty);
-              yield dal.savePendingIdentity(idty);
-              logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
-              next(null, idty);
-            })
-              .catch(next);
+            }
           }
         }
-      ], cb);
+        let existing = yield dal.getIdentityByHashWithCertsOrNull(obj.hash);
+        if (existing && !aCertWasSaved) {
+          throw 'Already up-to-date';
+        }
+        else if (!existing) {
+          // Create if not already written uid/pubkey
+          let used = yield dal.getWrittenIdtyByPubkey(idty.pubkey);
+          if (used) {
+            throw 'Pubkey already used in the blockchain';
+          }
+          used = yield dal.getWrittenIdtyByUID(idty.uid);
+          if (used) {
+            throw 'UID already used in the blockchain';
+          }
+          idty = new Identity(idty);
+          yield dal.savePendingIdentity(idty);
+          logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
+        }
+        cb(null, idty);
+      })
+        .catch(cb);
     }, function(err, idty) {
       err && logger.warn(err);
       done(err, idty);

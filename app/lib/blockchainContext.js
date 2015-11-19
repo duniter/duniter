@@ -86,7 +86,8 @@ function BlockchainContext(conf, dal) {
     block.fork = true;
     try {
       // Saves the block (DAL)
-      yield dal.saveBlockInFile(block);
+      block.wrong = false;
+      yield dal.saveSideBlockInFile(block);
       logger.info('SIDE Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
       return block;
     } catch (err) {

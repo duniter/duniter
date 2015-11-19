@@ -178,6 +178,9 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return that.blockDAL.saveBlock(block);
   };
 
+  this.writeSideFileOfBlock = (block) =>
+    that.blockDAL.saveSideBlock(block);
+
   this.listAllPeers = function() {
     return that.peerDAL.listAll();
   };
@@ -234,6 +237,9 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
         throw err;
       });
   };
+
+  this.getAbsoluteBlockByNumberAndHash = (number, hash) =>
+    that.blockDAL.getAbsoluteBlock(number, hash);
 
   this.getBlockByNumberAndHash = function(number, hash, done) {
     return that.getBlock(number)
@@ -905,6 +911,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   };
 
   this.saveBlock = function(block, done) {
+    block.wrong = false;
     return Q()
       .then(function() {
         return Q.all([
@@ -948,6 +955,9 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       done && done(err);
       throw err;
     });
+
+  this.saveSideBlockInFile = (block) =>
+    that.writeSideFileOfBlock(block);
 
   this.saveTxsInFiles = function (txs, extraProps) {
     return Q.all(txs.map(function(tx) {

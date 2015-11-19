@@ -18,6 +18,8 @@ var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 var blockchainCtx   = require('../lib/blockchainContext');
 
+const CHECK_ALL_RULES = true;
+
 module.exports = function (conf, dal, PeeringService) {
   return new BlockchainService(conf, dal, PeeringService);
 };
@@ -152,33 +154,8 @@ function BlockchainService (conf, mainDAL, pair) {
       // FIFO: only admit one block at a time
       blockFifo.push(function(blockIsProcessed) {
         return co(function *() {
-          let existing = yield mainDAL.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
-          if (existing) {
-            throw 'Already processed';
-          }
-          let current = yield mainContext.current();
-          let followsCurrent = !current || (obj.number == current.number + 1 && obj.previousHash == current.hash);
-          if (followsCurrent) {
-            // try to add it on main blockchain
-            if (doCheck) {
-              yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
-            }
-            let res = yield mainContext.addBlock(obj, doCheck);
-            yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
-            resolve(res);
-          } else {
-            // add it as side chain
-            if (current.number - obj.number + 1 >= conf.branchesWindowSize) {
-              throw 'Block out of fork window';
-            }
-            let res = yield mainContext.addSideBlock(obj, doCheck);
-            let newCurrent = mainContext.current();
-            let forked = newCurrent.number != current.number || newCurrent.hash != current.hash;
-            if (forked) {
-              yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
-            }
-            resolve(res);
-          }
+          let res = yield checkAndAddBlock(obj, doCheck);
+          resolve(res);
           blockIsProcessed();
         })
           .catch((err) => {
@@ -188,6 +165,115 @@ function BlockchainService (conf, mainDAL, pair) {
       });
     });
   };
+
+  function checkAndAddBlock(obj, doCheck) {
+    return co(function *() {
+      let existing = yield mainDAL.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
+      if (existing) {
+        throw 'Already processed';
+      }
+      let current = yield mainContext.current();
+      let followsCurrent = !current || (obj.number == current.number + 1 && obj.previousHash == current.hash);
+      if (followsCurrent) {
+        // try to add it on main blockchain
+        if (doCheck) {
+          yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
+        }
+        let res = yield mainContext.addBlock(obj, doCheck);
+        yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+        return res;
+      } else {
+        // add it as side chain
+        if (current.number - obj.number + 1 >= conf.branchesWindowSize) {
+          throw 'Block out of fork window';
+        }
+        let res = yield mainContext.addSideBlock(obj, doCheck);
+        yield eventuallySwitchOnSideChain(current);
+        let newCurrent = mainContext.current();
+        let forked = newCurrent.number != current.number || newCurrent.hash != current.hash;
+        if (forked) {
+          yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+        }
+        return res;
+      }
+    });
+  }
+
+  function eventuallySwitchOnSideChain(current) {
+    return co(function *() {
+      let branches = yield that.branches();
+      let potentials = _.without(branches, current);
+      potentials = _.filter(potentials, (p) => p.number - current.number > constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY);
+      logger.debug('SWITCH: %s branches...', branches.length);
+      logger.debug('SWITCH: %s potential side chains...', potentials.length);
+      for (let i = 0, len = potentials.length; i < len; i++) {
+        let potential = potentials[i];
+        logger.debug('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);
+        let sideChain = yield getWholeForkBranch(potential);
+        logger.debug('SWITCH: revert main chain to block #%s...', sideChain[0].number - 1);
+        yield revertToBlock(sideChain[0].number - 1);
+        try {
+          logger.debug('SWITCH: apply side chain #%s-%s...', potential.number, potential.hash);
+          yield applySideChain(sideChain);
+        } catch (e) {
+          // Revert the revert (so we go back to original chain)
+          let revertedChain = yield getWholeForkBranch(current);
+          yield applySideChain(revertedChain);
+          yield markSideChainAsWrong(sideChain);
+        }
+      }
+    });
+  }
+
+  function getWholeForkBranch(topForkBlock) {
+    return co(function *() {
+      let fullBranch = [];
+      let isForkBlock = true;
+      let next = topForkBlock;
+      while (isForkBlock) {
+        fullBranch.push(next);
+        logger.debug('SWITCH: get absolute #%s-%s...', next.number - 1, next.previousHash);
+        next = yield mainDAL.getAbsoluteBlockByNumberAndHash(next.number - 1, next.previousHash);
+        isForkBlock = next.fork;
+      }
+      //fullBranch.push(next);
+      // Revert order so we have a crescending branch
+      return fullBranch.reverse();
+    });
+  }
+
+  function revertToBlock(number) {
+    return co(function *() {
+      let nowCurrent = yield that.current();
+      logger.debug('SWITCH: main chain current = #%s-%s...', nowCurrent.number, nowCurrent.hash);
+      while (nowCurrent.number > number) {
+        logger.debug('SWITCH: main chain revert #%s-%s...', nowCurrent.number, nowCurrent.hash);
+        yield mainContext.revertCurrentBlock();
+        nowCurrent = yield that.current();
+      }
+    });
+  }
+
+  function applySideChain(chain) {
+    return co(function *() {
+      for (let i = 0, len = chain.length; i < len; i++) {
+        let block = chain[i];
+        logger.debug('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
+        yield checkAndAddBlock(block, CHECK_ALL_RULES);
+      }
+    });
+  }
+
+  function markSideChainAsWrong(chain) {
+    return co(function *() {
+      for (let i = 0, len = chain.length; i < len; i++) {
+        let block = chain[i];
+        block.wrong = true;
+        // Saves the block (DAL)
+        yield mainDAL.saveSideBlockInFile(block);
+      }
+    });
+  }
 
   this.revertCurrentBlock = () =>
     Q.Promise(function(resolve, reject){

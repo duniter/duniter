@@ -75,7 +75,7 @@ function Server (dbConf, overrideConf) {
           // Handle the incoming object
           action(obj, next);
         } else {
-          next('Unknown document type ' + obj.documentType);
+          next('Unknown document type \'' + obj.documentType + '\'');
         }
       }
     ], function (err, res) {
@@ -315,7 +315,9 @@ function Server (dbConf, overrideConf) {
                     that.PeeringService.setDAL(that.dal);
                     that.TransactionsService.setDAL(that.dal);
                     (theRouter && theRouter.setDAL(that.dal));
-                    that.BlockchainService.addStatComputing();
+                    if (!block.fork) {
+                      that.BlockchainService.addStatComputing();
+                    }
                     done(null, block);
                   })
                   .catch(done);

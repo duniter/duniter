@@ -43,6 +43,24 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
     return block;
   });
 
+  this.getAbsoluteBlock = (number, hash) => co(function *() {
+    let block = collection.find({
+      $and: [{
+        number: parseInt(number)
+      }, {
+        hash: hash
+      }
+    ]})[0];
+    if (!block) {
+      try {
+        block = yield rootFS.readJSON(pathOfBlock(number) + blockFileName(number) + '.json');
+      } catch(e) {
+        block = null;
+      }
+    }
+    return block;
+  });
+
   this.blocksDB = blocksDB;
   this.collection = collection;
 
@@ -79,7 +97,7 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
   };
 
   this.getForkBlocks = () =>
-    Q(this.collection.find({ fork: true }));
+    Q(this.collection.find({ fork: true, wrong: false }));
 
   this.saveBunch = (blocks, inFiles) => {
     if (!inFiles) {
@@ -105,6 +123,25 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
     if (!current || current.number < block.number) {
       current = block;
     }
+    let existing;
+    existing = collection.find({
+      $and: [{
+        number: block.number
+      }, {
+        hash: block.hash
+      }]
+    })[0];
+    if (existing) {
+      // Updates
+      collection.update(_.extend(existing, block));
+    } else {
+      collection.insert(block);
+    }
+    return Q(block);
+  };
+
+  this.saveSideBlock = (block) => {
+    block.fork = true;
     let existing;
     existing = collection.find({
       $and: [{

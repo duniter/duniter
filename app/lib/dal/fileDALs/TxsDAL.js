@@ -39,8 +39,11 @@ function TxsDAL(loki) {
 
   this.getAllPending = () =>
     this.lokiFindInAll({
-    written: false,
-    removed: false
+      $and: [{
+        written: false
+      },{
+        removed: false
+      }]
   });
 
   this.getTX = (hash) => this.lokiFindOne({

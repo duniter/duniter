@@ -16,10 +16,10 @@ var expectJSON     = httpTest.expectJSON;
 var expectAnswer   = httpTest.expectAnswer;
 var expectHttpCode = httpTest.expectHttpCode;
 
-//require('log4js').configure({
-//  "appenders": [
-//  ]
-//});
+require('log4js').configure({
+  "appenders": [
+  ]
+});
 
 var MEMORY_MODE = true;
 var commonConf = {

@@ -8,5 +8,5 @@ script: "npm run-script test-travis"
 
 # Send coverage data to Coveralls
 after_script:
-  - rm -Rf ./coverage
   - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+  - rm -Rf ./coverage

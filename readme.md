@@ -1,4 +1,4 @@
-# uCoin [![Build Status](https://api.travis-ci.org/ucoin-io/ucoin.png)](https://travis-ci.org/ucoin-io/ucoin)
+# uCoin [![Build Status](https://api.travis-ci.org/ucoin-io/ucoin.png)](https://travis-ci.org/ucoin-io/ucoin) [![Coverage Status](https://coveralls.io/repos/ucoin-io/ucoin/badge.svg?branch=master&service=github)](https://coveralls.io/github/ucoin-io/ucoin?branch=master)
 
 uCoin is a free server-side software allowing to create new P2P crypto-currencies based on individuals and Universal Dividend.
 

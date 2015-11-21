@@ -167,14 +167,6 @@ function Server (dbConf, overrideConf) {
       },
       function (next){
         that.PeeringService.regularSyncBlock(next);
-      },
-      function (next){
-        next();
-      },
-      function (next) {
-        // Launch a block analysis
-        that.BlockchainService.addStatComputing();
-        next();
       }
     ], done);
   };
@@ -315,9 +307,6 @@ function Server (dbConf, overrideConf) {
                     that.PeeringService.setDAL(that.dal);
                     that.TransactionsService.setDAL(that.dal);
                     (theRouter && theRouter.setDAL(that.dal));
-                    if (!block.fork) {
-                      that.BlockchainService.addStatComputing();
-                    }
                     done(null, block);
                   })
                   .catch(done);

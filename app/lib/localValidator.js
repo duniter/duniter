@@ -394,13 +394,7 @@ function LocalValidator (conf) {
     });
   };
 
-  this.checkPeerSignature = function (peer, done) {
-    async.series([
-      async.apply(checkPeerSignature, peer)
-    ], function (err) {
-      done(err);
-    });
-  };
+  this.checkPeerSignature = checkPeerSignature;
 
   /**
   * Function for testing constraints.
@@ -633,12 +627,12 @@ function checkSingleTransactionSignature (tx, done) {
   done(signaturesMatching ? null : 'Signature from a transaction must match');
 }
 
-function checkPeerSignature (peer, done) {
+function checkPeerSignature (peer) {
   var raw = rawer.getPeerWithoutSignature(peer);
   var sig = peer.signature;
   var pub = peer.pubkey;
   var signaturesMatching = crypto.verify(raw, sig, pub);
-  done(signaturesMatching ? null : 'Signature from a peer must match');
+  return !!signaturesMatching;
 }
 
 function checkSingleMembershipSignature(ms) {

@@ -181,7 +181,7 @@ function BlockchainService (conf, mainDAL, pair) {
         }
         let res = yield mainContext.addBlock(obj, doCheck);
         yield pushStatsForBlocks([res]);
-        yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+        //yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
         return res;
       } else {
         // add it as side chain
@@ -217,8 +217,10 @@ function BlockchainService (conf, mainDAL, pair) {
           logger.debug('SWITCH: apply side chain #%s-%s...', potential.number, potential.hash);
           yield applySideChain(sideChain);
         } catch (e) {
+          logger.warn('SWITCH: error %s', e.stack || e);
           // Revert the revert (so we go back to original chain)
           let revertedChain = yield getWholeForkBranch(current);
+          yield revertToBlock(revertedChain[0].number - 1);
           yield applySideChain(revertedChain);
           yield markSideChainAsWrong(sideChain);
         }

@@ -252,47 +252,34 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   // Peer
   //============
   function syncPeer (node) {
-    return Q.Promise(function(resolve, reject){
 
-      // Global sync vars
-      var remotePeer = new Peer({});
-      var remoteJsonPeer = {};
+    // Global sync vars
+    var remotePeer = new Peer({});
+    var remoteJsonPeer = {};
 
-      async.waterfall([
-        function (next){
-          node.network.peering.get(next);
-        },
-        function (json, next){
-          remotePeer.copyValuesFrom(json);
-          var entry = remotePeer.getRaw();
-          var signature = dos2unix(remotePeer.signature);
-          // Parameters
-          if(!(entry && signature)){
-            next('Requires a peering entry + signature');
-            return;
-          }
+    return co(function *() {
+      let json = yield Q.nfcall(node.network.peering.get);
+      remotePeer.copyValuesFrom(json);
+      var entry = remotePeer.getRaw();
+      var signature = dos2unix(remotePeer.signature);
+      // Parameters
+      if(!(entry && signature)){
+        throw 'Requires a peering entry + signature';
+      }
 
-          remoteJsonPeer = json;
-          remoteJsonPeer.pubkey = json.pubkey;
-          localValidator().checkPeerSignature(remoteJsonPeer, next);
-        },
-        function (next) {
-          async.waterfall([
-            function (next){
-              PeeringService.submit(remoteJsonPeer, function (err) {
-                next(err == constants.ERROR.PEER.ALREADY_RECORDED ? null : err);
-              });
-            }
-          ], function (err) {
-            next(err);
-          });
+      remoteJsonPeer = json;
+      remoteJsonPeer.pubkey = json.pubkey;
+      let signatureOK = localValidator().checkPeerSignature(remoteJsonPeer);
+      if (!signatureOK) {
+        watcher.writeStatus('Wrong signature for peer #' + remoteJsonPeer.pubkey);
+      }
+      try {
+        yield Q.nfcall(PeeringService.submit, remoteJsonPeer);
+      } catch (err) {
+        if (err != constants.ERROR.PEER.ALREADY_RECORDED && err != constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
+          throw err;
         }
-      ], (err, res) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(res);
-      });
+      }
     });
   }
 };

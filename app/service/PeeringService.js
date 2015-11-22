@@ -1,4 +1,5 @@
 "use strict";
+var co             = require('co');
 var util           = require('util');
 var async          = require('async');
 var _              = require('underscore');
@@ -41,52 +42,52 @@ function PeeringService(server, pair, dal) {
       done = eraseIfAlreadyRecorded;
       eraseIfAlreadyRecorded = false;
     }
-    var peer = new Peer(peering);
-    var sp = peer.block.split('-');
-    var number = sp[0];
-    var sigTime = 0;
-    async.waterfall([
-      function (next) {
-        localValidator(null).checkPeerSignature(peer, next);
-      },
-      function (next) {
-        if (peer.block == constants.PEER.SPECIAL_BLOCK) {
-          peer.statusTS = 0;
-          peer.status = 'UP';
-          next(null, null);
-        }
-        // Check if document is based upon an existing block as time reference
-        else dal.getBlockOrNull(number, next);
-      },
-      function (block, next){
-        sigTime = block ? block.medianTime : 0;
-        peer.statusTS = sigTime;
-        dal.getPeerOrNull(peer.pubkey, next);
-      },
-      function (found, next){
-        var peerEntity = Peer.statics.peerize(found || peer);
-        if(found){
-          // Already existing peer
-          var sp2 = found.block.split('-');
-          var number2 = sp2[0];
-          if(number <= number2 && !eraseIfAlreadyRecorded){
-            next(constants.ERROR.PEER.ALREADY_RECORDED);
-            return;
-          }
-          peerEntity = Peer.statics.peerize(found);
-          peer.copyValues(peerEntity);
-          peerEntity.sigDate = new Date(sigTime*1000);
-        }
-        // Set the peer as UP again
-        peerEntity.status = 'UP';
-        peerEntity.hash = String(sha1(peerEntity.getRawSigned())).toUpperCase();
-        dal.savePeer(peerEntity)
-          .then(function(){
-            next(null, Peer.statics.peerize(peerEntity));
-          })
-          .catch(next);
+    let thePeer = new Peer(peering);
+    let sp = thePeer.block.split('-');
+    let blockNumber = sp[0];
+    let blockHash = sp[1];
+    let sigTime = 0;
+    let block;
+    return co(function *() {
+      let goodSignature = localValidator(null).checkPeerSignature(thePeer);
+      if (!goodSignature) {
+        throw 'Signature from a peer must match';
       }
-    ], done);
+      if (thePeer.block == constants.PEER.SPECIAL_BLOCK) {
+        thePeer.statusTS = 0;
+        thePeer.status = 'UP';
+      } else {
+        block = yield dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
+        if (!block) {
+          throw constants.PEER.UNKNOWN_REFERENCE_BLOCK;
+        }
+      }
+      sigTime = block ? block.medianTime : 0;
+      thePeer.statusTS = sigTime;
+      let found = yield dal.getPeerOrNull(thePeer.pubkey);
+      var peerEntity = Peer.statics.peerize(found || thePeer);
+      if(found){
+        // Already existing peer
+        var sp2 = found.block.split('-');
+        var previousBlockNumber = sp2[0];
+        if(blockNumber <= previousBlockNumber && !eraseIfAlreadyRecorded){
+          throw constants.ERROR.PEER.ALREADY_RECORDED;
+        }
+        peerEntity = Peer.statics.peerize(found);
+        thePeer.copyValues(peerEntity);
+        peerEntity.sigDate = new Date(sigTime * 1000);
+      }
+      // Set the peer as UP again
+      peerEntity.status = 'UP';
+      peerEntity.first_down = null;
+      peerEntity.last_try = null;
+      peerEntity.hash = String(sha1(peerEntity.getRawSigned())).toUpperCase();
+      yield dal.savePeer(peerEntity);
+      let res = Peer.statics.peerize(peerEntity);
+      done(null, res);
+      return res;
+    })
+      .catch(done);
   };
 
   var peerFifo = async.queue(function (task, callback) {
@@ -102,17 +103,22 @@ function PeeringService(server, pair, dal) {
     generateSelfPeer(conf, done);
   };
 
-  var syncBlockFifo = async.queue(function (task, callback) {
-    task(callback);
-  }, 1);
+  var syncBlockFifo = async.queue((task, callback) => task(callback), 1);
   var syncBlockInterval = null;
   this.regularSyncBlock = function (done) {
     if (syncBlockInterval)
       clearInterval(syncBlockInterval);
-    syncBlockInterval = setInterval(function () {
-      syncBlockFifo.push(syncBlock);
-    }, 1000*conf.avgGenTime*constants.NETWORK.SYNC_BLOCK_INTERVAL);
+    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000*conf.avgGenTime*constants.NETWORK.SYNC_BLOCK_INTERVAL);
     syncBlock(done);
+  };
+
+  var testPeerFifo = async.queue((task, callback) => task(callback), 1);
+  var testPeerFifoInterval = null;
+  this.regularTestPeers = function (done) {
+    if (testPeerFifoInterval)
+      clearInterval(testPeerFifoInterval);
+    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers), 1000 * conf.avgGenTime * constants.NETWORK.TEST_PEERS_INTERVAL);
+    testPeers(done);
   };
 
   this.generateSelfPeer = generateSelfPeer;
@@ -192,146 +198,112 @@ function PeeringService(server, pair, dal) {
     });
   }
 
-  this.testPeers = function(done) {
-    dal.listAllPeers()
-      .then(function(peers){
-        peers = _.filter(peers, function(p){ return p.pubkey != selfPubkey; });
-        return Q.all(peers.map(function(p) {
-          var peer = new Peer(p);
-          return Q.nfcall(peer.connect)
-            .then(function(node){
-              // Get peering record of each peer
-              return Q.nfcall(node.network.peering.get)
-                .then(function(peering){
-                  // Submit the peering
-                  return Q.nfcall(that.submit, peering)
-                    .catch(function(err) {
-                      // Not a problem!
-                      logger.warn("Peer record %s: %s", peer.pubkey, err.code || err.message || err);
-                    });
-                })
-                .catch(function(err){
-                  logger.warn("Peer %s: %s", peer.pubkey, err.code || err.message || err);
-                  // The peer is unreachable: set it DOWN
-                  peer.status = 'DOWN';
-                  return dal.savePeer(peer);
-                });
-            });
-        }));
-      })
-      .then(function(){
-        done();
-      })
+  function testPeers(done) {
+    return co(function *() {
+      let peers = yield dal.listAllPeers();
+      let now = (new Date().getTime());
+      peers = _.filter(peers, (p) => p.pubkey != selfPubkey);
+      for (let i = 0, len = peers.length; i < len; i++) {
+        let p = new Peer(peers[i]);
+        if (p.status == 'DOWN') {
+          let downAt = p.first_down || now;
+          let downDelay = Math.floor((now - downAt) / 1000);
+          let waitedSinceLastTest = Math.floor((now - (p.last_try || now)) / 1000);
+          let testIt = 
+               (downDelay <= constants.DURATIONS.A_MINUTE    && waitedSinceLastTest >= constants.DURATIONS.TEN_SECONDS)
+            || (downDelay <= constants.DURATIONS.TEN_MINUTES && waitedSinceLastTest >= constants.DURATIONS.A_MINUTE)
+            || (downDelay <= constants.DURATIONS.AN_HOUR     && waitedSinceLastTest >= constants.DURATIONS.TEN_MINUTES)
+            || (downDelay <= constants.DURATIONS.A_DAY       && waitedSinceLastTest >= constants.DURATIONS.AN_HOUR)
+            || (downDelay <= constants.DURATIONS.A_WEEK      && waitedSinceLastTest >= constants.DURATIONS.A_DAY)
+            || (downDelay <= constants.DURATIONS.A_MONTH     && waitedSinceLastTest >= constants.DURATIONS.A_WEEK)
+          ;
+          if (testIt) {
+            // We try to reconnect only with peers marked as DOWN
+            let node = yield Q.nfcall(p.connect);
+            let peering = yield Q.nfcall(node.network.peering.get);
+            let sp1 = peering.block.split('-');
+            let currentBlockNumber = sp1[0];
+            let currentBlockHash = sp1[1];
+            let sp2 = peering.block.split('-');
+            let blockNumber = sp2[0];
+            let blockHash = sp2[1];
+            if (!(currentBlockNumber == blockNumber && currentBlockHash == blockHash)) {
+              // The peering changed
+              try {
+                yield Q.nfcall(that.submit, peering);
+              } catch (err) {
+                // Error: we set the peer as DOWN
+                logger.warn("Peer record %s: %s", p.pubkey, err.code || err.message || err);
+                yield dal.setPeerDown(p.pubkey);
+              }
+            }
+          }
+        }
+      }
+      done();
+    })
       .catch(done);
-  };
+  }
 
   function syncBlock(callback) {
-    var lastAdded = null;
-    async.waterfall([
-      function (next) {
-        dal.getCurrentBlockOrNull(next);
-      },
-      function(current, next) {
-        if (current) {
-          logger.info("Check network for new blocks...");
-          dal.findAllPeersNEWUPBut([selfPubkey])
-            .then(function(peers){
-              peers = _.shuffle(peers);
-              return peers.reduce(function(promise, peer) {
-                return promise
-                  .catch(function(err){
-                    if (err) {
-                      logger.warn(err.message || err);
-                    }
-                    var p = new Peer(peer);
-                    logger.info("Try with %s", p.getURL());
-                    return Q.Promise(function(resolve, reject){
-                      async.waterfall([
-                        function(next) {
-                          p.connect(next);
-                        },
-                        function(node, next) {
-                          var errorWithPeer = false;
-                          async.whilst(
-                            function () {
-                              return !errorWithPeer;
-                            },
-                            function (callback) {
-                              async.waterfall([
-                                function (next) {
-                                  node.blockchain.current(function(err) {
-                                    if (err) {
-                                      return dal.setPeerDown(p.pubkey)
-                                        .catch(function(err2){
-                                          next(err2 || err);
-                                        });
-                                    }
-                                    next();
-                                  });
-                                },
-                                function (next) {
-                                  node.blockchain.block(current.number + 1, next);
-                                },
-                                function (block, next) {
-                                  // Rawification of transactions
-                                  block.transactions.forEach(function (tx) {
-                                    tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
-                                    tx.raw += tx.signatories.join('\n') + '\n';
-                                    tx.raw += tx.inputs.join('\n') + '\n';
-                                    tx.raw += tx.outputs.join('\n') + '\n';
-                                    if (tx.comment)
-                                      tx.raw += tx.comment + '\n';
-                                    tx.raw += tx.signatures.join('\n') + '\n';
-                                    tx.version = 1;
-                                    tx.currency = conf.currency;
-                                    tx.issuers = tx.signatories;
-                                    tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
-                                  });
-                                  logger.info("Downloaded block #%s from peer %s", block.number, p.getNamedURL());
-                                  server.BlockchainService.submitBlock(block, true)
-                                    .then(function(block){
-                                      return next(null, block);
-                                    })
-                                    .catch(next);
-                                },
-                                function(block, next) {
-                                  current = block;
-                                  lastAdded = block;
-                                  next();
-                                }
-                              ], callback);
-                            },
-                            function (err) {
-                              errorWithPeer = err ? true : false;
-                              if (errorWithPeer) {
-                                next(err);
-                              }
-                            }
-                          );
-                        }
-                      ], function(err) {
-                        err ? reject(err) : resolve();
-                      });
-                    });
-                  })
-              }, Q.reject())
-                .catch(function(){
-                  logger.info("No new block found");
-                  if (lastAdded) {
-                    server.router().write(_.extend({ type: 'Block' }, lastAdded));
-                  }
-                  next();
-                });
-            });
+    return co(function *() {
+      let current = dal.getCurrentBlockOrNull();
+      if (current) {
+        logger.info("Check network for new blocks...");
+        let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
+        peers = _.shuffle(peers);
+        for (let i = 0, len = peers.length; i < len; i++) {
+          var p = new Peer(peers[i]);
+          logger.info("Try with %s", p.getURL());
+          let node = yield Q.nfcall(p.connect);
+          try {
+            let downloaded = yield Q.nfcall(node.blockchain.current);
+            if (!downloaded) {
+              yield dal.setPeerDown(p.pubkey);
+            }
+            while (downloaded) {
+              logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
+              let existing = yield dal.getAbsoluteBlockByNumberAndHash(downloaded.number, downloaded.hash);
+              if (existing) {
+                throw 'Already processed';
+              }
+              downloaded = rawifyTransactions(downloaded);
+              yield server.BlockchainService.submitBlock(downloaded, true);
+              if (downloaded.number == 0) {
+                downloaded = null;
+              } else {
+                downloaded = yield Q.nfcall(node.blockchain.block, downloaded.number - 1);
+              }
+            }
+          } catch (err) {
+            logger.warn(err);
+          }
         }
-        else next();
+        callback();
       }
-    ], function(err) {
-      if (err) {
-        logger.warn(err.code || err.message || err);
-      }
-      callback();
+    })
+      .catch((err) => {
+        logger.warn(err.code || err.stack || err.message || err);
+        callback();
+      });
+  }
+
+  function rawifyTransactions(block) {
+    // Rawification of transactions
+    block.transactions.forEach(function (tx) {
+      tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+      tx.raw += tx.signatories.join('\n') + '\n';
+      tx.raw += tx.inputs.join('\n') + '\n';
+      tx.raw += tx.outputs.join('\n') + '\n';
+      if (tx.comment)
+        tx.raw += tx.comment + '\n';
+      tx.raw += tx.signatures.join('\n') + '\n';
+      tx.version = 1;
+      tx.currency = conf.currency;
+      tx.issuers = tx.signatories;
+      tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
     });
+    return block;
   }
 }
 

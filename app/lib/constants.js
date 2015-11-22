@@ -21,7 +21,8 @@ module.exports = {
   ERROR: {
 
     PEER: {
-      ALREADY_RECORDED: 'A more recent peering document is already recorded.'
+      ALREADY_RECORDED: 'A more recent peering document is already recorded.',
+      UNKNOWN_REFERENCE_BLOCK: 'Unknown reference block of peer'
     },
 
     BLOCK: {
@@ -114,14 +115,25 @@ module.exports = {
       MAX: 20
     },
     STATUS_INTERVAL: {
-      UPDATE: 10, // Every X blocks
+      UPDATE: 6, // Every X blocks
       MAX: 20 // MAX Y blocks
     },
-    SYNC_BLOCK_INTERVAL: 1 // Every 1 block average generation time
+    SYNC_BLOCK_INTERVAL: 1, // Every 1 block average generation time
+    TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
     EVALUATION: 200,
     RELEASE_MEMORY: 10000
+  },
+
+  DURATIONS: {
+    TEN_SECONDS: 10,
+    A_MINUTE: 60,
+    TEN_MINUTES: 600,
+    AN_HOUR: 3600,
+    A_DAY: 3600 * 24,
+    A_WEEK: 3600 * 24 * 7,
+    A_MONTH: (3600 * 24 * 365.25) / 12
   },
 
   CONTRACT: {

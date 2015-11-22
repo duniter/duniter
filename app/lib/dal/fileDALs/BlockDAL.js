@@ -97,7 +97,12 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
   };
 
   this.getForkBlocks = () =>
-    Q(this.collection.find({ fork: true, wrong: false }));
+    Q(this.collection.find({
+      $and: [
+        { fork: true },
+        { wrong: false }
+      ]
+    }));
 
   this.saveBunch = (blocks, inFiles) => {
     if (!inFiles) {

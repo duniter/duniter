@@ -899,16 +899,17 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
-  this.setPeerDown = function(pubkey) {
-    return that.getPeer(pubkey)
-      .then(function(p){
-        p.status = 'DOWN';
-        return that.peerDAL.savePeer(p);
-      })
-      .catch(function() {
-        // Silent error
-      });
-  };
+  this.setPeerDown = (pubkey) => co(function *() {
+    let p = yield that.getPeer(pubkey);
+    let now = (new Date()).getTime();
+    p.status = 'DOWN';
+    if (!p.first_down) {
+      p.first_down = now;
+    }
+    p.last_try = now;
+    return that.peerDAL.savePeer(p);
+  })
+    .catch(() => null);
 
   this.saveBlock = function(block, done) {
     block.wrong = false;

@@ -163,7 +163,7 @@ function Server (dbConf, overrideConf) {
         that.PeeringService.regularPeerSignal(next);
       },
       function(next) {
-        that.PeeringService.testPeers(next);
+        that.PeeringService.regularTestPeers(next);
       },
       function (next){
         that.PeeringService.regularSyncBlock(next);

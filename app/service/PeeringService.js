@@ -14,6 +14,8 @@ var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 var blockchainCtx   = require('../lib/blockchainContext');
 
+const FROM_PULL = true;
+
 function PeeringService(server, pair, dal) {
 
   var conf = server.conf;
@@ -264,7 +266,7 @@ function PeeringService(server, pair, dal) {
             while (downloaded) {
               logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
               downloaded = rawifyTransactions(downloaded);
-              yield server.BlockchainService.submitBlock(downloaded, true);
+              yield server.BlockchainService.submitBlock(downloaded, true, FROM_PULL);
               if (downloaded.number == 0) {
                 downloaded = null;
               } else {

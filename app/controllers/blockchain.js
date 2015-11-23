@@ -214,7 +214,7 @@ function BlockchainBinding (server) {
           version: ms.version,
           currency: conf.currency,
           membership: ms.membership,
-          blockNumber: ms.blockNumber,
+          blockNumber: parseInt(ms.blockNumber),
           blockHash: ms.blockHash
         });
       });

@@ -111,7 +111,9 @@ function IdentityService (conf, dal) {
         for (let i = 0; i < certs.length; i++) {
           let cert = certs[i];
           yield Q.Promise(function(resolve){
-            globalValidation.checkCertificationIsValid(cert, potentialNext, resolve, function(err) {
+            globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
+              next(null, idty);
+            }, function(err) {
               cert.err = err;
               resolve();
             }, DO_NOT_THROW_ABOUT_EXPIRATION);
@@ -145,6 +147,8 @@ function IdentityService (conf, dal) {
                 aCertWasSaved = true;
               }
             }
+          } else {
+            logger.info('✘ CERT %s wrong signature', cert.from);
           }
         }
         let existing = yield dal.getIdentityByHashWithCertsOrNull(obj.hash);

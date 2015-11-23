@@ -132,10 +132,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
         return -1;
       }
       let conf = getParameters(rootBlock);
-      let maxBlock = getMaxBlocksToStoreAsFile(conf);
+      let needToBeKeptBlocks = getMaxBlocksToStoreAsFile(conf);
       let current = yield that.getCurrentBlockOrNull();
       let currentNumber = current ? current.number : -1;
-      return currentNumber - maxBlock;
+      return currentNumber - needToBeKeptBlocks;
     });
   }
 

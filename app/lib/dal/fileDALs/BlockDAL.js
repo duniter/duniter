@@ -6,6 +6,7 @@ var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
 var constants = require('../../constants');
+var logger = require('../../../../app/lib/logger')('blockdal');
 
 const BLOCK_FILE_PREFIX = "0000000000";
 const BLOCK_FOLDER_SIZE = 500;
@@ -19,6 +20,7 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
   let collection = loki.getCollection('blocks') || loki.addCollection('blocks', { indices: ['fork', 'number', 'hash'] });
   let blocksDB = getView();
   let current = null;
+  let that = this;
 
   this.init = () => co(function *() {
     yield rootFS.makeTree('blocks/');
@@ -89,7 +91,10 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
     });
   };
 
-  this.lastBlockWithDividend = () => blocksDB.branchResultset().find({ dividend: { $gt: 0 } }).data()[0];
+  this.lastBlockWithDividend = () => {
+    let blocks = blocksDB.branchResultset().find({ dividend: { $gt: 0 } }).simplesort('number', true).data();
+    return blocks[0];
+  };
 
   this.lastBlockOfIssuer = (issuer) => {
     let blocksOfIssuer = blocksDB.branchResultset().find({ issuer: issuer }).simplesort('number', true).limit(1).data();
@@ -182,11 +187,16 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
   function migrateOldBlocks() {
     return co(function *() {
       let number = yield getLowerWindowBlock();
+      logger.debug("Clean some blocks from memory to disk...");
+      logger.debug("Lower block = %s", number);
       let lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
       if (!lowerInLoki) {
         return;
       }
+      logger.debug("LastUD in loki = %s", that.lastBlockWithDividend().number);
+      logger.debug("Lower in loki = %s", lowerInLoki.number);
       let deadBlocksInLoki = number - lowerInLoki.number;
+      logger.debug("Dead blocks = %s", deadBlocksInLoki);
       if (deadBlocksInLoki >= constants.BLOCKS_COLLECT_THRESHOLD) {
         let blocksToPersist = blocksDB.branchResultset().find({
           $and: [{
@@ -195,12 +205,16 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
             number: { $lte: number }
           }]
         }).simplesort('number').data();
+        logger.debug("To store in files = %s to %s", blocksToPersist[0].number, blocksToPersist[blocksToPersist.length - 1].number);
         for (let i = 0; i < blocksToPersist.length; i++) {
           let block = blocksToPersist[i];
           yield rootFS.makeTree(pathOfBlock(block.number));
           yield rootFS.writeJSON(pathOfBlock(block.number) + blockFileName(block.number) + '.json', block);
           collection.remove(block);
         }
+        lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
+        logger.debug("Lower in loki now = %s", lowerInLoki.number);
+        logger.debug("LastUD in loki = %s", that.lastBlockWithDividend().number);
       }
     });
   }

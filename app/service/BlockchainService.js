@@ -188,6 +188,10 @@ function BlockchainService (conf, mainDAL, pair) {
         if (current.number - obj.number + 1 >= conf.branchesWindowSize) {
           throw 'Block out of fork window';
         }
+        let absolute = yield mainDAL.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
+        if (absolute) {
+          throw 'Already processed side block #' + obj.number + '-' + obj.hash;
+        }
         let res = yield mainContext.addSideBlock(obj, doCheck);
         yield eventuallySwitchOnSideChain(current);
         let newCurrent = mainContext.current();

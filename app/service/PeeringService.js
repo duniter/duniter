@@ -263,10 +263,6 @@ function PeeringService(server, pair, dal) {
             }
             while (downloaded) {
               logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
-              let existing = yield dal.getAbsoluteBlockByNumberAndHash(downloaded.number, downloaded.hash);
-              if (existing) {
-                throw 'Already processed';
-              }
               downloaded = rawifyTransactions(downloaded);
               yield server.BlockchainService.submitBlock(downloaded, true);
               if (downloaded.number == 0) {

@@ -19,6 +19,7 @@ var blockchainDao   = require('../lib/blockchainDao');
 var blockchainCtx   = require('../lib/blockchainContext');
 
 const CHECK_ALL_RULES = true;
+const FROM_PULL = true;
 
 module.exports = function (conf, dal, PeeringService) {
   return new BlockchainService(conf, dal, PeeringService);
@@ -166,7 +167,7 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   };
 
-  function checkAndAddBlock(obj, doCheck) {
+  function checkAndAddBlock(obj, doCheck, fromPull) {
     return co(function *() {
       let existing = yield mainDAL.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
       if (existing) {
@@ -188,7 +189,7 @@ function BlockchainService (conf, mainDAL, pair) {
           throw 'Block out of fork window';
         }
         let absolute = yield mainDAL.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
-        if (absolute) {
+        if (absolute && !fromPull) {
           throw 'Already processed side block #' + obj.number + '-' + obj.hash;
         }
         let res = yield mainContext.addSideBlock(obj, doCheck);
@@ -265,7 +266,7 @@ function BlockchainService (conf, mainDAL, pair) {
       for (let i = 0, len = chain.length; i < len; i++) {
         let block = chain[i];
         logger.debug('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
-        yield checkAndAddBlock(block, CHECK_ALL_RULES);
+        yield checkAndAddBlock(block, CHECK_ALL_RULES, FROM_PULL);
       }
     });
   }

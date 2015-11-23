@@ -88,10 +88,11 @@ function Multicaster (isolate, timeout) {
         "uri": 'http://' + peer.getURL() + url,
         "timeout": timeout || constants.NETWORK.DEFAULT_TIMEOUT
       }, function (err, res) {
-        if (err) {
+        // TODO: set unreachable only if problem of connection
+        /*if (err) {
           that.push({ unreachable: true, peer: { pubkey: peer.pubkey }});
           return reject(err);
-        }
+        }*/
         resolve(res);
       });
       postReq.form(data);

@@ -249,7 +249,7 @@ function PeeringService(server, pair, dal) {
 
   function syncBlock(callback) {
     return co(function *() {
-      let current = dal.getCurrentBlockOrNull();
+      let current = yield dal.getCurrentBlockOrNull();
       if (current) {
         logger.info("Check network for new blocks...");
         let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
@@ -266,7 +266,11 @@ function PeeringService(server, pair, dal) {
             while (downloaded) {
               logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
               downloaded = rawifyTransactions(downloaded);
-              yield server.BlockchainService.submitBlock(downloaded, true, FROM_PULL);
+              let res = yield server.BlockchainService.submitBlock(downloaded, true, FROM_PULL);
+              if (!res.fork) {
+                let nowCurrent = yield dal.getCurrentBlockOrNull();
+                yield server.BlockchainService.tryToFork(nowCurrent);
+              }
               if (downloaded.number == 0) {
                 downloaded = null;
               } else {
@@ -277,8 +281,8 @@ function PeeringService(server, pair, dal) {
             logger.warn(err);
           }
         }
-        callback();
       }
+      callback();
     })
       .catch((err) => {
         logger.warn(err.code || err.stack || err.message || err);

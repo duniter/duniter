@@ -193,16 +193,20 @@ function BlockchainService (conf, mainDAL, pair) {
           throw 'Already processed side block #' + obj.number + '-' + obj.hash;
         }
         let res = yield mainContext.addSideBlock(obj, doCheck);
-        yield eventuallySwitchOnSideChain(current);
-        let newCurrent = yield mainContext.current();
-        let forked = newCurrent.number != current.number || newCurrent.hash != current.hash;
-        if (forked) {
-          yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
-        }
+        yield that.tryToFork(current);
         return res;
       }
     });
   }
+
+  that.tryToFork = (current) => co(function *() {
+    yield eventuallySwitchOnSideChain(current);
+    let newCurrent = yield mainContext.current();
+    let forked = newCurrent.number != current.number || newCurrent.hash != current.hash;
+    if (forked) {
+      yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+    }
+  });
 
   function eventuallySwitchOnSideChain(current) {
     return co(function *() {

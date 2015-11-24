@@ -86,7 +86,6 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
     }
     return co(function *() {
       let filesBlocks = yield Q.all(_.range(start, Math.min(lowerInLoki.number, end + 1)).map((number) => rootFS.readJSON(pathOfBlock(number) + blockFileName(number) + '.json')));
-      yield migrateOldBlocks();
       return filesBlocks.concat(lokiBlocks);
     });
   };
@@ -184,40 +183,38 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
     current = previousBlock;
   };
 
-  function migrateOldBlocks() {
-    return co(function *() {
-      let number = yield getLowerWindowBlock();
-      logger.debug("Clean some blocks from memory to disk...");
-      logger.debug("Lower block = %s", number);
-      let lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
-      if (!lowerInLoki) {
-        return;
+  this.migrateOldBlocks = () => co(function *() {
+    let number = yield getLowerWindowBlock();
+    logger.debug("Clean some blocks from memory to disk...");
+    logger.debug("Lower block = %s", number);
+    let lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
+    if (!lowerInLoki) {
+      return;
+    }
+    logger.debug("LastUD in loki = %s", that.lastBlockWithDividend().number);
+    logger.debug("Lower in loki = %s", lowerInLoki.number);
+    let deadBlocksInLoki = number - lowerInLoki.number;
+    logger.debug("Dead blocks = %s", deadBlocksInLoki);
+    if (deadBlocksInLoki >= constants.BLOCKS_COLLECT_THRESHOLD) {
+      let blocksToPersist = blocksDB.branchResultset().find({
+        $and: [{
+          number: { $gte: lowerInLoki.number }
+        }, {
+          number: { $lte: number }
+        }]
+      }).simplesort('number').data();
+      logger.debug("To store in files = %s to %s", blocksToPersist[0].number, blocksToPersist[blocksToPersist.length - 1].number);
+      for (let i = 0; i < blocksToPersist.length; i++) {
+        let block = blocksToPersist[i];
+        yield rootFS.makeTree(pathOfBlock(block.number));
+        yield rootFS.writeJSON(pathOfBlock(block.number) + blockFileName(block.number) + '.json', block);
+        collection.remove(block);
       }
+      lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
+      logger.debug("Lower in loki now = %s", lowerInLoki.number);
       logger.debug("LastUD in loki = %s", that.lastBlockWithDividend().number);
-      logger.debug("Lower in loki = %s", lowerInLoki.number);
-      let deadBlocksInLoki = number - lowerInLoki.number;
-      logger.debug("Dead blocks = %s", deadBlocksInLoki);
-      if (deadBlocksInLoki >= constants.BLOCKS_COLLECT_THRESHOLD) {
-        let blocksToPersist = blocksDB.branchResultset().find({
-          $and: [{
-            number: { $gte: lowerInLoki.number }
-          }, {
-            number: { $lte: number }
-          }]
-        }).simplesort('number').data();
-        logger.debug("To store in files = %s to %s", blocksToPersist[0].number, blocksToPersist[blocksToPersist.length - 1].number);
-        for (let i = 0; i < blocksToPersist.length; i++) {
-          let block = blocksToPersist[i];
-          yield rootFS.makeTree(pathOfBlock(block.number));
-          yield rootFS.writeJSON(pathOfBlock(block.number) + blockFileName(block.number) + '.json', block);
-          collection.remove(block);
-        }
-        lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
-        logger.debug("Lower in loki now = %s", lowerInLoki.number);
-        logger.debug("LastUD in loki = %s", that.lastBlockWithDividend().number);
-      }
-    });
-  }
+    }
+  });
 
   function getView() {
     let view;

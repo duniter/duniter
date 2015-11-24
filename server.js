@@ -167,6 +167,9 @@ function Server (dbConf, overrideConf) {
       },
       function (next){
         that.PeeringService.regularSyncBlock(next);
+      },
+      function (next){
+        that.BlockchainService.regularCleanMemory(next);
       }
     ], done);
   };

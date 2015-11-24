@@ -12,7 +12,7 @@ var Membership = function(json) {
     that[key] = json[key];
   });
 
-  this.blockNumber = this.number;
+  this.blockNumber = isNaN(this.number) ? this.number : parseInt(this.number);
   this.blockHash = this.fpr;
   this.version = "1";
 

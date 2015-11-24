@@ -704,7 +704,10 @@ function BlockchainService (conf, mainDAL, pair) {
               }
               nextOne();
             }
-          ], callback);
+          ], (err) => {
+            logger.warn(err);
+            callback();
+          });
         }, next);
       }
     ], function(err) {
@@ -790,6 +793,9 @@ function BlockchainService (conf, mainDAL, pair) {
       var gValidator = globalValidator(conf, blockchainDao(null, that.currentDal));
       var identity = yield dal.getIdentityByHashOrNull(idHash);
       var foundCerts = [];
+      if (!identity) {
+        throw 'Identity with hash \'' + idHash + '\' not found';
+      }
       if (!identity.leaving) {
         if (!current) {
           // Look for certifications from initial joiners
@@ -1377,6 +1383,24 @@ function BlockchainService (conf, mainDAL, pair) {
     }
     return mainContext.dal.getBlocksBetween(from, from + count - 1);
   });
+
+  var cleanMemFifo = async.queue((task, callback) => task(callback), 1);
+  var cleanMemFifoInterval = null;
+  this.regularCleanMemory = function (done) {
+    if (cleanMemFifoInterval)
+      clearInterval(cleanMemFifoInterval);
+    cleanMemFifoInterval = setInterval(() => cleanMemFifo.push(cleanMemory), 1000 * constants.MEMORY_CLEAN_INTERVAL);
+    cleanMemory(done);
+  };
+
+  function cleanMemory(done) {
+    mainDAL.blockDAL.migrateOldBlocks()
+      .then(() => done())
+      .catch((err) => {
+        logger.warn(err);
+        done();
+      });
+  }
 }
 
 /**

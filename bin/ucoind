@@ -372,31 +372,33 @@ program
 program
   .command('reset [config|data|peers|tx|stats|all]')
   .description('Reset configuration, data, peers, transactions or everything in the database')
-  .action(connect(function (type, server) {
-    if(!~['config', 'data', 'peers', 'tx', 'stats', 'all'].indexOf(type)){
-      logger.error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset tx`, `reset stats` or `reset all`');
-      server.disconnect();
-      return;
-    }
-    if(type == 'data'){
-      server.resetData(resetDone(server, 'Data successfully reseted.'));
-    }
-    if(type == 'peers'){
-      server.resetPeers(resetDone(server, 'Peers successfully reseted.'));
-    }
-    if(type == 'tx'){
-      server.resetTxs(resetDone(server, 'Transactions successfully reseted.'));
-    }
-    if(type == 'stats'){
-      server.resetStats(resetDone(server, 'Stats successfully reseted.'));
-    }
-    if(type == 'config'){
-      server.resetConf(resetDone(server, 'Configuration successfully reseted.'));
-    }
-    if(type == 'all'){
-      server.reset(resetDone(server, 'Data & Configuration successfully reseted.'));
-    }
-  }, true));
+  .action((type) => {
+    connect(function (server) {
+      if(!~['config', 'data', 'peers', 'tx', 'stats', 'all'].indexOf(type)){
+        logger.error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset tx`, `reset stats` or `reset all`');
+        server.disconnect();
+        return;
+      }
+      if(type == 'data'){
+        server.resetData(resetDone(server, 'Data successfully reseted.'));
+      }
+      if(type == 'peers'){
+        server.resetPeers(resetDone(server, 'Peers successfully reseted.'));
+      }
+      if(type == 'tx'){
+        server.resetTxs(resetDone(server, 'Transactions successfully reseted.'));
+      }
+      if(type == 'stats'){
+        server.resetStats(resetDone(server, 'Stats successfully reseted.'));
+      }
+      if(type == 'config'){
+        server.resetConf(resetDone(server, 'Configuration successfully reseted.'));
+      }
+      if(type == 'all'){
+        server.reset(resetDone(server, 'Data & Configuration successfully reseted.'));
+      }
+    }, type != 'peers')(type);
+  });
 
 function resetDone(server, msg) {
   return function(err) {

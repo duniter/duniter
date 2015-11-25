@@ -68,6 +68,9 @@ function AbstractLoki(collection) {
     return false;
   };
 
+  this.lokiRemoveAll = () =>
+    collection.removeDataOnly();
+
   this.lokiRemoveWhere = (conditions) =>
     collection.removeWhere(conditions);
 

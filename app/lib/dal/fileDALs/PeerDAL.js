@@ -2,19 +2,41 @@
  * Created by cgeek on 22/08/15.
  */
 
+var Q = require('q');
+var AbstractLoki = require('./AbstractLoki');
+
 module.exports = PeerDAL;
 
-function PeerDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
+function PeerDAL(loki) {
 
   "use strict";
 
-  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
+  let collection = loki.getCollection('peers') || loki.addCollection('peers', { indices: ['pubkey', 'status'] });
 
-  this.init = () => this.coreFS.makeTree('peers/');
+  AbstractLoki.call(this, collection);
 
-  this.listAll = () => this.coreFS.listJSON('peers/');
+  this.idKeys = ['pubkey'];
+  this.propsToSave = [
+    'version',
+    'currency',
+    'status',
+    'statusTS',
+    'hash',
+    'first_down',
+    'last_try',
+    'pub',
+    'pubkey',
+    'block',
+    'signature',
+    'endpoints',
+    'raw'
+  ];
 
-  this.getPeer = (pubkey) => this.coreFS.readJSON('peers/' + pubkey + '.json');
+  this.init = () => null;
 
-  this.savePeer = (peer) => this.coreFS.writeJSON('peers/' + peer.pubkey + '.json', peer);
+  this.listAll = () => Q(collection.find());
+
+  this.getPeer = (pubkey) => Q(collection.find({ pubkey: pubkey })[0]);
+
+  this.savePeer = (peer) => this.lokiSave(peer);
 }

@@ -98,7 +98,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
-  this.peerDAL = new PeerDAL(rootPath, myFS, parentFileDAL && parentFileDAL.peerDAL.coreFS, that, CFSStorage);
+  this.peerDAL = new PeerDAL(loki);
   this.blockDAL = new BlockDAL(loki, blocksCFS, getLowerWindowBlock);
   this.sourcesDAL = new SourcesDAL(loki);
   this.txsDAL = new TxsDAL(loki);
@@ -1193,7 +1193,12 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   this.resetPeers = function(done) {
     var files = [];
     var dirs  = ['peers'];
-    return resetFiles(files, dirs, done);
+    return co(function *() {
+      that.peerDAL.lokiRemoveAll();
+      yield resetFiles(files, dirs);
+    })
+      .then(() => done && done())
+      .catch((err) => done && done(err));
   };
 
   this.resetTransactions = function(done) {

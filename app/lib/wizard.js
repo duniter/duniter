@@ -269,7 +269,7 @@ function networkConfiguration(conf, done) {
         operations = operations.concat(getUseUPnPOperations(conf));
       }
 
-      async.waterfall(operations, next);
+      async.waterfall(operations.concat(getHostnameOperations(conf, false)), next);
     }
   ], done);
 }

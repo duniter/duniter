@@ -182,6 +182,7 @@ function BlockchainService (conf, mainDAL, pair) {
         }
         let res = yield mainContext.addBlock(obj, doCheck);
         yield pushStatsForBlocks([res]);
+        yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
         return res;
       } else {
         // add it as side chain

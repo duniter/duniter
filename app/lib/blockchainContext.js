@@ -106,7 +106,7 @@ function BlockchainContext(conf, dal) {
   this.revertBlock = (block) => co(function *() {
     let previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
     // Set the block as SIDE block (equivalent to removal from main branch)
-    dal.blockDAL.setSideBlock(block, previousBlock);
+    yield dal.blockDAL.setSideBlock(block, previousBlock);
     yield undoCertifications(block);
     yield undoLinks(block);
     if (previousBlock) {
@@ -308,13 +308,13 @@ function BlockchainContext(conf, dal) {
       }
       // Undo renew (only remove last membership IN document)
       for (let i = 0, len = block.actives.length; i < len; i++) {
-        let msRaw = block.joiners[i];
+        let msRaw = block.actives[i];
         let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
         yield dal.unRenewIdentity(ms.issuer);
       }
       // Undo leavers (forget about their last membership OUT document)
       for (let i = 0, len = block.leavers.length; i < len; i++) {
-        let msRaw = block.joiners[i];
+        let msRaw = block.leavers[i];
         let ms = Membership.statics.fromInline(msRaw, 'OUT', conf.currency);
         yield dal.unLeaveIdentity(ms.issuer);
       }

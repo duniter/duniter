@@ -66,12 +66,6 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
   this.blocksDB = blocksDB;
   this.collection = collection;
 
-  this.getLastSavedBlockFileNumber = () => {
-    let last = collection.chain().simplesort('number', true).limit(1).data()[0];
-    if (last) return Q(last.number);
-    return Q(-1);
-  };
-
   this.getBlocks = (start, end) => {
     let lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
     let lokiBlocks = blocksDB.branchResultset().find({
@@ -168,7 +162,7 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
     return Q(block);
   };
 
-  this.setSideBlock = (block, previousBlock) => {
+  this.setSideBlock = (block, previousBlock) => co(function *() {
     let existing = collection.find({
       $and: [{
         number: block.number
@@ -181,7 +175,13 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
       collection.update(found);
     });
     current = previousBlock;
-  };
+    let lowerInLoki = collection.chain().simplesort('number').limit(1).data()[0];
+    if (lowerInLoki.number > 0) {
+      let newLower = yield that.getBlock(lowerInLoki.number - 1);
+      yield rootFS.remove(pathOfBlock(newLower.number) + blockFileName(newLower.number) + '.json');
+      collection.insert(newLower);
+    }
+  });
 
   this.migrateOldBlocks = () => co(function *() {
     let number = yield getLowerWindowBlock();

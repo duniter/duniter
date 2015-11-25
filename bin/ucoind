@@ -6,6 +6,7 @@ if (!~process.execArgv.indexOf('--harmony')) {
 }
 
 var async       = require('async');
+var co          = require('co');
 var Q           = require('q');
 var _           = require('underscore');
 var program     = require('commander');
@@ -229,6 +230,46 @@ program
       }
       server.disconnect();
       process.exit();
+    });
+  }));
+
+program
+  .command('revert [count]')
+  .description('Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL')
+  .action(service(function (count, server) {
+    co(function *() {
+      try {
+        for (let i = 0; i < count; i++) {
+          yield server.revert();
+        }
+      } catch (err) {
+        logger.error('Error during revert:', err);
+      }
+      // Save DB
+      server.disconnect()
+        .catch(() => null)
+        .then(function(){
+          process.exit();
+        });
+    });
+  }));
+
+program
+  .command('revert-to [number]')
+  .description('Revert (undo + remove) top blockchain blocks until block #[number] is reached. EXPERIMENTAL')
+  .action(service(function (number, server) {
+    co(function *() {
+      try {
+        yield server.revertTo(number);
+      } catch (err) {
+        logger.error('Error during revert:', err);
+      }
+      // Save DB
+      server.disconnect()
+        .catch(() => null)
+        .then(function(){
+          process.exit();
+        });
     });
   }));
 

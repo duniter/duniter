@@ -352,6 +352,17 @@ function Server (dbConf, overrideConf) {
 
   this.revert = () => this.BlockchainService.revertCurrentBlock();
 
+  this.revertTo = (number) => co(function *() {
+    let current = yield that.BlockchainService.current();
+    for (let i = 0, count = current.number - number; i < count; i++) {
+      yield that.BlockchainService.revertCurrentBlock();
+    }
+    if (current.number <= number) {
+      logger.warn('Already reached');
+    }
+    that.BlockchainService.revertCurrentBlock();
+  });
+
   this.singleWriteStream = function (onError, onSuccess) {
     return new TempStream(that, onError, onSuccess);
   };

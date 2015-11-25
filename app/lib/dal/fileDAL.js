@@ -295,10 +295,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
-  this.getLastSavedBlockFileNumber = function() {
-    return that.blockDAL.getLastSavedBlockFileNumber();
-  };
-
   this.getBlockCurrent = function(done) {
     return that.blockDAL.getCurrent()
       .then(function(current) {

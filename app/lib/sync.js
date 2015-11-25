@@ -50,7 +50,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       var node = yield getVucoin(host, port, vucoinOptions);
       logger.info('Sync started.');
 
-      var lastSavedNumber = yield server.dal.getLastSavedBlockFileNumber();
       var lCurrent = yield dal.getCurrentBlockOrNull();
 
       //============
@@ -74,14 +73,14 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
       // Prepare chunks of blocks to be downloaded
       var chunks = [];
-      for (let i = lastSavedNumber + 1; i <= remoteNumber; i = i + CONST_BLOCKS_CHUNK) {
+      for (let i = localNumber + 1; i <= remoteNumber; i = i + CONST_BLOCKS_CHUNK) {
         chunks.push([i, Math.min(i + CONST_BLOCKS_CHUNK - 1, remoteNumber)]);
       }
 
       // Prepare the array of download promises. The first is the promise of already downloaded blocks
       // which has not been applied yet.
       var toApply = [Q.defer()].concat(chunks.map(() => Q.defer()));
-      toApply[0].resolve([localNumber + 1, lastSavedNumber]);
+      toApply[0].resolve([localNumber + 1, localNumber]);
 
       // Chain download promises, and start download right now
       chunks.map((chunk, index) =>
@@ -132,7 +131,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       }
 
       // Specific treatment for nocautious
-      if (!cautious) {
+      if (!cautious && toApply.length > 1) {
         let lastChunk = yield toApplyNoCautious[toApplyNoCautious.length - 1].promise;
         let lastBlocks = lastChunk[2];
         let lastBlock = lastBlocks[lastBlocks.length - 1];

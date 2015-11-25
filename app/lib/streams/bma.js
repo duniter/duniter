@@ -69,7 +69,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGet( '/blockchain/block/:number',    blockchain.promoted);
   answerForGet( '/blockchain/blocks/:count/:from',    blockchain.blocks);
   answerForGet( '/blockchain/current',          blockchain.current);
-  answerForGet( '/blockchain/hardship/:pubkey', blockchain.hardship);
+  answerForGet( '/blockchain/hardship/:search', blockchain.hardship);
   answerForGet( '/blockchain/with/newcomers',   blockchain.with.newcomers);
   answerForGet( '/blockchain/with/certs',       blockchain.with.certs);
   answerForGet( '/blockchain/with/joiners',     blockchain.with.joiners);

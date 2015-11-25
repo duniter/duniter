@@ -154,37 +154,29 @@ function BlockchainBinding (server) {
 
   this.hardship = function (req, res) {
     res.type('application/json');
-    var member = "";
-    var nextBlockNumber = 0;
-    async.waterfall([
-      function (next){
-        ParametersService.getPubkey(req, next);
-      },
-      function (pubkey, next){
-        member = pubkey;
-        server.dal.isMember(pubkey, next);
-      },
-      function (isMember, next){
-        if (!isMember)
-          next('Not a member');
-        else
-          BlockchainService.current(next);
-      },
-      function (current, next){
+    return co(function *() {
+      let nextBlockNumber = 0;
+      try {
+        let search = yield ParametersService.getSearchP(req);
+        let idty = yield IdentityService.findMemberWithoutMemberships(search);
+        if (!idty) {
+          throw 'Identity not found';
+        }
+        if (!idty.member) {
+          throw 'Not a member';
+        }
+        let current = yield BlockchainService.current();
         if (current) {
           nextBlockNumber = current ? current.number + 1 : 0;
         }
-        globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(member, next);
+        let nbZeros = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(idty.pubkey);
+        res.send(200, JSON.stringify({
+          "block": nextBlockNumber,
+          "level": nbZeros
+        }, null, "  "));
+      } catch(e) {
+        res.send(400, e);
       }
-    ], function (err, nbZeros) {
-      if(err){
-        res.send(404, err);
-        return;
-      }
-      res.send(200, JSON.stringify({
-        "block": nextBlockNumber,
-        "level": nbZeros
-      }, null, "  "));
     });
   };
 

@@ -108,7 +108,6 @@ function Server (dbConf, overrideConf) {
         that.conf = conf;
         // Default values
         var defaultValues = {
-          remoteipv4:         that.conf.ipv4,
           remoteipv6:         that.conf.ipv6,
           remoteport:         that.conf.port,
           cpu:                1,
@@ -217,7 +216,7 @@ function Server (dbConf, overrideConf) {
         if(!conf.ipv4 && !conf.ipv6){
           throw new Error("No interface to listen to.");
         }
-        if(!conf.remoteipv4 && !conf.remoteipv6){
+        if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
           throw new Error('No interface for remote contact.');
         }
         if (!conf.remoteport) {

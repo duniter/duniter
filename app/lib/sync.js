@@ -1,20 +1,16 @@
 "use strict";
 var co = require('co');
-var async            = require('async');
 var _                = require('underscore');
 var Q                = require('q');
-var superagent       = require("superagent");
 var sha1             = require('sha1');
 var moment           = require('moment');
 var vucoin           = require('vucoin');
-var lokijs           = require('lokijs');
 var dos2unix         = require('./dos2unix');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
 var rawer            = require('../lib/rawer');
 var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
-var BlockDAL         = require('../lib/dal/fileDALs/BlockDAL');
 var multimeter = require('multimeter');
 
 var CONST_BLOCKS_CHUNK = 500;
@@ -54,8 +50,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       var node = yield getVucoin(host, port, vucoinOptions);
       logger.info('Sync started.');
 
-      let loki = new lokijs('download', { autosave: false });
-      let downloadedDAL = new BlockDAL(loki);
       var lastSavedNumber = yield server.dal.getLastSavedBlockFileNumber();
       var lCurrent = yield dal.getCurrentBlockOrNull();
 
@@ -99,13 +93,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
               logger.info('Blocks #%s to #%s...', chunk[0], chunk[1]);
               var blocks = yield Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0]);
               watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
-              if (cautious) {
-                for (let i = 0; i < blocks.length; i++) {
-                  yield downloadedDAL.saveBlock(blocks[i]);
-                }
-              } else {
-                chunk[2] = blocks;
-              }
+              chunk[2] = blocks;
             })
               // Resolve the promise
               .then(() =>
@@ -116,39 +104,42 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
               })
       ));
 
-      if (cautious) {
-        for (let i = 0; i < toApply.length; i++) {
-          // Wait for download chunk to be completed
-          let range = yield toApply[i].promise;
-          // Apply downloaded blocks
-          for (var j = range[0]; j < range[1] + 1; j++) {
-            yield downloadedDAL.getBlock(j).then((block) => applyGivenBlock(cautious, remoteNumber)(block));
-          }
+      function incrementBlocks(increment) {
+        blocksApplied += increment;
+        speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
+        if (watcher.appliedPercent() != Math.floor((blocksApplied + localNumber) / remoteNumber * 100)) {
+          watcher.appliedPercent(Math.floor((blocksApplied + localNumber) / remoteNumber * 100));
         }
-      } else {
-        // Reduce fork window to zero
-        yield BlockchainService.pruneAllForks();
-        // Wait for all downloads to be done
-        // Do not use the first which stands for blocks applied before sync
-        let toApplyNoCautious = toApply.slice(1);
-        for (let i = 0; i < toApplyNoCautious.length; i++) {
-          // Wait for download chunk to be completed
-          let chunk = yield toApplyNoCautious[i].promise;
-          let blocks = chunk[2];
-          blocks = _.sortBy(blocks, 'number');
-          logger.info("Applying blocks #%s to #%s...", blocks[0].number, blocks[blocks.length - 1].number);
+      }
+
+      // Do not use the first which stands for blocks applied before sync
+      let toApplyNoCautious = toApply.slice(1);
+      for (let i = 0; i < toApplyNoCautious.length; i++) {
+        // Wait for download chunk to be completed
+        let chunk = yield toApplyNoCautious[i].promise;
+        let blocks = chunk[2];
+        blocks = _.sortBy(blocks, 'number');
+        logger.info("Applying blocks #%s to #%s...", blocks[0].number, blocks[blocks.length - 1].number);
+        if (cautious) {
+          for (let j = 0, len = blocks.length; j < len; j++) {
+            yield applyGivenBlock(cautious, remoteNumber)(blocks[j]);
+            incrementBlocks(1);
+          }
+        } else {
           yield BlockchainService.saveBlocksInMainBranch(blocks, remoteNumber);
-          blocksApplied += blocks.length;
-          speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
-          if (watcher.appliedPercent() != Math.floor(blocks[blocks.length - 1].number / remoteNumber * 100)) {
-            watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / remoteNumber * 100));
-          }
+          incrementBlocks(blocks.length);
         }
+      }
+
+      // Specific treatment for nocautious
+      if (!cautious) {
         let lastChunk = yield toApplyNoCautious[toApplyNoCautious.length - 1].promise;
         let lastBlocks = lastChunk[2];
         let lastBlock = lastBlocks[lastBlocks.length - 1];
         yield BlockchainService.obsoleteInMainBranch(lastBlock);
       }
+
+      // Finished blocks
       yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
 
       // Save currency parameters given by root block

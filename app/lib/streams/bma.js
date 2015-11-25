@@ -2,6 +2,7 @@ var http = require('http');
 var express = require('express');
 var async = require('async');
 var log4js = require('log4js');
+var co = require('co');
 var Q = require('q');
 var cors = require('express-cors');
 var es = require('event-stream');
@@ -122,49 +123,55 @@ module.exports = function(server, interfaces, httpLogs) {
 
   var httpServers = [];
 
-  return interfaces.reduce(function(promise, netInterface) {
-    return promise.then(function() {
-      return listenInterface(app, netInterface.ip, netInterface.port)
-        .then(function(httpServer){
-          listenWebSocket(server, httpServer);
-          httpServers.push(httpServer);
-          logger.info('uCoin server listening on ' + netInterface.ip + ' port ' + netInterface.port);
-        });
-    });
-  }, Q.resolve())
+  return co(function *() {
+    for (let i = 0, len = interfaces.length; i < len; i++) {
+      let netInterface = interfaces[i];
+      try {
+        let httpServer = yield listenInterface(app, netInterface.ip, netInterface.port);
+        listenWebSocket(server, httpServer);
+        httpServers.push(httpServer);
+        logger.info('uCoin server listening on ' + netInterface.ip + ' port ' + netInterface.port);
+      } catch (err) {
+        logger.error('uCoin server cannot listen on ' + netInterface.ip + ' port ' + netInterface.port);
+      }
+    }
 
-    .then(function(){
-      return {
+    if (httpServers.length == 0){
+      throw 'uCoin does not have any interface to listen to.';
+    }
 
-        closeConnections: function () {
-          return Q.all(httpServers.map(function (httpServer) {
-            return Q.nbind(httpServer.close, httpServer)();
-          }));
-        },
+    // Return API
+    return {
 
-        reopenConnections: function () {
-          return Q.all(httpServers.map(function (httpServer, index) {
-            return Q.Promise(function (resolve, reject) {
-              var netInterface = interfaces[index].ip;
-              var port = interfaces[index].port;
-              httpServer.listen(port, netInterface, function (err) {
-                err ? reject(err) : resolve(httpServer);
-                logger.info('uCoin server listening again on ' + netInterface + ' port ' + port);
-              });
+      closeConnections: function () {
+        return Q.all(httpServers.map(function (httpServer) {
+          return Q.nbind(httpServer.close, httpServer)();
+        }));
+      },
+
+      reopenConnections: function () {
+        return Q.all(httpServers.map(function (httpServer, index) {
+          return Q.Promise(function (resolve, reject) {
+            var netInterface = interfaces[index].ip;
+            var port = interfaces[index].port;
+            httpServer.listen(port, netInterface, function (err) {
+              err ? reject(err) : resolve(httpServer);
+              logger.info('uCoin server listening again on ' + netInterface + ' port ' + port);
             });
-          }));
-        }
-      };
-    });
+          });
+        }));
+      }
+    };
+  });
 };
 
 function listenInterface(app, netInterface, port) {
   "use strict";
   return Q.Promise(function(resolve, reject){
     var httpServer = http.createServer(app);
-    httpServer.listen(port, netInterface, function(err){
-      err ? reject(err) : resolve(httpServer);
-    });
+    httpServer.on('error', reject);
+    httpServer.on('listening', resolve.bind(this, httpServer));
+    httpServer.listen(port, netInterface);
   });
 }
 
@@ -174,6 +181,7 @@ function listenWebSocket(server, httpServer) {
   var currentBlock = {};
   var blockSocket = io
     .of('/websocket/block')
+    .on('error', (err) => logger.error(err))
     .on('connection', function (socket) {
       socket.emit('block', currentBlock);
     });

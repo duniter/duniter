@@ -2,21 +2,15 @@
 
 # uCoin [![Build Status](https://api.travis-ci.org/ucoin-io/ucoin.png)](https://travis-ci.org/ucoin-io/ucoin) [![Coverage Status](https://coveralls.io/repos/ucoin-io/ucoin/badge.svg?branch=master&service=github)](https://coveralls.io/github/ucoin-io/ucoin?branch=master)
 
-uCoin is a free server-side software allowing to create new P2P crypto-currencies based on individuals and Universal Dividend.
+uCoin is a libre software allowing to create a new kind of P2P crypto-currencies based on individuals and Universal Dividend.
 
-It is mainly inspired from [OpenUDC project](https://github.com/Open-UDC/open-udc) for that purpose, but differs defining its own open currency protocol called UCP (UCoin Protocol).
+Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC project](https://github.com/Open-UDC/open-udc).
 
 ## Development state
 
-Software is still under development, and is not used yet. **This means no currency using uCoin exists for now**.
+Software is still under development, and **no production currency using uCoin exists for now**.
 
-However, it is hoped to build a new currency in a near future according to the following roadmap:
-
-1. Several POCs (prototypes) of uCoin will be released (first during August/September 2014)
-2. Code adaptation, cleaning, unit tests
-3. Beta testing with volunteer people
-
-> uCoin is server-side software and will require client GUI to be (easily) used. **Feel free to propose yours!**
+However, it already exists a testing currency named [MetaBrouzouf](http://ucoin.io/try/).
 
 ## Going further
 

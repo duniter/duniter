@@ -1,0 +1,16 @@
+#!/bin/bash
+
+NODE=node
+
+if [[ -d ./node ]]; then
+  NODE=./node/bin/node
+fi;
+
+VERSION=`node -v`
+
+if [[ $VERSION != v0.12* ]]; then
+  echo "Node.js v0.12 is not available";
+else
+  $NODE --harmony ./bin/ucoind $*
+fi;
+

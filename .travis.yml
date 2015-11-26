@@ -20,7 +20,7 @@ after_script:
   - mv node-${NVER}-linux-x64 node
   # Clean testing packages
   - npm prune --production
-  - tar czf ucoin.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"
+  - tar czf ucoin.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"  --exclude "ucoin.tar.gz"
 
 # Releases deployed on GitHub
 deploy:

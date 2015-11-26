@@ -23,6 +23,7 @@ var expectHttpCode = httpTest.expectHttpCode;
 var MEMORY_MODE = true;
 var commonConf = {
   ipv4: '127.0.0.1',
+  remoteipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
   branchesWindowSize: 3,

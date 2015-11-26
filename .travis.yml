@@ -20,7 +20,7 @@ after_script:
   - mv node-${NVER}-linux-x64 node
   # Clean testing packages
   - npm prune --production
-  - tar czf ucoin.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"  --exclude "ucoin.tar.gz"
+  - tar czf ../ucoin.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"
 
 # Releases deployed on GitHub
 deploy:
@@ -28,7 +28,7 @@ deploy:
   skip_cleanup: true
   api_key:
     secure: feyz5YmzYj6g6ZJKAv7u3pp9j9OY6oL4Pcx8mkha25BT1kEIu7lzvkZu4mJAIDjCxJjEkce3fNGXhRICqoMhRy/FK5dUUTpmP3KoMLNNJboO+MhDqjPEb6OYyafikSWnm0BszPL38FzSYMdmvNZ6WirOyVfrdzVPgU6MG0D99w8=
-  file: ucoin.tar.gz
+  file: ../ucoin.tar.gz
   on:
     repo: ucoin-io/ucoin
     tags: true

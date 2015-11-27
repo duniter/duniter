@@ -6,7 +6,7 @@ if [[ -d ./node ]]; then
   NODE=./node/bin/node
 fi;
 
-VERSION=`node -v`
+VERSION=`$NODE -v`
 
 if [[ $VERSION != v0.12* ]]; then
   echo "Node.js v0.12 is not available";

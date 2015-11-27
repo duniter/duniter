@@ -20,6 +20,7 @@ before_deploy:
   - wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
   - tar xzf node-${NVER}-linux-x64.tar.gz
   - mv node-${NVER}-linux-x64 node
+  - rm node-${NVER}-linux-x64.tar.gz
   # Clean testing packages
   - npm prune --production
   - tar czf ../ucoin.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"

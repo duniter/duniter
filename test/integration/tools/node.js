@@ -100,10 +100,12 @@ function Node (dbName, options) {
         BlockchainService.prove(block, sigFunc, difficulty, next);
       },
       function (provenBlock, next){
-        logger.debug(provenBlock.getRawSigned());
-        post('/blockchain/block', {
-          "block": provenBlock.getRawSigned()
-        }, next);
+        if (provenBlock) {
+          logger.debug(provenBlock.getRawSigned());
+          post('/blockchain/block', {
+            "block": provenBlock.getRawSigned()
+          }, next);
+        }
       }
     ], done);
   }

@@ -65,6 +65,7 @@ function BlockDAL(loki, rootFS, getLowerWindowBlock) {
   });
 
   this.blocksDB = blocksDB;
+  this.forksDB = forksDB;
   this.collection = collection;
 
   this.getBlocks = (start, end) => {

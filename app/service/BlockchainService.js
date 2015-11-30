@@ -19,7 +19,6 @@ var blockchainDao   = require('../lib/blockchainDao');
 var blockchainCtx   = require('../lib/blockchainContext');
 
 const CHECK_ALL_RULES = true;
-const FROM_PULL = true;
 
 module.exports = function (conf, dal, PeeringService) {
   return new BlockchainService(conf, dal, PeeringService);
@@ -128,6 +127,17 @@ function BlockchainService (conf, mainDAL, pair) {
         let last = branch[branch.length - 1];
         if (other.number == last.number + 1 && other.previousHash == last.hash) {
           branch.push(other);
+        } else if (branch[1]) {
+          // We try to find out if another fork block can be forked
+          let diff = other.number - branch[0].number;
+          if (diff > 0 && branch[diff - 1] && branch[diff - 1].hash == other.previousHash) {
+            // We duplicate the branch, and we add the block to this second branch
+            branches.push(branch.slice());
+            // First we remove the blocks that are not part of the fork
+            branch.splice(diff, branch.length - diff);
+            branch.push(other);
+            j++;
+          }
         }
       }
     }
@@ -150,12 +160,12 @@ function BlockchainService (conf, mainDAL, pair) {
     // TODO prune all forks
   });
 
-  this.submitBlock = function (obj, doCheck, fromPull) {
+  this.submitBlock = function (obj, doCheck) {
     return Q.Promise(function(resolve, reject){
       // FIFO: only admit one block at a time
       blockFifo.push(function(blockIsProcessed) {
         return co(function *() {
-          let res = yield checkAndAddBlock(obj, doCheck, fromPull);
+          let res = yield checkAndAddBlock(obj, doCheck);
           resolve(res);
           blockIsProcessed();
         })
@@ -167,7 +177,7 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   };
 
-  function checkAndAddBlock(obj, doCheck, fromPull) {
+  function checkAndAddBlock(obj, doCheck) {
     return co(function *() {
       let existing = yield mainDAL.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
       if (existing) {
@@ -190,7 +200,7 @@ function BlockchainService (conf, mainDAL, pair) {
           throw 'Block out of fork window';
         }
         let absolute = yield mainDAL.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
-        if (absolute && !fromPull) {
+        if (absolute) {
           throw 'Already processed side block #' + obj.number + '-' + obj.hash;
         }
         let res = yield mainContext.addSideBlock(obj, doCheck);
@@ -271,7 +281,7 @@ function BlockchainService (conf, mainDAL, pair) {
       for (let i = 0, len = chain.length; i < len; i++) {
         let block = chain[i];
         logger.debug('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
-        yield checkAndAddBlock(block, CHECK_ALL_RULES, FROM_PULL);
+        yield checkAndAddBlock(block, CHECK_ALL_RULES);
       }
     });
   }
@@ -1260,6 +1270,10 @@ function BlockchainService (conf, mainDAL, pair) {
   }
 
   this.saveBlocksInMainBranch = (blocks, targetLastNumber) => co(function *() {
+    // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
+    if (blocks[0].number == 0) {
+      yield that.saveParametersForRootBlock(blocks[0]);
+    }
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
     let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield mainDAL.getBlockOrNull(0));

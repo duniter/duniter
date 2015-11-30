@@ -14,8 +14,6 @@ var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 var blockchainCtx   = require('../lib/blockchainContext');
 
-const FROM_PULL = true;
-
 function PeeringService(server, pair, dal) {
 
   var conf = server.conf;
@@ -259,14 +257,14 @@ function PeeringService(server, pair, dal) {
           logger.info("Try with %s", p.getURL());
           let node = yield Q.nfcall(p.connect);
           try {
-            let downloaded = yield Q.nfcall(node.blockchain.current);
+            let downloaded = yield Q.nfcall(node.blockchain.block, current.number + 1);
             if (!downloaded) {
               yield dal.setPeerDown(p.pubkey);
             }
             while (downloaded) {
               logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
               downloaded = rawifyTransactions(downloaded);
-              let res = yield server.BlockchainService.submitBlock(downloaded, true, FROM_PULL);
+              let res = yield server.BlockchainService.submitBlock(downloaded, true);
               if (!res.fork) {
                 let nowCurrent = yield dal.getCurrentBlockOrNull();
                 yield server.BlockchainService.tryToFork(nowCurrent);
@@ -274,7 +272,7 @@ function PeeringService(server, pair, dal) {
               if (downloaded.number == 0) {
                 downloaded = null;
               } else {
-                downloaded = yield Q.nfcall(node.blockchain.block, downloaded.number - 1);
+                downloaded = yield Q.nfcall(node.blockchain.block, downloaded.number + 1);
               }
             }
           } catch (err) {

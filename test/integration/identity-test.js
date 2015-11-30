@@ -81,17 +81,47 @@ describe("Identities", function() {
     });
   });
 
+  it('should have identity-of/cat', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/identity-of/cat', { json: true }), function(res) {
+      res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.should.have.property('uid').equal('cat');
+      res.should.have.property('sigDate').be.a.Number;
+    });
+  });
+
+  it('should have identity-of/toc', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/identity-of/toc', { json: true }), function(res) {
+      res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+      res.should.have.property('uid').equal('toc');
+      res.should.have.property('sigDate').be.a.Number;
+    });
+  });
+
+  it('should have identity-of/tic', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/identity-of/tic', { json: true }), function(res) {
+      res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+      res.should.have.property('uid').equal('tic');
+      res.should.have.property('sigDate').be.a.Number;
+    });
+  });
+
+  it('should have identity-of/aaa', function() {
+    return httpTest.expectHttpCode(400, "No member matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/identity-of/tac'));
+  });
+
   it('should have certifiers-of/cat giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/cat', { json: true }), function(res) {
       res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.should.have.property('uid').equal('cat');
       res.should.have.property('isMember').equal(true);
+      res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(1);
       let certs = res.certifications;
       certs[0].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       certs[0].should.have.property('uid').equal('toc');
       certs[0].should.have.property('isMember').equal(true);
       certs[0].should.have.property('wasMember').equal(true);
+      certs[0].should.have.property('sigDate').be.a.Number;
       certs[0].should.have.property('cert_time').property('block').be.a.Number;
       certs[0].should.have.property('cert_time').property('medianTime').be.a.Number;
       certs[0].should.have.property('written').property('number').equal(0);
@@ -105,12 +135,14 @@ describe("Identities", function() {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
       res.should.have.property('uid').equal('tic');
       res.should.have.property('isMember').equal(true);
+      res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(1);
       let certs = res.certifications;
       certs[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       certs[0].should.have.property('uid').equal('cat');
       certs[0].should.have.property('isMember').equal(true);
       certs[0].should.have.property('wasMember').equal(true);
+      certs[0].should.have.property('sigDate').be.a.Number;
       certs[0].should.have.property('cert_time').property('block').be.a.Number;
       certs[0].should.have.property('cert_time').property('medianTime').be.a.Number;
       certs[0].should.have.property('written').property('number').equal(0);
@@ -124,12 +156,14 @@ describe("Identities", function() {
       res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       res.should.have.property('uid').equal('toc');
       res.should.have.property('isMember').equal(true);
+      res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(1);
       let certs = res.certifications;
       certs[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       certs[0].should.have.property('uid').equal('cat');
       certs[0].should.have.property('isMember').equal(true);
       certs[0].should.have.property('wasMember').equal(true);
+      certs[0].should.have.property('sigDate').be.a.Number;
       certs[0].should.have.property('cert_time').property('block').be.a.Number;
       certs[0].should.have.property('cert_time').property('medianTime').be.a.Number;
       certs[0].should.have.property('written').property('number').equal(0);
@@ -143,6 +177,7 @@ describe("Identities", function() {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
       res.should.have.property('uid').equal('tic');
       res.should.have.property('isMember').equal(true);
+      res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(0);
     });
   });
@@ -152,12 +187,14 @@ describe("Identities", function() {
       res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.should.have.property('uid').equal('cat');
       res.should.have.property('isMember').equal(true);
+      res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(2);
       let certs = res.certifications;
       certs[0].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       certs[0].should.have.property('uid').equal('toc');
       certs[0].should.have.property('isMember').equal(true);
       certs[0].should.have.property('wasMember').equal(true);
+      certs[0].should.have.property('sigDate').be.a.Number;
       certs[0].should.have.property('cert_time').property('block').be.a.Number;
       certs[0].should.have.property('cert_time').property('medianTime').be.a.Number;
       certs[0].should.have.property('written').property('number').equal(0);
@@ -167,10 +204,11 @@ describe("Identities", function() {
       certs[1].should.have.property('uid').equal('tic');
       certs[1].should.have.property('isMember').equal(true);
       certs[1].should.have.property('wasMember').equal(true);
+      certs[1].should.have.property('sigDate').be.a.Number;
       certs[1].should.have.property('cert_time').property('block').be.a.Number;
       certs[1].should.have.property('cert_time').property('medianTime').be.a.Number;
-      certs[0].should.have.property('written').property('number').equal(0);
-      certs[0].should.have.property('written').property('hash').not.equal('');
+      certs[1].should.have.property('written').property('number').equal(0);
+      certs[1].should.have.property('written').property('hash').not.equal('');
       certs[1].should.have.property('signature').not.equal('');
     });
   });

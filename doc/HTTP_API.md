@@ -465,6 +465,7 @@ Each certification also has:
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "uid": "user identifier",
   "isMember": true,
+  sigDate: 1421787461,
   "certifications": [
     {
       "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
@@ -473,6 +474,7 @@ Each certification also has:
         "block": 88,
         "medianTime": 1509991044
       },
+      sigDate: 1421787461,
       "written": {
         "number": 872768,
         "hash": "D30978C9D6C5A348A8188603F039423D90E50DC5"
@@ -511,6 +513,7 @@ Each certification also has:
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "uid": "user identifier",
   "isMember": true,
+  sigDate: 1421787461,
   "certifications": [
     {
       "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
@@ -519,6 +522,7 @@ Each certification also has:
         "block": 88,
         "medianTime": 1509991044
       },
+      sigDate: 1421787461,
       "written": {
         "number": 872768,
         "hash": "D30978C9D6C5A348A8188603F039423D90E50DC5"
@@ -528,6 +532,30 @@ Each certification also has:
     },
     ...
   ]
+}
+```
+
+#### `wot/identity-of/[search]`
+
+
+**Goal**
+
+GET identity data written for a member.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`search` | Public key or uid of a *member* we want see the attached identity. | URL
+
+**Returns**
+
+Identity data written in the blockchain.
+```json
+{
+  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "uid": "user identifier",
+  "sigDate": 1390739944
 }
 ```
 

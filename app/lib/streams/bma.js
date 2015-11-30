@@ -1,6 +1,5 @@
 var http = require('http');
 var express = require('express');
-var async = require('async');
 var log4js = require('log4js');
 var co = require('co');
 var Q = require('q');
@@ -93,6 +92,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGet( '/wot/requirements/:pubkey',  wot.requirements);
   answerForGet( '/wot/certifiers-of/:search', wot.certifiersOf);
   answerForGet( '/wot/certified-by/:search',  wot.certifiedBy);
+  answerForGet( '/wot/identity-of/:search',   wot.identityOf);
 
   var transactions = require('../../controllers/transactions')(server);
   var dividend     = require('../../controllers/uds')(server);

@@ -1,11 +1,9 @@
 "use strict";
 var co = require('co');
-var util     = require('util');
 var async    = require('async');
 var _        = require('underscore');
 var Q        = require('q');
-var stream   = require('stream');
-var unix2dos = require('../lib/unix2dos');
+var moment = require('moment');
 var dos2unix = require('../lib/dos2unix');
 var http2raw = require('../lib/streams/parsers/http2raw');
 var jsoner   = require('../lib/streams/jsoner');
@@ -122,6 +120,7 @@ function WOTBinding (server) {
             if (certifier) {
               cert.uid = certifier.uid;
               cert.isMember = certifier.member;
+              cert.sigDate = moment(certifier.time).unix();
               cert.wasMember = true; // As we checked if(certified)
               if (!cert.cert_time) {
                 // TODO: would be more efficient to save medianTime on certification reception
@@ -138,6 +137,7 @@ function WOTBinding (server) {
         var json = {
           pubkey: idty.pubkey,
           uid: idty.uid,
+          sigDate: moment(idty.time).unix(),
           isMember: idty.member,
           certifications: []
         };
@@ -148,6 +148,7 @@ function WOTBinding (server) {
             isMember: cert.isMember,
             wasMember: cert.wasMember,
             cert_time: cert.cert_time,
+            sigDate: cert.sigDate,
             written: cert.linked ? {
               number: cert.written_block,
               hash: cert.written_hash
@@ -231,6 +232,7 @@ function WOTBinding (server) {
             if (certified) {
               cert.uid = certified.uid;
               cert.isMember = certified.member;
+              cert.sigDate = moment(certified.time).unix();
               cert.wasMember = true; // As we checked if(certified)
               if (!cert.cert_time) {
                 // TODO: would be more efficient to save medianTime on certification reception
@@ -247,6 +249,7 @@ function WOTBinding (server) {
         var json = {
           pubkey: idty.pubkey,
           uid: idty.uid,
+          sigDate: moment(idty.time).unix(),
           isMember: idty.member,
           certifications: []
         };
@@ -257,6 +260,7 @@ function WOTBinding (server) {
             isMember: cert.isMember,
             wasMember: cert.wasMember,
             cert_time: cert.cert_time,
+            sigDate: cert.sigDate,
             written: cert.linked ? {
               number: cert.written_block,
               hash: cert.written_hash
@@ -271,6 +275,30 @@ function WOTBinding (server) {
           return;
         }
         res.send(400, err);
+      }
+    });
+  };
+
+  this.identityOf = function (req, res) {
+    res.type('application/json');
+    return co(function *() {
+      try {
+        let search = yield ParametersService.getSearchP(req);
+        let idty = yield IdentityService.findMemberWithoutMemberships(search);
+        if (!idty) {
+          throw 'Identity not found';
+        }
+        if (!idty.member) {
+          throw 'Not a member';
+        }
+        var json = {
+          pubkey: idty.pubkey,
+          uid: idty.uid,
+          sigDate: moment(idty.time).unix()
+        };
+        res.send(200, JSON.stringify(json, null, "  "));
+      } catch(e) {
+        res.send(400, e);
       }
     });
   };

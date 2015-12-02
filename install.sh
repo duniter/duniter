@@ -37,27 +37,56 @@ install_ucoin_from_git() {
 
   local PREVIOUS_PATH
   PREVIOUS_PATH=$PATH
-  if [ -d "$UCOIN_DIR/.git" ]; then
-    echo "=> ucoin is already installed in $UCOIN_DIR, trying to update using git"
-    printf "\r=> "
-    cd "$UCOIN_DIR" && (command git fetch 2> /dev/null || {
-      echo >&2 "Failed to update ucoin, run 'git fetch' in $UCOIN_DIR yourself." && exit 1
-    })
-  else
-    # Cloning to $UCOIN_DIR
-    echo "=> Downloading ucoin from git to '$UCOIN_DIR'"
-    printf "\r=> "
-    mkdir -p "$UCOIN_DIR"
-    command git clone "$(ucoin_repo_url)" "$UCOIN_DIR"
-  fi
-  cd "$UCOIN_DIR" && command git checkout --quiet $(ucoin_latest_version)
-  if [ ! -z "$(cd "$UCOIN_DIR" && git show-ref refs/heads/master)" ]; then
-    if git branch --quiet 2>/dev/null; then
-      cd "$UCOIN_DIR" && command git branch --quiet -D master >/dev/null 2>&1
+  if ucoin_has "git"; then
+    # Git is here: clone repository
+    if [ -d "$UCOIN_DIR/.git" ]; then
+      echo "=> ucoin is already installed in $UCOIN_DIR, trying to update using git"
+      printf "\r=> "
+      cd "$UCOIN_DIR" && (command git fetch 2> /dev/null || {
+        echo >&2 "Failed to update ucoin, run 'git fetch' in $UCOIN_DIR yourself." && exit 1
+      })
     else
-      echo >&2 "Your version of git is out of date. Please update it!"
-      cd "$UCOIN_DIR" && command git branch -D master >/dev/null 2>&1
+      # Cloning to $UCOIN_DIR
+      echo "=> Downloading ucoin from git to '$UCOIN_DIR'"
+      printf "\r=> "
+      mkdir -p "$UCOIN_DIR"
+      command git clone "$(ucoin_repo_url)" "$UCOIN_DIR"
     fi
+    cd "$UCOIN_DIR" && command git checkout --quiet $(ucoin_latest_version)
+    if [ ! -z "$(cd "$UCOIN_DIR" && git show-ref refs/heads/master)" ]; then
+      if git branch --quiet 2>/dev/null; then
+        cd "$UCOIN_DIR" && command git branch --quiet -D master >/dev/null 2>&1
+      else
+        echo >&2 "Your version of git is out of date. Please update it!"
+        cd "$UCOIN_DIR" && command git branch -D master >/dev/null 2>&1
+      fi
+    fi
+  else
+    # Fallback: git is not available, we download sources tarball
+    local UCOIN_SRC_TARBALL=https://github.com/ucoin-io/ucoin/archive/$(ucoin_latest_version).tar.gz
+    local UCOIN_SRC_ARCHIVE=$UCOIN_DIR/ucoin_$(ucoin_latest_version).tar.gz
+    local UCOIN_SRC_FOLDER=$UCOIN_DIR/ucoin-$(ucoin_latest_version | sed -e s/^v//)
+    echo "=> Downloading '$UCOIN_SRC_TARBALL' to '$UCOIN_SRC_ARCHIVE'"
+    mkdir -p "$UCOIN_DIR"
+    ucoin_download "$UCOIN_SRC_TARBALL" -o "$UCOIN_SRC_ARCHIVE" || {
+      echo >&2 "Failed to download '$UCOIN_SRC_TARBALL'"
+      return 7
+    }
+    echo "=> Extracting..."
+    cd "$UCOIN_DIR" && tar xzf $UCOIN_SRC_ARCHIVE || {
+      echo >&2 "Failed to extract '$UCOIN_SRC_ARCHIVE'"
+      return 8
+    }
+    echo "=> Moving..."
+    mv $UCOIN_SRC_FOLDER/* $UCOIN_DIR || {
+      echo >&2 "Failed to move files from '$UCOIN_SRC_FOLDER'"
+      return 9
+    }
+    echo "=> Cleaning ucoin sources..."
+    rm -Rf $UCOIN_ARCHIVE $UCOIN_SRC_ARCHIVE $UCOIN_SRC_FOLDER || {
+      echo >&2 "Failed to clean ucoin sources"
+      return 10
+    }
   fi
   
   # Download Nodejs
@@ -82,7 +111,7 @@ install_ucoin_from_git() {
   }
   mv $NODEJS_FILENAME "node" || {
     echo >&2 "Failed to extract '$NODEJS_ARCHIVE'"
-    return 5
+    return 6
   }
 
   # Install uCoin dependencies (NPM modules)
@@ -109,14 +138,14 @@ install_ucoin_as_script() {
     echo >&2 "Failed to download '$UCOIN_SOURCE_LOCAL'"
     return 1
   }
-  echo "=> Extracting..."
+  echo "=> Extracting ucoin sources..."
   tar xzf $UCOIN_ARCHIVE -C $UCOIN_DIR || {
     echo >&2 "Failed to extract $UCOIN_ARCHIVE to $UCOIN_DIR"
     return 2
   }
   echo "=> Cleaning..."
   rm $UCOIN_ARCHIVE || {
-    echo >&2 "Failed to extract $UCOIN_ARCHIVE to $UCOIN_DIR"
+    echo >&2 "Failed to remove $UCOIN_ARCHIVE"
     return 2
   }
 }

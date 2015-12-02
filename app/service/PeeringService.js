@@ -219,23 +219,23 @@ function PeeringService(server, pair, dal) {
           ;
           if (testIt) {
             // We try to reconnect only with peers marked as DOWN
-            let node = yield Q.nfcall(p.connect);
-            let peering = yield Q.nfcall(node.network.peering.get);
-            let sp1 = peering.block.split('-');
-            let currentBlockNumber = sp1[0];
-            let currentBlockHash = sp1[1];
-            let sp2 = peering.block.split('-');
-            let blockNumber = sp2[0];
-            let blockHash = sp2[1];
-            if (!(currentBlockNumber == blockNumber && currentBlockHash == blockHash)) {
-              // The peering changed
-              try {
+            try {
+              let node = yield Q.nfcall(p.connect);
+              let peering = yield Q.nfcall(node.network.peering.get);
+              let sp1 = peering.block.split('-');
+              let currentBlockNumber = sp1[0];
+              let currentBlockHash = sp1[1];
+              let sp2 = peering.block.split('-');
+              let blockNumber = sp2[0];
+              let blockHash = sp2[1];
+              if (!(currentBlockNumber == blockNumber && currentBlockHash == blockHash)) {
+                // The peering changed
                 yield Q.nfcall(that.submit, peering);
-              } catch (err) {
-                // Error: we set the peer as DOWN
-                logger.warn("Peer record %s: %s", p.pubkey, err.code || err.message || err);
-                yield dal.setPeerDown(p.pubkey);
               }
+            } catch (err) {
+              // Error: we set the peer as DOWN
+              logger.warn("Peer record %s: %s", p.pubkey, err.code || err.message || err);
+              yield dal.setPeerDown(p.pubkey);
             }
           }
         }
@@ -254,7 +254,7 @@ function PeeringService(server, pair, dal) {
         peers = _.shuffle(peers);
         for (let i = 0, len = peers.length; i < len; i++) {
           var p = new Peer(peers[i]);
-          logger.info("Try with %s", p.getURL());
+          logger.info("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
           let node = yield Q.nfcall(p.connect);
           try {
             let downloaded = yield Q.nfcall(node.blockchain.block, current.number + 1);
@@ -277,6 +277,9 @@ function PeeringService(server, pair, dal) {
             }
           } catch (err) {
             logger.warn(err);
+            if (err && err.code == "EINVAL") {
+              yield dal.setPeerDown(p.pubkey);
+            }
             try {
               let nowCurrent = yield dal.getCurrentBlockOrNull();
               yield server.BlockchainService.tryToFork(nowCurrent);

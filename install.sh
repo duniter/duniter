@@ -34,6 +34,9 @@ ucoin_download() {
 }
 
 install_ucoin_from_git() {
+
+  local PREVIOUS_PATH
+  PREVIOUS_PATH=$PATH
   if [ -d "$UCOIN_DIR/.git" ]; then
     echo "=> ucoin is already installed in $UCOIN_DIR, trying to update using git"
     printf "\r=> "
@@ -83,8 +86,9 @@ install_ucoin_from_git() {
   }
 
   # Install uCoin dependencies (NPM modules)
-  local NPM=$UCOIN_DIR/node/bin/npm
-  $NPM install
+  export PATH=$PATH:$UCOIN_DIR/node/bin/
+  npm install
+  export PATH=$PREVIOUS_PATH
   return
 }
 

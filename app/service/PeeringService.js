@@ -276,7 +276,7 @@ function PeeringService(server, pair, dal) {
               }
             }
           } catch (err) {
-            logger.warn(err);
+            logger.warn(err.code || err.message || err);
             if (err && err.code == "EINVAL") {
               yield dal.setPeerDown(p.pubkey);
             }

@@ -131,7 +131,7 @@ function Peer(json) {
   };
 
   that.connect = function (done){
-    vucoin(that.getIPv6() || that.getIPv4() || that.getDns(), that.getPort(), done, {
+    vucoin(that.getDns() || that.getIPv6() || that.getIPv4(), that.getPort(), done, {
       timeout: 2000
     });
   };

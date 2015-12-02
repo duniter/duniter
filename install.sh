@@ -88,7 +88,7 @@ install_ucoin_from_git() {
       return 10
     }
   fi
-  
+
   # Download Nodejs
   local NVER="0.12.6";
   local ARCH="32"
@@ -100,19 +100,21 @@ install_ucoin_from_git() {
   local NODEJS_TARBALL=http://nodejs.org/dist/v${NVER}/${NODEJS_FILENAME}.tar.gz
   local NODEJS_ARCHIVE=$UCOIN_DIR/node.tar.gz
   local NODEJS_EXTRACTED=$UCOIN_DIR/$NODEJS_FILENAME
-  echo "=> Downloading '$NODEJS_TARBALL' to '$NODEJS_ARCHIVE'"
-  ucoin_download "$NODEJS_TARBALL" -o "$NODEJS_ARCHIVE" || {
-    echo >&2 "Failed to download '$NODEJS_TARBALL'"
-    return 4
-  }
-  tar xzf $NODEJS_ARCHIVE || {
-    echo >&2 "Failed to extract '$NODEJS_ARCHIVE'"
-    return 5
-  }
-  mv $NODEJS_FILENAME "node" || {
-    echo >&2 "Failed to extract '$NODEJS_ARCHIVE'"
-    return 6
-  }
+  if [ ! -d "$UCOIN_DIR/node" ]; then
+    echo "=> Downloading '$NODEJS_TARBALL' to '$NODEJS_ARCHIVE'"
+    ucoin_download "$NODEJS_TARBALL" -o "$NODEJS_ARCHIVE" || {
+      echo >&2 "Failed to download '$NODEJS_TARBALL'"
+      return 4
+    }
+    tar xzf $NODEJS_ARCHIVE || {
+      echo >&2 "Failed to extract '$NODEJS_ARCHIVE'"
+      return 5
+    }
+    mv $NODEJS_FILENAME "node" || {
+      echo >&2 "Failed to extract '$NODEJS_ARCHIVE'"
+      return 6
+    }
+  fi
 
   # Install uCoin dependencies (NPM modules)
   export PATH=$PATH:$UCOIN_DIR/node/bin/

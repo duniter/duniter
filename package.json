@@ -47,7 +47,7 @@
     "moment": "2.6.0",
     "multimeter": "0.1.1",
     "naclb": "0.2.2",
-    "nat-upnp": "https://github.com/c-geek/node-nat-upnp",
+    "nnupnp": "1.0.0",
     "pm2": "0.15.10",
     "q": "1.1.2",
     "q-io": "1.13.1",

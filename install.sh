@@ -196,10 +196,12 @@ ucoin_detect_profile() {
 
 ucoin_is_available_for_distribution() {
   local distribution
+  local distribution_deb
 
   distribution=`cat /etc/*-release file 2>/dev/null | grep "Ubuntu"`
+  distribution_deb=`cat /etc/*-release file 2>/dev/null | grep "Debian"`
 
-  if [[ $distribution = *Ubuntu\ 14* ]] || [[ $distribution = *Ubuntu\ 15* ]]; then
+  if [[ "$distribution" = *Ubuntu\ 14* ]] || [[ "$distribution" = *Ubuntu\ 15* ]] || [[ "$distribution_deb" = *Debian*8*jessie* ]]; then
     return 0
   else
     return 1

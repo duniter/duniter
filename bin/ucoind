@@ -73,6 +73,7 @@ program
   .option('--nohttplogs',              'Disable HTTP logs')
   .option('--nointeractive',           'Disable interactive sync UI')
   .option('--nocautious',              'Do not check blocks validity during sync')
+  .option('--cautious',                'Check blocks validity during sync (overrides --nocautious option)')
   .option('--nopeers',                 'Do not retrieve peers during sync')
   .option('--isolate',                 'Avoid the node to send peering or status informations to the network')
   .option('--check',                   'With gen-next: just check validity of generated block')
@@ -135,7 +136,14 @@ program
 function sync(server, host, port, conf, to) {
   // Synchronize
   var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
-  return remote.sync(parseInt(to), program.nocautious, program.nopeers);
+  let cautious;
+  if (program.nocautious) {
+    cautious = false;
+  }
+  if (program.cautious) {
+    cautious = true;
+  }
+  return remote.sync(parseInt(to), cautious, program.nopeers);
 }
 
 program

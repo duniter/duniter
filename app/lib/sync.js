@@ -43,8 +43,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
     timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
-  this.sync = (to, nocautious, nopeers) => {
-    var cautious = !nocautious, logInterval;
+  this.sync = (to, askedCautious, nopeers) => {
     logger.info('Connecting remote host...');
     return co(function *() {
       var node = yield getVucoin(host, port, vucoinOptions);
@@ -61,8 +60,11 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       var localNumber = lCurrent ? lCurrent.number : -1;
       var remoteNumber = Math.min(rCurrent.number, to || rCurrent.number);
 
+      // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
+      var cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
+
       // Recurrent checking
-      logInterval = setInterval(() => {
+      setInterval(() => {
         if (remoteNumber > 1 && speed > 0) {
           var remain = (remoteNumber - (localNumber + 1 + blocksApplied));
           var secondsLeft = remain / speed;

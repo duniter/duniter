@@ -40,6 +40,10 @@ ucoind() {
 		local UCOIN_ERR_FILE
 		UCOIN_LOG_FILE=$UCOIN_DATA_HOME/$UCOIN_DATABASE/ucoin.log
 		UCOIN_ERR_FILE=$UCOIN_DATA_HOME/$UCOIN_DATABASE/ucoin.err.log
+		UCOIN_DATABASE=$2
+		if [ -z $UCOIN_DATABASE ]; then
+			UCOIN_DATABASE="$UCOIN_DB"
+		fi
 		if [ -z $UCOIN_DATABASE ]; then
 			UCOIN_DATABASE="ucoin_default"
 		fi

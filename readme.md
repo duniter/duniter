@@ -10,7 +10,24 @@ Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC project](
 
 Software is still under development, and **no production currency using uCoin exists for now**.
 
-However, it already exists a testing currency named [MetaBrouzouf](http://ucoin.io/try/).
+However, it already exists a testing currency named [MetaBrouzouf](http://ucoin.io/try/). Want to test it? Two ways.
+
+### Add your node to the network
+
+```
+$ wget -qO- https://raw.githubusercontent.com/ucoin-io/ucoin/master/install.sh | bash
+$ ucoind init
+$ ucoind sync metab.ucoin.io 9201
+$ ucoind start
+```
+
+and you are done! See [Install documentation](https://github.com/ucoin-io/ucoin/wiki/Install-uCoin-node) for further details.
+
+### Try Sakia Wallet
+
+In the world of crypto-currencies, [Sakia Wallet](http://sakia-wallet.org/) would be called a [SPV](https://en.bitcoin.it/wiki/Thin_Client_Security#Simplified_Payment_Verification_.28SPV.29_Clients) client. It is a graphical client connecting to the network. See this [tutorial](http://forum.ucoin.io/t/subscribing-to-meta-brouzouf-testing-currency/199) to join in the testing currency with Sakia.
+
+![](http://sakia-wallet.org/img/Dividends.png)
 
 ## Going further
 

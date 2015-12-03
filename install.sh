@@ -33,7 +33,43 @@ ucoin_download() {
   fi
 }
 
+ucoin_is_ubuntu_install() {
+  local distribution
+  distribution=`cat /etc/*-release file 2>/dev/null | grep "Ubuntu"`
+  if [[ "$distribution" = *Ubuntu* ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+ucoin_is_debian_install() {
+  local distribution
+  distribution=`cat /etc/*-release file 2>/dev/null | grep "Debian"`
+  if [[ "$distribution" = *Debian* ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 install_ucoin_from_git() {
+
+  if ! ucoin_has "make"; then
+    echo "=> 'make' command is required"
+    return 10
+  fi
+  if ! ucoin_has "g++"; then
+    if ucoin_is_ubuntu_install; then
+      echo "=> g++ is not available. Please install 'build-essential' package with 'sudo apt-get install build-essential' command, then retry uCoin installation."
+      exit 1
+    fi
+    if ucoin_is_debian_install; then
+      echo "=> g++ is not available. Please install 'build-essentials' package with 'apt-get install build-essentials' command as root, then retry uCoin installation."
+      exit 1
+    fi
+    return 11
+  fi
 
   local PREVIOUS_PATH
   PREVIOUS_PATH=$PATH
@@ -92,7 +128,7 @@ install_ucoin_from_git() {
   # Download Nodejs
   local NVER="0.12.6";
   local ARCH="86"
-  local X64=`uname -r | grep "x86_64"`
+  local X64=`uname -a | grep "x86_64"`
   if [ ! -z "$X64" ]; then
     ARCH="64"
   fi
@@ -125,12 +161,12 @@ install_ucoin_from_git() {
 
 install_ucoin_as_script() {
   local ARCH="32"
-  local X64=`uname -r | grep "x86_64"`
+  local X64=`uname -a | grep "x86_64"`
   if [ ! -z "$X64" ]; then
     ARCH="64"
   fi
   local UCOIN_SOURCE_LOCAL
-  UCOIN_SOURCE_LOCAL=https://github.com/ucoin-io/ucoin/releases/download/$(ucoin_latest_version)/ucoin.${ARCH}bits.tar.gz
+  UCOIN_SOURCE_LOCAL=https://github.com/ucoin-io/ucoin/releases/download/$(ucoin_latest_version)/ucoin-x${ARCH}.tar.gz
   local UCOIN_ARCHIVE
   UCOIN_ARCHIVE=$UCOIN_DIR/ucoin.tar.gz
 
@@ -207,8 +243,14 @@ ucoin_is_available_for_distribution() {
   distribution_deb=`cat /etc/*-release file 2>/dev/null | grep "Debian"`
 
   if [[ "$distribution" = *Ubuntu\ 14* ]] || [[ "$distribution" = *Ubuntu\ 15* ]] || [[ "$distribution_deb" = *Debian*8*jessie* ]]; then
-    return 0
+    local X64=`uname -a | grep "x86_64"`
+    if [ ! -z "$X64" ]; then
+      return 0
+    fi
+    echo "=> 32-bit OS, requires to build"
+    return 1
   else
+    echo "=> No binary for this system, requires to build"
     return 1
   fi
 }

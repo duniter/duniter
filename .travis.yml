@@ -26,6 +26,7 @@ before_deploy:
   # Clean testing packages
   - npm prune --production
   - tar czf ../ucoin.64bits.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"  --exclude "node-${NVER}-linux-x86.tar.gz"  --exclude "node-${NVER}-linux-x86"
+  - rm -Rf node
   - mv node-${NVER}-linux-x86 node
   - rm node-${NVER}-linux-x86.tar.gz
   - tar czf ../ucoin.32bits.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"

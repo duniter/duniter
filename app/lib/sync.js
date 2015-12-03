@@ -44,6 +44,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   };
 
   this.sync = (to, askedCautious, nopeers) => {
+    let logInterval;
     logger.info('Connecting remote host...');
     return co(function *() {
       var node = yield getVucoin(host, port, vucoinOptions);
@@ -64,7 +65,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       var cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
 
       // Recurrent checking
-      setInterval(() => {
+      logInterval = setInterval(() => {
         if (remoteNumber > 1 && speed > 0) {
           var remain = (remoteNumber - (localNumber + 1 + blocksApplied));
           var secondsLeft = remain / speed;

@@ -56,8 +56,14 @@ ucoin_is_debian_install() {
 install_ucoin_from_git() {
 
   if ! ucoin_has "make"; then
-    echo "=> 'make' command is required"
-    return 10
+    if ucoin_is_ubuntu_install; then
+      echo "=> make is not available. Please install 'build-essential' package with 'sudo apt-get install build-essential' command, then retry uCoin installation."
+      exit 1
+    fi
+    if ucoin_is_debian_install; then
+      echo "=> make is not available. Please install 'build-essentials' package with 'apt-get install build-essential' command as root, then retry uCoin installation."
+      exit 1
+    fi
   fi
   if ! ucoin_has "g++"; then
     if ucoin_is_ubuntu_install; then
@@ -65,7 +71,7 @@ install_ucoin_from_git() {
       exit 1
     fi
     if ucoin_is_debian_install; then
-      echo "=> g++ is not available. Please install 'build-essentials' package with 'apt-get install build-essentials' command as root, then retry uCoin installation."
+      echo "=> g++ is not available. Please install 'build-essentials' package with 'apt-get install build-essential' command as root, then retry uCoin installation."
       exit 1
     fi
     return 11

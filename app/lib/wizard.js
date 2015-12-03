@@ -6,7 +6,7 @@ var async     = require('async');
 var _         = require('underscore');
 var inquirer  = require('inquirer');
 var request   = require('request');
-var upnp      = require('nat-upnp');
+var upnp      = require('nnupnp');
 var logger    = require('../lib/logger')('wizard');
 
 module.exports = function () {

@@ -1,4 +1,4 @@
-var upnp = require('nat-upnp');
+var upnp = require('nnupnp');
 var async = require('async');
 var constants  = require('../lib/constants');
 var logger = require('../lib/logger')('upnp');

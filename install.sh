@@ -218,6 +218,10 @@ ucoin_do_install() {
     install_ucoin_as_script
   elif ucoin_has "git"; then
     install_ucoin_from_git
+  elif ucoin_has "curl"; then
+    install_ucoin_from_git
+  elif ucoin_has "wget"; then
+    install_ucoin_from_git
   else
     echo >&2 "You need git, curl, or wget to install ucoin"
     exit 1

@@ -93,7 +93,7 @@ install_ucoin_from_git() {
   local NVER="0.12.6";
   local ARCH="86"
   local X64=`uname -r | grep "x86_64"`
-  if [ ! -z X64 ]; then
+  if [ ! -z "$X64" ]; then
     ARCH="64"
   fi
   local NODEJS_FILENAME=node-v${NVER}-linux-x${ARCH}
@@ -126,7 +126,7 @@ install_ucoin_from_git() {
 install_ucoin_as_script() {
   local ARCH="32"
   local X64=`uname -r | grep "x86_64"`
-  if [ ! -z X64 ]; then
+  if [ ! -z "$X64" ]; then
     ARCH="64"
   fi
   local UCOIN_SOURCE_LOCAL

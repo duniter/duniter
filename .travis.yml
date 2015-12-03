@@ -17,13 +17,21 @@ after_success:
 before_deploy:
   # Download & embed Nodejs binary
   - NVER=`node -v`
+  - wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x86.tar.gz
   - wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
+  - tar xzf node-${NVER}-linux-x86.tar.gz
   - tar xzf node-${NVER}-linux-x64.tar.gz
   - mv node-${NVER}-linux-x64 node
   - rm node-${NVER}-linux-x64.tar.gz
   # Clean testing packages
   - npm prune --production
-  - tar czf ../ucoin.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"
+  - tar czf ../ucoin.64bits.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"  --exclude "node-${NVER}-linux-x86.tar.gz"  --exclude "node-${NVER}-linux-x86"
+  - rm -Rf node_modules node
+  - node-gyp clean configure build --verbose --arch=ia32
+  - npm install --production
+  - mv node-${NVER}-linux-x86 node
+  - rm node-${NVER}-linux-x86.tar.gz
+  - tar czf ../ucoin.32bits.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"
 
 # Releases deployed on GitHub
 deploy:
@@ -31,7 +39,9 @@ deploy:
   skip_cleanup: true
   api_key:
     secure: feyz5YmzYj6g6ZJKAv7u3pp9j9OY6oL4Pcx8mkha25BT1kEIu7lzvkZu4mJAIDjCxJjEkce3fNGXhRICqoMhRy/FK5dUUTpmP3KoMLNNJboO+MhDqjPEb6OYyafikSWnm0BszPL38FzSYMdmvNZ6WirOyVfrdzVPgU6MG0D99w8=
-  file: ../ucoin.tar.gz
+  file:
+    - ../ucoin.32bits.tar.gz
+    - ../ucoin.64bits.tar.gz
   on:
     repo: ucoin-io/ucoin
     tags: true

@@ -91,7 +91,7 @@ install_ucoin_from_git() {
 
   # Download Nodejs
   local NVER="0.12.6";
-  local ARCH="32"
+  local ARCH="86"
   local X64=`uname -r | grep "x86_64"`
   if [ ! -z X64 ]; then
     ARCH="64"
@@ -124,8 +124,13 @@ install_ucoin_from_git() {
 }
 
 install_ucoin_as_script() {
+  local ARCH="32"
+  local X64=`uname -r | grep "x86_64"`
+  if [ ! -z X64 ]; then
+    ARCH="64"
+  fi
   local UCOIN_SOURCE_LOCAL
-  UCOIN_SOURCE_LOCAL=https://github.com/ucoin-io/ucoin/releases/download/$(ucoin_latest_version)/ucoin.tar.gz
+  UCOIN_SOURCE_LOCAL=https://github.com/ucoin-io/ucoin/releases/download/$(ucoin_latest_version)/ucoin.${ARCH}bits.tar.gz
   local UCOIN_ARCHIVE
   UCOIN_ARCHIVE=$UCOIN_DIR/ucoin.tar.gz
 
@@ -251,7 +256,11 @@ ucoin_do_install() {
     fi
   fi
 
-  echo "=> Close and reopen your terminal to start using ucoin"
+  echo "=> ------------------------------------------------------"
+  echo "=> !                                                     !"
+  echo "=> ! CLOSE and REOPEN YOUR TERMINAL to start using ucoin !"
+  echo "=> !                                                     !"
+  echo "=> ------------------------------------------------------"
   ucoin_reset
 }
 

@@ -267,36 +267,19 @@ function PeeringService(server, pair, dal) {
           var p = new Peer(peers[i]);
           logger.info("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
           let node = yield Q.nfcall(p.connect);
+          let okUP = yield processAscendingUntilNoBlock(p, node, current);
+          if (okUP) {
+            let remoteCurrent = yield Q.nfcall(node.blockchain.current);
+            if (remoteCurrent.number != current.number) {
+              yield processLastTen(p, node, current);
+            }
+          }
           try {
-            let downloaded = yield Q.nfcall(node.blockchain.block, current.number + 1);
-            if (!downloaded) {
-              yield dal.setPeerDown(p.pubkey);
-            }
-            while (downloaded) {
-              logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
-              downloaded = rawifyTransactions(downloaded);
-              let res = yield server.BlockchainService.submitBlock(downloaded, true);
-              if (!res.fork) {
-                let nowCurrent = yield dal.getCurrentBlockOrNull();
-                yield server.BlockchainService.tryToFork(nowCurrent);
-              }
-              if (downloaded.number == 0) {
-                downloaded = null;
-              } else {
-                downloaded = yield Q.nfcall(node.blockchain.block, downloaded.number + 1);
-              }
-            }
-          } catch (err) {
-            logger.warn(err.code || err.message || err);
-            if (err && err.code == "EINVAL") {
-              yield dal.setPeerDown(p.pubkey);
-            }
-            try {
-              let nowCurrent = yield dal.getCurrentBlockOrNull();
-              yield server.BlockchainService.tryToFork(nowCurrent);
-            } catch (e) {
-              logger.warn(e);
-            }
+            // Try to fork as a final treatment
+            let nowCurrent = yield dal.getCurrentBlockOrNull();
+            yield server.BlockchainService.tryToFork(nowCurrent);
+          } catch (e) {
+            logger.warn(e);
           }
         }
       }
@@ -306,6 +289,88 @@ function PeeringService(server, pair, dal) {
         logger.warn(err.code || err.stack || err.message || err);
         callback();
       });
+  }
+
+  function isConnectionError(err) {
+    return err && (err.code == "EINVAL" || err.code == "ECONNREFUSED");
+  }
+
+  function processAscendingUntilNoBlock(p, node, current) {
+    return co(function *() {
+      try {
+        let downloaded = yield Q.nfcall(node.blockchain.block, current.number + 1);
+        if (!downloaded) {
+          yield dal.setPeerDown(p.pubkey);
+        }
+        while (downloaded) {
+          logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
+          downloaded = rawifyTransactions(downloaded);
+          try {
+            let res = yield server.BlockchainService.submitBlock(downloaded, true);
+            if (!res.fork) {
+              let nowCurrent = yield dal.getCurrentBlockOrNull();
+              yield server.BlockchainService.tryToFork(nowCurrent);
+            }
+          } catch (err) {
+            console.log(err);
+            if (isConnectionError(err)) {
+              throw err;
+            }
+          }
+          if (downloaded.number == 0) {
+            downloaded = null;
+          } else {
+            downloaded = yield Q.nfcall(node.blockchain.block, downloaded.number + 1);
+          }
+        }
+      } catch (err) {
+        logger.warn(err.code || err.message || err);
+        if (isConnectionError(err)) {
+          yield dal.setPeerDown(p.pubkey);
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  function processLastTen(p, node, current) {
+    return co(function *() {
+      try {
+        let downloaded = yield Q.nfcall(node.blockchain.block, current.number);
+        if (!downloaded) {
+          yield dal.setPeerDown(p.pubkey);
+        }
+        while (downloaded) {
+          logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
+          downloaded = rawifyTransactions(downloaded);
+          try {
+            let res = yield server.BlockchainService.submitBlock(downloaded, true);
+            if (!res.fork) {
+              let nowCurrent = yield dal.getCurrentBlockOrNull();
+              yield server.BlockchainService.tryToFork(nowCurrent);
+            }
+          } catch (err) {
+            console.log(err);
+            if (isConnectionError(err)) {
+              throw err;
+            }
+          }
+          if (downloaded.number == 0 || downloaded.number <= current.number - 10) {
+            downloaded = null;
+          } else {
+            downloaded = yield Q.nfcall(node.blockchain.block, downloaded.number - 1);
+          }
+        }
+      } catch (err) {
+        logger.warn(err.code || err.message || err);
+        if (isConnectionError(err)) {
+          yield dal.setPeerDown(p.pubkey);
+        }
+        return false;
+      }
+      return true;
+    });
   }
 
   function rawifyTransactions(block) {

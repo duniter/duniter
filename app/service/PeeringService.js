@@ -42,24 +42,37 @@ function PeeringService(server, pair, dal) {
       done = eraseIfAlreadyRecorded;
       eraseIfAlreadyRecorded = false;
     }
+    return that.submitP(peering, eraseIfAlreadyRecorded)
+    .then((res) => done(null, res))
+    .catch(done);
+  };
+
+  this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
     let blockNumber = sp[0];
     let blockHash = sp[1];
     let sigTime = 0;
     let block;
+    let makeCheckings = cautious || cautious === undefined;
     return co(function *() {
-      let goodSignature = localValidator(null).checkPeerSignature(thePeer);
-      if (!goodSignature) {
-        throw 'Signature from a peer must match';
+      if (makeCheckings) {
+        let goodSignature = localValidator(null).checkPeerSignature(thePeer);
+        if (!goodSignature) {
+          throw 'Signature from a peer must match';
+        }
       }
       if (thePeer.block == constants.PEER.SPECIAL_BLOCK) {
         thePeer.statusTS = 0;
         thePeer.status = 'UP';
       } else {
         block = yield dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
-        if (!block) {
+        if (!block && makeCheckings) {
           throw constants.PEER.UNKNOWN_REFERENCE_BLOCK;
+        } else if (!block) {
+          thePeer.block = constants.PEER.SPECIAL_BLOCK;
+          thePeer.statusTS = 0;
+          thePeer.status = 'UP';
         }
       }
       sigTime = block ? block.medianTime : 0;
@@ -84,10 +97,8 @@ function PeeringService(server, pair, dal) {
       peerEntity.hash = String(sha1(peerEntity.getRawSigned())).toUpperCase();
       yield dal.savePeer(peerEntity);
       let res = Peer.statics.peerize(peerEntity);
-      done(null, res);
       return res;
-    })
-      .catch(done);
+    });
   };
 
   var peerFifo = async.queue(function (task, callback) {

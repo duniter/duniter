@@ -156,7 +156,7 @@ program
         return Q.nfcall(node.network.peering.get)
           .then(function(peering){
             logger.info('Apply peering ...');
-            return Q.nfcall(server.PeeringService.submit, peering, ERASE_IF_ALREADY_RECORDED)
+            return server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious)
               .then(function() {
                 logger.info('Applied');
                 return server.dal.getPeer(server.PeeringService.pubkey)

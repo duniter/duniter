@@ -98,8 +98,8 @@ function PeerParser (onError) {
     }
     if(!err){
       // IP
-      if(!bma.ipv4 && !bma.ipv6)
-        err = {code: codes.NO_IP_GIVEN, message: "It must be given at least one IP, either v4 or v6"};
+      if(!bma.dns && !bma.ipv4 && !bma.ipv6)
+        err = {code: codes.NO_IP_GIVEN, message: "It must be given at least DNS or one IP, either v4 or v6"};
     }
     if(!err){
       // Port

@@ -166,7 +166,7 @@ program
                     return selfPeer;
                   })
                   .catch(function(){
-                    return Q.nfcall(server.PeeringService.generateSelfPeer, server.conf)
+                    return Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0)
                       .then(function(){
                         return server.dal.getPeer(server.PeeringService.pubkey);
                       });
@@ -461,51 +461,38 @@ function serverStart(server, conf) {
     constants.setUDID2Format();
   }
 
-  async.waterfall([
-    function (next){
-      // Launching server
-      server.start()
-        .then(function(){
-          // Enabling UPnP
-          if (conf.upnp) {
-            return upnp(server.conf.port, server.conf.remoteport)
-              .catch(function(err){
-                logger.warn(err);
-              });
-          }
-        })
-        .then(function(){
-          // Enabling HTTP
-          return bma(server, null, conf.httplogs);
-        })
-        .then(function(){
-          // Enabling Routing
-          if (server.conf.routing) {
-            server
-              // The router asks for multicasting of documents
-              .pipe(server.router())
-              // The documents get sent to peers
-              .pipe(multicaster(server.conf.isolate))
-              // The multicaster may answer 'unreachable peer'
-              .pipe(server.router());
-          }
-          next();
-        })
-        .then(function(){
-          if (conf.participate) {
-            return server.startBlockComputation();
-          }
-        })
-        .catch(next);
+  return co(function *() {
+    // Enabling HTTP
+    yield bma(server, null, conf.httplogs);
+    // Enabling Routing
+    if (server.conf.routing) {
+      server
+        // The router asks for multicasting of documents
+        .pipe(server.router())
+        // The documents get sent to peers
+        .pipe(multicaster(server.conf.isolate))
+        // The multicaster may answer 'unreachable peer'
+        .pipe(server.router());
     }
-  ], function (err) {
-    if(err){
+    // Enabling UPnP
+    if (conf.upnp) {
+      yield upnp(server.conf.port, server.conf.remoteport)
+        .catch(function(err){
+          logger.warn(err);
+        });
+    }
+    if (conf.participate) {
+      server.startBlockComputation();
+    }
+    // Launching server
+    server.start();
+    logger.info('Server ready!');
+  })
+    .catch((err) => {
       logger.error(err);
       server.disconnect();
       process.exit();
-    }
-    logger.debug('Server ready!');
-  });
+    });
 }
 
 function startWizard(step, server, conf, done) {

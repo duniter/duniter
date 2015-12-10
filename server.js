@@ -93,6 +93,8 @@ function Server (dbConf, overrideConf) {
     });
   };
 
+  this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
+
   this.connect = function (forConf, useDefaultConf) {
     // Init connection
     if (that.dal) {

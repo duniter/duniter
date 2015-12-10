@@ -77,8 +77,7 @@ program
   .option('--nopeers',                 'Do not retrieve peers during sync')
   .option('--isolate',                 'Avoid the node to send peering or status informations to the network')
   .option('--check',                   'With gen-next: just check validity of generated block')
-  .option('--forksize <size>',         'Maximum size of fork branches', parseInt)
-  .option('--nofork',                  'Equivalent to --forksize 0')
+  .option('--forksize <size>',         'Maximum size of fork window', parseInt)
   .option('--memory',                  'Memory mode')
   .option('--autoconf',                'With `init` command, will guess the best network and key options witout aksing for confirmation')
   ;
@@ -742,7 +741,6 @@ function commandLineConf(conf) {
   if (cli.isolate)                          conf.isolate        = cli.isolate;
   if (cli.timeout)                          conf.timeout        = cli.timeout;
   if (cli.forksize != null)                 conf.branchesWindowSize = cli.forksize;
-  if (cli.nofork)                           conf.branchesWindowSize = 0;
 
   // Specific internal settings
   conf.createNext = true;

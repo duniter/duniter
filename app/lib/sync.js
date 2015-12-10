@@ -20,7 +20,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
   var speed = 0, syncStart = new Date(), blocksApplied = 0;
   var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
-  var initialForkSize = conf.branchesWindowSize;
 
   // Disable branching for the main synchronization parts
   conf.branchesWindowSize = 0;
@@ -145,7 +144,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
 
       // Save currency parameters given by root block
-      conf.branchesWindowSize = initialForkSize;
       let rootBlock = yield server.dal.getBlock(0);
       yield BlockchainService.saveParametersForRootBlock(rootBlock);
 
@@ -232,10 +230,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
       if (watcher.appliedPercent() != Math.floor(block.number / remoteCurrentNumber * 100)) {
         watcher.appliedPercent(Math.floor(block.number / remoteCurrentNumber * 100));
-      }
-      if (block.number >= remoteCurrentNumber - initialForkSize) {
-        // Enables again branching for the lasts blocks
-        conf.branchesWindowSize = initialForkSize;
       }
       return BlockchainService.submitBlock(_.omit(block, '$loki', 'meta'), cautious);
     };

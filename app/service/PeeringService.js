@@ -106,12 +106,13 @@ function PeeringService(server, pair, dal) {
   }, 1);
   var peerInterval = null;
   this.regularPeerSignal = function (done) {
+    let signalTimeInterval = 1000 * conf.avgGenTime * constants.NETWORK.STATUS_INTERVAL.UPDATE;
     if (peerInterval)
       clearInterval(peerInterval);
     peerInterval = setInterval(function () {
-      peerFifo.push(_.partial(generateSelfPeer, conf));
-    }, 1000*conf.avgGenTime*constants.NETWORK.STATUS_INTERVAL.UPDATE);
-    generateSelfPeer(conf, done);
+      peerFifo.push(_.partial(generateSelfPeer, signalTimeInterval, conf));
+    }, signalTimeInterval);
+    generateSelfPeer(conf, signalTimeInterval, done);
   };
 
   var syncBlockFifo = async.queue((task, callback) => task(callback), 1);
@@ -123,18 +124,19 @@ function PeeringService(server, pair, dal) {
     syncBlock(done);
   };
 
+  const FIRST_CALL = true;
   var testPeerFifo = async.queue((task, callback) => task(callback), 1);
   var testPeerFifoInterval = null;
   this.regularTestPeers = function (done) {
     if (testPeerFifoInterval)
       clearInterval(testPeerFifoInterval);
-    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers), 1000 * conf.avgGenTime * constants.NETWORK.TEST_PEERS_INTERVAL);
-    testPeers(done);
+    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers.bind(null, !FIRST_CALL)), 1000 * conf.avgGenTime * constants.NETWORK.TEST_PEERS_INTERVAL);
+    testPeers(FIRST_CALL, done);
   };
 
   this.generateSelfPeer = generateSelfPeer;
 
-  function generateSelfPeer(conf, done) {
+  function generateSelfPeer(conf, signalTimeInterval, done) {
     var currency = conf.currency;
     var current = null;
     async.waterfall([
@@ -174,7 +176,7 @@ function PeeringService(server, pair, dal) {
         var raw2 = new Peer(p2).getRaw().dos2unix();
         logger.info('External access:', new Peer(raw1 == raw2 ? p1 : p2).getURL());
         if (raw1 != raw2) {
-          logger.debug('Generating server\'s peering entry...');
+          logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
           async.waterfall([
             function (next){
               server.sign(raw2, next);
@@ -205,11 +207,12 @@ function PeeringService(server, pair, dal) {
         next();
       }
     ], function(err) {
+      logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
       done(err);
     });
   }
 
-  function testPeers(done) {
+  function testPeers(displayDelays, done) {
     return co(function *() {
       let peers = yield dal.listAllPeers();
       let now = (new Date().getTime());
@@ -217,20 +220,23 @@ function PeeringService(server, pair, dal) {
       for (let i = 0, len = peers.length; i < len; i++) {
         let p = new Peer(peers[i]);
         if (p.status == 'DOWN') {
+          let shouldDisplayDelays = displayDelays;
           let downAt = p.first_down || now;
           let downDelay = Math.floor((now - downAt) / 1000);
           let waitedSinceLastTest = Math.floor((now - (p.last_try || now)) / 1000);
-          let testIt = 
-               (downDelay <= constants.DURATIONS.A_MINUTE    && waitedSinceLastTest >= constants.DURATIONS.TEN_SECONDS)
-            || (downDelay <= constants.DURATIONS.TEN_MINUTES && waitedSinceLastTest >= constants.DURATIONS.A_MINUTE)
-            || (downDelay <= constants.DURATIONS.AN_HOUR     && waitedSinceLastTest >= constants.DURATIONS.TEN_MINUTES)
-            || (downDelay <= constants.DURATIONS.A_DAY       && waitedSinceLastTest >= constants.DURATIONS.AN_HOUR)
-            || (downDelay <= constants.DURATIONS.A_WEEK      && waitedSinceLastTest >= constants.DURATIONS.A_DAY)
-            || (downDelay <= constants.DURATIONS.A_MONTH     && waitedSinceLastTest >= constants.DURATIONS.A_WEEK)
-          ;
+          let waitRemaining = downDelay <= constants.DURATIONS.A_MINUTE ? constants.DURATIONS.TEN_SECONDS - waitedSinceLastTest : (
+            downDelay <= constants.DURATIONS.TEN_MINUTES ?             constants.DURATIONS.A_MINUTE - waitedSinceLastTest : (
+            downDelay <= constants.DURATIONS.AN_HOUR ?                 constants.DURATIONS.TEN_MINUTES - waitedSinceLastTest : (
+            downDelay <= constants.DURATIONS.A_DAY ?                   constants.DURATIONS.AN_HOUR - waitedSinceLastTest : (
+            downDelay <= constants.DURATIONS.A_WEEK ?                  constants.DURATIONS.A_DAY - waitedSinceLastTest : (
+            downDelay <= constants.DURATIONS.A_MONTH ?                 constants.DURATIONS.A_WEEK - waitedSinceLastTest :
+            1 // Do not check it, DOWN for too long
+          )))));
+          let testIt = waitRemaining <= 0;
           if (testIt) {
             // We try to reconnect only with peers marked as DOWN
             try {
+              logger.info('Checking if node %s (%s:%s) is UP...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
               let node = yield Q.nfcall(p.connect);
               let peering = yield Q.nfcall(node.network.peering.get);
               let sp1 = peering.block.split('-');
@@ -247,7 +253,11 @@ function PeeringService(server, pair, dal) {
               // Error: we set the peer as DOWN
               logger.warn("Peer record %s: %s", p.pubkey, err.code || err.message || err);
               yield dal.setPeerDown(p.pubkey);
+              shouldDisplayDelays = true;
             }
+          }
+          if (shouldDisplayDelays) {
+            logger.info('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (waitRemaining / 60).toFixed(0));
           }
         }
       }
@@ -270,8 +280,11 @@ function PeeringService(server, pair, dal) {
           let okUP = yield processAscendingUntilNoBlock(p, node, current);
           if (okUP) {
             let remoteCurrent = yield Q.nfcall(node.blockchain.current);
-            if (remoteCurrent.number != current.number) {
-              yield processLastTen(p, node, current);
+            // We check if our current block has changed due to ascending pulling
+            let nowCurrent = yield dal.getCurrentBlockOrNull();
+            logger.debug("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
+            if (remoteCurrent.number != nowCurrent.number) {
+              yield processLastTen(p, node, nowCurrent);
             }
           }
           try {

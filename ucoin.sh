@@ -38,8 +38,6 @@ ucoind() {
 		local test
 		local UCOIN_LOG_FILE
 		local UCOIN_ERR_FILE
-		UCOIN_LOG_FILE=$UCOIN_DATA_HOME/$UCOIN_DATABASE/ucoin.log
-		UCOIN_ERR_FILE=$UCOIN_DATA_HOME/$UCOIN_DATABASE/ucoin.err.log
 		UCOIN_DATABASE=$2
 		if [ -z $UCOIN_DATABASE ]; then
 			UCOIN_DATABASE="$UCOIN_DB"
@@ -47,6 +45,8 @@ ucoind() {
 		if [ -z $UCOIN_DATABASE ]; then
 			UCOIN_DATABASE="ucoin_default"
 		fi
+		UCOIN_LOG_FILE=$UCOIN_DATA_HOME/$UCOIN_DATABASE/ucoin.log
+		UCOIN_ERR_FILE=$UCOIN_DATA_HOME/$UCOIN_DATABASE/ucoin.err.log
 		test=`$NODE $PM2 list | grep "$UCOIN_DATABASE.*online"`
 		if [ -z "$test" ]; then
 		echo $UCOIN_LOG_FILE

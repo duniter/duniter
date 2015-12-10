@@ -125,7 +125,7 @@ program
         err && console.error(err.stack || err.message);
       })
       .then(function(){
-        return server.disconnect().catch(() => null);
+        return ((server && server.disconnect()) || Q()).catch(() => null);
       })
       .then(function(){
         process.exit();
@@ -267,7 +267,7 @@ program
         logger.error('Error during revert:', err);
       }
       // Save DB
-      server.disconnect()
+      ((server && server.disconnect()) || Q())
         .catch(() => null)
         .then(function(){
           process.exit();
@@ -768,7 +768,7 @@ function connect(callback, forConf, useDefaultConf) {
     process.on('SIGINT', function() {
       if (!isSaving) {
         isSaving = true;
-        if (server.dal.needsSave()) {
+        if (server.dal && server.dal.needsSave()) {
           logger.info('Saving DB and close...');
         }
         // Save DB
@@ -808,11 +808,11 @@ function service(callback) {
     process.on('SIGINT', function() {
       if (!isSaving) {
         isSaving = true;
-        if (server.dal.needsSave()) {
+        if (server.dal && server.dal.needsSave()) {
           logger.info('Saving DB and close...');
         }
         // Save DB
-        server.disconnect()
+        ((server && server.disconnect()) || Q())
           .catch(() => null)
           .then(function(){
             process.exit();

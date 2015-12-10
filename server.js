@@ -257,7 +257,7 @@ function Server (dbConf, overrideConf) {
   };
 
   this.disconnect = function() {
-    return that.dal.close();
+    return that.dal && that.dal.close();
   };
 
   this.initServices = function() {

@@ -158,6 +158,12 @@ function PeeringService(server, pair, dal) {
       if (theConf.remoteport) {
         endpoint += ' ' + theConf.remoteport;
       }
+      if (!currency || endpoint == 'BASIC_MERKLED_API') {
+        logger.error('It seems there is an issue with your configuration.');
+        logger.error('Please restart your node with:');
+        logger.error('$ ucoind restart');
+        return Q.Promise((resolve) => null);
+      }
       // Choosing next based-block for our peer record: we basically want the most distant possible from current
       let minBlock = current ? current.number - 30 : 0;
       // But if already have a peer record within this distance, we need to take the next block of it

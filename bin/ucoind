@@ -382,7 +382,6 @@ program
         blocks.forEach(function (block) {
           jsoned.push(_(new Block(block).json()).omit('raw'));
         });
-        jsoned.push(chunk);
       }
       console.log(JSON.stringify(jsoned, null, "  "));
       yield server.disconnect();

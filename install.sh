@@ -53,6 +53,16 @@ ucoin_is_debian_install() {
   fi
 }
 
+ucoin_is_fedora_install() {
+  local distribution
+  distribution=`cat /etc/*-release file 2>/dev/null | grep "Fedora"`
+  if [[ "$distribution" = *Fedora* ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 install_ucoin_from_git() {
 
   if ! ucoin_has "make"; then
@@ -69,10 +79,23 @@ install_ucoin_from_git() {
     if ucoin_is_ubuntu_install; then
       echo "=> g++ is not available. Please install 'build-essential' package with 'sudo apt-get install build-essential' command, then retry uCoin installation."
       exit 1
-    fi
-    if ucoin_is_debian_install; then
+    elif ucoin_is_debian_install; then
       echo "=> g++ is not available. Please install 'build-essentials' package with 'apt-get install build-essential' command as root, then retry uCoin installation."
       exit 1
+    else
+      echo "=> g++ is not available"
+    fi
+    return 11
+  fi
+  if ! ucoin_has "python"; then
+    if ucoin_is_ubuntu_install; then
+      echo "=> python is not available. Please install 'build-essential' package with 'sudo apt-get install build-essential' command, then retry uCoin installation."
+      exit 1
+    elif ucoin_is_debian_install; then
+      echo "=> python is not available. Please install 'build-essentials' package with 'apt-get install build-essential' command as root, then retry uCoin installation."
+      exit 1
+    else
+      echo "=> python is not available"
     fi
     return 11
   fi
@@ -244,11 +267,13 @@ ucoin_detect_profile() {
 ucoin_is_available_for_distribution() {
   local distribution
   local distribution_deb
+  local distribution_fedora
 
   distribution=`cat /etc/*-release file 2>/dev/null | grep "Ubuntu"`
   distribution_deb=`cat /etc/*-release file 2>/dev/null | grep "Debian"`
+  distribution_fedora=`cat /etc/*-release file 2>/dev/null | grep "Fedora"`
 
-  if [[ "$distribution" = *Ubuntu\ 14* ]] || [[ "$distribution" = *Ubuntu\ 15* ]] || [[ "$distribution_deb" = *Debian*8*jessie* ]]; then
+  if [[ "$distribution" = *Ubuntu\ 14* ]] || [[ "$distribution" = *Ubuntu\ 15* ]] || [[ "$distribution_deb" = *Debian*8*jessie* ]] || [[ "$distribution_fedora" = *Fedora\ 23* ]]; then
     local X64=`uname -a | grep "x86_64"`
     if [ ! -z "$X64" ]; then
       return 0

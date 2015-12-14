@@ -228,7 +228,7 @@ describe("Branches", function() {
     it('should have a 3 blocks fork window size', function() {
       return expectAnswer(rp('http://127.0.0.1:7778/node/summary', { json: true }), function(res) {
         res.should.have.property('ucoin').property('software').equal('ucoind');
-        res.should.have.property('ucoin').property('version').equal('0.12.4');
+        res.should.have.property('ucoin').property('version').equal('0.12.5');
         res.should.have.property('ucoin').property('forkWindowSize').equal(3);
       });
     });

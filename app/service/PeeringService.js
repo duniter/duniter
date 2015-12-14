@@ -136,80 +136,75 @@ function PeeringService(server, pair, dal) {
 
   this.generateSelfPeer = generateSelfPeer;
 
-  function generateSelfPeer(conf, signalTimeInterval, done) {
-    var currency = conf.currency;
-    var current = null;
-    async.waterfall([
-      function (next) {
-        blockchainCtx(conf, dal).current(next);
-      },
-      function (currentBlock, next) {
-        current = currentBlock;
-        dal.findPeers(selfPubkey).then(_.partial(next, null)).catch(next);
-      },
-      function (peers, next) {
-        var p1 = { version: 1, currency: currency };
-        if(peers.length != 0){
-          p1 = _(peers[0]).extend({ version: 1, currency: currency });
-        }
-        var endpoint = 'BASIC_MERKLED_API';
-        if (conf.remotehost) {
-          endpoint += ' ' + conf.remotehost;
-        }
-        if (conf.remoteipv4) {
-          endpoint += ' ' + conf.remoteipv4;
-        }
-        if (conf.remoteipv6) {
-          endpoint += ' ' + conf.remoteipv6;
-        }
-        if (conf.remoteport) {
-          endpoint += ' ' + conf.remoteport;
-        }
-        var p2 = {
-          version: 1,
-          currency: currency,
-          pubkey: selfPubkey,
-          block: current ? [current.number, current.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-          endpoints: [endpoint]
-        };
-        var raw1 = new Peer(p1).getRaw().dos2unix();
-        var raw2 = new Peer(p2).getRaw().dos2unix();
-        logger.info('External access:', new Peer(raw1 == raw2 ? p1 : p2).getURL());
-        if (raw1 != raw2) {
-          logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
-          async.waterfall([
-            function (next){
-              server.sign(raw2, next);
-            },
-            function (signature, next) {
-              p2.signature = signature;
-              p2.pubkey = selfPubkey;
-              p2.documentType = 'peer';
-              server.submit(p2, false, next);
-            }
-          ], function (err) {
-            next(err);
-          });
-        } else {
-          p1.documentType = 'peer';
-          server.push(p1);
-          next();
-        }
-      },
-      function (next){
-        dal.getPeer(selfPubkey).then(_.partial(next, null)).catch(next);
-      },
-      function (peer, next){
-        // Set peer's statut to UP
-        peer.documentType = 'peer';
-        that.peer(peer);
-        server.push(peer);
-        next();
+  function generateSelfPeer(theConf, signalTimeInterval, done) {
+    return co(function *() {
+      let current = yield server.dal.getCurrentBlockOrNull();
+      let currency = theConf.currency;
+      let peers = yield dal.findPeers(selfPubkey);
+      let p1 = { version: 1, currency: currency };
+      if(peers.length != 0){
+        p1 = _(peers[0]).extend({ version: 1, currency: currency });
       }
-    ], function(err) {
+      let endpoint = 'BASIC_MERKLED_API';
+      if (theConf.remotehost) {
+        endpoint += ' ' + theConf.remotehost;
+      }
+      if (theConf.remoteipv4) {
+        endpoint += ' ' + theConf.remoteipv4;
+      }
+      if (theConf.remoteipv6) {
+        endpoint += ' ' + theConf.remoteipv6;
+      }
+      if (theConf.remoteport) {
+        endpoint += ' ' + theConf.remoteport;
+      }
+      if (!currency || endpoint == 'BASIC_MERKLED_API') {
+        logger.error('It seems there is an issue with your configuration.');
+        logger.error('Please restart your node with:');
+        logger.error('$ ucoind restart');
+        return Q.Promise((resolve) => null);
+      }
+      // Choosing next based-block for our peer record: we basically want the most distant possible from current
+      let minBlock = current ? current.number - 30 : 0;
+      // But if already have a peer record within this distance, we need to take the next block of it
+      if (p1) {
+        let p1Block = parseInt(p1.block.split('-')[0], 10);
+        minBlock = Math.max(minBlock, p1Block + 1);
+      }
+      // Finally we can't have a negative block
+      minBlock = Math.max(0, minBlock);
+      let targetBlock = yield server.dal.getBlockOrNull(minBlock);
+      var p2 = {
+        version: 1,
+        currency: currency,
+        pubkey: selfPubkey,
+        block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
+        endpoints: [endpoint]
+      };
+      var raw1 = new Peer(p1).getRaw().dos2unix();
+      var raw2 = new Peer(p2).getRaw().dos2unix();
+      logger.info('External access:', new Peer(raw1 == raw2 ? p1 : p2).getURL());
+      if (raw1 != raw2) {
+        logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
+        p2.signature = yield Q.nfcall(server.sign, raw2);
+        p2.pubkey = selfPubkey;
+        p2.documentType = 'peer';
+        // Submit & share with the network
+        yield server.submitP(p2, false);
+      } else {
+        p1.documentType = 'peer';
+        // Share with the network
+        server.push(p1);
+      }
+      let selfPeer = yield dal.getPeer(selfPubkey);
+      // Set peer's statut to UP
+      selfPeer.documentType = 'selfPeer';
+      that.peer(selfPeer);
+      server.push(selfPeer);
       logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
-      done(err);
-    });
+    })
+      .then(() => done())
+      .catch(done);
   }
 
   function testPeers(displayDelays, done) {

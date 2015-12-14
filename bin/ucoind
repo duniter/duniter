@@ -125,7 +125,7 @@ program
         err && console.error(err.stack || err.message);
       })
       .then(function(){
-        return server.disconnect().catch(() => null);
+        return ((server && server.disconnect()) || Q()).catch(() => null);
       })
       .then(function(){
         process.exit();
@@ -166,7 +166,7 @@ program
                     return selfPeer;
                   })
                   .catch(function(){
-                    return Q.nfcall(server.PeeringService.generateSelfPeer, server.conf)
+                    return Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0)
                       .then(function(){
                         return server.dal.getPeer(server.PeeringService.pubkey);
                       });
@@ -267,7 +267,7 @@ program
         logger.error('Error during revert:', err);
       }
       // Save DB
-      server.disconnect()
+      ((server && server.disconnect()) || Q())
         .catch(() => null)
         .then(function(){
           process.exit();
@@ -461,51 +461,38 @@ function serverStart(server, conf) {
     constants.setUDID2Format();
   }
 
-  async.waterfall([
-    function (next){
-      // Launching server
-      server.start()
-        .then(function(){
-          // Enabling UPnP
-          if (conf.upnp) {
-            return upnp(server.conf.port, server.conf.remoteport)
-              .catch(function(err){
-                logger.warn(err);
-              });
-          }
-        })
-        .then(function(){
-          // Enabling HTTP
-          return bma(server, null, conf.httplogs);
-        })
-        .then(function(){
-          // Enabling Routing
-          if (server.conf.routing) {
-            server
-              // The router asks for multicasting of documents
-              .pipe(server.router())
-              // The documents get sent to peers
-              .pipe(multicaster(server.conf.isolate))
-              // The multicaster may answer 'unreachable peer'
-              .pipe(server.router());
-          }
-          next();
-        })
-        .then(function(){
-          if (conf.participate) {
-            return server.startBlockComputation();
-          }
-        })
-        .catch(next);
+  return co(function *() {
+    // Enabling HTTP
+    yield bma(server, null, conf.httplogs);
+    // Enabling Routing
+    if (server.conf.routing) {
+      server
+        // The router asks for multicasting of documents
+        .pipe(server.router())
+        // The documents get sent to peers
+        .pipe(multicaster(server.conf.isolate))
+        // The multicaster may answer 'unreachable peer'
+        .pipe(server.router());
     }
-  ], function (err) {
-    if(err){
+    // Enabling UPnP
+    if (conf.upnp) {
+      yield upnp(server.conf.port, server.conf.remoteport)
+        .catch(function(err){
+          logger.warn(err);
+        });
+    }
+    if (conf.participate) {
+      server.startBlockComputation();
+    }
+    // Launching server
+    server.start();
+    logger.info('Server ready!');
+  })
+    .catch((err) => {
       logger.error(err);
       server.disconnect();
       process.exit();
-    }
-    logger.debug('Server ready!');
-  });
+    });
 }
 
 function startWizard(step, server, conf, done) {
@@ -768,7 +755,7 @@ function connect(callback, forConf, useDefaultConf) {
     process.on('SIGINT', function() {
       if (!isSaving) {
         isSaving = true;
-        if (server.dal.needsSave()) {
+        if (server.dal && server.dal.needsSave()) {
           logger.info('Saving DB and close...');
         }
         // Save DB
@@ -808,11 +795,11 @@ function service(callback) {
     process.on('SIGINT', function() {
       if (!isSaving) {
         isSaving = true;
-        if (server.dal.needsSave()) {
+        if (server.dal && server.dal.needsSave()) {
           logger.info('Saving DB and close...');
         }
         // Save DB
-        server.disconnect()
+        ((server && server.disconnect()) || Q())
           .catch(() => null)
           .then(function(){
             process.exit();

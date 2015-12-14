@@ -2,6 +2,8 @@
 var Q       = require('q');
 var co      = require('co');
 var _       = require('underscore');
+var fs      = require('fs');
+var qfs     = require('q-io/fs');
 var sha1    = require('sha1');
 var path    = require('path');
 var Configuration = require('../entity/configuration');
@@ -24,33 +26,65 @@ var CFSStorage = require('./fileDALs/AbstractCFS');
 var lokijs = require('lokijs');
 var logger = require('../../lib/logger')('database');
 
+const UCOIN_DB_NAME = 'ucoin';
+
 module.exports = {
   memory: function(profile) {
     return getHomeFS(profile, true)
       .then(function(params) {
-        let loki = new lokijs('ucoin', { autosave: false });
+        let loki = new lokijs(UCOIN_DB_NAME, { autosave: false });
         return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki));
       });
   },
   file: function(profile, forConf) {
     return getHomeFS(profile, false)
       .then(function(params) {
-        return Q.Promise(function(resolve){
+        return Q.Promise(function(resolve, reject){
           let loki;
           if (forConf) {
             // Memory only service dals
             loki = new lokijs('temp', { autosave: false });
             resolve(loki);
           } else {
-            logger.info('Loading...');
-            loki = new lokijs(path.join(params.home, 'ucoin.json'), {
-              autoload: true,
-              autosave: true,
-              autosaveInterval: 30000,
-              autoloadCallback: function() {
-                resolve(loki);
+            let lokiPath = path.join(params.home, UCOIN_DB_NAME + '.json');
+            logger.debug('Loading DB at %s...', lokiPath);
+            co(function *() {
+              let rawDB;
+              try {
+                // Try to read database
+                rawDB = yield qfs.read(lokiPath);
+                // Check if content is standard JSON
+                JSON.parse(rawDB);
+              } catch (e) {
+                if (rawDB) {
+                  logger.error('The database could not be loaded, it is probably corrupted due to some system fail.');
+                  logger.error('Please stop uCoin and re-sync it with another node of the network before restarting, using the following commands:');
+                  logger.error('> ucoind reset data');
+                  logger.error('> ucoind sync <some.ucoin.node> <port>');
+                  logger.error('> ucoind restart');
+                  // Dirty "won't go any further"
+                  return Q.Promise((resolve) => null);
+                }
               }
-            });
+
+              return Q.Promise(function(resolve2){
+                let lokiDB;
+                lokiDB = new lokijs(lokiPath, {
+                  autoload: true,
+                  autosave: true,
+                  autosaveInterval: 30000,
+                  adapter: {
+                    loadDatabase: (dbname, callback) => {
+                      callback(rawDB || null);
+                      resolve2(lokiDB);
+                    },
+                    saveDatabase: (dbname, dbstring, callback) => fs.writeFile(dbname, dbstring, callback)
+                  }
+                });
+              });
+            })
+              .then(resolve)
+              .catch(reject);
           }
         })
           .then(function(loki){
@@ -74,7 +108,7 @@ function getHomeFS(profile, isMemory) {
   let fs;
   return someDelayFix()
     .then(function() {
-      fs = (isMemory ? require('q-io/fs-mock')({}) : require('q-io/fs'));
+      fs = (isMemory ? require('q-io/fs-mock')({}) : qfs);
       return fs.makeTree(home);
     })
     .then(function(){
@@ -1148,7 +1182,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   this.loadStats = that.statDAL.loadStats;
   this.getStat = that.statDAL.getStat;
-  this.saveStat = that.statDAL.saveStat;
   this.pushStats = that.statDAL.pushStats;
 
   this.needsSave = function() {
@@ -1163,13 +1196,13 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf', 'ucoin'];
+    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'cores', 'current', 'ucoin'];
+    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };

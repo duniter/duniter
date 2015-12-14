@@ -93,6 +93,8 @@ function Server (dbConf, overrideConf) {
     });
   };
 
+  this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
+
   this.connect = function (forConf, useDefaultConf) {
     // Init connection
     if (that.dal) {
@@ -148,7 +150,7 @@ function Server (dbConf, overrideConf) {
   };
 
   this.recomputeSelfPeer = function() {
-    return Q.nbind(that.PeeringService.generateSelfPeer, that.PeeringService)(that.conf);
+    return Q.nbind(that.PeeringService.generateSelfPeer, that.PeeringService)(that.conf, 0);
   };
 
   this.initPeer = function (done) {
@@ -157,7 +159,6 @@ function Server (dbConf, overrideConf) {
         that.checkConfig().then(next).catch(next);
       },
       function (next){
-        logger.info('Starting core: %s', that.dal.name);
         logger.info('Storing self peer...');
         that.PeeringService.regularPeerSignal(next);
       },
@@ -257,7 +258,7 @@ function Server (dbConf, overrideConf) {
   };
 
   this.disconnect = function() {
-    return that.dal.close();
+    return that.dal && that.dal.close();
   };
 
   this.initServices = function() {

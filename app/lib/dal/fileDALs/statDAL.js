@@ -21,14 +21,6 @@ function StatDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   this.getStat = (statName) => that.loadStats().then((stats) => (stats && stats[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 });
 
-  this.saveStat = (stat, name) => {
-    return co(function *() {
-      var stats = (yield that.loadStats()) || {};
-      stats[name] = stat;
-      return that.coreFS.writeJSON('stats.json', stats);
-    });
-  };
-
   this.pushStats = (statsToPush) => {
     return co(function *() {
       var stats = (yield that.loadStats()) || {};

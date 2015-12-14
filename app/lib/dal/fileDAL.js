@@ -1182,7 +1182,6 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   this.loadStats = that.statDAL.loadStats;
   this.getStat = that.statDAL.getStat;
-  this.saveStat = that.statDAL.saveStat;
   this.pushStats = that.statDAL.pushStats;
 
   this.needsSave = function() {

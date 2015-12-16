@@ -776,14 +776,16 @@ function connect(callback, forConf, useDefaultConf) {
 
 function service(callback, nologs) {
 
-  if (nologs) {
-    // Disable logs
-    require('log4js').configure({
-      "appenders": [
-      ]
-    });
-  }
   return function () {
+
+    if (nologs) {
+      // Disable logs
+      require('log4js').configure({
+        "appenders": [
+        ]
+      });
+    }
+
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
 

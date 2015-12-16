@@ -150,40 +150,25 @@ program
   .command('peer [host] [port]')
   .description('Exchange peerings with another node')
   .action(service(function(host, port, server) {
-    Q.nfcall(vucoin, host, port)
-      .then(function(node){
-        logger.info('Fetching peering record at %s:%s...', host, port);
-        return Q.nfcall(node.network.peering.get)
-          .then(function(peering){
-            logger.info('Apply peering ...');
-            return server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious)
-              .then(function() {
-                logger.info('Applied');
-                return server.dal.getPeer(server.PeeringService.pubkey)
-                  .then(function(selfPeer){
-                    if (!selfPeer) {
-                      throw 'Generate self peer';
-                    }
-                    return selfPeer;
-                  })
-                  .catch(function(){
-                    return Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0)
-                      .then(function(){
-                        return server.dal.getPeer(server.PeeringService.pubkey);
-                      });
-                  });
-              })
-              .then(function(selfPeer){
-                logger.info('Send self peering ...');
-                var caster = multicaster();
-                return Q.nfcall(caster.sendPeering, Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer))
-                  .then(function(){
-                    logger.info('Sent.');
-                    process.exit();
-                  });
-              });
-          });
-      })
+    return co(function *() {
+      let node = yield Q.nfcall(vucoin, host, port);
+      logger.info('Fetching peering record at %s:%s...', host, port);
+      let peering = yield Q.nfcall(node.network.peering.get);
+      logger.info('Apply peering ...');
+      yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
+      logger.info('Applied');
+      let selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
+      if (!selfPeer) {
+        yield Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0);
+        selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
+      }
+      logger.info('Send self peering ...');
+      var caster = multicaster();
+      yield Q.nfcall(caster.sendPeering, Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
+      logger.info('Sent.');
+      yield server.disconnect();
+      process.exit();
+    })
       .catch(function(err){
         logger.error(err.code || err.message || err);
         process.exit();

@@ -23,7 +23,7 @@ var commonConf = {
   remoteipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
-  branchesWindowSize: 0,
+  forksize: 0,
   sigQty: 1
 };
 

@@ -125,7 +125,7 @@ describe("Integration", function() {
         pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
         sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
       },
-      branchesWindowSize: 3,
+      forksize: 3,
       participate: false, rootoffset: 10,
       sigQty: 1, dt: 0, ud0: 120
     });

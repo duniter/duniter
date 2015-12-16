@@ -129,7 +129,7 @@ function Server (dbConf, overrideConf) {
           dtDiffEval:         constants.CONTRACT.DEFAULT.DTDIFFEVAL,
           medianTimeBlocks:   constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
           rootoffset:         0,
-          branchesWindowSize: constants.BRANCHES.DEFAULT_WINDOW_SIZE
+          forksize:           constants.BRANCHES.DEFAULT_WINDOW_SIZE
         };
         _.keys(defaultValues).forEach(function(key){
           if (that.conf[key] == undefined) {

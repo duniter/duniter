@@ -21,9 +21,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var speed = 0, syncStart = new Date(), blocksApplied = 0;
   var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
 
-  // Disable branching for the main synchronization parts
-  conf.branchesWindowSize = 0;
-
   if (interactive) {
     require('log4js').configure({
       "appenders": [

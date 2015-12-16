@@ -26,7 +26,7 @@ var commonConf = {
   remoteipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
-  branchesWindowSize: 3,
+  forksize: 3,
   parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };

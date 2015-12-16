@@ -196,7 +196,7 @@ function BlockchainService (conf, mainDAL, pair) {
         return res;
       } else {
         // add it as side chain
-        if (current.number - obj.number + 1 >= conf.branchesWindowSize) {
+        if (current.number - obj.number + 1 >= conf.forksize) {
           throw 'Block out of fork window';
         }
         let absolute = yield mainDAL.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);

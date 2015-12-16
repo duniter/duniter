@@ -14,7 +14,7 @@ function NodeBinding (server) {
       "ucoin": {
         "software": "ucoind",
         "version": server.version,
-        "forkWindowSize": server.conf.branchesWindowSize
+        "forkWindowSize": server.conf.forksize
       }
     }, null, "  "));
   };

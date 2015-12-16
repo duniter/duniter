@@ -727,7 +727,7 @@ function commandLineConf(conf) {
   if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
   if (cli.isolate)                          conf.isolate        = cli.isolate;
   if (cli.timeout)                          conf.timeout        = cli.timeout;
-  if (cli.forksize != null)                 conf.branchesWindowSize = cli.forksize;
+  if (cli.forksize != null)                 conf.forksize       = cli.forksize;
 
   // Specific internal settings
   conf.createNext = true;

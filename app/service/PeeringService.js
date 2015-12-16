@@ -110,7 +110,7 @@ function PeeringService(server, pair, dal) {
     if (peerInterval)
       clearInterval(peerInterval);
     peerInterval = setInterval(function () {
-      peerFifo.push(_.partial(generateSelfPeer, signalTimeInterval, conf));
+      peerFifo.push(_.partial(generateSelfPeer, conf, signalTimeInterval));
     }, signalTimeInterval);
     generateSelfPeer(conf, signalTimeInterval, done);
   };

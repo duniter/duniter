@@ -1225,6 +1225,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return co(function *() {
       that.peerDAL.lokiRemoveAll();
       yield resetFiles(files, dirs);
+      return that.close();
     })
       .then(() => done && done())
       .catch((err) => done && done(err));

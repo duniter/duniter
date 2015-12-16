@@ -435,7 +435,8 @@ program
   .command('reset [config|data|peers|tx|stats|all]')
   .description('Reset configuration, data, peers, transactions or everything in the database')
   .action((type) => {
-    connect(function (server) {
+    let init = type != 'peers' ? connect : service;
+    init(function (server) {
       if(!~['config', 'data', 'peers', 'tx', 'stats', 'all'].indexOf(type)){
         logger.error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset tx`, `reset stats` or `reset all`');
         server.disconnect();

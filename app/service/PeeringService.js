@@ -217,16 +217,8 @@ function PeeringService(server, pair, dal) {
         if (p.status == 'DOWN') {
           let shouldDisplayDelays = displayDelays;
           let downAt = p.first_down || now;
-          let downDelay = Math.floor((now - downAt) / 1000);
-          let waitedSinceLastTest = Math.floor((now - (p.last_try || now)) / 1000);
-          let waitRemaining = downDelay <= constants.DURATIONS.A_MINUTE ? constants.DURATIONS.TEN_SECONDS - waitedSinceLastTest : (
-            downDelay <= constants.DURATIONS.TEN_MINUTES ?             constants.DURATIONS.A_MINUTE - waitedSinceLastTest : (
-            downDelay <= constants.DURATIONS.AN_HOUR ?                 constants.DURATIONS.TEN_MINUTES - waitedSinceLastTest : (
-            downDelay <= constants.DURATIONS.A_DAY ?                   constants.DURATIONS.AN_HOUR - waitedSinceLastTest : (
-            downDelay <= constants.DURATIONS.A_WEEK ?                  constants.DURATIONS.A_DAY - waitedSinceLastTest : (
-            downDelay <= constants.DURATIONS.A_MONTH ?                 constants.DURATIONS.A_WEEK - waitedSinceLastTest :
-            1 // Do not check it, DOWN for too long
-          )))));
+          let waitRemaining = getWaitRemaining(now, downAt, p.last_try);
+          let nextWaitRemaining = getWaitRemaining(now, downAt, now);
           let testIt = waitRemaining <= 0;
           if (testIt) {
             // We try to reconnect only with peers marked as DOWN
@@ -244,6 +236,8 @@ function PeeringService(server, pair, dal) {
                 // The peering changed
                 yield Q.nfcall(that.submit, peering);
               }
+              // Do not need to display when next check will occur: the node is now UP
+              shouldDisplayDelays = false;
             } catch (err) {
               // Error: we set the peer as DOWN
               logger.warn("Peer record %s: %s", p.pubkey, err.code || err.message || err);
@@ -252,13 +246,39 @@ function PeeringService(server, pair, dal) {
             }
           }
           if (shouldDisplayDelays) {
-            logger.info('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (waitRemaining / 60).toFixed(0));
+            logger.info('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (nextWaitRemaining / 60).toFixed(0));
           }
         }
       }
       done();
     })
       .catch(done);
+  }
+
+  function getWaitRemaining(now, downAt, last_try) {
+    let downDelay = Math.floor((now - downAt) / 1000);
+    let waitedSinceLastTest = Math.floor((now - (last_try || now)) / 1000);
+    let waitRemaining = 1;
+    if (downDelay <= constants.DURATIONS.A_MINUTE) {
+      waitRemaining = constants.DURATIONS.TEN_SECONDS - waitedSinceLastTest;
+    }
+    else if (downDelay <= constants.DURATIONS.TEN_MINUTES) {
+      waitRemaining = constants.DURATIONS.A_MINUTE - waitedSinceLastTest;
+    }
+    else if (downDelay <= constants.DURATIONS.AN_HOUR) {
+      waitRemaining = constants.DURATIONS.TEN_MINUTES - waitedSinceLastTest;
+    }
+    else if (downDelay <= constants.DURATIONS.A_DAY) {
+      waitRemaining = constants.DURATIONS.AN_HOUR - waitedSinceLastTest;
+    }
+    else if (downDelay <= constants.DURATIONS.A_WEEK) {
+      waitRemaining = constants.DURATIONS.A_DAY - waitedSinceLastTest;
+    }
+    else if (downDelay <= constants.DURATIONS.A_MONTH) {
+      waitRemaining = constants.DURATIONS.A_WEEK - waitedSinceLastTest;
+    }
+    // Else do not check it, DOWN for too long
+    return waitRemaining;
   }
 
   function syncBlock(callback) {

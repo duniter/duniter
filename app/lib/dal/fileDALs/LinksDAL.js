@@ -41,15 +41,14 @@ function LinksDAL(loki) {
     obsolete: false
   });
 
-  this.getObsoleteLinksFromTo = (from, to) => this.lokiFind({
-    $and: [{
-      source: from
-    },{
-      to: to
-    }]
-  }, {
-    obsolete: true
-  });
+  this.getLinksWithPath = (from, to) =>
+    this.lokiFind({
+      $and: [{
+        source: from
+      },{
+        target: to
+      }]
+    });
 
   this.obsoletesLinks = (minTimestamp) => co(function *() {
     let toObsolete = yield that.lokiFind({

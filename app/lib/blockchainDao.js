@@ -52,10 +52,10 @@ module.exports = function(dal) {
     this.getPreviousLinkFor = function (from, to, done) {
       async.waterfall([
         function (next){
-          dal.getObsoletesFromTo(from, to).then(_.partial(next, null)).catch(next);
+          dal.getPreviousLinks(from, to).then(_.partial(next, null)).catch(next);
         },
-        function (links, next){
-          next(null, links.length > 0 ? links[0] : null);
+        function (previous, next){
+          next(null, previous);
         }
       ], done);
     };

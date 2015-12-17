@@ -1320,7 +1320,14 @@ function BlockchainService (conf, mainDAL, pair) {
           },
           function (next){
             // Save links
-            mainContext.updateLinks(block, next);
+            mainContext.updateLinks(block, next, (number) => {
+              let firstLocalNumber = blocks[0].number;
+              if (number >= firstLocalNumber) {
+                let offset = number - firstLocalNumber;
+                return Q(blocks[offset]);
+              }
+              return mainDAL.getBlockOrNull(number);
+            });
           },
           function (next){
             // Update consumed sources & create new ones

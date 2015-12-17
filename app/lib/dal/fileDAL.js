@@ -357,15 +357,11 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return that.linksDAL.getValidLinksTo(to);
   };
 
-  this.getObsoletesFromTo = function(from, to) {
-    return that.linksDAL.getObsoleteLinksFromTo()
-      .then(function(links){
-        return _.chain(links).
-          where({ target: to, source: from }).
-          sortBy(function(lnk){ return -lnk.timestamp; }).
-          value();
-      });
-  };
+  this.getPreviousLinks = (from, to) => co(function *() {
+    let links = yield that.linksDAL.getLinksWithPath(from, to);
+    links = _.sortBy(links, 'timestamp');
+    return links[links.length - 1];
+  });
 
   this.getValidFromTo = function(from, to) {
     return that.getValidLinksFrom(from)

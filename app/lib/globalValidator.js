@@ -878,7 +878,7 @@ function GlobalValidator (conf, dao) {
         },
         function (previous, next){
           var duration = previous && (block.medianTime - parseInt(previous.timestamp));
-          if (previous && (duration < conf.sigDelay)) {
+          if (previous && (duration < conf.sigDelay + conf.sigValidity)) {
             next('Too early for this certification');
           } else {
             next();

@@ -182,7 +182,7 @@ function BlockchainContext(conf, dal) {
       },
       function (next){
         // Save links
-        updateLinks(block, next);
+        updateLinks(block, next, dal.getBlockOrNull.bind(dal));
       },
       function (next){
         // Compute obsolete links
@@ -452,18 +452,26 @@ function BlockchainContext(conf, dal) {
     }, done);
   }
 
-  function updateLinks (block, done) {
+  function updateLinks (block, done, getBlockOrNull) {
     async.forEach(block.certifications, function(inlineCert, callback){
       var cert = Certification.statics.fromInline(inlineCert);
-      dal.saveLink(
-        new Link({
-          source: cert.from,
-          target: cert.to,
-          timestamp: block.medianTime,
-          block_number: block.number,
-          block_hash: block.hash,
-          obsolete: false
-        })).then(_.partial(callback, null)).catch(callback);
+      return co(function *() {
+        let tagBlock = block;
+        if (block.number > 0) {
+          tagBlock = yield getBlockOrNull(cert.block_number);
+        }
+        return dal.saveLink(
+          new Link({
+            source: cert.from,
+            target: cert.to,
+            timestamp: tagBlock.medianTime,
+            block_number: block.number,
+            block_hash: block.hash,
+            obsolete: false
+          }));
+      })
+        .then(_.partial(callback, null))
+        .catch(callback);
     }, done);
   }
 

@@ -83,6 +83,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGet( '/network/peering',             net.peer);
   answerForGet( '/network/peering/peers',       net.peersGet);
   answerForPost('/network/peering/peers',       net.peersPost);
+  answerForGet('/network/peers',                net.peers);
 
   var wot = require('../../controllers/wot')(server);
   answerForPost('/wot/add',                   wot.add);

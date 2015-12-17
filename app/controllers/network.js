@@ -1,4 +1,6 @@
 "use strict";
+var _                = require('underscore');
+var co               = require('co');
 var async            = require('async');
 var es               = require('event-stream');
 var dos2unix         = require('../lib/dos2unix');
@@ -71,5 +73,31 @@ function NetworkBinding (server, conf) {
       .pipe(jsoner())
       .pipe(es.stringify())
       .pipe(res);
+  };
+
+  this.peers = function (req, res) {
+    res.type('application/json');
+    co(function *() {
+      try {
+        let peers = yield server.dal.listAllPeers();
+        var json = {
+          peers: peers.map((p) => {
+            return _.pick(p,
+              'version',
+              'currency',
+              'status',
+              'first_down',
+              'last_try',
+              'pubkey',
+              'block',
+              'signature',
+              'endpoints');
+          })
+        };
+        res.send(200, JSON.stringify(json, null, "  "));
+      } catch (err) {
+        res.send(400, err);
+      }
+    });
   };
 }

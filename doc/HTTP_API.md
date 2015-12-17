@@ -36,6 +36,7 @@
           * [tx](#blockchainwithtx)
       * [branches](#blockchainbranches)
   * [network/](#network)
+      * [peers](#networkpeers)
       * [peering](#networkpeering)
       * [peering/peers (GET)](#networkpeeringpeers-get)
       * [peering/peers (POST)](#networkpeeringpeers-post)
@@ -80,6 +81,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |   `-- [NUMBER]
     |   `-- current
     |-- network/
+    |   |-- peers
     |   `-- peering
     |       `-- peers
     |-- tx/
@@ -1002,6 +1004,52 @@ Top block of each branch, i.e. the last received block of each branch. An array 
 ### network/*
 
 This URL is used for uCoin Gossip protocol (exchanging UCG messages).
+
+#### `network/peers`
+**Goal**
+
+GET the exhaustive list of peers known by the node.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+List of peering entries.
+```json
+{
+  "peers": [
+    {
+      "version": "1",
+      "currency": "meta_brouzouf",
+      "status": "UP",
+      "first_down": null,
+      "last_try": null,
+      "pubkey": "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
+      "block": "45180-00000E577DD4B308B98D0ED3E43926CE4D22E9A8",
+      "signature": "GKTrlUc4um9lQuj9UI8fyA/n/JKieYqBYcl9keIWfAVOnvHamLHaqGzijsdX1kNt64cadcle/zkd7xOgMTdQAQ==",
+      "endpoints": [
+        "BASIC_MERKLED_API metab.ucoin.io 88.174.120.187 9201"
+      ]
+    },
+    {
+      "version": "1",
+      "currency": "meta_brouzouf",
+      "status": "UP",
+      "first_down": null,
+      "last_try": null,
+      "pubkey": "2aeLmae5d466y8D42wLK5MknwUBCR6MWWeixRzdTQ4Hu",
+      "block": "45182-0000064EEF412C1CDD1B370CC45A3BC3B9743464",
+      "signature": "kbdTay1OirDqG/E3jyCaDlL7HVVHb9/BXvNHAg+xO9sSA+NgmBo/4mEqL9b7hH0UnbXHss6TfuvxAHZLmBqsCw==",
+      "endpoints": [
+        "BASIC_MERKLED_API twiced.fr 88.174.120.187 9223"
+      ]
+    },
+    ...
+  ]
+}
+```
 
 #### `network/peering`
 **Goal**

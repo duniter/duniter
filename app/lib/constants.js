@@ -166,13 +166,7 @@ module.exports = {
 
   MEMORY_CLEAN_INTERVAL: 60 * 60, // hourly
   SAFE_FACTOR: 3,
-  BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
-
-  setUDID2Format: function () {
-    module.exports.USER_ID = module.exports.UDID2_FORMAT;
-    module.exports.CERT.SELF.UID = exact("UID:" + UDID2);
-    module.exports.IDENTITY.INLINE = exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + UDID2);
-  }
+  BLOCKS_COLLECT_THRESHOLD: 30 // Blocks to collect from memory and persist
 };
 
 function exact (regexpContent) {

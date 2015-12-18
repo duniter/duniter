@@ -49,7 +49,6 @@ program
 
   .option('--salt <salt>',             'Key salt to generate this key\'s secret key')
   .option('--passwd <password>',       'Password to generate this key\'s secret key')
-  .option('--member',                  'With `bootstrap` command, ensures we have a member keypair')
   .option('--participate <Y|N>',       'Participate to writing the blockchain')
   .option('--cpu <percent>',           'Percent of CPU usage for proof-of-work computation', parsePercent)
 
@@ -67,7 +66,6 @@ program
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RTM', parsePercent)
   .option('--ud0 <number>',            'Universal Dividend initial value')
   .option('--dt <number>',             'Number of seconds between two UD')
-  .option('--udid2',                   'Enable udid2 format for user id')
   .option('--rootoffset <number>',     'Allow to give a time offset for first block (offset in the past)')
   .option('--show',                    'With gen-next or gen-root commands, displays the generated block')
 
@@ -463,11 +461,6 @@ function resetDone(server, msg) {
 
 function serverStart(server, conf) {
 
-  if (conf.udid2) {
-    // UserID must match udid2 format
-    constants.setUDID2Format();
-  }
-
   return co(function *() {
     // Enabling HTTP
     yield bma(server, null, conf.httplogs);
@@ -563,7 +556,7 @@ function getBootstrapOperations(host, port, server, conf) {
       async.doWhilst(function(next){
         async.waterfall([
           function(next) {
-            if (!program.member && !conf.salt && !conf.passwd) {
+            if (!conf.salt && !conf.passwd) {
               if (program.autoconf) {
                 conf.salt = ~~(Math.random() * 2147483647) + "";
                 conf.passwd = ~~(Math.random() * 2147483647) + "";
@@ -578,43 +571,6 @@ function getBootstrapOperations(host, port, server, conf) {
                 function(){
                   startWizard("key", server, conf, next);
                 });
-            } else if(program.member) {
-              async.waterfall([
-                function(next) {
-                  async.parallel({
-                    node: function(callback){
-                      vucoin(host, port, callback, { timeout: server.conf.timeout });
-                    },
-                    keys: function(callback){
-                      crypto.getKeyPair(conf.passwd, conf.salt, callback);
-                    }
-                  }, next);
-                },
-                function(res, next) {
-                  var node = res.node;
-                  var keys = res.keys;
-                  // Look for existing member with this key
-                  node.wot.certifiersOf(base58.encode(keys.publicKey), function(err) {
-                    next(null, !err);
-                  });
-                },
-                function(matchesMember, next) {
-                  if (!matchesMember){
-                    wiz.choose('Your key does not match an existing member. Retry?', true,
-                      function(){
-                        keyChosen = false;
-                        startWizard("key", server, conf, next);
-                      },
-                      function(){
-                        logger.warn('This node will not be able to compute blocks.');
-                        next();
-                      });
-                  } else {
-                    keyChosen = true;
-                    next();
-                  }
-                }
-              ], next);
             } else {
               next();
             }
@@ -679,7 +635,6 @@ function commandLineConf(conf) {
       ud0:         program.ud0,
       c:           program.growth,
       dt:          program.dt,
-      udid2:       program.udid2,
       incDateMin:  program.incDateMin,
       medtblocks:  program.medtblocks,
       dtdiffeval:  program.dtdiffeval,
@@ -715,7 +670,6 @@ function commandLineConf(conf) {
   if (cli.ucp.dt)                           conf.dt             = cli.ucp.dt;
   if (cli.ucp.c)                            conf.c              = cli.ucp.c;
   if (cli.ucp.ud0)                          conf.ud0            = cli.ucp.ud0;
-  if (cli.ucp.udid2)                        conf.udid2          = cli.ucp.udid2;
   if (cli.ucp.incDateMin)                   conf.incDateMin     = cli.ucp.incDateMin;
   if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
   if (cli.ucp.avgGenTime)                   conf.avgGenTime     = cli.ucp.avgGenTime;

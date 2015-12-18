@@ -302,5 +302,5 @@ function User (uid, options, node) {
   this.certP = (user) => Q.nfcall(this.cert(user));
   this.joinP = () => Q.nfcall(this.join());
   this.leaveP = () => Q.nfcall(this.leave());
-  this.sendP = () => Q.nfcall(this.send.apply(this, arguments));
+  this.sendP = (amount, userid, comment) => Q.nfcall(this.send.apply(this, [amount, userid, comment]));
 }

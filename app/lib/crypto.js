@@ -117,10 +117,7 @@ module.exports = {
 
 function getScryptKey(key, salt, callback) {
   // console.log('Derivating the key...');
-  scrypt.kdf.config.saltEncoding = "ascii";
-  scrypt.kdf.config.keyEncoding = "ascii";
-  scrypt.kdf.config.outputEncoding = "base64";
-  scrypt.kdf(key, TEST_PARAMS, SEED_LENGTH, salt, function (err, res) {
-    callback(dec(res.hash));
+  scrypt.hash(key, TEST_PARAMS, SEED_LENGTH, salt, function (err, res) {
+    callback(dec(res.toString("base64")));
   });
 }

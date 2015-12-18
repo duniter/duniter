@@ -1,10 +1,6 @@
 #!/usr/bin/env node
 "use strict";
 
-if (!~process.execArgv.indexOf('--harmony')) {
-  throw Error('This version requires --harmony flag. Use \'node --harmony\' instead of just \'node\'.');
-}
-
 var async       = require('async');
 var co          = require('co');
 var Q           = require('q');

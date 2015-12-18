@@ -9,7 +9,6 @@ var sha1            = require('sha1');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
 var childProcess    = require('child_process');
-var usage           = require('usage');
 var base58          = require('../lib/base58');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
@@ -1036,30 +1035,6 @@ function BlockchainService (conf, mainDAL, pair) {
   }
   var powWorker;
 
-  this.getPoWProcessStats = function(done) {
-    if (powWorker)
-      usage.lookup(powWorker.powProcess.pid, done);
-    else
-      done(null, { memory: 0, cpu: 0 });
-  };
-
-  var askedStop = null;
-
-  this.stopProof = function(done) {
-    if (!newKeyblockCallback) {
-      askedStop = 'Stopping node.';
-      newKeyblockCallback = function() {
-        newKeyblockCallback = null;
-        // Definitely kill the process for this BlockchainService instance
-        if (powWorker) {
-          powWorker.kill();
-        }
-        done();
-      };
-    }
-    else done();
-  };
-
   this.prove = function (block, sigFunc, nbZeros, done) {
 
     return Q.Promise(function(resolve){
@@ -1164,7 +1139,6 @@ function BlockchainService (conf, mainDAL, pair) {
       if (!selfPubkey) {
         throw 'No self pubkey found.';
       }
-      askedStop = null;
       var block, current;
       var dal = mainDAL;
       var isMember = yield dal.isMember(selfPubkey);

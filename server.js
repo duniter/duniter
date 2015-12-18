@@ -101,7 +101,7 @@ function Server (dbConf, overrideConf) {
       return Q();
     }
     var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
-    return dbType(dbConf.name || "default", forConf)
+    return dbType(dbConf.name || "default", dbConf.home, forConf)
       .then(function(dal){
         that.dal = dal;
         return that.dal.init(overrideConf, useDefaultConf);

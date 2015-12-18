@@ -34,6 +34,7 @@ program
   .version(pjson.version)
   .usage('<command> [options]')
 
+  .option('-h, --home <path>',         'Path to uCoin HOME (defaults to "$HOME/.config/ucoin").')
   .option('-d, --mdb <name>',          'Database name (defaults to "ucoin_default").')
 
   .option('--autoconf',                'With `init` command, will guess the best network and key options witout aksing for confirmation')
@@ -612,7 +613,8 @@ function commandLineConf(conf) {
     },
     db: {
       mport: program.mport,
-      mdb: program.mdb
+      mdb: program.mdb,
+      home: program.home
     },
     net: {
       upnp:          program.upnp,
@@ -680,6 +682,7 @@ function commandLineConf(conf) {
   if (cli.logs.http)                        conf.httplogs       = true;
   if (cli.logs.nohttp)                      conf.httplogs       = false;
   if (cli.db.mport)                         conf.mport          = cli.db.mport;
+  if (cli.db.home)                          conf.home           = cli.db.home;
   if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
   if (cli.isolate)                          conf.isolate        = cli.isolate;
   if (cli.timeout)                          conf.timeout        = cli.timeout;
@@ -694,8 +697,9 @@ function connect(callback, forConf, useDefaultConf) {
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
+    var dbHome = program.home;
 
-    var server = ucoin({ name: dbName }, commandLineConf());
+    var server = ucoin({ home: dbHome, name: dbName }, commandLineConf());
 
     // Initialize server (db connection, ...)
     server.connectDB(forConf, useDefaultConf)
@@ -744,8 +748,9 @@ function service(callback, nologs) {
 
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
+    var dbHome = program.home;
 
-    var server = ucoin({ name: dbName, memory: program.memory }, commandLineConf());
+    var server = ucoin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf());
 
     // Initialize server (db connection, ...)
     server.initWithServices()

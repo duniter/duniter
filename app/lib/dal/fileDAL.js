@@ -29,15 +29,15 @@ var logger = require('../../lib/logger')('database');
 const UCOIN_DB_NAME = 'ucoin';
 
 module.exports = {
-  memory: function(profile) {
-    return getHomeFS(profile, true)
+  memory: function(profile, home) {
+    return getHomeFS(profile, true, home)
       .then(function(params) {
         let loki = new lokijs(UCOIN_DB_NAME, { autosave: false });
         return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki));
       });
   },
-  file: function(profile, forConf) {
-    return getHomeFS(profile, false)
+  file: function(profile, home, forConf) {
+    return getHomeFS(profile, false, home)
       .then(function(params) {
         return Q.Promise(function(resolve, reject){
           let loki;
@@ -102,9 +102,9 @@ function someDelayFix() {
   });
 }
 
-function getHomeFS(profile, isMemory) {
-  let userHome = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
-  let home = userHome + '/.config/ucoin/' + profile;
+function getHomeFS(profile, isMemory, homePath) {
+  let userHome = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.config/ucoin/';
+  let home = path.normalize((homePath || userHome) + '/') + profile;
   let fs;
   return someDelayFix()
     .then(function() {

@@ -27,10 +27,8 @@ describe('Peer', function(){
     var pr;
 
     before(function(done) {
-      var parser = parsers.parsePeer().asyncWrite(rawPeer, function (err, obj) {
-        pr = new Peer(obj);
-        done(err);
-      });
+      pr = new Peer(parsers.parsePeer.syncWrite(rawPeer));
+      done();
     });
 
     it('should be version 1', function(){

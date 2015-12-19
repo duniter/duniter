@@ -40,12 +40,14 @@ module.exports = {
 
     HTTP_PARAM_PUBKEY_REQUIRED:       { httpCode: 400, uerr: { ucode: 1101, message: "Parameter `pubkey` is required" }},
     HTTP_PARAM_SELF_REQUIRED:         { httpCode: 400, uerr: { ucode: 1102, message: "Parameter `self` is required" }},
+    HTTP_PARAM_PEER_REQUIRED:         { httpCode: 400, uerr: { ucode: 1103, message: "Requires a peer" }},
 
     // Business errors
     NO_MATCHING_IDENTITY:             { httpCode: 404, uerr: { ucode: 2001, message: "No matching identity" }},
     UID_ALREADY_USED:                 { httpCode: 400, uerr: { ucode: 2002, message: "UID already used in the blockchain" }},
     PUBKEY_ALREADY_USED:              { httpCode: 400, uerr: { ucode: 2003, message: "Pubkey already used in the blockchain" }},
-    NO_MEMBER_MATCHING_PUB_OR_UID:    { httpCode: 404, uerr: { ucode: 2004, message: "No member matching this pubkey or uid" }}
+    NO_MEMBER_MATCHING_PUB_OR_UID:    { httpCode: 404, uerr: { ucode: 2004, message: "No member matching this pubkey or uid" }},
+    SELF_PEER_NOT_FOUND:              { httpCode: 404, uerr: { ucode: 2005, message: "Self peering was not found" }}
   },
 
   DEBUG: {

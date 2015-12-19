@@ -1014,20 +1014,13 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   this.donable = donable;
 
-  this.merkleForPeers = function(done) {
-    return that.listAllPeersWithStatusNewUP()
-      .then(function(peers){
-        var leaves = peers.map(function(peer) { return peer.hash; });
-        var merkle = new Merkle();
-        merkle.initialize(leaves);
-        done && done(null, merkle);
-        return merkle;
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+  this.merkleForPeers = () => co(function *() {
+    let peers = yield that.listAllPeersWithStatusNewUP();
+    var leaves = peers.map(function(peer) { return peer.hash; });
+    var merkle = new Merkle();
+    merkle.initialize(leaves);
+    return merkle;
+  });
 
   this.saveLink = function(link) {
     return that.linksDAL.addLink(link);

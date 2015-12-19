@@ -81,10 +81,10 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGet( '/blockchain/branches',         blockchain.branches);
 
   var net = require('../../controllers/network')(server, server.conf);
-  answerForGet( '/network/peering',             net.peer);
-  answerForGet( '/network/peering/peers',       net.peersGet);
-  answerForPost('/network/peering/peers',       net.peersPost);
-  answerForGet('/network/peers',                net.peers);
+  answerForGetP( '/network/peering',             net.peer);
+  answerForGetP( '/network/peering/peers',       net.peersGet);
+  answerForPostP('/network/peering/peers',       net.peersPost);
+  answerForGetP('/network/peers',                net.peers);
 
   var wot = require('../../controllers/wot')(server);
   answerForPostP('/wot/add',                   wot.add);

@@ -8,7 +8,7 @@ module.exports = {
   identity:      Http2RawIdentity,
   revocation:    Http2RawRevocation,
   transaction:   instanciate.bind(null, Http2RawTransaction),
-  peer:          instanciate.bind(null, Http2RawPeer),
+  peer:          Http2RawPeer,
   membership:    instanciate.bind(null, Http2RawMembership),
   block:         instanciate.bind(null, Http2RawBlock)
 };
@@ -85,19 +85,11 @@ function Http2RawTransaction (req, onError) {
   }
 }
 
-function Http2RawPeer (req, onError) {
-  
-  stream.Readable.call(this);
-
-  this._read = function () {
-    if(!(req.body && req.body.peer)){
-      onError('Requires a peer');
-    }
-    else {
-      this.push(req.body.peer);
-    }
-    this.push(null);
+function Http2RawPeer (req) {
+  if(!(req.body && req.body.peer)){
+    throw constants.ERRORS.HTTP_PARAM_PEER_REQUIRED;
   }
+  return req.body.peer;
 }
 
 function Http2RawMembership (req, onError) {

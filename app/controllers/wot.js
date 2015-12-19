@@ -10,6 +10,8 @@ var jsoner   = require('../lib/streams/jsoner');
 var parsers  = require('../lib/streams/parsers/doc');
 var es       = require('event-stream');
 var http400  = require('../lib/http/http400');
+var constants = require('../lib/constants');
+var AbstractController = require('./abstract');
 var logger   = require('../lib/logger')();
 
 module.exports = function (server) {
@@ -18,312 +20,226 @@ module.exports = function (server) {
 
 function WOTBinding (server) {
 
+  AbstractController.call(this, server);
+
   var ParametersService = server.ParametersService;
   var IdentityService   = server.IdentityService;
   var BlockchainService   = server.BlockchainService;
 
   var Identity = require('../lib/entity/identity');
 
-  this.lookup = function (req, res) {
-    res.type('application/json');
-    return co(function *() {
-      var search = yield ParametersService.getSearchP(req);
-      var identities = yield IdentityService.searchIdentities(search);
-      identities.forEach(function(idty, index){
-        identities[index] = new Identity(idty);
-      });
-      var excluding = yield BlockchainService.getCertificationsExludingBlock();
-      for (let i = 0; i < identities.length; i++) {
-        let idty = identities[i];
-        var certs = yield server.dal.certsToTarget(idty.getTargetHash());
-        var validCerts = [];
-        for (let j = 0; j < certs.length; j++) {
-          let cert = certs[j];
-          if (!(excluding && cert.block <= excluding.number)) {
-            let member = yield IdentityService.getWrittenByPubkey(cert.from);
-            if (member) {
-              cert.uids = [member.uid];
-              cert.isMember = member.member;
-              cert.wasMember = member.wasMember;
-            } else {
-              let potentials = yield IdentityService.getPendingFromPubkey(cert.from);
-              cert.uids = _(potentials).pluck('uid');
-              cert.isMember = false;
-              cert.wasMember = false;
-            }
-            validCerts.push(cert);
+  this.lookup = (req) => co(function *() {
+    var search = yield ParametersService.getSearchP(req);
+    var identities = yield IdentityService.searchIdentities(search);
+    identities.forEach(function(idty, index){
+      identities[index] = new Identity(idty);
+    });
+    var excluding = yield BlockchainService.getCertificationsExludingBlock();
+    for (let i = 0; i < identities.length; i++) {
+      let idty = identities[i];
+      var certs = yield server.dal.certsToTarget(idty.getTargetHash());
+      var validCerts = [];
+      for (let j = 0; j < certs.length; j++) {
+        let cert = certs[j];
+        if (!(excluding && cert.block <= excluding.number)) {
+          let member = yield IdentityService.getWrittenByPubkey(cert.from);
+          if (member) {
+            cert.uids = [member.uid];
+            cert.isMember = member.member;
+            cert.wasMember = member.wasMember;
+          } else {
+            let potentials = yield IdentityService.getPendingFromPubkey(cert.from);
+            cert.uids = _(potentials).pluck('uid');
+            cert.isMember = false;
+            cert.wasMember = false;
           }
+          validCerts.push(cert);
         }
-        idty.certs = validCerts;
-        var signed = yield server.dal.certsFrom(idty.pubkey);
-        var validSigned = [];
-        for (let j = 0; j < signed.length; j++) {
-          let cert = _.clone(signed[j]);
-          if (!(excluding && cert.block <= excluding.number)) {
-            cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
-            validSigned.push(cert);
-          }
-        }
-        idty.signed = validSigned;
       }
-      return identities;
-    })
-      .then(function(identities){
-        var json = {
-          partial: false,
-          results: []
-        };
-        identities.forEach(function(identity){
-          json.results.push(identity.json());
+      idty.certs = validCerts;
+      var signed = yield server.dal.certsFrom(idty.pubkey);
+      var validSigned = [];
+      for (let j = 0; j < signed.length; j++) {
+        let cert = _.clone(signed[j]);
+        if (!(excluding && cert.block <= excluding.number)) {
+          cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
+          validSigned.push(cert);
+        }
+      }
+      idty.signed = validSigned;
+    }
+    var json = {
+      partial: false,
+      results: []
+    };
+    if (identities.length == 0) {
+      throw constants.ERRORS.NO_MATCHING_IDENTITY;
+    }
+    identities.forEach(function(identity){
+      json.results.push(identity.json());
+    });
+    return json;
+  });
+
+  this.members = () => co(function *() {
+    let identities = yield server.dal.getMembersP();
+    let json = {
+      results: []
+    };
+    identities.forEach(function(identity){
+      json.results.push({ pubkey: identity.pubkey, uid: identity.uid });
+    });
+    return json;
+  });
+
+  this.certifiersOf = (req) => co(function *() {
+    let search = yield ParametersService.getSearchP(req);
+    let idty = yield IdentityService.findMemberWithoutMemberships(search);
+    let excluding = yield BlockchainService.getCertificationsExludingBlock();
+    let certs = yield server.dal.certsToTarget(idty.getTargetHash());
+    idty.certs = [];
+    for (let i = 0; i < certs.length; i++) {
+      let cert = certs[i];
+      if (!(excluding && cert.block <= excluding.number)) {
+        let certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
+        if (certifier) {
+          cert.uid = certifier.uid;
+          cert.isMember = certifier.member;
+          cert.sigDate = moment(certifier.time).unix();
+          cert.wasMember = true; // As we checked if(certified)
+          if (!cert.cert_time) {
+            // TODO: would be more efficient to save medianTime on certification reception
+            let certBlock = yield server.dal.getBlock(cert.block_number);
+            cert.cert_time = {
+              block: certBlock.number,
+              medianTime: certBlock.medianTime
+            };
+          }
+          idty.certs.push(cert);
+        }
+      }
+    }
+    var json = {
+      pubkey: idty.pubkey,
+      uid: idty.uid,
+      sigDate: moment(idty.time).unix(),
+      isMember: idty.member,
+      certifications: []
+    };
+    idty.certs.forEach(function(cert){
+      json.certifications.push({
+        pubkey: cert.from,
+        uid: cert.uid,
+        isMember: cert.isMember,
+        wasMember: cert.wasMember,
+        cert_time: cert.cert_time,
+        sigDate: cert.sigDate,
+        written: cert.linked ? {
+          number: cert.written_block,
+          hash: cert.written_hash
+        } : null,
+        signature: cert.sig
+      });
+    });
+    return json;
+  });
+
+  this.requirements = (req) => co(function *() {
+    let search = yield ParametersService.getPubkeyP(req);
+    let identities = yield IdentityService.searchIdentities(search);
+    let all = yield identities.reduce(function(p, identity) {
+      return p
+        .then(function(all){
+          return BlockchainService.requirementsOfIdentity(new Identity(identity))
+            .then(function(requirements){
+              return all.concat([requirements]);
+            })
+            .catch(function(err){
+              logger.warn(err);
+              return all;
+            });
         });
-        res.send(200, JSON.stringify(json, null, "  "));
+    }, Q([]));
+    if (!all || !all.length) {
+      throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
+    }
+    return {
+      pubkey: all[0].pubkey,
+      identities: all.map(function(idty) {
+        return _.omit(idty, 'pubkey');
       })
-      .catch(function(err){
-        res.send(400, ((err && err.message) || err));
-      });
-  };
+    };
+  });
 
-  this.members = function (req, res) {
-    res.type('application/json');
-    async.waterfall([
-      function (next){
-        server.dal.getMembers(next);
-      }
-    ], function (err, identities) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      var json = {
-        results: []
-      };
-      identities.forEach(function(identity){
-        json.results.push({ pubkey: identity.pubkey, uid: identity.uid });
-      });
-      res.send(200, JSON.stringify(json, null, "  "));
-    });
-  };
-
-  this.certifiersOf = function (req, res) {
-    res.type('application/json');
-    co(function *() {
-      try {
-        let search = yield ParametersService.getSearchP(req);
-        let idty = yield IdentityService.findMemberWithoutMemberships(search);
-        let excluding = yield BlockchainService.getCertificationsExludingBlock();
-        let certs = yield server.dal.certsToTarget(idty.getTargetHash());
-        idty.certs = [];
-        for (let i = 0; i < certs.length; i++) {
-          let cert = certs[i];
-          if (!(excluding && cert.block <= excluding.number)) {
-            let certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
-            if (certifier) {
-              cert.uid = certifier.uid;
-              cert.isMember = certifier.member;
-              cert.sigDate = moment(certifier.time).unix();
-              cert.wasMember = true; // As we checked if(certified)
-              if (!cert.cert_time) {
-                // TODO: would be more efficient to save medianTime on certification reception
-                let certBlock = yield server.dal.getBlock(cert.block_number);
-                cert.cert_time = {
-                  block: certBlock.number,
-                  medianTime: certBlock.medianTime
-                };
-              }
-              idty.certs.push(cert);
-            }
+  this.certifiedBy = (req) => co(function *() {
+    let search = yield ParametersService.getSearchP(req);
+    let idty = yield IdentityService.findMemberWithoutMemberships(search);
+    let excluding = yield BlockchainService.getCertificationsExludingBlock();
+    let certs = yield server.dal.certsFrom(idty.pubkey);
+    idty.certs = [];
+    for (let i = 0; i < certs.length; i++) {
+      let cert = certs[i];
+      if (!(excluding && cert.block <= excluding.number)) {
+        let certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
+        if (certified) {
+          cert.uid = certified.uid;
+          cert.isMember = certified.member;
+          cert.sigDate = moment(certified.time).unix();
+          cert.wasMember = true; // As we checked if(certified)
+          if (!cert.cert_time) {
+            // TODO: would be more efficient to save medianTime on certification reception
+            let certBlock = yield server.dal.getBlock(cert.block_number);
+            cert.cert_time = {
+              block: certBlock.number,
+              medianTime: certBlock.medianTime
+            };
           }
+          idty.certs.push(cert);
         }
-        var json = {
-          pubkey: idty.pubkey,
-          uid: idty.uid,
-          sigDate: moment(idty.time).unix(),
-          isMember: idty.member,
-          certifications: []
-        };
-        idty.certs.forEach(function(cert){
-          json.certifications.push({
-            pubkey: cert.from,
-            uid: cert.uid,
-            isMember: cert.isMember,
-            wasMember: cert.wasMember,
-            cert_time: cert.cert_time,
-            sigDate: cert.sigDate,
-            written: cert.linked ? {
-              number: cert.written_block,
-              hash: cert.written_hash
-            } : null,
-            signature: cert.sig
-          });
-        });
-        res.send(200, JSON.stringify(json, null, "  "));
-      } catch (err) {
-        if (err == 'No member matching this pubkey or uid') {
-          res.send(404, err);
-          return;
-        }
-        res.send(400, err);
       }
+    }
+    var json = {
+      pubkey: idty.pubkey,
+      uid: idty.uid,
+      sigDate: moment(idty.time).unix(),
+      isMember: idty.member,
+      certifications: []
+    };
+    idty.certs.forEach(function(cert){
+      json.certifications.push({
+        pubkey: cert.to,
+        uid: cert.uid,
+        isMember: cert.isMember,
+        wasMember: cert.wasMember,
+        cert_time: cert.cert_time,
+        sigDate: cert.sigDate,
+        written: cert.linked ? {
+          number: cert.written_block,
+          hash: cert.written_hash
+        } : null,
+        signature: cert.sig
+      });
     });
-  };
+    return json;
+  });
 
-  this.requirements = function (req, res) {
-    res.type('application/json');
-    async.waterfall([
-      function (next){
-        ParametersService.getPubkey(req, next);
-      },
-      function (search, next){
-        IdentityService.searchIdentities(search).then(_.partial(next, null)).catch(next);
-      },
-      function (identities, next){
-        return identities.reduce(function(p, identity) {
-          return p
-            .then(function(all){
-              return BlockchainService.requirementsOfIdentity(new Identity(identity))
-                .then(function(requirements){
-                  return all.concat([requirements]);
-                })
-                .catch(function(err){
-                  logger.warn(err);
-                  return all;
-                });
-            });
-        }, Q([]))
-          .then(function(all){
-            if (!all || !all.length) {
-              return next('No member matching this pubkey or uid');
-            }
-            next(null, {
-              pubkey: all[0].pubkey,
-              identities: all.map(function(idty) {
-                return _.omit(idty, 'pubkey');
-              })
-            });
-          })
-          .catch(next);
-      }
-    ], function (err, json) {
-      if(err){
-        if (err == 'No member matching this pubkey or uid') {
-          res.send(404, err);
-          return;
-        }
-        res.send(400, err);
-        return;
-      }
-      res.send(200, JSON.stringify(json, null, "  "));
-    });
-  };
+  this.identityOf = (req) => co(function *() {
+    let search = yield ParametersService.getSearchP(req);
+    let idty = yield IdentityService.findMemberWithoutMemberships(search);
+    if (!idty) {
+      throw 'Identity not found';
+    }
+    if (!idty.member) {
+      throw 'Not a member';
+    }
+    return {
+      pubkey: idty.pubkey,
+      uid: idty.uid,
+      sigDate: moment(idty.time).unix()
+    };
+  });
 
-  this.certifiedBy = function (req, res) {
-    res.type('application/json');
-    co(function *() {
-      try {
-        let search = yield ParametersService.getSearchP(req);
-        let idty = yield IdentityService.findMemberWithoutMemberships(search);
-        let excluding = yield BlockchainService.getCertificationsExludingBlock();
-        let certs = yield server.dal.certsFrom(idty.pubkey);
-        idty.certs = [];
-        for (let i = 0; i < certs.length; i++) {
-          let cert = certs[i];
-          if (!(excluding && cert.block <= excluding.number)) {
-            let certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
-            if (certified) {
-              cert.uid = certified.uid;
-              cert.isMember = certified.member;
-              cert.sigDate = moment(certified.time).unix();
-              cert.wasMember = true; // As we checked if(certified)
-              if (!cert.cert_time) {
-                // TODO: would be more efficient to save medianTime on certification reception
-                let certBlock = yield server.dal.getBlock(cert.block_number);
-                cert.cert_time = {
-                  block: certBlock.number,
-                  medianTime: certBlock.medianTime
-                };
-              }
-              idty.certs.push(cert);
-            }
-          }
-        }
-        var json = {
-          pubkey: idty.pubkey,
-          uid: idty.uid,
-          sigDate: moment(idty.time).unix(),
-          isMember: idty.member,
-          certifications: []
-        };
-        idty.certs.forEach(function(cert){
-          json.certifications.push({
-            pubkey: cert.to,
-            uid: cert.uid,
-            isMember: cert.isMember,
-            wasMember: cert.wasMember,
-            cert_time: cert.cert_time,
-            sigDate: cert.sigDate,
-            written: cert.linked ? {
-              number: cert.written_block,
-              hash: cert.written_hash
-            } : null,
-            signature: cert.sig
-          });
-        });
-        res.send(200, JSON.stringify(json, null, "  "));
-      } catch (err) {
-        if (err == 'No member matching this pubkey or uid') {
-          res.send(404, err);
-          return;
-        }
-        res.send(400, err);
-      }
-    });
-  };
+  this.add = (req) => this.pushEntity(req, http2raw.identity, parsers.parseIdentity);
 
-  this.identityOf = function (req, res) {
-    res.type('application/json');
-    return co(function *() {
-      try {
-        let search = yield ParametersService.getSearchP(req);
-        let idty = yield IdentityService.findMemberWithoutMemberships(search);
-        if (!idty) {
-          throw 'Identity not found';
-        }
-        if (!idty.member) {
-          throw 'Not a member';
-        }
-        var json = {
-          pubkey: idty.pubkey,
-          uid: idty.uid,
-          sigDate: moment(idty.time).unix()
-        };
-        res.send(200, JSON.stringify(json, null, "  "));
-      } catch(e) {
-        res.send(400, e);
-      }
-    });
-  };
-
-  this.add = function (req, res) {
-    res.type('application/json');
-    var onError = http400(res);
-    http2raw.identity(req, onError)
-      .pipe(dos2unix())
-      .pipe(parsers.parseIdentity(onError))
-      .pipe(server.singleWriteStream(onError))
-      .pipe(jsoner())
-      .pipe(es.stringify())
-      .pipe(res);
-  };
-
-  this.revoke = function (req, res) {
-    res.type('application/json');
-    var onError = http400(res);
-    http2raw.revocation(req, onError)
-      .pipe(dos2unix())
-      .pipe(parsers.parseRevocation(onError))
-      .pipe(server.singleWriteStream(onError))
-      .pipe(jsoner())
-      .pipe(es.stringify())
-      .pipe(res);
-  };
+  this.revoke = (req) => this.pushEntity(req, http2raw.revocation, parsers.parseRevocation);
 }

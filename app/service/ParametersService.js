@@ -55,6 +55,8 @@ function ParameterNamespace () {
     callback(null, matches[0]);
   };
 
+  this.getPubkeyP = (req) => Q.nbind(this.getPubkey, this)(req);
+
   this.getFrom = function (req, callback){
     if(!req.params.from){
       callback('Parameter `from` is required');

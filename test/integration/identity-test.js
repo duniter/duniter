@@ -63,13 +63,13 @@ describe("Identities", function() {
         yield tic.selfCertPromise(now + 2);
         throw 'Should have thrown an error for already used pubkey';
       } catch (e) {
-        e.should.equal('Pubkey already used in the blockchain');
+        JSON.parse(e).message.should.equal('Pubkey already used in the blockchain');
       }
       try {
         yield tic2.selfCertPromise(now);
         throw 'Should have thrown an error for already used uid';
       } catch (e) {
-        e.should.equal('UID already used in the blockchain');
+        JSON.parse(e).message.should.equal('UID already used in the blockchain');
       }
     });
   });
@@ -106,7 +106,7 @@ describe("Identities", function() {
   });
 
   it('should have identity-of/aaa', function() {
-    return httpTest.expectHttpCode(400, "No member matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/identity-of/tac'));
+    return httpTest.expectError(404, "No member matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/identity-of/tac'));
   });
 
   it('should have certifiers-of/cat giving results', function() {

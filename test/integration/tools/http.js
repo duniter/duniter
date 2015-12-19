@@ -26,6 +26,26 @@ module.exports = {
       });
   },
 
+  expectError: function expectHttpCode(code, message, promise) {
+    if (arguments.length == 2) {
+      promise = arguments[1];
+      message = undefined;
+    }
+    return promise
+      .then(function(res){
+        assert.equal(200, code);
+      })
+      .catch(function(err){
+        if (err.response) {
+          assert.equal(err.response.statusCode, code);
+          if (message) {
+            assert.equal(JSON.parse(err.error || err.cause).message, message);
+          }
+        }
+        else throw err;
+      });
+  },
+
   expectJSON: function expectJSON(promise, json) {
     return promise
       .then(function(resJson){

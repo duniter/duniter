@@ -1,3 +1,4 @@
+var _ = require('underscore');
 var http = require('http');
 var express = require('express');
 var log4js = require('log4js');
@@ -5,7 +6,7 @@ var co = require('co');
 var Q = require('q');
 var cors = require('express-cors');
 var es = require('event-stream');
-
+var constants = require('../../lib/constants');
 var logger = require('../../lib/logger')('bma');
 
 module.exports = function(server, interfaces, httpLogs) {
@@ -86,14 +87,14 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGet('/network/peers',                net.peers);
 
   var wot = require('../../controllers/wot')(server);
-  answerForPost('/wot/add',                   wot.add);
-  answerForPost('/wot/revoke',                wot.revoke);
-  answerForGet( '/wot/lookup/:search',        wot.lookup);
-  answerForGet( '/wot/members',               wot.members);
-  answerForGet( '/wot/requirements/:pubkey',  wot.requirements);
-  answerForGet( '/wot/certifiers-of/:search', wot.certifiersOf);
-  answerForGet( '/wot/certified-by/:search',  wot.certifiedBy);
-  answerForGet( '/wot/identity-of/:search',   wot.identityOf);
+  answerForPostP('/wot/add',                   wot.add);
+  answerForPostP('/wot/revoke',                wot.revoke);
+  answerForGetP( '/wot/lookup/:search',        wot.lookup);
+  answerForGetP( '/wot/members',               wot.members);
+  answerForGetP( '/wot/requirements/:pubkey',  wot.requirements);
+  answerForGetP( '/wot/certifiers-of/:search', wot.certifiersOf);
+  answerForGetP( '/wot/certified-by/:search',  wot.certifiedBy);
+  answerForGetP( '/wot/identity-of/:search',   wot.identityOf);
 
   var transactions = require('../../controllers/transactions')(server);
   var dividend     = require('../../controllers/uds')(server);
@@ -107,6 +108,47 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGet( '/ud/history/:pubkey',                   dividend.getHistory);
   answerForGet( '/ud/history/:pubkey/blocks/:from/:to',  dividend.getHistoryBetweenBlocks);
   answerForGet( '/ud/history/:pubkey/times/:from/:to',   dividend.getHistoryBetweenTimes);
+
+  function answerForGetP(uri, promiseFunc) {
+    handleRequest(app.get.bind(app), uri, promiseFunc);
+  }
+
+  function answerForPostP(uri, promiseFunc) {
+    handleRequest(app.post.bind(app), uri, promiseFunc);
+  }
+
+  function handleRequest(method, uri, promiseFunc) {
+    method(uri, function(req, res) {
+      res.set('Access-Control-Allow-Origin', '*');
+      res.type('application/json');
+      co(function *() {
+        try {
+          let result = yield promiseFunc(req);
+          res.send(200, JSON.stringify(result, null, "  "));
+        } catch (e) {
+          let error = getResultingError(e);
+          res.send(error.httpCode, JSON.stringify(error.uerr, null, "  "));
+        }
+      });
+    });
+  }
+
+  function getResultingError(e) {
+    // Default is 500 unknown error
+    let error = constants.ERRORS.UNKNOWN;
+    if (e) {
+      // Print eventual stack trace
+      e.stack && logger.error(e.stack);
+      // BusinessException
+      if (e.uerr) {
+        error = e;
+      } else {
+        error = _.clone(constants.ERRORS.UNHANDLED);
+        error.uerr.message = e.message || error.uerr.message;
+      }
+    }
+    return error;
+  }
 
   function answerForGet(uri, callback) {
     app.get(uri, function(req, res) {

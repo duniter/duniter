@@ -441,6 +441,13 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
+  this.getMembersP = () => co(function *() {
+    let idties = yield that.idtyDAL.getWhoIsOrWasMember();
+    return _.chain(idties).
+      where({ member: true }).
+      value();
+  });
+
   // TODO: this should definitely be reduced by removing fillInMembershipsOfIdentity
   this.getWritten = function(pubkey, done) {
     return that.fillInMembershipsOfIdentity(

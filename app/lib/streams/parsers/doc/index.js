@@ -1,8 +1,8 @@
 "use strict";
 
 module.exports = {
-  parseIdentity:    instanciate.bind(instanciate, require('./identity')),
-  parseRevocation:  instanciate.bind(instanciate, require('./revocation')),
+  parseIdentity:    (new (require('./identity'))),
+  parseRevocation:  (new (require('./revocation'))),
   parseTransaction: instanciate.bind(instanciate, require('./transaction')),
   parsePeer:        instanciate.bind(instanciate, require('./peer')),
   parseMembership:  instanciate.bind(instanciate, require('./membership')),
@@ -11,4 +11,4 @@ module.exports = {
 
 function instanciate (constructorFunc, onError) {
   return new constructorFunc(onError);
-};
+}

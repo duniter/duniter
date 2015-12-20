@@ -81,17 +81,11 @@ function BlockchainService (conf, mainDAL, pair) {
   this.current = (done) =>
     mainDAL.getCurrentBlockOrNull(done);
 
-  this.promoted = (number, done) =>
-    co(function *() {
-      let bb = yield mainDAL.getPromoted(number);
-      if (!bb) throw 'Block not found';
-      done && done(null, bb);
-      return bb;
-    })
-    .catch(function(err) {
-      done && done(err);
-      throw err;
-    });
+  this.promoted = (number) => co(function *() {
+    let bb = yield mainDAL.getPromoted(number);
+    if (!bb) throw constants.ERRORS.BLOCK_NOT_FOUND;
+    return bb;
+  });
 
   this.checkBlock = function(block) {
     return mainContext.checkBlock(block);

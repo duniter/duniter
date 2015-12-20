@@ -6,7 +6,7 @@ var assert        = require('assert');
 var parsers       = require('../../../app/lib/streams/parsers/doc');
 var blocks        = require('../../data/blocks');
 var validator     = require('../../../app/lib/globalValidator');
-var parser        = parsers.parseBlock();
+var parser        = parsers.parseBlock;
 var Block         = require('../../../app/lib/entity/block');
 var Identity      = require('../../../app/lib/entity/identity');
 

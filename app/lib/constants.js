@@ -33,21 +33,32 @@ module.exports = {
   ERRORS: {
 
     // Technical errors
-    UNKNOWN:                          { httpCode: 500, uerr: { ucode: 1001, message: "An unknown error occured" }},
-    UNHANDLED:                        { httpCode: 500, uerr: { ucode: 1002, message: "An unhandled error occured" }},
-    SIGNATURE_DOES_NOT_MATCH:         { httpCode: 400, uerr: { ucode: 1003, message: "Signature does not match" }},
-    ALREADY_UP_TO_DATE:               { httpCode: 400, uerr: { ucode: 1004, message: "Already up-to-date" }},
+    UNKNOWN:                              { httpCode: 500, uerr: { ucode: 1001, message: "An unknown error occured" }},
+    UNHANDLED:                            { httpCode: 500, uerr: { ucode: 1002, message: "An unhandled error occured" }},
+    SIGNATURE_DOES_NOT_MATCH:             { httpCode: 400, uerr: { ucode: 1003, message: "Signature does not match" }},
+    ALREADY_UP_TO_DATE:                   { httpCode: 400, uerr: { ucode: 1004, message: "Already up-to-date" }},
+    WRONG_DOCUMENT:                       { httpCode: 400, uerr: { ucode: 1005, message: "Document has unkown fields or wrong line ending format" }},
 
-    HTTP_PARAM_PUBKEY_REQUIRED:       { httpCode: 400, uerr: { ucode: 1101, message: "Parameter `pubkey` is required" }},
-    HTTP_PARAM_SELF_REQUIRED:         { httpCode: 400, uerr: { ucode: 1102, message: "Parameter `self` is required" }},
-    HTTP_PARAM_PEER_REQUIRED:         { httpCode: 400, uerr: { ucode: 1103, message: "Requires a peer" }},
+    HTTP_PARAM_PUBKEY_REQUIRED:           { httpCode: 400, uerr: { ucode: 1101, message: "Parameter `pubkey` is required" }},
+    HTTP_PARAM_SELF_REQUIRED:             { httpCode: 400, uerr: { ucode: 1102, message: "Parameter `self` is required" }},
+    HTTP_PARAM_PEER_REQUIRED:             { httpCode: 400, uerr: { ucode: 1103, message: "Requires a peer" }},
+    HTTP_PARAM_BLOCK_REQUIRED:            { httpCode: 400, uerr: { ucode: 1104, message: "Requires a block" }},
+    HTTP_PARAM_MEMBERSHIP_REQUIRED:       { httpCode: 400, uerr: { ucode: 1105, message: "Requires a membership" }},
+    HTTP_PARAM_TX_REQUIRED:               { httpCode: 400, uerr: { ucode: 1106, message: "Requires a transaction" }},
+    HTTP_PARAM_SIG_REQUIRED:              { httpCode: 400, uerr: { ucode: 1107, message: "Parameter `sig` is required" }},
 
     // Business errors
-    NO_MATCHING_IDENTITY:             { httpCode: 404, uerr: { ucode: 2001, message: "No matching identity" }},
-    UID_ALREADY_USED:                 { httpCode: 400, uerr: { ucode: 2002, message: "UID already used in the blockchain" }},
-    PUBKEY_ALREADY_USED:              { httpCode: 400, uerr: { ucode: 2003, message: "Pubkey already used in the blockchain" }},
-    NO_MEMBER_MATCHING_PUB_OR_UID:    { httpCode: 404, uerr: { ucode: 2004, message: "No member matching this pubkey or uid" }},
-    SELF_PEER_NOT_FOUND:              { httpCode: 404, uerr: { ucode: 2005, message: "Self peering was not found" }}
+    NO_MATCHING_IDENTITY:                 { httpCode: 404, uerr: { ucode: 2001, message: "No matching identity" }},
+    UID_ALREADY_USED:                     { httpCode: 400, uerr: { ucode: 2002, message: "UID already used in the blockchain" }},
+    PUBKEY_ALREADY_USED:                  { httpCode: 400, uerr: { ucode: 2003, message: "Pubkey already used in the blockchain" }},
+    NO_MEMBER_MATCHING_PUB_OR_UID:        { httpCode: 404, uerr: { ucode: 2004, message: "No member matching this pubkey or uid" }},
+    SELF_PEER_NOT_FOUND:                  { httpCode: 404, uerr: { ucode: 2005, message: "Self peering was not found" }},
+    WRONG_SIGNATURE_MEMBERSHIP:           { httpCode: 400, uerr: { ucode: 2006, message: "wrong signature for membership" }},
+    ALREADY_RECEIVED_MEMBERSHIP:          { httpCode: 400, uerr: { ucode: 2007, message: "Already received membership" }},
+    MEMBERSHIP_A_NON_MEMBER_CANNOT_LEAVE: { httpCode: 400, uerr: { ucode: 2008, message: "A non-member cannot leave" }},
+    NOT_A_MEMBER:                         { httpCode: 400, uerr: { ucode: 2009, message: "Not a member" }},
+    NO_CURRENT_BLOCK:                     { httpCode: 404, uerr: { ucode: 2010, message: "No current block" }},
+    BLOCK_NOT_FOUND:                      { httpCode: 404, uerr: { ucode: 2011, message: "Block not found" }}
   },
 
   DEBUG: {

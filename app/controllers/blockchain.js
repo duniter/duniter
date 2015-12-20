@@ -1,20 +1,15 @@
 "use strict";
 
-var _                = require('underscore');
-var Q                = require('q');
 var co               = require('co');
 var async            = require('async');
-var es               = require('event-stream');
 var moment           = require('moment');
-var dos2unix         = require('../lib/dos2unix');
+var constants        = require('../lib/constants');
 var http2raw         = require('../lib/streams/parsers/http2raw');
-var jsoner           = require('../lib/streams/jsoner');
-var http400          = require('../lib/http/http400');
 var parsers          = require('../lib/streams/parsers/doc');
 var blockchainDao    = require('../lib/blockchainDao');
-var localValidator   = require('../lib/localValidator');
 var globalValidator  = require('../lib/globalValidator');
 var Membership       = require('../lib/entity/membership');
+var AbstractController = require('./abstract');
 
 module.exports = function (server) {
   return new BlockchainBinding(server);
@@ -22,9 +17,9 @@ module.exports = function (server) {
 
 function BlockchainBinding (server) {
 
+  AbstractController.call(this, server);
+
   var conf = server.conf;
-  var local = localValidator(conf);
-  var global = globalValidator(conf);
 
   // Services
   var ParametersService = server.ParametersService;
@@ -35,44 +30,11 @@ function BlockchainBinding (server) {
   var Block      = require('../lib/entity/block');
   var Stat       = require('../lib/entity/stat');
 
-  this.parseMembership = function (req, res) {
-    res.type('application/json');
-    var onError = http400(res);
-    http2raw.membership(req, onError)
-      .pipe(dos2unix())
-      .pipe(parsers.parseMembership(onError))
-      .pipe(local.versionFilter(onError))
-      .pipe(global.currencyFilter(onError))
-      .pipe(server.singleWriteStream(onError))
-      .pipe(jsoner())
-      .pipe(es.stringify())
-      .pipe(res);
-  };
+  this.parseMembership = (req) => this.pushEntity(req, http2raw.membership, parsers.parseMembership);
 
-  this.parseBlock = function (req, res) {
-    res.type('application/json');
-    var onError = http400(res);
-    http2raw.block(req, onError)
-      .pipe(dos2unix())
-      .pipe(parsers.parseBlock(onError))
-      .pipe(local.versionFilter(onError))
-      .pipe(global.currencyFilter(onError))
-      .pipe(server.singleWriteStream(onError))
-      .pipe(jsoner())
-      .pipe(es.stringify())
-      .pipe(res);
-  };
+  this.parseBlock = (req) => this.pushEntity(req, http2raw.block, parsers.parseBlock);
 
-  this.parameters = function (req, res) {
-    res.type('application/json');
-    server.dal.getParameters()
-      .then(function(parameters){
-        res.send(200, JSON.stringify(parameters, null, "  "));
-      })
-      .catch(function(){
-        res.send(200, JSON.stringify({}, null, "  "));
-      })
-  };
+  this.parameters = () => server.dal.getParameters();
 
   this.with = {
 
@@ -87,145 +49,81 @@ function BlockchainBinding (server) {
   };
 
   function getStat (statName) {
-    return function (req, res) {
-      async.waterfall([
-        function (next) {
-          server.dal.getStat(statName).then(_.partial(next, null)).catch(next);
-        }
-      ], function (err, stat) {
-        if(err){
-          res.send(400, err);
-          return;
-        }
-        res.type('application/json');
-        res.send(200, JSON.stringify({ result: new Stat(stat).json() }, null, "  "));
-      });
-    }
+    return () => co(function *() {
+      let stat = yield server.dal.getStat(statName);
+      return { result: new Stat(stat).json() };
+    });
   }
 
-  this.promoted = function (req, res) {
-    res.type('application/json');
-    async.waterfall([
-      function (next){
-        ParametersService.getNumber(req, next);
-      },
-      function (number, next){
-        BlockchainService.promoted(number, next);
-      }
-    ], function (err, promoted) {
-      if(err){
-        res.send(404, err && (err.message || err));
-        return;
-      }
-      res.send(200, JSON.stringify(new Block(promoted).json(), null, "  "));
-    });
-  };
+  this.promoted = (req) => co(function *() {
+    let number = yield ParametersService.getNumberP(req);
+    let promoted = yield BlockchainService.promoted(number);
+    return new Block(promoted).json();
+  });
 
-  this.blocks = function (req, res) {
-    res.type('application/json');
-    co(function *() {
-      try {
-        let params = ParametersService.getCountAndFrom(req);
-        var count = parseInt(params.count);
-        var from = parseInt(params.from);
-        let blocks = yield BlockchainService.blocksBetween(from, count);
-        blocks = blocks.map((b) => (new Block(b).json()));
-        res.send(200, JSON.stringify(blocks, null, "  "));
-      } catch(e) {
-        res.send(400, e);
-      }
-    });
-  };
+  this.blocks = (req) => co(function *() {
+    let params = ParametersService.getCountAndFrom(req);
+    var count = parseInt(params.count);
+    var from = parseInt(params.from);
+    let blocks = yield BlockchainService.blocksBetween(from, count);
+    blocks = blocks.map((b) => (new Block(b).json()));
+    return blocks;
+  });
 
-  this.current = function (req, res) {
-    res.type('application/json');
-    async.waterfall([
-      function (next){
-        BlockchainService.current(next);
-      }
-    ], function (err, current) {
-      if(err || !current){
-        res.send(404, err);
-        return;
-      }
-      res.send(200, JSON.stringify(new Block(current).json(), null, "  "));
-    });
-  };
+  this.current = () => co(function *() {
+    let current = yield server.dal.getCurrentBlockOrNull();
+    if (!current) throw constants.ERRORS.NO_CURRENT_BLOCK;
+    return new Block(current).json();
+  });
 
-  this.hardship = function (req, res) {
-    res.type('application/json');
-    return co(function *() {
-      let nextBlockNumber = 0;
-      try {
-        let search = yield ParametersService.getSearchP(req);
-        let idty = yield IdentityService.findMemberWithoutMemberships(search);
-        if (!idty) {
-          throw 'Identity not found';
-        }
-        if (!idty.member) {
-          throw 'Not a member';
-        }
-        let current = yield BlockchainService.current();
-        if (current) {
-          nextBlockNumber = current ? current.number + 1 : 0;
-        }
-        let nbZeros = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(idty.pubkey);
-        res.send(200, JSON.stringify({
-          "block": nextBlockNumber,
-          "level": nbZeros
-        }, null, "  "));
-      } catch(e) {
-        res.send(400, e);
-      }
-    });
-  };
+  this.hardship = (req) => co(function *() {
+    let nextBlockNumber = 0;
+    let search = yield ParametersService.getSearchP(req);
+    let idty = yield IdentityService.findMemberWithoutMemberships(search);
+    if (!idty) {
+      throw constants.ERRORS.NO_MATCHING_IDENTITY;
+    }
+    if (!idty.member) {
+      throw constants.ERRORS.NOT_A_MEMBER;
+    }
+    let current = yield BlockchainService.current();
+    if (current) {
+      nextBlockNumber = current ? current.number + 1 : 0;
+    }
+    let nbZeros = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(idty.pubkey);
+    return {
+      "block": nextBlockNumber,
+      "level": nbZeros
+    };
+  });
 
-  this.memberships = function (req, res) {
-    res.type('application/json');
-    async.waterfall([
-      function (next){
-        ParametersService.getSearch(req, next);
-      },
-      function (search, next){
-        IdentityService.findMember(search, next);
-      }
-    ], function (err, idty) {
-      if(err){
-        res.send(400, err);
-        return;
-      }
-      var json = {
-        pubkey: idty.pubkey,
-        uid: idty.uid,
-        sigDate: moment(idty.time).unix(),
-        memberships: []
-      };
-      idty.memberships.forEach(function(ms){
-        ms = new Membership(ms);
-        json.memberships.push({
-          version: ms.version,
-          currency: conf.currency,
-          membership: ms.membership,
-          blockNumber: parseInt(ms.blockNumber),
-          blockHash: ms.blockHash
-        });
+  this.memberships = (req) => co(function *() {
+    let search = yield ParametersService.getSearchP(req);
+    let idty = yield IdentityService.findMember(search);
+    var json = {
+      pubkey: idty.pubkey,
+      uid: idty.uid,
+      sigDate: moment(idty.time).unix(),
+      memberships: []
+    };
+    idty.memberships.forEach(function(ms){
+      ms = new Membership(ms);
+      json.memberships.push({
+        version: ms.version,
+        currency: conf.currency,
+        membership: ms.membership,
+        blockNumber: parseInt(ms.blockNumber),
+        blockHash: ms.blockHash
       });
-      res.send(200, JSON.stringify(json, null, "  "));
     });
-  };
+    return json;
+  });
 
-  this.branches = function (req, res) {
-    res.type('application/json');
-    co(function *() {
-      let branches = yield BlockchainService.branches();
-      let blocks = branches.map((b) => new Block(b).json());
-      res.send(200, JSON.stringify({
-        blocks: blocks
-      }, null, "  "));
-    })
-      .catch(function(err){
-        console.error(err.stack || err.message || err);
-        res.send(404, err && (err.message || err));
-      });
-  };
+  this.branches = () => co(function *() {
+    let branches = yield BlockchainService.branches();
+    let blocks = branches.map((b) => new Block(b).json());
+    return {
+      blocks: blocks
+    };
+  });
 }

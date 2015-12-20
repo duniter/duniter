@@ -40,7 +40,7 @@ function IdentityService (conf, dal) {
     return dal.searchJustIdentities(search);
   };
 
-  this.findMember = (search, done) => co(function *() {
+  this.findMember = (search) => co(function *() {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
       idty = yield dal.getWrittenIdtyByPubkey(search);
@@ -53,12 +53,7 @@ function IdentityService (conf, dal) {
     }
     yield dal.fillInMembershipsOfIdentity(Q(idty));
     return new Identity(idty);
-  })
-  .then(function(idty){
-    done && done(null, idty);
-    return idty;
-  })
-  .catch(done);
+  });
 
   this.findMemberWithoutMemberships = (search) => co(function *() {
     let idty = null;

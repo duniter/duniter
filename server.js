@@ -345,7 +345,7 @@ function Server (dbConf, overrideConf) {
   this.checkBlock = function(block) {
     return that.initWithServices()
       .then(function(){
-        var parsed = parsers.parseBlock().syncWrite(block.getRawSigned());
+        var parsed = parsers.parseBlock.syncWrite(block.getRawSigned());
         return that.BlockchainService.checkBlock(parsed, false);
       });
   };

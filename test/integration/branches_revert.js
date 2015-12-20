@@ -74,7 +74,7 @@ describe("Revert root", function() {
     });
 
     it('/block/2 should exist', function() {
-      return expectHttpCode(404, 'Block not found', rp('http://127.0.0.1:7711/blockchain/block/2', { json: true }));
+      return httpTest.expectError(404, 'Block not found', rp('http://127.0.0.1:7711/blockchain/block/2', { json: true }));
     });
 
     // Revert then Commit should be a neutral operation

@@ -32,14 +32,15 @@ module.exports = {
       message = undefined;
     }
     return promise
-      .then(function(res){
+      .then(function(){
         assert.equal(200, code);
       })
       .catch(function(err){
         if (err.response) {
           assert.equal(err.response.statusCode, code);
           if (message) {
-            assert.equal(JSON.parse(err.error || err.cause).message, message);
+            let errorObj = typeof err.error == "string" ? JSON.parse(err.error) : err.error;
+            assert.equal(errorObj.message, message);
           }
         }
         else throw err;

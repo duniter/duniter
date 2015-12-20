@@ -2,7 +2,8 @@
 
 var _ = require('underscore');
 var async           = require('async');
-var localValidator = require('../lib/localValidator');
+var constants       = require('../lib/constants');
+var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
 
@@ -33,14 +34,14 @@ function MembershipService (conf, dal) {
       function (next){
         logger.info('⬇ %s %s', entry.issuer, entry.membership);
         if (!localValidator().checkSingleMembershipSignature(entry)) {
-          return next('wrong signature for membership');
+          return next(constants.ERRORS.WRONG_SIGNATURE_MEMBERSHIP);
         }
         // Get already existing Membership with same parameters
         dal.getMembershipForHashAndIssuer(entry).then(_.partial(next, null)).catch(next);
       },
       function (found, next){
         if (found) {
-          next('Already received membership');
+          next(constants.ERRORS.ALREADY_RECEIVED_MEMBERSHIP);
         }
         else dal.isMember(entry.issuer, next);
       },
@@ -58,7 +59,7 @@ function MembershipService (conf, dal) {
             // RENEW
             next();
           else
-            next('A non-member cannot leave.');
+            next(constants.ERRORS.MEMBERSHIP_A_NON_MEMBER_CANNOT_LEAVE);
         }
       },
       function (next) {

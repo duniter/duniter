@@ -59,55 +59,55 @@ module.exports = function(server, interfaces, httpLogs) {
   }
 
   var node = require('../../controllers/node')(server);
-  answerForGetP('/node/summary',  node.summary);
+  answerForGetP('/node/summary',                          node.summary);
 
   var blockchain = require('../../controllers/blockchain')(server);
-  answerForGetP( '/blockchain/parameters',       blockchain.parameters);
-  answerForPostP('/blockchain/membership',       blockchain.parseMembership);
-  answerForGetP( '/blockchain/memberships/:search', blockchain.memberships);
-  answerForPostP('/blockchain/block',            blockchain.parseBlock);
-  answerForGetP( '/blockchain/block/:number',    blockchain.promoted);
-  answerForGetP( '/blockchain/blocks/:count/:from',    blockchain.blocks);
-  answerForGetP( '/blockchain/current',          blockchain.current);
-  answerForGetP( '/blockchain/hardship/:search', blockchain.hardship);
-  answerForGetP( '/blockchain/with/newcomers',   blockchain.with.newcomers);
-  answerForGetP( '/blockchain/with/certs',       blockchain.with.certs);
-  answerForGetP( '/blockchain/with/joiners',     blockchain.with.joiners);
-  answerForGetP( '/blockchain/with/actives',     blockchain.with.actives);
-  answerForGetP( '/blockchain/with/leavers',     blockchain.with.leavers);
-  answerForGetP( '/blockchain/with/excluded',    blockchain.with.excluded);
-  answerForGetP( '/blockchain/with/ud',          blockchain.with.ud);
-  answerForGetP( '/blockchain/with/tx',          blockchain.with.tx);
-  answerForGetP( '/blockchain/branches',         blockchain.branches);
+  answerForGetP( '/blockchain/parameters',                blockchain.parameters);
+  answerForPostP('/blockchain/membership',                blockchain.parseMembership);
+  answerForGetP( '/blockchain/memberships/:search',       blockchain.memberships);
+  answerForPostP('/blockchain/block',                     blockchain.parseBlock);
+  answerForGetP( '/blockchain/block/:number',             blockchain.promoted);
+  answerForGetP( '/blockchain/blocks/:count/:from',       blockchain.blocks);
+  answerForGetP( '/blockchain/current',                   blockchain.current);
+  answerForGetP( '/blockchain/hardship/:search',          blockchain.hardship);
+  answerForGetP( '/blockchain/with/newcomers',            blockchain.with.newcomers);
+  answerForGetP( '/blockchain/with/certs',                blockchain.with.certs);
+  answerForGetP( '/blockchain/with/joiners',              blockchain.with.joiners);
+  answerForGetP( '/blockchain/with/actives',              blockchain.with.actives);
+  answerForGetP( '/blockchain/with/leavers',              blockchain.with.leavers);
+  answerForGetP( '/blockchain/with/excluded',             blockchain.with.excluded);
+  answerForGetP( '/blockchain/with/ud',                   blockchain.with.ud);
+  answerForGetP( '/blockchain/with/tx',                   blockchain.with.tx);
+  answerForGetP( '/blockchain/branches',                  blockchain.branches);
 
   var net = require('../../controllers/network')(server, server.conf);
-  answerForGetP( '/network/peering',             net.peer);
-  answerForGetP( '/network/peering/peers',       net.peersGet);
-  answerForPostP('/network/peering/peers',       net.peersPost);
-  answerForGetP('/network/peers',                net.peers);
+  answerForGetP( '/network/peering',                      net.peer);
+  answerForGetP( '/network/peering/peers',                net.peersGet);
+  answerForPostP('/network/peering/peers',                net.peersPost);
+  answerForGetP('/network/peers',                         net.peers);
 
   var wot = require('../../controllers/wot')(server);
-  answerForPostP('/wot/add',                   wot.add);
-  answerForPostP('/wot/revoke',                wot.revoke);
-  answerForGetP( '/wot/lookup/:search',        wot.lookup);
-  answerForGetP( '/wot/members',               wot.members);
-  answerForGetP( '/wot/requirements/:pubkey',  wot.requirements);
-  answerForGetP( '/wot/certifiers-of/:search', wot.certifiersOf);
-  answerForGetP( '/wot/certified-by/:search',  wot.certifiedBy);
-  answerForGetP( '/wot/identity-of/:search',   wot.identityOf);
+  answerForPostP('/wot/add',                              wot.add);
+  answerForPostP('/wot/revoke',                           wot.revoke);
+  answerForGetP( '/wot/lookup/:search',                   wot.lookup);
+  answerForGetP( '/wot/members',                          wot.members);
+  answerForGetP( '/wot/requirements/:pubkey',             wot.requirements);
+  answerForGetP( '/wot/certifiers-of/:search',            wot.certifiersOf);
+  answerForGetP( '/wot/certified-by/:search',             wot.certifiedBy);
+  answerForGetP( '/wot/identity-of/:search',              wot.identityOf);
 
   var transactions = require('../../controllers/transactions')(server);
   var dividend     = require('../../controllers/uds')(server);
-  answerForPostP('/tx/process',                          transactions.parseTransaction);
+  answerForPostP('/tx/process',                           transactions.parseTransaction);
   answerForGetP( '/tx/sources/:pubkey',                   transactions.getSources);
   answerForGetP( '/tx/history/:pubkey',                   transactions.getHistory);
   answerForGetP( '/tx/history/:pubkey/blocks/:from/:to',  transactions.getHistoryBetweenBlocks);
   answerForGetP( '/tx/history/:pubkey/times/:from/:to',   transactions.getHistoryBetweenTimes);
   answerForGetP( '/tx/history/:pubkey/pending',           transactions.getPendingForPubkey);
   answerForGetP( '/tx/pending',                           transactions.getPending);
-  answerForGet( '/ud/history/:pubkey',                   dividend.getHistory);
-  answerForGet( '/ud/history/:pubkey/blocks/:from/:to',  dividend.getHistoryBetweenBlocks);
-  answerForGet( '/ud/history/:pubkey/times/:from/:to',   dividend.getHistoryBetweenTimes);
+  answerForGetP( '/ud/history/:pubkey',                   dividend.getHistory);
+  answerForGetP( '/ud/history/:pubkey/blocks/:from/:to',  dividend.getHistoryBetweenBlocks);
+  answerForGetP( '/ud/history/:pubkey/times/:from/:to',   dividend.getHistoryBetweenTimes);
 
   function answerForGetP(uri, promiseFunc) {
     handleRequest(app.get.bind(app), uri, promiseFunc);
@@ -148,13 +148,6 @@ module.exports = function(server, interfaces, httpLogs) {
       }
     }
     return error;
-  }
-
-  function answerForGet(uri, callback) {
-    app.get(uri, function(req, res) {
-      res.set('Access-Control-Allow-Origin', '*');
-      callback(req, res);
-    });
   }
 
   var httpServers = [];

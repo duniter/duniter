@@ -1126,24 +1126,14 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
-  this.getUDHistory = function(pubkey, done) {
-    return that.sourcesDAL.getUDSources(pubkey)
-      .then(function(sources){
-        return {
-          history: sources.map((src) => _.extend({
-            block_number: src.number
-          }, src))
-        };
-      })
-      .then(function(obj){
-        done && done(null, obj);
-        return obj;
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+  this.getUDHistory = (pubkey) => co(function *() {
+    let sources = yield that.sourcesDAL.getUDSources(pubkey);
+    return {
+      history: sources.map((src) => _.extend({
+        block_number: src.number
+      }, src))
+    };
+  });
 
   this.savePeer = function(peer) {
     return that.peerDAL.savePeer(peer);

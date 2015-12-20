@@ -831,7 +831,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 throw 'Too old certification';
               }
               // Already exists a link not replayable yet?
-              var exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay);
+              var exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay - conf.sigValidity);
               if (exists) {
                 throw 'It already exists a similar certification written, which is not replayable yet';
               }
@@ -1445,7 +1445,7 @@ function NextBlockGenerator(conf, dal) {
         var exists = false;
         if (current) {
           // Already exists a link not replayable yet?
-          exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay);
+          exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay - conf.sigValidity);
         }
         if (!exists) {
           // It does NOT already exists a similar certification written, which is not replayable yet

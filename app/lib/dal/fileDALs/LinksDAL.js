@@ -35,6 +35,14 @@ function LinksDAL(loki) {
     obsolete: false
   });
 
+  this.getSimilarLinksFromDate = (from, to, minDate) => this.lokiFind({
+    $and: [
+      { source: from },
+      { target: to },
+      { timestamp: { $gte: minDate }}
+    ]
+  });
+
   this.getValidLinksTo = (pubkey) => this.lokiFind({
     target: pubkey
   }, {

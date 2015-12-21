@@ -650,16 +650,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
-  this.existsLinkFromOrAfterDate = function(from, to, maxDate) {
-    return co(function *() {
-      var links = yield that.linksDAL.getValidLinksFrom(from);
-      var matching = _.chain(links).
-        where({ target: to }).
-        filter(function(lnk){ return lnk.timestamp >= maxDate; }).
-        value();
-      return matching.length ? true : false;
-    });
-  };
+  this.existsLinkFromOrAfterDate = (from, to, minDate) => co(function *() {
+    var links = yield that.linksDAL.getSimilarLinksFromDate(from, to, minDate);
+    return links.length ? true : false;
+  });
 
   this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount) {
     return that.sourcesDAL.isAvailableSource(pubkey, type, number, fingerprint, amount);

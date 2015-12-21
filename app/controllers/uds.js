@@ -17,18 +17,16 @@ function UDBinding(server) {
   // Models
   var Source = require('../lib/entity/source');
 
-  let getUDSourcesP = (pubkey) => Q.nbind(getUDSources, this)(pubkey);
-
   this.getHistory = (req) => co(function *() {
     let pubkey = yield ParametersService.getPubkeyP(req);
-    return getUDSourcesP(pubkey, (results) => results);
+    return getUDSources(pubkey, (results) => results);
   });
 
   this.getHistoryBetweenBlocks = (req) => co(function *() {
     let pubkey = yield ParametersService.getPubkeyP(req);
     let from = yield ParametersService.getFromP(req);
     let to = yield ParametersService.getToP(req);
-    return getUDSourcesP(pubkey, (results) => {
+    return getUDSources(pubkey, (results) => {
       results.history.history = _.filter(results.history.history, function(ud){ return ud.block_number >= from && ud.block_number <= to; });
       return results;
     });
@@ -38,7 +36,7 @@ function UDBinding(server) {
     let pubkey = yield ParametersService.getPubkeyP(req);
     let from = yield ParametersService.getFromP(req);
     let to = yield ParametersService.getToP(req);
-    return getUDSourcesP(pubkey, (results) => {
+    return getUDSources(pubkey, (results) => {
       results.history.history = _.filter(results.history.history, function(ud){ return ud.time >= from && ud.time <= to; });
       return results;
     });

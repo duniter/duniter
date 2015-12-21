@@ -68,11 +68,6 @@ function Block(json) {
         json[field] = parseInt(that[field]) || null;
       });
     [
-      "membersChanges"
-    ].forEach(function(field){
-        json[field] = that[field] || [];
-      });
-    [
       "identities",
       "joiners",
       "actives",

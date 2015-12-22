@@ -126,6 +126,14 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         } else {
           yield BlockchainService.saveBlocksInMainBranch(blocks, remoteNumber);
           incrementBlocks(blocks.length);
+          // Free memory
+          if (i >= 0 && i < toApplyNoCautious.length - 1) {
+            blocks.splice(0, blocks.length);
+            chunk.splice(0, chunk.length);
+          }
+          if (i - 1 >= 0) {
+            delete toApplyNoCautious[i - 1];
+          }
         }
       }
 

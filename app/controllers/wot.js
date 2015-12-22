@@ -145,29 +145,14 @@ function WOTBinding (server) {
   });
 
   this.requirements = (req) => co(function *() {
-    let search = yield ParametersService.getPubkeyP(req);
+    let search = yield ParametersService.getSearchP(req);
     let identities = yield IdentityService.searchIdentities(search);
-    let all = yield identities.reduce(function(p, identity) {
-      return p
-        .then(function(all){
-          return BlockchainService.requirementsOfIdentity(new Identity(identity))
-            .then(function(requirements){
-              return all.concat([requirements]);
-            })
-            .catch(function(err){
-              logger.warn(err);
-              return all;
-            });
-        });
-    }, Q([]));
+    let all = yield BlockchainService.requirementsOfIdentities(identities);
     if (!all || !all.length) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
     return {
-      pubkey: all[0].pubkey,
-      identities: all.map(function(idty) {
-        return _.omit(idty, 'pubkey');
-      })
+      identities: all
     };
   });
 

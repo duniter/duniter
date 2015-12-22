@@ -92,7 +92,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForPostP( '/wot/revoke',                            wot.revoke,                           dtos.Result);
   answerForGetP(  '/wot/lookup/:search',                    wot.lookup,                           dtos.Lookup);
   answerForGetP(  '/wot/members',                           wot.members,                          dtos.Members);
-  answerForGetP(  '/wot/requirements/:pubkey',              wot.requirements,                     dtos.Requirements);
+  answerForGetP(  '/wot/requirements/:search',              wot.requirements,                     dtos.Requirements);
   answerForGetP(  '/wot/certifiers-of/:search',             wot.certifiersOf,                     dtos.Certifications);
   answerForGetP(  '/wot/certified-by/:search',              wot.certifiedBy,                      dtos.Certifications);
   answerForGetP(  '/wot/identity-of/:search',               wot.identityOf,                       dtos.SimpleIdentity);

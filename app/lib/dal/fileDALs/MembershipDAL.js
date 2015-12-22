@@ -27,6 +27,7 @@ function MembershipDAL(loki) {
     'certts',
     'block',
     'fpr',
+    'idtyHash',
     'written',
     'signature'
   ];
@@ -39,7 +40,14 @@ function MembershipDAL(loki) {
     issuer: issuer
   });
 
-  this.getPendingLocal = () => Q([]);
+  this.getPendingINOfTarget = (hash) =>
+    this.lokiFind({
+    $and: [
+      { idtyHash: hash },
+      { membership: 'IN' },
+      { written: false }
+    ]
+  });
 
   this.getPendingIN = () => this.lokiFind({
     membership: 'IN'
@@ -68,12 +76,12 @@ function MembershipDAL(loki) {
     let obj = _.extend({}, ms);
     obj.membership = type.toUpperCase();
     obj.written = true;
-    return this.lokiSave(_.pick(obj, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'written', 'signature'));
+    return this.lokiSave(_.pick(obj, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'written', 'signature'));
   };
 
   this.savePendingMembership = (ms) => {
     ms.membership = ms.membership.toUpperCase();
     ms.written = false;
-    return this.lokiSave(_.pick(ms, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'written', 'signature'));
+    return this.lokiSave(_.pick(ms, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'written', 'signature'));
   };
 }

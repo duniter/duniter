@@ -206,15 +206,23 @@ dtos.Members = {
   }]
 };
 
+dtos.RequirementsCert = {
+  from: String,
+  to: String,
+  expiresIn: Number
+};
+
 dtos.Requirements = {
   "identities": [{
+    pubkey: String,
     uid: String,
     meta: {
       timestamp: Number
     },
     outdistanced: [String],
-    certifications: Number,
-    membershipMissing: Boolean
+    certifications: [dtos.RequirementsCert],
+    membershipPendingExpiresIn: Number,
+    membershipExpiresIn: Number
   }]
 };
 

@@ -628,9 +628,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
-  this.listPendingLocalMemberships = function() {
-    return that.msDAL.getPendingLocal();
-  };
+  this.lastJoinOfIdentity = (target) => co(function *() {
+    let pending = yield that.msDAL.getPendingINOfTarget(target);
+    return _(pending).sortBy((ms) => -ms.number)[0];
+  });
 
   this.findNewcomers = function() {
     return that.msDAL.getPendingIN()

@@ -1069,6 +1069,14 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return that.idtyDAL.leaveIdentity(pubkey, onBlock);
   };
 
+  this.removeUnWrittenWithPubkey = function(pubkey) {
+    return Q(that.idtyDAL.removeUnWrittenWithPubkey(pubkey));
+  };
+
+  this.removeUnWrittenWithUID = function(pubkey) {
+    return Q(that.idtyDAL.removeUnWrittenWithUID(pubkey));
+  };
+
   this.unacceptIdentity = that.idtyDAL.unacceptIdentity;
 
   this.unJoinIdentity = (ms) => co(function *() {

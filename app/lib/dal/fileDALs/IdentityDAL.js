@@ -150,6 +150,20 @@ function IdentityDAL(loki) {
     });
   };
 
+  this.removeUnWrittenWithPubkey = (pubkey) => this.lokiRemoveWhere({
+    $and: [
+      { pubkey: pubkey },
+      { written: false }
+    ]
+  });
+
+  this.removeUnWrittenWithUID = (uid) => this.lokiRemoveWhere({
+    $and: [
+      { uid: uid },
+      { written: false }
+    ]
+  });
+
   this.getFromPubkey = function(pubkey) {
     return that.lokiFindOne({
       pubkey: pubkey

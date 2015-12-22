@@ -250,46 +250,49 @@ function BlockchainContext(conf, dal) {
   this.computeObsoleteLinks = computeObsoleteLinks;
   this.computeObsoleteMemberships = computeObsoleteMemberships;
 
+  let cleanRejectedIdentities = (idty) => co(function *() {
+    yield dal.removeUnWrittenWithPubkey(idty.pubkey);
+    yield dal.removeUnWrittenWithUID(idty.uid);
+  });
+
   function updateMembers (block, done) {
-    async.waterfall([
-      function (next) {
-        // Newcomers
-        async.forEachSeries(block.identities, function(identity, callback){
-          var idty = Identity.statics.fromInline(identity);
-          // Computes the hash if not done yet
-          if (!idty.hash)
-            idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
-          dal.newIdentity(idty, block.number).then(_.partial(callback, null)).catch(callback);
-        }, next);
-      },
-      function (next) {
-        // Joiners (come back)
-        async.forEachSeries(block.joiners, function(inlineMS, callback){
-          var ms = Identity.statics.fromInline(inlineMS);
-          dal.joinIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).catch(callback);
-        }, next);
-      },
-      function (next) {
-        // Actives
-        async.forEachSeries(block.actives, function(inlineMS, callback){
-          var ms = Identity.statics.fromInline(inlineMS);
-          dal.activeIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).catch(callback);
-        }, next);
-      },
-      function (next) {
-        // Leavers
-        async.forEachSeries(block.leavers, function(inlineMS, callback){
-          var ms = Identity.statics.fromInline(inlineMS);
-          dal.leaveIdentity(ms.pubkey, block.number).then(_.partial(callback, null)).catch(callback);
-        }, next);
-      },
-      function (next) {
-        // Excluded
-        async.forEachSeries(block.excluded, function (pubkey, callback) {
-          dal.excludeIdentity(pubkey).then(_.partial(callback, null)).catch(callback);
-        }, next);
+    return co(function *() {
+      // Newcomers
+      for (let i = 0, len = block.identities.length; i < len; i++) {
+        let identity = block.identities[i];
+        let idty = Identity.statics.fromInline(identity);
+        // Computes the hash if not done yet
+        if (!idty.hash)
+          idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
+        yield dal.newIdentity(idty, block.number);
+        yield cleanRejectedIdentities(idty);
       }
-    ], done);
+      // Joiners (come back)
+      for (let i = 0, len = block.joiners.length; i < len; i++) {
+        let inlineMS = block.joiners[i];
+        let ms = Identity.statics.fromInline(inlineMS);
+        yield dal.joinIdentity(ms.pubkey, block.number);
+      }
+      // Actives
+      for (let i = 0, len = block.actives.length; i < len; i++) {
+        let inlineMS = block.actives[i];
+        let ms = Identity.statics.fromInline(inlineMS);
+        yield dal.activeIdentity(ms.pubkey, block.number);
+      }
+      // Actives
+      for (let i = 0, len = block.leavers.length; i < len; i++) {
+        let inlineMS = block.leavers[i];
+        let ms = Identity.statics.fromInline(inlineMS);
+        yield dal.leaveIdentity(ms.pubkey, block.number);
+      }
+      // Excluded
+      for (let i = 0, len = block.excluded.length; i < len; i++) {
+        let excluded = block.excluded[i];
+        dal.excludeIdentity(excluded);
+      }
+      done();
+    })
+      .catch(done);
   }
 
   function undoMembersUpdate (block) {

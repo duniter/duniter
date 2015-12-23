@@ -52,7 +52,7 @@ function PeeringService(server, pair, dal) {
   this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
-    let blockNumber = sp[0];
+    let blockNumber = parseInt(sp[0]);
     let blockHash = sp[1];
     let sigTime = 0;
     let block;
@@ -84,7 +84,7 @@ function PeeringService(server, pair, dal) {
       if(found){
         // Already existing peer
         var sp2 = found.block.split('-');
-        var previousBlockNumber = sp2[0];
+        var previousBlockNumber = parseInt(sp2[0]);
         if(blockNumber <= previousBlockNumber && !eraseIfAlreadyRecorded){
           throw constants.ERROR.PEER.ALREADY_RECORDED;
         }
@@ -373,20 +373,20 @@ function PeeringService(server, pair, dal) {
         let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
         peers = _.shuffle(peers);
         for (let i = 0, len = peers.length; i < len; i++) {
-          var p = new Peer(peers[i]);
+          let p = new Peer(peers[i]);
           logger.info("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
-          let node = yield Q.nfcall(p.connect);
-          let okUP = yield processAscendingUntilNoBlock(p, node, current);
-          if (okUP) {
-            let remoteCurrent = yield Q.nfcall(node.blockchain.current);
-            // We check if our current block has changed due to ascending pulling
-            let nowCurrent = yield dal.getCurrentBlockOrNull();
-            logger.debug("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
-            if (remoteCurrent.number != nowCurrent.number) {
-              yield processLastTen(p, node, nowCurrent);
-            }
-          }
           try {
+            let node = yield Q.nfcall(p.connect);
+            let okUP = yield processAscendingUntilNoBlock(p, node, current);
+            if (okUP) {
+              let remoteCurrent = yield Q.nfcall(node.blockchain.current);
+              // We check if our current block has changed due to ascending pulling
+              let nowCurrent = yield dal.getCurrentBlockOrNull();
+              logger.debug("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
+              if (remoteCurrent.number != nowCurrent.number) {
+                yield processLastTen(p, node, nowCurrent);
+              }
+            }
             // Try to fork as a final treatment
             let nowCurrent = yield dal.getCurrentBlockOrNull();
             yield server.BlockchainService.tryToFork(nowCurrent);

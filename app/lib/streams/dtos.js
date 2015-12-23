@@ -132,7 +132,7 @@ dtos.DBPeer = {
   "block": String,
   "status": String,
   "first_down": Number,
-  "last_down": Number,
+  "last_try": Number,
   "endpoints": [String],
   "signature": String
 };

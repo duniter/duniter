@@ -131,6 +131,9 @@ module.exports = {
     SPECIAL_BLOCK: '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
   },
   NETWORK: {
+    MAX_NON_MEMBERS_TO_FORWARD_TO: 4,
+    MAX_MEMBERS_TO_FORWARD_TO: 2,
+    COUNT_FOR_ENOUGH_PEERS: 4,
     MAX_CONCURRENT_POST: 3,
     DEFAULT_TIMEOUT: 5000,
     SYNC_LONG_TIMEOUT: 30 * 1000, // 30 seconds
@@ -149,6 +152,7 @@ module.exports = {
       UPDATE: 6, // Every X blocks
       MAX: 20 // MAX Y blocks
     },
+    SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
     SYNC_BLOCK_INTERVAL: 1, // Every 1 block average generation time
     TEST_PEERS_INTERVAL: 10 // In seconds
   },

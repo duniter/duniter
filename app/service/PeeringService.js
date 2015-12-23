@@ -14,6 +14,8 @@ var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 var blockchainCtx   = require('../lib/blockchainContext');
 
+const DONT_IF_MORE_THAN_FOUR_PEERS = true;
+
 function PeeringService(server, pair, dal) {
 
   var conf = server.conf;
@@ -115,12 +117,21 @@ function PeeringService(server, pair, dal) {
     generateSelfPeer(conf, signalTimeInterval, done);
   };
 
+  var crawlPeersFifo = async.queue((task, callback) => task(callback), 1);
+  var crawlPeersInterval = null;
+  this.regularCrawlPeers = function (done) {
+    if (crawlPeersInterval)
+      clearInterval(crawlPeersInterval);
+    crawlPeersInterval = setInterval(()  => crawlPeersFifo.push(crawlPeers), 1000 * conf.avgGenTime * constants.NETWORK.SYNC_PEERS_INTERVAL);
+    crawlPeers(DONT_IF_MORE_THAN_FOUR_PEERS, done);
+  };
+
   var syncBlockFifo = async.queue((task, callback) => task(callback), 1);
   var syncBlockInterval = null;
   this.regularSyncBlock = function (done) {
     if (syncBlockInterval)
       clearInterval(syncBlockInterval);
-    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000*conf.avgGenTime*constants.NETWORK.SYNC_BLOCK_INTERVAL);
+    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL);
     syncBlock(done);
   };
 
@@ -205,6 +216,79 @@ function PeeringService(server, pair, dal) {
     })
       .then(() => done())
       .catch(done);
+  }
+
+  function crawlPeers(dontCrawlIfEnoughPeers, done) {
+    if (arguments.length == 1) {
+      done = dontCrawlIfEnoughPeers;
+      dontCrawlIfEnoughPeers = false;
+    }
+    logger.info('Crawling the network...');
+    return co(function *() {
+      let peers = yield dal.listAllPeersWithStatusNewUPWithtout(selfPubkey);
+      if (peers.length > constants.NETWORK.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == DONT_IF_MORE_THAN_FOUR_PEERS) {
+        return;
+      }
+      let peersToTest = peers.slice().map((p) => Peer.statics.peerize(p));
+      let tested = [];
+      let found = [];
+      while (peersToTest.length > 0) {
+        let results = yield peersToTest.map(crawlPeer);
+        tested = tested.concat(peersToTest.map((p) => p.pubkey));
+        // End loop condition
+        peersToTest.splice(0);
+        // Eventually continue the loop
+        for (let i = 0, len = results.length; i < len; i++) {
+          let res = results[i];
+          for (let j = 0, len2 = res.length; j < len2; j++) {
+            try {
+              let subpeer = res[j].leaf.value;
+              if (subpeer.currency && tested.indexOf(subpeer.pubkey) === -1) {
+                let p = Peer.statics.peerize(subpeer);
+                peersToTest.push(p);
+                found.push(p);
+              }
+            } catch (e) {
+              logger.warn('Invalid peer %s', res[j]);
+            }
+          }
+        }
+        // Make unique list
+        peersToTest = _.uniq(peersToTest, false, (p) => p.pubkey);
+      }
+      logger.info('Crawling done.');
+      for (let i = 0, len = found.length; i < len; i++) {
+        let p = found[i];
+        try {
+          // Try to write it
+          p.documentType = 'peer';
+          yield server.singleWritePromise(p);
+        } catch(e) {
+          // Silent error
+        }
+      }
+    })
+      .then(() => done()).catch(done);
+  }
+
+  function crawlPeer(aPeer) {
+    return co(function *() {
+      let subpeers = [];
+      try {
+        logger.info('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
+        let node = yield aPeer.connectP();
+        //let remotePeer = yield Q.nbind(node.network.peering.get)();
+        let json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
+        for (let i = 0, len = json.leaves.length; i < len; i++) {
+          let leaf = json.leaves[i];
+          let subpeer = yield Q.nbind(node.network.peering.peers.get, node)({ leaf: leaf });
+          subpeers.push(subpeer);
+        }
+        return subpeers;
+      } catch (e) {
+        return subpeers;
+      }
+    });
   }
 
   function testPeers(displayDelays, done) {

@@ -1,8 +1,8 @@
 "use strict";
 
+var co = require('co');
 var _ = require('underscore');
 var async    = require('async');
-var sha1     = require('sha1');
 var util     = require('util');
 var stream   = require('stream');
 var Peer     = require('../entity/peer');
@@ -75,41 +75,21 @@ function Router (serverPubkey, conf, dal) {
 
   function getValidUpPeers (without) {
     return function (done) {
-      var members = [];
-      var nonmembers = [];
-      async.waterfall([
-        function(next) {
-          dal.getCurrentBlockOrNull(next);
-        },
-        function (current, next) {
-          dal.getRandomlyUPsWithout(without, next); // Peers with status UP
-        },
-        function (peers, next) {
-          async.forEachSeries(peers, function (p, callback) {
-            async.waterfall([
-              function (next) {
-                dal.isMember(p.pubkey, next);
-              },
-              function (isMember, next) {
-                isMember ? members.push(p) : nonmembers.push(p);
-                next();
-              }
-            ], callback);
-          }, next);
-        },
-        function (next) {
-          logger.info('New document to send to %s member and %s non-member peers', members.length, nonmembers.length);
-          async.parallel({
-            members: async.apply(choose4in, members), // Choose up to 4 member peers
-            nonmembers: async.apply(choose4in, nonmembers) // Choose up to 4 non-member peers
-          }, next);
-        },
-        function (res, next) {
-          var chosen = res.members.concat(res.nonmembers);
-          next(null, chosen);
+      return co(function *() {
+        let members = [];
+        let nonmembers = [];
+        let peers = yield dal.getRandomlyUPsWithout(without); // Peers with status UP
+        for (let i = 0, len = peers.length; i < len; i++) {
+          let p = peers[i];
+          let isMember = yield dal.isMember(p.pubkey);
+          isMember ? members.push(p) : nonmembers.push(p);
         }
-      ], done);
-    }
+        members = chooseXin(members, constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
+        nonmembers = chooseXin(nonmembers, constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
+        return members.concat(nonmembers);
+      })
+        .then(_.partial(done, null)).catch(done);
+    };
   }
 
   /**
@@ -121,25 +101,21 @@ function Router (serverPubkey, conf, dal) {
         done(null, []);
       } else {
         dal.getPeer(to)
-          .then(function(peer){
-            done(null, [peer]);
-          })
-          .catch(function(err){
-            done(err);
-          });
+          .then((peer) => done(null, [peer]))
+          .catch((err) => done(err));
       }
     };
   }
 
-  function choose4in (peers, done) {
+  function chooseXin (peers, max) {
     var chosen = [];
     var nbPeers = peers.length;
-    for (var i = 0; i < Math.min(nbPeers, 4); i++) {
-      var randIndex = Math.max(Math.floor(Math.random()*10) - (10 - nbPeers) - i, 0);
+    for (var i = 0; i < Math.min(nbPeers, max); i++) {
+      var randIndex = Math.max(Math.floor(Math.random() * 10) - (10 - nbPeers) - i, 0);
       chosen.push(peers[randIndex]);
       peers.splice(randIndex, 1);
     }
-    done(null, chosen);
+    return chosen;
   }
 }
 

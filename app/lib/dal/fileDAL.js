@@ -900,6 +900,15 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
+  this.listAllPeersWithStatusNewUPWithtout = (pubkey) => co(function *() {
+    let peers = yield that.peerDAL.listAll();
+    let matching = _.chain(peers).
+      filter((p) => p.status == 'UP').
+      filter((p) => p.pubkey != pubkey).
+      value();
+    return Q(matching);
+  });
+
   this.findPeers = function(pubkey) {
     return that.getPeer(pubkey)
       .catch(function(){

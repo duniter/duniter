@@ -65,30 +65,28 @@ function Server (dbConf, overrideConf) {
   };
 
   this.submit = function (obj, isInnerWrite, done) {
-    async.waterfall([
-      function (next){
-        if (!obj.documentType) {
-          return next('Document type not given');
-        }
-        var action = documentsMapping[obj.documentType];
+    return co(function *() {
+      if (!obj.documentType) {
+        throw 'Document type not given';
+      }
+      var action = documentsMapping[obj.documentType];
+      try {
+        let res;
         if (typeof action == 'function') {
           // Handle the incoming object
-          action(obj, next);
+          res = yield Q.nbind(action, this)(obj);
         } else {
-          next('Unknown document type \'' + obj.documentType + '\'');
+          throw 'Unknown document type \'' + obj.documentType + '\'';
         }
-      }
-    ], function (err, res) {
-      err && logger.debug(err);
-      if (res != null && res != undefined && !err) {
-        // Only emit valid documents
-        that.emit(obj.documentType, res);
-        that.push(res);
-      }
-      if (isInnerWrite) {
-        done(err, res);
-      } else {
-        done();
+        if (res) {
+          // Only emit valid documents
+          that.emit(obj.documentType, res);
+          that.push(res);
+        }
+        isInnerWrite ? done(null, res) : done();
+      } catch (err) {
+        logger.debug(err);
+        isInnerWrite ? done(err, null) : done();
       }
     });
   };
@@ -157,6 +155,9 @@ function Server (dbConf, overrideConf) {
     async.waterfall([
       function (next){
         that.checkConfig().then(next).catch(next);
+      },
+      function (next){
+        that.PeeringService.regularCrawlPeers(next);
       },
       function (next){
         logger.info('Storing self peer...');
@@ -299,9 +300,13 @@ function Server (dbConf, overrideConf) {
               'identity':    that.IdentityService.submitIdentity,
               'revocation':  that.IdentityService.submitRevocation,
               'membership':  that.MembershipService.submitMembership,
-              'peer':        that.PeeringService.submit,
+              'peer':        (obj, done) => {
+                that.PeeringService.submitP(obj)
+                  .then((res) => done(null, res))
+                  .catch(done);
+              },
               'transaction': that.TransactionsService.processTx,
-              'block':       function (obj, done) {
+              'block':       (obj, done) => {
                 that.BlockchainService.submitBlock(obj, true)
                   .then(function(block){
                     that.dal = that.BlockchainService.currentDal;
@@ -362,10 +367,6 @@ function Server (dbConf, overrideConf) {
     }
     that.BlockchainService.revertCurrentBlock();
   });
-
-  this.singleWriteStream = function (onError, onSuccess) {
-    return new TempStream(that, onError, onSuccess);
-  };
 
   this.singleWritePromise = function (obj) {
     return Q.Promise(function(resolve, reject){

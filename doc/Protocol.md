@@ -177,6 +177,7 @@ A self-revocation is just *a signature* over a complete self-certification flavo
 Where:
 
 * `CERTIFIER_SIGNATURE` is the signature of the *certifier*.
+
 ##### Example
 
 If we have the following complete self-certification:
@@ -224,7 +225,7 @@ Certification may exists under *inline format* which describes the certification
 
     PUBKEY_FROM:PUBKEY_TO:BLOCK_NUMBER:SIGNATURE
 
-Where
+Where:
 
   * `PUBKEY_FROM` is the certification public key
   * `PUBKEY_TO` is the public key whose identity is being certified
@@ -232,6 +233,7 @@ Where
   * `SIGNATURE` is the certification signature
 
 > Note: BLOCK_HASH is not required in the inline format, since this format aims at being used in the context of a blockchain, where hash can be deduced.
+
 ##### Example
 
 If we have the following complete self-certification:

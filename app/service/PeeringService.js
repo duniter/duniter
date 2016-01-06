@@ -141,7 +141,7 @@ function PeeringService(server, pair, dal) {
   this.regularTestPeers = function (done) {
     if (testPeerFifoInterval)
       clearInterval(testPeerFifoInterval);
-    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers.bind(null, !FIRST_CALL)), 1000 * conf.avgGenTime * constants.NETWORK.TEST_PEERS_INTERVAL);
+    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers.bind(null, !FIRST_CALL)), 1000 * constants.NETWORK.TEST_PEERS_INTERVAL);
     testPeers(FIRST_CALL, done);
   };
 
@@ -308,8 +308,15 @@ function PeeringService(server, pair, dal) {
             // We try to reconnect only with peers marked as DOWN
             try {
               logger.info('Checking if node %s (%s:%s) is UP...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
+              // We register the try anyway
+              yield dal.setPeerDown(p.pubkey);
+              // Now we test
               let node = yield Q.nfcall(p.connect);
               let peering = yield Q.nfcall(node.network.peering.get);
+              // The node answered, it is no more DOWN!
+              logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
+              yield dal.setPeerUP(p.pubkey);
+              // We try to forward its peering entry
               let sp1 = peering.block.split('-');
               let currentBlockNumber = sp1[0];
               let currentBlockHash = sp1[1];
@@ -391,6 +398,11 @@ function PeeringService(server, pair, dal) {
             let nowCurrent = yield dal.getCurrentBlockOrNull();
             yield server.BlockchainService.tryToFork(nowCurrent);
           } catch (e) {
+            if (isConnectionError(e)) {
+              logger.info("Peer %s unreachable: now considered as DOWN.", p.pubkey);
+              yield dal.setPeerDown(p.pubkey);
+              return false;
+            }
             logger.warn(e);
           }
         }
@@ -404,7 +416,7 @@ function PeeringService(server, pair, dal) {
   }
 
   function isConnectionError(err) {
-    return err && (err.code == "EINVAL" || err.code == "ECONNREFUSED");
+    return err && (err.code == "EINVAL" || err.code == "ECONNREFUSED" || err.code == "ETIMEDOUT");
   }
 
   function processAscendingUntilNoBlock(p, node, current) {

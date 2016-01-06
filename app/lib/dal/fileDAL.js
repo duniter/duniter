@@ -862,6 +862,15 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, sqlite) 
       });
   };
 
+  this.setPeerUP = (pubkey) => co(function *() {
+    let p = yield that.getPeer(pubkey);
+    p.status = 'UP';
+    p.first_down = null;
+    p.last_try = null;
+    return that.peerDAL.savePeer(p);
+  })
+    .catch(() => null);
+
   this.setPeerDown = (pubkey) => co(function *() {
     let p = yield that.getPeer(pubkey);
     let now = (new Date()).getTime();

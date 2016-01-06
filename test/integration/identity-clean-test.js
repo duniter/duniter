@@ -53,7 +53,6 @@ describe("Identities cleaned", function() {
       yield cat.selfCertPromise(now);
       yield tic.selfCertPromise(now);
       yield toc.selfCertPromise(now);
-      yield tic.selfCertPromise(now + 1);
 
       yield expectAnswer(rp('http://127.0.0.1:7733/wot/lookup/cat', { json: true }), function(res) {
         res.should.have.property('results').length(2);
@@ -66,6 +65,7 @@ describe("Identities cleaned", function() {
       yield tic.certPromise(cat);
       yield cat.joinPromise();
       yield tic.joinPromise();
+      yield tic.selfCertPromise(now + 1);
       yield commitS1();
 
       // We have the following WoT (diameter 1):

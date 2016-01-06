@@ -6,6 +6,7 @@ var fs      = require('fs');
 var qfs     = require('q-io/fs');
 var sha1    = require('sha1');
 var path    = require('path');
+var moment  = require('moment');
 var Configuration = require('../entity/configuration');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
@@ -13,17 +14,9 @@ var Transaction = require('../entity/transaction');
 var constants = require('../constants');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
-var CertDAL = require('./fileDALs/CertDAL');
-var TxsDAL = require('./fileDALs/TxsDAL');
-var SourcesDAL = require('./fileDALs/SourcesDAL');
-var LinksDAL = require('./fileDALs/LinksDAL');
-var MembershipDAL = require('./fileDALs/MembershipDAL');
-var IdentityDAL = require('./fileDALs/IdentityDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
-var PeerDAL = require('./fileDALs/PeerDAL');
-var BlockDAL = require('./fileDALs/BlockDAL');
 var CFSStorage = require('./fileDALs/AbstractCFS');
-var lokijs = require('lokijs');
+var sqlite3 = require("sqlite3").verbose();
 var logger = require('../../lib/logger')('database');
 
 const UCOIN_DB_NAME = 'ucoin';
@@ -32,65 +25,16 @@ module.exports = {
   memory: function(profile, home) {
     return getHomeFS(profile, true, home)
       .then(function(params) {
-        let loki = new lokijs(UCOIN_DB_NAME, { autosave: false });
-        return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki));
+        let sqlite = new sqlite3.Database(':memory:');
+        return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', sqlite));
       });
   },
-  file: function(profile, home, forConf) {
+  file: function(profile, home) {
     return getHomeFS(profile, false, home)
       .then(function(params) {
-        return Q.Promise(function(resolve, reject){
-          let loki;
-          if (forConf) {
-            // Memory only service dals
-            loki = new lokijs('temp', { autosave: false });
-            resolve(loki);
-          } else {
-            let lokiPath = path.join(params.home, UCOIN_DB_NAME + '.json');
-            logger.debug('Loading DB at %s...', lokiPath);
-            co(function *() {
-              let rawDB;
-              try {
-                // Try to read database
-                rawDB = yield qfs.read(lokiPath);
-                // Check if content is standard JSON
-                JSON.parse(rawDB);
-              } catch (e) {
-                if (rawDB) {
-                  logger.error('The database could not be loaded, it is probably corrupted due to some system fail.');
-                  logger.error('Please stop uCoin and re-sync it with another node of the network before restarting, using the following commands:');
-                  logger.error('> ucoind reset data');
-                  logger.error('> ucoind sync <some.ucoin.node> <port>');
-                  logger.error('> ucoind restart');
-                  // Dirty "won't go any further"
-                  return Q.Promise((resolve) => null);
-                }
-              }
-
-              return Q.Promise(function(resolve2){
-                let lokiDB;
-                lokiDB = new lokijs(lokiPath, {
-                  autoload: true,
-                  autosave: true,
-                  autosaveInterval: 30000,
-                  adapter: {
-                    loadDatabase: (dbname, callback) => {
-                      callback(rawDB || null);
-                      resolve2(lokiDB);
-                    },
-                    saveDatabase: (dbname, dbstring, callback) => fs.writeFile(dbname, dbstring, callback)
-                  }
-                });
-              });
-            })
-              .then(resolve)
-              .catch(reject);
-          }
-        })
-          .then(function(loki){
-            loki.autosaveClearFlags();
-            return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki);
-          });
+        let sqlitePath = path.join(params.home, UCOIN_DB_NAME + '.db');
+        let sqlite = new sqlite3.Database(sqlitePath);
+        return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', sqlite);
       });
   },
   FileDAL: FileDAL
@@ -116,7 +60,7 @@ function getHomeFS(profile, isMemory, homePath) {
     });
 }
 
-function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
+function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, sqlite) {
 
   var that = this;
 
@@ -128,26 +72,44 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   var rootPath = home;
 
-  let blocksCFS = require('../cfs')(rootPath, myFS);
-
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
-  this.peerDAL = new PeerDAL(loki);
-  this.blockDAL = new BlockDAL(loki, blocksCFS, getLowerWindowBlock);
-  this.sourcesDAL = new SourcesDAL(loki);
-  this.txsDAL = new TxsDAL(loki);
+  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqlite);
+  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqlite);
+  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqlite);
+  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqlite);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that, CFSStorage);
-  this.linksDAL = new LinksDAL(loki);
-  this.idtyDAL = new IdentityDAL(loki);
-  this.certDAL = new CertDAL(loki);
-  this.msDAL = new MembershipDAL(loki);
+  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite);
+  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqlite);
+  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqlite);
 
   this.newDals = {
+    'blockDAL': that.blockDAL,
+    'certDAL': that.certDAL,
+    'msDAL': that.msDAL,
+    'idtyDAL': that.idtyDAL,
+    'sourcesDAL': that.sourcesDAL,
+    'linksDAL': that.linksDAL,
+    'txsDAL': that.txsDAL,
     'peerDAL': that.peerDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
-    'statDAL': that.statDAL
+    'statDAL': that.statDAL,
+    'ghostDAL': {
+      init: () => co(function *() {
+
+        // Create extra views (useful for stats or debug)
+        return that.blockDAL.exec('BEGIN;' +
+          'CREATE VIEW IF NOT EXISTS identities_pending AS SELECT * FROM idty WHERE NOT written;' +
+          'CREATE VIEW IF NOT EXISTS certifications_pending AS SELECT * FROM cert WHERE NOT written;' +
+          'CREATE VIEW IF NOT EXISTS transactions_pending AS SELECT * FROM txs WHERE NOT written;' +
+          'CREATE VIEW IF NOT EXISTS transactions_desc AS SELECT * FROM txs ORDER BY time DESC;' +
+          'CREATE VIEW IF NOT EXISTS forks AS SELECT * FROM block WHERE fork ORDER BY number DESC;' +
+          'COMMIT;');
+      })
+    }
   };
 
   var currency = '';
@@ -156,47 +118,11 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return co(function *() {
       yield _.values(that.newDals).map((dal) => dal.init());
       return that.loadConf(overrideConf, defaultConf);
-    });
+    })
+      .catch((err) => {
+        throw Error(err);
+      });
   };
-
-  function getLowerWindowBlock() {
-    return co(function *() {
-      let rootBlock = yield that.getRootBlock();
-      if (!rootBlock) {
-        return -1;
-      }
-      let conf = getParameters(rootBlock);
-      let needToBeKeptBlocks = getMaxBlocksToStoreAsFile(conf);
-      let current = yield that.getCurrentBlockOrNull();
-      let currentNumber = current ? current.number : -1;
-      return currentNumber - needToBeKeptBlocks;
-    });
-  }
-
-  function getParameters(block) {
-    var sp = block.parameters.split(':');
-    let theConf = {};
-    theConf.c                = parseFloat(sp[0]);
-    theConf.dt               = parseInt(sp[1]);
-    theConf.ud0              = parseInt(sp[2]);
-    theConf.sigDelay         = parseInt(sp[3]);
-    theConf.sigValidity      = parseInt(sp[4]);
-    theConf.sigQty           = parseInt(sp[5]);
-    theConf.sigWoT           = parseInt(sp[6]);
-    theConf.msValidity       = parseInt(sp[7]);
-    theConf.stepMax          = parseInt(sp[8]);
-    theConf.medianTimeBlocks = parseInt(sp[9]);
-    theConf.avgGenTime       = parseInt(sp[10]);
-    theConf.dtDiffEval       = parseInt(sp[11]);
-    theConf.blocksRot        = parseInt(sp[12]);
-    theConf.percentRot       = parseFloat(sp[13]);
-    theConf.currency         = block.currency;
-    return theConf;
-  }
-
-  function getMaxBlocksToStoreAsFile(aConf) {
-    return Math.floor(Math.max(aConf.dt / aConf.avgGenTime, aConf.medianTimeBlocks, aConf.dtDiffEval, aConf.blocksRot) * constants.SAFE_FACTOR);
-  }
 
   this.getCurrency = function() {
     return currency;
@@ -976,6 +902,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
         var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', that.getCurrency());
         ms.type = type;
         ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
+        ms.idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
         return that.msDAL.saveOfficialMS(msType, ms);
       });
     }, Q());
@@ -1043,6 +970,26 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash, src.time);
   };
 
+  this.updateSources = function(sources) {
+    return that.sourcesDAL.updateBatchOfSources(sources);
+  };
+
+  this.updateCertifications = function(certs) {
+    return that.certDAL.updateBatchOfCertifications(certs);
+  };
+
+  this.updateMemberships = function(certs) {
+    return that.msDAL.updateBatchOfMemberships(certs);
+  };
+
+  this.updateLinks = function(certs) {
+    return that.linksDAL.updateBatchOfLinks(certs);
+  };
+
+  this.updateTransactions = function(txs) {
+    return that.txsDAL.updateBatchOfTxs(txs);
+  };
+
   this.officializeCertification = function(cert) {
     return that.certDAL.saveOfficial(cert);
   };
@@ -1090,17 +1037,17 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   this.unJoinIdentity = (ms) => co(function *() {
     yield that.idtyDAL.unJoinIdentity(ms);
-    that.msDAL.unwriteMS(ms);
+    yield that.msDAL.unwriteMS(ms);
   });
 
   this.unRenewIdentity = (ms) => co(function *() {
     yield that.idtyDAL.unRenewIdentity(ms);
-    that.msDAL.unwriteMS(ms);
+    yield that.msDAL.unwriteMS(ms);
   });
 
   this.unLeaveIdentity = (ms) => co(function *() {
     yield that.idtyDAL.unLeaveIdentity(ms);
-    that.msDAL.unwriteMS(ms);
+    yield that.msDAL.unwriteMS(ms);
   });
 
   this.unExcludeIdentity = that.idtyDAL.unExcludeIdentity;
@@ -1183,24 +1130,24 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   this.pushStats = that.statDAL.pushStats;
 
   this.needsSave = function() {
-    return loki.autosaveDirty();
+    return true;
   };
 
   this.close = function() {
     if (that.needsSave()) {
-      return Q.nbind(loki.saveDatabase, loki)();
+      return Q.nbind(sqlite.close, sqlite)();
     }
     return Q();
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME];
+    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME];
+    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
@@ -1221,7 +1168,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     var files = [];
     var dirs  = ['peers'];
     return co(function *() {
-      that.peerDAL.lokiRemoveAll();
+      that.peerDAL.removeAll();
       yield resetFiles(files, dirs);
       return that.close();
     })
@@ -1236,29 +1183,30 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   };
 
   function resetFiles(files, dirs, done) {
-    return Q.all([
-
-      // Remove files
-      Q.all(files.map(function(fName) {
-        return myFS.exists(rootPath + '/' + fName + '.json')
-          .then(function(exists){
-            return exists ? myFS.remove(rootPath + '/' + fName + '.json') : Q();
-          });
-      })),
-
-      // Remove directories
-      Q.all(dirs.map(function(dirName) {
-        return myFS.exists(rootPath + '/' + dirName)
-          .then(function(exists){
-            return exists ? myFS.removeTree(rootPath + '/' + dirName) : Q();
-          });
-      }))
-    ])
-      .then(function(){
-        done && done();
-      })
-      .catch(function(err){
-        done && done(err);
-      });
+    return co(function *() {
+      for (let i = 0, len = files.length; i < len; i++) {
+        let fName = files[i];
+        // JSON file?
+        let existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
+        if (existsJSON) {
+          yield myFS.remove(rootPath + '/' + fName + '.json');
+        } else {
+          // Normal file?
+          let existsFile = yield myFS.exists(rootPath + '/' + fName);
+          if (existsFile) {
+            yield myFS.remove(rootPath + '/' + fName);
+          }
+        }
+      }
+      for (let i = 0, len = dirs.length; i < len; i++) {
+        let dirName = dirs[i];
+        let existsDir = yield myFS.exists(rootPath + '/' + dirName);
+        if (existsDir) {
+          yield myFS.removeTree(rootPath + '/' + dirName);
+        }
+      }
+      done && done();
+    })
+      .catch((err) => done && done(err));
   }
 }

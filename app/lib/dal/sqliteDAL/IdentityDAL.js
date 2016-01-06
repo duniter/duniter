@@ -3,22 +3,21 @@
  */
 
 var Q = require('q');
-var _ = require('underscore');
 var co = require('co');
-var AbstractLoki = require('./AbstractLoki');
+var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = IdentityDAL;
 
-function IdentityDAL(loki) {
+function IdentityDAL(db) {
 
   "use strict";
 
-  let collection = loki.getCollection('identities') || loki.addCollection('identities', { indices: ['uid', 'pubkey', 'timestamp', 'member', 'written'] });
-  let that = this;
-  AbstractLoki.call(this, collection);
+  AbstractSQLite.call(this, db);
 
-  this.idKeys = ['pubkey', 'uid', 'hash'];
-  this.propsToSave = [
+  let that = this;
+
+  this.table = 'idty';
+  this.fields = [
     'revoked',
     'currentMSN',
     'memberships',
@@ -33,8 +32,39 @@ function IdentityDAL(loki) {
     'hash',
     'written'
   ];
+  this.arrays = ['memberships'];
+  this.booleans = ['revoked', 'member', 'kick', 'leaving', 'wasMember', 'written'];
+  this.pkFields = ['pubkey', 'uid', 'hash'];
+  this.translated = {};
 
-  this.init = () => null;
+  this.init = () => co(function *() {
+    return that.exec('BEGIN;' +
+      'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
+      'revoked BOOLEAN NOT NULL,' +
+      'currentMSN INTEGER NOT NULL,' +
+      'memberships TEXT,' +
+      'time DATETIME NOT NULL,' +
+      'member BOOLEAN NOT NULL,' +
+      'kick BOOLEAN NOT NULL,' +
+      'leaving BOOLEAN NOT NULL,' +
+      'wasMember BOOLEAN NOT NULL,' +
+      'pubkey VARCHAR(50) NOT NULL,' +
+      'uid VARCHAR(255) NOT NULL,' +
+      'sig VARCHAR(100) NOT NULL,' +
+      'hash VARCHAR(40) NOT NULL,' +
+      'written BOOLEAN NOT NULL,' +
+      'PRIMARY KEY (pubkey,uid,hash)' +
+      ');' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_pubkey ON idty (pubkey);' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_uid ON idty (uid);' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_kick ON idty (kick);' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_member ON idty (member);' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_wasMember ON idty (wasMember);' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_hash ON idty (hash);' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_written ON idty (written);' +
+      'CREATE INDEX IF NOT EXISTS idx_idty_currentMSN ON idty (currentMSN);' +
+      'COMMIT;', []);
+  });
 
   this.excludeIdentity = (pubkey) => {
     return co(function *() {
@@ -150,52 +180,47 @@ function IdentityDAL(loki) {
     });
   };
 
-  this.removeUnWrittenWithPubkey = (pubkey) => this.lokiRemoveWhere({
-    $and: [
-      { pubkey: pubkey },
-      { written: false }
-    ]
+  this.removeUnWrittenWithPubkey = (pubkey) => this.sqlRemoveWhere({
+    pubkey: pubkey,
+    written: false
   });
 
-  this.removeUnWrittenWithUID = (uid) => this.lokiRemoveWhere({
-    $and: [
-      { uid: uid },
-      { written: false }
-    ]
+  this.removeUnWrittenWithUID = (uid) => this.sqlRemoveWhere({
+    uid: uid,
+    written: false
   });
 
   this.getFromPubkey = function(pubkey) {
-    return that.lokiFindOne({
-      pubkey: pubkey
-    }, {
+    return that.sqlFindOne({
+      pubkey: pubkey,
       wasMember: true
-    }, that.IMMUTABLE_FIELDS);
+    });
   };
 
   this.getFromUID = function(uid) {
-    return that.lokiFindOne({
-      uid: uid
-    }, {
+    return that.sqlFindOne({
+      uid: uid,
       wasMember: true
-    }, that.IMMUTABLE_FIELDS);
+    });
   };
 
   this.getByHash = function(hash) {
-    return that.lokiFindOne({
+    return that.sqlFindOne({
       hash: hash
     });
   };
 
-  this.saveIdentity = (idty) => this.lokiSave(idty);
+  this.saveIdentity = (idty) =>
+    this.saveEntity(idty);
 
   this.getWhoIsOrWasMember = function() {
-    return that.lokiFindInAll({
+    return that.sqlFind({
       wasMember: true
     });
   };
 
   this.getPendingIdentities = function() {
-    return that.lokiFindInAll({
+    return that.sqlFind({
       wasMember: false
     });
   };
@@ -203,26 +228,22 @@ function IdentityDAL(loki) {
   this.listLocalPending = () => Q([]);
 
   this.searchThoseMatching = function(search) {
-    return that.lokiFind({
-      $or: [{
-        pubkey: { $regex: new RegExp(search, 'i') }
-      },{
-        uid: { $regex: new RegExp(search, 'i') }
-      }]
+    return that.sqlFindLikeAny({
+      pubkey: "%" + search + "%",
+      uid: "%" + search + "%"
     });
   };
 
   this.kickMembersForMembershipBelow = (maxNumber) => co(function *() {
-    let toKick = yield that.lokiFind({
-      currentMSN: { $lte: maxNumber }
-    },{
+    let toKick = yield that.sqlFind({
+      currentMSN: { $lte: maxNumber },
       kick: false,
       member: true
     });
     for (let i = 0; i < toKick.length; i++) {
       let idty = toKick[i];
       idty.kick = true;
-      collection.update(idty);
+      yield that.saveEntity(idty);
     }
   });
 }

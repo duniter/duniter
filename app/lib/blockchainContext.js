@@ -4,6 +4,7 @@ var _               = require('underscore');
 var co              = require('co');
 var Q               = require('q');
 var sha1            = require('sha1');
+var moment          = require('moment');
 var rawer           = require('./rawer');
 var localValidator  = require('./localValidator');
 var globalValidator = require('./globalValidator');
@@ -176,13 +177,9 @@ function BlockchainContext(conf, dal) {
         // Create/Update certifications
         updateCertifications(block, next);
       },
-      function (next) {
-        // Create/Update certifications
-        updateMemberships(block, next);
-      },
       function (next){
         // Save links
-        updateLinks(block, next, dal.getBlockOrNull.bind(dal));
+        updateLinksForBlocks([block], dal.getBlockOrNull.bind(dal)).then(() => next()).catch(next);
       },
       function (next){
         // Compute obsolete links
@@ -244,11 +241,13 @@ function BlockchainContext(conf, dal) {
 
   this.updateMembers = updateMembers;
   this.updateCertifications = updateCertifications;
-  this.updateMemberships = updateMemberships;
-  this.updateLinks = updateLinks;
-  this.updateTransactionSources = updateTransactionSources;
   this.computeObsoleteLinks = computeObsoleteLinks;
   this.computeObsoleteMemberships = computeObsoleteMemberships;
+  this.updateTransactionSourcesForBlocks = updateTransactionSourcesForBlocks;
+  this.updateCertificationsForBlocks = updateCertificationsForBlocks;
+  this.updateMembershipsForBlocks = updateMembershipsForBlocks;
+  this.updateLinksForBlocks = updateLinksForBlocks;
+  this.updateTransactionsForBlocks = updateTransactionsForBlocks;
 
   let cleanRejectedIdentities = (idty) => co(function *() {
     yield dal.removeUnWrittenWithPubkey(idty.pubkey);
@@ -396,6 +395,15 @@ function BlockchainContext(conf, dal) {
     });
   }
 
+  /**
+   * Historical method that takes certifications from a block and tries to either:
+   *  * Update the certification found in the DB an set it as written
+   *  * Create it if it does not exist
+   *
+   * Has a sibling method named 'updateCertificationsForBlocks'.
+   * @param block
+   * @param done
+   */
   function updateCertifications (block, done) {
     async.forEachSeries(block.certifications, function(inlineCert, callback){
       var cert = Certification.statics.fromInline(inlineCert);
@@ -427,54 +435,6 @@ function BlockchainContext(conf, dal) {
             .catch(next);
         }
       ], callback);
-    }, done);
-  }
-
-  // TODO: no more needed
-  function updateMemberships (block, done) {
-    async.forEachSeries(['joiners', 'actives', 'leavers'], function (prop, callback1) {
-      async.forEach(block[prop], function(inlineJoin, callback){
-        var ms = Membership.statics.fromInline(inlineJoin, prop == 'leavers' ? 'OUT' : 'IN');
-        async.waterfall([
-          function (next){
-            dal.getWritten(ms.issuer, next);
-          },
-          function (idty, next){
-            if (!idty) {
-              var err = 'Could not find identity for membership of issuer ' + ms.issuer;
-              logger.error(err);
-              next(err);
-              return;
-            }
-            ms.userid = idty.uid;
-            ms.certts = idty.time;
-            next();
-          }
-        ], callback);
-      }, callback1);
-    }, done);
-  }
-
-  function updateLinks (block, done, getBlockOrNull) {
-    async.forEach(block.certifications, function(inlineCert, callback){
-      var cert = Certification.statics.fromInline(inlineCert);
-      return co(function *() {
-        let tagBlock = block;
-        if (block.number > 0) {
-          tagBlock = yield getBlockOrNull(cert.block_number);
-        }
-        return dal.saveLink(
-          new Link({
-            source: cert.from,
-            target: cert.to,
-            timestamp: tagBlock.medianTime,
-            block_number: block.number,
-            block_hash: block.hash,
-            obsolete: false
-          }));
-      })
-        .then(_.partial(callback, null))
-        .catch(callback);
     }, done);
   }
 
@@ -521,16 +481,11 @@ function BlockchainContext(conf, dal) {
           var pubkey = idty.pubkey;
           async.waterfall([
             function (nextOne){
-              async.parallel({
-                enoughLinks: function(callback2){
-                  that.checkHaveEnoughLinks(pubkey, {}, function (err) {
-                    callback2(null, err);
-                  });
-                }
-              }, nextOne);
+              that.checkHaveEnoughLinks(pubkey, {}, function (err) {
+                nextOne(null, err);
+              });
             },
-            function (res, nextOne){
-              var notEnoughLinks = res.enoughLinks;
+            function (notEnoughLinks, nextOne){
               dal.setKicked(pubkey, new Identity(idty).getTargetHash(), notEnoughLinks ? true : false, nextOne);
             }
           ], callback);
@@ -551,7 +506,7 @@ function BlockchainContext(conf, dal) {
         next(count < conf.sigQty && 'Key ' + target + ' does not have enough links (' + count + '/' + conf.sigQty + ')');
       }
     ], done);
-  }
+  };
 
   function computeObsoleteMemberships (block) {
     return dal.getMembershipExcludingBlock(block, conf.msValidity)
@@ -621,6 +576,193 @@ function BlockchainContext(conf, dal) {
       }
     ], function (err) {
       done(err);
+    });
+  }
+
+  /**
+   * New method for CREATING memberships found in blocks.
+   * Made for performance reasons, this method will batch insert all memberships at once.
+   * @param blocks
+   * @returns {*}
+   */
+  function updateMembershipsForBlocks(blocks) {
+    return co(function *() {
+      let memberships = [];
+      let types = {
+        'join': 'joiners',
+        'active': 'actives',
+        'leave': 'leavers'
+      };
+      for (let i = 0, len = blocks.length; i < len; i++) {
+        let block = blocks[i];
+        _.keys(types).forEach(function(type){
+          let msType = type == 'leave' ? 'out' : 'in';
+          let field = types[type];
+          let mss = block[field];
+          for (let j = 0, len2 = mss.length; j < len2; j++) {
+            let msRaw = mss[j];
+            var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', block.currency);
+            ms.membership = msType.toUpperCase();
+            ms.written = true;
+            ms.type = type;
+            ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
+            ms.idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
+            memberships.push(ms);
+          }
+        });
+      }
+      return dal.updateMemberships(memberships);
+    });
+  }
+
+  /**
+   * New method for CREATING links found in blocks.
+   * Made for performance reasons, this method will batch insert all links at once.
+   * @param blocks
+   * @param getBlockOrNull
+   * @returns {*}
+   */
+  function updateLinksForBlocks(blocks, getBlockOrNull) {
+    return co(function *() {
+      let links = [];
+      for (let i = 0, len = blocks.length; i < len; i++) {
+        let block = blocks[i];
+        for (let j = 0, len2 = block.certifications.length; j < len2; j++) {
+          let inlineCert = block.certifications[j];
+          let cert = Certification.statics.fromInline(inlineCert);
+          let tagBlock = block;
+          if (block.number > 0) {
+            tagBlock = yield getBlockOrNull(cert.block_number);
+          }
+          links.push({
+            source: cert.from,
+            target: cert.to,
+            timestamp: tagBlock.medianTime,
+            block_number: block.number,
+            block_hash: block.hash,
+            obsolete: false
+          });
+        }
+      }
+      return dal.updateLinks(links);
+    });
+  }
+
+  /**
+   * New method for CREATING transactions found in blocks.
+   * Made for performance reasons, this method will batch insert all transactions at once.
+   * @param blocks
+   * @returns {*}
+   */
+  function updateTransactionsForBlocks(blocks) {
+    return co(function *() {
+      let txs = [];
+      for (let i = 0, len = blocks.length; i < len; i++) {
+        let block = blocks[i];
+        txs = txs.concat(block.transactions.map((tx) => {
+          _.extend(tx, {
+            block_number: block.number,
+            time: block.medianTime,
+            currency: block.currency,
+            written: true,
+            removed: false
+          });
+          return new Transaction(tx);
+        }));
+      }
+      return dal.updateTransactions(txs);
+    });
+  }
+
+  /**
+   * New method for CREATING certifications found in blocks.
+   * Made for performance reasons, this method will batch insert all certifications at once.
+   * @param blocks
+   * @returns {*}
+   */
+  function updateCertificationsForBlocks(blocks) {
+    return co(function *() {
+      let certs = [];
+      for (let i = 0, len = blocks.length; i < len; i++) {
+        let block = blocks[i];
+        for (let j = 0, len2 = block.certifications.length; j < len2; j++) {
+          let inlineCert = block.certifications[j];
+          var cert = Certification.statics.fromInline(inlineCert);
+          let to = yield dal.getWrittenIdtyByPubkey(cert.to);
+          let to_uid = to.uid;
+          cert.target = new Identity(to).getTargetHash();
+          let from = yield dal.getWrittenIdtyByPubkey(cert.from);
+          let from_uid = from.uid;
+          let existing = yield dal.existsCert(cert);
+          if (existing) {
+            cert = existing;
+          }
+          cert.written_block = block.number;
+          cert.written_hash = block.hash;
+          cert.from_uid = from_uid;
+          cert.to_uid = to_uid;
+          cert.linked = true;
+          certs.push(cert);
+        }
+      }
+      return dal.updateCertifications(certs);
+    });
+  }
+
+  /**
+   * New method for CREATING sources found in transactions of blocks.
+   * Made for performance reasons, this method will batch insert all sources at once.
+   * @param blocks
+   * @returns {*}
+   */
+  function updateTransactionSourcesForBlocks(blocks) {
+    return co(function *() {
+      let sources = [];
+      for (let i = 0, len = blocks.length; i < len; i++) {
+        let block = blocks[i];
+        // Dividends
+        if (block.dividend) {
+          let idties = yield dal.getMembersP();
+          for (let j = 0, len2 = idties.length; j < len2; j++) {
+            let idty = idties[j];
+            sources.push({
+              'pubkey': idty.pubkey,
+              'type': 'D',
+              'number': block.number,
+              'time': block.medianTime,
+              'fingerprint': block.hash,
+              'block_hash': block.hash,
+              'amount': block.dividend,
+              'consumed': false,
+              'toConsume': false
+            });
+          }
+        }
+        // Transactions
+        for (let j = 0, len2 = block.transactions.length; j < len2; j++) {
+          let json = block.transactions[j];
+          let obj = json;
+          obj.version = 1;
+          obj.currency = block.currency;
+          obj.issuers = json.signatories;
+          let tx = new Transaction(obj);
+          let txObj = tx.getTransaction();
+          let txHash = tx.getHash(true);
+          sources = sources.concat(txObj.inputs.map((input) => _.extend({ toConsume: true }, input)));
+          sources = sources.concat(txObj.outputs.map((output) => _.extend({
+            toConsume: false
+          }, {
+            'pubkey': output.pubkey,
+            'type': 'T',
+            'number': block.number,
+            'block_hash': block.hash,
+            'fingerprint': txHash,
+            'amount': output.amount,
+            'consumed': false
+          })));
+        }
+      }
+      return dal.updateSources(sources);
     });
   }
 

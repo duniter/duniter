@@ -1270,6 +1270,15 @@ function BlockchainService (conf, mainDAL, pair) {
     if (blocks[0].number == 0) {
       yield that.saveParametersForRootBlock(blocks[0]);
     }
+    // Helper to retrieve a block with local cache
+    let getBlockOrNull = (number) => {
+      let firstLocalNumber = blocks[0].number;
+      if (number >= firstLocalNumber) {
+        let offset = number - firstLocalNumber;
+        return Q(blocks[offset]);
+      }
+      return mainDAL.getBlockOrNull(number);
+    };
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
     let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield mainDAL.getBlockOrNull(0));
@@ -1294,50 +1303,26 @@ function BlockchainService (conf, mainDAL, pair) {
       } else {
         block.UDTime = previousBlock.UDTime;
       }
-      // Transactions & Memberships recording
-      yield mainDAL.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
-      yield mainDAL.saveMemberships('join', block.joiners);
-      yield mainDAL.saveMemberships('active', block.actives);
-      yield mainDAL.saveMemberships('leave', block.leavers);
       yield Q.Promise(function(resolve, reject){
-        // Compute resulting entities
-        async.waterfall([
-          function (next) {
-            // Create/Update members (create new identities if do not exist)
-            mainContext.updateMembers(block, next);
-          },
-          function (next) {
-            // Create/Update certifications
-            mainContext.updateCertifications(block, next);
-          },
-          function (next) {
-            // Create/Update memberships
-            mainContext.updateMemberships(block, next);
-          },
-          function (next){
-            // Save links
-            mainContext.updateLinks(block, next, (number) => {
-              let firstLocalNumber = blocks[0].number;
-              if (number >= firstLocalNumber) {
-                let offset = number - firstLocalNumber;
-                return Q(blocks[offset]);
-              }
-              return mainDAL.getBlockOrNull(number);
-            });
-          },
-          function (next){
-            // Update consumed sources & create new ones
-            mainContext.updateTransactionSources(block, next);
-          }
-        ], function (err) {
+        // Create/Update members (create new identities if do not exist)
+        mainContext.updateMembers(block, function (err) {
           if (err) return reject(err);
           resolve();
         });
       });
     }
+    // Transactions recording
+    yield mainContext.updateTransactionsForBlocks(blocks);
+    // Create certifications
+    yield mainContext.updateMembershipsForBlocks(blocks);
+    // Create certifications
+    yield mainContext.updateLinksForBlocks(blocks, getBlockOrNull);
+    // Create certifications
+    yield mainContext.updateCertificationsForBlocks(blocks);
+    // Create / Update sources
+    yield mainContext.updateTransactionSourcesForBlocks(blocks);
     yield mainDAL.blockDAL.saveBunch(blocks, (targetLastNumber - lastBlockToSave.number) > maxBlock);
     yield pushStatsForBlocks(blocks);
-    //console.log('Saved');
   });
 
   function pushStatsForBlocks(blocks) {

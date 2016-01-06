@@ -143,7 +143,7 @@ function IdentityService (conf, dal) {
               }
             }
           } else {
-            logger.info('✘ CERT %s wrong signature', cert.from);
+            logger.info('✘ CERT %s %s', cert.from, cert.err);
           }
         }
         let existing = yield dal.getIdentityByHashWithCertsOrNull(obj.hash);

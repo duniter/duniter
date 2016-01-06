@@ -221,7 +221,7 @@ function GlobalValidator (conf, dao) {
           next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
         } else {
           dao.getBlock(cert.block_number, function (err, basedBlock) {
-            next(err && 'Certification based on an unexisting block', basedBlock);
+            next((err || !basedBlock) && 'Certification based on an unexisting block', basedBlock);
           });
         }
       },
@@ -256,7 +256,7 @@ function GlobalValidator (conf, dao) {
           var targetId = [cert.block_number, res.target.hash].join('-');
           crypto.isValidCertification(selfCert, res.idty.sig, cert.from, cert.sig, targetId, next);
         }
-      },
+      }
     ], done);
   }
 

@@ -36,7 +36,7 @@ ucoind() {
 		#---------------------------------
 
 		start|stop|restart)
-		$NODE --harmony "$UCOIN_DIR/bin/daemon" $*
+		$NODE "$UCOIN_DIR/bin/daemon" $*
 		;;
 
 		#---------------------------------
@@ -44,7 +44,7 @@ ucoind() {
 		#---------------------------------
 
 		*)
-	  $NODE --harmony "$UCOIN_DIR/bin/ucoind" $*
+	  $NODE "$UCOIN_DIR/bin/ucoind" $*
 		;;
 
 		esac

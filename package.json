@@ -13,9 +13,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --harmony --growl --timeout 20000 test test/fast test/fast/block test/integration test/",
-    "start": "node --harmony bin/ucoind start",
-    "test-travis": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/"
+    "test": "mocha --growl --timeout 20000 test test/fast test/fast/block test/integration test/",
+    "start": "node bin/ucoind start",
+    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/"
   },
   "repository": {
     "type": "git",

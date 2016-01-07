@@ -23,14 +23,14 @@ var customLevels = {
 var logger = new (winston.Logger)({
   level: 'debug',
   levels: customLevels.levels,
-  handleExceptions: true,
+  handleExceptions: false,
   colors: customLevels.colors,
   transports: [
     // setup console logging
     new (winston.transports.Console)({
       level: 'error',
       levels: customLevels.levels,
-      handleExceptions: true,
+      handleExceptions: false,
       colorize: true,
       timestamp: function() {
         return moment().format();
@@ -43,7 +43,7 @@ logger.addHomeLogs = (home) => {
   logger.add(winston.transports.File, {
     level: 'error',
     levels: customLevels.levels,
-    handleExceptions: true,
+    handleExceptions: false,
     colorize: true,
     tailable: true,
     maxsize: 50 * 1024 * 1024, // 50 MB
@@ -58,7 +58,6 @@ logger.addHomeLogs = (home) => {
 };
 
 logger.mute = () => {
-  logger.remove(winston.transports.File);
   logger.remove(winston.transports.Console);
 };
 

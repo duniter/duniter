@@ -141,7 +141,7 @@ function AbstractSQLite(db) {
   this.getEntity = function(entity) {
     return co(function *() {
       let conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
-      let params = getPKFields().map((field) => entity[field]);
+      let params = toParams(entity, getPKFields());
       return (yield that.query('SELECT * FROM ' + that.table + ' WHERE ' + conditions, params))[0];
     });
   };
@@ -236,16 +236,18 @@ function AbstractSQLite(db) {
     return _.keys(row).map((k) => '`' + k + '` = ?');
   }
 
-  function toParams(obj) {
-    return _.keys(obj).map((k) => {
-      if (obj[k].$lte !== undefined) {
-        return obj[k].$lte;
-      } else if (obj[k].$gte !== undefined) {
-        return obj[k].$gte;
-      } else if (obj[k].$contains !== undefined) {
-        return "%" + obj[k].$contains + "%";
+  function toParams(obj, fields) {
+    return (fields || _.keys(obj)).map((f) => {
+      if (obj[f].$lte !== undefined) {
+        return obj[f].$lte;
+      } else if (obj[f].$gte !== undefined) {
+        return obj[f].$gte;
+      } else if (obj[f].$contains !== undefined) {
+        return "%" + obj[f].$contains + "%";
+      } else if (~that.bigintegers.indexOf(f) && typeof obj[f] !== "string") {
+        return String(obj[f]);
       } else {
-        return obj[k];
+        return obj[f];
       }
     });
   }

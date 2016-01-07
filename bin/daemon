@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+"use strict";
+
+var directory = require('../app/lib/directory');
+var path = require('path');
+
+var daemon = require("daemonize2").setup({
+  main: "ucoind",
+  name: directory.INSTANCE_NAME,
+  pidfile: path.join(directory.INSTANCE_HOME, "app.pid")
+});
+
+switch (process.argv[2]) {
+
+  case "start":
+    daemon.start();
+    break;
+
+  case "stop":
+    daemon.stop();
+    break;
+
+  case "restart":
+    daemon.stop(function(err) {
+      err && console.error(err);
+      daemon.start();
+    });
+    break;
+
+  default:
+    console.log("Usage: [start|stop|restart]");
+}

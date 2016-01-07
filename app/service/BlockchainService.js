@@ -944,6 +944,7 @@ function BlockchainService (conf, mainDAL, pair) {
     var block = new Block();
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
+    block.nonce = 0;
     block.number = current ? current.number + 1 : 0;
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,

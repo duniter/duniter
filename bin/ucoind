@@ -792,6 +792,9 @@ function exit (server) {
 
 function logIfErrorAndExit (server, prefix) {
   return function (err) {
+    if (err && err.uerr) {
+      err = err.uerr.message;
+    }
     err && logger.error((prefix ? prefix : "") + (err.message || err));
     server.disconnect();
     process.exit();

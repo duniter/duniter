@@ -111,9 +111,17 @@ function SourcesDAL(db) {
       fingerprint: fingerprint,
       amount: amount
     });
-    if (src) {
-      src.consumed = false;
-      that.saveEntity(src);
+    if (!src) {
+      return this.saveEntity({
+        pubkey: pubkey,
+        type: type,
+        number: number,
+        fingerprint: fingerprint,
+        amount: amount,
+        time: time,
+        block_hash: block_hash,
+        consumed: false
+      });
     } else {
       return that.updateEntity({
         pubkey: pubkey,

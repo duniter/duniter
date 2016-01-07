@@ -289,7 +289,6 @@ function Server (dbConf, overrideConf) {
           },
           function(next) {
             that.servicesInited = true;
-            that.HTTPService         = require("./app/service/HTTPService");
             that.MerkleService       = require("./app/service/MerkleService");
             that.ParametersService   = require("./app/service/ParametersService")();
             that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);

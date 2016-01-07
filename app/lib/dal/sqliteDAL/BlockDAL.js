@@ -22,7 +22,8 @@ function BlockDAL(db) {
 
   this.table = 'block';
   this.fields = ['fork', 'hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'excluded'];
-  this.arrays = ['identities','certifications','actives','excluded','leavers','actives','joiners','transactions'];
+  this.arrays = ['identities','certifications','actives','excluded','leavers','joiners','transactions'];
+  this.bigintegers = ['monetaryMass','dividend'];
   this.pkFields = ['number','hash'];
 
   this.init = () => co(function *() {

@@ -1,11 +1,11 @@
 var _ = require('underscore');
 var http = require('http');
 var express = require('express');
-var log4js = require('log4js');
 var co = require('co');
 var Q = require('q');
 var cors = require('express-cors');
 var es = require('event-stream');
+var morgan = require('morgan');
 var constants = require('../../lib/constants');
 var dtos = require('../../lib/streams/dtos');
 var sanitize = require('../../lib/sanitize');
@@ -15,7 +15,6 @@ module.exports = function(server, interfaces, httpLogs) {
 
   "use strict";
 
-  var httpLogger  = log4js.getLogger();
   var app = express();
 
   if (!interfaces) {
@@ -33,14 +32,14 @@ module.exports = function(server, interfaces, httpLogs) {
 
   // all environments
   if (httpLogs) {
-    app.use(log4js.connectLogger(httpLogger, {
-      format: '\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m'
+    app.use(morgan('\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m', {
+      stream: {
+        write: function(message){
+          message && logger.info(message.replace(/\n$/,''));
+        }
+      }
     }));
   }
-  //app.use(function(req, res, next) {
-  //  console.log('\x1b[90mDEBUG URL - %s\x1b[0m', req.url);
-  //  next();
-  //});
 
   app.use(cors({
     allowedOrigins: [

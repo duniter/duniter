@@ -1,19 +1,24 @@
 #!/usr/bin/env node
 "use strict";
 
+process.on('uncaughtException', function (err) {
+  logger.error(err);
+  process.exit(1);
+});
+
+var logger = require('../app/lib/logger')('ucoind');
 var async       = require('async');
 var co          = require('co');
 var Q           = require('q');
 var _           = require('underscore');
 var program     = require('commander');
 var vucoin      = require('vucoin');
+var directory   = require('../app/lib/directory');
 var wizard      = require('../app/lib/wizard');
 var multicaster = require('../app/lib/streams/multicaster');
-var logger      = require('../app/lib/logger')('ucoind');
 var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
-var constants   = require('../app/lib/constants');
 var Synchroniser = require('../app/lib/sync');
 var bma         = require('../app/lib/streams/bma');
 var upnp        = require('../app/lib/upnp');
@@ -94,12 +99,6 @@ program
   .description('Launch the configuration Wizard')
   .action(function (step) {
     // Only show message "Saved"
-    require('log4js').configure({
-      "appenders": [{
-        category: "ucoind",
-        type: "console"
-      }]
-    });
     connect(function(step, server, conf){
       async.series([
         function(next) {
@@ -740,15 +739,16 @@ function service(callback, nologs) {
 
     if (nologs) {
       // Disable logs
-      require('log4js').configure({
-        "appenders": [
-        ]
-      });
+      require('../app/lib/logger')().mute();
     }
 
     var cbArgs = arguments;
-    var dbName = program.mdb || "ucoin_default";
+    var dbName = program.mdb;
     var dbHome = program.home;
+
+    // Add log files for this instance
+    logger.addHomeLogs(directory.getHome(dbName, dbHome));
+    logger.info(">> NODE STARTING");
 
     var server = ucoin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf());
 

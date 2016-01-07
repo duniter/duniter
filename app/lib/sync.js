@@ -23,11 +23,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
   var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
 
   if (interactive) {
-    require('log4js').configure({
-      "appenders": [
-        //{ category: "db1", type: "console" }
-      ]
-    });
+    logger.mute();
   }
 
   // Services

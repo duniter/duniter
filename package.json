@@ -42,12 +42,13 @@
     "express": "3.4.7",
     "express-cors": "0.0.3",
     "inquirer": "0.8.5",
-    "log4js": "0.6.9",
     "merkle": "0.1.0",
     "moment": "2.6.0",
+    "morgan": "^1.6.1",
     "multimeter": "0.1.1",
     "naclb": "1.0.0",
     "nnupnp": "1.0.1",
+    "optimist": "^0.6.1",
     "pm2": "0.15.10",
     "q": "1.1.2",
     "q-io": "1.13.2",
@@ -59,7 +60,8 @@
     "superagent": "1.4.0",
     "tweetnacl": "0.11.2",
     "underscore": "1.8.3",
-    "vucoin": "0.26.0"
+    "vucoin": "0.26.0",
+    "winston": "^2.1.1"
   },
   "devDependencies": {
     "coveralls": "2.11.4",

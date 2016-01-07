@@ -16,6 +16,7 @@ var crypto      = require('./app/lib/crypto');
 var Peer        = require('./app/lib/entity/peer');
 var signature   = require('./app/lib/signature');
 var common      = require('./app/lib/common');
+var directory   = require('./app/lib/directory');
 var INNER_WRITE = true;
 
 // Add methods to String and Date
@@ -25,6 +26,7 @@ function Server (dbConf, overrideConf) {
 
   stream.Duplex.call(this, { objectMode: true });
 
+  let home = directory.getHome(dbConf.name, dbConf.home);
   var logger = require('./app/lib/logger')('server');
   var that = this;
   var connectionPromise, servicesPromise;
@@ -99,7 +101,7 @@ function Server (dbConf, overrideConf) {
       return Q();
     }
     var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
-    return dbType(dbConf.name || "default", dbConf.home)
+    return dbType(home)
       .then(function(dal){
         that.dal = dal;
         return that.dal.init(overrideConf, useDefaultConf);

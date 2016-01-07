@@ -22,19 +22,19 @@ var logger = require('../../lib/logger')('database');
 const UCOIN_DB_NAME = 'ucoin';
 
 module.exports = {
-  memory: function(profile, home) {
-    return getHomeFS(profile, true, home)
+  memory: function(home) {
+    return getHomeFS(true, home)
       .then(function(params) {
         let sqlite = new sqlite3.Database(':memory:');
-        return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', sqlite));
+        return Q(new FileDAL(params.home, "", params.fs, 'fileDal', sqlite));
       });
   },
-  file: function(profile, home) {
-    return getHomeFS(profile, false, home)
+  file: function(home) {
+    return getHomeFS(false, home)
       .then(function(params) {
         let sqlitePath = path.join(params.home, UCOIN_DB_NAME + '.db');
         let sqlite = new sqlite3.Database(sqlitePath);
-        return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', sqlite);
+        return new FileDAL(params.home, "", params.fs, 'fileDal', sqlite);
       });
   },
   FileDAL: FileDAL
@@ -46,40 +46,36 @@ function someDelayFix() {
   });
 }
 
-function getHomeFS(profile, isMemory, homePath) {
-  let userHome = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.config/ucoin/';
-  let home = path.normalize((homePath || userHome) + '/') + profile;
-  let fs;
+function getHomeFS(isMemory, home) {
+  let myfs;
   return someDelayFix()
     .then(function() {
-      fs = (isMemory ? require('q-io/fs-mock')({}) : qfs);
-      return fs.makeTree(home);
+      myfs = (isMemory ? require('q-io/fs-mock')({}) : qfs);
+      return myfs.makeTree(home);
     })
     .then(function(){
-      return { fs: fs, home: home };
+      return { fs: myfs, home: home };
     });
 }
 
-function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, sqlite) {
+function FileDAL(home, localDir, myFS, dalName, sqlite) {
 
   var that = this;
 
   let localHome = path.join(home, localDir);
 
   this.name = dalName;
-  this.profile = profile;
-  this.parentDAL = parentFileDAL;
-
+  this.profile = 'DAL';
   var rootPath = home;
 
   // DALs
-  this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
+  this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
   this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqlite);
   this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqlite);
   this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqlite);
   this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqlite);
-  this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, CFSStorage);
-  this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that, CFSStorage);
+  this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
+  this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
   this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite);
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqlite);

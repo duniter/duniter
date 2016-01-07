@@ -8,12 +8,6 @@ var node   = require('./tools/node');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
 
-//require('log4js').configure({
-//   "appenders": [
-//     //{ category: "db1", type: "console" }
-//   ]
-//});
-
 var MEMORY_MODE = true;
 
 describe("Forwarding", function() {

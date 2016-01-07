@@ -427,7 +427,6 @@ function PeeringService(server, pair, dal) {
           yield dal.setPeerDown(p.pubkey);
         }
         while (downloaded) {
-          logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
           downloaded = rawifyTransactions(downloaded);
           try {
             let res = yield server.BlockchainService.submitBlock(downloaded, true);
@@ -436,10 +435,10 @@ function PeeringService(server, pair, dal) {
               yield server.BlockchainService.tryToFork(nowCurrent);
             }
           } catch (err) {
-            console.log(err);
             if (isConnectionError(err)) {
               throw err;
             }
+            logger.info("Downloaded block #%s from peer %s => %s", downloaded.number, p.getNamedURL(), err.code || err.message || err);
           }
           if (downloaded.number == 0) {
             downloaded = null;
@@ -466,7 +465,6 @@ function PeeringService(server, pair, dal) {
           yield dal.setPeerDown(p.pubkey);
         }
         while (downloaded) {
-          logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
           downloaded = rawifyTransactions(downloaded);
           try {
             let res = yield server.BlockchainService.submitBlock(downloaded, true);
@@ -475,10 +473,10 @@ function PeeringService(server, pair, dal) {
               yield server.BlockchainService.tryToFork(nowCurrent);
             }
           } catch (err) {
-            console.log(err);
             if (isConnectionError(err)) {
               throw err;
             }
+            logger.info("Downloaded block #%s from peer %s => %s", downloaded.number, p.getNamedURL(), err.code || err.message || err || "Unknown error");
           }
           if (downloaded.number == 0 || downloaded.number <= current.number - 10) {
             downloaded = null;

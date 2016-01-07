@@ -195,7 +195,7 @@ program
       },
       function(current, next) {
         remoteCurrent = current;
-        console.log(remoteCurrent.number);
+        logger.info(remoteCurrent.number);
         server.dal.getBlockFrom(remoteCurrent.number - 10).then(_.partial(next, null)).catch(next);
       },
       function (blocks, next){

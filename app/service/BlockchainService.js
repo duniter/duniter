@@ -9,7 +9,6 @@ var sha1            = require('sha1');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
 var childProcess    = require('child_process');
-var usage           = require('usage');
 var base58          = require('../lib/base58');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
@@ -82,17 +81,11 @@ function BlockchainService (conf, mainDAL, pair) {
   this.current = (done) =>
     mainDAL.getCurrentBlockOrNull(done);
 
-  this.promoted = (number, done) =>
-    co(function *() {
-      let bb = yield mainDAL.getPromoted(number);
-      if (!bb) throw 'Block not found';
-      done && done(null, bb);
-      return bb;
-    })
-    .catch(function(err) {
-      done && done(err);
-      throw err;
-    });
+  this.promoted = (number) => co(function *() {
+    let bb = yield mainDAL.getPromoted(number);
+    if (!bb) throw constants.ERRORS.BLOCK_NOT_FOUND;
+    return bb;
+  });
 
   this.checkBlock = function(block) {
     return mainContext.checkBlock(block);
@@ -730,66 +723,80 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   }
 
-  this.requirementsOfIdentity = function(idty) {
-    return Q.all([
-      that.currentDal.getMembershipsForIssuer(idty.pubkey),
-      that.currentDal.getCurrent(),
-      that.currentDal.getMembers()
-        .then(function(members){
-          return Q.Promise(function(resolve, reject){
-            getSentryMembers(that.currentDal, members, function(err, sentries) {
-              if (err) return reject(err);
-              resolve(sentries);
-            });
-          });
-        })
-    ])
-      .spread(function(mss, current, sentries){
-        var ms = _.chain(mss).where({ membership: 'IN' }).sortBy(function(ms) { return -ms.number; }).value()[0];
-        return Q.nfcall(getSinglePreJoinData, that.currentDal, current, idty.hash)
-          .then(function(join){
-            join.ms = ms;
-            var joinData = {};
-            joinData[join.identity.pubkey] = join;
-            return joinData;
-          })
-          .then(function(joinData){
-            var pubkey = _.keys(joinData)[0];
-            var join = joinData[pubkey];
-            // Check WoT stability
-            var someNewcomers = [join.identity.pubkey];
-            var nextBlockNumber = current ? current.number + 1 : 0;
-            return Q.nfcall(computeNewLinks, nextBlockNumber, that.currentDal, someNewcomers, joinData, {})
-              .then(function(newLinks){
-                return Q.all([
-                  that.getValidCertsCount(pubkey, newLinks),
-                  that.isOver3Hops(pubkey, newLinks, sentries, current)
-                ])
-                  .spread(function(certs, outdistanced) {
-                    return {
-                      uid: join.identity.uid,
-                      meta: {
-                        timestamp: parseInt(new Date(join.identity.time).getTime() / 1000)
-                      },
-                      outdistanced: outdistanced,
-                      certifications: certs,
-                      membershipMissing: !join.ms
-                    };
-                  });
-              });
-          });
-      }, Q.reject);
-  };
+  this.requirementsOfIdentities = (identities) => co(function *() {
+    let all = [];
+    let current = yield that.currentDal.getCurrent();
+    let members = yield that.currentDal.getMembers();
+    let sentries = yield Q.nfcall(getSentryMembers, that.currentDal, members);
+    for (let i = 0, len = identities.length; i < len; i++) {
+      let idty = new Identity(identities[i]);
+      let reqs = yield that.requirementsOfIdentity(idty, current, sentries);
+      all.push(reqs);
+    }
+    return all;
+  });
 
-  this.getValidCertsCount = function(newcomer, newLinks) {
-    return that.currentDal.getValidLinksTo(newcomer)
-      .then(function(links){
-        var count = links.length;
-        if (newLinks && newLinks.length)
-          count += newLinks.length;
-        return count;
+  this.requirementsOfIdentity = (idty, current, sentries) => co(function *() {
+    let join = yield Q.nfcall(getSinglePreJoinData, that.currentDal, current, idty.hash);
+    let pubkey = join.identity.pubkey;
+    // Check WoT stability
+    let someNewcomers = [join.identity.pubkey];
+    let nextBlockNumber = current ? current.number + 1 : 0;
+    let joinData = {};
+    joinData[join.identity.pubkey] = join;
+    let updates = {};
+    let newCerts = yield computeNewCerts(nextBlockNumber, that.currentDal, someNewcomers, joinData, updates);
+    let newLinks = newCertsToLinks(newCerts, updates);
+    let certs = yield that.getValidCerts(pubkey, newCerts);
+    let outdistanced = yield that.isOver3Hops(pubkey, newLinks, sentries, current);
+    let expiresMS = 0;
+    let currentTime = current ? current.medianTime : 0;
+    // Expiration of current membershship
+    if (join.identity.currentMSN >= 0) {
+      let msBlock = yield that.currentDal.getBlockOrNull(join.identity.currentMSN);
+      expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+    }
+    // Expiration of pending membership
+    let expiresPending = 0;
+    let lastJoin = yield that.currentDal.lastJoinOfIdentity(idty.hash);
+    if (lastJoin) {
+      let msBlock = yield that.currentDal.getBlockOrNull(lastJoin.blockNumber);
+      expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+    }
+    // Expiration of certifications
+    for (let i = 0, len = certs.length; i < len; i++) {
+      let cert = certs[i];
+      cert.expiresIn = Math.max(0, cert.timestamp + conf.sigValidity - currentTime);
+    }
+    return {
+      pubkey: join.identity.pubkey,
+      uid: join.identity.uid,
+      meta: {
+        timestamp: parseInt(new Date(join.identity.time).getTime() / 1000)
+      },
+      outdistanced: outdistanced,
+      certifications: certs,
+      membershipPendingExpiresIn: expiresPending,
+      membershipExpiresIn: expiresMS
+    };
+  });
+
+  this.getValidCerts = (newcomer, newCerts) => co(function *() {
+    let links = yield that.currentDal.getValidLinksTo(newcomer);
+    let certsFromLinks = links.map((lnk) => { return { from: lnk.source, to: lnk.target, timestamp: lnk.timestamp }; });
+    let certsFromCerts = [];
+    let certs = newCerts[newcomer] || [];
+    for (let i = 0, len = certs.length; i < len; i++) {
+      let cert = certs[i];
+      let block = yield that.currentDal.getBlockOrNull(cert.block_number);
+      certsFromCerts.push({
+        from: cert.from,
+        to: cert.to,
+        timestamp: block.medianTime
       });
-  };
+    }
+    return certsFromLinks.concat(certsFromCerts);
+  });
 
   this.isOver3Hops = function(newcomer, newLinks, sentries, current) {
     if (!current) {
@@ -861,52 +868,66 @@ function BlockchainService (conf, mainDAL, pair) {
       .catch(done);
   }
 
-  function computeNewLinks (forBlock, dal, theNewcomers, joinData, updates, done) {
-    var newLinks = {}, certifiers = [];
-    var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
-    async.waterfall([
-      function (next){
-        async.forEach(theNewcomers, function(newcomer, callback){
-          // New array of certifiers
-          newLinks[newcomer] = newLinks[newcomer] || [];
-          // Check wether each certification of the block is from valid newcomer/member
-          async.forEach(certsByKey[newcomer], function(cert, callback){
-            var isAlreadyCertifying = certifiers.indexOf(cert.from) !== -1;
-            if (isAlreadyCertifying && forBlock > 0) {
-              return callback();
-            }
+  function computeNewCerts(forBlock, dal, theNewcomers, joinData) {
+    return co(function *() {
+      var newCerts = {}, certifiers = [];
+      var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
+      for (let i = 0, len = theNewcomers.length; i < len; i++) {
+        let newcomer = theNewcomers[i];
+        // New array of certifiers
+        newCerts[newcomer] = newCerts[newcomer] || [];
+        // Check wether each certification of the block is from valid newcomer/member
+        for (let j = 0, len2 = certsByKey[newcomer].length; j < len2; j++) {
+          let cert = certsByKey[newcomer][j];
+          let isAlreadyCertifying = certifiers.indexOf(cert.from) !== -1;
+          if (!(isAlreadyCertifying && forBlock > 0)) {
             if (~theNewcomers.indexOf(cert.from)) {
               // Newcomer to newcomer => valid link
-              newLinks[newcomer].push(cert.from);
+              newCerts[newcomer].push(cert);
               certifiers.push(cert.from);
-              callback();
             } else {
-              async.waterfall([
-                function (next){
-                  dal.isMember(cert.from, next);
-                },
-                function (isMember, next){
-                  // Member to newcomer => valid link
-                  if (isMember) {
-                    newLinks[newcomer].push(cert.from);
-                    certifiers.push(cert.from);
-                  }
-                  next();
-                }
-              ], callback);
+              let isMember = yield dal.isMember(cert.from);
+              // Member to newcomer => valid link
+              if (isMember) {
+                newCerts[newcomer].push(cert);
+                certifiers.push(cert.from);
+              }
             }
-          }, callback);
-        }, next);
-      },
-      function (next){
-        _.mapObject(updates, function(certs, pubkey) {
-          newLinks[pubkey] = (newLinks[pubkey] || []).concat(_.pluck(certs, 'pubkey'));
-        });
-        next();
+          }
+        }
       }
-    ], function (err) {
-      done(err, newLinks);
+      return newCerts;
     });
+  }
+
+  function newCertsToLinks(newCerts, updates) {
+    let newLinks = {};
+    _.mapObject(newCerts, function(certs, pubkey) {
+      newLinks[pubkey] = _.pluck(certs, 'from');
+    });
+    _.mapObject(updates, function(certs, pubkey) {
+      newLinks[pubkey] = (newLinks[pubkey] || []).concat(_.pluck(certs, 'pubkey'));
+    });
+    return newLinks;
+  }
+
+  function computeNewLinksP(forBlock, dal, theNewcomers, joinData, updates) {
+    return co(function *() {
+      let newCerts = yield computeNewCerts(forBlock, dal, theNewcomers, joinData);
+      return newCertsToLinks(newCerts, updates);
+    });
+  }
+
+  function computeNewLinks (forBlock, dal, theNewcomers, joinData, updates, done) {
+    return computeNewLinksP(forBlock, dal, theNewcomers, joinData, updates)
+      .catch((err) => {
+        done && done(err);
+        throw err;
+      })
+      .then((res) => {
+        done && done(null, res);
+        return res;
+      });
   }
 
   function createBlock (dal, current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions) {
@@ -923,6 +944,7 @@ function BlockchainService (conf, mainDAL, pair) {
     var block = new Block();
     block.version = 1;
     block.currency = current ? current.currency : conf.currency;
+    block.nonce = 0;
     block.number = current ? current.number + 1 : 0;
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
@@ -1036,30 +1058,6 @@ function BlockchainService (conf, mainDAL, pair) {
   }
   var powWorker;
 
-  this.getPoWProcessStats = function(done) {
-    if (powWorker)
-      usage.lookup(powWorker.powProcess.pid, done);
-    else
-      done(null, { memory: 0, cpu: 0 });
-  };
-
-  var askedStop = null;
-
-  this.stopProof = function(done) {
-    if (!newKeyblockCallback) {
-      askedStop = 'Stopping node.';
-      newKeyblockCallback = function() {
-        newKeyblockCallback = null;
-        // Definitely kill the process for this BlockchainService instance
-        if (powWorker) {
-          powWorker.kill();
-        }
-        done();
-      };
-    }
-    else done();
-  };
-
   this.prove = function (block, sigFunc, nbZeros, done) {
 
     return Q.Promise(function(resolve){
@@ -1164,7 +1162,6 @@ function BlockchainService (conf, mainDAL, pair) {
       if (!selfPubkey) {
         throw 'No self pubkey found.';
       }
-      askedStop = null;
       var block, current;
       var dal = mainDAL;
       var isMember = yield dal.isMember(selfPubkey);
@@ -1274,6 +1271,15 @@ function BlockchainService (conf, mainDAL, pair) {
     if (blocks[0].number == 0) {
       yield that.saveParametersForRootBlock(blocks[0]);
     }
+    // Helper to retrieve a block with local cache
+    let getBlockOrNull = (number) => {
+      let firstLocalNumber = blocks[0].number;
+      if (number >= firstLocalNumber) {
+        let offset = number - firstLocalNumber;
+        return Q(blocks[offset]);
+      }
+      return mainDAL.getBlockOrNull(number);
+    };
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
     let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield mainDAL.getBlockOrNull(0));
@@ -1298,50 +1304,26 @@ function BlockchainService (conf, mainDAL, pair) {
       } else {
         block.UDTime = previousBlock.UDTime;
       }
-      // Transactions & Memberships recording
-      yield mainDAL.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime });
-      yield mainDAL.saveMemberships('join', block.joiners);
-      yield mainDAL.saveMemberships('active', block.actives);
-      yield mainDAL.saveMemberships('leave', block.leavers);
       yield Q.Promise(function(resolve, reject){
-        // Compute resulting entities
-        async.waterfall([
-          function (next) {
-            // Create/Update members (create new identities if do not exist)
-            mainContext.updateMembers(block, next);
-          },
-          function (next) {
-            // Create/Update certifications
-            mainContext.updateCertifications(block, next);
-          },
-          function (next) {
-            // Create/Update memberships
-            mainContext.updateMemberships(block, next);
-          },
-          function (next){
-            // Save links
-            mainContext.updateLinks(block, next, (number) => {
-              let firstLocalNumber = blocks[0].number;
-              if (number >= firstLocalNumber) {
-                let offset = number - firstLocalNumber;
-                return Q(blocks[offset]);
-              }
-              return mainDAL.getBlockOrNull(number);
-            });
-          },
-          function (next){
-            // Update consumed sources & create new ones
-            mainContext.updateTransactionSources(block, next);
-          }
-        ], function (err) {
+        // Create/Update members (create new identities if do not exist)
+        mainContext.updateMembers(block, function (err) {
           if (err) return reject(err);
           resolve();
         });
       });
     }
+    // Transactions recording
+    yield mainContext.updateTransactionsForBlocks(blocks);
+    // Create certifications
+    yield mainContext.updateMembershipsForBlocks(blocks);
+    // Create certifications
+    yield mainContext.updateLinksForBlocks(blocks, getBlockOrNull);
+    // Create certifications
+    yield mainContext.updateCertificationsForBlocks(blocks);
+    // Create / Update sources
+    yield mainContext.updateTransactionSourcesForBlocks(blocks);
     yield mainDAL.blockDAL.saveBunch(blocks, (targetLastNumber - lastBlockToSave.number) > maxBlock);
     yield pushStatsForBlocks(blocks);
-    //console.log('Saved');
   });
 
   function pushStatsForBlocks(blocks) {

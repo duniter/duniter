@@ -58,7 +58,7 @@ function MembershipParser (onError) {
         err = {code: codes.BAD_ISSUER, message: "Incorrect issuer field"};
     }
     if(!err){
-      if(obj.membership && !obj.membership.match(/^(IN|OUT)$/))
+      if(!(obj.membership || "").match(/^(IN|OUT)$/))
         err = {code: codes.BAD_MEMBERSHIP, message: "Incorrect Membership field: must be either IN or OUT"};
     }
     if(!err){

@@ -2,13 +2,6 @@
 
 module.exports = {
 
-  merkleDone: function (req, res, json) {
-    if(req.query.nice){
-      res.end(JSON.stringify(json, null, "  "));
-    }
-    else res.end(JSON.stringify(json));
-  },
-
   processForURL: function (req, merkle, valueCB, done) {
     // Result
     var json = {
@@ -27,7 +20,7 @@ module.exports = {
       var hashes = [req.query.leaf];
       // This code is in a loop for historic reasons. Should be set to non-loop style.
       valueCB(hashes, function (err, values) {
-        hashes.forEach(function (hash, index){
+        hashes.forEach(function (hash){
           json.leaf = {
             "hash": hash,
             "value": values[hash] || ""
@@ -39,4 +32,4 @@ module.exports = {
       done(null, json);
     }
   }
-}
+};

@@ -13,20 +13,17 @@ var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
 var multimeter = require('multimeter');
 
-var CONST_BLOCKS_CHUNK = 500;
-var EVAL_REMAINING_INTERVAL = 1000;
+const CONST_BLOCKS_CHUNK = 500;
+const EVAL_REMAINING_INTERVAL = 1000;
+const COMPUTE_SPEED_ON_COUNT_CHUNKS = 8;
 
 module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
-  var speed = 0, syncStart = new Date(), blocksApplied = 0;
+  var speed = 0, syncStart = new Date(), times = [syncStart], blocksApplied = 0;
   var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
 
   if (interactive) {
-    require('log4js').configure({
-      "appenders": [
-        //{ category: "db1", type: "console" }
-      ]
-    });
+    logger.mute();
   }
 
   // Services
@@ -88,7 +85,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
             co(function *() {
               // Download blocks and save them
               watcher.downloadPercent(Math.floor(chunk[0] / remoteNumber * 100));
-              logger.info('Blocks #%s to #%s...', chunk[0], chunk[1]);
               var blocks = yield Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0]);
               watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
               chunk[2] = blocks;
@@ -104,7 +100,17 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
       function incrementBlocks(increment) {
         blocksApplied += increment;
-        speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
+        let now = new Date();
+        if (times.length == COMPUTE_SPEED_ON_COUNT_CHUNKS) {
+          times.splice(0, 1);
+        }
+        times.push(now);
+        let duration = times.reduce(function(sum, t, index) {
+          return index == 0 ? sum : (sum + (times[index] - times[index - 1]));
+        }, 0);
+        speed = (CONST_BLOCKS_CHUNK * (times.length  - 1)) / Math.round(Math.max(duration / 1000, 1));
+        // Reset chrono
+        syncStart = new Date();
         if (watcher.appliedPercent() != Math.floor((blocksApplied + localNumber) / remoteNumber * 100)) {
           watcher.appliedPercent(Math.floor((blocksApplied + localNumber) / remoteNumber * 100));
         }
@@ -117,7 +123,6 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         let chunk = yield toApplyNoCautious[i].promise;
         let blocks = chunk[2];
         blocks = _.sortBy(blocks, 'number');
-        logger.info("Applying blocks #%s to #%s...", blocks[0].number, blocks[blocks.length - 1].number);
         if (cautious) {
           for (let j = 0, len = blocks.length; j < len; j++) {
             yield applyGivenBlock(cautious, remoteNumber)(blocks[j]);
@@ -126,6 +131,14 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         } else {
           yield BlockchainService.saveBlocksInMainBranch(blocks, remoteNumber);
           incrementBlocks(blocks.length);
+          // Free memory
+          if (i >= 0 && i < toApplyNoCautious.length - 1) {
+            blocks.splice(0, blocks.length);
+            chunk.splice(0, chunk.length);
+          }
+          if (i - 1 >= 0) {
+            delete toApplyNoCautious[i - 1];
+          }
         }
       }
 
@@ -228,7 +241,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
       if (watcher.appliedPercent() != Math.floor(block.number / remoteCurrentNumber * 100)) {
         watcher.appliedPercent(Math.floor(block.number / remoteCurrentNumber * 100));
       }
-      return BlockchainService.submitBlock(_.omit(block, '$loki', 'meta'), cautious);
+      return BlockchainService.submitBlock(block, cautious);
     };
   }
 
@@ -358,19 +371,30 @@ function MultimeterWatcher() {
 
 function LoggerWatcher() {
 
-  var downPct = 0, appliedPct = 0;
+  var downPct = 0, appliedPct = 0, lastMsg;
+
+  this.showProgress = function() {
+    logger.info('Downloaded %s%, Applied %s%', downPct, appliedPct);
+  };
 
   this.writeStatus = function(str) {
-    logger.info(str);
+    if (str != lastMsg) {
+      lastMsg = str;
+      logger.info(str);
+    }
   };
 
   this.downloadPercent = function(pct) {
+    let changed = pct != downPct;
     downPct = pct;
+    if (changed) this.showProgress();
     return downPct;
   };
 
   this.appliedPercent = function(pct) {
+    let changed = pct !== undefined && pct != appliedPct;
     appliedPct = pct;
+    if (changed) this.showProgress();
     return appliedPct;
   };
 

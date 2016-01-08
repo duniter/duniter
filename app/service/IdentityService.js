@@ -40,7 +40,7 @@ function IdentityService (conf, dal) {
     return dal.searchJustIdentities(search);
   };
 
-  this.findMember = (search, done) => co(function *() {
+  this.findMember = (search) => co(function *() {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
       idty = yield dal.getWrittenIdtyByPubkey(search);
@@ -49,16 +49,11 @@ function IdentityService (conf, dal) {
       idty = yield dal.getWrittenIdtyByUID(search);
     }
     if (!idty) {
-      throw 'No member matching this pubkey or uid';
+      throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
     yield dal.fillInMembershipsOfIdentity(Q(idty));
     return new Identity(idty);
-  })
-  .then(function(idty){
-    done && done(null, idty);
-    return idty;
-  })
-  .catch(done);
+  });
 
   this.findMemberWithoutMemberships = (search) => co(function *() {
     let idty = null;
@@ -69,7 +64,7 @@ function IdentityService (conf, dal) {
       idty = yield dal.getWrittenIdtyByUID(search);
     }
     if (!idty) {
-      throw 'No member matching this pubkey or uid';
+      throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
     return new Identity(idty);
   });
@@ -105,7 +100,7 @@ function IdentityService (conf, dal) {
         // Check signature's validity
         let verified = crypto.verify(selfCert, idty.sig, idty.pubkey);
         if (!verified) {
-          throw 'Signature does not match';
+          throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
         }
         // CERTS
         for (let i = 0; i < certs.length; i++) {
@@ -148,22 +143,22 @@ function IdentityService (conf, dal) {
               }
             }
           } else {
-            logger.info('✘ CERT %s wrong signature', cert.from);
+            logger.info('✘ CERT %s %s', cert.from, cert.err);
           }
         }
         let existing = yield dal.getIdentityByHashWithCertsOrNull(obj.hash);
         if (existing && !aCertWasSaved) {
-          throw 'Already up-to-date';
+          throw constants.ERRORS.ALREADY_UP_TO_DATE;
         }
         else if (!existing) {
           // Create if not already written uid/pubkey
           let used = yield dal.getWrittenIdtyByPubkey(idty.pubkey);
           if (used) {
-            throw 'Pubkey already used in the blockchain';
+            throw constants.ERRORS.PUBKEY_ALREADY_USED;
           }
           used = yield dal.getWrittenIdtyByUID(idty.uid);
           if (used) {
-            throw 'UID already used in the blockchain';
+            throw constants.ERRORS.UID_ALREADY_USED;
           }
           idty = new Identity(idty);
           yield dal.savePendingIdentity(idty);

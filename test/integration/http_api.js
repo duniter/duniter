@@ -7,6 +7,7 @@ var assert    = require('assert');
 var ucoin     = require('./../../index');
 var bma       = require('./../../app/lib/streams/bma');
 var user      = require('./tools/user');
+var http      = require('./tools/http');
 var constants = require('../../app/lib/constants');
 var rp        = require('request-promise');
 
@@ -81,7 +82,7 @@ describe("HTTP API", function() {
     });
 
     it('/block/88 should not exist', function() {
-      return expectHttpCode(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
+      return http.expectError(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
     });
 
     it('/current should exist', function() {
@@ -91,7 +92,7 @@ describe("HTTP API", function() {
     });
 
     it('/membership should not accept wrong signature', function() {
-      return expectHttpCode(400, 'wrong signature for membership', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+      return http.expectError(400, 'wrong signature for membership', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 1\n' +
           'Type: Membership\n' +
@@ -106,8 +107,8 @@ describe("HTTP API", function() {
       }));
     });
 
-    it('/membership should not accept wrong signature', function() {
-      return expectHttpCode(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+    it('/membership should not accept wrong signature 2', function() {
+      return http.expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 1\n' +
           'Type: Membership\n' +
@@ -121,8 +122,8 @@ describe("HTTP API", function() {
       }));
     });
 
-    it('/membership should not accept wrong signature', function() {
-      return expectHttpCode(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+    it('/membership should not accept wrong signature 3', function() {
+      return http.expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 1\n' +
           'Type: Membership\n' +
@@ -138,26 +139,6 @@ describe("HTTP API", function() {
     });
   });
 });
-
-function expectHttpCode(code, message, promise) {
-  if (arguments.length == 2) {
-    promise = arguments[1];
-    message = undefined;
-  }
-  return promise
-    .then(function(){
-      assert.equal(200, code);
-    })
-    .catch(function(err){
-      if (err.response) {
-        assert.equal(err.response.statusCode, code);
-        if (message) {
-          assert.equal(err.error || err.cause, message);
-        }
-      }
-      else throw err;
-    });
-}
 
 function expectJSON(promise, json) {
   return promise

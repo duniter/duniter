@@ -16,10 +16,7 @@ var expectJSON     = httpTest.expectJSON;
 var expectAnswer   = httpTest.expectAnswer;
 var expectHttpCode = httpTest.expectHttpCode;
 
-require('log4js').configure({
-  "appenders": [
-  ]
-});
+require('../../app/lib/logger')().mute();
 
 var MEMORY_MODE = true;
 var commonConf = {
@@ -228,7 +225,7 @@ describe("Branches", function() {
     it('should have a 3 blocks fork window size', function() {
       return expectAnswer(rp('http://127.0.0.1:7778/node/summary', { json: true }), function(res) {
         res.should.have.property('ucoin').property('software').equal('ucoind');
-        res.should.have.property('ucoin').property('version').equal('0.12.10');
+        res.should.have.property('ucoin').property('version').equal('0.13.0');
         res.should.have.property('ucoin').property('forkWindowSize').equal(3);
       });
     });

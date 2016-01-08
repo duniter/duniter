@@ -14,6 +14,8 @@ var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
 var blockchainCtx   = require('../lib/blockchainContext');
 
+const DONT_IF_MORE_THAN_FOUR_PEERS = true;
+
 function PeeringService(server, pair, dal) {
 
   var conf = server.conf;
@@ -50,7 +52,7 @@ function PeeringService(server, pair, dal) {
   this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
-    let blockNumber = sp[0];
+    let blockNumber = parseInt(sp[0]);
     let blockHash = sp[1];
     let sigTime = 0;
     let block;
@@ -82,7 +84,7 @@ function PeeringService(server, pair, dal) {
       if(found){
         // Already existing peer
         var sp2 = found.block.split('-');
-        var previousBlockNumber = sp2[0];
+        var previousBlockNumber = parseInt(sp2[0]);
         if(blockNumber <= previousBlockNumber && !eraseIfAlreadyRecorded){
           throw constants.ERROR.PEER.ALREADY_RECORDED;
         }
@@ -115,12 +117,21 @@ function PeeringService(server, pair, dal) {
     generateSelfPeer(conf, signalTimeInterval, done);
   };
 
+  var crawlPeersFifo = async.queue((task, callback) => task(callback), 1);
+  var crawlPeersInterval = null;
+  this.regularCrawlPeers = function (done) {
+    if (crawlPeersInterval)
+      clearInterval(crawlPeersInterval);
+    crawlPeersInterval = setInterval(()  => crawlPeersFifo.push(crawlPeers), 1000 * conf.avgGenTime * constants.NETWORK.SYNC_PEERS_INTERVAL);
+    crawlPeers(DONT_IF_MORE_THAN_FOUR_PEERS, done);
+  };
+
   var syncBlockFifo = async.queue((task, callback) => task(callback), 1);
   var syncBlockInterval = null;
   this.regularSyncBlock = function (done) {
     if (syncBlockInterval)
       clearInterval(syncBlockInterval);
-    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000*conf.avgGenTime*constants.NETWORK.SYNC_BLOCK_INTERVAL);
+    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL);
     syncBlock(done);
   };
 
@@ -130,7 +141,7 @@ function PeeringService(server, pair, dal) {
   this.regularTestPeers = function (done) {
     if (testPeerFifoInterval)
       clearInterval(testPeerFifoInterval);
-    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers.bind(null, !FIRST_CALL)), 1000 * conf.avgGenTime * constants.NETWORK.TEST_PEERS_INTERVAL);
+    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers.bind(null, !FIRST_CALL)), 1000 * constants.NETWORK.TEST_PEERS_INTERVAL);
     testPeers(FIRST_CALL, done);
   };
 
@@ -207,6 +218,79 @@ function PeeringService(server, pair, dal) {
       .catch(done);
   }
 
+  function crawlPeers(dontCrawlIfEnoughPeers, done) {
+    if (arguments.length == 1) {
+      done = dontCrawlIfEnoughPeers;
+      dontCrawlIfEnoughPeers = false;
+    }
+    logger.info('Crawling the network...');
+    return co(function *() {
+      let peers = yield dal.listAllPeersWithStatusNewUPWithtout(selfPubkey);
+      if (peers.length > constants.NETWORK.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == DONT_IF_MORE_THAN_FOUR_PEERS) {
+        return;
+      }
+      let peersToTest = peers.slice().map((p) => Peer.statics.peerize(p));
+      let tested = [];
+      let found = [];
+      while (peersToTest.length > 0) {
+        let results = yield peersToTest.map(crawlPeer);
+        tested = tested.concat(peersToTest.map((p) => p.pubkey));
+        // End loop condition
+        peersToTest.splice(0);
+        // Eventually continue the loop
+        for (let i = 0, len = results.length; i < len; i++) {
+          let res = results[i];
+          for (let j = 0, len2 = res.length; j < len2; j++) {
+            try {
+              let subpeer = res[j].leaf.value;
+              if (subpeer.currency && tested.indexOf(subpeer.pubkey) === -1) {
+                let p = Peer.statics.peerize(subpeer);
+                peersToTest.push(p);
+                found.push(p);
+              }
+            } catch (e) {
+              logger.warn('Invalid peer %s', res[j]);
+            }
+          }
+        }
+        // Make unique list
+        peersToTest = _.uniq(peersToTest, false, (p) => p.pubkey);
+      }
+      logger.info('Crawling done.');
+      for (let i = 0, len = found.length; i < len; i++) {
+        let p = found[i];
+        try {
+          // Try to write it
+          p.documentType = 'peer';
+          yield server.singleWritePromise(p);
+        } catch(e) {
+          // Silent error
+        }
+      }
+    })
+      .then(() => done()).catch(done);
+  }
+
+  function crawlPeer(aPeer) {
+    return co(function *() {
+      let subpeers = [];
+      try {
+        logger.info('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
+        let node = yield aPeer.connectP();
+        //let remotePeer = yield Q.nbind(node.network.peering.get)();
+        let json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
+        for (let i = 0, len = json.leaves.length; i < len; i++) {
+          let leaf = json.leaves[i];
+          let subpeer = yield Q.nbind(node.network.peering.peers.get, node)({ leaf: leaf });
+          subpeers.push(subpeer);
+        }
+        return subpeers;
+      } catch (e) {
+        return subpeers;
+      }
+    });
+  }
+
   function testPeers(displayDelays, done) {
     return co(function *() {
       let peers = yield dal.listAllPeers();
@@ -224,8 +308,15 @@ function PeeringService(server, pair, dal) {
             // We try to reconnect only with peers marked as DOWN
             try {
               logger.info('Checking if node %s (%s:%s) is UP...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
+              // We register the try anyway
+              yield dal.setPeerDown(p.pubkey);
+              // Now we test
               let node = yield Q.nfcall(p.connect);
               let peering = yield Q.nfcall(node.network.peering.get);
+              // The node answered, it is no more DOWN!
+              logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
+              yield dal.setPeerUP(p.pubkey);
+              // We try to forward its peering entry
               let sp1 = peering.block.split('-');
               let currentBlockNumber = sp1[0];
               let currentBlockHash = sp1[1];
@@ -289,24 +380,29 @@ function PeeringService(server, pair, dal) {
         let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
         peers = _.shuffle(peers);
         for (let i = 0, len = peers.length; i < len; i++) {
-          var p = new Peer(peers[i]);
+          let p = new Peer(peers[i]);
           logger.info("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
-          let node = yield Q.nfcall(p.connect);
-          let okUP = yield processAscendingUntilNoBlock(p, node, current);
-          if (okUP) {
-            let remoteCurrent = yield Q.nfcall(node.blockchain.current);
-            // We check if our current block has changed due to ascending pulling
-            let nowCurrent = yield dal.getCurrentBlockOrNull();
-            logger.debug("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
-            if (remoteCurrent.number != nowCurrent.number) {
-              yield processLastTen(p, node, nowCurrent);
-            }
-          }
           try {
+            let node = yield Q.nfcall(p.connect);
+            let okUP = yield processAscendingUntilNoBlock(p, node, current);
+            if (okUP) {
+              let remoteCurrent = yield Q.nfcall(node.blockchain.current);
+              // We check if our current block has changed due to ascending pulling
+              let nowCurrent = yield dal.getCurrentBlockOrNull();
+              logger.debug("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
+              if (remoteCurrent.number != nowCurrent.number) {
+                yield processLastTen(p, node, nowCurrent);
+              }
+            }
             // Try to fork as a final treatment
             let nowCurrent = yield dal.getCurrentBlockOrNull();
             yield server.BlockchainService.tryToFork(nowCurrent);
           } catch (e) {
+            if (isConnectionError(e)) {
+              logger.info("Peer %s unreachable: now considered as DOWN.", p.pubkey);
+              yield dal.setPeerDown(p.pubkey);
+              return false;
+            }
             logger.warn(e);
           }
         }
@@ -320,7 +416,7 @@ function PeeringService(server, pair, dal) {
   }
 
   function isConnectionError(err) {
-    return err && (err.code == "EINVAL" || err.code == "ECONNREFUSED");
+    return err && (err.code == "EINVAL" || err.code == "ECONNREFUSED" || err.code == "ETIMEDOUT");
   }
 
   function processAscendingUntilNoBlock(p, node, current) {
@@ -331,7 +427,6 @@ function PeeringService(server, pair, dal) {
           yield dal.setPeerDown(p.pubkey);
         }
         while (downloaded) {
-          logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
           downloaded = rawifyTransactions(downloaded);
           try {
             let res = yield server.BlockchainService.submitBlock(downloaded, true);
@@ -340,10 +435,10 @@ function PeeringService(server, pair, dal) {
               yield server.BlockchainService.tryToFork(nowCurrent);
             }
           } catch (err) {
-            console.log(err);
             if (isConnectionError(err)) {
               throw err;
             }
+            logger.info("Downloaded block #%s from peer %s => %s", downloaded.number, p.getNamedURL(), err.code || err.message || err);
           }
           if (downloaded.number == 0) {
             downloaded = null;
@@ -370,7 +465,6 @@ function PeeringService(server, pair, dal) {
           yield dal.setPeerDown(p.pubkey);
         }
         while (downloaded) {
-          logger.info("Downloaded block #%s from peer %s", downloaded.number, p.getNamedURL());
           downloaded = rawifyTransactions(downloaded);
           try {
             let res = yield server.BlockchainService.submitBlock(downloaded, true);
@@ -379,10 +473,10 @@ function PeeringService(server, pair, dal) {
               yield server.BlockchainService.tryToFork(nowCurrent);
             }
           } catch (err) {
-            console.log(err);
             if (isConnectionError(err)) {
               throw err;
             }
+            logger.info("Downloaded block #%s from peer %s => %s", downloaded.number, p.getNamedURL(), err.code || err.message || err || "Unknown error");
           }
           if (downloaded.number == 0 || downloaded.number <= current.number - 10) {
             downloaded = null;

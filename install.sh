@@ -11,7 +11,7 @@ if [ -z "$UCOIN_DIR" ]; then
 fi
 
 ucoin_latest_version() {
-  echo "v0.12.10"
+  echo "v0.13.0"
 }
 
 ucoin_repo_url() {
@@ -155,7 +155,7 @@ install_ucoin_from_git() {
   fi
 
   # Download Nodejs
-  local NVER="0.12.7";
+  local NVER="4.2.0";
   local ARCH="86"
   local X64=`uname -a | grep "x86_64"`
   if [ ! -z "$X64" ]; then

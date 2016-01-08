@@ -2,6 +2,7 @@
 var sha1                 = require('sha1');
 var util                 = require('util');
 var stream               = require('stream');
+var constants            = require('../../../constants');
 var simpleLineExtract    = require('../../../simpleLineExtract');
 var multipleLinesExtract = require('../../../multipleLinesExtract');
 
@@ -51,7 +52,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     if (!error) {
       var raw = that.rawerFunc(obj);
       if (sha1(str) != sha1(raw))
-        error = 'Document has unkown fields or wrong line ending format';
+        error = constants.ERRORS.WRONG_DOCUMENT;
       if (error) {
         // console.log(error);
         // console.log('-----------------');
@@ -60,10 +61,9 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
         // console.log('-----------------');
       }
     }
-    if (typeof done == 'function')
-      done(error, obj);
-    else
-      return obj;
+    if (typeof done == 'function') return  done(error, obj);
+    if (error) throw constants.ERRORS.WRONG_DOCUMENT;
+    return obj;
   }
 
   this._clean = function (obj) {

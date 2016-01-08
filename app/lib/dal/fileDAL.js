@@ -6,6 +6,7 @@ var fs      = require('fs');
 var qfs     = require('q-io/fs');
 var sha1    = require('sha1');
 var path    = require('path');
+var moment  = require('moment');
 var Configuration = require('../entity/configuration');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
@@ -13,84 +14,27 @@ var Transaction = require('../entity/transaction');
 var constants = require('../constants');
 var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
-var CertDAL = require('./fileDALs/CertDAL');
-var TxsDAL = require('./fileDALs/TxsDAL');
-var SourcesDAL = require('./fileDALs/SourcesDAL');
-var LinksDAL = require('./fileDALs/LinksDAL');
-var MembershipDAL = require('./fileDALs/MembershipDAL');
-var IdentityDAL = require('./fileDALs/IdentityDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
-var PeerDAL = require('./fileDALs/PeerDAL');
-var BlockDAL = require('./fileDALs/BlockDAL');
 var CFSStorage = require('./fileDALs/AbstractCFS');
-var lokijs = require('lokijs');
+var sqlite3 = require("sqlite3").verbose();
 var logger = require('../../lib/logger')('database');
 
 const UCOIN_DB_NAME = 'ucoin';
 
 module.exports = {
-  memory: function(profile) {
-    return getHomeFS(profile, true)
+  memory: function(home) {
+    return getHomeFS(true, home)
       .then(function(params) {
-        let loki = new lokijs(UCOIN_DB_NAME, { autosave: false });
-        return Q(new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki));
+        let sqlite = new sqlite3.Database(':memory:');
+        return Q(new FileDAL(params.home, "", params.fs, 'fileDal', sqlite));
       });
   },
-  file: function(profile, forConf) {
-    return getHomeFS(profile, false)
+  file: function(home) {
+    return getHomeFS(false, home)
       .then(function(params) {
-        return Q.Promise(function(resolve, reject){
-          let loki;
-          if (forConf) {
-            // Memory only service dals
-            loki = new lokijs('temp', { autosave: false });
-            resolve(loki);
-          } else {
-            let lokiPath = path.join(params.home, UCOIN_DB_NAME + '.json');
-            logger.debug('Loading DB at %s...', lokiPath);
-            co(function *() {
-              let rawDB;
-              try {
-                // Try to read database
-                rawDB = yield qfs.read(lokiPath);
-                // Check if content is standard JSON
-                JSON.parse(rawDB);
-              } catch (e) {
-                if (rawDB) {
-                  logger.error('The database could not be loaded, it is probably corrupted due to some system fail.');
-                  logger.error('Please stop uCoin and re-sync it with another node of the network before restarting, using the following commands:');
-                  logger.error('> ucoind reset data');
-                  logger.error('> ucoind sync <some.ucoin.node> <port>');
-                  logger.error('> ucoind restart');
-                  // Dirty "won't go any further"
-                  return Q.Promise((resolve) => null);
-                }
-              }
-
-              return Q.Promise(function(resolve2){
-                let lokiDB;
-                lokiDB = new lokijs(lokiPath, {
-                  autoload: true,
-                  autosave: true,
-                  autosaveInterval: 30000,
-                  adapter: {
-                    loadDatabase: (dbname, callback) => {
-                      callback(rawDB || null);
-                      resolve2(lokiDB);
-                    },
-                    saveDatabase: (dbname, dbstring, callback) => fs.writeFile(dbname, dbstring, callback)
-                  }
-                });
-              });
-            })
-              .then(resolve)
-              .catch(reject);
-          }
-        })
-          .then(function(loki){
-            loki.autosaveClearFlags();
-            return new FileDAL(profile, params.home, "", params.fs, null, 'fileDal', loki);
-          });
+        let sqlitePath = path.join(params.home, UCOIN_DB_NAME + '.db');
+        let sqlite = new sqlite3.Database(sqlitePath);
+        return new FileDAL(params.home, "", params.fs, 'fileDal', sqlite);
       });
   },
   FileDAL: FileDAL
@@ -102,52 +46,68 @@ function someDelayFix() {
   });
 }
 
-function getHomeFS(profile, isMemory) {
-  let userHome = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
-  let home = userHome + '/.config/ucoin/' + profile;
-  let fs;
+function getHomeFS(isMemory, home) {
+  let myfs;
   return someDelayFix()
     .then(function() {
-      fs = (isMemory ? require('q-io/fs-mock')({}) : qfs);
-      return fs.makeTree(home);
+      myfs = (isMemory ? require('q-io/fs-mock')({}) : qfs);
+      return myfs.makeTree(home);
     })
     .then(function(){
-      return { fs: fs, home: home };
+      return { fs: myfs, home: home };
     });
 }
 
-function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
+function FileDAL(home, localDir, myFS, dalName, sqlite) {
 
   var that = this;
 
   let localHome = path.join(home, localDir);
 
   this.name = dalName;
-  this.profile = profile;
-  this.parentDAL = parentFileDAL;
-
+  this.profile = 'DAL';
   var rootPath = home;
 
-  let blocksCFS = require('../cfs')(rootPath, myFS);
-
   // DALs
-  this.confDAL = new ConfDAL(rootPath, myFS, parentFileDAL && parentFileDAL.confDAL.coreFS, that, CFSStorage);
-  this.peerDAL = new PeerDAL(loki);
-  this.blockDAL = new BlockDAL(loki, blocksCFS, getLowerWindowBlock);
-  this.sourcesDAL = new SourcesDAL(loki);
-  this.txsDAL = new TxsDAL(loki);
-  this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, parentFileDAL && parentFileDAL.indicatorsDAL.coreFS, that, CFSStorage);
-  this.statDAL = new StatDAL(rootPath, myFS, parentFileDAL && parentFileDAL.statDAL.coreFS, that, CFSStorage);
-  this.linksDAL = new LinksDAL(loki);
-  this.idtyDAL = new IdentityDAL(loki);
-  this.certDAL = new CertDAL(loki);
-  this.msDAL = new MembershipDAL(loki);
+  this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
+  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqlite);
+  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqlite);
+  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqlite);
+  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqlite);
+  this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
+  this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
+  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite);
+  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqlite);
+  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqlite);
 
   this.newDals = {
+    'blockDAL': that.blockDAL,
+    'certDAL': that.certDAL,
+    'msDAL': that.msDAL,
+    'idtyDAL': that.idtyDAL,
+    'sourcesDAL': that.sourcesDAL,
+    'linksDAL': that.linksDAL,
+    'txsDAL': that.txsDAL,
     'peerDAL': that.peerDAL,
     'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
-    'statDAL': that.statDAL
+    'statDAL': that.statDAL,
+    'ghostDAL': {
+      init: () => co(function *() {
+
+        // Create extra views (useful for stats or debug)
+        return that.blockDAL.exec('BEGIN;' +
+          'CREATE VIEW IF NOT EXISTS identities_pending AS SELECT * FROM idty WHERE NOT written;' +
+          'CREATE VIEW IF NOT EXISTS certifications_pending AS SELECT * FROM cert WHERE NOT written;' +
+          'CREATE VIEW IF NOT EXISTS transactions_pending AS SELECT * FROM txs WHERE NOT written;' +
+          'CREATE VIEW IF NOT EXISTS transactions_desc AS SELECT * FROM txs ORDER BY time DESC;' +
+          'CREATE VIEW IF NOT EXISTS forks AS SELECT number, hash, issuer, monetaryMass, dividend, UDTime, membersCount, medianTime, time, * FROM block WHERE fork ORDER BY number DESC;' +
+          'CREATE VIEW IF NOT EXISTS blockchain AS SELECT number, hash, issuer, monetaryMass, dividend, UDTime, membersCount, medianTime, time, * FROM block WHERE NOT fork ORDER BY number DESC;' +
+          'CREATE VIEW IF NOT EXISTS network AS select i.uid, (last_try - first_down) / 1000 as down_delay_in_sec, p.* from peer p LEFT JOIN idty i on i.pubkey = p.pubkey ORDER by down_delay_in_sec;' +
+          'COMMIT;');
+      })
+    }
   };
 
   var currency = '';
@@ -156,47 +116,11 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return co(function *() {
       yield _.values(that.newDals).map((dal) => dal.init());
       return that.loadConf(overrideConf, defaultConf);
-    });
+    })
+      .catch((err) => {
+        throw Error(err);
+      });
   };
-
-  function getLowerWindowBlock() {
-    return co(function *() {
-      let rootBlock = yield that.getRootBlock();
-      if (!rootBlock) {
-        return -1;
-      }
-      let conf = getParameters(rootBlock);
-      let needToBeKeptBlocks = getMaxBlocksToStoreAsFile(conf);
-      let current = yield that.getCurrentBlockOrNull();
-      let currentNumber = current ? current.number : -1;
-      return currentNumber - needToBeKeptBlocks;
-    });
-  }
-
-  function getParameters(block) {
-    var sp = block.parameters.split(':');
-    let theConf = {};
-    theConf.c                = parseFloat(sp[0]);
-    theConf.dt               = parseInt(sp[1]);
-    theConf.ud0              = parseInt(sp[2]);
-    theConf.sigDelay         = parseInt(sp[3]);
-    theConf.sigValidity      = parseInt(sp[4]);
-    theConf.sigQty           = parseInt(sp[5]);
-    theConf.sigWoT           = parseInt(sp[6]);
-    theConf.msValidity       = parseInt(sp[7]);
-    theConf.stepMax          = parseInt(sp[8]);
-    theConf.medianTimeBlocks = parseInt(sp[9]);
-    theConf.avgGenTime       = parseInt(sp[10]);
-    theConf.dtDiffEval       = parseInt(sp[11]);
-    theConf.blocksRot        = parseInt(sp[12]);
-    theConf.percentRot       = parseFloat(sp[13]);
-    theConf.currency         = block.currency;
-    return theConf;
-  }
-
-  function getMaxBlocksToStoreAsFile(aConf) {
-    return Math.floor(Math.max(aConf.dt / aConf.avgGenTime, aConf.medianTimeBlocks, aConf.dtDiffEval, aConf.blocksRot) * constants.SAFE_FACTOR);
-  }
 
   this.getCurrency = function() {
     return currency;
@@ -441,6 +365,13 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
+  this.getMembersP = () => co(function *() {
+    let idties = yield that.idtyDAL.getWhoIsOrWasMember();
+    return _.chain(idties).
+      where({ member: true }).
+      value();
+  });
+
   // TODO: this should definitely be reduced by removing fillInMembershipsOfIdentity
   this.getWritten = function(pubkey, done) {
     return that.fillInMembershipsOfIdentity(
@@ -621,9 +552,10 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
-  this.listPendingLocalMemberships = function() {
-    return that.msDAL.getPendingLocal();
-  };
+  this.lastJoinOfIdentity = (target) => co(function *() {
+    let pending = yield that.msDAL.getPendingINOfTarget(target);
+    return _(pending).sortBy((ms) => -ms.number)[0];
+  });
 
   this.findNewcomers = function() {
     return that.msDAL.getPendingIN()
@@ -892,6 +824,15 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
+  this.listAllPeersWithStatusNewUPWithtout = (pubkey) => co(function *() {
+    let peers = yield that.peerDAL.listAll();
+    let matching = _.chain(peers).
+      filter((p) => p.status == 'UP').
+      filter((p) => p.pubkey != pubkey).
+      value();
+    return Q(matching);
+  });
+
   this.findPeers = function(pubkey) {
     return that.getPeer(pubkey)
       .catch(function(){
@@ -918,6 +859,15 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
         throw err;
       });
   };
+
+  this.setPeerUP = (pubkey) => co(function *() {
+    let p = yield that.getPeer(pubkey);
+    p.status = 'UP';
+    p.first_down = null;
+    p.last_try = null;
+    return that.peerDAL.savePeer(p);
+  })
+    .catch(() => null);
 
   this.setPeerDown = (pubkey) => co(function *() {
     let p = yield that.getPeer(pubkey);
@@ -959,6 +909,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
         var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', that.getCurrency());
         ms.type = type;
         ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
+        ms.idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
         return that.msDAL.saveOfficialMS(msType, ms);
       });
     }, Q());
@@ -1001,20 +952,13 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   this.donable = donable;
 
-  this.merkleForPeers = function(done) {
-    return that.listAllPeersWithStatusNewUP()
-      .then(function(peers){
-        var leaves = peers.map(function(peer) { return peer.hash; });
-        var merkle = new Merkle();
-        merkle.initialize(leaves);
-        done && done(null, merkle);
-        return merkle;
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+  this.merkleForPeers = () => co(function *() {
+    let peers = yield that.listAllPeersWithStatusNewUP();
+    var leaves = peers.map(function(peer) { return peer.hash; });
+    var merkle = new Merkle();
+    merkle.initialize(leaves);
+    return merkle;
+  });
 
   this.saveLink = function(link) {
     return that.linksDAL.addLink(link);
@@ -1031,6 +975,26 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
 
   this.saveSource = function(src) {
     return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash, src.time);
+  };
+
+  this.updateSources = function(sources) {
+    return that.sourcesDAL.updateBatchOfSources(sources);
+  };
+
+  this.updateCertifications = function(certs) {
+    return that.certDAL.updateBatchOfCertifications(certs);
+  };
+
+  this.updateMemberships = function(certs) {
+    return that.msDAL.updateBatchOfMemberships(certs);
+  };
+
+  this.updateLinks = function(certs) {
+    return that.linksDAL.updateBatchOfLinks(certs);
+  };
+
+  this.updateTransactions = function(txs) {
+    return that.txsDAL.updateBatchOfTxs(txs);
   };
 
   this.officializeCertification = function(cert) {
@@ -1068,21 +1032,29 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     return that.idtyDAL.leaveIdentity(pubkey, onBlock);
   };
 
+  this.removeUnWrittenWithPubkey = function(pubkey) {
+    return Q(that.idtyDAL.removeUnWrittenWithPubkey(pubkey));
+  };
+
+  this.removeUnWrittenWithUID = function(pubkey) {
+    return Q(that.idtyDAL.removeUnWrittenWithUID(pubkey));
+  };
+
   this.unacceptIdentity = that.idtyDAL.unacceptIdentity;
 
   this.unJoinIdentity = (ms) => co(function *() {
     yield that.idtyDAL.unJoinIdentity(ms);
-    that.msDAL.unwriteMS(ms);
+    yield that.msDAL.unwriteMS(ms);
   });
 
   this.unRenewIdentity = (ms) => co(function *() {
     yield that.idtyDAL.unRenewIdentity(ms);
-    that.msDAL.unwriteMS(ms);
+    yield that.msDAL.unwriteMS(ms);
   });
 
   this.unLeaveIdentity = (ms) => co(function *() {
     yield that.idtyDAL.unLeaveIdentity(ms);
-    that.msDAL.unwriteMS(ms);
+    yield that.msDAL.unwriteMS(ms);
   });
 
   this.unExcludeIdentity = that.idtyDAL.unExcludeIdentity;
@@ -1120,24 +1092,14 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
       });
   };
 
-  this.getUDHistory = function(pubkey, done) {
-    return that.sourcesDAL.getUDSources(pubkey)
-      .then(function(sources){
-        return {
-          history: sources.map((src) => _.extend({
-            block_number: src.number
-          }, src))
-        };
-      })
-      .then(function(obj){
-        done && done(null, obj);
-        return obj;
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+  this.getUDHistory = (pubkey) => co(function *() {
+    let sources = yield that.sourcesDAL.getUDSources(pubkey);
+    return {
+      history: sources.map((src) => _.extend({
+        block_number: src.number
+      }, src))
+    };
+  });
 
   this.savePeer = function(peer) {
     return that.peerDAL.savePeer(peer);
@@ -1175,24 +1137,24 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   this.pushStats = that.statDAL.pushStats;
 
   this.needsSave = function() {
-    return loki.autosaveDirty();
+    return true;
   };
 
   this.close = function() {
     if (that.needsSave()) {
-      return Q.nbind(loki.saveDatabase, loki)();
+      return Q.nbind(sqlite.close, sqlite)();
     }
     return Q();
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME];
+    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME];
+    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
@@ -1213,7 +1175,7 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
     var files = [];
     var dirs  = ['peers'];
     return co(function *() {
-      that.peerDAL.lokiRemoveAll();
+      that.peerDAL.removeAll();
       yield resetFiles(files, dirs);
       return that.close();
     })
@@ -1228,29 +1190,30 @@ function FileDAL(profile, home, localDir, myFS, parentFileDAL, dalName, loki) {
   };
 
   function resetFiles(files, dirs, done) {
-    return Q.all([
-
-      // Remove files
-      Q.all(files.map(function(fName) {
-        return myFS.exists(rootPath + '/' + fName + '.json')
-          .then(function(exists){
-            return exists ? myFS.remove(rootPath + '/' + fName + '.json') : Q();
-          });
-      })),
-
-      // Remove directories
-      Q.all(dirs.map(function(dirName) {
-        return myFS.exists(rootPath + '/' + dirName)
-          .then(function(exists){
-            return exists ? myFS.removeTree(rootPath + '/' + dirName) : Q();
-          });
-      }))
-    ])
-      .then(function(){
-        done && done();
-      })
-      .catch(function(err){
-        done && done(err);
-      });
+    return co(function *() {
+      for (let i = 0, len = files.length; i < len; i++) {
+        let fName = files[i];
+        // JSON file?
+        let existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
+        if (existsJSON) {
+          yield myFS.remove(rootPath + '/' + fName + '.json');
+        } else {
+          // Normal file?
+          let existsFile = yield myFS.exists(rootPath + '/' + fName);
+          if (existsFile) {
+            yield myFS.remove(rootPath + '/' + fName);
+          }
+        }
+      }
+      for (let i = 0, len = dirs.length; i < len; i++) {
+        let dirName = dirs[i];
+        let existsDir = yield myFS.exists(rootPath + '/' + dirName);
+        if (existsDir) {
+          yield myFS.removeTree(rootPath + '/' + dirName);
+        }
+      }
+      done && done();
+    })
+      .catch((err) => done && done(err));
   }
 }

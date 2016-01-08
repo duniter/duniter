@@ -35,7 +35,7 @@ var raw = "Version: 1\n" +
 
 describe("Block format", function(){
 
-  var parser = parsers.parseBlock();
+  var parser = parsers.parseBlock;
 
   it('a valid block should be well formatted', function(done){
     parser.asyncWrite(raw, function (err, obj) {

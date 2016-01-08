@@ -458,16 +458,17 @@ function hasEachIdentityMatchesANewcomer (block) {
   // identities and/or joiners, this is another test responsability
   var pubkeys = [];
   block.identities.forEach(function(inline){
-    var sp = inline.split(':');
-    var pubk = sp[0], ts = sp[2], uid = sp[3];
-    pubkeys.push(pubk);
+    let sp = inline.split(':');
+    let pubk = sp[0], ts = sp[2], uid = sp[3];
+    pubkeys.push([pubk, uid, ts].join('-'));
   });
   var matchCount = 0;
   var i = 0;
   while (i < block.joiners.length) {
-    var sp = block.joiners[i].split(':');
-    var pubk = sp[0], ts = sp[3], uid = sp[4];
-    if (~pubkeys.indexOf(pubk)) matchCount++;
+    let sp = block.joiners[i].split(':');
+    let pubk = sp[0], ts = sp[4], uid = sp[5];
+    let idty = [pubk, uid, ts].join('-');
+    if (~pubkeys.indexOf(idty)) matchCount++;
     i++;
   }
   return matchCount != pubkeys.length;

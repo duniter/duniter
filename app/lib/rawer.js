@@ -211,8 +211,7 @@ module.exports = new function() {
   };
 
   function signed (raw, json) {
-    if (json.signature)
-      raw += json.signature + '\n';
+    raw += json.signature + '\n';
     return raw;
   }
-}
+};

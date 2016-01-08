@@ -55,6 +55,8 @@ function ParameterNamespace () {
     callback(null, matches[0]);
   };
 
+  this.getPubkeyP = (req) => Q.nbind(this.getPubkey, this)(req);
+
   this.getFrom = function (req, callback){
     if(!req.params.from){
       callback('Parameter `from` is required');
@@ -68,6 +70,8 @@ function ParameterNamespace () {
     callback(null, matches[0]);
   };
 
+  this.getFromP = (req) => Q.nbind(this.getFrom, this)(req);
+
   this.getTo = function (req, callback){
     if(!req.params.to){
       callback('Parameter `to` is required');
@@ -80,6 +84,8 @@ function ParameterNamespace () {
     }
     callback(null, matches[0]);
   };
+
+  this.getToP = (req) => Q.nbind(this.getTo, this)(req);
 
   this.getFingerprint = function (req, callback){
     if(!req.params.fpr){
@@ -106,6 +112,8 @@ function ParameterNamespace () {
     }
     callback(null, parseInt(matches[1]));
   };
+
+  this.getNumberP = (req) => Q.nbind(this.getNumber, this)(req);
 
   this.getCount = function (req, callback){
     if(!req.params.count){

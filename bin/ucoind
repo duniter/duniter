@@ -1,23 +1,24 @@
 #!/usr/bin/env node
 "use strict";
 
-if (!~process.execArgv.indexOf('--harmony')) {
-  throw Error('This version requires --harmony flag. Use \'node --harmony\' instead of just \'node\'.');
-}
+process.on('uncaughtException', function (err) {
+  logger.error(err);
+  process.exit(1);
+});
 
+var logger = require('../app/lib/logger')('ucoind');
 var async       = require('async');
 var co          = require('co');
 var Q           = require('q');
 var _           = require('underscore');
 var program     = require('commander');
 var vucoin      = require('vucoin');
+var directory   = require('../app/lib/directory');
 var wizard      = require('../app/lib/wizard');
 var multicaster = require('../app/lib/streams/multicaster');
-var logger      = require('../app/lib/logger')('ucoind');
 var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
-var constants   = require('../app/lib/constants');
 var Synchroniser = require('../app/lib/sync');
 var bma         = require('../app/lib/streams/bma');
 var upnp        = require('../app/lib/upnp');
@@ -38,6 +39,7 @@ program
   .version(pjson.version)
   .usage('<command> [options]')
 
+  .option('-h, --home <path>',         'Path to uCoin HOME (defaults to "$HOME/.config/ucoin").')
   .option('-d, --mdb <name>',          'Database name (defaults to "ucoin_default").')
 
   .option('--autoconf',                'With `init` command, will guess the best network and key options witout aksing for confirmation')
@@ -53,7 +55,6 @@ program
 
   .option('--salt <salt>',             'Key salt to generate this key\'s secret key')
   .option('--passwd <password>',       'Password to generate this key\'s secret key')
-  .option('--member',                  'With `bootstrap` command, ensures we have a member keypair')
   .option('--participate <Y|N>',       'Participate to writing the blockchain')
   .option('--cpu <percent>',           'Percent of CPU usage for proof-of-work computation', parsePercent)
 
@@ -71,7 +72,6 @@ program
   .option('--growth <number>',         'Universal Dividend %growth. Aka. \'c\' parameter in RTM', parsePercent)
   .option('--ud0 <number>',            'Universal Dividend initial value')
   .option('--dt <number>',             'Number of seconds between two UD')
-  .option('--udid2',                   'Enable udid2 format for user id')
   .option('--rootoffset <number>',     'Allow to give a time offset for first block (offset in the past)')
   .option('--show',                    'With gen-next or gen-root commands, displays the generated block')
 
@@ -99,12 +99,6 @@ program
   .description('Launch the configuration Wizard')
   .action(function (step) {
     // Only show message "Saved"
-    require('log4js').configure({
-      "appenders": [{
-        category: "ucoind",
-        type: "console"
-      }]
-    });
     connect(function(step, server, conf){
       async.series([
         function(next) {
@@ -184,7 +178,7 @@ program
 program
   .command('init [host] [port]')
   .description('Setup a node configuration and sync data with given node')
-  .action(connect(bootstrapServer, true, true));
+  .action(connect(bootstrapServer, true));
 
 program
   .command('forward [host] [port] [to]')
@@ -201,7 +195,7 @@ program
       },
       function(current, next) {
         remoteCurrent = current;
-        console.log(remoteCurrent.number);
+        logger.info(remoteCurrent.number);
         server.dal.getBlockFrom(remoteCurrent.number - 10).then(_.partial(next, null)).catch(next);
       },
       function (blocks, next){
@@ -420,7 +414,7 @@ program
         server.disconnect();
         process.exit();
       });
-  }, true));
+  }));
 
 program
   .command('reset [config|data|peers|tx|stats|all]')
@@ -466,11 +460,6 @@ function resetDone(server, msg) {
 }
 
 function serverStart(server, conf) {
-
-  if (conf.udid2) {
-    // UserID must match udid2 format
-    constants.setUDID2Format();
-  }
 
   return co(function *() {
     // Enabling HTTP
@@ -567,7 +556,7 @@ function getBootstrapOperations(host, port, server, conf) {
       async.doWhilst(function(next){
         async.waterfall([
           function(next) {
-            if (!program.member && !conf.salt && !conf.passwd) {
+            if (!conf.salt && !conf.passwd) {
               if (program.autoconf) {
                 conf.salt = ~~(Math.random() * 2147483647) + "";
                 conf.passwd = ~~(Math.random() * 2147483647) + "";
@@ -582,43 +571,6 @@ function getBootstrapOperations(host, port, server, conf) {
                 function(){
                   startWizard("key", server, conf, next);
                 });
-            } else if(program.member) {
-              async.waterfall([
-                function(next) {
-                  async.parallel({
-                    node: function(callback){
-                      vucoin(host, port, callback, { timeout: server.conf.timeout });
-                    },
-                    keys: function(callback){
-                      crypto.getKeyPair(conf.passwd, conf.salt, callback);
-                    }
-                  }, next);
-                },
-                function(res, next) {
-                  var node = res.node;
-                  var keys = res.keys;
-                  // Look for existing member with this key
-                  node.wot.certifiersOf(base58.encode(keys.publicKey), function(err) {
-                    next(null, !err);
-                  });
-                },
-                function(matchesMember, next) {
-                  if (!matchesMember){
-                    wiz.choose('Your key does not match an existing member. Retry?', true,
-                      function(){
-                        keyChosen = false;
-                        startWizard("key", server, conf, next);
-                      },
-                      function(){
-                        logger.warn('This node will not be able to compute blocks.');
-                        next();
-                      });
-                  } else {
-                    keyChosen = true;
-                    next();
-                  }
-                }
-              ], next);
             } else {
               next();
             }
@@ -660,7 +612,8 @@ function commandLineConf(conf) {
     },
     db: {
       mport: program.mport,
-      mdb: program.mdb
+      mdb: program.mdb,
+      home: program.home
     },
     net: {
       upnp:          program.upnp,
@@ -683,7 +636,6 @@ function commandLineConf(conf) {
       ud0:         program.ud0,
       c:           program.growth,
       dt:          program.dt,
-      udid2:       program.udid2,
       incDateMin:  program.incDateMin,
       medtblocks:  program.medtblocks,
       dtdiffeval:  program.dtdiffeval,
@@ -719,7 +671,6 @@ function commandLineConf(conf) {
   if (cli.ucp.dt)                           conf.dt             = cli.ucp.dt;
   if (cli.ucp.c)                            conf.c              = cli.ucp.c;
   if (cli.ucp.ud0)                          conf.ud0            = cli.ucp.ud0;
-  if (cli.ucp.udid2)                        conf.udid2          = cli.ucp.udid2;
   if (cli.ucp.incDateMin)                   conf.incDateMin     = cli.ucp.incDateMin;
   if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
   if (cli.ucp.avgGenTime)                   conf.avgGenTime     = cli.ucp.avgGenTime;
@@ -730,6 +681,7 @@ function commandLineConf(conf) {
   if (cli.logs.http)                        conf.httplogs       = true;
   if (cli.logs.nohttp)                      conf.httplogs       = false;
   if (cli.db.mport)                         conf.mport          = cli.db.mport;
+  if (cli.db.home)                          conf.home           = cli.db.home;
   if (cli.db.mdb)                           conf.mdb            = cli.db.mdb;
   if (cli.isolate)                          conf.isolate        = cli.isolate;
   if (cli.timeout)                          conf.timeout        = cli.timeout;
@@ -740,15 +692,16 @@ function commandLineConf(conf) {
   return _(conf).extend({ routing: true });
 }
 
-function connect(callback, forConf, useDefaultConf) {
+function connect(callback, useDefaultConf) {
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "ucoin_default";
+    var dbHome = program.home;
 
-    var server = ucoin({ name: dbName }, commandLineConf());
+    var server = ucoin({ home: dbHome, name: dbName }, commandLineConf());
 
     // Initialize server (db connection, ...)
-    server.connectDB(forConf, useDefaultConf)
+    server.connectDB(useDefaultConf)
       .then(function(){
         cbArgs.length--;
         cbArgs[cbArgs.length++] = server;
@@ -786,16 +739,18 @@ function service(callback, nologs) {
 
     if (nologs) {
       // Disable logs
-      require('log4js').configure({
-        "appenders": [
-        ]
-      });
+      require('../app/lib/logger')().mute();
     }
 
     var cbArgs = arguments;
-    var dbName = program.mdb || "ucoin_default";
+    var dbName = program.mdb;
+    var dbHome = program.home;
 
-    var server = ucoin({ name: dbName, memory: program.memory }, commandLineConf());
+    // Add log files for this instance
+    logger.addHomeLogs(directory.getHome(dbName, dbHome));
+    logger.info(">> NODE STARTING");
+
+    var server = ucoin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf());
 
     // Initialize server (db connection, ...)
     server.initWithServices()
@@ -837,6 +792,9 @@ function exit (server) {
 
 function logIfErrorAndExit (server, prefix) {
   return function (err) {
+    if (err && err.uerr) {
+      err = err.uerr.message;
+    }
     err && logger.error((prefix ? prefix : "") + (err.message || err));
     server.disconnect();
     process.exit();

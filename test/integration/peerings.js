@@ -1,5 +1,6 @@
 "use strict";
 
+var co        = require('co');
 var Q         = require('q');
 var _         = require('underscore');
 var should    = require('should');
@@ -102,106 +103,60 @@ describe("Network", function() {
     }, Q())
 
       .then(function(){
-        nodeS1 = vucoin_p('127.0.0.1', s1.conf.port);
-        nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
-        nodeS3 = vucoin_p('127.0.0.1', s3.conf.port);
-        // Server 1
-        return Q()
-          .then(function() {
-            return cat.selfCertPromise(now);
-          })
-          .then(function() {
-            return toc.selfCertPromise(now);
-          })
-          .then(function() {
-            return tic.selfCertPromise(now);
-          })
-          .then(_.partial(toc.certPromise, cat))
-          .then(_.partial(cat.certPromise, toc))
-          .then(_.partial(cat.certPromise, tic))
-          .then(cat.joinPromise)
-          .then(toc.joinPromise)
-          .then(tic.joinPromise)
-          .then(commitS1);
-      })
-
-      .then(function(){
-        return Q()
-          .then(function(){
-            // Server 2 syncs block 0
-            return sync(0, 0, s1, s2);
-          })
-          .then(function(){
-            // Server 3 syncs block 0
-            return sync(0, 0, s1, s3);
-          })
-          .then(function(){
-            return nodeS1.getPeer().then(function(peer) {
-              return nodeS2.postPeer(new Peer(peer).getRawSigned());
-            });
-          })
-          .then(function(){
-            return nodeS2.getPeer().then(function(peer) {
-              return nodeS1.postPeer(new Peer(peer).getRawSigned());
-            });
-          })
-          .then(function(){
-            return nodeS3.getPeer().then(function(peer) {
-              return nodeS1.postPeer(new Peer(peer).getRawSigned());
-            });
-          })
-          .then(commitS1)
-          .then(function(){
-            return Q.all([
-              until(s2, 'block', 1),
-              until(s3, 'block', 1)
-            ]);
-          })
-          .then(function(){
-            // A block was successfully spread accross the network
-            s2.bma.closeConnections();
-          })
-          .then(commitS1)
-          .then(function(){
-            return Q.all([
-              until(s3, 'block', 1)
-            ]);
-          })
-          .then(function(){
-            s2.bma.reopenConnections();
-            // Server 2 syncs block number 2 (it did not have it)
-            return sync(2, 2, s1, s2);
-          })
-          .then(function(){
-            return s2.recomputeSelfPeer();
-          })
-          .then(function(){
-            return nodeS2.getPeer().then(function(peer) {
-              return nodeS1.postPeer(new Peer(peer).getRawSigned());
-            });
-          })
-          .then(function(){
-            return Q.all([
-              until(s2, 'block', 2),
-              until(s3, 'block', 2),
-              commitS1()
-                .then(commitS1)
-            ]);
-          })
-          .then(commitS3)
-          .then(function(){
-            return Q.all([
-              until(s1, 'block', 1),
-              until(s2, 'block', 1)
-            ]);
-          })
-          .then(commitS2)
-          .then(function(){
-            return Q.all([
-              until(s1, 'block', 1),
-              until(s3, 'block', 1)
-            ]);
-          });
+        return co(function *() {
+          nodeS1 = vucoin_p('127.0.0.1', s1.conf.port);
+          nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
+          nodeS3 = vucoin_p('127.0.0.1', s3.conf.port);
+          // Server 1
+          yield cat.selfCertPromise(now);
+          yield toc.selfCertPromise(now);
+          yield tic.selfCertPromise(now);
+          yield toc.certPromise(cat);
+          yield cat.certPromise(toc);
+          yield cat.certPromise(tic);
+          yield cat.joinPromise();
+          yield toc.joinPromise();
+          yield tic.joinPromise();
+          yield commitS1();
+          // Server 2 syncs block 0
+          yield sync(0, 0, s1, s2);
+          // Server 3 syncs block 0
+          yield sync(0, 0, s1, s3);
+          yield nodeS1.getPeer().then((peer) => nodeS2.postPeer(new Peer(peer).getRawSigned()));
+          yield nodeS2.getPeer().then((peer) => nodeS1.postPeer(new Peer(peer).getRawSigned()));
+          yield nodeS3.getPeer().then((peer) => nodeS1.postPeer(new Peer(peer).getRawSigned()));
+          yield commitS1();
+          yield [
+            until(s2, 'block', 1),
+            until(s3, 'block', 1)
+          ];
+          // A block was successfully spread accross the network
+          s2.bma.closeConnections();
+          yield commitS1();
+          yield [
+            until(s3, 'block', 1)
+          ];
+          s2.bma.reopenConnections();
+          // Server 2 syncs block number 2 (it did not have it)
+          yield sync(2, 2, s1, s2);
+          yield s2.recomputeSelfPeer();
+          yield [
+            until(s2, 'block', 2),
+            until(s3, 'block', 2),
+            commitS1()
+              .then(commitS1)
+          ];
+          yield commitS3();
+          yield [
+            until(s1, 'block', 1),
+            until(s2, 'block', 1)
+          ];
+          yield commitS2();
+          yield [
+            until(s1, 'block', 1),
+            until(s3, 'block', 1)
+          ];
+        });
       })
       ;
   });

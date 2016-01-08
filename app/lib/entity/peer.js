@@ -1,4 +1,5 @@
 "use strict";
+var Q = require('q');
 var _ = require('underscore');
 var vucoin = require('vucoin');
 var rawer = require('../rawer');
@@ -140,6 +141,17 @@ function Peer(json) {
   that.connect = function (done){
     vucoin(that.getDns() || that.getIPv6() || that.getIPv4(), that.getPort(), done, {
       timeout: 2000
+    });
+  };
+
+  that.connectP = (timeout) => {
+    return Q.Promise(function(resolve, reject){
+      vucoin(that.getDns() || that.getIPv6() || that.getIPv4(), that.getPort(), (err, node) => {
+        if (err) return reject(err);
+        resolve(node);
+      }, {
+        timeout: timeout || 2000
+      });
     });
   };
 

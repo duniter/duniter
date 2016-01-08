@@ -16,6 +16,7 @@ var crypto      = require('./app/lib/crypto');
 var Peer        = require('./app/lib/entity/peer');
 var signature   = require('./app/lib/signature');
 var common      = require('./app/lib/common');
+var directory   = require('./app/lib/directory');
 var INNER_WRITE = true;
 
 // Add methods to String and Date
@@ -25,6 +26,7 @@ function Server (dbConf, overrideConf) {
 
   stream.Duplex.call(this, { objectMode: true });
 
+  let home = directory.getHome(dbConf.name, dbConf.home);
   var logger = require('./app/lib/logger')('server');
   var that = this;
   var connectionPromise, servicesPromise;
@@ -48,9 +50,9 @@ function Server (dbConf, overrideConf) {
     });
   };
 
-  this.connectDB = function (forConf, useDefaultConf) {
+  this.connectDB = function (useDefaultConf) {
     // Connect only once
-    return connectionPromise || (connectionPromise = that.connect(forConf, useDefaultConf));
+    return connectionPromise || (connectionPromise = that.connect(useDefaultConf));
   };
 
   this.initWithServices = function (done) {
@@ -65,43 +67,41 @@ function Server (dbConf, overrideConf) {
   };
 
   this.submit = function (obj, isInnerWrite, done) {
-    async.waterfall([
-      function (next){
-        if (!obj.documentType) {
-          return next('Document type not given');
-        }
-        var action = documentsMapping[obj.documentType];
+    return co(function *() {
+      if (!obj.documentType) {
+        throw 'Document type not given';
+      }
+      var action = documentsMapping[obj.documentType];
+      try {
+        let res;
         if (typeof action == 'function') {
           // Handle the incoming object
-          action(obj, next);
+          res = yield Q.nbind(action, this)(obj);
         } else {
-          next('Unknown document type \'' + obj.documentType + '\'');
+          throw 'Unknown document type \'' + obj.documentType + '\'';
         }
-      }
-    ], function (err, res) {
-      err && logger.debug(err);
-      if (res != null && res != undefined && !err) {
-        // Only emit valid documents
-        that.emit(obj.documentType, res);
-        that.push(res);
-      }
-      if (isInnerWrite) {
-        done(err, res);
-      } else {
-        done();
+        if (res) {
+          // Only emit valid documents
+          that.emit(obj.documentType, res);
+          that.push(res);
+        }
+        isInnerWrite ? done(null, res) : done();
+      } catch (err) {
+        logger.debug(err);
+        isInnerWrite ? done(err, null) : done();
       }
     });
   };
 
   this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
 
-  this.connect = function (forConf, useDefaultConf) {
+  this.connect = function (useDefaultConf) {
     // Init connection
     if (that.dal) {
       return Q();
     }
     var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
-    return dbType(dbConf.name || "default", forConf)
+    return dbType(home)
       .then(function(dal){
         that.dal = dal;
         return that.dal.init(overrideConf, useDefaultConf);
@@ -157,6 +157,9 @@ function Server (dbConf, overrideConf) {
     async.waterfall([
       function (next){
         that.checkConfig().then(next).catch(next);
+      },
+      function (next){
+        that.PeeringService.regularCrawlPeers(next);
       },
       function (next){
         logger.info('Storing self peer...');
@@ -286,7 +289,6 @@ function Server (dbConf, overrideConf) {
           },
           function(next) {
             that.servicesInited = true;
-            that.HTTPService         = require("./app/service/HTTPService");
             that.MerkleService       = require("./app/service/MerkleService");
             that.ParametersService   = require("./app/service/ParametersService")();
             that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);
@@ -299,9 +301,13 @@ function Server (dbConf, overrideConf) {
               'identity':    that.IdentityService.submitIdentity,
               'revocation':  that.IdentityService.submitRevocation,
               'membership':  that.MembershipService.submitMembership,
-              'peer':        that.PeeringService.submit,
+              'peer':        (obj, done) => {
+                that.PeeringService.submitP(obj)
+                  .then((res) => done(null, res))
+                  .catch(done);
+              },
               'transaction': that.TransactionsService.processTx,
-              'block':       function (obj, done) {
+              'block':       (obj, done) => {
                 that.BlockchainService.submitBlock(obj, true)
                   .then(function(block){
                     that.dal = that.BlockchainService.currentDal;
@@ -345,7 +351,7 @@ function Server (dbConf, overrideConf) {
   this.checkBlock = function(block) {
     return that.initWithServices()
       .then(function(){
-        var parsed = parsers.parseBlock().syncWrite(block.getRawSigned());
+        var parsed = parsers.parseBlock.syncWrite(block.getRawSigned());
         return that.BlockchainService.checkBlock(parsed, false);
       });
   };
@@ -362,10 +368,6 @@ function Server (dbConf, overrideConf) {
     }
     that.BlockchainService.revertCurrentBlock();
   });
-
-  this.singleWriteStream = function (onError, onSuccess) {
-    return new TempStream(that, onError, onSuccess);
-  };
 
   this.singleWritePromise = function (obj) {
     return Q.Promise(function(resolve, reject){

@@ -20,6 +20,7 @@ module.exports = {
       var hashes = [req.query.leaf];
       // This code is in a loop for historic reasons. Should be set to non-loop style.
       valueCB(hashes, function (err, values) {
+        if (err) return done(err);
         hashes.forEach(function (hash){
           json.leaf = {
             "hash": hash,

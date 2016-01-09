@@ -141,7 +141,7 @@ dtos.Peers = {
   "peers": [dtos.DBPeer]
 };
 
-dtos.Merkle = {
+dtos.MerkleOfPeers = {
   "depth": Number,
   "nodesCount": Number,
   "leavesCount": Number,
@@ -149,7 +149,7 @@ dtos.Merkle = {
   "leaves": [String],
   "leaf": {
     "hash": String,
-    "value": {}
+    "value": dtos.DBPeer
   }
 };
 

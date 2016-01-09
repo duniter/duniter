@@ -40,8 +40,12 @@ function NetworkBinding (server) {
           peers.forEach(function (peer){
             map[peer.hash] = Peer.statics.peerize(peer).json();
           });
+          if (peers.length == 0) {
+            done(constants.ERRORS.PEER_NOT_FOUND);
+          }
           done(null, map);
-        });
+        })
+        .catch(done);
     });
   });
 

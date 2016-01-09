@@ -1293,6 +1293,7 @@ function BlockchainService (conf, mainDAL, pair) {
       //console.log('Block #%s', block.number);
       // Monetary mass & UD Time recording before inserting elements
       block.monetaryMass = (previous && previous.monetaryMass) || 0;
+      block.dividend = block.dividend || 0;
       // UD Time update
       let previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;
       if (block.number == 0) {

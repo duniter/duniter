@@ -214,6 +214,7 @@ function BlockchainContext(conf, dal) {
     // UD Time update
     if (block.number == 0) {
       block.UDTime = block.medianTime; // Root = first UD time
+      block.dividend = 0;
       done();
     }
     else if (block.dividend) {
@@ -236,7 +237,11 @@ function BlockchainContext(conf, dal) {
         }
       ], done);
     }
-    else done();
+    else {
+      block.dividend = 0;
+      block.UDTime = current.UDTime;
+      done();
+    }
   }
 
   this.updateMembers = updateMembers;

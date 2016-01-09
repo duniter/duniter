@@ -10,9 +10,14 @@ module.exports = {
 
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
+  INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
 
   getHome: (profile, dir) => getHomePath(profile, dir)
 };
+
+function getLogsPath(profile, dir) {
+  return path.join(getHomePath(profile, dir), 'ucoin.log');
+}
 
 function getHomePath(profile, dir) {
   return path.normalize(getUserHome(dir) + '/') + getDomain(profile);

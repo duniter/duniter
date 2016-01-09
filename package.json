@@ -1,6 +1,6 @@
 {
   "name": "ucoin",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"
@@ -33,6 +33,7 @@
     "url": "https://github.com/ucoin-io/ucoin/issues"
   },
   "dependencies": {
+    "always-tail": "0.2.0",
     "async": "0.2.9",
     "bindings": "1.2.1",
     "co": "4.6.0",

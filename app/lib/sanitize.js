@@ -56,7 +56,7 @@ module.exports = function sanitize (json, contract) {
         // Test json member type
         let tjson = typeof json[prop];
         if (~['Array', 'Object'].indexOf(t)) {
-          if (tjson == 'object') {
+          if (tjson == 'object' && json[prop] !== null) {
             tjson = json[prop].length == undefined ? 'Object' : 'Array';
           }
         }
@@ -87,7 +87,7 @@ module.exports = function sanitize (json, contract) {
           }
         }
         // Recursivity
-        if (t == 'Object') {
+        if (t == 'Object' && json[prop] !== null) {
           json[prop] = sanitize(json[prop], contract[prop]);
         }
       }

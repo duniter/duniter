@@ -35,7 +35,7 @@ ucoind() {
 		#  UCOIN DAEMON MANAGEMENT
 		#---------------------------------
 
-		start|stop|restart)
+		start|stop|restart|logs)
 		$NODE "$UCOIN_DIR/bin/daemon" $*
 		;;
 

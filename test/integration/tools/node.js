@@ -274,11 +274,15 @@ function Node (dbName, options) {
     that.http.network.peering.get(done);
   };
 
+  this.peeringP = () => Q.nfcall(this.peering);
+
   this.submitPeer = function(peer, done) {
     post('/network/peering/peers', {
       "peer": Peer.statics.peerize(peer).getRawSigned()
     }, done);
   };
+
+  this.submitPeerP = (peer) => Q.nfcall(this.submitPeer, peer);
 
   this.commitP = () => Q.nfcall(this.commit());
 }

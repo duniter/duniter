@@ -84,7 +84,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGetP(  '/blockchain/with/tx',                    blockchain.with.tx,                   dtos.Stat);
   answerForGetP(  '/blockchain/branches',                   blockchain.branches,                  dtos.Branches);
   answerForGetP(  '/network/peering',                       net.peer,                             dtos.Peer);
-  answerForGetP(  '/network/peering/peers',                 net.peersGet,                         dtos.Merkle);
+  answerForGetP(  '/network/peering/peers',                 net.peersGet,                         dtos.MerkleOfPeers);
   answerForPostP( '/network/peering/peers',                 net.peersPost,                        dtos.Peer);
   answerForGetP(  '/network/peers',                         net.peers,                            dtos.Peers);
   answerForPostP( '/wot/add',                               wot.add,                              dtos.Identity);

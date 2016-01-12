@@ -4,8 +4,6 @@
 var directory = require('../app/lib/directory');
 var path = require('path');
 var Tail = require('always-tail');
-var fs = require('fs');
-var util = require('util');
 
 var daemon = require("daemonize2").setup({
   main: "ucoind",
@@ -34,6 +32,15 @@ switch (process.argv[2]) {
     break;
 
   case "restart":
+    daemon = require("daemonize2").setup({
+      main: "ucoind",
+      name: directory.INSTANCE_NAME,
+      pidfile: path.join(directory.INSTANCE_HOME, "app.pid"),
+
+      // We must redefine the main argument to 'start' because uCoin will receive it as command argument and does not
+      // know about 'restart' command.
+      argv: process.argv.slice(2).map((arg, index) => index == 0 ? 'start' : arg)
+    });
     daemon.stop(function(err) {
       err && console.error(err);
       daemon.start();

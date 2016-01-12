@@ -95,35 +95,32 @@ function Peer(json) {
   that.getHost = function() {
     var bma = that.getBMA();
     var host =
-      (bma.ipv6 ? bma.ipv6 :
-        (bma.ipv4 ? bma.ipv4 :
-          (bma.dns ? bma.dns : '')));
+      (that.hasValid4(bma) ? bma.ipv4 :
+        (bma.dns ? bma.dns :
+          (bma.ipv6 ? '[' + bma.ipv6 + ']' : '')));
     return host;
-  };
-
-  that.getHostPreferDNS = function() {
-    var bma = that.getBMA();
-    return (bma.dns ? bma.dns :
-            (bma.ipv4 ? bma.ipv4 :
-              (bma.ipv6 ? bma.ipv6 : '')));
   };
 
   that.getURL = function() {
     var bma = that.getBMA();
     var base =
-      (bma.ipv6 ? '[' + bma.ipv6 + ']' :
-        (bma.ipv4 ? bma.ipv4 :
-          (bma.dns ? bma.dns : '')));
+      (that.hasValid4(bma) ? bma.ipv4 :
+        (bma.dns ? bma.dns :
+          (bma.ipv6 ? '[' + bma.ipv6 + ']' : '')));
     if(bma.port)
       base += ':' + bma.port;
     return base;
   };
 
+  that.hasValid4 = function(bma) {
+    return bma.ipv4 && !bma.ipv4.match(/^127.0/) && !bma.ipv4.match(/^192.168/) ? true : false;
+  };
+
   that.getNamedURL = function() {
     var bma = that.getBMA();
     var base =
-      (bma.dns ? bma.dns :
-        (bma.ipv4 ? bma.ipv4 :
+      (that.hasValid4(bma) ? bma.ipv4 :
+        (bma.dns ? bma.dns :
           (bma.ipv6 ? '[' + bma.ipv6 + ']' : '')));
     if(bma.port)
       base += ':' + bma.port;

@@ -134,7 +134,8 @@ dtos.DBPeer = {
   "first_down": Number,
   "last_try": Number,
   "endpoints": [String],
-  "signature": String
+  "signature": String,
+  "raw": String
 };
 
 dtos.Peers = {

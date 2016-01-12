@@ -24,12 +24,9 @@ switch (process.argv[2]) {
     break;
 
   case "logs":
-    let stats = fs.statSync(directory.INSTANCE_HOMELOG_FILE);
-    let fileSizeInBytes = stats.size;
-    let lastLines = 0.995 * fileSizeInBytes;
     var tail = new Tail(directory.INSTANCE_HOMELOG_FILE, '\n', {
       interval: 5,
-      start: Math.max(0, lastLines)
+      start: 0
     });
     tail.on("line", function(data) {
       console.log(data);

@@ -3,16 +3,12 @@ var Q       = require('q');
 var stream  = require('stream');
 var util    = require('util');
 var request = require('request');
-var async   = require('async');
+var co      = require('co');
 var constants = require('../../lib/constants');
 var Peer    = require('../../lib/entity/peer');
 var logger  = require('../../lib/logger')('multicaster');
 
 const WITH_ISOLATION = true;
-
-var fifo = async.queue(function (task, callback) {
-  task(callback);
-}, constants.NETWORK.MAX_CONCURRENT_POST);
 
 module.exports = function (isolate, timeout) {
   return new Multicaster(isolate, timeout);
@@ -95,28 +91,29 @@ function Multicaster (isolate, timeout) {
   };
 
   this.sendBlock = (toPeer, block) => blockForward(block, [toPeer]);
-  this.sendPeering = (toPeer, peer) => blockForward(peer, [toPeer]);
+  this.sendPeering = (toPeer, peer) => peerForward(peer, [toPeer]);
 
   function forward(params) {
     return function(doc, peers) {
-      if(!params.withIsolation || !isolate) {
-        let theDoc = params.transform ? params.transform(doc) : doc;
-        logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
-        if (params.getDocID) {
-          logger.info('POST %s %s:', params.type, params.getDocID(theDoc));
+      return co(function *() {
+        if(!params.withIsolation || !isolate) {
+          let theDoc = params.transform ? params.transform(doc) : doc;
+          logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
+          if (params.getDocID) {
+            logger.info('POST %s %s:', params.type, params.getDocID(theDoc));
+          } else {
+            logger.info('POST %s:', params.type);
+          }
+          for (let i = 0, len = peers.length; i < len; i++) {
+            let p = peers[i];
+            let peer = Peer.statics.peerize(p);
+            logger.info(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
+            yield post(peer, params.uri, params.getObj(theDoc));
+          }
         } else {
-          logger.info('POST %s:', params.type);
+          logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
         }
-        peers.forEach(function(p){
-          let peer = Peer.statics.peerize(p);
-          logger.info(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
-          fifo.push(function (sent) {
-            return post(peer, params.uri, params.getObj(theDoc)).finally(sent);
-          });
-        });
-      } else {
-        logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
-      }
+      });
     };
   }
 

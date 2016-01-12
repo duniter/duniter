@@ -164,7 +164,7 @@ program
       }
       logger.info('Send self peering ...');
       var caster = multicaster();
-      yield Q.nfcall(caster.sendPeering, Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
+      yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
       logger.info('Sent.');
       yield server.disconnect();
       process.exit();
@@ -208,7 +208,7 @@ program
           logger.info("Forwarding block#" + block.number);
           server.dal.getBlock(block.number)
             .then(function(fullBlock){
-              multicaster(server.conf.isolate).sendBlock(peer, new Block(fullBlock), callback);
+              multicaster(server.conf.isolate).sendBlock(peer, new Block(fullBlock)).then(() => callback()).catch(callback);
             });
         }, next);
       }
@@ -334,7 +334,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
       });
       program.show && console.log(block.getRawSigned());
       logger.info('Posted block ' + block.quickDescription());
-      multicaster(server.conf.isolate).sendBlock(peer, block, next);
+      multicaster(server.conf.isolate).sendBlock(peer, block).then(() => next()).catch(next);
     }
   ], done);
 }

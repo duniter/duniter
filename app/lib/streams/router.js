@@ -86,7 +86,7 @@ function Router (serverPubkey, conf, dal) {
         }
         members = chooseXin(members, constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
         nonmembers = chooseXin(nonmembers, constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
-        return members.concat(nonmembers);
+        return members.map((p) => (p.member = true) && p).concat(nonmembers);
       })
         .then(_.partial(done, null)).catch(done);
     };

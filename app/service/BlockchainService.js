@@ -217,16 +217,16 @@ function BlockchainService (conf, mainDAL, pair) {
       let branches = yield that.branches();
       let potentials = _.without(branches, current);
       potentials = _.filter(potentials, (p) => p.number - current.number > constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY);
-      logger.debug('SWITCH: %s branches...', branches.length);
-      logger.debug('SWITCH: %s potential side chains...', potentials.length);
+      logger.trace('SWITCH: %s branches...', branches.length);
+      logger.trace('SWITCH: %s potential side chains...', potentials.length);
       for (let i = 0, len = potentials.length; i < len; i++) {
         let potential = potentials[i];
-        logger.debug('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);
+        logger.info('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);
         let sideChain = yield getWholeForkBranch(potential);
-        logger.debug('SWITCH: revert main chain to block #%s...', sideChain[0].number - 1);
+        logger.info('SWITCH: revert main chain to block #%s...', sideChain[0].number - 1);
         yield revertToBlock(sideChain[0].number - 1);
         try {
-          logger.debug('SWITCH: apply side chain #%s-%s...', potential.number, potential.hash);
+          logger.info('SWITCH: apply side chain #%s-%s...', potential.number, potential.hash);
           yield applySideChain(sideChain);
         } catch (e) {
           logger.warn('SWITCH: error %s', e.stack || e);
@@ -247,7 +247,7 @@ function BlockchainService (conf, mainDAL, pair) {
       let next = topForkBlock;
       while (isForkBlock) {
         fullBranch.push(next);
-        logger.debug('SWITCH: get absolute #%s-%s...', next.number - 1, next.previousHash);
+        logger.trace('SWITCH: get absolute #%s-%s...', next.number - 1, next.previousHash);
         next = yield mainDAL.getAbsoluteBlockByNumberAndHash(next.number - 1, next.previousHash);
         isForkBlock = next.fork;
       }
@@ -260,9 +260,9 @@ function BlockchainService (conf, mainDAL, pair) {
   function revertToBlock(number) {
     return co(function *() {
       let nowCurrent = yield that.current();
-      logger.debug('SWITCH: main chain current = #%s-%s...', nowCurrent.number, nowCurrent.hash);
+      logger.trace('SWITCH: main chain current = #%s-%s...', nowCurrent.number, nowCurrent.hash);
       while (nowCurrent.number > number) {
-        logger.debug('SWITCH: main chain revert #%s-%s...', nowCurrent.number, nowCurrent.hash);
+        logger.trace('SWITCH: main chain revert #%s-%s...', nowCurrent.number, nowCurrent.hash);
         yield mainContext.revertCurrentBlock();
         nowCurrent = yield that.current();
       }
@@ -273,7 +273,7 @@ function BlockchainService (conf, mainDAL, pair) {
     return co(function *() {
       for (let i = 0, len = chain.length; i < len; i++) {
         let block = chain[i];
-        logger.debug('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
+        logger.trace('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
         yield checkAndAddBlock(block, CHECK_ALL_RULES);
       }
     });

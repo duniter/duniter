@@ -61,7 +61,7 @@
     "superagent": "1.4.0",
     "tweetnacl": "0.11.2",
     "underscore": "1.8.3",
-    "vucoin": "0.26.0",
+    "vucoin": "0.27.0",
     "winston": "^2.1.1"
   },
   "devDependencies": {

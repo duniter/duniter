@@ -6,29 +6,31 @@ var directory = require('../lib/directory');
 
 var customLevels = {
   levels: {
-    debug: 0,
-    info: 1,
-    warn: 2,
-    error: 3
+    error: 0,
+    warn: 1,
+    info: 2,
+    debug: 3,
+    trace: 4
   },
   colors: {
-    debug: 'cyan',
-    info: 'green',
+    error: 'red',
     warn: 'yellow',
-    error: 'red'
+    info: 'green',
+    debug: 'cyan',
+    trace: 'cyan'
   }
 };
 
 // create the logger
 var logger = new (winston.Logger)({
-  level: 'debug',
+  level: 'trace',
   levels: customLevels.levels,
   handleExceptions: false,
   colors: customLevels.colors,
   transports: [
     // setup console logging
     new (winston.transports.Console)({
-      level: 'error',
+      level: 'debug',
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,
@@ -41,7 +43,7 @@ var logger = new (winston.Logger)({
 
 logger.addHomeLogs = (home) => {
   logger.add(winston.transports.File, {
-    level: 'error',
+    level: 'info',
     levels: customLevels.levels,
     handleExceptions: false,
     colorize: true,

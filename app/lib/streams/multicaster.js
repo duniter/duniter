@@ -57,9 +57,13 @@ function Multicaster (isolate, timeout) {
   that.on('peer', function(peering, peers) {
     if(!isolate) {
       logger.debug('--> new Peer to be sent to %s peer(s)', peers.length);
-      peers.forEach(function(peer){
+      let thePeering = Peer.statics.peerize(peering);
+      logger.info('POST peering %s:', thePeering.keyID());
+      peers.forEach(function(p){
+        let peer = Peer.statics.peerize(p);
+        logger.info(' `--> to peer %s (%s)', peer.keyID(), peer.getNamedURL());
         fifo.push(function (sent) {
-          sendPeer(Peer.statics.peerize(peer), Peer.statics.peerize(peering)).finally(sent);
+          sendPeer(peer, thePeering).finally(sent);
         });
       });
     } else {
@@ -148,7 +152,6 @@ function Multicaster (isolate, timeout) {
   }
 
   function sendPeer(peer, thePeering, done) {
-    logger.info('POST peering %s to peer %s', thePeering.keyID(), peer.keyID());
     return post(peer, "/network/peering/peers", {
       peer: thePeering.getRawSigned()
     }, done);

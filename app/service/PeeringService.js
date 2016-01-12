@@ -20,6 +20,8 @@ function PeeringService(server, pair, dal) {
 
   var conf = server.conf;
 
+  const SYNC_BLOCK_INTERVAL = conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL;
+
   var Peer        = require('../lib/entity/peer');
 
   var selfPubkey = base58.encode(pair.publicKey);
@@ -131,7 +133,7 @@ function PeeringService(server, pair, dal) {
   this.regularSyncBlock = function (done) {
     if (syncBlockInterval)
       clearInterval(syncBlockInterval);
-    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL);
+    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * SYNC_BLOCK_INTERVAL);
     syncBlock(done);
   };
 
@@ -307,7 +309,7 @@ function PeeringService(server, pair, dal) {
           if (testIt) {
             // We try to reconnect only with peers marked as DOWN
             try {
-              logger.info('Checking if node %s (%s:%s) is UP...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
+              logger.trace('Checking if node %s is UP... (%s:%s) ', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
               // We register the try anyway
               yield dal.setPeerDown(p.pubkey);
               // Now we test
@@ -331,7 +333,7 @@ function PeeringService(server, pair, dal) {
               shouldDisplayDelays = false;
             } catch (err) {
               // Error: we set the peer as DOWN
-              logger.warn("Peer record %s: %s", p.pubkey, err.code || err.message || err);
+              logger.warn("Peer %s is DOWN (%s)", p.pubkey, (err.httpCode && 'HTTP ' + err.httpCode) || err.code || err.message || err);
               yield dal.setPeerDown(p.pubkey);
               shouldDisplayDelays = true;
             }
@@ -376,12 +378,12 @@ function PeeringService(server, pair, dal) {
     return co(function *() {
       let current = yield dal.getCurrentBlockOrNull();
       if (current) {
-        logger.info("Check network for new blocks...");
+        logger.info("Pulling blocks from the network...");
         let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
         peers = _.shuffle(peers);
         for (let i = 0, len = peers.length; i < len; i++) {
           let p = new Peer(peers[i]);
-          logger.info("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
+          logger.trace("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
           try {
             let node = yield Q.nfcall(p.connect);
             let okUP = yield processAscendingUntilNoBlock(p, node, current);
@@ -389,7 +391,7 @@ function PeeringService(server, pair, dal) {
               let remoteCurrent = yield Q.nfcall(node.blockchain.current);
               // We check if our current block has changed due to ascending pulling
               let nowCurrent = yield dal.getCurrentBlockOrNull();
-              logger.debug("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
+              logger.trace("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
               if (remoteCurrent.number != nowCurrent.number) {
                 yield processLastTen(p, node, nowCurrent);
               }
@@ -403,10 +405,16 @@ function PeeringService(server, pair, dal) {
               yield dal.setPeerDown(p.pubkey);
               return false;
             }
-            logger.warn(e);
+            else if (e.httpCode == 404) {
+              logger.trace("No new block from %s %s", p.pubkey.substr(0, 6), p.getURL());
+            }
+            else {
+              logger.warn(e);
+            }
           }
         }
       }
+      logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(SYNC_BLOCK_INTERVAL / 60), Math.floor(SYNC_BLOCK_INTERVAL % 60));
       callback();
     })
       .catch((err) => {
@@ -416,11 +424,16 @@ function PeeringService(server, pair, dal) {
   }
 
   function isConnectionError(err) {
-    return err && (err.code == "EINVAL" || err.code == "ECONNREFUSED" || err.code == "ETIMEDOUT");
+    return err && (
+      err.code == "EINVAL"
+      || err.code == "ECONNREFUSED"
+      || err.code == "ETIMEDOUT"
+      || err.httpCode !== 404);
   }
 
   function processAscendingUntilNoBlock(p, node, current) {
     return co(function *() {
+      let applied = 0;
       try {
         let downloaded = yield Q.nfcall(node.blockchain.block, current.number + 1);
         if (!downloaded) {
@@ -430,6 +443,7 @@ function PeeringService(server, pair, dal) {
           downloaded = rawifyTransactions(downloaded);
           try {
             let res = yield server.BlockchainService.submitBlock(downloaded, true);
+            applied++;
             if (!res.fork) {
               let nowCurrent = yield dal.getCurrentBlockOrNull();
               yield server.BlockchainService.tryToFork(nowCurrent);
@@ -447,10 +461,15 @@ function PeeringService(server, pair, dal) {
           }
         }
       } catch (err) {
-        logger.warn(err.code || err.message || err);
         if (isConnectionError(err)) {
           yield dal.setPeerDown(p.pubkey);
           return false;
+        }
+        else if (err.httpCode == 404) {
+          logger.info("%s new block from %s at %s", applied, p.pubkey.substr(0, 6), p.getNamedURL());
+        }
+        else {
+          logger.warn(err.code || err.message || err);
         }
       }
       return true;
@@ -485,9 +504,11 @@ function PeeringService(server, pair, dal) {
           }
         }
       } catch (err) {
-        logger.warn(err.code || err.message || err);
         if (isConnectionError(err)) {
           yield dal.setPeerDown(p.pubkey);
+        }
+        else if (err.httpCode != 404) {
+          logger.warn(err.code || err.message || err);
         }
         return false;
       }

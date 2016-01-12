@@ -92,6 +92,13 @@ function Peer(json) {
     return bma.port ? bma.port : null;
   };
 
+  that.getHostPreferDNS = function() {
+    var bma = that.getBMA();
+    return (bma.dns ? bma.dns :
+      (bma.ipv4 ? bma.ipv4 :
+        (bma.ipv6 ? bma.ipv6 : '')));
+  };
+
   that.getHost = function() {
     var bma = that.getBMA();
     var host =

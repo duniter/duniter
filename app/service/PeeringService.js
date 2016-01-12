@@ -403,7 +403,6 @@ function PeeringService(server, pair, dal) {
             if (isConnectionError(e)) {
               logger.info("Peer %s unreachable: now considered as DOWN.", p.pubkey);
               yield dal.setPeerDown(p.pubkey);
-              return false;
             }
             else if (e.httpCode == 404) {
               logger.trace("No new block from %s %s", p.pubkey.substr(0, 6), p.getURL());

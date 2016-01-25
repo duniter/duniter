@@ -96,7 +96,7 @@ function Block(json) {
 
   this.getHash = function() {
     if (!this.hash) {
-      this.hash = sha1(this.getRaw()).toUpperCase();
+      this.hash = sha1(this.getRawSigned()).toUpperCase();
     }
     return this.hash;
   };
@@ -107,12 +107,6 @@ function Block(json) {
 
   this.getRawSigned = function() {
     return require('../../lib/rawer').getBlock(this);
-  };
-
-  this.display = function (done) {
-    console.log('------------------');
-    console.log('Block#%s', this.number);
-    done();
   };
 
   this.quickDescription = function () {
@@ -197,5 +191,5 @@ function Block(json) {
       transactions.push(tx);
     });
     return transactions;
-  }
+  };
 }

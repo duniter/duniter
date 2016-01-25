@@ -1,7 +1,7 @@
 "use strict";
 
 var co               = require('co');
-var async            = require('async');
+var _                = require('underscore');
 var moment           = require('moment');
 var constants        = require('../lib/constants');
 var http2raw         = require('../lib/streams/parsers/http2raw');
@@ -106,16 +106,18 @@ function BlockchainBinding (server) {
       sigDate: moment(idty.time).unix(),
       memberships: []
     };
-    idty.memberships.forEach(function(ms){
-      ms = new Membership(ms);
-      json.memberships.push({
+    json.memberships = idty.memberships.map((msObj) => {
+      let ms = new Membership(msObj);
+      return {
         version: ms.version,
         currency: conf.currency,
         membership: ms.membership,
         blockNumber: parseInt(ms.blockNumber),
         blockHash: ms.blockHash
-      });
+      };
     });
+    json.memberships = _.sortBy(json.memberships, 'blockNumber');
+    json.memberships.reverse();
     return json;
   });
 

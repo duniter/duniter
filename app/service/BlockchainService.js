@@ -1108,6 +1108,7 @@ function BlockchainService (conf, mainDAL, pair) {
         logger.debug('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration/1000).toFixed(2), msg.testsCount, testsPerSecond);
         stopped = true;
         start = null;
+        block.hash = msg.pow;
         onPoWFound(null, block);
       } else if (!stopped && msg.testsPerRound) {
         logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', msg.testsPerSecond, msg.testsPerRound);

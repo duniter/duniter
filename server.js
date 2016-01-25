@@ -189,8 +189,7 @@ function Server (dbConf, overrideConf) {
         try {
           let block = yield that.BlockchainService.startGeneration();
           if (block && shouldContinue) {
-            var peer = new Peer({endpoints: [['BASIC_MERKLED_API', that.conf.ipv4, that.conf.port].join(' ')]});
-            yield multicaster(that.conf.isolate, constants.NETWORK.SYNC_LONG_TIMEOUT).sendBlock(peer, block);
+            yield that.singleWritePromise(block);
           }
         }
         catch (e) {

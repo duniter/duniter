@@ -8,6 +8,8 @@ function Block(json) {
 
   var that = this;
 
+  this.documentType = 'block';
+
   _(json || {}).keys().forEach(function(key) {
     var value = json[key];
     if (

@@ -713,7 +713,9 @@ function BlockchainService (conf, mainDAL, pair) {
               nextOne();
             }
           ], (err) => {
-            logger.warn(err);
+            if (err) {
+              logger.warn(err);
+            }
             callback();
           });
         }, next);

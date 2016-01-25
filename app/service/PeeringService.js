@@ -277,7 +277,7 @@ function PeeringService(server, pair, dal) {
     return co(function *() {
       let subpeers = [];
       try {
-        logger.info('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
+        logger.debug('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
         let node = yield aPeer.connectP();
         //let remotePeer = yield Q.nbind(node.network.peering.get)();
         let json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
@@ -465,7 +465,7 @@ function PeeringService(server, pair, dal) {
           return false;
         }
         else if (err.httpCode == 404) {
-          logger.info("%s new block from %s at %s", applied, p.pubkey.substr(0, 6), p.getNamedURL());
+          logger.debug("%s new block from %s at %s", applied, p.pubkey.substr(0, 6), p.getNamedURL());
         }
         else {
           logger.warn(err.code || err.message || err);

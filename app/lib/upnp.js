@@ -31,7 +31,7 @@ module.exports = function (localPort, remotePort) {
 function openPort (localPort, remotePort) {
   "use strict";
   return Q.Promise(function(resolve, reject){
-    logger.info('UPnP: mapping external port %s to local %s...', remotePort, localPort);
+    logger.trace('UPnP: mapping external port %s to local %s...', remotePort, localPort);
     var client = upnp.createClient();
     client.portMapping({
       'public': parseInt(remotePort),

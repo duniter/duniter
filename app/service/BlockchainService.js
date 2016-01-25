@@ -1115,7 +1115,7 @@ function BlockchainService (conf, mainDAL, pair) {
         speedMesured = true;
       } else if (!stopped && msg.nonce > block.nonce + constants.PROOF_OF_WORK.RELEASE_MEMORY) {
         // Reset fork process (release memory)...
-        //logger.debug('Release mem... lastCount = %s, nonce = %s', block.nonce);
+        logger.trace('Release mem... lastCount = %s, nonce = %s', block.nonce);
         block.nonce = msg.nonce;
         speedMesured = false;
         that.powProcess.kill();
@@ -1124,6 +1124,15 @@ function BlockchainService (conf, mainDAL, pair) {
             secretKeyEnc: base58.encode(pair.secretKey)
           }
         });
+      } else if (!stopped && !msg.found) {
+        var pow = msg.pow;
+        for (let i = 5; i >= 3; i--) {
+          var lowPowRegexp = new RegExp('^0{' + (i) + '}[^0]');
+          if (pow.match(lowPowRegexp)) {
+            logger.info('Matched %s zeros %s with Nonce = %s', i, pow, msg.block.nonce);
+            break;
+          }
+        }
       } else if (!stopped) {
         // Continue...
         //console.log('Already made: %s tests...', msg.nonce);

@@ -26,6 +26,8 @@ process.on('message', function(stuff){
     function(sigFunc, next) {
       signatureFunc = sigFunc;
       var powRegexp = new RegExp('^0{' + nbZeros + '}[^0]');
+      var lowPowRegexp = new RegExp('^0{' + (nbZeros-1) + '}[^0]');
+      var verylowPowRegexp = new RegExp('^0{' + (nbZeros-2) + '}[^0]');
       var pow = "", sig = "", raw = "";
 
       // Time must be = [medianTime; medianTime + minSpeed]
@@ -56,6 +58,9 @@ process.on('message', function(stuff){
                 sig = dos2unix(sigFunc(raw));
                 pow = hash(raw + sig + '\n');
                 found = pow.match(powRegexp);
+                if (!found && (pow.match(lowPowRegexp) || pow.match(verylowPowRegexp))) {
+                  process.send({ found: false, pow: pow, block: block, nbZeros: nbZeros });
+                }
                 testsCount++;
                 i++;
               }
@@ -67,7 +72,7 @@ process.on('message', function(stuff){
               }, nbZeros == 0 ? 0 : Math.max(0, (1000-durationMS))); // Max wait 1 second
             },
             function(next) {
-              process.send({ found: false, block: block, nbZeros: nbZeros });
+              process.send({ found: false, pow: pow, block: block, nbZeros: nbZeros });
               next();
             }
           ], next);

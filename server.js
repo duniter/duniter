@@ -189,7 +189,11 @@ function Server (dbConf, overrideConf) {
         try {
           let block = yield that.BlockchainService.startGeneration();
           if (block && shouldContinue) {
-            yield that.singleWritePromise(block);
+            try {
+              yield that.singleWritePromise(block);
+            } catch (err) {
+              logger.warn('Proof-of-work self-submission: %s', err.message || err);
+            }
           }
         }
         catch (e) {

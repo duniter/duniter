@@ -1126,16 +1126,18 @@ function BlockchainService (conf, mainDAL, pair) {
             secretKeyEnc: base58.encode(pair.secretKey)
           }
         });
-      } else if (!stopped && !msg.found) {
-        var pow = msg.pow;
-        for (let i = 5; i >= 3; i--) {
-          var lowPowRegexp = new RegExp('^0{' + (i) + '}[^0]');
-          if (pow.match(lowPowRegexp)) {
-            logger.info('Matched %s zeros %s with Nonce = %s', i, pow, msg.block.nonce);
-            break;
+      } else if (!stopped) {
+
+        if (!msg.found) {
+          var pow = msg.pow;
+          for (let i = 5; i >= 3; i--) {
+            var lowPowRegexp = new RegExp('^0{' + (i) + '}[^0]');
+            if (pow.match(lowPowRegexp)) {
+              logger.info('Matched %s zeros %s with Nonce = %s for block#%s', i, pow, msg.block.nonce, msg.block.number);
+              break;
+            }
           }
         }
-      } else if (!stopped) {
         // Continue...
         //console.log('Already made: %s tests...', msg.nonce);
         // Look for incoming block

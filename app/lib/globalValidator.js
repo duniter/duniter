@@ -13,12 +13,17 @@ var Identity      = require('../lib/entity/identity');
 var Membership    = require('../lib/entity/membership');
 var Certification = require('../lib/entity/certification');
 
+// Future rule of X_PERCENT of the sentries
+const X_PERCENT = 1.0;
+
 module.exports = function (conf, dao) {
   
   return new GlobalValidator(conf, dao);
 };
 
 function GlobalValidator (conf, dao) {
+
+  let wotb = dao.wotb;
 
   this.checkSingleTransaction = function (tx, done) {
     async.series([
@@ -118,23 +123,8 @@ function GlobalValidator (conf, dao) {
     };
   }
 
-  /**
-  * Function for testing constraints.
-  * Useful for function signature reason: it won't give any result in final callback.
-  */
-  function checkTxs (fn) {
-    return function (block, done) {
-      var txs = block.getTransactions();
-      // Check rule against each transaction
-      async.forEachSeries(txs, fn, function (err) {
-        // Only return err as result
-        done(err);
-      });
-    };
-  }
-
-  this.isOver3Hops = function (member, wot, newLinks, done) {
-    isOver3Hops(member, wot, newLinks, dao, done);
+  this.isOver3Hops = function (member, newLinks, newcomers, done) {
+    checkPeopleAreNotOudistanced([member], newLinks, newcomers, done);
   };
 
   this.getTrialLevel = function (issuer, done) {
@@ -205,11 +195,12 @@ function GlobalValidator (conf, dao) {
 
   this.checkCertificationIsValidForBlock = function(cert, block, idty) {
     return co(function *() {
-      var isValid = yield Q.nfcall(checkCertificationIsValid, block, cert, function(block, pubkey, done) {
+      yield Q.nfcall(checkCertificationIsValid, block, cert, function(block, pubkey, done) {
         done(null, idty);
       });
-      return isValid;
-    });
+      return true;
+    })
+      .catch(() => false);
   };
 
   function checkCertificationIsValid (block, cert, findIdtyFunc, done, doNotThrowExpiration) {
@@ -220,9 +211,9 @@ function GlobalValidator (conf, dao) {
         } else if (block.number == 0 && cert.block_number == 0) {
           next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
         } else {
-          dao.getBlock(cert.block_number, function (err, basedBlock) {
-            next((err || !basedBlock) && 'Certification based on an unexisting block', basedBlock);
-          });
+          Q.nbind(dao.getBlock, dao)(cert.block_number)
+            .then((basedBlock) => next(null, basedBlock))
+            .catch((err) => next('Certification based on an unexisting block'));
         }
       },
       function (basedBlock, next){
@@ -257,7 +248,9 @@ function GlobalValidator (conf, dao) {
           crypto.isValidCertification(selfCert, res.idty.sig, cert.from, cert.sig, targetId, next);
         }
       }
-    ], done);
+    ], function(err) {
+      done(err);
+    });
   }
 
   function checkCertificationsAreMadeByMembers (block, done) {
@@ -929,11 +922,19 @@ function GlobalValidator (conf, dao) {
   }
 
   function checkJoinersAreNotOudistanced (block, done) {
-    checkPeopleAreNotOudistanced(block.joiners, block, done);
+    checkPeopleAreNotOudistanced(
+      block.joiners.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
+      getNewLinks(block),
+      block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
+      done);
   }
 
   function checkActivesAreNotOudistanced (block, done) {
-    checkPeopleAreNotOudistanced(block.actives, block, done);
+    checkPeopleAreNotOudistanced(
+      block.actives.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
+      getNewLinks(block),
+      block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
+      done);
   }
 
   function checkPeopleHaveEnoughCertifications (memberships, block, done) {
@@ -962,35 +963,63 @@ function GlobalValidator (conf, dao) {
     }, done);
   }
 
-  function checkPeopleAreNotOudistanced (memberships, block, done) {
-    var wotPubkeys = [];
-    async.waterfall([
-      function (next){
-        dao.getMembersWithEnoughSigWoT(conf.sigWoT, next);
-      },
-      function (identities, next){
-        // Stacking WoT pubkeys
-        identities.forEach(function(idty){
-          wotPubkeys.push(idty.pubkey);
-        });
-        var newLinks = getNewLinks(block);
-        // Checking distance of each member against them
-        async.forEach(memberships, function(inlineMembership, callback){
-          var ms = Membership.statics.fromInline(inlineMembership);
-          async.waterfall([
-            function (next){
-              isOver3Hops(ms.issuer, wotPubkeys, newLinks, dao, next);
-            },
-            function (outdistancedCount, next){
-              if (outdistancedCount.length > 0)
-                next('Joiner/Active is outdistanced from WoT');
-              else
-                next();
-            },
-          ], callback);
-        }, next);
-      },
-    ], done);
+  function getNodeIDfromPubkey(nodesCache, pubkey) {
+    return co(function *() {
+      let toNode = nodesCache[pubkey];
+      // Eventually cache the target nodeID
+      if (toNode === null || toNode === undefined) {
+        let idty = yield Q.nbind(dao.getIdentityByPubkey, dao)(pubkey);
+        toNode = idty.wotb_id;
+        nodesCache[pubkey] = toNode;
+      }
+      return toNode;
+    });
+  }
+
+  function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, done) {
+    return co(function *() {
+      // TODO: make a temporary copy of the WoT in RAM
+      // We add temporarily the newcomers to the WoT, to integrate their new links
+      let nodesCache = newcomers.reduce((map, pubkey) => {
+        let nodeID = wotb.addNode();
+        map[pubkey] = nodeID;
+        wotb.setEnabled(nodeID, false); // These are not members yet
+        return map;
+      }, {});
+      // Add temporarily the links to the WoT
+      let tempLinks = [];
+      let toKeys = _.keys(newLinks);
+      for (let i = 0, len = toKeys.length; i < len; i++) {
+        let toKey = toKeys[i];
+        let toNode = yield getNodeIDfromPubkey(nodesCache, toKey);
+        for (let j = 0, len2 = newLinks[toKey].length; j < len2; j++) {
+          let fromKey = newLinks[toKey][j];
+          let fromNode = yield getNodeIDfromPubkey(nodesCache, fromKey);
+          tempLinks.push({ from: fromNode, to: toNode });
+        }
+      }
+      tempLinks.forEach((link) => wotb.addLink(link.from, link.to));
+      // Checking distance of each member against them
+      let error;
+      for (let i = 0, len = pubkeys.length; i < len; i++) {
+        let pubkey = pubkeys[i];
+        let nodeID = yield getNodeIDfromPubkey(nodesCache, pubkey);
+        let isOutdistanced = wotb.isOutdistanced(nodeID, conf.sigWoT, conf.stepMax, X_PERCENT);
+        if (isOutdistanced) {
+          error = 'Joiner/Active is outdistanced from WoT';
+          break;
+        }
+      }
+      // Undo temp links/nodes
+      tempLinks.forEach((link) => wotb.removeLink(link.from, link.to));
+      newcomers.forEach(() => wotb.removeNode());
+      if (error) {
+        throw error;
+      }
+      done();
+    })
+      .catch((err) =>
+        done(err));
   }
 
   function checkKickedMembersAreExcluded (block, done) {
@@ -1038,135 +1067,6 @@ function getNewLinks (block) {
     newLinks[cert.to].push(cert.from);
   });
   return newLinks;
-}
-
-function isOver3Hops (pubkey, ofMembers, newLinks, dao, done) {
-  var newCertifiers = newLinks[pubkey] || [];
-  var remainingKeys = ofMembers.slice();
-  // Without self
-  remainingKeys = _(remainingKeys).difference([pubkey]);
-  var dist1Links = [];
-  async.waterfall([
-    function (next){
-      // Remove direct links (dist 1)
-      remainingKeys = _(remainingKeys).difference(newCertifiers);
-      next();
-    },
-    function (next) {
-      if (remainingKeys.length > 0) {
-        async.waterfall([
-          function (next){
-            dao.getValidLinksTo(pubkey, next);
-          },
-          function (links, next){
-            dist1Links = [];
-            links.forEach(function(lnk){
-              dist1Links.push(lnk.source);
-            });
-            // Add new certifiers as distance 1 links
-            dist1Links = _(dist1Links.concat(newCertifiers)).uniq();
-            next();
-          },
-        ], next);
-      }
-      else next();
-    },
-    function (next){
-      // Remove distance 2 links (those for whom new links make 1 distance)
-      var found = [];
-      if (remainingKeys.length > 0) {
-        async.forEachSeries(remainingKeys, function(member, callback){
-          // Exists distance 1 link?
-          async.detect(dist1Links, function (dist1member, callbackDist1) {
-            // Look in newLinks
-            var signatories = (newLinks[dist1member] || []);
-            if (~signatories.indexOf(member)) {
-              callbackDist1(true);
-              return;
-            }
-            // dist1member signed 'pubkey', so here we look for (member => dist1member => pubkey sigchain)
-            dao.getPreviousLinkFromTo(member, dist1member, function (err, links) {
-              if (links && links.length > 0) {
-                found.push(member);
-                callbackDist1(true);
-              }
-              else callbackDist1(false);
-            });
-          }, function (detected) {
-            if (detected)
-              found.push(member);
-            callback();
-          });
-        }, function(err){
-          remainingKeys = _(remainingKeys).difference(found);
-          next(err);
-        });
-      }
-      else next();
-    },
-    function (next){
-      // Remove distance 3 links (those for whom new links make 2 distance)
-      var found = [];
-      if (remainingKeys.length > 0) {
-        async.forEachSeries(remainingKeys, function(member, callback){
-          var dist2Links = [];
-
-          async.waterfall([
-            function (next){
-              // Step 1. Detect distance 1 members from current member (potential dist 2 from 'pubkey')
-              // Look in database
-              dao.getValidLinksFrom(member, function (err, links) {
-                dist2Links = [];
-                links.forEach(function(lnk){
-                  dist2Links.push(lnk.target);
-                });
-                next(err);
-              });
-              // Look in newLinks
-              _(newLinks).keys().forEach(function(signed){
-                (newLinks[signed] || []).forEach(function(signatories){
-                  if (~signatories.indexOf(member)) {
-                    dist2Links.push(signed);
-                  }
-                });
-              });
-            },
-            function (next){
-              // Step 2. Detect links between distance 2 & distance 1 members
-              async.detect(dist2Links, function (dist2member, callbackDist2) {
-                // Exists distance 1 link?
-                async.detect(dist1Links, function (dist1member, callbackDist1) {
-                  // Look in newLinks
-                  var signatories = (newLinks[dist1member] || []);
-                  if (~signatories.indexOf(dist2member)) {
-                    callbackDist1(true);
-                    return;
-                  }
-                  // dist1member signed 'pubkey', so here we look for (member => dist1member => pubkey sigchain)
-                  dao.getPreviousLinkFromTo(dist2member, dist1member, function (err, links) {
-                    if (links && links.length > 0) {
-                      callbackDist1(true);
-                    }
-                    else callbackDist1(false);
-                  });
-                }, callbackDist2);
-              }, function (detected) {
-                if (detected)
-                  found.push(member);
-                callback();
-              });
-            },
-          ], callback);
-        }, function(err){
-          remainingKeys = _(remainingKeys).difference(found);
-          next(err);
-        });
-      }
-      else next();
-    },
-  ], function (err) {
-    done(err, remainingKeys);
-  });
 }
 
 function CurrencyFilter (currency, onError) {

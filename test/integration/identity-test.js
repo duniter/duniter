@@ -82,6 +82,10 @@ describe("Identities", function() {
       yield man1.joinPromise();
       yield tac.certPromise(man1);
 
+      /**
+       *  toc <=> cat -> tic -> tac -> man1
+       */
+
       // Man2 is someone who has no certifications yet has sent a JOIN
       yield man2.selfCertPromise(now);
       yield man2.joinPromise();
@@ -209,7 +213,7 @@ describe("Identities", function() {
       res.identities[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.identities[0].should.have.property('uid').equal('cat');
       res.identities[0].should.have.property('meta').property('timestamp');
-      res.identities[0].should.have.property('outdistanced').have.length(0);
+      res.identities[0].should.have.property('outdistanced').equal(false);
       res.identities[0].should.have.property('certifications').have.length(1);
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
       res.identities[0].should.have.property('membershipExpiresIn').greaterThan(9000);
@@ -223,7 +227,7 @@ describe("Identities", function() {
       res.identities[0].should.have.property('pubkey').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
       res.identities[0].should.have.property('uid').equal('man1');
       res.identities[0].should.have.property('meta').property('timestamp');
-      res.identities[0].should.have.property('outdistanced').have.length(0);
+      res.identities[0].should.have.property('outdistanced').equal(false);
       res.identities[0].should.have.property('certifications').length(1);
       res.identities[0].certifications[0].should.have.property('from').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
       res.identities[0].certifications[0].should.have.property('to').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
@@ -302,8 +306,7 @@ describe("Identities", function() {
       res.identities[0].should.have.property('pubkey').equal('E44RxG9jKZQsaPLFSw2ZTJgW7AVRqo1NGy6KGLbKgtNm');
       res.identities[0].should.have.property('uid').equal('man2');
       res.identities[0].should.have.property('meta').property('timestamp');
-      res.identities[0].should.have.property('outdistanced').have.length(1);
-      res.identities[0].outdistanced[0].should.equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.identities[0].should.have.property('outdistanced').equal(true);
       res.identities[0].should.have.property('certifications').length(0);
       res.identities[0].should.have.property('membershipPendingExpiresIn').greaterThan(9000);
       res.identities[0].should.have.property('membershipExpiresIn').equal(0);
@@ -317,8 +320,7 @@ describe("Identities", function() {
       res.identities[0].should.have.property('pubkey').equal('5bfpAfZJ4xYspUBYseASJrofhRm6e6JMombt43HBaRzW');
       res.identities[0].should.have.property('uid').equal('man3');
       res.identities[0].should.have.property('meta').property('timestamp');
-      res.identities[0].should.have.property('outdistanced').have.length(1);
-      res.identities[0].outdistanced[0].should.equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.identities[0].should.have.property('outdistanced').equal(true);
       res.identities[0].should.have.property('certifications').length(0);
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
       res.identities[0].should.have.property('membershipExpiresIn').equal(0);

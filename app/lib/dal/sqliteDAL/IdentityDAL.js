@@ -4,11 +4,12 @@
 
 var Q = require('q');
 var co = require('co');
+var logger = require('../../../../app/lib/logger')('idtyDAL');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = IdentityDAL;
 
-function IdentityDAL(db) {
+function IdentityDAL(db, wotb) {
 
   "use strict";
 
@@ -30,7 +31,8 @@ function IdentityDAL(db) {
     'uid',
     'sig',
     'hash',
-    'written'
+    'written',
+    'wotb_id'
   ];
   this.arrays = ['memberships'];
   this.booleans = ['revoked', 'member', 'kick', 'leaving', 'wasMember', 'written'];
@@ -53,6 +55,7 @@ function IdentityDAL(db) {
       'sig VARCHAR(100) NOT NULL,' +
       'hash VARCHAR(40) NOT NULL,' +
       'written BOOLEAN NOT NULL,' +
+      'wotb_id INTEGER NULL,' +
       'PRIMARY KEY (pubkey,uid,hash)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_idty_pubkey ON idty (pubkey);' +
@@ -72,6 +75,7 @@ function IdentityDAL(db) {
       idty.member = false;
       idty.kick = false;
       idty.leaving = false;
+      wotb.setEnabled(false, idty.wotb_id);
       return that.saveIdentity(idty);
     });
   };
@@ -86,6 +90,7 @@ function IdentityDAL(db) {
       idty.member = false;
       idty.kick = false;
       idty.leaving = false;
+      idty.wotb_id = wotb.removeNode();
       return that.saveIdentity(idty);
     });
   };
@@ -94,8 +99,9 @@ function IdentityDAL(db) {
     return co(function *() {
       var idty = yield that.getFromPubkey(ms.issuer);
       idty.memberships.pop();
-      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      idty.currentMSN = previousMSN(idty);
       idty.member = false;
+      wotb.setEnabled(false, idty.wotb_id);
       return that.saveIdentity(idty);
     });
   };
@@ -104,7 +110,7 @@ function IdentityDAL(db) {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
       idty.memberships.pop();
-      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      idty.currentMSN = previousMSN(idty);
       return that.saveIdentity(idty);
     });
   };
@@ -113,7 +119,7 @@ function IdentityDAL(db) {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
       idty.memberships.pop();
-      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      idty.currentMSN = previousMSN(idty);
       idty.leaving = false;
       return that.saveIdentity(idty);
     });
@@ -123,8 +129,9 @@ function IdentityDAL(db) {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
       idty.memberships.pop();
-      idty.currentMSN = idty.memberships[idty.memberships.length - 1];
+      idty.currentMSN = previousMSN(idty);
       idty.leaving = false;
+      wotb.setEnabled(true, idty.wotb_id);
       return that.saveIdentity(idty);
     });
   };
@@ -136,6 +143,8 @@ function IdentityDAL(db) {
     idty.wasMember = true;
     idty.kick = false;
     idty.written = true;
+    idty.wotb_id = wotb.addNode();
+    logger.trace('%s was affected wotb_id %s', idty.uid, idty.wotb_id);
     return that.saveIdentity(idty);
   };
 
@@ -147,6 +156,7 @@ function IdentityDAL(db) {
       idty.member = true;
       idty.wasMember = true;
       idty.leaving = false;
+      wotb.setEnabled(true, idty.wotb_id);
       // TODO: previously had
       //idty.kick = false;
       return that.saveIdentity(idty);
@@ -161,6 +171,7 @@ function IdentityDAL(db) {
       idty.member = true;
       idty.kick = false;
       idty.leaving = false;
+      wotb.setEnabled(true, idty.wotb_id);
       // TODO: previously had
       //idty.kick = false;
       return that.saveIdentity(idty);
@@ -242,8 +253,17 @@ function IdentityDAL(db) {
     });
     for (let i = 0; i < toKick.length; i++) {
       let idty = toKick[i];
+      logger.trace('Kick %s for currentMSN <= %s', idty.uid, maxNumber);
       idty.kick = true;
       yield that.saveEntity(idty);
     }
   });
+
+  function previousMSN(idty) {
+    let msn = idty.memberships[idty.memberships.length - 1];
+    if (msn === null || msn === undefined) {
+      msn = -1;
+    }
+    return msn;
+  }
 }

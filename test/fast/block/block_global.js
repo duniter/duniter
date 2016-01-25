@@ -3,6 +3,7 @@ var Q             = require('q');
 var async         = require('async');
 var should        = require('should');
 var assert        = require('assert');
+var wotb          = require('../../../app/lib/wot');
 var parsers       = require('../../../app/lib/streams/parsers/doc');
 var blocks        = require('../../data/blocks');
 var validator     = require('../../../app/lib/globalValidator');
@@ -15,6 +16,7 @@ var conf = {
   msValidity: 365.25*24*3600, // 1 year
   sigValidity: 365.25*24*3600, // 1 year
   sigQty: 1,
+  sigWoT: 3,
   powZeroMin: 1,
   powPeriod: 18,
   incDateMin: 10,
@@ -29,371 +31,322 @@ var conf = {
 
 describe("Block global coherence:", function(){
 
-  it('a valid block should not have any error', validate(blocks.VALID_ROOT, function (err, done) {
+  it('a valid block should not have any error', validate(blocks.VALID_ROOT, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a valid (next) block should not have any error', validate(blocks.VALID_NEXT, function (err, done) {
+  it('a valid (next) block should not have any error', validate(blocks.VALID_NEXT, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block with positive number while no root exists should fail', test('checkNumber', blocks.ROOT_BLOCK_REQUIRED, function (err, done) {
+  it('a block with positive number while no root exists should fail', test('checkNumber', blocks.ROOT_BLOCK_REQUIRED, function (err) {
     should.exist(err);
     err.should.equal('Root block required first');
-    done();
   }));
 
-  it('a block with same number as current should fail', test('checkNumber', blocks.SAME_BLOCK_NUMBER, function (err, done) {
+  it('a block with same number as current should fail', test('checkNumber', blocks.SAME_BLOCK_NUMBER, function (err) {
     should.exist(err);
     err.should.equal('Too late for this block');
-    done();
   }));
 
-  it('a block with older number than current should fail', test('checkNumber', blocks.OLD_BLOCK_NUMBER, function (err, done) {
+  it('a block with older number than current should fail', test('checkNumber', blocks.OLD_BLOCK_NUMBER, function (err) {
     should.exist(err);
     err.should.equal('Too late for this block');
-    done();
   }));
 
-  it('a block with too far future number than current should fail', test('checkNumber', blocks.FAR_FUTURE_BLOCK_NUMBER, function (err, done) {
+  it('a block with too far future number than current should fail', test('checkNumber', blocks.FAR_FUTURE_BLOCK_NUMBER, function (err) {
     should.exist(err);
     err.should.equal('Too early for this block');
-    done();
   }));
 
-  it('a block with wrong PreviousHash should fail', test('checkPreviousHash', blocks.WRONG_PREVIOUS_HASH, function (err, done) {
+  it('a block with wrong PreviousHash should fail', test('checkPreviousHash', blocks.WRONG_PREVIOUS_HASH, function (err) {
     should.exist(err);
     err.should.equal('PreviousHash not matching hash of current block');
-    done();
   }));
 
-  it('a block with wrong PreviousIssuer should fail', test('checkPreviousIssuer', blocks.WRONG_PREVIOUS_ISSUER, function (err, done) {
+  it('a block with wrong PreviousIssuer should fail', test('checkPreviousIssuer', blocks.WRONG_PREVIOUS_ISSUER, function (err) {
     should.exist(err);
     err.should.equal('PreviousIssuer not matching issuer of current block');
-    done();
   }));
 
-  it('a block with wrong Issuer should fail', test('checkIssuerIsMember', blocks.WRONG_ISSUER, function (err, done) {
+  it('a block with wrong Issuer should fail', test('checkIssuerIsMember', blocks.WRONG_ISSUER, function (err) {
     should.exist(err);
     err.should.equal('Issuer is not a member');
-    done();
   }));
 
-  it('a block with joiner for root block without root number shoud fail', test('checkJoiners', blocks.WRONG_JOIN_ROOT_NUMBER, function (err, done) {
+  it('a block with joiner for root block without root number shoud fail', test('checkJoiners', blocks.WRONG_JOIN_ROOT_NUMBER, function (err) {
     should.exist(err);
     err.should.equal('Number must be 0 for root block\'s memberships');
-    done();
   }));
 
-  it('a block with joiner for root block without root hash shoud fail', test('checkJoiners', blocks.WRONG_JOIN_ROOT_HASH, function (err, done) {
+  it('a block with joiner for root block without root hash shoud fail', test('checkJoiners', blocks.WRONG_JOIN_ROOT_HASH, function (err) {
     should.exist(err);
     err.should.equal('Hash must be DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 for root block\'s memberships');
-    done();
   }));
 
-  it('a block with joiner targeting unexisting block fail', test('checkJoiners', blocks.WRONG_JOIN_BLOCK_TARGET, function (err, done) {
+  it('a block with joiner targeting unexisting block fail', test('checkJoiners', blocks.WRONG_JOIN_BLOCK_TARGET, function (err) {
     should.exist(err);
     err.should.equal('Membership based on an unexisting block');
-    done();
   }));
 
-  it('a block with joiner membership number lower or equal than previous should fail', test('checkJoiners', blocks.WRONG_JOIN_NUMBER_TOO_LOW, function (err, done) {
+  it('a block with joiner membership number lower or equal than previous should fail', test('checkJoiners', blocks.WRONG_JOIN_NUMBER_TOO_LOW, function (err) {
     should.exist(err);
     err.should.equal('Membership\'s number must be greater than last membership of the pubkey');
-    done();
   }));
 
-  it('a block with joiner membership of a yet member should fail', test('checkJoiners', blocks.WRONG_JOIN_ALREADY_MEMBER, function (err, done) {
+  it('a block with joiner membership of a yet member should fail', test('checkJoiners', blocks.WRONG_JOIN_ALREADY_MEMBER, function (err) {
     should.exist(err);
     err.should.equal('Cannot be in joiners if already a member');
-    done();
   }));
 
-  it('a block with at least one revoked joiner should fail', test('checkJoinersAreNotRevoked', blocks.REVOKED_JOINER, function (err, done) {
+  it('a block with at least one revoked joiner should fail', test('checkJoinersAreNotRevoked', blocks.REVOKED_JOINER, function (err) {
     should.exist(err);
     err.should.equal('Revoked pubkeys cannot join');
-    done();
   }));
 
-  it('a block with at least one joiner without enough certifications should fail', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER, function (err, done) {
+  it('a block with at least one joiner without enough certifications should fail', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER, function (err) {
     should.exist(err);
     err.should.equal('Joiner/Active does not gathers enough certifications');
-    done();
   }));
 
-  it('a block with at least one joiner without enough certifications should succeed', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER_BLOCK_0, function (err, done) {
+  it('a block with at least one joiner without enough certifications should succeed', test('checkJoinersHaveEnoughCertifications', blocks.NOT_ENOUGH_CERTIFICATIONS_JOINER_BLOCK_0, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block with expired membership should fail', test('checkJoiners', blocks.EXPIRED_MEMBERSHIP, function (err, done) {
+  it('a block with expired membership should fail', test('checkJoiners', blocks.EXPIRED_MEMBERSHIP, function (err) {
     should.exist(err);
     err.should.equal('Membership has expired');
-    done();
   }));
 
-  it('a block with at least one joiner outdistanced from WoT should fail', test('checkJoinersAreNotOudistanced', blocks.OUTDISTANCED_JOINER, function (err, done) {
+  it('a block with at least one joiner outdistanced from WoT should fail', test('checkJoinersAreNotOudistanced', blocks.OUTDISTANCED_JOINER, function (err) {
     should.exist(err);
     err.should.equal('Joiner/Active is outdistanced from WoT');
-    done();
   }));
 
-  it('a block with active targeting unexisting block fail', test('checkActives', blocks.WRONG_ACTIVE_BLOCK_TARGET, function (err, done) {
+  it('a block with active targeting unexisting block fail', test('checkActives', blocks.WRONG_ACTIVE_BLOCK_TARGET, function (err) {
     should.exist(err);
     err.should.equal('Membership based on an unexisting block');
-    done();
   }));
 
-  it('a block with certification of unknown pubkey should fail', test('checkCertificationsAreValid', blocks.WRONGLY_SIGNED_CERTIFICATION, function (err, done) {
+  it('a block with certification of unknown pubkey should fail', test('checkCertificationsAreValid', blocks.WRONGLY_SIGNED_CERTIFICATION, function (err) {
     should.exist(err);
     err.should.equal('Wrong signature for certification');
-    done();
   }));
 
-  it('a block with certification to non-zero block for root block should fail', test('checkCertificationsAreValid', blocks.CERT_BASED_ON_NON_ZERO_FOR_ROOT, function (err, done) {
+  it('a block with certification to non-zero block for root block should fail', test('checkCertificationsAreValid', blocks.CERT_BASED_ON_NON_ZERO_FOR_ROOT, function (err) {
     should.exist(err);
     err.should.equal('Number must be 0 for root block\'s certifications');
-    done();
   }));
 
-  it('a block with certification to unknown block should fail', test('checkCertificationsAreValid', blocks.CERT_BASED_ON_NON_EXISTING_BLOCK, function (err, done) {
+  it('a block with certification to unknown block should fail', test('checkCertificationsAreValid', blocks.CERT_BASED_ON_NON_EXISTING_BLOCK, function (err) {
     should.exist(err);
     err.should.equal('Certification based on an unexisting block');
-    done();
   }));
 
-  it('a block with expired certifications should fail', test('checkCertificationsAreValid', blocks.EXPIRED_CERTIFICATIONS, function (err, done) {
+  it('a block with expired certifications should fail', test('checkCertificationsAreValid', blocks.EXPIRED_CERTIFICATIONS, function (err) {
     should.exist(err);
     err.should.equal('Certification has expired');
-    done();
   }));
 
-  it('a block with certification from non-member pubkey should fail', test('checkCertificationsAreMadeByMembers', blocks.UNKNOWN_CERTIFIER, function (err, done) {
+  it('a block with certification from non-member pubkey should fail', test('checkCertificationsAreMadeByMembers', blocks.UNKNOWN_CERTIFIER, function (err) {
     should.exist(err);
     err.should.equal('Certification from non-member');
-    done();
   }));
 
-  it('a block with certification to non-member pubkey should fail', test('checkCertificationsAreMadeToMembers', blocks.UNKNOWN_CERTIFIED, function (err, done) {
+  it('a block with certification to non-member pubkey should fail', test('checkCertificationsAreMadeToMembers', blocks.UNKNOWN_CERTIFIED, function (err) {
     should.exist(err);
     err.should.equal('Certification to non-member');
-    done();
   }));
 
-  it('a block with already used UserID should fail', test('checkIdentityUnicity', blocks.EXISTING_UID, function (err, done) {
+  it('a block with already used UserID should fail', test('checkIdentityUnicity', blocks.EXISTING_UID, function (err) {
     should.exist(err);
     err.should.equal('Identity already used');
-    done();
   }));
 
-  it('a block with already used pubkey should fail', test('checkPubkeyUnicity', blocks.EXISTING_PUBKEY, function (err, done) {
+  it('a block with already used pubkey should fail', test('checkPubkeyUnicity', blocks.EXISTING_PUBKEY, function (err) {
     should.exist(err);
     err.should.equal('Pubkey already used');
-    done();
   }));
 
-  it('a block with too early certification replay should fail', test('checkCertificationsDelayIsRespected', blocks.TOO_EARLY_CERTIFICATION_REPLAY, function (err, done) {
+  it('a block with too early certification replay should fail', test('checkCertificationsDelayIsRespected', blocks.TOO_EARLY_CERTIFICATION_REPLAY, function (err) {
     should.exist(err);
     err.should.equal('Too early for this certification');
-    done();
   }));
 
-  it('a block with kicked members not written under Excluded field should fail', test('checkKickedMembersAreExcluded', blocks.KICKED_NOT_EXCLUDED, function (err, done) {
+  it('a block with kicked members not written under Excluded field should fail', test('checkKickedMembersAreExcluded', blocks.KICKED_NOT_EXCLUDED, function (err) {
     should.exist(err);
     err.should.equal('All kicked members must be present under Excluded members');
-    done();
   }));
 
-  it('a block with kicked members well written under Excluded field should succeed', test('checkKickedMembersAreExcluded', blocks.KICKED_EXCLUDED, function (err, done) {
+  it('a block with kicked members well written under Excluded field should succeed', test('checkKickedMembersAreExcluded', blocks.KICKED_EXCLUDED, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block with wrong members count should fail', test('checkMembersCountIsGood', blocks.WRONG_MEMBERS_COUNT, function (err, done) {
+  it('a block with wrong members count should fail', test('checkMembersCountIsGood', blocks.WRONG_MEMBERS_COUNT, function (err) {
     should.exist(err);
     err.should.equal('Wrong members count');
-    done();
   }));
 
-  it('a block not starting with a leading zero should fail', test('checkProofOfWork', blocks.NO_LEADING_ZERO, function (err, done) {
+  it('a block not starting with a leading zero should fail', test('checkProofOfWork', blocks.NO_LEADING_ZERO, function (err) {
     should.exist(err);
     err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 1 zeros');
-    done();
   }));
 
-  it('a block requiring 2 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_7_LEADING_ZEROS, function (err, done) {
+  it('a block requiring 2 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_7_LEADING_ZEROS, function (err) {
     should.exist(err);
     err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 2 zeros');
-    done();
   }));
 
-  it('a block requiring 1 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_6_LEADING_ZEROS, function (err, done) {
+  it('a block requiring 1 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_6_LEADING_ZEROS, function (err) {
     should.exist(err);
     err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 1 zeros');
-    done();
   }));
 
-  it('a block requiring 1 leading zeros as first block of newcomer should succeed', test('checkProofOfWork', blocks.FIRST_BLOCK_OF_NEWCOMER, function (err, done) {
+  it('a block requiring 1 leading zeros as first block of newcomer should succeed', test('checkProofOfWork', blocks.FIRST_BLOCK_OF_NEWCOMER, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block requiring 40 leading zeros as second block of newcomer should fail', test('checkProofOfWork', blocks.SECOND_BLOCK_OF_NEWCOMER, function (err, done) {
+  it('a block requiring 40 leading zeros as second block of newcomer should fail', test('checkProofOfWork', blocks.SECOND_BLOCK_OF_NEWCOMER, function (err) {
     should.exist(err);
     err.should.equal('Wrong proof-of-work level: given 0 zeros, required was 40 zeros');
-    done();
   }));
 
-  it('a root block should not fail for time reason', test('checkTimes', blocks.WRONG_ROOT_DATES, function (err, done) {
+  it('a root block should not fail for time reason', test('checkTimes', blocks.WRONG_ROOT_DATES, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block with wrong median for an odd number of blocks should fail', test('checkTimes', blocks.WRONG_MEDIAN_TIME_ODD, function (err, done) {
+  it('a block with wrong median for an odd number of blocks should fail', test('checkTimes', blocks.WRONG_MEDIAN_TIME_ODD, function (err) {
     should.exist(err);
     err.should.equal('Wrong MedianTime');
-    done();
   }));
 
-  it('a block with wrong median for an even number of blocks should fail', test('checkTimes', blocks.WRONG_MEDIAN_TIME_EVEN, function (err, done) {
+  it('a block with wrong median for an even number of blocks should fail', test('checkTimes', blocks.WRONG_MEDIAN_TIME_EVEN, function (err) {
     should.exist(err);
     err.should.equal('Wrong MedianTime');
-    done();
   }));
 
-  it('a block whose median time is correct (odd) should pass', test('checkTimes', blocks.GOOD_MEDIAN_TIME_ODD, function (err, done) {
+  it('a block whose median time is correct (odd) should pass', test('checkTimes', blocks.GOOD_MEDIAN_TIME_ODD, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block whose median time is correct (even) should pass', test('checkTimes', blocks.GOOD_MEDIAN_TIME_EVEN, function (err, done) {
+  it('a block whose median time is correct (even) should pass', test('checkTimes', blocks.GOOD_MEDIAN_TIME_EVEN, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a root block with Universal Dividend should fail', test('checkUD', blocks.ROOT_BLOCK_WITH_UD, function (err, done) {
+  it('a root block with Universal Dividend should fail', test('checkUD', blocks.ROOT_BLOCK_WITH_UD, function (err) {
     should.exist(err);
     err.should.equal('Root block cannot have UniversalDividend field');
-    done();
   }));
 
-  it('first block with Universal Dividend should not happen before root time + dt', test('checkUD', blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULDNT, function (err, done) {
+  it('first block with Universal Dividend should not happen before root time + dt', test('checkUD', blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULDNT, function (err) {
     should.exist(err);
     err.should.equal('This block cannot have UniversalDividend');
-    done();
   }));
 
-  it('first block with Universal Dividend should happen on root time + dt', test('checkUD', blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULD, function (err, done) {
+  it('first block with Universal Dividend should happen on root time + dt', test('checkUD', blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULD, function (err) {
     should.exist(err);
     err.should.equal('Block must have a UniversalDividend field');
-    done();
   }));
 
-  it('a block without Universal Dividend whereas it have to have one should fail', test('checkUD', blocks.UD_BLOCK_WIHTOUT_UD, function (err, done) {
+  it('a block without Universal Dividend whereas it have to have one should fail', test('checkUD', blocks.UD_BLOCK_WIHTOUT_UD, function (err) {
     should.exist(err);
     err.should.equal('Block must have a UniversalDividend field');
-    done();
   }));
 
-  it('a block with wrong Universal Dividend value should fail', test('checkUD', blocks.BLOCK_WITH_WRONG_UD, function (err, done) {
+  it('a block with wrong Universal Dividend value should fail', test('checkUD', blocks.BLOCK_WITH_WRONG_UD, function (err) {
     should.exist(err);
     err.should.equal('UniversalDividend must be equal to 121');
-    done();
   }));
 
-  it('a root block with unlegitimated Universal Dividend presence should fail', test('checkUD', blocks.BLOCK_UNLEGITIMATE_UD, function (err, done) {
+  it('a root block with unlegitimated Universal Dividend presence should fail', test('checkUD', blocks.BLOCK_UNLEGITIMATE_UD, function (err) {
     should.exist(err);
     err.should.equal('This block cannot have UniversalDividend');
-    done();
   }));
 
-  it('a root block with unlegitimated Universal Dividend presence should fail', test('checkUD', blocks.BLOCK_UNLEGITIMATE_UD_2, function (err, done) {
+  it('a root block with unlegitimated Universal Dividend presence should fail', test('checkUD', blocks.BLOCK_UNLEGITIMATE_UD_2, function (err) {
     should.exist(err);
     err.should.equal('This block cannot have UniversalDividend');
-    done();
   }));
 
 
-  it('a block without transactions should pass', test('checkTransactions', blocks.BLOCK_WITHOUT_TRANSACTIONS, function (err, done) {
+  it('a block without transactions should pass', test('checkTransactions', blocks.BLOCK_WITHOUT_TRANSACTIONS, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block with good transactions should pass', test('checkTransactions', blocks.BLOCK_WITH_GOOD_TRANSACTIONS, function (err, done) {
+  it('a block with good transactions should pass', test('checkTransactions', blocks.BLOCK_WITH_GOOD_TRANSACTIONS, function (err) {
     should.not.exist(err);
-    done();
   }));
 
-  it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_AMOUNT, function (err, done) {
+  it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_AMOUNT, function (err) {
     should.exist(err);
     err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:100 is not available');
-    done();
   }));
 
-  it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_AMOUNT, function (err, done) {
+  it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_AMOUNT, function (err) {
     should.exist(err);
     err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:60 is not available');
-    done();
   }));
 
-  // it('a block with wrong UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err, done) {
+  // it('a block with wrong UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err) {
   //   should.exist(err);
   //   err.should.equal('Source D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B does not exist');
   //   done();
   // }));
 
-  // it('a block with wrong TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_SOURCE, function (err, done) {
+  // it('a block with wrong TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_SOURCE, function (err) {
   //   should.exist(err);
   //   err.should.equal('Source T:44:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD does not exist');
   //   done();
   // }));
 
-  it('a block with unavailable UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, function (err, done) {
+  it('a block with unavailable UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, function (err) {
     should.exist(err);
     err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:55:C3AE457BB31EA0B0DF811CF615E81CB46FEFDBE9:40 is not available');
-    done();
   }));
 
-  it('a block with unavailable TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, function (err, done) {
+  it('a block with unavailable TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, function (err) {
     should.exist(err);
     err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40 is not available');
-    done();
   }));
 });
 
 function test (funcName, raw, callback) {
   var block;
-  return function (done) {
-    async.waterfall([
-      function (next){
-        parser.asyncWrite(raw, next);
-      },
-      function (obj, next){
-        block = new Block(obj);
-        validator(conf, new BlockCheckerDao(block))[funcName](block, next);
-      },
-    ], function (err) {
-      callback(err, done);
-    });
-  };
+  return function() {
+    return Q.Promise(function(resolve, reject){
+      async.waterfall([
+        function (next){
+          parser.asyncWrite(raw, next);
+        },
+        function (obj, next){
+          block = new Block(obj);
+          validator(conf, new BlockCheckerDao(block))[funcName](block, next);
+        }
+      ], function (err) {
+        err ? reject(err) : resolve();
+      });
+    })
+      .then(callback).catch(callback);
+  }
 }
 
 function validate (raw, callback) {
   var block;
-  return function (done) {
-    async.waterfall([
-      function (next){
-        parser.asyncWrite(raw, next);
-      },
-      function (obj, next){
-        block = new Block(obj);
-        validator(conf, new BlockCheckerDao(block)).validate(block, next);
-      },
-    ], function (err) {
-      callback(err, done);
-    });
+  return function() {
+    return Q.Promise(function(resolve, reject){
+      async.waterfall([
+        function (next){
+          parser.asyncWrite(raw, next);
+        },
+        function (obj, next){
+          block = new Block(obj);
+          validator(conf, new BlockCheckerDao(block)).validate(block, next);
+        }
+      ], function (err) {
+        err ? reject(err) : resolve();
+      });
+    })
+      .then(callback).catch(callback)
   };
 }
 
@@ -401,7 +354,17 @@ function validate (raw, callback) {
 * Mock dao for testing
 */
 function BlockCheckerDao (block) {
-  
+
+  this.wotb = wotb.memoryInstance();
+  this.wotb.addNode(); // HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+  this.wotb.addNode(); // G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU
+  this.wotb.addNode(); // F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg
+  this.wotb.addLink(1, 0); // G2 => Hg
+  this.wotb.addLink(2, 0); // F5 => Hg
+  this.wotb.addLink(0, 1); // Hg => G2
+  this.wotb.addLink(2, 1); // F5 => G2
+  this.wotb.addLink(0, 2); // Hg => F5
+
   this.existsUserID = function (uid, done) {
     if (uid == 'EXISTING') {
       done(null, true);
@@ -424,6 +387,8 @@ function BlockCheckerDao (block) {
       done(null, new Identity({ pubkey: 'CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' }));
     else if (pubkey == 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
       done(null, new Identity({ pubkey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', revoked: true }));
+    else if (pubkey == 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
+      done(null, new Identity({ pubkey: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', revoked: false, wotb_id: 0 }));
     else
       done(null, null);
   }
@@ -468,16 +433,6 @@ function BlockCheckerDao (block) {
     else {
       done(null, [
         { pubkey: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd' },
-        { pubkey: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' },
-      ]);
-    }
-  }
-
-  this.getMembersWithEnoughSigWoT = function (minSigWoT, done) {
-    if (block.number == 0)
-      done(null, []);
-    else {
-      done(null, [
         { pubkey: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU' },
       ]);
     }

@@ -7,6 +7,7 @@ var qfs     = require('q-io/fs');
 var sha1    = require('sha1');
 var path    = require('path');
 var moment  = require('moment');
+var wotb    = require('../wot');
 var Configuration = require('../entity/configuration');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
@@ -20,13 +21,14 @@ var sqlite3 = require("sqlite3").verbose();
 var logger = require('../../lib/logger')('database');
 
 const UCOIN_DB_NAME = 'ucoin';
+const WOTB_FILE = 'wotb.bin';
 
 module.exports = {
   memory: function(home) {
     return getHomeFS(true, home)
       .then(function(params) {
         let sqlite = new sqlite3.Database(':memory:');
-        return Q(new FileDAL(params.home, "", params.fs, 'fileDal', sqlite));
+        return Q(new FileDAL(params.home, "", params.fs, 'fileDal', sqlite, wotb.memoryInstance()));
       });
   },
   file: function(home) {
@@ -34,7 +36,7 @@ module.exports = {
       .then(function(params) {
         let sqlitePath = path.join(params.home, UCOIN_DB_NAME + '.db');
         let sqlite = new sqlite3.Database(sqlitePath);
-        return new FileDAL(params.home, "", params.fs, 'fileDal', sqlite);
+        return new FileDAL(params.home, "", params.fs, 'fileDal', sqlite, wotb.fileInstance(path.join(params.home, WOTB_FILE)));
       });
   },
   FileDAL: FileDAL
@@ -58,7 +60,7 @@ function getHomeFS(isMemory, home) {
     });
 }
 
-function FileDAL(home, localDir, myFS, dalName, sqlite) {
+function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
 
   var that = this;
 
@@ -66,6 +68,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite) {
 
   this.name = dalName;
   this.profile = 'DAL';
+  this.wotb = wotbInstance;
   var rootPath = home;
 
   // DALs
@@ -76,8 +79,8 @@ function FileDAL(home, localDir, myFS, dalName, sqlite) {
   this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqlite);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
-  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite);
-  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite);
+  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite, wotbInstance);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite, wotbInstance);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqlite);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqlite);
 
@@ -470,34 +473,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite) {
       });
   };
 
-  this.searchIdentity = function(search) {
-    return Q.all([
-      that.idtyDAL.getWhoIsOrWasMember(),
-      that.idtyDAL.getPendingIdentities()
-    ])
-      .then(function(res){
-        var idties = _.chain(res[0]).
-          where({ revoked: false }).
-          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
-          value();
-        var pendings = _.chain(res[1]).
-          where({ revoked: false }).
-          filter(function(idty){ return idty.pubkey.match(new RegExp(search, 'i')) || idty.uid.match(new RegExp(search, 'i')); }).
-          value();
-        var hashes = _.pluck(idties, 'hash');
-        pendings.forEach(function(pending){
-          if (hashes.indexOf(pending.hash) == -1) {
-            idties.push(pending);
-          }
-        });
-        return that.fillIdentitiesWithCerts(idties);
-      });
-  };
-
-  this.searchJustIdentities = (search) => co(function *() {
-    let found = yield that.idtyDAL.searchThoseMatching(search);
-    return found;
-  });
+  this.searchJustIdentities = (search) => this.idtyDAL.searchThoseMatching(search);
 
   this.certsToTarget = function(hash) {
     return that.certDAL.getToTarget(hash)
@@ -960,10 +936,6 @@ function FileDAL(home, localDir, myFS, dalName, sqlite) {
     return merkle;
   });
 
-  this.saveLink = function(link) {
-    return that.linksDAL.addLink(link);
-  };
-
   this.removeLink = (link) =>
     that.linksDAL.removeLink(link);
 
@@ -1002,13 +974,11 @@ function FileDAL(home, localDir, myFS, dalName, sqlite) {
   };
 
   this.saveCert = (cert) =>
+    // TODO: create a specific method with a different name and hide saveCert()
     that.certDAL.saveCert(cert);
 
-  this.listLocalPendingIdentities = function() {
-    return that.idtyDAL.listLocalPending();
-  };
-
   this.savePendingIdentity = function(idty) {
+    // TODO: create a specific method with a different name and hide saveIdentity()
     return that.idtyDAL.saveIdentity(idty);
   };
 
@@ -1154,7 +1124,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite) {
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db'];
+    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db', WOTB_FILE];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };

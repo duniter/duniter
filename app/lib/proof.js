@@ -10,11 +10,17 @@ var rawer = require('./rawer');
 
 var signatureFunc;
 
+process.on('uncaughtException', function (err) {
+  console.error(err.stack || Error(err));
+  process.send({ error: err });
+});
+
 process.on('message', function(stuff){
   var conf = stuff.conf;
   var block = stuff.block;
   var nbZeros = stuff.zeros;
   var pair = stuff.pair;
+  var forcedTime = stuff.forcedTime;
   var cpu = conf.cpu || 1;
   async.waterfall([
     function(next) {
@@ -31,7 +37,7 @@ process.on('message', function(stuff){
       var pow = "", sig = "", raw = "";
 
       // Time must be = [medianTime; medianTime + minSpeed]
-      block.time = getBlockTime(block, conf);
+      block.time = getBlockTime(block, conf, forcedTime);
       // Test CPU speed
       var testsPerSecond = nbZeros > 0 ? computeSpeed(block, sigFunc) : 1;
       var testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1);
@@ -51,7 +57,7 @@ process.on('message', function(stuff){
               var testStart = new Date();
               var found = false;
               var i = 0;
-              block.time = getBlockTime(block, conf);
+              block.time = getBlockTime(block, conf, forcedTime);
               while(!found && i < testsPerRound) {
                 block.nonce++;
                 raw = rawer.getBlockWithoutSignature(block);
@@ -108,8 +114,8 @@ function computeSpeed(block, sigFunc) {
   return Math.round(constants.PROOF_OF_WORK.EVALUATION*1000/duration);
 }
 
-function getBlockTime (block, conf) {
-  var now = moment.utc().unix();
+function getBlockTime (block, conf, forcedTime) {
+  var now = forcedTime || moment.utc().unix();
   var maxAcceleration = localValidator(conf).maxAcceleration();
   var timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
   var medianTime = block.medianTime;

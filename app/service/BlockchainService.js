@@ -318,54 +318,26 @@ function BlockchainService (conf, mainDAL, pair) {
     done();
   };
 
-  function checkWoTConstraints (dal, sentries, block, newLinks, done) {
-    if (block.number >= 0) {
-      var newcomers = [];
-      var ofMembers = [].concat(sentries);
-      // other blocks may introduce unstability with new members
-      async.waterfall([
-        function (next) {
-          block.joiners.forEach(function (inlineMS) {
-            var fpr = inlineMS.split(':')[0];
-            newcomers.push(fpr);
-            ofMembers.push(fpr);
-          });
-          async.forEachSeries(newcomers, function (newcomer, newcomerTested) {
-            async.waterfall([
-              function (next) {
-                if (block.number > 0)
-                  mainContext.checkHaveEnoughLinks(newcomer, newLinks, next);
-                else
-                  next();
-              },
-              function (next) {
-                // Check the newcomer IS RECOGNIZED BY the WoT
-                // (check we have a path for each WoT member => newcomer)
-                if (block.number > 0)
-                  globalValidator(conf, blockchainDao(block, dal)).isOver3Hops(newcomer, ofMembers, newLinks, next);
-                else
-                  next(null, []);
-              },
-              function (outdistanced, next) {
-                if (outdistanced.length > 0) {
-                  // logger.debug('------ Newcomers ------');
-                  // logger.debug(newcomers);
-                  // logger.debug('------ Members ------');
-                  // logger.debug(ofMembers);
-                  // logger.debug('------ newLinks ------');
-                  // logger.debug(newLinks);
-                  // logger.debug('------ outdistanced ------');
-                  // logger.debug(outdistanced);
-                  next('Newcomer ' + newcomer + ' is not recognized by the WoT for this block');
-                }
-                else next();
-              }
-            ], newcomerTested);
-          }, next);
+  function checkWoTConstraints (block, newLinks, done) {
+    return co(function *() {
+      if (block.number < 0) {
+        throw 'Cannot compute WoT constraint for negative block number';
+      }
+      let newcomers = block.joiners.map((inlineMS) => inlineMS.split(':')[0]);
+      let realNewcomers = block.identities;
+      for (let i = 0, len = newcomers.length; i < len; i++) {
+        let newcomer = newcomers[i];
+        if (block.number > 0) {
+          let haveEnoughLinks = yield Q.nbind(mainContext.checkHaveEnoughLinks, mainContext)(newcomer, newLinks);
+          let isOutdistanced = yield that.isOver3Hops(newcomer, newLinks, realNewcomers);
+          if (isOutdistanced) {
+            throw 'Newcomer ' + newcomer + ' is not recognized by the WoT for this block';
+          }
         }
-      ], done);
-    }
-    else done('Cannot compute WoT constraint for negative block number');
+      }
+    })
+      .then(() => done())
+      .catch(done);
   }
 
   function getSentryMembers(dal, members, done) {
@@ -634,7 +606,8 @@ function BlockchainService (conf, mainDAL, pair) {
         iteratedChecking(newcomers, function (someNewcomers, onceChecked) {
           var nextBlock = {
             number: nextBlockNumber,
-            joiners: someNewcomers
+            joiners: someNewcomers,
+            identities: _.filter(newcomers.map((pub) => joinData[pub].identity), { wasMember: false }).map((idty) => idty.pubkey)
           };
           // Check WoT stability
           async.waterfall([
@@ -642,7 +615,7 @@ function BlockchainService (conf, mainDAL, pair) {
               computeNewLinks(nextBlockNumber, dal, someNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
-              checkWoTConstraints(dal, sentries, nextBlock, newLinks, next);
+              checkWoTConstraints(nextBlock, newLinks, next);
             }
           ], onceChecked);
         }, function (err, realNewcomers) {
@@ -728,29 +701,28 @@ function BlockchainService (conf, mainDAL, pair) {
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];
     let current = yield that.currentDal.getCurrent();
-    let members = yield that.currentDal.getMembers();
-    let sentries = yield Q.nfcall(getSentryMembers, that.currentDal, members);
     for (let i = 0, len = identities.length; i < len; i++) {
       let idty = new Identity(identities[i]);
-      let reqs = yield that.requirementsOfIdentity(idty, current, sentries);
+      let reqs = yield that.requirementsOfIdentity(idty, current);
       all.push(reqs);
     }
     return all;
   });
 
-  this.requirementsOfIdentity = (idty, current, sentries) => co(function *() {
+  this.requirementsOfIdentity = (idty, current) => co(function *() {
+    // TODO: this is not clear
     let join = yield Q.nfcall(getSinglePreJoinData, that.currentDal, current, idty.hash);
     let pubkey = join.identity.pubkey;
     // Check WoT stability
-    let someNewcomers = [join.identity.pubkey];
+    let someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];
     let nextBlockNumber = current ? current.number + 1 : 0;
     let joinData = {};
     joinData[join.identity.pubkey] = join;
     let updates = {};
-    let newCerts = yield computeNewCerts(nextBlockNumber, that.currentDal, someNewcomers, joinData, updates);
+    let newCerts = yield computeNewCerts(nextBlockNumber, that.currentDal, [join.identity.pubkey], joinData, updates);
     let newLinks = newCertsToLinks(newCerts, updates);
     let certs = yield that.getValidCerts(pubkey, newCerts);
-    let outdistanced = yield that.isOver3Hops(pubkey, newLinks, sentries, current);
+    let outdistanced = yield that.isOver3Hops(pubkey, newLinks, someNewcomers, current);
     let expiresMS = 0;
     let currentTime = current ? current.medianTime : 0;
     // Expiration of current membershship
@@ -800,15 +772,18 @@ function BlockchainService (conf, mainDAL, pair) {
     return certsFromLinks.concat(certsFromCerts);
   });
 
-  this.isOver3Hops = function(newcomer, newLinks, sentries, current) {
-    if (!current) {
-      return Q([]);
-    }
-    return Q.Promise(function(resolve, reject){
-      globalValidator(conf, blockchainDao(null, that.currentDal)).isOver3Hops(newcomer, sentries, newLinks, function(err, remainings) {
-        if (err) return reject(err);
-        resolve(remainings);
-      });
+  this.isOver3Hops = function(newcomer, newLinks, otherNewcomers, current) {
+    return co(function *() {
+      if (!current) {
+        return Q(false);
+      }
+      let gvalidator = globalValidator(conf, blockchainDao(null, that.currentDal));
+      try {
+        yield Q.nbind(gvalidator.isOver3Hops, gvalidator)(newcomer, newLinks, otherNewcomers);
+        return false;
+      } catch (e) {
+        return true;
+      }
     });
   };
 
@@ -980,6 +955,10 @@ function BlockchainService (conf, mainDAL, pair) {
         block.joiners.push(new Membership(data.ms).inline());
       }
     });
+    block.identities = _.sortBy(block.identities, (line) => {
+      let sp = line.split(':');
+      return sp[2] + sp[3];
+    });
     // Renewed
     block.actives = [];
     joiners.forEach(function(joiner){
@@ -1060,9 +1039,9 @@ function BlockchainService (conf, mainDAL, pair) {
   }
   var powWorker;
 
-  this.prove = function (block, sigFunc, nbZeros, done) {
+  this.prove = function (block, sigFunc, nbZeros, done, forcedTime) {
 
-    return Q.Promise(function(resolve){
+    return Q.Promise(function(resolve, reject){
       if (!powWorker) {
         powWorker = new Worker();
       }
@@ -1077,8 +1056,12 @@ function BlockchainService (conf, mainDAL, pair) {
         done && done(null, theBlock);
       });
 
+      powWorker.setOnError((err) => {
+        reject(err);
+      });
+
       block.nonce = 0;
-      powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros,
+      powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, forcedTime: forcedTime,
         pair: {
           secretKeyEnc: base58.encode(pair.secretKey)
         }
@@ -1092,12 +1075,17 @@ function BlockchainService (conf, mainDAL, pair) {
     var stopped = true;
     var that = this;
     var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.'; };
+    var onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
     that.powProcess = childProcess.fork(path.join(__dirname, '/../lib/proof'));
     var start = null;
     var speedMesured = false;
 
     that.powProcess.on('message', function(msg) {
       var block = msg.block;
+      if (msg.error) {
+        onPoWError(msg.error);
+        stopped = true;
+      }
       if (stopped) {
         // Started...
         start = new Date();
@@ -1165,6 +1153,10 @@ function BlockchainService (conf, mainDAL, pair) {
 
     this.setOnPoW = function(onPoW) {
       onPoWFound = onPoW;
+    };
+
+    this.setOnError = function(onError) {
+      onPoWError = onError;
     };
   }
 
@@ -1238,13 +1230,13 @@ function BlockchainService (conf, mainDAL, pair) {
       });
   };
 
-  this.makeNextBlock = function(block, sigFunc, trial) {
+  this.makeNextBlock = function(block, sigFunc, trial, manualValues) {
     return co(function *() {
       var dal = mainDAL;
       var unsignedBlock = block || (yield that.generateNext());
       var sigF = sigFunc || signature.sync(pair);
       var trialLevel = trial || (yield globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey));
-      return that.prove(unsignedBlock, sigF, trialLevel);
+      return that.prove(unsignedBlock, sigF, trialLevel, null, (manualValues && manualValues.time) || null);
     });
   };
 

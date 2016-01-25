@@ -344,11 +344,12 @@ function Server (dbConf, overrideConf) {
     });
   };
 
-  this.makeNextBlock = function() {
-    return that.initWithServices()
-      .then(function(){
-        return that.BlockchainService.makeNextBlock();
-      });
+  this.makeNextBlock = function(manualValues) {
+    return co(function *() {
+      yield that.initWithServices();
+      let proven = yield that.BlockchainService.makeNextBlock(null, null, null, manualValues);
+      return proven;
+    });
   };
 
   this.checkBlock = function(block) {

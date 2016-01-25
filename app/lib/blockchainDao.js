@@ -11,9 +11,9 @@ module.exports = function(dal) {
 
   function BlockCheckerDao () {
 
-    var dao = this;
-
     this.dal = dal;
+
+    this.wotb = dal.wotb;
     
     this.existsUserID = function (uid, done) {
       async.waterfall([
@@ -66,31 +66,6 @@ module.exports = function(dal) {
 
     this.getMembers = function (done) {
       dal.getMembers(done);
-    };
-
-    this.getMembersWithEnoughSigWoT = function (minSigToWoT, done) {
-      var membersWithEnough = [];
-      async.waterfall([
-        function (next) {
-          dal.getMembers(next);
-        },
-        function (members, next) {
-          async.forEachSeries(members, function (member, callback) {
-            async.waterfall([
-              function (next) {
-                dao.getValidLinksFrom(member.pubkey, next);
-              },
-              function (links, next) {
-                if (links.length >= minSigToWoT)
-                  membersWithEnough.push(member);
-                next();
-              }
-            ], callback);
-          }, next);
-        }
-      ], function (err) {
-        done(err, membersWithEnough);
-      });
     };
 
     this.getPreviousLinkFromTo = function (from, to, done) {

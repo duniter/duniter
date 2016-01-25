@@ -10,14 +10,16 @@ var customLevels = {
     warn: 1,
     info: 2,
     debug: 3,
-    trace: 4
+    trace: 4,
+    query: 5
   },
   colors: {
     error: 'red',
     warn: 'yellow',
     info: 'green',
     debug: 'cyan',
-    trace: 'cyan'
+    trace: 'cyan',
+    query: 'grey'
   }
 };
 
@@ -30,7 +32,7 @@ var logger = new (winston.Logger)({
   transports: [
     // setup console logging
     new (winston.transports.Console)({
-      level: 'debug',
+      level: 'query',
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,

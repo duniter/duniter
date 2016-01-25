@@ -6,6 +6,7 @@ var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
 var colors = require('colors');
+var logger = require('../../../../app/lib/logger')('sqlite');
 
 module.exports = AbstractSQLite;
 
@@ -24,28 +25,23 @@ function AbstractSQLite(db) {
 
   this.query = (sql, params) => co(function *() {
     try {
-      if (sql.match(/^INSERT/)) {
-        //console.log(sql, JSON.stringify(params || []));
-      }
+      //logger.trace(sql, JSON.stringify(params || []));
       let start = new Date();
       let res = yield Q.nbind(db.all, db)(sql, params || []);
       let duration = (new Date()) - start;
       let entities = res.map(toEntity);
-      if (true || that.table == "source") {
-        let msg = sql + ' | %s\t==> %s rows in %s ms';
-        if (duration <= 2) {
-          msg = colors.green(msg);
-        } else if(duration <= 5) {
-          msg = colors.yellow(msg);
-        } else if (duration <= 10) {
-          msg = colors.magenta(msg);
-        } else if (duration <= 100) {
-          msg = colors.red(msg);
-        }
-        if (duration > 10) {
-          //console.log(msg, JSON.stringify([] || []), entities.length, duration);
-        }
+      // Display result
+      let msg = sql + ' | %s\t==> %s rows in %s ms';
+      if (duration <= 2) {
+        msg = colors.green(msg);
+      } else if(duration <= 5) {
+        msg = colors.yellow(msg);
+      } else if (duration <= 10) {
+        msg = colors.magenta(msg);
+      } else if (duration <= 100) {
+        msg = colors.red(msg);
       }
+      logger.query(msg, JSON.stringify([] || []), entities.length, duration);
       return entities;
     } catch (e) {
       console.error('ERROR >> %s', sql, JSON.stringify(params || []), e.stack || e.message || e);

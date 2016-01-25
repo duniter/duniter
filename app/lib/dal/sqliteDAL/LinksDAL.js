@@ -4,11 +4,12 @@
 
 var Q = require('q');
 var co = require('co');
+var logger = require('../../../../app/lib/logger')('linksDAL');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = LinksDAL;
 
-function LinksDAL(db) {
+function LinksDAL(db, wotb) {
 
   "use strict";
 
@@ -23,7 +24,9 @@ function LinksDAL(db) {
     'timestamp',
     'block_number',
     'block_hash',
-    'obsolete'
+    'obsolete',
+    'from_wotb_id',
+    'to_wotb_id'
   ];
   this.arrays = [];
   this.booleans = ['obsolete'];
@@ -39,6 +42,8 @@ function LinksDAL(db) {
       'block_number INTEGER NOT NULL,' +
       'block_hash VARCHAR(50),' +
       'obsolete BOOLEAN NOT NULL,' +
+      'from_wotb_id INTEGER NULL,' +
+      'to_wotb_id INTEGER NULL,' +
       'PRIMARY KEY (source,target,block_number,block_hash)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_link_source ON link (source);' +
@@ -71,6 +76,11 @@ function LinksDAL(db) {
     });
 
   this.obsoletesLinks = (minTimestamp) => co(function *() {
+    let linksToObsolete = yield that.sqlFind({
+      timestamp: { $lte: minTimestamp },
+      obsolete: false
+    });
+    linksToObsolete.forEach((link) => wotb.removeLink(link.from_wotb_id, link.to_wotb_id));
     return that.sqlUpdateWhere({ obsolete: true }, {
       timestamp: { $lte: minTimestamp },
       obsolete: false
@@ -78,23 +88,28 @@ function LinksDAL(db) {
   });
 
   this.unObsoletesLinks = (minTimestamp) => co(function *() {
+    let linksToUnObsolete = yield that.sqlFind({
+      timestamp: { $gte: minTimestamp },
+      obsolete: true
+    });
+    linksToUnObsolete.forEach((link) => wotb.addLink(link.from_wotb_id, link.to_wotb_id));
     return that.sqlUpdateWhere({ obsolete: false }, {
       timestamp: { $gte: minTimestamp }
     });
   });
 
-  this.addLink = (link) => {
-    link.obsolete = false;
-    return that.saveEntity(link);
-  };
-
-  this.removeLink = (link) =>
-    this.deleteEntity(link);
+  this.removeLink = (link) => co(function *() {
+    wotb.removeLink(link.from_wotb_id, link.to_wotb_id);
+    return that.deleteEntity(link);
+  });
 
   this.updateBatchOfLinks = (links) => co(function *() {
     let queries = [];
     let insert = that.getInsertHead();
-    let values = links.map((cert) => that.getInsertValue(cert));
+    let values = links.map((link) => {
+      wotb.addLink(link.from_wotb_id, link.to_wotb_id);
+      return that.getInsertValue(link);
+    });
     if (links.length) {
       queries.push(insert + '\n' + values.join(',\n') + ';');
     }

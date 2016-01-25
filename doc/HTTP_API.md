@@ -431,7 +431,7 @@ A list of identities matching this pubkey and the requirements of each identitie
       "meta": {
         "timestamp": 1409990782
       },
-      "outdistanced": ["G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU"],
+      "outdistanced": true,
       "certifications": 2,
       "membershipMissing": true
     }

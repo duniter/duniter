@@ -207,6 +207,10 @@ function BlockchainContext(conf, dal) {
   }
 
   function updateBlocksComputedVars (current, block, done) {
+    if (current) {
+      logger.trace('Block median time +%s', block.medianTime - current.medianTime);
+      logger.trace('Block time ' + ((block.time - current.time) >= 0 ? '+' : '') + '%d', block.time - current.time);
+    }
     // Monetary Mass update
     if (current) {
       block.monetaryMass = (current.monetaryMass || 0) + block.dividend * block.membersCount;
@@ -355,10 +359,14 @@ function BlockchainContext(conf, dal) {
       for (let i = 0, len = block.certifications.length; i < len; i++) {
         let inlineCert = block.certifications[i];
         let cert = Certification.statics.fromInline(inlineCert);
+        let fromIdty = yield dal.getWrittenIdtyByPubkey(cert.from);
+        let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
         dal.removeLink(
           new Link({
             source: cert.from,
             target: cert.to,
+            from_wotb_id: fromIdty.wotb_id,
+            to_wotb_id: toIdty.wotb_id,
             timestamp: block.medianTime,
             block_number: block.number,
             block_hash: block.hash,
@@ -639,9 +647,13 @@ function BlockchainContext(conf, dal) {
           if (block.number > 0) {
             tagBlock = yield getBlockOrNull(cert.block_number);
           }
+          let fromIdty = yield dal.getWrittenIdtyByPubkey(cert.from);
+          let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
           links.push({
             source: cert.from,
             target: cert.to,
+            from_wotb_id: fromIdty.wotb_id,
+            to_wotb_id: toIdty.wotb_id,
             timestamp: tagBlock.medianTime,
             block_number: block.number,
             block_hash: block.hash,

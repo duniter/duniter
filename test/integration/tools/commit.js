@@ -1,11 +1,14 @@
 "use strict";
 
+var co = require('co');
 var rp = require('request-promise');
 
 module.exports = function makeBlockAndPost(theServer) {
-  return function() {
-    return theServer.makeNextBlock()
-      .then(postBlock(theServer));
+  return function(manualValues) {
+    return co(function *() {
+      let proven = yield theServer.makeNextBlock(manualValues);
+      return postBlock(theServer)(proven);
+    });
   };
 };
 

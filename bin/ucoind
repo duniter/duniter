@@ -403,17 +403,25 @@ program
   .command('config')
   .description('Register configuration in database')
   .action(connect(function (server, conf) {
-    return server.dal.saveConf(conf)
-      .then(function() {
-        logger.debug("Configuration saved.");
-        server.disconnect();
-        process.exit();
-      })
-      .catch(function(err) {
-        logger.error("Configuration could not be saved: " + err);
-        server.disconnect();
-        process.exit();
-      });
+    return co(function *() {
+      if (program.autoconf) {
+        let wiz = wizard();
+        conf.upnp = !program.noupnp;
+        yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, program.autoconf, program.noupnp);
+        yield Q.nbind(wiz.keyReconfigure, wiz)(conf, program.autoconf);
+      }
+      return server.dal.saveConf(conf)
+        .then(function() {
+          logger.debug("Configuration saved.");
+          server.disconnect();
+          process.exit();
+        })
+        .catch(function(err) {
+          logger.error("Configuration could not be saved: " + err);
+          server.disconnect();
+          process.exit();
+        });
+    });
   }));
 
 program
@@ -557,20 +565,7 @@ function getBootstrapOperations(host, port, server, conf) {
         async.waterfall([
           function(next) {
             if (!conf.salt && !conf.passwd) {
-              if (program.autoconf) {
-                conf.salt = ~~(Math.random() * 2147483647) + "";
-                conf.passwd = ~~(Math.random() * 2147483647) + "";
-                return next();
-              }
-              wiz.choose('You need a keypair to identify your node on the network. Would you like to automatically generate it?', true,
-                function(){
-                  conf.salt = ~~(Math.random() * 2147483647) + "";
-                  conf.passwd = ~~(Math.random() * 2147483647) + "";
-                  next();
-                },
-                function(){
-                  startWizard("key", server, conf, next);
-                });
+              wiz.keyReconfigure(conf, program.autoconf, next);
             } else {
               next();
             }

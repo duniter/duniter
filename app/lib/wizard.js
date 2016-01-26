@@ -1,4 +1,6 @@
 "use strict";
+var co        = require('co');
+var Q         = require('q');
 var wizard    = require('./wizard');
 var constants = require('./constants');
 var os        = require('os');
@@ -50,13 +52,32 @@ function Wizard () {
     doTasks(['ucp'], conf, done);
   };
 
-  this.doTasks = function (todos, conf, done) {
-    doTasks(todos, conf, done);
-  };
-
-  this.choose = choose;
-  this.networkConfiguration = networkConfiguration;
   this.networkReconfiguration = networkReconfiguration;
+  this.keyReconfigure = keyReconfigure;
+}
+
+function keyReconfigure(conf, autoconf, done) {
+  return co(function *() {
+    if (autoconf) {
+      conf.salt = ~~(Math.random() * 2147483647) + "";
+      conf.passwd = ~~(Math.random() * 2147483647) + "";
+      logger.info('Key: %s', 'generated');
+    } else {
+      yield Q.Promise(function(resolve, reject){
+        choose('You need a keypair to identify your node on the network. Would you like to automatically generate it?', true,
+          function(){
+            conf.salt = ~~(Math.random() * 2147483647) + "";
+            conf.passwd = ~~(Math.random() * 2147483647) + "";
+            resolve();
+          },
+          function(){
+            doTasks(['key'], conf, (err) => err ? reject(err) : resolve());
+          });
+      });
+    }
+    done();
+  })
+    .catch(done);
 }
 
 function doTasks (todos, conf, done) {

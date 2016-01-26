@@ -818,6 +818,33 @@ The hardship value (`level`) + `block` number.
 
 ```
 
+#### `blockchain/difficulties/[NUMBER]`
+
+**Goal**
+
+GET hardship level for given member's pubkey for writing next block.
+
+**Parameters**
+
+None.
+
+**Returns**
+
+The respective difficulty of each member in the last `blocksRot` blocks for current block.
+```json
+{
+  "block": 598,
+  "levels": [{
+    "uid": "jack",
+    "level": 8
+  },{
+    "uid": "cat",
+    "level": 4
+  }]
+}
+
+```
+
 #### `blockchain/with/newcomers`
 **Goal**
 

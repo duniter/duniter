@@ -9,8 +9,6 @@ module.exports = function () {
 
 function ParameterNamespace () {
 
-  var that = this;
-
   this.getSearch = function (req, callback) {
     if(!req.params || !req.params.search){
       callback("No search criteria given");
@@ -87,19 +85,6 @@ function ParameterNamespace () {
 
   this.getToP = (req) => Q.nbind(this.getTo, this)(req);
 
-  this.getFingerprint = function (req, callback){
-    if(!req.params.fpr){
-      callback("Fingerprint is required");
-      return;
-    }
-    var matches = req.params.fpr.match(/([A-Z0-9]{40})/);
-    if(!matches){
-      callback("Fingerprint format is incorrect, must be an upper-cased SHA1 hash");
-      return;
-    }
-    callback(null, matches[1]);
-  };
-
   this.getNumber = function (req, callback){
     if(!req.params.number){
       callback("Number is required");
@@ -114,32 +99,4 @@ function ParameterNamespace () {
   };
 
   this.getNumberP = (req) => Q.nbind(this.getNumber, this)(req);
-
-  this.getCount = function (req, callback){
-    if(!req.params.count){
-      callback("Count is required");
-      return;
-    }
-    var matches = req.params.count.match(/^(\d+)$/);
-    if(!matches){
-      callback("Count format is incorrect, must be a positive integer");
-      return;
-    }
-    var count = parseInt(matches[1], 10);
-    if(count <= 0){
-      callback("Count must be a positive integer");
-      return;
-    }
-    callback(null, matches[1]);
-  };
-
-  this.getTransactionID = function (req, callback) {
-    async.series({
-      fprint: async.apply(that.getFingerprint, req),
-      number: async.apply(that.getNumber, req)
-    },
-    function(err, results) {
-      callback(null, results.fprint, results.number);
-    });
-  };
 }

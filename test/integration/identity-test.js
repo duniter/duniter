@@ -357,4 +357,13 @@ describe("Identities", function() {
   it('memberships of man3', function() {
     return httpTest.expectHttpCode(404, rp('http://127.0.0.1:7799/blockchain/memberships/man3'));
   });
+
+  it('difficulties', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/blockchain/difficulties', { json: true }), function(res) {
+      res.should.have.property('block').equal(1);
+      res.should.have.property('levels').length(1);
+      res.levels[0].should.have.property('uid').equal('cat');
+      res.levels[0].should.have.property('level').equal(0);
+    });
+  });
 });

@@ -104,6 +104,16 @@ dtos.Hardship = {
   "level": Number
 };
 
+dtos.Difficulty = {
+  "uid": String,
+  "level": Number
+};
+
+dtos.Difficulties = {
+  "block": Number,
+  "levels": [dtos.Difficulty]
+};
+
 dtos.Blocks = [dtos.Block];
 
 dtos.Stat = {

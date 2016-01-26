@@ -74,6 +74,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGetP(  '/blockchain/blocks/:count/:from',        blockchain.blocks,                    dtos.Blocks);
   answerForGetP(  '/blockchain/current',                    blockchain.current,                   dtos.Block);
   answerForGetP(  '/blockchain/hardship/:search',           blockchain.hardship,                  dtos.Hardship);
+  answerForGetP(  '/blockchain/difficulties',               blockchain.difficulties,              dtos.Difficulties);
   answerForGetP(  '/blockchain/with/newcomers',             blockchain.with.newcomers,            dtos.Stat);
   answerForGetP(  '/blockchain/with/certs',                 blockchain.with.certs,                dtos.Stat);
   answerForGetP(  '/blockchain/with/joiners',               blockchain.with.joiners,              dtos.Stat);

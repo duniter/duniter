@@ -1075,6 +1075,14 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return that.peerDAL.savePeer(peer);
   };
 
+  this.getUniqueIssuersBetween = (start, end) => co(function *() {
+    let current = yield that.blockDAL.getCurrent();
+    let firstBlock = Math.max(0, start);
+    let lastBlock = Math.max(0, Math.min(current.number - 1, end));
+    let blocks = yield that.blockDAL.getBlocks(firstBlock, lastBlock);
+    return _.chain(blocks).pluck('issuer').uniq().value();
+  });
+
   /***********************
    *    CONFIGURATION
    **********************/

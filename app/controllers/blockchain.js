@@ -97,6 +97,25 @@ function BlockchainBinding (server) {
     };
   });
 
+  this.difficulties = () => co(function *() {
+    let current = yield server.dal.getCurrent();
+    let issuers = yield server.dal.getUniqueIssuersBetween(current.number - 1 - conf.blocksRot, current.number - 1);
+    let difficulties = [];
+    for (let i = 0, len = issuers.length; i < len; i++) {
+      let issuer = issuers[i];
+      let member = yield server.dal.getWrittenIdtyByPubkey(issuer);
+      let level = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(member.pubkey);
+      difficulties.push({
+        uid: member.uid,
+        level: level
+      });
+    }
+    return {
+      "block": current.number,
+      "levels": difficulties
+    };
+  });
+
   this.memberships = (req) => co(function *() {
     let search = yield ParametersService.getSearchP(req);
     let idty = yield IdentityService.findMember(search);

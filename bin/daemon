@@ -3,7 +3,6 @@
 
 var directory = require('../app/lib/directory');
 var path = require('path');
-var Tail = require('always-tail');
 
 var daemon = require("daemonize2").setup({
   main: "ucoind",
@@ -21,16 +20,6 @@ switch (process.argv[2]) {
     daemon.stop();
     break;
 
-  case "logs":
-    var tail = new Tail(directory.INSTANCE_HOMELOG_FILE, '\n', {
-      interval: 5,
-      start: 0
-    });
-    tail.on("line", function(data) {
-      console.log(data);
-    });
-    break;
-
   case "restart":
     daemon = require("daemonize2").setup({
       main: "ucoind",
@@ -45,6 +34,11 @@ switch (process.argv[2]) {
       err && console.error(err);
       daemon.start();
     });
+    break;
+
+  case "logs":
+    console.log(directory.INSTANCE_HOMELOG_FILE);
+    process.exit(0);
     break;
 
   default:

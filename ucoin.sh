@@ -9,6 +9,7 @@
 ucoind() {
 
 	local NODE
+	local LOGS_FILE
 
 	if [ -z "$DEV_MODE" ]; then
 
@@ -35,8 +36,13 @@ ucoind() {
 		#  UCOIN DAEMON MANAGEMENT
 		#---------------------------------
 
-		start|stop|restart|logs)
+		start|stop|restart)
 		$NODE "$UCOIN_DIR/bin/daemon" $*
+		;;
+
+		logs)
+		LOGS_FILE=`$NODE "$UCOIN_DIR/bin/daemon" $*`
+		tail -f -n 500 "$LOGS_FILE"
 		;;
 
 		#---------------------------------

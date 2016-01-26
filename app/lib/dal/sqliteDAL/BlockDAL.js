@@ -61,7 +61,6 @@ function BlockDAL(db) {
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_block_hash ON block (hash);' +
       'CREATE INDEX IF NOT EXISTS idx_block_fork ON block (fork);' +
-      'ALTER TABLE block ADD COLUMN `wrong` BOOLEAN NOT NULL DEFAULT 0;' +
       'COMMIT;', []);
   });
 

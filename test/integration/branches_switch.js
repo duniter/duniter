@@ -81,7 +81,7 @@ describe("Switch", function() {
       yield commit(s2)();
       // So we now have:
       // S1 01234
-      // S2   `345678
+      // S2   `3456789
       yield sync(3, 8, s2, s1);
       // S1 should have switched to the other branch
     });
@@ -98,6 +98,20 @@ describe("Switch", function() {
     it('/block/8 should exist on S2', function() {
       return expectJSON(rp('http://127.0.0.1:7789/blockchain/block/8', { json: true }), {
         number: 8
+      });
+    });
+
+    it('/block/7 should have valid monetary mass', function() {
+      return co(function *() {
+        let block = yield s1.dal.getBlock(7);
+        block.should.have.property('UDTime').not.equal(null);
+      });
+    });
+
+    it('/block/8 should have valid monetary mass', function() {
+      return co(function *() {
+        let block = yield s1.dal.getBlock(8);
+        block.should.have.property('UDTime').not.equal(null);
       });
     });
   });

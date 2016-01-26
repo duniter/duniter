@@ -24,6 +24,7 @@ function BlockDAL(db) {
   this.fields = ['fork', 'hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'excluded'];
   this.arrays = ['identities','certifications','actives','excluded','leavers','joiners','transactions'];
   this.bigintegers = ['monetaryMass','dividend'];
+  this.booleans = ['wrong'];
   this.pkFields = ['number','hash'];
 
   this.init = () => co(function *() {
@@ -60,6 +61,7 @@ function BlockDAL(db) {
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_block_hash ON block (hash);' +
       'CREATE INDEX IF NOT EXISTS idx_block_fork ON block (fork);' +
+      'ALTER TABLE block ADD COLUMN `wrong` BOOLEAN NOT NULL DEFAULT 0;' +
       'COMMIT;', []);
   });
 
@@ -118,11 +120,8 @@ function BlockDAL(db) {
 
   function saveBlockAs(block, fork) {
     return co(function *() {
-      let existing = yield that.getEntity(block);
-      if (existing) {
-        return that.query('UPDATE block SET fork = ? WHERE number = ? and hash = ?', [fork, block.number, block.hash]);
-      }
-      yield that.insert(block);
+      block.fork = fork;
+      return yield that.saveEntity(block);
     });
   }
 

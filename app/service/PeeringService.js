@@ -427,7 +427,7 @@ function PeeringService(server, pair, dal) {
       err.code == "EINVAL"
       || err.code == "ECONNREFUSED"
       || err.code == "ETIMEDOUT"
-      || err.httpCode !== 404);
+      || (err.httpCode !== undefined && err.httpCode !== 404));
   }
 
   function processAscendingUntilNoBlock(p, node, current) {

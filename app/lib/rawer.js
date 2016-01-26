@@ -119,10 +119,8 @@ module.exports = new function() {
     raw += "PoWMin: " + json.powMin + "\n";
     raw += "Time: " + json.time + "\n";
     raw += "MedianTime: " + json.medianTime + "\n";
-    if (json.dividend)
+    if (json.dividend || json.dividend === 0)
       raw += "UniversalDividend: " + json.dividend + "\n";
-    if (json.fees)
-      raw += "Fees: " + json.fees + "\n";
     raw += "Issuer: " + json.issuer + "\n";
     if(json.previousHash)
       raw += "PreviousHash: " + json.previousHash + "\n";

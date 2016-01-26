@@ -1014,6 +1014,7 @@ function BlockchainService (conf, mainDAL, pair) {
         block.medianTime = yield globalValidator(conf, blockchainDao(block, dal)).getMedianTime(block.number);
       }
       // Universal Dividend
+      block.dividend = null;
       var lastUDTime = lastUDBlock && lastUDBlock.UDTime;
       if (!lastUDTime) {
         let rootBlock = yield dal.getBlockOrNull(0);
@@ -1025,7 +1026,12 @@ function BlockchainService (conf, mainDAL, pair) {
           var c = conf.c;
           var N = block.membersCount;
           var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-          block.dividend = Math.ceil(Math.max(previousUD, c * M / N));
+          if (N > 0) {
+            block.dividend = Math.ceil(Math.max(previousUD, c * M / N));
+          } else {
+            // The community has collapsed. RIP.
+            block.dividend = 0;
+          }
         }
       }
       return block;
@@ -1305,7 +1311,7 @@ function BlockchainService (conf, mainDAL, pair) {
       if (block.number == 0) {
         block.UDTime = block.medianTime; // Root = first UD time
       }
-      else if (block.dividend) {
+      else if (block.dividend || block.dividend === 0) {
         block.UDTime = conf.dt + previousBlock.UDTime;
         block.monetaryMass += block.dividend * block.membersCount;
       } else {

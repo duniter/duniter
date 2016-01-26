@@ -544,17 +544,17 @@ function GlobalValidator (conf, dao) {
         var M = res.lastUDBlock ? res.lastUDBlock.monetaryMass : 0;
         var Nt1 = block.membersCount;
         var c = conf.c;
-        var UDt1 = Math.ceil(Math.max(UD, c * M / Nt1));
-        if (!current && block.dividend) {
+        var UDt1 = Nt1 > 0 ? Math.ceil(Math.max(UD, c * M / Nt1)) : 0;
+        if (!current && (block.dividend || block.dividend === 0)) {
           next('Root block cannot have UniversalDividend field');
         }
-        else if (current && block.medianTime >= lastUDTime + conf.dt && !block.dividend) {
+        else if (current && block.medianTime >= lastUDTime + conf.dt && !(block.dividend || block.dividend === 0)) {
           next('Block must have a UniversalDividend field');
         }
         else if (current && block.medianTime >= lastUDTime + conf.dt && block.dividend != UDt1) {
           next('UniversalDividend must be equal to ' + UDt1);
         }
-        else if (current && block.medianTime < lastUDTime + conf.dt && block.dividend) {
+        else if (current && block.medianTime < lastUDTime + conf.dt && (block.dividend || block.dividend === 0)) {
           next('This block cannot have UniversalDividend');
         }
         else {

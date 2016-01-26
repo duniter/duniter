@@ -2,6 +2,7 @@
 var sha1                 = require('sha1');
 var util                 = require('util');
 var stream               = require('stream');
+var logger               = require('../../../logger')('gen_parser');
 var constants            = require('../../../constants');
 var simpleLineExtract    = require('../../../simpleLineExtract');
 var multipleLinesExtract = require('../../../multipleLinesExtract');
@@ -54,11 +55,11 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
       if (sha1(str) != sha1(raw))
         error = constants.ERRORS.WRONG_DOCUMENT;
       if (error) {
-        // console.log(error);
-        // console.log('-----------------');
-        // console.log('Written:', { str: str });
-        // console.log('Extract:', { raw: raw });
-        // console.log('-----------------');
+        logger.trace(error);
+        logger.trace('-----------------');
+        logger.trace('Written: %s', JSON.stringify({ str: str }));
+        logger.trace('Extract: %s', JSON.stringify({ raw: raw }));
+        logger.trace('-----------------');
       }
     }
     if (typeof done == 'function') return  done(error, obj);

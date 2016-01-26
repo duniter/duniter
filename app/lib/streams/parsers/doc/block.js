@@ -54,7 +54,7 @@ function BlockParser (onError) {
     obj.number = obj.number || '';
     obj.time = obj.time || '';
     obj.medianTime = obj.medianTime || '';
-    obj.dividend = obj.dividend || '';
+    obj.dividend = (obj.dividend || obj.dividend === 0) ? obj.dividend : '';
     obj.issuer = obj.issuer || '';
     obj.parameters = obj.parameters || '';
     obj.previousHash = obj.previousHash || '';
@@ -116,7 +116,7 @@ function BlockParser (onError) {
         err = {code: codes.BAD_MEDIAN_TIME, message: "MedianTime must be an integer"};
     }
     if(!err){
-      if(obj.dividend && !obj.dividend.match(constants.INTEGER))
+      if((obj.dividend || obj.dividend === 0) && !obj.dividend.match(constants.INTEGER))
         err = {code: codes.BAD_DIVIDEND, message: "Incorrect UniversalDividend field"};
     }
     if(!err){

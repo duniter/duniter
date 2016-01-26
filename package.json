@@ -1,6 +1,6 @@
 {
   "name": "ucoin",
-  "version": "0.13.6a2",
+  "version": "0.13.6",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"

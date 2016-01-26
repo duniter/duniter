@@ -65,6 +65,8 @@ logger.mute = () => {
   logger.remove(winston.transports.Console);
 };
 
+logger.mute(); // Can be muted by default
+
 /**
 * Convenience function to get logger directly
 */

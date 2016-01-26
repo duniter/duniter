@@ -176,6 +176,7 @@ module.exports = function(server, interfaces, httpLogs) {
 
       closeConnections: function () {
         return Q.all(httpServers.map(function (httpServer) {
+          logger.info('uCoin server stop listening');
           return Q.nbind(httpServer.close, httpServer)();
         }));
       },

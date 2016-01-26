@@ -131,15 +131,15 @@ describe("Network", function() {
             until(s3, 'block', 1)
           ];
           // A block was successfully spread accross the network
-          s2.bma.closeConnections();
+          yield s2.bma.closeConnections();
           yield commitS1();
           yield [
             until(s3, 'block', 1)
           ];
-          s2.bma.reopenConnections();
           // Server 2 syncs block number 2 (it did not have it)
           yield sync(2, 2, s1, s2);
           yield s2.recomputeSelfPeer();
+          yield s2.bma.reopenConnections();
           yield [
             until(s2, 'block', 2),
             until(s3, 'block', 2),

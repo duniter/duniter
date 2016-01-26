@@ -40,10 +40,10 @@ function BlockDAL(db) {
       'previousIssuer VARCHAR(50),' +
       'version INTEGER NOT NULL,' +
       'membersCount INTEGER NOT NULL,' +
-      'monetaryMass INTEGER DEFAULT 0,' +
+      'monetaryMass VARCHAR(100) DEFAULT \'0\',' +
       'UDTime DATETIME,' +
       'medianTime DATETIME NOT NULL,' +
-      'dividend INTEGER,' +
+      'dividend VARCHAR(100) DEFAULT \'0\',' +
       'time DATETIME NOT NULL,' +
       'powMin INTEGER NOT NULL,' +
       'number INTEGER NOT NULL,' +

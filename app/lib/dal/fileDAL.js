@@ -864,9 +864,9 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
         return Q.all([
           that.saveBlockInFile(block, true),
           that.saveTxsInFiles(block.transactions, { block_number: block.number, time: block.medianTime }),
-          that.saveMemberships('join', block.joiners),
-          that.saveMemberships('active', block.actives),
-          that.saveMemberships('leave', block.leavers)
+          that.saveMemberships('join', block.joiners, block.number),
+          that.saveMemberships('active', block.actives, block.number),
+          that.saveMemberships('leave', block.leavers, block.number)
         ]);
       })
       .then(function(){
@@ -878,7 +878,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       });
   };
 
-  this.saveMemberships = function (type, mss) {
+  this.saveMemberships = function (type, mss, blockNumber) {
     var msType = type == 'leave' ? 'out' : 'in';
     return mss.reduce(function(p, msRaw) {
       return p.then(function(){
@@ -886,7 +886,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
         ms.type = type;
         ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
         ms.idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
-        return that.msDAL.saveOfficialMS(msType, ms);
+        return that.msDAL.saveOfficialMS(msType, ms, blockNumber);
       });
     }, Q());
   };

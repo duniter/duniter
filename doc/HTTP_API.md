@@ -663,7 +663,8 @@ A list of memberships issued by the *member* and written in the blockchain.
 	  "currency": "beta_brouzouf",
 	  "membership": "IN",
 	  "blockNumber": 678,
-	  "blockHash": "000007936DF3CC32BFCC1023D1258EC9E485D474"
+	  "blockHash": "000007936DF3CC32BFCC1023D1258EC9E485D474",
+	  "written_number": null
 	},
     ...
   ]

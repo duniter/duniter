@@ -32,7 +32,7 @@ var logger = new (winston.Logger)({
   transports: [
     // setup console logging
     new (winston.transports.Console)({
-      level: 'query',
+      level: 'debug',
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,

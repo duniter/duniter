@@ -617,6 +617,7 @@ function BlockchainContext(conf, dal) {
             var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', block.currency);
             ms.membership = msType.toUpperCase();
             ms.written = true;
+            ms.written_number = block.number;
             ms.type = type;
             ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
             ms.idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();

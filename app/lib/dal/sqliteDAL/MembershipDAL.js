@@ -30,6 +30,7 @@ function MembershipDAL(db) {
     'fpr',
     'idtyHash',
     'written',
+    'written_number',
     'signature'
   ];
   this.arrays = [];
@@ -51,6 +52,7 @@ function MembershipDAL(db) {
       'fpr VARCHAR(50),' +
       'idtyHash VARCHAR(40),' +
       'written BOOLEAN NOT NULL,' +
+      'written_number INTEGER,' +
       'signature VARCHAR(50),' +
       'PRIMARY KEY (issuer,signature)' +
       ');' +
@@ -90,21 +92,23 @@ function MembershipDAL(db) {
     });
     if (existing) {
       existing.written = false;
+      existing.written_number = null;
       that.saveEntity(existing);
     }
   });
 
-  this.saveOfficialMS = (type, ms) => {
+  this.saveOfficialMS = (type, ms, blockNumber) => {
     let obj = _.extend({}, ms);
     obj.membership = type.toUpperCase();
     obj.written = true;
-    return this.saveEntity(_.pick(obj, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'written', 'signature'));
+    obj.written_number = blockNumber;
+    return this.saveEntity(_.pick(obj, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'written', 'written_number', 'signature'));
   };
 
   this.savePendingMembership = (ms) => {
     ms.membership = ms.membership.toUpperCase();
     ms.written = false;
-    return this.saveEntity(_.pick(ms, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'written', 'signature'));
+    return this.saveEntity(_.pick(ms, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'written', 'written_number', 'signature'));
   };
 
   this.updateBatchOfMemberships = (mss) => co(function *() {

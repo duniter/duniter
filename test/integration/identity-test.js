@@ -68,6 +68,7 @@ describe("Identities", function() {
       yield tic.joinPromise();
       yield tac.joinPromise();
       yield commitS1();
+      yield commitS1();
 
       // We have the following WoT (diameter 3):
 
@@ -92,6 +93,9 @@ describe("Identities", function() {
 
       // Man3 is someone who has only published its identity
       yield man3.selfCertPromise(now);
+
+      // tic RENEW, but not written
+      yield tic.joinPromise(now);
 
       try {
         yield tic.selfCertPromise(now + 2);
@@ -325,5 +329,32 @@ describe("Identities", function() {
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
       res.identities[0].should.have.property('membershipExpiresIn').equal(0);
     });
+  });
+
+  it('memberships of tic', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/blockchain/memberships/tic', { json: true }), function(res) {
+      res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+      res.should.have.property('uid').equal('tic');
+      res.should.have.property('sigDate').be.a.Number;
+      res.should.have.property('memberships').length(2);
+      // Initial membership
+      res.memberships[0].should.have.property('version').equal(1);
+      res.memberships[0].should.have.property('currency').equal('bb');
+      res.memberships[0].should.have.property('membership').equal('IN');
+      res.memberships[0].should.have.property('blockNumber').equal(1);
+      res.memberships[0].should.have.property('blockHash').not.equal('DA39A3EE5E6B4B0D3255BFEF95601890AFD80709');
+      res.memberships[0].should.have.property('written').equal(null);
+      // Renew membership, not written
+      res.memberships[1].should.have.property('version').equal(1);
+      res.memberships[1].should.have.property('currency').equal('bb');
+      res.memberships[1].should.have.property('membership').equal('IN');
+      res.memberships[1].should.have.property('blockNumber').equal(0);
+      res.memberships[1].should.have.property('blockHash').equal('DA39A3EE5E6B4B0D3255BFEF95601890AFD80709');
+      res.memberships[1].should.have.property('written').equal(0);
+    });
+  });
+
+  it('memberships of man3', function() {
+    return httpTest.expectHttpCode(404, rp('http://127.0.0.1:7799/blockchain/memberships/man3'));
   });
 });

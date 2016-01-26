@@ -113,7 +113,8 @@ function BlockchainBinding (server) {
         currency: conf.currency,
         membership: ms.membership,
         blockNumber: parseInt(ms.blockNumber),
-        blockHash: ms.blockHash
+        blockHash: ms.blockHash,
+        written: (!ms.written_number && ms.written_number !== 0) ? null : ms.written_number
       };
     });
     json.memberships = _.sortBy(json.memberships, 'blockNumber');

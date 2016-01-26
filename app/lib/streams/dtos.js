@@ -53,7 +53,8 @@ dtos.Memberships = {
       "currency": String,
       "membership": String,
       "blockNumber": Number,
-      "blockHash": String
+      "blockHash": String,
+      "written": Number
     }
   ]
 };

@@ -333,13 +333,13 @@ function PeeringService(server, pair, dal) {
               shouldDisplayDelays = false;
             } catch (err) {
               // Error: we set the peer as DOWN
-              logger.warn("Peer %s is DOWN (%s)", p.pubkey, (err.httpCode && 'HTTP ' + err.httpCode) || err.code || err.message || err);
+              logger.trace("Peer %s is DOWN (%s)", p.pubkey, (err.httpCode && 'HTTP ' + err.httpCode) || err.code || err.message || err);
               yield dal.setPeerDown(p.pubkey);
               shouldDisplayDelays = true;
             }
           }
           if (shouldDisplayDelays) {
-            logger.info('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (nextWaitRemaining / 60).toFixed(0));
+            logger.debug('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (nextWaitRemaining / 60).toFixed(0));
           }
         }
       }

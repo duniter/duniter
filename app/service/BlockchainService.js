@@ -1107,7 +1107,7 @@ function BlockchainService (conf, mainDAL, pair) {
         var end = new Date();
         var duration = (end.getTime() - start.getTime());
         var testsPerSecond = (1000 / duration * msg.testsCount).toFixed(2);
-        logger.debug('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration / 1000).toFixed(2), msg.testsCount, testsPerSecond);
+        logger.info('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration / 1000).toFixed(2), msg.testsCount, testsPerSecond);
         stopped = true;
         start = null;
         block.hash = msg.pow;

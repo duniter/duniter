@@ -1,0 +1,42 @@
+@startuml
+
+skinparam usecase {
+	BackgroundColor DarkSeaGreen
+	BorderColor DarkSlateGray
+	ArrowColor Blue
+}
+
+
+(C3) --[#AFBDDA,dotted]-> (C1)
+(C4) --[#AFBDDA,dotted]-> (C1)
+(C5) --[#AFBDDA,dotted]-> (C2)
+(C6) --[#AFBDDA,dotted]-> (C2)
+
+(C1) --[#AFBDDA]-> (S1)
+(C1) --[#AFBDDA]-> (S2)
+(C1) --[#AFBDDA]-> (S3)
+(C1) --[#AFBDDA]-> (S4)
+
+(C2) ---> (S1)
+(C2) ---> (S2)
+(C2) ---> (S3)
+(C2) ---> (S4)
+
+(S1) -[#FFBBAA]-> (S5)
+(S1) -[#FFBBAA]-> (S6)
+(S1) -[#FFBBAA]-> (S7)
+(S1) -[#FFBBAA]-> (S8)
+(S2) -[#F178FF]-> (S5)
+(S2) -[#F178FF]-> (S6)
+(S2) -[#F178FF]-> (S7)
+(S2) -[#F178FF]-> (S8)
+(S3) -[#090755]-> (S9)
+(S3) -[#090755]-> (S10)
+(S3) -[#090755]-> (S11)
+(S3) -[#090755]-> (S12)
+(S4) -[#6FBBAA]-> (S9)
+(S4) -[#6FBBAA]-> (S10)
+(S4) -[#6FBBAA]-> (S11)
+(S4) -[#6FBBAA]-> (S12)
+
+@enduml

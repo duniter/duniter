@@ -32,7 +32,7 @@ var logger = new (winston.Logger)({
   transports: [
     // setup console logging
     new (winston.transports.Console)({
-      level: 'debug',
+      level: 'trace',
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,
@@ -64,8 +64,6 @@ logger.addHomeLogs = (home) => {
 logger.mute = () => {
   logger.remove(winston.transports.Console);
 };
-
-logger.mute(); // Can be muted by default
 
 /**
 * Convenience function to get logger directly

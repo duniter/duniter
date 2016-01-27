@@ -10,12 +10,13 @@ var Block          = require('../../../app/lib/entity/block');
 var Configuration  = require('../../../app/lib/entity/configuration');
 
 var conf = Configuration.statics.complete({
-  sigDelay: 365.25*24*3600, // 1 year
+  sigDelay: 365.25 * 24 * 3600, // 1 year
   sigQty: 1,
   powZeroMin: 1,
   powPeriod: 18,
   incDateMin: 10,
   avgGenTime: 60,
+  medianTimeBlocks: 20,
   dt: 100,
   ud0: 100,
   c: 0.1
@@ -76,12 +77,12 @@ describe("Block local coherence", function(){
     }));
 
     it('a block with wrong date (in past)', test('checkBlockTimes', blocks.WRONG_DATE_LOWER, function (err, done) {
-      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 2640');
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 1020');
       done();
     }));
 
     it('a block with wrong date (in future, but too far)', test('checkBlockTimes', blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, function (err, done) {
-      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 2640');
+      assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 1020');
       done();
     }));
 

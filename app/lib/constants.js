@@ -159,7 +159,13 @@ module.exports = {
   },
   PROOF_OF_WORK: {
     EVALUATION: 200,
-    RELEASE_MEMORY: 10000
+    RELEASE_MEMORY: 10000,
+    UPPER_BOUND: {
+      LEVEL_0: '9A-F',
+      LEVEL_1: '7',
+      LEVEL_2: '3',
+      LEVEL_3: '1'
+    }
   },
 
   DURATIONS: {

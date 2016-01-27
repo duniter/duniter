@@ -692,9 +692,9 @@ percentRot  | The percent of previous issuers to reach for personalized difficul
 Variable  | Meaning
 --------- | ----
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last valid (non-expired) membership is either in `Joiners` or `Actives`.
-maxGenTime  | `= avgGenTime * 4`
-minGenTime  | `= avgGenTime / 4`
-maxAcceleration | `= maxGenTime * CEIL((medianTimeBlocks + 1) / 2)`
+maxGenTime  | `= CEIL(avgGenTime * √2)`
+minGenTime  | `= FLOOR(avgGenTime / √2)`
+maxAcceleration | `= maxGenTime * (CEIL((medianTimeBlocks + 1) / 2) + 1)`
 
 ## Processing
 

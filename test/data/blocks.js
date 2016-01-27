@@ -1636,7 +1636,7 @@ module.exports = {
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 11\n" +
+    "Nonce: 12\n" +
     "Number: 3\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +

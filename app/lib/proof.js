@@ -22,6 +22,7 @@ process.on('message', function(stuff){
   var pair = stuff.pair;
   var forcedTime = stuff.forcedTime;
   var cpu = conf.cpu || 1;
+  var highMark = stuff.highMark;
   async.waterfall([
     function(next) {
       if (signatureFunc)
@@ -31,17 +32,17 @@ process.on('message', function(stuff){
     },
     function(sigFunc, next) {
       signatureFunc = sigFunc;
-      var powRegexp = new RegExp('^0{' + nbZeros + '}[^0]');
-      var lowPowRegexp = new RegExp('^0{' + (nbZeros-1) + '}[^0]');
-      var verylowPowRegexp = new RegExp('^0{' + (nbZeros-2) + '}[^0]');
+      var powRegexp = new RegExp('^0{' + nbZeros + '}' + '[0-' + highMark + ']');
+      var lowPowRegexp = new RegExp('^0{' + (nbZeros) + '}[^0]');
+      var verylowPowRegexp = new RegExp('^0{' + (nbZeros - 1) + '}[^0]');
       var pow = "", sig = "", raw = "";
 
       // Time must be = [medianTime; medianTime + minSpeed]
       block.time = getBlockTime(block, conf, forcedTime);
       // Test CPU speed
-      var testsPerSecond = nbZeros > 0 ? computeSpeed(block, sigFunc) : 1;
+      var testsPerSecond = nbZeros == 0 && highMark == '9A-F' ? 1 : computeSpeed(block, sigFunc);
       var testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1);
-      process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound });
+      process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound, nonce: block.nonce });
       // Really start now
       var testsCount = 0;
       if (nbZeros == 0) {

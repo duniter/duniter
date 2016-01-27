@@ -8,6 +8,7 @@ var crypto        = require('./crypto');
 var moment        = require('moment');
 var util          = require('util');
 var stream        = require('stream');
+var constants     = require('./constants');
 var Block         = require('../lib/entity/block');
 var Identity      = require('../lib/entity/identity');
 var Membership    = require('../lib/entity/membership');
@@ -400,9 +401,9 @@ function GlobalValidator (conf, dao) {
           var lastDistant = yield dao.getBlock(Math.max(0, blockNumber - conf.dtDiffEval));
           // Compute PoWMin value
           var duration = medianTime - lastDistant.medianTime;
-          var speed = (conf.dtDiffEval * 1.0) / (duration * 1.0);
-          var maxGenTime = conf.avgGenTime * 4;
-          var minGenTime = conf.avgGenTime / 4;
+          var speed = parseFloat(conf.dtDiffEval) / duration;
+          var maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(2));
+          var minGenTime = Math.floor(conf.avgGenTime / Math.sqrt(2));
           var maxSpeed = 1.0 / minGenTime;
           var minSpeed = 1.0 / maxGenTime;
           // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');
@@ -430,14 +431,23 @@ function GlobalValidator (conf, dao) {
       function (next){
         getTrialLevel(block.issuer, next);
       },
-      function (nbZeros, next){
-        var powRegexp = new RegExp('^0{' + nbZeros + ',}');
-        if (!block.hash.match(powRegexp))
-          next('Wrong proof-of-work level: given ' + block.hash.match(/^0*/)[0].length + ' zeros, required was ' + nbZeros + ' zeros');
+      function (difficulty, next){
+        var remainder = difficulty % 4;
+        var nbZerosReq = Math.max(0, (difficulty - remainder) / 4);
+        var highMark = remainder == 3 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_3
+          : (remainder == 2 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_2
+          : (remainder == 1 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_1
+          : constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_0));
+        var powRegexp = new RegExp('^0{' + nbZerosReq + '}' + '[0-' + highMark + ']');
+        if (!block.hash.match(powRegexp)) {
+          var givenZeros = Math.max(0, Math.min(nbZerosReq, block.hash.match(/^0*/)[0].length));
+          var c = block.hash.substr(givenZeros, 1);
+          next('Wrong proof-of-work level: given ' + givenZeros + ' zeros and \'' + c + '\', required was ' + nbZerosReq + ' zeros and an hexa char between [0-' + highMark + ']');
+        }
         else {
           next();
         }
-      },
+      }
     ], done);
   }
 
@@ -656,8 +666,8 @@ function GlobalValidator (conf, dao) {
             function (issuers, next) {
               var nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
               var nbBlocksSince = current.number - last.number;
-              var nbZeros = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
-              next(null, nbZeros);
+              var difficulty = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
+              next(null, difficulty);
             }
           ], next);
         }

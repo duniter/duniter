@@ -1044,7 +1044,14 @@ function BlockchainService (conf, mainDAL, pair) {
   }
   var powWorker;
 
-  this.prove = function (block, sigFunc, nbZeros, done, forcedTime) {
+  this.prove = function (block, sigFunc, difficulty, done, forcedTime) {
+
+    var remainder = difficulty % 4;
+    var nbZeros = (difficulty - remainder) / 4;
+    var highMark = remainder == 3 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_3
+      : (remainder == 2 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_2
+      : (remainder == 1 ?constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_1
+      : constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_0));
 
     return Q.Promise(function(resolve, reject){
       if (!powWorker) {
@@ -1052,7 +1059,7 @@ function BlockchainService (conf, mainDAL, pair) {
       }
       if (block.number == 0) {
         // On initial block, difficulty is the one given manually
-        block.powMin = nbZeros;
+        block.powMin = difficulty;
       }
       // Start
       powWorker.setOnPoW(function(err, powBlock) {
@@ -1066,12 +1073,12 @@ function BlockchainService (conf, mainDAL, pair) {
       });
 
       block.nonce = 0;
-      powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, forcedTime: forcedTime,
+      powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, highMark: highMark, forcedTime: forcedTime,
         pair: {
           secretKeyEnc: base58.encode(pair.secretKey)
         }
       });
-      logger.info('Generating proof-of-work of block #%s with %s leading zeros... (CPU usage set to %s%)', block.number, nbZeros, (conf.cpu*100).toFixed(0));
+      logger.info('Generating proof-of-work with %s leading zeros followed by [0-' + highMark + ']... (CPU usage set to %s%)', nbZeros, (conf.cpu * 100).toFixed(0));
     });
   };
 

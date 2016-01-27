@@ -90,10 +90,10 @@ function BlockchainBinding (server) {
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    let nbZeros = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(idty.pubkey);
+    let difficulty = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(idty.pubkey);
     return {
       "block": nextBlockNumber,
-      "level": nbZeros
+      "level": difficulty
     };
   });
 
@@ -104,10 +104,10 @@ function BlockchainBinding (server) {
     for (let i = 0, len = issuers.length; i < len; i++) {
       let issuer = issuers[i];
       let member = yield server.dal.getWrittenIdtyByPubkey(issuer);
-      let level = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(member.pubkey);
+      let difficulty = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(member.pubkey);
       difficulties.push({
         uid: member.uid,
-        level: level
+        level: difficulty
       });
     }
     return {

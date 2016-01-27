@@ -111,7 +111,7 @@ function LocalValidator (conf) {
   };
 
   function maxAcceleration () {
-    return conf.avgGenTime * 4 * (Math.ceil((conf.medianTimeBlocks + 1) / 2));
+    return Math.ceil(conf.avgGenTime * Math.sqrt(2)) * (Math.ceil((conf.medianTimeBlocks + 1) / 2) + 1);
   }
 
   this.checkSingleMembershipSignature = checkSingleMembershipSignature;
@@ -130,7 +130,7 @@ function LocalValidator (conf) {
   });
 
   this.checkProofOfWork = check(function (block, done) {
-    var powRegexp = new RegExp('^0{' + block.powMin + '}');
+    var powRegexp = new RegExp('^0{' + Math.floor(block.powMin / 4) + '}');
     if (!block.hash.match(powRegexp))
       done('Not a proof-of-work');
     else
@@ -165,7 +165,6 @@ function LocalValidator (conf) {
   this.checkBlockTimes = check(function (block, done) {
     var time = parseInt(block.time);
     var medianTime = parseInt(block.medianTime);
-    var maxGenTime = conf.avgGenTime * 4;
     if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration()))
       done('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration());
     else if (block.number == 0 && time != medianTime)

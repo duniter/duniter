@@ -209,7 +209,7 @@ function BlockchainContext(conf, dal) {
   function updateBlocksComputedVars (current, block, done) {
     // Monetary Mass update
     if (current) {
-      block.monetaryMass = (current.monetaryMass || 0) + block.dividend * block.membersCount;
+      block.monetaryMass = (current.monetaryMass || 0) + (block.dividend || 0) * block.membersCount;
     }
     // UD Time update
     if (block.number == 0) {

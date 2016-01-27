@@ -37,7 +37,6 @@ process.on('message', function(stuff){
       var testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1);
       process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound });
       // Really start now
-      block.nonce = 208320;
       var testsCount = 0;
       if (nbZeros == 0) {
         block.nonce = 0;

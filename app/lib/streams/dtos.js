@@ -18,6 +18,7 @@ dtos.Parameters = {
   dt: Number,
   ud0: Number,
   sigDelay: Number,
+  sigPeriod: Number,
   sigValidity: Number,
   sigQty: Number,
   sigWoT: Number,

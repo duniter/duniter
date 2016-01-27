@@ -72,6 +72,10 @@ module.exports = function(dal) {
       dal.getValidFromTo(from, to).then(_.partial(done, null)).catch(done);
     };
 
+    this.getPreviousLinkFrom = function (from) {
+      return dal.getLastValidFrom(from);
+    };
+
     this.getValidLinksFrom = function (member, done) {
       dal.getValidLinksFrom(member).then(_.partial(done, null)).catch(done);
     };

@@ -459,16 +459,17 @@ function BlockchainContext(conf, dal) {
       conf.dt               = parseInt(sp[1]);
       conf.ud0              = parseInt(sp[2]);
       conf.sigDelay         = parseInt(sp[3]);
-      conf.sigValidity      = parseInt(sp[4]);
-      conf.sigQty           = parseInt(sp[5]);
-      conf.sigWoT           = parseInt(sp[6]);
-      conf.msValidity       = parseInt(sp[7]);
-      conf.stepMax          = parseInt(sp[8]);
-      conf.medianTimeBlocks = parseInt(sp[9]);
-      conf.avgGenTime       = parseInt(sp[10]);
-      conf.dtDiffEval       = parseInt(sp[11]);
-      conf.blocksRot        = parseInt(sp[12]);
-      conf.percentRot       = parseFloat(sp[13]);
+      conf.sigPeriod        = parseInt(sp[4]);
+      conf.sigValidity      = parseInt(sp[5]);
+      conf.sigQty           = parseInt(sp[6]);
+      conf.sigWoT           = parseInt(sp[7]);
+      conf.msValidity       = parseInt(sp[8]);
+      conf.stepMax          = parseInt(sp[9]);
+      conf.medianTimeBlocks = parseInt(sp[10]);
+      conf.avgGenTime       = parseInt(sp[11]);
+      conf.dtDiffEval       = parseInt(sp[12]);
+      conf.blocksRot        = parseInt(sp[13]);
+      conf.percentRot       = parseFloat(sp[14]);
       conf.currency         = block.currency;
       return dal.saveConf(conf).then(done).catch(done);
     }

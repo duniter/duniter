@@ -229,6 +229,18 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       }));
   };
 
+  this.getChainabilityBlock = (currentTime, sigPeriod) => co(function *() {
+    // AGE = current_time - block_time
+    // CHAINABLE = AGE >= sigPeriod
+    // CHAINABLE = block_time =< current_time - sigPeriod
+    return that.blockDAL.getMoreRecentBlockWithTimeEqualBelow(currentTime - sigPeriod);
+  });
+
+  this.existsNonChainableLink = (from, chainabilityBlockNumber) => co(function *() {
+    let links = yield that.linksDAL.getLinksOfIssuerAbove(from, chainabilityBlockNumber);
+    return links.length > 0;
+  });
+
   this.getCurrent = function(done) {
     return that.getBlockCurrent(done);
   };
@@ -298,6 +310,12 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
           value();
       });
   };
+
+  this.getLastValidFrom = (from) => co(function *() {
+    let links = yield that.linksDAL.getLinksFrom(from);
+    links = _.sortBy(links, 'timestamp');
+    return links[links.length - 1];
+  });
 
   this.getAvailableSourcesByPubkey = function(pubkey) {
     return that.sourcesDAL.getAvailableForPubkey(pubkey);

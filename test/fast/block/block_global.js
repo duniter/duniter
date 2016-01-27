@@ -1,4 +1,5 @@
 "use strict";
+var co            = require('co');
 var Q             = require('q');
 var async         = require('async');
 var should        = require('should');
@@ -669,6 +670,10 @@ function BlockCheckerDao (block) {
     else
       done(null, []);
   }
+
+  this.getPreviousLinkFrom = () => co(function *() {
+    return null;
+  });
 
   this.getTimesBetween = function (bStart, bEnd, done) {
     if (block.number == 66)

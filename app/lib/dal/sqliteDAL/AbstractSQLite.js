@@ -219,6 +219,8 @@ function AbstractSQLite(db) {
         return '`' + k + '` <= ?';
       } else if (obj[k].$gte !== undefined) {
         return '`' + k + '` >= ?';
+      } else if (obj[k].$gt !== undefined) {
+        return '`' + k + '` >= ?';
       }  else if (obj[k].$contains !== undefined) {
         return '`' + k + '` LIKE ?';
       } else {
@@ -237,6 +239,8 @@ function AbstractSQLite(db) {
       if (obj[f].$lte !== undefined) {
         return obj[f].$lte;
       } else if (obj[f].$gte !== undefined) {
+        return obj[f].$gte;
+      } else if (obj[f].$gt !== undefined) {
         return obj[f].$gte;
       } else if (obj[f].$contains !== undefined) {
         return "%" + obj[f].$contains + "%";

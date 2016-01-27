@@ -75,6 +75,17 @@ function LinksDAL(db, wotb) {
       target: to
     });
 
+  this.getLinksFrom = (from) =>
+    this.sqlFind({
+      source: from
+    });
+
+  this.getLinksOfIssuerAbove = (from, aboveBlock) =>
+    this.sqlFind({
+      source: from,
+      block_number: { $gt: aboveBlock }
+    });
+
   this.obsoletesLinks = (minTimestamp) => co(function *() {
     let linksToObsolete = yield that.sqlFind({
       timestamp: { $lte: minTimestamp },

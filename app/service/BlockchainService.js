@@ -792,6 +792,7 @@ function BlockchainService (conf, mainDAL, pair) {
       var gValidator = globalValidator(conf, blockchainDao(null, that.currentDal));
       var identity = yield dal.getIdentityByHashOrNull(idHash);
       var foundCerts = [];
+      let blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
       if (!identity) {
         throw 'Identity with hash \'' + idHash + '\' not found';
       }
@@ -818,6 +819,11 @@ function BlockchainService (conf, mainDAL, pair) {
               var exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay - conf.sigValidity);
               if (exists) {
                 throw 'It already exists a similar certification written, which is not replayable yet';
+              }
+              // Already exists a link not chainable yet?
+              exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability.number);
+              if (exists) {
+                throw 'It already exists a certification written which is not chainable yet';
               }
               var isMember = yield dal.isMember(cert.from);
               var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
@@ -925,7 +931,7 @@ function BlockchainService (conf, mainDAL, pair) {
     block.number = current ? current.number + 1 : 0;
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
-      conf.sigDelay, conf.sigValidity,
+      conf.sigDelay, conf.sigPeriod, conf.sigValidity,
       conf.sigQty, conf.sigWoT, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
@@ -1266,16 +1272,17 @@ function BlockchainService (conf, mainDAL, pair) {
     theConf.dt               = parseInt(sp[1]);
     theConf.ud0              = parseInt(sp[2]);
     theConf.sigDelay         = parseInt(sp[3]);
-    theConf.sigValidity      = parseInt(sp[4]);
-    theConf.sigQty           = parseInt(sp[5]);
-    theConf.sigWoT           = parseInt(sp[6]);
-    theConf.msValidity       = parseInt(sp[7]);
-    theConf.stepMax          = parseInt(sp[8]);
-    theConf.medianTimeBlocks = parseInt(sp[9]);
-    theConf.avgGenTime       = parseInt(sp[10]);
-    theConf.dtDiffEval       = parseInt(sp[11]);
-    theConf.blocksRot        = parseInt(sp[12]);
-    theConf.percentRot       = parseFloat(sp[13]);
+    theConf.sigPeriod        = parseInt(sp[4]);
+    theConf.sigValidity      = parseInt(sp[5]);
+    theConf.sigQty           = parseInt(sp[6]);
+    theConf.sigWoT           = parseInt(sp[7]);
+    theConf.msValidity       = parseInt(sp[8]);
+    theConf.stepMax          = parseInt(sp[9]);
+    theConf.medianTimeBlocks = parseInt(sp[10]);
+    theConf.avgGenTime       = parseInt(sp[11]);
+    theConf.dtDiffEval       = parseInt(sp[12]);
+    theConf.blocksRot        = parseInt(sp[13]);
+    theConf.percentRot       = parseFloat(sp[14]);
     theConf.currency         = block.currency;
     return theConf;
   }
@@ -1441,6 +1448,8 @@ function NextBlockGenerator(conf, dal) {
       var updates = {};
       var updatesToFrom = {};
       var certs = yield dal.certsFindNew();
+      // The block above which (above from current means blocks with number < current)
+      let blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
       for (var i = 0; i < certs.length; i++) {
         var cert = certs[i];
         var exists = false;
@@ -1449,17 +1458,22 @@ function NextBlockGenerator(conf, dal) {
           exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay - conf.sigValidity);
         }
         if (!exists) {
-          // It does NOT already exists a similar certification written, which is not replayable yet
-          // Signatory must be a member
-          var isSignatoryAMember = yield dal.isMember(cert.from);
-          var isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
-          // Certified must be a member and non-leaver
-          if (isSignatoryAMember && isCertifiedANonLeavingMember) {
-            updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
-            updates[cert.to] = updates[cert.to] || [];
-            if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
-              updates[cert.to].push(cert);
-              updatesToFrom[cert.to].push(cert.from);
+          // Already exists a link not chainable yet?
+          // No chainability block means absolutely nobody can issue certifications yet
+          exists = current && (!blockOfChainability || (yield dal.existsNonChainableLink(cert.from, blockOfChainability.number)));
+          if (!exists) {
+            // It does NOT already exists a similar certification written, which is not replayable yet
+            // Signatory must be a member
+            var isSignatoryAMember = yield dal.isMember(cert.from);
+            var isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
+            // Certified must be a member and non-leaver
+            if (isSignatoryAMember && isCertifiedANonLeavingMember) {
+              updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
+              updates[cert.to] = updates[cert.to] || [];
+              if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
+                updates[cert.to].push(cert);
+                updatesToFrom[cert.to].push(cert.from);
+              }
             }
           }
         }

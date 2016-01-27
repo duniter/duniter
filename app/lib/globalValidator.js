@@ -66,6 +66,7 @@ function GlobalValidator (conf, dao) {
     { name: 'checkCertificationsAreMadeToMembers',  func: check(checkCertificationsAreMadeToMembers)  },
     { name: 'checkCertificationsAreMadeToNonLeaver',func: check(checkCertificationsAreMadeToNonLeaver)  },
     { name: 'checkCertificationsDelayIsRespected',  func: check(checkCertificationsDelayIsRespected)  },
+    { name: 'checkCertificationsPeriodIsRespected', func: check(checkCertificationsPeriodIsRespected) },
     { name: 'checkMembersCountIsGood',              func: check(checkMembersCountIsGood)              },
     { name: 'checkPoWMin',                          func: check(checkPoWMin)                          },
     { name: 'checkProofOfWork',                     func: check(checkProofOfWork)                     },
@@ -889,6 +890,24 @@ function GlobalValidator (conf, dao) {
         },
       ], callback);
     }, done);
+  }
+
+  function checkCertificationsPeriodIsRespected (block, done) {
+    return co(function *() {
+      let current = yield Q.nbind(dao.getCurrent, dao)();
+      for (let i = 0, len = block.certifications.length; i < len; i++) {
+        let cert = Certification.statics.fromInline(block.certifications[i]);
+        let previous = yield dao.getPreviousLinkFrom(cert.from);
+        if (previous) {
+          let duration = current.medianTime - parseInt(previous.timestamp);
+          if (duration < conf.sigPeriod) {
+            throw 'Previous certification is not chainable yet';
+          }
+        }
+      }
+    })
+      .then(() => done())
+      .catch(done);
   }
 
   function checkJoinersAreNotRevoked (block, done) {

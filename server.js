@@ -118,6 +118,7 @@ function Server (dbConf, overrideConf) {
           ud0:                constants.CONTRACT.DEFAULT.UD0,
           stepMax:            constants.CONTRACT.DEFAULT.STEPMAX,
           sigDelay:           constants.CONTRACT.DEFAULT.SIGDELAY,
+          sigPeriod:          constants.CONTRACT.DEFAULT.SIGPERIOD,
           sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
           msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
           sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,

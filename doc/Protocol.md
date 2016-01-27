@@ -936,7 +936,7 @@ Where:
 ##### Universal Dividend
 
 * Root block do not have `UniversalDividend` field.
-* Universal Dividend must be present if `MedianTime` value is greater or equal to `lastUDTime` + `dt`.
+* Universal Dividend must be present if `MedianTime` value is greater or equal to `lastUDTime` + `dt` **AND** `N(t+1)` is > 0.
 * `lastUDTime` is the `MedianTime` of the last block with `UniversalDividend` in it.
 * Initial value of `lastUDTime` equals to the root block's `MedianTime`.
 * Value of `UniversalDividend` (`UD(t+1)`) equals to:

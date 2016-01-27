@@ -221,7 +221,7 @@ function BlockchainContext(conf, dal) {
       block.dividend = 0;
       done();
     }
-    else if (block.dividend || block.dividend === 0) {
+    else if (block.dividend) {
       async.waterfall([
         function (next) {
           async.parallel({
@@ -533,7 +533,7 @@ function BlockchainContext(conf, dal) {
   function updateTransactionSources (block, done) {
     async.parallel([
       function (next) {
-        if (block.dividend || block.dividend === 0) {
+        if (block.dividend) {
           async.waterfall([
             function (nextOne) {
               dal.getMembers(nextOne);
@@ -739,7 +739,7 @@ function BlockchainContext(conf, dal) {
       for (let i = 0, len = blocks.length; i < len; i++) {
         let block = blocks[i];
         // Dividends
-        if (block.dividend || block.dividend === 0) {
+        if (block.dividend) {
           let idties = yield dal.getMembersP();
           for (let j = 0, len2 = idties.length; j < len2; j++) {
             let idty = idties[j];

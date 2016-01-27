@@ -27,7 +27,7 @@ function Block(json) {
       if (typeof value == "string") {
         value = parseInt(value);
       }
-      if (key != "dividend" && (isNaN(value) || value === null)) {
+      if (isNaN(value) || value === null) {
         value = 0;
       }
     }

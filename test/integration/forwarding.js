@@ -4,6 +4,7 @@ var assert = require('assert');
 var async  = require('async');
 var _      = require('underscore');
 var Q      = require('q');
+var co     = require('co');
 var node   = require('./tools/node');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
@@ -18,6 +19,11 @@ describe("Forwarding", function() {
 
     var node1 = node({ name: 'db_1', memory: MEMORY_MODE }, _({ httplogs: false, port: 9600, remoteport: 9600, salt: 'abc', passwd: 'abc', routing: true }).extend(common));
     var node2 = node({ name: 'db_2', memory: MEMORY_MODE }, _({ httplogs: false, port: 9601, remoteport: 9601, salt: 'abc', passwd: 'def', routing: true }).extend(common));
+
+    var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, node1);
+    var tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, node1);
+    var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node1);
+    var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node1);
 
     before(function(done) {
       Q.all([node1, node2].map(function(node) {
@@ -50,10 +56,21 @@ describe("Forwarding", function() {
           return Q.all([
             node2.until('identity', 4),
             node2.until('block', 1),
-            Q.Promise(function(resolve, reject){
-            node1.executes(require('./scenarios/new-community-4-members')(node1), function(err) {
-              err ? reject(err) : resolve();
-            });
+            co(function *() {
+
+              var now = Math.round(new Date().getTime()/1000);
+
+              // Self certifications
+              yield cat.selfCert(now);
+              yield tac.selfCert(now);
+              yield tic.selfCert(now);
+              yield toc.selfCert(now);
+              // Certifications
+              yield cat.certP(tac);
+              yield tac.certP(cat);
+              yield cat.joinP();
+              yield tac.joinP();
+              yield node1.commitP();
             })
           ]);
         })

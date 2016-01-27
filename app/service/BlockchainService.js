@@ -1014,7 +1014,6 @@ function BlockchainService (conf, mainDAL, pair) {
         block.medianTime = yield globalValidator(conf, blockchainDao(block, dal)).getMedianTime(block.number);
       }
       // Universal Dividend
-      block.dividend = null;
       var lastUDTime = lastUDBlock && lastUDBlock.UDTime;
       if (!lastUDTime) {
         let rootBlock = yield dal.getBlockOrNull(0);
@@ -1311,7 +1310,7 @@ function BlockchainService (conf, mainDAL, pair) {
       if (block.number == 0) {
         block.UDTime = block.medianTime; // Root = first UD time
       }
-      else if (block.dividend || block.dividend === 0) {
+      else if (block.dividend) {
         block.UDTime = conf.dt + previousBlock.UDTime;
         block.monetaryMass += block.dividend * block.membersCount;
       } else {

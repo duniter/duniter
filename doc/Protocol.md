@@ -820,12 +820,12 @@ A membership is to be considered valid if its age is less or equal to `[msValidi
     EXPIRED = AGE > [msValidity]
 
 ###### Certification replayability
-A written certification is to be considered replayable if its age is greater than `[sigDelay]`:
+A written certification is to be considered replayable if its age is greater or equal to `[sigDelay]`:
 
-    REPLAYABLE = AGE > [sigDelay]
+    REPLAYABLE = AGE >= [sigDelay]
 
 ###### Certification chaining
-A written certification is to be considered chainable if its age is greater than `[sigPeriod]`:
+A written certification is to be considered chainable if its age is greater or equal to `[sigPeriod]`:
 
     CHAINABLE = AGE >= [sigPeriod]
 

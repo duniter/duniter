@@ -1,19 +1,24 @@
+"use strict";
+
 var _ = require('underscore');
 var http = require('http');
 var express = require('express');
+var url = require('url');
 var co = require('co');
 var Q = require('q');
 var cors = require('express-cors');
 var es = require('event-stream');
 var morgan = require('morgan');
+var errorhandler = require('errorhandler');
+var bodyParser = require('body-parser');
 var constants = require('../../lib/constants');
 var dtos = require('../../lib/streams/dtos');
 var sanitize = require('../../lib/sanitize');
 var logger = require('../../lib/logger')('bma');
 
-module.exports = function(server, interfaces, httpLogs) {
+let WebSocketServer = require('ws').Server;
 
-  "use strict";
+module.exports = function(server, interfaces, httpLogs) {
 
   var app = express();
 
@@ -48,15 +53,14 @@ module.exports = function(server, interfaces, httpLogs) {
   }));
 
 
-  app.use(express.urlencoded());
-  app.use(express.json());
-
-  // Routing
-  app.use(app.router);
+  app.use(bodyParser.urlencoded({
+    extended: true
+  }));
+  app.use(bodyParser.json());
 
   // development only
   if (app.get('env') == 'development') {
-    app.use(express.errorHandler());
+    app.use(errorhandler());
   }
 
   var node         = require('../../controllers/node')(server);
@@ -125,11 +129,11 @@ module.exports = function(server, interfaces, httpLogs) {
           // Ensure of the answer format
           result = sanitize(result, dtoContract);
           // HTTP answer
-          res.send(200, JSON.stringify(result, null, "  "));
+          res.status(200).send(JSON.stringify(result, null, "  "));
         } catch (e) {
           let error = getResultingError(e);
           // HTTP error
-          res.send(error.httpCode, JSON.stringify(error.uerr, null, "  "));
+          res.status(error.httpCode).send(JSON.stringify(error.uerr, null, "  "));
         }
       });
     });
@@ -164,6 +168,7 @@ module.exports = function(server, interfaces, httpLogs) {
         httpServers.push(httpServer);
         logger.info('uCoin server listening on ' + netInterface.ip + ' port ' + netInterface.port);
       } catch (err) {
+        logger.error(err.message);
         logger.error('uCoin server cannot listen on ' + netInterface.ip + ' port ' + netInterface.port);
       }
     }
@@ -199,7 +204,6 @@ module.exports = function(server, interfaces, httpLogs) {
 };
 
 function listenInterface(app, netInterface, port) {
-  "use strict";
   return Q.Promise(function(resolve, reject){
     var httpServer = http.createServer(app);
     httpServer.on('error', reject);
@@ -209,26 +213,40 @@ function listenInterface(app, netInterface, port) {
 }
 
 function listenWebSocket(server, httpServer) {
-  "use strict";
-  var io = require('socket.io')(httpServer);
-  var currentBlock = {};
-  var blockSocket = io
-    .of('/websocket/block')
-    .on('error', (err) => logger.error(err))
-    .on('connection', function (socket) {
-      socket.emit('block', currentBlock);
-    });
-  var peerSocket = io
-    .of('/websocket/peer');
 
+  let currentBlock = {};
+  let wssBlock = new WebSocketServer({
+    server: httpServer,
+    path: '/ws/block'
+  });
+  let wssPeer = new WebSocketServer({
+    server: httpServer,
+    path: '/ws/peer'
+  });
+
+  wssBlock.on('connection', function connection(ws) {
+    ws.send(JSON.stringify(currentBlock));
+  });
+
+  wssBlock.broadcast = (data) => wssBlock.clients.forEach((client) => client.send(data));
+  wssPeer.broadcast = (data) => wssPeer.clients.forEach((client) => client.send(data));
+
+  // Forward blocks & peers
   server
     .pipe(es.mapSync(function(data) {
+      // Broadcast block
       if (data.joiners) {
         currentBlock = data;
-        blockSocket.emit('block', currentBlock);
+        wssBlock.broadcast(JSON.stringify(currentBlock));
       }
+      // Broadcast peer
       if (data.endpoints) {
-        peerSocket.emit('peer', data);
+        wssPeer.broadcast(JSON.stringify(data));
       }
     }));
+
+  return co(function *() {
+    currentBlock = yield server.dal.getCurrent();
+    wssBlock.broadcast(JSON.stringify(currentBlock));
+  });
 }

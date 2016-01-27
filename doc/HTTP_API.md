@@ -48,9 +48,9 @@
       * [history/[pubkey]/times/[from]/[to]](#txhistorypubkeytimesfromto)
   * [ud/](#ud)
       * [history/[pubkey]](#udhistorypubkey)
-  * [websocket/](#websocket)
-      * [block](#websocketblock)
-      * [peer](#websocketpeer)
+  * [ws/](#ws)
+      * [block](#wsblock)
+      * [peer](#wspeer)
 
 ## Overview
 
@@ -90,7 +90,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   `-- history
     |-- ud/
     |   `-- history
-    `-- websocket/
+    `-- ws/
         |-- block
         `-- peer
 
@@ -1699,9 +1699,9 @@ The universal dividend history for the given `pubkey`.
 ```
 
 
-### websocket/*
+### ws/*
 
-#### `websocket/block`
+#### `ws/block`
 
 **Goal**
 
@@ -1715,7 +1715,7 @@ A websocket entry point for receiving blocks.
 
 Websocket connection.
 
-#### `websocket/peer`
+#### `ws/peer`
 
 **Goal**
 

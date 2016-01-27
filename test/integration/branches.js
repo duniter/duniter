@@ -16,6 +16,8 @@ var expectJSON     = httpTest.expectJSON;
 var expectAnswer   = httpTest.expectAnswer;
 var expectHttpCode = httpTest.expectHttpCode;
 
+let WebSocket = require('ws');
+
 require('../../app/lib/logger')().mute();
 
 var MEMORY_MODE = true;
@@ -230,14 +232,14 @@ describe("Branches", function() {
       });
     });
 
-    it('should have an open websocket on /websocket/block', function() {
-      var socket = require('socket.io-client')('http://127.0.0.1:7778/websocket/block');
+    it('should have an open websocket on /ws/block', function() {
+      var ws = new WebSocket('ws://127.0.0.1:7778/ws/block');
       return Q.Promise(function(resolve, reject){
-        socket.on('block', function(data){
+        ws.on('message', function(data){
           should.exist(data);
           resolve(data);
         });
-        socket.on('error', reject);
+        ws.on('error', reject);
       });
     });
 

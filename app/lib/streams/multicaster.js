@@ -100,14 +100,14 @@ function Multicaster (isolate, timeout) {
           let theDoc = params.transform ? params.transform(doc) : doc;
           logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
           if (params.getDocID) {
-            logger.info('POST %s %s:', params.type, params.getDocID(theDoc));
+            logger.info('POST %s %s', params.type, params.getDocID(theDoc));
           } else {
-            logger.info('POST %s:', params.type);
+            logger.info('POST %s', params.type);
           }
           for (let i = 0, len = peers.length; i < len; i++) {
             let p = peers[i];
             let peer = Peer.statics.peerize(p);
-            logger.info(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
+            logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
             yield post(peer, params.uri, params.getObj(theDoc));
           }
         } else {

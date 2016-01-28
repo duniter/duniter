@@ -821,7 +821,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 throw 'It already exists a similar certification written, which is not replayable yet';
               }
               // Already exists a link not chainable yet?
-              exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability.number);
+              exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability.number, conf.sigStock);
               if (exists) {
                 throw 'It already exists a certification written which is not chainable yet';
               }
@@ -931,7 +931,7 @@ function BlockchainService (conf, mainDAL, pair) {
     block.number = current ? current.number + 1 : 0;
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
-      conf.sigDelay, conf.sigPeriod, conf.sigValidity,
+      conf.sigDelay, conf.sigPeriod, conf.sigStock, conf.sigValidity,
       conf.sigQty, conf.sigWoT, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
@@ -1273,16 +1273,17 @@ function BlockchainService (conf, mainDAL, pair) {
     theConf.ud0              = parseInt(sp[2]);
     theConf.sigDelay         = parseInt(sp[3]);
     theConf.sigPeriod        = parseInt(sp[4]);
-    theConf.sigValidity      = parseInt(sp[5]);
-    theConf.sigQty           = parseInt(sp[6]);
-    theConf.sigWoT           = parseInt(sp[7]);
-    theConf.msValidity       = parseInt(sp[8]);
-    theConf.stepMax          = parseInt(sp[9]);
-    theConf.medianTimeBlocks = parseInt(sp[10]);
-    theConf.avgGenTime       = parseInt(sp[11]);
-    theConf.dtDiffEval       = parseInt(sp[12]);
-    theConf.blocksRot        = parseInt(sp[13]);
-    theConf.percentRot       = parseFloat(sp[14]);
+    theConf.sigStock         = parseInt(sp[5]);
+    theConf.sigValidity      = parseInt(sp[6]);
+    theConf.sigQty           = parseInt(sp[7]);
+    theConf.sigWoT           = parseInt(sp[8]);
+    theConf.msValidity       = parseInt(sp[9]);
+    theConf.stepMax          = parseInt(sp[10]);
+    theConf.medianTimeBlocks = parseInt(sp[11]);
+    theConf.avgGenTime       = parseInt(sp[12]);
+    theConf.dtDiffEval       = parseInt(sp[13]);
+    theConf.blocksRot        = parseInt(sp[14]);
+    theConf.percentRot       = parseFloat(sp[15]);
     theConf.currency         = block.currency;
     return theConf;
   }
@@ -1460,7 +1461,7 @@ function NextBlockGenerator(conf, dal) {
         if (!exists) {
           // Already exists a link not chainable yet?
           // No chainability block means absolutely nobody can issue certifications yet
-          exists = current && (!blockOfChainability || (yield dal.existsNonChainableLink(cert.from, blockOfChainability.number)));
+          exists = current && (!blockOfChainability || (yield dal.existsNonChainableLink(cert.from, blockOfChainability.number, conf.sigStock)));
           if (!exists) {
             // It does NOT already exists a similar certification written, which is not replayable yet
             // Signatory must be a member

@@ -901,7 +901,10 @@ function GlobalValidator (conf, dao) {
         if (previous) {
           let duration = current.medianTime - parseInt(previous.timestamp);
           if (duration < conf.sigPeriod) {
-            throw 'Previous certification is not chainable yet';
+            let stock = yield Q.nbind(dao.getValidLinksFrom, dao)(cert.from);
+            if (stock >= conf.sigStock) {
+              throw 'Previous certification is not chainable yet';
+            }
           }
         }
       }

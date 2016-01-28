@@ -236,9 +236,13 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return that.blockDAL.getMoreRecentBlockWithTimeEqualBelow(currentTime - sigPeriod);
   });
 
-  this.existsNonChainableLink = (from, chainabilityBlockNumber) => co(function *() {
+  this.existsNonChainableLink = (from, chainabilityBlockNumber, sigStock) => co(function *() {
+    // Cert period rule
     let links = yield that.linksDAL.getLinksOfIssuerAbove(from, chainabilityBlockNumber);
-    return links.length > 0;
+    if (links.length === 0) return false;
+    // Max stock rule
+    let activeLinks = yield that.linksDAL.getValidLinksFrom(from);
+    return activeLinks.length >= sigStock;
   });
 
   this.getCurrent = function(done) {

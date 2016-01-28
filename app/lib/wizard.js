@@ -160,6 +160,7 @@ var tasks = {
       async.apply(simpleInteger, "First Universal Dividend (UD[0]) amount",                                "ud0", conf),
       async.apply(simpleInteger, "Delay between 2 identical certifications",                               "sigDelay", conf),
       async.apply(simpleInteger, "Delay between 2 certifications of a same issuer",                        "sigPeriod", conf),
+      async.apply(simpleInteger, "Maximum stock of valid certifications per member",                       "sigStock", conf),
       async.apply(simpleInteger, "Certification validity duration",                                        "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member",                 "sigQty", conf),
       async.apply(simpleInteger, "Number of valid emitted certifications to be a distance checked member", "sigWoT", conf),

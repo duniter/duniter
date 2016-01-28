@@ -30,6 +30,7 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
         "ud0": parseInt(conf.ud0,10),
         "sigDelay": parseInt(conf.sigDelay,10),
         "sigPeriod": parseInt(conf.sigPeriod,10),
+        "sigStock": parseInt(conf.sigPeriod,10),
         "sigValidity": parseInt(conf.sigValidity,10),
         "sigQty": parseInt(conf.sigQty,10),
         "sigWoT": parseInt(conf.sigWoT,10),

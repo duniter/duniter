@@ -578,7 +578,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigPeriod:sigValidity:sigQty:sigWoT:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigDelay:sigPeriod:sigStock:sigValidity:sigQty:sigWoT:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -677,6 +677,7 @@ dt          | Time period between two UD
 ud0         | UD(0), i.e. initial Universal Dividend
 sigDelay    | Minimum delay between 2 identical certifications (same pubkeys). Must be superior to `sigValidity`.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
+sigStock    | Maximum quantity of active certifications made by member.
 sigValidity | Maximum age of a valid signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
 sigWoT      | Minimum quantity of valid made certifications to be part of the WoT for distance rule
@@ -813,6 +814,11 @@ A certification is to be considered valid if its age is less or equal to `[sigVa
     VALID   = AGE <= [sigValidity]
     EXPIRED = AGE > [sigValidity]
 
+###### Certification stock
+The stock of certification is defined per member and reflects the number of *valid* certifications, i.e. which are not expired:
+
+    STOCK = COUNT(valid_certifications)
+
 ###### Membership validity
 A membership is to be considered valid if its age is less or equal to `[msValidity]`:
 
@@ -825,9 +831,12 @@ A written certification is to be considered replayable if its age is greater or 
     REPLAYABLE = AGE >= [sigDelay]
 
 ###### Certification chaining
-A written certification is to be considered chainable if its age is greater or equal to `[sigPeriod]`:
+A written certification is to be considered chainable if:
 
-    CHAINABLE = AGE >= [sigPeriod]
+* its age is greater or equal to `[sigPeriod]`:
+* the number of active certifications is lower than `[sigStock]`:
+
+    CHAINABLE = AGE >= [sigPeriod] && STOCK < [sigStock]
 
 ###### Member
 A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners`, `Actives` or `Leavers` **and is not expired**.

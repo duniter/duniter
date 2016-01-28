@@ -678,10 +678,10 @@ ud0         | UD(0), i.e. initial Universal Dividend
 sigDelay    | Minimum delay between 2 identical certifications (same pubkeys). Must be superior to `sigValidity`.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
 sigStock    | Maximum quantity of active certifications made by member.
-sigValidity | Maximum age of a valid signature (in seconds)
+sigValidity | Maximum age of a active signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
-sigWoT      | Minimum quantity of valid made certifications to be part of the WoT for distance rule
-msValidity  | Maximum age of a valid membership (in seconds)
+sigWoT      | Minimum quantity of active made certifications to be part of the WoT for distance rule
+msValidity  | Maximum age of an active membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
 medianTimeBlocks | Number of blocks used for calculating median time.
 avgGenTime  | The average time for writing 1 block (wished time)
@@ -693,7 +693,7 @@ percentRot  | The percent of previous issuers to reach for personalized difficul
 
 Variable  | Meaning
 --------- | ----
-members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last valid (non-expired) membership is either in `Joiners` or `Actives`.
+members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last active (non-expired) membership is either in `Joiners` or `Actives`.
 maxGenTime  | `= CEIL(avgGenTime * √2)`
 minGenTime  | `= FLOOR(avgGenTime / √2)`
 maxAcceleration | `= maxGenTime * (CEIL((medianTimeBlocks + 1) / 2) + 1)`
@@ -809,21 +809,27 @@ Age is defined as the number of seconds between the certification's or membershi
     AGE = current_time - block_time
 
 ###### Certification validity
-A certification is to be considered valid if its age is less or equal to `[sigValidity]`:
+A certification is to be considered *valid* if its age is less or equal to `[sigValidity]`:
 
     VALID   = AGE <= [sigValidity]
     EXPIRED = AGE > [sigValidity]
 
-###### Certification stock
-The stock of certification is defined per member and reflects the number of *valid* certifications, i.e. which are not expired:
+###### Certification activity
+A certification is to be considered *active* if it is both written in the blockchain and *valid* (equivalent to not expired).
 
-    STOCK = COUNT(valid_certifications)
+###### Certification stock
+The stock of certification is defined per member and reflects the number of *active* certifications, i.e. which are not expired:
+
+    STOCK = COUNT(active_certifications)
 
 ###### Membership validity
 A membership is to be considered valid if its age is less or equal to `[msValidity]`:
 
     VALID   = AGE <= [msValidity]
     EXPIRED = AGE > [msValidity]
+
+###### Membership activity
+A membership is to be considered *active* if it is both written in the blockchain and *valid* (equivalent to not expired).
 
 ###### Certification replayability
 A written certification is to be considered replayable if its age is greater or equal to `[sigDelay]`:
@@ -893,13 +899,13 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 
 ##### Joiners, Actives (Web of Trust distance constraint)
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for each WoT member with at least `[sigWoT]` valid certifications emitted (incoming block excluded), a path using certifications (this block included), leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for each WoT member with at least `[sigWoT]` active certifications emitted (incoming block excluded), a path using certifications (this block included), leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
 
 ##### Joiners
 
 * A revoked public key **cannot** be in `Joiners`
 * A given `PUBLIC_KEY` can be in `Joiners` if it is not a member.
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` valid certifications coming *to* it (incoming block included)
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` active certifications coming *to* it (incoming block included)
 * `PUBLIC_KEY` must match for exactly one identity of the blockchain (incoming block included).
 
 ##### Actives
@@ -913,7 +919,7 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 ##### Excluded
 
 * A given `PUBLIC_KEY` cannot be in `Excluded` if public key is not a member
-* Each `PUBLIC_KEY` with less than `[sigQty]` valid certifications or whose last membership is either in `Joiners` or `Actives` is outdated **must** be present in this field.
+* Each `PUBLIC_KEY` with less than `[sigQty]` active certifications or whose last membership is either in `Joiners` or `Actives` is outdated **must** be present in this field.
 * Each `PUBLIC_KEY` whose last membership occurrence is either in `Joiners` or `Actives` *and* is outdated **must** be present in this field.
 
 ##### Certifications

@@ -53,8 +53,8 @@ describe("Certification chainability", function() {
        * tac <===> cat
        */
       yield s1.initWithServices().then(bma);
-      yield cat.selfCertPromise(now);
-      yield tac.selfCertPromise(now);
+      yield cat.selfCertPromise();
+      yield tac.selfCertPromise();
       yield cat.certPromise(tac);
       yield tac.certPromise(cat);
       yield cat.joinPromise();
@@ -65,7 +65,7 @@ describe("Certification chainability", function() {
       });
 
       // Should not happen on the first commit due to certPeriod
-      yield tic.selfCertPromise(now);
+      yield tic.selfCertPromise();
       yield tic.joinPromise();
       yield cat.certPromise(tic);
       yield commitS1({ now });

@@ -14,7 +14,7 @@ module.exports = function makeBlockAndPost(theServer) {
 
 function postBlock(server) {
   return function(block) {
-    console.log(block.getRawSigned());
+    //console.log(block.getRawSigned());
     return post(server, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     });

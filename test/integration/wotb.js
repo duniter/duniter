@@ -70,19 +70,12 @@ var tic2 = user('tic2', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', s
 var cat3 = user('cat3', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s3 });
 var toc3 = user('toc3', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s3 });
 var tic3 = user('tic3', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s3 });
-var tac3 = user('tac3', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s3 });
 
 var now = Math.round(new Date().getTime() / 1000);
-const X_PERCENT = 1.0;
 const _100_PERCENT = 1.0;
 const MAX_DISTANCE_1 = 1;
 const MAX_DISTANCE_2 = 2;
-const MAX_DISTANCE_3 = 3;
-const MAX_DISTANCE_4 = 4;
-const MAX_DISTANCE_5 = 5;
 const FROM_1_LINK_SENTRIES = 1;
-const FROM_2_LINKS_SENTRIES = 2;
-const FROM_3_LINKS_SENTRIES = 3;
 const __OUTDISTANCED__ = true;
 const __OK__ = false;
 
@@ -100,8 +93,8 @@ describe("WOTB module", function() {
          */
         yield s1.initWithServices().then(bma);
         wotb = s1.dal.wotb;
-        yield cat.selfCertPromise(now);
-        yield toc.selfCertPromise(now);
+        yield cat.selfCertPromise();
+        yield toc.selfCertPromise();
         yield toc.certPromise(cat);
         yield cat.certPromise(toc);
         yield cat.joinPromise();
@@ -133,7 +126,7 @@ describe("WOTB module", function() {
         /**
          * cat <==> toc --> tic
          */
-        yield tic.selfCertPromise(now);
+        yield tic.selfCertPromise();
         yield toc.certPromise(tic);
         yield tic.joinPromise();
         yield commit(s1)();
@@ -164,9 +157,9 @@ describe("WOTB module", function() {
          */
         yield s2.initWithServices().then(bma);
         wotb = s2.dal.wotb;
-        yield cat2.selfCertPromise(now);
-        yield toc2.selfCertPromise(now);
-        yield tic2.selfCertPromise(now);
+        yield cat2.selfCertPromise();
+        yield toc2.selfCertPromise();
+        yield tic2.selfCertPromise();
         // toc2 <==> cat2
         yield toc2.certPromise(cat2);
         yield cat2.certPromise(toc2);
@@ -235,8 +228,8 @@ describe("WOTB module", function() {
       return co(function *() {
         yield s3.initWithServices().then(bma);
         wotb = s3.dal.wotb;
-        yield cat3.selfCertPromise(now);
-        yield tic3.selfCertPromise(now);
+        yield cat3.selfCertPromise();
+        yield tic3.selfCertPromise();
         // cat <==> tic
         yield tic3.certPromise(cat3);
         yield cat3.certPromise(tic3);
@@ -271,7 +264,7 @@ describe("WOTB module", function() {
           time: now + 2000
         });
         // MedianTime is now +500 for next certs
-        yield toc3.selfCertPromise(now);
+        yield toc3.selfCertPromise();
         yield toc3.joinPromise();
         yield tic3.certPromise(toc3);
         yield commit(s3)({

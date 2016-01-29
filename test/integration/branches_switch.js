@@ -51,8 +51,6 @@ var s2 = ucoin({
 var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
 var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
-var now = Math.round(new Date().getTime()/1000);
-
 describe("Switch", function() {
 
   before(function() {
@@ -60,8 +58,8 @@ describe("Switch", function() {
     return co(function *() {
       yield s1.initWithServices().then(bma);
       yield s2.initWithServices().then(bma);
-      yield cat.selfCertPromise(now);
-      yield toc.selfCertPromise(now);
+      yield cat.selfCertPromise();
+      yield toc.selfCertPromise();
       yield toc.certPromise(cat);
       yield cat.certPromise(toc);
       yield cat.joinPromise();

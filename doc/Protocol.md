@@ -34,6 +34,8 @@ UCP                   | Acronym for *UCoin Protocol*. A set of rules to create u
 Signature             | The cryptographical act of certifying a document using a private key.
 WoT                   | Acronym for *Web of Trust*. A groupment of individuals recognizing each other's identity through public keys and certification mechanisms
 UD                    | Acronym for *Universal Dividend*. Means money issuance **directly** and **exclusively** by and to WoT members
+realtime              | The time of real life (the habitual time).
+blocktime             | The realtime recorded by a block.
 
 ## Introduction
 
@@ -54,6 +56,24 @@ This is a *very important information* as every document is subject to hashes, a
 #### Numbering
 
 [Block](#block) numbering starts from `0`. That is, first block is `BLOCK#0`.
+
+#### Block identifiers
+
+It exists 2 kinds of [Block](#block) identifiers:
+
+##### `BLOCK_ID`
+
+It is the number of the block. Its format is `INTEGER`, so it is a positive or zero integer.
+
+##### `BLOCK_UID`
+It is the concatenation of the `BLOCK_ID` of a block and hash. Its format is `BLOCK_ID-HASH`.
+
+##### Examples
+
+The block ID of the root block is `0`. Its UID *might be* `0-883228A23F8A75B342E912DF439738450AE94F5D`.
+The block ID of the block#433 is `433`. Its UID *might be* `433-FB11681FC1B3E36C9B7A74F4DDE2D07EC2637957`.
+
+> Note that it is said "might be" because the hash is not known by advance.
 
 #### Currency name
 
@@ -118,20 +138,21 @@ A self certification is the act, for a given public key's owner, to sign an iden
 Self-certification is the signature of a special string *containing* the identifier:
 
     UID:IDENTIFIER
-    META:TS:TIMESTAMP
+    META:TS:BLOCK_UID
     
-Here, `UID` is just 'UID' string and `IDENTIFIER` has to be replaced by a valid identifier. Also, `META` and `TS` are simple strings, and `TIMESTAMP` has to be replaced by a valid timestamp. This whole string **is what signature is based upon**, without any carriage return.
+Here, `UID` is just 'UID' string and `IDENTIFIER` has to be replaced by a valid identifier. Also, `META` and `TS` are simple strings. This whole string **is what signature is based upon**, without any carriage return.
 
 The whole self-certification is then:
 
     UID:IDENTIFIER
-    META:TS:TIMESTAMP
+    META:TS:BLOCK_UID
     SIGNATURE
+
 Where:
 
 * `META` is just 'META' string
 * `TS` is just 'TS' string
-* `TIMESTAMP` is the timestamp value of the signature date
+* `BLOCK_UID` refers to a [block unique ID], and represents a time reference.
 * `SIGNATURE` is a signature
 
 So a self-certification is the act of saying:
@@ -147,7 +168,7 @@ A valid identity:
 A complete self-certification:
 
     UID:lolcat
-    META:TS:1409990782
+    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
 
 #### Self-revocation
@@ -169,7 +190,7 @@ For example, this document could be sent to a node to remove an identity we subm
 A self-revocation is just *a signature* over a complete self-certification flavoured with metadata telling this identity is to be revoked:
 
     UID:IDENTIFIER
-    META:TS:TIMESTAMP
+    META:TS:BLOCK_UID
     SIGNATURE
     META:REVOKE
     CERTIFIER_SIGNATURE
@@ -183,7 +204,7 @@ Where:
 If we have the following complete self-certification:
 
     UID:lolcat
-    META:TS:1409990782
+    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     
 A valid self-revocation could be:
@@ -193,7 +214,7 @@ A valid self-revocation could be:
 Over the following data:
 
     UID:lolcat
-    META:TS:1409990782
+    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     META:REVOKE
     
@@ -208,28 +229,27 @@ The generic word *certification*, in UCP, is to be used for describing *certific
 A certification is just *a signature* over a complete self-certification flavoured with a signature date:
 
     UID:IDENTIFIER
-    META:TS:TIMESTAMP
+    META:TS:BLOCK_UID
     SIGNATURE
-    META:TS:BLOCK_NUMBER-BLOCK_HASH
+    META:TS:BLOCK_UID
     CERTIFIER_SIGNATURE
 
 Where:
 
-* `BLOCK_NUMBER` refers to a block number of the Blockchain, and represents a time reference.
-* `BLOCK_HASH` refers to the fingerprint of the block targeted by `BLOCK_NUMBER`.
+* `BLOCK_UID` refers to a block unique ID.
 * `CERTIFIER_SIGNATURE` is the signature of the *certifier*.
 
 ##### Inline format
 
 Certification may exists under *inline format* which describes the certification under a simple line. Here is general structure:
 
-    PUBKEY_FROM:PUBKEY_TO:BLOCK_NUMBER:SIGNATURE
+    PUBKEY_FROM:PUBKEY_TO:BLOCK_ID:SIGNATURE
 
 Where:
 
   * `PUBKEY_FROM` is the certification public key
   * `PUBKEY_TO` is the public key whose identity is being certified
-  * `BLOCK_NUMBER` is the certification time reference
+  * `BLOCK_ID` is the certification time reference
   * `SIGNATURE` is the certification signature
 
 > Note: BLOCK_HASH is not required in the inline format, since this format aims at being used in the context of a blockchain, where hash can be deduced.
@@ -239,7 +259,7 @@ Where:
 If we have the following complete self-certification:
 
     UID:lolcat
-    META:TS:1409990782
+    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     
 A valid certification could be:
@@ -249,7 +269,7 @@ A valid certification could be:
 Over the following data:
 
     UID:lolcat
-    META:TS:1409990782
+    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     META:TS:84-2E76A3677D24C4A7225059A4A51364A11A6E47F7
 
@@ -266,10 +286,10 @@ Version: VERSION
 Type: Membership
 Currency: CURRENCY_NAME
 Issuer: ISSUER
-Block: NUMBER-HASH
+Block: BLOCK_UID
 Membership: MEMBERSHIP_TYPE
 UserID: USER_ID
-CertTS: CERTIFICATION_TS
+CertTS: BLOCK_UID
 ```
 
 followed by a signature of `Issuer`.
@@ -285,7 +305,7 @@ Field | Description
 `Block` | Block number and hash. Value is used to target a blockchain and precise time reference for membership's time validity.
 `Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
 `UserID` | Identity to use for this public key
-`CertTS` | Identity's certification date
+`CertTS` | Identity's block UID
 
 #### Validity
 
@@ -298,7 +318,7 @@ A [Membership](#membership) is to be considered having valid format if:
 * `Membership` matches either `IN` or `OUT` value
 * `Block` starts with an integer value, followed by a dash and an uppercased SHA1 string
 * `UserID` is a non-empty string
-* `CertTS` is a valid timestamp
+* `CertTS` is a valid block UID
 
 ### Transaction
 
@@ -492,7 +512,7 @@ but also other informations like:
     Type: Block
     Currency: CURRENCY
     Nonce: NONCE
-    Number: BLOCK_NUMBER
+    Number: BLOCK_ID
     PoWMin: NUMBER_OF_ZEROS
     Time: GENERATED_ON
     MedianTime: MEDIAN_DATE
@@ -503,22 +523,22 @@ but also other informations like:
     Parameters: PARAMETERS
     MembersCount: WOT_MEM_COUNT
     Identities:
-    PUBLIC_KEY:SIGNATURE:TIMESTAMP:USER_ID
+    PUBLIC_KEY:SIGNATURE:I_BLOCK_UID:USER_ID
     ...
     Joiners:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:TIMESTAMP:USER_ID
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:I_BLOCK_UID:USER_ID
     ...
     Actives:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:TIMESTAMP:USER_ID
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:I_BLOCK_UID:USER_ID
     ...
     Leavers:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:TIMESTAMP:USER_ID
+    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:I_BLOCK_UID:USER_ID
     ...
     Excluded:
     PUBLIC_KEY
     ...
     Certifications:
-    PUBKEY_FROM:PUBKEY_TO:BLOCK_NUMBER:SIGNATURE
+    PUBKEY_FROM:PUBKEY_TO:BLOCK_ID:SIGNATURE
     ...
     Transactions:
     COMPACT_TRANSACTION
@@ -537,9 +557,9 @@ Time                  | Time of generation                                | Alwa
 MedianTime            | Median date                                       | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
 Issuer                | This block's issuer's public key                  | Always
-PreviousHash          | Previous block fingerprint (SHA-1)             | from Block#1
-PreviousIssuer        | Previous block issuer's public key             | from Block#1
-Parameters            | Currency parameters.                             | **Block#0 only**
+PreviousHash          | Previous block fingerprint (SHA-1)                | from Block#1
+PreviousIssuer        | Previous block issuer's public key                | from Block#1
+Parameters            | Currency parameters.                              | **Block#0 only**
 MembersCount          | Number of members in the WoT, this block included | Always
 Identities            | New identities in the WoT                         | Always
 Joiners               | `IN` memberships                                  | Always
@@ -559,21 +579,21 @@ To be a valid, a block must match the following rules:
 * `Identities` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
-  * `TIMESTAMP` : an integer
+  * `BLOCK_UID` : a block UID
   * `USER_ID` : an identifier
 * `Joiners`, `Actives` and `Leavers` are multiline fields composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
   * `NUMBER` : an integer
   * `HASH` : an uppercased SHA1 string
-  * `TIMESTAMP` : an integer
+  * `I_BLOCK_UID` : a block UID
   * `USER_ID` : an identifier
 * `Excluded` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
 * `Certifications` is a multiline field composed for each line of:
   * `PUBKEY_FROM` : a [Public key](#publickey) doing the certification
   * `PUBKEY_TO` : a [Public key](#publickey) being certified
-  * `BLOCK_NUMBER` : a positive integer
+  * `BLOCK_ID` : a positive integer
   * `SIGNATURE` : a [Signature](#signature) of the certification
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
@@ -798,7 +818,7 @@ Calendar time is the one provided by the blocks under `MedianTime` field. This t
 > *Current time* is to be understood as the last block calendar time written in the blockchain.
 
 ###### Certification time
-When making a certification, `BLOCK_NUMBER` is a reference to *block time*.
+When making a certification, `BLOCK_ID` is a reference to *block time*.
 
 ###### Membership time
 When making a membership, `NUMBER` is a reference to *block time*.
@@ -889,6 +909,8 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 
 * The blockchain cannot contain two or more identities sharing a same `USER_ID`.
 * The blockchain cannot contain two or more identities sharing a same `PUBLIC_KEY`.
+* Block#0's identities' `BLOCK_UID` must be the special value `0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709`.
+* Other blocks' identities' `BLOCK_UID` field must match an existing block in the blockchain.
 
 ##### Joiners, Actives, Leavers (block fingerprint based memberships)
 

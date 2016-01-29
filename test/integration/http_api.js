@@ -29,8 +29,6 @@ var server = ucoin({
 var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
 var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
 
-var now = Math.round(new Date().getTime()/1000);
-
 describe("HTTP API", function() {
 
   before(function() {
@@ -42,10 +40,10 @@ describe("HTTP API", function() {
       .then(function(){
         return Q()
           .then(function() {
-            return cat.selfCertPromise(now);
+            return cat.selfCertPromise();
           })
           .then(function() {
-            return toc.selfCertPromise(now);
+            return toc.selfCertPromise();
           })
           .then(_.partial(toc.certPromise, cat))
           .then(_.partial(cat.certPromise, toc))
@@ -101,7 +99,7 @@ describe("HTTP API", function() {
           'Block: 0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709\n' +
           'Membership: IN\n' +
           'UserID: someuid\n' +
-          'CertTS: 1421787800\n' +
+          'CertTS: 0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709\n' +
           'cJohoG/qmxm7KwqCB71RXRSIvHu7IcYB1zWE33OpPLGmedH mdPWad32S7G9j9IDpI8QpldalhdT4BUIHlAtCw==\n'
         }
       }));

@@ -78,8 +78,6 @@ var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec
 var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
 
-var now = Math.round(new Date().getTime()/1000);
-
 describe("Branches", function() {
 
   before(function() {
@@ -100,13 +98,13 @@ describe("Branches", function() {
         // Server 1
         return Q()
           .then(function() {
-            return cat.selfCertPromise(now);
+            return cat.selfCertPromise();
           })
           .then(function() {
-            return toc.selfCertPromise(now);
+            return toc.selfCertPromise();
           })
           .then(function() {
-            return tic.selfCertPromise(now);
+            return tic.selfCertPromise();
           })
           .then(_.partial(toc.certPromise, cat))
           .then(_.partial(cat.certPromise, toc))

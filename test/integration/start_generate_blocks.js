@@ -58,8 +58,6 @@ var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec
 var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
 var tuc = user('tuc', { pub: '3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk', sec: '5ks7qQ8Fpkin7ycXpxQSxxjVhs8VTzpM3vEBMqM7NfC1ZiFJ93uQryDcoM93Mj77T6hDAABdeHZJDFnkDb35bgiU'}, { server: s1 });
 
-var now = Math.round(new Date().getTime()/1000);
-
 var nodeS1;
 var nodeS2;
 
@@ -84,8 +82,8 @@ describe("Generation", function() {
       nodeS1 = vucoin_p('127.0.0.1', s1.conf.port);
       nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
       // Server 1
-      yield cat.selfCertPromise(now);
-      yield toc.selfCertPromise(now);
+      yield cat.selfCertPromise();
+      yield toc.selfCertPromise();
       yield toc.certPromise(cat);
       yield cat.certPromise(toc);
       yield cat.joinPromise();

@@ -47,7 +47,7 @@ function MembershipDAL(db) {
       'blockNumber INTEGER,' +
       'blockHash VARCHAR(40) NOT NULL,' +
       'userid VARCHAR(255) NOT NULL,' +
-      'certts DATETIME NOT NULL,' +
+      'certts VARCHAR(100) NOT NULL,' +
       'block INTEGER,' +
       'fpr VARCHAR(50),' +
       'idtyHash VARCHAR(40),' +

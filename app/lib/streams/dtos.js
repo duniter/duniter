@@ -181,7 +181,7 @@ dtos.Other = {
 dtos.UID = {
   "uid": String,
   "meta": {
-    "timestamp": Number
+    "timestamp": String
   },
   "self": String,
   "others": [dtos.Other]
@@ -191,7 +191,7 @@ dtos.Signed = {
   "uid": String,
   "pubkey": String,
   "meta": {
-    "timestamp": Number
+    "timestamp": String
   },
   "isMember": Boolean,
   "wasMember": Boolean,
@@ -231,7 +231,7 @@ dtos.Requirements = {
     pubkey: String,
     uid: String,
     meta: {
-      timestamp: Number
+      timestamp: String
     },
     outdistanced: Boolean,
     certifications: [dtos.RequirementsCert],
@@ -268,7 +268,7 @@ dtos.Certifications = {
 dtos.SimpleIdentity = {
   "pubkey": String,
   "uid": String,
-  "sigDate": Number
+  "sigDate": String
 };
 
 dtos.Transaction = {

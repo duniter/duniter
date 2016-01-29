@@ -7,6 +7,7 @@ var Q              = require('q');
 var events         = require('events');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/base58');
+var dos2unix       = require('../lib/dos2unix');
 var sha1           = require('sha1');
 var moment         = require('moment');
 var rawer          = require('../lib/rawer');
@@ -194,8 +195,8 @@ function PeeringService(server, pair, dal) {
         block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
         endpoints: [endpoint]
       };
-      var raw1 = new Peer(p1).getRaw().dos2unix();
-      var raw2 = new Peer(p2).getRaw().dos2unix();
+      var raw1 = dos2unix(new Peer(p1).getRaw());
+      var raw2 = dos2unix(new Peer(p2).getRaw());
       logger.info('External access:', new Peer(raw1 == raw2 ? p1 : p2).getURL());
       if (raw1 != raw2) {
         logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);

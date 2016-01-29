@@ -33,7 +33,7 @@ function MembershipService (conf, dal) {
 
   let submitMembershipP = (ms) => co(function *() {
     let entry = new Membership(ms);
-    entry.idtyHash = (sha1(entry.userid + moment(entry.certts).unix() + entry.issuer) + "").toUpperCase();
+    entry.idtyHash = (sha1(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
     let globalValidation = globalValidator(conf, blockchainDao(null, dal));
     logger.info('⬇ %s %s', entry.issuer, entry.membership);
     if (!localValidator().checkSingleMembershipSignature(entry)) {

@@ -105,7 +105,7 @@ function WOTBinding (server) {
         if (certifier) {
           cert.uid = certifier.uid;
           cert.isMember = certifier.member;
-          cert.sigDate = moment(certifier.time).unix();
+          cert.sigDate = certifier.buid;
           cert.wasMember = true; // As we checked if(certified)
           if (!cert.cert_time) {
             // TODO: would be more efficient to save medianTime on certification reception
@@ -122,7 +122,7 @@ function WOTBinding (server) {
     var json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
-      sigDate: moment(idty.time).unix(),
+      sigDate: idty.buid,
       isMember: idty.member,
       certifications: []
     };
@@ -169,7 +169,7 @@ function WOTBinding (server) {
         if (certified) {
           cert.uid = certified.uid;
           cert.isMember = certified.member;
-          cert.sigDate = moment(certified.time).unix();
+          cert.sigDate = certified.buid;
           cert.wasMember = true; // As we checked if(certified)
           if (!cert.cert_time) {
             // TODO: would be more efficient to save medianTime on certification reception
@@ -186,7 +186,7 @@ function WOTBinding (server) {
     var json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
-      sigDate: moment(idty.time).unix(),
+      sigDate: idty.buid,
       isMember: idty.member,
       certifications: []
     };
@@ -220,7 +220,7 @@ function WOTBinding (server) {
     return {
       pubkey: idty.pubkey,
       uid: idty.uid,
-      sigDate: moment(idty.time).unix()
+      sigDate: idty.buid
     };
   });
 

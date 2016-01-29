@@ -45,9 +45,7 @@ var man1 = user('man1', { pub: '12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK', s
 var man2 = user('man2', { pub: 'E44RxG9jKZQsaPLFSw2ZTJgW7AVRqo1NGy6KGLbKgtNm', sec: 'pJRwpaCWshKZNWsbDxAHFQbVjk6X8gz9eBy9jaLnVY9gUZRqotrZLZPZe68ag4vEX1Y8mX77NhPXV2hj9F1UkX3'}, { server: s1 });
 var man3 = user('man3', { pub: '5bfpAfZJ4xYspUBYseASJrofhRm6e6JMombt43HBaRzW', sec: '2VFQtEcYZRwjoc8Lxwfzcejtw9VP8VAi47WjwDDjCJCXu7g1tXUAbVZN3QmvG6NJqaSuLCuYP7WDHWkFmTrUEMaE'}, { server: s1 });
 
-var now = Math.round(new Date().getTime() / 1000);
-
-describe("Identities", function() {
+describe("Identities collision", function() {
 
   before(function() {
 
@@ -55,10 +53,10 @@ describe("Identities", function() {
 
     return co(function *() {
       yield s1.initWithServices().then(bma);
-      yield cat.selfCertPromise(now);
-      yield tac.selfCertPromise(now);
-      yield toc.selfCertPromise(now);
-      yield tic.selfCertPromise(now);
+      yield cat.selfCertPromise();
+      yield tac.selfCertPromise();
+      yield toc.selfCertPromise();
+      yield tic.selfCertPromise();
       yield toc.certPromise(cat);
       yield cat.certPromise(toc);
       yield cat.certPromise(tic);
@@ -79,7 +77,7 @@ describe("Identities", function() {
       // cat is the sentry
 
       // Man1 is someone who just needs a commit to join
-      yield man1.selfCertPromise(now);
+      yield man1.selfCertPromise();
       yield man1.joinPromise();
       yield tac.certPromise(man1);
 
@@ -88,23 +86,23 @@ describe("Identities", function() {
        */
 
       // Man2 is someone who has no certifications yet has sent a JOIN
-      yield man2.selfCertPromise(now);
+      yield man2.selfCertPromise();
       yield man2.joinPromise();
 
       // Man3 is someone who has only published its identity
-      yield man3.selfCertPromise(now);
+      yield man3.selfCertPromise();
 
       // tic RENEW, but not written
-      yield tic.joinPromise(now);
+      yield tic.joinPromise();
 
       try {
-        yield tic.selfCertPromise(now + 2);
+        yield tic.selfCertPromise();
         throw 'Should have thrown an error for already used pubkey';
       } catch (e) {
         JSON.parse(e).message.should.equal('Pubkey already used in the blockchain');
       }
       try {
-        yield tic2.selfCertPromise(now);
+        yield tic2.selfCertPromise();
         throw 'Should have thrown an error for already used uid';
       } catch (e) {
         JSON.parse(e).message.should.equal('UID already used in the blockchain');

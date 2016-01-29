@@ -28,22 +28,7 @@ var Membership = function(json) {
   };
 
   this.inline = function() {
-    return [this.issuer, this.signature, this.number, this.fpr, moment(this.certts).unix(), this.userid].join(':');
-  };
-
-  this.inlineValue = function() {
-    return [this.version, this.issuer, this.membership, this.number, this.fpr, this.userid].join(':');
-  };
-
-  this.inlineSignature = function() {
-    var splits = dos2unix(this.signature).split('\n');
-    var signature = "";
-    var keep = false;
-    splits.forEach(function(line){
-      if (keep && !line.match('-----END PGP') && line != '') signature += line + '\n';
-      if (line == "") keep = true;
-    });
-    return signature;
+    return [this.issuer, this.signature, this.number, this.fpr, this.certts, this.userid].join(':');
   };
 
   this.json = function() {
@@ -80,14 +65,14 @@ Membership.statics.fromInline = function (inlineMS, type, currency) {
     number:     parseInt(sp[2]),
     fpr:        sp[3],
     block:      [sp[2], sp[3]].join('-'),
-    certts:     new Date(parseInt(sp[4])*1000),
+    certts:     sp[4],
     userid:     sp[5],
     signature:  sp[1]
   });
 };
 
 Membership.statics.toInline = function (entity) {
-  return [entity.issuer, entity.signature, entity.number, entity.fpr, moment(entity.certts).unix(), entity.userid].join(':');
+  return [entity.issuer, entity.signature, entity.number, entity.fpr, entity.certts, entity.userid].join(':');
 };
 
 module.exports = Membership;

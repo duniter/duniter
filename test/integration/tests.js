@@ -8,6 +8,7 @@ var constants = require('../../app/lib/constants');
 var node   = require('./tools/node');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
+var commit    = require('./tools/commit');
 var MEMORY_MODE = true;
 
 describe("Integration", function() {
@@ -69,34 +70,42 @@ describe("Integration", function() {
 
       before(function() {
         return co(function *() {
-          let now = Math.round(new Date().getTime() / 1000);
 
           // Self certifications
-          yield cat.selfCert(now);
-          yield tac.selfCert(now);
-          yield tic.selfCert(now);
-          yield tic.selfCert(now + 2);
-          // We send again the same
-          try {
-            yield tic.selfCert(now + 2);
-            throw 'Should have thrown an error';
-          } catch (e) {
-            JSON.parse(e).ucode.should.equal(constants.ERRORS.ALREADY_UP_TO_DATE.uerr.ucode);
-          }
-          // We send again the same, again!
-          try {
-            yield tic.selfCert(now + 2);
-            throw 'Should have thrown an error';
-          } catch (e) {
-            JSON.parse(e).ucode.should.equal(constants.ERRORS.ALREADY_UP_TO_DATE.uerr.ucode);
-          }
-          yield tic.selfCert(now + 3);
-          yield toc.selfCert(now);
+          yield cat.selfCert();
+          yield tac.selfCert();
+          yield tic.selfCert();
+          yield toc.selfCert();
           // Certifications
           yield cat.cert(tac);
         });
       });
       after(node1.after());
+
+      describe("identities collisions", () => {
+
+        it("sending same identity should fail", () => co(function *() {
+
+          // We send again the same
+          try {
+            yield tic.selfCert();
+            throw 'Should have thrown an error';
+          } catch (e) {
+            JSON.parse(e).ucode.should.equal(constants.ERRORS.ALREADY_UP_TO_DATE.uerr.ucode);
+          }
+        }));
+
+        it("sending same identity (again) should fail", () => co(function *() {
+
+          // We send again the same
+          try {
+            yield tic.selfCert();
+            throw 'Should have thrown an error';
+          } catch (e) {
+            JSON.parse(e).ucode.should.equal(constants.ERRORS.ALREADY_UP_TO_DATE.uerr.ucode);
+          }
+        }));
+      });
 
       describe("user cat", function(){
 
@@ -144,9 +153,9 @@ describe("Integration", function() {
         done();
       }));
 
-      it('tic should give only 3 results', node1.lookup('tic', function(res, done){
+      it('tic should give only 1 result', node1.lookup('tic', function(res, done){
         should.exists(res);
-        assert.equal(res.results.length, 3);
+        assert.equal(res.results.length, 1);
         done();
       }));
     });

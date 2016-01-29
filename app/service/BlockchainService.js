@@ -541,7 +541,7 @@ function BlockchainService (conf, mainDAL, pair) {
         });
         async.forEach(mss, function(ms, callback){
           var leave = { identity: null, ms: ms, key: null, idHash: '' };
-          leave.idHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
+          leave.idHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
           async.waterfall([
             function (next){
               async.parallel({
@@ -675,7 +675,7 @@ function BlockchainService (conf, mainDAL, pair) {
               if (!block) {
                 return nextOne('Block not found for membership');
               }
-              var idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
+              var idtyHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
               getSinglePreJoinData(dal, current, idtyHash, nextOne, joiners);
             },
             function(join, nextOne) {
@@ -746,7 +746,7 @@ function BlockchainService (conf, mainDAL, pair) {
       pubkey: join.identity.pubkey,
       uid: join.identity.uid,
       meta: {
-        timestamp: parseInt(new Date(join.identity.time).getTime() / 1000)
+        timestamp: join.identity.buid
       },
       outdistanced: outdistanced,
       certifications: certs,

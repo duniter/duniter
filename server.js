@@ -10,17 +10,11 @@ var constants   = require('./app/lib/constants');
 var fileDAL     = require('./app/lib/dal/fileDAL');
 var jsonpckg    = require('./package.json');
 var router      = require('./app/lib/streams/router');
-var multicaster = require('./app/lib/streams/multicaster');
 var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
-var Peer        = require('./app/lib/entity/peer');
 var signature   = require('./app/lib/signature');
-var common      = require('./app/lib/common');
 var directory   = require('./app/lib/directory');
 var INNER_WRITE = true;
-
-// Add methods to String and Date
-common.shim();
 
 function Server (dbConf, overrideConf) {
 

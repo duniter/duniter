@@ -69,8 +69,6 @@ var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec
 var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
 
-var now = Math.round(new Date().getTime()/1000);
-
 var nodeS1;
 var nodeS2;
 var nodeS3;
@@ -108,9 +106,9 @@ describe("Network", function() {
           nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
           nodeS3 = vucoin_p('127.0.0.1', s3.conf.port);
           // Server 1
-          yield cat.selfCertPromise(now);
-          yield toc.selfCertPromise(now);
-          yield tic.selfCertPromise(now);
+          yield cat.selfCertPromise();
+          yield toc.selfCertPromise();
+          yield tic.selfCertPromise();
           yield toc.certPromise(cat);
           yield cat.certPromise(toc);
           yield cat.certPromise(tic);

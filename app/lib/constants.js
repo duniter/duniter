@@ -1,7 +1,6 @@
 "use strict";
 
 var CURRENCY     = "[a-zA-Z0-9-_ ]+";
-var META_TS      = "META:TS:[1-9][0-9]*";
 var UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 var USER_ID      = "[A-Za-z0-9_-]*";
 var BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
@@ -14,7 +13,9 @@ var BOOLEAN      = "[01]";
 var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 var FINGERPRINT  = "[A-F0-9]{40}";
 var COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
-var BLOCK_REFERENCE = INTEGER + "-" + FINGERPRINT;
+var BLOCK_ID     = INTEGER;
+var BLOCK_UID    = BLOCK_ID + "-" + FINGERPRINT;
+var META_TS      = "META:TS:" + BLOCK_UID;
 
 module.exports = {
   
@@ -76,7 +77,7 @@ module.exports = {
   BASE58: exact(BASE58),
   PUBLIC_KEY: exact(PUBKEY),
   SIG: exact(SIGNATURE),
-  BLOCK_REFERENCE: exact(BLOCK_REFERENCE),
+  BLOCK_UID: exact(BLOCK_UID),
   CERT: {
     SELF: {
       UID: exact("UID:" + USER_ID),
@@ -89,15 +90,16 @@ module.exports = {
     }
   },
   IDENTITY: {
-    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + TIMESTAMP + ":" + USER_ID)
+    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + USER_ID)
   },
   MEMBERSHIP: {
-    BLOCK:      find('Block: (' + BLOCK_REFERENCE + ')'),
+    BLOCK:      find('Block: (' + BLOCK_UID + ')'),
     VERSION:    find('Version: (1)'),
     CURRENCY:   find('Currency: (' + CURRENCY + ')'),
     ISSUER:     find('Issuer: (' + PUBKEY + ')'),
     MEMBERSHIP: find('Membership: (IN|OUT)'),
-    USERID:     find('UserID: (' + USER_ID + ')')
+    USERID:     find('UserID: (' + USER_ID + ')'),
+    CERTTS:     find('CertTS: (' + BLOCK_UID + ')'),
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + INTEGER + ")"),
@@ -110,9 +112,9 @@ module.exports = {
     PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
     PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
-    JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
-    ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
-    LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + POSITIVE_INT + ":" + USER_ID),
+    JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
+    ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
+    LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     EXCLUDED: exact(PUBKEY)
   },
   TRANSACTION: {

@@ -22,7 +22,7 @@ function IdentityDAL(db, wotb) {
     'revoked',
     'currentMSN',
     'memberships',
-    'time',
+    'buid',
     'member',
     'kick',
     'leaving',
@@ -45,7 +45,7 @@ function IdentityDAL(db, wotb) {
       'revoked BOOLEAN NOT NULL,' +
       'currentMSN INTEGER NOT NULL,' +
       'memberships TEXT,' +
-      'time DATETIME NOT NULL,' +
+      'buid VARCHAR(100) NOT NULL,' +
       'member BOOLEAN NOT NULL,' +
       'kick BOOLEAN NOT NULL,' +
       'leaving BOOLEAN NOT NULL,' +

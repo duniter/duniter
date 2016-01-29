@@ -122,7 +122,7 @@ function BlockchainBinding (server) {
     var json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
-      sigDate: moment(idty.time).unix(),
+      sigDate: idty.buid,
       memberships: []
     };
     json.memberships = idty.memberships.map((msObj) => {

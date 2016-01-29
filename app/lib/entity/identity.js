@@ -1,6 +1,5 @@
 "use strict";
 var _ = require('underscore');
-var moment = require('moment');
 var sha1 = require('sha1');
 var rawer = require('../rawer');
 
@@ -10,8 +9,8 @@ var Identity = function(json) {
 
   this.revoked = false;
   this.currentMSN = -1;
-  this.time = Date.now;
   this.member = false;
+  this.buid = '';
   this.kick = false;
   this.leaving = false;
   this.wasMember = false;
@@ -20,13 +19,13 @@ var Identity = function(json) {
   this.memberships = [];
 
   _(json).keys().forEach(function(key) {
-   that[key] = json[key];
+    that[key] = json[key];
   });
 
   this.kick = !!this.kick;
   this.wasMember = !!this.wasMember;
   this.written = this.written || this.wasMember;
-  this.hash = sha1(this.uid + moment(this.time).unix() + this.pubkey).toUpperCase();
+  this.hash = sha1(this.uid + this.buid + this.pubkey).toUpperCase();
   this.memberships = this.memberships || [];
 
   this.json = function () {
@@ -46,7 +45,7 @@ var Identity = function(json) {
     var uids = [{
       "uid": this.uid,
       "meta": {
-        "timestamp": moment(this.time).unix()
+        "timestamp": this.buid
       },
       "self": this.sig,
       "others": others
@@ -57,7 +56,7 @@ var Identity = function(json) {
         "uid": cert.idty.uid,
         "pubkey": cert.idty.pubkey,
         "meta": {
-          "timestamp": moment(cert.idty.time).unix()
+          "timestamp": cert.idty.buid
         },
         "isMember": cert.idty.member,
         "wasMember": cert.idty.wasMember,
@@ -72,32 +71,27 @@ var Identity = function(json) {
   };
 
   this.inline = function () {
-    return [this.pubkey, this.sig, moment(this.time).unix(), this.uid].join(':');
+    return [this.pubkey, this.sig, this.buid, this.uid].join(':');
   };
 
   this.selfCert = function () {
     return rawer.getSelfIdentity(this);
   };
 
-  this.selfRevocation = function () {
-    return rawer.getSelfRevocation(this);
-  };
-
   this.othersCerts = function () {
-    var that = this;
     var certs = [];
     this.certs.forEach(function(cert){
       if (cert.to == that.pubkey) {
         // Signature for this pubkey
-        certs.push(cert)
+        certs.push(cert);
       }
     });
     return certs;
   };
 
   this.getTargetHash = function () {
-    return sha1(this.uid + moment(this.time).unix() + this.pubkey).toUpperCase();
-  }
+    return sha1(this.uid + this.buid + this.pubkey).toUpperCase();
+  };
 
   this.getRawPubkey = function () {
     return rawer.getIdentityPubkey(this);
@@ -119,13 +113,13 @@ Identity.statics.fromInline = function (inline) {
   return new Identity({
     pubkey: sp[0],
     sig: sp[1],
-    time: new Date(parseInt(sp[2])*1000),
+    buid: sp[2],
     uid: sp[3]
   });
 };
 
 Identity.statics.toInline = function (entity) {
-  return [entity.pubkey, entity.sig, moment(entity.time).unix(), entity.uid].join(':');
+  return [entity.pubkey, entity.sig, entity.buid, entity.uid].join(':');
 };
 
 module.exports = Identity;

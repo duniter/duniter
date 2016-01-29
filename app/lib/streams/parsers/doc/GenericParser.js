@@ -63,7 +63,10 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
       }
     }
     if (typeof done == 'function') return  done(error, obj);
-    if (error) throw constants.ERRORS.WRONG_DOCUMENT;
+    if (error){
+      logger.trace(error);
+      throw constants.ERRORS.WRONG_DOCUMENT;
+    }
     return obj;
   }
 

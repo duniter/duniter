@@ -1,16 +1,15 @@
 "use strict";
-var dos2unix = require('./dos2unix');
-var moment = require('moment');
+let dos2unix = require('./dos2unix');
 
 module.exports = new function() {
 
-  var that = this;
+  let that = this;
 
   this.getIdentity = function (json) {
-    var raw = "";
+    let raw = "";
     raw += json.pubkey + '\n';
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + moment(json.time).unix() + '\n';
+    raw += "META:TS:" + json.buid + '\n';
     raw += json.sig + '\n';
     (json.certs || []).forEach(function(cert){
       raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
@@ -19,21 +18,21 @@ module.exports = new function() {
   };
 
   this.getIdentityPubkey = function (json) {
-    var raw = "";
+    let raw = "";
     raw += json.pubkey + '\n';
     return dos2unix(raw);
   };
 
   this.getIdentitySelf = function (json) {
-    var raw = "";
+    let raw = "";
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + moment(json.time).unix() + '\n';
+    raw += "META:TS:" + json.buid + '\n';
     raw += json.sig + '\n';
     return dos2unix(raw);
   };
 
   this.getIdentityOthers = function (json) {
-    var raw = "";
+    let raw = "";
     (json.certs || []).forEach(function(cert){
       raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
     });
@@ -41,17 +40,17 @@ module.exports = new function() {
   };
 
   this.getSelfIdentity = function (json) {
-    var raw = "";
+    let raw = "";
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + moment(json.time).unix() + '\n';
+    raw += "META:TS:" + json.buid + '\n';
     return dos2unix(raw);
   };
 
   this.getRevocation = function (json) {
-    var raw = "";
+    let raw = "";
     raw += json.pubkey + '\n';
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + moment(json.time).unix() + '\n';
+    raw += "META:TS:" + json.buid + '\n';
     raw += json.sig + '\n';
     raw += "META:REVOKE\n";
     raw += json.revocation;
@@ -59,9 +58,9 @@ module.exports = new function() {
   };
 
   this.getSelfRevocation = function (json) {
-    var raw = "";
+    let raw = "";
     raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + moment(json.time).unix() + '\n';
+    raw += "META:TS:" + json.buid + '\n';
     raw += json.sig + '\n';
     raw += "META:REVOKE\n";
     raw += json.revocation;
@@ -73,7 +72,7 @@ module.exports = new function() {
   };
 
   this.getPeerWithoutSignature = function (json) {
-    var raw = "";
+    let raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Type: Peer\n";
     raw += "Currency: " + json.currency + "\n";
@@ -91,7 +90,7 @@ module.exports = new function() {
   };
 
   this.getMembershipWithoutSignature = function (json) {
-    var raw = "";
+    let raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Type: Membership\n";
     raw += "Currency: " + json.currency + "\n";
@@ -100,8 +99,8 @@ module.exports = new function() {
     raw += "Membership: " + json.membership + "\n";
     if (json.userid)
       raw += "UserID: " + json.userid + "\n";
-    if (!isNaN(json.certts))
-      raw += "CertTS: " + moment(json.certts).unix() + "\n";
+    if (json.certts)
+      raw += "CertTS: " + json.certts + "\n";
     return dos2unix(raw);
   };
 
@@ -110,7 +109,7 @@ module.exports = new function() {
   };
 
   this.getBlockWithoutSignature = function (json) {
-    var raw = "";
+    let raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Type: Block\n";
     raw += "Currency: " + json.currency + "\n";
@@ -130,31 +129,31 @@ module.exports = new function() {
       raw += "Parameters: " + json.parameters + "\n";
     raw += "MembersCount: " + json.membersCount + "\n";
     raw += "Identities:\n";
-    for(var i = 0; i < json.identities.length; i++){
+    for(let i = 0; i < json.identities.length; i++){
       raw += json.identities[i] + "\n";
     }
     raw += "Joiners:\n";
-    for(var i = 0; i < json.joiners.length; i++){
+    for(let i = 0; i < json.joiners.length; i++){
       raw += json.joiners[i] + "\n";
     }
     raw += "Actives:\n";
-    for(var i = 0; i < json.actives.length; i++){
+    for(let i = 0; i < json.actives.length; i++){
       raw += json.actives[i] + "\n";
     }
     raw += "Leavers:\n";
-    for(var i = 0; i < json.leavers.length; i++){
+    for(let i = 0; i < json.leavers.length; i++){
       raw += json.leavers[i] + "\n";
     }
     raw += "Excluded:\n";
-    for(var i = 0; i < json.excluded.length; i++){
+    for(let i = 0; i < json.excluded.length; i++){
       raw += json.excluded[i] + "\n";
     }
     raw += "Certifications:\n";
-    for(var i = 0; i < json.certifications.length; i++){
+    for(let i = 0; i < json.certifications.length; i++){
       raw += json.certifications[i] + "\n";
     }
     raw += "Transactions:\n";
-    for(var i = 0; i < json.transactions.length; i++){
+    for(let i = 0; i < json.transactions.length; i++){
       raw += json.transactions[i].raw || that.getCompactTransaction(json.transactions[i]);
     }
     return dos2unix(raw);
@@ -165,7 +164,7 @@ module.exports = new function() {
   };
 
   this.getTransaction = function (json) {
-    var raw = "";
+    let raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Type: Transaction\n";
     raw += "Currency: " + json.currency + "\n";
@@ -189,8 +188,8 @@ module.exports = new function() {
   };
 
   this.getCompactTransaction = function (json) {
-    var issuers = (json.issuers || json.signatories);
-    var raw = ["TX", 1, issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
+    let issuers = (json.issuers || json.signatories);
+    let raw = ["TX", 1, issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
     (issuers || []).forEach(function (issuer) {
       raw += issuer + '\n';
     });

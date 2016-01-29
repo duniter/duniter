@@ -58,13 +58,11 @@ describe("Forwarding", function() {
             node2.until('block', 1),
             co(function *() {
 
-              var now = Math.round(new Date().getTime()/1000);
-
               // Self certifications
-              yield cat.selfCert(now);
-              yield tac.selfCert(now);
-              yield tic.selfCert(now);
-              yield toc.selfCert(now);
+              yield cat.selfCert();
+              yield tac.selfCert();
+              yield tic.selfCert();
+              yield toc.selfCert();
               // Certifications
               yield cat.certP(tac);
               yield tac.certP(cat);

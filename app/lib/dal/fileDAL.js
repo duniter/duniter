@@ -907,7 +907,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
         var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', that.getCurrency());
         ms.type = type;
         ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
-        ms.idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
+        ms.idtyHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
         return that.msDAL.saveOfficialMS(msType, ms, blockNumber);
       });
     }, Q());

@@ -1,13 +1,9 @@
 "use strict";
 var GenericParser = require('./GenericParser');
+var ucp           = require('../../../ucp');
 var rawer         = require('../../../rawer');
 var util          = require('util');
-var sha1          = require('sha1');
-var moment        = require('moment');
-var split         = require('../../../split');
-var unix2dos      = require('../../../unix2dos');
 var constants     = require('../../../constants');
-var _             = require('underscore');
 
 module.exports = MembershipParser;
 
@@ -20,7 +16,7 @@ function MembershipParser (onError) {
     {prop: "membership",        regexp: constants.MEMBERSHIP.MEMBERSHIP },
     {prop: "userid",            regexp: constants.MEMBERSHIP.USERID },
     {prop: "block",             regexp: constants.MEMBERSHIP.BLOCK},
-    {prop: "certts",            regexp: /CertTS: (.*)/, parser: parseDateFromTimestamp}
+    {prop: "certts",            regexp: constants.MEMBERSHIP.CERTTS}
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
@@ -62,7 +58,7 @@ function MembershipParser (onError) {
         err = {code: codes.BAD_MEMBERSHIP, message: "Incorrect Membership field: must be either IN or OUT"};
     }
     if(!err){
-      if(obj.block && !obj.block.match(constants.BLOCK_REFERENCE))
+      if(obj.block && !obj.block.match(constants.BLOCK_UID))
         err = {code: codes.BAD_BLOCK, message: "Incorrect Block field: must be a positive or zero integer, a dash and an uppercased SHA1 hash"};
     }
     if(!err){
@@ -70,15 +66,11 @@ function MembershipParser (onError) {
         err = {code: codes.BAD_USERID, message: "UserID must match udid2 format"};
     }
     if(!err){
-      if(obj.certts && (typeof obj == 'string' ? !obj.certts.match(/^\d+$/) : moment(obj.certts).unix() <= 0))
+      if(!ucp.format.isBuid(obj.certts))
         err = {code: codes.BAD_CERTTS, message: "CertTS must be a valid timestamp"};
     }
     return err && err.message;
   };
-}
-
-function parseDateFromTimestamp (value) {
-  return new Date(parseInt(value)*1000);
 }
 
 util.inherits(MembershipParser, GenericParser);

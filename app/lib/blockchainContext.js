@@ -622,7 +622,7 @@ function BlockchainContext(conf, dal) {
             ms.written_number = block.number;
             ms.type = type;
             ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
-            ms.idtyHash = (sha1(ms.userid + moment(ms.certts).unix() + ms.issuer) + "").toUpperCase();
+            ms.idtyHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
             memberships.push(ms);
           }
         });

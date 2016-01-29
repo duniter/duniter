@@ -1,11 +1,9 @@
 "use strict";
 var GenericParser = require('./GenericParser');
 var util          = require('util');
-var split         = require('../../../split');
+var ucp           = require('../../../ucp');
 var rawer         = require('../../../rawer');
 var sha1          = require('sha1');
-var moment        = require('moment');
-var unix2dos      = require('../../../unix2dos');
 var constants     = require('../../../constants');
 
 module.exports = IdentityParser;
@@ -34,8 +32,7 @@ function IdentityParser (onError) {
           break;
         case 2:
           if (line.match(constants.CERT.SELF.META)) {
-            var timestamp = parseInt(line.match(/TS:(\d+)/)[1]);
-            obj.time = new Date(timestamp*1000);
+            obj.buid = ucp.format.buid.fromTS(line);
           }
           break;
         case 3:
@@ -56,8 +53,8 @@ function IdentityParser (onError) {
 
   this._clean = function (obj) {
     obj.documentType = 'identity';
-    if (obj.uid && obj.time && obj.pubkey) {
-      obj.hash = sha1(obj.uid + moment(obj.time).unix() + obj.pubkey).toUpperCase();
+    if (obj.uid && obj.buid && obj.pubkey) {
+      obj.hash = sha1(obj.uid + obj.buid + obj.pubkey).toUpperCase();
     }
   };
 
@@ -68,8 +65,8 @@ function IdentityParser (onError) {
     if (!obj.uid) {
       return "Wrong user id format";
     }
-    if (!obj.time) {
-      return "Could not extract signature time";
+    if (!obj.buid) {
+      return "Could not extract signature block uid";
     }
     if (!obj.sig) {
       return "No signature found for self-certification";

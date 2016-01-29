@@ -3,6 +3,7 @@ var Q		    = require('q');
 var async		= require('async');
 var request	= require('request');
 var vucoin	= require('vucoin');
+var ucp     = require('../../../app/lib/ucp');
 var crypto	= require('../../../app/lib/crypto');
 var rawer		= require('../../../app/lib/rawer');
 var base58	= require('../../../app/lib/base58');
@@ -16,7 +17,6 @@ function User (uid, options, node) {
   var that = this;
   var pub, sec;
   var selfCert = "";
-  var selfTime = new Date();
 
   // For sync code
   if (options.pub && options.sec) {
@@ -45,11 +45,8 @@ function User (uid, options, node) {
     }
   }
 
-  this.selfCert = function (whenTimestamp) {
+  this.selfCert = function (useRoot) {
     return function(done) {
-      var when = new Date();
-      when.setTime(whenTimestamp*1000);
-      selfTime = when;
       async.waterfall([
         function(next) {
           if (!pub) {
@@ -58,7 +55,11 @@ function User (uid, options, node) {
           else next();
         },
         function(next) {
-          selfCert = rawer.getSelfIdentity({ time: when, uid: uid });
+          node.server.BlockchainService.current(next);
+        },
+        function(current, next) {
+          let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709';
+          selfCert = rawer.getSelfIdentity({ buid: buid, uid: uid });
           selfCert += crypto.signSync(selfCert, sec);
           post('/wot/add', {
             "pubkey": pub,
@@ -71,9 +72,9 @@ function User (uid, options, node) {
     };
   };
 
-  this.selfCertPromise = function(whenTimestamp) {
+  this.selfCertPromise = function(useRoot) {
     return Q.Promise(function(resolve, reject){
-      that.selfCert(whenTimestamp)(function(err) {
+      that.selfCert(useRoot)(function(err) {
         err ? reject(err) : resolve();
       });
     });
@@ -103,13 +104,12 @@ function User (uid, options, node) {
         function(res, next) {
           var current = res.current;
           var idty = res.lookup.results[0].uids[0];
-          var when = new Date();
           var hisPub = res.lookup.results[0].pubkey;
-          when.setTime(idty.meta.timestamp*1000);
-          selfCert = rawer.getSelfIdentity({ time: when, uid: idty.uid });
+          selfCert = rawer.getSelfIdentity({ buid: idty.meta.timestamp, uid: idty.uid });
           selfCert += idty.self;
           var blockNumber = (current ? current.number : 0);
-          var cert = selfCert + '\nMETA:TS:' + (current ? [current.number, current.hash].join('-') : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709') + '\n';
+          let buid = current ? ucp.format.buid(current.number, current.hash) : ucp.format.buid();
+          var cert = selfCert + '\nMETA:TS:' + buid + '\n';
           var sig = crypto.signSync(cert, sec);
           post('/wot/add', {
             "pubkey": hisPub,
@@ -144,6 +144,9 @@ function User (uid, options, node) {
       async.waterfall([
         function(next) {
           async.parallel({
+            lookup: lookup(pub, function(res, callback) {
+              callback(null, res);
+            }),
             current: function(callback){
               node.server.BlockchainService.current(callback);
             }
@@ -151,7 +154,8 @@ function User (uid, options, node) {
         },
         function(res, next) {
           var current = res.current;
-          var block = (current ? [current.number, current.hash].join('-') : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709');
+          var idty = res.lookup.results[0].uids[0];
+          var block = ucp.format.buid(current);
           var join = rawer.getMembershipWithoutSignature({
             "version": 1,
             "currency": node.server.conf.currency,
@@ -159,7 +163,7 @@ function User (uid, options, node) {
             "block": block,
             "membership": type,
             "userid": uid,
-            "certts": selfTime
+            "certts": idty.meta.timestamp
           });
           var sig = crypto.signSync(join, sec);
           post('/blockchain/membership', {
@@ -262,6 +266,7 @@ function User (uid, options, node) {
   };
 
   function post(uri, data, done) {
+    console.log(data);
     var postReq = request.post({
       "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
       "timeout": 1000*100000

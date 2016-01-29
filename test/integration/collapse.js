@@ -34,15 +34,13 @@ var s1 = ucoin({
 
 var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
 
-var now = Math.round(new Date().getTime() / 1000);
-
 describe("Community collapse", function() {
 
   before(function() {
 
     return co(function *() {
       yield s1.initWithServices().then(bma);
-      yield cat.selfCertPromise(now);
+      yield cat.selfCertPromise();
       yield cat.joinPromise();
       yield commit(s1)();
       yield commit(s1)();

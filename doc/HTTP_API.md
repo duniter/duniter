@@ -26,6 +26,7 @@
       * [blocks/[count]/[from]](#blockchainblockscountfrom)
       * [current](#blockchaincurrent)
       * [hardship/[PUBKEY]](#blockchainhardshippubkey)
+      * [difficulties](#blockchaindifficulties)
       * [with/](#blockchainwith)
           * [newcomers](#blockchainwithnewcomers)
           * [certs](#blockchainwithcerts)
@@ -79,6 +80,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |   `-- [PUBKEY]
     |   |-- block
     |   |   `-- [NUMBER]
+    |   |-- difficulties
     |   `-- current
     |-- network/
     |   |-- peers
@@ -818,7 +820,7 @@ The hardship value (`level`) + `block` number.
 
 ```
 
-#### `blockchain/difficulties/[NUMBER]`
+#### `blockchain/difficulties`
 
 **Goal**
 

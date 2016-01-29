@@ -26,6 +26,7 @@
       * [blocks/[count]/[from]](#blockchainblockscountfrom)
       * [current](#blockchaincurrent)
       * [hardship/[PUBKEY]](#blockchainhardshippubkey)
+      * [difficulties](#blockchaindifficulties)
       * [with/](#blockchainwith)
           * [newcomers](#blockchainwithnewcomers)
           * [certs](#blockchainwithcerts)
@@ -818,7 +819,7 @@ The hardship value (`level`) + `block` number.
 
 ```
 
-#### `blockchain/difficulties/[NUMBER]`
+#### `blockchain/difficulties`
 
 **Goal**
 

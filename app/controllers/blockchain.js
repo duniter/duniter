@@ -99,7 +99,8 @@ function BlockchainBinding (server) {
 
   this.difficulties = () => co(function *() {
     let current = yield server.dal.getCurrent();
-    let issuers = yield server.dal.getUniqueIssuersBetween(current.number - 1 - conf.blocksRot, current.number - 1);
+    let number = (current && current.number) || 0;
+    let issuers = yield server.dal.getUniqueIssuersBetween(number - 1 - conf.blocksRot, number - 1);
     let difficulties = [];
     for (let i = 0, len = issuers.length; i < len; i++) {
       let issuer = issuers[i];
@@ -111,7 +112,7 @@ function BlockchainBinding (server) {
       });
     }
     return {
-      "block": current.number,
+      "block": number + 1,
       "levels": difficulties
     };
   });

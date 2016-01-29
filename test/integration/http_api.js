@@ -135,6 +135,13 @@ describe("HTTP API", function() {
         }
       }));
     });
+
+    it('/difficulties should have current block number + 1', function() {
+      return http.expectAnswer(rp('http://127.0.0.1:7777/blockchain/difficulties', { json: true }), function(res) {
+        res.should.have.property('block').equal(5);
+        res.should.have.property('levels').have.length(1);
+      });
+    });
   });
 });
 

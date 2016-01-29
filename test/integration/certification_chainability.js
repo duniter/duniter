@@ -61,7 +61,7 @@ describe("Certification chainability", function() {
       yield tac.joinPromise();
       yield commitS1({ now });
       yield commitS1({
-        time: now + 398
+        time: now + 395
       });
 
       // Should not happen on the first commit due to certPeriod
@@ -70,13 +70,13 @@ describe("Certification chainability", function() {
       yield cat.certPromise(tic);
       yield commitS1({ now });
       yield commitS1({ now });
-      // We still are at +199, and the certPeriod must be OVER (or equal to) current time to allow new certs from cat.
+      // We still are at +195, and the certPeriod must be OVER (or equal to) current time to allow new certs from cat.
       // So if we increment +1
       yield commitS1({
-        time: now + 202
+        time: now + 205
       });
       yield commitS1({
-        time: now + 202
+        time: now + 205
       });
       yield commitS1({ now });
       // Should be integrated now

@@ -266,7 +266,6 @@ function User (uid, options, node) {
   };
 
   function post(uri, data, done) {
-    console.log(data);
     var postReq = request.post({
       "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
       "timeout": 1000*100000

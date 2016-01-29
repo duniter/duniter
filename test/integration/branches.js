@@ -18,7 +18,7 @@ var expectHttpCode = httpTest.expectHttpCode;
 
 let WebSocket = require('ws');
 
-require('../../app/lib/logger')().mute();
+//require('../../app/lib/logger')().mute();
 
 var MEMORY_MODE = true;
 var commonConf = {

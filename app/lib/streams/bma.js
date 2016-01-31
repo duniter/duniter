@@ -225,7 +225,7 @@ function listenWebSocket(server, httpServer) {
   });
 
   wssBlock.on('connection', function connection(ws) {
-    ws.send(JSON.stringify(currentBlock));
+    ws.send(JSON.stringify(sanitize(currentBlock, dtos.Block)));
   });
 
   wssBlock.broadcast = (data) => wssBlock.clients.forEach((client) => client.send(data));
@@ -237,16 +237,16 @@ function listenWebSocket(server, httpServer) {
       // Broadcast block
       if (data.joiners) {
         currentBlock = data;
-        wssBlock.broadcast(JSON.stringify(currentBlock));
+        wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
       }
       // Broadcast peer
       if (data.endpoints) {
-        wssPeer.broadcast(JSON.stringify(data));
+        wssPeer.broadcast(JSON.stringify(sanitize(data, dtos.Peer)));
       }
     }));
 
   return co(function *() {
     currentBlock = yield server.dal.getCurrent();
-    wssBlock.broadcast(JSON.stringify(currentBlock));
+    wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
   });
 }

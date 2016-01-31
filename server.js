@@ -10,13 +10,13 @@ var constants   = require('./app/lib/constants');
 var fileDAL     = require('./app/lib/dal/fileDAL');
 var jsonpckg    = require('./package.json');
 var router      = require('./app/lib/streams/router');
-var multicaster = require('./app/lib/streams/multicaster');
 var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
-var Peer        = require('./app/lib/entity/peer');
 var signature   = require('./app/lib/signature');
 var common      = require('./app/lib/common');
 var directory   = require('./app/lib/directory');
+var http2raw    = require('./app/lib/streams/parsers/http2raw');
+var dos2unix    = require('./app/lib/dos2unix');
 var INNER_WRITE = true;
 
 // Add methods to String and Date
@@ -190,7 +190,8 @@ function Server (dbConf, overrideConf) {
           let block = yield that.BlockchainService.startGeneration();
           if (block && shouldContinue) {
             try {
-              yield that.singleWritePromise(block);
+              let obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
+              yield that.singleWritePromise(obj);
             } catch (err) {
               logger.warn('Proof-of-work self-submission: %s', err.message || err);
             }

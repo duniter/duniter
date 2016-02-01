@@ -463,7 +463,7 @@ function BlockchainContext(conf, dal) {
       conf.sigStock         = parseInt(sp[5]);
       conf.sigValidity      = parseInt(sp[6]);
       conf.sigQty           = parseInt(sp[7]);
-      conf.sigWoT           = parseInt(sp[8]);
+      conf.xpercent         = parseFloat(sp[8]);
       conf.msValidity       = parseInt(sp[9]);
       conf.stepMax          = parseInt(sp[10]);
       conf.medianTimeBlocks = parseInt(sp[11]);

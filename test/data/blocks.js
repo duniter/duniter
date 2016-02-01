@@ -31,7 +31,34 @@ module.exports = {
     "Transactions:\n" +
     "mqzcL5FW0ZMz7/aPpV8vLb6KzMYXl3WYI4bdm6Usq34tSgvROoAOp1uSuyqFBHNd7hggfR/8tACCPhkJMVNLCw==\n",
 
-  WRONG_PROOF_OF_WORK: 
+  VALID_ROOT:
+  "Version: 1\n" +
+  "Type: Block\n" +
+  "Currency: bb\n" +
+  "Nonce: 1\n" +
+  "Number: 0\n" +
+  "PoWMin: 0\n" +
+  "Time: 1454055980\n" +
+  "MedianTime: 1454055980\n" +
+  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "Parameters: 0.007376575:2629800:100:157680000:0:40:31536000:1:0.9:10000:3:20:960:10:20:0.6666666666666666\n" +
+  "MembersCount: 2\n" +
+  "Identities:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:2Dwih1ekFzT8hE+XGh9lsEpg7+gEvGFziHmH5eC6pEVmjbyUhqOOk57P6OgOGANdgmr5CoykyRnagVzNFETkCQ==:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:cat\n" +
+  "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:3NU1ktzr1vdLvyseMlwgPbH128SE41CN/oT5xka28kh6crFTtuo4xYzQ1Q1e2GOlE6HX43AWA4RCeQDNXmt+AA==:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:tic\n" +
+  "Joiners:\n" +
+  "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:uXB0lhNITo8MS7UH34oE/ve32ztrnnMnzXZKBwPBTy/u7EBZ6eJ4yiesD2/owWzLqYQLio4PpBTZadG4xKbyBw==:0:DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:tic\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:hnZGmbZRKzIK+YB9RE+HbyGmotICDUce5e5XErzw4GlDLR9K7Z5ev3/QrVcDYvRl0Z5MhiH2swZ1nbah7//rAQ==:0:DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:cat\n" +
+  "Actives:\n" +
+  "Leavers:\n" +
+  "Excluded:\n" +
+  "Certifications:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:0:MDC0XlX3AEe32mt2UAzjvrR91hcjB7m1zKqDZXrKakMV0ADeH/T4DYkRD+ltqR4zuRMFBl1XLx5ixFbROV0GBQ==\n" +
+  "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:liLSh76vbsMGTTTzr91BpLEDJTgZ06M0CofBNd+Wb0gJzvIXBIsCJMP+cEAhsQ0WfYorzjNhiC5l0LwyjUP0AQ==\n" +
+  "Transactions:\n" +
+  "R0T6k4HwyVJ9FMMIkuYTgA4Zg6aVifUASo+d98Ei6kGt5kS5fHg5yqOWnCsOSTMyScRamkzrcfuvSroAi1imAw==\n",
+
+  WRONG_PROOF_OF_WORK:
     "Version: 1\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
@@ -51,33 +78,6 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
-
-  VALID_ROOT:
-  "Version: 1\n" +
-  "Type: Block\n" +
-  "Currency: bb\n" +
-  "Nonce: 1\n" +
-  "Number: 0\n" +
-  "PoWMin: 0\n" +
-  "Time: 1454055980\n" +
-  "MedianTime: 1454055980\n" +
-  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-  "Parameters: 0.007376575:2629800:100:157680000:0:40:31536000:1:2:10000:3:20:960:10:20:0.6666666666666666\n" +
-  "MembersCount: 2\n" +
-  "Identities:\n" +
-  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:2Dwih1ekFzT8hE+XGh9lsEpg7+gEvGFziHmH5eC6pEVmjbyUhqOOk57P6OgOGANdgmr5CoykyRnagVzNFETkCQ==:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:cat\n" +
-  "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:3NU1ktzr1vdLvyseMlwgPbH128SE41CN/oT5xka28kh6crFTtuo4xYzQ1Q1e2GOlE6HX43AWA4RCeQDNXmt+AA==:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:tic\n" +
-  "Joiners:\n" +
-  "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:uXB0lhNITo8MS7UH34oE/ve32ztrnnMnzXZKBwPBTy/u7EBZ6eJ4yiesD2/owWzLqYQLio4PpBTZadG4xKbyBw==:0:DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:tic\n" +
-  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:hnZGmbZRKzIK+YB9RE+HbyGmotICDUce5e5XErzw4GlDLR9K7Z5ev3/QrVcDYvRl0Z5MhiH2swZ1nbah7//rAQ==:0:DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709:cat\n" +
-  "Actives:\n" +
-  "Leavers:\n" +
-  "Excluded:\n" +
-  "Certifications:\n" +
-  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:0:MDC0XlX3AEe32mt2UAzjvrR91hcjB7m1zKqDZXrKakMV0ADeH/T4DYkRD+ltqR4zuRMFBl1XLx5ixFbROV0GBQ==\n" +
-  "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:liLSh76vbsMGTTTzr91BpLEDJTgZ06M0CofBNd+Wb0gJzvIXBIsCJMP+cEAhsQ0WfYorzjNhiC5l0LwyjUP0AQ==\n" +
-  "Transactions:\n" +
-  "R0T6k4HwyVJ9FMMIkuYTgA4Zg6aVifUASo+d98Ei6kGt5kS5fHg5yqOWnCsOSTMyScRamkzrcfuvSroAi1imAw==\n",
 
   ROOT_WITHOUT_PARAMETERS: 
     "Version: 1\n" +
@@ -110,7 +110,7 @@ module.exports = {
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "Parameters: 0.7376575:10:100:157680000:0:40:31536000:1:1:31536000:3:1:60:10:20:0.67\n" +
+    "Parameters: 0.7376575:10:100:157680000:0:40:31536000:1:0.9:31536000:3:1:60:10:20:0.67\n" +
     "MembersCount: 3\n" +
     "Identities:\n" +
     "Joiners:\n" +

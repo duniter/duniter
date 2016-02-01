@@ -22,7 +22,7 @@ dtos.Parameters = {
   sigStock: Number,
   sigValidity: Number,
   sigQty: Number,
-  sigWoT: Number,
+  xpercent: Number,
   msValidity: Number,
   stepMax: Number,
   medianTimeBlocks: Number,

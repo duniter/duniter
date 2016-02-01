@@ -598,7 +598,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigPeriod:sigStock:sigValidity:sigQty:sigWoT:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigDelay:sigPeriod:sigStock:sigValidity:sigQty:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -700,7 +700,7 @@ sigPeriod   | Minimum delay between 2 certifications of a same issuer, in second
 sigStock    | Maximum quantity of active certifications made by member.
 sigValidity | Maximum age of a active signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
-sigWoT      | Minimum quantity of active made certifications to be part of the WoT for distance rule
+xpercent    | Minimum percent of sentries to reach to match the distance rule
 msValidity  | Maximum age of an active membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
 medianTimeBlocks | Number of blocks used for calculating median time.
@@ -717,6 +717,8 @@ members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting th
 maxGenTime  | `= CEIL(avgGenTime * √2)`
 minGenTime  | `= FLOOR(avgGenTime / √2)`
 maxAcceleration | `= maxGenTime * (CEIL((medianTimeBlocks + 1) / 2) + 1)`
+dSen | `= 1.2 x CEIL(EXP(LN(membersCount)/stepMax))`
+sentries | Members with at least `dSen` active links *from* them
 
 ## Processing
 
@@ -921,7 +923,7 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 
 ##### Joiners, Actives (Web of Trust distance constraint)
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for each WoT member with at least `[sigWoT]` active certifications emitted (incoming block excluded), a path using certifications (this block included), leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops. Thus, such a path uses maximum `[stepMax]` certifications to link a member to `PUBLIC_KEY`.
+* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for at least `xpercent`% of the sentries, a path using certifications (this block included) leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops.
 
 ##### Joiners
 

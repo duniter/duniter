@@ -17,7 +17,7 @@ var MEMORY_MODE = true;
 var commonConf = {
   ipv4: '127.0.0.1',
   currency: 'bb',
-  sigWoT: 2,
+  xpercent: 0.9,
   sigPeriod: 200, // every 200 seconds
   msValidity: 10000,
   parcatipate: false, // TODO: to remove when startGeneration will be an explicit call

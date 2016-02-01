@@ -163,7 +163,7 @@ var tasks = {
       async.apply(simpleInteger, "Maximum stock of valid certifications per member",                       "sigStock", conf),
       async.apply(simpleInteger, "Certification validity duration",                                        "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member",                 "sigQty", conf),
-      async.apply(simpleInteger, "Number of valid emitted certifications to be a distance checked member", "sigWoT", conf),
+      async.apply(simpleFloat,   "Percentage of sentries to be reached to match WoT distance rule",        "xpercent", conf),
       async.apply(simpleInteger, "Membership validity duration",                                           "msValidity", conf),
       async.apply(simpleInteger, "Number of blocks on which is computed median time",                      "medianTimeBlocks", conf),
       async.apply(simpleInteger, "The average time for writing 1 block (wished time)",                     "avgGenTime", conf),

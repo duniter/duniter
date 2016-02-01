@@ -117,7 +117,7 @@ function Server (dbConf, overrideConf) {
           sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
           msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
           sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,
-          sigWoT:             constants.CONTRACT.DEFAULT.SIGWOT,
+          xpercent:           constants.CONTRACT.DEFAULT.X_PERCENT,
           percentRot:         constants.CONTRACT.DEFAULT.PERCENTROT,
           blocksRot:          constants.CONTRACT.DEFAULT.BLOCKSROT,
           powDelay:           constants.CONTRACT.DEFAULT.POWDELAY,

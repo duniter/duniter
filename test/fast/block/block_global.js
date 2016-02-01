@@ -17,7 +17,7 @@ var conf = {
   msValidity: 365.25*24*3600, // 1 year
   sigValidity: 365.25*24*3600, // 1 year
   sigQty: 1,
-  sigWoT: 3,
+  xpercent: 0.9,
   powZeroMin: 1,
   powPeriod: 18,
   incDateMin: 10,
@@ -321,7 +321,16 @@ function test (funcName, raw, callback) {
         },
         function (obj, next){
           block = new Block(obj);
-          validator(conf, new BlockCheckerDao(block))[funcName](block, next);
+          let dao = new BlockCheckerDao(block);
+          dao.wotb.addNode(); // HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+          dao.wotb.addNode(); // G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU
+          dao.wotb.addNode(); // F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg
+          dao.wotb.addLink(1, 0); // G2 => Hg
+          dao.wotb.addLink(2, 0); // F5 => Hg
+          dao.wotb.addLink(0, 1); // Hg => G2
+          dao.wotb.addLink(2, 1); // F5 => G2
+          dao.wotb.addLink(0, 2); // Hg => F5
+          validator(conf, dao)[funcName](block, next);
         }
       ], function (err) {
         err ? reject(err) : resolve();
@@ -357,14 +366,6 @@ function validate (raw, callback) {
 function BlockCheckerDao (block) {
 
   this.wotb = wotb.memoryInstance();
-  this.wotb.addNode(); // HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-  this.wotb.addNode(); // G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU
-  this.wotb.addNode(); // F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg
-  this.wotb.addLink(1, 0); // G2 => Hg
-  this.wotb.addLink(2, 0); // F5 => Hg
-  this.wotb.addLink(0, 1); // Hg => G2
-  this.wotb.addLink(2, 1); // F5 => G2
-  this.wotb.addLink(0, 2); // Hg => F5
 
   this.existsUserID = function (uid, done) {
     if (uid == 'EXISTING') {

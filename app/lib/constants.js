@@ -111,7 +111,7 @@ module.exports = {
     MEDIAN_TIME: find("MedianTime: (" + TIMESTAMP + ")"),
     PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
-    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
+    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
@@ -192,14 +192,16 @@ module.exports = {
       SIGVALIDITY: 3600 * 24 * 365,
       MSVALIDITY: 3600 * 24 * 365,
       SIGQTY: 5,
-      SIGWOT: 5,
+      X_PERCENT: 0.9,
       PERCENTROT: 2 / 3,
       BLOCKSROT: 20,
       POWDELAY: 10,
       AVGGENTIME: 16 * 60,
       DTDIFFEVAL: 10,
       MEDIANTIMEBLOCKS: 20
-    }
+    },
+
+    DSEN_P: 1.2 // dSen proportional factor
   },
 
   BRANCHES: {

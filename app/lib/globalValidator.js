@@ -1010,12 +1010,14 @@ function GlobalValidator (conf, dao) {
 
   function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, done) {
     return co(function *() {
+      let current = yield Q.nbind(dao.getCurrent, dao)();
+      let membersCount = current ? current.membersCount : 0;
       // TODO: make a temporary copy of the WoT in RAM
       // We add temporarily the newcomers to the WoT, to integrate their new links
       let nodesCache = newcomers.reduce((map, pubkey) => {
         let nodeID = wotb.addNode();
         map[pubkey] = nodeID;
-        wotb.setEnabled(nodeID, false); // These are not members yet
+        wotb.setEnabled(false, nodeID); // These are not members yet
         return map;
       }, {});
       // Add temporarily the links to the WoT
@@ -1036,7 +1038,8 @@ function GlobalValidator (conf, dao) {
       for (let i = 0, len = pubkeys.length; i < len; i++) {
         let pubkey = pubkeys[i];
         let nodeID = yield getNodeIDfromPubkey(nodesCache, pubkey);
-        let isOutdistanced = wotb.isOutdistanced(nodeID, conf.sigWoT, conf.stepMax, X_PERCENT);
+        let dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
+        let isOutdistanced = wotb.isOutdistanced(nodeID, dSen, conf.stepMax, conf.xpercent);
         if (isOutdistanced) {
           error = 'Joiner/Active is outdistanced from WoT';
           break;

@@ -19,9 +19,10 @@ function WoTBWrapper(instance) {
     instance.showGraph();
   this.getWoTSize = instance.getWoTSize;
   this.isEnabled = instance.isEnabled;
-  this.setEnabled = instance.setEnabled;
   this.existsLink = instance.existsLink;
   this.isOutdistanced = instance.isOutdistanced;
+
+  this.setEnabled = (enabled, nodeID) => instance.setEnabled(enabled, nodeID);
 
   this.addNode = () => {
     let nodeNumber = instance.addNode();

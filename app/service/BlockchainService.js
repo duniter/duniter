@@ -349,7 +349,7 @@ function BlockchainService (conf, mainDAL, pair) {
         },
         function (links, next) {
           // Only test agains members who make enough signatures
-          if (links.length >= conf.sigWoT) {
+          if (links.length >= conf.xpercent) {
             sentries.push(m.pubkey);
           }
           next();
@@ -932,7 +932,7 @@ function BlockchainService (conf, mainDAL, pair) {
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
       conf.sigDelay, conf.sigPeriod, conf.sigStock, conf.sigValidity,
-      conf.sigQty, conf.sigWoT, conf.msValidity,
+      conf.sigQty, conf.xpercent, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
     ].join(':');
@@ -1276,7 +1276,7 @@ function BlockchainService (conf, mainDAL, pair) {
     theConf.sigStock         = parseInt(sp[5]);
     theConf.sigValidity      = parseInt(sp[6]);
     theConf.sigQty           = parseInt(sp[7]);
-    theConf.sigWoT           = parseInt(sp[8]);
+    theConf.xpercent         = parseFloat(sp[8]);
     theConf.msValidity       = parseInt(sp[9]);
     theConf.stepMax          = parseInt(sp[10]);
     theConf.medianTimeBlocks = parseInt(sp[11]);

@@ -128,4 +128,6 @@ Identity.statics.toInline = function (entity) {
   return [entity.pubkey, entity.sig, moment(entity.time).unix(), entity.uid].join(':');
 };
 
+Identity.statics.fromJSON = (json) => new Identity(json);
+
 module.exports = Identity;

@@ -82,8 +82,8 @@ function Server (dbConf, overrideConf) {
         }
         if (res) {
           // Only emit valid documents
-          that.emit(obj.documentType, res);
-          that.push(res);
+          that.emit(obj.documentType, _.clone(res));
+          that.push(_.clone(res));
         }
         isInnerWrite ? done(null, res) : done();
       } catch (err) {

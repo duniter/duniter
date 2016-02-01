@@ -90,4 +90,6 @@ Membership.statics.toInline = function (entity) {
   return [entity.issuer, entity.signature, entity.number, entity.fpr, moment(entity.certts).unix(), entity.userid].join(':');
 };
 
+Membership.statics.fromJSON = (json) => new Membership(json);
+
 module.exports = Membership;

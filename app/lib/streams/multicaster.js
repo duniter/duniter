@@ -6,6 +6,10 @@ var request = require('request');
 var co      = require('co');
 var constants = require('../../lib/constants');
 var Peer    = require('../../lib/entity/peer');
+var Identity = require('../../lib/entity/identity');
+var Membership = require('../../lib/entity/membership');
+var Block = require('../../lib/entity/block');
+var Transaction = require('../../lib/entity/transaction');
 var logger  = require('../../lib/logger')('multicaster');
 
 const WITH_ISOLATION = true;
@@ -21,6 +25,7 @@ function Multicaster (isolate, timeout) {
   var that = this;
 
   let blockForward = forward({
+    transform: Block.statics.fromJSON,
     type: 'Block',
     uri: '/blockchain/block',
     getObj: (block) => {
@@ -32,6 +37,7 @@ function Multicaster (isolate, timeout) {
   });
 
   let idtyForward = forward({
+    transform: Identity.statics.fromJSON,
     type: 'Identity',
     uri: '/wot/add',
     getObj: (idty) => {
@@ -45,6 +51,7 @@ function Multicaster (isolate, timeout) {
   });
 
   let txForward = forward({
+    transform: Transaction.statics.fromJSON,
     type: 'Transaction',
     uri: '/tx/process',
     getObj: (transaction) => {
@@ -69,6 +76,7 @@ function Multicaster (isolate, timeout) {
   });
 
   let msForward = forward({
+    transform: Membership.statics.fromJSON,
     type: 'Membership',
     uri: '/blockchain/membership',
     getObj: (membership) => {
@@ -96,22 +104,26 @@ function Multicaster (isolate, timeout) {
   function forward(params) {
     return function(doc, peers) {
       return co(function *() {
-        if(!params.withIsolation || !isolate) {
-          let theDoc = params.transform ? params.transform(doc) : doc;
-          logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
-          if (params.getDocID) {
-            logger.info('POST %s %s', params.type, params.getDocID(theDoc));
+        try {
+          if(!params.withIsolation || !isolate) {
+            let theDoc = params.transform ? params.transform(doc) : doc;
+            logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
+            if (params.getDocID) {
+              logger.info('POST %s %s', params.type, params.getDocID(theDoc));
+            } else {
+              logger.info('POST %s', params.type);
+            }
+            for (let i = 0, len = peers.length; i < len; i++) {
+              let p = peers[i];
+              let peer = Peer.statics.peerize(p);
+              logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
+              yield post(peer, params.uri, params.getObj(theDoc));
+            }
           } else {
-            logger.info('POST %s', params.type);
+            logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
           }
-          for (let i = 0, len = peers.length; i < len; i++) {
-            let p = peers[i];
-            let peer = Peer.statics.peerize(p);
-            logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
-            yield post(peer, params.uri, params.getObj(theDoc));
-          }
-        } else {
-          logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
+        } catch (err) {
+          logger.error(err);
         }
       });
     };

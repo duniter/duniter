@@ -14,6 +14,8 @@ var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
 var signature   = require('./app/lib/signature');
 var directory   = require('./app/lib/directory');
+var http2raw    = require('./app/lib/streams/parsers/http2raw');
+var dos2unix    = require('./app/lib/dos2unix');
 var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf) {
@@ -76,8 +78,8 @@ function Server (dbConf, overrideConf) {
         }
         if (res) {
           // Only emit valid documents
-          that.emit(obj.documentType, res);
-          that.push(res);
+          that.emit(obj.documentType, _.clone(res));
+          that.push(_.clone(res));
         }
         isInnerWrite ? done(null, res) : done();
       } catch (err) {
@@ -186,7 +188,8 @@ function Server (dbConf, overrideConf) {
           let block = yield that.BlockchainService.startGeneration();
           if (block && shouldContinue) {
             try {
-              yield that.singleWritePromise(block);
+              let obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
+              yield that.singleWritePromise(obj);
             } catch (err) {
               logger.warn('Proof-of-work self-submission: %s', err.message || err);
             }

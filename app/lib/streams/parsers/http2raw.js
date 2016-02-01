@@ -73,7 +73,14 @@ function Http2RawMembership (req) {
   if(!(req.body && req.body.membership)){
     throw constants.ERRORS.HTTP_PARAM_MEMBERSHIP_REQUIRED;
   }
-  return req.body.membership;
+  let ms = req.body.membership;
+  if(req.body && req.body.signature){
+    ms = [ms, req.body.signature].join('');
+    if (!ms.match(/\n$/)) {
+      ms += '\n';
+    }
+  }
+  return ms;
 }
 
 function Http2RawBlock (req) {

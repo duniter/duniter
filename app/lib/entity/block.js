@@ -193,3 +193,7 @@ function Block(json) {
     return transactions;
   };
 }
+
+Block.statics = {};
+
+Block.statics.fromJSON = (json) => new Block(json);

@@ -318,7 +318,7 @@ function BlockchainService (conf, mainDAL, pair) {
     done();
   };
 
-  function checkWoTConstraints (block, newLinks, done) {
+  function checkWoTConstraints (block, newLinks, current, done) {
     return co(function *() {
       if (block.number < 0) {
         throw 'Cannot compute WoT constraint for negative block number';
@@ -328,10 +328,17 @@ function BlockchainService (conf, mainDAL, pair) {
       for (let i = 0, len = newcomers.length; i < len; i++) {
         let newcomer = newcomers[i];
         if (block.number > 0) {
-          let haveEnoughLinks = yield Q.nbind(mainContext.checkHaveEnoughLinks, mainContext)(newcomer, newLinks);
-          let isOutdistanced = yield that.isOver3Hops(newcomer, newLinks, realNewcomers);
-          if (isOutdistanced) {
-            throw 'Newcomer ' + newcomer + ' is not recognized by the WoT for this block';
+          try {
+            // Will throw an error if not enough links
+            yield Q.nbind(mainContext.checkHaveEnoughLinks, mainContext)(newcomer, newLinks);
+            // This one does not throw but returns a boolean
+            let isOut = yield that.isOver3Hops(newcomer, newLinks, realNewcomers, current);
+            if (isOut) {
+              throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
+            }
+          } catch (e) {
+            logger.debug(e);
+            throw e;
           }
         }
       }
@@ -615,10 +622,13 @@ function BlockchainService (conf, mainDAL, pair) {
               computeNewLinks(nextBlockNumber, dal, someNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
-              checkWoTConstraints(nextBlock, newLinks, next);
+              checkWoTConstraints(nextBlock, newLinks, current, next);
             }
-          ], onceChecked);
+          ], (err) => {
+            onceChecked(err);
+          });
         }, function (err, realNewcomers) {
+          err && logger.error(err);
           async.waterfall([
             function (next){
               computeNewLinks(nextBlockNumber, dal, realNewcomers, joinData, updates, next);

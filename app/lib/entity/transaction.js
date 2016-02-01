@@ -93,4 +93,6 @@ var Transaction = function(obj, currency) {
 
 Transaction.statics = {};
 
+Transaction.statics.fromJSON = (json) => new Transaction(json);
+
 module.exports = Transaction;

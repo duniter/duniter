@@ -336,14 +336,14 @@ describe("Identities collision", function() {
       res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('memberships').length(2);
       // Initial membership
-      res.memberships[0].should.have.property('version').equal(1);
+      res.memberships[0].should.have.property('version').equal(constants.DOCUMENTS_VERSION);
       res.memberships[0].should.have.property('currency').equal('bb');
       res.memberships[0].should.have.property('membership').equal('IN');
       res.memberships[0].should.have.property('blockNumber').equal(1);
       res.memberships[0].should.have.property('blockHash').not.equal('E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855');
       res.memberships[0].should.have.property('written').equal(null);
       // Renew membership, not written
-      res.memberships[1].should.have.property('version').equal(1);
+      res.memberships[1].should.have.property('version').equal(constants.DOCUMENTS_VERSION);
       res.memberships[1].should.have.property('currency').equal('bb');
       res.memberships[1].should.have.property('membership').equal('IN');
       res.memberships[1].should.have.property('blockNumber').equal(0);

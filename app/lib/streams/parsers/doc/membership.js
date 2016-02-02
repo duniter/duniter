@@ -46,7 +46,7 @@ function MembershipParser (onError) {
       'BAD_CERTTS': 157
     }
     if(!err){
-      if(!obj.version || !obj.version.match(/^1$/))
+      if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
         err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){

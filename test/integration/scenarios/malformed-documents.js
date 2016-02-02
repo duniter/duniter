@@ -5,7 +5,7 @@ module.exports = function(node1) {
 
   var w1 = wallet('abc', '123', node1);
 
-  var malformedTransaction = "Version: 1\n" +
+  var malformedTransaction = "Version: 2\n" +
     "Type: Transaction\n" +
     "Currency: null\n" +
     "Issuers:\n" +

@@ -4,6 +4,7 @@ var _ = require('underscore');
 var should = require('should');
 var assert = require('assert');
 var dal = require('../../app/lib/dal/fileDAL');
+var constants = require('../../app/lib/constants');
 var Peer   = require('../../app/lib/entity/peer');
 
 var mocks = {
@@ -11,7 +12,7 @@ var mocks = {
     pubkey: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
       block: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
       currency: 'bb',
-      version: 1,
+      version: constants.DOCUMENTS_VERSION,
       endpoints: [
       'BASIC_MERKLED_API localhost 7777'
     ]
@@ -19,7 +20,7 @@ var mocks = {
   block0: {
     "hash" : "00063EB6E83F8717CEF1D25B3E2EE308374A14B1",
     "signature" : "+78w7251vvRdhoIJ6IWHEiEOLxNrmfQf45Y5sYvPdnAdXkVpO1unMV5YA/G5Vhphyz1dICrbeKCPM5qbFsoWAQ==",
-    "version" : 1,
+    "version" : constants.DOCUMENTS_VERSION,
     "currency" : "meta_brouzouf",
     "issuer" : "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
     "parameters" : "0.1:86400:100:604800:2629800:3:3:2629800:3:11:600:20:144:0.67",

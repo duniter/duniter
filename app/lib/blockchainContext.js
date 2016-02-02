@@ -5,6 +5,7 @@ var co              = require('co');
 var Q               = require('q');
 var hashf           = require('./hashf');
 var rawer           = require('./rawer');
+var constants       = require('./constants');
 var localValidator  = require('./localValidator');
 var globalValidator = require('./globalValidator');
 var blockchainDao   = require('./blockchainDao');
@@ -381,7 +382,7 @@ function BlockchainContext(conf, dal) {
       dal.removeAllSourcesOfBlock(block.number);
       for (let i = 0, len = block.transactions.length; i < len; i++) {
         let obj = block.transactions[i];
-        obj.version = 1;
+        obj.version = constants.DOCUMENTS_VERSION;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
@@ -398,7 +399,7 @@ function BlockchainContext(conf, dal) {
     return co(function *() {
       for (let i = 0, len = block.transactions.length; i < len; i++) {
         let obj = block.transactions[i];
-        obj.version = 1;
+        obj.version = constants.DOCUMENTS_VERSION;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
@@ -560,7 +561,7 @@ function BlockchainContext(conf, dal) {
       function (next) {
         async.forEachSeries(block.transactions, function (json, callback) {
           var obj = json;
-          obj.version = 1;
+          obj.version = constants.DOCUMENTS_VERSION;
           obj.currency = block.currency;
           obj.issuers = json.signatories;
           var tx = new Transaction(obj);
@@ -761,7 +762,7 @@ function BlockchainContext(conf, dal) {
         for (let j = 0, len2 = block.transactions.length; j < len2; j++) {
           let json = block.transactions[j];
           let obj = json;
-          obj.version = 1;
+          obj.version = constants.DOCUMENTS_VERSION;
           obj.currency = block.currency;
           obj.issuers = json.signatories;
           let tx = new Transaction(obj);
@@ -788,7 +789,7 @@ function BlockchainContext(conf, dal) {
   function deleteTransactions (block, done) {
     async.forEachSeries(block.transactions, function (json, callback) {
       var obj = json;
-      obj.version = 1;
+      obj.version = constants.DOCUMENTS_VERSION;
       obj.currency = block.currency;
       obj.issuers = json.signatories;
       var tx = new Transaction(obj);

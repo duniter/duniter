@@ -2,7 +2,7 @@
 var _ = require('underscore');
 var moment = require('moment');
 var rawer = require('../rawer');
-var dos2unix = require('../dos2unix');
+var constants = require('../constants');
 
 var Membership = function(json) {
 
@@ -14,7 +14,7 @@ var Membership = function(json) {
 
   this.blockNumber = isNaN(this.number) ? this.number : parseInt(this.number);
   this.blockHash = this.fpr;
-  this.version = "1";
+  this.version = constants.DOCUMENTS_VERSION;
 
   this.keyID = function () {
     return this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
@@ -57,7 +57,7 @@ Membership.statics = {};
 Membership.statics.fromInline = function (inlineMS, type, currency) {
   var sp = inlineMS.split(':');
   return new Membership({
-    version:    1,
+    version:    constants.DOCUMENTS_VERSION,
     currency:   currency,
     issuer:     sp[0],
     membership: type,

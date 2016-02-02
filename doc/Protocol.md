@@ -382,7 +382,7 @@ A Transaction structure is considered *valid* if:
 
 Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its value is not known but could be 30) written in block #3.
 
-    Version: 1
+    Version: 2
     Type: Transaction
     Currency: beta_brousouf
     Issuers:
@@ -402,7 +402,7 @@ Signatures (fake here):
 
 Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction written in blocks #65 and #77 + 1 UD from block #88.
 
-    Version: 1
+    Version: 2
     Type: Transaction
     Currency: beta_brousouf
     Issuers:
@@ -423,7 +423,7 @@ Signatures (fake here):
 
 Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction (written in blocks #4, #78, #66 and #176) + 2 UD from same block #46.
 
-    Version: 1
+    Version: 2
     Type: Transaction
     Currency: beta_brousouf
     Issuers:
@@ -676,7 +676,7 @@ The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
 #### Example
 
-    Version: 1
+    Version: 2
     Type: Peer
     Currency: beta_brousouf
     PublicKey: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY

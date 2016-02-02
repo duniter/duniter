@@ -63,7 +63,7 @@ function PeerParser (onError) {
     }
     if(!err){
       // Version
-      if(!obj.version || !obj.version.match(/^1$/))
+      if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
         err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){

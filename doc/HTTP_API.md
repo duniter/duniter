@@ -629,7 +629,7 @@ The posted membership request.
 {
   "signature": "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==",
   "membership": {
-    "version": "1",
+    "version": "2",
     "currency": "beta_brouzouf",
     "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "membership": "IN",
@@ -662,7 +662,7 @@ A list of memberships issued by the *member* and written in the blockchain.
   "sigDate": 1390739944,
   "memberships": [
     {
-	  "version": "1",
+	  "version": "2",
 	  "currency": "beta_brouzouf",
 	  "membership": "IN",
 	  "blockNumber": 678,
@@ -708,7 +708,7 @@ Name               | Value                                                      
 The promoted block if it exists (otherwise return HTTP 404).
 ```json
 {
-  "version": 1,
+  "version": 2,
   "currency": "beta_brouzouf",
   "nonce": 28,
   "number": 1,
@@ -743,7 +743,7 @@ The promoted block if it exists (otherwise return HTTP 404).
         "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX",
         "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk"
     ],
-      "version": 1,
+      "version": 2,
       "currency": "beta_brouzouf",
       "issuers": [
         "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
@@ -1052,7 +1052,7 @@ List of peering entries.
 {
   "peers": [
     {
-      "version": "1",
+      "version": "2",
       "currency": "meta_brouzouf",
       "status": "UP",
       "first_down": null,
@@ -1065,7 +1065,7 @@ List of peering entries.
       ]
     },
     {
-      "version": "1",
+      "version": "2",
       "currency": "meta_brouzouf",
       "status": "UP",
       "first_down": null,
@@ -1096,7 +1096,7 @@ GET the peering informations of this node.
 Peering entry of the node.
 ```json
 {
-  "version": "1",
+  "version": "2",
   "currency": "beta_brouzouf",
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "endpoints": [
@@ -1134,7 +1134,7 @@ Merkle URL leaf: peering entry
 {
   "hash": "2E69197FAB029D8669EF85E82457A1587CA0ED9C",
   "value": {
-    "version": "1",
+    "version": "2",
     "currency": "beta_brouzouf",
     "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
     "endpoints": [
@@ -1163,7 +1163,7 @@ Name        | Value                               | Method
 The posted entry.
 ```json
 {
-  "version": "1",
+  "version": "2",
   "currency": "beta_brouzouf",
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "endpoints": [
@@ -1193,13 +1193,13 @@ Name              | Value                                                       
 The recorded transaction.
 ```json
 {
-  "raw": "Version: 1\r\n...\r\n",
+  "raw": "Version: 2\r\n...\r\n",
   "transaction":
   {
     "signatures": [
       "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
   ],
-    "version": 1,
+    "version": 2,
     "currency": "beta_brouzouf",
     "issuers": [
       "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
@@ -1290,7 +1290,7 @@ The full transaction history for the given `pubkey`
   "history": {
     "sent": [
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1312,7 +1312,7 @@ The full transaction history for the given `pubkey`
     ],
     "received": [
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
         ],
@@ -1332,7 +1332,7 @@ The full transaction history for the given `pubkey`
         "time": 1421955525
       },
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
         ],
@@ -1354,7 +1354,7 @@ The full transaction history for the given `pubkey`
     ],
     "sending": [
 	  {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1374,7 +1374,7 @@ The full transaction history for the given `pubkey`
     ],
     "receiving": [
 	 {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX"
         ],
@@ -1420,7 +1420,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
   "history": {
     "sent": [
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1442,7 +1442,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
     ],
     "received": [
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
         ],
@@ -1462,7 +1462,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
         "time": 1421955525
       },
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
         ],
@@ -1484,7 +1484,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
     ],
     "sending": [
 	  {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1504,7 +1504,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
     ],
     "receiving": [
 	 {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX"
         ],
@@ -1550,7 +1550,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
   "history": {
     "sent": [
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1572,7 +1572,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
     ],
     "received": [
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
         ],
@@ -1592,7 +1592,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
         "time": 1421955525
       },
       {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
         ],
@@ -1614,7 +1614,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
     ],
     "sending": [
 	  {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1634,7 +1634,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
     ],
     "receiving": [
 	 {
-        "version": 1,
+        "version": 2,
         "issuers": [
           "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX"
         ],

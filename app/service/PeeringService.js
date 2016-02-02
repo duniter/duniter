@@ -153,9 +153,9 @@ function PeeringService(server, pair, dal) {
       let current = yield server.dal.getCurrentBlockOrNull();
       let currency = theConf.currency;
       let peers = yield dal.findPeers(selfPubkey);
-      let p1 = { version: 1, currency: currency };
+      let p1 = { version: constants.DOCUMENTS_VERSION, currency: currency };
       if(peers.length != 0){
-        p1 = _(peers[0]).extend({ version: 1, currency: currency });
+        p1 = _(peers[0]).extend({ version: constants.DOCUMENTS_VERSION, currency: currency });
       }
       let endpoint = 'BASIC_MERKLED_API';
       if (theConf.remotehost) {
@@ -187,7 +187,7 @@ function PeeringService(server, pair, dal) {
       minBlock = Math.max(0, minBlock);
       let targetBlock = yield server.dal.getBlockOrNull(minBlock);
       var p2 = {
-        version: 1,
+        version: constants.DOCUMENTS_VERSION,
         currency: currency,
         pubkey: selfPubkey,
         block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
@@ -517,14 +517,14 @@ function PeeringService(server, pair, dal) {
   function rawifyTransactions(block) {
     // Rawification of transactions
     block.transactions.forEach(function (tx) {
-      tx.raw = ["TX", "1", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+      tx.raw = ["TX", "2", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
       tx.raw += tx.signatories.join('\n') + '\n';
       tx.raw += tx.inputs.join('\n') + '\n';
       tx.raw += tx.outputs.join('\n') + '\n';
       if (tx.comment)
         tx.raw += tx.comment + '\n';
       tx.raw += tx.signatures.join('\n') + '\n';
-      tx.version = 1;
+      tx.version = 2;
       tx.currency = conf.currency;
       tx.issuers = tx.signatories;
       tx.hash = ("" + hashf(rawer.getTransaction(tx))).toUpperCase();

@@ -78,6 +78,10 @@ module.exports = {
   PUBLIC_KEY: exact(PUBKEY),
   SIG: exact(SIGNATURE),
   BLOCK_UID: exact(BLOCK_UID),
+
+  DOCUMENTS_VERSION_REGEXP: /^2$/,
+  DOCUMENTS_VERSION: 2,
+
   CERT: {
     SELF: {
       UID: exact("UID:" + USER_ID),
@@ -94,7 +98,7 @@ module.exports = {
   },
   MEMBERSHIP: {
     BLOCK:      find('Block: (' + BLOCK_UID + ')'),
-    VERSION:    find('Version: (1)'),
+    VERSION:    find('Version: (2)'),
     CURRENCY:   find('Currency: (' + CURRENCY + ')'),
     ISSUER:     find('Issuer: (' + PUBKEY + ')'),
     MEMBERSHIP: find('Membership: (IN|OUT)'),
@@ -103,7 +107,7 @@ module.exports = {
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + INTEGER + ")"),
-    VERSION:     find("Version: (1)"),
+    VERSION:     find("Version: (2)"),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
     POWMIN:      find("PoWMin: (" + INTEGER + ")"),

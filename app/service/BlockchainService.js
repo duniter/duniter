@@ -935,7 +935,7 @@ function BlockchainService (conf, mainDAL, pair) {
       delete joinData[leaver];
     });
     var block = new Block();
-    block.version = 1;
+    block.version = constants.DOCUMENTS_VERSION;
     block.currency = current ? current.currency : conf.currency;
     block.nonce = 0;
     block.number = current ? current.number + 1 : 0;

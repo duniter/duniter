@@ -2,6 +2,7 @@
 var _ = require('underscore');
 var rawer = require('../rawer');
 var hashf = require('../hashf');
+var constants = require('../constants');
 
 var Transaction = function(obj, currency) {
 
@@ -16,7 +17,7 @@ var Transaction = function(obj, currency) {
    that[key] = json[key];
   });
 
-  this.version = 1;
+  this.version = constants.DOCUMENTS_VERSION;
   this.currency = currency || this.currency;
 
   if (this.signatories && this.signatories.length)

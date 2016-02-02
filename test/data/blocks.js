@@ -1,7 +1,7 @@
 
 module.exports = {
   WRONG_SIGNATURE:
-    "Version: 1\n" + 
+    "Version: 2\n" + 
     "Type: Block\n" + 
     "Currency: beta_brousouf\n" + 
     "Nonce: 2\n" + 
@@ -32,7 +32,7 @@ module.exports = {
     "mqzcL5FW0ZMz7/aPpV8vLb6KzMYXl3WYI4bdm6Usq34tSgvROoAOp1uSuyqFBHNd7hggfR/8tACCPhkJMVNLCw==\n",
 
   VALID_ROOT:
-  "Version: 1\n" +
+  "Version: 2\n" +
   "Type: Block\n" +
   "Currency: bb\n" +
   "Nonce: 1\n" +
@@ -59,7 +59,7 @@ module.exports = {
   "rlB7vJoe6Sfs8p5azeDCQM8TjTKKXFeUxUTxZedHwnQlptPy7m/5rebCe3oWKmpZaONcaPG7XEQyF299YKPACA==\n",
 
   WRONG_PROOF_OF_WORK:
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -80,7 +80,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_WITHOUT_PARAMETERS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -101,7 +101,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NON_ROOT_WITH_PARAMETERS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -122,7 +122,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_WITH_PREVIOUS_HASH: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -143,7 +143,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_WITH_PREVIOUS_ISSUER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -164,7 +164,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NON_ROOT_WITHOUT_PREVIOUS_HASH: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -184,7 +184,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NON_ROOT_WITHOUT_PREVIOUS_ISSUER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -205,7 +205,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   COLLIDING_UIDS:
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -236,7 +236,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   COLLIDING_PUBKEYS:
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -267,7 +267,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DATE_LOWER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -298,7 +298,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DATE_HIGHER_BUT_TOO_FEW: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -331,7 +331,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DATE_HIGHER_BUT_TOO_HIGH: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -364,7 +364,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ROOT_TIMES: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -395,7 +395,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   GOOD_DATE_HIGHER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -428,7 +428,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_IDTY_MATCH_JOINS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -458,7 +458,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_JOINERS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -487,7 +487,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_ACTIVES: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -516,7 +516,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_LEAVES: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -549,7 +549,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_EXCLUDED: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -578,7 +578,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_OVER_ALL: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -606,7 +606,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_CERTIFICATIONS_FROM_SAME_ISSUER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -628,7 +628,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   IDENTICAL_CERTIFICATIONS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -660,7 +660,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   LEAVER_WITH_CERTIFICATIONS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -690,7 +690,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXCLUDED_WITH_CERTIFICATIONS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -720,7 +720,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_IDENTITIES: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -751,7 +751,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_JOIN: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -782,7 +782,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_ACTIVE: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -810,7 +810,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_LEAVE: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -836,7 +836,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   CORRECTLY_SIGNED_LEAVE: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -862,7 +862,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_CERTIFICATION: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -893,7 +893,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   UNKNOWN_CERTIFIER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -924,7 +924,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   UNKNOWN_CERTIFIED: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -955,7 +955,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXISTING_UID: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -986,7 +986,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXISTING_PUBKEY: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1017,7 +1017,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TOO_EARLY_CERTIFICATION_REPLAY: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1048,7 +1048,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXPIRED_CERTIFICATIONS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1071,7 +1071,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXPIRED_MEMBERSHIP: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1093,7 +1093,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REVOKED_JOINER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1116,7 +1116,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NOT_ENOUGH_CERTIFICATIONS_JOINER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1148,7 +1148,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NOT_ENOUGH_CERTIFICATIONS_JOINER_BLOCK_0: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1178,7 +1178,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   OUTDISTANCED_JOINER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1203,7 +1203,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   VALID_NEXT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 1\n" +
@@ -1226,7 +1226,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_BLOCK_REQUIRED: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1248,7 +1248,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   SAME_BLOCK_NUMBER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1270,7 +1270,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   OLD_BLOCK_NUMBER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1292,7 +1292,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   FAR_FUTURE_BLOCK_NUMBER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1314,7 +1314,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_PREVIOUS_HASH: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1347,7 +1347,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_PREVIOUS_ISSUER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1380,7 +1380,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ISSUER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1402,7 +1402,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_BLOCK_TARGET_ROOT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1425,7 +1425,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_ROOT_NUMBER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1446,7 +1446,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_ROOT_HASH: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1467,7 +1467,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_NUMBER_TOO_LOW: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1488,7 +1488,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_BLOCK_TARGET: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1511,7 +1511,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_ALREADY_MEMBER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1534,7 +1534,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ACTIVE_BLOCK_TARGET: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1557,7 +1557,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   KICKED_NOT_EXCLUDED: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1580,7 +1580,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   KICKED_EXCLUDED: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1604,7 +1604,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_MEMBERS_COUNT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1628,10 +1628,10 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NO_LEADING_ZERO: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 26\n" +
+    "Nonce: 10\n" +
     "Number: 3\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
@@ -1650,7 +1650,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_4_LEADING_ZEROS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 31\n" +
@@ -1674,10 +1674,10 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_7_LEADING_ZEROS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 5\n" +
+    "Nonce: 8\n" +
     "Number: 61\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
@@ -1698,10 +1698,10 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_6_LEADING_ZEROS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 1\n" +
+    "Nonce: 4\n" +
     "Number: 67\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
@@ -1722,7 +1722,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_5_LEADING_ZEROS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 18\n" +
@@ -1746,7 +1746,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_7_LEADING_ZEROS_AGAIN: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 4\n" +
@@ -1770,10 +1770,10 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   FIRST_BLOCK_OF_NEWCOMER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 7\n" +
+    "Nonce: 1\n" +
     "Number: 65\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
@@ -1794,10 +1794,10 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   SECOND_BLOCK_OF_NEWCOMER: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Nonce: 13\n" +
+    "Nonce: 8\n" +
     "Number: 66\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
@@ -1818,7 +1818,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ROOT_DATES: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1849,7 +1849,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_MEDIAN_TIME_ODD: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1871,7 +1871,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_MEDIAN_TIME_EVEN: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1893,7 +1893,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   GOOD_MEDIAN_TIME_ODD: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1915,7 +1915,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   GOOD_MEDIAN_TIME_EVEN: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1937,7 +1937,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_CONFIRMED_DATE_MUST_CONFIRM: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1959,7 +1959,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_BLOCK_WITH_UD: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -1991,7 +1991,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   UD_BLOCK_WIHTOUT_UD: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2013,7 +2013,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UD: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2036,7 +2036,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_UNLEGITIMATE_UD: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2059,7 +2059,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_UNLEGITIMATE_UD_2: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2082,7 +2082,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   FIRST_UD_BLOCK_WITH_UD_THAT_SHOULDNT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2105,7 +2105,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   FIRST_UD_BLOCK_WITH_UD_THAT_SHOULD: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2127,7 +2127,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITHOUT_TRANSACTIONS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2150,7 +2150,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_GOOD_TRANSACTIONS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2189,7 +2189,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UD_AMOUNT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2228,7 +2228,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_TX_AMOUNT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2267,7 +2267,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UD_SOURCE: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2295,7 +2295,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_TX_SOURCE: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2323,7 +2323,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_UNAVAILABLE_UD_SOURCE: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2351,7 +2351,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_UNAVAILABLE_TX_SOURCE: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2379,7 +2379,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_MORE_INDEXES_THAN_ISSUERS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2408,7 +2408,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITHOUT_ISSUERS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2435,7 +2435,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITHOUT_SOURCES: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2464,7 +2464,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITHOUT_RECIPIENT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2494,7 +2494,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_UNMATCHING_INDEX: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2525,7 +2525,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_DIFFERENT_INPUT_OUTPUT_SUMS: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2556,7 +2556,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_DUPLICATED_SOURCE_SINGLE_TX: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2588,7 +2588,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_DUPLICATED_RECIPIENTS_SINGLE_TX: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2620,7 +2620,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_DUPLICATED_SOURCE_MULTIPLE_TX: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2656,7 +2656,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_WRONG_SIGNATURES: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 11\n" +
@@ -2687,7 +2687,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   CERT_BASED_ON_NON_ZERO_FOR_ROOT: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 14\n" +
@@ -2708,7 +2708,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   CERT_BASED_ON_NON_EXISTING_BLOCK: 
-    "Version: 1\n" +
+    "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Nonce: 14\n" +

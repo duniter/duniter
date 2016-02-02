@@ -92,7 +92,7 @@ describe("HTTP API", function() {
     it('/membership should not accept wrong signature', function() {
       return http.expectError(400, 'wrong signature for membership', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
-          membership: 'Version: 1\n' +
+          membership: 'Version: 2\n' +
           'Type: Membership\n' +
           'Currency: bb\n' +
           'Issuer: 6upqFiJ66WV6N3bPc8x8y7rXT3syqKRmwnVyunCtEj7o\n' +
@@ -108,7 +108,7 @@ describe("HTTP API", function() {
     it('/membership should not accept wrong signature 2', function() {
       return http.expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
-          membership: 'Version: 1\n' +
+          membership: 'Version: 2\n' +
           'Type: Membership\n' +
           'Currency: bb\n' +
           'Issuer: 6upqFiJ66WV6N3bPc8x8y7rXT3syqKRmwnVyunCtEj7o\n' +
@@ -123,7 +123,7 @@ describe("HTTP API", function() {
     it('/membership should not accept wrong signature 3', function() {
       return http.expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
-          membership: 'Version: 1\n' +
+          membership: 'Version: 2\n' +
           'Type: Membership\n' +
           'Currency: bb\n' +
           'Issuer: 6upqFiJ66WV6N3bPc8x8y7rXT3syqKRmwnVyunCtEj7o\n' +
@@ -160,17 +160,17 @@ function expectJSON(promise, json) {
     });
 }
 
-function postBlock(server) {
+function postBlock(server2) {
   return function(block) {
-    return post(server, '/blockchain/block')({
+    return post(server2, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     });
   };
 }
 
-function post(server, uri) {
+function post(server2, uri) {
   return function(data) {
-    return rp.post('http://' + [server.conf.ipv4, server.conf.port].join(':') + uri, {
+    return rp.post('http://' + [server2.conf.ipv4, server2.conf.port].join(':') + uri, {
       form: data
     });
   };

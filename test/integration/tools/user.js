@@ -7,6 +7,7 @@ var ucp     = require('../../../app/lib/ucp');
 var crypto	= require('../../../app/lib/crypto');
 var rawer		= require('../../../app/lib/rawer');
 var base58	= require('../../../app/lib/base58');
+var constants = require('../../../app/lib/constants');
 
 module.exports = function (uid, salt, passwd, url) {
 	return new User(uid, salt, passwd, url);
@@ -157,7 +158,7 @@ function User (uid, options, node) {
           var idty = res.lookup.results[0].uids[0];
           var block = ucp.format.buid(current);
           var join = rawer.getMembershipWithoutSignature({
-            "version": 1,
+            "version": constants.DOCUMENTS_VERSION,
             "currency": node.server.conf.currency,
             "issuer": pub,
             "block": block,
@@ -229,7 +230,7 @@ function User (uid, options, node) {
         function (sources, next) {
           var inputSum = 0;
           var issuer = pub;
-          raw += "Version: 1" + '\n';
+          raw += "Version: " + constants.DOCUMENTS_VERSION + '\n';
           raw += "Type: Transaction\n";
           raw += "Currency: " + currency + '\n';
           raw += "Issuers:\n";

@@ -3,7 +3,7 @@ var async   = require('async');
 var should  = require('should');
 var parsers = require('../../../app/lib/streams/parsers/doc');
 
-var raw = "Version: 1\n" + 
+var raw = "Version: 2\n" +
   "Type: Block\n" + 
   "Currency: beta_brousouf\n" + 
   "Nonce: 2\n" + 

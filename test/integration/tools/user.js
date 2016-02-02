@@ -10,7 +10,7 @@ var base58	= require('../../../app/lib/base58');
 var constants = require('../../../app/lib/constants');
 
 module.exports = function (uid, salt, passwd, url) {
-	return new User(uid, salt, passwd, url);
+  return new User(uid, salt, passwd, url);
 };
 
 function User (uid, options, node) {
@@ -121,7 +121,7 @@ function User (uid, options, node) {
       ], function(err) {
         done(err);
       });
-    }
+    };
   };
 
   this.join = function () {
@@ -174,13 +174,12 @@ function User (uid, options, node) {
       ], function(err) {
         done(err);
       });
-    }
+    };
   };
 
   this.send = function (amount, recipient, comment) {
     return function(done) {
       var sources = [];
-      var choices = {};
       var currency = '';
       var raw = "";
       async.waterfall([
@@ -227,7 +226,7 @@ function User (uid, options, node) {
           }
           next(null, selected);
         },
-        function (sources, next) {
+        function (sources2, next) {
           var inputSum = 0;
           var issuer = pub;
           raw += "Version: " + constants.DOCUMENTS_VERSION + '\n';
@@ -236,7 +235,7 @@ function User (uid, options, node) {
           raw += "Issuers:\n";
           raw += issuer + '\n';
           raw += "Inputs:\n";
-          sources.forEach(function (src) {
+          sources2.forEach(function (src) {
             raw += ['0', src.type, src.number, src.hash, src.amount].join(':') + '\n';
             inputSum += src.amount;
           });
@@ -258,18 +257,18 @@ function User (uid, options, node) {
               http.tx.process(raw, function (err) {
                 if (err) console.error('Error:', err);
                 next(err);
-              })
+              });
             })
             .catch(next);
         }
       ], done);
-    }
+    };
   };
 
   function post(uri, data, done) {
     var postReq = request.post({
       "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000*100000
+      "timeout": 1000 * 100000
     }, function (err, res, body) {
       err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
       done(err, res, body);
@@ -283,7 +282,7 @@ function User (uid, options, node) {
         if (err) return reject(err);
         resolve(node);
       }, {
-        timeout: 1000*100000
+        timeout: 1000 * 100000
       });
     });
   }
@@ -291,8 +290,8 @@ function User (uid, options, node) {
   function lookup(pubkey, done) {
     return function(calback) {
       getVucoin()
-        .then(function(node){
-          node.wot.lookup(pubkey, function(err, res) {
+        .then(function(node2){
+          node2.wot.lookup(pubkey, function(err, res) {
             if (err) {
               console.error(err);
             }

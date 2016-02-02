@@ -34,7 +34,6 @@ function MembershipParser (onError) {
 
   this._verify = function(obj){
     var err = null;
-    var code = 150;
     var codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
@@ -44,7 +43,7 @@ function MembershipParser (onError) {
       'BAD_BLOCK': 155,
       'BAD_USERID': 156,
       'BAD_CERTTS': 157
-    }
+    };
     if(!err){
       if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
         err = {code: codes.BAD_VERSION, message: "Version unknown"};

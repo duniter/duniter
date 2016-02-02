@@ -16,7 +16,7 @@ function PeerParser (onError) {
     {prop: "currency",          regexp: /Currency: (.*)/},
     {prop: "pubkey",            regexp: /PublicKey: (.*)/},
     {prop: "block",             regexp: constants.PEER.BLOCK},
-    {prop: "endpoints",         regexp: /Endpoints:\n([\s\S]*)/, parser: split("\n")},
+    {prop: "endpoints",         regexp: /Endpoints:\n([\s\S]*)/, parser: split("\n")}
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getPeer, onError);
@@ -49,7 +49,6 @@ function PeerParser (onError) {
 
   this._verify = function(obj){
     var err = null;
-    var code = 150;
     var codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
@@ -60,7 +59,7 @@ function PeerParser (onError) {
       'BAD_FINGERPRINT': 156,
       'BAD_BLOCK': 157,
       'NO_IP_GIVEN': 158
-    }
+    };
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))

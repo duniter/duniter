@@ -66,7 +66,6 @@ function BlockParser (onError) {
 
   this._verify = function(obj){
     var err = null;
-    var code = 150;
     var codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
@@ -81,7 +80,7 @@ function BlockParser (onError) {
       'BAD_DIVIDEND': 160,
       'BAD_TIME': 161,
       'BAD_MEDIAN_TIME': 162
-    }
+    };
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
@@ -181,7 +180,7 @@ function extractTransactions(raw) {
         },
         signatures: {
           start: 1 + nbSignatories + nbInputs + nbOutputs + hasComment,
-          end: 2*nbSignatories + nbInputs + nbOutputs + hasComment
+          end: 2 * nbSignatories + nbInputs + nbOutputs + hasComment
         }
       };
       ['signatories', 'inputs', 'outputs', 'comments', 'signatures'].forEach(function(prop){
@@ -203,7 +202,7 @@ function extractTransactions(raw) {
       currentTX.hash = hashf(rawer.getTransaction(currentTX)).toUpperCase();
       // Add to txs array
       transactions.push(currentTX);
-      i = i + 2*nbSignatories + nbInputs + nbOutputs + hasComment;
+      i = i + 2 * nbSignatories + nbInputs + nbOutputs + hasComment;
     } else {
       // Not a transaction header, stop reading
       i = lines.length;

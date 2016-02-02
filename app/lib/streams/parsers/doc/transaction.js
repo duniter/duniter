@@ -28,10 +28,9 @@ function TransactionParser (onError) {
 
   this._verify = function(obj){
     var err = null;
-    var code = 150;
     var codes = {
       'BAD_VERSION': 150
-    }
+    };
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
@@ -47,7 +46,7 @@ function extractIssuers(raw) {
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
     if (line.match(constants.TRANSACTION.SENDER)) {
-      issuers.push(line)
+      issuers.push(line);
     } else {
       // Not a pubkey, stop reading
       i = lines.length;
@@ -62,7 +61,7 @@ function extractInputs(raw) {
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
     if (line.match(constants.TRANSACTION.SOURCE)) {
-      inputs.push(line)
+      inputs.push(line);
     } else {
       // Not a transaction input, stop reading
       i = lines.length;
@@ -77,7 +76,7 @@ function extractOutputs(raw) {
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
     if (line.match(constants.TRANSACTION.TARGET)) {
-      outputs.push(line)
+      outputs.push(line);
     } else {
       // Not a transaction input, stop reading
       i = lines.length;
@@ -92,7 +91,7 @@ function extractSignatures(raw) {
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
     if (line.match(constants.SIG)) {
-      signatures.push(line)
+      signatures.push(line);
     }
   }
   return signatures;

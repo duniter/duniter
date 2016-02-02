@@ -31,12 +31,12 @@ function BlockDAL(db) {
     return that.exec('BEGIN;' +
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       'fork BOOLEAN NOT NULL,' +
-      'hash VARCHAR(40) NOT NULL,' +
+      'hash VARCHAR(64) NOT NULL,' +
       'signature VARCHAR(100) NOT NULL,' +
       'currency VARCHAR(50) NOT NULL,' +
       'issuer VARCHAR(50) NOT NULL,' +
       'parameters VARCHAR(255),' +
-      'previousHash VARCHAR(50),' +
+      'previousHash VARCHAR(64),' +
       'previousIssuer VARCHAR(50),' +
       'version INTEGER NOT NULL,' +
       'membersCount INTEGER NOT NULL,' +

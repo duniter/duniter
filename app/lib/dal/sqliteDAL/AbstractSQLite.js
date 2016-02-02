@@ -41,7 +41,7 @@ function AbstractSQLite(db) {
       } else if (duration <= 100) {
         msg = colors.red(msg);
       }
-      logger.query(msg, JSON.stringify([] || []), entities.length, duration);
+      logger.query(msg, JSON.stringify(params || []), entities.length, duration);
       return entities;
     } catch (e) {
       console.error('ERROR >> %s', sql, JSON.stringify(params || []), e.stack || e.message || e);

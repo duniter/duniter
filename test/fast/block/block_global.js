@@ -82,7 +82,7 @@ describe("Block global coherence:", function(){
 
   it('a block with joiner for root block without root hash shoud fail', test('checkJoiners', blocks.WRONG_JOIN_ROOT_HASH, function (err) {
     should.exist(err);
-    err.should.equal('Hash must be DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 for root block\'s memberships');
+    err.should.equal('Hash must be E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855 for root block\'s memberships');
   }));
 
   it('a block with joiner targeting unexisting block fail', test('checkJoiners', blocks.WRONG_JOIN_BLOCK_TARGET, function (err) {
@@ -190,17 +190,17 @@ describe("Block global coherence:", function(){
 
   it('a block not starting with a leading zero should fail', test('checkProofOfWork', blocks.NO_LEADING_ZERO, function (err) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'C\', required was 0 zeros and an hexa char between [0-7]');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'F\', required was 0 zeros and an hexa char between [0-7]');
   }));
 
   it('a block requiring 2 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_7_LEADING_ZEROS, function (err) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'6\', required was 0 zeros and an hexa char between [0-3]');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'B\', required was 0 zeros and an hexa char between [0-3]');
   }));
 
   it('a block requiring 1 leading zeros but providing less should fail', test('checkProofOfWork', blocks.REQUIRES_6_LEADING_ZEROS, function (err) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'C\', required was 0 zeros and an hexa char between [0-7]');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'8\', required was 0 zeros and an hexa char between [0-7]');
   }));
 
   it('a block requiring 1 leading zeros as first block of newcomer should succeed', test('checkProofOfWork', blocks.FIRST_BLOCK_OF_NEWCOMER, function (err) {
@@ -209,7 +209,7 @@ describe("Block global coherence:", function(){
 
   it('a block requiring 40 leading zeros as second block of newcomer should fail', test('checkProofOfWork', blocks.SECOND_BLOCK_OF_NEWCOMER, function (err) {
     should.exist(err);
-    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'6\', required was 10 zeros and an hexa char between [0-9A-F]');
+    err.should.equal('Wrong proof-of-work level: given 0 zeros and \'F\', required was 10 zeros and an hexa char between [0-9A-F]');
   }));
 
   it('a root block should not fail for time reason', test('checkTimes', blocks.WRONG_ROOT_DATES, function (err) {
@@ -280,34 +280,34 @@ describe("Block global coherence:", function(){
 
   it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_AMOUNT, function (err) {
     should.exist(err);
-    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:100 is not available');
+    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:100 is not available');
   }));
 
   it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_AMOUNT, function (err) {
     should.exist(err);
-    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:60 is not available');
+    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:60 is not available');
   }));
 
   // it('a block with wrong UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err) {
   //   should.exist(err);
-  //   err.should.equal('Source D:33:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B does not exist');
+  //   err.should.equal('Source D:33:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF does not exist');
   //   done();
   // }));
 
   // it('a block with wrong TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_SOURCE, function (err) {
   //   should.exist(err);
-  //   err.should.equal('Source T:44:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD does not exist');
+  //   err.should.equal('Source T:44:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956 does not exist');
   //   done();
   // }));
 
   it('a block with unavailable UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, function (err) {
     should.exist(err);
-    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:55:C3AE457BB31EA0B0DF811CF615E81CB46FEFDBE9:40 is not available');
+    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:55:D9779D03C70337E288D249DA8109943171F5B3E1565EE7AC20117D41E38B3168:40 is not available');
   }));
 
   it('a block with unavailable TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, function (err) {
     should.exist(err);
-    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:88:B3052F06756154DC11033D4F3E1771AC30054E1F:40 is not available');
+    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:88:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:40 is not available');
   }));
 });
 
@@ -450,9 +450,9 @@ function BlockCheckerDao (block) {
 
   this.getCurrent = function (done) {
     if (block.number == 3)      
-      done(null, { number: 2, hash: '15978746968DB6BE3CDAF243E372FEB35F7B0924', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, time: 1411776000, medianTime: 1411776000 });
+      done(null, { number: 2, hash: '52DC8A585C5D89571C511BB83F7E7D3382F0041452064B1272E65F0B42B82D57', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, time: 1411776000, medianTime: 1411776000 });
     else if (block.number == 4)
-      done(null, { number: 3, hash: '4AE9FA0A8299A828A886C0EB30C930C7CF302A72', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
+      done(null, { number: 3, hash: '2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 20)
       done(null, { number: 19, time: 1411773000, medianTime: 1411773000 });
     else if (block.number == 48)
@@ -460,13 +460,13 @@ function BlockCheckerDao (block) {
     else if (block.number == 47)
       done(null, { number: 47 });
     else if (block.number == 51)
-      done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
+      done(null, { number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 50)
-      done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
+      done(null, { number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 49)
-      done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
+      done(null, { number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 52)
-      done(null, { number: 50, hash: 'E5B4669FF9B5576EE649BB3CD84AC530DED1F34B', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
+      done(null, { number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 });
     else if (block.number == 70)
       done(null, { number: 69, time: 1411777000, medianTime: 1411777000 });
     else if (block.number == 71)
@@ -503,7 +503,7 @@ function BlockCheckerDao (block) {
   this.getBlock = function (number, done) {
     var block2;
     if (number == 0) {
-      block2 = { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: 1411773000, powMin: 1 };
+      block2 = { hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855', medianTime: 1411773000, powMin: 1 };
     }
     else if (number == 2) {
       block2 = { number: 3, powMin: 1 };
@@ -604,8 +604,8 @@ function BlockCheckerDao (block) {
 
   this.existsUDSource = function (number, fpr, done) {
     var existing = [
-      '46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B',
-      '55:C3AE457BB31EA0B0DF811CF615E81CB46FEFDBE9'
+      '46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF',
+      '55:D9779D03C70337E288D249DA8109943171F5B3E1565EE7AC20117D41E38B3168'
     ];
     var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
     done(null, exists);
@@ -613,11 +613,11 @@ function BlockCheckerDao (block) {
 
   this.existsTXSource = function (number, fpr, done) {
     var existing = [
-      '4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8',
-      '78:F80993776FB55154A60B3E58910C942A347964AD',
-      '66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD',
-      '176:0651DE13A80EB0515A5D9F29E25D5D777152DE91',
-      '88:B3052F06756154DC11033D4F3E1771AC30054E1F'
+      '4:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3',
+      '78:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435',
+      '66:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956',
+      '176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B',
+      '88:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326'
     ];
     var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
     done(null, exists);
@@ -625,8 +625,8 @@ function BlockCheckerDao (block) {
 
   this.isAvailableUDSource = function (pubkey, number, fpr, amount, done) {
     var existing = [
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40',
-      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:F4A47E39BC2A20EE69DCD5CAB0A9EB3C92FD8F7B:40'
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40',
+      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40'
     ];
     var isAvailable = ~existing.indexOf([pubkey, 'D', number, fpr, amount].join(':')) ? true : false;
     done(null, isAvailable);
@@ -634,21 +634,21 @@ function BlockCheckerDao (block) {
 
   this.isAvailableTXSource = function (pubkey, number, fpr, amount, done) {
     var existing = [
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:4:D717FEC1993554F8EAE4CEA88DE5FBB6887CFAE8:22',
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:78:F80993776FB55154A60B3E58910C942A347964AD:8',
-      'CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp:T:66:1D02FF8A7AE0037DF33F09C8750C0F733D61B7BD:120',
-      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:0651DE13A80EB0515A5D9F29E25D5D777152DE91:5'
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:4:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:22',
+      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:78:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8',
+      'CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp:T:66:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:120',
+      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5'
     ];
     var isAvailable = ~existing.indexOf([pubkey, 'T', number, fpr, amount].join(':')) ? true : false;
     done(null, isAvailable);
   }
 
   this.findBlock = function (number, hash, done) {
-    if (number == 2 && hash == 'A9B751F5D24A3F418815BD9CE2766759E21E9E21')
+    if (number == 2 && hash == '65DDE908DC06D42EC8AAAE4AB716C299ECD4891740349BCF50EF3D70C947CBE0')
       done(null, {});
-    else if (number == 3 && hash == 'A9B751F5D24A3F418815BD9CE2766759E21E9E21')
+    else if (number == 3 && hash == '65DDE908DC06D42EC8AAAE4AB716C299ECD4891740349BCF50EF3D70C947CBE0')
       done(null, {});
-    else if (number == 70 && hash == '3BAF425A914349B9681A444B5A2F59EEA55D2663')
+    else if (number == 70 && hash == '5918CE7F40186F8E0BD8F239986A723FCC329927B999885B32DAAE40EA8BEDB6')
       done(null, { medianTime: 1411775000 });
     else
       done(null, null);

@@ -42,7 +42,7 @@ function PeerDAL(db) {
       'currency VARCHAR(50) NOT NULL,' +
       'status VARCHAR(10),' +
       'statusTS INTEGER NOT NULL,' +
-      'hash CHAR(40),' +
+      'hash CHAR(64),' +
       'first_down INTEGER,' +
       'last_try INTEGER,' +
       'pubkey VARCHAR(50) NOT NULL,' +

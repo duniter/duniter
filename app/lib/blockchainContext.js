@@ -3,8 +3,7 @@ var async           = require('async');
 var _               = require('underscore');
 var co              = require('co');
 var Q               = require('q');
-var sha1            = require('sha1');
-var moment          = require('moment');
+var hashf           = require('./hashf');
 var rawer           = require('./rawer');
 var localValidator  = require('./localValidator');
 var globalValidator = require('./globalValidator');
@@ -271,7 +270,7 @@ function BlockchainContext(conf, dal) {
         let idty = Identity.statics.fromInline(identity);
         // Computes the hash if not done yet
         if (!idty.hash)
-          idty.hash = (sha1(rawer.getIdentity(idty)) + "").toUpperCase();
+          idty.hash = (hashf(rawer.getIdentity(idty)) + "").toUpperCase();
         yield dal.newIdentity(idty, block.number);
         yield cleanRejectedIdentities(idty);
       }
@@ -621,8 +620,8 @@ function BlockchainContext(conf, dal) {
             ms.written = true;
             ms.written_number = block.number;
             ms.type = type;
-            ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
-            ms.idtyHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
+            ms.hash = String(hashf(ms.getRawSigned())).toUpperCase();
+            ms.idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
             memberships.push(ms);
           }
         });

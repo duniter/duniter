@@ -2,10 +2,7 @@
 
 var Q = require('q');
 var co = require('co');
-var _ = require('underscore');
-var sha1            = require('sha1');
-var async           = require('async');
-var moment          = require('moment');
+var hashf           = require('../lib/hashf');
 var constants       = require('../lib/constants');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
@@ -33,7 +30,7 @@ function MembershipService (conf, dal) {
 
   let submitMembershipP = (ms) => co(function *() {
     let entry = new Membership(ms);
-    entry.idtyHash = (sha1(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
+    entry.idtyHash = (hashf(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
     let globalValidation = globalValidator(conf, blockchainDao(null, dal));
     logger.info('⬇ %s %s', entry.issuer, entry.membership);
     if (!localValidator().checkSingleMembershipSignature(entry)) {

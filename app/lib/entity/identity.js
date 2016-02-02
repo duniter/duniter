@@ -1,6 +1,6 @@
 "use strict";
 var _ = require('underscore');
-var sha1 = require('sha1');
+var hashf = require('../hashf');
 var rawer = require('../rawer');
 
 var Identity = function(json) {
@@ -25,7 +25,7 @@ var Identity = function(json) {
   this.kick = !!this.kick;
   this.wasMember = !!this.wasMember;
   this.written = this.written || this.wasMember;
-  this.hash = sha1(this.uid + this.buid + this.pubkey).toUpperCase();
+  this.hash = hashf(this.uid + this.buid + this.pubkey).toUpperCase();
   this.memberships = this.memberships || [];
 
   this.json = function () {
@@ -90,7 +90,7 @@ var Identity = function(json) {
   };
 
   this.getTargetHash = function () {
-    return sha1(this.uid + this.buid + this.pubkey).toUpperCase();
+    return hashf(this.uid + this.buid + this.pubkey).toUpperCase();
   };
 
   this.getRawPubkey = function () {

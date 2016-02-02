@@ -1,7 +1,7 @@
 "use strict";
-var sha1                 = require('sha1');
 var util                 = require('util');
 var stream               = require('stream');
+var hashf                = require('../../../hashf');
 var logger               = require('../../../logger')('gen_parser');
 var constants            = require('../../../constants');
 var simpleLineExtract    = require('../../../simpleLineExtract');
@@ -52,7 +52,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     }
     if (!error) {
       var raw = that.rawerFunc(obj);
-      if (sha1(str) != sha1(raw))
+      if (hashf(str) != hashf(raw))
         error = constants.ERRORS.WRONG_DOCUMENT;
       if (error) {
         logger.trace(error);
@@ -85,7 +85,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
       error = "No document given";
     } else {
       error = "";
-      obj.hash = sha1(str).toUpperCase();
+      obj.hash = hashf(str).toUpperCase();
       // Divide in 2 parts: document & signature
       var sp = str.split('\n');
       if (sp.length < 3) {
@@ -93,7 +93,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
       }
       else {
         obj.signature = sp[sp.length-2];
-        obj.hash = sha1(str).toUpperCase();
+        obj.hash = hashf(str).toUpperCase();
         obj.raw = sp.slice(0, sp.length-1).join('\n') + '\n';
         var docLF = obj.raw.replace(/\r\n/g, "\n");
         if(docLF.match(/\n$/)){

@@ -1,9 +1,6 @@
 "use strict";
 var should   = require('should');
 var assert   = require('assert');
-var sha1     = require('sha1');
-var fs       = require('fs');
-var ucoin    = require('../../index');
 
 var Merkle = require('../../app/lib/entity/merkle');
 
@@ -12,16 +9,16 @@ describe("Merkle ['a', 'b', 'c', 'd', 'e']", function(){
   var m = new Merkle({ type: 'CollectionName', criteria: '{}'});
   m.initialize(['a', 'b', 'c', 'd', 'e']);
 
-  it('should have root 114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9', function(){
-    assert.equal(m.levels[0], '114B6E61CB5BB93D862CA3C1DFA8B99E313E66E9');
+  it('should have root 16E6BEB3E080910740A2923D6091618CAA9968AEAD8A52D187D725D199548E2C', function(){
+    assert.equal(m.levels[0], '16E6BEB3E080910740A2923D6091618CAA9968AEAD8A52D187D725D199548E2C');
   });
 
-  it('should have level 1,0 585DD1B0A3A55D9A36DE747EC37524D318E2EBEE', function(){
-    assert.equal(m.levels[1][0], '585DD1B0A3A55D9A36DE747EC37524D318E2EBEE');
+  it('should have level 1,0 AB4587D9F4AD6990E0BF4A1C5A836C78CCE881C2B7C4287C0A7DA15B47B8CF1F', function(){
+    assert.equal(m.levels[1][0], 'AB4587D9F4AD6990E0BF4A1C5A836C78CCE881C2B7C4287C0A7DA15B47B8CF1F');
   });
 
-  it('should have level 1,1 58E6B3A414A1E090DFC6029ADD0F3555CCBA127F', function(){
-    assert.equal(m.levels[1][1], '58E6B3A414A1E090DFC6029ADD0F3555CCBA127F');
+  it('should have level 1,1 3F79BB7B435B05321651DAEFD374CDC681DC06FAA65E374E38337B88CA046DEA', function(){
+    assert.equal(m.levels[1][1], '3F79BB7B435B05321651DAEFD374CDC681DC06FAA65E374E38337B88CA046DEA');
   });
 
   it('should have 4 levels', function(){

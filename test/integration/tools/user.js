@@ -58,7 +58,7 @@ function User (uid, options, node) {
           node.server.BlockchainService.current(next);
         },
         function(current, next) {
-          let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709';
+          let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
           selfCert = rawer.getSelfIdentity({ buid: buid, uid: uid });
           selfCert += crypto.signSync(selfCert, sec);
           post('/wot/add', {

@@ -2,11 +2,9 @@
 var Q       = require('q');
 var co      = require('co');
 var _       = require('underscore');
-var fs      = require('fs');
 var qfs     = require('q-io/fs');
-var sha1    = require('sha1');
 var path    = require('path');
-var moment  = require('moment');
+var hashf   = require('../hashf');
 var wotb    = require('../wot');
 var Configuration = require('../entity/configuration');
 var Membership = require('../entity/membership');
@@ -906,8 +904,8 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       return p.then(function(){
         var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', that.getCurrency());
         ms.type = type;
-        ms.hash = String(sha1(ms.getRawSigned())).toUpperCase();
-        ms.idtyHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
+        ms.hash = String(hashf(ms.getRawSigned())).toUpperCase();
+        ms.idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
         return that.msDAL.saveOfficialMS(msType, ms, blockNumber);
       });
     }, Q());

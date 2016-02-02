@@ -96,10 +96,10 @@ describe("HTTP API", function() {
           'Type: Membership\n' +
           'Currency: bb\n' +
           'Issuer: 6upqFiJ66WV6N3bPc8x8y7rXT3syqKRmwnVyunCtEj7o\n' +
-          'Block: 0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709\n' +
+          'Block: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n' +
           'Membership: IN\n' +
           'UserID: someuid\n' +
-          'CertTS: 0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709\n' +
+          'CertTS: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n' +
           'cJohoG/qmxm7KwqCB71RXRSIvHu7IcYB1zWE33OpPLGmedH mdPWad32S7G9j9IDpI8QpldalhdT4BUIHlAtCw==\n'
         }
       }));
@@ -112,7 +112,7 @@ describe("HTTP API", function() {
           'Type: Membership\n' +
           'Currency: bb\n' +
           'Issuer: 6upqFiJ66WV6N3bPc8x8y7rXT3syqKRmwnVyunCtEj7o\n' +
-          'Block: 0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709\n' +
+          'Block: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n' +
           'UserID: someuid\n' +
           'CertTS: 1421787800\n' +
           'cJohoG/qmxm7KwqCB71RXRSIvHu7IcYB1zWE33OpPLGmedH mdPWad32S7G9j9IDpI8QpldalhdT4BUIHlAtCw==\n'
@@ -127,7 +127,7 @@ describe("HTTP API", function() {
           'Type: Membership\n' +
           'Currency: bb\n' +
           'Issuer: 6upqFiJ66WV6N3bPc8x8y7rXT3syqKRmwnVyunCtEj7o\n' +
-          'Block: 0--DA39A3EE5E6B4B0D3255BFEF95601890AFD80709\n' +
+          'Block: 0--E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n' +
           'Membership: IN\n' +
           'UserID: someuid\n' +
           'CertTS: 1421787800\n' +

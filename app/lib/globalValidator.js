@@ -211,7 +211,7 @@ function GlobalValidator (conf, dao) {
         if (block.number == 0 && cert.block_number != 0) {
           next('Number must be 0 for root block\'s certifications');
         } else if (block.number == 0 && cert.block_number == 0) {
-          next(null, { hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
+          next(null, { hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855', medianTime: moment.utc().startOf('minute').unix() }); // Valid for root block
         } else {
           Q.nbind(dao.getBlock, dao)(cert.block_number)
             .then((basedBlock) => next(null, basedBlock))
@@ -838,8 +838,8 @@ function GlobalValidator (conf, dao) {
     if (block.number == 0 && ms.number != 0) {
       done('Number must be 0 for root block\'s memberships');
     }
-    else if (block.number == 0 && ms.fpr != 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709') {
-      done('Hash must be DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 for root block\'s memberships');
+    else if (block.number == 0 && ms.fpr != 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
+      done('Hash must be E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855 for root block\'s memberships');
     }
     else if (block.number == 0) {
       done(); // Valid for root block

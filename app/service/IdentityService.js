@@ -118,7 +118,7 @@ function IdentityService (conf, dal) {
             if (cert.block_number == 0 && !basedBlock) {
               basedBlock = {
                 number: 0,
-                hash: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709'
+                hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
               };
             }
             cert.block_hash = basedBlock.hash;

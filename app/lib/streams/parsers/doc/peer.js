@@ -2,11 +2,8 @@
 var GenericParser = require('./GenericParser');
 var rawer         = require('../../../rawer');
 var util          = require('util');
-var sha1          = require('sha1');
 var split         = require('../../../split');
-var unix2dos      = require('../../../unix2dos');
 var constants     = require('../../../constants');
-var _             = require('underscore');
 
 module.exports = PeerParser;
 

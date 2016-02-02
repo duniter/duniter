@@ -40,15 +40,15 @@ function CertDAL(db) {
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       '`from` VARCHAR(50) NOT NULL,' +
       '`to` VARCHAR(50) NOT NULL,' +
-      'target CHAR(40) NOT NULL,' +
+      'target CHAR(64) NOT NULL,' +
       'sig VARCHAR(100) NOT NULL,' +
       'block_number INTEGER NOT NULL,' +
-      'block_hash VARCHAR(50),' +
+      'block_hash VARCHAR(64),' +
       'block INTEGER NOT NULL,' +
       'linked BOOLEAN NOT NULL,' +
       'written BOOLEAN NOT NULL,' +
       'written_block INTEGER,' +
-      'written_hash VARCHAR(50),' +
+      'written_hash VARCHAR(64),' +
       'PRIMARY KEY (`from`, target, sig, written_block)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_cert_from ON cert (`from`);' +

@@ -45,12 +45,12 @@ function MembershipDAL(db) {
       'issuer VARCHAR(50) NOT NULL,' +
       'number INTEGER NOT NULL,' +
       'blockNumber INTEGER,' +
-      'blockHash VARCHAR(40) NOT NULL,' +
+      'blockHash VARCHAR(64) NOT NULL,' +
       'userid VARCHAR(255) NOT NULL,' +
       'certts VARCHAR(100) NOT NULL,' +
       'block INTEGER,' +
-      'fpr VARCHAR(50),' +
-      'idtyHash VARCHAR(40),' +
+      'fpr VARCHAR(64),' +
+      'idtyHash VARCHAR(64),' +
       'written BOOLEAN NOT NULL,' +
       'written_number INTEGER,' +
       'signature VARCHAR(50),' +

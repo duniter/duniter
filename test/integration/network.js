@@ -2,16 +2,10 @@
 
 var co = require('co');
 var _         = require('underscore');
-var ucoin     = require('./../../index');
-var bma       = require('./../../app/lib/streams/bma');
-var user      = require('./tools/user');
 var rp        = require('request-promise');
 var httpTest  = require('./tools/http');
-var commit    = require('./tools/commit');
-var sync      = require('./tools/sync');
 var node      = require('./tools/node');
 
-var expectJSON     = httpTest.expectJSON;
 var expectHttpCode = httpTest.expectHttpCode;
 var expectAnswer = httpTest.expectAnswer;
 
@@ -52,11 +46,6 @@ var s2 = node({
   }
 }, commonConf));
 
-var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
-
-var now = Math.round(new Date().getTime()/1000);
-
 describe("Network Merkle", function() {
 
   before(function() {
@@ -76,24 +65,24 @@ describe("Network Merkle", function() {
         res.should.have.property('depth').equal(0);
         res.should.have.property('nodesCount').equal(0);
         res.should.have.property('leavesCount').equal(1);
-        res.should.have.property('root').equal('CB9F165229579D66447F4C5A0EABAD6F51985387');
+        res.should.have.property('root').equal('C5929A95E17D36A89939E8657F3947B21210A1D904124B401ECB4ABEB9863F8C');
         res.should.have.property('leaves').length(1);
-        res.leaves[0].should.equal('CB9F165229579D66447F4C5A0EABAD6F51985387');
+        res.leaves[0].should.equal('C5929A95E17D36A89939E8657F3947B21210A1D904124B401ECB4ABEB9863F8C');
       });
     });
 
-    it('/peers?leaf=CB9F165229579D66447F4C5A0EABAD6F51985387', function() {
-      return expectAnswer(rp('http://127.0.0.1:20501/network/peering/peers?leaf=CB9F165229579D66447F4C5A0EABAD6F51985387', { json: true }), (res) => {
+    it('/peers?leaf=C5929A95E17D36A89939E8657F3947B21210A1D904124B401ECB4ABEB9863F8C', function() {
+      return expectAnswer(rp('http://127.0.0.1:20501/network/peering/peers?leaf=C5929A95E17D36A89939E8657F3947B21210A1D904124B401ECB4ABEB9863F8C', { json: true }), (res) => {
         res.should.have.property('depth').equal(0);
         res.should.have.property('nodesCount').equal(0);
         res.should.have.property('leavesCount').equal(1);
-        res.should.have.property('root').equal('CB9F165229579D66447F4C5A0EABAD6F51985387');
+        res.should.have.property('root').equal('C5929A95E17D36A89939E8657F3947B21210A1D904124B401ECB4ABEB9863F8C');
         res.should.have.property('leaves').length(0);
-        res.should.have.property('leaf').have.property('hash').equal('CB9F165229579D66447F4C5A0EABAD6F51985387');
+        res.should.have.property('leaf').have.property('hash').equal('C5929A95E17D36A89939E8657F3947B21210A1D904124B401ECB4ABEB9863F8C');
         res.should.have.property('leaf').have.property('value');
         res.should.have.property('leaf').have.property('value').have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
-        res.should.have.property('leaf').have.property('value').have.property('block').equal('0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709');
-        res.should.have.property('leaf').have.property('value').have.property('signature').equal('iH35xyF95GMvXWKewJHhShkXNppU2/0p1EbQErgSbBipq6A2Ux9YwzSoPXXnCQCTrBSMKbc/KSDgtRuCmAIoBQ==');
+        res.should.have.property('leaf').have.property('value').have.property('block').equal('0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855');
+        res.should.have.property('leaf').have.property('value').have.property('signature').equal('/xd4g6NtvZ6M1T/gRh/S72Esj15fH4U4Lcr3KfKRBq+n0g8G0FlOg7hHVhJ5UMjoqvO/WEAILKR0Zb9ur5rjCg==');
         res.should.have.property('leaf').have.property('value').have.property('status').equal('UP');
         res.should.have.property('leaf').have.property('value').have.property('currency').equal('bb');
         res.should.have.property('leaf').have.property('value').have.property('endpoints').length(1);
@@ -109,25 +98,25 @@ describe("Network Merkle", function() {
         res.should.have.property('depth').equal(1);
         res.should.have.property('nodesCount').equal(1);
         res.should.have.property('leavesCount').equal(2);
-        res.should.have.property('root').equal('EA6180FE4B924AFC64D3EE7D42C2C58CC4AF244B');
+        res.should.have.property('root').equal('B1250488EEAC3AB64F65EBAF7EB49D6DF43D7AF81BFA76E1BD41AC4132FE63F6');
         res.should.have.property('leaves').length(2);
-        res.leaves[0].should.equal('6F9D30999682338B713CEB3175C2406B5A438A65');
-        res.leaves[1].should.equal('CB9F165229579D66447F4C5A0EABAD6F51985387');
+        res.leaves[0].should.equal('E2B4182EBF3DE126BFB99755A357C4194B7162EF7D4351495A49BE1224E492E5');
+        res.leaves[1].should.equal('C5929A95E17D36A89939E8657F3947B21210A1D904124B401ECB4ABEB9863F8C');
       });
     });
 
-    it('/peers?leaf=6F9D30999682338B713CEB3175C2406B5A438A65', function() {
-      return expectAnswer(rp('http://127.0.0.1:20502/network/peering/peers?leaf=6F9D30999682338B713CEB3175C2406B5A438A65', { json: true }), (res) => {
+    it('/peers?leaf=E2B4182EBF3DE126BFB99755A357C4194B7162EF7D4351495A49BE1224E492E5', function() {
+      return expectAnswer(rp('http://127.0.0.1:20502/network/peering/peers?leaf=E2B4182EBF3DE126BFB99755A357C4194B7162EF7D4351495A49BE1224E492E5', { json: true }), (res) => {
         res.should.have.property('depth').equal(1);
         res.should.have.property('nodesCount').equal(1);
         res.should.have.property('leavesCount').equal(2);
-        res.should.have.property('root').equal('EA6180FE4B924AFC64D3EE7D42C2C58CC4AF244B');
+        res.should.have.property('root').equal('B1250488EEAC3AB64F65EBAF7EB49D6DF43D7AF81BFA76E1BD41AC4132FE63F6');
         res.should.have.property('leaves').length(0);
-        res.should.have.property('leaf').have.property('hash').equal('6F9D30999682338B713CEB3175C2406B5A438A65');
+        res.should.have.property('leaf').have.property('hash').equal('E2B4182EBF3DE126BFB99755A357C4194B7162EF7D4351495A49BE1224E492E5');
         res.should.have.property('leaf').have.property('value');
         res.should.have.property('leaf').have.property('value').have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
-        res.should.have.property('leaf').have.property('value').have.property('block').equal('0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709');
-        res.should.have.property('leaf').have.property('value').have.property('signature').equal('bSWLDHDPUs7U8+tgVFcny5li3FBeTXeNhf7jkAeFBHG9B1SUWs75vPoHE4TUQVNyxfZ9vjx6U8lf8HAPxTcLAw==');
+        res.should.have.property('leaf').have.property('value').have.property('block').equal('0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855');
+        res.should.have.property('leaf').have.property('value').have.property('signature').equal('BhrZzTJb28/FTqAuIfFsVX1muCMqqNaT1RYMVUaKsryuELbchN1pJ09mwB7gcuLgrZ84ZA5lwernS/JL2RUPBQ==');
         res.should.have.property('leaf').have.property('value').have.property('status').equal('UP');
         res.should.have.property('leaf').have.property('value').have.property('currency').equal('bb');
         res.should.have.property('leaf').have.property('value').have.property('endpoints').length(1);

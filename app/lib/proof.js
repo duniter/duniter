@@ -1,7 +1,7 @@
 "use strict";
 var async = require('async');
-var sha1 = require('sha1');
 var moment = require('moment');
+var hashf = require('./hashf');
 var localValidator = require('./localValidator');
 var constants = require('./constants');
 var dos2unix = require('./dos2unix');
@@ -99,7 +99,7 @@ process.on('message', function(stuff){
 });
 
 function hash(str) {
-  return sha1(str).toUpperCase();
+  return hashf(str).toUpperCase();
 }
 
 function computeSpeed(block, sigFunc) {

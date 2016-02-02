@@ -5,10 +5,10 @@ var async           = require('async');
 var _               = require('underscore');
 var co               = require('co');
 var Q               = require('q');
-var sha1            = require('sha1');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
 var childProcess    = require('child_process');
+var hashf           = require('../lib/hashf');
 var base58          = require('../lib/base58');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
@@ -548,7 +548,7 @@ function BlockchainService (conf, mainDAL, pair) {
         });
         async.forEach(mss, function(ms, callback){
           var leave = { identity: null, ms: ms, key: null, idHash: '' };
-          leave.idHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
+          leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
           async.waterfall([
             function (next){
               async.parallel({
@@ -685,7 +685,7 @@ function BlockchainService (conf, mainDAL, pair) {
               if (!block) {
                 return nextOne('Block not found for membership');
               }
-              var idtyHash = (sha1(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
+              var idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
               getSinglePreJoinData(dal, current, idtyHash, nextOne, joiners);
             },
             function(join, nextOne) {

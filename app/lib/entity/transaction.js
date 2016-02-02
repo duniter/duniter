@@ -1,7 +1,7 @@
 "use strict";
 var _ = require('underscore');
 var rawer = require('../rawer');
-var sha1 = require('sha1');
+var hashf = require('../hashf');
 
 var Transaction = function(obj, currency) {
 
@@ -79,7 +79,7 @@ var Transaction = function(obj, currency) {
 
   this.getHash = function (recompute) {
     if (recompute || !this.hash) {
-      this.hash = sha1(rawer.getTransaction(this)).toUpperCase();
+      this.hash = hashf(rawer.getTransaction(this)).toUpperCase();
     }
     return this.hash;
   };
@@ -88,7 +88,7 @@ var Transaction = function(obj, currency) {
     return rawer.getCompactTransaction(this);
   };
 
-  this.hash = this.hash || sha1(this.getRaw()).toUpperCase();
+  this.hash = this.hash || hashf(this.getRaw()).toUpperCase();
 };
 
 Transaction.statics = {};

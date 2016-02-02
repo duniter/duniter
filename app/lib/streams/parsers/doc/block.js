@@ -1,11 +1,8 @@
 "use strict";
 var util          = require('util');
-var sha1          = require('sha1');
-var _             = require('underscore');
 var GenericParser = require('./GenericParser');
+var hashf         = require('../../../hashf');
 var rawer         = require('../../../rawer');
-var split         = require('../../../split');
-var unix2dos      = require('../../../unix2dos');
 var constants     = require('../../../constants');
 
 module.exports = BlockParser;
@@ -63,7 +60,7 @@ function BlockParser (onError) {
     obj.transactions.map(function(tx) {
       tx.version = obj.version;
       tx.currency = obj.currency;
-      tx.currency = sha1(rawer.getTransaction(tx)).toUpperCase();
+      tx.currency = hashf(rawer.getTransaction(tx)).toUpperCase();
     });
   };
 
@@ -203,7 +200,7 @@ function extractTransactions(raw) {
       } else {
         currentTX.comment = '';
       }
-      currentTX.hash = sha1(rawer.getTransaction(currentTX)).toUpperCase();
+      currentTX.hash = hashf(rawer.getTransaction(currentTX)).toUpperCase();
       // Add to txs array
       transactions.push(currentTX);
       i = i + 2*nbSignatories + nbInputs + nbOutputs + hasComment;

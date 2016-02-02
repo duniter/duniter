@@ -1,6 +1,6 @@
 "use strict";
 var _ = require('underscore');
-var sha1 = require('sha1');
+var hashf = require('../hashf');
 
 module.exports = Block;
 
@@ -96,7 +96,7 @@ function Block(json) {
 
   this.getHash = function() {
     if (!this.hash) {
-      this.hash = sha1(this.getRawSigned()).toUpperCase();
+      this.hash = hashf(this.getRawSigned()).toUpperCase();
     }
     return this.hash;
   };

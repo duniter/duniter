@@ -53,7 +53,7 @@ function IdentityDAL(db, wotb) {
       'pubkey VARCHAR(50) NOT NULL,' +
       'uid VARCHAR(255) NOT NULL,' +
       'sig VARCHAR(100) NOT NULL,' +
-      'hash VARCHAR(40) NOT NULL,' +
+      'hash VARCHAR(64) NOT NULL,' +
       'written BOOLEAN NOT NULL,' +
       'wotb_id INTEGER NULL,' +
       'PRIMARY KEY (pubkey,uid,hash)' +

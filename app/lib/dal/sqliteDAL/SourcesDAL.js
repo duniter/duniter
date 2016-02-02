@@ -40,9 +40,9 @@ function SourcesDAL(db) {
       'type VARCHAR(1) NOT NULL,' +
       'number INTEGER NOT NULL,' +
       'time DATETIME,' +
-      'fingerprint VARCHAR(40) NOT NULL,' +
+      'fingerprint VARCHAR(64) NOT NULL,' +
       'amount VARCHAR(50) NOT NULL,' +
-      'block_hash VARCHAR(40) NOT NULL,' +
+      'block_hash VARCHAR(64) NOT NULL,' +
       'consumed BOOLEAN NOT NULL,' +
       'PRIMARY KEY (pubkey,type,number,fingerprint,amount)' +
       ');' +

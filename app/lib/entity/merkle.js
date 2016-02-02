@@ -17,7 +17,7 @@ function Merkle(json) {
   });
 
   this.initialize = function (leaves) {
-    var tree = merkle(leaves, 'sha1').process();
+    var tree = merkle('sha256').sync(leaves);
     this.depth = tree.depth();
     this.nodes = tree.nodes();
     this.levels = [];

@@ -1,5 +1,5 @@
 "use strict";
-let sha1 = require('sha1');
+let hashf = require('./hashf');
 let constants = require('./constants');
 
 let buidFunctions = function(number, hash) {
@@ -9,7 +9,7 @@ let buidFunctions = function(number, hash) {
   if (arguments[0]) {
     return [arguments[0].number, arguments[0].hash].join('-');
   }
-  return '0-DA39A3EE5E6B4B0D3255BFEF95601890AFD80709';
+  return '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
 };
 
 buidFunctions.fromTS = (line) => line.match(/TS:(.*)/)[1];
@@ -19,7 +19,7 @@ module.exports = {
 
   format: {
 
-    sha1: (value) => sha1(String(value)).toUpperCase(),
+    hashf: (value) => hashf(String(value)).toUpperCase(),
 
     isBuid: (value) => (typeof value === 'string') && value.match(constants.BLOCK_UID) ? true : false,
 

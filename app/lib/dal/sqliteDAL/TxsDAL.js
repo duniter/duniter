@@ -41,7 +41,7 @@ function TxsDAL(db) {
   this.init = () => co(function *() {
     return that.exec('BEGIN;' +
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
-      'hash CHAR(40) NOT NULL,' +
+      'hash CHAR(64) NOT NULL,' +
       'block_number INTEGER,' +
       'version INTEGER NOT NULL,' +
       'currency VARCHAR(50) NOT NULL,' +

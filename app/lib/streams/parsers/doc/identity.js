@@ -3,7 +3,7 @@ var GenericParser = require('./GenericParser');
 var util          = require('util');
 var ucp           = require('../../../ucp');
 var rawer         = require('../../../rawer');
-var sha1          = require('sha1');
+var hashf         = require('../../../hashf');
 var constants     = require('../../../constants');
 
 module.exports = IdentityParser;
@@ -54,7 +54,7 @@ function IdentityParser (onError) {
   this._clean = function (obj) {
     obj.documentType = 'identity';
     if (obj.uid && obj.buid && obj.pubkey) {
-      obj.hash = sha1(obj.uid + obj.buid + obj.pubkey).toUpperCase();
+      obj.hash = hashf(obj.uid + obj.buid + obj.pubkey).toUpperCase();
     }
   };
 

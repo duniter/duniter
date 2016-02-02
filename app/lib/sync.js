@@ -2,9 +2,9 @@
 var co = require('co');
 var _                = require('underscore');
 var Q                = require('q');
-var sha1             = require('sha1');
 var moment           = require('moment');
 var vucoin           = require('vucoin');
+var hashf            = require('./hashf');
 var dos2unix         = require('./dos2unix');
 var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
@@ -234,7 +234,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         tx.version = 1;
         tx.currency = conf.currency;
         tx.issuers = tx.signatories;
-        tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
+        tx.hash = ("" + hashf(rawer.getTransaction(tx))).toUpperCase();
       });
       blocksApplied++;
       speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));

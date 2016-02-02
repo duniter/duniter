@@ -37,10 +37,10 @@ function LinksDAL(db, wotb) {
     return that.exec('BEGIN;' +
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       'source VARCHAR(50) NOT NULL,' +
-      'target CHAR(40) NOT NULL,' +
+      'target VARCHAR(50) NOT NULL,' +
       'timestamp INTEGER NOT NULL,' +
       'block_number INTEGER NOT NULL,' +
-      'block_hash VARCHAR(50),' +
+      'block_hash VARCHAR(64),' +
       'obsolete BOOLEAN NOT NULL,' +
       'from_wotb_id INTEGER NULL,' +
       'to_wotb_id INTEGER NULL,' +

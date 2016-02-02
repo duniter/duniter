@@ -2,7 +2,7 @@
 
 module.exports = function (str){
   return require("crypto")
-    .createHash("md5")
+    .createHash("sha256")
     .update(str)
     .digest("hex");
 };

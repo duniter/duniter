@@ -8,12 +8,10 @@ var events         = require('events');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/base58');
 var dos2unix       = require('../lib/dos2unix');
-var sha1           = require('sha1');
-var moment         = require('moment');
+var hashf          = require('../lib/hashf');
 var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');
 var localValidator = require('../lib/localValidator');
-var blockchainCtx   = require('../lib/blockchainContext');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 
@@ -99,7 +97,7 @@ function PeeringService(server, pair, dal) {
       peerEntity.status = 'UP';
       peerEntity.first_down = null;
       peerEntity.last_try = null;
-      peerEntity.hash = String(sha1(peerEntity.getRawSigned())).toUpperCase();
+      peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
       yield dal.savePeer(peerEntity);
       let res = Peer.statics.peerize(peerEntity);
       return res;
@@ -529,7 +527,7 @@ function PeeringService(server, pair, dal) {
       tx.version = 1;
       tx.currency = conf.currency;
       tx.issuers = tx.signatories;
-      tx.hash = ("" + sha1(rawer.getTransaction(tx))).toUpperCase();
+      tx.hash = ("" + hashf(rawer.getTransaction(tx))).toUpperCase();
     });
     return block;
   }

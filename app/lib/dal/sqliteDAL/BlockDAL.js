@@ -21,7 +21,7 @@ function BlockDAL(db) {
   let that = this;
 
   this.table = 'block';
-  this.fields = ['fork', 'hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'excluded'];
+  this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'excluded'];
   this.arrays = ['identities','certifications','actives','excluded','leavers','joiners','transactions'];
   this.bigintegers = ['monetaryMass','dividend'];
   this.booleans = ['wrong'];
@@ -32,6 +32,7 @@ function BlockDAL(db) {
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       'fork BOOLEAN NOT NULL,' +
       'hash VARCHAR(64) NOT NULL,' +
+      'inner_hash VARCHAR(64) NOT NULL,' +
       'signature VARCHAR(100) NOT NULL,' +
       'currency VARCHAR(50) NOT NULL,' +
       'issuer VARCHAR(50) NOT NULL,' +

@@ -148,7 +148,8 @@ var mocks = {
     "time" : 1421838980,
     "powMin" : 3,
     "number" : 0,
-    "nonce" : 10144
+    "nonce" : 10144,
+    "inner_hash": "r51009E813AEAB91F6541170D589E42BD2BBBC19BAB18F32EC1D3E83159BB1CD6"
   }
 };
 

@@ -108,12 +108,11 @@ module.exports = new function() {
     return dos2unix(signed(that.getMembershipWithoutSignature(json), json));
   };
 
-  this.getBlockWithoutSignature = function (json) {
+  this.getBlockInnerPart = function (json) {
     let raw = "";
     raw += "Version: " + json.version + "\n";
     raw += "Type: Block\n";
     raw += "Currency: " + json.currency + "\n";
-    raw += "Nonce: " + json.nonce + "\n";
     raw += "Number: " + json.number + "\n";
     raw += "PoWMin: " + json.powMin + "\n";
     raw += "Time: " + json.time + "\n";
@@ -159,8 +158,15 @@ module.exports = new function() {
     return dos2unix(raw);
   };
 
+  this.getBlockWithInnerHashAndNonce = function (json) {
+    let raw = that.getBlockInnerPart(json);
+    raw += "InnerHash: " + json.inner_hash + "\n";
+    raw += "Nonce: " + json.nonce + "\n";
+    return dos2unix(raw);
+  };
+
   this.getBlock = function (json) {
-    return dos2unix(signed(that.getBlockWithoutSignature(json), json));
+    return dos2unix(signed(that.getBlockWithInnerHashAndNonce(json), json));
   };
 
   this.getTransaction = function (json) {

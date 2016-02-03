@@ -13,24 +13,25 @@ function BlockParser (onError) {
     {prop: "version",         regexp: constants.BLOCK.VERSION},
     {prop: "type",            regexp: constants.BLOCK.TYPE},
     {prop: "currency",        regexp: constants.BLOCK.CURRENCY},
-    {prop: "nonce",           regexp: constants.BLOCK.NONCE},
-    {prop: "number",          regexp: /Number: (.*)/},
+    {prop: "number",          regexp: constants.BLOCK.BNUMBER},
     {prop: "powMin",          regexp: constants.BLOCK.POWMIN},
     {prop: "time",            regexp: constants.BLOCK.TIME},
     {prop: "medianTime",      regexp: constants.BLOCK.MEDIAN_TIME},
-    {prop: "dividend",        regexp: /UniversalDividend: (.*)/},
-    {prop: "issuer",          regexp: /Issuer: (.*)/},
+    {prop: "dividend",        regexp: constants.BLOCK.UD},
+    {prop: "issuer",          regexp: constants.BLOCK.BLOCK_ISSUER},
     {prop: "parameters",      regexp: constants.BLOCK.PARAMETERS},
     {prop: "previousHash",    regexp: constants.BLOCK.PREV_HASH},
     {prop: "previousIssuer",  regexp: constants.BLOCK.PREV_ISSUER},
-    {prop: "membersCount",    regexp: /MembersCount: (.*)/},
+    {prop: "membersCount",    regexp: constants.BLOCK.MEMBERS_COUNT},
     {prop: "identities",      regexp: /Identities:\n([\s\S]*)Joiners/,          parser: splitAndMatch('\n', constants.IDENTITY.INLINE)},
     {prop: "joiners",         regexp: /Joiners:\n([\s\S]*)Actives/,             parser: splitAndMatch('\n', constants.BLOCK.JOINER)},
     {prop: "actives",         regexp: /Actives:\n([\s\S]*)Leavers/,             parser: splitAndMatch('\n', constants.BLOCK.ACTIVE)},
     {prop: "leavers",         regexp: /Leavers:\n([\s\S]*)Excluded/,            parser: splitAndMatch('\n', constants.BLOCK.LEAVER)},
     {prop: "excluded",        regexp: /Excluded:\n([\s\S]*)Certifications/,     parser: splitAndMatch('\n', constants.PUBLIC_KEY)},
     {prop: "certifications",  regexp: /Certifications:\n([\s\S]*)Transactions/, parser: splitAndMatch('\n', constants.CERT.OTHER.INLINE)},
-    {prop: "transactions",    regexp: /Transactions:\n([\s\S]*)/,               parser: extractTransactions}
+    {prop: "transactions",    regexp: /Transactions:\n([\s\S]*)/,               parser: extractTransactions},
+    {prop: "inner_hash",      regexp: constants.BLOCK.INNER_HASH},
+    {prop: "nonce",           regexp: constants.BLOCK.NONCE}
   ];
   var multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getBlock, onError);
@@ -46,6 +47,8 @@ function BlockParser (onError) {
     obj.transactions = obj.transactions || [];
     obj.version = obj.version || '';
     obj.type = obj.type || '';
+    obj.hash = obj.hash || '';
+    obj.inner_hash = obj.inner_hash || '';
     obj.currency = obj.currency || '';
     obj.nonce = obj.nonce || '';
     obj.number = obj.number || '';
@@ -79,7 +82,9 @@ function BlockParser (onError) {
       'BAD_PREV_ISSUER_ABSENT': 159,
       'BAD_DIVIDEND': 160,
       'BAD_TIME': 161,
-      'BAD_MEDIAN_TIME': 162
+      'BAD_MEDIAN_TIME': 162,
+      'BAD_INNER_HASH': 163,
+      'BAD_MEMBERS_COUNT': 164
     };
     if(!err){
       // Version
@@ -123,6 +128,11 @@ function BlockParser (onError) {
       // MembersCount
       if(!obj.nonce || !obj.nonce.match(constants.INTEGER))
         err = {code: codes.BAD_MEMBERS_COUNT, message: "MembersCount must be an integer value"};
+    }
+    if(!err){
+      // InnerHash
+      if(!obj.inner_hash || !obj.inner_hash.match(constants.FINGERPRINT))
+        err = {code: codes.BAD_INNER_HASH, message: "InnerHash must be a hash value"};
     }
     return err && err.message;
   };

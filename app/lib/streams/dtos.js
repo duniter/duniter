@@ -77,7 +77,6 @@ dtos.TransactionOfBlock = {
 dtos.Block = {
   "version": Number,
   "currency": String,
-  "nonce": Number,
   "number": Number,
   "issuer": String,
   "parameters": String,
@@ -97,6 +96,8 @@ dtos.Block = {
   "leavers": [String],
   "excluded": [String],
   "transactions": [dtos.TransactionOfBlock],
+  "nonce": Number,
+  "inner_hash": String,
   "signature": String,
   "raw": String
 };

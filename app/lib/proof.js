@@ -49,6 +49,8 @@ process.on('message', function(stuff){
         block.nonce = 0;
         block.time = block.medianTime;
       }
+      // Compute block's hash
+      block.inner_hash = getBlockInnerHash(block);
       async.whilst(
         function(){ return !pow.match(powRegexp); },
         function (next) {
@@ -59,9 +61,10 @@ process.on('message', function(stuff){
               var found = false;
               var i = 0;
               block.time = getBlockTime(block, conf, forcedTime);
+              block.inner_hash = getBlockInnerHash(block);
               while(!found && i < testsPerRound) {
                 block.nonce++;
-                raw = rawer.getBlockWithoutSignature(block);
+                raw = rawer.getBlockWithInnerHashAndNonce(block);
                 sig = dos2unix(sigFunc(raw));
                 pow = hash(raw + sig + '\n');
                 found = pow.match(powRegexp);
@@ -98,13 +101,18 @@ process.on('message', function(stuff){
   });
 });
 
+function getBlockInnerHash(block) {
+  let raw = rawer.getBlockInnerPart(block);
+  return hash(raw);
+}
+
 function hash(str) {
   return hashf(str).toUpperCase();
 }
 
 function computeSpeed(block, sigFunc) {
   var start = new Date();
-  var raw = rawer.getBlockWithoutSignature(block);
+  var raw = rawer.getBlockWithInnerHashAndNonce(block);
   for (var i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
     // Signature
     var sig = dos2unix(sigFunc(raw));

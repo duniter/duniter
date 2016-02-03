@@ -4,6 +4,7 @@ var util       = require('util');
 var stream     = require('stream');
 var crypto     = require('./crypto');
 var rawer      = require('./rawer');
+var hashf      = require('./hashf');
 var Block      = require('../lib/entity/block');
 var Identity   = require('../lib/entity/identity');
 var Membership = require('../lib/entity/membership');
@@ -24,6 +25,7 @@ function LocalValidator (conf) {
     async.series([
       async.apply(that.checkParameters,                           block),
       async.apply(that.checkProofOfWork,                          block),
+      async.apply(that.checkInnerHash,                            block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
       async.apply(that.checkBlockSignature,                       block),
@@ -133,6 +135,14 @@ function LocalValidator (conf) {
     var powRegexp = new RegExp('^0{' + Math.floor(block.powMin / 4) + '}');
     if (!block.hash.match(powRegexp))
       done('Not a proof-of-work');
+    else
+      done();
+  });
+
+  this.checkInnerHash = check(function (block, done) {
+    let inner_hash = hashf(block.getRawInnerPart()).toUpperCase();
+    if (block.inner_hash != inner_hash)
+      done('Wrong inner hash');
     else
       done();
   });

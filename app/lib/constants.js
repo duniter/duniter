@@ -7,6 +7,7 @@ var BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]
 var PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
 var TIMESTAMP    = "[1-9][0-9]*";
 var POSITIVE_INT = "[1-9][0-9]*";
+var ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]*";
 var INTEGER      = "\\d+";
 var FLOAT        = "\\d+\.\\d+";
 var BOOLEAN      = "[01]";
@@ -71,6 +72,7 @@ module.exports = {
   PASSWORD: exact(".*"),
 
   INTEGER: /^\d+$/,
+  FINGERPRINT: exact(FINGERPRINT),
   TIMESTAMP: exact(TIMESTAMP),
   USER_ID: exact(USER_ID), // Any format, by default
   UDID2_FORMAT: exact(UDID2),
@@ -106,20 +108,25 @@ module.exports = {
     CERTTS:     find('CertTS: (' + BLOCK_UID + ')'),
   },
   BLOCK: {
-    NONCE:       find("Nonce: (" + INTEGER + ")"),
+    NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
     VERSION:     find("Version: (2)"),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
-    POWMIN:      find("PoWMin: (" + INTEGER + ")"),
+    BNUMBER:     find("Number: (" + ZERO_OR_POSITIVE_INT + ")"),
+    POWMIN:      find("PoWMin: (" + ZERO_OR_POSITIVE_INT + ")"),
     TIME:        find("Time: (" + TIMESTAMP + ")"),
     MEDIAN_TIME: find("MedianTime: (" + TIMESTAMP + ")"),
+    UD:          find("UniversalDividend: (" + POSITIVE_INT + ")"),
     PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
+    MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
+    BLOCK_ISSUER:find('Issuer: (' + PUBKEY + ')'),
     PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
-    EXCLUDED: exact(PUBKEY)
+    EXCLUDED: exact(PUBKEY),
+    INNER_HASH: find("InnerHash: (" + FINGERPRINT + ")")
   },
   TRANSACTION: {
     HEADER:  exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN),

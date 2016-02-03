@@ -60,7 +60,8 @@ function Block(json) {
       });
     [
       "previousHash",
-      "previousIssuer"
+      "previousIssuer",
+      "inner_hash"
     ].forEach(function(field){
         json[field] = that[field] || null;
       });
@@ -101,8 +102,12 @@ function Block(json) {
     return this.hash;
   };
 
+  this.getRawInnerPart = function() {
+    return require('../../lib/rawer').getBlockInnerPart(this);
+  };
+
   this.getRaw = function() {
-    return require('../../lib/rawer').getBlockWithoutSignature(this);
+    return require('../../lib/rawer').getBlockWithInnerHashAndNonce(this);
   };
 
   this.getRawSigned = function() {

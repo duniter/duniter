@@ -5,8 +5,7 @@ var parsers = require('../../../app/lib/streams/parsers/doc');
 
 var raw = "Version: 2\n" +
   "Type: Block\n" + 
-  "Currency: beta_brousouf\n" + 
-  "Nonce: 2\n" + 
+  "Currency: beta_brousouf\n" +
   "Number: 0\n" + 
   "PoWMin: 4\n" + 
   "Time: 1411321505\n" + 
@@ -31,6 +30,8 @@ var raw = "Version: 2\n" +
   "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:1411328683:ltl8jrXFfOH890amFa39Utneq/sUyqNXGZeKAYohU5UdWLyfiHSFYfC+e8FrKf0EQFzUdVIooFg3nrBPlvwaDw==\n" + 
   "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:1411328682:Wp/XBzxZtcQmSlEMn5RRLZSedLbPq/1xU8i7UafrtZWuBXyrhElSI45tPomMtFPZ21WqZwMpol9/pEEhFFm/AA==\n" + 
   "Transactions:\n" +
+  "InnerHash: 4A60BF7D4BC1E485744CF7E8D0860524752FCA1CE42331BE7C439FD23043F151\n" +
+  "Nonce: 2\n" +
   "mqzcL5FW0ZMz7/aPpV8vLb6KzMYXl3WYI4bdm6Usq34tSgvROoAOp1uSuyqFBHNd7hggfR/8tACCPhkJMVNLCw==\n";
 
 describe("Block format", function(){

@@ -511,7 +511,6 @@ but also other informations like:
     Version: VERSION
     Type: Block
     Currency: CURRENCY
-    Nonce: NONCE
     Number: BLOCK_ID
     PoWMin: NUMBER_OF_ZEROS
     Time: GENERATED_ON
@@ -543,6 +542,8 @@ but also other informations like:
     Transactions:
     COMPACT_TRANSACTION
     ...
+    Hash: BLOCK_HASH
+    Nonce: NONCE
     BOTTOM_SIGNATURE
 
 Field                 | Data                                              | Mandatory?
@@ -550,7 +551,6 @@ Field                 | Data                                              | Mand
 Version               | The document version                              | Always
 Type                  | The document type                                 | Always
 Currency              | The currency name                                 | Always
-Nonce                 | An arbitrary nonce value                          | Always
 Number                | The block number                                  | Always
 PoWMin                | The current minimum PoW difficulty                | Always
 Time                  | Time of generation                                | Always
@@ -567,6 +567,8 @@ Actives               | `IN` memberships                                  | Alwa
 Leavers               | `OUT` memberships                                 | Always
 Excluded              | Exluded members' public key                       | Always
 Transactions          | A liste of compact transactions                   | Always
+InnerHash             | The hash value of the block's inner content       | Always
+Nonce                 | An arbitrary nonce value                          | Always
 
 #### Coherence
 To be a valid, a block must match the following rules:
@@ -729,6 +731,10 @@ A Block can be accepted only if it respects a set of rules, here divided in 2 pa
 
 Local validation verifies the coherence of a well-formatted block, withtout any other context than the block itself.
 
+##### InnerHash
+
+* `InnerHash` is the SHA256 hash of the whole fields from `Version: 2` to `\nHash`, 'Hash' string being excluded from the hash computation.
+
 ##### Nonce
 
 * `Nonce` value may be any zero or positive integer. This field is a special field allowing for document hash to change for proof-of-work computation.
@@ -753,7 +759,7 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 
 ##### Signature
 
-* A block must have a valid signature over the block's content, where associated public key is block's `Issuer` field.
+* A block must have a valid signature over the content from `Hash: ` to `Nonce: NONCE\n`, where associated public key is block's `Issuer` field.
 
 ##### Dates
 

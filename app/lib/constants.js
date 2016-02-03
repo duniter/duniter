@@ -121,7 +121,7 @@ module.exports = {
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
     MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
     BLOCK_ISSUER:find('Issuer: (' + PUBKEY + ')'),
-    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
+    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
@@ -200,6 +200,7 @@ module.exports = {
       SIGDELAY: 3600 * 24 * 365 * 5,
       SIGPERIOD: 0, // Instant
       SIGSTOCK: 40,
+      SIGWINDOW: 3600, // 2h
       SIGVALIDITY: 3600 * 24 * 365,
       MSVALIDITY: 3600 * 24 * 365,
       SIGQTY: 5,

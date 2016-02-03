@@ -61,10 +61,11 @@ function GlobalValidator (conf, dao) {
     { name: 'checkLeavers',                         func: check(checkLeavers)                         },
     { name: 'checkExcluded',                        func: check(checkExcluded)                        },
     { name: 'checkKickedMembersAreExcluded',        func: check(checkKickedMembersAreExcluded)        },
+    { name: 'checkCertificationsAreWritable',       func: check(checkCertificationsAreWritable)       },
     { name: 'checkCertificationsAreMadeByMembers',  func: check(checkCertificationsAreMadeByMembers)  },
     { name: 'checkCertificationsAreValid',          func: check(checkCertificationsAreValid)          },
     { name: 'checkCertificationsAreMadeToMembers',  func: check(checkCertificationsAreMadeToMembers)  },
-    { name: 'checkCertificationsAreMadeToNonLeaver',func: check(checkCertificationsAreMadeToNonLeaver)  },
+    { name: 'checkCertificationsAreMadeToNonLeaver',func: check(checkCertificationsAreMadeToNonLeaver)},
     { name: 'checkCertificationsDelayIsRespected',  func: check(checkCertificationsDelayIsRespected)  },
     { name: 'checkCertificationsPeriodIsRespected', func: check(checkCertificationsPeriodIsRespected) },
     { name: 'checkMembersCountIsGood',              func: check(checkMembersCountIsGood)              },
@@ -186,6 +187,26 @@ function GlobalValidator (conf, dao) {
     dao.isLeaving(pubkey, function(err, isLeaver) {
       done(err, !isLeaver);
     });
+  }
+
+  function checkCertificationsAreWritable (block, done) {
+    return co(function *() {
+      let current = block.certifications.length ? yield Q.nbind(dao.getCurrent, dao)() : null;
+      for (let i = 0, len = block.certifications.length; i < len; i++) {
+        let cert = Certification.statics.fromInline(block.certifications[i]);
+        if (current) {
+          // Because the window rule does not apply on initial certifications
+          let basedBlock = yield dao.getBlock(cert.block_number);
+          // Check if writable
+          let duration = current.medianTime - parseInt(basedBlock.medianTime);
+          if (duration > conf.sigWindow) {
+            throw 'Certification is too old and cannot be written';
+          }
+        }
+      }
+    })
+      .then((res) => done(null, res))
+      .catch(done);
   }
 
   function checkCertificationsAreValid (block, done) {

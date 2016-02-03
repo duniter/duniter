@@ -41,7 +41,7 @@ module.exports = {
   "Time: 1454404156\n" +
   "MedianTime: 1454404156\n" +
   "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-  "Parameters: 0.007376575:2629800:100:157680000:0:40:31536000:1:0.9:10000:3:20:960:10:20:0.6666666666666666\n" +
+  "Parameters: 0.007376575:2629800:100:157680000:0:40:7200:31536000:1:0.9:10000:3:20:960:10:20:0.6666666666666666\n" +
   "MembersCount: 2\n" +
   "Identities:\n" +
   "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:6AOD4fQLK7Mfb/FYHCK8hDwRuVYTxcUAtnBrg7umaWeBYHcwpMpxctQu2tqLcNj4O1sB4431oofdIkrisgjdBA==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
@@ -113,7 +113,7 @@ module.exports = {
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "Parameters: 0.7376575:10:100:157680000:0:40:31536000:1:0.9:31536000:3:1:60:10:20:0.67\n" +
+    "Parameters: 0.7376575:10:100:157680000:0:40:7200:31536000:1:0.9:31536000:3:1:60:10:20:0.67\n" +
     "MembersCount: 3\n" +
     "Identities:\n" +
     "Joiners:\n" +

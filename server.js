@@ -116,6 +116,7 @@ function Server (dbConf, overrideConf) {
           sigDelay:           constants.CONTRACT.DEFAULT.SIGDELAY,
           sigPeriod:          constants.CONTRACT.DEFAULT.SIGPERIOD,
           sigStock:           constants.CONTRACT.DEFAULT.SIGSTOCK,
+          sigWindow:          constants.CONTRACT.DEFAULT.SIGWINDOW,
           sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
           msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
           sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,

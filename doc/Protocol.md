@@ -600,7 +600,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigPeriod:sigStock:sigValidity:sigQty:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigDelay:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -700,6 +700,7 @@ ud0         | UD(0), i.e. initial Universal Dividend
 sigDelay    | Minimum delay between 2 identical certifications (same pubkeys). Must be superior to `sigValidity`.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
 sigStock    | Maximum quantity of active certifications made by member.
+sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
 sigValidity | Maximum age of a active signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
 xpercent    | Minimum percent of sentries to reach to match the distance rule
@@ -836,8 +837,14 @@ Age is defined as the number of seconds between the certification's or membershi
 
     AGE = current_time - block_time
 
+###### Certification writability
+A certification is to be considered *non-writable* if its age is less or equal to `[sigWindow]`:
+
+    VALID   = AGE <= [sigWindow]
+    EXPIRED = AGE > [sigWindow]
+
 ###### Certification validity
-A certification is to be considered *valid* if its age is less or equal to `[sigValidity]`:
+A certification is to be considered *valid* if: its age is less or equal to `[sigValidity]`:
 
     VALID   = AGE <= [sigValidity]
     EXPIRED = AGE > [sigValidity]
@@ -955,6 +962,7 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 ##### Certifications
 
 * A certification's `PUBKEY_FROM` must be a member.
+* A certification must be writable.
 * A certification must not be expired.
 * A certification's `PUBKEY_TO`'s last membership occurrence **must not** be in `Leavers`.
 * A certification's `PUBKEY_TO` must be a member **or** be in incoming block's `Joiners`.

@@ -161,6 +161,7 @@ var tasks = {
       async.apply(simpleInteger, "Delay between 2 identical certifications",                               "sigDelay", conf),
       async.apply(simpleInteger, "Delay between 2 certifications of a same issuer",                        "sigPeriod", conf),
       async.apply(simpleInteger, "Maximum stock of valid certifications per member",                       "sigStock", conf),
+      async.apply(simpleInteger, "Maximum age of a non-written certification",                             "sigWindow", conf),
       async.apply(simpleInteger, "Certification validity duration",                                        "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member",                 "sigQty", conf),
       async.apply(simpleFloat,   "Percentage of sentries to be reached to match WoT distance rule",        "xpercent", conf),
@@ -169,7 +170,7 @@ var tasks = {
       async.apply(simpleInteger, "The average time for writing 1 block (wished time)",                     "avgGenTime", conf),
       async.apply(simpleInteger, "Frequency, in number of blocks, to wait for changing common difficulty", "dtDiffEval", conf),
       async.apply(simpleInteger, "Number of blocks to check in past for deducing personalized difficulty", "blocksRot", conf),
-      async.apply(simpleFloat,   "Weight in percent for previous issuers",                                 "percentRot", conf),
+      async.apply(simpleFloat,   "Weight in percent for previous issuers",                                 "percentRot", conf)
     ], done);
   },
 

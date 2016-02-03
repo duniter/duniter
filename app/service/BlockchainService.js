@@ -822,8 +822,11 @@ function BlockchainService (conf, mainDAL, pair) {
             let cert = certs[i];
             try {
               var basedBlock = yield dal.getBlock(cert.block_number);
-              if (current && current.medianTime > basedBlock.medianTime + conf.sigValidity) {
-                throw 'Too old certification';
+              if (current) {
+                let age = current.medianTime - basedBlock.medianTime;
+                if (age > conf.sigWindow || age > conf.sigValidity) {
+                  throw 'Too old certification';
+                }
               }
               // Already exists a link not replayable yet?
               var exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay - conf.sigValidity);
@@ -941,7 +944,7 @@ function BlockchainService (conf, mainDAL, pair) {
     block.number = current ? current.number + 1 : 0;
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
-      conf.sigDelay, conf.sigPeriod, conf.sigStock, conf.sigValidity,
+      conf.sigDelay, conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
       conf.sigQty, conf.xpercent, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
@@ -1284,16 +1287,17 @@ function BlockchainService (conf, mainDAL, pair) {
     theConf.sigDelay         = parseInt(sp[3]);
     theConf.sigPeriod        = parseInt(sp[4]);
     theConf.sigStock         = parseInt(sp[5]);
-    theConf.sigValidity      = parseInt(sp[6]);
-    theConf.sigQty           = parseInt(sp[7]);
-    theConf.xpercent         = parseFloat(sp[8]);
-    theConf.msValidity       = parseInt(sp[9]);
-    theConf.stepMax          = parseInt(sp[10]);
-    theConf.medianTimeBlocks = parseInt(sp[11]);
-    theConf.avgGenTime       = parseInt(sp[12]);
-    theConf.dtDiffEval       = parseInt(sp[13]);
-    theConf.blocksRot        = parseInt(sp[14]);
-    theConf.percentRot       = parseFloat(sp[15]);
+    theConf.sigWindow        = parseInt(sp[6]);
+    theConf.sigValidity      = parseInt(sp[7]);
+    theConf.sigQty           = parseInt(sp[8]);
+    theConf.xpercent         = parseFloat(sp[9]);
+    theConf.msValidity       = parseInt(sp[10]);
+    theConf.stepMax          = parseInt(sp[11]);
+    theConf.medianTimeBlocks = parseInt(sp[12]);
+    theConf.avgGenTime       = parseInt(sp[13]);
+    theConf.dtDiffEval       = parseInt(sp[14]);
+    theConf.blocksRot        = parseInt(sp[15]);
+    theConf.percentRot       = parseFloat(sp[16]);
     theConf.currency         = block.currency;
     return theConf;
   }

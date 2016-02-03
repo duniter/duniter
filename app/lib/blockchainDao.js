@@ -81,7 +81,7 @@ module.exports = function(dal) {
     };
 
     this.getCurrent = function (done) {
-      dal.getCurrentBlockOrNull(done);
+      return dal.getCurrentBlockOrNull(done);
     };
 
     this.getBlock = function (number, done) {

@@ -332,6 +332,8 @@ A list of public key data matching search string (may not return all results, ch
             "timestamp": 1409990782
           },
           "self": "J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci",
+          "revocation_sig": "CTmlh3tO4B8f8IbL8iDy5ZEr3jZDcxkPmDmRPQY74C39MRLXi0CKUP+oFzTZPYmyUC7fZrUXrb3LwRKWw1jEBQ==",
+          "revoked": false,
           "others": [
             {
               "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
@@ -350,6 +352,8 @@ A list of public key data matching search string (may not return all results, ch
           "meta": {
             "timestamp": 1509992000
           },
+          "revocation_sig": "CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==",
+          "revoked": false,
           "signature": "Xbr7qhyGNCmLoVuuKnKIbrdmtCvb9VBIEY19izUNwA5nufsjNm8iEsBTwKWOo0lq5O1+AAPMnht8cm2JjMq8AQ=="
         },
         {
@@ -358,6 +362,8 @@ A list of public key data matching search string (may not return all results, ch
           "meta": {
             "timestamp": 1509992006
           },
+          "revocation_sig": "a7SFapoVaXq27NU+wZj4afmxp0SbwLGqLJih8pfX6TRKPvNp/V93fbKixbqg10cwa1CadNenztxq3ZgOivqADw==",
+          "revoked": false,
           "signature": "HU9VPwC4EqPJwATPuyUJM7HLjfig5Ke1CKonL9Q78n5/uNSL2hkgE9Pxsor8CCJfkwCxh66NjGyqnGYqZnQMAg=="
         },
         {
@@ -366,6 +372,8 @@ A list of public key data matching search string (may not return all results, ch
           "meta": {
             "timestamp": 1609994000
           },
+          "revocation_sig": "h8D/dx/z5K2dx06ktp7fnmLRdxkdV5wRkJgnmEvKy2k55mM2RyREpHfD7t/1CC5Ew+UD0V9N27PfaoLxZc1KCQ==",
+          "revoked": true,
           "signature": "6S3x3NwiHB2QqYEY79x4wCUYHcDctbazfxIyxejs38V1uRAl4DuC8R3HJUfD6wMSiWKPqbO+td+8ZMuIn0L8AA=="
         },
         {
@@ -374,6 +382,8 @@ A list of public key data matching search string (may not return all results, ch
           "meta": {
             "timestamp": 1422890632
           },
+          "revocation_sig": "bJyoM2Tz4hltVXkLvYHOOmLP4qqh2fx7aMLkS5q0cMoEg5AFER3iETj13uoFyhz8yiAKESyAZSDjjQwp8A1QDw==",
+          "revoked": false,
           "signature": "AhgblSOdxUkLwpUN9Ec46St3JGaw2jPyDn/mLcR4j3EjKxUOwHBYqqkxcQdRz/6K4Qo/xMa941MgUp6NjNbKBA=="
         }
       ]
@@ -932,6 +942,26 @@ Block numbers.
 **Goal**
 
 GET the block numbers containing leavers (members leaving definitely the currency).
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+Block numbers.
+```json
+{
+  "result": {
+    "blocks": [223,813]
+  }
+}
+```
+
+#### `blockchain/with/revoked`
+**Goal**
+
+GET the block numbers containing revoked members.
 
 **Parameters**
 

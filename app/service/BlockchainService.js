@@ -67,11 +67,12 @@ function BlockchainService (conf, mainDAL, pair) {
     'joiners': 'joiners',
     'actives': 'actives',
     'leavers': 'leavers',
+    'revoked': 'revoked',
     'excluded': 'excluded',
     'ud': 'dividend',
     'tx': 'transactions'
   };
-  let statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'excluded', 'ud', 'tx'];
+  let statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
 
   this.init = function(done) {
     that.currentDal = mainDAL;
@@ -432,6 +433,7 @@ function BlockchainService (conf, mainDAL, pair) {
     return co(function *() {
       var current = yield dal.getCurrentBlockOrNull();
       var lastUDBlock = yield dal.lastUDBlock();
+      var revocations = yield dal.getRevocatingMembers();
       var exclusions = yield dal.getToBeKickedPubkeys();
       var newCertsFromWoT = yield generator.findNewCertsFromWoT(current);
       var newcomersLeavers = yield findNewcomersAndLeavers(dal, current, generator.filterJoiners);
@@ -457,8 +459,9 @@ function BlockchainService (conf, mainDAL, pair) {
       _(newCertsFromNewcomers).keys().forEach(function(certified){
         newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
       });
+      // Revocations
       // Create the block
-      return createBlock(dal, current, joinData, leaveData, newCertsFromWoT, exclusions, lastUDBlock, transactions);
+      return createBlock(dal, current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions);
     });
   };
 
@@ -471,7 +474,7 @@ function BlockchainService (conf, mainDAL, pair) {
       var current = yield dal.getCurrentBlockOrNull();
       var lastUDBlock = dal.lastUDBlock();
       var exclusions = yield dal.getToBeKickedPubkeys();
-      return createBlock(dal, current, {}, {}, {}, exclusions, lastUDBlock, []);
+      return createBlock(dal, current, {}, {}, {}, [], exclusions, lastUDBlock, []);
     });
   };
 
@@ -600,11 +603,6 @@ function BlockchainService (conf, mainDAL, pair) {
         dal.getMembers(next);
       },
       function (members, next) {
-        getSentryMembers(dal, members, function(err, sentries) {
-          next(err, members, sentries);
-        });
-      },
-      function (members, sentries, next) {
         wotMembers = _.pluck(members, 'pubkey');
         // Checking step
         var newcomers = _(joinData).keys();
@@ -690,7 +688,7 @@ function BlockchainService (conf, mainDAL, pair) {
             },
             function(join, nextOne) {
               join.ms = ms;
-              if (join.identity.currentMSN < parseInt(join.ms.number)) {
+              if (!join.identity.revoked && join.identity.currentMSN < parseInt(join.ms.number)) {
                 preJoinData[join.identity.pubkey] = join;
               }
               nextOne();
@@ -926,8 +924,11 @@ function BlockchainService (conf, mainDAL, pair) {
       });
   }
 
-  function createBlock (dal, current, joinData, leaveData, updates, exclusions, lastUDBlock, transactions) {
+  function createBlock (dal, current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions) {
+    // Revocations have an impact on exclusions
+    revocations.forEach((idty) => exclusions.push(idty.pubkey));
     // Prevent writing joins/updates for excluded members
+    exclusions = _.uniq(exclusions);
     exclusions.forEach(function (excluded) {
       delete updates[excluded];
       delete joinData[excluded];
@@ -997,6 +998,7 @@ function BlockchainService (conf, mainDAL, pair) {
         block.leavers.push(new Membership(data.ms).inline());
       }
     });
+    block.revoked = revocations.map((idty) => [idty.pubkey, idty.revocation_sig].join(':'));
     // Kicked people
     block.excluded = exclusions;
     // Final number of members

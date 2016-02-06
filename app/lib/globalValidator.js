@@ -9,6 +9,7 @@ var moment        = require('moment');
 var util          = require('util');
 var stream        = require('stream');
 var constants     = require('./constants');
+var rawer         = require('../lib/rawer');
 var Block         = require('../lib/entity/block');
 var Identity      = require('../lib/entity/identity');
 var Membership    = require('../lib/entity/membership');
@@ -52,13 +53,14 @@ function GlobalValidator (conf, dao) {
     { name: 'checkIdentityUnicity',                 func: check(checkIdentityUnicity)                 },
     { name: 'checkPubkeyUnicity',                   func: check(checkPubkeyUnicity)                   },
     { name: 'checkJoiners',                         func: check(checkJoiners)                         },
-    { name: 'checkJoinersAreNotRevoked',            func: check(checkJoinersAreNotRevoked)            },
     { name: 'checkJoinersHaveUniqueIdentity',       func: check(checkJoinersHaveUniqueIdentity)       },
     { name: 'checkJoinersHaveEnoughCertifications', func: check(checkJoinersHaveEnoughCertifications) },
     { name: 'checkJoinersAreNotOudistanced',        func: check(checkJoinersAreNotOudistanced)        },
     { name: 'checkActives',                         func: check(checkActives)                         },
     { name: 'checkActivesAreNotOudistanced',        func: check(checkActivesAreNotOudistanced)        },
     { name: 'checkLeavers',                         func: check(checkLeavers)                         },
+    { name: 'checkRevoked',                         func: check(checkRevoked)                         },
+    { name: 'checkJoinersAreNotRevoked',            func: check(checkJoinersAreNotRevoked)            },
     { name: 'checkExcluded',                        func: check(checkExcluded)                        },
     { name: 'checkKickedMembersAreExcluded',        func: check(checkKickedMembersAreExcluded)        },
     { name: 'checkCertificationsAreWritable',       func: check(checkCertificationsAreWritable)       },
@@ -836,6 +838,34 @@ function GlobalValidator (conf, dao) {
         }
       ], callback);
     }, done);
+  }
+
+  function checkRevoked(block, done) {
+    return co(function *() {
+      for (let i = 0, len = block.revoked.length; i < len; i++) {
+        let sp = block.revoked[i].split(':');
+        let pubkey = sp[0], sig = sp[1];
+        let idty = yield dao.getIdentityByPubkeyP(pubkey);
+        if (!idty) {
+          throw "A pubkey who was never a member cannot be revoked";
+        }
+        if (idty.revoked) {
+          throw "A revoked identity cannot be revoked again";
+        }
+        let rawRevocation = rawer.getSelfRevocation({
+          uid: idty.uid,
+          buid: idty.buid,
+          sig: idty.sig,
+          revocation: ''
+        });
+        let sigOK = crypto.verify(rawRevocation, sig, pubkey);
+        if (!sigOK) {
+          throw "Revocation signature must match";
+        }
+      }
+    })
+      .then(() => done())
+      .catch(done);
   }
 
   function checkExcluded (block, done) {

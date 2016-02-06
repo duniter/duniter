@@ -20,6 +20,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:YrvetcOPv38M9vfMOR55vehRUTs29XUI9uXm/BF+X+V8Ielz/1xHV6K3v8fog6vA3XirDXGWOOJeNFJsirIvBQ==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:SNOW\n" +
     "Actives:\n" + 
     "Leavers:\n" + 
+    "Revoked:\n" + 
     "Excluded:\n" + 
     "Certifications:\n" + 
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" + 
@@ -51,6 +52,7 @@ module.exports = {
   "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:TBtmxBITiTCve905MZNEwYaSPFyYPGLbvezCJienYBtCHrPo/UsyUf+ea82nzd9q8XiAXEHJos/Ehhlk7188Aw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic\n" +
   "Actives:\n" +
   "Leavers:\n" +
+  "Revoked:\n" +
   "Excluded:\n" +
   "Certifications:\n" +
   "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:H8YjdLATZChqqnWq5aAzPB4i2EmPv5udJBFZGIzIdK9niDAqkcg/j5/orSQXSYCI74TKDnG2iFMe6+WrZJ/yCA==\n" +
@@ -75,6 +77,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -97,6 +100,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -119,6 +123,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -141,6 +146,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -163,6 +169,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -184,6 +191,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -206,6 +214,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -233,6 +242,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -265,6 +275,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -297,6 +308,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -331,6 +343,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -365,6 +378,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -397,6 +411,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -431,6 +446,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -462,6 +478,7 @@ module.exports = {
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:25xK7+ph7IYeN9Hu8PvuIBjYdVURYtvKayPHZg7zrrYTs6ii2fMtk5J65a3bT/NKr2Qsd7I5TCL29QyiAXa7BA==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tac\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -492,6 +509,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -522,6 +540,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -556,6 +575,7 @@ module.exports = {
     "Leavers:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -588,6 +608,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -618,6 +639,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "Certifications:\n" +
@@ -641,6 +663,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -670,6 +693,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -702,6 +726,7 @@ module.exports = {
     "Actives:\n" +
     "Leavers:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:I9kYCknNTp9zYS4CflAMk4Xh1yQIaP1H3PgPHJeQZQNkBavyqddXsq5DUzscsi2kRttJw6C/MATSD8KyZYPNAg==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -732,6 +757,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "Certifications:\n" +
@@ -765,6 +791,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -797,6 +824,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -826,6 +854,7 @@ module.exports = {
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:25xK7+ph7IYeN9Hu8PvuIBjYdVURYtvKayPHZg7zrrYTs6ii2fMtk5J65a3bT/NKr2Qsd7I5TCL29QyiAXa7BA==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tac\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -857,6 +886,7 @@ module.exports = {
     "Actives:\n" +
     "Leavers:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:I9kYCknNTp9zYS4CflAMk4Xh1yQIaP1H3PgPHJeQZQNkBavyqddXsq5DUzscsi2kRttJw6C/MATSD8KyZYPNAg==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:0:h8D/dx/z5K2dx06ktp7fnmLRdxkdV5wRkJgnmEvKy2k55mM2RyREpHfD7t/1CC5Ew+UD0V9N27PfaoLxZc1KCQ==\n" +
@@ -884,6 +914,7 @@ module.exports = {
     "Actives:\n" +
     "Leavers:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:I9kYCknNTp9zYS4CflAMk4Xh1yQIaP1H3PgPHJeQZQNkBavyqddXsq5DUzscsi2kRttJw6C/MATSD8KyZYPNAg==:1411850496\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:0:h8D/dx/z5K2dx06ktp7fnmLRdxkdV5wRkJgnmEvKy2k55mM2RyREpHfD7t/1CC5Ew+UD0V9N27PfaoLxZc1KCQ==\n" +
@@ -912,6 +943,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
@@ -944,6 +976,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
@@ -976,6 +1009,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
@@ -1008,6 +1042,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -1040,6 +1075,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -1072,6 +1108,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC:1411844654:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
@@ -1100,6 +1137,7 @@ module.exports = {
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:25xK7+ph7IYeN9Hu8PvuIBjYdVURYtvKayPHZg7zrrYTs6ii2fMtk5J65a3bT/NKr2Qsd7I5TCL29QyiAXa7BA==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tac\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:70:h8D/dx/z5K2dx06ktp7fnmLRdxkdV5wRkJgnmEvKy2k55mM2RyREpHfD7t/1CC5Ew+UD0V9N27PfaoLxZc1KCQ==\n" +
@@ -1124,6 +1162,7 @@ module.exports = {
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:25xK7+ph7IYeN9Hu8PvuIBjYdVURYtvKayPHZg7zrrYTs6ii2fMtk5J65a3bT/NKr2Qsd7I5TCL29QyiAXa7BA==:70:5918CE7F40186F8E0BD8F239986A723FCC329927B999885B32DAAE40EA8BEDB6:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tac\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1148,6 +1187,7 @@ module.exports = {
     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1177,6 +1217,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -1208,6 +1249,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -1237,6 +1279,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:0C1C080CA81F6D763C6C42B7D043DF40DDABC2E27D47E0FE27DEF0E65D795280:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:0:eefk9Gg0Ijz0GvrNnRc55CCCBd4yk8j0fNzWzVZFKR3kZ7lsKav6dWyAsaVhlNG5S6XwEwvPoMwKJq1Vn7OjBg==\n" +
@@ -1262,11 +1305,12 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 1\n" +
+    "Nonce: 2\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_BLOCK_REQUIRED: 
@@ -1285,6 +1329,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1308,6 +1353,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1331,6 +1377,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1354,6 +1401,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1383,6 +1431,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -1417,6 +1466,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -1445,6 +1495,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1469,6 +1520,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:44:9F118AC87B062F23F193761E081082BB661547CF9A0C243CD3994E99C78A74C3:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1491,6 +1543,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:44:9F118AC87B062F23F193761E081082BB661547CF9A0C243CD3994E99C78A74C3:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1513,6 +1566,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:9F118AC87B062F23F193761E081082BB661547CF9A0C243CD3994E99C78A74C3:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1535,6 +1589,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:2:65DDE908DC06D42EC8AAAE4AB716C299ECD4891740349BCF50EF3D70C947CBE0:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1559,6 +1614,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:44:9F118AC87B062F23F193761E081082BB661547CF9A0C243CD3994E99C78A74C3:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1583,6 +1639,7 @@ module.exports = {
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:3:65DDE908DC06D42EC8AAAE4AB716C299ECD4891740349BCF50EF3D70C947CBE0:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1607,6 +1664,7 @@ module.exports = {
     "Actives:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:44:9F118AC87B062F23F193761E081082BB661547CF9A0C243CD3994E99C78A74C3:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1630,6 +1688,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "Certifications:\n" +
@@ -1654,6 +1713,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -1679,6 +1739,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -1704,11 +1765,12 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 2\n" +
+    "Nonce: 17\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_4_LEADING_ZEROS: 
@@ -1727,6 +1789,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -1752,13 +1815,14 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 13\n" +
+    "Nonce: 5\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_6_LEADING_ZEROS: 
@@ -1777,13 +1841,14 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 10\n" +
+    "Nonce: 21\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_5_LEADING_ZEROS: 
@@ -1802,6 +1867,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -1827,6 +1893,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -1852,13 +1919,14 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 1\n" +
+    "Nonce: 2\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   SECOND_BLOCK_OF_NEWCOMER: 
@@ -1877,13 +1945,14 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 24\n" +
+    "Nonce: 13\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ROOT_DATES: 
@@ -1906,6 +1975,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -1934,6 +2004,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1957,6 +2028,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -1980,6 +2052,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2003,6 +2076,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2026,6 +2100,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2054,6 +2129,7 @@ module.exports = {
     "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:ze+ftHWFLYmjfvXyrx4a15N2VQjf6oen8kkMiYNYrVllbpb5IUcb28CenlOQbVd9cZCNGSkTP7xP5bt8KAqUAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==\n" +
@@ -2082,6 +2158,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2106,6 +2183,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2130,6 +2208,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2154,6 +2233,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2178,6 +2258,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2201,6 +2282,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2225,6 +2307,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2249,6 +2332,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2289,6 +2373,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2329,6 +2414,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2369,6 +2455,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2398,6 +2485,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2427,6 +2515,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2456,6 +2545,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2485,6 +2575,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2515,6 +2606,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2543,6 +2635,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2573,6 +2666,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2604,6 +2698,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2636,6 +2731,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2668,6 +2764,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2701,6 +2798,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2734,6 +2832,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2771,6 +2870,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
@@ -2800,6 +2900,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
@@ -2822,6 +2923,7 @@ module.exports = {
     "Joiners:\n" +
     "Actives:\n" +
     "Leavers:\n" +
+    "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:CCCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:111:vTvKYvjTYUT30t/9h7uNE/2LFJiYuA4YleIetFkb62XxDoxGizKC9VvVs7WRNArcfHvJ+RLyOoawQzpmw2DyCw==\n" +
@@ -2829,4 +2931,149 @@ module.exports = {
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  REVOKED_WITH_MEMBERSHIPS:
+  "Version: 2\n" +
+  "Type: Block\n" +
+  "Currency: beta_brousouf\n" +
+  "Number: 0\n" +
+  "PoWMin: 1\n" +
+  "Time: 1411776000\n" +
+  "MedianTime: 1411776000\n" +
+  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "MembersCount: 3\n" +
+  "Identities:\n" +
+  "Joiners:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==:0:E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
+  "Actives:\n" +
+  "Leavers:\n" +
+  "Revoked:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==\n" +
+  "Excluded:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "Certifications:\n" +
+  "Transactions:\n" +
+  "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+  "Nonce: 1\n" +
+  "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  REVOKED_WITH_DUPLICATES:
+  "Version: 2\n" +
+  "Type: Block\n" +
+  "Currency: beta_brousouf\n" +
+  "Number: 0\n" +
+  "PoWMin: 1\n" +
+  "Time: 1411776000\n" +
+  "MedianTime: 1411776000\n" +
+  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "MembersCount: 3\n" +
+  "Identities:\n" +
+  "Joiners:\n" +
+  "Actives:\n" +
+  "Leavers:\n" +
+  "Revoked:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==\n" +
+  "Excluded:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "Certifications:\n" +
+  "Transactions:\n" +
+  "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+  "Nonce: 1\n" +
+  "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  REVOKED_NOT_IN_EXCLUDED:
+  "Version: 2\n" +
+  "Type: Block\n" +
+  "Currency: beta_brousouf\n" +
+  "Number: 0\n" +
+  "PoWMin: 1\n" +
+  "Time: 1411776000\n" +
+  "MedianTime: 1411776000\n" +
+  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "MembersCount: 3\n" +
+  "Identities:\n" +
+  "Joiners:\n" +
+  "Actives:\n" +
+  "Leavers:\n" +
+  "Revoked:\n" +
+  "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==\n" +
+  "Excluded:\n" +
+  "Certifications:\n" +
+  "Transactions:\n" +
+  "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+  "Nonce: 1\n" +
+  "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_UNKNOWN_REVOKED:
+  "Version: 2\n" +
+  "Type: Block\n" +
+  "Currency: beta_brousouf\n" +
+  "Number: 0\n" +
+  "PoWMin: 1\n" +
+  "Time: 1411776000\n" +
+  "MedianTime: 1411776000\n" +
+  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "MembersCount: 3\n" +
+  "Identities:\n" +
+  "Joiners:\n" +
+  "Actives:\n" +
+  "Leavers:\n" +
+  "Revoked:\n" +
+  "HATTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==\n" +
+  "Excluded:\n" +
+  "HATTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "Certifications:\n" +
+  "Transactions:\n" +
+  "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+  "Nonce: 1\n" +
+  "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITH_YET_REVOKED:
+  "Version: 2\n" +
+  "Type: Block\n" +
+  "Currency: beta_brousouf\n" +
+  "Number: 0\n" +
+  "PoWMin: 1\n" +
+  "Time: 1411776000\n" +
+  "MedianTime: 1411776000\n" +
+  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "MembersCount: 3\n" +
+  "Identities:\n" +
+  "Joiners:\n" +
+  "Actives:\n" +
+  "Leavers:\n" +
+  "Revoked:\n" +
+  "BBTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==\n" +
+  "Excluded:\n" +
+  "BBTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "Certifications:\n" +
+  "Transactions:\n" +
+  "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+  "Nonce: 1\n" +
+  "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITH_WRONG_REVOCATION_SIG:
+  "Version: 2\n" +
+  "Type: Block\n" +
+  "Currency: beta_brousouf\n" +
+  "Number: 0\n" +
+  "PoWMin: 1\n" +
+  "Time: 1411776000\n" +
+  "MedianTime: 1411776000\n" +
+  "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "MembersCount: 3\n" +
+  "Identities:\n" +
+  "Joiners:\n" +
+  "Actives:\n" +
+  "Leavers:\n" +
+  "Revoked:\n" +
+  "CCTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:iSQvl1VVc6+b1AUaBJ/VTTurGGHgaIcjASBhIlzI7M/7KVQV2Wi3oGUZUzLWqCAtGUsPcsj1HCV2/sRyxHmqAw==\n" +
+  "Excluded:\n" +
+  "CCTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+  "Certifications:\n" +
+  "Transactions:\n" +
+  "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+  "Nonce: 1\n" +
+  "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n"
 };

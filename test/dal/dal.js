@@ -112,6 +112,10 @@ var mocks = {
       "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:37qBxM4hLV2jfyYo2bNzAjkeLngLr2r7G2HpdpKieVxw:0:e/ai9E4G5CFB9Qi329e0ffYpZMgxj8mM4rviqIr2+UESA0UG86OuAAyHO11hYeyolZRiU8I7WdtNE98B1uZuBg==",
       "BMAVuMDcGhYAV4wA27DL1VXX2ZARZGJYaMwpf7DJFMYH:37qBxM4hLV2jfyYo2bNzAjkeLngLr2r7G2HpdpKieVxw:0:q4PCneYkcPH8AHEqEvqTtYQWslhlYO2B87aReuOl1uPczn5Q3VkZFAsU48ZTYryeyWp2nxdQojdFYhlAUNchAw=="
     ],
+    "revoked" : [
+      "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU",
+      "C7qBxM4hLV2jfyYo2bNzAjkeLngLr2r7G2HpdpKieVxw"
+    ],
     "excluded" : [
       "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU",
       "37qBxM4hLV2jfyYo2bNzAjkeLngLr2r7G2HpdpKieVxw"
@@ -225,6 +229,7 @@ describe("DAL", function(){
       assert.deepEqual(block.identities, mocks.block0.identities);
       assert.deepEqual(block.certifications, mocks.block0.certifications);
       assert.deepEqual(block.actives, mocks.block0.actives);
+      assert.deepEqual(block.revoked, mocks.block0.revoked);
       assert.deepEqual(block.excluded, mocks.block0.excluded);
       assert.deepEqual(block.leavers, mocks.block0.leavers);
       assert.deepEqual(block.actives, mocks.block0.actives);

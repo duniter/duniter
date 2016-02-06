@@ -293,6 +293,12 @@ function BlockchainContext(conf, dal) {
         let ms = Identity.statics.fromInline(inlineMS);
         yield dal.leaveIdentity(ms.pubkey, block.number);
       }
+      // Revoked
+      for (let i = 0, len = block.revoked.length; i < len; i++) {
+        let inlineRevocation = block.revoked[i];
+        let revocation = Identity.statics.revocationFromInline(inlineRevocation);
+        yield dal.revokeIdentity(revocation.pubkey);
+      }
       // Excluded
       for (let i = 0, len = block.excluded.length; i < len; i++) {
         let excluded = block.excluded[i];
@@ -329,10 +335,18 @@ function BlockchainContext(conf, dal) {
         let ms = Membership.statics.fromInline(msRaw, 'OUT', conf.currency);
         yield dal.unLeaveIdentity(ms.issuer);
       }
+      // Undo revoked (make them non-revoked)
+      let revokedPubkeys = [];
+      for (let i = 0, len = block.revoked.length; i < len; i++) {
+        let inlineRevocation = block.revoked[i];
+        let revocation = Identity.statics.revocationFromInline(inlineRevocation);
+        revokedPubkeys.push(revocation.pubkey);
+        yield dal.unrevokeIdentity(revocation.pubkey);
+      }
       // Undo excluded (make them become members again, but set them as 'to be kicked')
       for (let i = 0, len = block.excluded.length; i < len; i++) {
         let pubkey = block.excluded[i];
-        yield dal.unExcludeIdentity(pubkey);
+        yield dal.unExcludeIdentity(pubkey, revokedPubkeys.indexOf(pubkey) !== -1);
       }
     });
   }

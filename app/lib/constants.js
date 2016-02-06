@@ -125,6 +125,7 @@ module.exports = {
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + INTEGER + ":" + FINGERPRINT + ":" + BLOCK_UID + ":" + USER_ID),
+    REVOCATION: exact(PUBKEY + ":" + SIGNATURE),
     EXCLUDED: exact(PUBKEY),
     INNER_HASH: find("InnerHash: (" + FINGERPRINT + ")")
   },

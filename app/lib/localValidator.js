@@ -34,6 +34,9 @@ function LocalValidator (conf) {
       async.apply(that.checkIdentitiesUserIDConflict,             block),
       async.apply(that.checkIdentitiesPubkeyConflict,             block),
       async.apply(that.checkIdentitiesMatchJoin,                  block),
+      async.apply(that.checkRevokedNotInMemberships,              block),
+      async.apply(that.checkRevokedUnicity,                       block),
+      async.apply(that.checkRevokedAreExcluded,                   block),
       async.apply(that.checkMembershipsSignature,                 block),
       async.apply(that.checkPubkeyUnicity,                        block),
       async.apply(that.checkCertificationOneByIssuer,             block),
@@ -213,6 +216,33 @@ function LocalValidator (conf) {
   this.checkIdentitiesMatchJoin = check(function (block, done) {
     if (hasEachIdentityMatchesANewcomer(block)) {
       done('Each identity must match a newcomer line with same userid and certts');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkRevokedAreExcluded = check(function (block, done) {
+    if (checkRevokedAreExcluded(block)) {
+      done('A revoked member must be excluded');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkRevokedUnicity = check(function (block, done) {
+    if (checkRevokedUnicity(block)) {
+      done('A single revocation per member is allowed');
+      return;
+    }
+    else
+      done();
+  });
+
+  this.checkRevokedNotInMemberships = check(function (block, done) {
+    if (hasRevokedInMemberships(block)) {
+      done('A revoked pubkey cannot have a membership in the same block');
       return;
     }
     else
@@ -457,6 +487,61 @@ function hasPubkeyConflictInIdentities (block) {
     var pubk = block.identities[i].split(':')[0];
     conflict = ~pubkeys.indexOf(pubk);
     pubkeys.push(pubk);
+    i++;
+  }
+  return conflict;
+}
+
+function hasRevokedInMemberships (block) {
+  var i = 0;
+  var conflict = false;
+  while (!conflict && i < block.revoked.length) {
+    let pubk = block.revoked[i].split(':')[0];
+    conflict = existsPubkeyIn(pubk, block.joiners)
+      || existsPubkeyIn(pubk, block.actives)
+      || existsPubkeyIn(pubk, block.leavers);
+    i++;
+  }
+  return conflict;
+}
+
+function checkRevokedAreExcluded(block) {
+  // N.B.: this function does not test for potential duplicates in Revoked,
+  // this is another test responsability
+  var pubkeys = [];
+  block.revoked.forEach(function(inline){
+    let sp = inline.split(':');
+    let pubk = sp[0];
+    pubkeys.push(pubk);
+  });
+  var matchCount = 0;
+  var i = 0;
+  while (i < block.excluded.length) {
+    if (~pubkeys.indexOf(block.excluded[i])) matchCount++;
+    i++;
+  }
+  return matchCount != pubkeys.length;
+}
+
+function checkRevokedUnicity(block) {
+  let pubkeys = [];
+  let conflict = false;
+  let i = 0;
+  while (!conflict && i < block.revoked.length) {
+    let pubk = block.revoked[i].split(':')[0];
+    conflict = ~pubkeys.indexOf(pubk);
+    pubkeys.push(pubk);
+    i++;
+  }
+  return conflict;
+}
+
+function existsPubkeyIn(pubk, memberships) {
+  let i = 0;
+  let conflict = false;
+  while (!conflict && i < memberships.length) {
+    let pubk2 = memberships[i].split(':')[0];
+    conflict = pubk == pubk2;
     i++;
   }
   return conflict;

@@ -191,11 +191,13 @@ function IdentityService (conf, dal) {
         function (existing, next){
           if (existing) {
             // Modify
-            if (existing.wasMember) {
-              next('This identity cannot be revoked since it is present in the blockchain.');
+            if (existing.revoked) {
+              next('Already revoked');
+            }
+            else if (existing.revocation_sig) {
+              next('Revocation already registered');
             } else {
-              existing.revoked = true;
-              dal.setRevoked(obj.hash).then(function () {
+              dal.setRevocating(obj.hash, idty.revocation).then(function () {
                 next(null, jsonResultTrue());
               })
                 .catch(next);

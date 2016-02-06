@@ -43,6 +43,7 @@ function BlockchainBinding (server) {
     joiners:   getStat('joiners'),
     actives:   getStat('actives'),
     leavers:   getStat('leavers'),
+    revoked:  getStat('revoked'),
     excluded:  getStat('excluded'),
     ud:        getStat('ud'),
     tx:        getStat('tx')

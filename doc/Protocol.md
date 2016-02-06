@@ -171,19 +171,17 @@ A complete self-certification:
     META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
 
-#### Self-revocation
+#### Identity revocation
 
 ##### Definition
 
-A self revocation is the act, for a given public key's owner, to revoke an identity he created for representing himself. Doing a self-revocation is extacly like saying:
+An identity revocation is the act, for a given public key's owner, to revoke an identity he created for representing himself. Doing a self-revocation is extacly like saying:
 
-> « Sorry, I made a mistake about this identity. Do not consider it. »
+> « This identity I created has no more sense. It has to be locked definitively. »
 
 ##### Use case
 
-This document is not to be written in the blockchain. Its goal is only to inform that a created identity was made by mistake, or contained a mistake, and should not be considered.
-
-For example, this document could be sent to a node to remove an identity we submitted by mistake.
+Its goal is only to inform that a created identity was either made by mistake, or contained a mistake, may have been compromised (private key stolen, lost, ...), or because for some reason you want to create another identity for you.
 
 ##### Format
 
@@ -206,18 +204,18 @@ If we have the following complete self-certification:
     UID:lolcat
     META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    
+
 A valid self-revocation could be:
 
     SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
-    
+
 Over the following data:
 
     UID:lolcat
     META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     META:REVOKE
-    
+
 #### Certification
 
 ##### Definition
@@ -261,11 +259,11 @@ If we have the following complete self-certification:
     UID:lolcat
     META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    
+
 A valid certification could be:
 
     SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
-    
+
 Over the following data:
 
     UID:lolcat
@@ -341,7 +339,7 @@ A transaction is defined by the following format:
     Version: VERSION
     Type: Transaction
     Currency: CURRENCY_NAME
-    Issuers: 
+    Issuers:
     PUBLIC_KEY
     ...
     Inputs:
@@ -393,7 +391,7 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its va
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:25
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:5
     Comment: First transaction
-    
+
 Signatures (fake here):
 
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
@@ -413,8 +411,8 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction writte
     0:D:88:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:11
     Outputs:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
-    Comment: 
-    
+    Comment:
+
 Signatures (fake here):
 
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
@@ -442,7 +440,7 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:146
     6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49
     Comment: -----@@@----- (why not this comment?)
-    
+
 Signatures (fakes here):
 
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
@@ -533,6 +531,9 @@ but also other informations like:
     Leavers:
     PUBLIC_KEY:SIGNATURE:NUMBER:HASH:I_BLOCK_UID:USER_ID
     ...
+    Revoked:
+    PUBLIC_KEY:SIGNATURE
+    ...
     Excluded:
     PUBLIC_KEY
     ...
@@ -565,6 +566,7 @@ Identities            | New identities in the WoT                         | Alwa
 Joiners               | `IN` memberships                                  | Always
 Actives               | `IN` memberships                                  | Always
 Leavers               | `OUT` memberships                                 | Always
+Revoked               | Revocation documents                              | Always
 Excluded              | Exluded members' public key                       | Always
 Transactions          | A liste of compact transactions                   | Always
 InnerHash             | The hash value of the block's inner content       | Always
@@ -589,6 +591,9 @@ To be a valid, a block must match the following rules:
   * `NUMBER` : an integer
   * `HASH` : an uppercased SHA1 string
   * `I_BLOCK_UID` : a block UID
+  * `USER_ID` : an identifier
+* `Revoked` is a multiline field composed for each line of:
+  * `SIGNATURE` : a [Signature](#signature)
   * `USER_ID` : an identifier
 * `Excluded` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
@@ -620,7 +625,7 @@ For that purpose, UCP defines a peering table containing, for a given node publi
 This link is made through a document called *Peer* whose format is described below.
 
 #### Structure
-  
+
     Version: VERSION
     Type: Peer
     Currency: CURRENCY_NAME
@@ -782,6 +787,15 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 
 * A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither be present one time in `Actives`, `Leavers` or `Excluded`.
 
+##### Revoked
+
+* Each `PUBLIC_KEY` under `Revoked` field **must not** be present under `Joiners`, `Actives` or `Leavers` fields.
+* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Revoked`.
+
+##### Excluded
+
+* Each `PUBLIC_KEY` under `Revoked` field **must** be present under `Excluded` field.
+
 ##### Certifications
 
 * A block cannot have two certifications from a same `PUBKEY_FROM`, unless it is block#0.
@@ -877,7 +891,7 @@ A written certification is to be considered chainable if:
 * its age is greater or equal to `[sigPeriod]`:
 * the number of active certifications is lower than `[sigStock]`:
 
-    CHAINABLE = AGE >= [sigPeriod] && STOCK < [sigStock]
+        CHAINABLE = AGE >= [sigPeriod] && STOCK < [sigStock]
 
 ###### Member
 A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners`, `Actives` or `Leavers` **and is not expired**.
@@ -947,17 +961,24 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 
 ##### Actives
 
-* A given `PUBLIC_KEY` **can** be in `Actives` **only if** if it is a member.
+* A given `PUBLIC_KEY` **can** be in `Actives` **only if** it is a member.
 
 ##### Leavers
 
 * A given `PUBLIC_KEY` cannot be in `Leavers` if it is not a member.
 
+##### Revoked
+
+* A given `PUBLIC_KEY` cannot be in `Revoked` if it has never been a member.
+* A given `PUBLIC_KEY` cannot be in `Revoked` if its identity is already revoked.
+* A given `PUBLIC_KEY` cannot be in `Revoked` if its revocation signature does not match.
+
 ##### Excluded
 
-* A given `PUBLIC_KEY` cannot be in `Excluded` if public key is not a member
+* A given `PUBLIC_KEY` cannot be in `Excluded` if it is not a member
 * Each `PUBLIC_KEY` with less than `[sigQty]` active certifications or whose last membership is either in `Joiners` or `Actives` is outdated **must** be present in this field.
 * Each `PUBLIC_KEY` whose last membership occurrence is either in `Joiners` or `Actives` *and* is outdated **must** be present in this field.
+* A given `PUBLIC_KEY` **cannot** be in `Excluded` field if it doesn't **have to** (i.e. if no **must** condition is matched).
 
 ##### Certifications
 

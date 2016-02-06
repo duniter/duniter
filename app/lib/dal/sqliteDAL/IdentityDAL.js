@@ -20,6 +20,7 @@ function IdentityDAL(db, wotb) {
   this.table = 'idty';
   this.fields = [
     'revoked',
+    'revocation_sig',
     'currentMSN',
     'memberships',
     'buid',
@@ -53,6 +54,7 @@ function IdentityDAL(db, wotb) {
       'pubkey VARCHAR(50) NOT NULL,' +
       'uid VARCHAR(255) NOT NULL,' +
       'sig VARCHAR(100) NOT NULL,' +
+      'revocation_sig VARCHAR(100) NULL,' +
       'hash VARCHAR(64) NOT NULL,' +
       'written BOOLEAN NOT NULL,' +
       'wotb_id INTEGER NULL,' +
@@ -69,12 +71,27 @@ function IdentityDAL(db, wotb) {
       'COMMIT;', []);
   });
 
+  this.revokeIdentity = (pubkey) => {
+    return co(function *() {
+      var idty = yield that.getFromPubkey(pubkey);
+      idty.revoked = true;
+      return that.saveIdentity(idty);
+    });
+  };
+
+  this.unrevokeIdentity = (pubkey) => {
+    return co(function *() {
+      var idty = yield that.getFromPubkey(pubkey);
+      idty.revoked = false;
+      return that.saveIdentity(idty);
+    });
+  };
+
   this.excludeIdentity = (pubkey) => {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
       idty.member = false;
       idty.kick = false;
-      idty.leaving = false;
       wotb.setEnabled(false, idty.wotb_id);
       return that.saveIdentity(idty);
     });
@@ -125,12 +142,11 @@ function IdentityDAL(db, wotb) {
     });
   };
 
-  this.unExcludeIdentity = (pubkey) => {
+  this.unExcludeIdentity = (pubkey, causeWasRevocation) => {
     return co(function *() {
       var idty = yield that.getFromPubkey(pubkey);
-      idty.memberships.pop();
-      idty.currentMSN = previousMSN(idty);
-      idty.leaving = false;
+      idty.member = true;
+      idty.kick = !causeWasRevocation;
       wotb.setEnabled(true, idty.wotb_id);
       return that.saveIdentity(idty);
     });
@@ -226,6 +242,14 @@ function IdentityDAL(db, wotb) {
 
   this.getWhoIsOrWasMember = function() {
     return that.sqlFind({
+      wasMember: true
+    });
+  };
+
+  this.getToRevoke = function() {
+    return that.sqlFind({
+      revocation_sig: { $null: false },
+      revoked: false,
       wasMember: true
     });
   };

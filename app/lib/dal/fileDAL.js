@@ -476,6 +476,10 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       }).catch(done);
   };
 
+  this.getRevocatingMembers = () => co(function *() {
+    return that.idtyDAL.getToRevoke();
+  });
+
   this.getToBeKickedPubkeys = function() {
     return co(function *() {
       var exclusions = yield that.getToBeKicked();
@@ -641,17 +645,17 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       .catch(done);
   };
 
-  this.setRevoked = function(hash, done) {
-    return that.idtyDAL.getByHash(hash)
-      .then(function(idty){
-        idty.revoked = true;
-        return that.idtyDAL.saveIdentity(idty);
-      })
-      .then(function(){
-        done && done();
-      })
-      .catch(done);
-  };
+  this.setRevocating = (hash, revocation_sig) => co(function *() {
+    let idty = yield that.idtyDAL.getByHash(hash);
+    idty.revocation_sig = revocation_sig;
+    return that.idtyDAL.saveIdentity(idty);
+  });
+
+  this.setRevoked = (hash) => co(function *() {
+    let idty = yield that.idtyDAL.getByHash(hash);
+    idty.revoked = true;
+    return that.idtyDAL.saveIdentity(idty);
+  });
 
   this.getMembershipExcludingBlock = function(current, msValidtyTime) {
     return co(function *() {
@@ -1001,6 +1005,10 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     // TODO: create a specific method with a different name and hide saveIdentity()
     return that.idtyDAL.saveIdentity(idty);
   };
+
+  this.revokeIdentity = (pubkey) => that.idtyDAL.revokeIdentity(pubkey);
+
+  this.unrevokeIdentity = (pubkey) => that.idtyDAL.unrevokeIdentity(pubkey);
 
   this.excludeIdentity = function(pubkey) {
     return that.idtyDAL.excludeIdentity(pubkey);

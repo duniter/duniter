@@ -95,6 +95,7 @@ dtos.Block = {
   "joiners": [String],
   "actives": [String],
   "leavers": [String],
+  "revoked": [String],
   "excluded": [String],
   "transactions": [dtos.TransactionOfBlock],
   "nonce": Number,
@@ -186,6 +187,8 @@ dtos.UID = {
     "timestamp": String
   },
   "self": String,
+  "revocation_sig": String,
+  "revoked": Boolean,
   "others": [dtos.Other]
 };
 

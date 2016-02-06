@@ -21,8 +21,8 @@ function BlockDAL(db) {
   let that = this;
 
   this.table = 'block';
-  this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'excluded'];
-  this.arrays = ['identities','certifications','actives','excluded','leavers','joiners','transactions'];
+  this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'revoked', 'excluded'];
+  this.arrays = ['identities','certifications','actives','revoked','excluded','leavers','joiners','transactions'];
   this.bigintegers = ['monetaryMass','dividend'];
   this.booleans = ['wrong'];
   this.pkFields = ['number','hash'];
@@ -55,6 +55,7 @@ function BlockDAL(db) {
       'joiners TEXT,' +
       'actives TEXT,' +
       'leavers TEXT,' +
+      'revoked TEXT,' +
       'excluded TEXT,' +
       'created DATETIME DEFAULT NULL,' +
       'updated DATETIME DEFAULT NULL,' +

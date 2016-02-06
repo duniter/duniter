@@ -221,6 +221,8 @@ function AbstractSQLite(db) {
         return '`' + k + '` >= ?';
       } else if (obj[k].$gt !== undefined) {
         return '`' + k + '` >= ?';
+      }  else if (obj[k].$null !== undefined) {
+        return '`' + k + '` IS ' + (!obj[k].$null ? 'NOT' : '') + ' NULL';
       }  else if (obj[k].$contains !== undefined) {
         return '`' + k + '` LIKE ?';
       } else {
@@ -235,21 +237,24 @@ function AbstractSQLite(db) {
   }
 
   function toParams(obj, fields) {
-    return (fields || _.keys(obj)).map((f) => {
-      if (obj[f].$lte !== undefined) {
-        return obj[f].$lte;
-      } else if (obj[f].$gte !== undefined) {
-        return obj[f].$gte;
-      } else if (obj[f].$gt !== undefined) {
-        return obj[f].$gte;
-      } else if (obj[f].$contains !== undefined) {
-        return "%" + obj[f].$contains + "%";
-      } else if (~that.bigintegers.indexOf(f) && typeof obj[f] !== "string") {
-        return String(obj[f]);
-      } else {
-        return obj[f];
+    let params = [];
+    (fields || _.keys(obj)).forEach((f) => {
+      if (obj[f].$null === undefined) {
+        let pValue;
+        if      (obj[f].$lte  !== undefined)      { pValue = obj[f].$lte;  }
+        else if (obj[f].$gte  !== undefined)      { pValue = obj[f].$gte;  }
+        else if (obj[f].$gt   !== undefined)      { pValue = obj[f].$gt;   }
+        else if (obj[f].$null !== undefined)      { pValue = obj[f].$null; }
+        else if (obj[f].$contains !== undefined) { pValue = "%" + obj[f].$contains + "%"; }
+        else if (~that.bigintegers.indexOf(f) && typeof obj[f] !== "string") {
+          pValue = String(obj[f]);
+        } else {
+          pValue = obj[f];
+        }
+        params.push(pValue);
       }
     });
+    return params;
   }
 
   function escapeToSQLite(val) {

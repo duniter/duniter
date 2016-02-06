@@ -75,6 +75,7 @@ function Block(json) {
       "joiners",
       "actives",
       "leavers",
+      "revoked",
       "excluded",
       "certifications"
     ].forEach(function(field){

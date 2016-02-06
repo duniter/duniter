@@ -40,6 +40,10 @@ module.exports = function(dal) {
     this.getIdentityByPubkey = function (pubkey, done) {
       dal.getWritten(pubkey, done);
     };
+
+    this.getIdentityByPubkeyP = function (pubkey) {
+      return dal.getWrittenIdtyByPubkey(pubkey);
+    };
     
     this.isMember = function (pubkey, done) {
       dal.isMember(pubkey, done);

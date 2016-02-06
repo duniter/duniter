@@ -156,6 +156,21 @@ describe("Block local coherence", function(){
       done();
     }));
 
+    it('Block cannot have revoked key in joiners,actives,leavers', test('checkRevokedNotInMemberships', blocks.REVOKED_WITH_MEMBERSHIPS, function (err, done) {
+      assert.equal(err, 'A revoked pubkey cannot have a membership in the same block');
+      done();
+    }));
+
+    it('Block cannot have revoked key duplicates', test('checkRevokedUnicity', blocks.REVOKED_WITH_DUPLICATES, function (err, done) {
+      assert.equal(err, 'A single revocation per member is allowed');
+      done();
+    }));
+
+    it('Block revoked keys must be in excluded', test('checkRevokedAreExcluded', blocks.REVOKED_NOT_IN_EXCLUDED, function (err, done) {
+      assert.equal(err, 'A revoked member must be excluded');
+      done();
+    }));
+
     it('Block cannot contain 2 certifications from same issuer', test('checkCertificationOneByIssuer', blocks.MULTIPLE_CERTIFICATIONS_FROM_SAME_ISSUER, function (err, done) {
       assert.equal(err, 'Block cannot contain two certifications from same issuer');
       done();

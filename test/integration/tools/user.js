@@ -1,4 +1,5 @@
 "use strict";
+var co      = require('co');
 var Q		    = require('q');
 var async		= require('async');
 var request	= require('request');
@@ -8,6 +9,7 @@ var crypto	= require('../../../app/lib/crypto');
 var rawer		= require('../../../app/lib/rawer');
 var base58	= require('../../../app/lib/base58');
 var constants = require('../../../app/lib/constants');
+var Identity = require('../../../app/lib/entity/identity');
 
 module.exports = function (uid, salt, passwd, url) {
   return new User(uid, salt, passwd, url);
@@ -135,6 +137,29 @@ function User (uid, options, node) {
   this.leave = function () {
     return that.sendMembership("OUT");
   };
+
+  this.revoke = () => co(function *() {
+    let res = yield lookupP(pub);
+    let idty = Identity.statics.fromJSON({
+      uid: res.results[0].uids[0].uid,
+      buid: res.results[0].uids[0].meta.timestamp,
+      sig: res.results[0].uids[0].self
+    });
+
+    var revocation = rawer.getSelfRevocation({
+      "uid": idty.uid,
+      "sig": idty.sig,
+      "buid": idty.buid,
+      "revocation": ''
+    });
+
+    var sig = crypto.signSync(revocation, sec);
+    return Q.nfcall(post, '/wot/revoke', {
+      "pubkey": pub,
+      "self": idty.getRawSelf(),
+      "sig": sig
+    });
+  });
 
   this.sendMembershipPromise = function(type) {
     return Q.nfcall(that.sendMembership(type));
@@ -300,6 +325,13 @@ function User (uid, options, node) {
         })
         .catch(done);
     };
+  }
+
+  function lookupP(pubkey) {
+    return co(function *() {
+      let node2 = yield getVucoin();
+      return Q.nbind(node2.wot.lookup, node2)(pubkey);
+    });
   }
 
   this.selfCertP = (when) => Q.nfcall(this.selfCert(when));

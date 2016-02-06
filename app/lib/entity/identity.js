@@ -47,6 +47,8 @@ var Identity = function(json) {
       "meta": {
         "timestamp": this.buid
       },
+      "revoked": this.revoked,
+      "revocation_sig": this.revocation_sig,
       "self": this.sig,
       "others": others
     }];
@@ -116,6 +118,14 @@ Identity.statics.fromInline = function (inline) {
     buid: sp[2],
     uid: sp[3]
   });
+};
+
+Identity.statics.revocationFromInline = function (inline) {
+  var sp = inline.split(':');
+  return {
+    pubkey: sp[0],
+    sig: sp[1]
+  };
 };
 
 Identity.statics.toInline = function (entity) {

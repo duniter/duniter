@@ -143,6 +143,10 @@ module.exports = new function() {
     for(let i = 0; i < json.leavers.length; i++){
       raw += json.leavers[i] + "\n";
     }
+    raw += "Revoked:\n";
+    for(let i = 0; i < json.revoked.length; i++){
+      raw += json.revoked[i] + "\n";
+    }
     raw += "Excluded:\n";
     for(let i = 0; i < json.excluded.length; i++){
       raw += json.excluded[i] + "\n";

@@ -27,6 +27,7 @@ function BlockParser (onError) {
     {prop: "joiners",         regexp: /Joiners:\n([\s\S]*)Actives/,             parser: splitAndMatch('\n', constants.BLOCK.JOINER)},
     {prop: "actives",         regexp: /Actives:\n([\s\S]*)Leavers/,             parser: splitAndMatch('\n', constants.BLOCK.ACTIVE)},
     {prop: "leavers",         regexp: /Leavers:\n([\s\S]*)Excluded/,            parser: splitAndMatch('\n', constants.BLOCK.LEAVER)},
+    {prop: "revoked",         regexp: /Revoked:\n([\s\S]*)Excluded/,            parser: splitAndMatch('\n', constants.BLOCK.REVOCATION)},
     {prop: "excluded",        regexp: /Excluded:\n([\s\S]*)Certifications/,     parser: splitAndMatch('\n', constants.PUBLIC_KEY)},
     {prop: "certifications",  regexp: /Certifications:\n([\s\S]*)Transactions/, parser: splitAndMatch('\n', constants.CERT.OTHER.INLINE)},
     {prop: "transactions",    regexp: /Transactions:\n([\s\S]*)/,               parser: extractTransactions},
@@ -42,6 +43,7 @@ function BlockParser (onError) {
     obj.joiners = obj.joiners || [];
     obj.actives = obj.actives || [];
     obj.leavers = obj.leavers || [];
+    obj.revoked = obj.revoked || [];
     obj.excluded = obj.excluded || [];
     obj.certifications = obj.certifications || [];
     obj.transactions = obj.transactions || [];

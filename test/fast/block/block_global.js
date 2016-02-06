@@ -309,6 +309,21 @@ describe("Block global coherence:", function(){
     should.exist(err);
     err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:88:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:40 is not available');
   }));
+
+  it('a block with an unknown member revoked should fail', test('checkRevoked', blocks.BLOCK_UNKNOWN_REVOKED, function (err) {
+    should.exist(err);
+    err.should.equal('A pubkey who was never a member cannot be revoked');
+  }));
+
+  it('a block with a yet revoked identity should fail', test('checkRevoked', blocks.BLOCK_WITH_YET_REVOKED, function (err) {
+    should.exist(err);
+    err.should.equal('A revoked identity cannot be revoked again');
+  }));
+
+  it('a block with a wrong revocation signature should fail', test('checkRevoked', blocks.BLOCK_WITH_WRONG_REVOCATION_SIG, function (err) {
+    should.exist(err);
+    err.should.equal('Revocation signature must match');
+  }));
 });
 
 function test (funcName, raw, callback) {
@@ -699,6 +714,20 @@ function BlockCheckerDao (block) {
     }
     else
       done(null, []);
-  }
+  };
+
+  this.getIdentityByPubkeyP = (pubkey) => co(function *() {
+    if (pubkey == 'BBTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+      return {
+        revoked: true
+      };
+    }
+    if (pubkey == 'CCTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd') {
+      return {
+        revoked: false
+      };
+    }
+    return null;
+  });
 
 }

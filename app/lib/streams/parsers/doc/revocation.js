@@ -10,50 +10,23 @@ var constants     = require('../../../constants');
 module.exports = RevocationParser;
 
 function RevocationParser (onError) {
-  
-  var captures = [];
-  var multilineFields = [];
-  GenericParser.call(this, captures, multilineFields, rawer.getRevocation, onError);
 
-  this._parse = function (str, obj) {
-    obj.certs = [];
-    var lines = str.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      switch (i) {
-        case 0:
-          if (line.match(constants.PUBLIC_KEY)) {
-            obj.pubkey = line;
-          }
-          break;
-        case 1:
-          if (line.match(constants.CERT.SELF.UID)) {
-            obj.uid = line.split(':')[1];
-          }
-          break;
-        case 2:
-          if (line.match(constants.CERT.SELF.META)) {
-            obj.buid = ucp.format.buid.fromTS(line);
-          }
-          break;
-        case 3:
-        case 5:
-          if (line.match(constants.SIG)) {
-            if (!obj.sig) {
-              // Self-certification signature
-              obj.sig = line;
-            } else {
-              // Revocation signature
-              obj.revocation = line;
-            }
-          }
-          break;
-      }
-    }
-  };
+  let captures = [
+    {prop: "version",           regexp: constants.DOCUMENTS.DOC_VERSION },
+    {prop: "type",              regexp: constants.REVOCATION.REVOC_TYPE },
+    {prop: "currency",          regexp: constants.DOCUMENTS.DOC_CURRENCY },
+    {prop: "issuer",            regexp: constants.DOCUMENTS.DOC_ISSUER },
+    {prop: "sig",               regexp: constants.REVOCATION.IDTY_SIG },
+    {prop: "buid",              regexp: constants.REVOCATION.IDTY_TIMESTAMP},
+    {prop: "uid",               regexp: constants.REVOCATION.IDTY_UID }
+  ];
+  let multilineFields = [];
+  GenericParser.call(this, captures, multilineFields, rawer.getOfficialRevocation, onError);
 
   this._clean = function (obj) {
     obj.documentType = 'revocation';
+    obj.pubkey = obj.issuer;
+    obj.revocation = obj.signature;
     if (obj.uid && obj.buid && obj.pubkey) {
       obj.hash = hashf(obj.uid + obj.buid + obj.pubkey).toUpperCase();
     }
@@ -70,7 +43,7 @@ function RevocationParser (onError) {
       return "Could not extract block uid";
     }
     if (!obj.sig) {
-      return "No signature found for self-certification";
+      return "No signature found for identity";
     }
     if (!obj.revocation) {
       return "No revocation signature found";

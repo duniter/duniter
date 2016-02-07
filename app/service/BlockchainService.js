@@ -839,7 +839,7 @@ function BlockchainService (conf, mainDAL, pair) {
               var isMember = yield dal.isMember(cert.from);
               var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
               if (isMember && !doubleSignature) {
-                var isValid = yield gValidator.checkCertificationIsValidForBlock(cert, { number: current.number + 1 }, identity);
+                var isValid = yield gValidator.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity);
                 if (isValid) {
                   certifiers.push(cert.from);
                   foundCerts.push(cert);

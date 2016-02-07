@@ -203,6 +203,20 @@ dtos.Signed = {
   "signature": String
 };
 
+dtos.CertIdentity = {
+  "issuer": String,
+  "uid": String,
+  "timestamp": String,
+  "sig": String
+};
+
+dtos.Cert = {
+  "issuer": String,
+  "timestamp": String,
+  "sig": String,
+  "target": dtos.CertIdentity
+};
+
 dtos.Identity = {
   "pubkey": String,
   "uids": [dtos.UID],

@@ -337,38 +337,6 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       });
   };
 
-  this.getIdentityByHashWithCertsOrNull = function(hash) {
-    return that.getIdentityByHashOrNull(hash)
-      .catch(function(){
-        return null;
-      })
-      .then(function(idty){
-        return that.fillIdentityWithCerts(idty);
-      });
-  };
-
-  this.fillIdentitiesWithCerts = function(idties) {
-    return idties.reduce(function(p, aIdty) {
-      return that.certDAL.getToTarget(aIdty.hash)
-        .then(function(certs){
-          aIdty.certs = certs;
-          return Q();
-        });
-    }, Q())
-      .then(() => idties);
-  };
-
-  this.fillIdentityWithCerts = function(idty) {
-    if (!idty) {
-      return Q(null);
-    }
-    return that.certDAL.getToTarget(idty.hash)
-      .then(function(certs){
-        idty.certs = certs;
-        return idty;
-      });
-  };
-
   this.getMembers = function(done) {
     return that.idtyDAL.getWhoIsOrWasMember()
       .then(function(idties) {
@@ -491,9 +459,6 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return that.idtyDAL.getFromUID(uid)
       .catch(function(){
         return null;
-      })
-      .then(function(idty){
-        return that.fillIdentityWithCerts(idty);
       });
   };
 

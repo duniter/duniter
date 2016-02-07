@@ -91,7 +91,7 @@ function LinksDAL(db, wotb) {
       timestamp: { $lte: minTimestamp },
       obsolete: false
     });
-    linksToObsolete.forEach((link) => wotb.removeLink(link.from_wotb_id, link.to_wotb_id));
+    linksToObsolete.forEach((link) => wotb.removeLink(link.from_wotb_id, link.to_wotb_id, true));
     return that.sqlUpdateWhere({ obsolete: true }, {
       timestamp: { $lte: minTimestamp },
       obsolete: false
@@ -123,6 +123,7 @@ function LinksDAL(db, wotb) {
     });
     if (links.length) {
       queries.push(insert + '\n' + values.join(',\n') + ';');
+      logger.query(queries.join('\n'));
     }
     if (queries.length) {
       return that.exec(queries.join('\n'));

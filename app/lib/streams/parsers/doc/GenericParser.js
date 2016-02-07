@@ -92,7 +92,8 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
         error = "Wrong document: must have at least 2 lines";
       }
       else {
-        obj.signature = sp[sp.length-2];
+        let endOffset = str.match(/\n$/) ? 2 : 1;
+        obj.signature = sp[sp.length - endOffset];
         obj.hash = hashf(str).toUpperCase();
         obj.raw = sp.slice(0, sp.length-1).join('\n') + '\n';
         var docLF = obj.raw.replace(/\r\n/g, "\n");

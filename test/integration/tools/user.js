@@ -62,11 +62,15 @@ function User (uid, options, node) {
         },
         function(current, next) {
           let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-          selfCert = rawer.getSelfIdentity({ buid: buid, uid: uid });
+          selfCert = rawer.getOfficialIdentity({
+            buid: buid,
+            uid: uid,
+            issuer: pub,
+            currency: node.server.conf.currency
+          });
           selfCert += crypto.signSync(selfCert, sec);
           post('/wot/add', {
-            "pubkey": pub,
-            "self": selfCert
+            "identity": selfCert
           }, next);
         }
       ], function(err) {
@@ -107,17 +111,20 @@ function User (uid, options, node) {
         function(res, next) {
           var current = res.current;
           var idty = res.lookup.results[0].uids[0];
-          var hisPub = res.lookup.results[0].pubkey;
-          selfCert = rawer.getSelfIdentity({ buid: idty.meta.timestamp, uid: idty.uid });
-          selfCert += idty.self;
-          var blockNumber = (current ? current.number : 0);
           let buid = current ? ucp.format.buid(current.number, current.hash) : ucp.format.buid();
-          var cert = selfCert + '\nMETA:TS:' + buid + '\n';
+          var cert = rawer.getOfficialCertification({
+            "version": constants.DOCUMENTS_VERSION,
+            "currency": node.server.conf.currency,
+            "issuer": pub,
+            "idty_issuer": user.pub,
+            "idty_uid": idty.uid,
+            "idty_buid": idty.meta.timestamp,
+            "idty_sig": idty.self,
+            "buid": buid
+          });
           var sig = crypto.signSync(cert, sec);
-          post('/wot/add', {
-            "pubkey": hisPub,
-            "self": selfCert,
-            "other": [pub, hisPub, blockNumber, sig].join(':') + '\n'
+          post('/wot/certify', {
+            "cert": cert + sig
           }, next);
         }
       ], function(err) {
@@ -146,7 +153,9 @@ function User (uid, options, node) {
       sig: res.results[0].uids[0].self
     });
 
-    var revocation = rawer.getSelfRevocation({
+    var revocation = rawer.getOfficialRevocation({
+      "currency": node.server.conf.currency,
+      "issuer": pub,
       "uid": idty.uid,
       "sig": idty.sig,
       "buid": idty.buid,
@@ -155,9 +164,7 @@ function User (uid, options, node) {
 
     var sig = crypto.signSync(revocation, sec);
     return Q.nfcall(post, '/wot/revoke', {
-      "pubkey": pub,
-      "self": idty.getRawSelf(),
-      "sig": sig
+      "revocation": revocation + sig
     });
   });
 

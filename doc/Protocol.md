@@ -11,6 +11,8 @@
   * [Signatures](#signatures)
 * [Formats](#formats)
   * [Public key](#public-key)
+  * [Identity](#identity)
+  * [Revocation](#revocation)
   * [Certification](#certification)
   * [Membership](#membership)
   * [Block](#block)
@@ -113,49 +115,51 @@ Its format is a [Base58](http://en.wikipedia.org/wiki/Base58) string of 43 or 44
 
 A public key is alway paired with a private key, which UCP will never deal with. UCP only deals with public keys and signatures.
 
-### Certification
+### Identity
 
 #### Definition
 
-A certification is the generic act of creating a link between a *public key* and *an arbitrary identity*. In UCP, this certification is done through the signature of an identity string by a public key.
-
-####Identity string
-
-UCP does not rely on any particular identity format, which remains implementation free. Identity simply has to be a string avoiding usage of line endings characters.
-    
-In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferently used to refer to this identity string.
-
-#### Self certification
-
-##### Definition
-
-A self certification is the act, for a given public key's owner, to sign an identifier *he considers it reflects his identity*. Doing a self-certification is extacly like saying:
+Issuing an identity is the act of creating a link between a *public key* and *an arbitrary identity*. In UCP, this link is done through the signature of an identity string by a public key. It is exactly like saying:
 
 > « This identity refers to me ! »
 
-##### Format
+#### Identity unique ID
+UCP does not rely on any particular identity format, which remains implementation free. Identity simply has to be a string avoiding usage of line endings characters.
 
-Self-certification is the signature of a special string *containing* the identifier:
+In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferently used to refer to this identity string.
 
-    UID:IDENTIFIER
-    META:TS:BLOCK_UID
-    
-Here, `UID` is just 'UID' string and `IDENTIFIER` has to be replaced by a valid identifier. Also, `META` and `TS` are simple strings. This whole string **is what signature is based upon**, without any carriage return.
+#### Format
 
-The whole self-certification is then:
+An identity is a *signed* document containing the identifier:
 
-    UID:IDENTIFIER
-    META:TS:BLOCK_UID
+    Version: 2
+    Type: Identity
+    Currency: CURRENCY_NAME
+    Issuer: PUBLIC_KEY
+    UniqueID: USER_ID
+    Timestamp: BLOCK_UID
+
+Here, `USER_ID` has to be replaced by a valid identifier, `PUBLIC_KEY` by a valid public key and `BLOCK_UID` by a valid block unique ID. This document **is what signature is based upon**.
+
+The whole identity document is then:
+
+    Version: 2
+    Type: Identity
+    Currency: CURRENCY_NAME
+    Issuer: PUBLIC_KEY
+    UniqueID: USER_ID
+    Timestamp: BLOCK_UID
     SIGNATURE
 
 Where:
 
-* `META` is just 'META' string
-* `TS` is just 'TS' string
+* `CURRENCY_NAME` is a valid currency name
+* `USER_ID` is a valid user identity string
+* `PUBLIC_KEY` is a valid public key (base58 format)
 * `BLOCK_UID` refers to a [block unique ID], and represents a time reference.
 * `SIGNATURE` is a signature
 
-So a self-certification is the act of saying:
+So the identity issuance is the act of saying:
 
 > « I attest, today, that this identity refers to me. »
 
@@ -163,73 +167,88 @@ So a self-certification is the act of saying:
 
 A valid identity:
 
-    UID:lolcat
-    
-A complete self-certification:
-
-    UID:lolcat
-    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+    Version: 2
+    Type: Identity
+    Currency: beta_brousouf
+    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+    UniqueID: lolcat
+    Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
 
-#### Identity revocation
+### Revocation
 
-##### Definition
+
+#### Definition
 
 An identity revocation is the act, for a given public key's owner, to revoke an identity he created for representing himself. Doing a self-revocation is extacly like saying:
 
 > « This identity I created has no more sense. It has to be locked definitively. »
 
-##### Use case
+#### Use case
 
 Its goal is only to inform that a created identity was either made by mistake, or contained a mistake, may have been compromised (private key stolen, lost, ...), or because for some reason you want to create another identity for you.
 
-##### Format
+#### Format
 
-A self-revocation is just *a signature* over a complete self-certification flavoured with metadata telling this identity is to be revoked:
+A revocation is a *signed* document gathering the identity informations to revoke:
 
-    UID:IDENTIFIER
-    META:TS:BLOCK_UID
-    SIGNATURE
-    META:REVOKE
-    CERTIFIER_SIGNATURE
+    Version: 2
+    Type: Revocation
+    Currency: CURRENCY_NAME
+    Issuer: PUBLIC_KEY
+    IdtyUniqueID: USER_ID
+    IdtyTimestamp: BLOCK_UID
+    IdtySignature: IDTY_SIGNATURE
+    REVOCATION_SIGNATURE
 
 Where:
 
-* `CERTIFIER_SIGNATURE` is the signature of the *certifier*.
+* `REVOCATION_SIGNATURE` is the signature over the document, `REVOCATION_SIGNATURE` excluded.
 
-##### Example
+#### Example
 
-If we have the following complete self-certification:
+If we have the following identity:
 
-    UID:lolcat
-    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+    Version: 2
+    Type: Identity
+    Currency: beta_brousouf
+    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+    UniqueID: lolcat
+    Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
 
-A valid self-revocation could be:
+A valid revocation could be:
 
+    Version: 2
+    Type: Revocation
+    Currency: beta_brousouf
+    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+    IdtyUniqueID: lolcat
+    IdtyTimestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+    IdtySignature: J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
 
-Over the following data:
+> The revocation actually *contains* the identity, so a program receiving a Revocation can extract the Identity and check the validity of its signature before processing the Revocation document.
 
-    UID:lolcat
-    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
-    J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    META:REVOKE
+### Certification
 
-#### Certification
+#### Definition
 
-##### Definition
+A *certification* in UCP refers to the document *certifying* someone else's identity to consider it as the unique reference to a living individual.
 
-The generic word *certification*, in UCP, is to be used for describing *certification from others*, i.e. *non-self certifications*.
+#### Format
 
-##### Format
+A certification has the following format:
 
-A certification is just *a signature* over a complete self-certification flavoured with a signature date:
-
-    UID:IDENTIFIER
-    META:TS:BLOCK_UID
-    SIGNATURE
-    META:TS:BLOCK_UID
+    Version: 2
+    Type: Certification
+    Currency: CURRENCY_NAME
+    Issuer: PUBLIC_KEY
+    IdtyIssuer: IDTY_ISSUER
+    IdtyUniqueID: USER_ID
+    IdtyTimestamp: BLOCK_UID
+    IdtySignature: IDTY_SIGNATURE
+    Timestamp: BLOCK_UID
     CERTIFIER_SIGNATURE
 
 Where:
@@ -237,7 +256,7 @@ Where:
 * `BLOCK_UID` refers to a block unique ID.
 * `CERTIFIER_SIGNATURE` is the signature of the *certifier*.
 
-##### Inline format
+#### Inline format
 
 Certification may exists under *inline format* which describes the certification under a simple line. Here is general structure:
 
@@ -250,28 +269,31 @@ Where:
   * `BLOCK_ID` is the certification time reference
   * `SIGNATURE` is the certification signature
 
-> Note: BLOCK_HASH is not required in the inline format, since this format aims at being used in the context of a blockchain, where hash can be deduced.
+> Note: BLOCK_UID is not required in the inline format, since this format aims at being used in the context of a blockchain, where block_uid can be deduced.
 
-##### Example
+#### Example
 
 If we have the following complete self-certification:
 
-    UID:lolcat
-    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+    Version: 2
+    Type: Identity
+    Currency: beta_brousouf
+    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+    UniqueID: lolcat
+    Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
 
 A valid certification could be:
 
+    Version: 2
+    Type: Certification
+    Currency: beta_brousouf
+    Issuer: DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV
+    IdtyIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+    IdtyUniqueID: lolcat
+    IdtyTimestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+    IdtySignature: J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
     SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
-
-Over the following data:
-
-    UID:lolcat
-    META:TS:32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
-    J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    META:TS:84-2E76A3677D24C4A7225059A4A51364A11A6E47F7
-
-Note here that a certification *alone* has no meaning: it is only when appended to a flavoured self-certification that this signature (the certification) makes sense.
 
 ### Membership
 
@@ -309,7 +331,7 @@ Field | Description
 
 A [Membership](#membership) is to be considered having valid format if:
 
-* `Version` equals `1`
+* `Version` equals `2`
 * `Type` equals `Membership` value.
 * `Currency` is a valid currency name
 * `Issuer` is a public key
@@ -368,7 +390,7 @@ Field | Description
 
 A Transaction structure is considered *valid* if:
 
-* Field `Version` equals `1`.
+* Field `Version` equals `2`.
 * Field `Type` equals `Transaction`.
 * Field `Currency` is not empty.
 * Field `Issuers` is a multiline field whose lines are public keys.
@@ -629,7 +651,7 @@ This link is made through a document called *Peer* whose format is described bel
     Version: VERSION
     Type: Peer
     Currency: CURRENCY_NAME
-    PublicKey: NODE_PUBLICKEY
+    Issuer: NODE_PUBLICKEY
     Block: BLOCK
     Endpoints:
     END_POINT_1
@@ -648,7 +670,7 @@ Field | Description
 `Version` | denotes the current structure version.
 `Type`  | The document type.
 `Currency` | contains the name of the currency.
-`PublicKey` | the node's public key.
+`Issuer` | the node's public key.
 `Block` | Block number and hash. Value is used to target a blockchain and precise time reference.
 `Endpoints` | a list of endpoints to interact with the node
 `Endpoints` has a particular structure: it is made up of at least one line with each line following format:
@@ -673,7 +695,7 @@ Field | Description
 To be a valid, a peer document must match the following rules:
 
 ##### Format
-* `Version` equals `1`
+* `Version` equals `2`
 * `Type` equals `Peer`
 * `Currency` is a valid currency name
 * `PublicKey` is a [Public key](#publickey)

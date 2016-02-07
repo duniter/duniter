@@ -41,7 +41,7 @@ function WoTBWrapper(instance) {
     instance.addLink(from, to);
   };
 
-  this.removeLink = (from, to) => {
+  this.removeLink = (from, to, debug) => {
     logger.trace('Link %s X> %s', from, to);
     instance.removeLink(from, to);
   };

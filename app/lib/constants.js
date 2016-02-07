@@ -42,12 +42,14 @@ module.exports = {
     WRONG_DOCUMENT:                       { httpCode: 400, uerr: { ucode: 1005, message: "Document has unkown fields or wrong line ending format" }},
 
     HTTP_PARAM_PUBKEY_REQUIRED:           { httpCode: 400, uerr: { ucode: 1101, message: "Parameter `pubkey` is required" }},
-    HTTP_PARAM_SELF_REQUIRED:             { httpCode: 400, uerr: { ucode: 1102, message: "Parameter `self` is required" }},
+    HTTP_PARAM_IDENTITY_REQUIRED:         { httpCode: 400, uerr: { ucode: 1102, message: "Parameter `identity` is required" }},
     HTTP_PARAM_PEER_REQUIRED:             { httpCode: 400, uerr: { ucode: 1103, message: "Requires a peer" }},
     HTTP_PARAM_BLOCK_REQUIRED:            { httpCode: 400, uerr: { ucode: 1104, message: "Requires a block" }},
     HTTP_PARAM_MEMBERSHIP_REQUIRED:       { httpCode: 400, uerr: { ucode: 1105, message: "Requires a membership" }},
     HTTP_PARAM_TX_REQUIRED:               { httpCode: 400, uerr: { ucode: 1106, message: "Requires a transaction" }},
     HTTP_PARAM_SIG_REQUIRED:              { httpCode: 400, uerr: { ucode: 1107, message: "Parameter `sig` is required" }},
+    HTTP_PARAM_CERT_REQUIRED:             { httpCode: 400, uerr: { ucode: 1108, message: "Parameter `cert` is required" }},
+    HTTP_PARAM_REVOCATION_REQUIRED:       { httpCode: 400, uerr: { ucode: 1109, message: "Parameter `revocation` is required" }},
 
     // Business errors
     NO_MATCHING_IDENTITY:                 { httpCode: 404, uerr: { ucode: 2001, message: "No matching identity" }},
@@ -96,7 +98,30 @@ module.exports = {
     }
   },
   IDENTITY: {
-    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + USER_ID)
+    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + USER_ID),
+    IDTY_TYPE:      find('Type: (Identity)'),
+    IDTY_UID:       find('UniqueID: (' + USER_ID + ')')
+  },
+  DOCUMENTS: {
+    DOC_VERSION:    find('Version: (2)'),
+    DOC_CURRENCY:   find('Currency: (' + CURRENCY + ')'),
+    DOC_ISSUER:     find('Issuer: (' + PUBKEY + ')'),
+    TIMESTAMP:      find('Timestamp: (' + BLOCK_UID + ')')
+  },
+  CERTIFICATION: {
+    CERT_TYPE:      find('Type: (Certification)'),
+    IDTY_ISSUER:    find('IdtyIssuer: (' + PUBKEY + ')'),
+    IDTY_UID:       find('IdtyUniqueID: (' + USER_ID + ')'),
+    IDTY_TIMESTAMP: find('IdtyTimestamp: (' + BLOCK_UID + ')'),
+    IDTY_SIG:       find('IdtySignature: (' + SIGNATURE + ')'),
+    CERT_TIMESTAMP: find('CertTimestamp: (' + BLOCK_UID + ')')
+  },
+  REVOCATION: {
+    REVOC_TYPE:      find('Type: (Certification)'),
+    IDTY_ISSUER:     find('IdtyIssuer: (' + PUBKEY + ')'),
+    IDTY_UID:        find('IdtyUniqueID: (' + USER_ID + ')'),
+    IDTY_TIMESTAMP:  find('IdtyTimestamp: (' + BLOCK_UID + ')'),
+    IDTY_SIG:        find('IdtySignature: (' + SIGNATURE + ')')
   },
   MEMBERSHIP: {
     BLOCK:      find('Block: (' + BLOCK_UID + ')'),

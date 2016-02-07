@@ -77,34 +77,19 @@ var Identity = function(json) {
   };
 
   this.selfCert = function () {
-    return rawer.getSelfIdentity(this);
+    return rawer.getOfficialIdentity(this);
   };
 
-  this.othersCerts = function () {
-    var certs = [];
-    this.certs.forEach(function(cert){
-      if (cert.to == that.pubkey) {
-        // Signature for this pubkey
-        certs.push(cert);
-      }
-    });
-    return certs;
+  this.rawWithoutSig = () => {
+    let sig = this.sig;
+    this.sig = '';
+    let raw = rawer.getOfficialIdentity(this);
+    this.sig = sig;
+    return raw;
   };
 
   this.getTargetHash = function () {
     return hashf(this.uid + this.buid + this.pubkey).toUpperCase();
-  };
-
-  this.getRawPubkey = function () {
-    return rawer.getIdentityPubkey(this);
-  };
-
-  this.getRawSelf = function () {
-    return rawer.getIdentitySelf(this);
-  };
-
-  this.getRawOther = function () {
-    return rawer.getIdentityOthers(this);
   };
 };
 

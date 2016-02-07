@@ -7,6 +7,7 @@ var co      = require('co');
 var constants = require('../../lib/constants');
 var Peer    = require('../../lib/entity/peer');
 var Identity = require('../../lib/entity/identity');
+var Revocation = require('../../lib/entity/revocation');
 var Membership = require('../../lib/entity/membership');
 var Block = require('../../lib/entity/block');
 var Transaction = require('../../lib/entity/transaction');
@@ -42,9 +43,31 @@ function Multicaster (isolate, timeout) {
     uri: '/wot/add',
     getObj: (idty) => {
       return {
-        "pubkey": idty.getRawPubkey(),
-        "self": idty.getRawSelf(),
-        "other": idty.getRawOther()
+        "identity": idty.selfCert()
+      };
+    },
+    getDocID: (idty) => 'with ' + (idty.certs || []).length + ' certs'
+  });
+
+  let certForward = forward({
+    transform: Identity.statics.fromJSON,
+    type: 'Cert',
+    uri: '/wot/certify',
+    getObj: (cert) => {
+      return {
+        "cert": cert.getRaw()
+      };
+    },
+    getDocID: (idty) => 'with ' + (idty.certs || []).length + ' certs'
+  });
+
+  let revocationForward = forward({
+    transform: Revocation.statics.fromJSON,
+    type: 'Revocation',
+    uri: '/wot/revoke',
+    getObj: (revocation) => {
+      return {
+        "revocation": revocation.getRaw()
       };
     },
     getDocID: (idty) => 'with ' + (idty.certs || []).length + ' certs'
@@ -88,6 +111,8 @@ function Multicaster (isolate, timeout) {
   });
   
   that.on('identity', idtyForward);
+  that.on('cert', certForward);
+  that.on('revocation', revocationForward);
   that.on('block', blockForward);
   that.on('transaction', txForward);
   that.on('peer', peerForward);

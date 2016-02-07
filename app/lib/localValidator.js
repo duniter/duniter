@@ -642,7 +642,8 @@ function hasWrongSignatureForIdentities (block) {
   var wrongSig = false;
   while (!wrongSig && i < block.identities.length) {
     var idty = Identity.statics.fromInline(block.identities[i]);
-    wrongSig = !crypto.verify(idty.selfCert(), idty.sig, idty.pubkey);
+    idty.currency = block.currency;
+    wrongSig = !crypto.verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
     i++;
   }
   return wrongSig;

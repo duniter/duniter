@@ -268,9 +268,9 @@ function GlobalValidator (conf, dao) {
         else if (cert.from == res.idty.pubkey)
           next('Rejected certification: certifying its own self-certification has no meaning');
         else {
-          var selfCert = new Identity(res.idty).selfCert();
-          var targetId = [cert.block_number, res.target.hash].join('-');
-          crypto.isValidCertification(selfCert, res.idty.sig, cert.from, cert.sig, targetId, next);
+          var buid = [cert.block_number, res.target.hash].join('-');
+          res.idty.currency = conf.currency;
+          crypto.isValidCertification(new Identity(res.idty), cert.from, cert.sig, buid, block.currency, next);
         }
       }
     ], function(err) {
@@ -852,7 +852,9 @@ function GlobalValidator (conf, dao) {
         if (idty.revoked) {
           throw "A revoked identity cannot be revoked again";
         }
-        let rawRevocation = rawer.getSelfRevocation({
+        let rawRevocation = rawer.getOfficialRevocation({
+          currency: block.currency,
+          issuer: idty.pubkey,
           uid: idty.uid,
           buid: idty.buid,
           sig: idty.sig,

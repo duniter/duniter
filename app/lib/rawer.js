@@ -1,79 +1,46 @@
 "use strict";
 let dos2unix = require('./dos2unix');
+let constants = require('./constants');
 
 module.exports = new function() {
 
   let that = this;
 
-  this.getIdentity = function (json) {
+  this.getOfficialIdentity = function (json) {
     let raw = "";
-    raw += json.pubkey + '\n';
-    raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.buid + '\n';
-    raw += json.sig + '\n';
-    (json.certs || []).forEach(function(cert){
-      raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
-    });
+    raw += "Version: " + (json.version || constants.DOCUMENTS_VERSION) + "\n";
+    raw += "Type: Identity\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Issuer: " + (json.issuer || json.pubkey) + "\n";
+    raw += "UniqueID: " + json.uid + '\n';
+    raw += "Timestamp: " + json.buid + '\n';
+    raw += json.sig || '';
     return dos2unix(raw);
   };
 
-  this.getIdentityPubkey = function (json) {
-    let raw = "";
-    raw += json.pubkey + '\n';
+  this.getOfficialCertification = function (json) {
+    let raw = getNormalHeader('Certification', json);
+    raw += "IdtyIssuer: " + json.idty_issuer + '\n';
+    raw += "IdtyUniqueID: " + json.idty_uid + '\n';
+    raw += "IdtyTimestamp: " + json.idty_buid + '\n';
+    raw += "IdtySignature: " + json.idty_sig + '\n';
+    raw += "CertTimestamp: " + json.buid + '\n';
+    raw += json.sig || '';
     return dos2unix(raw);
   };
 
-  this.getIdentitySelf = function (json) {
-    let raw = "";
-    raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.buid + '\n';
-    raw += json.sig + '\n';
-    return dos2unix(raw);
-  };
-
-  this.getIdentityOthers = function (json) {
-    let raw = "";
-    (json.certs || []).forEach(function(cert){
-      raw += [cert.from, json.pubkey, cert.block_number, cert.sig].join(':') + '\n';
-    });
-    return (raw && dos2unix(raw)) || raw;
-  };
-
-  this.getSelfIdentity = function (json) {
-    let raw = "";
-    raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.buid + '\n';
-    return dos2unix(raw);
-  };
-
-  this.getRevocation = function (json) {
-    let raw = "";
-    raw += json.pubkey + '\n';
-    raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.buid + '\n';
-    raw += json.sig + '\n';
-    raw += "META:REVOKE\n";
+  this.getOfficialRevocation = function (json) {
+    let raw = getNormalHeader('Revocation', json);
+    raw += "IdtyUniqueID: " + json.uid + '\n';
+    raw += "IdtyTimestamp: " + json.buid + '\n';
+    raw += "IdtySignature: " + json.sig + '\n';
     raw += json.revocation;
     return dos2unix(raw);
-  };
-
-  this.getSelfRevocation = function (json) {
-    let raw = "";
-    raw += "UID:" + json.uid + '\n';
-    raw += "META:TS:" + json.buid + '\n';
-    raw += json.sig + '\n';
-    raw += "META:REVOKE\n";
-    raw += json.revocation;
-    return dos2unix(raw);
-  };
-
-  this.getPubkey = function (json) {
-    return dos2unix(json.raw);
   };
 
   this.getPeerWithoutSignature = function (json) {
     let raw = "";
-    raw += "Version: " + json.version + "\n";
+    raw += "Version: " + (json.version || constants.DOCUMENTS_VERSION) + "\n";
     raw += "Type: Peer\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "PublicKey: " + json.pubkey + "\n";
@@ -90,11 +57,7 @@ module.exports = new function() {
   };
 
   this.getMembershipWithoutSignature = function (json) {
-    let raw = "";
-    raw += "Version: " + json.version + "\n";
-    raw += "Type: Membership\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "Issuer: " + json.issuer + "\n";
+    let raw = getNormalHeader('Membership', json);
     raw += "Block: " + json.block + "\n";
     raw += "Membership: " + json.membership + "\n";
     if (json.userid)
@@ -110,7 +73,7 @@ module.exports = new function() {
 
   this.getBlockInnerPart = function (json) {
     let raw = "";
-    raw += "Version: " + json.version + "\n";
+    raw += "Version: " + (json.version || constants.DOCUMENTS_VERSION) + "\n";
     raw += "Type: Block\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Number: " + json.number + "\n";
@@ -175,7 +138,7 @@ module.exports = new function() {
 
   this.getTransaction = function (json) {
     let raw = "";
-    raw += "Version: " + json.version + "\n";
+    raw += "Version: " + (json.version || constants.DOCUMENTS_VERSION) + "\n";
     raw += "Type: Transaction\n";
     raw += "Currency: " + json.currency + "\n";
     raw += "Issuers:\n";
@@ -216,6 +179,15 @@ module.exports = new function() {
     });
     return dos2unix(raw);
   };
+
+  function getNormalHeader(doctype, json) {
+    let raw = "";
+    raw += "Version: " + (json.version || constants.DOCUMENTS_VERSION) + "\n";
+    raw += "Type: " + doctype + "\n";
+    raw += "Currency: " + json.currency + "\n";
+    raw += "Issuer: " + json.issuer + "\n";
+    return raw;
+  }
 
   function signed (raw, json) {
     raw += json.signature + '\n';

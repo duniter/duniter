@@ -1,7 +1,9 @@
 "use strict";
+var _           = require('underscore');
 var nacl        = require('tweetnacl');
 var scrypt      = require('scrypt');
 var base58      = require('./base58');
+var rawer       = require('./rawer');
 var naclBinding = require('naclb');
 
 var crypto_sign_BYTES = 64;
@@ -102,16 +104,19 @@ module.exports = {
   *
   *****************************/
 
-  isValidCertification: function (selfCert, selfSig, otherPubkey, otherSig, blockID, done) {
-    var raw = selfCert + selfSig + '\n' + 'META:TS:' + blockID + '\n';
-    var verified = this.verify(raw, otherSig, otherPubkey);
+  isValidCertification: function (idty, from, sig, blockID, currency, done) {
+    var raw = rawer.getOfficialCertification(_.extend(idty, {
+      currency: currency,
+      idty_issuer: idty.pubkey,
+      idty_uid: idty.uid,
+      idty_buid: idty.buid,
+      idty_sig: idty.sig,
+      issuer: from,
+      buid: blockID,
+      sig: ''
+    }));
+    var verified = this.verify(raw, sig, from);
     done(verified ? null : 'Wrong signature for certification', verified);
-  },
-
-  isValidRevocation: function (selfCert, selfSig, selfPubkey, selfRevocationSig, done) {
-    var raw = selfCert + selfSig + '\n' + 'META:REVOKE\n';
-    var verified = this.verify(raw, selfRevocationSig, selfPubkey);
-    done(verified ? null : 'Wrong signature for revocation');
   }
 };
 

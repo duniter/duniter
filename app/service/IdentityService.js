@@ -16,11 +16,14 @@ module.exports = function (conf, dal) {
 
 function IdentityService (conf, dal) {
 
+  let that = this;
+
   var logger          = require('../lib/logger')(dal.profile);
 
   var Block         = require('../../app/lib/entity/block');
   var Identity      = require('../../app/lib/entity/identity');
   var Certification = require('../../app/lib/entity/certification');
+  var Revocation    = require('../../app/lib/entity/revocation');
 
   this.dal = dal;
   
@@ -77,77 +80,19 @@ function IdentityService (conf, dal) {
     return dal.getNonWritten(pubkey);
   };
 
-  /**
-  * Tries to persist a public key given in ASCII-armored format.
-  * Returns the database stored public key.
-  */
   this.submitIdentity = function(obj, done) {
     var idty = new Identity(obj);
-    var selfCert = idty.selfCert();
-    var certs = idty.othersCerts();
-    var potentialNext;
-    var aCertWasSaved = false;
+    var selfCert = idty.rawWithoutSig();
     fifo.push(function (cb) {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
-      certs = _.sortBy(certs, function(c){ return parseInt(c.block_number); });
-      certs.forEach(function(cert){
-        logger.info('⬇ CERT %s block#%s', cert.from, cert.block_number);
-      });
       return co(function *() {
-        let current = yield dal.getCurrentBlockOrNull();
-        // Prepare validator for certifications
-        potentialNext = new Block({ identities: [], number: current ? current.number + 1 : 0 });
         // Check signature's validity
         let verified = crypto.verify(selfCert, idty.sig, idty.pubkey);
         if (!verified) {
           throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
         }
-        // CERTS
-        for (let i = 0; i < certs.length; i++) {
-          let cert = certs[i];
-          yield Q.Promise(function(resolve){
-            globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
-              next(null, idty);
-            }, function(err) {
-              cert.err = err;
-              resolve();
-            }, DO_NOT_THROW_ABOUT_EXPIRATION);
-          });
-          if (!cert.err) {
-            let basedBlock = yield dal.getBlock(cert.block_number);
-            if (cert.block_number == 0 && !basedBlock) {
-              basedBlock = {
-                number: 0,
-                hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
-              };
-            }
-            cert.block_hash = basedBlock.hash;
-            var mCert = new Certification({
-              pubkey: cert.from,
-              sig: cert.sig,
-              block_number: cert.block_number,
-              block_hash: cert.block_hash,
-              target: obj.hash,
-              to: idty.pubkey
-            });
-            let existingCert = yield dal.existsCert(mCert);
-            if (!existingCert) {
-              try {
-                yield dal.registerNewCertification(new Certification(mCert));
-                logger.info('✔ CERT %s', mCert.from);
-                aCertWasSaved = true;
-              } catch (e) {
-                // TODO: This is weird...
-                logger.info('✔ CERT %s', mCert.from);
-                aCertWasSaved = true;
-              }
-            }
-          } else {
-            logger.info('✘ CERT %s %s', cert.from, cert.err);
-          }
-        }
-        let existing = yield dal.getIdentityByHashWithCertsOrNull(obj.hash);
-        if (existing && !aCertWasSaved) {
+        let existing = yield dal.getIdentityByHashOrNull(obj.hash);
+        if (existing) {
           throw constants.ERRORS.ALREADY_UP_TO_DATE;
         }
         else if (!existing) {
@@ -173,17 +118,74 @@ function IdentityService (conf, dal) {
     });
   };
 
+  this.submitCertification = (obj, done) => co(function *() {
+    let current = yield dal.getCurrentBlockOrNull();
+    // Prepare validator for certifications
+    let potentialNext = new Block({ currency: conf.currency, identities: [], number: current ? current.number + 1 : 0 });
+    let cert = Certification.statics.fromJSON(obj);
+    let targetHash = cert.getTargetHash();
+    let idty = yield dal.getIdentityByHashOrNull(targetHash);
+    if (!idty) {
+      yield Q.nbind(that.submitIdentity, that)({
+        issuer: cert.idty_issuer,
+        uid: cert.idty_uid,
+        buid: cert.idty_buid
+      });
+    }
+    // TODO: missing fifo ?
+    logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
+    yield Q.Promise(function(resolve){
+      globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
+        next(null, idty);
+      }, function(err) {
+        cert.err = err;
+        resolve();
+      }, DO_NOT_THROW_ABOUT_EXPIRATION);
+    });
+    if (!cert.err) {
+      let basedBlock = yield dal.getBlock(cert.block_number);
+      if (cert.block_number == 0 && !basedBlock) {
+        basedBlock = {
+          number: 0,
+          hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
+        };
+      }
+      cert.block_hash = basedBlock.hash;
+      var mCert = new Certification({
+        pubkey: cert.from,
+        sig: cert.sig,
+        block_number: cert.block_number,
+        block_hash: cert.block_hash,
+        target: targetHash,
+        to: idty.pubkey
+      });
+      let existingCert = yield dal.existsCert(mCert);
+      if (!existingCert) {
+        try {
+          yield dal.registerNewCertification(new Certification(mCert));
+          logger.info('✔ CERT %s', mCert.from);
+        } catch (e) {
+          // TODO: This is weird...
+          logger.error(e);
+          logger.info('✔ CERT %s', mCert.from);
+        }
+      }
+    } else {
+      logger.info('✘ CERT %s %s', cert.from, cert.err);
+      throw cert.err;
+    }
+    return cert;
+  })
+    .then((cert) => done(null, cert)).catch(done);
+
   this.submitRevocation = function(obj, done) {
-    var idty = new Identity(obj);
-    var selfCert = idty.selfCert();
+    var revoc = new Revocation(obj);
+    var raw = revoc.rawWithoutSig();
     fifo.push(function (cb) {
       async.waterfall([
         function (next) {
           // Check signature's validity
-          crypto.verifyCbErr(selfCert, idty.sig, idty.pubkey, next);
-        },
-        function (next) {
-          crypto.isValidRevocation(selfCert, idty.sig, idty.pubkey, idty.revocation, next);
+          crypto.verifyCbErr(raw, revoc.revocation, revoc.pubkey, next);
         },
         function (next){
           dal.getIdentityByHashOrNull(obj.hash, next);
@@ -197,7 +199,7 @@ function IdentityService (conf, dal) {
             else if (existing.revocation_sig) {
               next('Revocation already registered');
             } else {
-              dal.setRevocating(obj.hash, idty.revocation).then(function () {
+              dal.setRevocating(obj.hash, revoc.revocation).then(function () {
                 next(null, jsonResultTrue());
               })
                 .catch(next);
@@ -205,8 +207,8 @@ function IdentityService (conf, dal) {
           }
           else {
             // Create
-            idty.revoked = true;
-            dal.savePendingIdentity(idty).then(function() {
+            revoc.revoked = true;
+            dal.savePendingIdentity(revoc).then(function() {
               next(null, jsonResultTrue());
             }).catch(next);
           }

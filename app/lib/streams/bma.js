@@ -94,6 +94,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForPostP( '/network/peering/peers',                 net.peersPost,                        dtos.Peer);
   answerForGetP(  '/network/peers',                         net.peers,                            dtos.Peers);
   answerForPostP( '/wot/add',                               wot.add,                              dtos.Identity);
+  answerForPostP( '/wot/certify',                           wot.certify,                          dtos.Cert);
   answerForPostP( '/wot/revoke',                            wot.revoke,                           dtos.Result);
   answerForGetP(  '/wot/lookup/:search',                    wot.lookup,                           dtos.Lookup);
   answerForGetP(  '/wot/members',                           wot.members,                          dtos.Members);

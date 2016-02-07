@@ -3,70 +3,22 @@
 var constants = require('../../constants');
 
 module.exports = {
-  identity:      Http2RawIdentity,
-  revocation:    Http2RawRevocation,
-  transaction:   Http2RawTransaction,
-  peer:          Http2RawPeer,
+  identity:      requiresParameter('identity',    constants.ERRORS.HTTP_PARAM_IDENTITY_REQUIRED),
+  certification: requiresParameter('cert',        constants.ERRORS.HTTP_PARAM_CERT_REQUIRED),
+  revocation:    requiresParameter('revocation',  constants.ERRORS.HTTP_PARAM_REVOCATION_REQUIRED),
+  transaction:   requiresParameter('transaction', constants.ERRORS.HTTP_PARAM_TX_REQUIRED),
+  peer:          requiresParameter('peer',        constants.ERRORS.HTTP_PARAM_PEER_REQUIRED),
   membership:    Http2RawMembership,
-  block:         Http2RawBlock
+  block:         requiresParameter('block',       constants.ERRORS.HTTP_PARAM_BLOCK_REQUIRED)
 };
 
-function Http2RawIdentity (req) {
-  if(!req.body || !req.body.pubkey){
-    throw constants.ERRORS.HTTP_PARAM_PUBKEY_REQUIRED;
-  }
-  if(!req.body || !req.body.self){
-    throw constants.ERRORS.HTTP_PARAM_SELF_REQUIRED;
-  }
-  let pubkey = req.body.pubkey;
-  // Add trailing LF to pubkey
-  if (!req.body.pubkey.match(/\n$/)) {
-    pubkey += '\n';
-  }
-  let selfCert = req.body.self;
-  // Add trailing LF to self
-  if (!req.body.self.match(/\n$/)) {
-    selfCert += '\n';
-  }
-  return pubkey + selfCert + (req.body.other || '');
-}
-
-function Http2RawRevocation (req) {
-  if(!req.body || !req.body.pubkey){
-    throw constants.ERRORS.HTTP_PARAM_PUBKEY_REQUIRED;
-  }
-  else if(!req.body || !req.body.self){
-    throw constants.ERRORS.HTTP_PARAM_SELF_REQUIRED;
-  }
-  else if(!req.body || !req.body.sig){
-    throw constants.ERRORS.HTTP_PARAM_SIG_REQUIRED;
-  }
-  var pubkey = req.body.pubkey;
-  // Add trailing LF to pubkey
-  if (!req.body.pubkey.match(/\n$/)) {
-    pubkey += '\n';
-  }
-  var selfCert = req.body.self;
-  // Add trailing LF to self
-  if (!req.body.self.match(/\n$/)) {
-    selfCert += '\n';
-  }
-  var revocationLine = 'META:REVOKE\n';
-  return pubkey + selfCert + revocationLine + (req.body.sig || '');
-}
-
-function Http2RawTransaction (req) {
-  if(!(req.body && req.body.transaction)){
-    throw constants.ERRORS.HTTP_PARAM_TX_REQUIRED;
-  }
-  return req.body.transaction;
-}
-
-function Http2RawPeer (req) {
-  if(!(req.body && req.body.peer)){
-    throw constants.ERRORS.HTTP_PARAM_PEER_REQUIRED;
-  }
-  return req.body.peer;
+function requiresParameter(parameter, err) {
+  return (req) => {
+    if(!req.body || !req.body[parameter]){
+      throw err;
+    }
+    return req.body[parameter];
+  };
 }
 
 function Http2RawMembership (req) {
@@ -81,11 +33,4 @@ function Http2RawMembership (req) {
     }
   }
   return ms;
-}
-
-function Http2RawBlock (req) {
-  if(!(req.body && req.body.block)){
-    throw constants.ERRORS.HTTP_PARAM_BLOCK_REQUIRED;
-  }
-  return req.body.block;
 }

@@ -302,6 +302,7 @@ function Server (dbConf, overrideConf) {
             // Create document mapping
             documentsMapping = {
               'identity':    that.IdentityService.submitIdentity,
+              'certification': that.IdentityService.submitCertification,
               'revocation':  that.IdentityService.submitRevocation,
               'membership':  that.MembershipService.submitMembership,
               'peer':        (obj, done) => {

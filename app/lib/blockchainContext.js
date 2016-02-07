@@ -271,7 +271,7 @@ function BlockchainContext(conf, dal) {
         let idty = Identity.statics.fromInline(identity);
         // Computes the hash if not done yet
         if (!idty.hash)
-          idty.hash = (hashf(rawer.getIdentity(idty)) + "").toUpperCase();
+          idty.hash = (hashf(rawer.getOfficialIdentity(idty)) + "").toUpperCase();
         yield dal.newIdentity(idty, block.number);
         yield cleanRejectedIdentities(idty);
       }

@@ -226,5 +226,7 @@ function WOTBinding (server) {
 
   this.add = (req) => this.pushEntity(req, http2raw.identity, parsers.parseIdentity);
 
+  this.certify = (req) => this.pushEntity(req, http2raw.certification, parsers.parseCertification);
+
   this.revoke = (req) => this.pushEntity(req, http2raw.revocation, parsers.parseRevocation);
 }

@@ -87,20 +87,20 @@ function User (uid, options, node) {
     });
   };
 
-  this.certPromise = function(user) {
+  this.certPromise = function(user, fromServer) {
     return Q.Promise(function(resolve, reject){
-      that.cert(user)(function(err) {
+      that.cert(user, fromServer)(function(err) {
         err ? reject(err) : resolve();
       });
     });
   };
 
-  this.cert = function (user) {
+  this.cert = function (user, fromServer) {
     return function(done) {
       async.waterfall([
         function(next) {
           async.parallel({
-            lookup: lookup(user.pub, function(res, callback) {
+            lookup: lookup(user.pub, fromServer, function(res, callback) {
               callback(null, res);
             }),
             current: function(callback){
@@ -177,7 +177,7 @@ function User (uid, options, node) {
       async.waterfall([
         function(next) {
           async.parallel({
-            lookup: lookup(pub, function(res, callback) {
+            lookup: lookup(pub, null, function(res, callback) {
               callback(null, res);
             }),
             current: function(callback){
@@ -308,20 +308,21 @@ function User (uid, options, node) {
     postReq.form(data);
   }
 
-  function getVucoin() {
+  function getVucoin(fromServer) {
     return Q.Promise(function(resolve, reject){
-      vucoin(node.server.conf.ipv4, node.server.conf.port, function(err, node) {
+      let theNode = (fromServer && { server: fromServer }) || node;
+      vucoin(theNode.server.conf.ipv4, theNode.server.conf.port, function(err, node2) {
         if (err) return reject(err);
-        resolve(node);
+        resolve(node2);
       }, {
         timeout: 1000 * 100000
       });
     });
   }
 
-  function lookup(pubkey, done) {
+  function lookup(pubkey, fromServer, done) {
     return function(calback) {
-      getVucoin()
+      getVucoin(fromServer)
         .then(function(node2){
           node2.wot.lookup(pubkey, function(err, res) {
             if (err) {

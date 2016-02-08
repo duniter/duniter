@@ -91,6 +91,10 @@ var Identity = function(json) {
   this.getTargetHash = function () {
     return hashf(this.uid + this.buid + this.pubkey).toUpperCase();
   };
+
+  if (!this.hash) {
+    this.hash = this.getTargetHash();
+  }
 };
 
 Identity.statics = {};

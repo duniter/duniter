@@ -91,7 +91,7 @@ function IdentityService (conf, dal) {
         if (!verified) {
           throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
         }
-        let existing = yield dal.getIdentityByHashOrNull(obj.hash);
+        let existing = yield dal.getIdentityByHashOrNull(idty.hash);
         if (existing) {
           throw constants.ERRORS.ALREADY_UP_TO_DATE;
         }
@@ -126,55 +126,67 @@ function IdentityService (conf, dal) {
     let targetHash = cert.getTargetHash();
     let idty = yield dal.getIdentityByHashOrNull(targetHash);
     if (!idty) {
-      yield Q.nbind(that.submitIdentity, that)({
+      idty = yield Q.nbind(that.submitIdentity, that)({
+        currency: cert.currency,
         issuer: cert.idty_issuer,
+        pubkey: cert.idty_issuer,
         uid: cert.idty_uid,
-        buid: cert.idty_buid
+        buid: cert.idty_buid,
+        sig: cert.idty_sig
       });
     }
-    // TODO: missing fifo ?
-    logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
-    yield Q.Promise(function(resolve){
-      globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
-        next(null, idty);
-      }, function(err) {
-        cert.err = err;
-        resolve();
-      }, DO_NOT_THROW_ABOUT_EXPIRATION);
+    return Q.Promise(function(resolve, reject){
+      fifo.push(function (cb) {
+        return co(function *() {
+          logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
+          yield Q.Promise(function(resolve){
+            globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
+              next(null, idty);
+            }, function(err) {
+              cert.err = err;
+              resolve();
+            }, DO_NOT_THROW_ABOUT_EXPIRATION);
+          });
+          if (!cert.err) {
+            let basedBlock = yield dal.getBlock(cert.block_number);
+            if (cert.block_number == 0 && !basedBlock) {
+              basedBlock = {
+                number: 0,
+                hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
+              };
+            }
+            cert.block_hash = basedBlock.hash;
+            var mCert = new Certification({
+              pubkey: cert.from,
+              sig: cert.sig,
+              block_number: cert.block_number,
+              block_hash: cert.block_hash,
+              target: targetHash,
+              to: idty.pubkey
+            });
+            let existingCert = yield dal.existsCert(mCert);
+            if (!existingCert) {
+              try {
+                yield dal.registerNewCertification(new Certification(mCert));
+                logger.info('✔ CERT %s', mCert.from);
+              } catch (e) {
+                // TODO: This is weird...
+                logger.error(e);
+                logger.info('✔ CERT %s', mCert.from);
+              }
+            }
+          } else {
+            logger.info('✘ CERT %s %s', cert.from, cert.err);
+            throw cert.err;
+          }
+          return cert;
+        })
+          .then((crt) => cb(null, crt)).catch(cb);
+      }, (err, res) => {
+        if (err) return reject(err);
+        resolve(res);
+      });
     });
-    if (!cert.err) {
-      let basedBlock = yield dal.getBlock(cert.block_number);
-      if (cert.block_number == 0 && !basedBlock) {
-        basedBlock = {
-          number: 0,
-          hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
-        };
-      }
-      cert.block_hash = basedBlock.hash;
-      var mCert = new Certification({
-        pubkey: cert.from,
-        sig: cert.sig,
-        block_number: cert.block_number,
-        block_hash: cert.block_hash,
-        target: targetHash,
-        to: idty.pubkey
-      });
-      let existingCert = yield dal.existsCert(mCert);
-      if (!existingCert) {
-        try {
-          yield dal.registerNewCertification(new Certification(mCert));
-          logger.info('✔ CERT %s', mCert.from);
-        } catch (e) {
-          // TODO: This is weird...
-          logger.error(e);
-          logger.info('✔ CERT %s', mCert.from);
-        }
-      }
-    } else {
-      logger.info('✘ CERT %s %s', cert.from, cert.err);
-      throw cert.err;
-    }
-    return cert;
   })
     .then((cert) => done(null, cert)).catch(done);
 

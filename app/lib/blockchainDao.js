@@ -109,7 +109,7 @@ module.exports = function(dal) {
       dal.lastUDBlock().then(_.partial(done, null)).catch(done);
     };
 
-    this.getSource = (type, pubkey, number, fingerprint, amount) => dal.getSource(type, pubkey, number, fingerprint, amount);
+    this.getSource = (identifier, noffset) => dal.getSource(identifier, noffset);
 
     this.getCurrentMembershipNumber = function (pubkey, done) {
       async.waterfall([

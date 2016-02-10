@@ -545,7 +545,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return links.length ? true : false;
   });
 
-  this.getSource = (type, pubkey, number, fingerprint, amount) => that.sourcesDAL.getSource(pubkey, type, number, fingerprint, amount);
+  this.getSource = (identifier, noffset) => that.sourcesDAL.getSource(identifier, noffset);
 
   this.isMember = function(pubkey, done) {
     return that.idtyDAL.getFromPubkey(pubkey)
@@ -589,9 +589,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return that.linksDAL.unObsoletesLinks(minTimestamp);
   };
 
-  this.setConsumedSource = function(type, pubkey, number, fingerprint, amount) {
-    return that.sourcesDAL.consumeSource(pubkey, type, number, fingerprint, amount);
-  };
+  this.setConsumedSource = (identifier, noffset) => that.sourcesDAL.consumeSource(identifier, noffset);
 
   this.setKicked = function(pubkey, hash, notEnoughLinks, done) {
     var kick = notEnoughLinks ? true : false;
@@ -929,11 +927,11 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   this.removeAllSourcesOfBlock = (number) =>
     that.sourcesDAL.removeAllSourcesOfBlock(number);
 
-  this.unConsumeSource = (type, pubkey, number, fingerprint, amount, time, block_hash) =>
-    that.sourcesDAL.unConsumeSource(type, pubkey, number, fingerprint, amount, time, block_hash);
+  this.unConsumeSource = (identifier, noffset) =>
+    that.sourcesDAL.unConsumeSource(identifier, noffset);
 
   this.saveSource = function(src) {
-    return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash, src.time, src.conditions);
+    return that.sourcesDAL.addSource(src.type, src.number, src.identifier, src.noffset, src.amount, src.block_hash, src.time, src.conditions);
   };
 
   this.updateSources = function(sources) {

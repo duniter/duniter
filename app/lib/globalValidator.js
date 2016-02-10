@@ -5,6 +5,7 @@ var _             = require('underscore');
 var co            = require('co');
 var async         = require('async');
 var crypto        = require('./crypto');
+var ucp           = require('./ucp');
 var moment        = require('moment');
 var util          = require('util');
 var stream        = require('stream');
@@ -632,9 +633,9 @@ function GlobalValidator (conf, dao) {
       }
       for (let i = 0, len = tx.inputs.length; i < len; i++) {
         let src = tx.inputs[i];
-        let dbSrc = yield dao.getSource(src.type, src.pubkey, src.number, src.fingerprint, src.amount);
+        let dbSrc = yield dao.getSource(src.identifier, src.noffset);
         if (!dbSrc || dbSrc.consumed) {
-          throw 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' is not available';
+          throw 'Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available';
         }
         let sigResults = localV.getSigResult(tx);
         let unlocksForCondition = [];

@@ -15,8 +15,8 @@ var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 var FINGERPRINT  = "[A-F0-9]{64}";
 var COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
 var UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + FINGERPRINT + "\\))";
-var BLOCK_ID     = INTEGER;
-var BLOCK_UID    = BLOCK_ID + "-" + FINGERPRINT;
+var CONDITIONS   = "(SIG|&&|\|\|| |XHX|[()\\da-zA-Z])*";
+var BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
 var META_TS      = "META:TS:" + BLOCK_UID;
 
 module.exports = {
@@ -158,9 +158,9 @@ module.exports = {
   TRANSACTION: {
     HEADER:  exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN + ":" + INTEGER),
     SENDER:  exact(PUBKEY),
-    SOURCE:  exact(INTEGER + ":(T|D):" + POSITIVE_INT + ":" + FINGERPRINT + ":" + POSITIVE_INT),
+    SOURCE:  exact("(T:" + FINGERPRINT + ":" + INTEGER + "|D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
     UNLOCK:  exact(INTEGER + ":" + UNLOCK + "( (" + UNLOCK + "))*"),
-    TARGET:  exact(PUBKEY + ":" + POSITIVE_INT),
+    TARGET:  exact(POSITIVE_INT + ":" + CONDITIONS),
     COMMENT: find("Comment: (" + COMMENT + ")"),
     INLINE_COMMENT: exact(COMMENT)
   },

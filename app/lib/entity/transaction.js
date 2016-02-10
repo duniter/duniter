@@ -53,12 +53,9 @@ var Transaction = function(obj, currency) {
     this.inputs.forEach(function (input) {
       var sp = input.split(':');
       tx.inputs.push({
-        index: parseInt(sp[0]),
-        pubkey: tx.issuers[parseInt(sp[0])] || '',
-        type: sp[1],
-        number: parseInt(sp[2]),
-        fingerprint: sp[3],
-        amount: parseInt(sp[4]),
+        type: sp[0],
+        identifier: sp[1],
+        noffset: sp[2],
         raw: input
       });
     });
@@ -69,8 +66,8 @@ var Transaction = function(obj, currency) {
     this.outputs.forEach(function (output) {
       var sp = output.split(':');
       tx.outputs.push({
-        pubkey: sp[0],
-        amount: parseInt(sp[1]),
+        amount: parseInt(sp[0]),
+        conditions: sp[1],
         raw: output
       });
     });

@@ -20,10 +20,9 @@ function Source(json) {
 
   this.json = function () {
     return {
-      "pubkey": this.pubkey,
       "type": this.type,
-      "number": this.number,
-      "fingerprint": this.fingerprint,
+      "noffset": this.noffset,
+      "identifier": this.identifier,
       "amount": this.amount
     };
   };

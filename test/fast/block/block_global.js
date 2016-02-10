@@ -278,36 +278,14 @@ describe("Block global coherence:", function(){
     should.not.exist(err);
   }));
 
-  it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_AMOUNT, function (err) {
-    should.exist(err);
-    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:100 is not available');
-  }));
-
-  it('a block with wrong UD source amount should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_AMOUNT, function (err) {
-    should.exist(err);
-    err.should.equal('Source 9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:60 is not available');
-  }));
-
-  // it('a block with wrong UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_UD_SOURCE, function (err) {
-  //   should.exist(err);
-  //   err.should.equal('Source D:33:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF does not exist');
-  //   done();
-  // }));
-
-  // it('a block with wrong TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TX_SOURCE, function (err) {
-  //   should.exist(err);
-  //   err.should.equal('Source T:44:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956 does not exist');
-  //   done();
-  // }));
-
   it('a block with unavailable UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, function (err) {
     should.exist(err);
-    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:55:D9779D03C70337E288D249DA8109943171F5B3E1565EE7AC20117D41E38B3168:40 is not available');
+    err.should.equal('Source D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:55 is not available');
   }));
 
   it('a block with unavailable TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, function (err) {
     should.exist(err);
-    err.should.equal('Source HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:88:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:40 is not available');
+    err.should.equal('Source T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88 is not available');
   }));
 
   it('a block with an unknown member revoked should fail', test('checkRevoked', blocks.BLOCK_UNKNOWN_REVOKED, function (err) {
@@ -619,8 +597,8 @@ function BlockCheckerDao (block) {
 
   this.existsUDSource = function (number, fpr, done) {
     var existing = [
-      '46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF',
-      '55:D9779D03C70337E288D249DA8109943171F5B3E1565EE7AC20117D41E38B3168'
+      'D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46',
+      'D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:55'
     ];
     var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
     done(null, exists);
@@ -628,26 +606,26 @@ function BlockCheckerDao (block) {
 
   this.existsTXSource = function (number, fpr, done) {
     var existing = [
-      '4:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3',
-      '78:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435',
-      '66:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956',
-      '176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B',
-      '88:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326'
+      'T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4',
+      'T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:78',
+      'T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:66',
+      'T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:176',
+      'T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88'
     ];
     var exists = ~existing.indexOf([number, fpr].join(':')) ? true : false;
     done(null, exists);
   }
 
-  this.getSource = function (type, pubkey, number, fpr, amount) {
+  this.getSource = function (identifier, noffset) {
     var existing = [
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40',
-      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40',
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:4:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:22',
-      'HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:T:78:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8',
-      'CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp:T:66:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:120',
-      '9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:T:176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5'
+      'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46',
+      'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:47',
+      '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4',
+      '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:78',
+      'A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:66',
+      '67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:176'
     ];
-    var index = existing.indexOf([pubkey, type, number, fpr, amount].join(':'));
+    var index = existing.indexOf([identifier, noffset].join(':'));
     return Q(index !== -1 ? existing[index] : null);
   };
 

@@ -235,8 +235,8 @@ function User (uid, options, node) {
             sources.push({
               'type': src.type,
               'amount': src.amount,
-              'number': src.number,
-              'hash': src.fingerprint
+              'noffset': src.noffset,
+              'identifier': src.identifier
             });
             cumulated += src.amount;
             i++;
@@ -268,7 +268,7 @@ function User (uid, options, node) {
           raw += issuer + '\n';
           raw += "Inputs:\n";
           sources2.forEach(function (src) {
-            raw += ['0', src.type, src.number, src.hash, src.amount].join(':') + '\n';
+            raw += [src.type, src.identifier, src.noffset].join(':') + '\n';
             inputSum += src.amount;
           });
           raw += "Unlocks:\n";
@@ -276,10 +276,10 @@ function User (uid, options, node) {
             raw += index + ":SIG(0)" + '\n';
           });
           raw += "Outputs:\n";
-          raw += [recipient.pub, amount].join(':') + '\n';
+          raw += [amount, "SIG(" + recipient.pub + ")"].join(':') + '\n';
           if (inputSum - amount > 0) {
             // Rest back to issuer
-            raw += [issuer, inputSum - amount].join(':') + '\n';
+            raw += [inputSum - amount, "SIG(" + issuer + ")"].join(':') + '\n';
           }
           raw += "Comment: " + (comment || "") + "\n";
           next(null, raw);

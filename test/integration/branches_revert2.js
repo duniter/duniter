@@ -78,9 +78,9 @@ describe("Revert two blocks", function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'), (body) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(1);
-        res.sources[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+        res.sources[0].should.have.property('identifier').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
         res.sources[0].should.have.property('type').equal('D');
-        res.sources[0].should.have.property('number').equal(1);
+        res.sources[0].should.have.property('noffset').equal(1);
         res.sources[0].should.have.property('amount').equal(120);
       });
     });
@@ -89,9 +89,9 @@ describe("Revert two blocks", function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo'), (body) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(1);
-        res.sources[0].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+        res.sources[0].should.have.property('identifier').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
         res.sources[0].should.have.property('type').equal('D');
-        res.sources[0].should.have.property('number').equal(1);
+        res.sources[0].should.have.property('noffset').equal(1);
         res.sources[0].should.have.property('amount').equal(120);
       });
     });

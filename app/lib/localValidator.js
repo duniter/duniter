@@ -45,8 +45,6 @@ function LocalValidator (conf) {
       async.apply(that.checkTxIssuers,                            block),
       async.apply(that.checkTxSources,                            block),
       async.apply(that.checkTxRecipients,                         block),
-      async.apply(that.checkTxSums,                               block),
-      async.apply(that.checkTxIndexes,                            block),
       async.apply(that.checkTxSignature,                          block)
     ], function (err) {
       done(err);
@@ -76,8 +74,6 @@ function LocalValidator (conf) {
       async.apply(that.checkTxIssuers,                            block),
       async.apply(that.checkTxSources,                            block),
       async.apply(that.checkTxRecipients,                         block),
-      async.apply(that.checkTxSums,                               block),
-      async.apply(that.checkTxIndexes,                            block),
       async.apply(that.checkTxSignature,                          block)
     ], function (err) {
       done(err);
@@ -103,9 +99,7 @@ function LocalValidator (conf) {
       async.apply(that.checkCertificationIsntForLeaverOrExcluded, block),
       async.apply(that.checkTxIssuers,                            block),
       async.apply(that.checkTxSources,                            block),
-      async.apply(that.checkTxRecipients,                         block),
-      async.apply(that.checkTxSums,                               block),
-      async.apply(that.checkTxIndexes,                            block)
+      async.apply(that.checkTxRecipients,                         block)
     ], function (err) {
       done(err);
     });
@@ -338,10 +332,10 @@ function LocalValidator (conf) {
       var existsIdenticalRecipient = false;
       var recipients = [];
       tx.outputs.forEach(function (output) {
-        if (~recipients.indexOf(output.pubkey)) {
+        if (~recipients.indexOf(output.raw)) {
           existsIdenticalRecipient = true;
         } else {
-          recipients.push(output.pubkey);
+          recipients.push(output.raw);
         }
       });
       if (existsIdenticalRecipient) {
@@ -349,50 +343,6 @@ function LocalValidator (conf) {
       }
       else done();
     }
-  });
-
-  this.checkTxSums = checkTxs(function (tx, done) {
-      // input sum == output sum
-      var inputSum = 0;
-      tx.inputs.forEach(function (input) {
-        inputSum += input.amount;
-      });
-      var outputSum = 0;
-      tx.outputs.forEach(function (output) {
-        outputSum += output.amount;
-      });
-      if (inputSum != outputSum) {
-        done('Input sum and output sum must be equal');
-      }
-      else done();
-  });
-
-  this.checkTxIndexes = checkTxs(function (tx, done) {
-    // Signatures count == issuers.length
-    if (tx.issuers.length != tx.signatures.length) {
-      done('Number of signatures must be equal to number of issuers'); return;
-    }
-    // INDEX related
-    var indexes = [];
-    tx.inputs.forEach(function (input) {
-      var index = input.index;
-      if (indexes.indexOf(index) == -1)
-        indexes.push(index);
-    });
-    // Indexes <= issuers.length
-    if (tx.issuers.length != indexes.length) {
-      done('Number of indexes must be equal to number of issuers'); return;
-    }
-    // It must appear each index 0..Nissuers - 1
-    var containsAll = true;
-    for (var i = 0; i < indexes.length; i++) {
-      if (indexes.indexOf(i) == -1)
-        containsAll = false;
-    }
-    if (!containsAll) {
-      done('Each issuer must be present in sources'); return;
-    }
-    done();
   });
 
   this.checkTxSignature = check(function (block, done) {
@@ -418,17 +368,7 @@ function LocalValidator (conf) {
       async.apply(that.checkTxIssuers,          block),
       async.apply(that.checkTxSources,          block),
       async.apply(that.checkTxRecipients,       block),
-      async.apply(that.checkTxSums,             block),
-      async.apply(that.checkTxIndexes,          block),
       async.apply(that.checkTxSignature,        block)
-    ], function (err) {
-      done(err);
-    });
-  };
-
-  this.checkSingleTransactionSignature = function (tx, done) {
-    async.series([
-      async.apply(checkSingleTransactionSignature, tx)
     ], function (err) {
       done(err);
     });

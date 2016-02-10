@@ -18,12 +18,12 @@ function SourcesDAL(db) {
 
   this.table = 'source';
   this.fields = [
-    'pubkey',
     'type',
     'number',
     'time',
-    'fingerprint',
+    'identifier',
     'amount',
+    'noffset',
     'block_hash',
     'consumed',
     'conditions'
@@ -31,71 +31,65 @@ function SourcesDAL(db) {
   this.arrays = [];
   this.bigintegers = ['amount'];
   this.booleans = ['consumed'];
-  this.pkFields = ['pubkey', 'type', 'number', 'fingerprint', 'amount'];
+  this.pkFields = ['identifier', 'noffset'];
   this.translated = {};
 
   this.init = () => co(function *() {
     return that.exec('BEGIN;' +
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
-      'pubkey VARCHAR(50) NOT NULL,' +
       'type VARCHAR(1) NOT NULL,' +
       'number INTEGER NOT NULL,' +
       'time DATETIME,' +
-      'fingerprint VARCHAR(64) NOT NULL,' +
+      'identifier VARCHAR(64) NOT NULL,' +
+      'noffset INTEGER NOT NULL,' +
       'amount VARCHAR(50) NOT NULL,' +
       'block_hash VARCHAR(64) NOT NULL,' +
       'consumed BOOLEAN NOT NULL,' +
       'conditions TEXT,' +
-      'PRIMARY KEY (pubkey,type,number,fingerprint,amount)' +
+      'PRIMARY KEY (identifier,noffset)' +
       ');' +
-      'CREATE INDEX IF NOT EXISTS idx_source_pubkey ON source (pubkey);' +
       'CREATE INDEX IF NOT EXISTS idx_source_type ON source (type);' +
       'CREATE INDEX IF NOT EXISTS idx_source_number ON source (number);' +
-      'CREATE INDEX IF NOT EXISTS idx_source_fingerprint ON source (fingerprint);' +
+      'CREATE INDEX IF NOT EXISTS idx_source_identifier ON source (identifier);' +
+      'CREATE INDEX IF NOT EXISTS idx_source_noffset ON source (noffset);' +
+      'CREATE INDEX IF NOT EXISTS idx_source_conditions ON source (conditions);' +
       'COMMIT;', []);
   });
 
   this.getAvailableForPubkey = (pubkey) => this.sqlFind({
-    pubkey: pubkey,
+    conditions: { $contains: pubkey },
     consumed: false
   });
 
   this.getUDSources = (pubkey) => this.sqlFind({
-    pubkey: pubkey,
+    conditions: { $contains: pubkey },
     type: 'D'
   });
 
-  this.getSource = (pubkey, type, number) => this.sqlFindOne({
-    pubkey: pubkey,
-    type: type,
-    number: number
+  this.getSource = (identifier, index) => this.sqlFindOne({
+    identifier: identifier,
+    noffset: index
   });
 
-  this.getSource = (pubkey, type, number, fingerprint, amount) => that.sqlExisting({
-    pubkey: pubkey,
-    type: type,
-    number: number,
-    fingerprint: fingerprint,
-    amount: amount
+  this.getSource = (identifier, noffset) => that.sqlExisting({
+    identifier: identifier,
+    noffset: noffset
   });
 
-  this.consumeSource = (pubkey, type, number, fingerprint, amount) => co(function *() {
+  this.consumeSource = (identifier, index) => co(function *() {
     return that.updateEntity({
-      pubkey: pubkey,
-      type: type,
-      number: number,
-      fingerprint: fingerprint,
-      amount: amount
+      identifier: identifier,
+      noffset: index
     },{
       consumed: true
     });
   });
 
-  this.addSource = (state, pubkey, type, number, fingerprint, amount, block_hash, time, conditions) => this.saveEntity({
-    pubkey: pubkey,
+  this.addSource = (type, number, identifier, noffset, amount, block_hash, time, conditions) => this.saveEntity({
     type: type,
     number: number,
-    fingerprint: fingerprint,
+    identifier: identifier,
+    noffset: noffset,
     amount: amount,
     time: time,
     block_hash: block_hash,
@@ -103,33 +97,17 @@ function SourcesDAL(db) {
     conditions: conditions
   });
 
-  this.unConsumeSource = (type, pubkey, number, fingerprint, amount, time, block_hash) => co(function *() {
+  this.unConsumeSource = (identifier, index) => co(function *() {
     let src = yield that.sqlExisting({
-      pubkey: pubkey,
-      type: type,
-      number: number,
-      fingerprint: fingerprint,
-      amount: amount
+      identifier: identifier,
+      noffset: index
     });
     if (!src) {
-      return this.saveEntity({
-        pubkey: pubkey,
-        type: type,
-        number: number,
-        fingerprint: fingerprint,
-        amount: amount,
-        time: time,
-        block_hash: block_hash,
-        consumed: false
-      });
+      throw "Cannot revert: inputs used by the blocks were removed from the DB";
     } else {
       return that.updateEntity({
-        pubkey: pubkey,
-        type: type,
-        number: number,
-        fingerprint: fingerprint,
-        amount: amount,
-        block_hash: block_hash
+        identifier: identifier,
+        noffset: index
       },{
         consumed: false
       });

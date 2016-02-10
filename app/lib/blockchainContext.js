@@ -3,6 +3,7 @@ var async           = require('async');
 var _               = require('underscore');
 var co              = require('co');
 var Q               = require('q');
+var ucp             = require('./ucp');
 var hashf           = require('./hashf');
 var rawer           = require('./rawer');
 var constants       = require('./constants');
@@ -403,7 +404,7 @@ function BlockchainContext(conf, dal) {
         let txObj = tx.getTransaction();
         for (let j = 0, len2 = txObj.inputs.length; j < len2; j++) {
           let input = txObj.inputs[j];
-          dal.unConsumeSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount, block.medianTime, block.hash);
+          dal.unConsumeSource(input.identifier, input.noffset);
         }
       }
     });
@@ -558,11 +559,11 @@ function BlockchainContext(conf, dal) {
             function (idties, nextOne) {
               async.forEachSeries(idties, function (idty, callback) {
                 dal.saveSource(new Source({
-                  'pubkey': idty.pubkey,
                   'type': 'D',
                   'number': block.number,
                   'time': block.medianTime,
-                  'fingerprint': block.hash,
+                  'identifier': idty.pubkey,
+                  'noffset': block.number,
                   'block_hash': block.hash,
                   'amount': block.dividend,
                   'conditions': 'SIG(' + idty.pubkey + ')', // Only this pubkey can unlock its UD
@@ -586,18 +587,20 @@ function BlockchainContext(conf, dal) {
           async.parallel([
             function (nextOne) {
               async.forEachSeries(txObj.inputs, function (input, callback2) {
-                dal.setConsumedSource(input.type, input.pubkey, input.number, input.fingerprint, input.amount).then(_.partial(callback2, null)).catch(callback2);
+                dal.setConsumedSource(input.identifier, input.noffset).then(_.partial(callback2, null)).catch(callback2);
               }, nextOne);
             },
             function (nextOne) {
+              let index = 0;
               async.forEachSeries(txObj.outputs, function (output, callback2) {
                 dal.saveSource(new Source({
-                  'pubkey': output.pubkey,
                   'type': 'T',
                   'number': block.number,
                   'block_hash': block.hash,
-                  'fingerprint': txHash,
+                  'identifier': txHash,
+                  'noffset': index++,
                   'amount': output.amount,
+                  'conditions': output.conditions,
                   'consumed': 0
                 })).then(_.partial(callback2, null)).catch(callback2);
               }, nextOne);
@@ -789,7 +792,6 @@ function BlockchainContext(conf, dal) {
           sources = sources.concat(txObj.outputs.map((output) => _.extend({
             toConsume: false
           }, {
-            'pubkey': output.pubkey,
             'type': 'T',
             'number': block.number,
             'block_hash': block.hash,

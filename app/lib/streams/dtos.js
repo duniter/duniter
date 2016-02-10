@@ -304,10 +304,9 @@ dtos.Transaction = {
 };
 
 dtos.Source = {
-  "pubkey": String,
   "type": String,
-  "number": Number,
-  "fingerprint": String,
+  "noffset": Number,
+  "identifier": String,
   "amount": Number
 };
 

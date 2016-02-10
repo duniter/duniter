@@ -206,16 +206,6 @@ describe("Block local coherence", function(){
       done();
     }));
 
-    it('Block cannot contain transactions with issuers not spending coins', test('checkTxIndexes', blocks.TRANSACTION_WITH_UNMATCHING_INDEX, function (err, done) {
-      assert.equal(err, 'Each issuer must be present in sources');
-      done();
-    }));
-
-    it('Block cannot contain transactions with more or less indexes than issuers', test('checkTxIndexes', blocks.TRANSACTION_WITH_MORE_INDEXES_THAN_ISSUERS, function (err, done) {
-      assert.equal(err, 'Number of indexes must be equal to number of issuers');
-      done();
-    }));
-
     it('Block cannot contain transactions with identical sources in one transaction', test('checkTxSources', blocks.TRANSACTION_WITH_DUPLICATED_SOURCE_SINGLE_TX, function (err, done) {
       assert.equal(err, 'It cannot exist 2 identical sources for transactions inside a given block');
       done();
@@ -228,11 +218,6 @@ describe("Block local coherence", function(){
 
     it('Block cannot contain transactions with identical outputs in one transaction', test('checkTxRecipients', blocks.TRANSACTION_WITH_DUPLICATED_RECIPIENTS_SINGLE_TX, function (err, done) {
       assert.equal(err, 'It cannot exist 2 identical recipients inside a transaction');
-      done();
-    }));
-
-    it('Block cannot contain transactions with input sum different from output sum', test('checkTxSums', blocks.TRANSACTION_WITH_DIFFERENT_INPUT_OUTPUT_SUMS, function (err, done) {
-      assert.equal(err, 'Input sum and output sum must be equal');
       done();
     }));
 

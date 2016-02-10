@@ -565,6 +565,7 @@ function BlockchainContext(conf, dal) {
                   'fingerprint': block.hash,
                   'block_hash': block.hash,
                   'amount': block.dividend,
+                  'conditions': 'SIG(' + idty.pubkey + ')', // Only this pubkey can unlock its UD
                   'consumed': 0
                 })).then(_.partial(callback, null)).catch(callback);
               }, nextOne);
@@ -769,7 +770,8 @@ function BlockchainContext(conf, dal) {
               'block_hash': block.hash,
               'amount': block.dividend,
               'consumed': false,
-              'toConsume': false
+              'toConsume': false,
+              'conditions': 'SIG(' + idty.pubkey + ')', // Only this pubkey can unlock its UD
             });
           }
         }

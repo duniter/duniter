@@ -25,7 +25,8 @@ function SourcesDAL(db) {
     'fingerprint',
     'amount',
     'block_hash',
-    'consumed'
+    'consumed',
+    'conditions'
   ];
   this.arrays = [];
   this.bigintegers = ['amount'];
@@ -44,6 +45,7 @@ function SourcesDAL(db) {
       'amount VARCHAR(50) NOT NULL,' +
       'block_hash VARCHAR(64) NOT NULL,' +
       'consumed BOOLEAN NOT NULL,' +
+      'conditions TEXT,' +
       'PRIMARY KEY (pubkey,type,number,fingerprint,amount)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_source_pubkey ON source (pubkey);' +
@@ -69,15 +71,12 @@ function SourcesDAL(db) {
     number: number
   });
 
-  this.isAvailableSource = (pubkey, type, number, fingerprint, amount) => co(function *() {
-    let src = yield that.sqlExisting({
-      pubkey: pubkey,
-      type: type,
-      number: number,
-      fingerprint: fingerprint,
-      amount: amount
-    });
-    return src ? !src.consumed : false;
+  this.getSource = (pubkey, type, number, fingerprint, amount) => that.sqlExisting({
+    pubkey: pubkey,
+    type: type,
+    number: number,
+    fingerprint: fingerprint,
+    amount: amount
   });
 
   this.consumeSource = (pubkey, type, number, fingerprint, amount) => co(function *() {
@@ -92,7 +91,7 @@ function SourcesDAL(db) {
     });
   });
 
-  this.addSource = (state, pubkey, type, number, fingerprint, amount, block_hash, time) => this.saveEntity({
+  this.addSource = (state, pubkey, type, number, fingerprint, amount, block_hash, time, conditions) => this.saveEntity({
     pubkey: pubkey,
     type: type,
     number: number,
@@ -100,7 +99,8 @@ function SourcesDAL(db) {
     amount: amount,
     time: time,
     block_hash: block_hash,
-    consumed: false
+    consumed: false,
+    conditions: conditions
   });
 
   this.unConsumeSource = (type, pubkey, number, fingerprint, amount, time, block_hash) => co(function *() {

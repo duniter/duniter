@@ -191,17 +191,17 @@ describe("Block local coherence", function(){
       done();
     }));
 
-    it('Block cannot contain transactions without issuers', test('checkTxIssuers', blocks.TRANSACTION_WITHOUT_ISSUERS, function (err, done) {
+    it('Block cannot contain transactions without issuers (1)', test('checkTxIssuers', blocks.TRANSACTION_WITHOUT_ISSUERS, function (err, done) {
       assert.equal(err, 'A transaction must have at least 1 issuer');
       done();
     }));
 
-    it('Block cannot contain transactions without issuers', test('checkTxSources', blocks.TRANSACTION_WITHOUT_SOURCES, function (err, done) {
+    it('Block cannot contain transactions without issuers (2)', test('checkTxSources', blocks.TRANSACTION_WITHOUT_SOURCES, function (err, done) {
       assert.equal(err, 'A transaction must have at least 1 source');
       done();
     }));
 
-    it('Block cannot contain transactions without issuers', test('checkTxRecipients', blocks.TRANSACTION_WITHOUT_RECIPIENT, function (err, done) {
+    it('Block cannot contain transactions without issuers (3)', test('checkTxRecipients', blocks.TRANSACTION_WITHOUT_RECIPIENT, function (err, done) {
       assert.equal(err, 'A transaction must have at least 1 recipient');
       done();
     }));

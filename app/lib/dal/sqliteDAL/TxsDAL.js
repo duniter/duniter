@@ -27,13 +27,14 @@ function TxsDAL(db) {
     'written',
     'removed',
     'inputs',
+    'unlocks',
     'outputs',
     'issuers',
     'signatories',
     'signatures',
     'recipients'
   ];
-  this.arrays = ['inputs','outputs','issuers','signatories','signatures','recipients'];
+  this.arrays = ['inputs','unlocks','outputs','issuers','signatories','signatures','recipients'];
   this.booleans = ['written','removed'];
   this.pkFields = ['hash'];
   this.translated = {};
@@ -48,6 +49,7 @@ function TxsDAL(db) {
       'comment VARCHAR(255) NOT NULL,' +
       'time DATETIME,' +
       'inputs TEXT NOT NULL,' +
+      'unlocks TEXT NOT NULL,' +
       'outputs TEXT NOT NULL,' +
       'issuers TEXT NOT NULL,' +
       'signatories TEXT NOT NULL,' +

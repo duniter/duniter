@@ -12,7 +12,8 @@ function TransactionParser (onError) {
     {prop: "version",    regexp: /Version: (.*)/},
     {prop: "currency",   regexp: /Currency: (.*)/},
     {prop: "issuers",    regexp: /Issuers:\n([\s\S]*)Inputs/, parser: extractIssuers },
-    {prop: "inputs",     regexp: /Inputs:\n([\s\S]*)Outputs/, parser: extractInputs },
+    {prop: "inputs",     regexp: /Inputs:\n([\s\S]*)Unlocks/, parser: extractInputs },
+    {prop: "unlocks",    regexp: /Unlocks:\n([\s\S]*)Outputs/,parser: extractUnlocks },
     {prop: "outputs",    regexp: /Outputs:\n([\s\S]*)/,       parser: extractOutputs },
     {prop: "comment",    regexp: constants.TRANSACTION.COMMENT },
     {prop: "signatures", regexp: /Outputs:\n([\s\S]*)/,       parser: extractSignatures }
@@ -22,7 +23,6 @@ function TransactionParser (onError) {
 
   this._clean = function (obj) {
     obj.documentType = 'transaction';
-    obj.coins = obj.coins || [];
     obj.comment = obj.comment || "";
   };
 
@@ -68,6 +68,21 @@ function extractInputs(raw) {
     }
   }
   return inputs;
+}
+
+function extractUnlocks(raw) {
+  var unlocks = [];
+  var lines = raw.split(/\n/);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.match(constants.TRANSACTION.UNLOCK)) {
+      unlocks.push(line);
+    } else {
+      // Not a transaction unlock, stop reading
+      i = lines.length;
+    }
+  }
+  return unlocks;
 }
 
 function extractOutputs(raw) {

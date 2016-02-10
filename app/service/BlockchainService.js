@@ -150,10 +150,6 @@ function BlockchainService (conf, mainDAL, pair) {
     return [];
   }
 
-  this.pruneAllForks = () => co(function *() {
-    // TODO prune all forks
-  });
-
   this.submitBlock = function (obj, doCheck) {
     return Q.Promise(function(resolve, reject){
       // FIFO: only admit one block at a time

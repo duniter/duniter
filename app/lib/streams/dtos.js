@@ -69,6 +69,7 @@ dtos.TransactionOfBlock = {
   "signatures": [String],
   "outputs": [String],
   "inputs": [String],
+  "unlocks": [String],
   "signatories": [String],
   "block_number": Number,
   "time": Number,

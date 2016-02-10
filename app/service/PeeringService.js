@@ -517,7 +517,7 @@ function PeeringService(server, pair, dal) {
   function rawifyTransactions(block) {
     // Rawification of transactions
     block.transactions.forEach(function (tx) {
-      tx.raw = ["TX", "2", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0'].join(':') + '\n';
+      tx.raw = ["TX", "2", tx.signatories.length, tx.inputs.length, tx.outputs.length, tx.comment ? '1' : '0', tx.locktime].join(':') + '\n';
       tx.raw += tx.signatories.join('\n') + '\n';
       tx.raw += tx.inputs.join('\n') + '\n';
       tx.raw += tx.outputs.join('\n') + '\n';

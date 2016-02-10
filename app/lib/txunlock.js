@@ -49,7 +49,7 @@ module.exports = function unlock(conditionsStr, executions) {
     i: 0,
     sig: function (pubkey) {
       let sigParam = executions[this.i++];
-      return pubkey === sigParam.pubkey && sigParam.sigOK;
+      return (sigParam && pubkey === sigParam.pubkey && sigParam.sigOK) || false;
     },
     xHx: function(hash) {
       let xhxParam = executions[this.i++];

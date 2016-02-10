@@ -222,7 +222,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   this.getBlockByNumberAndHashOrNull = function(number, hash) {
     return nullIfError(that.getBlock(number)
       .then(function(block){
-        if (block.hash != hash) throw "Not found";
+        if (!block || block.hash != hash) throw "Not found";
         else return block;
       }));
   };
@@ -545,9 +545,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return links.length ? true : false;
   });
 
-  this.existsNotConsumed = function(type, pubkey, number, fingerprint, amount) {
-    return that.sourcesDAL.isAvailableSource(pubkey, type, number, fingerprint, amount);
-  };
+  this.getSource = (type, pubkey, number, fingerprint, amount) => that.sourcesDAL.getSource(pubkey, type, number, fingerprint, amount);
 
   this.isMember = function(pubkey, done) {
     return that.idtyDAL.getFromPubkey(pubkey)
@@ -935,7 +933,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     that.sourcesDAL.unConsumeSource(type, pubkey, number, fingerprint, amount, time, block_hash);
 
   this.saveSource = function(src) {
-    return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash, src.time);
+    return that.sourcesDAL.addSource('available', src.pubkey, src.type, src.number, src.fingerprint, src.amount, src.block_hash, src.time, src.conditions);
   };
 
   this.updateSources = function(sources) {

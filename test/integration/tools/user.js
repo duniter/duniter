@@ -271,6 +271,10 @@ function User (uid, options, node) {
             raw += ['0', src.type, src.number, src.hash, src.amount].join(':') + '\n';
             inputSum += src.amount;
           });
+          raw += "Unlocks:\n";
+          sources2.forEach(function (src, index) {
+            raw += index + ":SIG(0)" + '\n';
+          });
           raw += "Outputs:\n";
           raw += [recipient.pub, amount].join(':') + '\n';
           if (inputSum - amount > 0) {

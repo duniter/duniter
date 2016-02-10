@@ -120,6 +120,7 @@ function LocalValidator (conf) {
   }
 
   this.checkSingleMembershipSignature = checkSingleMembershipSignature;
+  this.getSigResult = getSigResult;
 
   this.versionFilter = function (onError) {
     return new VersionFilter(onError);
@@ -704,13 +705,20 @@ function checkTransactionsSignature (block, done) {
 }
 
 function checkSingleTransactionSignature (tx, done) {
-  var json = { "version": tx.version, "currency": tx.currency, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
+  let sigResult = getSigResult(tx);
+  done(sigResult.matching ? null : 'Signature from a transaction must match');
+}
+
+function getSigResult(tx) {
+  let sigResult = { sigs: {}, matching: true };
+  let json = { "version": tx.version, "currency": tx.currency, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
   tx.inputs.forEach(function (input) {
     json.inputs.push(input.raw);
   });
   tx.outputs.forEach(function (output) {
     json.outputs.push(output.raw);
   });
+  json.unlocks = tx.unlocks;
   var i = 0;
   var signaturesMatching = true;
   var raw = rawer.getTransaction(json);
@@ -718,9 +726,14 @@ function checkSingleTransactionSignature (tx, done) {
     var sig = tx.signatures[i];
     var pub = tx.issuers[i];
     signaturesMatching = crypto.verify(raw, sig, pub);
+    sigResult.sigs[pub] = {
+      matching: signaturesMatching,
+      index: i
+    };
     i++;
   }
-  done(signaturesMatching ? null : 'Signature from a transaction must match');
+  sigResult.matching = signaturesMatching;
+  return sigResult;
 }
 
 function checkPeerSignature (peer) {

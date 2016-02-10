@@ -248,7 +248,7 @@ A certification has the following format:
     IdtyUniqueID: USER_ID
     IdtyTimestamp: BLOCK_UID
     IdtySignature: IDTY_SIGNATURE
-    Timestamp: BLOCK_UID
+    CertTimestamp: BLOCK_UID
     CERTIFIER_SIGNATURE
 
 Where:
@@ -293,6 +293,7 @@ A valid certification could be:
     IdtyUniqueID: lolcat
     IdtyTimestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
     IdtySignature: J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+    CertTimestamp: 36-1076F10A7397715D2BEE82579861999EA1F274AC
     SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
 
 ### Membership
@@ -365,10 +366,13 @@ A transaction is defined by the following format:
     PUBLIC_KEY
     ...
     Inputs:
-    INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
+    INPUT
+    ...
+    Unlocks:
+    UNLOCK
     ...
     Outputs:
-    PUBLIC_KEY:AMOUNT
+    AMOUNT:CONDITIONS
     ...
     Comment: COMMENT
     SIGNATURES
@@ -380,10 +384,12 @@ Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
 `Type` | Type of the document.
-`Currency` | contains the name of the currency. This is used to identify the target of the transaction, as several moneys may be UCP-based.
-`Issuers` | a list of public key, followed by a sequential integer
-`Inputs` | a list linking `Issuers` (via INDEX) to coin sources
-`Outputs` | a list of public keys and amounts allowed to them
+`Currency` | contains the name of the currency.
+`Locktime` | waiting delay to be included in the blockchain
+`Issuers` | a list of public key
+`Inputs` | a list of money sources
+`Unlocks` | a list of values justifying inputs consumption
+`Outputs` | a list of amounts and conditions to unlock them
 `Comment` | a comment to write on the transaction
 
 #### Validity
@@ -393,10 +399,46 @@ A Transaction structure is considered *valid* if:
 * Field `Version` equals `2`.
 * Field `Type` equals `Transaction`.
 * Field `Currency` is not empty.
+* Field `Locktime` is an integer
 * Field `Issuers` is a multiline field whose lines are public keys.
-* Field `Inputs` is a multiline field whose lines starts with an integer, followed by a colon, a source character (either `T`, `D`), a colon, an integer, a colon, a SHA-1 hash and an integer value
-* Field `Outputs` is a multiline field whose lines starts by a Base58 string, followed by a colon and an integer value
+* Field `Inputs` is a multiline field whose lines match either:
+  * `D:BLOCK_ID:PUBLIC_KEY` format
+  * `T:HASH:INDEX` format
+* Field `Unlocks` is a multiline field whose lines follow `INDEX:UL_CONDITIONS` format:
+  * `INDEX` must be an integer value
+  * `UL_CONDITIONS` must be a valid [Input Condition](#input-condition)
+* Field `Outputs` is a multiline field whose lines follow `AMOUNT:CONDITIONS` format:
+  * `AMOUNT` must be an integer value
+  * `CONDITIONS` must be a valid [Output Condition](#output-condition)
 * Field `Comment` is a string of maximum 255 characters, exclusively composed of alphanumeric characters, space, `-`, `_`, `:`, `/`, `;`, `*`, `[`, `]`, `(`, `)`, `?`, `!`, `^`, `+`, `=`, `@`, `&`, `~`, `#`, `{`, `}`, `|`, `\`, `<`, `>`, `%`, `.`. Must be present even if empty.
+
+#### Input condition
+
+It is a suite of values each separated by a space "` `". Values must be either a `SIG(INDEX)` or `HXH(INTEGER)`.
+
+If no value is provided, the valid input condition is an empty string.
+
+##### Input condition examples
+
+* `SIG(0)`
+* `XHX(73856837)`
+* `SIG(0) SIG(2) XHX(343)`
+* `SIG(0) SIG(2) SIG(4) SIG(6)`
+
+#### Output condition
+
+It follows a machine-readable BNF grammar composed of
+
+* `(` and `)` characters
+* `AND` and `OR` operators
+* `SIG(PUBLIC_KEY)`, `XHX(INTEGER)` functions
+* ` ` space
+
+##### Output condition examples
+
+* `SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd)`
+* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) AND XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6))`
+* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) OR (SIG(DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV) AND XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6)))`
 
 #### Example 1
 
@@ -405,13 +447,16 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its va
     Version: 2
     Type: Transaction
     Currency: beta_brousouf
+    Locktime: 0
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    0:T:3:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:30
+    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:3
+    Unlocks:
+    0:SIG(0)
     Outputs:
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:25
-    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:5
+    25:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    5:SIG(HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY)
     Comment: First transaction
 
 Signatures (fake here):
@@ -425,14 +470,19 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction writte
     Version: 2
     Type: Transaction
     Currency: beta_brousouf
+    Locktime: 0
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    0:T:65:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4
-    0:T:77:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:15
-    0:D:88:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:11
+    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
+    D:88:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+    Unlocks:
+    0:SIG(0)
+    1:SIG(0)
+    2:SIG(0)
     Outputs:
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
+    30:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
     Comment:
 
 Signatures (fake here):
@@ -441,26 +491,34 @@ Signatures (fake here):
 
 #### Example 3
 
-Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction (written in blocks #4, #78, #66 and #176) + 2 UD from same block #46.
+Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction + 2 UD from same block #46.
 
     Version: 2
     Type: Transaction
     Currency: beta_brousouf
+    Locktime: 0
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
     Inputs:
-    0:T:4:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:22
-    0:T:78:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
-    0:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40
-    1:T:66:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:200
-    2:T:176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
-    2:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40
+    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
+    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
+    D:46:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+    T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
+    T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
+    D:46:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
+    Unlocks:
+    0:SIG(0)
+    1:XHX(7665798292)
+    2:SIG(0)
+    3:SIG(0) SIG(2)
+    4:SIG(0) SIG(1) SIG(2)
+    5:SIG(2)
     Outputs:
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:120
-    DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:146
-    6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49
+    120:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    146:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
+    49:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
     Comment: -----@@@----- (why not this comment?)
 
 Signatures (fakes here):
@@ -473,12 +531,14 @@ Signatures (fakes here):
 
 A transaction may be described under a more compact format, to be used under [Block](#block) document. General format is:
 
-    TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS:HAS_COMMENT
+    TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS:HAS_COMMENT:LOCKTIME
     PUBLIC_KEY
     ...
-    INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
+    INPUT
     ...
-    PUBLIC_KEY:AMOUNT
+    UNLOCK
+    ...
+    OUTPUT
     ...
     COMMENT
     SIGNATURE
@@ -486,29 +546,38 @@ A transaction may be described under a more compact format, to be used under [Bl
 
 Here is an example compacting above [example 2](#example-2):
 
-    TX:1:1:3:1:0
+    TX:1:1:3:1:0:0
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    0:T:65:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4
-    0:T:77:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:15
-    0:D:88:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:11
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30
+    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
+    D:88:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+    0:SIG(0)
+    1:SIG(0)
+    2:SIG(0)
+    30:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
 
 Here is an example compacting above [example 3](#example-3):
 
-    TX:1:3:6:3:1
+    TX:1:3:6:3:1:0
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
-    0:T:4:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:22
-    0:T:78:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
-    0:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40
-    1:T:66:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:200
-    2:T:176:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
-    2:D:46:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:40
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:120
-    DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:146
-    6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49
+    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
+    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
+    D:46:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+    T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
+    T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
+    D:46:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
+    0:SIG(0)
+    1:XHX(7665798292)
+    2:SIG(0)
+    3:SIG(0) SIG(2)
+    4:SIG(0) SIG(1) SIG(2)
+    5:SIG(2)
+    120:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    146:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
+    49:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
     -----@@@----- (why not this comment?)
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
     2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
@@ -828,9 +897,9 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 
 * A transaction must have at least 1 issuer, 1 source and 1 recipient
 * For each issuer line, starting from line # `0`, it must exist a source with an `INDEX` value equal to this line#
-* A transaction cannot have 2 identical sources (INDEX + SOURCE + NUMBER + FINGERPRINT)
-* A transaction cannot have 2 identical recipients (PUBLIC_KEY)
-* A transaction **must** have its output sum equal to its input sum
+* A transaction cannot have 2 identical inputs
+* A transaction cannot have 2 identical outputs
+* A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
 * A transaction **must** have signatures matching its content for each issuer
 
 ###### About signatures
@@ -1061,9 +1130,11 @@ Where:
 
 ##### Transactions
 
-* It cannot exist 2 transactions with an identical source (where `INDEX` is replaced by the correct `PUBLIC_KEY`)
+* It cannot exist 2 transactions with an identical source
 * For `D` sources, public key must be a member for the block `#NUMBER` (so, *before* the block's memberships were applied)
-* For `T` sources, public key must be a recipient of the source transaction, written in the block targeted by the source
+* For `T` sources, the attached unlock condition must match
+* The sum of all inputs must match the sum of all outputs
+* Transaction cannot be included if `BLOCK_MEDIAN_TIME - MOST_RECENT_INPUT_TIME < LOCKTIME`
 
 ###### Amounts
 

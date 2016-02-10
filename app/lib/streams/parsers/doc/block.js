@@ -156,6 +156,7 @@ function extractTransactions(raw) {
   var regexps = {
     "signatories": constants.TRANSACTION.SENDER,
     "inputs": constants.TRANSACTION.SOURCE,
+    "unlocks": constants.TRANSACTION.UNLOCK,
     "outputs": constants.TRANSACTION.TARGET,
     "comments": constants.TRANSACTION.INLINE_COMMENT,
     "signatures": constants.SIG
@@ -171,8 +172,9 @@ function extractTransactions(raw) {
       var sp = line.split(':');
       var nbSignatories = parseInt(sp[2]);
       var nbInputs = parseInt(sp[3]);
-      var nbOutputs = parseInt(sp[4]);
-      var hasComment = parseInt(sp[5]);
+      var nbUnlocks = parseInt(sp[4]);
+      var nbOutputs = parseInt(sp[5]);
+      var hasComment = parseInt(sp[6]);
       var linesToExtract = {
         signatories: {
           start: 1,
@@ -182,20 +184,24 @@ function extractTransactions(raw) {
           start: 1 + nbSignatories,
           end: nbSignatories + nbInputs
         },
-        outputs: {
+        unlocks: {
           start: 1 + nbSignatories + nbInputs,
-          end: nbSignatories + nbInputs + nbOutputs
+          end: nbSignatories + nbInputs + nbUnlocks
+        },
+        outputs: {
+          start: 1 + nbSignatories + nbInputs + nbUnlocks,
+          end: nbSignatories + nbInputs + nbUnlocks + nbOutputs
         },
         comments: {
-          start: 1 + nbSignatories + nbInputs + nbOutputs,
-          end: nbSignatories + nbInputs + nbOutputs + hasComment
+          start: 1 + nbSignatories + nbInputs + nbUnlocks + nbOutputs,
+          end: nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
         },
         signatures: {
-          start: 1 + nbSignatories + nbInputs + nbOutputs + hasComment,
-          end: 2 * nbSignatories + nbInputs + nbOutputs + hasComment
+          start: 1 + nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment,
+          end: 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
         }
       };
-      ['signatories', 'inputs', 'outputs', 'comments', 'signatures'].forEach(function(prop){
+      ['signatories', 'inputs', 'unlocks', 'outputs', 'comments', 'signatures'].forEach(function(prop){
         currentTX[prop] = currentTX[prop] || [];
         for (var j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
           var line = lines[i + j];
@@ -214,7 +220,7 @@ function extractTransactions(raw) {
       currentTX.hash = hashf(rawer.getTransaction(currentTX)).toUpperCase();
       // Add to txs array
       transactions.push(currentTX);
-      i = i + 2 * nbSignatories + nbInputs + nbOutputs + hasComment;
+      i = i + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment;
     } else {
       // Not a transaction header, stop reading
       i = lines.length;

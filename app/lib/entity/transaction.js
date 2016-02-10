@@ -9,7 +9,9 @@ var Transaction = function(obj, currency) {
   var that = this;
   var json = obj || {};
 
+  this.locktime = 0;
   this.inputs = [];
+  this.unlocks = [];
   this.outputs = [];
   this.issuers = [];
 
@@ -60,6 +62,8 @@ var Transaction = function(obj, currency) {
         raw: input
       });
     });
+    // Unlocks
+    tx.unlocks = this.unlocks;
     // Outputs
     tx.outputs = [];
     this.outputs.forEach(function (output) {

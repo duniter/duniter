@@ -161,58 +161,6 @@ describe("Integration", function() {
     });
   });
 
-  describe("Testing transactions", function(){
-
-    var node2 = node({ name: 'db2', memory: MEMORY_MODE }, { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: false,
-      pair: {
-        pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
-        sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
-      },
-      forksize: 3,
-      participate: false, rootoffset: 10,
-      sigQty: 1, dt: 0, ud0: 120
-    });
-
-    before(function(done) {
-      node2.startTesting()
-        .then(function(){
-          node2.before(require('./scenarios/transactions')(node2))(done);
-        });
-    });
-    after(node2.after());
-
-    it('it should exist block#2 with UD of 120', node2.block(2, function(block, done){
-      should.exists(block);
-      assert.equal(block.number, 2);
-      assert.equal(block.dividend, 120);
-      done();
-    }));
-
-    it('tic should be able to send 51 to toc', node2.sourcesOf('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', function(res, done){
-      should.exists(res);
-      assert.equal(res.sources.length, 2);
-      var txSrc = _.findWhere(res.sources, { type: 'T' });
-      var udSrc = _.findWhere(res.sources, { type: 'D' });
-      assert.equal(txSrc.amount, 69);
-      assert.equal(udSrc.amount, 120);
-      done();
-    }));
-
-    it('toc should have 151 of sources', node2.sourcesOf('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', function(res, done){
-      should.exists(res);
-      assert.equal(res.sources.length, 3);
-      var txRes = _.findWhere(res.sources, { type: 'T' });
-      var duRes = _.filter(res.sources, { type: 'D' });
-      assert.equal(txRes.type, 'T');
-      assert.equal(txRes.amount, 51);
-      assert.equal(duRes[0].type, 'D');
-      assert.equal(duRes[0].amount, 120);
-      assert.equal(duRes[1].type, 'D');
-      assert.equal(duRes[1].amount, 120);
-      done();
-    }));
-  });
-
   describe("Testing leavers", function(){
 
     var node3 = node({ name: 'db3', memory: MEMORY_MODE }, { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,

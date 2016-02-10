@@ -149,6 +149,10 @@ module.exports = new function() {
     (json.inputs || []).forEach(function (input) {
       raw += input + '\n';
     });
+    raw += "Unlocks:\n";
+    (json.unlocks || []).forEach(function (input) {
+      raw += input + '\n';
+    });
     raw += "Outputs:\n";
     (json.outputs || []).forEach(function (output) {
       raw += output + '\n';
@@ -162,11 +166,14 @@ module.exports = new function() {
 
   this.getCompactTransaction = function (json) {
     let issuers = (json.issuers || json.signatories);
-    let raw = ["TX", 1, issuers.length, json.inputs.length, json.outputs.length, json.comment ? 1 : 0].join(':') + '\n';
+    let raw = ["TX", 1, issuers.length, json.inputs.length, json.unlocks.length, json.outputs.length, json.comment ? 1 : 0, json.locktime].join(':') + '\n';
     (issuers || []).forEach(function (issuer) {
       raw += issuer + '\n';
     });
     (json.inputs || []).forEach(function (input) {
+      raw += input + '\n';
+    });
+    (json.unlocks || []).forEach(function (input) {
       raw += input + '\n';
     });
     (json.outputs || []).forEach(function (output) {

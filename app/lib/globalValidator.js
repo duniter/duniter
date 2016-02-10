@@ -9,14 +9,13 @@ var moment        = require('moment');
 var util          = require('util');
 var stream        = require('stream');
 var constants     = require('./constants');
+var unlock        = require('../lib/txunlock');
+var localValidator = require('../lib/localValidator');
 var rawer         = require('../lib/rawer');
 var Block         = require('../lib/entity/block');
 var Identity      = require('../lib/entity/identity');
 var Membership    = require('../lib/entity/membership');
 var Certification = require('../lib/entity/certification');
-
-// Future rule of X_PERCENT of the sentries
-const X_PERCENT = 1.0;
 
 module.exports = function (conf, dao) {
   
@@ -26,17 +25,10 @@ module.exports = function (conf, dao) {
 function GlobalValidator (conf, dao) {
 
   let wotb = dao.wotb;
+  let localV = localValidator(conf);
 
   this.checkSingleTransaction = function (tx, done) {
-    async.series([
-      async.apply(checkSourcesAvailabilityForTransaction, tx)
-    ], function (err) {
-      done(err);
-    });
-  };
-
-  this.currencyFilter = function (onError) {
-    return new CurrencyFilter(conf.currency, onError);
+    return checkSourcesAvailabilityForTransaction(tx, done);
   };
 
   this.checkExistsUserID = checkExistsUserID;
@@ -625,27 +617,62 @@ function GlobalValidator (conf, dao) {
   function checkSourcesAvailability (block, done) {
     async.waterfall([
       function (next){
-        var sources = [];
         async.forEachSeries(block.getTransactions(), checkSourcesAvailabilityForTransaction, next);
       }
     ], done);
   }
 
   function checkSourcesAvailabilityForTransaction (tx, done) {
-    async.forEachSeries(tx.inputs, function (src, callback) {
-      async.waterfall([
-        function (next) {
-          if (src.type == 'D') {
-            dao.isAvailableUDSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
-          } else {
-            dao.isAvailableTXSource(src.pubkey, src.number, src.fingerprint, src.amount, next);
-          }
-        },
-        function (isAvailable, next) {
-          next(isAvailable ? null : 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' is not available');
+    return co(function *() {
+      let unlocks = {};
+      for (let i = 0, len = tx.unlocks.length; i < len; i++) {
+        let sp = tx.unlocks[i].split(':');
+        let index = parseInt(sp[0]);
+        unlocks[index] = sp[1];
+      }
+      for (let i = 0, len = tx.inputs.length; i < len; i++) {
+        let src = tx.inputs[i];
+        let dbSrc = yield dao.getSource(src.type, src.pubkey, src.number, src.fingerprint, src.amount);
+        if (!dbSrc || dbSrc.consumed) {
+          throw 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' is not available';
         }
-      ], callback);
-    }, done);
+        let sigResults = localV.getSigResult(tx);
+        let unlocksForCondition = [];
+        let unlockValues = unlocks[i];
+        if (dbSrc.conditions) {
+          if (unlockValues) {
+            // Evaluate unlock values
+            let sp = unlockValues.split(' ');
+            for (let j = 0, len2 = sp.length; j < len2; j++) {
+              let func = sp[j];
+              let param = func.match(/\((.+)\)/)[1];
+              let pubkey = tx.issuers[0];
+              if (func.match(/^SIG/)) {
+                unlocksForCondition.push({
+                  pubkey: pubkey,
+                  sigOK: sigResults.sigs[pubkey].matching || false
+                });
+              } else {
+                // XHX
+                unlocksForCondition.push(param);
+              }
+            }
+          }
+          try {
+            if (!unlock(dbSrc.conditions, unlocksForCondition)) {
+              throw 'Locked';
+            }
+          } catch (e) {
+            throw 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' unlock fail';
+          }
+        }
+      }
+      done && done(null);
+    })
+      .catch((err) => {
+        if (done) return done(err);
+        throw err;
+      });
   }
 
   function getTrialLevel (issuer, done) {

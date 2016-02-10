@@ -270,6 +270,8 @@ function Node (dbName, options) {
     };
   };
 
+  this.sourcesOfP = (pub) => Q.nbind(that.http.tx.sources, that)(pub);
+
   this.peering = function(done) {
     that.http.network.peering.get(done);
   };

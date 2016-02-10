@@ -181,6 +181,8 @@ function Block(json) {
           raw: input
         });
       });
+      // Unlocks
+      tx.unlocks = simpleTx.unlocks;
       // Outputs
       tx.outputs = [];
       (simpleTx.outputs || []).forEach(function (output) {

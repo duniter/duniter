@@ -21,6 +21,7 @@ function User (uid, options, node) {
   var that = this;
   var pub, sec;
   var selfCert = "";
+  that.node = node;
 
   // For sync code
   if (options.pub && options.sec) {
@@ -222,6 +223,7 @@ function User (uid, options, node) {
 
   this.sendTX = (rawTX) => co(function *() {
     let http = yield getVucoin();
+    console.log(rawTX);
     return Q.nbind(http.tx.process, http)(rawTX);
   });
 
@@ -249,10 +251,6 @@ function User (uid, options, node) {
     opts = opts || {};
     opts.issuers = [pub, user2.pub];
     return signed(that.prepareTX(inputs, outputs, opts), user2);
-  });
-
-  this.prepareOTX = (previousTX, outputs, opts) => co(function *() {
-
   });
 
   this.prepareITX = (amount, recipient, comment) => co(function *() {

@@ -280,12 +280,12 @@ describe("Block global coherence:", function(){
 
   it('a block with unavailable UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, function (err) {
     should.exist(err);
-    err.should.equal('Source D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:55 is not available');
+    err.should.have.property('uerr').property('message').equal('Source already consumed');
   }));
 
   it('a block with unavailable TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, function (err) {
     should.exist(err);
-    err.should.equal('Source T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88 is not available');
+    err.should.have.property('uerr').property('message').equal('Source already consumed');
   }));
 
   it('a block with an unknown member revoked should fail', test('checkRevoked', blocks.BLOCK_UNKNOWN_REVOKED, function (err) {
@@ -626,7 +626,13 @@ function BlockCheckerDao (block) {
       '67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:176'
     ];
     var index = existing.indexOf([identifier, noffset].join(':'));
-    return Q(index !== -1 ? existing[index] : null);
+    let obj = index !== -1 ? existing[index] : null;
+    if (obj) {
+      obj = {
+        amount: index == 4 ? 235 : 0
+      };
+    }
+    return Q(obj);
   };
 
   this.findBlock = function (number, hash, done) {

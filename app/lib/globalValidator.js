@@ -627,6 +627,7 @@ function GlobalValidator (conf, dao) {
   function checkSourcesAvailabilityForTransaction (tx, block, done) {
     return co(function *() {
       let unlocks = {};
+      let sumOfInputs = 0;
       for (let i = 0, len = tx.unlocks.length; i < len; i++) {
         let sp = tx.unlocks[i].split(':');
         let index = parseInt(sp[0]);
@@ -636,8 +637,10 @@ function GlobalValidator (conf, dao) {
         let src = tx.inputs[i];
         let dbSrc = yield dao.getSource(src.identifier, src.noffset);
         if (!dbSrc || dbSrc.consumed) {
-          throw 'Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available';
+          logger.warn('Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available');
+          throw constants.ERRORS.SOURCE_ALREADY_CONSUMED;
         }
+        sumOfInputs += dbSrc.amount;
         if (block.medianTime - dbSrc.time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
@@ -675,6 +678,13 @@ function GlobalValidator (conf, dao) {
             throw constants.ERRORS.WRONG_UNLOCKER;
           }
         }
+      }
+      let sumOfOutputs = tx.outputs.reduce(function(p, output) {
+        return p + output.amount;
+      }, 0);
+      if (sumOfInputs !== sumOfOutputs) {
+        logger.warn('Inputs/Outputs != 1 (%s/%s)', sumOfInputs, sumOfOutputs);
+        throw constants.ERRORS.WRONG_AMOUNTS;
       }
       done && done(null);
     })

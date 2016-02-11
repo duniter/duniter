@@ -33,6 +33,7 @@ var Transaction = function(obj, currency) {
       'currency': this.currency,
       'issuers': this.issuers,
       'inputs': this.inputs,
+      'unlocks': this.unlocks,
       'outputs': this.outputs,
       'comment': this.comment,
       'signatures': this.signatures,

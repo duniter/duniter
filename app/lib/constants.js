@@ -14,8 +14,9 @@ var BOOLEAN      = "[01]";
 var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 var FINGERPRINT  = "[A-F0-9]{64}";
 var COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
-var UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + FINGERPRINT + "\\))";
-var CONDITIONS   = "(SIG|&&|\|\|| |XHX|[()\\da-zA-Z])*";
+var UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + INTEGER + "\\))";
+var CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{44,45}\\)|(XHX\\([A-F0-9]{64}\\))))*";
+//var CONDITIONS   = "(&&|\|\|| |[()]|(SIG\\(\\da-zA-Z\\))|(XHX\\(" + FINGERPRINT + "\\)))*";
 var BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
 var META_TS      = "META:TS:" + BLOCK_UID;
 
@@ -64,7 +65,8 @@ module.exports = {
     NOT_A_MEMBER:                         { httpCode: 400, uerr: { ucode: 2009, message: "Not a member" }},
     NO_CURRENT_BLOCK:                     { httpCode: 404, uerr: { ucode: 2010, message: "No current block" }},
     BLOCK_NOT_FOUND:                      { httpCode: 404, uerr: { ucode: 2011, message: "Block not found" }},
-    PEER_NOT_FOUND:                       { httpCode: 404, uerr: { ucode: 2012, message: "Peer not found" }}
+    PEER_NOT_FOUND:                       { httpCode: 404, uerr: { ucode: 2012, message: "Peer not found" }},
+    WRONG_UNLOCKER:                       { httpCode: 400, uerr: { ucode: 2013, message: "Wrong unlocker in transaction" }}
   },
 
   DEBUG: {

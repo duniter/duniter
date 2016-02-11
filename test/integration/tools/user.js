@@ -5,6 +5,7 @@ var async		= require('async');
 var request	= require('request');
 var vucoin	= require('vucoin');
 var ucp     = require('../../../app/lib/ucp');
+var parsers = require('../../../app/lib/streams/parsers/doc');
 var crypto	= require('../../../app/lib/crypto');
 var rawer		= require('../../../app/lib/rawer');
 var base58	= require('../../../app/lib/base58');
@@ -24,7 +25,7 @@ function User (uid, options, node) {
   // For sync code
   if (options.pub && options.sec) {
     pub = that.pub = options.pub;
-    sec = base58.decode(options.sec);
+    sec = that.sec = base58.decode(options.sec);
   }
 
   function init(done) {
@@ -35,13 +36,13 @@ function User (uid, options, node) {
         },
         function (pair, next) {
           pub = that.pub = base58.encode(pair.publicKey);
-          sec = pair.secretKey;
+          sec = that.sec = pair.secretKey;
           next();
         }
       ], done);
     } else if (options.pub && options.sec) {
       pub = that.pub = options.pub;
-      sec = base58.decode(options.sec);
+      sec = that.sec = base58.decode(options.sec);
       done();
     } else {
       throw 'Not keypair information given for testing user ' + uid;
@@ -211,94 +212,136 @@ function User (uid, options, node) {
 
   this.send = function (amount, recipient, comment) {
     return function(done) {
-      var sources = [];
-      var currency = '';
-      var raw = "";
-      async.waterfall([
-        function (next) {
-          if (!amount || !recipient) {
-            next('Amount and recipient are required');
-            return;
-          }
-          getVucoin()
-            .then(function(http){
-              http.tx.sources(pub, next);
-            })
-            .catch(next);
-        },
-        function (json, next) {
-          currency = json.currency;
-          var i = 0;
-          var cumulated = 0;
-          while (i < json.sources.length) {
-            var src = json.sources[i];
-            sources.push({
-              'type': src.type,
-              'amount': src.amount,
-              'noffset': src.noffset,
-              'identifier': src.identifier
-            });
-            cumulated += src.amount;
-            i++;
-          }
-          if (cumulated < amount) {
-            next('You do not have enough coins! (' + cumulated + ' ' + currency + ' left)');
-          }
-          else {
-            next();
-          }
-        },
-        function (next) {
-          var selected = [];
-          var total = 0;
-          for (var i = 0; i < sources.length && total < amount; i++) {
-            var src = sources[i];
-            total += src.amount;
-            selected.push(src);
-          }
-          next(null, selected);
-        },
-        function (sources2, next) {
-          var inputSum = 0;
-          var issuer = pub;
-          raw += "Version: " + constants.DOCUMENTS_VERSION + '\n';
-          raw += "Type: Transaction\n";
-          raw += "Currency: " + currency + '\n';
-          raw += "Issuers:\n";
-          raw += issuer + '\n';
-          raw += "Inputs:\n";
-          sources2.forEach(function (src) {
-            raw += [src.type, src.identifier, src.noffset].join(':') + '\n';
-            inputSum += src.amount;
-          });
-          raw += "Unlocks:\n";
-          sources2.forEach(function (src, index) {
-            raw += index + ":SIG(0)" + '\n';
-          });
-          raw += "Outputs:\n";
-          raw += [amount, "SIG(" + recipient.pub + ")"].join(':') + '\n';
-          if (inputSum - amount > 0) {
-            // Rest back to issuer
-            raw += [inputSum - amount, "SIG(" + issuer + ")"].join(':') + '\n';
-          }
-          raw += "Comment: " + (comment || "") + "\n";
-          next(null, raw);
-        },
-        function (raw, next) {
-          var sig = crypto.signSync(raw, sec);
-          raw += sig + '\n';
-
-          getVucoin()
-            .then(function(http){
-              http.tx.process(raw, function (err) {
-                if (err) console.error('Error:', err);
-                next(err);
-              });
-            })
-            .catch(next);
-        }
-      ], done);
+      return co(function *() {
+        let raw = yield that.prepareITX(amount, recipient, comment);
+        return that.sendTX(raw);
+      })
+        .then(() => done()).catch(done);
     };
+  };
+
+  this.sendTX = (rawTX) => co(function *() {
+    let http = yield getVucoin();
+    return Q.nbind(http.tx.process, http)(rawTX);
+  });
+
+  this.prepareUTX = (previousTX, unlocks, outputs, opts) => co(function *() {
+    let obj = parsers.parseTransaction.syncWrite(previousTX);
+    // Unlocks inputs with given "unlocks" strings
+    let inputs = obj.outputs.map((out, index) => {
+      return {
+        src: ['T', obj.hash, index].join(':'),
+        unlock: unlocks[index]
+      };
+    });
+    return signed(that.prepareTX(inputs, outputs, opts));
+  });
+
+  this.prepareMTX = (previousTX, user2, unlocks, outputs, opts) => co(function *() {
+    let obj = parsers.parseTransaction.syncWrite(previousTX);
+    // Unlocks inputs with given "unlocks" strings
+    let inputs = obj.outputs.map((out, index) => {
+      return {
+        src: ['T', obj.hash, index].join(':'),
+        unlock: unlocks[index]
+      };
+    });
+    opts = opts || {};
+    opts.issuers = [pub, user2.pub];
+    return signed(that.prepareTX(inputs, outputs, opts), user2);
+  });
+
+  this.prepareOTX = (previousTX, outputs, opts) => co(function *() {
+
+  });
+
+  this.prepareITX = (amount, recipient, comment) => co(function *() {
+    let sources = [];
+    if (!amount || !recipient) {
+      throw 'Amount and recipient are required';
+    }
+    let http = yield getVucoin();
+    let json = yield Q.nbind(http.tx.sources, http)(pub);
+    let i = 0;
+    let cumulated = 0;
+    while (i < json.sources.length) {
+      let src = json.sources[i];
+      sources.push({
+        'type': src.type,
+        'amount': src.amount,
+        'noffset': src.noffset,
+        'identifier': src.identifier
+      });
+      cumulated += src.amount;
+      i++;
+    }
+    if (cumulated < amount) {
+      throw 'You do not have enough coins! (' + cumulated + ' ' + node.server.conf.currency + ' left)';
+    }
+    let sources2 = [];
+    let total = 0;
+    for (let j = 0; j < sources.length && total < amount; j++) {
+      var src = sources[j];
+      total += src.amount;
+      sources2.push(src);
+    }
+    var inputSum = 0;
+    sources2.forEach((src) => inputSum += src.amount);
+    let inputs = sources2.map((src) => {
+      return {
+        src: [src.type, src.identifier, src.noffset].join(':'),
+        unlock: 'SIG(0)'
+      };
+    });
+    let outputs = [{
+      qty: amount,
+      lock: 'SIG(' + recipient.pub + ')'
+    }];
+    if (inputSum - amount > 0) {
+      // Rest back to issuer
+      outputs.push({
+        qty: inputSum - amount,
+        lock: "SIG(" + pub + ")"
+      });
+    }
+    return signed(that.prepareTX(inputs, outputs, {
+      comment: comment
+    }));
+  });
+
+  function signed(raw, user2) {
+    let signatures = [crypto.signSync(raw, sec)];
+    if (user2) {
+      signatures.push(crypto.signSync(raw, user2.sec));
+    }
+    return raw + signatures.join('\n') + '\n';
+  }
+
+  this.prepareTX = (inputs, outputs, theOptions) => {
+    let opts = theOptions || {};
+    let issuers = opts.issuers || [pub];
+    let raw = '';
+    raw += "Version: " + constants.DOCUMENTS_VERSION + '\n';
+    raw += "Type: Transaction\n";
+    raw += "Currency: " + node.server.conf.currency + '\n';
+    raw += "Issuers:\n";
+    issuers.forEach((issuer) => raw += issuer + '\n');
+    raw += "Inputs:\n";
+    inputs.forEach(function (input) {
+      raw += input.src + '\n';
+    });
+    raw += "Unlocks:\n";
+    inputs.forEach(function (input, index) {
+      if (input.unlock) {
+        raw += index + ":" + input.unlock + '\n';
+      }
+    });
+    raw += "Outputs:\n";
+    outputs.forEach(function (output) {
+      raw += [output.qty, output.lock].join(':') + '\n';
+    });
+    raw += "Comment: " + (opts.comment || "") + "\n";
+    return raw;
   };
 
   function post(uri, data, done) {

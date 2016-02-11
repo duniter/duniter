@@ -17,6 +17,7 @@ var Block         = require('../lib/entity/block');
 var Identity      = require('../lib/entity/identity');
 var Membership    = require('../lib/entity/membership');
 var Certification = require('../lib/entity/certification');
+var logger        = require('../lib/logger')('globv');
 
 module.exports = function (conf, dao) {
   
@@ -647,11 +648,14 @@ function GlobalValidator (conf, dao) {
             for (let j = 0, len2 = sp.length; j < len2; j++) {
               let func = sp[j];
               let param = func.match(/\((.+)\)/)[1];
-              let pubkey = tx.issuers[0];
               if (func.match(/^SIG/)) {
+                let pubkey = tx.issuers[parseInt(param)];
+                if (!pubkey) {
+                  throw constants.ERRORS.WRONG_UNLOCKER;
+                }
                 unlocksForCondition.push({
                   pubkey: pubkey,
-                  sigOK: sigResults.sigs[pubkey].matching || false
+                  sigOK: sigResults.sigs[pubkey] && sigResults.sigs[pubkey].matching || false
                 });
               } else {
                 // XHX
@@ -664,7 +668,8 @@ function GlobalValidator (conf, dao) {
               throw 'Locked';
             }
           } catch (e) {
-            throw 'Source ' + [src.pubkey, src.type, src.number, src.fingerprint, src.amount].join(':') + ' unlock fail';
+            logger.warn('Source ' + [src.type, src.identifier, src.noffset].join(':') + ' unlock fail');
+            throw constants.ERRORS.WRONG_UNLOCKER;
           }
         }
       }

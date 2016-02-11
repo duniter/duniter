@@ -296,6 +296,7 @@ dtos.Transaction = {
   "currency": String,
   "issuers": [String],
   "inputs": [String],
+  "unlocks": [String],
   "outputs": [String],
   "comment": String,
   "signatures": [String],

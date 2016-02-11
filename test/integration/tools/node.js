@@ -86,8 +86,8 @@ function Node (dbName, options) {
           var pub = that.server.PeeringService.pubkey;
           proveAndSend(that.server, block, sigFunc, pub, block.powMin, next);
         }
-      ], function(err) {
-        done(err);
+      ], function(err, res) {
+        done(err, res.body);
       });
     };
   };
@@ -113,7 +113,8 @@ function Node (dbName, options) {
   function post(uri, data, done) {
     var postReq = request.post({
       "uri": 'http://' + [that.server.conf.remoteipv4, that.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000 * 10
+      "timeout": 1000 * 10,
+      "json": true
     }, function (err, res, body) {
       done(err, res, body);
     });

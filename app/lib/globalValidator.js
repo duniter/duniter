@@ -29,8 +29,8 @@ function GlobalValidator (conf, dao) {
   let wotb = dao.wotb;
   let localV = localValidator(conf);
 
-  this.checkSingleTransaction = function (tx, done) {
-    return checkSourcesAvailabilityForTransaction(tx, done);
+  this.checkSingleTransaction = function (tx, block, done) {
+    return checkSourcesAvailabilityForTransaction(tx, block, done);
   };
 
   this.checkExistsUserID = checkExistsUserID;
@@ -619,12 +619,12 @@ function GlobalValidator (conf, dao) {
   function checkSourcesAvailability (block, done) {
     async.waterfall([
       function (next){
-        async.forEachSeries(block.getTransactions(), checkSourcesAvailabilityForTransaction, next);
+        async.forEachSeries(block.getTransactions(), (tx) => checkSourcesAvailabilityForTransaction(tx, block, next), next);
       }
     ], done);
   }
 
-  function checkSourcesAvailabilityForTransaction (tx, done) {
+  function checkSourcesAvailabilityForTransaction (tx, block, done) {
     return co(function *() {
       let unlocks = {};
       for (let i = 0, len = tx.unlocks.length; i < len; i++) {
@@ -637,6 +637,9 @@ function GlobalValidator (conf, dao) {
         let dbSrc = yield dao.getSource(src.identifier, src.noffset);
         if (!dbSrc || dbSrc.consumed) {
           throw 'Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available';
+        }
+        if (block.medianTime - dbSrc.time < tx.locktime) {
+          throw constants.ERRORS.LOCKTIME_PREVENT;
         }
         let sigResults = localV.getSigResult(tx);
         let unlocksForCondition = [];

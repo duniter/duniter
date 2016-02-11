@@ -193,6 +193,7 @@ function Block(json) {
       tx.comment = simpleTx.comment;
       tx.version = version;
       tx.currency = currency;
+      tx.locktime = simpleTx.locktime;
       transactions.push(tx);
     });
     return transactions;

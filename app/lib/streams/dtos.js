@@ -66,6 +66,7 @@ dtos.TransactionOfBlock = {
   "version": Number,
   "currency": String,
   "comment": String,
+  "locktime": String,
   "signatures": [String],
   "outputs": [String],
   "inputs": [String],
@@ -299,6 +300,7 @@ dtos.Transaction = {
   "unlocks": [String],
   "outputs": [String],
   "comment": String,
+  "locktime": String,
   "signatures": [String],
   "raw": String,
   "hash": String
@@ -323,6 +325,7 @@ dtos.TxOfHistory = {
   "inputs": [String],
   "outputs": [String],
   "comment": String,
+  "locktime": String,
   "signatures": [String],
   "hash": String,
   "block_number": Number,

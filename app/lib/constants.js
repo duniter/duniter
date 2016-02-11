@@ -66,7 +66,8 @@ module.exports = {
     NO_CURRENT_BLOCK:                     { httpCode: 404, uerr: { ucode: 2010, message: "No current block" }},
     BLOCK_NOT_FOUND:                      { httpCode: 404, uerr: { ucode: 2011, message: "Block not found" }},
     PEER_NOT_FOUND:                       { httpCode: 404, uerr: { ucode: 2012, message: "Peer not found" }},
-    WRONG_UNLOCKER:                       { httpCode: 400, uerr: { ucode: 2013, message: "Wrong unlocker in transaction" }}
+    WRONG_UNLOCKER:                       { httpCode: 400, uerr: { ucode: 2013, message: "Wrong unlocker in transaction" }},
+    LOCKTIME_PREVENT:                     { httpCode: 400, uerr: { ucode: 2014, message: "Locktime not elapsed yet" }}
   },
 
   DEBUG: {
@@ -164,6 +165,7 @@ module.exports = {
     UNLOCK:  exact(INTEGER + ":" + UNLOCK + "( (" + UNLOCK + "))*"),
     TARGET:  exact(POSITIVE_INT + ":" + CONDITIONS),
     COMMENT: find("Comment: (" + COMMENT + ")"),
+    LOCKTIME:find("Locktime: (" + INTEGER + ")"),
     INLINE_COMMENT: exact(COMMENT)
   },
   PEER: {

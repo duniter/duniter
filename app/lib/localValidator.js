@@ -651,7 +651,7 @@ function checkSingleTransactionSignature (tx, done) {
 
 function getSigResult(tx) {
   let sigResult = { sigs: {}, matching: true };
-  let json = { "version": tx.version, "currency": tx.currency, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
+  let json = { "version": tx.version, "currency": tx.currency, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
   tx.inputs.forEach(function (input) {
     json.inputs.push(input.raw);
   });

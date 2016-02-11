@@ -16,6 +16,7 @@ function TransactionParser (onError) {
     {prop: "unlocks",    regexp: /Unlocks:\n([\s\S]*)Outputs/,parser: extractUnlocks },
     {prop: "outputs",    regexp: /Outputs:\n([\s\S]*)/,       parser: extractOutputs },
     {prop: "comment",    regexp: constants.TRANSACTION.COMMENT },
+    {prop: "locktime",   regexp: constants.TRANSACTION.LOCKTIME },
     {prop: "signatures", regexp: /Outputs:\n([\s\S]*)/,       parser: extractSignatures }
   ];
   var multilineFields = [];

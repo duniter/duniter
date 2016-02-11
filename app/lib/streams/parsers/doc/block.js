@@ -175,6 +175,7 @@ function extractTransactions(raw) {
       var nbUnlocks = parseInt(sp[4]);
       var nbOutputs = parseInt(sp[5]);
       var hasComment = parseInt(sp[6]);
+      currentTX.locktime = parseInt(sp[7]);
       var linesToExtract = {
         signatories: {
           start: 1,

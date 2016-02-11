@@ -491,7 +491,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 localValidation.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
               },
               function (next) {
-                globalValidation.checkSingleTransaction(extractedTX, next);
+                globalValidation.checkSingleTransaction(extractedTX, { medianTime: moment().utc().unix() }, next);
               },
               function (next) {
                 transactions.push(tx);

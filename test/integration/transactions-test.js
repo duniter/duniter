@@ -92,29 +92,29 @@ describe("Testing transactions", function() {
     }));
   });
 
-  describe.only("Chaining", function(){
+  describe("Chaining", function(){
 
-    //it('with SIG and XHX', () => co(function *() {
-    //  let tx1 = yield toc.prepareITX(120, tic);
-    //  yield toc.sendTX(tx1);
-    //  yield node2.commitP();
-    //  let tx2 = yield tic.prepareUTX(tx1, ['SIG(2)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
-    //  let tx3 = yield tic.prepareUTX(tx1, ['SIG(1)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
-    //  let tx4 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 200, lock: 'XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)' }], { comment: 'ok'});
-    //  let tx5 = yield tic.prepareUTX(tx1, ['XHX(2)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
-    //  let tx6 = yield tic.prepareUTX(tx1, ['XHX(4)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
-    //  yield unit.shouldFail(toc.sendTX(tx2), 'Wrong unlocker in transaction');
-    //  yield unit.shouldFail(toc.sendTX(tx3), 'Wrong unlocker in transaction');
-    //  yield unit.shouldNotFail(toc.sendTX(tx4));
-    //  yield unit.shouldFail(toc.sendTX(tx5), 'Wrong unlocker in transaction');
-    //  yield unit.shouldFail(toc.sendTX(tx6), 'Wrong unlocker in transaction');
-    //  yield node2.commitP(); // TX4 commited
-    //  let tx7 = yield tic.prepareUTX(tx4, ['XHX(2872767826647264)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong1'});
-    //  let tx8 = yield tic.prepareUTX(tx4, ['XHX(1872767826647264)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'okk'});
-    //  yield unit.shouldFail(toc.sendTX(tx7), 'Wrong unlocker in transaction');
-    //  yield unit.shouldNotFail(toc.sendTX(tx8));
-    //  yield node2.commitP(); // TX4 commited
-    //}));
+    it('with SIG and XHX', () => co(function *() {
+      let tx1 = yield toc.prepareITX(120, tic);
+      yield toc.sendTX(tx1);
+      yield node2.commitP();
+      let tx2 = yield tic.prepareUTX(tx1, ['SIG(2)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
+      let tx3 = yield tic.prepareUTX(tx1, ['SIG(1)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
+      let tx4 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 200, lock: 'XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)' }], { comment: 'ok'});
+      let tx5 = yield tic.prepareUTX(tx1, ['XHX(2)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
+      let tx6 = yield tic.prepareUTX(tx1, ['XHX(4)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});
+      yield unit.shouldFail(toc.sendTX(tx2), 'Wrong unlocker in transaction');
+      yield unit.shouldFail(toc.sendTX(tx3), 'Wrong unlocker in transaction');
+      yield unit.shouldNotFail(toc.sendTX(tx4));
+      yield unit.shouldFail(toc.sendTX(tx5), 'Wrong unlocker in transaction');
+      yield unit.shouldFail(toc.sendTX(tx6), 'Wrong unlocker in transaction');
+      yield node2.commitP(); // TX4 commited
+      let tx7 = yield tic.prepareUTX(tx4, ['XHX(2872767826647264)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong1'});
+      let tx8 = yield tic.prepareUTX(tx4, ['XHX(1872767826647264)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'okk'});
+      yield unit.shouldFail(toc.sendTX(tx7), 'Wrong unlocker in transaction');
+      yield unit.shouldNotFail(toc.sendTX(tx8));
+      yield node2.commitP(); // TX4 commited
+    }));
 
     it('with MULTISIG', () => co(function *() {
       let tx1 = yield toc.prepareITX(120, tic);
@@ -128,13 +128,15 @@ describe("Testing transactions", function() {
       let tx4 = yield toc.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'ok'});
       let tx5 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi OK'});
       let tx6 = yield toc.prepareMTX(tx2, tic, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi WRONG'});
+      // nLocktime
+      let tx7 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 200, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong locktime', locktime: 100 });
       yield unit.shouldFail(toc.sendTX(tx3), 'Wrong unlocker in transaction');
       yield unit.shouldNotFail(toc.sendTX(tx4));
       yield unit.shouldNotFail(toc.sendTX(tx5));
       yield unit.shouldFail(toc.sendTX(tx6), 'Wrong unlocker in transaction');
+      yield unit.shouldFail(toc.sendTX(tx7), 'Locktime not elapsed yet');
     }));
 
-    // nLocktime
     // Complete cross chain transaction
   });
 });

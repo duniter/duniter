@@ -36,6 +36,7 @@ var Transaction = function(obj, currency) {
       'unlocks': this.unlocks,
       'outputs': this.outputs,
       'comment': this.comment,
+      'locktime': this.locktime,
       'signatures': this.signatures,
       'raw': this.getRaw(),
       'hash': this.hash
@@ -73,6 +74,7 @@ var Transaction = function(obj, currency) {
       });
     });
     tx.comment = this.comment;
+    tx.locktime = this.locktime;
     return tx;
   };
 

@@ -596,9 +596,10 @@ function BlockchainContext(conf, dal) {
                 dal.saveSource(new Source({
                   'type': 'T',
                   'number': block.number,
-                  'block_hash': block.hash,
+                  'time': block.medianTime,
                   'identifier': txHash,
                   'noffset': index++,
+                  'block_hash': block.hash,
                   'amount': output.amount,
                   'conditions': output.conditions,
                   'consumed': 0

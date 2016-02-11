@@ -324,6 +324,7 @@ function User (uid, options, node) {
     raw += "Version: " + constants.DOCUMENTS_VERSION + '\n';
     raw += "Type: Transaction\n";
     raw += "Currency: " + node.server.conf.currency + '\n';
+    raw += "Locktime: " + (theOptions.locktime || 0) + '\n';
     raw += "Issuers:\n";
     issuers.forEach((issuer) => raw += issuer + '\n');
     raw += "Inputs:\n";

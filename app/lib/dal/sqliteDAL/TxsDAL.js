@@ -23,6 +23,7 @@ function TxsDAL(db) {
     'version',
     'currency',
     'comment',
+    'locktime',
     'time',
     'written',
     'removed',
@@ -44,6 +45,7 @@ function TxsDAL(db) {
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       'hash CHAR(64) NOT NULL,' +
       'block_number INTEGER,' +
+      'locktime INTEGER NOT NULL,' +
       'version INTEGER NOT NULL,' +
       'currency VARCHAR(50) NOT NULL,' +
       'comment VARCHAR(255) NOT NULL,' +

@@ -2,8 +2,7 @@
 
 var co = require('co');
 var Q = require('q');
-var _               = require('underscore');
-var async           = require('async');
+var moment          = require('moment');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
 var blockchainDao   = require('../lib/blockchainDao');
@@ -35,7 +34,7 @@ function TransactionService (conf, dal) {
       // Start checks...
       var transaction = tx.getTransaction();
       yield Q.nbind(localValidation.checkSingleTransaction, localValidation)(transaction);
-      yield Q.nbind(globalValidation.checkSingleTransaction, globalValidation)(transaction);
+      yield Q.nbind(globalValidation.checkSingleTransaction, globalValidation)(transaction, { medianTime: moment().utc().unix() });
       return dal.saveTransaction(tx);
     })
       .then(function(){

@@ -362,6 +362,7 @@ A transaction is defined by the following format:
     Version: VERSION
     Type: Transaction
     Currency: CURRENCY_NAME
+    Locktime: INTEGER
     Issuers:
     PUBLIC_KEY
     ...
@@ -403,9 +404,9 @@ A Transaction structure is considered *valid* if:
 * Field `Issuers` is a multiline field whose lines are public keys.
 * Field `Inputs` is a multiline field whose lines match either:
   * `D:PUBLIC_KEY:BLOCK_ID` format
-  * `T:HASH:INDEX` format
+  * `T:T_HASH:T_INDEX` format
 * Field `Unlocks` is a multiline field whose lines follow `INDEX:UL_CONDITIONS` format:
-  * `INDEX` must be an integer value
+  * `IN_INDEX` must be an integer value
   * `UL_CONDITIONS` must be a valid [Input Condition](#input-condition)
 * Field `Outputs` is a multiline field whose lines follow `AMOUNT:CONDITIONS` format:
   * `AMOUNT` must be an integer value
@@ -439,6 +440,129 @@ It follows a machine-readable BNF grammar composed of
 * `SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd)`
 * `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) AND XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6))`
 * `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) OR (SIG(DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV) AND XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6)))`
+
+#### Condition matching
+
+Each `Unlock` of TX2 refers to an input of TX2 through `IN_INDEX`, input itself refering to an `Output` of TX1 through `T_HASH` reference and `T_INDEX`.
+
+* An output contains `F` functions in its conditions (read from left to right)
+* An unlock contains `P` parameters (or less, min. is zero), each separated by a space (read from left to right)
+
+A function of TX1 at position `f` returns TRUE if parameter at position `p` resolves the function. Otherwise it returns FALSE.
+
+The condition of an `Output` is unlocked if, evaluated globally with `(`, `)`, `(`, `&&`, and `||`, the condition returns TRUE.
+
+##### Example 1
+
+TX1:
+
+    Outputs:
+    50:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+
+Is resolved by TX2:
+
+    Unlocks:
+    0:XHX(1872767826647264)
+
+Because `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB` (this will be explained in next sections).
+
+##### Example 2
+
+TX1:
+
+    Outputs:
+    50:SIG(DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo)
+
+Is resolved by TX2:
+
+    Issuers:
+    HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+    DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo
+    [...]
+    Unlocks:
+    0:SIG(1)
+
+Because `SIG(1)` refers to signature of `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo`, and considering signature of `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo` is good over TX2.
+
+#### SIG and XHX functions
+
+These functions are present under both `Unlocks` and `Outputs` fields.
+
+* When present under `Outputs`, these functions define the *necessary conditions* to spend each output.
+* When present under `Unlocks`, these functions define the *sufficient proofs* that each input can be spent.
+
+##### SIG example
+
+This function is a control over the signature.
+
+* in an `Output` of TX1, `SIG(PUBKEY_A)` requires from a future transaction TX2 unlocking the output to give as parameter a valid signature of TX2 by `PUBKEY_A`
+  * if TX2 does not give `SIG(INDEX)` parameter as [matching parameter](#condition-matching), the condition fails
+  * if TX2's `Issuers[INDEX]` does not equal `PUBKEY_A`, the condition fails
+  * if TX2's `SIG(INDEX)` does not return TRUE, the condition fails
+* in an `Unlock` of TX2, `SIG(INDEX)` return TRUE if `Signatures[INDEX]` is a valid signature of TX2 against`Issuers[INDEX]`
+
+So if we have, in TX1:
+
+    Version: 2
+    Type: Transaction
+    [...]
+	Outputs
+    25:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+
+Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
+
+    Version: 2
+    Type: Transaction
+    [...]
+    Issuers:
+    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
+    Inputs:
+    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    Unlocks:
+    0:SIG(0)
+
+Where:
+
+* `SIG(0)` refers to the signature of `Issuers[0]`, i.e. `BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g`
+* `6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3` is the hash of TX1.
+
+The necessary condition `SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)` is matched here if **both**:
+
+* the sufficient proof `SIG(0)` is a valid signature of TX2 against `Issuers[0]` public key
+* `Issuers[0] = BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g`
+
+
+##### XHX example
+
+This function is a password control.
+
+So if we have, in TX1:
+
+    Version: 2
+    Type: Transaction
+    [...]
+	Outputs
+    25:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+
+Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
+
+    Version: 2
+    Type: Transaction
+    [...]
+    Issuers:
+    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
+    Inputs:
+    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    Unlocks:
+    0:XHX(1872767826647264)
+
+Where:
+
+* `6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3` is the hash of TX1.
+
+The necessary condition `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)` is matched here if `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB`.
+
+`XHX(1872767826647264)` is to be evaluated as `SHA256(1872767826647264)`.
 
 #### Example 1
 
@@ -649,7 +773,7 @@ Time                  | Time of generation                                | Alwa
 MedianTime            | Median date                                       | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
 Issuer                | This block's issuer's public key                  | Always
-PreviousHash          | Previous block fingerprint (SHA-1)                | from Block#1
+PreviousHash          | Previous block fingerprint (SHA256)               | from Block#1
 PreviousIssuer        | Previous block issuer's public key                | from Block#1
 Parameters            | Currency parameters.                              | **Block#0 only**
 MembersCount          | Number of members in the WoT, this block included | Always
@@ -669,7 +793,7 @@ To be a valid, a block must match the following rules:
 ##### Format
 * `Version`, `Nonce`, `Number`, `PoWMin`, `Time`, `MedianTime`, `MembersCount` and `UniversalDividend` are integer values
 * `Currency` is a valid currency name
-* `PreviousHash` is an uppercased SHA-1 hash
+* `PreviousHash` is an uppercased SHA256 hash
 * `Issuer` and `PreviousIssuer` are [Public keys](#publickey)
 * `Identities` is a multiline field composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)

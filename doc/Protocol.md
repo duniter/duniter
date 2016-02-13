@@ -820,7 +820,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigDelay:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -917,7 +917,6 @@ Parameter   | Goal
 c           | The %growth of the UD every `[dt]` period
 dt          | Time period between two UD
 ud0         | UD(0), i.e. initial Universal Dividend
-sigDelay    | Minimum delay between 2 identical certifications (same pubkeys). Must be superior to `sigValidity`.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
 sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
@@ -1095,11 +1094,6 @@ A membership is to be considered valid if its age is less or equal to `[msValidi
 ###### Membership activity
 A membership is to be considered *active* if it is both written in the blockchain and *valid* (equivalent to not expired).
 
-###### Certification replayability
-A written certification is to be considered replayable if its age is greater or equal to `[sigDelay]`:
-
-    REPLAYABLE = AGE >= [sigDelay]
-
 ###### Certification chaining
 A written certification is to be considered chainable if:
 
@@ -1203,7 +1197,7 @@ A member may *revoke* its membership to the currency by sending an `OUT` members
 * A certification's `PUBKEY_TO`'s last membership occurrence **must not** be in `Leavers`.
 * A certification's `PUBKEY_TO` must be a member **or** be in incoming block's `Joiners`.
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
-* Replayability: a certification whose `PUBKEY_FROM` and `PUBKEY_TO` are the same than an existing certification in the blockchain can be written **only if** last certification written (incoming block excluded) is considered replayable.
+* Replayability: it cannot exist 2 *actives* certifications with the same `PUBKEY_FROM` and `PUBKEY_TO`.
 * Chainability: a certification whose `PUBKEY_FROM` is the same than an existing certification in the blockchain can be written **only if** last certification written (incoming block excluded) is considered chainable.
 
 ##### MembersCount

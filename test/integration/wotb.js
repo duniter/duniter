@@ -55,7 +55,6 @@ var s3 = ucoin({
   },
   participate: false, rootoffset: 10,
   sigQty: 1, dt: 0, ud0: 120,
-  sigDelay: 0, // Links can be replayed immediately
   sigValidity: 1400
 }, commonConf));
 

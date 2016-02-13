@@ -17,7 +17,6 @@ dtos.Parameters = {
   c: Number,
   dt: Number,
   ud0: Number,
-  sigDelay: Number,
   sigPeriod: Number,
   sigStock: Number,
   sigWindow: Number,

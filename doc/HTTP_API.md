@@ -594,7 +594,6 @@ The synchronization parameters.
   c: 0.01,
   dt: 302400,
   ud0: 100,
-  sigDelay: 5259600,
   sigPeriod: 7200,
   sigValidity: 2629800,
   sigQty: 3,

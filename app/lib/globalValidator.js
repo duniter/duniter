@@ -981,12 +981,12 @@ function GlobalValidator (conf, dao) {
         },
         function (previous, next){
           var duration = previous && (block.medianTime - parseInt(previous.timestamp));
-          if (previous && (duration <= conf.sigDelay + conf.sigValidity)) {
-            next('Too early for this certification');
+          if (previous && (duration <= conf.sigValidity)) {
+            next('A similar certification is already active');
           } else {
             next();
           }
-        },
+        }
       ], callback);
     }, done);
   }

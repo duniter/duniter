@@ -286,10 +286,6 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       });
   };
 
-  this.getBlocksUntil = function(number) {
-    return that.getBlocksBetween(0, number);
-  };
-
   this.getValidLinksFrom = function(from) {
     return that.linksDAL.getValidLinksFrom(from);
   };
@@ -677,7 +673,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     });
   };
 
-  this.getCertificationExcludingBlock = function(current, certValidtyTime, certDelay) {
+  this.getCertificationExcludingBlock = function(current, certValidtyTime) {
     return co(function *() {
       var currentExcluding;
       if (current.number > 0) {
@@ -690,13 +686,13 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       if (!currentExcluding) {
         var root = yield that.getRootBlock();
         var delaySinceStart = current.medianTime - root.medianTime;
-        if (delaySinceStart > certValidtyTime + certDelay) {
+        if (delaySinceStart > certValidtyTime) {
           return that.indicatorsDAL.writeCurrentExcludingForCert(root).then(() => root);
         }
       } else {
         // Check current position
         let currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
-        if (isExcluding(current, currentExcluding, currentNextBlock, certValidtyTime, certDelay)) {
+        if (isExcluding(current, currentExcluding, currentNextBlock, certValidtyTime)) {
           return currentExcluding;
         } else {
           // Have to look for new one
@@ -719,8 +715,8 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
             let middleNextB = yield that.getBlock(middle + 1);
             var delaySinceMiddle = current.medianTime - middleBlock.medianTime;
             var delaySinceNextB = current.medianTime - middleNextB.medianTime;
-            let isValidPeriod = delaySinceMiddle <= certValidtyTime + certDelay;
-            let isValidPeriodB = delaySinceNextB <= certValidtyTime + certDelay;
+            let isValidPeriod = delaySinceMiddle <= certValidtyTime;
+            let isValidPeriodB = delaySinceNextB <= certValidtyTime;
             let isExcludin = !isValidPeriod && isValidPeriodB;
             //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
             if (isExcludin) {
@@ -743,11 +739,11 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     });
   };
 
-  function isExcluding(current, excluding, nextBlock, certValidtyTime, certDelay) {
+  function isExcluding(current, excluding, nextBlock, certValidtyTime) {
     var delaySinceMiddle = current.medianTime - excluding.medianTime;
     var delaySinceNextB = current.medianTime - nextBlock.medianTime;
-    let isValidPeriod = delaySinceMiddle <= certValidtyTime + certDelay;
-    let isValidPeriodB = delaySinceNextB <= certValidtyTime + certDelay;
+    let isValidPeriod = delaySinceMiddle <= certValidtyTime;
+    let isValidPeriodB = delaySinceNextB <= certValidtyTime;
     return !isValidPeriod && isValidPeriodB;
   }
 

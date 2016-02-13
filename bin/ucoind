@@ -59,7 +59,6 @@ program
   .option('--cpu <percent>',           'Percent of CPU usage for proof-of-work computation', parsePercent)
 
   .option('-c, --currency <name>',     'Name of the currency managed by this node.')
-  .option('--sigDelay <timestamp>',    'Minimum delay between 2 similar certifications, in seconds.')
   .option('--sigPeriod <timestamp>',   'Minimum delay between 2 certifications of a same issuer, in seconds.')
   .option('--sigStock <count>',        'Maximum quantity of valid certifications per member.')
   .option('--sigWindow <duration>',    'Maximum age of a non-written certification.')
@@ -623,7 +622,6 @@ function commandLineConf(conf) {
     },
     ucp: {
       rootoffset:  program.rootoffset,
-      sigDelay:    program.sigDelay,
       sigPeriod:   program.sigPeriod,
       sigStock:    program.sigStock,
       sigWindow:   program.sigWindow,
@@ -660,7 +658,6 @@ function commandLineConf(conf) {
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6     = cli.server.remote.ipv6;
   if (cli.server.remote.port != undefined)  conf.remoteport     = cli.server.remote.port;
   if (cli.ucp.rootoffset)                   conf.rootoffset     = cli.ucp.rootoffset;
-  if (cli.ucp.sigDelay)                     conf.sigDelay       = cli.ucp.sigDelay;
   if (cli.ucp.sigPeriod)                    conf.sigPeriod      = cli.ucp.sigPeriod;
   if (cli.ucp.sigStock)                     conf.sigStock       = cli.ucp.sigStock;
   if (cli.ucp.sigWindow)                    conf.sigWindow      = cli.ucp.sigWindow;

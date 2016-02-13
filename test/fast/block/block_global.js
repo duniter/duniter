@@ -13,7 +13,6 @@ var Block         = require('../../../app/lib/entity/block');
 var Identity      = require('../../../app/lib/entity/identity');
 
 var conf = {
-  sigDelay: 365.25*24*3600, // 1 year
   msValidity: 365.25*24*3600, // 1 year
   sigValidity: 365.25*24*3600, // 1 year
   sigQty: 1,
@@ -171,7 +170,7 @@ describe("Block global coherence:", function(){
 
   it('a block with too early certification replay should fail', test('checkCertificationsDelayIsRespected', blocks.TOO_EARLY_CERTIFICATION_REPLAY, function (err) {
     should.exist(err);
-    err.should.equal('Too early for this certification');
+    err.should.equal('A similar certification is already active');
   }));
 
   it('a block with kicked members not written under Excluded field should fail', test('checkKickedMembersAreExcluded', blocks.KICKED_NOT_EXCLUDED, function (err) {

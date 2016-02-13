@@ -10,7 +10,6 @@ var Block          = require('../../../app/lib/entity/block');
 var Configuration  = require('../../../app/lib/entity/configuration');
 
 var conf = Configuration.statics.complete({
-  sigDelay: 365.25 * 24 * 3600, // 1 year
   sigQty: 1,
   powZeroMin: 1,
   powPeriod: 18,

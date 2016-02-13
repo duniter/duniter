@@ -823,7 +823,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 }
               }
               // Already exists a link not replayable yet?
-              var exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay - conf.sigValidity);
+              var exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
               if (exists) {
                 throw 'It already exists a similar certification written, which is not replayable yet';
               }
@@ -941,7 +941,7 @@ function BlockchainService (conf, mainDAL, pair) {
     block.number = current ? current.number + 1 : 0;
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
-      conf.sigDelay, conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
+      conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
       conf.sigQty, conf.xpercent, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
@@ -1282,20 +1282,19 @@ function BlockchainService (conf, mainDAL, pair) {
     theConf.c                = parseFloat(sp[0]);
     theConf.dt               = parseInt(sp[1]);
     theConf.ud0              = parseInt(sp[2]);
-    theConf.sigDelay         = parseInt(sp[3]);
-    theConf.sigPeriod        = parseInt(sp[4]);
-    theConf.sigStock         = parseInt(sp[5]);
-    theConf.sigWindow        = parseInt(sp[6]);
-    theConf.sigValidity      = parseInt(sp[7]);
-    theConf.sigQty           = parseInt(sp[8]);
-    theConf.xpercent         = parseFloat(sp[9]);
-    theConf.msValidity       = parseInt(sp[10]);
-    theConf.stepMax          = parseInt(sp[11]);
-    theConf.medianTimeBlocks = parseInt(sp[12]);
-    theConf.avgGenTime       = parseInt(sp[13]);
-    theConf.dtDiffEval       = parseInt(sp[14]);
-    theConf.blocksRot        = parseInt(sp[15]);
-    theConf.percentRot       = parseFloat(sp[16]);
+    theConf.sigPeriod        = parseInt(sp[3]);
+    theConf.sigStock         = parseInt(sp[4]);
+    theConf.sigWindow        = parseInt(sp[5]);
+    theConf.sigValidity      = parseInt(sp[6]);
+    theConf.sigQty           = parseInt(sp[7]);
+    theConf.xpercent         = parseFloat(sp[8]);
+    theConf.msValidity       = parseInt(sp[9]);
+    theConf.stepMax          = parseInt(sp[10]);
+    theConf.medianTimeBlocks = parseInt(sp[11]);
+    theConf.avgGenTime       = parseInt(sp[12]);
+    theConf.dtDiffEval       = parseInt(sp[13]);
+    theConf.blocksRot        = parseInt(sp[14]);
+    theConf.percentRot       = parseFloat(sp[15]);
     theConf.currency         = block.currency;
     return theConf;
   }
@@ -1412,7 +1411,7 @@ function BlockchainService (conf, mainDAL, pair) {
   this.getCertificationsExludingBlock = function() {
     return that.currentDal.getCurrent()
       .then(function(current){
-        return that.currentDal.getCertificationExcludingBlock(current, conf.sigValidity, conf.sigDelay);
+        return that.currentDal.getCertificationExcludingBlock(current, conf.sigValidity);
       })
       .catch(function(){
         return { number: -1 };
@@ -1468,7 +1467,7 @@ function NextBlockGenerator(conf, dal) {
         var exists = false;
         if (current) {
           // Already exists a link not replayable yet?
-          exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigDelay - conf.sigValidity);
+          exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
         }
         if (!exists) {
           // Already exists a link not chainable yet?

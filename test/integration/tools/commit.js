@@ -2,6 +2,7 @@
 
 var co = require('co');
 var rp = require('request-promise');
+var logger = require('../../../app/lib/logger')('test');
 
 module.exports = function makeBlockAndPost(theServer) {
   return function(manualValues) {
@@ -14,7 +15,7 @@ module.exports = function makeBlockAndPost(theServer) {
 
 function postBlock(server) {
   return function(block) {
-    //console.log(block.getRawSigned());
+    logger.trace(block.getRawSigned());
     return post(server, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     });

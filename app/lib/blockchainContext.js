@@ -273,26 +273,26 @@ function BlockchainContext(conf, dal) {
         // Computes the hash if not done yet
         if (!idty.hash)
           idty.hash = (hashf(rawer.getOfficialIdentity(idty)) + "").toUpperCase();
-        yield dal.newIdentity(idty, block.number);
+        yield dal.newIdentity(idty);
         yield cleanRejectedIdentities(idty);
       }
       // Joiners (come back)
       for (let i = 0, len = block.joiners.length; i < len; i++) {
         let inlineMS = block.joiners[i];
-        let ms = Identity.statics.fromInline(inlineMS);
-        yield dal.joinIdentity(ms.pubkey, block.number);
+        let ms = Membership.statics.fromInline(inlineMS);
+        yield dal.joinIdentity(ms.issuer, ms.number);
       }
       // Actives
       for (let i = 0, len = block.actives.length; i < len; i++) {
         let inlineMS = block.actives[i];
-        let ms = Identity.statics.fromInline(inlineMS);
-        yield dal.activeIdentity(ms.pubkey, block.number);
+        let ms = Membership.statics.fromInline(inlineMS);
+        yield dal.activeIdentity(ms.issuer, ms.number);
       }
-      // Actives
+      // Leavers
       for (let i = 0, len = block.leavers.length; i < len; i++) {
         let inlineMS = block.leavers[i];
-        let ms = Identity.statics.fromInline(inlineMS);
-        yield dal.leaveIdentity(ms.pubkey, block.number);
+        let ms = Membership.statics.fromInline(inlineMS);
+        yield dal.leaveIdentity(ms.issuer, ms.number);
       }
       // Revoked
       for (let i = 0, len = block.revoked.length; i < len; i++) {
@@ -539,12 +539,16 @@ function BlockchainContext(conf, dal) {
   };
 
   function computeObsoleteMemberships (block) {
-    return dal.getMembershipExcludingBlock(block, conf.msValidity)
-      .then(function(last){
-        if (last) {
-          return dal.kickWithOutdatedMemberships(last.number);
-        }
-      });
+    return co(function *() {
+      let lastForKick = yield dal.getMembershipExcludingBlock(block, conf.msValidity);
+      let lastForRevoke = yield dal.getMembershipRevocatingBlock(block, conf.msValidity * constants.REVOCATION_FACTOR);
+      if (lastForKick) {
+        yield dal.kickWithOutdatedMemberships(lastForKick.number);
+      }
+      if (lastForRevoke) {
+        yield dal.revokeWithOutdatedMemberships(lastForRevoke.number);
+      }
+    });
   }
 
   function updateTransactionSources (block, done) {

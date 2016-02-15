@@ -9,6 +9,7 @@ var Identity = function(json) {
 
   this.revoked = false;
   this.currentMSN = -1;
+  this.currentINN = -1;
   this.member = false;
   this.buid = '';
   this.kick = false;

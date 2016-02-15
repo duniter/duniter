@@ -61,8 +61,8 @@ function AbstractSQLite(db) {
     return that.query('SELECT * FROM ' + that.table + ' WHERE ' + conditions + sort, values);
   });
 
-  this.sqlFindOne = (obj) => co(function *() {
-    let res = yield that.sqlFind(obj);
+  this.sqlFindOne = (obj, sortObj) => co(function *() {
+    let res = yield that.sqlFind(obj, sortObj);
     return res[0];
   });
 

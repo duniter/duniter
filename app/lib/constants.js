@@ -92,6 +92,8 @@ module.exports = {
   DOCUMENTS_VERSION_REGEXP: /^2$/,
   DOCUMENTS_VERSION: 2,
 
+  REVOCATION_FACTOR: 2, // This is protocol fixed value
+
   CERT: {
     SELF: {
       UID: exact("UID:" + USER_ID),

@@ -25,11 +25,13 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   this.writeCurrentExcluding = (excluding) => that.coreFS.writeJSON('indicators/excludingMS.json', excluding);
 
+  this.writeCurrentRevocating = (revocating) => that.coreFS.writeJSON('indicators/revocatingMS.json', revocating);
+
   this.writeCurrentExcludingForCert = (excluding) => that.coreFS.writeJSON('indicators/excludingCRT.json', excluding);
 
   this.getCurrentMembershipExcludingBlock = () => that.coreFS.readJSON('indicators/excludingMS.json');
 
-  this.getCurrentCertificationExcludingBlock = () => that.coreFS.readJSON('indicators/excludingCRT.json');
+  this.getCurrentMembershipRevocatingBlock = () => that.coreFS.readJSON('indicators/revocatingMS.json');
 
-  this.getLastBlockOfIssuer = (pubkey) => that.coreFS.readJSON('indicators/issuers/' + pubkey + '.json').catch(() => null);
+  this.getCurrentCertificationExcludingBlock = () => that.coreFS.readJSON('indicators/excludingCRT.json');
 }

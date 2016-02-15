@@ -85,6 +85,39 @@ function MembershipDAL(db) {
     written: false
   });
 
+  this.previousMS = (pubkey, maxNumber) => co(function *() {
+    let previous = yield that.sqlFindOne({
+      issuer: pubkey,
+      number: { $lt: maxNumber },
+      written: true
+    }, {
+      number: 'DESC'
+    });
+    if (!previous) {
+      previous = {
+        number: -1
+      };
+    }
+    return previous;
+  });
+
+  this.previousIN = (pubkey, maxNumber) => co(function *() {
+    let previous = yield that.sqlFindOne({
+      issuer: pubkey,
+      membership: 'IN',
+      number: { $lt: maxNumber },
+      written: true
+    }, {
+      number: 'DESC'
+    });
+    if (!previous) {
+      previous = {
+        number: -1
+      };
+    }
+    return previous;
+  });
+
   this.unwriteMS = (ms) => co(function *() {
     let existing = yield that.sqlExisting({
       issuer: ms.issuer,

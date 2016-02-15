@@ -608,12 +608,6 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return that.idtyDAL.saveIdentity(idty);
   });
 
-  this.setRevoked = (hash) => co(function *() {
-    let idty = yield that.idtyDAL.getByHash(hash);
-    idty.revoked = true;
-    return that.idtyDAL.saveIdentity(idty);
-  });
-
   this.getMembershipExcludingBlock = function(current, msValidtyTime) {
     return co(function *() {
       var currentExcluding;
@@ -669,6 +663,68 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
           }
         } while (!newExcluding);
         return newExcluding;
+      }
+    });
+  };
+
+  // TODO: this is complete duplicate of getMembershipExcludingBlock()n but with two different calls:
+  // * getCurrentMembershipRevocatingBlock()
+  // * writeCurrentRevocating
+  this.getMembershipRevocatingBlock = function(current, msValidtyTime) {
+    return co(function *() {
+      var currentExcluding;
+      if (current.number > 0) {
+        try {
+          currentExcluding = yield that.indicatorsDAL.getCurrentMembershipRevocatingBlock();
+        } catch(e){
+          currentExcluding = null;
+        }
+      }
+      if (!currentExcluding) {
+        var root = yield that.getRootBlock();
+        var delaySinceStart = current.medianTime - root.medianTime;
+        if (delaySinceStart > msValidtyTime) {
+          return that.indicatorsDAL.writeCurrentRevocating(root).then(() => root);
+        }
+      } else {
+        var start = currentExcluding.number;
+        let newRevocating;
+        let top = current.number, bottom = start;
+        // Binary tree search
+        do {
+          let middle = top - bottom;
+          if (middle % 2 != 0) {
+            middle = middle + 1;
+          }
+          middle /= 2;
+          middle += bottom;
+          if (middle == top) {
+            middle--;
+            bottom--; // Helps not being stuck looking at 'top'
+          }
+          let middleBlock = yield that.getBlock(middle);
+          let middleNextB = yield that.getBlock(middle + 1);
+          var delaySinceMiddle = current.medianTime - middleBlock.medianTime;
+          var delaySinceNextB = current.medianTime - middleNextB.medianTime;
+          let isValidPeriod = delaySinceMiddle <= msValidtyTime;
+          let isValidPeriodB = delaySinceNextB <= msValidtyTime;
+          let isExcludin = !isValidPeriod && isValidPeriodB;
+          //console.log('MS: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
+          if (isExcludin) {
+            // Found
+            yield that.indicatorsDAL.writeCurrentRevocating(middleBlock);
+            newRevocating = middleBlock;
+          }
+          else if (isValidPeriod) {
+            // Look down in the blockchain
+            top = middle;
+          }
+          else {
+            // Look up in the blockchain
+            bottom = middle;
+          }
+        } while (!newRevocating);
+        return newRevocating;
       }
     });
   };
@@ -748,6 +804,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   }
 
   this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
+  this.revokeWithOutdatedMemberships = (maxNumber) => this.idtyDAL.revokeMembersForMembershipBelow(maxNumber);
 
   this.getPeerOrNull = function(pubkey, done) {
     return nullIfError(that.getPeer(pubkey), done);
@@ -971,20 +1028,20 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return that.idtyDAL.excludeIdentity(pubkey);
   };
 
-  this.newIdentity = function(idty, onBlock) {
-    return that.idtyDAL.newIdentity(idty, onBlock);
+  this.newIdentity = (idty) => co(function *() {
+    return that.idtyDAL.newIdentity(idty);
+  });
+
+  this.joinIdentity = function(pubkey, number) {
+    return that.idtyDAL.joinIdentity(pubkey, number);
   };
 
-  this.joinIdentity = function(pubkey, onBlock) {
-    return that.idtyDAL.joinIdentity(pubkey, onBlock);
+  this.activeIdentity = function(pubkey, number) {
+    return that.idtyDAL.activeIdentity(pubkey, number);
   };
 
-  this.activeIdentity = function(pubkey, onBlock) {
-    return that.idtyDAL.activeIdentity(pubkey, onBlock);
-  };
-
-  this.leaveIdentity = function(pubkey, onBlock) {
-    return that.idtyDAL.leaveIdentity(pubkey, onBlock);
+  this.leaveIdentity = function(pubkey, number) {
+    return that.idtyDAL.leaveIdentity(pubkey, number);
   };
 
   this.removeUnWrittenWithPubkey = function(pubkey) {
@@ -998,17 +1055,34 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   this.unacceptIdentity = that.idtyDAL.unacceptIdentity;
 
   this.unJoinIdentity = (ms) => co(function *() {
-    yield that.idtyDAL.unJoinIdentity(ms);
+    let previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
+    let previousINN = previousMSN.number;
+    if (previousMSN.membership == 'IN') {
+      previousINN = previousMSN;
+    }
+    else {
+      previousINN = yield that.msDAL.previousIN(ms.issuer, ms.number);
+    }
+    yield that.idtyDAL.unJoinIdentity(ms, previousMSN.number, previousINN.number);
     yield that.msDAL.unwriteMS(ms);
   });
 
   this.unRenewIdentity = (ms) => co(function *() {
-    yield that.idtyDAL.unRenewIdentity(ms);
+    let previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
+    let previousINN = previousMSN.number;
+    if (previousMSN.membership == 'IN') {
+      previousINN = previousMSN;
+    }
+    else {
+      previousINN = yield that.msDAL.previousIN(ms.issuer, ms.number);
+    }
+    yield that.idtyDAL.unRenewIdentity(ms, previousMSN.number, previousINN.number);
     yield that.msDAL.unwriteMS(ms);
   });
 
   this.unLeaveIdentity = (ms) => co(function *() {
-    yield that.idtyDAL.unLeaveIdentity(ms);
+    let previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
+    yield that.idtyDAL.unLeaveIdentity(ms, previousMSN.number);
     yield that.msDAL.unwriteMS(ms);
   });
 

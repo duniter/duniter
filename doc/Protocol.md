@@ -307,7 +307,7 @@ Version: VERSION
 Type: Membership
 Currency: CURRENCY_NAME
 Issuer: ISSUER
-Block: BLOCK_UID
+Block: M_BLOCK_UID
 Membership: MEMBERSHIP_TYPE
 UserID: USER_ID
 CertTS: BLOCK_UID
@@ -738,13 +738,13 @@ but also other informations like:
     PUBLIC_KEY:SIGNATURE:I_BLOCK_UID:USER_ID
     ...
     Joiners:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:I_BLOCK_UID:USER_ID
+    PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
     ...
     Actives:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:I_BLOCK_UID:USER_ID
+    PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
     ...
     Leavers:
-    PUBLIC_KEY:SIGNATURE:NUMBER:HASH:I_BLOCK_UID:USER_ID
+    PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
     ...
     Revoked:
     PUBLIC_KEY:SIGNATURE
@@ -803,8 +803,7 @@ To be a valid, a block must match the following rules:
 * `Joiners`, `Actives` and `Leavers` are multiline fields composed for each line of:
   * `PUBLIC_KEY` : a [Public key](#publickey)
   * `SIGNATURE` : a [Signature](#signature)
-  * `NUMBER` : an integer
-  * `HASH` : an uppercased SHA1 string
+  * `M_BLOCK_UID` : a block UID
   * `I_BLOCK_UID` : a block UID
   * `USER_ID` : an identifier
 * `Revoked` is a multiline field composed for each line of:

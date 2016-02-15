@@ -501,7 +501,7 @@ function hasEachIdentityMatchesANewcomer (block) {
   var i = 0;
   while (i < block.joiners.length) {
     let sp = block.joiners[i].split(':');
-    let pubk = sp[0], ts = sp[4], uid = sp[5];
+    let pubk = sp[0], ts = sp[3], uid = sp[4];
     let idty = [pubk, uid, ts].join('-');
     if (~pubkeys.indexOf(idty)) matchCount++;
     i++;

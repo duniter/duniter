@@ -28,7 +28,7 @@ var Membership = function(json) {
   };
 
   this.inline = function() {
-    return [this.issuer, this.signature, this.number, this.fpr, this.certts, this.userid].join(':');
+    return [this.issuer, this.signature, [this.number, this.fpr].join('-'), this.certts, this.userid].join(':');
   };
 
   this.json = function() {
@@ -63,10 +63,10 @@ Membership.statics.fromInline = function (inlineMS, type, currency) {
     membership: type,
     type:       type,
     number:     parseInt(sp[2]),
-    fpr:        sp[3],
-    block:      [sp[2], sp[3]].join('-'),
-    certts:     sp[4],
-    userid:     sp[5],
+    fpr:        sp[2].split('-')[1],
+    block:      sp[2],
+    certts:     sp[3],
+    userid:     sp[4],
     signature:  sp[1]
   });
 };

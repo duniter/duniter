@@ -23,6 +23,7 @@ function SourcesDAL(db) {
     'time',
     'identifier',
     'amount',
+    'base',
     'noffset',
     'block_hash',
     'consumed',
@@ -43,6 +44,7 @@ function SourcesDAL(db) {
       'identifier VARCHAR(64) NOT NULL,' +
       'noffset INTEGER NOT NULL,' +
       'amount VARCHAR(50) NOT NULL,' +
+      'base INTEGER NOT NULL,' +
       'block_hash VARCHAR(64) NOT NULL,' +
       'consumed BOOLEAN NOT NULL,' +
       'conditions TEXT,' +
@@ -85,12 +87,13 @@ function SourcesDAL(db) {
     });
   });
 
-  this.addSource = (type, number, identifier, noffset, amount, block_hash, time, conditions) => this.saveEntity({
+  this.addSource = (type, number, identifier, noffset, amount, base, block_hash, time, conditions) => this.saveEntity({
     type: type,
     number: number,
     identifier: identifier,
     noffset: noffset,
     amount: amount,
+    base: base,
     time: time,
     block_hash: block_hash,
     consumed: false,

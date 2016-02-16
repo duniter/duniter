@@ -1,6 +1,6 @@
 # UCP - uCoin Protocol
 
-> This document is still regularly updated (as of December 2014)
+> This document is still regularly updated (as of February 2015)
 
 ## Contents
 
@@ -373,7 +373,7 @@ A transaction is defined by the following format:
     UNLOCK
     ...
     Outputs:
-    AMOUNT:CONDITIONS
+    AMOUNT:BASE:CONDITIONS
     ...
     Comment: COMMENT
     SIGNATURES
@@ -410,6 +410,7 @@ A Transaction structure is considered *valid* if:
   * `UL_CONDITIONS` must be a valid [Input Condition](#input-condition)
 * Field `Outputs` is a multiline field whose lines follow `AMOUNT:CONDITIONS` format:
   * `AMOUNT` must be an integer value
+  * `BASE` must be an integer value
   * `CONDITIONS` must be a valid [Output Condition](#output-condition)
 * Field `Comment` is a string of maximum 255 characters, exclusively composed of alphanumeric characters, space, `-`, `_`, `:`, `/`, `;`, `*`, `[`, `]`, `(`, `)`, `?`, `!`, `^`, `+`, `=`, `@`, `&`, `~`, `#`, `{`, `}`, `|`, `\`, `<`, `>`, `%`, `.`. Must be present even if empty.
 
@@ -457,7 +458,7 @@ The condition of an `Output` is unlocked if, evaluated globally with `(`, `)`, `
 TX1:
 
     Outputs:
-    50:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+    50:2:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
 
 Is resolved by TX2:
 
@@ -471,7 +472,7 @@ Because `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F
 TX1:
 
     Outputs:
-    50:SIG(DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo)
+    50:2:SIG(DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo)
 
 Is resolved by TX2:
 
@@ -507,7 +508,7 @@ So if we have, in TX1:
     Type: Transaction
     [...]
 	Outputs
-    25:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    25:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
 
 Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
 
@@ -542,7 +543,7 @@ So if we have, in TX1:
     Type: Transaction
     [...]
 	Outputs
-    25:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+    25:2:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
 
 Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
 
@@ -579,8 +580,8 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its va
     Unlocks:
     0:SIG(0)
     Outputs:
-    25:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    5:SIG(HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY)
+    25:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    5:2:SIG(HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY)
     Comment: First transaction
 
 Signatures (fake here):
@@ -606,7 +607,7 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction writte
     1:SIG(0)
     2:SIG(0)
     Outputs:
-    30:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    30:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
     Comment:
 
 Signatures (fake here):
@@ -640,9 +641,9 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     4:SIG(0) SIG(1) SIG(2)
     5:SIG(2)
     Outputs:
-    120:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    146:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
-    49:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
+    120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
+    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
     Comment: -----@@@----- (why not this comment?)
 
 Signatures (fakes here):
@@ -678,7 +679,7 @@ Here is an example compacting above [example 2](#example-2):
     0:SIG(0)
     1:SIG(0)
     2:SIG(0)
-    30:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    30:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
 
 Here is an example compacting above [example 3](#example-3):
@@ -699,9 +700,9 @@ Here is an example compacting above [example 3](#example-3):
     3:SIG(0) SIG(2)
     4:SIG(0) SIG(1) SIG(2)
     5:SIG(2)
-    120:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    146:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
-    49:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
+    120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+    146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
+    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
     -----@@@----- (why not this comment?)
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
     2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
@@ -729,6 +730,7 @@ but also other informations like:
     Time: GENERATED_ON
     MedianTime: MEDIAN_DATE
     UniversalDividend: DIVIDEND_AMOUNT
+    UnitBase: UNIT_BASE
     Issuer: ISSUER_KEY
     PreviousHash: PREVIOUS_HASH
     PreviousIssuer: PREVIOUS_ISSUER_KEY
@@ -772,6 +774,7 @@ PoWMin                | The current minimum PoW difficulty                | Alwa
 Time                  | Time of generation                                | Always
 MedianTime            | Median date                                       | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
+UnitBase              | Universal Dividend unit base (power of 10)        | **Optional**
 Issuer                | This block's issuer's public key                  | Always
 PreviousHash          | Previous block fingerprint (SHA256)               | from Block#1
 PreviousIssuer        | Previous block issuer's public key                | from Block#1
@@ -791,7 +794,7 @@ Nonce                 | An arbitrary nonce value                          | Alwa
 To be a valid, a block must match the following rules:
 
 ##### Format
-* `Version`, `Nonce`, `Number`, `PoWMin`, `Time`, `MedianTime`, `MembersCount` and `UniversalDividend` are integer values
+* `Version`, `Nonce`, `Number`, `PoWMin`, `Time`, `MedianTime`, `MembersCount`, `UniversalDividend` and `UnitBase` are integer values
 * `Currency` is a valid currency name
 * `PreviousHash` is an uppercased SHA256 hash
 * `Issuer` and `PreviousIssuer` are [Public keys](#publickey)
@@ -975,6 +978,10 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 
 * `Parameters` must be present if `Number` field equals `0` value.
 * `Parameters` must not be present if `Number` field is over `0` value.
+
+##### UnitBase
+
+If `UniversalDividend` field is present, `UnitBase` must be present too.
 
 ##### Signature
 
@@ -1248,6 +1255,21 @@ Where:
   * `UD(0)` equals to `[ud0]` parameter of this protocol
   * `N(0) = 0`
 
+###### UD overflow
+If `UniversalDividend` value is higher or equal to `1000000` (1 million), then `UniversalDividend` value has to be:
+```
+UD(t+1) = CEIL(UD(t+1) / 10)
+```
+
+and `UnitBase` value must be incremented by `1` compared to its value at `UD(t)`.
+
+##### UnitBase
+
+The field must be either equal to:
+
+* previous `UnitBase` value in the blockchain if UD had no overflow
+* previous `UnitBase` value in the blockchain `+ 1` if UD had an overflow
+
 ##### Transactions
 
 * It cannot exist 2 transactions with an identical source
@@ -1256,10 +1278,64 @@ Where:
 * The sum of all inputs must match the sum of all outputs
 * Transaction cannot be included if `BLOCK_MEDIAN_TIME - MOST_RECENT_INPUT_TIME < LOCKTIME`
 
+###### CommonBase
+
+Each input has an `InputBase`, and each output has an `OutputBase`. These bases are to be called `AmountBase`.
+
+The `CommonBase` is the lowest base value among all `AmountBase` of the transaction.
+
+For any amount comparison, the respective amounts must be translated into `CommonBase` using the following rule:
+
+```
+AMOUNT(CommonBase) = AMOUNT(AmountBase) x POW(10, AmountBase - CommonBase)
+```
+
+So if a transaction only carries amounts with the same `AmountBase`, no conversion is required. But if a transaction carries:
+
+* input_0 of value 45 with `AmountBase = 5`
+* input_1 of value 75 with `AmountBase = 5`
+* output_0 of value 12 with `AmountBase = 6`
+
+Then the output value has to be converted before being compared:
+
+```
+CommonBase = 5
+
+output_0(5) = output_0(6) x POW(10, 6 - 5)
+output_0(5) = output_0(6) x POW(10, 1)
+output_0(5) = output_0(6) x 10
+output_0(5) = 12 x 10
+output_0(5) = 120
+
+input_0(5) = input_0(5)
+input_0(5) = 45
+
+input_1(5) = input_1(5)
+input_1(5) = 75
+```
+
+The equality of inputs and outputs is then verified because:
+
+```
+output_0(5) = 120
+input_0(5) = 45
+input_1(5) = 75
+
+output_0(5) = input_0(5) + input_1(5)
+120 = 45 + 75
+TRUE
+```
+
 ###### Amounts
 
 * For each UD source, the amount must match the exact targeted UD value
-* For each Transaction source, the amount must match the exact Output value
+* The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
+
+> Consequence: we cannot create money nor lose money through transactions. We can only transfer coins we own.
+
+* Each output `AmountBase` must be equal to the maximum `AmountBase` of all inputs
+
+> Consequence: if a transaction carries inputs with a different `AmountBase`, these coins will be transformed into a higher `UnitBase` if they make round output amounts for this higher base.
 
 ### Peer
 

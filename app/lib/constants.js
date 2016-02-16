@@ -7,8 +7,9 @@ var BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]
 var PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
 var TIMESTAMP    = "[1-9][0-9]*";
 var POSITIVE_INT = "[1-9][0-9]*";
+var DIVIDEND     = "[1-9][0-9]{0,5}";
 var ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]*";
-var INTEGER      = "\\d+";
+var INTEGER      = "(0|[1-9]\\d*)";
 var FLOAT        = "\\d+\.\\d+";
 var BOOLEAN      = "[01]";
 var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
@@ -69,7 +70,8 @@ module.exports = {
     WRONG_UNLOCKER:                       { httpCode: 400, uerr: { ucode: 2013, message: "Wrong unlocker in transaction" }},
     LOCKTIME_PREVENT:                     { httpCode: 400, uerr: { ucode: 2014, message: "Locktime not elapsed yet" }},
     SOURCE_ALREADY_CONSUMED:              { httpCode: 400, uerr: { ucode: 2015, message: "Source already consumed" }},
-    WRONG_AMOUNTS:                        { httpCode: 400, uerr: { ucode: 2016, message: "Sum of inputs must equal sum of outputs" }}
+    WRONG_AMOUNTS:                        { httpCode: 400, uerr: { ucode: 2016, message: "Sum of inputs must equal sum of outputs" }},
+    WRONG_OUTPUT_BASE:                    { httpCode: 400, uerr: { ucode: 2017, message: "Wrong unit base for outputs" }}
   },
 
   DEBUG: {
@@ -93,6 +95,8 @@ module.exports = {
   DOCUMENTS_VERSION: 2,
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
+  NB_DIGITS_UD: 6,      // This is protocol fixed value
+  FIRST_UNIT_BASE: 0,
 
   CERT: {
     SELF: {
@@ -138,7 +142,7 @@ module.exports = {
     ISSUER:     find('Issuer: (' + PUBKEY + ')'),
     MEMBERSHIP: find('Membership: (IN|OUT)'),
     USERID:     find('UserID: (' + USER_ID + ')'),
-    CERTTS:     find('CertTS: (' + BLOCK_UID + ')'),
+    CERTTS:     find('CertTS: (' + BLOCK_UID + ')')
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
@@ -149,7 +153,8 @@ module.exports = {
     POWMIN:      find("PoWMin: (" + ZERO_OR_POSITIVE_INT + ")"),
     TIME:        find("Time: (" + TIMESTAMP + ")"),
     MEDIAN_TIME: find("MedianTime: (" + TIMESTAMP + ")"),
-    UD:          find("UniversalDividend: (" + POSITIVE_INT + ")"),
+    UD:          find("UniversalDividend: (" + DIVIDEND + ")"),
+    UNIT_BASE:   find("UnitBase: (" + INTEGER + ")"),
     PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
     MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
@@ -167,7 +172,7 @@ module.exports = {
     SENDER:  exact(PUBKEY),
     SOURCE:  exact("(T:" + FINGERPRINT + ":" + INTEGER + "|D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
     UNLOCK:  exact(INTEGER + ":" + UNLOCK + "( (" + UNLOCK + "))*"),
-    TARGET:  exact(POSITIVE_INT + ":" + CONDITIONS),
+    TARGET:  exact(POSITIVE_INT + ":" + INTEGER + ":" + CONDITIONS),
     COMMENT: find("Comment: (" + COMMENT + ")"),
     LOCKTIME:find("Locktime: (" + INTEGER + ")"),
     INLINE_COMMENT: exact(COMMENT)

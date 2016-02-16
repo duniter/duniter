@@ -214,7 +214,7 @@ function BlockchainContext(conf, dal) {
     }
     // Monetary Mass update
     if (current) {
-      block.monetaryMass = (current.monetaryMass || 0) + (block.dividend || 0) * block.membersCount;
+      block.monetaryMass = (current.monetaryMass || 0) + (block.dividend || 0) * Math.pow(10, block.unitbase || 0) * block.membersCount;
     }
     // UD Time update
     if (block.number == 0) {
@@ -569,6 +569,7 @@ function BlockchainContext(conf, dal) {
                   'noffset': block.number,
                   'block_hash': block.hash,
                   'amount': block.dividend,
+                  'base': block.unitbase,
                   'conditions': 'SIG(' + idty.pubkey + ')', // Only this pubkey can unlock its UD
                   'consumed': 0
                 })).then(_.partial(callback, null)).catch(callback);
@@ -604,6 +605,7 @@ function BlockchainContext(conf, dal) {
                   'noffset': index++,
                   'block_hash': block.hash,
                   'amount': output.amount,
+                  'base': output.base,
                   'conditions': output.conditions,
                   'consumed': 0
                 })).then(_.partial(callback2, null)).catch(callback2);
@@ -776,6 +778,7 @@ function BlockchainContext(conf, dal) {
               'fingerprint': block.hash,
               'block_hash': block.hash,
               'amount': block.dividend,
+              'base': block.unitbase,
               'consumed': false,
               'toConsume': false,
               'conditions': 'SIG(' + idty.pubkey + ')', // Only this pubkey can unlock its UD
@@ -801,6 +804,7 @@ function BlockchainContext(conf, dal) {
             'block_hash': block.hash,
             'fingerprint': txHash,
             'amount': output.amount,
+            'base': output.base,
             'consumed': false
           })));
         }

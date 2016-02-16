@@ -569,10 +569,16 @@ function GlobalValidator (conf, dao) {
         var root = res.root;
         var lastUDTime = res.lastUDBlock ? res.lastUDBlock.UDTime : (root != null ? root.medianTime : 0);
         var UD = res.lastUDBlock ? res.lastUDBlock.dividend : conf.ud0;
+        var UB = res.lastUDBlock ? res.lastUDBlock.unitbase : 0;
         var M = res.lastUDBlock ? res.lastUDBlock.monetaryMass : 0;
         var Nt1 = block.membersCount;
         var c = conf.c;
-        var UDt1 = Nt1 > 0 ? Math.ceil(Math.max(UD, c * M / Nt1)) : 0;
+        var UDt1 = Nt1 > 0 ? Math.ceil(Math.max(UD, c * M / Math.pow(10,UB) / Nt1)) : 0;
+        let UBt1 = UB;
+        if (UDt1 >= Math.pow(10, constants.NB_DIGITS_UD)) {
+          UDt1 = Math.ceil(UDt1 / 10.0);
+          UBt1++;
+        }
         if (!current && block.dividend) {
           next('Root block cannot have UniversalDividend field');
         }
@@ -585,10 +591,13 @@ function GlobalValidator (conf, dao) {
         else if (current && block.medianTime < lastUDTime + conf.dt && block.dividend) {
           next('This block cannot have UniversalDividend');
         }
+        else if (current && block.medianTime >= lastUDTime + conf.dt && UDt1 && block.unitbase != UBt1) {
+          next('UnitBase must be equal to ' + UBt1);
+        }
         else {
           next();
         }
-      },
+      }
     ], done);
   }
 
@@ -628,6 +637,7 @@ function GlobalValidator (conf, dao) {
     return co(function *() {
       let unlocks = {};
       let sumOfInputs = 0;
+      let maxInputBase = null;
       for (let i = 0, len = tx.unlocks.length; i < len; i++) {
         let sp = tx.unlocks[i].split(':');
         let index = parseInt(sp[0]);
@@ -640,7 +650,11 @@ function GlobalValidator (conf, dao) {
           logger.warn('Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available');
           throw constants.ERRORS.SOURCE_ALREADY_CONSUMED;
         }
-        sumOfInputs += dbSrc.amount;
+        sumOfInputs += dbSrc.amount * Math.pow(10, dbSrc.base);
+        if (maxInputBase == null) {
+          maxInputBase = dbSrc.base;
+        }
+        maxInputBase = Math.max(maxInputBase, dbSrc.base);
         if (block.medianTime - dbSrc.time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
@@ -680,7 +694,10 @@ function GlobalValidator (conf, dao) {
         }
       }
       let sumOfOutputs = tx.outputs.reduce(function(p, output) {
-        return p + output.amount;
+        if (output.base != maxInputBase) {
+          throw constants.ERRORS.WRONG_OUTPUT_BASE;
+        }
+        return p + output.amount * Math.pow(10, output.base);
       }, 0);
       if (sumOfInputs !== sumOfOutputs) {
         logger.warn('Inputs/Outputs != 1 (%s/%s)', sumOfInputs, sumOfOutputs);

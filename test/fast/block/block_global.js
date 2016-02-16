@@ -258,6 +258,11 @@ describe("Block global coherence:", function(){
     err.should.equal('UniversalDividend must be equal to 121');
   }));
 
+  it('a block with wrong UnitBase value should fail', test('checkUD', blocks.BLOCK_WITH_WRONG_UNIT_BASE, function (err) {
+    should.exist(err);
+    err.should.equal('UnitBase must be equal to 3');
+  }));
+
   it('a root block with unlegitimated Universal Dividend presence should fail', test('checkUD', blocks.BLOCK_UNLEGITIMATE_UD, function (err) {
     should.exist(err);
     err.should.equal('This block cannot have UniversalDividend');
@@ -275,6 +280,21 @@ describe("Block global coherence:", function(){
 
   it('a block with good transactions should pass', test('checkTransactions', blocks.BLOCK_WITH_GOOD_TRANSACTIONS, function (err) {
     should.not.exist(err);
+  }));
+
+  it('a block with wrong transaction sum should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, function (err) {
+    should.exist(err);
+    err.uerr.message.should.equal('Sum of inputs must equal sum of outputs');
+  }));
+
+  it('a block with wrong transaction unit bases should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, function (err) {
+    should.exist(err);
+    err.uerr.message.should.equal('Sum of inputs must equal sum of outputs');
+  }));
+
+  it('a block with whose transaction has too high unit bases should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TRANSACTION_UNIT_BASES, function (err) {
+    should.exist(err);
+    err.uerr.message.should.equal('Wrong unit base for outputs');
   }));
 
   it('a block with unavailable UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, function (err) {
@@ -488,6 +508,8 @@ function BlockCheckerDao (block) {
       done(null, { number: 102 });
     else if (block.number == 104)
       done(null, { number: 103 });
+    else if (block.number == 160)
+      done(null, { time: 1411777000, medianTime: 1411777000 });
     else
       done(null, null);
   }
@@ -582,13 +604,15 @@ function BlockCheckerDao (block) {
     if (block.number == 0) {
       done(null, null);
     } else if (block.number == 80) {
-      done(null, { UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 300, dividend: 100 });
+      done(null, { UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 300 * 10000, dividend: 100, unitbase: 4 });
     } else if (block.number == 81) {
-      done(null, { UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 3620, dividend: 110 });
+      done(null, { UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 });
     } else if (block.number == 82) {
-      done(null, { UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
+      done(null, { UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 });
     } else if (block.number == 83) {
-      done(null, { UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620, dividend: 110 });
+      done(null, { UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 });
+    } else if (block.number == 160) {
+      done(null, { UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 12345678900, dividend: 100, unitbase: 2 });
     } else {
       done(null, null);
     }
@@ -620,7 +644,7 @@ function BlockCheckerDao (block) {
       'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46',
       'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:47',
       '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4',
-      '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:78',
+      '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10',
       'A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:66',
       '67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:176'
     ];
@@ -628,7 +652,8 @@ function BlockCheckerDao (block) {
     let obj = index !== -1 ? existing[index] : null;
     if (obj) {
       obj = {
-        amount: index == 4 ? 235 : 0
+        amount: index == 4 ? 235 : 0,
+        base: index == 3 ? 3 : 4
       };
     }
     return Q(obj);

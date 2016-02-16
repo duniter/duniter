@@ -75,6 +75,11 @@ describe("Block local coherence", function(){
       done();
     }));
 
+    it('a block with Dividend must have UnitBase field', test('checkUnitBase', blocks.UD_BLOCK_WIHTOUT_BASE, function (err, done) {
+      should.exist(err);
+      done();
+    }));
+
     it('a block with wrong date (in past)', test('checkBlockTimes', blocks.WRONG_DATE_LOWER, function (err, done) {
       assert.equal(err, 'A block must have its Time between MedianTime and MedianTime + 1020');
       done();

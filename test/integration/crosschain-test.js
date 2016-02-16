@@ -112,15 +112,15 @@ describe("Crosschain transactions", function() {
 
         // TOCB side (BETA)
         // 1. toc secretely chooses X password
-        let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic' });
+        let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic' });
         // 2. toc makes a rollback transaction from tx1, signed by both parties (through internet): toc and tic
-        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 0 }); // N.B.: locktime should be like 48h in real world
+        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 0 }); // N.B.: locktime should be like 48h in real world
 
         // TICM side (META)
         // 3. tic generates a transaction based on H(X) given by toc (through internet)
-        let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc' });
+        let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc' });
         // 4. tic makes a rollback transaction from tx1, signed by both parties: toc and tic
-        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB', locktime: 0 }); // N.B.: locktime should be like 24h in real world
+        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB', locktime: 0 }); // N.B.: locktime should be like 24h in real world
 
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);
@@ -139,13 +139,13 @@ describe("Crosschain transactions", function() {
          */
 
         // TOCM consumes TICM's offered money by revealing the password + signing
-        let mtx5 = yield tocM.prepareUTX(mtx3, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, lock: 'SIG(' + tocM.pub + ')' }], { comment: 'toc takes money on META_BROUZOUF'});
+        let mtx5 = yield tocM.prepareUTX(mtx3, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocM.pub + ')' }], { comment: 'toc takes money on META_BROUZOUF'});
         yield tocM.sendTX(mtx5);
         // Written
         yield commit(sM)();
 
         // But now X is revealed: TAC can takes the money offered in TX1 by TOCB
-        let btx6 = yield ticB.prepareUTX(btx1, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, lock: 'SIG(' + ticB.pub + ')' }], { comment: 'tic takes money on BETA_BROUZOUF'});
+        let btx6 = yield ticB.prepareUTX(btx1, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticB.pub + ')' }], { comment: 'tic takes money on BETA_BROUZOUF'});
         yield ticB.sendTX(btx6);
         // Written
         yield commit(sB)();
@@ -278,15 +278,15 @@ describe("Crosschain transactions", function() {
 
         // TOCB side (BETA)
         // 1. toc secretely chooses X password
-        let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic' });
+        let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic' });
         // 2. toc makes a rollback transaction from tx1, signed by both parties (through internet): toc and tic
-        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 0 }); // N.B.: locktime should be like 48h in real world
+        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 0 }); // N.B.: locktime should be like 48h in real world
 
         // TICM side (META)
         // 3. tic generates a transaction based on H(X) given by toc (through internet)
-        let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc' });
+        let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc' });
         // 4. tic makes a rollback transaction from tx1, signed by both parties: toc and tic
-        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 0 }); // N.B.: locktime should be like 24h in real world
+        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 0 }); // N.B.: locktime should be like 24h in real world
 
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);
@@ -316,10 +316,10 @@ describe("Crosschain transactions", function() {
          */
 
         // TOCM consumes TICM's offered money by revealing the password + signing
-        let mtx5 = yield tocM.prepareUTX(mtx3, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, lock: 'SIG(' + tocM.pub + ')' }], { comment: 'toc takes money on META_BROUZOUF'});
+        let mtx5 = yield tocM.prepareUTX(mtx3, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocM.pub + ')' }], { comment: 'toc takes money on META_BROUZOUF'});
 
         // Assuming X was revealed ... but actually it is not since TOCM did succeed to send the TX
-        let btx6 = yield ticB.prepareUTX(btx1, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, lock: 'SIG(' + ticB.pub + ')' }], { comment: 'tic takes money on BETA_BROUZOUF'});
+        let btx6 = yield ticB.prepareUTX(btx1, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticB.pub + ')' }], { comment: 'tic takes money on BETA_BROUZOUF'});
 
         yield unit.shouldFail(tocB.sendTX(btx6), 'Source already consumed');
         yield unit.shouldFail(ticM.sendTX(mtx5), 'Source already consumed');

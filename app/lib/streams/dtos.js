@@ -88,6 +88,7 @@ dtos.Block = {
   "time": Number,
   "medianTime": Number,
   "dividend": Number,
+  "unitbase": Number,
   "hash": String,
   "previousHash": String,
   "previousIssuer": String,

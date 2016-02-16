@@ -984,7 +984,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     that.sourcesDAL.unConsumeSource(identifier, noffset);
 
   this.saveSource = function(src) {
-    return that.sourcesDAL.addSource(src.type, src.number, src.identifier, src.noffset, src.amount, src.block_hash, src.time, src.conditions);
+    return that.sourcesDAL.addSource(src.type, src.number, src.identifier, src.noffset, src.amount, src.base, src.block_hash, src.time, src.conditions);
   };
 
   this.updateSources = function(sources) {

@@ -262,15 +262,21 @@ function User (uid, options, node) {
     let json = yield Q.nbind(http.tx.sources, http)(pub);
     let i = 0;
     let cumulated = 0;
+    let commonbase = null;
     while (i < json.sources.length) {
       let src = json.sources[i];
       sources.push({
         'type': src.type,
         'amount': src.amount,
+        'base': src.base,
         'noffset': src.noffset,
         'identifier': src.identifier
       });
-      cumulated += src.amount;
+      if (commonbase == null) {
+        commonbase = src.base;
+      }
+      commonbase = Math.min(commonbase, src.base);
+      cumulated += src.amount * Math.pow(10, src.base);
       i++;
     }
     if (cumulated < amount) {
@@ -280,11 +286,11 @@ function User (uid, options, node) {
     let total = 0;
     for (let j = 0; j < sources.length && total < amount; j++) {
       var src = sources[j];
-      total += src.amount;
+      total += src.amount * Math.pow(10, src.base);
       sources2.push(src);
     }
     var inputSum = 0;
-    sources2.forEach((src) => inputSum += src.amount);
+    sources2.forEach((src) => inputSum += src.amount * Math.pow(10, src.base));
     let inputs = sources2.map((src) => {
       return {
         src: [src.type, src.identifier, src.noffset].join(':'),
@@ -293,12 +299,14 @@ function User (uid, options, node) {
     });
     let outputs = [{
       qty: amount,
+      base: commonbase,
       lock: 'SIG(' + recipient.pub + ')'
     }];
     if (inputSum - amount > 0) {
       // Rest back to issuer
       outputs.push({
         qty: inputSum - amount,
+        base: commonbase,
         lock: "SIG(" + pub + ")"
       });
     }
@@ -337,7 +345,7 @@ function User (uid, options, node) {
     });
     raw += "Outputs:\n";
     outputs.forEach(function (output) {
-      raw += [output.qty, output.lock].join(':') + '\n';
+      raw += [output.qty, output.base, output.lock].join(':') + '\n';
     });
     raw += "Comment: " + (opts.comment || "") + "\n";
     return raw;

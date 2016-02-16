@@ -23,7 +23,8 @@ function Source(json) {
       "type": this.type,
       "noffset": this.noffset,
       "identifier": this.identifier,
-      "amount": this.amount
+      "amount": this.amount,
+      "base": this.base
     };
   };
 
@@ -32,7 +33,8 @@ function Source(json) {
       "block_number": this.number,
       "consumed": this.consumed,
       "time": this.time,
-      "amount": this.amount
+      "amount": this.amount,
+      "base": this.base
     };
   };
 }

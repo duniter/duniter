@@ -149,6 +149,7 @@ var mocks = {
     "UDTime" : 1421838980,
     "medianTime" : 1421838980,
     "dividend" : 100,
+    "unitbase" : 0,
     "time" : 1421838980,
     "powMin" : 3,
     "number" : 0,
@@ -220,6 +221,7 @@ describe("DAL", function(){
       block.should.have.property('UDTime').equal(mocks.block0.UDTime);
       block.should.have.property('medianTime').equal(mocks.block0.medianTime);
       block.should.have.property('dividend').equal(mocks.block0.dividend);
+      block.should.have.property('unitbase').equal(mocks.block0.unitbase);
       block.should.have.property('time').equal(mocks.block0.time);
       block.should.have.property('powMin').equal(mocks.block0.powMin);
       block.should.have.property('number').equal(mocks.block0.number);

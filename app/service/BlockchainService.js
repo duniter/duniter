@@ -1042,8 +1042,14 @@ function BlockchainService (conf, mainDAL, pair) {
           var c = conf.c;
           var N = block.membersCount;
           var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+          var previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
           if (N > 0) {
-            block.dividend = Math.ceil(Math.max(previousUD, c * M / N));
+            block.dividend = Math.ceil(Math.max(previousUD, c * M / Math.pow(10,previousUB) / N));
+            block.unitbase = previousUB;
+            if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
+              block.dividend = Math.ceil(block.dividend / 10.0);
+              block.unitbase++;
+            }
           } else {
             // The community has collapsed. RIP.
             block.dividend = 0;

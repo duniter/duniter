@@ -18,6 +18,7 @@ function BlockParser (onError) {
     {prop: "time",            regexp: constants.BLOCK.TIME},
     {prop: "medianTime",      regexp: constants.BLOCK.MEDIAN_TIME},
     {prop: "dividend",        regexp: constants.BLOCK.UD},
+    {prop: "unitbase",        regexp: constants.BLOCK.UNIT_BASE},
     {prop: "issuer",          regexp: constants.BLOCK.BLOCK_ISSUER},
     {prop: "parameters",      regexp: constants.BLOCK.PARAMETERS},
     {prop: "previousHash",    regexp: constants.BLOCK.PREV_HASH},
@@ -57,6 +58,7 @@ function BlockParser (onError) {
     obj.time = obj.time || '';
     obj.medianTime = obj.medianTime || '';
     obj.dividend = obj.dividend || '';
+    obj.unitbase = obj.unitbase || '';
     obj.issuer = obj.issuer || '';
     obj.parameters = obj.parameters || '';
     obj.previousHash = obj.previousHash || '';
@@ -86,7 +88,8 @@ function BlockParser (onError) {
       'BAD_TIME': 161,
       'BAD_MEDIAN_TIME': 162,
       'BAD_INNER_HASH': 163,
-      'BAD_MEMBERS_COUNT': 164
+      'BAD_MEMBERS_COUNT': 164,
+      'BAD_UNITBASE': 165
     };
     if(!err){
       // Version
@@ -121,6 +124,10 @@ function BlockParser (onError) {
     if(!err){
       if(obj.dividend && !obj.dividend.match(constants.INTEGER))
         err = {code: codes.BAD_DIVIDEND, message: "Incorrect UniversalDividend field"};
+    }
+    if(!err){
+      if(obj.unitbase && !obj.unitbase.match(constants.INTEGER))
+        err = {code: codes.BAD_UNITBASE, message: "Incorrect UnitBase field"};
     }
     if(!err){
       if(!obj.issuer || !obj.issuer.match(constants.BASE58))

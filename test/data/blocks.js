@@ -1297,6 +1297,7 @@ module.exports = {
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 52DC8A585C5D89571C511BB83F7E7D3382F0041452064B1272E65F0B42B82D57\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1310,7 +1311,7 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 2\n" +
+    "Nonce: 1\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_BLOCK_REQUIRED: 
@@ -2117,6 +2118,7 @@ module.exports = {
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "MembersCount: 3\n" +
     "Identities:\n" +
@@ -2166,6 +2168,31 @@ module.exports = {
     "Nonce: 1\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
+  UD_BLOCK_WIHTOUT_BASE:
+    "Version: 2\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 80\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411777000\n" +
+    "MedianTime: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
   BLOCK_WITH_WRONG_UD: 
     "Version: 2\n" +
     "Type: Block\n" +
@@ -2175,6 +2202,33 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITH_WRONG_UNIT_BASE:
+    "Version: 2\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 160\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411777000\n" +
+    "MedianTime: 1411778000\n" +
+    "UniversalDividend: 411523\n" +
+    "UnitBase: 1\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2200,6 +2254,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2225,6 +2280,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2250,6 +2306,7 @@ module.exports = {
     "Time: 1411773099\n" +
     "MedianTime: 1411773099\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2299,6 +2356,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2324,6 +2382,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2341,7 +2400,7 @@ module.exports = {
     "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp\n" +
     "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB\n" +
     "T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4\n" +
-    "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:78\n" +
+    "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10\n" +
     "D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46\n" +
     "T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:66\n" +
     "T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:176\n" +
@@ -2352,9 +2411,105 @@ module.exports = {
     "3:SIG(0)\n" +
     "4:SIG(0)\n" +
     "5:SIG(0)\n" +
-    "30:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
-    "156:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)\n" +
-    "49:SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i)\n" +
+    "30:4:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "156:4:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)\n" +
+    "49:4:SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i)\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX\n" +
+    "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITH_WRONG_TRANSACTION_SUMS:
+    "Version: 2\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 83\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411777000\n" +
+    "MedianTime: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:3:6:6:3:0:0\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp\n" +
+    "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB\n" +
+    "T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4\n" +
+    "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10\n" +
+    "D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46\n" +
+    "T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:66\n" +
+    "T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:176\n" +
+    "D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46\n" +
+    "0:SIG(0)\n" +
+    "1:SIG(0)\n" +
+    "2:SIG(0)\n" +
+    "3:SIG(0)\n" +
+    "4:SIG(0)\n" +
+    "5:SIG(0)\n" +
+    "30:4:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "156:4:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)\n" +
+    "50:4:SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i)\n" +
+    "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX\n" +
+    "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_WITH_WRONG_TRANSACTION_UNIT_BASES:
+    "Version: 2\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 83\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411777000\n" +
+    "MedianTime: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:1:3:6:6:3:0:0\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp\n" +
+    "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB\n" +
+    "T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:4\n" +
+    "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10\n" +
+    "D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46\n" +
+    "T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:66\n" +
+    "T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:176\n" +
+    "D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:46\n" +
+    "0:SIG(0)\n" +
+    "1:SIG(0)\n" +
+    "2:SIG(0)\n" +
+    "3:SIG(0)\n" +
+    "4:SIG(0)\n" +
+    "5:SIG(0)\n" +
+    "30:4:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "156:3:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)\n" +
+    "49:4:SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX\n" +
     "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk\n" +
@@ -2371,6 +2526,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2386,7 +2542,7 @@ module.exports = {
     "TX:1:1:1:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:33\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +
@@ -2401,6 +2557,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2416,7 +2573,7 @@ module.exports = {
     "TX:1:1:1:1:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:44\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +
@@ -2431,6 +2588,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2447,7 +2605,7 @@ module.exports = {
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:55\n" +
     "0:SIG(0)\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +
@@ -2462,6 +2620,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2478,7 +2637,7 @@ module.exports = {
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
     "0:SIG(0)\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +
@@ -2493,6 +2652,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2510,7 +2670,7 @@ module.exports = {
     "T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
     "0:SIG(0)\n" +
     "1:SIG(0)\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
@@ -2524,6 +2684,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2539,7 +2700,7 @@ module.exports = {
     "TX:1:2:0:0:1:0:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
@@ -2555,6 +2716,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2589,6 +2751,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2610,7 +2773,7 @@ module.exports = {
     "0:SIG(0)\n" +
     "1:SIG(0)\n" +
     "2:SIG(0)\n" +
-    "120:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "120:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
@@ -2626,6 +2789,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2645,8 +2809,8 @@ module.exports = {
     "T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
     "0:SIG(0)\n" +
     "1:SIG(0)\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
@@ -2662,6 +2826,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2681,14 +2846,14 @@ module.exports = {
     "T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
     "0:SIG(0)\n" +
     "1:SIG(0)\n" +
-    "80:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "80:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
     "TX:1:1:1:1:1:0:0\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
     "0:SIG(0)\n" +
-    "40:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "40:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +
@@ -2703,6 +2868,7 @@ module.exports = {
     "Time: 1411777000\n" +
     "MedianTime: 1411777000\n" +
     "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
     "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -2722,7 +2888,7 @@ module.exports = {
     "T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
     "0:SIG(0)\n" +
     "1:SIG(0)\n" +
-    "80:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
+    "80:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +

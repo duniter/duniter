@@ -69,7 +69,8 @@ var Transaction = function(obj, currency) {
       var sp = output.split(':');
       tx.outputs.push({
         amount: parseInt(sp[0]),
-        conditions: sp[1],
+        base: parseInt(sp[1]),
+        conditions: sp[2],
         raw: output
       });
     });

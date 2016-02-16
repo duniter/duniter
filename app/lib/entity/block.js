@@ -14,7 +14,6 @@ function Block(json) {
     var value = json[key];
     if (
          key == "number"
-      || key == "dividend"
       || key == "medianTime"
       || key == "time"
       || key == "version"
@@ -22,6 +21,7 @@ function Block(json) {
       || key == "powMin"
       || key == "membersCount"
       || key == "dividend"
+      || key == "unitbase"
       || key == "UDTime"
     ) {
       if (typeof value == "string") {
@@ -66,7 +66,8 @@ function Block(json) {
         json[field] = that[field] || null;
       });
     [
-      "dividend"
+      "dividend",
+      "unitbase"
     ].forEach(function(field){
         json[field] = parseInt(that[field]) || null;
       });
@@ -186,7 +187,8 @@ function Block(json) {
         var sp = output.split(':');
         tx.outputs.push({
           amount: parseInt(sp[0]),
-          conditions: sp[1],
+          base: parseInt(sp[1]),
+          conditions: sp[2],
           raw: output
         });
       });

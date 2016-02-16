@@ -28,6 +28,7 @@ function LocalValidator (conf) {
       async.apply(that.checkInnerHash,                            block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
+      async.apply(that.checkUnitBase,                             block),
       async.apply(that.checkBlockSignature,                       block),
       async.apply(that.checkBlockTimes,                           block),
       async.apply(that.checkIdentitiesSignature,                  block),
@@ -61,6 +62,7 @@ function LocalValidator (conf) {
       async.apply(that.checkParameters,                           block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
+      async.apply(that.checkUnitBase,                             block),
       async.apply(that.checkBlockTimes,                           block),
       async.apply(that.checkIdentitiesSignature,                  block),
       async.apply(that.checkIdentitiesUserIDConflict,             block),
@@ -89,6 +91,7 @@ function LocalValidator (conf) {
       async.apply(that.checkParameters,                           block),
       async.apply(that.checkPreviousHash,                         block),
       async.apply(that.checkPreviousIssuer,                       block),
+      async.apply(that.checkUnitBase,                             block),
       async.apply(that.checkBlockTimes,                           block),
       async.apply(that.checkIdentitiesUserIDConflict,             block),
       async.apply(that.checkIdentitiesPubkeyConflict,             block),
@@ -159,6 +162,13 @@ function LocalValidator (conf) {
       done('PreviousIssuer must not be provided for root block');
     else if (block.number > 0 && !block.previousIssuer)
       done('PreviousIssuer must be provided for non-root block');
+    else
+      done();
+  });
+
+  this.checkUnitBase = check(function (block, done) {
+    if (block.dividend > 0 && !(block.unitbase === 0 || block.unitbase > 0))
+      done('UnitBase must be provided for UD block');
     else
       done();
   });

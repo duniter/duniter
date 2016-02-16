@@ -21,7 +21,7 @@ function BlockDAL(db) {
   let that = this;
 
   this.table = 'block';
-  this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'revoked', 'excluded'];
+  this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'unitbase', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'revoked', 'excluded'];
   this.arrays = ['identities','certifications','actives','revoked','excluded','leavers','joiners','transactions'];
   this.bigintegers = ['monetaryMass','dividend'];
   this.booleans = ['wrong'];
@@ -45,6 +45,7 @@ function BlockDAL(db) {
       'UDTime DATETIME,' +
       'medianTime DATETIME NOT NULL,' +
       'dividend VARCHAR(100) DEFAULT \'0\',' +
+      'unitbase INTEGER NOT NULL,' +
       'time DATETIME NOT NULL,' +
       'powMin INTEGER NOT NULL,' +
       'number INTEGER NOT NULL,' +

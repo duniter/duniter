@@ -5,6 +5,7 @@ var async          = require('async');
 var _              = require('underscore');
 var Q              = require('q');
 var events         = require('events');
+var crypto         = require('../lib/crypto');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/base58');
 var dos2unix       = require('../lib/dos2unix');
@@ -40,6 +41,14 @@ function PeeringService(server, pair, dal) {
     return Peer.statics.peerize(peer);
   };
 
+  this.checkPeerSignature = function (p) {
+    var raw = rawer.getPeerWithoutSignature(p);
+    var sig = p.signature;
+    var pub = p.pubkey;
+    var signaturesMatching = crypto.verify(raw, sig, pub);
+    return !!signaturesMatching;
+  };
+
   this.submit = function(peering, eraseIfAlreadyRecorded, done){
     if (arguments.length == 2) {
       done = eraseIfAlreadyRecorded;
@@ -60,7 +69,7 @@ function PeeringService(server, pair, dal) {
     let makeCheckings = cautious || cautious === undefined;
     return co(function *() {
       if (makeCheckings) {
-        let goodSignature = localValidator(null).checkPeerSignature(thePeer);
+        let goodSignature = that.checkPeerSignature(thePeer);
         if (!goodSignature) {
           throw 'Signature from a peer must match';
         }

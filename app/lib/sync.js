@@ -266,7 +266,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
 
       remoteJsonPeer = json;
       remoteJsonPeer.pubkey = json.pubkey;
-      let signatureOK = localValidator().checkPeerSignature(remoteJsonPeer);
+      let signatureOK = PeeringService.checkPeerSignature(remoteJsonPeer);
       if (!signatureOK) {
         watcher.writeStatus('Wrong signature for peer #' + remoteJsonPeer.pubkey);
       }

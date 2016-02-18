@@ -223,7 +223,6 @@ function User (uid, options, node) {
 
   this.sendTX = (rawTX) => co(function *() {
     let http = yield getVucoin();
-    console.log(rawTX);
     return Q.nbind(http.tx.process, http)(rawTX);
   });
 

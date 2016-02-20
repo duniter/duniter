@@ -1,8 +1,6 @@
 "use strict";
 var async           = require('async');
-var _               = require('underscore');
 var Q = require('q');
-var blockchainDao   = require('../lib/blockchainDao');
 var globalValidator = require('../lib/globalValidator');
 var crypto          = require('../lib/crypto');
 var constants       = require('../lib/constants');
@@ -32,11 +30,11 @@ function IdentityService (conf, dal) {
   }, 1);
 
   // Validator for certifications
-  var globalValidation = globalValidator(conf, blockchainDao(null, dal));
+  var globalValidation = globalValidator(conf, dal);
 
   this.setDAL = function(theDAL) {
     dal = theDAL;
-    globalValidation = globalValidator(conf, blockchainDao(null, dal));
+    globalValidation = globalValidator(conf, dal);
   };
 
   this.searchIdentities = function(search) {
@@ -139,14 +137,11 @@ function IdentityService (conf, dal) {
       fifo.push(function (cb) {
         return co(function *() {
           logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
-          yield Q.Promise(function(resolve){
-            globalValidation.checkCertificationIsValid(cert, potentialNext, function (block, pubkey, next) {
-              next(null, idty);
-            }, function(err) {
-              cert.err = err;
-              resolve();
-            }, DO_NOT_THROW_ABOUT_EXPIRATION);
-          });
+          try {
+            yield globalValidation.checkCertificationIsValid(cert, potentialNext, () => Q(idty), conf, dal);
+          } catch (e) {
+            cert.err = e;
+          }
           if (!cert.err) {
             let basedBlock = yield dal.getBlock(cert.block_number);
             if (cert.block_number == 0 && !basedBlock) {

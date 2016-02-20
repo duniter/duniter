@@ -25,6 +25,7 @@ function TransactionParser (onError) {
   this._clean = function (obj) {
     obj.documentType = 'transaction';
     obj.comment = obj.comment || "";
+    obj.locktime = parseInt(obj.locktime) || 0;
   };
 
   this._verify = function(obj){

@@ -6,7 +6,6 @@ var hashf           = require('../lib/hashf');
 var constants       = require('../lib/constants');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
-var blockchainDao   = require('../lib/blockchainDao');
 
 module.exports = function (conf, dal) {
   return new MembershipService(conf, dal);
@@ -31,7 +30,7 @@ function MembershipService (conf, dal) {
   let submitMembershipP = (ms) => co(function *() {
     let entry = new Membership(ms);
     entry.idtyHash = (hashf(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
-    let globalValidation = globalValidator(conf, blockchainDao(null, dal));
+    let globalValidation = globalValidator(conf, dal);
     logger.info('⬇ %s %s', entry.issuer, entry.membership);
     if (!localValidator().checkSingleMembershipSignature(entry)) {
       throw constants.ERRORS.WRONG_SIGNATURE_MEMBERSHIP;
@@ -48,7 +47,7 @@ function MembershipService (conf, dal) {
       throw constants.ERRORS.MEMBERSHIP_A_NON_MEMBER_CANNOT_LEAVE;
     }
     let current = yield dal.getCurrentBlockOrNull();
-    yield Q.nbind(globalValidation.checkMembershipBlock, globalValidation)(entry, current);
+    yield globalValidation.checkMembershipBlock(entry, current, conf, dal);
     // Saves entry
     yield dal.savePendingMembership(entry);
     logger.info('✔ %s %s', entry.issuer, entry.membership);

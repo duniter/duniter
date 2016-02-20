@@ -1,18 +1,19 @@
 "use strict";
 
+var _ = require('underscore');
 var co          = require('co');
 var local_rules = require('./local_rules');
+var global_rules = require('./global_rules');
 
 let rules = {};
 
 rules.LOCAL = local_rules.FUNCTIONS;
+rules.GLOBAL = global_rules.FUNCTIONS;
 
-rules.HELPERS = {
+rules.HELPERS = {};
 
-  maxAcceleration: local_rules.HELPERS.maxAcceleration,
-  checkSingleMembershipSignature: local_rules.HELPERS.checkSingleMembershipSignature,
-  getSigResult: local_rules.HELPERS.getSigResult
-};
+_.extend(rules.HELPERS, local_rules.HELPERS);
+_.extend(rules.HELPERS, global_rules.HELPERS);
 
 rules.ALIAS = {
 

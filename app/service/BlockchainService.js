@@ -14,7 +14,6 @@ var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
-var blockchainDao   = require('../lib/blockchainDao');
 var blockchainCtx   = require('../lib/blockchainContext');
 
 const CHECK_ALL_RULES = true;
@@ -28,13 +27,6 @@ var powFifo = async.queue(function (task, callback) {
 }, 1);
 
 var cancels = [];
-
-var statQueue = async.queue(function (task, callback) {
-  task(callback);
-}, 1);
-
-// Callback used as a semaphore to sync block reception & PoW computation
-var newKeyblockCallback = null;
 
 // Callback used to start again computation of next PoW
 var computeNextCallback = null;
@@ -480,7 +472,7 @@ function BlockchainService (conf, mainDAL, pair) {
         var transactions = [];
         var passingTxs = [];
         var localValidation = localValidator(conf);
-        var globalValidation = globalValidator(conf, blockchainDao(null, dal));
+        var globalValidation = globalValidator(conf, dal);
         return Q.Promise(function(resolve, reject){
 
           async.forEachSeries(txs, function (rawtx, callback) {
@@ -491,7 +483,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 localValidation.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
               },
               function (next) {
-                globalValidation.checkSingleTransaction(extractedTX, { medianTime: moment().utc().unix() }, next);
+                globalValidation.checkSingleTransaction(extractedTX, { medianTime: moment().utc().unix() }).then(() => next()).catch(next);
               },
               function (next) {
                 transactions.push(tx);
@@ -781,9 +773,9 @@ function BlockchainService (conf, mainDAL, pair) {
       if (!current) {
         return Q(false);
       }
-      let gvalidator = globalValidator(conf, blockchainDao(null, that.currentDal));
+      let gvalidator = globalValidator(conf, that.currentDal);
       try {
-        yield Q.nbind(gvalidator.isOver3Hops, gvalidator)(newcomer, newLinks, otherNewcomers);
+        yield gvalidator.isOver3Hops(newcomer, newLinks, otherNewcomers, conf, that.currentDal);
         return false;
       } catch (e) {
         return true;
@@ -793,7 +785,7 @@ function BlockchainService (conf, mainDAL, pair) {
 
   function getSinglePreJoinData(dal, current, idHash, done, joiners) {
     return co(function *() {
-      var gValidator = globalValidator(conf, blockchainDao(null, that.currentDal));
+      var gValidator = globalValidator(conf, that.currentDal);
       var identity = yield dal.getIdentityByHashOrNull(idHash);
       var foundCerts = [];
       let blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
@@ -835,13 +827,14 @@ function BlockchainService (conf, mainDAL, pair) {
               var isMember = yield dal.isMember(cert.from);
               var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
               if (isMember && !doubleSignature) {
-                var isValid = yield gValidator.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity);
+                var isValid = yield gValidator.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity, conf, dal);
                 if (isValid) {
                   certifiers.push(cert.from);
                   foundCerts.push(cert);
                 }
               }
             } catch (e) {
+              console.error(e.stack);
               // Go on
             }
           }
@@ -1023,12 +1016,12 @@ function BlockchainService (conf, mainDAL, pair) {
       block.transactions.push({ raw: tx.compact() });
     });
     return co(function *() {
-      block.powMin = block.number == 0 ? 0 : yield globalValidator(conf, blockchainDao(block, dal)).getPoWMin(block.number);
+      block.powMin = block.number == 0 ? 0 : yield globalValidator(conf, dal).getPoWMin(block.number, conf, dal);
       if (block.number == 0) {
         block.medianTime = moment.utc().unix() - conf.rootoffset;
       }
       else {
-        block.medianTime = yield globalValidator(conf, blockchainDao(block, dal)).getMedianTime(block.number);
+        block.medianTime = yield globalValidator(conf, dal).getMedianTime(block.number, conf, dal);
       }
       // Universal Dividend
       var lastUDTime = lastUDBlock && lastUDBlock.UDTime;
@@ -1237,7 +1230,7 @@ function BlockchainService (conf, mainDAL, pair) {
               return null;
             }
           }
-          var trial = yield globalValidator(conf, blockchainDao(null, dal)).getTrialLevel(selfPubkey);
+          var trial = yield globalValidator(conf, dal).getTrialLevel(selfPubkey, conf, dal);
           if (trial > (current.powMin + 1)) {
             powCanceled = 'Too high difficulty: waiting for other members to write next block';
           }
@@ -1246,7 +1239,7 @@ function BlockchainService (conf, mainDAL, pair) {
               yield that.generateEmptyNextBlock() :
               yield that.generateNext();
             var signature2 = signature.sync(pair);
-            var trial2 = yield globalValidator(conf, blockchainDao(block2, dal)).getTrialLevel(selfPubkey);
+            var trial2 = yield globalValidator(conf, dal).getTrialLevel(selfPubkey, conf, dal);
             computing = true;
             return yield that.makeNextBlock(block2, signature2, trial2);
           }
@@ -1270,7 +1263,7 @@ function BlockchainService (conf, mainDAL, pair) {
       var dal = mainDAL;
       var unsignedBlock = block || (yield that.generateNext());
       var sigF = sigFunc || signature.sync(pair);
-      var trialLevel = trial || (yield globalValidator(conf, blockchainDao(block, dal)).getTrialLevel(selfPubkey));
+      var trialLevel = trial || (yield globalValidator(conf, dal).getTrialLevel(selfPubkey, conf, dal));
       return that.prove(unsignedBlock, sigF, trialLevel, null, (manualValues && manualValues.time) || null);
     });
   };
@@ -1501,19 +1494,19 @@ function NextBlockGenerator(conf, dal) {
   };
 
   this.filterJoiners = function takeAllJoiners(preJoinData, done) {
-    var validator = globalValidator(conf, blockchainDao(dal));
+    var validator = globalValidator(conf, dal);
     // No manual filtering, takes all BUT already used UID or pubkey
     var filtered = {};
     async.forEach(_.keys(preJoinData), function(pubkey, callback) {
       async.waterfall([
         function(next) {
-          validator.checkExistsUserID(preJoinData[pubkey].identity.uid, next);
+          validator.checkExistsUserID(preJoinData[pubkey].identity.uid, dal).then((exists) => next(null, exists ? true : false)).catch(next);
         },
         function(exists, next) {
           if (exists && !preJoinData[pubkey].identity.wasMember) {
             return next('UID already taken');
           }
-          validator.checkExistsPubkey(pubkey, next);
+          validator.checkExistsPubkey(pubkey, dal).then((exists) => next(null, exists ? true : false)).catch(next);
         },
         function(exists, next) {
           if (exists && !preJoinData[pubkey].identity.wasMember) {

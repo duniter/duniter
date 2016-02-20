@@ -3,13 +3,11 @@ var async           = require('async');
 var _               = require('underscore');
 var co              = require('co');
 var Q               = require('q');
-var ucp             = require('./ucp');
 var hashf           = require('./hashf');
 var rawer           = require('./rawer');
 var constants       = require('./constants');
 var localValidator  = require('./localValidator');
 var globalValidator = require('./globalValidator');
-var blockchainDao   = require('./blockchainDao');
 
 module.exports = function(conf, dal) {
   return new BlockchainContext(conf, dal);
@@ -33,7 +31,7 @@ function BlockchainContext(conf, dal) {
   this.checkBlock = function(block, withPoWAndSignature, done) {
     return Q.Promise(function(resolve, reject){
       var localValidation = localValidator(conf);
-      var globalValidation = globalValidator(conf, blockchainDao(block, dal));
+      var globalValidation = globalValidator(conf, dal);
       async.waterfall([
         function (nextOne){
           if (withPoWAndSignature) {
@@ -227,10 +225,10 @@ function BlockchainContext(conf, dal) {
         function (next) {
           async.parallel({
             last: function (callback) {
-              blockchainDao(block, dal).getLastUDBlock(callback);
+              dal.lastUDBlock().then((res) => callback(null, res)).catch(callback);
             },
             root: function (callback) {
-              blockchainDao(block, dal).getBlock(0, callback);
+              dal.getBlock(0, callback);
             }
           }, next);
         },

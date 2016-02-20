@@ -115,8 +115,7 @@ module.exports = {
       buid: blockID,
       sig: ''
     }));
-    var verified = this.verify(raw, sig, from);
-    done(verified ? null : 'Wrong signature for certification', verified);
+    return this.verify(raw, sig, from);
   }
 };
 

@@ -6,7 +6,6 @@ var moment           = require('moment');
 var constants        = require('../lib/constants');
 var http2raw         = require('../lib/streams/parsers/http2raw');
 var parsers          = require('../lib/streams/parsers/doc');
-var blockchainDao    = require('../lib/blockchainDao');
 var globalValidator  = require('../lib/globalValidator');
 var Membership       = require('../lib/entity/membership');
 var AbstractController = require('./abstract');
@@ -91,7 +90,7 @@ function BlockchainBinding (server) {
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    let difficulty = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(idty.pubkey);
+    let difficulty = yield globalValidator(conf, server.dal).getTrialLevel(idty.pubkey, conf, server.dal);
     return {
       "block": nextBlockNumber,
       "level": difficulty
@@ -106,7 +105,7 @@ function BlockchainBinding (server) {
     for (let i = 0, len = issuers.length; i < len; i++) {
       let issuer = issuers[i];
       let member = yield server.dal.getWrittenIdtyByPubkey(issuer);
-      let difficulty = yield globalValidator(conf, blockchainDao(null, server.dal)).getTrialLevel(member.pubkey);
+      let difficulty = yield globalValidator(conf, server.dal).getTrialLevel(member.pubkey, conf, server.dal);
       difficulties.push({
         uid: member.uid,
         level: difficulty

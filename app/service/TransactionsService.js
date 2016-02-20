@@ -5,7 +5,6 @@ var Q = require('q');
 var moment          = require('moment');
 var localValidator  = require('../lib/localValidator');
 var globalValidator = require('../lib/globalValidator');
-var blockchainDao   = require('../lib/blockchainDao');
 
 module.exports = function (conf, dal) {
   return new TransactionService(conf, dal);
@@ -28,13 +27,12 @@ function TransactionService (conf, dal) {
       if (existing) {
         throw 'Transaction already processed';
       }
-      var current = yield dal.getCurrent();
       // Validator OK
-      globalValidation = globalValidator(conf, blockchainDao(current, dal));
+      globalValidation = globalValidator(conf, dal);
       // Start checks...
       var transaction = tx.getTransaction();
       yield Q.nbind(localValidation.checkSingleTransaction, localValidation)(transaction);
-      yield Q.nbind(globalValidation.checkSingleTransaction, globalValidation)(transaction, { medianTime: moment().utc().unix() });
+      yield globalValidation.checkSingleTransaction(transaction, { medianTime: moment().utc().unix() });
       return dal.saveTransaction(tx);
     })
       .then(function(){

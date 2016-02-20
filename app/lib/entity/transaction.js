@@ -57,7 +57,7 @@ var Transaction = function(obj, currency) {
       tx.inputs.push({
         type: sp[0],
         identifier: sp[1],
-        noffset: sp[2],
+        noffset: parseInt(sp[2]),
         raw: input
       });
     });

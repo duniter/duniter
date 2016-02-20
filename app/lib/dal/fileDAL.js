@@ -243,13 +243,12 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
     return activeLinks.length >= sigStock;
   });
 
-  this.getCurrent = function(done) {
-    return that.getBlockCurrent(done);
-  };
 
   this.getCurrentBlockOrNull = function(done) {
     return nullIfErrorIs(that.getBlockCurrent(), constants.ERROR.BLOCK.NO_CURRENT_BLOCK, done);
   };
+
+  this.getCurrent = this.getCurrentBlockOrNull;
 
   this.getPromoted = function(number, done) {
     return that.getBlock(number, done);
@@ -555,17 +554,10 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
       });
   };
 
-  this.isLeaving = function(pubkey, done) {
-    return that.idtyDAL.getFromPubkey(pubkey)
-      .then(function(idty){
-        done && done(null, idty.leaving);
-        return true;
-      })
-      .catch(function(){
-        done && done(null, false);
-        return false;
-      });
-  };
+  this.isLeaving = (pubkey) => co(function *() {
+    let idty = yield that.idtyDAL.getFromPubkey(pubkey);
+    return idty && idty.leaving || false;
+  });
 
   this.isMemberAndNonLeaver = function(pubkey) {
     return that.idtyDAL.getFromPubkey(pubkey)

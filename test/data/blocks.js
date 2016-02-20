@@ -927,7 +927,7 @@ module.exports = {
     "Version: 2\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
-    "Number: 0\n" +
+    "Number: 29890\n" +
     "PoWMin: 1\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +

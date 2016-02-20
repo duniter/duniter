@@ -126,7 +126,7 @@ rules.FUNCTIONS = {
 
   checkIdentitiesMatchJoin: (block) => co(function *() {
     // N.B.: this function does not test for potential duplicates in
-    // identities and/or joiners, this is another test responsability
+    // identities and/or joiners, this is another test responsibility
     var pubkeys = [];
     block.identities.forEach(function(inline){
       let sp = inline.split(':');

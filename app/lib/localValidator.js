@@ -1,7 +1,7 @@
 "use strict";
 var co = require('co');
-var rules = require('./rules');
-var Block = require('../lib/entity/block');
+var rules         = require('../lib/rules/index');
+var Block = require('./entity/block');
 
 module.exports = function (conf) {
   

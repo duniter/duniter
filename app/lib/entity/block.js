@@ -175,7 +175,7 @@ function Block(json) {
         tx.inputs.push({
           type: sp[0],
           identifier: sp[1],
-          noffset: sp[2],
+          noffset: parseInt(sp[2]),
           raw: input
         });
       });
@@ -195,7 +195,7 @@ function Block(json) {
       tx.comment = simpleTx.comment;
       tx.version = version;
       tx.currency = currency;
-      tx.locktime = simpleTx.locktime;
+      tx.locktime = parseInt(simpleTx.locktime);
       transactions.push(tx);
     });
     return transactions;

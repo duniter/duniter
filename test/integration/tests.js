@@ -4,11 +4,17 @@ var co = require('co');
 var _ = require('underscore');
 var should = require('should');
 var assert = require('assert');
+var bma       = require('./../../app/lib/streams/bma');
 var constants = require('../../app/lib/constants');
 var node   = require('./tools/node');
+var ucoin     = require('./../../index');
 var user   = require('./tools/user');
 var jspckg = require('../../package');
 var commit    = require('./tools/commit');
+var httpTest  = require('./tools/http');
+var rp        = require('request-promise');
+
+var expectAnswer   = httpTest.expectAnswer;
 var MEMORY_MODE = true;
 
 describe("Integration", function() {
@@ -163,27 +169,67 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
-    var node3 = node({ name: 'db3', memory: MEMORY_MODE }, { currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
+    var node3 = ucoin({ name: 'db3', memory: MEMORY_MODE }, {
+      currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
       salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
-      sigQty: 1
+      sigQty: 1, sigPeriod: 0
     });
 
-    before(function(done) {
-      node3.startTesting()
-        .then(function(){
-          node3.before(require('./scenarios/certifications')(node3))(done);
+    var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: node3 });
+    var tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: node3 });
+    var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: node3 });
+    var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: node3 });
+
+    before(function() {
+      return co(function *() {
+
+        yield node3.initWithServices().then(bma);
+        let now = Math.round(new Date().getTime() / 1000);
+
+        // Self certifications
+        yield cat.selfCertP();
+        yield tac.selfCertP();
+        yield tic.selfCertP();
+        yield toc.selfCertP();
+        yield cat.certP(tac);
+        yield cat.certP(tic);
+        yield cat.certP(toc);
+        yield tac.certP(cat);
+        yield tac.certP(tic);
+        yield tic.certP(cat);
+        yield tic.certP(tac);
+        yield toc.certP(cat);
+        yield cat.joinP();
+        yield tac.joinP();
+        yield tic.joinP();
+        yield toc.joinP();
+        yield commit(node3)({
+          time: now
         });
+        yield commit(node3)();
+        yield toc.leaveP();
+        yield commit(node3)();
+        yield tac.certP(toc);
+        yield tic.certP(toc);
+        yield toc.certP(tic); // Should be taken in 1 block
+        yield toc.certP(tac); // Should be taken in 1 other block
+        yield commit(node3)({
+          time: now + 200
+        });
+        yield commit(node3)({
+          time: now + 200
+        });
+        yield commit(node3)();
+      });
     });
-    after(node3.after());
 
-    it('toc should give only 1 result with 3 certification by others', node3.lookup('toc', function(res, done){
+    it('toc should give only 1 result with 3 certification by others', () => expectAnswer(rp('http://127.0.0.1:9997/wot/lookup/toc', { json: true }), function(res) {
       should.exists(res);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].uids[0].others.length, 3);
-      done();
     }));
 
-    it('tic should give only 1 results', node3.lookup('tic', function(res, done){
+    it('tic should give only 1 results', () => expectAnswer(rp('http://127.0.0.1:9997/wot/lookup/tic', { json: true }), function(res) {
       should.exists(res);
       var uids = _.pluck(res.results[0].signed, 'uid');
       var uidsShould = ["cat", "tac", "toc"];
@@ -208,28 +254,27 @@ describe("Integration", function() {
       assert.equal(res.results[0].uids[0].others[0].uids.length, 1);
       assert.equal(res.results[0].uids[0].others[0].isMember, true);
       assert.equal(res.results[0].uids[0].others[0].wasMember, true);
-      done();
     }));
 
-    it('it should exist block#2 with 4 members', node3.block(2, function(block, done){
+    it('it should exist block#2 with 4 members', () => expectAnswer(rp('http://127.0.0.1:9997/blockchain/block/2', { json: true }), function(block) {
       should.exists(block);
       assert.equal(block.number, 2);
       assert.equal(block.membersCount, 4);
-      done();
     }));
 
-    it('it should exist block#3 with only 1 certification', node3.block(3, function(block, done){
-      should.exists(block);
-      assert.equal(block.number, 3);
-      assert.equal(block.certifications.length, 1);
-      done();
-    }));
+    blockShouldHaveCerts(0, 8);
+    blockShouldHaveCerts(1, 0);
+    blockShouldHaveCerts(2, 0);
+    blockShouldHaveCerts(3, 1);
+    blockShouldHaveCerts(4, 0);
+    blockShouldHaveCerts(5, 1);
 
-    it('it should exist block#4 with only 1 certification', node3.block(4, function(block, done){
-      should.exists(block);
-      assert.equal(block.number, 4);
-      assert.equal(block.certifications.length, 1);
-      done();
-    }));
+    function blockShouldHaveCerts(number, certificationsCount) {
+      it('it should exist block#' + number + ' with ' + certificationsCount + ' certification', () => expectAnswer(rp('http://127.0.0.1:9997/blockchain/block/' + number, { json: true }), function(block) {
+        should.exists(block);
+        assert.equal(block.number, number);
+        assert.equal(block.certifications.length, certificationsCount);
+      }));
+    }
   });
 });

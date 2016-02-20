@@ -237,7 +237,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   this.existsNonChainableLink = (from, chainabilityBlockNumber, sigStock) => co(function *() {
     // Cert period rule
     let links = yield that.linksDAL.getLinksOfIssuerAbove(from, chainabilityBlockNumber);
-    if (links.length === 0) return false;
+    if (links.length > 0) return true;
     // Max stock rule
     let activeLinks = yield that.linksDAL.getValidLinksFrom(from);
     return activeLinks.length >= sigStock;

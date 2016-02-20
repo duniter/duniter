@@ -4,6 +4,7 @@ var Q             = require('q');
 var _             = require('underscore');
 var async         = require('async');
 var should        = require('should');
+var rules         = require('../../../app/lib/rules');
 var wotb          = require('../../../app/lib/wot');
 var parsers       = require('../../../app/lib/streams/parsers/doc');
 var blocks        = require('../../data/blocks');
@@ -478,13 +479,13 @@ describe("Block global coherence:", function(){
   }));
 
 
-  it('a block without transactions should pass', test('checkTransactions', blocks.BLOCK_WITHOUT_TRANSACTIONS, {
+  it('a block without transactions should pass', test('checkSourcesAvailability', blocks.BLOCK_WITHOUT_TRANSACTIONS, {
     getCurrent: () => Q(null)
   }, function (err) {
     should.not.exist(err);
   }));
 
-  it('a block with good transactions should pass', test('checkTransactions', blocks.BLOCK_WITH_GOOD_TRANSACTIONS, {
+  it('a block with good transactions should pass', test('checkSourcesAvailability', blocks.BLOCK_WITH_GOOD_TRANSACTIONS, {
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -497,7 +498,7 @@ describe("Block global coherence:", function(){
     should.not.exist(err);
   }));
 
-  it('a block with wrong transaction sum should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, {
+  it('a block with wrong transaction sum should fail', test('checkSourcesAvailability', blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, {
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -511,7 +512,7 @@ describe("Block global coherence:", function(){
     err.uerr.message.should.equal('Sum of inputs must equal sum of outputs');
   }));
 
-  it('a block with wrong transaction unit bases should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, {
+  it('a block with wrong transaction unit bases should fail', test('checkSourcesAvailability', blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, {
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -525,7 +526,7 @@ describe("Block global coherence:", function(){
     err.uerr.message.should.equal('Sum of inputs must equal sum of outputs');
   }));
 
-  it('a block with whose transaction has too high unit bases should fail', test('checkTransactions', blocks.BLOCK_WITH_WRONG_TRANSACTION_UNIT_BASES, {
+  it('a block with whose transaction has too high unit bases should fail', test('checkSourcesAvailability', blocks.BLOCK_WITH_WRONG_TRANSACTION_UNIT_BASES, {
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -539,7 +540,7 @@ describe("Block global coherence:", function(){
     err.uerr.message.should.equal('Wrong unit base for outputs');
   }));
 
-  it('a block with unavailable UD source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, {
+  it('a block with unavailable UD source should fail', test('checkSourcesAvailability', blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, {
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -553,7 +554,7 @@ describe("Block global coherence:", function(){
     err.should.have.property('uerr').property('message').equal('Source already consumed');
   }));
 
-  it('a block with unavailable TX source should fail', test('checkTransactions', blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, {
+  it('a block with unavailable TX source should fail', test('checkSourcesAvailability', blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, {
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -590,30 +591,26 @@ describe("Block global coherence:", function(){
 });
 
 function test (funcName, raw, dal, callback) {
-  var block;
   return function() {
-    return Q.Promise(function(resolve, reject){
-      async.waterfall([
-        function (next){
-          parser.asyncWrite(raw, next);
-        },
-        function (obj, next){
-          block = new Block(obj);
-          let wotb2 = wotb.memoryInstance();
-          wotb2.addNode(); // HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-          wotb2.addNode(); // G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU
-          wotb2.addNode(); // F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg
-          wotb2.addLink(1, 0); // G2 => Hg
-          wotb2.addLink(2, 0); // F5 => Hg
-          wotb2.addLink(0, 1); // Hg => G2
-          wotb2.addLink(2, 1); // F5 => G2
-          wotb2.addLink(0, 2); // Hg => F5
-          validator(conf, { wotb: wotb2 })[funcName](block, dal).then(() => next()).catch(next);
-        }
-      ], function (err) {
-        err && console.error(err.stack);
-        err ? reject(err) : resolve();
-      });
+    return co(function *() {
+      let obj = parser.syncWrite(raw);
+      let block = new Block(obj);
+      let wotb2 = wotb.memoryInstance();
+      //wotb2.addNode(); // HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+      //wotb2.addNode(); // G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU
+      //wotb2.addNode(); // F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg
+      //wotb2.addLink(1, 0); // G2 => Hg
+      //wotb2.addLink(2, 0); // F5 => Hg
+      //wotb2.addLink(0, 1); // Hg => G2
+      //wotb2.addLink(2, 1); // F5 => G2
+      //wotb2.addLink(0, 2); // Hg => F5
+      //dal.wotb = wotb2;
+      let rule = rules.GLOBAL[funcName];
+      if (rule.length == 2) {
+        yield rule(block, dal);
+      } else {
+        yield rule(block, conf, dal);
+      }
     })
       .then(callback).catch(callback);
   };

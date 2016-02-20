@@ -202,10 +202,11 @@ rules.FUNCTIONS = {
       if (previous) {
         let duration = current.medianTime - parseInt(previous.timestamp);
         if (duration < conf.sigPeriod) {
-          let stock = yield dal.getValidLinksFrom(cert.from);
-          if (stock >= conf.sigStock) {
-            throw Error('Previous certification is not chainable yet');
-          }
+          throw Error('Previous certification is not chainable yet');
+        }
+        let stock = yield dal.getValidLinksFrom(cert.from);
+        if (stock >= conf.sigStock) {
+          throw Error('Previous certification is not chainable yet');
         }
       }
     }

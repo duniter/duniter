@@ -10,8 +10,8 @@ module.exports = function (conf) {
 
 function LocalValidator (conf) {
 
-  this.validate = check(rules.ALIAS.ALL);
-  this.validateWithoutPoWAndSignature = check(rules.ALIAS.ALL_BUT_POW_AND_SIGNATURE);
+  this.validate = check(rules.ALIAS.ALL_LOCAL);
+  this.validateWithoutPoWAndSignature = check(rules.ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE);
 
   function check(contract) {
     return (b, done) => {

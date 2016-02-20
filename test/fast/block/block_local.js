@@ -21,7 +21,7 @@ var conf = Configuration.statics.complete({
 
 describe("Block local coherence", function(){
 
-  it('a valid block should be well formatted',                                                        test(rules.ALIAS.ALL_BUT_POW_AND_SIGNATURE, blocks.VALID_ROOT));
+  it('a valid block should be well formatted',                                                        test(rules.ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE, blocks.VALID_ROOT));
 
   describe("should be rejected", function(){
 

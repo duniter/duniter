@@ -55,7 +55,7 @@ var s3 = ucoin({
   },
   participate: false, rootoffset: 10,
   sigQty: 1, dt: 0, ud0: 120,
-  sigValidity: 1400
+  sigValidity: 1400, sigPeriod: 0
 }, commonConf));
 
 var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
@@ -98,14 +98,19 @@ describe("WOTB module", function() {
         yield cat.certPromise(toc);
         yield cat.joinPromise();
         yield toc.joinPromise();
-        yield commit(s1)();
+        yield commit(s1)({
+          time: now + 500
+        });
+        yield commit(s1)({
+          time: now + 500
+        });
       });
     });
 
     it('the wotb_id should be affected to new members', function() {
       return co(function *() {
-        let icat = yield s1.dal.getWrittenByUID("cat");
-        let itoc = yield s1.dal.getWrittenByUID("toc");
+        let icat = yield s1.dal.getWrittenIdtyByUID("cat");
+        let itoc = yield s1.dal.getWrittenIdtyByUID("toc");
         icat.should.have.property('wotb_id').equal(0);
         itoc.should.have.property('wotb_id').equal(1);
         wotb.isEnabled(0).should.equal(true);
@@ -129,7 +134,7 @@ describe("WOTB module", function() {
         yield toc.certPromise(tic);
         yield tic.joinPromise();
         yield commit(s1)();
-        let itic = yield s1.dal.getWrittenByUID("tic");
+        let itic = yield s1.dal.getWrittenIdtyByUID("tic");
         itic.should.have.property('wotb_id').equal(2);
         wotb.isEnabled(2).should.equal(true);
         wotb.existsLink(1, 2).should.equal(true);

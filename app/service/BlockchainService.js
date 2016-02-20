@@ -820,7 +820,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 throw 'It already exists a similar certification written, which is not replayable yet';
               }
               // Already exists a link not chainable yet?
-              exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability.number, conf.sigStock);
+              exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock);
               if (exists) {
                 throw 'It already exists a certification written which is not chainable yet';
               }
@@ -1471,7 +1471,7 @@ function NextBlockGenerator(conf, dal) {
         if (!exists) {
           // Already exists a link not chainable yet?
           // No chainability block means absolutely nobody can issue certifications yet
-          exists = current && (!blockOfChainability || (yield dal.existsNonChainableLink(cert.from, blockOfChainability.number, conf.sigStock)));
+          exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
           if (!exists) {
             // It does NOT already exists a similar certification written, which is not replayable yet
             // Signatory must be a member

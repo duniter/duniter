@@ -17,7 +17,7 @@ _.extend(rules.HELPERS, global_rules.HELPERS);
 
 rules.ALIAS = {
 
-  ALL: (block, conf) => co(function *() {
+  ALL_LOCAL: (block, conf) => co(function *() {
     yield rules.LOCAL.checkParameters(block);
     yield rules.LOCAL.checkProofOfWork(block);
     yield rules.LOCAL.checkInnerHash(block);
@@ -44,7 +44,7 @@ rules.ALIAS = {
     yield rules.LOCAL.checkTxSignature(block);
   }),
 
-  ALL_BUT_POW_AND_SIGNATURE: (block, conf) => co(function *() {
+  ALL_LOCAL_BUT_POW_AND_SIGNATURE: (block, conf) => co(function *() {
     yield rules.LOCAL.checkParameters(block);
     yield rules.LOCAL.checkInnerHash(block);
     yield rules.LOCAL.checkPreviousHash(block);
@@ -67,6 +67,69 @@ rules.ALIAS = {
     yield rules.LOCAL.checkTxSources(block);
     yield rules.LOCAL.checkTxRecipients(block);
     yield rules.LOCAL.checkTxSignature(block);
+  }),
+
+  ALL_GLOBAL: (block, conf, dal) => co(function *() {
+    yield rules.GLOBAL.checkNumber(block, dal);
+    yield rules.GLOBAL.checkPreviousHash(block, dal);
+    yield rules.GLOBAL.checkPreviousIssuer(block, dal);
+    yield rules.GLOBAL.checkIssuerIsMember(block, dal);
+    yield rules.GLOBAL.checkTimes(block, conf, dal);
+    yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
+    yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
+    yield rules.GLOBAL.checkJoiners(block, conf, dal);
+    yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
+    yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
+    yield rules.GLOBAL.checkActives(block, conf, dal);
+    yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
+    yield rules.GLOBAL.checkLeavers(block, conf, dal);
+    yield rules.GLOBAL.checkRevoked(block, conf, dal);
+    yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
+    yield rules.GLOBAL.checkExcluded(block, conf, dal);
+    yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsAreMadeByMembers(block, dal);
+    yield rules.GLOBAL.checkCertificationsAreValid(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsAreMadeToMembers(block, dal);
+    yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
+    yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
+    yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
+    yield rules.GLOBAL.checkPoWMin(block, conf, dal);
+    yield rules.GLOBAL.checkProofOfWork(block, conf, dal);
+    yield rules.GLOBAL.checkUD(block, conf, dal);
+    yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
+  }),
+
+  ALL_GLOBAL_WITHOUT_POW: (block, conf, dal) => co(function *() {
+    yield rules.GLOBAL.checkNumber(block, dal);
+    yield rules.GLOBAL.checkPreviousHash(block, dal);
+    yield rules.GLOBAL.checkPreviousIssuer(block, dal);
+    yield rules.GLOBAL.checkIssuerIsMember(block, dal);
+    yield rules.GLOBAL.checkTimes(block, conf, dal);
+    yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
+    yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
+    yield rules.GLOBAL.checkJoiners(block, conf, dal);
+    yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
+    yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
+    yield rules.GLOBAL.checkActives(block, conf, dal);
+    yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
+    yield rules.GLOBAL.checkLeavers(block, conf, dal);
+    yield rules.GLOBAL.checkRevoked(block, conf, dal);
+    yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
+    yield rules.GLOBAL.checkExcluded(block, conf, dal);
+    yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsAreMadeByMembers(block, dal);
+    yield rules.GLOBAL.checkCertificationsAreValid(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsAreMadeToMembers(block, dal);
+    yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
+    yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
+    yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
+    yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
+    yield rules.GLOBAL.checkPoWMin(block, conf, dal);
+    yield rules.GLOBAL.checkUD(block, conf, dal);
+    yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })
 };
 

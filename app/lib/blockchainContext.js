@@ -6,7 +6,6 @@ var Q               = require('q');
 var hashf           = require('./hashf');
 var rawer           = require('./rawer');
 var constants       = require('./constants');
-var localValidator  = require('./localValidator');
 var rules           = require('./rules');
 
 module.exports = function(conf, dal) {
@@ -30,13 +29,12 @@ function BlockchainContext(conf, dal) {
 
   this.checkBlock = function(block, withPoWAndSignature, done) {
     return Q.Promise(function(resolve, reject){
-      var localValidation = localValidator(conf);
       async.waterfall([
         function (nextOne){
           if (withPoWAndSignature) {
-            return localValidation.validate(block, nextOne);
+            return rules.CHECK.ASYNC.ALL_LOCAL(block, conf, nextOne);
           }
-          localValidation.validateWithoutPoWAndSignature(block, nextOne);
+          rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW(block, conf, nextOne);
         },
         function (nextOne){
           if (withPoWAndSignature) {

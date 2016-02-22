@@ -4,7 +4,6 @@ var co              = require('co');
 var rules           = require('../lib/rules');
 var hashf           = require('../lib/hashf');
 var constants       = require('../lib/constants');
-var localValidator  = require('../lib/localValidator');
 
 module.exports = function (conf, dal) {
   return new MembershipService(conf, dal);
@@ -30,7 +29,7 @@ function MembershipService (conf, dal) {
     let entry = new Membership(ms);
     entry.idtyHash = (hashf(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
     logger.info('⬇ %s %s', entry.issuer, entry.membership);
-    if (!localValidator().checkSingleMembershipSignature(entry)) {
+    if (!rules.HELPERS.checkSingleMembershipSignature(entry)) {
       throw constants.ERRORS.WRONG_SIGNATURE_MEMBERSHIP;
     }
     // Get already existing Membership with same parameters

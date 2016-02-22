@@ -2,7 +2,7 @@
 var async = require('async');
 var moment = require('moment');
 var hashf = require('./hashf');
-var localValidator = require('./localValidator');
+var rules = require('./rules');
 var constants = require('./constants');
 var dos2unix = require('./dos2unix');
 var signature = require('./signature');
@@ -125,7 +125,7 @@ function computeSpeed(block, sigFunc) {
 
 function getBlockTime (block, conf, forcedTime) {
   var now = forcedTime || moment.utc().unix();
-  var maxAcceleration = localValidator(conf).maxAcceleration();
+  var maxAcceleration = rules.HELPERS.maxAcceleration(conf);
   var timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
   var medianTime = block.medianTime;
   var upperBound = block.number == 0 ? medianTime : Math.min(medianTime + maxAcceleration, now - timeoffset);

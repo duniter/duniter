@@ -456,11 +456,37 @@ function getSigResult(tx) {
   return sigResult;
 }
 
+function checkBunchOfTransactions(txs, done){
+  var block = {
+    getTransactions: function () {
+      return txs;
+    }
+  };
+  return co(function *() {
+    let local_rule = rules.FUNCTIONS;
+    yield local_rule.checkTxIssuers(block);
+    yield local_rule.checkTxSources(block);
+    yield local_rule.checkTxRecipients(block);
+    yield local_rule.checkTxSignature(block);
+    done && done();
+  })
+    .catch((err) => {
+      if (done) return done(err);
+      throw err;
+    });
+}
+
 rules.HELPERS = {
 
   maxAcceleration: maxAcceleration,
+
   checkSingleMembershipSignature: checkSingleMembershipSignature,
-  getSigResult: getSigResult
+
+  getSigResult: getSigResult,
+
+  checkBunchOfTransactions: checkBunchOfTransactions,
+
+  checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done)
 };
 
 module.exports = rules;

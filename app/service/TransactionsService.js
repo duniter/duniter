@@ -1,10 +1,9 @@
 "use strict";
 
-var co = require('co');
-var Q = require('q');
-var moment          = require('moment');
-var rules           = require('../lib/rules');
-var localValidator  = require('../lib/localValidator');
+var co     = require('co');
+var Q      = require('q');
+var moment = require('moment');
+var rules  = require('../lib/rules');
 
 module.exports = function (conf, dal) {
   return new TransactionService(conf, dal);
@@ -20,7 +19,6 @@ function TransactionService (conf, dal) {
 
   this.processTx = function (txObj, done) {
     var tx = new Transaction(txObj, conf.currency);
-    var localValidation = localValidator(conf);
     return co(function *() {
       var existing = yield dal.getTxByHash(tx.hash);
       if (existing) {
@@ -28,7 +26,7 @@ function TransactionService (conf, dal) {
       }
       // Start checks...
       var transaction = tx.getTransaction();
-      yield Q.nbind(localValidation.checkSingleTransaction, localValidation)(transaction);
+      yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(transaction);
       yield rules.HELPERS.checkSingleTransaction(transaction, { medianTime: moment().utc().unix() }, conf, dal);
       return dal.saveTransaction(tx);
     })

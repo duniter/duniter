@@ -136,10 +136,26 @@ rules.ALIAS = {
 
 rules.CHECK = {
   ASYNC: {
+    ALL_LOCAL: checkLocal(rules.ALIAS.ALL_LOCAL),
+    ALL_LOCAL_BUT_POW: checkLocal(rules.ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE),
     ALL_GLOBAL: check(rules.ALIAS.ALL_GLOBAL),
     ALL_GLOBAL_BUT_POW: check(rules.ALIAS.ALL_GLOBAL_WITHOUT_POW)
   }
 };
+
+function checkLocal(contract) {
+  return (b, conf, done) => {
+    return co(function *() {
+      var block = new Block(b);
+      yield contract(block, conf);
+      done && done();
+    })
+      .catch((err) => {
+        if (done) return done(err);
+        throw err;
+      });
+  };
+}
 
 function check(contract) {
   return (b, conf, dal, done) => {

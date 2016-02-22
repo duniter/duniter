@@ -13,7 +13,6 @@ var hashf           = require('../lib/hashf');
 var base58          = require('../lib/base58');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
-var localValidator  = require('../lib/localValidator');
 var blockchainCtx   = require('../lib/blockchainContext');
 
 const CHECK_ALL_RULES = true;
@@ -471,7 +470,6 @@ function BlockchainService (conf, mainDAL, pair) {
       .then(function (txs) {
         var transactions = [];
         var passingTxs = [];
-        var localValidation = localValidator(conf);
         return Q.Promise(function(resolve, reject){
 
           async.forEachSeries(txs, function (rawtx, callback) {
@@ -479,7 +477,7 @@ function BlockchainService (conf, mainDAL, pair) {
             var extractedTX = tx.getTransaction();
             async.waterfall([
               function (next) {
-                localValidation.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
+                rules.HELPERS.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
               },
               function (next) {
                 rules.HELPERS.checkSingleTransaction(extractedTX, { medianTime: moment().utc().unix() }, conf, dal).then(() => next()).catch(next);

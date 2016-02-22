@@ -6,7 +6,6 @@ var moment           = require('moment');
 var vucoin           = require('vucoin');
 var hashf            = require('./hashf');
 var dos2unix         = require('./dos2unix');
-var localValidator   = require('./localValidator');
 var logger           = require('./logger')('sync');
 var rawer            = require('../lib/rawer');
 var constants        = require('../lib/constants');

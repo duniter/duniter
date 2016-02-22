@@ -11,6 +11,7 @@ var Membership     = require('../entity/membership');
 var Certification  = require('../entity/certification');
 var logger         = require('../logger')('globr');
 var unlock         = require('../txunlock');
+var local_rules    = require('./local_rules');
 
 let rules = {};
 
@@ -387,7 +388,6 @@ rules.FUNCTIONS = {
 
   checkSourcesAvailability: (block, conf, dal) => co(function *() {
     let txs = block.getTransactions();
-    let localV = require('../localValidator')(conf);
     for (let i = 0, len = txs.length; i < len; i++) {
       let tx = txs[i];
       let unlocks = {};
@@ -414,7 +414,7 @@ rules.FUNCTIONS = {
         if (block.medianTime - dbSrc.time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
-        let sigResults = localV.getSigResult(tx);
+        let sigResults = local_rules.HELPERS.getSigResult(tx);
         let unlocksForCondition = [];
         let unlockValues = unlocks[k];
         if (dbSrc.conditions) {

@@ -12,7 +12,6 @@ var dos2unix       = require('../lib/dos2unix');
 var hashf          = require('../lib/hashf');
 var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');
-var localValidator = require('../lib/localValidator');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 

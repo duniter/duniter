@@ -473,7 +473,17 @@ rules.HELPERS = {
 
   checkCertificationIsValidForBlock: (cert, block, idty, conf, dal) => checkCertificationIsValid(block, cert, () => idty, conf, dal),
 
-  isOver3Hops: (member, newLinks, newcomers, conf, dal) => checkPeopleAreNotOudistanced([member], newLinks, newcomers, conf, dal),
+  isOver3Hops: (member, newLinks, newcomers, current, conf, dal) => co(function *() {
+    if (!current) {
+      return Q(false);
+    }
+    try {
+      yield checkPeopleAreNotOudistanced([member], newLinks, newcomers, conf, dal);
+      return false;
+    } catch (e) {
+      return true;
+    }
+  }),
 
   getTrialLevel: (issuer, conf, dal) => getTrialLevel(issuer, conf, dal),
 

@@ -97,7 +97,7 @@ function Node (dbName, options) {
     async.waterfall([
       function (next){
         block.issuer = issuer;
-        BlockchainService.prove(block, sigFunc, difficulty, next);
+        BlockchainService.prove(block, sigFunc, difficulty).then((proven) => next(null, proven)).catch(next);
       },
       function (provenBlock, next){
         if (provenBlock) {

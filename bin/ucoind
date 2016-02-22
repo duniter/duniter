@@ -328,7 +328,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
     function (next){
       block.issuer = issuer;
       program.show && console.log(block.getRawSigned());
-      BlockchainService.prove(block, sigFunc, difficulty, next);
+      BlockchainService.prove(block, sigFunc, difficulty).then((proven) => next(null, proven)).catch(next);
     },
     function (block, next){
       var peer = new Peer({

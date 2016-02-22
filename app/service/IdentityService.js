@@ -1,12 +1,10 @@
 "use strict";
 var async           = require('async');
-var Q = require('q');
-var globalValidator = require('../lib/globalValidator');
+var Q               = require('q');
+var rules           = require('../lib/rules');
 var crypto          = require('../lib/crypto');
 var constants       = require('../lib/constants');
-var co = require('co');
-
-var DO_NOT_THROW_ABOUT_EXPIRATION = true;
+var co              = require('co');
 
 module.exports = function (conf, dal) {
   return new IdentityService(conf, dal);
@@ -29,12 +27,8 @@ function IdentityService (conf, dal) {
     task(callback);
   }, 1);
 
-  // Validator for certifications
-  var globalValidation = globalValidator(conf, dal);
-
   this.setDAL = function(theDAL) {
     dal = theDAL;
-    globalValidation = globalValidator(conf, dal);
   };
 
   this.searchIdentities = function(search) {
@@ -138,7 +132,7 @@ function IdentityService (conf, dal) {
         return co(function *() {
           logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
           try {
-            yield globalValidation.checkCertificationIsValid(cert, potentialNext, () => Q(idty), conf, dal);
+            yield rules.HELPERS.checkCertificationIsValid(cert, potentialNext, () => Q(idty), conf, dal);
           } catch (e) {
             cert.err = e;
           }

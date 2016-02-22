@@ -483,7 +483,12 @@ rules.HELPERS = {
 
   checkExistsUserID: (uid, dal) => dal.getWrittenIdtyByUID(uid),
 
-  checkExistsPubkey: (pub, dal) => dal.getWrittenIdtyByPubkey(pub)
+  checkExistsPubkey: (pub, dal) => dal.getWrittenIdtyByPubkey(pub),
+
+  checkSingleTransaction: (tx, block, conf, dal) => rules.FUNCTIONS.checkSourcesAvailability({
+    getTransactions: () => [tx],
+    medianTime: block.medianTime
+  }, conf, dal)
 };
 
 /*****************************

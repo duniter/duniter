@@ -2,6 +2,7 @@
 
 var _ = require('underscore');
 var co          = require('co');
+var Block = require('../entity/block');
 var local_rules = require('./local_rules');
 var global_rules = require('./global_rules');
 
@@ -132,5 +133,26 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })
 };
+
+rules.CHECK = {
+  ASYNC: {
+    ALL_GLOBAL: check(rules.ALIAS.ALL_GLOBAL),
+    ALL_GLOBAL_BUT_POW: check(rules.ALIAS.ALL_GLOBAL_WITHOUT_POW)
+  }
+};
+
+function check(contract) {
+  return (b, conf, dal, done) => {
+    return co(function *() {
+      var block = new Block(b);
+      yield contract(block, conf, dal);
+      done && done();
+    })
+      .catch((err) => {
+        if (done) return done(err);
+        throw err;
+      });
+  };
+}
 
 module.exports = rules;

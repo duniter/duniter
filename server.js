@@ -227,13 +227,6 @@ function Server (dbConf, overrideConf) {
       });
   };
 
-  this.createSignFunction = function (pair, done) {
-    signature.async(pair, function (err, sigFunc) {
-      that.sign = sigFunc;
-      done(err);
-    });
-  };
-
   this.reset = function(done) {
     return that.dal.resetAll(done);
   };
@@ -262,78 +255,44 @@ function Server (dbConf, overrideConf) {
     return that.dal && that.dal.close();
   };
 
-  this.initServices = function() {
-    return Q.Promise(function(resolve, reject){
-      if (!that.servicesInited) {
-        async.waterfall([
-          function(next) {
-            // Extract key pair
-            if (that.conf.pair)
-              next(null, {
-                publicKey: base58.decode(that.conf.pair.pub),
-                secretKey: base58.decode(that.conf.pair.sec)
-              });
-            else if (that.conf.passwd || that.conf.salt)
-              crypto.getKeyPair(that.conf.passwd, that.conf.salt, next);
-            else
-              next(null, null);
-          },
-          function (pair, next){
-            if (pair) {
-              that.pair = pair;
-              that.createSignFunction(pair, next);
-            }
-            else next('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
-          },
-          function(next) {
-            that.servicesInited = true;
-            that.MerkleService       = require("./app/service/MerkleService");
-            that.ParametersService   = require("./app/service/ParametersService")();
-            that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);
-            that.MembershipService   = require('./app/service/MembershipService')(that.conf, that.dal);
-            that.PeeringService      = require('./app/service/PeeringService')(that, that.pair, that.dal);
-            that.BlockchainService   = require('./app/service/BlockchainService')(that.conf, that.dal, that.pair);
-            that.TransactionsService = require('./app/service/TransactionsService')(that.conf, that.dal);
-            // Create document mapping
-            documentsMapping = {
-              'identity':    that.IdentityService.submitIdentity,
-              'certification': that.IdentityService.submitCertification,
-              'revocation':  that.IdentityService.submitRevocation,
-              'membership':  that.MembershipService.submitMembership,
-              'peer':        that.PeeringService.submitP,
-              'transaction': that.TransactionsService.processTx,
-              'block':       (obj) => {
-                return co(function *() {
-                  let block = yield that.BlockchainService.submitBlock(obj, true);
-                  that.dal = that.BlockchainService.currentDal;
-                  that.IdentityService.setDAL(that.dal);
-                  that.MembershipService.setDAL(that.dal);
-                  that.PeeringService.setDAL(that.dal);
-                  that.TransactionsService.setDAL(that.dal);
-                  (theRouter && theRouter.setDAL(that.dal));
-                  return block;
-                });
-              }
-            };
-            that.BlockchainService.init(next);
-          },
-          function(next) {
-            that.dal = that.BlockchainService.currentDal;
-            that.IdentityService.setDAL(that.dal);
-            that.MembershipService.setDAL(that.dal);
-            that.PeeringService.setDAL(that.dal);
-            that.TransactionsService.setDAL(that.dal);
-            (theRouter && theRouter.setDAL(that.dal));
-            next();
-          }
-        ], function(err) {
-          err ? reject(err) : resolve();
-        });
-      } else {
-        resolve();
+  this.initServices = () => co(function *() {
+    if (!that.servicesInited) {
+      // Extract key pair
+      let pair = null;
+      if (that.conf.pair) {
+        pair = {
+          publicKey: base58.decode(that.conf.pair.pub),
+          secretKey: base58.decode(that.conf.pair.sec)
+        };
       }
-    });
-  };
+      else if (that.conf.passwd || that.conf.salt) {
+        pair = yield Q.nbind(crypto.getKeyPair, crypto)(that.conf.passwd, that.conf.salt);
+      }
+      if (!pair) {
+        throw 'This node does not have a keypair. Use `ucoind wizard key` to fix this.';
+      }
+      that.pair = pair;
+      that.sign = signature.asyncSig(pair);
+      that.servicesInited = true;
+      that.MerkleService       = require("./app/service/MerkleService");
+      that.ParametersService   = require("./app/service/ParametersService")();
+      that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);
+      that.MembershipService   = require('./app/service/MembershipService')(that.conf, that.dal);
+      that.PeeringService      = require('./app/service/PeeringService')(that, that.pair, that.dal);
+      that.BlockchainService   = require('./app/service/BlockchainService')(that.conf, that.dal, that.pair);
+      that.TransactionsService = require('./app/service/TransactionsService')(that.conf, that.dal);
+      // Create document mapping
+      documentsMapping = {
+        'identity':    that.IdentityService.submitIdentity,
+        'certification': that.IdentityService.submitCertification,
+        'revocation':  that.IdentityService.submitRevocation,
+        'membership':  that.MembershipService.submitMembership,
+        'peer':        that.PeeringService.submitP,
+        'transaction': that.TransactionsService.processTx,
+        'block':       _.partial(that.BlockchainService.submitBlock, _, true)
+      };
+    }
+  });
 
   this.makeNextBlock = function(manualValues) {
     return co(function *() {

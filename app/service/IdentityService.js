@@ -26,10 +26,6 @@ function IdentityService (conf, dal) {
 
   this.dal = dal;
 
-  this.setDAL = function(theDAL) {
-    dal = theDAL;
-  };
-
   this.searchIdentities = function(search) {
     return dal.searchJustIdentities(search);
   };

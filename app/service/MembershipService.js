@@ -19,10 +19,6 @@ function MembershipService (conf, dal) {
 
   this.pair = null;
 
-  this.setDAL = function(theDAL) {
-    dal = theDAL;
-  };
-
   this.current = function (done) {
     dal.getCurrentBlockOrNull(done);
   };

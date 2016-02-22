@@ -20,10 +20,6 @@ function Router (serverPubkey, conf, dal) {
 
   var that = this;
 
-  this.setDAL = function(theDAL) {
-    dal = theDAL;
-  };
-
   this._write = function (obj, enc, done) {
          if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers(),                        done); }
     else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers(),                        done); }

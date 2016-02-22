@@ -34,13 +34,13 @@ var computeNextCallback = null;
 // Flag indicating the PoW has begun
 var computing = false;
 
-function BlockchainService (conf, mainDAL, pair) {
+function BlockchainService (conf, dal, pair) {
 
   AbstractService.call(this);
 
   var that = this;
-  var mainContext = blockchainCtx(conf, mainDAL);
-  var logger = require('../lib/logger')(mainDAL.profile);
+  var mainContext = blockchainCtx(conf, dal);
+  var logger = require('../lib/logger')(dal.profile);
   var selfPubkey = base58.encode(pair.publicKey);
 
   var lastGeneratedWasWrong = false;
@@ -64,16 +64,11 @@ function BlockchainService (conf, mainDAL, pair) {
   };
   let statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
 
-  this.init = function(done) {
-    that.currentDal = mainDAL;
-    done();
-  };
-
   this.current = (done) =>
-    mainDAL.getCurrentBlockOrNull(done);
+    dal.getCurrentBlockOrNull(done);
 
   this.promoted = (number) => co(function *() {
-    let bb = yield mainDAL.getPromoted(number);
+    let bb = yield dal.getPromoted(number);
     if (!bb) throw constants.ERRORS.BLOCK_NOT_FOUND;
     return bb;
   });
@@ -83,13 +78,13 @@ function BlockchainService (conf, mainDAL, pair) {
   };
 
   this.branches = () => co(function *() {
-    let forkBlocks = yield mainDAL.blockDAL.getForkBlocks();
+    let forkBlocks = yield dal.blockDAL.getForkBlocks();
     forkBlocks = _.sortBy(forkBlocks, 'number');
     // Get the blocks refering current blockchain
     let forkables = [];
     for (let i = 0; i < forkBlocks.length; i++) {
       let block = forkBlocks[i];
-      let refered = yield mainDAL.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash);
+      let refered = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash);
       if (refered) {
         forkables.push(block);
       }
@@ -144,7 +139,7 @@ function BlockchainService (conf, mainDAL, pair) {
 
   function checkAndAddBlock(obj, doCheck) {
     return co(function *() {
-      let existing = yield mainDAL.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
+      let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
       if (existing) {
         throw 'Already processed';
       }
@@ -164,7 +159,7 @@ function BlockchainService (conf, mainDAL, pair) {
         if (current.number - obj.number + 1 >= conf.forksize) {
           throw 'Block out of fork window';
         }
-        let absolute = yield mainDAL.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
+        let absolute = yield dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
         if (absolute) {
           throw 'Already processed side block #' + obj.number + '-' + obj.hash;
         }
@@ -220,7 +215,7 @@ function BlockchainService (conf, mainDAL, pair) {
       while (isForkBlock) {
         fullBranch.push(next);
         logger.trace('SWITCH: get absolute #%s-%s...', next.number - 1, next.previousHash);
-        next = yield mainDAL.getAbsoluteBlockByNumberAndHash(next.number - 1, next.previousHash);
+        next = yield dal.getAbsoluteBlockByNumberAndHash(next.number - 1, next.previousHash);
         isForkBlock = next.fork;
       }
       //fullBranch.push(next);
@@ -257,7 +252,7 @@ function BlockchainService (conf, mainDAL, pair) {
         let block = chain[i];
         block.wrong = true;
         // Saves the block (DAL)
-        yield mainDAL.saveSideBlockInFile(block);
+        yield dal.saveSideBlockInFile(block);
       }
     });
   }
@@ -305,26 +300,6 @@ function BlockchainService (conf, mainDAL, pair) {
       .catch(done);
   }
 
-  function getSentryMembers(dal, members, done) {
-    var sentries = [];
-    async.forEachSeries(members, function (m, callback) {
-      async.waterfall([
-        function (next) {
-          dal.getValidLinksFrom(m.pubkey).then(_.partial(next, null)).catch(next);
-        },
-        function (links, next) {
-          // Only test agains members who make enough signatures
-          if (links.length >= conf.xpercent) {
-            sentries.push(m.pubkey);
-          }
-          next();
-        }
-      ], callback);
-    }, function(err) {
-      done(err, sentries);
-    });
-  }
-
   /**
    * Generates root block with manual selection of root members.
    * @param done
@@ -336,7 +311,7 @@ function BlockchainService (conf, mainDAL, pair) {
       },
       function (block, next) {
         if (!block) {
-          return that.generateNextBlock(mainDAL, new ManualRootGenerator()).then(_.partial(next, null)).catch(next);
+          return that.generateNextBlock(new ManualRootGenerator()).then(_.partial(next, null)).catch(next);
         }
         else
           next('Cannot generate root block: it already exists.');
@@ -378,23 +353,22 @@ function BlockchainService (conf, mainDAL, pair) {
    */
   this.generateNext = function () {
     return co(function *() {
-      var dal = mainDAL;
-      return that.generateNextBlock(dal, new NextBlockGenerator(conf, dal));
+      return that.generateNextBlock(new NextBlockGenerator(conf, dal));
     });
   };
 
   /**
   * Generate next block, gathering both updates & newcomers
   */
-  this.generateNextBlock = function (dal, generator) {
+  this.generateNextBlock = function (generator) {
     return co(function *() {
       var current = yield dal.getCurrentBlockOrNull();
       var lastUDBlock = yield dal.lastUDBlock();
       var revocations = yield dal.getRevocatingMembers();
       var exclusions = yield dal.getToBeKickedPubkeys();
       var newCertsFromWoT = yield generator.findNewCertsFromWoT(current);
-      var newcomersLeavers = yield findNewcomersAndLeavers(dal, current, generator.filterJoiners);
-      var transactions = yield findTransactions(dal);
+      var newcomersLeavers = yield findNewcomersAndLeavers(current, generator.filterJoiners);
+      var transactions = yield findTransactions();
       var joinData = newcomersLeavers[2];
       var leaveData = newcomersLeavers[3];
       var newCertsFromNewcomers = newcomersLeavers[4];
@@ -418,7 +392,7 @@ function BlockchainService (conf, mainDAL, pair) {
       });
       // Revocations
       // Create the block
-      return createBlock(dal, current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions);
+      return createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions);
     });
   };
 
@@ -427,15 +401,14 @@ function BlockchainService (conf, mainDAL, pair) {
   */
   this.generateEmptyNextBlock = function () {
     return co(function *() {
-      var dal = mainDAL;
       var current = yield dal.getCurrentBlockOrNull();
       var lastUDBlock = dal.lastUDBlock();
       var exclusions = yield dal.getToBeKickedPubkeys();
-      return createBlock(dal, current, {}, {}, {}, [], exclusions, lastUDBlock, []);
+      return createBlock(current, {}, {}, {}, [], exclusions, lastUDBlock, []);
     });
   };
 
-  function findTransactions(dal) {
+  function findTransactions() {
     return dal.getTransactionsPending()
       .then(function (txs) {
         var transactions = [];
@@ -474,14 +447,14 @@ function BlockchainService (conf, mainDAL, pair) {
       });
   }
 
-  function findNewcomersAndLeavers (dal, current, filteringFunc) {
+  function findNewcomersAndLeavers (current, filteringFunc) {
     return Q.Promise(function(resolve, reject){
       async.parallel({
         newcomers: function(callback){
-          findNewcomers(dal, current, filteringFunc, callback);
+          findNewcomers(current, filteringFunc, callback);
         },
         leavers: function(callback){
-          findLeavers(dal, current, callback);
+          findLeavers(current, callback);
         }
       }, function(err, res) {
         var current = res.newcomers[0];
@@ -493,7 +466,7 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   }
 
-  function findLeavers (dal, current, done) {
+  function findLeavers (current, done) {
     var leaveData = {};
     async.waterfall([
       function (next){
@@ -541,13 +514,13 @@ function BlockchainService (conf, mainDAL, pair) {
     ], done);
   }
 
-  function findNewcomers (dal, current, filteringFunc, done) {
+  function findNewcomers (current, filteringFunc, done) {
     var wotMembers = [];
     var joinData = {};
     var updates = {};
     async.waterfall([
       function (next) {
-        getPreJoinData(dal, current, next);
+        getPreJoinData(current, next);
       },
       function (preJoinData, next){
         filteringFunc(preJoinData, next);
@@ -572,7 +545,7 @@ function BlockchainService (conf, mainDAL, pair) {
           // Check WoT stability
           async.waterfall([
             function (next){
-              computeNewLinks(nextBlockNumber, dal, someNewcomers, joinData, updates, next);
+              computeNewLinks(nextBlockNumber, someNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
               checkWoTConstraints(nextBlock, newLinks, current, next);
@@ -584,7 +557,7 @@ function BlockchainService (conf, mainDAL, pair) {
           err && logger.error(err);
           async.waterfall([
             function (next){
-              computeNewLinks(nextBlockNumber, dal, realNewcomers, joinData, updates, next);
+              computeNewLinks(nextBlockNumber, realNewcomers, joinData, updates, next);
             },
             function (newLinks, next){
               var newWoT = wotMembers.concat(realNewcomers);
@@ -614,7 +587,7 @@ function BlockchainService (conf, mainDAL, pair) {
     ], done);
   }
 
-  function getPreJoinData(dal, current, done) {
+  function getPreJoinData(current, done) {
     var preJoinData = {};
     async.waterfall([
       function (next){
@@ -639,7 +612,7 @@ function BlockchainService (conf, mainDAL, pair) {
                 return nextOne('Block not found for membership');
               }
               var idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
-              getSinglePreJoinData(dal, current, idtyHash, nextOne, joiners);
+              getSinglePreJoinData(current, idtyHash, nextOne, joiners);
             },
             function(join, nextOne) {
               join.ms = ms;
@@ -663,7 +636,7 @@ function BlockchainService (conf, mainDAL, pair) {
 
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];
-    let current = yield that.currentDal.getCurrent();
+    let current = yield dal.getCurrent();
     for (let i = 0, len = identities.length; i < len; i++) {
       let idty = new Identity(identities[i]);
       let reqs = yield that.requirementsOfIdentity(idty, current);
@@ -674,7 +647,7 @@ function BlockchainService (conf, mainDAL, pair) {
 
   this.requirementsOfIdentity = (idty, current) => co(function *() {
     // TODO: this is not clear
-    let join = yield Q.nfcall(getSinglePreJoinData, that.currentDal, current, idty.hash);
+    let join = yield Q.nfcall(getSinglePreJoinData, current, idty.hash);
     let pubkey = join.identity.pubkey;
     // Check WoT stability
     let someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];
@@ -682,7 +655,7 @@ function BlockchainService (conf, mainDAL, pair) {
     let joinData = {};
     joinData[join.identity.pubkey] = join;
     let updates = {};
-    let newCerts = yield computeNewCerts(nextBlockNumber, that.currentDal, [join.identity.pubkey], joinData, updates);
+    let newCerts = yield computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
     let newLinks = newCertsToLinks(newCerts, updates);
     let certs = yield that.getValidCerts(pubkey, newCerts);
     let outdistanced = yield that.isOver3Hops(pubkey, newLinks, someNewcomers, current);
@@ -690,14 +663,14 @@ function BlockchainService (conf, mainDAL, pair) {
     let currentTime = current ? current.medianTime : 0;
     // Expiration of current membershship
     if (join.identity.currentMSN >= 0) {
-      let msBlock = yield that.currentDal.getBlockOrNull(join.identity.currentMSN);
+      let msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
       expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
     }
     // Expiration of pending membership
     let expiresPending = 0;
-    let lastJoin = yield that.currentDal.lastJoinOfIdentity(idty.hash);
+    let lastJoin = yield dal.lastJoinOfIdentity(idty.hash);
     if (lastJoin) {
-      let msBlock = yield that.currentDal.getBlockOrNull(lastJoin.blockNumber);
+      let msBlock = yield dal.getBlockOrNull(lastJoin.blockNumber);
       expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
     }
     // Expiration of certifications
@@ -719,13 +692,13 @@ function BlockchainService (conf, mainDAL, pair) {
   });
 
   this.getValidCerts = (newcomer, newCerts) => co(function *() {
-    let links = yield that.currentDal.getValidLinksTo(newcomer);
+    let links = yield dal.getValidLinksTo(newcomer);
     let certsFromLinks = links.map((lnk) => { return { from: lnk.source, to: lnk.target, timestamp: lnk.timestamp }; });
     let certsFromCerts = [];
     let certs = newCerts[newcomer] || [];
     for (let i = 0, len = certs.length; i < len; i++) {
       let cert = certs[i];
-      let block = yield that.currentDal.getBlockOrNull(cert.block_number);
+      let block = yield dal.getBlockOrNull(cert.block_number);
       certsFromCerts.push({
         from: cert.from,
         to: cert.to,
@@ -741,7 +714,7 @@ function BlockchainService (conf, mainDAL, pair) {
         return Q(false);
       }
       try {
-        yield rules.HELPERS.isOver3Hops(newcomer, newLinks, otherNewcomers, conf, that.currentDal);
+        yield rules.HELPERS.isOver3Hops(newcomer, newLinks, otherNewcomers, conf, dal);
         return false;
       } catch (e) {
         return true;
@@ -749,7 +722,7 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   };
 
-  function getSinglePreJoinData(dal, current, idHash, done, joiners) {
+  function getSinglePreJoinData(current, idHash, done, joiners) {
     return co(function *() {
       var identity = yield dal.getIdentityByHashOrNull(idHash);
       var foundCerts = [];
@@ -816,7 +789,7 @@ function BlockchainService (conf, mainDAL, pair) {
       .catch(done);
   }
 
-  function computeNewCerts(forBlock, dal, theNewcomers, joinData) {
+  function computeNewCerts(forBlock, theNewcomers, joinData) {
     return co(function *() {
       var newCerts = {}, certifiers = [];
       var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
@@ -859,15 +832,15 @@ function BlockchainService (conf, mainDAL, pair) {
     return newLinks;
   }
 
-  function computeNewLinksP(forBlock, dal, theNewcomers, joinData, updates) {
+  function computeNewLinksP(forBlock, theNewcomers, joinData, updates) {
     return co(function *() {
-      let newCerts = yield computeNewCerts(forBlock, dal, theNewcomers, joinData);
+      let newCerts = yield computeNewCerts(forBlock, theNewcomers, joinData);
       return newCertsToLinks(newCerts, updates);
     });
   }
 
-  function computeNewLinks (forBlock, dal, theNewcomers, joinData, updates, done) {
-    return computeNewLinksP(forBlock, dal, theNewcomers, joinData, updates)
+  function computeNewLinks (forBlock, theNewcomers, joinData, updates, done) {
+    return computeNewLinksP(forBlock, theNewcomers, joinData, updates)
       .catch((err) => {
         done && done(err);
         throw err;
@@ -878,7 +851,7 @@ function BlockchainService (conf, mainDAL, pair) {
       });
   }
 
-  function createBlock (dal, current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions) {
+  function createBlock (current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions) {
     // Revocations have an impact on exclusions
     revocations.forEach((idty) => exclusions.push(idty.pubkey));
     // Prevent writing joins/updates for excluded members
@@ -1162,7 +1135,6 @@ function BlockchainService (conf, mainDAL, pair) {
         throw 'No self pubkey found.';
       }
       var block, current;
-      var dal = mainDAL;
       var isMember = yield dal.isMember(selfPubkey);
       var powCanceled = '';
       if (!isMember) {
@@ -1225,7 +1197,6 @@ function BlockchainService (conf, mainDAL, pair) {
 
   this.makeNextBlock = function(block, sigFunc, trial, manualValues) {
     return co(function *() {
-      var dal = mainDAL;
       var unsignedBlock = block || (yield that.generateNext());
       var sigF = sigFunc || signature.sync(pair);
       var trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
@@ -1279,11 +1250,11 @@ function BlockchainService (conf, mainDAL, pair) {
         let offset = number - firstLocalNumber;
         return Q(blocks[offset]);
       }
-      return mainDAL.getBlockOrNull(number);
+      return dal.getBlockOrNull(number);
     };
     // Insert a bunch of blocks
-    let lastPrevious = blocks[0].number == 0 ? null : yield mainDAL.getBlock(blocks[0].number - 1);
-    let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield mainDAL.getBlockOrNull(0));
+    let lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
+    let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield dal.getBlockOrNull(0));
     let rootConf = getParameters(rootBlock);
     let maxBlock = getMaxBlocksToStoreAsFile(rootConf);
     let lastBlockToSave = blocks[blocks.length - 1];
@@ -1324,7 +1295,7 @@ function BlockchainService (conf, mainDAL, pair) {
     yield mainContext.updateCertificationsForBlocks(blocks);
     // Create / Update sources
     yield mainContext.updateTransactionSourcesForBlocks(blocks);
-    yield mainDAL.blockDAL.saveBunch(blocks, (targetLastNumber - lastBlockToSave.number) > maxBlock);
+    yield dal.blockDAL.saveBunch(blocks, (targetLastNumber - lastBlockToSave.number) > maxBlock);
     yield pushStatsForBlocks(blocks);
   });
 
@@ -1349,7 +1320,7 @@ function BlockchainService (conf, mainDAL, pair) {
         stat.lastParsedBlock = block.number;
       }
     }
-    return mainDAL.pushStats(stats);
+    return dal.pushStats(stats);
   }
 
   this.obsoleteInMainBranch = (block) => Q.Promise(function(resolve, reject){
@@ -1373,9 +1344,9 @@ function BlockchainService (conf, mainDAL, pair) {
   });
 
   this.getCertificationsExludingBlock = function() {
-    return that.currentDal.getCurrent()
+    return dal.getCurrent()
       .then(function(current){
-        return that.currentDal.getCertificationExcludingBlock(current, conf.sigValidity);
+        return dal.getCertificationExcludingBlock(current, conf.sigValidity);
       })
       .catch(function(){
         return { number: -1 };
@@ -1404,7 +1375,7 @@ function BlockchainService (conf, mainDAL, pair) {
   };
 
   function cleanMemory(done) {
-    mainDAL.blockDAL.migrateOldBlocks()
+    dal.blockDAL.migrateOldBlocks()
       .then(() => done())
       .catch((err) => {
         logger.warn(err);

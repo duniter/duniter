@@ -15,10 +15,6 @@ function TransactionService (conf, dal) {
 
   AbstractService.call(this);
 
-  this.setDAL = function(theDAL) {
-    dal = theDAL;
-  };
-
   this.processTx = (txObj) => this.pushFIFO(() => co(function *() {
     var tx = new Transaction(txObj, conf.currency);
     var existing = yield dal.getTxByHash(tx.hash);

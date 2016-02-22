@@ -15,7 +15,6 @@ var crypto      = require('./app/lib/crypto');
 var signature   = require('./app/lib/signature');
 var directory   = require('./app/lib/directory');
 var dos2unix    = require('./app/lib/dos2unix');
-var INNER_WRITE = true;
 
 function Server (dbConf, overrideConf) {
 
@@ -34,15 +33,7 @@ function Server (dbConf, overrideConf) {
   // Unused, but made mandatory by Duplex interface
   this._read = () => null;
 
-  this._write = function (obj, enc, writeDone, isInnerWrite) {
-    that.submit(obj, isInnerWrite, function (err, res) {
-      if (isInnerWrite) {
-        writeDone(err, res);
-      } else {
-        writeDone();
-      }
-    });
-  };
+  this._write = (obj, enc, writeDone) => that.submit(obj, false, () => writeDone);
 
   this.connectDB = function (useDefaultConf) {
     // Connect only once

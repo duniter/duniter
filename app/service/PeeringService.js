@@ -12,10 +12,13 @@ var dos2unix       = require('../lib/dos2unix');
 var hashf          = require('../lib/hashf');
 var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');
+var AbstractService = require('./AbstractService');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 
 function PeeringService(server, pair, dal) {
+
+  AbstractService.call(this);
 
   var conf = server.conf;
 
@@ -48,16 +51,6 @@ function PeeringService(server, pair, dal) {
     return !!signaturesMatching;
   };
 
-  this.submit = function(peering, eraseIfAlreadyRecorded, done){
-    if (arguments.length == 2) {
-      done = eraseIfAlreadyRecorded;
-      eraseIfAlreadyRecorded = false;
-    }
-    return that.submitP(peering, eraseIfAlreadyRecorded)
-    .then((res) => done(null, res))
-    .catch(done);
-  };
-
   this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
@@ -66,7 +59,7 @@ function PeeringService(server, pair, dal) {
     let sigTime = 0;
     let block;
     let makeCheckings = cautious || cautious === undefined;
-    return co(function *() {
+    return that.pushFIFO(() => co(function *() {
       if (makeCheckings) {
         let goodSignature = that.checkPeerSignature(thePeer);
         if (!goodSignature) {
@@ -107,9 +100,8 @@ function PeeringService(server, pair, dal) {
       peerEntity.last_try = null;
       peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
       yield dal.savePeer(peerEntity);
-      let res = Peer.statics.peerize(peerEntity);
-      return res;
-    });
+      return Peer.statics.peerize(peerEntity);
+    }));
   };
 
   var peerFifo = async.queue(function (task, callback) {
@@ -334,7 +326,7 @@ function PeeringService(server, pair, dal) {
               let blockHash = sp2[1];
               if (!(currentBlockNumber == blockNumber && currentBlockHash == blockHash)) {
                 // The peering changed
-                yield Q.nfcall(that.submit, peering);
+                yield that.submitP(peering);
               }
               // Do not need to display when next check will occur: the node is now UP
               shouldDisplayDelays = false;

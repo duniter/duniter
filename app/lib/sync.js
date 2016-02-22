@@ -186,7 +186,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
             entry.signature = sign;
             watcher.writeStatus('Peer ' + entry.pubkey);
             logger.info('Peer ' + entry.pubkey);
-            return Q.nbind(PeeringService.submit, PeeringService, entry);
+            return PeeringService.submitP(PeeringService, entry);
           }
         }
         else {
@@ -270,7 +270,7 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
         watcher.writeStatus('Wrong signature for peer #' + remoteJsonPeer.pubkey);
       }
       try {
-        yield Q.nfcall(PeeringService.submit, remoteJsonPeer);
+        yield PeeringService.submitP(remoteJsonPeer);
       } catch (err) {
         if (err != constants.ERROR.PEER.ALREADY_RECORDED && err != constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
           throw err;

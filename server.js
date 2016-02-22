@@ -14,7 +14,6 @@ var base58      = require('./app/lib/base58');
 var crypto      = require('./app/lib/crypto');
 var signature   = require('./app/lib/signature');
 var directory   = require('./app/lib/directory');
-var http2raw    = require('./app/lib/streams/parsers/http2raw');
 var dos2unix    = require('./app/lib/dos2unix');
 var INNER_WRITE = true;
 
@@ -33,8 +32,7 @@ function Server (dbConf, overrideConf) {
   var documentsMapping = {};
 
   // Unused, but made mandatory by Duplex interface
-  this._read = function () {
-  };
+  this._read = () => null;
 
   this._write = function (obj, enc, writeDone, isInnerWrite) {
     that.submit(obj, isInnerWrite, function (err, res) {
@@ -67,12 +65,12 @@ function Server (dbConf, overrideConf) {
       if (!obj.documentType) {
         throw 'Document type not given';
       }
-      var action = documentsMapping[obj.documentType];
       try {
+        let action = documentsMapping[obj.documentType];
         let res;
         if (typeof action == 'function') {
           // Handle the incoming object
-          res = yield Q.nbind(action, this)(obj);
+          res = yield action(obj);
         } else {
           throw 'Unknown document type \'' + obj.documentType + '\'';
         }
@@ -81,10 +79,17 @@ function Server (dbConf, overrideConf) {
           that.emit(obj.documentType, _.clone(res));
           that.push(_.clone(res));
         }
-        isInnerWrite ? done(null, res) : done();
+        if (done) {
+          isInnerWrite ? done(null, res) : done();
+        }
+        return res;
       } catch (err) {
         logger.debug(err);
-        isInnerWrite ? done(err, null) : done();
+        if (done) {
+          isInnerWrite ? done(err, null) : done();
+        } else {
+          throw err;
+        }
       }
     });
   };
@@ -304,24 +309,19 @@ function Server (dbConf, overrideConf) {
               'certification': that.IdentityService.submitCertification,
               'revocation':  that.IdentityService.submitRevocation,
               'membership':  that.MembershipService.submitMembership,
-              'peer':        (obj, done) => {
-                that.PeeringService.submitP(obj)
-                  .then((res) => done(null, res))
-                  .catch(done);
-              },
+              'peer':        that.PeeringService.submitP,
               'transaction': that.TransactionsService.processTx,
-              'block':       (obj, done) => {
-                that.BlockchainService.submitBlock(obj, true)
-                  .then(function(block){
-                    that.dal = that.BlockchainService.currentDal;
-                    that.IdentityService.setDAL(that.dal);
-                    that.MembershipService.setDAL(that.dal);
-                    that.PeeringService.setDAL(that.dal);
-                    that.TransactionsService.setDAL(that.dal);
-                    (theRouter && theRouter.setDAL(that.dal));
-                    done(null, block);
-                  })
-                  .catch(done);
+              'block':       (obj) => {
+                return co(function *() {
+                  let block = yield that.BlockchainService.submitBlock(obj, true);
+                  that.dal = that.BlockchainService.currentDal;
+                  that.IdentityService.setDAL(that.dal);
+                  that.MembershipService.setDAL(that.dal);
+                  that.PeeringService.setDAL(that.dal);
+                  that.TransactionsService.setDAL(that.dal);
+                  (theRouter && theRouter.setDAL(that.dal));
+                  return block;
+                });
               }
             };
             that.BlockchainService.init(next);
@@ -373,29 +373,7 @@ function Server (dbConf, overrideConf) {
     that.BlockchainService.revertCurrentBlock();
   });
 
-  this.singleWritePromise = function (obj) {
-    return Q.Promise(function(resolve, reject){
-      new TempStream(that, reject, resolve).write(obj);
-    });
-  };
-
-  function TempStream (parentStream, onError, onSuccess) {
-
-    stream.Duplex.call(this, { objectMode: true });
-
-    var self = this;
-    self._write = function (obj, enc, done) {
-      parentStream._write(obj, enc, function (err, res) {
-        if (err && typeof onError == 'function') onError(err);
-        if (!err && typeof onSuccess == 'function') onSuccess(res);
-        if (res) self.push(res);
-        self.push(null);
-        done();
-      }, INNER_WRITE);
-    };
-    self._read = function () {
-    };
-  }
+  this.singleWritePromise = (obj) => that.submit(obj);
 
   var theRouter;
 
@@ -406,7 +384,6 @@ function Server (dbConf, overrideConf) {
     return theRouter;
   };
 
-  util.inherits(TempStream, stream.Duplex);
 }
 
 util.inherits(Server, stream.Duplex);

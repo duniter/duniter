@@ -1,9 +1,11 @@
 "use strict";
 
-var co     = require('co');
-var Q      = require('q');
-var moment = require('moment');
-var rules  = require('../lib/rules');
+var co              = require('co');
+var Q               = require('q');
+var moment          = require('moment');
+var rules           = require('../lib/rules');
+var Transaction     = require('../lib/entity/transaction');
+var AbstractService = require('./AbstractService');
 
 module.exports = function (conf, dal) {
   return new TransactionService(conf, dal);
@@ -11,32 +13,23 @@ module.exports = function (conf, dal) {
 
 function TransactionService (conf, dal) {
 
-  var Transaction = require('../lib/entity/transaction');
+  AbstractService.call(this);
 
   this.setDAL = function(theDAL) {
     dal = theDAL;
   };
 
-  this.processTx = function (txObj, done) {
+  this.processTx = (txObj) => this.pushFIFO(() => co(function *() {
     var tx = new Transaction(txObj, conf.currency);
-    return co(function *() {
-      var existing = yield dal.getTxByHash(tx.hash);
-      if (existing) {
-        throw 'Transaction already processed';
-      }
-      // Start checks...
-      var transaction = tx.getTransaction();
-      yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(transaction);
-      yield rules.HELPERS.checkSingleTransaction(transaction, { medianTime: moment().utc().unix() }, conf, dal);
-      return dal.saveTransaction(tx);
-    })
-      .then(function(){
-        done && done(null, tx);
-        return tx;
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+    var existing = yield dal.getTxByHash(tx.hash);
+    if (existing) {
+      throw 'Transaction already processed';
+    }
+    // Start checks...
+    var transaction = tx.getTransaction();
+    yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(transaction);
+    yield rules.HELPERS.checkSingleTransaction(transaction, { medianTime: moment().utc().unix() }, conf, dal);
+    yield dal.saveTransaction(tx);
+    return tx;
+  }));
 }

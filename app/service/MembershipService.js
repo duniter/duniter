@@ -4,6 +4,8 @@ var co              = require('co');
 var rules           = require('../lib/rules');
 var hashf           = require('../lib/hashf');
 var constants       = require('../lib/constants');
+var Membership      = require('../lib/entity/membership');
+var AbstractService = require('./AbstractService');
 
 module.exports = function (conf, dal) {
   return new MembershipService(conf, dal);
@@ -11,11 +13,11 @@ module.exports = function (conf, dal) {
 
 function MembershipService (conf, dal) {
 
+  AbstractService.call(this);
+
   var logger = require('../lib/logger')(dal.profile);
 
   this.pair = null;
-
-  var Membership    = require('../lib/entity/membership');
 
   this.setDAL = function(theDAL) {
     dal = theDAL;
@@ -25,7 +27,7 @@ function MembershipService (conf, dal) {
     dal.getCurrentBlockOrNull(done);
   };
 
-  let submitMembershipP = (ms) => co(function *() {
+  this.submitMembership = (ms) => this.pushFIFO(() => co(function *() {
     let entry = new Membership(ms);
     entry.idtyHash = (hashf(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
     logger.info('⬇ %s %s', entry.issuer, entry.membership);
@@ -49,17 +51,5 @@ function MembershipService (conf, dal) {
     yield dal.savePendingMembership(entry);
     logger.info('✔ %s %s', entry.issuer, entry.membership);
     return entry;
-  });
-
-  this.submitMembership = function (ms, done) {
-    return submitMembershipP(ms)
-      .then((saved) => {
-        done && done(null, saved);
-        return saved;
-      })
-      .catch((err) => {
-        done && done(err);
-        throw err;
-      });
-  };
+  }));
 }

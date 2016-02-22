@@ -14,6 +14,7 @@ var base58          = require('../lib/base58');
 var signature       = require('../lib/signature');
 var constants       = require('../lib/constants');
 var blockchainCtx   = require('../lib/blockchainContext');
+var AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
@@ -33,11 +34,9 @@ var computeNextCallback = null;
 // Flag indicating the PoW has begun
 var computing = false;
 
-var blockFifo = async.queue(function (task, callback) {
-  task(callback);
-}, 1);
-
 function BlockchainService (conf, mainDAL, pair) {
+
+  AbstractService.call(this);
 
   var that = this;
   var mainContext = blockchainCtx(conf, mainDAL);
@@ -141,22 +140,7 @@ function BlockchainService (conf, mainDAL, pair) {
     return [];
   }
 
-  this.submitBlock = function (obj, doCheck) {
-    return Q.Promise(function(resolve, reject){
-      // FIFO: only admit one block at a time
-      blockFifo.push(function(blockIsProcessed) {
-        return co(function *() {
-          let res = yield checkAndAddBlock(obj, doCheck);
-          resolve(res);
-          blockIsProcessed();
-        })
-          .catch((err) => {
-            reject(err);
-            blockIsProcessed();
-          });
-      });
-    });
-  };
+  this.submitBlock = (obj, doCheck) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck));
 
   function checkAndAddBlock(obj, doCheck) {
     return co(function *() {
@@ -278,21 +262,7 @@ function BlockchainService (conf, mainDAL, pair) {
     });
   }
 
-  this.revertCurrentBlock = () =>
-    Q.Promise(function(resolve, reject){
-      // FIFO: only admit one block at a time
-      blockFifo.push(function(blockIsProcessed) {
-        return co(function *() {
-          yield mainContext.revertCurrentBlock();
-          resolve();
-          blockIsProcessed();
-        })
-          .catch((err) => {
-            reject(err);
-            blockIsProcessed();
-          });
-      });
-    });
+  this.revertCurrentBlock = () => this.pushFIFO(() => mainContext.revertCurrentBlock());
 
   this.stopPoWThenProcessAndRestartPoW = function (done) {
     // If PoW computation process is waiting, trigger it

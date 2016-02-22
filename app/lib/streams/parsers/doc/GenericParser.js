@@ -9,40 +9,14 @@ var multipleLinesExtract = require('../../../multipleLinesExtract');
 
 module.exports = GenericParser;
 
-function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
+function GenericParser (captures, multipleLinesFields, rawerFunc) {
 
   stream.Transform.call(this, { decodeStrings: false, objectMode: true });
 
   var that = this;
   this.rawerFunc = rawerFunc;
 
-  // Stream way
-  this._write = function (str, enc, done) {
-    doJob(str.toString(), function (err, obj) {
-      if (!err) {
-        // Readable object for piped streams
-        that.push(obj);
-      } else {
-        // Error callback
-        if (typeof onError == 'function')
-          onError(err);
-        that.push(null);
-      }
-      done();
-    });
-  };
-
-  // Async way
-  this.asyncWrite = function (str, done) {
-    doJob(str, done);
-  };
-
-  // Sync way
-  this.syncWrite = function (str) {
-    return doJob(str);
-  };
-
-  function doJob (str, done) {
+  this.syncWrite = (str) => {
     var error;
     var obj = {};
     that._parse(str, obj);
@@ -62,21 +36,11 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
         logger.trace('-----------------');
       }
     }
-    if (typeof done == 'function') return  done(error, obj);
     if (error){
       logger.trace(error);
       throw constants.ERRORS.WRONG_DOCUMENT;
     }
     return obj;
-  }
-
-  this._clean = function (obj) {
-    // To override
-  };
-
-  this._verify = function (obj) {
-    // To override
-    return null;
   };
 
   this._parse = function (str, obj) {
@@ -95,7 +59,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
         let endOffset = str.match(/\n$/) ? 2 : 1;
         obj.signature = sp[sp.length - endOffset];
         obj.hash = hashf(str).toUpperCase();
-        obj.raw = sp.slice(0, sp.length-1).join('\n') + '\n';
+        obj.raw = sp.slice(0, sp.length - 1).join('\n') + '\n';
         var docLF = obj.raw.replace(/\r\n/g, "\n");
         if(docLF.match(/\n$/)){
           captures.forEach(function (cap) {
@@ -112,6 +76,6 @@ function GenericParser (captures, multipleLinesFields, rawerFunc, onError) {
     }
     return error;
   };
-};
+}
 
 util.inherits(GenericParser, stream.Transform);

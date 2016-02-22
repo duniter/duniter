@@ -39,28 +39,26 @@ describe("Block format", function(){
 
   var parser = parsers.parseBlock;
 
-  it('a valid block should be well formatted', function(done){
-    parser.asyncWrite(raw, function (err, obj) {
-      should.not.exist(err);
-      done();
-    });
-  });
+  it('a valid block should be well formatted', () => parser.syncWrite(raw));
 
   describe("should be rejected", function(){
 
-    it('a block without signature', function(done){
-      parser.asyncWrite(raw.replace("mqzcL5FW0ZMz7/aPpV8vLb6KzMYXl3WYI4bdm6Usq34tSgvROoAOp1uSuyqFBHNd7hggfR/8tACCPhkJMVNLCw==\n", ""), function (err, obj) {
+    it('a block without signature', () => {
+      try {
+        parser.syncWrite(raw.replace("mqzcL5FW0ZMz7/aPpV8vLb6KzMYXl3WYI4bdm6Usq34tSgvROoAOp1uSuyqFBHNd7hggfR/8tACCPhkJMVNLCw==\n", ""));
+        should.not.exist('Should have thrown a format error.');
+      } catch (err) {
         should.exist(err);
-        done();
-      });
+      }
     });
 
-    it('a block with wrong pubkey format', function(done){
-      var wrongPubkeyFormat = raw.replace("HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:", "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvY:");
-      parser.asyncWrite(wrongPubkeyFormat, function (err, obj) {
+    it('a block with wrong pubkey format', () => {
+      try {
+        parser.syncWrite(raw.replace("HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:", "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvY:"));
+        should.not.exist('Should have thrown a format error.');
+      } catch (err) {
         should.exist(err);
-        done();
-      });
+      }
     });
   });
   

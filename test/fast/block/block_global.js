@@ -610,10 +610,7 @@ function validate (raw, dal, callback) {
     return Q.Promise(function(resolve, reject){
       async.waterfall([
         function (next){
-          parser.asyncWrite(raw, next);
-        },
-        function (obj, next){
-          block = new Block(obj);
+          block = new Block(parser.syncWrite(raw));
           rules.CHECK.ASYNC.ALL_GLOBAL(block, conf, dal, next);
         }
       ], function (err) {

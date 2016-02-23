@@ -23,7 +23,7 @@
     "no-unused-expressions": 0,
     "comma-spacing": 0,
 
-    "quotes": ["quotes", "double"],
+    "quotes": [2, "double"],
     "linebreak-style": [2,"unix"],
     "mocha/no-exclusive-tests": 2,
     "no-undef": [2],

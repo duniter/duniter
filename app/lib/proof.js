@@ -64,7 +64,7 @@ process.on('message', function(stuff){
               block.inner_hash = getBlockInnerHash(block);
               while(!found && i < testsPerRound) {
                 block.nonce++;
-                raw = rawer.getBlockWithInnerHashAndNonce(block);
+                raw = rawer.getBlockInnerHashAndNonce(block);
                 sig = dos2unix(sigFunc(raw));
                 pow = hash(raw + sig + '\n');
                 found = pow.match(powRegexp);
@@ -112,7 +112,7 @@ function hash(str) {
 
 function computeSpeed(block, sigFunc) {
   var start = new Date();
-  var raw = rawer.getBlockWithInnerHashAndNonce(block);
+  var raw = rawer.getBlockInnerHashAndNonce(block);
   for (var i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
     // Signature
     var sig = dos2unix(sigFunc(raw));

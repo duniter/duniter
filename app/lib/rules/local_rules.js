@@ -62,7 +62,7 @@ rules.FUNCTIONS = {
   }),
 
   checkBlockSignature: (block) => co(function *() {
-    if (!crypto.verify(block.getRaw(), block.signature, block.issuer))
+    if (!crypto.verify(block.getSignedPart(), block.signature, block.issuer))
       throw Error('Block\'s signature must match');
     return true;
   }),

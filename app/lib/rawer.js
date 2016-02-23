@@ -134,6 +134,13 @@ module.exports = new function() {
     return dos2unix(raw);
   };
 
+  this.getBlockInnerHashAndNonce = function (json) {
+    let raw = "" +
+      "InnerHash: " + json.inner_hash + "\n" +
+      "Nonce: " + json.nonce + "\n";
+    return dos2unix(raw);
+  };
+
   this.getBlock = function (json) {
     return dos2unix(signed(that.getBlockWithInnerHashAndNonce(json), json));
   };

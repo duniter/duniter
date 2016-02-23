@@ -112,6 +112,10 @@ function Block(json) {
     return require('../../lib/rawer').getBlockWithInnerHashAndNonce(this);
   };
 
+  this.getSignedPart = function() {
+    return require('../../lib/rawer').getBlockInnerHashAndNonce(this);
+  };
+
   this.getRawSigned = function() {
     return require('../../lib/rawer').getBlock(this);
   };

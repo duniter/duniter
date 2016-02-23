@@ -760,7 +760,7 @@ but also other informations like:
     Transactions:
     COMPACT_TRANSACTION
     ...
-    Hash: BLOCK_HASH
+    InnerHash: BLOCK_HASH
     Nonce: NONCE
     BOTTOM_SIGNATURE
 

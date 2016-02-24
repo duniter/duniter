@@ -85,7 +85,7 @@ module.exports = function(server, interfaces, httpLogs) {
   answerForGetP(  '/blockchain/with/actives',               blockchain.with.actives,              dtos.Stat);
   answerForGetP(  '/blockchain/with/leavers',               blockchain.with.leavers,              dtos.Stat);
   answerForGetP(  '/blockchain/with/excluded',              blockchain.with.excluded,             dtos.Stat);
-  answerForGetP(  '/blockchain/with/revoked',               blockchain.with.revoked,             dtos.Stat);
+  answerForGetP(  '/blockchain/with/revoked',               blockchain.with.revoked,              dtos.Stat);
   answerForGetP(  '/blockchain/with/ud',                    blockchain.with.ud,                   dtos.Stat);
   answerForGetP(  '/blockchain/with/tx',                    blockchain.with.tx,                   dtos.Stat);
   answerForGetP(  '/blockchain/branches',                   blockchain.branches,                  dtos.Branches);

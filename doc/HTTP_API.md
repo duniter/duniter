@@ -10,6 +10,7 @@
       * [summary](#nodesummary)
   * [wot/](#wot)
       * [add](#wotadd)
+      * [certify](#wotcertify)
       * [revoke](#wotrevoke)
       * [lookup/[search]](#wotlookupsearch)
       * [requirements/[PUBKEY]](#wotrequirementspubkey)
@@ -59,6 +60,9 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
 
     http[s]://Node[:port]/...
     |-- wot/
+    |   |-- add
+    |   |-- certify
+    |   |-- revoke
     |   |-- requirements/[pubkey]
     |   |-- certifiers-of/[uid|pubkey]
     |   |-- certified-by/[uid|pubkey]
@@ -240,15 +244,13 @@ Technical informations about the node.
 
 **Goal**
 
-POST [Public key](./Protocol.md#publickey) data.
+POST [Identity](./Protocol.md#identity) data.
 
 **Parameters**
 
 Name  | Value | Method
 ----  | ----- | ------
-`pubkey` | The [public key](./Protocol.md#publickey). | POST
-`self` | The raw self-certification. | POST
-`other` | A list of [inline certifications](./Protocol.md#inlinecertification) separated by new lines. | POST
+`identity` | The raw identity. | POST
 
 **Returns**
 
@@ -260,20 +262,50 @@ The available validated data for this public key.
     {
       "uid": "udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;",
       "meta": {
-        "timestamp": 1409990782
+        "timestamp": "44-76522E321B3380B058DB6D9E66121705EEA63610869A7C5B3E701CF6AF2D55A8"
       },
       "self": "J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci",
       "others": [
         {
           "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
           "meta": {
-            "timestamp": 1509991044
+            "timestamp": "22-2E910FCCCEE008C4B978040CA68211C2395C84C3E6BFB432A267384ED8CD22E5"
           },
           "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
         }
       ]
     }
   ]
+}
+```
+
+#### `wot/certify`
+
+
+**Goal**
+
+POST [Certification](./Protocol.md#certification) data.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`cert` | The raw certification. | POST
+
+**Returns**
+
+The available validated data for this public key.
+```json
+{
+  "issuer": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+  "timestamp": "44-76522E321B3380B058DB6D9E66121705EEA63610869A7C5B3E701CF6AF2D55A8",
+  "sig": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r",
+  "target": {
+    "issuer": "CqwuWfMsPqtUkWdUK6FxV6hPWeHaUfEcz7dFZZJA49BS",
+    "uid": "johnsnow",
+    "timestamp": "44-76522E321B3380B058DB6D9E66121705EEA63610869A7C5B3E701CF6AF2D55A8",
+    "sig": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r",
+  }
 }
 ```
 
@@ -290,9 +322,7 @@ Remove an identity from Identity pool.
 
 Name  | Value | Method
 ----  | ----- | ------
-`pubkey` | The [public key](./Protocol.md#publickey) signing the revokation. | POST
-`self` | The raw self-certification. | POST
-`sig` | The signature of the revokation, without any line-ending. | POST
+`revocation` | The raw revocation. | POST
 
 **Returns**
 
@@ -329,7 +359,7 @@ A list of public key data matching search string (may not return all results, ch
         {
           "uid": "udid2;c;TOCQUEVILLE;FRANCOIS-XAVIER-ROBE;1989-07-14;e+48.84+002.30;0;",
           "meta": {
-            "timestamp": 1409990782
+            "timestamp": "56-97A56CCE04A1B7A03264ADE09545B262CBE65E62DDA481B7D7C89EB4669F5435"
           },
           "self": "J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci",
           "revocation_sig": "CTmlh3tO4B8f8IbL8iDy5ZEr3jZDcxkPmDmRPQY74C39MRLXi0CKUP+oFzTZPYmyUC7fZrUXrb3LwRKWw1jEBQ==",
@@ -338,7 +368,7 @@ A list of public key data matching search string (may not return all results, ch
             {
               "pubkey": "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB",
               "meta": {
-                "timestamp": 1509991044
+                "timestamp": "32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD"
               },
               "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
             }
@@ -350,7 +380,7 @@ A list of public key data matching search string (may not return all results, ch
           "uid": "snow",
           "pubkey": "2P7y2UDiCcvsgSSt8sgHF3BPKS4m9waqKw4yXHCuP6CN",
           "meta": {
-            "timestamp": 1509992000
+            "timestamp": "33-AB30D958EE5CB75186972286ED3F4686B8A1C2CD"
           },
           "revocation_sig": "CK6UDDJM3d0weE1RVtzFJnw/+J507lPAtspleHc59T4+N1tzQj1RRGWrzPiTknCjnCO6SxBSJX0B+MIUWrpNAw==",
           "revoked": false,
@@ -360,7 +390,7 @@ A list of public key data matching search string (may not return all results, ch
           "uid": "snow",
           "pubkey": "2P7y2UDiCcvsgSSt8sgHF3BPKS4m9waqKw4yXHCuP6CN",
           "meta": {
-            "timestamp": 1509992006
+            "timestamp": "978-B38F54242807DFA1A12F17E012D355D8DB92CA6E947FC5D147F131B30C639163"
           },
           "revocation_sig": "a7SFapoVaXq27NU+wZj4afmxp0SbwLGqLJih8pfX6TRKPvNp/V93fbKixbqg10cwa1CadNenztxq3ZgOivqADw==",
           "revoked": false,
@@ -370,7 +400,7 @@ A list of public key data matching search string (may not return all results, ch
           "uid": "snow",
           "pubkey": "7xapQvvxQ6367bs8DsskEf3nvQAgJv97Yu11aPbkCLQj",
           "meta": {
-            "timestamp": 1609994000
+            "timestamp": "76-0DC977717C49E69A78A67C6A1526EC17ED380BC68F0C38D290A954471A1349B7"
           },
           "revocation_sig": "h8D/dx/z5K2dx06ktp7fnmLRdxkdV5wRkJgnmEvKy2k55mM2RyREpHfD7t/1CC5Ew+UD0V9N27PfaoLxZc1KCQ==",
           "revoked": true,
@@ -380,7 +410,7 @@ A list of public key data matching search string (may not return all results, ch
           "uid": "cat",
           "pubkey": "CK2hBp25sYQhdBf9oFMGHyokkmYFfzSCmwio27jYWAN7",
           "meta": {
-            "timestamp": 1422890632
+            "timestamp": "63-999677597FC04E6148860AE888A2E1942DF0E1E732C31500BA8EFF07F06FEC0C"
           },
           "revocation_sig": "bJyoM2Tz4hltVXkLvYHOOmLP4qqh2fx7aMLkS5q0cMoEg5AFER3iETj13uoFyhz8yiAKESyAZSDjjQwp8A1QDw==",
           "revoked": false,
@@ -441,7 +471,7 @@ A list of identities matching this pubkey and the requirements of each identitie
   "identities": [{
       "uid": "tobi",
       "meta": {
-        "timestamp": 1409990782
+        "timestamp": "12-20504546F37853625C1E695B757D93CFCC6E494069D53F73748E428947933E45"
       },
       "outdistanced": true,
       "certifications": 2,
@@ -569,7 +599,7 @@ Identity data written in the blockchain.
 {
   "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
   "uid": "user identifier",
-  "sigDate": 1390739944
+  "sigDate": "21-EB18A8D89256EA80195990C91AD399B798F92EE8187F775DF7F4823C46E61F00"
 }
 ```
 
@@ -595,6 +625,8 @@ The synchronization parameters.
   dt: 302400,
   ud0: 100,
   sigPeriod: 7200,
+  sigStock: 45,
+  sigWindow: 604800,
   sigValidity: 2629800,
   sigQty: 3,
   xpercent: 5,
@@ -720,6 +752,7 @@ The promoted block if it exists (otherwise return HTTP 404).
   "version": 2,
   "currency": "beta_brouzouf",
   "nonce": 28,
+  "inner_hash": "FD09B0F7CEC5A575CA6E528DC4C854B612AE77B7283F48E0D28677F5C9C9D0DD",
   "number": 1,
   "time": 1408996317,
   "medianTime": 1408992543,
@@ -739,6 +772,9 @@ The promoted block if it exists (otherwise return HTTP 404).
   "leavers": [
     "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk:1505004141"
   ],
+  "revoked": [
+    "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX"
+  ],
   "excluded": [
     "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
   ],
@@ -751,26 +787,34 @@ The promoted block if it exists (otherwise return HTTP 404).
         "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
         "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX",
         "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk"
-    ],
-      "version": 2,
-      "currency": "beta_brouzouf",
-      "issuers": [
-        "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
-        "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
-        "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
       ],
-      "inputs": [
-        "0:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:30",
-        "0:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:5",
-        "0:D:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:100",
-        "1:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:40",
-        "2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:50",
-        "2:D:521A760049DF4FAA602FEF86B7A8E306654502FA3A345F6169B8468B81E71AD3:10"
-     ],
+        "version": 2,
+        "currency": "beta_brouzouf",
+        "issuers": [
+          "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+          "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
+          "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
+        ],
+        "inputs": [
+          "T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0",
+          "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:0",
+          "D:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:243",
+          "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:1",
+          "T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:0",
+          "D:521A760049DF4FAA602FEF86B7A8E306654502FA3A345F6169B8468B81E71AD3:187"
+       ],
+       "unlocks": [
+          "0:SIG(0)",
+          "1:SIG(2)",
+          "2:SIG(1)",
+          "3:SIG(1)",
+          "4:SIG(0)",
+          "5:SIG(0)"
+       ],
       "outputs": [
-        "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30",
-        "DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156",
-        "6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49"
+        "30:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)",
+        "156:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)",
+        "49:SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i)"
       ]
     }
   ],
@@ -1225,30 +1269,39 @@ The recorded transaction.
   "raw": "Version: 2\r\n...\r\n",
   "transaction":
   {
-    "signatures": [
-      "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
-  ],
-    "version": 2,
-    "currency": "beta_brouzouf",
-    "issuers": [
-      "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
-      "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
-      "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
-    ],
-    "inputs": [
-      "0:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3",
-      "0:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435",
-      "0:D:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF",
-      "0:F:2B53C3BE2DEA6A74C41DC6A44EEAB8BD4DC47097",
-      "1:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435",
-      "2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B",
-      "2:D:521A760049DF4FAA602FEF86B7A8E306654502FA3A345F6169B8468B81E71AD3"
-    ],
-    "outputs": [
-      "BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g:30",
-      "DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx:156",
-      "6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i:49"
-    ]
+      "signatures": [
+        "H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw=="
+        "2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX",
+        "2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk"
+      ],
+        "version": 2,
+        "currency": "beta_brouzouf",
+        "issuers": [
+          "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
+          "CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp",
+          "9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB"
+        ],
+        "inputs": [
+          "T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0",
+          "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:0",
+          "D:4745EEBA84D4E3C2BDAE4768D4E0F5A671531EE1B0B9F5206744B4551C664FDF:243",
+          "T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:1",
+          "T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:0",
+          "D:521A760049DF4FAA602FEF86B7A8E306654502FA3A345F6169B8468B81E71AD3:187"
+       ],
+       "unlocks": [
+          "0:SIG(0)",
+          "1:SIG(2)",
+          "2:SIG(1)",
+          "3:SIG(1)",
+          "4:SIG(0)",
+          "5:SIG(0)"
+       ],
+      "outputs": [
+        "30:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)",
+        "156:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)",
+        "49:SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i)"
+      ]
   }
 }
 ```
@@ -1276,20 +1329,20 @@ A list of available sources for the given `pubkey`.
   "sources": [
     {
       "type: "D",
-      "number": 5,
-      "fingerprint": "6C20752F6AD06AEA8D0BB46BB8C4F68641A34C79",
+      "noffset": 5,
+      "identifier": "6C20752F6AD06AEA8D0BB46BB8C4F68641A34C79",
       "amount": 100
     },
     {
       "type: "D",
-      "number": 18,
-      "fingerprint": "DB7D88E795E42CF8CFBFAAFC77379E97847F9B42",
+      "noffset": 18,
+      "identifier": "DB7D88E795E42CF8CFBFAAFC77379E97847F9B42",
       "amount": 110
     },
     {
       "type: "T",
-      "number": 55,
-      "fingerprint": "E614E814179F313B1113475E6319EF4A3D470AD0",
+      "noffset": 55,
+      "identifier": "E614E814179F313B1113475E6319EF4A3D470AD0",
       "amount": 30
     }
   ]
@@ -1324,11 +1377,11 @@ The full transaction history for the given `pubkey`
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
         "inputs": [
-          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+          "D:000A8362AE0C1B8045569CE07735DE4C18E81586:125"
         ],
         "outputs": [
-          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:5",
-          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:95"
+          "5:SIG(8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU)",
+          "95:SIG(HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk)"
         ],
         "comment": "Essai",
         "signatures": [
@@ -1346,11 +1399,11 @@ The full transaction history for the given `pubkey`
           "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
         ],
         "inputs": [
-          "0:D:125:000A8362AE0C1B8045569CE07735DE4C18E81586:100"
+          "D:000A8362AE0C1B8045569CE07735DE4C18E81586:125"
         ],
         "outputs": [
-          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:7",
-          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:93"
+          "7:SIG(HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk)",
+          "93:SIG(8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU)"
         ],
         "comment": "",
         "signatures": [
@@ -1366,11 +1419,11 @@ The full transaction history for the given `pubkey`
           "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
         ],
         "inputs": [
-          "0:T:15128:6A50FF82410387B239489CE38B34E0FDDE1697FE:10000"
+          "T:6A50FF82410387B239489CE38B34E0FDDE1697FE:0"
         ],
         "outputs": [
-          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:42",
-          "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3:9958"
+          "42:SIG(HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk)",
+          "9958:SIG(J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3)"
         ],
         "comment": "",
         "signatures": [

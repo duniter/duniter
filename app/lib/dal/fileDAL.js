@@ -113,15 +113,9 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
 
   var currency = '';
 
-  this.init = (overrideConf, defaultConf) => {
-    return co(function *() {
-      yield _.values(that.newDals).map((dal) => dal.init());
-      return that.loadConf(overrideConf, defaultConf);
-    })
-      .catch((err) => {
-        throw Error(err);
-      });
-  };
+  this.init = () => co(function *() {
+    yield _.values(that.newDals).map((dal) => dal.init());
+  });
 
   this.getCurrency = function() {
     return currency;

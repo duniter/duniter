@@ -1,22 +1,16 @@
 "use strict";
 var co        = require('co');
 var Q         = require('q');
-var wizard    = require('./wizard');
 var constants = require('./constants');
-var os        = require('os');
+var network   = require('./network');
 var async     = require('async');
 var _         = require('underscore');
 var inquirer  = require('inquirer');
-var request   = require('request');
-var upnp      = require('nnupnp');
 var logger    = require('../lib/logger')('wizard');
 
 module.exports = function () {
   return new Wizard();
 };
-
-var IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
 function Wizard () {
 
@@ -232,51 +226,14 @@ function simpleFloat (question, property, conf, done) {
   }, done);
 }
 
-function getRandomPort() {
-  return ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
-}
-
 function upnpResolve(noupnp, done) {
-  var conf = {};
-  var client = upnp.createClient();
-  var privateIP = null, publicIP = null;
-  // Look for 2 random ports
-  var privatePort = getRandomPort();
-  var publicPort = privatePort;
-  logger.info('Checking UPnP features...');
-  async.waterfall([
-    function (next) {
-      if (noupnp) {
-        return next('No UPnP');
-      }
-      client.externalIp(next);
-    },
-    function (ip, next) {
-      publicIP = ip;
-      next();
-    },
-    function(next) {
-      client.portMapping({
-        public: publicPort,
-        private: privatePort,
-        ttl: 120
-      }, next);
-    },
-    function(res, next) {
-      client.findGateway(next);
-    },
-    function(res, localIP, next) {
-      privateIP = localIP;
-      conf.remoteipv4 = publicIP.match(IPV4_REGEXP) ? publicIP : null;
-      conf.remoteipv6 = publicIP.match(IPV6_REGEXP) ? publicIP : null;
-      conf.remoteport = publicPort;
-      conf.port = privatePort;
-      conf.ipv4 = privateIP.match(IPV4_REGEXP) ? privateIP : null;
-      conf.ipv6 = privateIP.match(IPV6_REGEXP) ? privateIP : null;
-      next();
+  return co(function *() {
+    try {
+      let conf = yield network.upnpConf(noupnp);
+      done(null, false, conf);
+    } catch (err) {
+      done(null, true, {});
     }
-  ], function(err) {
-    done(null, !err, conf);
   });
 }
 
@@ -380,14 +337,14 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
 function getLocalNetworkOperations(conf, autoconf) {
   return [
     function (next){
-      var osInterfaces = os.networkInterfaces();
+      var osInterfaces = network.listInterfaces();
       var interfaces = [{ name: "None", value: null }];
-      _(osInterfaces).keys().forEach(function(interfaceName){
-        var addresses = osInterfaces[interfaceName];
+      osInterfaces.forEach(function(netInterface){
+        var addresses = netInterface.addresses;
         var filtered = _(addresses).where({family: 'IPv4'});
         filtered.forEach(function(addr){
           interfaces.push({
-            name: [interfaceName, addr.address].join(' '),
+            name: [netInterface.name, addr.address].join(' '),
             value: addr.address
           });
         });
@@ -418,14 +375,14 @@ function getLocalNetworkOperations(conf, autoconf) {
       });
     },
     function (next){
-      var osInterfaces = os.networkInterfaces();
+      var osInterfaces = network.listInterfaces();
       var interfaces = [{ name: "None", value: null }];
-      _(osInterfaces).keys().forEach(function(interfaceName){
-        var addresses = osInterfaces[interfaceName];
+      osInterfaces.forEach(function(netInterface){
+        var addresses = netInterface.addresses;
         var filtered = _(addresses).where({family: 'IPv6'});
         filtered.forEach(function(addr){
           interfaces.push({
-            name: [interfaceName, addr.address].join(' '),
+            name: [netInterface.name, addr.address].join(' '),
             value: addr.address
           });
         });
@@ -456,7 +413,7 @@ function getLocalNetworkOperations(conf, autoconf) {
       });
     },
     autoconf ? (done) => {
-      conf.port = getRandomPort();
+      conf.port = network.getRandomPort();
       done();
     } : async.apply(simpleInteger, "Port", "port", conf)
   ];
@@ -467,13 +424,13 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
     function (next){
       var choices = [{ name: "None", value: null }];
       // Local interfaces
-      var osInterfaces = os.networkInterfaces();
-      _(osInterfaces).keys().forEach(function(interfaceName){
-        var addresses = osInterfaces[interfaceName];
+      var osInterfaces = network.listInterfaces();
+      osInterfaces.forEach(function(netInterface){
+        var addresses = netInterface.addresses;
         var filtered = _(addresses).where({family: 'IPv4'});
         filtered.forEach(function(addr){
           choices.push({
-            name: [interfaceName, addr.address].join(' '),
+            name: [netInterface.name, addr.address].join(' '),
             value: addr.address
           });
         });
@@ -492,7 +449,7 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
         default: conf.remoteipv4 || conf.ipv4 || null,
         choices: choices,
         validate: function (input) {
-          return input && input.toString().match(IPV4_REGEXP) ? true : false;
+          return input && input.toString().match(constants.IPV4_REGEXP) ? true : false;
         }
       }], function (answers) {
         if (answers.remoteipv4 == "new") {
@@ -502,7 +459,7 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
             message: "Remote IPv4",
             default: conf.remoteipv4 || conf.ipv4,
             validate: function (input) {
-              return input && input.toString().match(IPV4_REGEXP) ? true : false;
+              return input && input.toString().match(constants.IPV4_REGEXP) ? true : false;
             }
           }], async.apply(next, null));
         } else {
@@ -527,7 +484,7 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
         default: conf.remoteipv6 || null,
         choices: choices,
         validate: function (input) {
-          return input && input.toString().match(IPV6_REGEXP) ? true : false;
+          return input && input.toString().match(constants.IPV6_REGEXP) ? true : false;
         }
       }], function (answers) {
         if (answers.remoteipv6 == "new") {
@@ -537,7 +494,7 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
             message: "Remote IPv6",
             default: conf.remoteipv6 || conf.ipv6,
             validate: function (input) {
-              return input && input.toString().match(IPV6_REGEXP) ? true : false;
+              return input && input.toString().match(constants.IPV6_REGEXP) ? true : false;
             }
           }], function (answers) {
             conf.remoteipv6 = answers.remoteipv6;

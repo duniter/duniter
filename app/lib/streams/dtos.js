@@ -363,3 +363,12 @@ dtos.UDHistory = {
     "history": [dtos.UD]
   }
 };
+
+dtos.NetworkInterface = {
+  "name": String,
+  "addresses": [String]
+};
+
+dtos.NetworkInterfaces = {
+  "interfaces": [dtos.NetworkInterface]
+};

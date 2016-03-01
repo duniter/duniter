@@ -43,6 +43,7 @@ function Server (dbConf, overrideConf) {
   this.initWithServices = function (done) {
     // Init services only once
     return servicesPromise || (servicesPromise = that.connectDB()
+        .then(() => that.initDAL())
         .then(that.initServices)
         .then(function(err) {
           done && done(err);
@@ -87,51 +88,47 @@ function Server (dbConf, overrideConf) {
 
   this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
 
-  this.connect = function (useDefaultConf) {
-    // Init connection
-    if (that.dal) {
-      return Q();
-    }
-    var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
-    return dbType(home)
-      .then(function(dal){
-        that.dal = dal;
-        return that.dal.init(overrideConf, useDefaultConf);
-      })
-      .then(function(conf){
-        that.conf = conf;
-        // Default values
-        var defaultValues = {
-          remoteipv6:         that.conf.ipv6,
-          remoteport:         that.conf.port,
-          cpu:                1,
-          c:                  constants.CONTRACT.DEFAULT.C,
-          dt:                 constants.CONTRACT.DEFAULT.DT,
-          ud0:                constants.CONTRACT.DEFAULT.UD0,
-          stepMax:            constants.CONTRACT.DEFAULT.STEPMAX,
-          sigPeriod:          constants.CONTRACT.DEFAULT.SIGPERIOD,
-          sigStock:           constants.CONTRACT.DEFAULT.SIGSTOCK,
-          sigWindow:          constants.CONTRACT.DEFAULT.SIGWINDOW,
-          sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
-          msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
-          sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,
-          xpercent:           constants.CONTRACT.DEFAULT.X_PERCENT,
-          percentRot:         constants.CONTRACT.DEFAULT.PERCENTROT,
-          blocksRot:          constants.CONTRACT.DEFAULT.BLOCKSROT,
-          powDelay:           constants.CONTRACT.DEFAULT.POWDELAY,
-          avgGenTime:         constants.CONTRACT.DEFAULT.AVGGENTIME,
-          dtDiffEval:         constants.CONTRACT.DEFAULT.DTDIFFEVAL,
-          medianTimeBlocks:   constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
-          rootoffset:         0,
-          forksize:           constants.BRANCHES.DEFAULT_WINDOW_SIZE
-        };
-        _.keys(defaultValues).forEach(function(key){
-          if (that.conf[key] == undefined) {
-            that.conf[key] = defaultValues[key];
-          }
-        });
+  this.connect = (useDefaultConf) => co(function *() {
+    if (!that.dal) {
+      // Init connection
+      var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
+      that.dal = yield dbType(home);
+      that.conf = yield that.dal.loadConf(overrideConf, useDefaultConf);
+      // Default values
+      var defaultValues = {
+        remoteipv6:         that.conf.ipv6,
+        remoteport:         that.conf.port,
+        cpu:                1,
+        c:                  constants.CONTRACT.DEFAULT.C,
+        dt:                 constants.CONTRACT.DEFAULT.DT,
+        ud0:                constants.CONTRACT.DEFAULT.UD0,
+        stepMax:            constants.CONTRACT.DEFAULT.STEPMAX,
+        sigPeriod:          constants.CONTRACT.DEFAULT.SIGPERIOD,
+        sigStock:           constants.CONTRACT.DEFAULT.SIGSTOCK,
+        sigWindow:          constants.CONTRACT.DEFAULT.SIGWINDOW,
+        sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
+        msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
+        sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,
+        xpercent:           constants.CONTRACT.DEFAULT.X_PERCENT,
+        percentRot:         constants.CONTRACT.DEFAULT.PERCENTROT,
+        blocksRot:          constants.CONTRACT.DEFAULT.BLOCKSROT,
+        powDelay:           constants.CONTRACT.DEFAULT.POWDELAY,
+        avgGenTime:         constants.CONTRACT.DEFAULT.AVGGENTIME,
+        dtDiffEval:         constants.CONTRACT.DEFAULT.DTDIFFEVAL,
+        medianTimeBlocks:   constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
+        rootoffset:         0,
+        forksize:           constants.BRANCHES.DEFAULT_WINDOW_SIZE
+      };
+      _.keys(defaultValues).forEach(function(key){
+        if (that.conf[key] == undefined) {
+          that.conf[key] = defaultValues[key];
+        }
       });
-  };
+    }
+    return that.conf;
+  });
+
+  this.initDAL = () => this.dal.init();
 
   this.start = function () {
     return that.checkConfig()
@@ -274,6 +271,7 @@ function Server (dbConf, overrideConf) {
       that.pair = pair;
       that.sign = signature.asyncSig(pair);
       that.servicesInited = true;
+      // TODO: migrer en début de code + utiliser les setConf et setDAL pour changer ces 2 paramètres
       that.MerkleService       = require("./app/service/MerkleService");
       that.ParametersService   = require("./app/service/ParametersService")();
       that.IdentityService     = require('./app/service/IdentityService')(that.conf, that.dal);

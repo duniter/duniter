@@ -20,18 +20,11 @@ var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
 var Synchroniser = require('../app/lib/sync');
-var bma         = require('../app/lib/streams/bma');
-var upnp        = require('../app/lib/upnp');
 var pjson       = require('../package.json');
 var ucoin       = require('./../index');
 var Peer        = require('../app/lib/entity/peer');
 var Block       = require('../app/lib/entity/block');
 
-function keys (val) {
-  return val.split(',');
-}
-
-const INTERACTIVE_SYNC = true;
 const ERASE_IF_ALREADY_RECORDED = true;
 const NO_LOGS = true;
 
@@ -471,33 +464,7 @@ function resetDone(server, msg) {
 
 function serverStart(server, conf) {
 
-  return co(function *() {
-    // Enabling HTTP
-    yield bma(server, null, conf.httplogs);
-    // Enabling Routing
-    if (server.conf.routing) {
-      server
-        // The router asks for multicasting of documents
-        .pipe(server.router())
-        // The documents get sent to peers
-        .pipe(multicaster(server.conf.isolate))
-        // The multicaster may answer 'unreachable peer'
-        .pipe(server.router());
-    }
-    // Enabling UPnP
-    if (conf.upnp) {
-      yield upnp(server.conf.port, server.conf.remoteport)
-        .catch(function(err){
-          logger.warn(err);
-        });
-    }
-    if (conf.participate) {
-      server.startBlockComputation();
-    }
-    // Launching server
-    server.start();
-    logger.info('Server ready!');
-  })
+  return ucoin.statics.startNode(server, conf)
     .catch((err) => {
       logger.error(err);
       server.disconnect();
@@ -749,7 +716,6 @@ function service(callback, nologs) {
 
     // Add log files for this instance
     logger.addHomeLogs(directory.getHome(dbName, dbHome));
-    logger.info(">> NODE STARTING");
 
     var server = ucoin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf());
 

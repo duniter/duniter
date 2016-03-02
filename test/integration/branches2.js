@@ -57,8 +57,8 @@ describe("SelfFork", function() {
     var commitS2 = commit(s2);
 
     return Q.all([
-      s1.initWithServices().then(bma),
-      s2.initWithServices().then(bma),
+      s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections()),
+      s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections()),
     ])
 
       .then(function(){

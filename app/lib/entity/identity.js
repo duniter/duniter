@@ -23,6 +23,7 @@ var Identity = function(json) {
     that[key] = json[key];
   });
 
+  this.issuer = this.pubkey = (this.issuer || this.pubkey);
   this.kick = !!this.kick;
   this.wasMember = !!this.wasMember;
   this.written = this.written || this.wasMember;

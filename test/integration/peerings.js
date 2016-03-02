@@ -85,14 +85,17 @@ describe("Network", function() {
       return p
         .then(function(){
           return server
-            .initWithServices()
+            .initWithDAL()
             .then(bma)
             .then(function(bmaAPI){
-              server.bma = bmaAPI;
-              server
-                .pipe(server.router()) // The router asks for multicasting of documents
-                .pipe(multicaster())
-                .pipe(server.router());
+              return bmaAPI.openConnections()
+                .then(() => {
+                  server.bma = bmaAPI;
+                  server
+                    .pipe(server.router()) // The router asks for multicasting of documents
+                    .pipe(multicaster())
+                    .pipe(server.router());
+                });
             })
             .then(function(){
               return server.start();
@@ -137,7 +140,7 @@ describe("Network", function() {
           // Server 2 syncs block number 2 (it did not have it)
           yield sync(2, 2, s1, s2);
           yield s2.recomputeSelfPeer();
-          yield s2.bma.reopenConnections();
+          yield s2.bma.openConnections();
           yield [
             until(s2, 'block', 2),
             until(s3, 'block', 2),

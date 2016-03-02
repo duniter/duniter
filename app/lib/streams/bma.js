@@ -11,19 +11,22 @@ let WebSocketServer = require('ws').Server;
 module.exports = function(server, interfaces, httpLogs) {
 
   if (!interfaces) {
-    interfaces = [{
-      ip: server.conf.ipv4,
-      port: server.conf.port
-    }];
-    if (server.conf.ipv6) {
-      interfaces.push({
-        ip: server.conf.ipv6,
+    interfaces = [];
+    if (server.conf) {
+      interfaces = [{
+        ip: server.conf.ipv4,
         port: server.conf.port
-      });
+      }];
+      if (server.conf.ipv6) {
+        interfaces.push({
+          ip: server.conf.ipv6,
+          port: server.conf.port
+        });
+      }
     }
   }
 
-  return network.createServersAndListen(interfaces, httpLogs, (app, httpMethods) => {
+  return network.createServersAndListen('uCoin server', interfaces, httpLogs, (app, httpMethods) => {
 
     var node         = require('../../controllers/node')(server);
     var blockchain   = require('../../controllers/blockchain')(server);
@@ -88,7 +91,11 @@ module.exports = function(server, interfaces, httpLogs) {
     });
 
     wssBlock.on('connection', function connection(ws) {
-      ws.send(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+      co(function *() {
+        currentBlock = yield server.dal.getCurrent();
+        wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+        ws.send(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+      });
     });
 
     wssBlock.broadcast = (data) => wssBlock.clients.forEach((client) => client.send(data));
@@ -107,10 +114,5 @@ module.exports = function(server, interfaces, httpLogs) {
           wssPeer.broadcast(JSON.stringify(sanitize(data, dtos.Peer)));
         }
       }));
-
-    return co(function *() {
-      currentBlock = yield server.dal.getCurrent();
-      wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
-    });
   });
 };

@@ -7,25 +7,26 @@ var hashf           = require('./hashf');
 var rawer           = require('./rawer');
 var constants       = require('./constants');
 var rules           = require('./rules');
+var Identity        = require('./entity/identity');
+var Certification   = require('./entity/certification');
+var Membership      = require('./entity/membership');
+var Block           = require('./entity/block');
+var Link            = require('./entity/link');
+var Source          = require('./entity/source');
+var Transaction     = require('./entity/transaction');
 
-module.exports = function(conf, dal) {
-  return new BlockchainContext(conf, dal);
-};
+module.exports = () => new BlockchainContext();
 
-function BlockchainContext(conf, dal) {
+function BlockchainContext() {
 
   var that = this;
-  var logger = require('../lib/logger')(dal.profile);
+  var conf, dal, logger;
 
-  var Identity      = require('./entity/identity');
-  var Certification = require('./entity/certification');
-  var Membership    = require('./entity/membership');
-  var Block         = require('./entity/block');
-  var Link          = require('./entity/link');
-  var Source        = require('./entity/source');
-  var Transaction   = require('./entity/transaction');
-
-  this.dal = dal;
+  this.setConfDAL = (newConf, newDAL) => {
+    dal = newDAL;
+    conf = newConf;
+    logger = require('../lib/logger')(dal.profile);
+  };
 
   this.checkBlock = function(block, withPoWAndSignature, done) {
     return Q.Promise(function(resolve, reject){

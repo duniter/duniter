@@ -71,8 +71,9 @@ describe("Generation", function() {
       let servers = [s1, s2];
       for (let i = 0; i < servers.length; i++) {
         let server = servers[i];
-        yield server.initWithServices();
+        yield server.initWithDAL();
         server.bma = yield bma(server);
+        yield server.bma.openConnections();
         server
           .pipe(server.router()) // The router asks for multicasting of documents
           .pipe(multicaster())

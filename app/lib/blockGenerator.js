@@ -4,26 +4,32 @@ var _               = require('underscore');
 var co              = require('co');
 var Q               = require('q');
 var moment          = require('moment');
+var inquirer        = require('inquirer');
 var hashf           = require('./hashf');
 var constants       = require('./constants');
-var inquirer        = require('inquirer');
+var base58          = require('./base58');
 var rules           = require('./rules');
-var signature       = require('../lib/signature');
+var signature       = require('./signature');
+var Identity        = require('./entity/identity');
+var Certification   = require('./entity/certification');
+var Membership      = require('./entity/membership');
+var Block           = require('./entity/block');
+var Transaction     = require('./entity/transaction');
 
-module.exports = function(conf, dal, mainContext, selfPubkey, pair, prover) {
-  return new BlockGenerator(conf, dal, mainContext, selfPubkey, pair, prover);
-};
+module.exports = (mainContext, prover) => new BlockGenerator(mainContext, prover);
 
-function BlockGenerator(conf, dal, mainContext, selfPubkey, pair, prover) {
+function BlockGenerator(mainContext, prover) {
 
   var that = this;
-  var logger = require('../lib/logger')(dal.profile);
+  var conf, dal, pair, selfPubkey, logger;
 
-  var Identity      = require('./entity/identity');
-  var Certification = require('./entity/certification');
-  var Membership    = require('./entity/membership');
-  var Block         = require('./entity/block');
-  var Transaction   = require('./entity/transaction');
+  this.setConfDAL = (newConf, newDAL, newPair) => {
+    dal = newDAL;
+    conf = newConf;
+    pair = newPair;
+    selfPubkey = base58.encode(pair.publicKey);
+    logger = require('../lib/logger')(dal.profile);
+  };
 
   this.nextBlock = () => generateNextBlock(new NextBlockGenerator(conf, dal));
 
@@ -539,7 +545,7 @@ function BlockGenerator(conf, dal, mainContext, selfPubkey, pair, prover) {
     var joiners = _(joinData).keys();
     var previousCount = current ? current.membersCount : 0;
     if (joiners.length == 0 && !current) {
-      throw 'Wrong new block: cannot make a root block without members';
+      throw constants.ERRORS.CANNOT_ROOT_BLOCK_NO_MEMBERS;
     }
     // Newcomers
     block.identities = [];

@@ -7,17 +7,19 @@ var constants       = require('../lib/constants');
 var Membership      = require('../lib/entity/membership');
 var AbstractService = require('./AbstractService');
 
-module.exports = function (conf, dal) {
-  return new MembershipService(conf, dal);
-};
+module.exports = () => new MembershipService();
 
-function MembershipService (conf, dal) {
+function MembershipService () {
 
   AbstractService.call(this);
 
-  var logger = require('../lib/logger')(dal.profile);
+  var conf, dal, logger;
 
-  this.pair = null;
+  this.setConfDAL = (newConf, newDAL) => {
+    dal = newDAL;
+    conf = newConf;
+    logger = require('../lib/logger')(dal.profile);
+  };
 
   this.current = function (done) {
     dal.getCurrentBlockOrNull(done);

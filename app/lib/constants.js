@@ -56,6 +56,7 @@ module.exports = {
     HTTP_PARAM_SIG_REQUIRED:              { httpCode: 400, uerr: { ucode: 1107, message: "Parameter `sig` is required" }},
     HTTP_PARAM_CERT_REQUIRED:             { httpCode: 400, uerr: { ucode: 1108, message: "Parameter `cert` is required" }},
     HTTP_PARAM_REVOCATION_REQUIRED:       { httpCode: 400, uerr: { ucode: 1109, message: "Parameter `revocation` is required" }},
+    HTTP_PARAM_CONF_REQUIRED:             { httpCode: 400, uerr: { ucode: 1110, message: "Parameter `conf` is required" }},
 
     // Business errors
     NO_MATCHING_IDENTITY:                 { httpCode: 404, uerr: { ucode: 2001, message: "No matching identity" }},
@@ -74,7 +75,8 @@ module.exports = {
     LOCKTIME_PREVENT:                     { httpCode: 400, uerr: { ucode: 2014, message: "Locktime not elapsed yet" }},
     SOURCE_ALREADY_CONSUMED:              { httpCode: 400, uerr: { ucode: 2015, message: "Source already consumed" }},
     WRONG_AMOUNTS:                        { httpCode: 400, uerr: { ucode: 2016, message: "Sum of inputs must equal sum of outputs" }},
-    WRONG_OUTPUT_BASE:                    { httpCode: 400, uerr: { ucode: 2017, message: "Wrong unit base for outputs" }}
+    WRONG_OUTPUT_BASE:                    { httpCode: 400, uerr: { ucode: 2017, message: "Wrong unit base for outputs" }},
+    CANNOT_ROOT_BLOCK_NO_MEMBERS:         { httpCode: 400, uerr: { ucode: 2018, message: "Wrong new block: cannot make a root block without members" }}
   },
 
   DEBUG: {
@@ -261,6 +263,13 @@ module.exports = {
     },
 
     DSEN_P: 1.2 // dSen proportional factor
+  },
+
+  CRYPTO: {
+    DEFAULT_KEYPAIR: {
+      pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+      sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+    }
   },
 
   BRANCHES: {

@@ -14,14 +14,25 @@ module.exports = function (dbConf, overConf) {
 
 module.exports.statics = {
 
+  enableHttpAdmin: (dbConf, overConf, httpLogs) => webmin(dbConf, overConf, [{
+    ip: 'localhost',
+    port: 9220
+  }], httpLogs !== false),
+
   startNode: (server, conf) => co(function *() {
 
     logger.info(">> NODE STARTING");
 
-    /***************
-     * HTTP BINDING
-     **************/
+    // Public http interface
     yield bma(server, null, conf.httplogs);
+
+    // Services
+    yield module.exports.startServices(server);
+
+    logger.info('>> Server ready!');
+  }),
+
+  startServices: (server) => co(function *() {
 
     /***************
      * HTTP ROUTING
@@ -39,7 +50,7 @@ module.exports.statics = {
     /***************
      *    UPnP
      **************/
-    if (conf.upnp) {
+    if (server.conf.upnp) {
       yield upnp(server.conf.port, server.conf.remoteport)
         .catch(function(err){
           logger.warn(err);
@@ -49,7 +60,7 @@ module.exports.statics = {
     /*******************
      * BLOCK COMPUTING
      ******************/
-    if (conf.participate) {
+    if (server.conf.participate) {
       server.startBlockComputation();
     }
 
@@ -58,6 +69,6 @@ module.exports.statics = {
      **********************/
     server.start();
 
-    logger.info('>> Server ready!');
+    return {};
   })
 };

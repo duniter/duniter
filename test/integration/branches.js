@@ -88,10 +88,10 @@ describe("Branches", function() {
     var commitS4 = commit(s4);
 
     return Q.all([
-      s1.initWithServices().then(bma),
-      s2.initWithServices().then(bma),
-      s3.initWithServices().then(bma),
-      s4.initWithServices().then(bma)
+      s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections()),
+      s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections()),
+      s3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections()),
+      s4.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections())
     ])
 
       .then(function(){

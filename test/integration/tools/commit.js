@@ -7,7 +7,7 @@ var logger = require('../../../app/lib/logger')('test');
 module.exports = function makeBlockAndPost(theServer) {
   return function(manualValues) {
     return co(function *() {
-      let proven = yield theServer.makeNextBlock(manualValues);
+      let proven = yield theServer.doMakeNextBlock(manualValues);
       return postBlock(theServer)(proven);
     });
   };

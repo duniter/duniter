@@ -159,7 +159,8 @@ function Node (dbName, options) {
         return bma(server, [{
           ip: server.conf.ipv4,
           port: server.conf.port
-        }]);
+        }])
+          .then((bmapi) => bmapi.openConnections());
       });
   };
 
@@ -170,7 +171,7 @@ function Node (dbName, options) {
       var server = ucoin(dbConf, Configuration.statics.complete(options));
 
       // Initialize server (db connection, ...)
-      server.initWithServices()
+      server.initWithDAL()
         .then(function(){
           //cbArgs.length--;
           cbArgs[cbArgs.length++] = server;

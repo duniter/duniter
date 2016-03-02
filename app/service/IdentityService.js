@@ -1,30 +1,29 @@
 "use strict";
-var async           = require('async');
 var Q               = require('q');
 var rules           = require('../lib/rules');
 var crypto          = require('../lib/crypto');
 var constants       = require('../lib/constants');
+var Block           = require('../../app/lib/entity/block');
+var Identity        = require('../../app/lib/entity/identity');
+var Certification   = require('../../app/lib/entity/certification');
+var Revocation      = require('../../app/lib/entity/revocation');
 var AbstractService = require('./AbstractService');
 var co              = require('co');
 
-module.exports = function (conf, dal) {
-  return new IdentityService(conf, dal);
-};
+module.exports = () => new IdentityService();
 
-function IdentityService (conf, dal) {
+function IdentityService () {
 
   AbstractService.call(this);
 
   let that = this;
+  let dal, conf, logger;
 
-  var logger          = require('../lib/logger')(dal.profile);
-
-  var Block         = require('../../app/lib/entity/block');
-  var Identity      = require('../../app/lib/entity/identity');
-  var Certification = require('../../app/lib/entity/certification');
-  var Revocation    = require('../../app/lib/entity/revocation');
-
-  this.dal = dal;
+  this.setConfDAL = (newConf, newDAL) => {
+    dal = newDAL;
+    conf = newConf;
+    logger = require('../lib/logger')(dal.profile);
+  };
 
   this.searchIdentities = function(search) {
     return dal.searchJustIdentities(search);

@@ -9,7 +9,8 @@ module.exports = {
   transaction:   requiresParameter('transaction', constants.ERRORS.HTTP_PARAM_TX_REQUIRED),
   peer:          requiresParameter('peer',        constants.ERRORS.HTTP_PARAM_PEER_REQUIRED),
   membership:    Http2RawMembership,
-  block:         requiresParameter('block',       constants.ERRORS.HTTP_PARAM_BLOCK_REQUIRED)
+  block:         requiresParameter('block',       constants.ERRORS.HTTP_PARAM_BLOCK_REQUIRED),
+  conf:          requiresParameter('conf',        constants.ERRORS.HTTP_PARAM_CONF_REQUIRED)
 };
 
 function requiresParameter(parameter, err) {

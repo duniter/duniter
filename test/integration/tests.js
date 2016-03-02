@@ -183,7 +183,7 @@ describe("Integration", function() {
     before(function() {
       return co(function *() {
 
-        yield node3.initWithServices().then(bma);
+        yield node3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         let now = Math.round(new Date().getTime() / 1000);
 
         // Self certifications

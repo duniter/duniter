@@ -90,6 +90,23 @@ program
   .action(service(serverStart));
 
 program
+  .command('webstart')
+  .description('Start uCoin server + web admin.')
+  .action(() => {
+
+    var dbName = program.mdb;
+    var dbHome = program.home;
+
+    // Add log files for this instance
+    logger.addHomeLogs(directory.getHome(dbName, dbHome));
+
+    co(function *() {
+      let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf());
+      webminapi.openConnections();
+    });
+  });
+
+program
   .command('wizard [step]')
   .description('Launch the configuration Wizard')
   .action(function (step) {
@@ -277,7 +294,7 @@ function generateAndSend (generationMethod) {
         if (program.check) {
           block.time = block.medianTime;
           program.show && console.log(block.getRawSigned());
-          server.checkBlock(block)
+          server.doCheckBlock(block)
             .then(function(){
               logger.info('Acceptable block');
               next();
@@ -669,7 +686,8 @@ function connect(callback, useDefaultConf) {
     var server = ucoin({ home: dbHome, name: dbName }, commandLineConf());
 
     // Initialize server (db connection, ...)
-    server.connectDB(useDefaultConf)
+    server.plugFileSystem(useDefaultConf)
+      .then(() => server.loadConf())
       .then(function(){
         cbArgs.length--;
         cbArgs[cbArgs.length++] = server;
@@ -720,7 +738,7 @@ function service(callback, nologs) {
     var server = ucoin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf());
 
     // Initialize server (db connection, ...)
-    server.initWithServices()
+    server.initWithDAL()
       .then(function(){
         cbArgs.length--;
         cbArgs[cbArgs.length++] = server;

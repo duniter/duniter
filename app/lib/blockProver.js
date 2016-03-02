@@ -3,19 +3,23 @@ var async           = require('async');
 var co              = require('co');
 var Q               = require('q');
 var constants       = require('./constants');
-var rules           = require('./rules');
 var base58          = require('../lib/base58');
 var childProcess    = require('child_process');
 var path            = require('path');
+var Block           = require('./entity/block');
 
-module.exports = function(conf, dal, selfPubkey, pair) {
-  return new BlockGenerator(conf, dal, selfPubkey, pair);
-};
+module.exports = () => new BlockGenerator();
 
-function BlockGenerator(conf, dal, selfPubkey, pair) {
+function BlockGenerator() {
 
-  var logger = require('../lib/logger')(dal.profile);
-  var Block         = require('./entity/block');
+  var conf, dal, pair, logger;
+
+  this.setConfDAL = (newConf, newDAL, newPair) => {
+    dal = newDAL;
+    conf = newConf;
+    pair = newPair;
+    logger = require('../lib/logger')(dal.profile);
+  };
 
   var cancels = [];
 

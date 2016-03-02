@@ -17,6 +17,9 @@ var logger = require('../lib/logger')('network');
 
 module.exports = {
 
+  getBestLocalIPv4: () => getBestLocal('IPv4'),
+  getBestLocalIPv6: () => getBestLocal('IPv6'),
+
   listInterfaces: () => {
     let netInterfaces = os.networkInterfaces();
     let keys = _.keys(netInterfaces);
@@ -41,7 +44,7 @@ module.exports = {
     if (noupnp) {
       throw Error('No UPnP');
     }
-    let publicIP = yield Q.nfbind(client.externalIp, client)();
+    let publicIP = yield Q.nbind(client.externalIp, client)();
     yield Q.nbind(client.portMapping, client)({
       public: publicPort,
       private: privatePort,
@@ -64,7 +67,7 @@ module.exports = {
 
   getRandomPort: () => ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START,
 
-  createServersAndListen: (interfaces, httpLogs, routingCallback, listenWebSocket) => co(function *() {
+  createServersAndListen: (name, interfaces, httpLogs, routingCallback, listenWebSocket) => co(function *() {
 
     var app = express();
 
@@ -100,20 +103,14 @@ module.exports = {
       httpPOST: (uri, promiseFunc, dtoContract) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract)
     });
 
-    var httpServers = [];
+    var httpServers = interfaces.map(() => {
+      let httpServer = http.createServer(app);
+      listenWebSocket && listenWebSocket(httpServer);
+      return httpServer;
+    });
 
-    for (let i = 0, len = interfaces.length; i < len; i++) {
-      let netInterface = interfaces[i];
-      try {
-        let httpServer = yield listenInterface(app, netInterface.ip, netInterface.port);
-        listenWebSocket && listenWebSocket(httpServer);
-        httpServers.push(httpServer);
-        logger.info('uCoin server listening on ' + netInterface.ip + ' port ' + netInterface.port);
-      } catch (err) {
-        logger.error(err.message);
-        logger.error('uCoin server cannot listen on ' + netInterface.ip + ' port ' + netInterface.port);
-      }
-    }
+    // May be removed when using Node 5.x where httpServer.listening boolean exists
+    var listenings = interfaces.map(() => false);
 
     if (httpServers.length == 0){
       throw 'uCoin does not have any interface to listen to.';
@@ -122,37 +119,44 @@ module.exports = {
     // Return API
     return {
 
-      closeConnections: function () {
-        return Q.all(httpServers.map(function (httpServer) {
-          logger.info('uCoin server stop listening');
-          return Q.nbind(httpServer.close, httpServer)();
-        }));
-      },
+      closeConnections: () => co(function *() {
+        for (let i = 0, len = httpServers.length; i < len; i++) {
+          let httpServer = httpServers[i];
+          let isListening = listenings[i];
+          if (isListening) {
+            listenings[i] = false;
+            logger.info(name + ' stop listening');
+            yield Q.nbind(httpServer.close, httpServer)();
+          }
+        }
+        return [];
+      }),
 
-      reopenConnections: function () {
-        return Q.all(httpServers.map(function (httpServer, index) {
-          return Q.Promise(function (resolve, reject) {
-            var netInterface = interfaces[index].ip;
-            var port = interfaces[index].port;
-            httpServer.listen(port, netInterface, function (err) {
-              err ? reject(err) : resolve(httpServer);
-              logger.info('uCoin server listening again on ' + netInterface + ' port ' + port);
+      openConnections: () => co(function *() {
+        for (let i = 0, len = httpServers.length; i < len; i++) {
+          let httpServer = httpServers[i];
+          let isListening = listenings[i];
+          if (!isListening) {
+            listenings[i] = true;
+            yield Q.Promise(function (resolve, reject) {
+              try {
+                var netInterface = interfaces[i].ip;
+                var port = interfaces[i].port;
+                httpServer.listen(port, netInterface, function (err) {
+                  err ? reject(err) : resolve(httpServer);
+                  logger.info(name + ' listening on http://' + netInterface + ':' + port);
+                });
+              } catch (e) {
+                reject(e);
+              }
             });
-          });
-        }));
-      }
+          }
+        }
+        return [];
+      })
     };
   })
 };
-
-function listenInterface(app, netInterface, port) {
-  return Q.Promise(function(resolve, reject){
-    var httpServer = http.createServer(app);
-    httpServer.on('error', reject);
-    httpServer.on('listening', resolve.bind(this, httpServer));
-    httpServer.listen(port, netInterface);
-  });
-}
 
 function handleRequest(method, uri, promiseFunc, dtoContract) {
   method(uri, function(req, res) {
@@ -179,6 +183,7 @@ function getResultingError(e) {
   let error = constants.ERRORS.UNKNOWN;
   if (e) {
     // Print eventual stack trace
+    typeof e == 'string' && logger.error(e);
     e.stack && logger.error(e.stack);
     e.message && logger.warn(e.message);
     // BusinessException
@@ -190,4 +195,34 @@ function getResultingError(e) {
     }
   }
   return error;
+}
+
+function getBestLocal(family) {
+  let netInterfaces = os.networkInterfaces();
+  let keys = _.keys(netInterfaces);
+  let res = [];
+  for (let i = 0, len = keys.length; i < len; i++) {
+    let name = keys[i];
+    let addresses = netInterfaces[name];
+    for (let j = 0, len2 = addresses.length; j < len2; j++) {
+      let addr = addresses[j];
+      if (!family || addr.family == family) {
+        res.push({
+          name: name,
+          value: addr.address
+        });
+      }
+    }
+  }
+  return _.sortBy(res, function(entry) {
+    if (entry.name.match(/^eth0/))  return 0;
+    if (entry.name.match(/^eth1/))  return 1;
+    if (entry.name.match(/^eth2/))  return 2;
+    if (entry.name.match(/^wlan0/)) return 3;
+    if (entry.name.match(/^wlan1/)) return 4;
+    if (entry.name.match(/^wlan2/)) return 5;
+    if (entry.name.match(/^lo/))    return 6;
+    if (entry.name.match(/^None/))  return 7;
+    return 10;
+  })[0].value;
 }

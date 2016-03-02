@@ -52,7 +52,7 @@ describe("Certification chainability", function() {
       /**
        * tac <===> cat
        */
-      yield s1.initWithServices().then(bma);
+      yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
       yield cat.selfCertPromise();
       yield tac.selfCertPromise();
       yield cat.certPromise(tac);

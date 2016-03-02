@@ -90,7 +90,7 @@ describe("WOTB module", function() {
         /**
          * cat <==> toc
          */
-        yield s1.initWithServices().then(bma);
+        yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s1.dal.wotb;
         yield cat.selfCertPromise();
         yield toc.selfCertPromise();
@@ -159,7 +159,7 @@ describe("WOTB module", function() {
         /**
          * tic <==> cat <==> toc
          */
-        yield s2.initWithServices().then(bma);
+        yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s2.dal.wotb;
         yield cat2.selfCertPromise();
         yield toc2.selfCertPromise();
@@ -233,7 +233,7 @@ describe("WOTB module", function() {
     before(function() {
 
       return co(function *() {
-        yield s3.initWithServices().then(bma);
+        yield s3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s3.dal.wotb;
         yield cat3.selfCertPromise();
         yield tic3.selfCertPromise();

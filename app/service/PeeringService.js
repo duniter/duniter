@@ -12,22 +12,24 @@ var dos2unix       = require('../lib/dos2unix');
 var hashf          = require('../lib/hashf');
 var rawer          = require('../lib/rawer');
 var constants      = require('../lib/constants');
+var Peer           = require('../lib/entity/peer');
 var AbstractService = require('./AbstractService');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 
-function PeeringService(server, pair, dal) {
+function PeeringService(server) {
 
   AbstractService.call(this);
+  let conf, dal, pair, selfPubkey, SYNC_BLOCK_INTERVAL;
 
-  var conf = server.conf;
-
-  const SYNC_BLOCK_INTERVAL = conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL;
-
-  var Peer        = require('../lib/entity/peer');
-
-  var selfPubkey = base58.encode(pair.publicKey);
-  this.pubkey = selfPubkey;
+  this.setConfDAL = (newConf, newDAL, newPair) => {
+    dal = newDAL;
+    conf = newConf;
+    pair = newPair;
+    this.pubkey = base58.encode(pair.publicKey);
+    selfPubkey = this.pubkey;
+    SYNC_BLOCK_INTERVAL = conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL;
+  };
 
   var peer = null;
   var that = this;

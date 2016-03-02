@@ -2,7 +2,7 @@
 
 var async           = require('async');
 var _               = require('underscore');
-var co               = require('co');
+var co              = require('co');
 var Q               = require('q');
 var rules           = require('../lib/rules');
 var base58          = require('../lib/base58');
@@ -11,29 +11,35 @@ var constants       = require('../lib/constants');
 var blockchainCtx   = require('../lib/blockchainContext');
 var blockGenerator  = require('../lib/blockGenerator');
 var blockProver     = require('../lib/blockProver');
+let Identity        = require('../lib/entity/identity');
 var AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
-module.exports = function (conf, dal, PeeringService) {
-  return new BlockchainService(conf, dal, PeeringService);
-};
+module.exports = () => new BlockchainService();
 
-function BlockchainService (conf, dal, pair) {
+function BlockchainService () {
 
   AbstractService.call(this);
 
   let that = this;
-  let logger = require('../lib/logger')(dal.profile);
-  let selfPubkey = base58.encode(pair.publicKey);
-  let mainContext = blockchainCtx(conf, dal);
-  let prover = blockProver(conf, dal, selfPubkey, pair);
-  let generator = blockGenerator(conf, dal, mainContext, selfPubkey, pair, prover);
+  let mainContext = blockchainCtx();
+  let prover = blockProver();
+  let generator = blockGenerator(mainContext, prover);
+  let conf, dal, pair, logger, selfPubkey;
+
+  this.setConfDAL = (newConf, newDAL, newPair) => {
+    dal = newDAL;
+    conf = newConf;
+    pair = newPair;
+    mainContext.setConfDAL(conf, dal);
+    prover.setConfDAL(conf, dal, pair);
+    generator.setConfDAL(conf, dal, pair);
+    selfPubkey = base58.encode(pair.publicKey);
+    logger = require('../lib/logger')(dal.profile);
+  };
 
   let lastGeneratedWasWrong = false;
-
-  let Identity      = require('../lib/entity/identity');
-  let Block         = require('../lib/entity/block');
 
   let statTests = {
     'newcomers': 'identities',

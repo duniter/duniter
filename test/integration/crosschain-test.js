@@ -62,8 +62,8 @@ describe("Crosschain transactions", function() {
     before(function() {
 
       return co(function *() {
-        yield sB.initWithServices().then(bma);
-        yield sM.initWithServices().then(bma);
+        yield sB.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+        yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
         // Initialize BETA
         yield ticB.selfCertPromise();
@@ -228,8 +228,8 @@ describe("Crosschain transactions", function() {
     before(function() {
 
       return co(function *() {
-        yield sB.initWithServices().then(bma);
-        yield sM.initWithServices().then(bma);
+        yield sB.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+        yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
         // Initialize BETA
         yield ticB.selfCertPromise();

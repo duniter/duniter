@@ -35,7 +35,7 @@ describe("HTTP API", function() {
 
     var commit = makeBlockAndPost(server);
 
-    return server.initWithServices().then(bma)
+    return server.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections())
 
       .then(function(){
         return Q()
@@ -60,7 +60,7 @@ describe("HTTP API", function() {
 
   function makeBlockAndPost(theServer) {
     return function() {
-      return theServer.makeNextBlock()
+      return theServer.doMakeNextBlock()
         .then(postBlock(theServer));
     };
   }

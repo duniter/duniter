@@ -350,17 +350,7 @@ function getLocalNetworkOperations(conf, autoconf) {
         });
       });
       if (autoconf) {
-        conf.ipv4 = _.sortBy(interfaces, function(entry) {
-          if (entry.name.match(/^eth0/)) return 0;
-          if (entry.name.match(/^eth1/)) return 1;
-          if (entry.name.match(/^eth2/)) return 2;
-          if (entry.name.match(/^wlan0/)) return 3;
-          if (entry.name.match(/^wlan1/)) return 4;
-          if (entry.name.match(/^wlan2/)) return 5;
-          if (entry.name.match(/^lo/)) return 6;
-          if (entry.name.match(/^None/)) return 7;
-          return 10;
-        })[0].value;
+        conf.ipv4 = network.getBestLocalIPv4();
         return next();
       }
       inquirer.prompt([{
@@ -388,17 +378,7 @@ function getLocalNetworkOperations(conf, autoconf) {
         });
       });
       if (autoconf) {
-        conf.ipv6 = _.sortBy(interfaces, function(entry) {
-          if (entry.name.match(/^eth0/)) return 0;
-          if (entry.name.match(/^eth1/)) return 1;
-          if (entry.name.match(/^eth2/)) return 2;
-          if (entry.name.match(/^wlan0/)) return 3;
-          if (entry.name.match(/^wlan1/)) return 4;
-          if (entry.name.match(/^wlan2/)) return 5;
-          if (entry.name.match(/^lo/)) return 6;
-          if (entry.name.match(/^None/)) return 7;
-          return 10;
-        })[0].value;
+        conf.ipv6 = network.getBestLocalIPv6();
         return next();
       }
       inquirer.prompt([{

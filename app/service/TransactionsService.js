@@ -7,13 +7,18 @@ var rules           = require('../lib/rules');
 var Transaction     = require('../lib/entity/transaction');
 var AbstractService = require('./AbstractService');
 
-module.exports = function (conf, dal) {
-  return new TransactionService(conf, dal);
-};
+module.exports = () => new TransactionService();
 
-function TransactionService (conf, dal) {
+function TransactionService () {
 
   AbstractService.call(this);
+
+  var conf, dal;
+
+  this.setConfDAL = (newConf, newDAL) => {
+    dal = newDAL;
+    conf = newConf;
+  };
 
   this.processTx = (txObj) => this.pushFIFO(() => co(function *() {
     var tx = new Transaction(txObj, conf.currency);

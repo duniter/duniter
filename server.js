@@ -83,8 +83,7 @@ function Server (dbConf, overrideConf) {
       dtDiffEval:         constants.CONTRACT.DEFAULT.DTDIFFEVAL,
       medianTimeBlocks:   constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
       rootoffset:         0,
-      forksize:           constants.BRANCHES.DEFAULT_WINDOW_SIZE,
-      pair:               constants.CRYPTO.DEFAULT_KEYPAIR
+      forksize:           constants.BRANCHES.DEFAULT_WINDOW_SIZE
     };
     _.keys(defaultValues).forEach(function(key){
       if (that.conf[key] == undefined) {
@@ -102,6 +101,12 @@ function Server (dbConf, overrideConf) {
     }
     else if (that.conf.passwd || that.conf.salt) {
       pair = yield Q.nbind(crypto.getKeyPair, crypto)(that.conf.passwd, that.conf.salt);
+    }
+    else {
+      pair = {
+        publicKey: base58.decode(constants.CRYPTO.DEFAULT_KEYPAIR.pub),
+        secretKey: base58.decode(constants.CRYPTO.DEFAULT_KEYPAIR.sec)
+      };
     }
     if (!pair) {
       throw Error('This node does not have a keypair. Use `ucoind wizard key` to fix this.');

@@ -1171,7 +1171,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   };
 
   this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db'];
+    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db', WOTB_FILE];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };

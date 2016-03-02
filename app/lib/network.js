@@ -10,7 +10,7 @@ var express = require('express');
 var morgan = require('morgan');
 var errorhandler = require('errorhandler');
 var bodyParser = require('body-parser');
-var cors = require('express-cors');
+var cors = require('cors');
 var constants = require('./constants');
 var sanitize = require('./sanitize');
 var logger = require('../lib/logger')('network');
@@ -82,11 +82,8 @@ module.exports = {
       }));
     }
 
-    app.use(cors({
-      allowedOrigins: [
-        '*:*'
-      ]
-    }));
+    // CORS for **any** HTTP request
+    app.use(cors());
 
     app.use(bodyParser.urlencoded({
       extended: true

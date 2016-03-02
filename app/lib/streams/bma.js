@@ -6,7 +6,7 @@ var express = require('express');
 var url = require('url');
 var co = require('co');
 var Q = require('q');
-var cors = require('express-cors');
+var cors = require('cors');
 var es = require('event-stream');
 var morgan = require('morgan');
 var errorhandler = require('errorhandler');
@@ -46,11 +46,8 @@ module.exports = function(server, interfaces, httpLogs) {
     }));
   }
 
-  app.use(cors({
-    allowedOrigins: [
-      '*:*'
-    ]
-  }));
+  // CORS for **any** HTTP request
+  app.use(cors());
 
 
   app.use(bodyParser.urlencoded({

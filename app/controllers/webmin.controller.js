@@ -169,6 +169,28 @@ function WebAdmin (dbConf, overConf) {
     return found;
   });
 
+  this.applyNetworkConf = (req) => co(function *() {
+    yield pluggedConfP;
+    let conf = http2raw.conf(req);
+    yield server.dal.saveConf(_.extend(server.conf, {
+      ipv4: conf.local_ipv4,
+      ipv6: conf.local_ipv6,
+      port: conf.lport,
+      remoteipv4: conf.remote_ipv4,
+      remoteipv6: conf.remote_ipv6,
+      remoteport: conf.rport,
+      upnp: conf.upnp
+    }));
+    pluggedConfP = co(function *() {
+      yield bmapi.closeConnections();
+      yield server.loadConf();
+      bmapi = yield bma(server, null, true);
+      return bmapi.openConnections();
+    });
+    yield pluggedConfP;
+    return {};
+  });
+
   this.listInterfaces = () => co(function *() {
     let upnp = {
       name: 'upnp',
@@ -220,6 +242,20 @@ function WebAdmin (dbConf, overConf) {
           dns: '',
           port: randomPort,
           upnp: upnpConf ? true : false
+        }
+      },
+      conf: {
+        local: {
+          ipv4: conf && conf.ipv4,
+          ipv6: conf && conf.ipv6,
+          port: conf && conf.port
+        },
+        remote: {
+          ipv4: conf && conf.remoteipv4,
+          ipv6: conf && conf.remoteipv6,
+          dns:  conf && conf.remotehost,
+          port: conf && conf.remoteport,
+          upnp: conf && conf.upnp
         }
       }
     };

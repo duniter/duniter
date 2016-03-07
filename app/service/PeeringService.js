@@ -125,6 +125,8 @@ function PeeringService(server) {
     crawlPeers(DONT_IF_MORE_THAN_FOUR_PEERS, done);
   };
 
+  let askedCancel = false;
+  let currentSyncP = Q();
   var syncBlockFifo = async.queue((task, callback) => task(callback), 1);
   var syncBlockInterval = null;
   this.regularSyncBlock = function (done) {
@@ -145,10 +147,19 @@ function PeeringService(server) {
   };
 
   this.stopRegular = () => {
+    askedCancel = true;
     clearInterval(peerInterval);
     clearInterval(crawlPeersInterval);
     clearInterval(syncBlockInterval);
     clearInterval(testPeerFifoInterval);
+    peerFifo.kill();
+    crawlPeersFifo.kill();
+    syncBlockFifo.kill();
+    testPeerFifo.kill();
+    return co(function *() {
+      yield currentSyncP;
+      askedCancel = false;
+    });
   };
 
   this.generateSelfPeer = generateSelfPeer;
@@ -379,7 +390,7 @@ function PeeringService(server) {
   }
 
   function syncBlock(callback) {
-    return co(function *() {
+    currentSyncP = co(function *() {
       let current = yield dal.getCurrentBlockOrNull();
       if (current) {
         logger.info("Pulling blocks from the network...");
@@ -391,18 +402,23 @@ function PeeringService(server) {
           try {
             let node = yield Q.nfcall(p.connect);
             let okUP = yield processAscendingUntilNoBlock(p, node, current);
-            if (okUP) {
-              let remoteCurrent = yield Q.nfcall(node.blockchain.current);
-              // We check if our current block has changed due to ascending pulling
-              let nowCurrent = yield dal.getCurrentBlockOrNull();
-              logger.trace("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
-              if (remoteCurrent.number != nowCurrent.number) {
-                yield processLastTen(p, node, nowCurrent);
-              }
+            if (askedCancel) {
+              len = 0;
             }
-            // Try to fork as a final treatment
-            let nowCurrent = yield dal.getCurrentBlockOrNull();
-            yield server.BlockchainService.tryToFork(nowCurrent);
+            if (!askedCancel) {
+              if (okUP) {
+                let remoteCurrent = yield Q.nfcall(node.blockchain.current);
+                // We check if our current block has changed due to ascending pulling
+                let nowCurrent = yield dal.getCurrentBlockOrNull();
+                logger.trace("Remote #%s Local #%s", remoteCurrent.number, nowCurrent.number);
+                if (remoteCurrent.number != nowCurrent.number) {
+                  yield processLastTen(p, node, nowCurrent);
+                }
+              }
+              // Try to fork as a final treatment
+              let nowCurrent = yield dal.getCurrentBlockOrNull();
+              yield server.BlockchainService.tryToFork(nowCurrent);
+            }
           } catch (e) {
             if (isConnectionError(e)) {
               logger.info("Peer %s unreachable: now considered as DOWN.", p.pubkey);
@@ -424,6 +440,7 @@ function PeeringService(server) {
         logger.warn(err.code || err.stack || err.message || err);
         callback();
       });
+    return currentSyncP;
   }
 
   function isConnectionError(err) {
@@ -442,7 +459,7 @@ function PeeringService(server) {
         if (!downloaded) {
           yield dal.setPeerDown(p.pubkey);
         }
-        while (downloaded) {
+        while (downloaded && !askedCancel) {
           downloaded = rawifyTransactions(downloaded);
           try {
             let res = yield server.BlockchainService.submitBlock(downloaded, true);

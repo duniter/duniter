@@ -57,6 +57,11 @@ function Server (dbConf, overrideConf) {
     that.dal = yield dbType(home);
   });
 
+  this.unPlugFileSystem = () => co(function *() {
+    logger.debug('Unplugging file system...');
+    yield that.dal.close();
+  });
+
   this.loadConf = (useDefaultConf) => co(function *() {
     logger.debug('Loading conf...');
     that.conf = yield that.dal.loadConf(overrideConf, useDefaultConf);
@@ -181,8 +186,8 @@ function Server (dbConf, overrideConf) {
   };
 
   this.stop = function () {
-    that.PeeringService.stopRegular();
     that.BlockchainService.stopCleanMemory();
+    return that.PeeringService.stopRegular();
   };
 
   this.recomputeSelfPeer = function() {

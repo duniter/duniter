@@ -710,9 +710,6 @@ function connect(callback, useDefaultConf) {
     process.on('SIGINT', function() {
       if (!isSaving) {
         isSaving = true;
-        if (server.dal && server.dal.needsSave()) {
-          logger.info('Saving DB and close...');
-        }
         // Save DB
         server.disconnect()
           .catch(() => null)
@@ -761,9 +758,6 @@ function service(callback, nologs) {
     process.on('SIGINT', function() {
       if (!isSaving) {
         isSaving = true;
-        if (server.dal && server.dal.needsSave()) {
-          logger.info('Saving DB and close...');
-        }
         // Save DB
         ((server && server.disconnect()) || Q())
           .catch(() => null)

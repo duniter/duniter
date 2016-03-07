@@ -41,15 +41,10 @@ function WebAdmin (dbConf, overConf) {
 
   let startServicesP, stopServicesP;
 
-  let pluggedConfP = co(function *() {
-    yield server.plugFileSystem();
-    yield server.loadConf();
-    bmapi = yield bma(server, null, true);
-  });
+  let pluggedConfP = plugForConf();
 
   let pluggedDALP = co(function *() {
     yield pluggedConfP;
-    yield server.initDAL();
 
     // Routing documents
     server
@@ -59,6 +54,8 @@ function WebAdmin (dbConf, overConf) {
       .pipe(multicaster(server.conf))
       // The multicaster may answer 'unreachable peer'
       .pipe(server.router());
+
+    return plugForDAL();
   });
 
   this.summary = () => co(function *() {
@@ -284,10 +281,37 @@ function WebAdmin (dbConf, overConf) {
       // Broadcast block
       that.push(data);
     }));
-    yield remote.sync();
+    yield remote.sync(parseInt(req.body.to));
     logger.info('Sync finished.');
     return {};
   });
+
+  this.resetData = () => co(function *() {
+    yield pluggedDALP;
+    // We have to wait for a non-breaking window to process reset
+    yield server.BlockchainService.pushFIFO(() => co(function *() {
+      yield server.unPlugFileSystem();
+      yield server.resetData();
+      pluggedConfP = plugForConf();
+      pluggedDALP = plugForDAL();
+    }));
+    return {};
+  });
+
+  function plugForConf() {
+    return co(function *() {
+      yield server.plugFileSystem();
+      yield server.loadConf();
+      bmapi = yield bma(server, null, true);
+    });
+  }
+
+  function plugForDAL() {
+    return co(function *() {
+      yield pluggedConfP;
+      return server.initDAL();
+    });
+  }
 }
 
 util.inherits(WebAdmin, stream.Duplex);

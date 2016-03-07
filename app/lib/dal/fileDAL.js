@@ -1159,16 +1159,10 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   this.getStat = that.statDAL.getStat;
   this.pushStats = that.statDAL.pushStats;
 
-  this.needsSave = function() {
-    return true;
-  };
-
-  this.close = function() {
-    if (that.needsSave()) {
-      return Q.nbind(sqlite.close, sqlite)();
-    }
-    return Q();
-  };
+  this.close = () => co(function *() {
+    yield _.values(that.newDals).map((dal) => dal.close && dal.close());
+    return Q.nbind(sqlite.close, sqlite);
+  });
 
   this.resetAll = function(done) {
     var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db', WOTB_FILE];

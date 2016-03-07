@@ -80,7 +80,7 @@ module.exports.statics = {
     if (server.conf.participate) {
       server.stopBlockComputation();
     }
-    server.stop();
+    yield server.stop();
 
     return {};
   })

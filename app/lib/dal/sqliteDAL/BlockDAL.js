@@ -67,6 +67,9 @@ function BlockDAL(db) {
       'COMMIT;', []);
   });
 
+  this.close = () =>
+    current = null;
+
   this.getCurrent = () => co(function *() {
     if (!current) {
       current = (yield that.query('SELECT * FROM block WHERE NOT fork ORDER BY number DESC LIMIT 1'))[0];

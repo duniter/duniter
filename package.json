@@ -33,7 +33,7 @@
     "url": "https://github.com/ucoin-io/ucoin/issues"
   },
   "dependencies": {
-    "async": "0.2.9",
+    "async": "1.5.2",
     "bindings": "1.2.1",
     "body-parser": "1.14.2",
     "co": "4.6.0",

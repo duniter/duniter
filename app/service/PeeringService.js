@@ -475,6 +475,8 @@ function PeeringService(server) {
           logger.warn(err.code || err.message || err);
         }
       }
+      let newCurrent = yield dal.getCurrentBlockOrNull();
+      server.push(newCurrent);
       return true;
     });
   }

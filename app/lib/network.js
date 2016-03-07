@@ -144,15 +144,16 @@ module.exports = {
           if (isListening) {
             listenings[i] = false;
             logger.info(name + ' stop listening');
-            httpServers[i].closeSockets();
-            yield Q.nbind(httpServer.close, httpServer)();
-            //yield Q.Promise((resolve, reject) => {
-            //  httpServers[i].closeSockets();
-            //  httpServer.close(function(err) {
-            //    if(err) return reject(err);
-            //    resolve();
-            //  });
-            //});
+            yield Q.Promise((resolve, reject) => {
+              httpServer.errorPropagates(function(err) {
+                reject(err);
+              });
+              httpServers[i].closeSockets();
+              httpServer.close(function(err) {
+                err && logger.error(err.stack || err);
+                resolve();
+              });
+            });
           }
         }
         return [];

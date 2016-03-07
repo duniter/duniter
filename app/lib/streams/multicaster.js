@@ -15,11 +15,11 @@ var logger  = require('../../lib/logger')('multicaster');
 
 const WITH_ISOLATION = true;
 
-module.exports = function (isolate, timeout) {
-  return new Multicaster(isolate, timeout);
+module.exports = function (conf, timeout) {
+  return new Multicaster(conf, timeout);
 };
 
-function Multicaster (isolate, timeout) {
+function Multicaster (conf, timeout) {
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -130,7 +130,7 @@ function Multicaster (isolate, timeout) {
     return function(doc, peers) {
       return co(function *() {
         try {
-          if(!params.withIsolation || !isolate) {
+          if(!params.withIsolation || (conf && !conf.isolate)) {
             let theDoc = params.transform ? params.transform(doc) : doc;
             logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
             if (params.getDocID) {

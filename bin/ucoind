@@ -223,7 +223,7 @@ program
           logger.info("Forwarding block#" + block.number);
           server.dal.getBlock(block.number)
             .then(function(fullBlock){
-              multicaster(server.conf.isolate).sendBlock(peer, new Block(fullBlock)).then(() => callback()).catch(callback);
+              multicaster(server.conf).sendBlock(peer, new Block(fullBlock)).then(() => callback()).catch(callback);
             });
         }, next);
       }
@@ -349,7 +349,7 @@ function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, d
       });
       program.show && console.log(block.getRawSigned());
       logger.info('Posted block ' + block.quickDescription());
-      multicaster(server.conf.isolate).sendBlock(peer, block).then(() => next()).catch(next);
+      multicaster(server.conf).sendBlock(peer, block).then(() => next()).catch(next);
     }
   ], done);
 }

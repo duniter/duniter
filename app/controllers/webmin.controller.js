@@ -19,6 +19,7 @@ let Identity = require('../lib/entity/identity');
 let network = require('../lib/network');
 let AbstractController = require('../controllers/abstract');
 var Synchroniser = require('../lib/sync');
+var multicaster = require('../lib/streams/multicaster');
 var logger = require('../lib/logger')('webmin');
 
 module.exports = (dbConf, overConf) => new WebAdmin(dbConf, overConf);
@@ -49,6 +50,15 @@ function WebAdmin (dbConf, overConf) {
   let pluggedDALP = co(function *() {
     yield pluggedConfP;
     yield server.initDAL();
+
+    // Routing documents
+    server
+    // The router asks for multicasting of documents
+      .pipe(server.router())
+      // The documents get sent to peers
+      .pipe(multicaster(server.conf))
+      // The multicaster may answer 'unreachable peer'
+      .pipe(server.router());
   });
 
   this.summary = () => co(function *() {

@@ -31,7 +31,7 @@ module.exports.statics = {
     // The router asks for multicasting of documents
       .pipe(server.router())
       // The documents get sent to peers
-      .pipe(multicaster(server.conf.isolate))
+      .pipe(multicaster(server.conf))
       // The multicaster may answer 'unreachable peer'
       .pipe(server.router());
 

@@ -102,8 +102,29 @@ module.exports = {
 
     var httpServers = interfaces.map(() => {
       let httpServer = http.createServer(app);
+      let sockets = {}, nextSocketId = 0;
+      httpServer.on('connection', function(socket) {
+        let socketId = nextSocketId++;
+        sockets[socketId] = socket;
+        //logger.debug('socket %s opened', socketId);
+
+        socket.on('close', () => {
+          //logger.debug('socket %s closed', socketId);
+          delete sockets[socketId];
+        });
+      });
+      httpServer.on('error', function(err) {
+        httpServer.errorPropagates(err);
+      });
       listenWebSocket && listenWebSocket(httpServer);
-      return httpServer;
+      return {
+        http: httpServer,
+        closeSockets: () => {
+          _.keys(sockets).map((socketId) => {
+            sockets[socketId].destroy();
+          });
+        }
+      };
     });
 
     // May be removed when using Node 5.x where httpServer.listening boolean exists
@@ -118,12 +139,20 @@ module.exports = {
 
       closeConnections: () => co(function *() {
         for (let i = 0, len = httpServers.length; i < len; i++) {
-          let httpServer = httpServers[i];
+          let httpServer = httpServers[i].http;
           let isListening = listenings[i];
           if (isListening) {
             listenings[i] = false;
             logger.info(name + ' stop listening');
+            httpServers[i].closeSockets();
             yield Q.nbind(httpServer.close, httpServer)();
+            //yield Q.Promise((resolve, reject) => {
+            //  httpServers[i].closeSockets();
+            //  httpServer.close(function(err) {
+            //    if(err) return reject(err);
+            //    resolve();
+            //  });
+            //});
           }
         }
         return [];
@@ -131,22 +160,29 @@ module.exports = {
 
       openConnections: () => co(function *() {
         for (let i = 0, len = httpServers.length; i < len; i++) {
-          let httpServer = httpServers[i];
+          let httpServer = httpServers[i].http;
           let isListening = listenings[i];
           if (!isListening) {
             listenings[i] = true;
-            yield Q.Promise(function (resolve, reject) {
-              try {
-                var netInterface = interfaces[i].ip;
-                var port = interfaces[i].port;
-                httpServer.listen(port, netInterface, function (err) {
-                  err ? reject(err) : resolve(httpServer);
-                  logger.info(name + ' listening on http://' + netInterface + ':' + port);
+
+            let netInterface = interfaces[i].ip;
+            let port = interfaces[i].port;
+            try {
+              yield Q.Promise((resolve, reject) => {
+                // Weird the need of such a hack to catch an exception...
+                httpServer.errorPropagates = function(err) {
+                  reject(err);
+                };
+                //httpServer.on('listening', resolve.bind(this, httpServer));
+                httpServer.listen(port, netInterface, (err) => {
+                  if (err) return reject(err);
+                  resolve(httpServer);
                 });
-              } catch (e) {
-                reject(e);
-              }
-            });
+              });
+              logger.info(name + ' listening on http://' + netInterface + ':' + port);
+            } catch (e) {
+              logger.warn('Could NOT listen to http://' + netInterface + ':' + port);
+            }
           }
         }
         return [];

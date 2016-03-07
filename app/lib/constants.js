@@ -256,7 +256,7 @@ module.exports = {
       X_PERCENT: 0.9,
       PERCENTROT: 2 / 3,
       BLOCKSROT: 20,
-      POWDELAY: 10,
+      POWDELAY: 0,
       AVGGENTIME: 16 * 60,
       DTDIFFEVAL: 10,
       MEDIANTIMEBLOCKS: 20

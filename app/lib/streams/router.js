@@ -8,15 +8,19 @@ var stream   = require('stream');
 var Peer     = require('../entity/peer');
 var constants = require('../constants');
 
-module.exports = function (serverPubkey, conf, dal) {
-  return new Router(serverPubkey, conf, dal);
+module.exports = function (PeeringService, conf, dal) {
+  return new Router(PeeringService, conf, dal);
 };
 
-function Router (serverPubkey, conf, dal) {
+function Router (PeeringService, conf, dal) {
 
   var logger   = require('../../lib/logger')(dal.profile);
 
   stream.Transform.call(this, { objectMode: true });
+
+  let active = true;
+
+  this.setActive = (shouldBeActive) => active = shouldBeActive;
 
   var that = this;
 
@@ -26,7 +30,7 @@ function Router (serverPubkey, conf, dal) {
     else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers(),                        done); }
     else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers(),                        done); }
     else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pubkey),           done); }
-    else if (obj.from && obj.from == serverPubkey) {
+    else if (obj.from && obj.from == PeeringService.pubkey) {
       // Route ONLY status emitted by this node
       route('status', obj, getTargeted(obj.to), done);
     }
@@ -51,6 +55,9 @@ function Router (serverPubkey, conf, dal) {
   };
 
   function route (type, obj, getPeersFunc, done) {
+    if (!active) {
+      return done();
+    }
     getPeersFunc(function (err, peers) {
       that.push({
         'type': type,
@@ -62,11 +69,11 @@ function Router (serverPubkey, conf, dal) {
   }
 
   function getRandomInUPPeers () {
-    return getValidUpPeers([serverPubkey]);
+    return getValidUpPeers([PeeringService.pubkey]);
   }
 
   function getRandomInUPPeersBut (pubkey) {
-    return getValidUpPeers([serverPubkey, pubkey]);
+    return getValidUpPeers([PeeringService.pubkey, pubkey]);
   }
 
   function getValidUpPeers (without) {
@@ -93,7 +100,7 @@ function Router (serverPubkey, conf, dal) {
   */
   function getTargeted (to) {
     return function (done) {
-      if (to == serverPubkey) {
+      if (to == PeeringService.pubkey) {
         done(null, []);
       } else {
         dal.getPeer(to)

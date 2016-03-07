@@ -50,7 +50,7 @@ function BlockParser (onError) {
     obj.transactions = obj.transactions || [];
     obj.version = obj.version || '';
     obj.type = obj.type || '';
-    obj.hash = obj.hash || '';
+    obj.hash = hashf(require('../../../rawer').getBlockInnerHashAndNonceWithSignature(obj)).toUpperCase();
     obj.inner_hash = obj.inner_hash || '';
     obj.currency = obj.currency || '';
     obj.nonce = obj.nonce || '';
@@ -67,7 +67,7 @@ function BlockParser (onError) {
     obj.transactions.map(function(tx) {
       tx.version = obj.version;
       tx.currency = obj.currency;
-      tx.currency = hashf(rawer.getTransaction(tx)).toUpperCase();
+      tx.hash = hashf(rawer.getTransaction(tx)).toUpperCase();
     });
   };
 

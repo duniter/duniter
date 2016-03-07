@@ -1,5 +1,8 @@
 "use strict";
 
+var util = require('util');
+var es = require('event-stream');
+var stream      = require('stream');
 var _ = require('underscore');
 var Q = require('q');
 let co = require('co');
@@ -15,6 +18,7 @@ let bma = require('../lib/streams/bma');
 let Identity = require('../lib/entity/identity');
 let network = require('../lib/network');
 let AbstractController = require('../controllers/abstract');
+var Synchroniser = require('../lib/sync');
 var logger = require('../lib/logger')('webmin');
 
 module.exports = (dbConf, overConf) => new WebAdmin(dbConf, overConf);
@@ -22,11 +26,19 @@ module.exports = (dbConf, overConf) => new WebAdmin(dbConf, overConf);
 function WebAdmin (dbConf, overConf) {
 
   // Node instance: this is the object to be managed by the web admin
-  let server = ucoin(dbConf, overConf);
+  let server = this.server = ucoin(dbConf, overConf);
   let bmapi;
   let that = this;
 
   AbstractController.call(this, server);
+
+  stream.Duplex.call(this, { objectMode: true });
+
+  // Unused, but made mandatory by Duplex interface
+  this._read = () => null;
+  this._write = () => null;
+
+  let startServicesP, stopServicesP;
 
   let pluggedConfP = co(function *() {
     yield server.plugFileSystem();
@@ -207,6 +219,65 @@ function WebAdmin (dbConf, overConf) {
   });
 
   this.startAllServices = () => co(function *() {
-    return ucoin.statics.startServices(server);
+    // Allow services to be stopped
+    stopServicesP = null;
+    yield startServicesP || (startServicesP = ucoin.statics.startServices(server));
+    that.push({ started: true });
+    return {};
+  });
+
+  this.stopAllServices = () => co(function *() {
+    // Allow services to be started
+    startServicesP = null;
+    yield stopServicesP || (stopServicesP = ucoin.statics.stopServices(server));
+    that.push({ stopped: true });
+    return {};
+  });
+
+  this.autoConfNetwork = () => co(function *() {
+    let bestLocal4 = network.getBestLocalIPv4();
+    let bestLocal6 = network.getBestLocalIPv6();
+    let upnpConf = {
+      remoteipv4: bestLocal4,
+      remoteipv6: bestLocal6,
+      upnp: false
+    };
+    try {
+      upnpConf = yield network.upnpConf();
+      upnpConf.upnp = true;
+    } catch (e) {
+      logger.error(e.stack || e);
+    }
+    let randomPort = network.getRandomPort();
+    _.extend(server.conf, {
+      ipv4: bestLocal4,
+      ipv6: bestLocal6,
+      port: randomPort,
+      remoteipv4: upnpConf.remoteipv4,
+      remoteipv6: upnpConf.remoteipv6,
+      remoteport: randomPort,
+      upnp: upnpConf.upnp
+    });
+    yield server.dal.saveConf(server.conf);
+    pluggedConfP = co(function *() {
+      yield bmapi.closeConnections();
+      yield server.loadConf();
+      bmapi = yield bma(server, null, true);
+    });
+    return {};
+  });
+
+  this.startSync = (req) => co(function *() {
+    // Synchronize
+    var remote = new Synchroniser(server, req.body.host, parseInt(req.body.port), server.conf, false);
+    remote.pipe(es.mapSync(function(data) {
+      // Broadcast block
+      that.push(data);
+    }));
+    yield remote.sync();
+    logger.info('Sync finished.');
+    return {};
   });
 }
+
+util.inherits(WebAdmin, stream.Duplex);

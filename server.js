@@ -180,6 +180,11 @@ function Server (dbConf, overrideConf) {
       });
   };
 
+  this.stop = function () {
+    that.PeeringService.stopRegular();
+    that.BlockchainService.stopCleanMemory();
+  };
+
   this.recomputeSelfPeer = function() {
     return Q.nbind(that.PeeringService.generateSelfPeer, that.PeeringService)(that.conf, 0);
   };
@@ -212,6 +217,7 @@ function Server (dbConf, overrideConf) {
 
   this.stopBlockComputation = function() {
     shouldContinue = false;
+    that.BlockchainService.stopPoWThenProcessAndRestartPoW();
   };
 
   this.startBlockComputation = function() {
@@ -233,6 +239,7 @@ function Server (dbConf, overrideConf) {
           shouldContinue = true;
         }
       }
+      logger.info('Proof-of-work computation STOPPED.');
     });
   };
 
@@ -316,10 +323,11 @@ function Server (dbConf, overrideConf) {
 
   var theRouter;
 
-  this.router = function() {
+  this.router = function(active) {
     if (!theRouter) {
-      theRouter = router(that.PeeringService.pubkey, that.conf, that.dal);
+      theRouter = router(that.PeeringService, that.conf, that.dal);
     }
+    theRouter.setActive(active !== false);
     return theRouter;
   };
 

@@ -45,7 +45,7 @@ function BlockDAL(db) {
       'UDTime DATETIME,' +
       'medianTime DATETIME NOT NULL,' +
       'dividend VARCHAR(100) DEFAULT \'0\',' +
-      'unitbase INTEGER NOT NULL,' +
+      'unitbase INTEGER NULL,' +
       'time DATETIME NOT NULL,' +
       'powMin INTEGER NOT NULL,' +
       'number INTEGER NOT NULL,' +

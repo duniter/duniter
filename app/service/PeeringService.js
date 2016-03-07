@@ -144,6 +144,13 @@ function PeeringService(server) {
     testPeers(FIRST_CALL, done);
   };
 
+  this.stopRegular = () => {
+    clearInterval(peerInterval);
+    clearInterval(crawlPeersInterval);
+    clearInterval(syncBlockInterval);
+    clearInterval(testPeerFifoInterval);
+  };
+
   this.generateSelfPeer = generateSelfPeer;
 
   function generateSelfPeer(theConf, signalTimeInterval, done) {

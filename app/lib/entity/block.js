@@ -99,7 +99,7 @@ function Block(json) {
 
   this.getHash = function() {
     if (!this.hash) {
-      this.hash = hashf(this.getRawSigned()).toUpperCase();
+      this.hash = hashf(this.getProofOfWorkPart()).toUpperCase();
     }
     return this.hash;
   };
@@ -114,6 +114,10 @@ function Block(json) {
 
   this.getSignedPart = function() {
     return require('../../lib/rawer').getBlockInnerHashAndNonce(this);
+  };
+
+  this.getProofOfWorkPart = function() {
+    return require('../../lib/rawer').getBlockInnerHashAndNonceWithSignature(this);
   };
 
   this.getRawSigned = function() {

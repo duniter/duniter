@@ -24,10 +24,20 @@ module.exports.statics = {
     logger.info(">> NODE STARTING");
 
     // Public http interface
-    yield bma(server, null, conf.httplogs);
+    let bmapi = yield bma(server, null, conf.httplogs);
+
+    // Routing documents
+    server
+    // The router asks for multicasting of documents
+      .pipe(server.router())
+      // The documents get sent to peers
+      .pipe(multicaster(server.conf.isolate))
+      // The multicaster may answer 'unreachable peer'
+      .pipe(server.router());
 
     // Services
-    yield module.exports.startServices(server);
+    yield module.exports.statics.startServices(server);
+    yield bmapi.openConnections();
 
     logger.info('>> Server ready!');
   }),
@@ -37,15 +47,7 @@ module.exports.statics = {
     /***************
      * HTTP ROUTING
      **************/
-    if (server.conf.routing) {
-      server
-      // The router asks for multicasting of documents
-        .pipe(server.router())
-        // The documents get sent to peers
-        .pipe(multicaster(server.conf.isolate))
-        // The multicaster may answer 'unreachable peer'
-        .pipe(server.router());
-    }
+    server.router(server.conf.routing);
 
     /***************
      *    UPnP
@@ -68,6 +70,17 @@ module.exports.statics = {
      * CRYPTO NETWORK LAYER
      **********************/
     server.start();
+
+    return {};
+  }),
+
+  stopServices: (server) => co(function *() {
+
+    server.router(false);
+    if (server.conf.participate) {
+      server.stopBlockComputation();
+    }
+    server.stop();
 
     return {};
   })

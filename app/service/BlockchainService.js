@@ -16,7 +16,9 @@ var AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
-module.exports = () => new BlockchainService();
+module.exports = function() {
+  return new BlockchainService();
+};
 
 function BlockchainService () {
 
@@ -142,7 +144,7 @@ function BlockchainService () {
         }
         let res = yield mainContext.addBlock(obj, doCheck);
         yield pushStatsForBlocks([res]);
-        yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+        that.stopPoWThenProcessAndRestartPoW();
         return res;
       } else {
         // add it as side chain
@@ -165,7 +167,7 @@ function BlockchainService () {
     let newCurrent = yield mainContext.current();
     let forked = newCurrent.number != current.number || newCurrent.hash != current.hash;
     if (forked) {
-      yield Q.nfcall(that.stopPoWThenProcessAndRestartPoW.bind(that));
+      that.stopPoWThenProcessAndRestartPoW();
     }
   });
 
@@ -249,9 +251,8 @@ function BlockchainService () {
 
   this.revertCurrentBlock = () => this.pushFIFO(() => mainContext.revertCurrentBlock());
 
-  this.stopPoWThenProcessAndRestartPoW = function (done) {
+  this.stopPoWThenProcessAndRestartPoW = function () {
     prover.cancel();
-    done();
   };
 
   /**
@@ -557,7 +558,7 @@ function BlockchainService () {
     if (!current || current.number < from) {
       throw 'Starting block #' + from + ' does not exist';
     }
-    return mainContext.dal.getBlocksBetween(from, from + count - 1);
+    return dal.getBlocksBetween(from, from + count - 1);
   });
 
   var cleanMemFifo = async.queue((task, callback) => task(callback), 1);
@@ -568,6 +569,8 @@ function BlockchainService () {
     cleanMemFifoInterval = setInterval(() => cleanMemFifo.push(cleanMemory), 1000 * constants.MEMORY_CLEAN_INTERVAL);
     cleanMemory(done);
   };
+
+  this.stopCleanMemory = () => clearInterval(cleanMemFifoInterval);
 
   function cleanMemory(done) {
     dal.blockDAL.migrateOldBlocks()

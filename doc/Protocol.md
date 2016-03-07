@@ -955,14 +955,14 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 
 ##### InnerHash
 
-* `InnerHash` is the SHA256 hash of the whole fields from `Version: 2` to `\nHash`, 'Hash' string being excluded from the hash computation.
+* `InnerHash` is the SHA256 hash of the whole fields from `Version: 2` to `\InnerHash`, 'InnerHash' string being excluded from the hash computation.
 
 ##### Nonce
 
 * `Nonce` value may be any zero or positive integer. This field is a special field allowing for document hash to change for proof-of-work computation.
 
-##### Block fingerprint
-To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Locally, this hash must start with at least `PoWMin` zeros.
+##### Proof of work
+To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must start with a specific number of zeros. Locally, this hash must start with at least `PoWMin` zeros.
 
 ##### PreviousHash
 
@@ -1214,9 +1214,11 @@ An identity is considered *revoked* if either:
 `MembersCount` field must be equal to last block's `MembersCount` plus incoming block's `Joiners` count, minus minus this block's `Excluded` count.
 
 ##### Proof-of-Work
-To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros. Rules is the following, and **relative to a each particular member**:
+To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules is the following, and **relative to a each particular member**:
 
-    NB_ZEROS = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * (1 + nbPreviousIssuers )/ (1 + nbBlocksSince)) ]
+    PERSONAL_DIFFICULTY = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * (1 + nbPreviousIssuers )/ (1 + nbBlocksSince)) ]
+    REST = PERSONAL_DIFFICULTY  % 4
+    NB_ZEROS = (PERSONAL_DIFFICULTY - REST) / 4
 
 Where:
 
@@ -1229,6 +1231,15 @@ Where:
 * If no block has been written by the member:
   * `[nbPreviousIssuers] = 0`
   * `[nbBlocksSince] = 0`
+
+The proof is considered valid if:
+
+* the proof starts with at least `NB_ZEROS` zeros
+* the `NB_ZEROS + 1`th character is:
+  * between `[0-F]` if `REST = 0`
+  * between `[0-7]` if `REST = 1`
+  * between `[0-3]` if `REST = 2`
+  * between `[0-1]` if `REST = 3`
 
 > Those rules of difficulty adaptation ensures a shared control of the blockchain writing.
 

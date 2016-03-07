@@ -1,25 +1,55 @@
 "use strict";
-var co = require('co');
-var _                = require('underscore');
-var Q                = require('q');
-var moment           = require('moment');
-var vucoin           = require('vucoin');
-var hashf            = require('./hashf');
-var dos2unix         = require('./dos2unix');
-var logger           = require('./logger')('sync');
-var rawer            = require('../lib/rawer');
-var constants        = require('../lib/constants');
-var Peer             = require('../lib/entity/peer');
+var util       = require('util');
+var stream     = require('stream');
+var co         = require('co');
+var _          = require('underscore');
+var Q          = require('q');
+var moment     = require('moment');
+var vucoin     = require('vucoin');
+var hashf      = require('./hashf');
+var dos2unix   = require('./dos2unix');
+var logger     = require('./logger')('sync');
+var rawer      = require('../lib/rawer');
+var constants  = require('../lib/constants');
+var Peer       = require('../lib/entity/peer');
 var multimeter = require('multimeter');
 
 const CONST_BLOCKS_CHUNK = 500;
 const EVAL_REMAINING_INTERVAL = 1000;
 const COMPUTE_SPEED_ON_COUNT_CHUNKS = 8;
 
-module.exports = function Synchroniser (server, host, port, conf, interactive) {
+module.exports = Synchroniser;
+
+function Synchroniser (server, host, port, conf, interactive) {
+
+  let that = this;
 
   var speed = 0, syncStart = new Date(), times = [syncStart], blocksApplied = 0;
-  var watcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
+  var baseWatcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
+
+  // Wrapper to also push event stream
+  let watcher = {
+    writeStatus: baseWatcher.writeStatus,
+    downloadPercent: (pct) => {
+      if (pct !== undefined && baseWatcher.downloadPercent() < pct) {
+        that.push({ download: pct });
+      }
+      return baseWatcher.downloadPercent(pct);
+    },
+    appliedPercent: (pct) => {
+      if (pct !== undefined && baseWatcher.appliedPercent() < pct) {
+        that.push({ applied: pct });
+      }
+      return baseWatcher.appliedPercent(pct);
+    },
+    end: baseWatcher.end
+  };
+
+  stream.Duplex.call(this, { objectMode: true });
+
+  // Unused, but made mandatory by Duplex interface
+  this._read = () => null;
+  this._write = () => null;
 
   if (interactive) {
     logger.mute();
@@ -196,9 +226,11 @@ module.exports = function Synchroniser (server, host, port, conf, interactive) {
     })
       .then(() => {
         watcher.end();
+        that.push({ sync: true });
         logger.info('Sync finished.');
       })
       .catch((err) => {
+        that.push({ sync: false });
         if (logInterval) {
           clearInterval(logInterval);
         }
@@ -384,16 +416,20 @@ function LoggerWatcher() {
   };
 
   this.downloadPercent = function(pct) {
-    let changed = pct != downPct;
-    downPct = pct;
-    if (changed) this.showProgress();
+    if (pct !== undefined) {
+      let changed = pct > downPct;
+      downPct = pct;
+      if (changed) this.showProgress();
+    }
     return downPct;
   };
 
   this.appliedPercent = function(pct) {
-    let changed = pct !== undefined && pct != appliedPct;
-    appliedPct = pct;
-    if (changed) this.showProgress();
+    if (pct !== undefined) {
+      let changed = pct > appliedPct;
+      appliedPct = pct;
+      if (changed) this.showProgress();
+    }
     return appliedPct;
   };
 
@@ -401,3 +437,5 @@ function LoggerWatcher() {
   };
 
 }
+
+util.inherits(Synchroniser, stream.Duplex);

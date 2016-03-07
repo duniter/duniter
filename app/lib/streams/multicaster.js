@@ -130,7 +130,7 @@ function Multicaster (conf, timeout) {
     return function(doc, peers) {
       return co(function *() {
         try {
-          if(!params.withIsolation || (conf && !conf.isolate)) {
+          if(!params.withIsolation || !(conf && conf.isolate)) {
             let theDoc = params.transform ? params.transform(doc) : doc;
             logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
             if (params.getDocID) {

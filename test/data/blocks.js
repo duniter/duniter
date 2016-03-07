@@ -1311,7 +1311,7 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 1\n" +
+    "Nonce: 5\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_BLOCK_REQUIRED: 
@@ -1771,7 +1771,7 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 17\n" +
+    "Nonce: 10\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_4_LEADING_ZEROS: 
@@ -1823,7 +1823,7 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 5\n" +
+    "Nonce: 11\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_6_LEADING_ZEROS: 
@@ -1849,7 +1849,7 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 21\n" +
+    "Nonce: 4\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_5_LEADING_ZEROS: 
@@ -1953,7 +1953,7 @@ module.exports = {
     "Certifications:\n" +
     "Transactions:\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
-    "Nonce: 13\n" +
+    "Nonce: 10\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ROOT_DATES: 

@@ -405,5 +405,6 @@ dtos.Boolean = {
 
 dtos.AdminSummary = {
   "host": String,
-  "current": dtos.Block
+  "current": dtos.Block,
+  "pubkey": String
 };

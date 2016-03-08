@@ -64,7 +64,8 @@ function WebAdmin (dbConf, overConf) {
     let current = yield server.dal.getCurrentBlockOrNull();
     return {
       "host": host,
-      "current": current
+      "current": current,
+      "pubkey": base58.encode(server.pair.publicKey)
     };
   });
 
@@ -114,9 +115,6 @@ function WebAdmin (dbConf, overConf) {
       currency: conf.currency,
       dt: conf.dt,
       dtDiffEval: conf.dtDiffEval,
-      idty_entropy: conf.idty_entropy,
-      idty_password: conf.idty_password,
-      idty_uid: conf.idty_uid,
       medianTimeBlocks: conf.medianTimeBlocks,
       msValidity: conf.msValidity,
       percentRot: conf.percentRot,
@@ -186,6 +184,27 @@ function WebAdmin (dbConf, overConf) {
       yield server.loadConf();
       bmapi = yield bma(server, null, true);
       return bmapi.openConnections();
+    });
+    yield pluggedConfP;
+    return {};
+  });
+
+  this.applyNewKeyConf = (req) => co(function *() {
+    yield pluggedConfP;
+    let conf = http2raw.conf(req);
+    let pair = yield Q.nbind(crypto.getKeyPair, crypto)(conf.idty_entropy, conf.idty_password);
+    let publicKey = base58.encode(pair.publicKey);
+    let secretKey = pair.secretKey;
+    yield server.dal.saveConf(_.extend(server.conf, {
+      salt: conf.idty_entropy,
+      passwd: conf.idty_password,
+      pair: {
+        pub: publicKey,
+        sec: base58.encode(secretKey)
+      }
+    }));
+    pluggedConfP = co(function *() {
+      yield server.loadConf();
     });
     yield pluggedConfP;
     return {};

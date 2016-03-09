@@ -64,7 +64,7 @@ function BlockGenerator() {
       clearTimeout(timeoutToClear);
       computeNextCallback = null;
       resolve();
-    }, (conf.powDelay || 1) * 1000);
+    }, (conf.powDelay) * 1000);
     // Offer the possibility to break waiting
     computeNextCallback = function() {
       clearTimeout(timeoutToClear);
@@ -74,12 +74,9 @@ function BlockGenerator() {
 
   this.prove = function (block, sigFunc, difficulty, done, forcedTime) {
 
-    var remainder = difficulty % 4;
-    var nbZeros = (difficulty - remainder) / 4;
-    var highMark = remainder == 3 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_3
-      : (remainder == 2 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_2
-      : (remainder == 1 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_1
-      : constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_0));
+    var remainder = difficulty % 16;
+    var nbZeros = (difficulty - remainder) / 16;
+    var highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
 
     return Q.Promise(function(resolve, reject){
       if (!powWorker) {

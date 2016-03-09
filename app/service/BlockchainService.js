@@ -374,7 +374,7 @@ function BlockchainService () {
           }
         }
         var trial = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
-        if (trial > (current.powMin + 1)) {
+        if (trial > (current.powMin + 2)) {
           powCanceled = 'Too high difficulty: waiting for other members to write next block';
         }
         else {

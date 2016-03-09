@@ -7,8 +7,13 @@ var constants = require('./constants');
 var dos2unix = require('./dos2unix');
 var signature = require('./signature');
 var rawer = require('./rawer');
+var logger = require('./logger')();
 
 var signatureFunc;
+
+let speed = 1;
+let A_SECOND = 1000;
+let SAMPLES_PER_SECOND = 10;
 
 process.on('uncaughtException', function (err) {
   console.error(err.stack || Error(err));
@@ -32,17 +37,16 @@ process.on('message', function(stuff){
     },
     function(sigFunc, next) {
       signatureFunc = sigFunc;
-      var powRegexp = new RegExp('^0{' + nbZeros + '}' + '[0-' + highMark + ']');
-      var lowPowRegexp = new RegExp('^0{' + (nbZeros) + '}[^0]');
-      var verylowPowRegexp = new RegExp('^0{' + (nbZeros - 1) + '}[^0]');
       var pow = "", sig = "", raw = "";
 
-      // Time must be = [medianTime; medianTime + minSpeed]
       block.time = getBlockTime(block, conf, forcedTime);
       // Test CPU speed
-      var testsPerSecond = nbZeros == 0 && highMark == '9A-F' ? 1 : computeSpeed(block, sigFunc);
-      var testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1);
-      process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound, nonce: block.nonce });
+      if ((nbZeros > 0 || highMark != '9A-F') && speed == 1) {
+        speed = computeSpeed(block, sigFunc);
+      }
+      var testsPerSecond = speed;
+      var testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1) / SAMPLES_PER_SECOND; // We make a sample every Xms
+      process.send({ found: false, testsPerSecond: testsPerSecond, testsPerRound: testsPerRound * SAMPLES_PER_SECOND, nonce: block.nonce });
       // Really start now
       var testsCount = 0;
       if (nbZeros == 0) {
@@ -51,15 +55,16 @@ process.on('message', function(stuff){
       }
       // Compute block's hash
       block.inner_hash = getBlockInnerHash(block);
+      var found = false;
       async.whilst(
-        function(){ return !pow.match(powRegexp); },
+        function(){ return !found; },
         function (next) {
           async.waterfall([
             function(next) {
               // Prove
               var testStart = new Date();
-              var found = false;
               var i = 0;
+              // Time is updated regularly during the proof
               block.time = getBlockTime(block, conf, forcedTime);
               block.inner_hash = getBlockInnerHash(block);
               while(!found && i < testsPerRound) {
@@ -67,8 +72,16 @@ process.on('message', function(stuff){
                 raw = rawer.getBlockInnerHashAndNonce(block);
                 sig = dos2unix(sigFunc(raw));
                 pow = hash(raw + sig + '\n');
-                found = pow.match(powRegexp);
-                if (!found && (pow.match(lowPowRegexp) || pow.match(verylowPowRegexp))) {
+                //found = pow.match(powRegexp);
+                let j = 0, charOK = true;
+                while (j < nbZeros && charOK) {
+                  charOK = pow[j] == '0';
+                  j++;
+                }
+                if (charOK) {
+                  found = pow[nbZeros].match(new RegExp('[0-' + highMark + ']'));
+                }
+                if (!found && nbZeros > 0 && j >= Math.max(1, nbZeros - 2)) {
                   process.send({ found: false, pow: pow, block: block, nbZeros: nbZeros });
                 }
                 testsCount++;
@@ -79,7 +92,7 @@ process.on('message', function(stuff){
               // Run NEXT only after a delay
               setTimeout(function () {
                 next();
-              }, nbZeros == 0 ? 0 : Math.max(0, (1000-durationMS))); // Max wait 1 second
+              }, nbZeros == 0 ? 0 : Math.max(0, (A_SECOND / SAMPLES_PER_SECOND - durationMS))); // Max wait 1 second
             },
             function(next) {
               process.send({ found: false, pow: pow, block: block, nbZeros: nbZeros });
@@ -120,7 +133,7 @@ function computeSpeed(block, sigFunc) {
     hash(raw + sig + '\n');
   }
   var duration = (new Date().getTime() - start.getTime());
-  return Math.round(constants.PROOF_OF_WORK.EVALUATION*1000/duration);
+  return Math.round(constants.PROOF_OF_WORK.EVALUATION * 1000 / duration);
 }
 
 function getBlockTime (block, conf, forcedTime) {

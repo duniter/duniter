@@ -47,12 +47,9 @@ rules.FUNCTIONS = {
   checkProofOfWork: (block, conf, dal) => co(function *() {
     // Compute exactly how much zeros are required for this block's issuer
     let difficulty = yield getTrialLevel(block.issuer, conf, dal);
-    var remainder = difficulty % 4;
-    var nbZerosReq = Math.max(0, (difficulty - remainder) / 4);
-    var highMark = remainder == 3 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_3
-      : (remainder == 2 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_2
-      : (remainder == 1 ? constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_1
-      : constants.PROOF_OF_WORK.UPPER_BOUND.LEVEL_0));
+    var remainder = difficulty % 16;
+    var nbZerosReq = Math.max(0, (difficulty - remainder) / 16);
+    var highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
     var powRegexp = new RegExp('^0{' + nbZerosReq + '}' + '[0-' + highMark + ']');
     if (!block.hash.match(powRegexp)) {
       var givenZeros = Math.max(0, Math.min(nbZerosReq, block.hash.match(/^0*/)[0].length));
@@ -680,7 +677,11 @@ function getTrialLevel (issuer, conf, dal) {
     }
     var nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
     var nbBlocksSince = current.number - last.number;
-    return Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
+    let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
+    if (personal_diff + 1 % 16 == 0) {
+      personal_diff++;
+    }
+    return personal_diff;
   });
 }
 
@@ -705,22 +706,33 @@ function getPoWMinFor (blockNumber, conf, dal) {
       co(function *() {
         var previous = yield dal.getBlock(blockNumber - 1);
         var medianTime = yield getMedianTime(blockNumber, conf, dal);
-        var lastDistant = yield dal.getBlock(Math.max(0, blockNumber - conf.dtDiffEval));
+        var speedRange = parseFloat(conf.medianTimeBlocks) * 3;
+        var lastDistant = yield dal.getBlock(Math.max(0, blockNumber - speedRange));
         // Compute PoWMin value
         var duration = medianTime - lastDistant.medianTime;
-        var speed = parseFloat(conf.dtDiffEval) / duration;
-        var maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(2));
-        var minGenTime = Math.floor(conf.avgGenTime / Math.sqrt(2));
+        var speed = speedRange / duration;
+        var maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
+        var minGenTime = Math.floor(conf.avgGenTime / Math.sqrt(1.066));
         var maxSpeed = 1.0 / minGenTime;
         var minSpeed = 1.0 / maxGenTime;
         // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');
         if (speed >= maxSpeed) {
           // Must increase difficulty
-          resolve(previous.powMin + 1);
+          if ((previous.powMin + 2) % 16 == 0) {
+            // Avoid (16*n - 1) value
+            resolve(previous.powMin + 2);
+          } else {
+            resolve(previous.powMin + 1);
+          }
         }
         else if (speed <= minSpeed) {
           // Must decrease difficulty
-          resolve(Math.max(0, previous.powMin - 1));
+          if (previous.powMin % 16 == 0) {
+            // Avoid (16*n - 1) value
+            resolve(Math.max(0, previous.powMin - 2));
+          } else {
+            resolve(Math.max(0, previous.powMin - 1));
+          }
         }
         else {
           // Must not change difficulty

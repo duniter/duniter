@@ -320,7 +320,7 @@ describe("Block global coherence:", function(){
   it('a block not starting with a leading zero should fail', test(rules.GLOBAL.checkProofOfWork, blocks.NO_LEADING_ZERO, {
     getCurrent: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 1 }),
+    getBlock: () => Q({ powMin: 8 }),
     getBlocksBetween: () => Q([{ issuer: 'a' }])
   }, function (err) {
     should.exist(err);
@@ -330,7 +330,7 @@ describe("Block global coherence:", function(){
   it('a block requiring 2 leading zeros but providing less should fail', test(rules.GLOBAL.checkProofOfWork, blocks.REQUIRES_7_LEADING_ZEROS, {
     getCurrent: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 1 }),
+    getBlock: () => Q({ powMin: 6 }),
     getBlocksBetween: () => Q([{ issuer: 'a' },{ issuer: 'b' }])
   }, function (err) {
     should.exist(err);
@@ -340,7 +340,7 @@ describe("Block global coherence:", function(){
   it('a block requiring 1 leading zeros but providing less should fail', test(rules.GLOBAL.checkProofOfWork, blocks.REQUIRES_6_LEADING_ZEROS, {
     getCurrent: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 1 }),
+    getBlock: () => Q({ powMin: 8 }),
     getBlocksBetween: () => Q([{ issuer: 'a' }])
   }, function (err) {
     should.exist(err);
@@ -356,7 +356,7 @@ describe("Block global coherence:", function(){
   it('a block requiring 40 leading zeros as second block of newcomer should fail', test(rules.GLOBAL.checkProofOfWork, blocks.SECOND_BLOCK_OF_NEWCOMER, {
     getCurrent: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 40 }),
+    getBlock: () => Q({ powMin: 160 }),
     getBlocksBetween: () => Q([{ issuer: 'a' }])
   }, function (err) {
     should.exist(err);

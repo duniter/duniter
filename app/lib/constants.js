@@ -220,14 +220,26 @@ module.exports = {
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
-    EVALUATION: 200,
+    EVALUATION: 1000,
     RELEASE_MEMORY: 10000,
-    UPPER_BOUND: {
-      LEVEL_0: '9A-F',
-      LEVEL_1: '7',
-      LEVEL_2: '3',
-      LEVEL_3: '1'
-    }
+    UPPER_BOUND: [
+      '9A-F',
+      '9A-E',
+      '9A-D',
+      '9A-C',
+      '9A-B',
+      '9A',
+      '9',
+      '8',
+      '7',
+      '6',
+      '5',
+      '4',
+      '3',
+      '2',
+      '1',
+      '1' // In case remainder 15 happens for some reason
+    ]
   },
 
   DURATIONS: {

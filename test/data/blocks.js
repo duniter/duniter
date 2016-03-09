@@ -67,7 +67,7 @@ module.exports = {
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 1\n" +
-    "PoWMin: 10\n" +
+    "PoWMin: 17\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1755,7 +1755,7 @@ module.exports = {
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 3\n" +
-    "PoWMin: 1\n" +
+    "PoWMin: 8\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1805,7 +1805,7 @@ module.exports = {
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 61\n" +
-    "PoWMin: 1\n" +
+    "PoWMin: 6\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1831,7 +1831,7 @@ module.exports = {
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 67\n" +
-    "PoWMin: 1\n" +
+    "PoWMin: 8\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
@@ -1935,7 +1935,7 @@ module.exports = {
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 66\n" +
-    "PoWMin: 1\n" +
+    "PoWMin: 160\n" +
     "Time: 1411776000\n" +
     "MedianTime: 1411776000\n" +
     "Issuer: AbCCJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +

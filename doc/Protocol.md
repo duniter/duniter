@@ -938,9 +938,9 @@ percentRot  | The percent of previous issuers to reach for personalized difficul
 Variable  | Meaning
 --------- | ----
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last active (non-expired) membership is either in `Joiners` or `Actives`.
-maxGenTime  | `= CEIL(avgGenTime * √2)`
-minGenTime  | `= FLOOR(avgGenTime / √2)`
-maxAcceleration | `= maxGenTime * (CEIL((medianTimeBlocks + 1) / 2) + 1)`
+maxGenTime  | `= CEIL(avgGenTime * √(1,066))`
+minGenTime  | `= FLOOR(avgGenTime / √(1,066))`
+maxAcceleration | `= CEIL(maxGenTime * (CEIL((medianTimeBlocks + 1) / 2) + 1))`
 dSen | `= 1.2 x CEIL(EXP(LN(membersCount)/stepMax))`
 sentries | Members with at least `dSen` active links *from* them
 
@@ -962,7 +962,10 @@ Local validation verifies the coherence of a well-formatted block, withtout any 
 * `Nonce` value may be any zero or positive integer. This field is a special field allowing for document hash to change for proof-of-work computation.
 
 ##### Proof of work
-To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must start with a specific number of zeros. Locally, this hash must start with at least `PoWMin` zeros.
+To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must start with a specific number of zeros. Locally, this hash must start with at least `NB_ZEROS` zeros:
+
+    REMAINDER = PowMin % 16
+    NB_ZEROS = (PowMin - REMAINDER) / 16
 
 ##### PreviousHash
 
@@ -1128,15 +1131,22 @@ An identity is considered *revoked* if either:
 ##### PoWMin
 
 ###### Définitions
-* `speed = dtDiffEval / (medianTime(incomingNumber) - medianTime(incomingNumber - dtDiffEval))`
+* `speedRange = medianTimeBlocks * 3`
+* `speed = speedRange / (medianTime(incomingNumber) - medianTime(incomingNumber - speedRange))`
 * `maxSpeed = 1/minGenTime`
 * `minSpeed = 1/maxGenTime`
 
 ###### Rules
 
+We define `PPowMin` as the `PowMin` value of previous block.
+
 * If incoming block's `Number` is > 0 and a multiple of `dtDiffEval`, then:
-  * If `speed` is greater or equal to `maxSpeed`, then `PoWMin = PoWMin + 1`
-  * If `speed` is less or equal to `minSpeed`, then `PoWMin = MAX(0, PoWMin - 1)`
+  * If `speed` is greater or equal to `maxSpeed`, then:
+      *  if `(PPoWMin + 2) % 16 == 0` then `PoWMin = PPoWMin + 2`
+      *  else `PoWMin = PPoWMin + 1`
+  * If `speed` is less or equal to `minSpeed`, then:
+	  * if `(PPoWMin) % 16 == 0` then `PoWMin = MAX(0, PPoWMin - 2)`
+	  * else `PoWMin = MAX(0, PPoWMin - 1)`
 * Else
   * If `Number` is > 0, `PoWMin` must be equal to previous block's `PoWMin`
 
@@ -1216,9 +1226,14 @@ An identity is considered *revoked* if either:
 ##### Proof-of-Work
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules is the following, and **relative to a each particular member**:
 
-    PERSONAL_DIFFICULTY = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * (1 + nbPreviousIssuers )/ (1 + nbBlocksSince)) ]
-    REST = PERSONAL_DIFFICULTY  % 4
-    NB_ZEROS = (PERSONAL_DIFFICULTY - REST) / 4
+```
+PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * (1 + nbPreviousIssuers )/ (1 + nbBlocksSince)) ]
+
+if (PERSONAL_DIFF + 1) % 16 == 0 then PERSONAL_DIFF = PERSONAL_DIFF + 1
+
+REMAINDER = PERSONAL_DIFFICULTY  % 16
+NB_ZEROS = (PERSONAL_DIFFICULTY - REMAINDER) / 16
+```
 
 Where:
 
@@ -1236,10 +1251,23 @@ The proof is considered valid if:
 
 * the proof starts with at least `NB_ZEROS` zeros
 * the `NB_ZEROS + 1`th character is:
-  * between `[0-F]` if `REST = 0`
-  * between `[0-7]` if `REST = 1`
-  * between `[0-3]` if `REST = 2`
-  * between `[0-1]` if `REST = 3`
+  * between `[0-F]` if `REMAINDER = 0`
+  * between `[0-E]` if `REMAINDER = 1`
+  * between `[0-D]` if `REMAINDER = 2`
+  * between `[0-C]` if `REMAINDER = 3`
+  * between `[0-B]` if `REMAINDER = 4`
+  * between `[0-A]` if `REMAINDER = 5`
+  * between `[0-9]` if `REMAINDER = 6`
+  * between `[0-8]` if `REMAINDER = 7`
+  * between `[0-7]` if `REMAINDER = 8`
+  * between `[0-6]` if `REMAINDER = 9`
+  * between `[0-5]` if `REMAINDER = 10`
+  * between `[0-4]` if `REMAINDER = 11`
+  * between `[0-3]` if `REMAINDER = 12`
+  * between `[0-2]` if `REMAINDER = 13`
+  * between `[0-1]` if `REMAINDER = 14`
+
+> N.B.: it is not possible to have REMAINDER = 15
 
 > Those rules of difficulty adaptation ensures a shared control of the blockchain writing.
 
@@ -1376,8 +1404,8 @@ TRUE
 * A transaction's `Inputs` amount sum must be equal to `Ouputs` amount sum.
 * A transaction cannot have two identical `Inputs`
 * A transaction cannot have a same pubkey twice in `Outputs`
-    
-## Implementations  
+
+## Implementations
 
 ### APIs
 

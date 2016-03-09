@@ -22,7 +22,9 @@ rules.FUNCTIONS = {
   }),
 
   checkProofOfWork: (block) => co(function *() {
-    var powRegexp = new RegExp('^0{' + Math.floor(block.powMin / 4) + '}');
+    let remainder = block.powMin % 16;
+    let nb_zeros = (block.powMin - remainder) / 16;
+    var powRegexp = new RegExp('^0{' + nb_zeros + '}');
     if (!block.hash.match(powRegexp)) {
       throw Error('Not a proof-of-work');
     }
@@ -411,7 +413,7 @@ rules.FUNCTIONS = {
 };
 
 function maxAcceleration (conf) {
-  return Math.ceil(conf.avgGenTime * Math.sqrt(2)) * (Math.ceil((conf.medianTimeBlocks + 1) / 2) + 1);
+  return Math.ceil(conf.avgGenTime * Math.sqrt(1.066)) * (Math.ceil((conf.medianTimeBlocks + 1) / 2) + 1);
 }
 
 function existsPubkeyIn(pubk, memberships) {

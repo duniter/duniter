@@ -67,7 +67,7 @@ module.exports = {
 
   getRandomPort: () => ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START,
 
-  createServersAndListen: (name, interfaces, httpLogs, routingCallback, listenWebSocket) => co(function *() {
+  createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket) => co(function *() {
 
     var app = express();
 
@@ -93,6 +93,10 @@ module.exports = {
     // development only
     if (app.get('env') == 'development') {
       app.use(errorhandler());
+    }
+
+    if (staticPath) {
+      app.use(express.static(staticPath));
     }
 
     routingCallback(app, {

@@ -26,7 +26,7 @@ module.exports = function(server, interfaces, httpLogs) {
     }
   }
 
-  return network.createServersAndListen('uCoin server', interfaces, httpLogs, (app, httpMethods) => {
+  return network.createServersAndListen('uCoin server', interfaces, httpLogs, null, (app, httpMethods) => {
 
     var node         = require('../../controllers/node')(server);
     var blockchain   = require('../../controllers/blockchain')(server);

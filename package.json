@@ -67,7 +67,8 @@
     "vucoin": "0.29.1",
     "winston": "2.1.1",
     "wotb": "0.3.2",
-    "ws": "1.0.1"
+    "ws": "1.0.1",
+    "ucoin-ui": "git@github.com:ucoin-io/ucoin-ui.git"
   },
   "devDependencies": {
     "coveralls": "2.11.4",

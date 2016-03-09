@@ -11,7 +11,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
   var webminCtrl = require('../../controllers/webmin.controller')(dbConf, overConf);
 
-  return network.createServersAndListen('uCoin web admin', interfaces, httpLogs, (app, httpMethods) => {
+  return network.createServersAndListen('uCoin web admin', interfaces, httpLogs, 'node_modules/ucoin-ui/public', (app, httpMethods) => {
 
     httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
     httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);

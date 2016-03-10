@@ -95,19 +95,7 @@ program
 program
   .command('webstart')
   .description('Start uCoin server + web admin.')
-  .action(() => {
-
-    var dbName = program.mdb;
-    var dbHome = program.home;
-
-    // Add log files for this instance
-    logger.addHomeLogs(directory.getHome(dbName, dbHome));
-
-    co(function *() {
-      let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false);
-      webminapi.openConnections();
-    });
-  });
+  .action(webStart);
 
 program
   .command('wizard [step]')
@@ -796,9 +784,23 @@ program
     process.exit();
   });
 
+function webStart() {
+  var dbName = program.mdb;
+  var dbHome = program.home;
+
+  // Add log files for this instance
+  logger.addHomeLogs(directory.getHome(dbName, dbHome));
+
+  co(function *() {
+    let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false);
+    webminapi.openConnections();
+  });
+}
+
 program.parse(process.argv);
 
 if (program.args.length == 0) {
-  program.help();
-  process.exit();
-}
+
+  console.log('No command given, using default: ucoind webstart');
+  webStart();
+};

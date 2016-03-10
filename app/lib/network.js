@@ -95,14 +95,14 @@ module.exports = {
       app.use(errorhandler());
     }
 
-    if (staticPath) {
-      app.use(express.static(staticPath));
-    }
-
     routingCallback(app, {
       httpGET:  (uri, promiseFunc, dtoContract) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract),
       httpPOST: (uri, promiseFunc, dtoContract) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract)
     });
+
+    if (staticPath) {
+      app.use(express.static(staticPath));
+    }
 
     var httpServers = interfaces.map(() => {
       let httpServer = http.createServer(app);

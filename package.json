@@ -68,7 +68,7 @@
     "winston": "2.1.1",
     "wotb": "0.3.2",
     "ws": "1.0.1",
-    "ucoin-ui": "git@github.com:ucoin-io/ucoin-ui.git"
+    "ucoin-ui": "0.1.0"
   },
   "devDependencies": {
     "coveralls": "2.11.4",

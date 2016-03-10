@@ -33,7 +33,18 @@ before_deploy:
   - rm node-${NVER}-linux-x64.tar.gz
   # Clean testing packages
   - npm prune --production
-  - tar czf ../ucoin-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"  --exclude "share"
+  - tar czf ../ucoin-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"
+  # GUI Version
+  - NW="nwjs-v0.13.0-rc2-linux-x64"
+  - NW_GZ="${NW}.tar.gz"
+  - wget http://dl.nwjs.io/live-build/03-10-2016/d0b5cf2-ea112a8-3d99a78-678d67e/v0.13.0-rc2/${NW_GZ}
+  - tar xvzf ${NW_GZ}
+  - mv ${NW}/* ./
+  - mv gui/* ./
+  - rm -Rf ${NW}
+  - rm -Rf ./ui/package/node_modules
+  - rm -Rf ./ui/package/bower_components
+  - tar czf ../duniter-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"
 
 # Releases deployed on GitHub
 deploy:
@@ -44,6 +55,7 @@ deploy:
     secure: feyz5YmzYj6g6ZJKAv7u3pp9j9OY6oL4Pcx8mkha25BT1kEIu7lzvkZu4mJAIDjCxJjEkce3fNGXhRICqoMhRy/FK5dUUTpmP3KoMLNNJboO+MhDqjPEb6OYyafikSWnm0BszPL38FzSYMdmvNZ6WirOyVfrdzVPgU6MG0D99w8=
   file:
     - ../ucoin-x64.tar.gz
+    - ../duniter-x64.tar.gz
   on:
     repo: ucoin-io/ucoin
     tags: true

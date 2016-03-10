@@ -49,7 +49,7 @@ before_deploy:
 # Releases deployed on GitHub
 deploy:
   provider: releases
-#  prerelease: true
+  prerelease: true
   skip_cleanup: true
   api_key:
     secure: feyz5YmzYj6g6ZJKAv7u3pp9j9OY6oL4Pcx8mkha25BT1kEIu7lzvkZu4mJAIDjCxJjEkce3fNGXhRICqoMhRy/FK5dUUTpmP3KoMLNNJboO+MhDqjPEb6OYyafikSWnm0BszPL38FzSYMdmvNZ6WirOyVfrdzVPgU6MG0D99w8=

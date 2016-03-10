@@ -15,7 +15,8 @@
   "scripts": {
     "test": "mocha --growl --timeout 20000 test test/fast test/fast/block test/integration test/",
     "start": "node bin/ucoind start",
-    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/"
+    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/",
+    "postinstall": "mkdir -p ui && cd ui && npm pack ucoin-ui@0.1.2 && tar xzf ucoin-ui-0.1.2.tgz && cd package && npm install && cd .. && rm ucoin-ui-0.1.2.tgz"
   },
   "repository": {
     "type": "git",
@@ -67,8 +68,7 @@
     "vucoin": "0.29.1",
     "winston": "2.1.1",
     "wotb": "0.3.2",
-    "ws": "1.0.1",
-    "ucoin-ui": "0.1.0"
+    "ws": "1.0.1"
   },
   "devDependencies": {
     "coveralls": "2.11.4",

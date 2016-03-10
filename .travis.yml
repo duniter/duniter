@@ -45,6 +45,7 @@ before_deploy:
   - rm -Rf ${NW_GZ}
   - rm -Rf ./ui/package/node_modules
   - rm -Rf ./ui/package/bower_components
+  - rm -Rf node
   - tar czf ../duniter-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"
 
 # Releases deployed on GitHub

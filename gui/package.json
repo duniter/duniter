@@ -1,0 +1,9 @@
+{
+  "name": "duniter-ui",
+  "main": "http://localhost:9220",
+  "node-main": "./bin/ucoind",
+  "window": {
+    "icon": "duniter.png",
+    "title": "Duniter v0.2"
+  }
+}

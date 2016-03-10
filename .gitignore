@@ -7,3 +7,4 @@ bin/jpgp*.jar
 naclb/build
 naclb/node_modules
 dump*/
+/ui/

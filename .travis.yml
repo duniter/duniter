@@ -42,6 +42,7 @@ before_deploy:
   - mv ${NW}/* ./
   - mv gui/* ./
   - rm -Rf ${NW}
+  - rm -Rf ${NW_GZ}
   - rm -Rf ./ui/package/node_modules
   - rm -Rf ./ui/package/bower_components
   - tar czf ../duniter-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"

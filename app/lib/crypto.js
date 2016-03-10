@@ -6,6 +6,8 @@ var base58      = require('./base58');
 var rawer       = require('./rawer');
 var naclBinding = require('naclb');
 
+nacl.util = require('./nacl-util');
+
 var crypto_sign_BYTES = 64;
 var SEED_LENGTH = 32; // Length of the key
 // TODO: change key parameters

@@ -113,7 +113,7 @@ function BlockGenerator() {
     var that = this;
     var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.'; };
     var onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
-    that.powProcess = childProcess.fork(path.join(__dirname, '/../lib/proof'));
+    that.powProcess = childProcess.fork(path.join(__dirname, '/../lib/proof.js'));
     var start = null;
     var speedMesured = false;
 

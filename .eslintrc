@@ -45,6 +45,11 @@
     "es6": true
   },
   "globals": {
+    "unescape": true,
+    "escape": true,
+    "window": true,
+    "btoa": true,
+    "atob": true,
     "before": true,
     "after": true,
     "describe": true,

@@ -51,16 +51,16 @@ before_deploy:
   - cd ucoin_release
   - tar czf ../duniter-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
   - cd ..
-  - git clone git@github.com:ucoin-io/debpkg.git duniter-0.6
-  - mkdir -p duniter-0.6/opt/duniter/
+  - git clone https://github.com/ucoin-io/debpkg.git duniter
+  - mkdir -p duniter/opt/duniter/
   - cd ucoin_release/sources
   - zip -r ../duniter-desktop.nw *
   - cd ../nw
   - zip -r ../nw.nwb *
   - cd ../..
-  - mv ucoin_release/duniter-desktop.nw duniter-0.6/opt/duniter/
-  - mv ucoin_release/nw.nwb duniter-0.6/opt/duniter/
-  - fakeroot dpkg-deb --build duniter-0.6
+  - mv ucoin_release/duniter-desktop.nw duniter/opt/duniter/
+  - mv ucoin_release/nw.nwb duniter/opt/duniter/
+  - fakeroot dpkg-deb --build duniter
 
 # Releases deployed on GitHub
 deploy:

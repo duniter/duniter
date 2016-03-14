@@ -55,7 +55,7 @@ before_deploy:
   - git clone https://github.com/ucoin-io/debpkg.git duniter-x64
   - mkdir -p duniter-x64/opt/duniter/
   - chmod 775 duniter-x64/DEBIAN/post*
-  - sed -i "s/Version:.*/Version: $DUNITER_VER/g" DEBIAN/control
+  - sed -i "s/Version:.*/Version: $DUNITER_VER/g" duniter-x64/DEBIAN/control
   - cd ucoin_release/sources
   - rm -Rf .git
   - zip -qr ../duniter-desktop.nw *

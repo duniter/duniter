@@ -51,7 +51,7 @@ before_deploy:
   - cd ucoin_release
   - tar czf ../duniter-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
   - cd ..
-  - git clone https://github.com/ucoin-io/debpkg.git duniter
+  - git clone https://github.com/ucoin-io/debpkg.git duniter-x64
   - mkdir -p duniter-x64/opt/duniter/
   - cd ucoin_release/sources
   - zip -qr ../duniter-desktop.nw *

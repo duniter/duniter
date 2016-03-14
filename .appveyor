@@ -1,0 +1,11 @@
+environment:
+  nodejs_version: "5.8.0"
+
+install:
+  - npm install
+
+test_script:
+  - npm test
+
+build: off
+deploy: off

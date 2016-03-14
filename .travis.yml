@@ -27,6 +27,7 @@ after_success:
 before_deploy:
   # Download & embed Nodejs binary
   - NVER=`node -v`
+  - DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
   - wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
   - tar xzf node-${NVER}-linux-x64.tar.gz
   - mv node-${NVER}-linux-x64 node
@@ -54,6 +55,7 @@ before_deploy:
   - git clone https://github.com/ucoin-io/debpkg.git duniter-x64
   - mkdir -p duniter-x64/opt/duniter/
   - chmod 775 duniter-x64/DEBIAN/post*
+  - sed -i "s/Version:.*/Version: $DUNITER_VER/g" DEBIAN/control
   - cd ucoin_release/sources
   - rm -Rf .git
   - zip -qr ../duniter-desktop.nw *

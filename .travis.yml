@@ -54,9 +54,9 @@ before_deploy:
   - git clone https://github.com/ucoin-io/debpkg.git duniter
   - mkdir -p duniter/opt/duniter/
   - cd ucoin_release/sources
-  - zip -r ../duniter-desktop.nw *
-  - cd ../nw
-  - zip -r ../nw.nwb *
+  - zip -qr ../duniter-desktop.nw *
+  - cd ../nwK
+  - zip -qr ../nw.nwb *
   - cd ../..
   - mv ucoin_release/duniter-desktop.nw duniter/opt/duniter/
   - mv ucoin_release/nw.nwb duniter/opt/duniter/

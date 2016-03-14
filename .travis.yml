@@ -28,7 +28,7 @@ before_deploy:
   # Download & embed Nodejs binary
   - NVER=`node -v`
   - DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
-  - DUNITER_DEB_VER =" $DUNITER_VER"
+  - DUNITER_DEB_VER=" $DUNITER_VER"
   - wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
   - tar xzf node-${NVER}-linux-x64.tar.gz
   - mv node-${NVER}-linux-x64 node

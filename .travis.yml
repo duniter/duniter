@@ -55,7 +55,7 @@ before_deploy:
   - mkdir -p duniter/opt/duniter/
   - cd ucoin_release/sources
   - zip -qr ../duniter-desktop.nw *
-  - cd ../nwK
+  - cd ../nw
   - zip -qr ../nw.nwb *
   - cd ../..
   - mv ucoin_release/duniter-desktop.nw duniter/opt/duniter/

@@ -1,5 +1,6 @@
 "use strict";
 
+var path = require('path');
 var es = require('event-stream');
 var network = require('../../lib/network');
 var dtos = require('../../lib/streams/dtos');
@@ -10,7 +11,9 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
   var webminCtrl = require('../../controllers/webmin.controller')(dbConf, overConf);
 
-  return network.createServersAndListen('uCoin web admin', interfaces, httpLogs, './ui/package/public', (app, httpMethods) => {
+  var fullPath = path.join(__dirname, '../../../ui/package/public');
+
+  return network.createServersAndListen('uCoin web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
 
     httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
     httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);

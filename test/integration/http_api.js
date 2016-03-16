@@ -10,6 +10,7 @@ var user      = require('./tools/user');
 var http      = require('./tools/http');
 var constants = require('../../app/lib/constants');
 var rp        = require('request-promise');
+var ws        = require('ws');
 
 var server = ucoin({
   memory: true
@@ -140,6 +141,41 @@ describe("HTTP API", function() {
       return http.expectAnswer(rp('http://127.0.0.1:7777/blockchain/difficulties', { json: true }), function(res) {
         res.should.have.property('block').equal(5);
         res.should.have.property('levels').have.length(1);
+      });
+    });
+  });
+
+  describe("/ws", function() {
+
+    it('/block should exist', function(done) {
+      var client = new ws('ws://127.0.0.1:7777/ws/block');
+      client.on('open', function open() {
+        client.terminate();
+        done();
+      });
+    });
+
+    it('/block should send a block', function(done) {
+      var completed = false
+      var client = new ws('ws://127.0.0.1:7777/ws/block');
+      client.on('message', function message(data, flags) {
+        var block = JSON.parse(data);
+        should(block).have.property('number', 4);
+        if (!completed) {
+          completed = true;
+          done();
+        }
+      });
+    });
+
+    it('/block should answer to pings', function(done) {
+      var client = new ws('ws://127.0.0.1:7777/ws/block');
+      client.on('pong', function message(data, flags) {
+        client.terminate();
+        done();
+      });
+      client.on('open', function open() {
+        client.ping();
       });
     });
   });

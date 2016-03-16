@@ -80,6 +80,10 @@ function Synchroniser (server, host, port, conf, interactive) {
       logger.info('Downloading Blockchain...');
       watcher.writeStatus('Connecting to ' + host + '...');
       var rCurrent = yield Q.nbind(node.blockchain.current, node)();
+      var remoteVersion = rCurrent.version;
+      if (remoteVersion < 2) {
+        throw Error("Could not sync with remote host. UCP version is " + remoteVersion + " (Must be >= 2)")
+      }
       var localNumber = lCurrent ? lCurrent.number : -1;
       var remoteNumber = Math.min(rCurrent.number, to || rCurrent.number);
 

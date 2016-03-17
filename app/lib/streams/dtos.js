@@ -48,7 +48,7 @@ dtos.Membership = {
 dtos.Memberships = {
   "pubkey": String,
   "uid": String,
-  "sigDate": Number,
+  "sigDate": String,
   "memberships": [
     {
       "version": Number,
@@ -310,7 +310,8 @@ dtos.Source = {
   "type": String,
   "noffset": Number,
   "identifier": String,
-  "amount": Number
+  "amount": Number,
+  "base": Number
 };
 
 dtos.Sources = {

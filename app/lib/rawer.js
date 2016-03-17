@@ -14,7 +14,9 @@ module.exports = new function() {
     raw += "Issuer: " + (json.issuer || json.pubkey) + "\n";
     raw += "UniqueID: " + json.uid + '\n';
     raw += "Timestamp: " + json.buid + '\n';
-    raw += json.sig || '';
+    if (json.sig) {
+      raw += json.sig + '\n';
+    }
     return dos2unix(raw);
   };
 
@@ -25,7 +27,9 @@ module.exports = new function() {
     raw += "IdtyTimestamp: " + json.idty_buid + '\n';
     raw += "IdtySignature: " + json.idty_sig + '\n';
     raw += "CertTimestamp: " + json.buid + '\n';
-    raw += json.sig || '';
+    if (json.sig) {
+      raw += json.sig + '\n';
+    }
     return dos2unix(raw);
   };
 
@@ -34,7 +38,9 @@ module.exports = new function() {
     raw += "IdtyUniqueID: " + json.uid + '\n';
     raw += "IdtyTimestamp: " + json.buid + '\n';
     raw += "IdtySignature: " + json.sig + '\n';
-    raw += json.revocation;
+    if (json.revocation) {
+      raw += json.revocation + '\n';
+    }
     return dos2unix(raw);
   };
 

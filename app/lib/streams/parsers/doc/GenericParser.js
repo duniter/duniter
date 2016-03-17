@@ -59,7 +59,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
         let endOffset = str.match(/\n$/) ? 2 : 1;
         obj.signature = sp[sp.length - endOffset];
         obj.hash = hashf(str).toUpperCase();
-        obj.raw = sp.slice(0, sp.length - 1).join('\n') + '\n';
+        obj.raw = sp.slice(0, sp.length - endOffset).join('\n') + '\n';
         var docLF = obj.raw.replace(/\r\n/g, "\n");
         if(docLF.match(/\n$/)){
           captures.forEach(function (cap) {

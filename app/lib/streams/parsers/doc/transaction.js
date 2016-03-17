@@ -26,6 +26,7 @@ function TransactionParser (onError) {
     obj.documentType = 'transaction';
     obj.comment = obj.comment || "";
     obj.locktime = parseInt(obj.locktime) || 0;
+    obj.signatures.push(obj.signature)
   };
 
   this._verify = function(obj){

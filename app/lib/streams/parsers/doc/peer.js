@@ -27,9 +27,6 @@ function PeerParser (onError) {
     // Removes trailing space
     if (obj.endpoints.length > 0)
       obj.endpoints.splice(obj.endpoints.length - 1, 1);
-    // Removes trailing signature
-    if (obj.endpoints.length > 0)
-      obj.endpoints.splice(obj.endpoints.length - 1, 1);
     obj.getBMA = function() {
       var bma = null;
       obj.endpoints.forEach(function(ep){

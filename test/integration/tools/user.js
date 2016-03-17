@@ -70,7 +70,7 @@ function User (uid, options, node) {
             issuer: pub,
             currency: node.server.conf.currency
           });
-          selfCert += crypto.signSync(selfCert, sec);
+          selfCert += crypto.signSync(selfCert, sec) + '\n';
           post('/wot/add', {
             "identity": selfCert
           }, next);
@@ -126,7 +126,7 @@ function User (uid, options, node) {
           });
           var sig = crypto.signSync(cert, sec);
           post('/wot/certify', {
-            "cert": cert + sig
+            "cert": cert + sig + "\n"
           }, next);
         }
       ], function(err) {
@@ -166,7 +166,7 @@ function User (uid, options, node) {
 
     var sig = crypto.signSync(revocation, sec);
     return Q.nfcall(post, '/wot/revoke', {
-      "revocation": revocation + sig
+      "revocation": revocation + sig + '\n'
     });
   });
 

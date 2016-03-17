@@ -38,7 +38,9 @@ module.exports = new function() {
     raw += "IdtyUniqueID: " + json.uid + '\n';
     raw += "IdtyTimestamp: " + json.buid + '\n';
     raw += "IdtySignature: " + json.sig + '\n';
-    raw += json.revocation + '\n';
+    if (json.revocation) {
+      raw += json.revocation + '\n';
+    }
     return dos2unix(raw);
   };
 

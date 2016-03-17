@@ -145,7 +145,7 @@ function WebAdmin (dbConf, overConf) {
     let found = yield server.dal.getIdentityByHashOrNull(entity.getTargetHash());
     if (!found) {
       let selfCert = rawer.getOfficialIdentity(entity);
-      selfCert += crypto.signSync(selfCert, secretKey);
+      selfCert += crypto.signSync(selfCert, secretKey) + '\n';
       found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, parsers.parseIdentity);
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));

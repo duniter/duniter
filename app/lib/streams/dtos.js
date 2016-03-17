@@ -310,7 +310,8 @@ dtos.Source = {
   "type": String,
   "noffset": Number,
   "identifier": String,
-  "amount": Number
+  "amount": Number,
+  "base": Number
 };
 
 dtos.Sources = {

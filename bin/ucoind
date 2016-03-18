@@ -35,7 +35,7 @@ program
   .version(pjson.version)
   .usage('<command> [options]')
 
-  .option('-h, --home <path>',         'Path to uCoin HOME (defaults to "$HOME/.config/ucoin").')
+  .option('--home <path>',         'Path to uCoin HOME (defaults to "$HOME/.config/ucoin").')
   .option('-d, --mdb <name>',          'Database name (defaults to "ucoin_default").')
 
   .option('--autoconf',                'With `init` command, will guess the best network and key options witout aksing for confirmation')

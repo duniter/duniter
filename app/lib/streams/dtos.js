@@ -270,7 +270,7 @@ dtos.Certification = {
     "block": Number,
     "medianTime": Number
   },
-  "sigDate": Number,
+  "sigDate": String,
   "written": {
     "number": Number,
     "hash": String
@@ -281,7 +281,7 @@ dtos.Certification = {
 dtos.Certifications = {
   "pubkey": String,
   "uid": String,
-  "sigDate": Number,
+  "sigDate": String,
   "isMember": Boolean,
   "certifications": [dtos.Certification]
 };

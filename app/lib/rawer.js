@@ -189,7 +189,7 @@ module.exports = new function() {
 
   this.getCompactTransaction = function (json) {
     let issuers = (json.issuers || json.signatories);
-    let raw = ["TX", 1, issuers.length, json.inputs.length, json.unlocks.length, json.outputs.length, json.comment ? 1 : 0, json.locktime || 0].join(':') + '\n';
+    let raw = ["TX", json.version, issuers.length, json.inputs.length, json.unlocks.length, json.outputs.length, json.comment ? 1 : 0, json.locktime || 0].join(':') + '\n';
     (issuers || []).forEach(function (issuer) {
       raw += issuer + '\n';
     });

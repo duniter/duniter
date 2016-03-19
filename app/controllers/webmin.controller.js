@@ -162,6 +162,7 @@ function WebAdmin (dbConf, overConf) {
       });
       join += crypto.signSync(join, secretKey) + '\n';
       yield that.pushEntity({ body: { membership: join }}, http2raw.membership, parsers.parseMembership);
+      yield server.recomputeSelfPeer();
     }
     //
     return found;

@@ -69,6 +69,14 @@ function WebAdmin (dbConf, overConf) {
     };
   });
 
+  this.previewPubkey = (req) => co(function *() {
+    let conf = http2raw.conf(req);
+    let pair = yield Q.nbind(crypto.getKeyPair, crypto)(conf.idty_entropy, conf.idty_password);
+    return {
+      "pubkey": base58.encode(pair.publicKey)
+    };
+  });
+
   this.startHTTP = () => co(function *() {
     yield pluggedDALP;
     return bmapi.openConnections();

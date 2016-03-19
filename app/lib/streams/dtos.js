@@ -410,3 +410,7 @@ dtos.AdminSummary = {
   "current": dtos.Block,
   "pubkey": String
 };
+
+dtos.PreviewPubkey = {
+  "pubkey": String
+};

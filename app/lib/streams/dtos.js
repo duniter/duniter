@@ -354,7 +354,8 @@ dtos.UD = {
   "block_number": Number,
   "consumed": Boolean,
   "time": Number,
-  "amount": Number
+  "amount": Number,
+  "base": Number
 };
 
 dtos.UDHistory = {

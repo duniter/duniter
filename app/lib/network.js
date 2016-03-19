@@ -19,6 +19,8 @@ module.exports = {
 
   getBestLocalIPv4: () => getBestLocal('IPv4'),
   getBestLocalIPv6: () => getBestLocal('IPv6'),
+  getLANIPv4: () => getLAN('IPv4'),
+  getLANIPv6: () => getLAN('IPv6'),
 
   listInterfaces: () => {
     let netInterfaces = os.networkInterfaces();
@@ -263,4 +265,28 @@ function getBestLocal(family) {
     if (entry.name.match(/^None/))  return 7;
     return 10;
   })[0].value;
+}
+
+function getLAN(family) {
+  let netInterfaces = os.networkInterfaces();
+  let keys = _.keys(netInterfaces);
+  let res = [];
+  for (let i = 0, len = keys.length; i < len; i++) {
+    let name = keys[i];
+    let addresses = netInterfaces[name];
+    for (let j = 0, len2 = addresses.length; j < len2; j++) {
+      let addr = addresses[j];
+      if ((addr.family == "IPv4" && family == "IPv4"
+          && addr.address != "127.0.0.1" && addr.address != "lo" && addr.address != "localhost")
+          || (addr.family == "IPv6" && family == "IPv6"
+          && addr.address != "::1" && addr.address != "lo" && addr.address != "localhost"))
+      {
+        res.push({
+          name: name,
+          value: addr.address
+        });
+      }
+    }
+  }
+  return res;
 }

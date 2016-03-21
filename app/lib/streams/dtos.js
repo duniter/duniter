@@ -354,7 +354,8 @@ dtos.UD = {
   "block_number": Number,
   "consumed": Boolean,
   "time": Number,
-  "amount": Number
+  "amount": Number,
+  "base": Number
 };
 
 dtos.UDHistory = {
@@ -407,5 +408,9 @@ dtos.Boolean = {
 dtos.AdminSummary = {
   "host": String,
   "current": dtos.Block,
+  "pubkey": String
+};
+
+dtos.PreviewPubkey = {
   "pubkey": String
 };

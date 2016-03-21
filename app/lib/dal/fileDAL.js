@@ -15,7 +15,7 @@ var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 var CFSStorage = require('./fileDALs/AbstractCFS');
-var sqlite3 = require("sqlite3").verbose();
+var sqlite3 = require("sqlite3b").verbose();
 var logger = require('../../lib/logger')('database');
 
 const UCOIN_DB_NAME = 'ucoin';

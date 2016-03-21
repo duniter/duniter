@@ -63,7 +63,6 @@ before_deploy:
   - cd ../nw
   - zip -qr ../nw.nwb *
   - cd ../..
-  - rm -Rf .git
   - mv ucoin_release/duniter-desktop.nw duniter-x64/opt/duniter/
   - mv ucoin_release/nw.nwb duniter-x64/opt/duniter/
   - fakeroot dpkg-deb --build duniter-x64

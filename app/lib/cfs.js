@@ -27,7 +27,7 @@ function CFSCore(rootPath, qfs, parent) {
    * @returns {*|any|Q.Promise<void>} Promise of creation.
    */
   function createDeletionFolder() {
-    return deletionFolderPromise || (deletionFolderPromise = qfs.makeTree(path.join(rootPath, '.deleted')));
+    return deletionFolderPromise || (deletionFolderPromise = that.makeTree('.deleted'));
   }
 
   /**
@@ -154,7 +154,23 @@ function CFSCore(rootPath, qfs, parent) {
    * Create a directory tree.
    * @param treePath Tree path to create.
    */
-  this.makeTree = (treePath) => qfs.makeTree(path.join(rootPath, treePath));
+  this.makeTree = (treePath) => co(function*(){
+    // Note: qfs.makeTree does not work on windows, so we implement it manually
+    try {
+      let normalized = path.normalize(treePath);
+      let folders = normalized.split(path.sep);
+      let folder = rootPath;
+      for (let i = 0, len = folders.length; i < len; i++) {
+        folder = folder ? path.join(folder, folders[i]) : folders[i];
+        let exists = yield qfs.exists(folder);
+        if (!exists) {
+          yield qfs.makeDirectory(folder);
+        }
+      }
+    } catch (e) {
+      if (e && e.code !== "EISDIR") throw e;
+    }
+  });
 
   /**
    * Write JSON object to given file.

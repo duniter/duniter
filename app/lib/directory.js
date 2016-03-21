@@ -4,7 +4,7 @@ var opts = require('optimist').argv;
 var path = require('path');
 
 const DEFAULT_DOMAIN = "ucoin_default";
-const DEFAULT_HOME = ((process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.config/ucoin/');
+const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/ucoin/';
 
 module.exports = {
 

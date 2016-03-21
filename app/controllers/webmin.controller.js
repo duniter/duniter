@@ -228,6 +228,10 @@ function WebAdmin (dbConf, overConf) {
       name: 'conf',
       addresses: []
     };
+    let lan = {
+      name: 'lan',
+      addresses: []
+    };
     yield pluggedConfP;
     let conf = server.conf;
     if (conf.remoteipv4) {
@@ -254,10 +258,24 @@ function WebAdmin (dbConf, overConf) {
     } catch (e) {
       logger.error(e.stack || e);
     }
+    let lanIPv4 = network.getLANIPv4();
+    lanIPv4.forEach(function(addr) {
+      lan.addresses.push({
+        family: 'IPv4',
+        address: addr.value
+      });
+    });
+    let lanIPv6 = network.getLANIPv6();
+    lanIPv6.forEach(function(addr) {
+      lan.addresses.push({
+        family: 'IPv6',
+        address: addr.value
+      });
+    });
     let randomPort = network.getRandomPort();
     return {
       local: network.listInterfaces(),
-      remote: [upnp, manual],
+      remote: [upnp, manual, lan],
       auto: {
         local: {
           ipv4: network.getBestLocalIPv4(),

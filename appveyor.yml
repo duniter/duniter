@@ -80,8 +80,7 @@ deploy:
   auth_token:
     secure: Vp/M0r0i1yhGR2nhrPWEbTiDIF6r0cmwbNDFZUzdFe5clWxPXtuC0lgIpOQI78zt
   artifact: /Duniter/
-  draft: true
   prerelease: true
   on:
     branch: master
-    appveyor_repo_tag: false
+    appveyor_repo_tag: true

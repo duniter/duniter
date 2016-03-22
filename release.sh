@@ -33,7 +33,7 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
       git add package.json .travis.yml appveyor.yml test/integration/branches.js install.sh
       ;;
     pre)
-      git add package.json .travis.yml test/integration/branches.js
+      git add package.json .travis.yml appveyor.yml test/integration/branches.js
       ;;
   esac
   git commit -m "v$2"

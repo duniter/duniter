@@ -1,5 +1,5 @@
 {
-  "name": "duniter-ui",
+  "name": "Duniter",
   "main": "http://localhost:9220",
   "node-main": "../sources/bin/ucoind",
   "window": {

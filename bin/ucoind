@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 
+var logger = require('../app/lib/logger')('ucoind');
+
 process.on('uncaughtException', function (err) {
   // Dunno why this specific exception is not caught
   if (err.code !== "EADDRNOTAVAIL") {
@@ -9,7 +11,6 @@ process.on('uncaughtException', function (err) {
   }
 });
 
-var logger = require('../app/lib/logger')('ucoind');
 var async       = require('async');
 var co          = require('co');
 var Q           = require('q');
@@ -785,15 +786,19 @@ program
   });
 
 function webStart() {
-  var dbName = program.mdb;
-  var dbHome = program.home;
+  return co(function *() {
+    var dbName = program.mdb;
+    var dbHome = program.home;
+    if (!program.memory) {
+      let params = yield directory.getHomeFS(program.memory, dbHome);
+      yield directory.createHomeIfNotExists(params.fs, params.home);
 
-  // Add log files for this instance
-  logger.addHomeLogs(directory.getHome(dbName, dbHome));
-
-  co(function *() {
+      // Add log files for this instance
+      logger.addHomeLogs(params.home);
+    }
     let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false);
-    webminapi.openConnections();
+    return webminapi.openConnections();
+
   });
 }
 
@@ -802,5 +807,12 @@ program.parse(process.argv);
 if (program.args.length == 0) {
 
   console.log('No command given, using default: ucoind webstart');
-  webStart();
-};
+  return co(function *() {
+    try {
+      yield webStart();
+    } catch (e) {
+      logger.error(e);
+      process.exit();
+    }
+  });
+}

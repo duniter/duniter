@@ -2,10 +2,10 @@
 var Q       = require('q');
 var co      = require('co');
 var _       = require('underscore');
-var qfs     = require('q-io/fs');
 var path    = require('path');
 var hashf   = require('../hashf');
 var wotb    = require('../wot');
+var directory = require('../directory');
 var Configuration = require('../entity/configuration');
 var Membership = require('../entity/membership');
 var Merkle = require('../entity/merkle');
@@ -15,59 +15,21 @@ var ConfDAL = require('./fileDALs/confDAL');
 var StatDAL = require('./fileDALs/statDAL');
 var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 var CFSStorage = require('./fileDALs/AbstractCFS');
-var sqlite3 = require("sqlite3b").verbose();
-var logger = require('../../lib/logger')('database');
 
-const UCOIN_DB_NAME = 'ucoin';
-const WOTB_FILE = 'wotb.bin';
-
-module.exports = {
-  memory: function(home) {
-    return getHomeFS(true, home)
-      .then(function(params) {
-        let sqlite = new sqlite3.Database(':memory:');
-        return Q(new FileDAL(params.home, "", params.fs, 'fileDal', sqlite, wotb.memoryInstance()));
-      });
-  },
-  file: function(home) {
-    return getHomeFS(false, home)
-      .then(function(params) {
-        let sqlitePath = path.join(params.home, UCOIN_DB_NAME + '.db');
-        let sqlite = new sqlite3.Database(sqlitePath);
-        return new FileDAL(params.home, "", params.fs, 'fileDal', sqlite, wotb.fileInstance(path.join(params.home, WOTB_FILE)));
-      });
-  },
-  FileDAL: FileDAL
+module.exports = (params) => {
+  return new FileDAL(params);
 };
 
-function someDelayFix() {
-  return Q.Promise(function(resolve){
-    setTimeout(resolve, 100);
-  });
-}
+function FileDAL(params) {
 
-function getHomeFS(isMemory, home) {
-  let myfs;
-  return someDelayFix()
-    .then(function() {
-      myfs = (isMemory ? require('q-io/fs-mock')({}) : qfs);
-      return myfs.makeTree(home);
-    })
-    .then(function(){
-      return { fs: myfs, home: home };
-    });
-}
+  let rootPath = params.home;
+  let myFS = params.fs;
+  let sqlite = params.db;
+  let wotbInstance = params.wotb;
+  let that = this;
 
-function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
-
-  var that = this;
-
-  let localHome = path.join(home, localDir);
-
-  this.name = dalName;
   this.profile = 'DAL';
   this.wotb = wotbInstance;
-  var rootPath = home;
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
@@ -119,12 +81,6 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
 
   this.getCurrency = function() {
     return currency;
-  };
-
-  this.removeHome = function() {
-    return myFS.removeTree(localHome)
-      .catch(function(){
-      });
   };
 
   that.writeFileOfBlock = function(block) {
@@ -201,7 +157,7 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
         else return block;
       })
       .catch(function(){
-        throw 'Block ' + [number, hash].join('-') + ' not found in ' + that.name;
+        throw 'Block ' + [number, hash].join('-') + ' not found';
       })
       .then(function(block){
         done && done(null, block);
@@ -1165,13 +1121,13 @@ function FileDAL(home, localDir, myFS, dalName, sqlite, wotbInstance) {
   });
 
   this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db', WOTB_FILE];
+    var files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    var files = ['stats', 'cores', 'current', UCOIN_DB_NAME, UCOIN_DB_NAME + '.db', WOTB_FILE];
+    var files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };

@@ -53,8 +53,8 @@ function Server (dbConf, overrideConf) {
 
   this.plugFileSystem = () => co(function *() {
     logger.debug('Plugging file system...');
-    var dbType = dbConf && dbConf.memory ? fileDAL.memory : fileDAL.file;
-    that.dal = yield dbType(home);
+    var params = yield directory.getHomeParams(dbConf && dbConf.memory, home);
+    that.dal = fileDAL(params);
   });
 
   this.unPlugFileSystem = () => co(function *() {

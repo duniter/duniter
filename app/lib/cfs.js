@@ -168,7 +168,7 @@ function CFSCore(rootPath, qfs, parent) {
         }
       }
     } catch (e) {
-      if (e && e.code !== "EISDIR") throw e;
+      if (e && e.code !== "EISDIR" && e.code !== "EEXIST") throw e;
     }
   });
 

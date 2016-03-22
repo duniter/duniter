@@ -4,6 +4,7 @@ var _ = require('underscore');
 var should = require('should');
 var assert = require('assert');
 var dal = require('../../app/lib/dal/fileDAL');
+var dir = require('../../app/lib/directory');
 var constants = require('../../app/lib/constants');
 var Peer   = require('../../app/lib/entity/peer');
 
@@ -162,16 +163,12 @@ var fileDAL = null;
 
 describe("DAL", function(){
 
-  before(function() {
-    return dal.memory('db0')
-      .then(function(dal){
-        fileDAL = dal;
-        return dal.init();
-      })
-      .then(function() {
-        return fileDAL.saveConf({ currency: "meta_brouzouf" });
-      });
-  });
+  before(() => co(function *() {
+    let params = yield dir.getHomeParams(true, 'db0');
+    fileDAL = dal(params);
+    yield fileDAL.init();
+    return fileDAL.saveConf({ currency: "meta_brouzouf" });
+  }));
 
   it('should have no peer in a first time', function(){
     return fileDAL.listAllPeers().then(function(peers){
@@ -189,7 +186,7 @@ describe("DAL", function(){
         peers[0].should.have.property('currency').equal('bb');
         peers[0].should.have.property('endpoints').length(1);
         peers[0].endpoints[0].should.equal('BASIC_MERKLED_API localhost 7777');
-    });
+      });
   });
 
   it('should have no current block', function(){

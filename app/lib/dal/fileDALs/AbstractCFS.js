@@ -12,6 +12,4 @@ function AbstractCFS(rootPath, qioFS, parentDAL, localDAL) {
 
   this.coreFS = cfs(rootPath, qioFS, parentDAL);
   this.dal = localDAL;
-
-  this.changeParentCore = (newParent) => this.coreFS.changeParent(newParent);
 }

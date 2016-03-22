@@ -30,7 +30,7 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
   git reset HEAD
   case "$1" in
     rel)
-      git add package.json .travis.yml test/integration/branches.js install.sh
+      git add package.json .travis.yml appveyor.yml test/integration/branches.js install.sh
       ;;
     pre)
       git add package.json .travis.yml test/integration/branches.js

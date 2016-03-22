@@ -67,6 +67,8 @@ before_deploy:
   - mv ucoin_release/duniter-desktop.nw duniter-x64/opt/duniter/
   - mv ucoin_release/nw.nwb duniter-x64/opt/duniter/
   - fakeroot dpkg-deb --build duniter-x64
+  - mv duniter-x64.deb duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
+  - mv duniter-x64.tar.gz duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
 
 # Releases deployed on GitHub
 deploy:
@@ -77,8 +79,8 @@ deploy:
     secure: feyz5YmzYj6g6ZJKAv7u3pp9j9OY6oL4Pcx8mkha25BT1kEIu7lzvkZu4mJAIDjCxJjEkce3fNGXhRICqoMhRy/FK5dUUTpmP3KoMLNNJboO+MhDqjPEb6OYyafikSWnm0BszPL38FzSYMdmvNZ6WirOyVfrdzVPgU6MG0D99w8=
   file:
     - ucoin-x64.tar.gz
-    - duniter-x64.tar.gz
-    - duniter-x64.deb
+    - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
+    - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
   on:
     repo: ucoin-io/ucoin
     tags: true

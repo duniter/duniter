@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Duniter</title>
+  <style>
+    html {
+      font-family: "Courier New", Courier, monospace;
+    }
+    img {
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+
+      margin-top: 40vh;
+      transform: translateY(-50%);
+    }
+    h1 {
+      text-align: center;
+      width: 80%;
+      margin-top: -10%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+<img src="duniter.png"/>
+<h1 id="loader">Loading...</h1>
+<script type="text/javascript">
+  function reqListener () {
+    document.getElementById('loader').innerHTML = 'Server ready.';
+    location.href = 'http://127.0.0.1:9220';
+  }
+  function test() {
+    var oReq = new XMLHttpRequest();
+    oReq.addEventListener("load", reqListener);
+    oReq.open("GET", "http://127.0.0.1:9220/");
+    oReq.send();
+  }
+  function strange () {
+    document.getElementById('loader').innerHTML = 'The server is not starting...';
+  }
+  setInterval(test, 800);
+  setTimeout(strange, 8000);
+</script>
+</body>
+</html>

@@ -122,19 +122,16 @@ program
     if (!port) {
       throw 'Port is required.';
     }
-    sync(server, host, port, conf, to)
-      .then(function(){
+    return co(function *() {
+      try {
+        yield sync(server, host, port, conf, to);
         logger.info('Sync finished.');
-      })
-      .catch(function(err){
-        err && console.error(err.stack || err.message);
-      })
-      .then(function(){
-        return ((server && server.disconnect()) || Q()).catch(() => null);
-      })
-      .then(function(){
-        process.exit();
-      });
+      } catch (err) {
+        logger.error(err.stack || err.message);
+      }
+      yield ((server && server.disconnect()) || Q()).catch(() => null);
+      process.exit();
+    });
   }));
 
 function sync(server, host, port, conf, to) {

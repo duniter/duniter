@@ -2,8 +2,10 @@
 
 var path = require('path');
 var es = require('event-stream');
+var constants = require('../../lib/constants');
 var network = require('../../lib/network');
 var dtos = require('../../lib/streams/dtos');
+var logger = require('../../lib/logger')('webmin');
 
 let WebSocketServer = require('ws').Server;
 
@@ -37,12 +39,37 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
       path: '/webmin/ws'
     });
 
-    //wssSync.on('connection', function connection() {
-    //  wssSync.broadcast(JSON.stringify({
-    //    type: 'download',
-    //    value: 55
-    //  }));
-    //});
+    let lastLogs = [];
+    wssEvents.on('connection', function connection(ws) {
+
+      ws.on('message', () => {
+        wssEvents.broadcast(JSON.stringify({
+          type: 'log',
+          value: lastLogs
+        }));
+      });
+
+      wssEvents.broadcast(JSON.stringify({
+        type: 'log',
+        value: lastLogs
+      }));
+
+      // The callback which write each new log message to websocket
+      logger.addCallbackLogs((level, msg) => {
+        lastLogs.splice(0, Math.max(0, lastLogs.length - constants.WEBMIN_LOGS_CACHE + 1));
+        lastLogs.push({
+          level: level,
+          msg: msg
+        });
+        wssEvents.broadcast(JSON.stringify({
+          type: 'log',
+          value: [{
+            level: level,
+            msg: msg
+          }]
+        }));
+      });
+    });
 
     wssEvents.broadcast = (data) => wssEvents.clients.forEach((client) => client.send(data));
 

@@ -2,7 +2,8 @@
 var moment = require('moment');
 var path = require('path');
 var winston = require('winston');
-var directory = require('../lib/directory');
+var cbLogger = require('./callbackLogger');
+var directory = require('./directory');
 
 var customLevels = {
   levels: {
@@ -42,6 +43,24 @@ var logger = new (winston.Logger)({
     })
   ]
 });
+
+// Singleton
+let loggerAttached = false;
+logger.addCallbackLogs = (callbackForLog) => {
+  if (!loggerAttached) {
+    loggerAttached = true;
+    logger.add(cbLogger, {
+      callback: callbackForLog,
+      level: 'trace',
+      levels: customLevels.levels,
+      handleExceptions: false,
+      colorize: true,
+      timestamp: function() {
+        return moment().format();
+      }
+    });
+  }
+};
 
 logger.addHomeLogs = (home) => {
   logger.add(winston.transports.File, {

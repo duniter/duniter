@@ -79,6 +79,7 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
     yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);
+    yield rules.GLOBAL.checkMembershipsAreWritable(block, conf, dal);
     yield rules.GLOBAL.checkJoiners(block, conf, dal);
     yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
@@ -112,6 +113,7 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
     yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);
+    yield rules.GLOBAL.checkMembershipsAreWritable(block, conf, dal);
     yield rules.GLOBAL.checkJoiners(block, conf, dal);
     yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);

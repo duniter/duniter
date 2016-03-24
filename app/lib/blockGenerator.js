@@ -349,16 +349,17 @@ function BlockGenerator(mainContext, prover) {
         async.forEach(mss, function(ms, callback){
           async.waterfall([
             function(nextOne) {
-              if (current) {
-                dal.getBlockOrNull(ms.number, nextOne);
-              } else {
-                nextOne(null, {});
-              }
+              return co(function *() {
+                if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
+                  let msBasedBlock = yield dal.getBlock(ms.block);
+                  let age = current.medianTime - msBasedBlock.medianTime;
+                  if (age > conf.msWindow) {
+                    throw 'Too old membership';
+                  }
+                }
+              }).then(() => nextOne()).catch(nextOne);
             },
-            function(block, nextOne) {
-              if (!block) {
-                return nextOne('Block not found for membership');
-              }
+            function(nextOne) {
               var idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
               getSinglePreJoinData(current, idtyHash, nextOne, joiners);
             },
@@ -540,7 +541,7 @@ function BlockGenerator(mainContext, prover) {
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
       conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
-      conf.sigQty, conf.idtyWindow, conf.xpercent, conf.msValidity,
+      conf.sigQty, conf.idtyWindow, conf.msWindow, conf.xpercent, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
     ].join(':');

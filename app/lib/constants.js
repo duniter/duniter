@@ -167,7 +167,7 @@ module.exports = {
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
     MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
     BLOCK_ISSUER:find('Issuer: (' + PUBKEY + ')'),
-    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
+    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
@@ -273,7 +273,8 @@ module.exports = {
       AVGGENTIME: 16 * 60,
       DTDIFFEVAL: 10,
       MEDIANTIMEBLOCKS: 20,
-      IDTYWINDOW: 3600 * 24 * 7 // a week
+      IDTYWINDOW: 3600 * 24 * 7, // a week
+      MSWINDOW: 3600 * 24 * 7 // a week
     },
 
     DSEN_P: 1.2 // dSen proportional factor

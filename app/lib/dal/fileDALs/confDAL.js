@@ -34,6 +34,7 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
         "sigValidity": parseInt(conf.sigValidity,10),
         "sigQty": parseInt(conf.sigQty,10),
         "idtyWindow": parseInt(conf.idtyWindow,10),
+        "msWindow": parseInt(conf.msWindow,10),
         "xpercent": parseFloat(conf.xpercent,10),
         "msValidity": parseInt(conf.msValidity,10),
         "stepMax": parseInt(3,10), // uCoin only handles 3 step currencies for now

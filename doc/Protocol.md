@@ -822,7 +822,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:msWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -925,6 +925,7 @@ sigWindow   | Maximum delay a certification can wait before being expired for no
 sigValidity | Maximum age of a active signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
 idtyWindow  | Maximum delay an identity can wait before being expired for non-writing.
+msWindow    | Maximum delay a membership can wait before being expired for non-writing.
 xpercent    | Minimum percent of sentries to reach to match the distance rule
 msValidity  | Maximum age of an active membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
@@ -1080,6 +1081,12 @@ An identity is to be considered *non-writable* if its age is less or equal to `[
 
     VALID   = AGE <= [idtyWindow]
     EXPIRED = AGE > [idtyWindow]
+
+###### Membership writability
+A membership is to be considered *non-writable* if its age is less or equal to `[msWindow]`:
+
+    VALID   = AGE <= [msWindow]
+    EXPIRED = AGE > [msWindow]
 
 ###### Certification writability
 A certification is to be considered *non-writable* if its age is less or equal to `[sigWindow]`:

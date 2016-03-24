@@ -602,6 +602,7 @@ function commandLineConf(conf) {
       sigStock:    program.sigStock,
       sigWindow:   program.sigWindow,
       idtyWindow:   program.idtyWindow,
+      msWindow:   program.msWindow,
       sigValidity: program.sigValidity,
       sigQty:      program.sigQty,
       msValidity:  program.msValidity,
@@ -639,6 +640,7 @@ function commandLineConf(conf) {
   if (cli.ucp.sigStock)                     conf.sigStock       = cli.ucp.sigStock;
   if (cli.ucp.sigWindow)                    conf.sigWindow      = cli.ucp.sigWindow;
   if (cli.ucp.idtyWindow)                   conf.idtyWindow     = cli.ucp.idtyWindow;
+  if (cli.ucp.msWindow)                     conf.msWindow       = cli.ucp.msWindow;
   if (cli.ucp.sigValidity)                  conf.sigValidity    = cli.ucp.sigValidity;
   if (cli.ucp.msValidity)                   conf.msValidity     = cli.ucp.msValidity;
   if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;

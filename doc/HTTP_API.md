@@ -630,6 +630,7 @@ The synchronization parameters.
   sigValidity: 2629800,
   sigQty: 3,
   idtyWindow: 604800,
+  msWindow: 604800,
   xpercent: 5,
   msValidity: 2629800,
   stepMax: 3,

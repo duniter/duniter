@@ -158,6 +158,7 @@ var tasks = {
       async.apply(simpleInteger, "Certification validity duration",                                        "sigValidity", conf),
       async.apply(simpleInteger, "Number of valid certifications required to be a member",                 "sigQty", conf),
       async.apply(simpleInteger, "Maximum age of a non-written identity",                                  "idtyWindow", conf),
+      async.apply(simpleInteger, "Maximum age of a non-written membership",                                "msWindow", conf),
       async.apply(simpleFloat,   "Percentage of sentries to be reached to match WoT distance rule",        "xpercent", conf),
       async.apply(simpleInteger, "Membership validity duration",                                           "msValidity", conf),
       async.apply(simpleInteger, "Number of blocks on which is computed median time",                      "medianTimeBlocks", conf),

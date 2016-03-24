@@ -249,6 +249,25 @@ rules.FUNCTIONS = {
     return true;
   }),
 
+  checkMembershipsAreWritable: (block, conf, dal) => co(function *() {
+    let current = yield dal.getCurrent();
+    let fields = ['joiners', 'actives', 'leavers'];
+    for (let m = 0, len2 = fields.length; m < len2; m++) {
+      let field = fields[m];
+      for (let i = 0, len = block[field].length; i < len; i++) {
+        let ms = Membership.statics.fromInline(block[field][i]);
+        if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
+          let msBasedBlock = yield dal.getBlock(ms.block);
+          let age = current.medianTime - msBasedBlock.medianTime;
+          if (age > conf.msWindow) {
+            throw 'Too old membership';
+          }
+        }
+      }
+    }
+    return true;
+  }),
+
   checkIdentityUnicity: (block, conf, dal) => co(function *() {
     for (let i = 0, len = block.identities.length; i < len; i++) {
       let idty = Identity.statics.fromInline(block.identities[i]);

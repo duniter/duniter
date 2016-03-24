@@ -822,7 +822,7 @@ To be a valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
 
-        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -924,6 +924,7 @@ sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
 sigValidity | Maximum age of a active signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
+idtyWindow  | Maximum delay an identity can wait before being expired for non-writing.
 xpercent    | Minimum percent of sentries to reach to match the distance rule
 msValidity  | Maximum age of an active membership (in seconds)
 stepMax     | Maximum distance between each WoT member and a newcomer
@@ -1074,6 +1075,12 @@ Age is defined as the number of seconds between the certification's or membershi
 
     AGE = current_time - block_time
 
+###### Identity writability
+An identity is to be considered *non-writable* if its age is less or equal to `[idtyWindow]`:
+
+    VALID   = AGE <= [idtyWindow]
+    EXPIRED = AGE > [idtyWindow]
+
 ###### Certification writability
 A certification is to be considered *non-writable* if its age is less or equal to `[sigWindow]`:
 
@@ -1164,6 +1171,7 @@ We define `PPowMin` as the `PowMin` value of previous block.
 
 ##### Identity
 
+* An identity must be writable to be included in the block.
 * The blockchain cannot contain two or more identities sharing a same `USER_ID`.
 * The blockchain cannot contain two or more identities sharing a same `PUBLIC_KEY`.
 * Block#0's identities' `BLOCK_UID` must be the special value `0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855`.

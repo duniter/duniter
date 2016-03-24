@@ -167,13 +167,14 @@ module.exports = {
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
     MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
     BLOCK_ISSUER:find('Issuer: (' + PUBKEY + ')'),
-    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
+    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     REVOCATION: exact(PUBKEY + ":" + SIGNATURE),
     EXCLUDED: exact(PUBKEY),
-    INNER_HASH: find("InnerHash: (" + FINGERPRINT + ")")
+    INNER_HASH: find("InnerHash: (" + FINGERPRINT + ")"),
+    SPECIAL_BLOCK: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
   },
   TRANSACTION: {
     HEADER:  exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN + ":" + INTEGER),
@@ -261,7 +262,7 @@ module.exports = {
       SIGDELAY: 3600 * 24 * 365 * 5,
       SIGPERIOD: 0, // Instant
       SIGSTOCK: 40,
-      SIGWINDOW: 3600, // 2h
+      SIGWINDOW: 3600 * 24 * 7, // a week
       SIGVALIDITY: 3600 * 24 * 365,
       MSVALIDITY: 3600 * 24 * 365,
       SIGQTY: 5,
@@ -271,7 +272,8 @@ module.exports = {
       POWDELAY: 0,
       AVGGENTIME: 16 * 60,
       DTDIFFEVAL: 10,
-      MEDIANTIMEBLOCKS: 20
+      MEDIANTIMEBLOCKS: 20,
+      IDTYWINDOW: 3600 * 24 * 7 // a week
     },
 
     DSEN_P: 1.2 // dSen proportional factor

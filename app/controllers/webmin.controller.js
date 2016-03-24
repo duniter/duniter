@@ -134,7 +134,8 @@ function WebAdmin (dbConf, overConf) {
       sigWindow: conf.sigWindow,
       stepMax: conf.stepMax,
       ud0: conf.ud0,
-      xpercent: conf.xpercent
+      xpercent: conf.xpercent,
+      idtyWindow: conf.idtyWindow
     });
     pluggedConfP = co(function *() {
       yield bmapi.closeConnections();

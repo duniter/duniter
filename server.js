@@ -80,6 +80,7 @@ function Server (dbConf, overrideConf) {
       sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
       msValidity:         constants.CONTRACT.DEFAULT.MSVALIDITY,
       sigQty:             constants.CONTRACT.DEFAULT.SIGQTY,
+      idtyWindow:         constants.CONTRACT.DEFAULT.IDTYWINDOW,
       xpercent:           constants.CONTRACT.DEFAULT.X_PERCENT,
       percentRot:         constants.CONTRACT.DEFAULT.PERCENTROT,
       blocksRot:          constants.CONTRACT.DEFAULT.BLOCKSROT,

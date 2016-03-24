@@ -418,14 +418,15 @@ function BlockchainService () {
     theConf.sigWindow        = parseInt(sp[5]);
     theConf.sigValidity      = parseInt(sp[6]);
     theConf.sigQty           = parseInt(sp[7]);
-    theConf.xpercent         = parseFloat(sp[8]);
-    theConf.msValidity       = parseInt(sp[9]);
-    theConf.stepMax          = parseInt(sp[10]);
-    theConf.medianTimeBlocks = parseInt(sp[11]);
-    theConf.avgGenTime       = parseInt(sp[12]);
-    theConf.dtDiffEval       = parseInt(sp[13]);
-    theConf.blocksRot        = parseInt(sp[14]);
-    theConf.percentRot       = parseFloat(sp[15]);
+    theConf.idtyWindow       = parseFloat(sp[8]);
+    theConf.xpercent         = parseFloat(sp[9]);
+    theConf.msValidity       = parseInt(sp[10]);
+    theConf.stepMax          = parseInt(sp[11]);
+    theConf.medianTimeBlocks = parseInt(sp[12]);
+    theConf.avgGenTime       = parseInt(sp[13]);
+    theConf.dtDiffEval       = parseInt(sp[14]);
+    theConf.blocksRot        = parseInt(sp[15]);
+    theConf.percentRot       = parseFloat(sp[16]);
     theConf.currency         = block.currency;
     return theConf;
   }

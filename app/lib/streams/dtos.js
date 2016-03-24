@@ -22,6 +22,7 @@ dtos.Parameters = {
   sigWindow: Number,
   sigValidity: Number,
   sigQty: Number,
+  idtyWindow: Number,
   xpercent: Number,
   msValidity: Number,
   stepMax: Number,

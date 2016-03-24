@@ -452,6 +452,13 @@ function BlockGenerator(mainContext, prover) {
       if (!identity) {
         throw 'Identity with hash \'' + idHash + '\' not found';
       }
+      if (identity.buid != constants.BLOCK.SPECIAL_BLOCK) {
+        let idtyBasedBlock = yield dal.getBlock(identity.buid);
+        let age = current.medianTime - idtyBasedBlock.medianTime;
+        if (age > conf.idtyWindow) {
+          throw 'Too old identity';
+        }
+      }
       if (!identity.leaving) {
         if (!current) {
           // Look for certifications from initial joiners
@@ -533,7 +540,7 @@ function BlockGenerator(mainContext, prover) {
     block.parameters = block.number > 0 ? '' : [
       conf.c, conf.dt, conf.ud0,
       conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
-      conf.sigQty, conf.xpercent, conf.msValidity,
+      conf.sigQty, conf.idtyWindow, conf.xpercent, conf.msValidity,
       conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
       conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
     ].join(':');

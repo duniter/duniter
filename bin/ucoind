@@ -59,6 +59,7 @@ program
   .option('--sigPeriod <timestamp>',   'Minimum delay between 2 certifications of a same issuer, in seconds.')
   .option('--sigStock <count>',        'Maximum quantity of valid certifications per member.')
   .option('--sigWindow <duration>',    'Maximum age of a non-written certification.')
+  .option('--idtyWindow <duration>',    'Maximum age of a non-written certification.')
   .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
   .option('--msValidity <timestamp>',  'Validity duration of a memberships, in seconds.')
   .option('--sigQty <number>',         'Minimum number of required certifications to be a member/stay as a member')
@@ -600,6 +601,7 @@ function commandLineConf(conf) {
       sigPeriod:   program.sigPeriod,
       sigStock:    program.sigStock,
       sigWindow:   program.sigWindow,
+      idtyWindow:   program.idtyWindow,
       sigValidity: program.sigValidity,
       sigQty:      program.sigQty,
       msValidity:  program.msValidity,
@@ -636,6 +638,7 @@ function commandLineConf(conf) {
   if (cli.ucp.sigPeriod)                    conf.sigPeriod      = cli.ucp.sigPeriod;
   if (cli.ucp.sigStock)                     conf.sigStock       = cli.ucp.sigStock;
   if (cli.ucp.sigWindow)                    conf.sigWindow      = cli.ucp.sigWindow;
+  if (cli.ucp.idtyWindow)                   conf.idtyWindow     = cli.ucp.idtyWindow;
   if (cli.ucp.sigValidity)                  conf.sigValidity    = cli.ucp.sigValidity;
   if (cli.ucp.msValidity)                   conf.msValidity     = cli.ucp.msValidity;
   if (cli.ucp.sigQty)                       conf.sigQty         = cli.ucp.sigQty;

@@ -211,6 +211,27 @@ rules.FUNCTIONS = {
     return true;
   }),
 
+  checkIdentitiesAreWritable: (block, conf, dal) => co(function *() {
+    let current = yield dal.getCurrent();
+    for (let i = 0, len = block.identities.length; i < len; i++) {
+      let idty = Identity.statics.fromInline(block.identities[i]);
+      let found = yield dal.getWrittenIdtyByUID(idty.uid);
+      if (found) {
+        throw Error('Identity already used');
+      }
+      if (current && idty.buid != constants.BLOCK.SPECIAL_BLOCK) {
+        // Because the window rule does not apply on initial certifications
+        let basedBlock = yield dal.getBlock(idty.buid);
+        // Check if writable
+        let duration = current.medianTime - parseInt(basedBlock.medianTime);
+        if (duration > conf.idtyWindow) {
+          throw Error('Identity is too old and cannot be written');
+        }
+      }
+    }
+    return true;
+  }),
+
   checkCertificationsAreWritable: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrent();
     for (let i = 0, len = block.certifications.length; i < len; i++) {

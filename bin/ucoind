@@ -36,7 +36,7 @@ program
   .version(pjson.version)
   .usage('<command> [options]')
 
-  .option('--home <path>',         'Path to uCoin HOME (defaults to "$HOME/.config/ucoin").')
+  .option('--home <path>',         'Path to uCoin HOME (defaults to "$HOME/.config/duniter").')
   .option('-d, --mdb <name>',          'Database name (defaults to "ucoin_default").')
 
   .option('--autoconf',                'With `init` command, will guess the best network and key options witout aksing for confirmation')
@@ -676,7 +676,7 @@ function commandLineConf(conf) {
 function connect(callback, useDefaultConf) {
   return function () {
     var cbArgs = arguments;
-    var dbName = program.mdb || "ucoin_default";
+    var dbName = program.mdb || "duniter_default";
     var dbHome = program.home;
 
     var server = ucoin({ home: dbHome, name: dbName }, commandLineConf());

@@ -8,15 +8,15 @@ var Q    = require('q');
 var qfs  = require('q-io/fs');
 var sqlite3 = require("sqlite3b").verbose();
 
-const DEFAULT_DOMAIN = "ucoin_default";
-const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/ucoin/';
+const DEFAULT_DOMAIN = "duniter_default";
+const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';
 
 let dir = module.exports = {
 
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
-  UCOIN_DB_NAME: 'ucoin',
+  UCOIN_DB_NAME: 'duniter',
   WOTB_FILE: 'wotb.bin',
 
   getHome: (profile, dir) => getHomePath(profile, dir),
@@ -64,7 +64,7 @@ function someDelayFix() {
 }
 
 function getLogsPath(profile, dir) {
-  return path.join(getHomePath(profile, dir), 'ucoin.log');
+  return path.join(getHomePath(profile, dir), 'duniter.log');
 }
 
 function getHomePath(profile, dir) {

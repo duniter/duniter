@@ -73,7 +73,7 @@ logger.addHomeLogs = (home) => {
     maxFiles: 3,
     //zippedArchive: true,
     json: false,
-    filename: path.join(home, 'ucoin.log'),
+    filename: path.join(home, 'duniter.log'),
     timestamp: function() {
       return moment().format();
     }

@@ -122,6 +122,7 @@ function Server (dbConf, overrideConf) {
     [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
       service.setConfDAL(that.conf, that.dal, that.pair);
     });
+    that.router().setConfDAL(that.conf, that.dal);
     return that.conf;
   });
 

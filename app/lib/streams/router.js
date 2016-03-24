@@ -13,6 +13,10 @@ module.exports = function (PeeringService, conf, dal) {
 };
 
 function Router (PeeringService, conf, dal) {
+  
+  this.setConfDAL = (theConf, theDAL) => {
+    dal = theDAL;
+  };
 
   var logger   = require('../../lib/logger')(dal.profile);
 

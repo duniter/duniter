@@ -218,7 +218,7 @@ function Server (dbConf, overrideConf) {
     ], done);
   };
 
-  let shouldContinue = true;
+  let shouldContinue = false;
 
   this.stopBlockComputation = function() {
     shouldContinue = false;
@@ -226,6 +226,7 @@ function Server (dbConf, overrideConf) {
   };
 
   this.startBlockComputation = function() {
+    shouldContinue = true;
     return co(function *() {
       while (shouldContinue) {
         try {

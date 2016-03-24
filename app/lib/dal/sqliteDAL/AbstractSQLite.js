@@ -44,7 +44,7 @@ function AbstractSQLite(db) {
       logger.query(msg, JSON.stringify(params || []), entities.length, duration);
       return entities;
     } catch (e) {
-      console.error('ERROR >> %s', sql, JSON.stringify(params || []), e.stack || e.message || e);
+      logger.error('ERROR >> %s', sql, JSON.stringify(params || []), e.stack || e.message || e);
       throw e;
     }
   });
@@ -144,14 +144,9 @@ function AbstractSQLite(db) {
 
   this.exec = (sql) => co(function *() {
     try {
-      if (sql.match(/INSERT INTO source/)) {
-        //console.log('------------');
-        //console.log(sql);
-        //console.log('------------');
-      }
       return Q.nbind(db.exec, db)(sql);
     } catch (e) {
-      console.error('ERROR >> %s', sql);
+      logger.error('ERROR >> %s', sql);
       throw e;
     }
   });

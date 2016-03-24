@@ -7,9 +7,8 @@ var constants = require('./constants');
 var dos2unix = require('./dos2unix');
 var signature = require('./signature');
 var rawer = require('./rawer');
-var logger = require('./logger')();
 
-var signatureFunc;
+var signatureFunc, lastSecret;
 
 let speed = 1;
 let A_SECOND = 1000;
@@ -30,10 +29,13 @@ process.on('message', function(stuff){
   var highMark = stuff.highMark;
   async.waterfall([
     function(next) {
-      if (signatureFunc)
+      if (signatureFunc && lastSecret == pair.secretKeyEnc) {
         next(null, signatureFunc);
-      else
+      }
+      else {
+        lastSecret = pair.secretKeyEnc;
         signature.sync(pair, next);
+      }
     },
     function(sigFunc, next) {
       signatureFunc = sigFunc;

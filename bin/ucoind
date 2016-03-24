@@ -50,6 +50,10 @@ program
   .option('--upnp',                    'Use UPnP to open remote port')
   .option('--noupnp',                  'Do not use UPnP to open remote port')
 
+  // Webmin options
+  .option('--webmhost <host>',         'Local network interface to connect to (IP)')
+  .option('--webmport <port>',         'Local network port to connect', parseInt)
+
   .option('--salt <salt>',             'Key salt to generate this key\'s secret key')
   .option('--passwd <password>',       'Password to generate this key\'s secret key')
   .option('--participate <Y|N>',       'Participate to writing the blockchain')
@@ -798,7 +802,7 @@ function webStart() {
       // Add log files for this instance
       logger.addHomeLogs(params.home);
     }
-    let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false);
+    let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false, program.webmhost, program.webmport);
     return webminapi.openConnections();
 
   });

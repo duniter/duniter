@@ -14,9 +14,9 @@ module.exports = function (dbConf, overConf) {
 
 module.exports.statics = {
 
-  enableHttpAdmin: (dbConf, overConf, httpLogs) => webmin(dbConf, overConf, [{
-    ip: 'localhost',
-    port: 9220
+  enableHttpAdmin: (dbConf, overConf, httpLogs, wmHost, wmPort) => webmin(dbConf, overConf, [{
+    ip:  wmHost || 'localhost',
+    port: wmPort || 9220
   }], httpLogs !== false),
 
   startNode: (server, conf) => co(function *() {

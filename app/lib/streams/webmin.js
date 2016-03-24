@@ -55,15 +55,17 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
       }));
 
       // The callback which write each new log message to websocket
-      logger.addCallbackLogs((level, msg) => {
+      logger.addCallbackLogs((level, msg, timestamp) => {
         lastLogs.splice(0, Math.max(0, lastLogs.length - constants.WEBMIN_LOGS_CACHE + 1));
         lastLogs.push({
+          timestamp: timestamp,
           level: level,
           msg: msg
         });
         wssEvents.broadcast(JSON.stringify({
           type: 'log',
           value: [{
+            timestamp: timestamp,
             level: level,
             msg: msg
           }]

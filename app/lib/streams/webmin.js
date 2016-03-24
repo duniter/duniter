@@ -71,7 +71,13 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
       });
     });
 
-    wssEvents.broadcast = (data) => wssEvents.clients.forEach((client) => client.send(data));
+    wssEvents.broadcast = (data) => wssEvents.clients.forEach((client) => {
+      try {
+        client.send(data);
+      } catch (e) {
+        console.log(e);
+      }
+    });
 
     // Forward blocks & peers
     webminCtrl

@@ -57,6 +57,7 @@ before_deploy:
   - rm -Rf duniter-x64/.git
   - mkdir -p duniter-x64/opt/duniter/
   - chmod 755 duniter-x64/DEBIAN/post*
+  - chmod 755 duniter-x64/DEBIAN/pre*
   - sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-x64/DEBIAN/control
   - cd ucoin_release/sources
   - rm -Rf .git

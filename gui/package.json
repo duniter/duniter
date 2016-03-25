@@ -1,5 +1,5 @@
 {
-  "name": "v0.20.0a26",
+  "name": "v0.20.0a27",
   "main": "index.html",
   "node-main": "../sources/bin/ucoind",
   "window": {

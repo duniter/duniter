@@ -605,14 +605,14 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
   return co(function *() {
     if (block.number == 0 && cert.block_number != 0) {
       throw Error('Number must be 0 for root block\'s certifications');
-    } else if (block.number == 0 && cert.block_number == 0) {
-      return true; // Valid for root block
     } else {
       let basedBlock;
-      try {
-        basedBlock = yield dal.getBlock(cert.block_number);
-      } catch (e) {
-        throw Error('Certification based on an unexisting block');
+      if (block.number != 0) {
+        try {
+          basedBlock = yield dal.getBlock(cert.block_number);
+        } catch (e) {
+          throw Error('Certification based on an unexisting block');
+        }
       }
       let idty = yield findIdtyFunc(block, cert.to, dal);
       let current = block.number == 0 ? null : yield dal.getCurrent();

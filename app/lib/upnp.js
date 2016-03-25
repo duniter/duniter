@@ -9,12 +9,12 @@ module.exports = function (localPort, remotePort) {
   "use strict";
   return co(function *() {
     logger.info('UPnP: configuring...');
-    // Update UPnP IGD every INTERVAL seconds
-    setInterval(async.apply(openPort, localPort, remotePort), 1000 * constants.NETWORK.UPNP.INTERVAL);
-    return openPort(localPort, remotePort)
-      .catch(function(){
+    return co(function *() {
+      try {
+        yield openPort(localPort, remotePort);
+      } catch (e) {
         var client = upnp.createClient();
-        return Q.nbind(client.externalIp, client)()
+        yield Q.nbind(client.externalIp, client)()
           .catch(function(err){
             if (err && err.message == 'timeout') {
               throw 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.'
@@ -24,7 +24,24 @@ module.exports = function (localPort, remotePort) {
           .finally(function() {
             client.close();
           });
-      });
+      }
+      let interval;
+      return {
+        openPort: () => {
+          return openPort(localPort, remotePort);
+        },
+        startRegular: () => {
+          this.stopRegular();
+          // Update UPnP IGD every INTERVAL seconds
+          interval = setInterval(async.apply(openPort, localPort, remotePort), 1000 * constants.NETWORK.UPNP.INTERVAL);
+        },
+        stopRegular: () => {
+          if (interval) {
+            clearInterval(interval);
+          }
+        }
+      };
+    });
   });
 };
 

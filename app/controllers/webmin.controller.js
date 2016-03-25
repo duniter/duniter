@@ -7,6 +7,7 @@ var _ = require('underscore');
 var Q = require('q');
 let co = require('co');
 let ucoin = require('../../index');
+var upnp = require('../lib/upnp');
 let ucp = require('../lib/ucp');
 let constants = require('../lib/constants');
 let base58 = require('../lib/base58');
@@ -80,6 +81,11 @@ function WebAdmin (dbConf, overConf) {
   this.startHTTP = () => co(function *() {
     yield pluggedDALP;
     return bmapi.openConnections();
+  });
+
+  this.openUPnP = () => co(function *() {
+    yield pluggedDALP;
+    return upnp(server.conf.port, server.conf.remoteport);
   });
 
   this.stopHTTP = () => co(function *() {

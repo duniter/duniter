@@ -53,10 +53,15 @@ module.exports.statics = {
      *    UPnP
      **************/
     if (server.conf.upnp) {
-      yield upnp(server.conf.port, server.conf.remoteport)
-        .catch(function(err){
-          logger.warn(err);
-        });
+      try {
+        if (server.upnpAPI) {
+          server.upnpAPI.stopRegular();
+        }
+        server.upnpAPI = yield upnp(server.conf.port, server.conf.remoteport);
+        server.upnpAPI.startRegular();
+      } catch (e) {
+        logger.warn(e);
+      }
     }
 
     /*******************

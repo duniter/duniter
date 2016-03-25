@@ -64,15 +64,11 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\* %cd%\ucoin_release\sources\ /s /e
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\ucoin_release\sources\ui\package\node_modules
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\ucoin_release\sources\ui\package\bower_components
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] 7z a -tzip duniter-win-x64.zip %cd%\ucoin_release\* 1> null
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move duniter-win-x64.zip %cd%\ucoin\duniter-%APPVEYOR_REPO_TAG_NAME%-windows-x64.zip
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] iscc %cd%\ucoin_release\sources\duniter.iss /DROOT_PATH=%cd%\ucoin_release
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\ucoin_release\Duniter.exe %cd%\ucoin\duniter-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
 
 artifacts:
   - path: duniter*.exe
-    name: DuniterEXE
-  - path: duniter*.zip
     name: Duniter
 
 deploy:

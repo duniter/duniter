@@ -1,5 +1,5 @@
 {
-  "name": "Duniter",
+  "name": "v0.20.0a26",
   "main": "index.html",
   "node-main": "../sources/bin/ucoind",
   "window": {

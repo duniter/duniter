@@ -57,9 +57,11 @@ function Server (dbConf, overrideConf) {
     that.dal = fileDAL(params);
   });
 
-  this.unPlugFileSystem = () => co(function *() {
-    logger.debug('Unplugging file system...');
-    yield that.dal.close();
+  this.softResetData = () => co(function *() {
+    logger.debug('Soft data reset... [cache]');
+    yield that.dal.cleanCaches();
+    logger.debug('Soft data reset... [data]');
+    yield that.dal.cleanDBData();
   });
 
   this.loadConf = (useDefaultConf) => co(function *() {

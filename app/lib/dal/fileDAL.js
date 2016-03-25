@@ -1114,9 +1114,21 @@ function FileDAL(params) {
   this.loadStats = that.statDAL.loadStats;
   this.getStat = that.statDAL.getStat;
   this.pushStats = that.statDAL.pushStats;
+  
+  this.cleanCaches = () => co(function *() {
+    yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
+  });
+
+  this.cleanDBData = () => co(function *() {
+    yield _.values(that.newDals).map((dal) => dal.cleanData && dal.cleanData());
+    that.wotb.resetWoT();
+    var files = ['stats', 'cores', 'current'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    return resetFiles(files, dirs);
+  });
 
   this.close = () => co(function *() {
-    yield _.values(that.newDals).map((dal) => dal.close && dal.close());
+    yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
     return Q.nbind(sqlite.close, sqlite);
   });
 

@@ -67,8 +67,7 @@ function BlockDAL(db) {
       'COMMIT;', []);
   });
 
-  this.close = () =>
-    current = null;
+  this.cleanCache = () => current = null;
 
   this.getCurrent = () => co(function *() {
     if (!current) {

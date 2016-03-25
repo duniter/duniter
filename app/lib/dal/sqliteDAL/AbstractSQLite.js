@@ -49,6 +49,8 @@ function AbstractSQLite(db) {
     }
   });
 
+  this.cleanData = () => this.query("DELETE FROM " + this.table);
+
   this.sqlListAll = () => this.query("SELECT * FROM " + this.table);
 
   this.sqlDeleteAll = () => this.exec("DELETE FROM " + this.table);

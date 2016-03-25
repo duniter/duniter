@@ -83,5 +83,4 @@ deploy:
   artifact: /Duniter/
   prerelease: true
   on:
-    branch: master
     appveyor_repo_tag: true

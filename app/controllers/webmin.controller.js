@@ -23,7 +23,9 @@ var Synchroniser = require('../lib/sync');
 var multicaster = require('../lib/streams/multicaster');
 var logger = require('../lib/logger')('webmin');
 
-module.exports = (dbConf, overConf) => new WebAdmin(dbConf, overConf);
+module.exports = (dbConf, overConf) => {
+  return new WebAdmin(dbConf, overConf);
+};
 
 function WebAdmin (dbConf, overConf) {
 
@@ -86,6 +88,16 @@ function WebAdmin (dbConf, overConf) {
   this.openUPnP = () => co(function *() {
     yield pluggedDALP;
     return upnp(server.conf.port, server.conf.remoteport);
+  });
+
+  this.regularUPnP = () => co(function *() {
+    yield pluggedDALP;
+    if (server.upnpAPI) {
+      server.upnpAPI.stopRegular();
+    }
+    server.upnpAPI = yield upnp(server.conf.port, server.conf.remoteport);
+    server.upnpAPI.startRegular();
+    return {};
   });
 
   this.stopHTTP = () => co(function *() {

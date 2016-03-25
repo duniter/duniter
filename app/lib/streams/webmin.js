@@ -18,10 +18,11 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
   return network.createServersAndListen('uCoin web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
 
     httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
-    httpMethods.httpPOST(  '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
+    httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
     httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/stop',          webminCtrl.stopHTTP,  dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/upnp/open',     webminCtrl.openUPnP,  dtos.Boolean);
+    httpMethods.httpGET(  '/webmin/server/http/upnp/regular',  webminCtrl.regularUPnP,  dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/preview_next',       webminCtrl.previewNext,  dtos.Block);
     httpMethods.httpPOST( '/webmin/server/send_conf',          webminCtrl.sendConf, dtos.Identity);
     httpMethods.httpPOST( '/webmin/server/net_conf',           webminCtrl.applyNetworkConf, dtos.Boolean);

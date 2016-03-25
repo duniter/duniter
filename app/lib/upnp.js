@@ -25,13 +25,12 @@ module.exports = function (localPort, remotePort) {
             client.close();
           });
       }
-      let interval;
-      return {
+      let interval, upnpService = {
         openPort: () => {
           return openPort(localPort, remotePort);
         },
         startRegular: () => {
-          this.stopRegular();
+          upnpService.stopRegular();
           // Update UPnP IGD every INTERVAL seconds
           interval = setInterval(async.apply(openPort, localPort, remotePort), 1000 * constants.NETWORK.UPNP.INTERVAL);
         },
@@ -41,6 +40,7 @@ module.exports = function (localPort, remotePort) {
           }
         }
       };
+      return upnpService;
     });
   });
 };

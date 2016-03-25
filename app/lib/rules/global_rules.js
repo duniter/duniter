@@ -606,7 +606,9 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
     if (block.number == 0 && cert.block_number != 0) {
       throw Error('Number must be 0 for root block\'s certifications');
     } else {
-      let basedBlock;
+      let basedBlock = {
+        hash: constants.BLOCK.SPECIAL_HASH
+      };
       if (block.number != 0) {
         try {
           basedBlock = yield dal.getBlock(cert.block_number);

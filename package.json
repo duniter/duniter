@@ -16,7 +16,7 @@
     "test": "mocha --growl --timeout 20000 test test/fast test/fast/block test/integration test/",
     "start": "node bin/ucoind start",
     "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/",
-    "postinstall": "mkdir ui -p && cd ui && npm pack ucoin-ui@0.1.9 && tar xzf ucoin-ui-0.1.9.tgz && cd package && npm install && cd .. && rm ucoin-ui-0.1.9.tgz"
+    "postinstall": "mkdir ui -p && cd ui && npm pack ucoin-ui@0.1.11 && tar xzf ucoin-ui-0.1.11.tgz && cd package && npm install && cd .. && rm ucoin-ui-0.1.11.tgz"
   },
   "repository": {
     "type": "git",

@@ -65,10 +65,12 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedDALP;
     let host = server.conf ? [server.conf.ipv4, server.conf.port].join(':') : '';
     let current = yield server.dal.getCurrentBlockOrNull();
+    let parameters = yield server.dal.getParameters();
     return {
       "host": host,
       "current": current,
-      "pubkey": base58.encode(server.pair.publicKey)
+      "pubkey": base58.encode(server.pair.publicKey),
+      "parameters": parameters
     };
   });
 
@@ -82,7 +84,13 @@ function WebAdmin (dbConf, overConf) {
 
   this.startHTTP = () => co(function *() {
     yield pluggedDALP;
-    return bmapi.openConnections();
+    try {
+      yield bmapi.openConnections();
+      return { success: true };
+    } catch (e) {
+      logger.error(e);
+      return { success: false };
+    }
   });
 
   this.openUPnP = () => co(function *() {

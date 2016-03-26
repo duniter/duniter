@@ -410,7 +410,8 @@ dtos.Boolean = {
 dtos.AdminSummary = {
   "host": String,
   "current": dtos.Block,
-  "pubkey": String
+  "pubkey": String,
+  "parameters": dtos.Parameters
 };
 
 dtos.PreviewPubkey = {

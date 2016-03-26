@@ -5,7 +5,7 @@ var logger = require('../app/lib/logger')('ucoind');
 
 process.on('uncaughtException', function (err) {
   // Dunno why this specific exception is not caught
-  if (err.code !== "EADDRNOTAVAIL") {
+  if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL") {
     logger.error(err);
     process.exit(1);
   }

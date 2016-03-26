@@ -170,8 +170,6 @@ module.exports = {
           let httpServer = httpServers[i].http;
           let isListening = listenings[i];
           if (!isListening) {
-            listenings[i] = true;
-
             let netInterface = interfaces[i].ip;
             let port = interfaces[i].port;
             try {
@@ -183,6 +181,7 @@ module.exports = {
                 //httpServer.on('listening', resolve.bind(this, httpServer));
                 httpServer.listen(port, netInterface, (err) => {
                   if (err) return reject(err);
+                  listenings[i] = true;
                   resolve(httpServer);
                 });
               });

@@ -188,6 +188,7 @@ module.exports = {
               logger.info(name + ' listening on http://' + netInterface + ':' + port);
             } catch (e) {
               logger.warn('Could NOT listen to http://' + netInterface + ':' + port);
+              logger.warn(e);
             }
           }
         }

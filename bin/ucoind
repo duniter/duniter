@@ -149,7 +149,7 @@ function sync(server, host, port, conf, to) {
   if (program.cautious) {
     cautious = true;
   }
-  return remote.sync(parseInt(to), cautious, program.nopeers);
+  return remote.sync(parseInt(to), 0, cautious, program.nopeers);
 }
 
 program

@@ -391,7 +391,7 @@ function WebAdmin (dbConf, overConf) {
       // Broadcast block
       that.push(data);
     }));
-    yield remote.sync(parseInt(req.body.to));
+    yield remote.sync(parseInt(req.body.to), parseInt(req.body.chunkLen));
     logger.info('Sync finished.');
     return {};
   });

@@ -65,8 +65,9 @@ function Synchroniser (server, host, port, conf, interactive) {
     timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
-  this.sync = (to, askedCautious, nopeers) => {
+  this.sync = (to, chunkLen, askedCautious, nopeers) => {
     let logInterval;
+    chunkLen = chunkLen || CONST_BLOCKS_CHUNK;
     logger.info('Connecting remote host...');
     return co(function *() {
       var node = yield getVucoin(host, port, vucoinOptions);
@@ -102,8 +103,8 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // Prepare chunks of blocks to be downloaded
       var chunks = [];
-      for (let i = localNumber + 1; i <= remoteNumber; i = i + CONST_BLOCKS_CHUNK) {
-        chunks.push([i, Math.min(i + CONST_BLOCKS_CHUNK - 1, remoteNumber)]);
+      for (let i = localNumber + 1; i <= remoteNumber; i = i + chunkLen) {
+        chunks.push([i, Math.min(i + chunkLen - 1, remoteNumber)]);
       }
 
       // Prepare the array of download promises. The first is the promise of already downloaded blocks
@@ -141,7 +142,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         let duration = times.reduce(function(sum, t, index) {
           return index == 0 ? sum : (sum + (times[index] - times[index - 1]));
         }, 0);
-        speed = (CONST_BLOCKS_CHUNK * (times.length  - 1)) / Math.round(Math.max(duration / 1000, 1));
+        speed = (chunkLen * (times.length  - 1)) / Math.round(Math.max(duration / 1000, 1));
         // Reset chrono
         syncStart = new Date();
         if (watcher.appliedPercent() != Math.floor((blocksApplied + localNumber) / remoteNumber * 100)) {

@@ -770,6 +770,8 @@ function BlockchainContext() {
             let idty = idties[j];
             sources.push({
               'pubkey': idty.pubkey,
+              'identifier': idty.pubkey,
+              'noffset': block.number,
               'type': 'D',
               'number': block.number,
               'time': block.medianTime,
@@ -779,7 +781,7 @@ function BlockchainContext() {
               'base': block.unitbase,
               'consumed': false,
               'toConsume': false,
-              'conditions': 'SIG(' + idty.pubkey + ')', // Only this pubkey can unlock its UD
+              'conditions': 'SIG(' + idty.pubkey + ')' // Only this pubkey can unlock its UD
             });
           }
         }
@@ -794,7 +796,7 @@ function BlockchainContext() {
           let txObj = tx.getTransaction();
           let txHash = tx.getHash(true);
           sources = sources.concat(txObj.inputs.map((input) => _.extend({ toConsume: true }, input)));
-          sources = sources.concat(txObj.outputs.map((output) => _.extend({
+          sources = sources.concat(txObj.outputs.map((output, index) => _.extend({
             toConsume: false
           }, {
             'type': 'T',
@@ -803,11 +805,18 @@ function BlockchainContext() {
             'fingerprint': txHash,
             'amount': output.amount,
             'base': output.base,
-            'consumed': false
+            'consumed': false,
+            'identifier': txHash,
+            'noffset': index
           })));
         }
       }
-      return dal.updateSources(sources);
+      try {
+        let res = yield dal.updateSources(sources);
+        return res;
+      } catch (e) {
+        throw e;
+      }
     });
   }
 

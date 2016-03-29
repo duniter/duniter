@@ -24,7 +24,7 @@ function NetworkBinding (server) {
   this.cert = PeeringService.cert;
 
   this.peer = () => co(function *() {
-    var p = PeeringService.peer();
+    var p = yield PeeringService.peer();
     if (!p) {
       throw constants.ERRORS.SELF_PEER_NOT_FOUND;
     }

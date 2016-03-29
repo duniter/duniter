@@ -236,7 +236,7 @@ function PeeringService(server) {
         yield that.peer(selfPeer);
         server.push(selfPeer);
         logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
-        done && done(null, selfPeer);
+        done && done();
         return selfPeer;
       } catch(e) {
         if (done) return done(e);

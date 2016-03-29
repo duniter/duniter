@@ -103,8 +103,12 @@ function WebAdmin (dbConf, overConf) {
     if (server.upnpAPI) {
       server.upnpAPI.stopRegular();
     }
-    server.upnpAPI = yield upnp(server.conf.port, server.conf.remoteport);
-    server.upnpAPI.startRegular();
+    try {
+      server.upnpAPI = yield upnp(server.conf.port, server.conf.remoteport);
+      server.upnpAPI.startRegular();
+    } catch (e) {
+      logger.error(e);
+    }
     return {};
   });
 

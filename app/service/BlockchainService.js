@@ -452,17 +452,13 @@ function BlockchainService () {
     };
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
-    let rootBlock = (blocks[0].number == 0 ? blocks[0] : null) || (yield dal.getBlockOrNull(0));
-    let rootConf = getParameters(rootBlock);
-    let maxBlock = getMaxBlocksToStoreAsFile(rootConf);
-    let lastBlockToSave = blocks[blocks.length - 1];
     for (let i = 0; i < blocks.length; i++) {
       let previous = i > 0 ? blocks[i - 1] : lastPrevious;
       let block = blocks[i];
       block.fork = false;
-      //console.log('Block #%s', block.number);
       // Monetary mass & UD Time recording before inserting elements
       block.monetaryMass = (previous && previous.monetaryMass) || 0;
+      block.unitbase = block.unitbase || 0;
       block.dividend = block.dividend || 0;
       // UD Time update
       let previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;
@@ -493,7 +489,7 @@ function BlockchainService () {
     yield mainContext.updateCertificationsForBlocks(blocks);
     // Create / Update sources
     yield mainContext.updateTransactionSourcesForBlocks(blocks);
-    yield dal.blockDAL.saveBunch(blocks, (targetLastNumber - lastBlockToSave.number) > maxBlock);
+    yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
   });
 

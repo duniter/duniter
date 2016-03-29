@@ -45,7 +45,8 @@ function Block(json) {
       "time",
       "medianTime",
       "membersCount",
-      "monetaryMass"
+      "monetaryMass",
+      "unitbase"
     ].forEach(function(field){
         json[field] = parseInt(that[field], 10);
       });
@@ -66,8 +67,7 @@ function Block(json) {
         json[field] = that[field] || null;
       });
     [
-      "dividend",
-      "unitbase"
+      "dividend"
     ].forEach(function(field){
         json[field] = parseInt(that[field]) || null;
       });

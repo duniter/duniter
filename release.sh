@@ -15,7 +15,7 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
       # GUI containers version
       sed -i "s/name\": .*/name\": \"v$2\",/g" gui/package.json
       sed -i "s/title\": .*/title\": \"v$2\",/g" gui/package.json
-      sed -i "s/<title>Duniter<\/title>/<title>Duniter v$2<\/title>/g" gui/index.html
+      sed -i "s/<title>Duniter.*<\/title>/<title>Duniter $2<\/title>/g" gui/index.html
 
       # (pre)-release management
       if [[ "$1" =~ ^rel$ ]]; then

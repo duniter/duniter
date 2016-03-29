@@ -67,6 +67,7 @@ function WebAdmin (dbConf, overConf) {
     let current = yield server.dal.getCurrentBlockOrNull();
     let parameters = yield server.dal.getParameters();
     return {
+      "version": server.version,
       "host": host,
       "current": current,
       "pubkey": base58.encode(server.pair.publicKey),

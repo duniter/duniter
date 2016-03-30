@@ -6,7 +6,7 @@
 # Wraps bin/ucoind.js that is called with Node.js
 #
 
-ucoind() {
+duniter() {
 
 	local NODE
 	local LOGS_FILE
@@ -26,8 +26,8 @@ ucoind() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v4* ]]; then
-	  echo "$NODE v4+ is required";
+	if [[ $VERSION != v5* ]]; then
+	  echo "$NODE v5 is required";
 	else
 
 		case "$1" in
@@ -59,5 +59,5 @@ ucoind() {
 
 # If the script was launched with parameters, try to launch the uCoin command
 if [ ! -z $1 ]; then
-	ucoind $*
+	duniter $*
 fi

@@ -219,13 +219,15 @@ function WebAdmin (dbConf, overConf) {
       remoteipv4: conf.remote_ipv4,
       remoteipv6: conf.remote_ipv6,
       remoteport: conf.rport,
+      remotehost: conf.dns,
       upnp: conf.upnp
     }));
     pluggedConfP = co(function *() {
       yield bmapi.closeConnections();
       yield server.loadConf();
       bmapi = yield bma(server, null, true);
-      return bmapi.openConnections();
+      yield bmapi.openConnections();
+      yield server.recomputeSelfPeer();
     });
     yield pluggedConfP;
     return {};

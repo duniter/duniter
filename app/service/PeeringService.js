@@ -476,6 +476,8 @@ function PeeringService(server) {
             applied++;
             if (!res.fork) {
               let nowCurrent = yield dal.getCurrentBlockOrNull();
+              // Notify
+              server.push(_.clone(res));
               yield server.BlockchainService.tryToFork(nowCurrent);
             }
           } catch (err) {

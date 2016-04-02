@@ -34,8 +34,9 @@ function NetworkBinding (server) {
   this.peersGet = (req) => co(function *() {
     let merkle = yield server.dal.merkleForPeers();
     return Q.nfcall(MerkleService.processForURL, req, merkle, function (hashes, done) {
-      server.dal.findPeersWhoseHashIsIn(hashes)
-        .then(function(peers) {
+      return co(function *() {
+        try {
+          let peers = yield server.dal.findPeersWhoseHashIsIn(hashes);
           var map = {};
           peers.forEach(function (peer){
             map[peer.hash] = Peer.statics.peerize(peer).json();
@@ -44,8 +45,11 @@ function NetworkBinding (server) {
             done(constants.ERRORS.PEER_NOT_FOUND);
           }
           done(null, map);
-        })
-        .catch(done);
+        } catch (e) {
+          if (done) done(e);
+          throw e;
+        }
+      });
     });
   });
 

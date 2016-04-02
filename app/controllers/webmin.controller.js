@@ -345,6 +345,13 @@ function WebAdmin (dbConf, overConf) {
   this.startAllServices = () => co(function *() {
     // Allow services to be stopped
     stopServicesP = null;
+    if (!server.conf.salt && !server.conf.passwd) {
+      let conf = {
+        idty_entropy: ~~(Math.random() * 2147483647) + "",
+        idty_password: ~~(Math.random() * 2147483647) + ""
+      };
+      yield that.applyNewKeyConf({ body: { conf :conf } });
+    }
     yield startServicesP || (startServicesP = ucoin.statics.startServices(server));
     that.push({ started: true });
     return {};

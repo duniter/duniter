@@ -62,12 +62,17 @@ install_ucoin_from_git() {
 
   # Download Nodejs
   local NVER="5.8.0";
-  local ARCH="86"
+  local ARCH="x86"
   local X64=`uname -a | grep "x86_64"`
+  local ARM=`uname -a | grep "arm"`
   if [ ! -z "$X64" ]; then
-    ARCH="64"
+    ARCH="x64"
   fi
-  local NODEJS_FILENAME=node-v${NVER}-linux-x${ARCH}
+  # ARM processors
+  if [ ! -z "$ARM" ]; then
+    ARCH="`uname -m`"
+  fi
+  local NODEJS_FILENAME=node-v${NVER}-linux-${ARCH}
   local NODEJS_TARBALL=http://nodejs.org/dist/v${NVER}/${NODEJS_FILENAME}.tar.gz
   local NODEJS_ARCHIVE=$UCOIN_DIR/node.tar.gz
   local NODEJS_EXTRACTED=$UCOIN_DIR/$NODEJS_FILENAME

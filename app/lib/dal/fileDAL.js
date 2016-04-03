@@ -33,6 +33,7 @@ function FileDAL(params) {
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
+  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqlite);
   this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqlite);
   this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqlite);
   this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqlite);
@@ -45,6 +46,7 @@ function FileDAL(params) {
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqlite);
 
   this.newDals = {
+    'metaDAL': that.metaDAL,
     'blockDAL': that.blockDAL,
     'certDAL': that.certDAL,
     'msDAL': that.msDAL,
@@ -77,7 +79,10 @@ function FileDAL(params) {
 
   this.init = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.init());
+    yield that.metaDAL.upgradeDatabase();
   });
+  
+  this.getDBVersion = () => that.metaDAL.getVersion();
 
   this.getCurrency = function() {
     return currency;

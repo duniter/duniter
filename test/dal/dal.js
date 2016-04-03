@@ -170,6 +170,12 @@ describe("DAL", function(){
     return fileDAL.saveConf({ currency: "meta_brouzouf" });
   }));
 
+  it('should have DB version 2', () => co(function *() {
+    let version = yield fileDAL.getDBVersion();
+    should.exist(version);
+    version.should.equal(2);
+  }));
+
   it('should have no peer in a first time', function(){
     return fileDAL.listAllPeers().then(function(peers){
       peers.should.have.length(0);

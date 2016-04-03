@@ -239,7 +239,7 @@ function BlockchainContext() {
       ], done);
     }
     else {
-      block.dividend = 0;
+      block.dividend = null;
       block.UDTime = current.UDTime;
       done();
     }

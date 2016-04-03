@@ -158,9 +158,10 @@ describe("HTTP API", function() {
     it('/block should send a block', function(done) {
       var completed = false
       var client = new ws('ws://127.0.0.1:7777/ws/block');
-      client.on('message', function message(data, flags) {
+      client.on('message', function message(data) {
         var block = JSON.parse(data);
         should(block).have.property('number', 4);
+        should(block).have.property('dividend', null);
         if (!completed) {
           completed = true;
           done();

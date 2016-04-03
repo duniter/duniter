@@ -34,6 +34,12 @@ function Block(json) {
     that[key] = value;
   });
 
+  [
+    "dividend"
+  ].forEach(function(field){
+    that[field] = parseInt(that[field]) || null;
+  });
+
   this.json = function() {
     var that = this;
     var json = {};

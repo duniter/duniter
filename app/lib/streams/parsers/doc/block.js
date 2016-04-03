@@ -57,7 +57,7 @@ function BlockParser (onError) {
     obj.number = obj.number || '';
     obj.time = obj.time || '';
     obj.medianTime = obj.medianTime || '';
-    obj.dividend = obj.dividend || '';
+    obj.dividend = obj.dividend || null;
     obj.unitbase = obj.unitbase || '';
     obj.issuer = obj.issuer || '';
     obj.parameters = obj.parameters || '';

@@ -1375,6 +1375,7 @@ The full transaction history for the given `pubkey`
     "sent": [
       {
         "version": 2,
+        "received": null,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1397,6 +1398,7 @@ The full transaction history for the given `pubkey`
     "received": [
       {
         "version": 2,
+        "received": null,
         "issuers": [
           "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
         ],
@@ -1417,6 +1419,7 @@ The full transaction history for the given `pubkey`
       },
       {
         "version": 2,
+        "received": null,
         "issuers": [
           "J78bPUvLjxmjaEkdjxWLeENQtcfXm7iobqB49uT1Bgp3"
         ],
@@ -1439,6 +1442,7 @@ The full transaction history for the given `pubkey`
     "sending": [
 	  {
         "version": 2,
+        "received": 1459691641,
         "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
@@ -1459,6 +1463,7 @@ The full transaction history for the given `pubkey`
     "receiving": [
 	 {
         "version": 2,
+        "received": 1459691641,
         "issuers": [
           "2sq8bBDQGK74f1eD3mAPQVgHCmFdijZr9nbv16FwbokX"
         ],

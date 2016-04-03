@@ -4,6 +4,7 @@
 
 var Q = require('q');
 var co = require('co');
+var moment = require('moment');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = TxsDAL;
@@ -24,6 +25,7 @@ function TxsDAL(db) {
     'currency',
     'comment',
     'locktime',
+    'received',
     'time',
     'written',
     'removed',
@@ -99,11 +101,13 @@ function TxsDAL(db) {
   };
 
   this.addPending = (tx) => {
+    tx.received = moment().unix();
     tx.written = false;
     tx.removed = false;
     tx.hash = tx.getHash(true);
     tx.recipients = tx.outputs.map(function(out) {
-      return out.match('(.*):')[1];
+      let recipent = out.match('SIG\\((.*)\\)');
+      return (recipent && recipent[1]) || 'UNKNOWN';
     });
     return this.saveEntity(tx);
   };

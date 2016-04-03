@@ -329,6 +329,7 @@ dtos.TxOfHistory = {
   "outputs": [String],
   "comment": String,
   "locktime": String,
+  "received": Number,
   "signatures": [String],
   "hash": String,
   "block_number": Number,

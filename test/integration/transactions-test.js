@@ -8,6 +8,8 @@ var constants = require('../../app/lib/constants');
 var node   = require('./tools/node');
 var user   = require('./tools/user');
 var unit   = require('./tools/unit');
+var http   = require('./tools/http');
+var rp     = require('request-promise');
 var MEMORY_MODE = true;
 
 describe("Testing transactions", function() {
@@ -40,6 +42,11 @@ describe("Testing transactions", function() {
           yield node2.commitP();
           yield node2.commitP();
           yield tic.sendP(51, toc);
+          yield http.expectAnswer(rp('http://127.0.0.1:9998/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', { json: true }), function(res) {
+            res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+            res.should.have.property('history').property('pending').length(1);
+            res.history.pending[0].should.have.property('received').be.a.Number;
+          });
           yield node2.commitP();
         });
       });

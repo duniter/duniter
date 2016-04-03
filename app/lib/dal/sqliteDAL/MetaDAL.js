@@ -28,7 +28,8 @@ function MetaDAL(db) {
 
   let migrations = {
     0: 'BEGIN; COMMIT;',
-    1: 'BEGIN; COMMIT;'
+    1: 'BEGIN; COMMIT;',
+    2: 'BEGIN; ALTER TABLE txs ADD COLUMN received INTEGER NULL; COMMIT;'
   };
 
   this.init = () => co(function *() {

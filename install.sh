@@ -11,7 +11,7 @@ if [ -z "$UCOIN_DIR" ]; then
 fi
 
 ucoin_latest_version() {
-  echo "v0.20.0a38"
+  echo "v0.20.0a39"
 }
 
 ucoin_repo_url() {

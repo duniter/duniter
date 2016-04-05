@@ -18,7 +18,7 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   var logger = require('../../../lib/logger')(this.dal.profile);
 
-  this.init = () => null;
+  this.init = () => Promise.resolve();
 
   this.getParameters = function() {
     return co(function *() {

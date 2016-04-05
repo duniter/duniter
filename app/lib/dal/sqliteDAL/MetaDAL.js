@@ -3,7 +3,7 @@
  */
 
 var co = require('co');
-var logger = require('../../../../app/lib/logger')('linksDAL');
+var logger = require('../../../../app/lib/logger')('metaDAL');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = MetaDAL;
@@ -39,13 +39,13 @@ function MetaDAL(db) {
       'version INTEGER NOT NULL,' +
       'PRIMARY KEY (id)' +
       ');' +
-      'INSERT INTO ' + that.table + ' VALUES (1,0);' +
       'COMMIT;', []);
   });
 
   this.upgradeDatabase = () => co(function *() {
     let version = yield that.getVersion();
     while(migrations[version]) {
+      logger.debug("Upgrading from v%s to v%s...", version, version + 1);
       yield that.exec(migrations[version]);
       // Automated increment
       yield that.exec('UPDATE meta SET version = version + 1');
@@ -56,7 +56,12 @@ function MetaDAL(db) {
   this.getRow = () => that.sqlFindOne({ id: 1 });
 
   this.getVersion = () => co(function *() {
-    let row = yield that.getRow();
-    return row.version;
+    try {
+      let row = yield that.getRow();
+      return row.version;
+    } catch(e) {
+      yield that.exec('INSERT INTO ' + that.table + ' VALUES (1,0);');
+      return 0;
+    }
   });
 }

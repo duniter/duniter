@@ -15,7 +15,7 @@ function StatDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
-  this.init = () => null;
+  this.init = () => Promise.resolve();
 
   this.loadStats = () => that.coreFS.readJSON('stats.json').catch(() => {});
 

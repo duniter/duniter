@@ -5,6 +5,7 @@ var _       = require('underscore');
 var path    = require('path');
 var hashf   = require('../hashf');
 var wotb    = require('../wot');
+var logger = require('../logger')('filedal');
 var directory = require('../directory');
 var Configuration = require('../entity/configuration');
 var Membership = require('../entity/membership');
@@ -78,7 +79,13 @@ function FileDAL(params) {
   var currency = '';
 
   this.init = () => co(function *() {
-    yield _.values(that.newDals).map((dal) => dal.init());
+    let dalNames = _.keys(that.newDals);
+    for (let i = 0; i < dalNames.length; i++) {
+      logger.debug("Init DAL %s...", dalNames[i]);
+      let dal = that.newDals[dalNames[i]];
+      yield dal.init();
+    }
+    logger.debug("Upgrade database...");
     yield that.metaDAL.upgradeDatabase();
   });
   

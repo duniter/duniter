@@ -64,4 +64,6 @@ function MetaDAL(db) {
       return 0;
     }
   });
+
+  this.cleanData = null; // Never clean data of this table
 }

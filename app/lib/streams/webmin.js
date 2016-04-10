@@ -102,7 +102,8 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
         if (data.sync !== undefined) {
           wssEvents.broadcast(JSON.stringify({
             type: 'sync',
-            value: data.sync
+            value: data.sync,
+            msg: (data.msg && (data.msg.message || data.msg))
           }));
         }
         if (data.started !== undefined) {

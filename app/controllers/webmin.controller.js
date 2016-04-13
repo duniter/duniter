@@ -406,7 +406,6 @@ function WebAdmin (dbConf, overConf) {
       that.push(data);
     }));
     yield remote.sync(parseInt(req.body.to), parseInt(req.body.chunkLen));
-    logger.info('Sync finished.');
     return {};
   });
 

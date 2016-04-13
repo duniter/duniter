@@ -130,7 +130,6 @@ program
     return co(function *() {
       try {
         yield sync(server, host, port, conf, to);
-        logger.info('Sync finished.');
       } catch (err) {
         logger.error(err.stack || err.message);
       }

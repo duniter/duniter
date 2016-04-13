@@ -74,7 +74,7 @@ function PeeringService(server) {
       } else {
         block = yield dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
         if (!block && makeCheckings) {
-          throw constants.PEER.UNKNOWN_REFERENCE_BLOCK;
+          throw constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK;
         } else if (!block) {
           thePeer.block = constants.PEER.SPECIAL_BLOCK;
           thePeer.statusTS = 0;

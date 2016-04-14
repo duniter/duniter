@@ -453,7 +453,7 @@ function BlockGenerator(mainContext, prover) {
       if (!identity) {
         throw 'Identity with hash \'' + idHash + '\' not found';
       }
-      if (identity.buid != constants.BLOCK.SPECIAL_BLOCK) {
+      if (!identity.wasMember && identity.buid != constants.BLOCK.SPECIAL_BLOCK) {
         let idtyBasedBlock = yield dal.getBlock(identity.buid);
         let age = current.medianTime - idtyBasedBlock.medianTime;
         if (age > conf.idtyWindow) {

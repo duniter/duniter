@@ -9,6 +9,7 @@ var rp        = require('request-promise');
 var httpTest  = require('./tools/http');
 var commit    = require('./tools/commit');
 var sync      = require('./tools/sync');
+var constants = require('./../../app/lib/constants');
 
 var expectJSON     = httpTest.expectJSON;
 var expectHttpCode = httpTest.expectHttpCode;
@@ -20,6 +21,7 @@ var commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
+  avgGenTime: 1,
   parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
@@ -80,7 +82,9 @@ describe("Switch", function() {
       // So we now have:
       // S1 01234
       // S2   `3456789
+      let oldVal = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = 0;
       yield sync(3, 8, s2, s1);
+      constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = oldVal;
       // S1 should have switched to the other branch
     });
   });

@@ -178,7 +178,7 @@ function BlockchainService () {
       let blocksAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES / (conf.avgGenTime / 60);
       let timeAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60;
       // We switch only to blockchain with X_MIN advance considering both theoretical time by block + written time
-      potentials = _.filter(potentials, (p) => p.number - current.number > blocksAdvance && p.medianTime - current.medianTime > timeAdvance);
+      potentials = _.filter(potentials, (p) => p.number - current.number >= blocksAdvance && p.medianTime - current.medianTime >= timeAdvance);
       logger.trace('SWITCH: %s branches...', branches.length);
       logger.trace('SWITCH: %s potential side chains...', potentials.length);
       for (let i = 0, len = potentials.length; i < len; i++) {

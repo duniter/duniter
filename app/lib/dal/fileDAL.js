@@ -81,7 +81,6 @@ function FileDAL(params) {
   this.init = () => co(function *() {
     let dalNames = _.keys(that.newDals);
     for (let i = 0; i < dalNames.length; i++) {
-      logger.debug("Init DAL %s...", dalNames[i]);
       let dal = that.newDals[dalNames[i]];
       yield dal.init();
     }

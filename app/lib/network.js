@@ -40,7 +40,7 @@ module.exports = {
     var conf = {};
     var client = upnp.createClient();
     // Look for 2 random ports
-    var privatePort = module.exports.getRandomPort();
+    var privatePort = module.exports.getRandomPort(conf);
     var publicPort = privatePort;
     logger.info('Checking UPnP features...');
     if (noupnp) {
@@ -67,7 +67,13 @@ module.exports = {
     return conf;
   }),
 
-  getRandomPort: () => ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START,
+  getRandomPort: (conf) => {
+    if (conf && conf.remoteport) {
+      return conf.remoteport;
+    } else {
+      return ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
+    }
+  },
 
   createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket) => co(function *() {
 

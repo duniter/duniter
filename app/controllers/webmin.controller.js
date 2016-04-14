@@ -307,7 +307,7 @@ function WebAdmin (dbConf, overConf) {
         address: addr.value
       });
     });
-    let randomPort = network.getRandomPort();
+    let randomPort = network.getRandomPort(conf);
     return {
       local: network.listInterfaces(),
       remote: [upnp, manual, lan],
@@ -379,7 +379,7 @@ function WebAdmin (dbConf, overConf) {
     } catch (e) {
       logger.error(e.stack || e);
     }
-    let randomPort = network.getRandomPort();
+    let randomPort = network.getRandomPort(server.conf);
     _.extend(server.conf, {
       ipv4: bestLocal4,
       ipv6: bestLocal6,

@@ -395,7 +395,7 @@ function getLocalNetworkOperations(conf, autoconf) {
       });
     },
     autoconf ? (done) => {
-      conf.port = network.getRandomPort();
+      conf.port = network.getRandomPort(conf);
       done();
     } : async.apply(simpleInteger, "Port", "port", conf)
   ];

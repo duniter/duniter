@@ -3,70 +3,101 @@ var should = require('should');
 var co = require('co');
 var Q = require('q');
 var pulling = require('../../app/lib/pulling');
+var constants = require("../../app/lib/constants.js");
 
 let commonConf = {
-  avgGenTime: 1
+  avgGenTime: constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60,
+  forksize: 100
 };
 
 describe('Pulling blocks', () => {
 
   it('from genesis with good sidechain should work', pullinTest({
     blockchain: [
-      { number: 0, medianTime: 0, hash: 'H0' }
+      newBlock(0, 'A')
     ],
     sidechains: [
       [
-        { number: 0, medianTime: 0, hash: 'H0' },
-        { number: 1, medianTime: 1, hash: 'H1', previousHash: 'H0' }
+        newBlock(0, 'A'),
+        newBlock(1, 'A')
       ]
     ],
-    expectNumber: 1,
-    expectHash: 'H1'
+    expectHash: 'A1'
   }));
 
   it('from genesis with fork sidechain should not work', pullinTest({
     blockchain: [
-      { number: 0, medianTime: 0, hash: 'H0' }
+      newBlock(0, 'A')
     ],
     sidechains: [
       [
-        { number: 0, medianTime: 0, hash: 'H0' },
-        { number: 1, medianTime: 1, hash: 'H1', previousHash: 'H0bis' }
+        newBlock(0, 'B'),
+        newBlock(1, 'B')
       ]
     ],
-    expectNumber: 0,
-    expectHash: 'H0'
+    expectHash: 'A0'
   }));
 
   it('from genesis with multiple good sidechains should work', pullinTest({
     blockchain: [
-      { number: 0, medianTime: 0, hash: 'H0' }
+      newBlock(0, 'A')
     ],
     sidechains: [
       [
-        { number: 0, medianTime: 0, hash: 'H0' },
-        { number: 1, medianTime: 1, hash: 'H1', previousHash: 'H0' },
-        { number: 2, medianTime: 2, hash: 'H2', previousHash: 'H1' }
+        newBlock(0, 'A'),
+        newBlock(1, 'A'),
+        newBlock(2, 'A')
       ],
       [
-        { number: 0, medianTime: 0, hash: 'H0' },
-        { number: 1, medianTime: 1, hash: 'H1', previousHash: 'H0' }
+        newBlock(0, 'A'),
+        newBlock(1, 'A')
       ],
       [
-        { number: 0, medianTime: 0, hash: 'H0' },
-        { number: 1, medianTime: 1, hash: 'H1', previousHash: 'H0' },
-        { number: 2, medianTime: 2, hash: 'H2', previousHash: 'H1' },
-        { number: 3, medianTime: 3, hash: 'H3', previousHash: 'H2' }
+        newBlock(0, 'A'),
+        newBlock(1, 'A'),
+        newBlock(2, 'A'),
+        newBlock(3, 'A')
       ],
       [
-        { number: 0, medianTime: 0, hash: 'H0' },
-        { number: 1, medianTime: 1, hash: 'H1', previousHash: 'H0' }
+        newBlock(0, 'A'),
+        newBlock(1, 'A')
       ]
     ],
-    expectNumber: 3,
-    expectHash: 'H3'
+    expectHash: 'A3'
+  }));
+
+  it('sync with a single fork', pullinTest({
+    blockchain: [
+      newBlock(0, 'A'),
+      newBlock(1, 'A'),
+      newBlock(2, 'A'),
+      newBlock(3, 'A')
+    ],
+    sidechains: [
+      [
+        newBlock(0, 'A'),
+        newBlock(1, 'A'),
+        newBlock(2, 'B'),
+        newBlock(3, 'B'),
+        newBlock(4, 'B'),
+        newBlock(5, 'B')
+      ]
+    ],
+    expectHash: 'B5'
   }));
 });
+
+function newBlock(number, branch, rootBranch) {
+  let previousNumber = number - 1;
+  let previousBranch = rootBranch || branch;
+  let previousHash = previousNumber >= 0 ? previousBranch + previousNumber : '';
+  return {
+    number: number,
+    medianTime: number * constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60,
+    hash: branch + number,
+    previousHash: previousHash
+  };
+}
 
 function pullinTest(testConfiguration) {
   return () => co(function *() {
@@ -76,9 +107,6 @@ function pullinTest(testConfiguration) {
     (yield dao.localCurrent()).should.have.property('number').equal(blockchain[blockchain.length - 1].number);
     yield pulling(commonConf, dao);
     let localCurrent = yield dao.localCurrent();
-    if (testConfiguration.expectNumber !== undefined && testConfiguration.expectNumber !== null) {
-      localCurrent.should.have.property('number').equal(testConfiguration.expectNumber);
-    }
     if (testConfiguration.expectHash !== undefined && testConfiguration.expectHash !== null) {
       localCurrent.should.have.property('hash').equal(testConfiguration.expectHash);
     }
@@ -97,11 +125,14 @@ function mockDao(blockchain, sideChains) {
     getRemoteBlock: (bc, number) => Q(bc[number] || null),
     applyMainBranch: (block) => Q(blockchain.push(block)),
     removeForks: () => Q(),
-    isMemberPeer: () => Q(),
+    isMemberPeer: () => Q(true),
     // Not required in this test
     // TODO: make a real algorithm like binary tree search
-    findCommonRoot: () => Q(blockchain[0]),
-    downloadBlocks: () => Q(),
-    applyBranch: () => Q(null)
+    findCommonRoot: (fork, forksize) => Q(blockchain[1]),
+    downloadBlocks: (bc, fromNumber, count) => Q(bc.slice(fromNumber, fromNumber + count)),
+    applyBranch: (blocks) => {
+      blockchain = blockchain.concat(blocks);
+      return Q(true);
+    }
   };
 }

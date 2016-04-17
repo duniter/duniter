@@ -61,17 +61,17 @@ module.exports = (conf, dao) => co(function *() {
   yield dao.removeForks();
   // Find the common root block
   let j = 0, successFork = false;
-  do {
+  while (!successFork && j < memberForks.length) {
     let fork = memberForks[j];
     let commonRootBlock = yield dao.findCommonRoot(fork, conf.forksize);
     if (commonRootBlock) {
-      let blocksToApply = yield dao.downloadBlocks(commonRootBlock.number, conf.forksize);
+      let blocksToApply = yield dao.downloadBlocks(fork.peer, commonRootBlock.number + 1, conf.forksize);
       successFork = yield dao.applyBranch(blocksToApply);
     } else {
       logger.debug('No common root block with peer %s', fork.peer.pubkey.substr(0, 6));
     }
     j++;
-  } while (!successFork && j < memberForks.length);
+  }
   return dao.localCurrent();
 });
 

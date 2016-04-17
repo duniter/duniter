@@ -9,7 +9,7 @@ module.exports = (conf, dao) => co(function *() {
 
   let forks = [];
   let localCurrent = yield dao.localCurrent();
-  let peers = yield dao.remoteBlockchains();
+  let peers = yield dao.remotePeers();
   // Try to get new legit blocks for local blockchain
   for (let i = 0, len = peers.length; i < len; i++) {
     let peer = peers[i];

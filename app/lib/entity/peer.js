@@ -6,19 +6,14 @@ var rawer = require('../rawer');
 
 module.exports = Peer;
 
-var STATUS = {
-  ASK: "ASK",
-  NEW: "NEW",
-  NEW_BACK: "NEW_BACK",
-  UP: "UP",
-  DOWN: "DOWN",
-  NOTHING: "NOTHING"
-};
+let DEFAULT_HOST = 'localhost';
 var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 function Peer(json) {
 
   var that = this;
+
+  this.documentType = 'peer';
 
   _(json).keys().forEach(function(key) {
    that[key] = json[key];
@@ -56,7 +51,7 @@ function Peer(json) {
     return json;
   };
 
-  that.getBMA = function() {
+  that.getBMA = () => {
     var bma = null;
     that.endpoints.forEach(function(ep){
       var matches = !bma && ep.match(BMA_REGEXP);
@@ -72,48 +67,43 @@ function Peer(json) {
     return bma || {};
   };
 
-  that.getDns = function() {
+  that.getDns = () => {
     var bma = that.getBMA();
     return bma.dns ? bma.dns : null;
   };
 
-  that.getIPv4 = function() {
+  that.getIPv4 = () => {
     var bma = that.getBMA();
     return bma.ipv4 ? bma.ipv4 : null;
   };
 
-  that.getIPv6 = function() {
-    var bma = that.getBMA();
+  that.getIPv6 = () => {
+    let bma = that.getBMA();
     return bma.ipv6 ? bma.ipv6 : null;
   };
 
-  that.getPort = function() {
+  that.getPort = () => {
     var bma = that.getBMA();
     return bma.port ? bma.port : null;
   };
 
-  that.getHostPreferDNS = function() {
-    var bma = that.getBMA();
+  that.getHostPreferDNS = () => {
+    let bma = that.getBMA();
     return (bma.dns ? bma.dns :
       (bma.ipv4 ? bma.ipv4 :
         (bma.ipv6 ? bma.ipv6 : '')));
   };
 
-  that.getHost = function() {
-    var bma = that.getBMA();
-    var host =
-      (that.hasValid4(bma) ? bma.ipv4 :
-        (bma.dns ? bma.dns :
-          (bma.ipv6 ? '[' + bma.ipv6 + ']' : '')));
-    return host;
+  that.getHost = () => {
+    let bma = that.getBMA();
+    return (that.hasValid4(bma) ? bma.ipv4 :
+      (bma.dns ? bma.dns :
+        (bma.ipv6 ? '[' + bma.ipv6 + ']' : DEFAULT_HOST)));
   };
 
-  that.getURL = function() {
-    var bma = that.getBMA();
-    var base =
-      (that.hasValid4(bma) ? bma.ipv4 :
-        (bma.dns ? bma.dns :
-          (bma.ipv6 ? '[' + bma.ipv6 + ']' : '')));
+  that.getURL = () => {
+    let bma = that.getBMA();
+    let base = this.getHost();
     if(bma.port)
       base += ':' + bma.port;
     return base;
@@ -123,34 +113,21 @@ function Peer(json) {
     return bma.ipv4 && !bma.ipv4.match(/^127.0/) && !bma.ipv4.match(/^192.168/) ? true : false;
   };
 
-  that.getNamedURL = function() {
-    var bma = that.getBMA();
-    var base =
-      (that.hasValid4(bma) ? bma.ipv4 :
-        (bma.dns ? bma.dns :
-          (bma.ipv6 ? '[' + bma.ipv6 + ']' : '')));
-    if(bma.port)
-      base += ':' + bma.port;
-    return base;
-  };
+  that.getNamedURL = () => this.getURL();
 
-  that.getRaw = function() {
-    return rawer.getPeerWithoutSignature(that);
-  };
+  that.getRaw = () => rawer.getPeerWithoutSignature(that);
 
-  that.getRawSigned = function() {
-    return rawer.getPeer(that);
-  };
+  that.getRawSigned = () => rawer.getPeer(that);
 
   that.connect = function (done){
-    vucoin(that.getDns() || that.getIPv6() || that.getIPv4(), that.getPort(), done, {
+    vucoin(that.getDns() || that.getIPv6() || that.getIPv4() || DEFAULT_HOST, that.getPort(), done, {
       timeout: 2000
     });
   };
 
   that.connectP = (timeout) => {
     return Q.Promise(function(resolve, reject){
-      vucoin(that.getDns() || that.getIPv6() || that.getIPv4(), that.getPort(), (err, node) => {
+      vucoin(that.getDns() || that.getIPv6() || that.getIPv4() || DEFAULT_HOST, that.getPort(), (err, node) => {
         if (err) return reject(err);
         resolve(node);
       }, {

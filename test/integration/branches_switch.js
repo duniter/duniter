@@ -12,15 +12,13 @@ var sync      = require('./tools/sync');
 var constants = require('./../../app/lib/constants');
 
 var expectJSON     = httpTest.expectJSON;
-var expectHttpCode = httpTest.expectHttpCode;
-var expectAnswer = httpTest.expectAnswer;
 
 var MEMORY_MODE = true;
 var commonConf = {
   ipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
-  forksize: 3,
+  forksize: 30,
   avgGenTime: 1,
   parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
@@ -55,39 +53,44 @@ var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec
 
 describe("Switch", function() {
 
-  before(function() {
+  before(() => co(function *() {
+    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield cat.selfCertPromise();
+    yield toc.selfCertPromise();
+    yield toc.certPromise(cat);
+    yield cat.certPromise(toc);
+    yield cat.joinPromise();
+    yield toc.joinPromise();
+    yield commit(s1)();
+    yield commit(s1)();
+    yield commit(s1)();
+    yield sync(0, 2, s1, s2);
 
-    return co(function *() {
-      yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCertPromise();
-      yield toc.selfCertPromise();
-      yield toc.certPromise(cat);
-      yield cat.certPromise(toc);
-      yield cat.joinPromise();
-      yield toc.joinPromise();
-      yield commit(s1)();
-      yield commit(s1)();
-      yield commit(s1)();
-      yield sync(0, 2, s1, s2);
-      yield commit(s1)();
-      yield commit(s1)();
-      yield commit(s2)();
-      yield commit(s2)();
-      yield commit(s2)();
-      yield commit(s2)();
-      yield commit(s2)();
-      yield commit(s2)();
-      yield commit(s2)();
-      // So we now have:
-      // S1 01234
-      // S2   `3456789
-      let oldVal = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = 0;
-      yield sync(3, 8, s2, s1);
-      constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = oldVal;
-      // S1 should have switched to the other branch
-    });
-  });
+    let s2p = yield s2.PeeringService.peer();
+
+    yield commit(s1)();
+    yield commit(s1)();
+    yield commit(s2)();
+    yield commit(s2)();
+    yield commit(s2)();
+    yield commit(s2)();
+    yield commit(s2)();
+    yield commit(s2)();
+    yield commit(s2)();
+    // So we now have:
+    // S1 01234
+    // S2   `3456789
+    let oldVal = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = 0;
+
+    yield s1.singleWritePromise(s2p);
+
+    // Forking S1 from S2
+    yield s1.pullBlocks(s2p.pubkey);
+
+    constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = oldVal;
+    // S1 should have switched to the other branch
+  }));
 
   describe("Server 1 /blockchain", function() {
 

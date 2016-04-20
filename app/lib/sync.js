@@ -281,7 +281,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       if (watcher.appliedPercent() != Math.floor(block.number / remoteCurrentNumber * 100)) {
         watcher.appliedPercent(Math.floor(block.number / remoteCurrentNumber * 100));
       }
-      return BlockchainService.submitBlock(block, cautious);
+      return BlockchainService.submitBlock(block, cautious, constants.FORK_ALLOWED);
     };
   }
 

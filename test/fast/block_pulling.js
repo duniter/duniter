@@ -171,7 +171,7 @@ function pullinTest(testConfiguration) {
     (yield dao.localCurrent()).should.have.property('number').equal(blockchain[blockchain.length - 1].number);
 
     // And after we make a pulling...
-    yield pulling(commonConf, dao);
+    yield pulling.pull(commonConf, dao);
 
     // We test the new local blockchain current block (it should have changed in case of successful pull)
     let localCurrent = yield dao.localCurrent();
@@ -191,7 +191,7 @@ function pullinTest(testConfiguration) {
  * @returns {{localCurrent: (function(): (*|Q.Promise<*>|Q.Promise<T>)), remoteCurrent: (function(): (*|Q.Promise<*>|Q.Promise<T>)), remotePeers: (function(): (*|Q.Promise<*>|Q.Promise<T>)), getRemoteBlock: (function(): (*|Q.Promise<*|null>|Q.Promise<T>)), applyMainBranch: (function(): (*|Q.Promise<Number|*|_Chain<*>>|Q.Promise<T>)), removeForks: (function(): (*|Q.Promise<T>)), isMemberPeer: (function(): (*|Q.Promise<boolean>|Q.Promise<T>)), findCommonRoot: (function(): (*|Promise)), downloadBlocks: (function(): (*|Q.Promise<Buffer|ArrayBuffer|Array.<any>|string|*|_Chain<any>>|Q.Promise<T>)), applyBranch: (function())}}
  */
 function mockDao(blockchain, sideChains) {
-  let dao = {
+  return pulling.abstractDao({
 
     // Get the local blockchain current block
     localCurrent: () => Q(blockchain[blockchain.length - 1]),
@@ -230,83 +230,6 @@ function mockDao(blockchain, sideChains) {
     isMemberPeer: (peer) => Q(true),
 
     // Simulates the downloading of blocks from a peer
-    downloadBlocks: (bc, fromNumber, count) => Q(bc.slice(fromNumber, fromNumber + count)),
-
-    // Simulate the adding of new blocks on local blockchain
-    applyBranch: (blocks) => {
-      blockchain = blockchain.concat(blocks);
-      return Q(true);
-    }
-  };
-
-  dao.findCommonRoot = (fork, forksize) => co(function *() {
-
-    let commonRoot = null;
-    let localCurrent = yield dao.localCurrent();
-
-    // We look between the top block that is known as fork ...
-    let topBlock = fork.block;
-    // ... and the bottom which is bounded by `forksize`
-    let bottomBlock = yield dao.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize));
-    let lookBlock = bottomBlock;
-    let localEquivalent = yield dao.getLocalBlock(bottomBlock.number);
-    let isCommonBlock = lookBlock.hash == localEquivalent.hash;
-    if (isCommonBlock) {
-
-      // Then common root can be found between top and bottom. We process.
-      let position, wrongRemotechain = false;
-      do {
-
-        isCommonBlock = lookBlock.hash == localEquivalent.hash;
-        if (!isCommonBlock) {
-
-          // Too high, look downward
-          topBlock = lookBlock;
-          position = middle(topBlock.number, bottomBlock.number);
-        }
-        else {
-          let upperBlock = yield dao.getRemoteBlock(fork.peer, lookBlock.number + 1);
-          let localUpper = yield dao.getLocalBlock(upperBlock.number);
-          let isCommonUpper = upperBlock.hash == localUpper.hash;
-          if (isCommonUpper) {
-
-            // Too low, look upward
-            bottomBlock = lookBlock;
-            position = middle(topBlock.number, bottomBlock.number);
-          }
-          else {
-
-            // Spotted!
-            commonRoot = lookBlock;
-          }
-        }
-
-        let noSpace = topBlock.number == bottomBlock.number + 1;
-        if (!commonRoot && noSpace) {
-          // Remote node have inconsistency blockchain, stop search
-          wrongRemotechain = true;
-        }
-
-        if (!wrongRemotechain) {
-          lookBlock = yield dao.getRemoteBlock(fork.peer, position);
-          localEquivalent = yield dao.getLocalBlock(position);
-        }
-      } while (!commonRoot && !wrongRemotechain);
-    }
-    // Otherwise common root is unreachable
-
-
-    return Q(commonRoot);
+    downloadBlocks: (bc, fromNumber, count) => Q(bc.slice(fromNumber, fromNumber + count))
   });
-
-  return dao;
-}
-
-function middle(top, bottom) {
-  let difference = top - bottom;
-  if (difference % 2 == 1) {
-    // We look one step below to not forget any block
-    difference++;
-  }
-  return bottom + (difference / 2);
 }

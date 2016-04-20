@@ -43,7 +43,7 @@ function Server (dbConf, overrideConf) {
     'membership':    that.MembershipService.submitMembership,
     'peer':          that.PeeringService.submitP,
     'transaction':   that.TransactionsService.processTx,
-    'block':         _.partial(that.BlockchainService.submitBlock, _, true)
+    'block':         _.partial(that.BlockchainService.submitBlock, _, true, constants.NO_FORK_ALLOWED)
   };
 
   // Unused, but made mandatory by Duplex interface
@@ -309,6 +309,8 @@ function Server (dbConf, overrideConf) {
   this.disconnect = function() {
     return that.dal && that.dal.close();
   };
+
+  this.pullBlocks = that.PeeringService.pullBlocks;
 
   this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, null, manualValues);
 

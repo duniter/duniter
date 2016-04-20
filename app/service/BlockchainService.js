@@ -127,9 +127,9 @@ function BlockchainService () {
     return [];
   }
 
-  this.submitBlock = (obj, doCheck) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck));
+  this.submitBlock = (obj, doCheck, forkAllowed) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck, forkAllowed));
 
-  function checkAndAddBlock(obj, doCheck) {
+  function checkAndAddBlock(obj, doCheck, forkAllowed) {
     return co(function *() {
       let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
       if (existing) {
@@ -146,7 +146,7 @@ function BlockchainService () {
         yield pushStatsForBlocks([res]);
         that.stopPoWThenProcessAndRestartPoW();
         return res;
-      } else {
+      } else if (forkAllowed) {
         // add it as side chain
         if (current.number - obj.number + 1 >= conf.forksize) {
           throw 'Block out of fork window';
@@ -158,6 +158,8 @@ function BlockchainService () {
         let res = yield mainContext.addSideBlock(obj, doCheck);
         yield that.tryToFork(current);
         return res;
+      } else {
+        throw "Fork block rejected";
       }
     });
   }

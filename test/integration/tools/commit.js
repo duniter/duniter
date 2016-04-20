@@ -1,11 +1,16 @@
 "use strict";
 
+var _  = require('underscore');
 var co = require('co');
 var rp = require('request-promise');
 var logger = require('../../../app/lib/logger')('test');
 
-module.exports = function makeBlockAndPost(theServer) {
+module.exports = function makeBlockAndPost(theServer, extraProps) {
   return function(manualValues) {
+    if (extraProps) {
+      manualValues = manualValues || {};
+      manualValues = _.extend(manualValues, extraProps);
+    }
     return co(function *() {
       let proven = yield theServer.doMakeNextBlock(manualValues);
       return postBlock(theServer)(proven);

@@ -1,4 +1,4 @@
-![uCoin logo](https://raw.github.com/ucoin-io/ucoin/master/ucoin_logo.png)
+![uCoin logo](https://raw.github.com/ucoin-io/ucoin/master/duniter-logo.png)
 
 # uCoin [![Build Status](https://api.travis-ci.org/ucoin-io/ucoin.png)](https://travis-ci.org/ucoin-io/ucoin) [![Coverage Status](https://coveralls.io/repos/ucoin-io/ucoin/badge.svg?branch=master&service=github)](https://coveralls.io/github/ucoin-io/ucoin?branch=master)
 

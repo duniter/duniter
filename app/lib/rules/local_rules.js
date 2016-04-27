@@ -413,7 +413,8 @@ rules.FUNCTIONS = {
 };
 
 function maxAcceleration (conf) {
-  return Math.ceil(conf.avgGenTime * Math.sqrt(1.066)) * (Math.ceil((conf.medianTimeBlocks + 1) / 2) + 1);
+  let maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
+  return Math.ceil(maxGenTime * conf.medianTimeBlocks);
 }
 
 function existsPubkeyIn(pubk, memberships) {

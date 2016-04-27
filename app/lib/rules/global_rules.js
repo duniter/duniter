@@ -748,7 +748,7 @@ function getPoWMinFor (blockNumber, conf, dal) {
       co(function *() {
         var previous = yield dal.getBlock(blockNumber - 1);
         var medianTime = yield getMedianTime(blockNumber, conf, dal);
-        var speedRange = parseFloat(conf.medianTimeBlocks) * 3;
+        var speedRange = Math.min(conf.dtDiffEval, blockNumber);
         var lastDistant = yield dal.getBlock(Math.max(0, blockNumber - speedRange));
         // Compute PoWMin value
         var duration = medianTime - lastDistant.medianTime;
@@ -800,31 +800,12 @@ function getMedianTime (blockNumber, conf, dal) {
     let timeValues = _.pluck(blocksBetween, 'time');
     var blocksCount;
     timeValues.sort();
-    // console.log(timeValues);
-    var times = [0];
-    var middle;
-    if (blocksCount % 2 == 0) {
-      // Even number of blocks
-      middle = blocksCount / 2;
-      times = [timeValues[middle - 1], timeValues[middle]];
-      // console.log('middle', middle);
-      // console.log('times = ', times);
+    let sum = 0;
+    for (let i = 0, len = timeValues.length; i < len; i++) {
+      sum += timeValues[i];
     }
-    else {
-      // Odd number of blocks
-      middle = (blocksCount - 1) / 2;
-      times = [timeValues[middle]];
-      // console.log('middle', middle);
-      // console.log('times = ', times);
-    }
-    // Content
-    if (times.length == 2) {
-      // Even number of times
-      return Math.ceil((times[0] + times[1]) / 2);
-    }
-    else if (times.length == 1) {
-      // Odd number of times
-      return times[0];
+    if (timeValues.length) {
+      return Math.floor(sum / timeValues.length);
     }
     else {
       throw Error('No block found for MedianTime comparison');

@@ -942,7 +942,7 @@ Variable  | Meaning
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last active (non-expired) membership is either in `Joiners` or `Actives`.
 maxGenTime  | `= CEIL(avgGenTime * √(1,066))`
 minGenTime  | `= FLOOR(avgGenTime / √(1,066))`
-maxAcceleration | `= CEIL(maxGenTime * (CEIL((medianTimeBlocks + 1) / 2) + 1))`
+maxAcceleration | `= CEIL(maxGenTime * medianTimeBlocks)`
 dSen | `= 1.2 x CEIL(EXP(LN(membersCount)/stepMax))`
 sentries | Members with at least `dSen` active links *from* them
 
@@ -1145,7 +1145,7 @@ An identity is considered *revoked* if either:
 ##### PoWMin
 
 ###### Définitions
-* `speedRange = medianTimeBlocks * 3`
+* `speedRange = MIN(dtDiffEval, incomingNumber)`
 * `speed = speedRange / (medianTime(incomingNumber) - medianTime(incomingNumber - speedRange))`
 * `maxSpeed = 1/minGenTime`
 * `minSpeed = 1/maxGenTime`

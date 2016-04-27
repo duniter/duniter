@@ -1,6 +1,7 @@
 "use strict";
 
 var co        = require('co');
+var should    = require('should');
 var _         = require('underscore');
 var ucoin     = require('./../../index');
 var bma       = require('./../../app/lib/streams/bma');
@@ -176,10 +177,10 @@ describe("WOTB module", function() {
         yield commit(s2)();
         // Should make MS expire for toc2
         yield commit(s2)({
-          time: now + 500
+          time: now + 650
         });
         yield commit(s2)({
-          time: now + 500
+          time: now + 650
         });
         yield cat2.joinPromise(); // Renew for not to be kicked!
         yield tic2.joinPromise(); // Renew for not to be kicked!
@@ -249,7 +250,7 @@ describe("WOTB module", function() {
       return co(function *() {
         yield commit(s3)();
         yield commit(s3)({
-          time: now + 1000
+          time: now + 1200
         });
         /**
          * cat <==> tic
@@ -268,14 +269,14 @@ describe("WOTB module", function() {
     it('third & fourth commits: toc should have joined', function() {
       return co(function *() {
         yield commit(s3)({
-          time: now + 2000
+          time: now + 2400
         });
         // MedianTime is now +500 for next certs
         yield toc3.selfCertPromise();
         yield toc3.joinPromise();
         yield tic3.certPromise(toc3);
         yield commit(s3)({
-          time: now + 2000
+          time: now + 4000
         });
         // MedianTime is now +1000 for next certs
         /**
@@ -297,7 +298,7 @@ describe("WOTB module", function() {
       return co(function *() {
         yield toc3.certPromise(tic3);
         yield commit(s3)({
-          time: now + 2000
+          time: now + 4000
         });
         /**
          *   cat     tic <==> toc
@@ -339,7 +340,7 @@ describe("WOTB module", function() {
         yield tic3.certPromise(cat3);
         yield cat3.joinPromise();
         yield commit(s3)({
-          time: now + 1500
+          time: now + 1800
         });
         /**
          *  cat <-- tic <-- [toc]

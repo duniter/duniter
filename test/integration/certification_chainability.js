@@ -73,10 +73,10 @@ describe("Certification chainability", function() {
       // We still are at +195, and the certPeriod must be OVER (or equal to) current time to allow new certs from cat.
       // So if we increment +1
       yield commitS1({
-        time: now + 205
+        time: now + 210
       });
       yield commitS1({
-        time: now + 205
+        time: now + 210
       });
       yield commitS1({ now });
       // Should be integrated now

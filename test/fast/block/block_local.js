@@ -1,5 +1,6 @@
 "use strict";
 var co             = require('co');
+var should         = require('should');
 var parsers        = require('../../../app/lib/streams/parsers/doc');
 var blocks         = require('../../data/blocks');
 var rules          = require('../../../app/lib/rules');
@@ -34,8 +35,8 @@ describe("Block local coherence", function(){
     it('if non-root block does not have PreviousHash',                                                test(rules.LOCAL.checkPreviousHash, blocks.NON_ROOT_WITHOUT_PREVIOUS_HASH, 'PreviousHash must be provided for non-root block'));
     it('if non-root block does not have PreviousIssuer',                                              test(rules.LOCAL.checkPreviousIssuer, blocks.NON_ROOT_WITHOUT_PREVIOUS_ISSUER, 'PreviousIssuer must be provided for non-root block'));
     it('a block with Dividend must have UnitBase field',                                              test(rules.LOCAL.checkUnitBase, blocks.UD_BLOCK_WIHTOUT_BASE, 'Document has unkown fields or wrong line ending format'));
-    it('a block with wrong date (in past)',                                                           test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_LOWER, 'A block must have its Time between MedianTime and MedianTime + 744'));
-    it('a block with wrong date (in future, but too far)',                                            test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, 'A block must have its Time between MedianTime and MedianTime + 744'));
+    it('a block with wrong date (in past)',                                                           test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_LOWER, 'A block must have its Time between MedianTime and MedianTime + 1240'));
+    it('a block with wrong date (in future, but too far)',                                            test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, 'A block must have its Time between MedianTime and MedianTime + 1240'));
     it('a root block with different time & medianTime should fail',                                   test(rules.LOCAL.checkBlockTimes, blocks.WRONG_ROOT_TIMES, 'Root block must have Time equal MedianTime'));
     it('a block with good date',                                                                      test(rules.LOCAL.checkBlockTimes, blocks.GOOD_DATE_HIGHER));
     it('Block cannot contain wrongly signed identities',                                              test(rules.LOCAL.checkIdentitiesSignature, blocks.WRONGLY_SIGNED_IDENTITIES, 'Identity\'s signature must match'));

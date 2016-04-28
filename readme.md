@@ -1,6 +1,6 @@
 ![Duniter logo](https://raw.github.com/duniter/duniter/master/duniter-logos/250×250.png)
 
-# Duniter [![Build Status](https://api.travis-ci.org/ucoin-io/ucoin.png)](https://travis-ci.org/ucoin-io/ucoin) [![Coverage Status](https://coveralls.io/repos/ucoin-io/ucoin/badge.svg?branch=master&service=github)](https://coveralls.io/github/ucoin-io/ucoin?branch=master)
+# Duniter [![Build Status](https://api.travis-ci.org/duniter/duniter.png)](https://travis-ci.org/duniter/duniter) [![Coverage Status](https://coveralls.io/repos/duniter/duniter/badge.svg?branch=master&service=github)](https://coveralls.io/github/duniter/duniter?branch=master)
 
 Duniter (previously uCoin) is a libre software allowing to create a new kind of P2P crypto-currencies based on individuals and Universal Dividend.
 

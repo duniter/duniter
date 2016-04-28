@@ -54,7 +54,7 @@ describe("Integration", function() {
         should.exists(summary.ucoin);
         should.exists(summary.ucoin.software);
         should.exists(summary.ucoin.version);
-        assert.equal(summary.ucoin.software, "ucoind");
+        assert.equal(summary.ucoin.software, "duniter");
         assert.equal(summary.ucoin.version, jspckg.version);
         done();
       }));

@@ -94,7 +94,7 @@ module.exports = {
   * Generates a new keypair object from salt + password strings.
   * Returns: { publicKey: pubkeyObject, secretKey: secretkeyObject }.
   */
-  getKeyPair: function (key, salt, done) {
+  getKeyPair: function (salt, key, done) {
     getScryptKey(key, salt, function(keyBytes) {
       done(null, nacl.sign.keyPair.fromSeed(keyBytes));
     });

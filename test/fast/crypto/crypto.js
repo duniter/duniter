@@ -14,7 +14,7 @@ var pub, sec, rawPub, rawSec;
 
 before(function (done) {
   // Generate the keypair
-  crypto.getKeyPair(passphrase, salt, function (err, keyPair) {
+  crypto.getKeyPair(salt, passphrase, function (err, keyPair) {
     pub = keyPair.publicKey;
     sec = keyPair.secretKey;
     rawPub = base58.encode(pub);

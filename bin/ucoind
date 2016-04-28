@@ -307,7 +307,7 @@ function generateAndSend (generationMethod) {
             },
             function (next){
               // Extract key pair
-              crypto.getKeyPair(conf.passwd, conf.salt, next);
+              crypto.getKeyPair(conf.salt, conf.passwd, next);
             },
             function (pair, next){
               signature.sync(pair, function(err, sigFunc) {

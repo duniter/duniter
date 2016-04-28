@@ -109,7 +109,7 @@ function Server (dbConf, overrideConf) {
       };
     }
     else if (that.conf.passwd || that.conf.salt) {
-      pair = yield Q.nbind(crypto.getKeyPair, crypto)(that.conf.passwd, that.conf.salt);
+      pair = yield Q.nbind(crypto.getKeyPair, crypto)(that.conf.salt, that.conf.passwd);
     }
     else {
       pair = {

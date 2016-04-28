@@ -6,12 +6,12 @@ ucoin_has() {
   type "$1" > /dev/null 2>&1
 }
 
-if [ -z "$UCOIN_DIR" ]; then
-  UCOIN_DIR="$HOME/.ucoin"
+if [ -z "$DUNITER_DIR" ]; then
+  DUNITER_DIR="$HOME/.duniter"
 fi
 
 ucoin_latest_version() {
-  echo "v0.20.0a41"
+  echo "v0.20.0a47"
 }
 
 ucoin_repo_url() {
@@ -37,26 +37,26 @@ install_ucoin_from_git() {
 
   local PREVIOUS_PATH
   PREVIOUS_PATH=$PATH
-  if [ -d "$UCOIN_DIR/.git" ]; then
-    echo "=> ucoin is already installed in $UCOIN_DIR, trying to update using git"
+  if [ -d "$DUNITER_DIR/.git" ]; then
+    echo "=> ucoin is already installed in $DUNITER_DIR, trying to update using git"
     printf "\r=> "
-    cd "$UCOIN_DIR" && (command git fetch 2> /dev/null || {
-      echo >&2 "Failed to update ucoin, run 'git fetch' in $UCOIN_DIR yourself." && exit 1
+    cd "$DUNITER_DIR" && (command git fetch 2> /dev/null || {
+      echo >&2 "Failed to update ucoin, run 'git fetch' in $DUNITER_DIR yourself." && exit 1
     })
   else
-    # Cloning to $UCOIN_DIR
-    echo "=> Downloading ucoin from git to '$UCOIN_DIR'"
+    # Cloning to $DUNITER_DIR
+    echo "=> Downloading ucoin from git to '$DUNITER_DIR'"
     printf "\r=> "
-    mkdir -p "$UCOIN_DIR"
-    command git clone "$(ucoin_repo_url)" "$UCOIN_DIR"
+    mkdir -p "$DUNITER_DIR"
+    command git clone "$(ucoin_repo_url)" "$DUNITER_DIR"
   fi
-  cd "$UCOIN_DIR" && command git checkout --quiet $(ucoin_latest_version)
-  if [ ! -z "$(cd "$UCOIN_DIR" && git show-ref refs/heads/master)" ]; then
+  cd "$DUNITER_DIR" && command git checkout --quiet $(ucoin_latest_version)
+  if [ ! -z "$(cd "$DUNITER_DIR" && git show-ref refs/heads/master)" ]; then
     if git branch --quiet 2>/dev/null; then
-      cd "$UCOIN_DIR" && command git branch --quiet -D master >/dev/null 2>&1
+      cd "$DUNITER_DIR" && command git branch --quiet -D master >/dev/null 2>&1
     else
       echo >&2 "Your version of git is out of date. Please update it!"
-      cd "$UCOIN_DIR" && command git branch -D master >/dev/null 2>&1
+      cd "$DUNITER_DIR" && command git branch -D master >/dev/null 2>&1
     fi
   fi
 
@@ -74,9 +74,9 @@ install_ucoin_from_git() {
   fi
   local NODEJS_FILENAME=node-v${NVER}-linux-${ARCH}
   local NODEJS_TARBALL=http://nodejs.org/dist/v${NVER}/${NODEJS_FILENAME}.tar.gz
-  local NODEJS_ARCHIVE=$UCOIN_DIR/node.tar.gz
-  local NODEJS_EXTRACTED=$UCOIN_DIR/$NODEJS_FILENAME
-  if [ ! -d "$UCOIN_DIR/node" ]; then
+  local NODEJS_ARCHIVE=$DUNITER_DIR/node.tar.gz
+  local NODEJS_EXTRACTED=$DUNITER_DIR/$NODEJS_FILENAME
+  if [ ! -d "$DUNITER_DIR/node" ]; then
     echo "=> Downloading '$NODEJS_TARBALL' to '$NODEJS_ARCHIVE'"
     ucoin_download "$NODEJS_TARBALL" -o "$NODEJS_ARCHIVE" || {
       echo >&2 "Failed to download '$NODEJS_TARBALL'"
@@ -93,9 +93,9 @@ install_ucoin_from_git() {
   fi
 
   # Install uCoin dependencies (NPM modules)
-  export PATH=$PATH:$UCOIN_DIR/node/bin/
+  export PATH=$PATH:$DUNITER_DIR/node/bin/
   npm install -g node-pre-gyp
-  export PATH=$PATH:$UCOIN_DIR/node/lib/node_modules/node-pre-gyp/bin/
+  export PATH=$PATH:$DUNITER_DIR/node/lib/node_modules/node-pre-gyp/bin/
   npm install
   export PATH=$PREVIOUS_PATH
   return
@@ -174,7 +174,7 @@ ucoin_do_install() {
   local UCOIN_PROFILE
   UCOIN_PROFILE=$(ucoin_detect_profile)
 
-  SOURCE_STR="\nexport UCOIN_DIR=\"$UCOIN_DIR\"\n[ -s \"\$UCOIN_DIR/ucoin.sh\" ] && . \"\$UCOIN_DIR/ucoin.sh\"  # This loads ucoin.sh"
+  SOURCE_STR="\nexport DUNITER_DIR=\"$DUNITER_DIR\"\n[ -s \"\$DUNITER_DIR/duniter.sh\" ] && . \"\$DUNITER_DIR/duniter.sh\"  # This loads duniter.sh"
 
   if [ -z "$UCOIN_PROFILE" ] ; then
     echo "=> Profile not found. Tried $UCOIN_PROFILE (as defined in \$PROFILE), ~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile."
@@ -185,7 +185,7 @@ ucoin_do_install() {
     printf "$SOURCE_STR"
     echo
   else
-    if ! command grep -qc '/ucoin.sh' "$UCOIN_PROFILE"; then
+    if ! command grep -qc '/duniter.sh' "$UCOIN_PROFILE"; then
       echo "=> Appending source string to $UCOIN_PROFILE"
       printf "$SOURCE_STR\n" >> "$UCOIN_PROFILE"
     else

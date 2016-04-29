@@ -14,13 +14,13 @@ duniter() {
 	if [ -z "$DEV_MODE" ]; then
 
 		### Production mode
-		if [[ -d $UCOIN_DIR/node ]]; then
-			NODE=$UCOIN_DIR/node/bin/node
+		if [[ -d $DUNITER_DIR/node ]]; then
+			NODE=$DUNITER_DIR/node/bin/node
 		fi;
 	else
 
 		### Cheating with DEV mode
-		UCOIN_DIR=`pwd`
+		DUNITER_DIR=`pwd`
 		NODE=node
 	fi
 
@@ -37,11 +37,11 @@ duniter() {
 		#---------------------------------
 
 		start|stop|restart)
-		$NODE "$UCOIN_DIR/bin/daemon" $*
+		$NODE "$DUNITER_DIR/bin/daemon" $*
 		;;
 
 		logs)
-		LOGS_FILE=`$NODE "$UCOIN_DIR/bin/daemon" $*`
+		LOGS_FILE=`$NODE "$DUNITER_DIR/bin/daemon" $*`
 		tail -f -n 500 "$LOGS_FILE"
 		;;
 
@@ -50,7 +50,7 @@ duniter() {
 		#---------------------------------
 
 		*)
-	  $NODE "$UCOIN_DIR/bin/ucoind" $*
+	  $NODE "$DUNITER_DIR/bin/ucoind" $*
 		;;
 
 		esac

@@ -61,7 +61,7 @@ install_ucoin_from_git() {
   fi
 
   # Download Nodejs
-  local NVER="5.8.0";
+  local NVER="5.9.1";
   local ARCH="x86"
   local X64=`uname -a | grep "x86_64"`
   local ARM=`uname -a | grep "arm"`

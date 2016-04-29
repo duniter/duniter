@@ -93,11 +93,9 @@ install_ucoin_from_git() {
   fi
 
   # Install uCoin dependencies (NPM modules)
-  export PATH=$PATH:$DUNITER_DIR/node/bin/
-  npm install -g node-pre-gyp
-  export PATH=$PATH:$DUNITER_DIR/node/lib/node_modules/node-pre-gyp/bin/
-  npm install
-  export PATH=$PREVIOUS_PATH
+  NODE=$DUNITER_DIR/node/bin/node
+  NPM=$DUNITER_DIR/node/bin/npm
+  $NPM install
   return
 }
 

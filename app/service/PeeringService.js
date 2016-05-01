@@ -102,6 +102,7 @@ function PeeringService(server) {
       peerEntity.first_down = null;
       peerEntity.last_try = null;
       peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
+      peerEntity.raw = peerEntity.getRaw();
       yield dal.savePeer(peerEntity);
       return Peer.statics.peerize(peerEntity);
     }));

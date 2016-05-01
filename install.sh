@@ -190,7 +190,7 @@ do_install() {
       echo "=> Source string already in $PROFILE"
     fi
   fi
-  source $PROFILE
+  echo "===> !Run the command 'source" $PROFILE"' to start using duniter! <==="
   reset
 }
 

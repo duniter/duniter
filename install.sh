@@ -190,12 +190,7 @@ ucoin_do_install() {
       echo "=> Source string already in $UCOIN_PROFILE"
     fi
   fi
-
-  echo "=> ------------------------------------------------------"
-  echo "=> !                                                     !"
-  echo "=> ! CLOSE and REOPEN YOUR TERMINAL to start using ucoin !"
-  echo "=> !                                                     !"
-  echo "=> ------------------------------------------------------"
+  source $UCOIN_PROFILE
   ucoin_reset
 }
 

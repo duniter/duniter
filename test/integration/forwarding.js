@@ -85,21 +85,21 @@ describe("Forwarding", function() {
 
       it('Node1 should be up and running', node1.summary(function(summary, done){
         should.exists(summary);
-        should.exists(summary.ucoin);
-        should.exists(summary.ucoin.software);
-        should.exists(summary.ucoin.version);
-        assert.equal(summary.ucoin.software, "duniter");
-        assert.equal(summary.ucoin.version, jspckg.version);
+        should.exists(summary.duniter);
+        should.exists(summary.duniter.software);
+        should.exists(summary.duniter.version);
+        assert.equal(summary.duniter.software, "duniter");
+        assert.equal(summary.duniter.version, jspckg.version);
         done();
       }));
 
       it('Node2 should be up and running', node2.summary(function(summary, done){
         should.exists(summary);
-        should.exists(summary.ucoin);
-        should.exists(summary.ucoin.software);
-        should.exists(summary.ucoin.version);
-        assert.equal(summary.ucoin.software, "duniter");
-        assert.equal(summary.ucoin.version, jspckg.version);
+        should.exists(summary.duniter);
+        should.exists(summary.duniter.software);
+        should.exists(summary.duniter.version);
+        assert.equal(summary.duniter.software, "duniter");
+        assert.equal(summary.duniter.version, jspckg.version);
         done();
       }));
     });

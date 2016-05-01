@@ -5,7 +5,7 @@ let dtos;
 module.exports = dtos = {};
 
 dtos.Summary = {
-  ucoin: {
+  duniter: {
     "software": String,
     "version": String,
     "forkWindowSize": Number

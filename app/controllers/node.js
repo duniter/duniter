@@ -8,7 +8,7 @@ function NodeBinding (server) {
 
   this.summary = () => {
     return {
-      "ucoin": {
+      "duniter": {
         "software": "duniter",
         "version": server.version,
         "forkWindowSize": server.conf.forksize

@@ -400,7 +400,7 @@ function BlockchainContext() {
         let txObj = tx.getTransaction();
         for (let j = 0, len2 = txObj.inputs.length; j < len2; j++) {
           let input = txObj.inputs[j];
-          dal.unConsumeSource(input.identifier, input.noffset);
+          yield dal.unConsumeSource(input.identifier, input.noffset);
         }
       }
     });

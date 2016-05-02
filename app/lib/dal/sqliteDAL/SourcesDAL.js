@@ -127,8 +127,8 @@ function SourcesDAL(db) {
       queries.push(insert + '\n' + values.join(',\n') + ';');
     }
     if (updates.length) {
-      let del = that.getDeleteHead();
-      let values = that.getDeleteValues(updates);
+      let del = that.getConsumeHead();
+      let values = that.getConsumeValues(updates);
       queries.push(del + '\n' + values + ';');
     }
     if (queries.length) {

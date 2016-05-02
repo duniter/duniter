@@ -189,11 +189,11 @@ function AbstractSQLite(db) {
     return 'DELETE FROM ' + that.table + ' WHERE ' + conditions + ';';
   };
 
-  this.getDeleteHead = () => {
-    return 'DELETE FROM ' + that.table + " WHERE ";
+  this.getConsumeHead = () => {
+    return 'UPDATE ' + that.table + " SET consumed = 1 WHERE ";
   };
 
-  this.getDeleteValues = (entities) => {
+  this.getConsumeValues = (entities) => {
     return entities.map((toSave) => {
       if (that.beforeSaveHook) {
         that.beforeSaveHook(toSave);

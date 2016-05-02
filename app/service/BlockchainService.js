@@ -412,35 +412,6 @@ function BlockchainService () {
     return mainFork.saveParametersForRootBlock(rootBlock);
   });
 
-  function getParameters(block) {
-    var sp = block.parameters.split(':');
-    let theConf = {};
-    theConf.c                = parseFloat(sp[0]);
-    theConf.dt               = parseInt(sp[1]);
-    theConf.ud0              = parseInt(sp[2]);
-    theConf.sigPeriod        = parseInt(sp[3]);
-    theConf.sigStock         = parseInt(sp[4]);
-    theConf.sigWindow        = parseInt(sp[5]);
-    theConf.sigValidity      = parseInt(sp[6]);
-    theConf.sigQty           = parseInt(sp[7]);
-    theConf.idtyWindow       = parseInt(sp[8]);
-    theConf.msWindow         = parseInt(sp[9]);
-    theConf.xpercent         = parseFloat(sp[10]);
-    theConf.msValidity       = parseInt(sp[11]);
-    theConf.stepMax          = parseInt(sp[12]);
-    theConf.medianTimeBlocks = parseInt(sp[13]);
-    theConf.avgGenTime       = parseInt(sp[14]);
-    theConf.dtDiffEval       = parseInt(sp[15]);
-    theConf.blocksRot        = parseInt(sp[16]);
-    theConf.percentRot       = parseFloat(sp[17]);
-    theConf.currency         = block.currency;
-    return theConf;
-  }
-
-  function getMaxBlocksToStoreAsFile(aConf) {
-    return Math.floor(Math.max(aConf.dt / aConf.avgGenTime, aConf.medianTimeBlocks, aConf.dtDiffEval, aConf.blocksRot) * constants.SAFE_FACTOR);
-  }
-
   this.saveBlocksInMainBranch = (blocks, targetLastNumber) => co(function *() {
     // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
     if (blocks[0].number == 0) {

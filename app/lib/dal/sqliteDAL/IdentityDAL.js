@@ -229,6 +229,12 @@ function IdentityDAL(db, wotb) {
     });
   };
 
+  this.getLatestMember = () => that.sqlFindOne({
+    wasMember: true
+  }, {
+    wotb_id: this.DESC
+  });
+
   this.saveIdentity = (idty) =>
     this.saveEntity(idty);
 

@@ -1,10 +1,10 @@
 {
-  "name": "v0.20.0a53",
+  "name": "v0.20.0a54",
   "main": "index.html",
   "node-main": "../sources/bin/ucoind",
   "window": {
     "icon": "duniter.png",
-    "title": "v0.20.0a53",
+    "title": "v0.20.0a54",
     "width": 800,
     "height": 800,
     "min_width": 750,

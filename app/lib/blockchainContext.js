@@ -215,7 +215,7 @@ function BlockchainContext() {
     // UD Time update
     if (block.number == 0) {
       block.UDTime = block.medianTime; // Root = first UD time
-      block.dividend = 0;
+      block.dividend = null;
       done();
     }
     else if (block.dividend) {

@@ -11,7 +11,7 @@ if [ -z "$DUNITER_DIR" ]; then
 fi
 
 ucoin_latest_version() {
-  echo "v0.20.0a53"
+  echo "v0.20.0a54"
 }
 
 ucoin_repo_url() {

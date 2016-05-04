@@ -969,7 +969,7 @@ function FileDAL(params) {
   };
 
   this.updateTransactions = function(txs) {
-    return that.txsDAL.updateBatchOfTxs(txs);
+    return that.txsDAL.insertBatchOfTxs(txs);
   };
 
   this.officializeCertification = function(cert) {

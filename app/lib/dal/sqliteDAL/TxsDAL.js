@@ -5,6 +5,7 @@
 var Q = require('q');
 var co = require('co');
 var moment = require('moment');
+var Transaction = require('../../entity/transaction');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = TxsDAL;
@@ -94,9 +95,7 @@ function TxsDAL(db) {
     tx.written = true;
     tx.removed = false;
     tx.hash = tx.getHash(true);
-    tx.recipients = tx.outputs.map(function(out) {
-      return out.match('(.*):')[1];
-    });
+    tx.recipients = Transaction.statics.outputs2recipients(tx);
     return that.saveEntity(tx);
   };
 
@@ -105,10 +104,7 @@ function TxsDAL(db) {
     tx.written = false;
     tx.removed = false;
     tx.hash = tx.getHash(true);
-    tx.recipients = tx.outputs.map(function(out) {
-      let recipent = out.match('SIG\\((.*)\\)');
-      return (recipent && recipent[1]) || 'UNKNOWN';
-    });
+    tx.recipients = Transaction.statics.outputs2recipients(tx);
     return this.saveEntity(tx);
   };
 
@@ -132,7 +128,9 @@ function TxsDAL(db) {
     written: false
   });
 
-  this.updateBatchOfTxs = (txs) => co(function *() {
+  this.insertBatchOfTxs = (txs) => co(function *() {
+    // // Be sure the recipients field are correctly updated
+    Transaction.statics.setRecipients(txs);
     let queries = [];
     let insert = that.getInsertHead();
     let values = txs.map((cert) => that.getInsertValue(cert));

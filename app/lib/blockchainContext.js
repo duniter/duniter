@@ -15,7 +15,7 @@ var Link            = require('./entity/link');
 var Source          = require('./entity/source');
 var Transaction     = require('./entity/transaction');
 
-module.exports = () => new BlockchainContext();
+module.exports = () => { return new BlockchainContext() };
 
 function BlockchainContext() {
 
@@ -215,7 +215,7 @@ function BlockchainContext() {
     // UD Time update
     if (block.number == 0) {
       block.UDTime = block.medianTime; // Root = first UD time
-      block.dividend = 0;
+      block.dividend = null;
       done();
     }
     else if (block.dividend) {
@@ -400,7 +400,7 @@ function BlockchainContext() {
         let txObj = tx.getTransaction();
         for (let j = 0, len2 = txObj.inputs.length; j < len2; j++) {
           let input = txObj.inputs[j];
-          dal.unConsumeSource(input.identifier, input.noffset);
+          yield dal.unConsumeSource(input.identifier, input.noffset);
         }
       }
     });

@@ -438,6 +438,13 @@ function PeeringService(server) {
                 let block = null;
                 try {
                   block = yield Q.nfcall(thePeer.blockchain.block, number);
+                  block.transactions.map((tx) => {
+                    if (tx.signatories && tx.signatories.length) {
+                      // Might need to be overriden
+                      tx.issuers = tx.signatories;
+                    }
+                    return tx;
+                  });
                   return block;
                 } catch (e) {
                   if (e.httpCode != 404) {

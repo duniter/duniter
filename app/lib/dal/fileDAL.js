@@ -86,6 +86,18 @@ function FileDAL(params) {
     }
     logger.debug("Upgrade database...");
     yield that.metaDAL.upgradeDatabase();
+    let latestMember = yield that.idtyDAL.getLatestMember();
+    if (latestMember && that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
+      logger.warn('Maintenance: cleaning wotb...');
+      while (that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
+        that.wotb.removeNode();
+      }
+    }
+    // Update the maximum certifications count a member can issue into the C++ addon
+    let currencyParams = yield that.getParameters();
+    if (currencyParams && currencyParams.sigStock !== undefined && currencyParams.sigStock !== null) {
+      that.wotb.setMaxCert(currencyParams.sigStock);
+    }
   });
   
   this.getDBVersion = () => that.metaDAL.getVersion();
@@ -957,7 +969,7 @@ function FileDAL(params) {
   };
 
   this.updateTransactions = function(txs) {
-    return that.txsDAL.updateBatchOfTxs(txs);
+    return that.txsDAL.insertBatchOfTxs(txs);
   };
 
   this.officializeCertification = function(cert) {
@@ -1115,6 +1127,9 @@ function FileDAL(params) {
 
   this.saveConf = function(confToSave) {
     currency = confToSave.currency;
+    // Super important: adapt wotb module to handle the correct stock
+    that.wotb.setMaxCert(confToSave.sigStock);
+    // Save the conf in file
     return that.confDAL.saveConf(confToSave);
   };
 

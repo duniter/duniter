@@ -189,11 +189,11 @@ function AbstractSQLite(db) {
     return 'DELETE FROM ' + that.table + ' WHERE ' + conditions + ';';
   };
 
-  this.getDeleteHead = () => {
-    return 'DELETE FROM ' + that.table + " WHERE ";
+  this.getConsumeHead = () => {
+    return 'UPDATE ' + that.table + " SET consumed = 1 WHERE ";
   };
 
-  this.getDeleteValues = (entities) => {
+  this.getConsumeValues = (entities) => {
     return entities.map((toSave) => {
       if (that.beforeSaveHook) {
         that.beforeSaveHook(toSave);
@@ -315,7 +315,11 @@ function AbstractSQLite(db) {
     // Big integers are stored as strings to avoid data loss
     for (let i = 0, len = that.bigintegers.length; i < len; i++) {
       let bigint = that.bigintegers[i];
-      row[bigint] = String(entity[bigint]);
+      if (entity[bigint] === null || entity[bigint] === undefined) {
+        row[bigint] = null;
+      } else {
+        row[bigint] = String(entity[bigint]);
+      }
     }
     // Translate some obj fields to DB field name (because of DB keywords)
     let toTranslate = that.translated || {};

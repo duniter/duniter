@@ -186,6 +186,11 @@ program
   .action(connect(bootstrapServer, true));
 
 program
+  .command('dump [what]')
+  .description('Diverse dumps of the inner data')
+  .action(connect(makeDump, true));
+
+program
   .command('forward [host] [port] [to]')
   .description('Forward local blockchain to a remote uCoin node')
   .action(service(function (host, port, to, server) {
@@ -515,6 +520,18 @@ function startWizard(step, server, conf, done) {
       })(null, null);
     }
   ], done);
+}
+
+function makeDump(what, server, conf) {
+  return co(function *() {
+    try {
+      server.dal.wotb.showWoT();
+    } catch (e) {
+      logger.error(e);
+    }
+    server.disconnect();
+    process.exit();
+  });
 }
 
 function bootstrapServer(host, port, server, conf) {

@@ -15,7 +15,7 @@ var Link            = require('./entity/link');
 var Source          = require('./entity/source');
 var Transaction     = require('./entity/transaction');
 
-module.exports = () => new BlockchainContext();
+module.exports = () => { return new BlockchainContext() };
 
 function BlockchainContext() {
 

@@ -152,10 +152,10 @@ function BlockchainService () {
           throw 'Block out of fork window';
         }
         let absolute = yield dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
-        if (absolute) {
-          throw 'Already processed side block #' + obj.number + '-' + obj.hash;
+        let res = null;
+        if (!absolute) {
+          res = yield mainContext.addSideBlock(obj, doCheck);
         }
-        let res = yield mainContext.addSideBlock(obj, doCheck);
         yield that.tryToFork(current);
         return res;
       } else {

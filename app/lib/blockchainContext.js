@@ -485,6 +485,8 @@ function BlockchainContext() {
       conf.blocksRot        = parseInt(sp[16]);
       conf.percentRot       = parseFloat(sp[17]);
       conf.currency         = block.currency;
+      // Super important: adapt wotb module to handle the correct stock
+      dal.wotb.setMaxCert(conf.sigStock);
       return dal.saveConf(conf).then(done).catch(done);
     }
     else {

@@ -476,6 +476,9 @@ function BlockGenerator(mainContext, prover) {
             let cert = certs[i];
             try {
               var basedBlock = yield dal.getBlock(cert.block_number);
+              if (!basedBlock) {
+                throw 'Unknown timestamp block for identity';
+              }
               if (current) {
                 let age = current.medianTime - basedBlock.medianTime;
                 if (age > conf.sigWindow || age > conf.sigValidity) {

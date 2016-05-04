@@ -19,7 +19,7 @@ build: off
 
 after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %APPDATA%\..\Local\NuGet\Cache
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] choco install -y wget 7zip InnoSetup
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] choco install -y 7zip InnoSetup
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set PATH="C:\Program Files\7-Zip";"C:\Program Files (x86)\Inno Setup 5";%PATH%
   # GUI Version
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set SRC=%cd%
@@ -51,21 +51,21 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm prune --production
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir ucoin_release
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir duniter_release
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW=nwjs-%NW_RELEASE%-win-x64
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_GZ=%NW%.zip
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW_GZ%
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] wget http://dl.nwjs.io/%NW_RELEASE%/%NW_GZ%
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] curl -fS -o %NW_GZ% https://s3.eu-central-1.amazonaws.com/duniter/binaries/%NW_GZ%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] 7z x %NW_GZ% 1> null
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %NW% %cd%\ucoin_release\nw
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir %cd%\ucoin_release\sources
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\gui\* %cd%\ucoin_release\nw\ /s /e
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\* %cd%\ucoin_release\sources\ /s /e
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\ucoin_release\sources\ui\package\node_modules
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\ucoin_release\sources\ui\package\bower_components
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] iscc %cd%\ucoin_release\sources\duniter.iss /DROOT_PATH=%cd%\ucoin_release
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\ucoin_release\Duniter.exe %cd%\ucoin\duniter-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %NW% %cd%\duniter_release\nw
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir %cd%\duniter_release\sources
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\gui\* %cd%\duniter_release\nw\ /s /e
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\* %cd%\duniter_release\sources\ /s /e
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\ui\package\node_modules
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\ui\package\bower_components
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] iscc %cd%\duniter_release\sources\duniter.iss /DROOT_PATH=%cd%\duniter_release
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\duniter_release\Duniter.exe %cd%\duniter\duniter-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
 
 artifacts:
   - path: duniter*.exe

@@ -1,16 +1,17 @@
+"use strict";
+
 /**
  * Created by cgeek on 22/08/15.
  */
 
 var co = require('co');
-var logger = require('../../../../app/lib/logger')('metaDAL');
+var logger = require('../../logger')('metaDAL');
+var Transaction = require('../../entity/transaction');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = MetaDAL;
 
 function MetaDAL(db) {
-
-  "use strict";
 
   AbstractSQLite.call(this, db);
 
@@ -29,7 +30,15 @@ function MetaDAL(db) {
   let migrations = {
     0: 'BEGIN; COMMIT;',
     1: 'BEGIN; COMMIT;',
-    2: 'BEGIN; ALTER TABLE txs ADD COLUMN received INTEGER NULL; COMMIT;'
+    2: 'BEGIN; ALTER TABLE txs ADD COLUMN received INTEGER NULL; COMMIT;',
+    3: () => co(function*() {
+      let txsDAL = new (require('./TxsDAL'))(db);
+      let txs = yield txsDAL.sqlListAll();
+      Transaction.statics.setRecipients(txs);
+      for (let i = 0; i < txs.length; i++) {
+        yield txsDAL.saveEntity(txs[i]);
+      }
+    })
   };
 
   this.init = () => co(function *() {
@@ -46,7 +55,18 @@ function MetaDAL(db) {
     let version = yield that.getVersion();
     while(migrations[version]) {
       logger.debug("Upgrading from v%s to v%s...", version, version + 1);
-      yield that.exec(migrations[version]);
+
+      if (typeof migrations[version] == "string") {
+
+        // Simple SQL script to pass
+        yield that.exec(migrations[version]);
+
+      } else if (typeof migrations[version] == "function") {
+
+        // JS function to execute
+        yield migrations[version]();
+        
+      }
       // Automated increment
       yield that.exec('UPDATE meta SET version = version + 1');
       version++;

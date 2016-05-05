@@ -14,6 +14,7 @@ var rawer          = require('../lib/rawer');
 var pulling        = require('../lib/pulling');
 var constants      = require('../lib/constants');
 var Peer           = require('../lib/entity/peer');
+var Transaction    = require('../lib/entity/transaction');
 var AbstractService = require('./AbstractService');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
@@ -438,13 +439,7 @@ function PeeringService(server) {
                 let block = null;
                 try {
                   block = yield Q.nfcall(thePeer.blockchain.block, number);
-                  block.transactions.map((tx) => {
-                    if (tx.signatories && tx.signatories.length) {
-                      // Might need to be overriden
-                      tx.issuers = tx.signatories;
-                    }
-                    return tx;
-                  });
+                  Transaction.statics.setIssuers(block.transactions);
                   return block;
                 } catch (e) {
                   if (e.httpCode != 404) {

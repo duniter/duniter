@@ -1,5 +1,7 @@
 "use strict";
 var Q = require('q');
+var co = require('co');
+var rp     = require('request-promise');
 var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
@@ -9,10 +11,74 @@ var bma    = require('../../../app/lib/streams/bma');
 var multicaster = require('../../../app/lib/streams/multicaster');
 var Configuration = require('../../../app/lib/entity/configuration');
 var Peer          = require('../../../app/lib/entity/peer');
+var user   = require('./user');
+var http   = require('./http');
+
+var MEMORY_MODE = true;
 
 module.exports = function (dbName, options) {
   return new Node(dbName, options);
 };
+
+let AUTO_PORT = 10200;
+
+module.exports.statics = {
+
+  newBasicTxNode: (testSuite) => () => {
+    getTxNode(testSuite);
+  },
+
+  newBasicTxNodeWithOldDatabase: (testSuite) => () => {
+    getTxNode(testSuite, (node) => co(function*() {
+      node.server.dal.txsDAL.exec('UPDATE txs SET recipients = "[]";');
+    }));
+  }
+};
+
+function getTxNode(testSuite, afterBeforeHook){
+
+  let port = ++AUTO_PORT;
+
+  var node2 = new Node({ name: "db_" + port, memory: MEMORY_MODE }, { currency: 'cc', ipv4: 'localhost', port: port, remoteipv4: 'localhost', remoteport: port, upnp: false, httplogs: false,
+    pair: {
+      pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+      sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
+    },
+    forksize: 3,
+    participate: false, rootoffset: 10,
+    sigQty: 1, dt: 0, ud0: 120
+  });
+
+  var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node2);
+  var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node2);
+
+  before(() => co(function*() {
+    yield node2.startTesting();
+    // Self certifications
+    yield tic.selfCertP();
+    yield toc.selfCertP();
+    // Certification;
+    yield tic.certP(toc);
+    yield toc.certP(tic);
+    yield tic.joinP();
+    yield toc.joinP();
+    yield node2.commitP();
+    yield node2.commitP();
+    yield tic.sendP(51, toc);
+
+    if (afterBeforeHook) {
+      yield afterBeforeHook(node2);
+    }
+  }));
+
+  after(node2.after());
+
+  node2.rp = (uri) => rp('http://127.0.0.1:' + port + uri, { json: true });
+
+  node2.expectHttp = (uri, callback) => () => http.expectAnswer(node2.rp(uri), callback);
+
+  testSuite(node2);
+}
 
 var UNTIL_TIMEOUT = 115000;
 

@@ -793,12 +793,11 @@ function getMedianTime (blockNumber, conf, dal) {
       return 0;
     }
     // Get the number of blocks we can look back from this block
-    blocksCount = blockNumber < conf.medianTimeBlocks ? blockNumber : conf.medianTimeBlocks;
+    let blocksCount = blockNumber < conf.medianTimeBlocks ? blockNumber : conf.medianTimeBlocks;
     // Get their 'time' value
     // console.log('Times between ', blockNumber - blocksCount, blockNumber - 1);
     let blocksBetween = yield dal.getBlocksBetween(blockNumber - blocksCount, blockNumber - 1);
     let timeValues = _.pluck(blocksBetween, 'time');
-    var blocksCount;
     timeValues.sort();
     let sum = 0;
     for (let i = 0, len = timeValues.length; i < len; i++) {

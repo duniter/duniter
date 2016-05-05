@@ -12,6 +12,7 @@ var blockchainCtx   = require('../lib/blockchainContext');
 var blockGenerator  = require('../lib/blockGenerator');
 var blockProver     = require('../lib/blockProver');
 let Identity        = require('../lib/entity/identity');
+var Transaction     = require('../lib/entity/transaction');
 var AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
@@ -131,6 +132,7 @@ function BlockchainService () {
 
   function checkAndAddBlock(obj, doCheck, forkAllowed) {
     return co(function *() {
+      Transaction.statics.setIssuers(obj.transactions);
       let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
       if (existing) {
         throw 'Already processed';
@@ -152,10 +154,10 @@ function BlockchainService () {
           throw 'Block out of fork window';
         }
         let absolute = yield dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
-        if (absolute) {
-          throw 'Already processed side block #' + obj.number + '-' + obj.hash;
+        let res = null;
+        if (!absolute) {
+          res = yield mainContext.addSideBlock(obj, doCheck);
         }
-        let res = yield mainContext.addSideBlock(obj, doCheck);
         yield that.tryToFork(current);
         return res;
       } else {
@@ -428,6 +430,7 @@ function BlockchainService () {
     };
     // Insert a bunch of blocks
     let lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
+    let dividends = [];
     for (let i = 0; i < blocks.length; i++) {
       let previous = i > 0 ? blocks[i - 1] : lastPrevious;
       let block = blocks[i];
@@ -454,6 +457,29 @@ function BlockchainService () {
           resolve();
         });
       });
+      // Dividends
+      if (block.dividend) {
+        // Get the members at THAT moment (only them should have the UD)
+        let idties = yield dal.getMembersP();
+        for (let j = 0, len2 = idties.length; j < len2; j++) {
+          let idty = idties[j];
+          dividends.push({
+            'pubkey': idty.pubkey,
+            'identifier': idty.pubkey,
+            'noffset': block.number,
+            'type': 'D',
+            'number': block.number,
+            'time': block.medianTime,
+            'fingerprint': block.hash,
+            'block_hash': block.hash,
+            'amount': block.dividend,
+            'base': block.unitbase,
+            'consumed': false,
+            'toConsume': false,
+            'conditions': 'SIG(' + idty.pubkey + ')' // Only this pubkey can unlock its UD
+          });
+        }
+      }
     }
     // Transactions recording
     yield mainContext.updateTransactionsForBlocks(blocks);
@@ -464,7 +490,7 @@ function BlockchainService () {
     // Create certifications
     yield mainContext.updateCertificationsForBlocks(blocks);
     // Create / Update sources
-    yield mainContext.updateTransactionSourcesForBlocks(blocks);
+    yield mainContext.updateTransactionSourcesForBlocks(blocks, dividends);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
   });

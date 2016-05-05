@@ -969,7 +969,7 @@ function FileDAL(params) {
   };
 
   this.updateTransactions = function(txs) {
-    return that.txsDAL.updateBatchOfTxs(txs);
+    return that.txsDAL.insertBatchOfTxs(txs);
   };
 
   this.officializeCertification = function(cert) {
@@ -1127,8 +1127,6 @@ function FileDAL(params) {
 
   this.saveConf = function(confToSave) {
     currency = confToSave.currency;
-    // Super important: adapt wotb module to handle the correct stock
-    that.wotb.setMaxCert(confToSave.sigStock);
     // Save the conf in file
     return that.confDAL.saveConf(confToSave);
   };

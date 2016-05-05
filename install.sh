@@ -2,7 +2,7 @@
 
 { # this ensures the entire script is downloaded #
 
-ucoin_has() {
+is_installed() {
   type "$1" > /dev/null 2>&1
 }
 
@@ -10,18 +10,18 @@ if [ -z "$DUNITER_DIR" ]; then
   DUNITER_DIR="$HOME/.duniter"
 fi
 
-ucoin_latest_version() {
-  echo "v0.20.0a54"
+latest_version() {
+  echo "v0.20.0a57"
 }
 
-ucoin_repo_url() {
-  echo "https://github.com/ucoin-io/ucoin.git"
+repo_url() {
+  echo "https://github.com/duniter/duniter.git"
 }
 
-ucoin_download() {
-  if ucoin_has "curl"; then
+download() {
+  if is_installed "curl"; then
     curl -qkL $*
-  elif ucoin_has "wget"; then
+  elif is_installed "wget"; then
     # Emulate curl with wget
     ARGS=$(echo "$*" | command sed -e 's/--progress-bar /--progress=bar /' \
                            -e 's/-L //' \
@@ -33,24 +33,24 @@ ucoin_download() {
   fi
 }
 
-install_ucoin_from_git() {
+install_from_git() {
 
   local PREVIOUS_PATH
   PREVIOUS_PATH=$PATH
   if [ -d "$DUNITER_DIR/.git" ]; then
-    echo "=> ucoin is already installed in $DUNITER_DIR, trying to update using git"
+    echo "=> duniter is already installed in $DUNITER_DIR, trying to update using git"
     printf "\r=> "
     cd "$DUNITER_DIR" && (command git fetch 2> /dev/null || {
-      echo >&2 "Failed to update ucoin, run 'git fetch' in $DUNITER_DIR yourself." && exit 1
+      echo >&2 "Failed to update duniter, run 'git fetch' in $DUNITER_DIR yourself." && exit 1
     })
   else
     # Cloning to $DUNITER_DIR
-    echo "=> Downloading ucoin from git to '$DUNITER_DIR'"
+    echo "=> Downloading duniter from git to '$DUNITER_DIR'"
     printf "\r=> "
     mkdir -p "$DUNITER_DIR"
-    command git clone "$(ucoin_repo_url)" "$DUNITER_DIR"
+    command git clone "$(repo_url)" "$DUNITER_DIR"
   fi
-  cd "$DUNITER_DIR" && command git checkout --quiet $(ucoin_latest_version)
+  cd "$DUNITER_DIR" && command git checkout --quiet $(latest_version)
   if [ ! -z "$(cd "$DUNITER_DIR" && git show-ref refs/heads/master)" ]; then
     if git branch --quiet 2>/dev/null; then
       cd "$DUNITER_DIR" && command git branch --quiet -D master >/dev/null 2>&1
@@ -78,7 +78,7 @@ install_ucoin_from_git() {
   local NODEJS_EXTRACTED=$DUNITER_DIR/$NODEJS_FILENAME
   if [ ! -d "$DUNITER_DIR/node" ]; then
     echo "=> Downloading '$NODEJS_TARBALL' to '$NODEJS_ARCHIVE'"
-    ucoin_download "$NODEJS_TARBALL" -o "$NODEJS_ARCHIVE" || {
+    download "$NODEJS_TARBALL" -o "$NODEJS_ARCHIVE" || {
       echo >&2 "Failed to download '$NODEJS_TARBALL'"
       return 4
     }
@@ -92,7 +92,7 @@ install_ucoin_from_git() {
     }
   fi
 
-  # Install uCoin dependencies (NPM modules)
+  # Install Duniter dependencies (NPM modules)
   NODE=$DUNITER_DIR/node/bin/node
   NPM=$DUNITER_DIR/node/bin/npm
   $NPM install
@@ -105,7 +105,7 @@ install_ucoin_from_git() {
 # The echo'ed path is guaranteed to be an existing file
 # Otherwise, an empty string is returned
 #
-ucoin_detect_profile() {
+detect_profile() {
 
   local DETECTED_PROFILE
   DETECTED_PROFILE=''
@@ -141,74 +141,69 @@ ucoin_detect_profile() {
   fi
 }
 
-ucoin_do_install() {
+do_install() {
 
   # Check required commands
-  if ! ucoin_has "git"; then
+  if ! is_installed "git"; then
     echo "=> git is not available. You will likely need to install 'git' package."
     exit 1
   fi
-  if ! ucoin_has "curl"; then
+  if ! is_installed "curl"; then
     echo "=> curl is not available. You will likely need to install 'curl' package."
     exit 1
   fi
-  if ! ucoin_has "make"; then
+  if ! is_installed "make"; then
     echo "=> make is not available. You will likely need to install 'build-essential' package."
     exit 1
   fi
-  if ! ucoin_has "g++"; then
+  if ! is_installed "g++"; then
     echo "=> g++ is not available. You will likely need to install 'build-essential' package."
     exit 1
   fi
-  if ! ucoin_has "python"; then
+  if ! is_installed "python"; then
     echo "=> python is not available. You will likely need to install 'build-essential' package."
     exit 1
   fi
 
-  install_ucoin_from_git
+  install_from_git
 
   echo
 
-  local UCOIN_PROFILE
-  UCOIN_PROFILE=$(ucoin_detect_profile)
+  local PROFILE
+  PROFILE=$(detect_profile)
 
   SOURCE_STR="\nexport DUNITER_DIR=\"$DUNITER_DIR\"\n[ -s \"\$DUNITER_DIR/duniter.sh\" ] && . \"\$DUNITER_DIR/duniter.sh\"  # This loads duniter.sh"
 
-  if [ -z "$UCOIN_PROFILE" ] ; then
-    echo "=> Profile not found. Tried $UCOIN_PROFILE (as defined in \$PROFILE), ~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile."
+  if [ -z "$PROFILE" ] ; then
+    echo "=> Profile not found. Tried $PROFILE (as defined in \$PROFILE), ~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile."
     echo "=> Create one of them and run this script again"
-    echo "=> Create it (touch $UCOIN_PROFILE) and run this script again"
+    echo "=> Create it (touch $PROFILE) and run this script again"
     echo "   OR"
     echo "=> Append the following lines to the correct file yourself:"
     printf "$SOURCE_STR"
     echo
   else
-    if ! command grep -qc '/duniter.sh' "$UCOIN_PROFILE"; then
-      echo "=> Appending source string to $UCOIN_PROFILE"
-      printf "$SOURCE_STR\n" >> "$UCOIN_PROFILE"
+    if ! command grep -qc '/duniter.sh' "$PROFILE"; then
+      echo "=> Appending source string to $PROFILE"
+      printf "$SOURCE_STR\n" >> "$PROFILE"
     else
-      echo "=> Source string already in $UCOIN_PROFILE"
+      echo "=> Source string already in $PROFILE"
     fi
   fi
-
-  echo "=> ------------------------------------------------------"
-  echo "=> !                                                     !"
-  echo "=> ! CLOSE and REOPEN YOUR TERMINAL to start using ucoin !"
-  echo "=> !                                                     !"
-  echo "=> ------------------------------------------------------"
-  ucoin_reset
+  echo "===> !Run the command 'source" $PROFILE"' to start using duniter! <==="
+  reset
 }
 
 #
 # Unsets the various functions defined
 # during the execution of the install script
 #
-ucoin_reset() {
-  unset -f ucoin_reset ucoin_has ucoin_latest_version \
-    ucoin_download install_ucoin_from_git \
-    ucoin_detect_profile ucoin_do_install
+reset() {
+  unset -f reset is_installed latest_version \
+    download install_from_git \
+    detect_profile do_install
 }
 
-[ "_$UCOIN_ENV" = "_testing" ] || ucoin_do_install $1
+[ "_$DUNITER_ENV" = "_testing" ] || do_install $1
 
 } # this ensures the entire script is downloaded #

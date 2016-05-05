@@ -106,10 +106,12 @@ module.exports = {
     // Try to get new legit blocks for local blockchain
     for (let i = 0, len = peers.length; i < len; i++) {
       let peer = peers[i];
+      let shortPubkey = peer.pubkey.substr(0, 6);
       let remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
       if (remoteNext) {
         let isFork = !(remoteNext.previousHash == localCurrent.hash && remoteNext.number == localCurrent.number + 1);
         if (!isFork) {
+          logger.debug('Peer %s is on same blockchain', shortPubkey);
           let appliedSuccessfully;
           do {
             yield dao.applyMainBranch(remoteNext);
@@ -118,6 +120,7 @@ module.exports = {
             remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
           } while (appliedSuccessfully && remoteNext);
         } else {
+          logger.debug('Peer %s has forked', shortPubkey);
           let remoteCurrent = yield dao.remoteCurrent(peer);
           forks.push({
             peer: peer,
@@ -125,6 +128,8 @@ module.exports = {
             current: remoteCurrent
           });
         }
+      } else {
+        logger.debug('Peer %s do not have next block #%s', shortPubkey, localCurrent.number + 1);
       }
     }
     // Filter forks: do not include mirror peers (non-member peers)
@@ -147,6 +152,7 @@ module.exports = {
     memberForks = _.filter(memberForks, (fork) => {
       let blockDistance = (fork.current.number - localCurrent.number) * avgGenTime / 60;
       let timeDistance = (fork.current.medianTime - localCurrent.medianTime) / 60;
+      logger.debug('Fork of %s has blockDistance %s ; timeDistance %s ; required is >= %s for both values to try to follow the fork', fork.peer.pubkey.substr(0, 6), parseFloat(blockDistance).toFixed(2), parseFloat(timeDistance).toFixed(2), constant.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES);
       return blockDistance >= constant.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES
         && timeDistance >= constant.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES;
     });

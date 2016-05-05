@@ -15,7 +15,7 @@ var Link            = require('./entity/link');
 var Source          = require('./entity/source');
 var Transaction     = require('./entity/transaction');
 
-module.exports = () => new BlockchainContext();
+module.exports = () => { return new BlockchainContext() };
 
 function BlockchainContext() {
 
@@ -485,6 +485,8 @@ function BlockchainContext() {
       conf.blocksRot        = parseInt(sp[16]);
       conf.percentRot       = parseFloat(sp[17]);
       conf.currency         = block.currency;
+      // Super important: adapt wotb module to handle the correct stock
+      dal.wotb.setMaxCert(conf.sigStock);
       return dal.saveConf(conf).then(done).catch(done);
     }
     else {
@@ -758,33 +760,11 @@ function BlockchainContext() {
    * @param blocks
    * @returns {*}
    */
-  function updateTransactionSourcesForBlocks(blocks) {
+  function updateTransactionSourcesForBlocks(blocks, dividends) {
     return co(function *() {
-      let sources = [];
+      let sources = dividends;
       for (let i = 0, len = blocks.length; i < len; i++) {
         let block = blocks[i];
-        // Dividends
-        if (block.dividend) {
-          let idties = yield dal.getMembersP();
-          for (let j = 0, len2 = idties.length; j < len2; j++) {
-            let idty = idties[j];
-            sources.push({
-              'pubkey': idty.pubkey,
-              'identifier': idty.pubkey,
-              'noffset': block.number,
-              'type': 'D',
-              'number': block.number,
-              'time': block.medianTime,
-              'fingerprint': block.hash,
-              'block_hash': block.hash,
-              'amount': block.dividend,
-              'base': block.unitbase,
-              'consumed': false,
-              'toConsume': false,
-              'conditions': 'SIG(' + idty.pubkey + ')' // Only this pubkey can unlock its UD
-            });
-          }
-        }
         // Transactions
         for (let j = 0, len2 = block.transactions.length; j < len2; j++) {
           let json = block.transactions[j];
@@ -807,7 +787,8 @@ function BlockchainContext() {
             'base': output.base,
             'consumed': false,
             'identifier': txHash,
-            'noffset': index
+            'noffset': index,
+            'conditions': output.conditions
           })));
         }
       }

@@ -101,4 +101,24 @@ Transaction.statics = {};
 
 Transaction.statics.fromJSON = (json) => new Transaction(json);
 
+Transaction.statics.outputs2recipients = (tx) => tx.outputs.map(function(out) {
+  let recipent = out.match('SIG\\((.*)\\)');
+  return (recipent && recipent[1]) || 'UNKNOWN';
+});
+
+Transaction.statics.setRecipients = (txs) => {
+  // Each transaction must have a good "recipients" field for future searchs
+  txs.forEach((tx) => tx.recipients = Transaction.statics.outputs2recipients(tx));
+};
+
+Transaction.statics.setIssuers = (txs) => {
+  txs.forEach((tx) => {
+    if (tx.signatories && tx.signatories.length) {
+      // Might need to be overriden
+      tx.issuers = tx.signatories;
+    }
+    return tx;
+  });
+};
+
 module.exports = Transaction;

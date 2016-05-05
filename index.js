@@ -74,7 +74,7 @@ module.exports.statics = {
     /***********************
      * CRYPTO NETWORK LAYER
      **********************/
-    server.start();
+    yield server.start();
 
     return {};
   }),

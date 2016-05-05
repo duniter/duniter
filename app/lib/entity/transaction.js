@@ -111,4 +111,14 @@ Transaction.statics.setRecipients = (txs) => {
   txs.forEach((tx) => tx.recipients = Transaction.statics.outputs2recipients(tx));
 };
 
+Transaction.statics.setIssuers = (txs) => {
+  txs.forEach((tx) => {
+    if (tx.signatories && tx.signatories.length) {
+      // Might need to be overriden
+      tx.issuers = tx.signatories;
+    }
+    return tx;
+  });
+};
+
 module.exports = Transaction;

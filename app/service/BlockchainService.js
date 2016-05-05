@@ -12,6 +12,7 @@ var blockchainCtx   = require('../lib/blockchainContext');
 var blockGenerator  = require('../lib/blockGenerator');
 var blockProver     = require('../lib/blockProver');
 let Identity        = require('../lib/entity/identity');
+var Transaction     = require('../lib/entity/transaction');
 var AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
@@ -131,6 +132,7 @@ function BlockchainService () {
 
   function checkAndAddBlock(obj, doCheck, forkAllowed) {
     return co(function *() {
+      Transaction.statics.setIssuers(obj.transactions);
       let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
       if (existing) {
         throw 'Already processed';

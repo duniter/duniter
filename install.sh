@@ -161,7 +161,7 @@ do_install() {
     exit 1
   fi
   if ! is_installed "python"; then
-    echo "=> python is not available. You will likely need to install 'build-essential' package."
+    echo "=> python is not available. You will likely need to install 'python' package."
     exit 1
   fi
 

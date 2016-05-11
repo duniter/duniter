@@ -95,12 +95,17 @@ program
 
 program
   .command('start')
-  .description('Start uCoin server.')
+  .description('Start Duniter server.')
   .action(service(serverStart));
 
 program
+  .command('webwait')
+  .description('Start Duniter web admin.')
+  .action(webWait);
+
+program
   .command('webstart')
-  .description('Start uCoin server + web admin.')
+  .description('Start Duniter web admin + immediately start the server.')
   .action(webStart);
 
 program
@@ -119,7 +124,7 @@ program
 
 program
   .command('sync [host] [port] [to]')
-  .description('Synchronize blockchain from a remote uCoin node')
+  .description('Synchronize blockchain from a remote Duniter node')
   .action(service(function (host, port, to, server, conf) {
     if (!host) {
       throw 'Host is required.';
@@ -192,7 +197,7 @@ program
 
 program
   .command('forward [host] [port] [to]')
-  .description('Forward local blockchain to a remote uCoin node')
+  .description('Forward local blockchain to a remote Duniter node')
   .action(service(function (host, port, to, server) {
 
     var remoteCurrent;
@@ -807,7 +812,26 @@ program
     process.exit();
   });
 
+function webWait() {
+  return co(function *() {
+    let webminapi = yield webInit();
+    return webminapi.httpLayer.openConnections();
+  })
+    .catch(mainError);
+}
+
 function webStart() {
+  return co(function *() {
+    let webminapi = yield webInit();
+    yield webminapi.httpLayer.openConnections();
+    yield webminapi.webminCtrl.startHTTP();
+    yield webminapi.webminCtrl.startAllServices();
+    yield webminapi.webminCtrl.regularUPnP();
+  })
+    .catch(mainError);
+}
+
+function webInit() {
   return co(function *() {
     var dbName = program.mdb;
     var dbHome = program.home;
@@ -818,9 +842,7 @@ function webStart() {
       // Add log files for this instance
       logger.addHomeLogs(params.home);
     }
-    let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false, program.webmhost, program.webmport);
-    return webminapi.openConnections();
-
+    return yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false, program.webmhost, program.webmport);
   });
 }
 
@@ -837,4 +859,9 @@ if (program.args.length == 0) {
       process.exit();
     }
   });
+}
+
+function mainError(err) {
+  logger.error(err.code || err.message || err);
+  process.exit();
 }

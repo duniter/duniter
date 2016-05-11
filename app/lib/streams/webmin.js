@@ -15,7 +15,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
   var fullPath = path.join(__dirname, '../../../ui/package/public');
 
-  return network.createServersAndListen('uCoin web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
+  let httpLayer = network.createServersAndListen('uCoin web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
 
     httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
     httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
@@ -120,4 +120,9 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
         }
       }));
   });
+
+  return {
+    httpLayer: httpLayer,
+    webminCtrl: webminCtrl
+  };
 };

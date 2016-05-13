@@ -1,0 +1,13 @@
+Duniter dans un container Docker
+
+Télecharger le fichier "Dockerfile" et le fichier "go" dans un répertoire.
+
+puis :
+
+1/ Construire le container :
+
+> docker build -t="duniter" .
+
+2/ Executer le container :
+
+> docker run -p 8999:8999 -dt duniter

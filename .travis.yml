@@ -53,8 +53,7 @@ before_deploy:
   - cd ucoin_release
   - tar czf ../duniter-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
   - cd ..
-  - git clone https://github.com/ucoin-io/debpkg.git duniter-x64
-  - rm -Rf duniter-x64/.git
+  - mv ucoin_release/sources/ci/travis/debian duniter-x64
   - mkdir -p duniter-x64/opt/duniter/
   - chmod 755 duniter-x64/DEBIAN/post*
   - chmod 755 duniter-x64/DEBIAN/pre*

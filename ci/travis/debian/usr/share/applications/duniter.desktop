@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Duniter Desktop
+Exec=duniter-desktop
+Icon=/opt/duniter/nw/duniter.png
+Type=Application
+Categories=Utility

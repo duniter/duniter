@@ -1,0 +1,28 @@
+#!/bin/bash
+
+DUN_ROOT=/opt/duniter
+mkdir $DUN_ROOT/sources
+
+# Duniter sources
+if [[ -f $DUN_ROOT/duniter-desktop.nw ]]; then
+  unzip -d $DUN_ROOT/sources/ $DUN_ROOT/duniter-desktop.nw
+fi
+
+# Duniter-Desktop
+if [[ -f $DUN_ROOT/nw.nwb ]]; then
+  unzip -d $DUN_ROOT/nw $DUN_ROOT/nw.nwb
+  cp -R $DUN_ROOT/sources/gui/* $DUN_ROOT/nw/
+  chmod +x $DUN_ROOT/nw/nw $DUN_ROOT/nw/lib $DUN_ROOT/nw/locales
+  ln -s $DUN_ROOT/nw/nw /usr/bin/duniter-desktop
+fi
+
+# Duniter CLI executes with embedded node
+if [[ -d $DUN_ROOT/node ]]; then
+  chmod 755 $DUN_ROOT/sources/bin/ucoind
+  sed -i "s/usr\/bin\/env node/opt\/duniter\/node\/bin\/node/g" $DUN_ROOT/sources/bin/ucoind
+fi
+# Else will execute with environment node
+
+ln -s $DUN_ROOT/sources/bin/ucoind /usr/bin/duniter
+
+chmod +r -R $DUN_ROOT

@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 "use strict";
 
-var directory = require('../app/lib/directory');
-var path = require('path');
+const directory = require('../app/lib/directory');
+const path = require('path');
+const spawn = require('child_process').spawn;
 
 var daemon = getDaemon('start');
 
 switch (process.argv[2]) {
 
   case "start":
-    daemon.start();
+    start(daemon);
     break;
 
   case "stop":
@@ -20,13 +21,13 @@ switch (process.argv[2]) {
     daemon = getDaemon('start');
     daemon.stop(function(err) {
       err && console.error(err);
-      daemon.start();
+      start(daemon);
     });
     break;
 
   case "webstart":
     daemon = getDaemon('webstart');
-    daemon.start();
+    start(daemon);
     break;
 
   case "webstop":
@@ -38,7 +39,7 @@ switch (process.argv[2]) {
     daemon = getDaemon('webstart');
     daemon.stop(function(err) {
       err && console.error(err);
-      daemon.start();
+      start(daemon);
     });
     break;
 
@@ -59,6 +60,30 @@ function getDaemon(overrideCommand) {
 
     // We must redefine the main argument to 'start' because uCoin will receive it as command argument and does not
     // know about 'restart' command.
-    argv: process.argv.slice(2).map((arg, index) => index == 0 && overrideCommand ? overrideCommand : arg)
+    argv: getCommand(overrideCommand)
+  });
+}
+
+function getCommand(overrideCommand) {
+  return process.argv.slice(2).map((arg, index) => index == 0 && overrideCommand ? overrideCommand : arg);
+}
+
+function start(daemonToStart) {
+  let ucoind = path.resolve(path.dirname(process.argv[1]), './ucoind');
+  let checkConf = spawn(ucoind, getCommand('check-config'));
+  let echos = [];
+
+  // Error messages
+  checkConf.stdout.on('data', (data) => echos.push(data));
+  // checkConf.stderr.on('data', (data) => console.error(data.toString('utf8')));
+
+  // Result
+  checkConf.on('close', (code) => {
+    if (code === 0) {
+      daemonToStart.start();
+    } else {
+      echos.forEach((echo) => console.error(echo.toString('utf8').replace(/\n$/, '')));
+      console.log('You have configuration issues. Please fix them and retry to start your node with `duniter restart` or `duniter webrestart`.');
+    }
   });
 }

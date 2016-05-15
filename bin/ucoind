@@ -410,7 +410,7 @@ program
       .catch(function(err) {
         logger.warn(err.message || err);
         server.disconnect();
-        process.exit();
+        process.exit(1);
       });
   }));
 

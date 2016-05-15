@@ -23,6 +23,6 @@ if [[ -d $DUN_ROOT/node ]]; then
 fi
 # Else will execute with environment node
 
-ln -s $DUN_ROOT/sources/bin/ucoind /usr/bin/duniter
+ln -s $DUN_ROOT/sources/duniter.sh /usr/bin/duniter
 
 chmod +r -R $DUN_ROOT

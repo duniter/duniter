@@ -16,6 +16,9 @@ duniter() {
 		### Production mode
 		if [[ -d $DUNITER_DIR/node ]]; then
 			NODE=$DUNITER_DIR/node/bin/node
+	  else
+	    echo "Node.js is not embedded in this version of Duniter"
+	    return
 		fi;
 	else
 
@@ -38,6 +41,10 @@ duniter() {
 
 		start|stop|restart)
 		$NODE "$DUNITER_DIR/bin/daemon" $*
+		;;
+
+		direct_start)
+		$NODE "$DUNITER_DIR/bin/ucoind" start ${@:2}
 		;;
 
 		logs)

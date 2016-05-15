@@ -443,7 +443,10 @@ function PeeringService(server) {
               }),
 
               // Simulate the adding of a single new block on local blockchain
-              applyMainBranch: (block) => server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED),
+              applyMainBranch: (block) => co(function *() {
+                let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
+                server.push(addedBlock);
+              }),
 
               // Eventually remove forks later on
               removeForks: () => Q(),

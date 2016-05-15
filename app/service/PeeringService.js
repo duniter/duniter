@@ -220,21 +220,14 @@ function PeeringService(server) {
           block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
           endpoints: [endpoint]
         };
-        var raw1 = dos2unix(new Peer(p1).getRaw());
         var raw2 = dos2unix(new Peer(p2).getRaw());
-        logger.info('External access:', new Peer(raw1 == raw2 ? p1 : p2).getURL());
-        if (raw1 != raw2) {
-          logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
-          p2.signature = yield Q.nfcall(server.sign, raw2);
-          p2.pubkey = selfPubkey;
-          p2.documentType = 'peer';
-          // Submit & share with the network
-          yield server.submitP(p2, false);
-        } else {
-          p1.documentType = 'peer';
-          // Share with the network
-          server.push(p1);
-        }
+        logger.info('External access:', new Peer(p2).getURL());
+        logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
+        p2.signature = yield Q.nfcall(server.sign, raw2);
+        p2.pubkey = selfPubkey;
+        p2.documentType = 'peer';
+        // Submit & share with the network
+        yield server.submitP(p2, false);
         let selfPeer = yield dal.getPeer(selfPubkey);
         // Set peer's statut to UP
         selfPeer.documentType = 'selfPeer';

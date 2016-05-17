@@ -1,5 +1,5 @@
 {
-  "name": "ucoin",
+  "name": "duniter",
   "version": "0.20.0a59",
   "engines": {
     "node": ">=4.2.0",
@@ -20,18 +20,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:ucoin-io/ucoin.git"
+    "url": "git@github.com:duniter/duniter.git"
   },
   "keywords": [
-    "openudc",
+    "duniter",
     "ucoin",
+    "openudc",
     "crypto-currency"
   ],
   "author": "Cedric Moreau <cem.moreau@gmail.com>",
   "license": "GPLv3",
-  "readmeFilename": "readme.md",
+  "readmeFilename": "README.md",
   "bugs": {
-    "url": "https://github.com/ucoin-io/ucoin/issues"
+    "url": "https://github.com/duniter/duniter/issues"
   },
   "dependencies": {
     "async": "1.5.2",

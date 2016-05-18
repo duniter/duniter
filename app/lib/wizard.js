@@ -483,6 +483,7 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
             next();
           });
         } else {
+          conf.remoteipv6 = answers.remoteipv6;
           next();
         }
       });

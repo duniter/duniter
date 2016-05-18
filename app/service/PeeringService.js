@@ -302,6 +302,7 @@ function PeeringService(server) {
       try {
         logger.debug('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
         let node = yield aPeer.connectP();
+        yield checkPeerValidity(aPeer, node);
         //let remotePeer = yield Q.nbind(node.network.peering.get)();
         let json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
         for (let i = 0, len = json.leaves.length; i < len; i++) {
@@ -397,6 +398,35 @@ function PeeringService(server) {
     return waitRemaining;
   }
 
+  function checkPeerValidity(p, node) {
+    return co(function *() {
+      try {
+        let document = yield Q.nfcall(node.network.peering.get);
+        let thePeer = Peer.statics.peerize(document);
+        let goodSignature = that.checkPeerSignature(thePeer);
+        if (!goodSignature) {
+          throw 'Signature from a peer must match';
+        }
+        if (p.currency !== thePeer.currency) {
+          throw 'Currency has changed from ' + p.currency + ' to ' + thePeer.currency;
+        }
+        if (p.pubkey !== thePeer.pubkey) {
+          throw 'Public key of the peer has changed from ' + p.pubkey + ' to ' + thePeer.pubkey;
+        }
+        let sp1 = p.block.split('-');
+        let sp2 = thePeer.block.split('-');
+        let blockNumber1 = parseInt(sp1[0]);
+        let blockNumber2 = parseInt(sp2[0]);
+        if (blockNumber2 < blockNumber1) {
+          throw 'Signature date has changed from block ' + blockNumber1 + ' to older block ' + blockNumber2;
+        }
+      } catch (e) {
+        logger.warn(e);
+        throw { code: "E_DUNITER_PEER_CHANGED" };
+      }
+    });
+  }
+
   function syncBlock(callback, pubkey) {
     currentSyncP = co(function *() {
       let current = yield dal.getCurrentBlockOrNull();
@@ -413,6 +443,7 @@ function PeeringService(server) {
           try {
             let node = yield Q.nfcall(p.connect);
             node.pubkey = p.pubkey;
+            yield checkPeerValidity(p, node);
             let dao = pulling.abstractDao({
 
               // Get the local blockchain current block
@@ -493,7 +524,8 @@ function PeeringService(server) {
 
   function isConnectionError(err) {
     return err && (
-      err.code == "EINVAL"
+      err.code == "E_DUNITER_PEER_CHANGED"
+      || err.code == "EINVAL"
       || err.code == "ECONNREFUSED"
       || err.code == "ETIMEDOUT"
       || (err.httpCode !== undefined && err.httpCode !== 404));

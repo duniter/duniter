@@ -6,7 +6,7 @@
 # Wraps bin/ucoind.js that is called with Node.js
 #
 
-DEB_PACKAGING=false
+DEB_PACKAGING=
 
 if [[ $DEB_PACKAGING ]]; then
   DUNITER_DIR=/opt/duniter/sources/

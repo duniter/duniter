@@ -84,11 +84,12 @@ function start(daemonToStart) {
 
   // Result
   checkConf.on('close', (code) => {
-    if (code === 0) {
-      daemonToStart.start();
-    } else {
-      echos.forEach((echo) => console.error(echo.toString('utf8').replace(/\n$/, '')));
+    if (code !== 0 && code !== '0' && code !== '' && code !== null && code !== undefined) {
+      console.log('Error code \'%s\'', code);
+      echos.forEach((echo) => console.log(echo.toString('utf8').replace(/\n$/, '')));
       console.log('You have configuration issues. Please fix them and retry to start your node with `duniter restart` or `duniter webrestart`.');
+    } else {
+      daemonToStart.start();
     }
   });
 }

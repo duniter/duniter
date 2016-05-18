@@ -366,35 +366,38 @@ function WebAdmin (dbConf, overConf) {
   });
 
   this.autoConfNetwork = () => co(function *() {
-    let bestLocal4 = network.getBestLocalIPv4();
-    let bestLocal6 = network.getBestLocalIPv6();
-    let upnpConf = {
-      remoteipv4: bestLocal4,
-      remoteipv6: bestLocal6,
-      upnp: false
-    };
-    try {
-      upnpConf = yield network.upnpConf();
-      upnpConf.upnp = true;
-    } catch (e) {
-      logger.error(e.stack || e);
+    // Reconfigure the network if it has not been initialized yet
+    if (!server.conf.remoteipv4 && !server.conf.remoteipv6 && !server.conf.remotehost) {
+      let bestLocal4 = network.getBestLocalIPv4();
+      let bestLocal6 = network.getBestLocalIPv6();
+      let upnpConf = {
+        remoteipv4: bestLocal4,
+        remoteipv6: bestLocal6,
+        upnp: false
+      };
+      try {
+        upnpConf = yield network.upnpConf();
+        upnpConf.upnp = true;
+      } catch (e) {
+        logger.error(e.stack || e);
+      }
+      let randomPort = network.getRandomPort(server.conf);
+      _.extend(server.conf, {
+        ipv4: bestLocal4,
+        ipv6: bestLocal6,
+        port: randomPort,
+        remoteipv4: upnpConf.remoteipv4,
+        remoteipv6: upnpConf.remoteipv6,
+        remoteport: randomPort,
+        upnp: upnpConf.upnp
+      });
+      yield server.dal.saveConf(server.conf);
+      pluggedConfP = co(function *() {
+        yield bmapi.closeConnections();
+        yield server.loadConf();
+        bmapi = yield bma(server, null, true);
+      });
     }
-    let randomPort = network.getRandomPort(server.conf);
-    _.extend(server.conf, {
-      ipv4: bestLocal4,
-      ipv6: bestLocal6,
-      port: randomPort,
-      remoteipv4: upnpConf.remoteipv4,
-      remoteipv6: upnpConf.remoteipv6,
-      remoteport: randomPort,
-      upnp: upnpConf.upnp
-    });
-    yield server.dal.saveConf(server.conf);
-    pluggedConfP = co(function *() {
-      yield bmapi.closeConnections();
-      yield server.loadConf();
-      bmapi = yield bma(server, null, true);
-    });
     return {};
   });
 

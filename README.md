@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.github.com/duniter/duniter/master/duniter-logos/250×250.png"></p>
+<p align="center"><img src="https://raw.github.com/duniter/duniter/master/duniter-logos/duniter-logo.svg?raw=true" width="250" height="250" /></p>
 
 # Duniter [![Build Status](https://api.travis-ci.org/duniter/duniter.png)](https://travis-ci.org/duniter/duniter) [![Coverage Status](https://coveralls.io/repos/duniter/duniter/badge.svg?branch=master&service=github)](https://coveralls.io/github/duniter/duniter?branch=master)
 
@@ -27,7 +27,7 @@ and you are done! See [Install documentation](https://github.com/duniter/duniter
 
 In the world of crypto-currencies, [Sakia Wallet](http://sakia-wallet.org/) would be called a [SPV](https://en.bitcoin.it/wiki/Thin_Client_Security#Simplified_Payment_Verification_.28SPV.29_Clients) client. It is a graphical client connecting to the network. See this [tutorial](https://forum.duniter.org/t/join-our-new-testnet-currency/813) to join in the testing currency with Sakia.
 
-<p align="center"><img src="http://sakia-wallet.org/img/Dividends.png"></p>
+<p align="center"><img src="http://sakia-wallet.org/img/Dividends.png" /></p>
 
 ## Going further
 

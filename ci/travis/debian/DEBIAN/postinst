@@ -14,13 +14,13 @@ if [[ -f $DUN_ROOT/nw.nwb ]]; then
   cp -R $DUN_ROOT/sources/gui/* $DUN_ROOT/nw/
   chmod +x $DUN_ROOT/nw/nw $DUN_ROOT/nw/lib $DUN_ROOT/nw/locales
   ln -s $DUN_ROOT/nw/nw /usr/bin/duniter-desktop
+  sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_ROOT/sources/duniter.sh
 fi
 
 # Duniter CLI executes with embedded node
 if [[ -d $DUN_ROOT/node ]]; then
   chmod 755 $DUN_ROOT/sources/bin/ucoind
   sed -i "s/usr\/bin\/env node/opt\/duniter\/node\/bin\/node/g" $DUN_ROOT/sources/bin/ucoind
-  sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_ROOT/sources/duniter.sh
 fi
 # Else will execute with environment node
 

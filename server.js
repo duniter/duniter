@@ -71,7 +71,7 @@ function Server (dbConf, overrideConf) {
     var defaultValues = {
       remoteipv6:         that.conf.ipv6,
       remoteport:         that.conf.port,
-      cpu:                1,
+      cpu:                constants.DEFAULT_CPU,
       c:                  constants.CONTRACT.DEFAULT.C,
       dt:                 constants.CONTRACT.DEFAULT.DT,
       ud0:                constants.CONTRACT.DEFAULT.UD0,

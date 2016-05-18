@@ -134,7 +134,7 @@ function WebAdmin (dbConf, overConf) {
     yield server.dal.saveConf({
       routing: true,
       createNext: true,
-      cpu: 0.5,
+      cpu: constants.DEFAULT_CPU,
       ipv4: conf.local_ipv4,
       ipv6: conf.local_ipv6,
       port: conf.lport,

@@ -69,18 +69,14 @@ before_deploy:
   - fakeroot dpkg-deb --build duniter-x64
   - mv duniter-x64.deb duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
   - mv duniter-x64.tar.gz duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
-
-# Releases deployed on GitHub
 deploy:
   provider: releases
-  prerelease: true
-  skip_cleanup: true
-  api_key:
-    secure: eZ+DHkTYXkBqoHp/Qea1duDQXTAgJ+oYWbWET7PNlNbq6IGHRae//VqGkOIGaYvPCu6ezZbI/z/nQvBhm794vihYYek1Y8AAXp0QmxmRJhCgsCxRcVmyLu99un2aAYiZzUKKOylQrhc30JsObgo3JrovHAdMJFDf3f123whAPCA=
+  api-key:
+    secure: h+GgYhh8/I/l5EWdI1+bDQYtN57jvDf0xhiwcxlfm/AvaJWOZa+q81HsXdHqtwgmsCoRklKtOqTM/nqgSOcWPXsAditRjEXOui2FjZiJCosDjDPMnN6HKzw6XVLtSOx7CeCX/xFmoNTIdsAuC+HUfDWCUFgrsMj9F0V9J3U1nDs=
   file:
-    - ucoin-x64.tar.gz
-    - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-    - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
+  - ucoin-x64.tar.gz
+  - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
+  - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
   on:
     repo: duniter/duniter
     tags: true

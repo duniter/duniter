@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.github.com/duniter/duniter/master/duniter-logos/duniter-logo.svg?raw=true" width="250" height="250" /></p>
+![Duniter logo](https://raw.github.com/duniter/duniter/master/duniter-logos/250×250.png)
 
 # Duniter [![Build Status](https://api.travis-ci.org/duniter/duniter.png)](https://travis-ci.org/duniter/duniter) [![Coverage Status](https://coveralls.io/repos/duniter/duniter/badge.svg?branch=master&service=github)](https://coveralls.io/github/duniter/duniter?branch=master)
 

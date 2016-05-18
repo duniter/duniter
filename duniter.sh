@@ -39,7 +39,7 @@ duniter() {
 		#  UCOIN DAEMON MANAGEMENT
 		#---------------------------------
 
-		webstart|webstop|webrestart|start|stop|restart)
+		webwait|webstart|webstop|webrestart|start|stop|restart)
 		$NODE "$DUNITER_DIR/bin/daemon" $*
 		;;
 

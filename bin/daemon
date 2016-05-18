@@ -25,13 +25,18 @@ switch (process.argv[2]) {
     });
     break;
 
+  case "webwait":
+    daemon = getDaemon('webwait');
+    start(daemon);
+    break;
+
   case "webstart":
     daemon = getDaemon('webstart');
     start(daemon);
     break;
 
   case "webstop":
-    daemon = getDaemon('webstart');
+    daemon = getDaemon();
     daemon.stop();
     break;
 
@@ -49,7 +54,7 @@ switch (process.argv[2]) {
     break;
 
   default:
-    console.log("Usage: [webstart|webstop|webrestart|start|stop|restart]");
+    console.log("Usage: [webstart|webwait|webstop|webrestart|start|stop|restart]");
 }
 
 function getDaemon(overrideCommand) {

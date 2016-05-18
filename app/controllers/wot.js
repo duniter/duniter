@@ -63,7 +63,11 @@ function WOTBinding (server) {
         let cert = _.clone(signed[j]);
         if (!(excluding && cert.block <= excluding.number)) {
           cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
-          validSigned.push(cert);
+          if (cert.idty) {
+            validSigned.push(cert);
+          } else {
+            logger.debug('A certification to an unknown identity was found (%s => %s)', cert.from, cert.to);
+          }
         }
       }
       idty.signed = validSigned;

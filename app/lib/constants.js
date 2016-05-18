@@ -254,6 +254,8 @@ module.exports = {
     A_MONTH: (3600 * 24 * 365.25) / 12
   },
 
+  DEFAULT_CPU: 0.6,
+
   CONTRACT: {
     DEFAULT: {
       C: 0.007376575,

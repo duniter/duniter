@@ -15,7 +15,7 @@ var defaultConf = function() {
     "remoteport": constants.NETWORK.DEFAULT_PORT,
     "salt": "",
     "passwd": "",
-    "cpu": 0.9,
+    "cpu": constants.DEFAULT_CPU,
     "upInterval": 3600 * 1000,
     "c": constants.CONTRACT.DEFAULT.C,
     "dt": constants.CONTRACT.DEFAULT.DT,

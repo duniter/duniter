@@ -25,7 +25,7 @@ process.on('message', function(stuff){
   var nbZeros = stuff.zeros;
   var pair = stuff.pair;
   var forcedTime = stuff.forcedTime;
-  var cpu = conf.cpu || 1;
+  var cpu = conf.cpu || constants.DEFAULT_CPU;
   var highMark = stuff.highMark;
   async.waterfall([
     function(next) {

@@ -93,8 +93,9 @@ module.exports = function(server, interfaces, httpLogs) {
     wssBlock.on('connection', function connection(ws) {
       co(function *() {
         currentBlock = yield server.dal.getCurrent();
-        wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
-        ws.send(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+        if (currentBlock) {
+          ws.send(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+        }
       });
     });
 

@@ -339,6 +339,7 @@ function PeeringService(server) {
               // Now we test
               let node = yield Q.nfcall(p.connect);
               let peering = yield Q.nfcall(node.network.peering.get);
+              yield checkPeerValidity(p, node);
               // The node answered, it is no more DOWN!
               logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
               yield dal.setPeerUP(p.pubkey);

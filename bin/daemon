@@ -73,9 +73,13 @@ function getCommand(overrideCommand) {
   return process.argv.slice(2).map((arg, index) => index == 0 && overrideCommand ? overrideCommand : arg);
 }
 
-function start(daemonToStart) {
+function getFullCommand(overrideCommand) {
   let ucoind = path.resolve(path.dirname(process.argv[1]), './ucoind');
-  let checkConf = spawn(ucoind, getCommand('check-config'));
+  return [ucoind].concat(getCommand(overrideCommand));
+}
+
+function start(daemonToStart) {
+  let checkConf = spawn(process.argv[0], getFullCommand('check-config'));
   let echos = [];
 
   // Error messages

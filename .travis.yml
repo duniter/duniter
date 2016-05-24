@@ -24,7 +24,7 @@ after_success:
   - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - rm -Rf ./coverage
 
-#before_deploy:
+before_deploy:
   # Download & embed Nodejs binary
   - NVER=`node -v`
   - DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`

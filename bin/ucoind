@@ -450,7 +450,7 @@ program
         server.disconnect();
         return;
       }
-      return co(function*(){
+      co(function*(){
         try {
           if(type == 'data'){
             yield server.resetData();

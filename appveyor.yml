@@ -56,7 +56,7 @@ after_test:
   - echo %NW%
   - set NW_GZ=%NW%.zip
   - echo %NW_GZ%
-  - curl -fS -o %NW_GZ% https://s3.eu-central-1.amazonaws.com/duniter/binaries/%NW_GZ%
+  - curl -fS -o %NW_GZ% http://dl.nwjs.io/%NW_RELEASE%/%NW_GZ%
   - 7z x %NW_GZ% 1> null
   - move %NW% %cd%\duniter_release\nw
   - mkdir %cd%\duniter_release\sources

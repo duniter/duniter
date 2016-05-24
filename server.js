@@ -2,6 +2,7 @@
 var stream      = require('stream');
 var async       = require('async');
 var util        = require('util');
+var path        = require('path');
 var co          = require('co');
 var _           = require('underscore');
 var Q           = require('q');
@@ -21,8 +22,9 @@ function Server (dbConf, overrideConf) {
   stream.Duplex.call(this, { objectMode: true });
 
   let home = directory.getHome(dbConf.name, dbConf.home);
-  var logger = require('./app/lib/logger')('server');
-  var that = this;
+  let paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
+  let logger = require('./app/lib/logger')('server');
+  let that = this;
   that.conf = null;
   that.dal = null;
   that.version = jsonpckg.version;
@@ -53,7 +55,7 @@ function Server (dbConf, overrideConf) {
 
   this.plugFileSystem = () => co(function *() {
     logger.debug('Plugging file system...');
-    var params = yield directory.getHomeParams(dbConf && dbConf.memory, home);
+    let params = yield paramsP;
     that.dal = fileDAL(params);
   });
 
@@ -61,7 +63,7 @@ function Server (dbConf, overrideConf) {
     logger.debug('Soft data reset... [cache]');
     yield that.dal.cleanCaches();
     logger.debug('Soft data reset... [data]');
-    yield that.dal.cleanDBData();
+    yield that.cleanDBData();
   });
 
   this.loadConf = (useDefaultConf) => co(function *() {
@@ -282,29 +284,78 @@ function Server (dbConf, overrideConf) {
       });
   };
 
-  this.reset = function(done) {
-    return that.dal.resetAll(done);
+  this.resetAll = function(done) {
+    var files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    return resetFiles(files, dirs, done);
   };
 
   this.resetData = function(done) {
-    return that.dal.resetData(done);
+    return co(function*(){
+      var files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.UCOIN_DB_NAME + '.log', directory.WOTB_FILE];
+      var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+      yield resetFiles(files, dirs, done);
+    });
+  };
+
+  this.resetConf = function(done) {
+    var files = ['conf'];
+    var dirs  = [];
+    return resetFiles(files, dirs, done);
   };
 
   this.resetStats = function(done) {
-    return that.dal.resetStats(done);
+    var files = ['stats'];
+    var dirs  = ['ud_history'];
+    return resetFiles(files, dirs, done);
   };
 
   this.resetPeers = function(done) {
     return that.dal.resetPeers(done);
   };
 
-  this.resetTxs = function(done) {
-    that.dal.resetTransactions(done);
-  };
+  this.cleanDBData = () => co(function *() {
+    yield _.values(that.newDals).map((dal) => dal.cleanData && dal.cleanData());
+    that.wotb.resetWoT();
+    var files = ['stats', 'cores', 'current'];
+    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    return resetFiles(files, dirs);
+  });
 
-  this.resetConf = function(done) {
-    return that.dal.resetConf(done);
-  };
+  function resetFiles(files, dirs, done) {
+    return co(function *() {
+      let params = yield paramsP;
+      let myFS = params.fs;
+      let rootPath = params.home;
+      for (let i = 0, len = files.length; i < len; i++) {
+        let fName = files[i];
+        // JSON file?
+        let existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
+        if (existsJSON) {
+          yield myFS.remove(rootPath + '/' + fName + '.json');
+        } else {
+          // Normal file?
+          let normalFile = path.join(rootPath, fName);
+          let existsFile = yield myFS.exists(normalFile);
+          if (existsFile) {
+            yield myFS.remove(normalFile);
+          }
+        }
+      }
+      for (let i = 0, len = dirs.length; i < len; i++) {
+        let dirName = dirs[i];
+        let existsDir = yield myFS.exists(rootPath + '/' + dirName);
+        if (existsDir) {
+          yield myFS.removeTree(rootPath + '/' + dirName);
+        }
+      }
+      done && done();
+    })
+        .catch((err) => {
+          done && done(err);
+          throw err;
+        });
+  }
 
   this.disconnect = function() {
     return that.dal && that.dal.close();

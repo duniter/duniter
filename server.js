@@ -54,6 +54,16 @@ function Server (dbConf, overrideConf) {
 
   this._write = (obj, enc, writeDone) => that.submit(obj, false, () => writeDone);
 
+  /**
+   * Facade method to control what is pushed to the stream (we don't want it to be closed)
+   * @param obj An object to be pushed to the stream.
+   */
+  this.streamPush = (obj) => {
+    if (obj) {
+      that.push(obj);
+    }
+  };
+
   this.plugFileSystem = () => co(function *() {
     logger.debug('Plugging file system...');
     let params = yield paramsP;
@@ -157,7 +167,7 @@ function Server (dbConf, overrideConf) {
         if (res) {
           // Only emit valid documents
           that.emit(obj.documentType, _.clone(res));
-          that.push(_.clone(res));
+          that.streamPush(_.clone(res));
         }
         if (done) {
           isInnerWrite ? done(null, res) : done();

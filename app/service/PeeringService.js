@@ -232,7 +232,7 @@ function PeeringService(server) {
         // Set peer's statut to UP
         selfPeer.documentType = 'selfPeer';
         yield that.peer(selfPeer);
-        server.push(selfPeer);
+        server.streamPush(selfPeer);
         logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
         done && done();
         return selfPeer;
@@ -477,7 +477,7 @@ function PeeringService(server) {
               // Simulate the adding of a single new block on local blockchain
               applyMainBranch: (block) => co(function *() {
                 let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
-                server.push(addedBlock);
+                server.streamPush(addedBlock);
               }),
 
               // Eventually remove forks later on

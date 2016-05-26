@@ -6,7 +6,7 @@ var path = require('path');
 var cfs  = require('./cfs');
 var Q    = require('q');
 var qfs  = require('q-io/fs');
-var sqlite3 = require("sqlite3b").verbose();
+var sqlite3 = require("sqlite3").verbose();
 
 const DEFAULT_DOMAIN = "duniter_default";
 const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';

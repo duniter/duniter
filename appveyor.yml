@@ -44,7 +44,7 @@ after_test:
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
   - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\scryptb.node %cd%\lib\binding\Release\node-v47-win32-x64\scryptb.node /Y
-  - cd ../sqlite3b
+  - cd ../sqlite3
   - npm install --build-from-source
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build

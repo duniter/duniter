@@ -26,54 +26,7 @@ after_success:
 
 before_deploy:
   # Download & embed Nodejs binary
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ui
-  - [[ -z $BUILT_ARTIFACTS ]] && git submodule update
-  - [[ -z $BUILT_ARTIFACTS ]] && npm install
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ..
-  - [[ -z $BUILT_ARTIFACTS ]] && NVER=`node -v`
-  - [[ -z $BUILT_ARTIFACTS ]] && DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
-  - [[ -z $BUILT_ARTIFACTS ]] && DUNITER_DEB_VER=" $DUNITER_VER"
-  - [[ -z $BUILT_ARTIFACTS ]] && wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
-  - [[ -z $BUILT_ARTIFACTS ]] && tar xzf node-${NVER}-linux-x64.tar.gz
-  - [[ -z $BUILT_ARTIFACTS ]] && mv node-${NVER}-linux-x64 node
-  - [[ -z $BUILT_ARTIFACTS ]] && rm node-${NVER}-linux-x64.tar.gz
-  # Clean testing packages
-  - [[ -z $BUILT_ARTIFACTS ]] && npm prune --production
-  - [[ -z $BUILT_ARTIFACTS ]] && tar czf ../ucoin-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"
-  - [[ -z $BUILT_ARTIFACTS ]] && SRC=`pwd`
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ..
-  # GUI Version
-  - [[ -z $BUILT_ARTIFACTS ]] && mkdir ucoin_release
-  - [[ -z $BUILT_ARTIFACTS ]] && NW_RELEASE="v0.14.5"
-  - [[ -z $BUILT_ARTIFACTS ]] && NW="nwjs-${NW_RELEASE}-linux-x64"
-  - [[ -z $BUILT_ARTIFACTS ]] && NW_GZ="${NW}.tar.gz"
-  - [[ -z $BUILT_ARTIFACTS ]] && wget http://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}
-  - [[ -z $BUILT_ARTIFACTS ]] && tar xvzf ${NW_GZ}
-  - [[ -z $BUILT_ARTIFACTS ]] && mv ${NW} ucoin_release/nw
-  - [[ -z $BUILT_ARTIFACTS ]] && cp ${SRC}/gui/* ucoin_release/nw/
-  - [[ -z $BUILT_ARTIFACTS ]] && cp -R ${SRC}/ ucoin_release/sources/
-  - [[ -z $BUILT_ARTIFACTS ]] && rm -Rf ucoin_release/sources/ui/node_modules
-  - [[ -z $BUILT_ARTIFACTS ]] && rm -Rf ucoin_release/sources/ui/bower_components
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ucoin_release
-  - [[ -z $BUILT_ARTIFACTS ]] && tar czf ../duniter-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ..
-  - [[ -z $BUILT_ARTIFACTS ]] && mv ucoin_release/sources/ci/travis/debian duniter-x64
-  - [[ -z $BUILT_ARTIFACTS ]] && mkdir -p duniter-x64/opt/duniter/
-  - [[ -z $BUILT_ARTIFACTS ]] && chmod 755 duniter-x64/DEBIAN/post*
-  - [[ -z $BUILT_ARTIFACTS ]] && chmod 755 duniter-x64/DEBIAN/pre*
-  - [[ -z $BUILT_ARTIFACTS ]] && sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-x64/DEBIAN/control
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ucoin_release/sources
-  - [[ -z $BUILT_ARTIFACTS ]] && rm -Rf .git
-  - [[ -z $BUILT_ARTIFACTS ]] && zip -qr ../duniter-desktop.nw *
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ../nw
-  - [[ -z $BUILT_ARTIFACTS ]] && zip -qr ../nw.nwb *
-  - [[ -z $BUILT_ARTIFACTS ]] && cd ../..
-  - [[ -z $BUILT_ARTIFACTS ]] && mv ucoin_release/duniter-desktop.nw duniter-x64/opt/duniter/
-  - [[ -z $BUILT_ARTIFACTS ]] && mv ucoin_release/nw.nwb duniter-x64/opt/duniter/
-  - [[ -z $BUILT_ARTIFACTS ]] && fakeroot dpkg-deb --build duniter-x64
-  - [[ -z $BUILT_ARTIFACTS ]] && mv duniter-x64.deb duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-  - [[ -z $BUILT_ARTIFACTS ]] && mv duniter-x64.tar.gz duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
-  - BUILT_ARTIFACTS="done"
+  - ci/travis/before_deploy.sh
 deploy:
   - provider: releases
     prerelease: true

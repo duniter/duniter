@@ -26,10 +26,10 @@ after_success:
 
 before_deploy:
   # Download & embed Nodejs binary
-  - [[ -z $BUILT_ARTIFACTS ]] cd ui
-  - [[ -z $BUILT_ARTIFACTS ]] git submodule update
-  - [[ -z $BUILT_ARTIFACTS ]] npm install
-  - [[ -z $BUILT_ARTIFACTS ]] cd ..
+  - [[ -z $BUILT_ARTIFACTS ]] && cd ui
+  - [[ -z $BUILT_ARTIFACTS ]] && git submodule update
+  - [[ -z $BUILT_ARTIFACTS ]] && npm install
+  - [[ -z $BUILT_ARTIFACTS ]] && cd ..
   - [[ -z $BUILT_ARTIFACTS ]] && NVER=`node -v`
   - [[ -z $BUILT_ARTIFACTS ]] && DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
   - [[ -z $BUILT_ARTIFACTS ]] && DUNITER_DEB_VER=" $DUNITER_VER"

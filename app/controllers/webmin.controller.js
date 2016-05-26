@@ -19,7 +19,6 @@ let bma = require('../lib/streams/bma');
 let Identity = require('../lib/entity/identity');
 let network = require('../lib/network');
 let AbstractController = require('../controllers/abstract');
-var Synchroniser = require('../lib/sync');
 var multicaster = require('../lib/streams/multicaster');
 var logger = require('../lib/logger')('webmin');
 
@@ -402,13 +401,12 @@ function WebAdmin (dbConf, overConf) {
   });
 
   this.startSync = (req) => co(function *() {
-    // Synchronize
-    var remote = new Synchroniser(server, req.body.host, parseInt(req.body.port), server.conf, false);
-    remote.pipe(es.mapSync(function(data) {
+    let sync = server.synchronize(req.body.host, parseInt(req.body.port), parseInt(req.body.to), parseInt(req.body.chunkLen));
+    sync.flow.pipe(es.mapSync(function(data) {
       // Broadcast block
       that.push(data);
     }));
-    yield remote.sync(parseInt(req.body.to), parseInt(req.body.chunkLen));
+    yield sync.syncPromise;
     return {};
   });
 

@@ -23,7 +23,6 @@ var multicaster = require('../app/lib/streams/multicaster');
 var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
-var Synchroniser = require('../app/lib/sync');
 var pjson       = require('../package.json');
 var ucoin       = require('./../index');
 var Peer        = require('../app/lib/entity/peer');
@@ -134,7 +133,14 @@ program
     }
     return co(function *() {
       try {
-        yield sync(server, host, port, conf, to);
+        let cautious;
+        if (program.nocautious) {
+          cautious = false;
+        }
+        if (program.cautious) {
+          cautious = true;
+        }
+        yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers);
       } catch (err) {
         logger.error(err.stack || err.message);
       }
@@ -142,19 +148,6 @@ program
       process.exit();
     });
   }));
-
-function sync(server, host, port, conf, to) {
-  // Synchronize
-  var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
-  let cautious;
-  if (program.nocautious) {
-    cautious = false;
-  }
-  if (program.cautious) {
-    cautious = true;
-  }
-  return remote.sync(parseInt(to), 0, cautious, program.nopeers);
-}
 
 program
   .command('peer [host] [port]')

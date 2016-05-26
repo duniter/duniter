@@ -16,6 +16,7 @@ var crypto      = require('./app/lib/crypto');
 var signature   = require('./app/lib/signature');
 var directory   = require('./app/lib/directory');
 var dos2unix    = require('./app/lib/dos2unix');
+var Synchroniser = require('./app/lib/sync');
 
 function Server (dbConf, overrideConf) {
 
@@ -315,8 +316,8 @@ function Server (dbConf, overrideConf) {
   };
 
   this.cleanDBData = () => co(function *() {
-    yield _.values(that.newDals).map((dal) => dal.cleanData && dal.cleanData());
-    that.wotb.resetWoT();
+    yield _.values(that.dal.newDals).map((dal) => dal.cleanData && dal.cleanData());
+    that.dal.wotb.resetWoT();
     var files = ['stats', 'cores', 'current'];
     var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs);
@@ -393,6 +394,29 @@ function Server (dbConf, overrideConf) {
     }
     theRouter.setActive(active !== false);
     return theRouter;
+  };
+
+  /**
+   * Synchronize the server with another server.
+   *
+   * If local server's blockchain is empty, process a fast sync: **no block is verified in such a case**, unless
+   * you force value `askedCautious` to true.
+   *
+   * @param onHost Syncs on given host.
+   * @param onPort Syncs on given port.
+   * @param upTo Sync up to this number, if `upTo` value is a positive integer.
+   * @param chunkLength Length of each chunk of blocks to download. Kind of buffer size.
+   * @param interactive Tell if the loading bars should be used for console output.
+   * @param askedCautious If true, force the verification of each downloaded block. This is the right way to have a valid blockchain for sure.
+   * @param nopeers If true, sync will omit to retrieve peer documents.
+   */
+  this.synchronize = (onHost, onPort, upTo, chunkLength, interactive, askedCautious, nopeers) => {
+    let remote = new Synchroniser(that, onHost, onPort, that.conf, interactive === true);
+    let syncPromise = remote.sync(upTo, chunkLength, askedCautious, nopeers);
+    return {
+      flow: remote,
+      syncPromise: syncPromise
+    };
   };
 
 }

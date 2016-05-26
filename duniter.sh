@@ -20,8 +20,8 @@ duniter() {
 	if [ -z "$DEV_MODE" ]; then
 
 		### Production mode
-		if [[ -d $DUNITER_DIR/node ]]; then
-			NODE=$DUNITER_DIR/node/bin/node
+		if [[ -d $DUNITER_DIR/../node ]]; then
+			NODE=$DUNITER_DIR/../node/bin/node
 	  else
 	    echo "Node.js is not embedded in this version of Duniter"
 	    return

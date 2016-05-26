@@ -13,7 +13,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
   var webminCtrl = require('../../controllers/webmin.controller')(dbConf, overConf);
 
-  var fullPath = path.join(__dirname, '../../../ui/package/public');
+  var fullPath = path.join(__dirname, '../../../ui/public');
 
   let httpLayer = network.createServersAndListen('uCoin web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
 

@@ -37,8 +37,8 @@ else
   mkdir -p duniter_release
   cp -R ${SRC}/ duniter_release/sources/
   mv duniter_release/sources/node duniter_release
-  rm -Rf duniter_release/sources/ui/package/node_modules
-  rm -Rf duniter_release/sources/ui/package/bower_components
+  rm -Rf duniter_release/sources/ui/node_modules
+  rm -Rf duniter_release/sources/ui/bower_components
   git clone https://github.com/ucoin-io/debpkg.git duniter-${ARCH}
   rm -Rf duniter-${ARCH}/.git
   mkdir -p duniter-${ARCH}/opt/duniter/

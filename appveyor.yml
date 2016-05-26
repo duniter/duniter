@@ -22,6 +22,10 @@ test_script:
 build: off
 
 after_test:
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ui
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] git submodule update
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %APPDATA%\..\Local\NuGet\Cache
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] choco install -y 7zip InnoSetup
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set PATH="C:\Program Files\7-Zip";"C:\Program Files (x86)\Inno Setup 5";%PATH%

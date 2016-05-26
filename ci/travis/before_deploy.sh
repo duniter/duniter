@@ -66,6 +66,9 @@ if [[ ! -f before_deploy ]]; then
   fakeroot dpkg-deb --build duniter-x64
   mv duniter-x64.deb ../duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
   mv duniter-x64.tar.gz ../duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
+  pwd
+  ls -al
+  ls -al ../
 
   ###### NPM release
   cd ../duniter

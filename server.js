@@ -17,6 +17,7 @@ var signature   = require('./app/lib/signature');
 var directory   = require('./app/lib/directory');
 var dos2unix    = require('./app/lib/dos2unix');
 var Synchroniser = require('./app/lib/sync');
+var multicaster = require('./app/lib/streams/multicaster');
 
 function Server (dbConf, overrideConf) {
 
@@ -429,6 +430,19 @@ function Server (dbConf, overrideConf) {
     };
   };
 
+  /**
+   * Enable routing features:
+   *   - The server will try to send documents to the network
+   *   - The server will eventually be notified of network failures
+   */
+  this.routing = () => {
+    // The router asks for multicasting of documents
+    this.pipe(this.router())
+      // The documents get sent to peers
+      .pipe(multicaster(this.conf))
+      // The multicaster may answer 'unreachable peer'
+      .pipe(this.router());
+  };
 }
 
 util.inherits(Server, stream.Duplex);

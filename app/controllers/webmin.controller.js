@@ -19,7 +19,6 @@ let bma = require('../lib/streams/bma');
 let Identity = require('../lib/entity/identity');
 let network = require('../lib/network');
 let AbstractController = require('../controllers/abstract');
-var multicaster = require('../lib/streams/multicaster');
 var logger = require('../lib/logger')('webmin');
 
 module.exports = (dbConf, overConf) => {
@@ -49,13 +48,7 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedConfP;
 
     // Routing documents
-    server
-    // The router asks for multicasting of documents
-      .pipe(server.router())
-      // The documents get sent to peers
-      .pipe(multicaster(server.conf))
-      // The multicaster may answer 'unreachable peer'
-      .pipe(server.router());
+    server.routing();
 
     return plugForDAL();
   });

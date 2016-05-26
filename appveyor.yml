@@ -1,12 +1,15 @@
 environment:
   matrix:
     - nodejs_version: "5.9.1"
+      ADDON_VERSION: "47"
     - nodejs_version: "6.2.0"
+      ADDON_VERSION: "48"
 
 platform:
   - x64
 
 install:
+  - echo %ADDON_VERSION%
   - ps: Install-Product node $env:nodejs_version $env:platform
   - node -v
   - npm install -g npm
@@ -19,9 +22,6 @@ test_script:
 build: off
 
 after_test:
-  - for /f %i in ('node --version') do set NODEJS_VERSION=%i
-  - if "%NODEJS_VERSION%" == "v5.9.1" (set ADDON_VERSION=47)
-  - if "%NODEJS_VERSION%" == "v6.2.0" (set ADDON_VERSION=48)
   - rd /s /q %APPDATA%\..\Local\NuGet\Cache
   - choco install -y 7zip InnoSetup
   - set PATH="C:\Program Files\7-Zip";"C:\Program Files (x86)\Inno Setup 5";%PATH%

@@ -19,6 +19,9 @@ test_script:
 build: off
 
 after_test:
+  - for /f %i in ('node --version') do set NODEJS_VERSION=%i
+  - if "%NODEJS_VERSION%" == "v5.9.1" (set ADDON_VERSION=47)
+  - if "%NODEJS_VERSION%" == "v6.2.0" (set ADDON_VERSION=48)
   - rd /s /q %APPDATA%\..\Local\NuGet\Cache
   - choco install -y 7zip InnoSetup
   - set PATH="C:\Program Files\7-Zip";"C:\Program Files (x86)\Inno Setup 5";%PATH%
@@ -33,22 +36,23 @@ after_test:
   - npm install --build-from-source
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\wotb.node %cd%\lib\binding\Release\node-v47-win32-x64\wotb.node /Y
+  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\wotb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\wotb.node /Y
   - cd ../naclb
   - npm install --build-from-source
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\naclb.node %cd%\lib\binding\Release\node-v47-win32-x64\naclb.node /Y
+  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\naclb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\naclb.node /Y
   - cd ../scryptb
   - npm install --build-from-source
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\scryptb.node %cd%\lib\binding\Release\node-v47-win32-x64\scryptb.node /Y
+  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\scryptb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\scryptb.node /Y
   - cd ../sqlite3
   - npm install --build-from-source
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\Release\node-v47-win32-x64\node_sqlite3.node /Y
+  - mkdir %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64
+  - copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\node_sqlite3.node /Y
   - cd ../..
   - npm prune --production
   - cd ..

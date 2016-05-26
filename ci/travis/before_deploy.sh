@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ ! -f before_deploy_done ]]; then
+if [[ -f npm_pub_done ]]; then
 
   # Install UI
   cd ui
@@ -17,8 +17,6 @@ if [[ ! -f before_deploy_done ]]; then
   mv node-${NVER}-linux-x64 node
   rm node-${NVER}-linux-x64.tar.gz
 
-  # Clean testing packages
-  npm prune --production
   tar czf ../ucoin-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"
   SRC=`pwd`
   cd ..
@@ -56,8 +54,13 @@ if [[ ! -f before_deploy_done ]]; then
   fakeroot dpkg-deb --build duniter-x64
   mv duniter-x64.deb duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
   mv duniter-x64.tar.gz duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
+fi
 
-  # Travis indicator
-  touch before_deploy_done
+if [[ ! -f npm_pub_done ]]; then
+  # Clean testing packages
+  npm prune --production
+
+  # Travis indicator saying NPM publishing is done
+  touch npm_pub_done
 fi
 

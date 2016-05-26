@@ -4,7 +4,6 @@ var co = require('co');
 var Server = require('./server');
 var bma  = require('./app/lib/streams/bma');
 var webmin  = require('./app/lib/streams/webmin');
-var upnp = require('./app/lib/upnp');
 var logger = require('./app/lib/logger')('ucoin');
 
 module.exports = function (dbConf, overConf) {
@@ -50,7 +49,7 @@ module.exports.statics = {
         if (server.upnpAPI) {
           server.upnpAPI.stopRegular();
         }
-        server.upnpAPI = yield upnp(server.conf.port, server.conf.remoteport);
+        yield server.upnp();
         server.upnpAPI.startRegular();
       } catch (e) {
         logger.warn(e);

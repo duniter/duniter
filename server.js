@@ -18,6 +18,7 @@ var directory   = require('./app/lib/directory');
 var dos2unix    = require('./app/lib/dos2unix');
 var Synchroniser = require('./app/lib/sync');
 var multicaster = require('./app/lib/streams/multicaster');
+var upnp        = require('./app/lib/upnp');
 
 function Server (dbConf, overrideConf) {
 
@@ -443,6 +444,12 @@ function Server (dbConf, overrideConf) {
       // The multicaster may answer 'unreachable peer'
       .pipe(this.router());
   };
+
+  this.upnp = () => co(function *() {
+    let upnpAPI = yield upnp(that.conf.port, that.conf.remoteport);
+    that.upnpAPI = upnpAPI;
+    return upnpAPI;
+  });
 }
 
 util.inherits(Server, stream.Duplex);

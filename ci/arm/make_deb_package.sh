@@ -51,7 +51,7 @@ else
   zip -qr ../duniter-desktop.nw *
   cd ../..
   mv duniter_release/duniter-desktop.nw duniter-${ARCH}/opt/duniter/
-  mv duniter_release/node duniter-${ARCH}/opt/duniter/
+  mv duniter_release/node duniter-${ARCH}/opt/duniter/sources/
   fakeroot dpkg-deb --build duniter-${ARCH}
   mv duniter-${ARCH}.deb duniter-v${DUNITER_VER}-linux-${ARCH}.deb
   ./github-release upload -u ucoin-io -r ucoin --tag v${DUNITER_VER} --name duniter-v${DUNITER_VER}-linux-${ARCH}.deb --file ~/dev/duniter-v${DUNITER_VER}-linux-${ARCH}.deb

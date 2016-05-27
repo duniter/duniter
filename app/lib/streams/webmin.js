@@ -15,7 +15,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
   var fullPath = path.join(__dirname, '../../../ui/public');
 
-  let httpLayer = network.createServersAndListen('uCoin web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
+  let httpLayer = network.createServersAndListen('Duniter web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
 
     httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
     httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);

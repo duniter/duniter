@@ -1,4 +1,4 @@
-# uCoin HTTP API
+# Duniter HTTP API
 
 ## Contents
 
@@ -56,7 +56,7 @@
 
 ## Overview
 
-Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit uCoin specificities.
+Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchange_formats draft](https://github.com/Open-UDC/open-udc/blob/master/docs/OpenUDC_exchange_formats.draft.txt), and has been adapted to fit Duniter specificities.
 
     http[s]://Node[:port]/...
     |-- wot/
@@ -106,9 +106,9 @@ Merkle URL is a special kind of URL applicable for resources:
 
 * `network/peering/peers (GET)`
 
-Such kind of URL returns Merkle tree hashes informations. In uCoin, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `network/peering/peers` is a Merkle tree whose leaves are peers' key fingerprint sorted ascending way. Thus, if any new peer is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
+Such kind of URL returns Merkle tree hashes informations. In Duniter, Merkle trees are an easy way to detect unsynced data and where the differences come from. For example, `network/peering/peers` is a Merkle tree whose leaves are peers' key fingerprint sorted ascending way. Thus, if any new peer is added, a branch of the tree will see its hash modified and propagated to the root hash. Change is then easy to detect.
 
-For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. uCoin Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
+For commodity issues, this URL uses query parameters to retrieve partial data of the tree, as most of the time all the data is not required. Duniter Merkle tree has a determined number of parent nodes (given a number of leaves), which allows to ask only for interval of them.
 
 Here is an example of members Merkle tree with 5 members (taken from [Tree Hash EXchange format (THEX)](http://web.archive.org/web/20080316033726/http://www.open-content.net/specs/draft-jchapweske-thex-02.html)):
 
@@ -128,9 +128,9 @@ Here is an example of members Merkle tree with 5 members (taken from [Tree Hash 
 
 Where A,B,C,D,E are already hashed data.
 
-With such a tree structure, uCoin consider the tree has exactly 6 nodes: `[ROOT,H,E,F,G,E]`. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of another server LS2 for level 1 (`H` and `E`, the second level): it requires nodes interval `[1;2]`.
+With such a tree structure, Duniter consider the tree has exactly 6 nodes: `[ROOT,H,E,F,G,E]`. Nodes are just an array, and for a Lambda Server LS1, it is easy to ask for the values of another server LS2 for level 1 (`H` and `E`, the second level): it requires nodes interval `[1;2]`.
 
-Hence it is quite easy for anyone who wants to check if a `Z` member joined the uCoin community as it would alter the `E` branch of the tree:
+Hence it is quite easy for anyone who wants to check if a `Z` member joined the Duniter community as it would alter the `E` branch of the tree:
 
                         ROOT'=H(H+E')
                         /            \
@@ -197,7 +197,7 @@ Merkle URL result with `leaf=AE4F281DF5A5D0FF3CAD6371F76D5C29B6D953EC`.
 }
 ```
 
-### uCoin Merkle trees leaves
+### Duniter Merkle trees leaves
 
 Each tree manages different data, and has a different goal. Hence, each tree has its own rules on how are generated and sorted tree leaves.
 Here is a summup of such rules:
@@ -1109,7 +1109,7 @@ Top block of each branch, i.e. the last received block of each branch. An array 
 
 ### network/*
 
-This URL is used for uCoin Gossip protocol (exchanging UCG messages).
+This URL is used for Duniter Gossip protocol (exchanging UCG messages).
 
 #### `network/peers`
 **Goal**

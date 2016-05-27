@@ -63,7 +63,7 @@ function getDaemon(overrideCommand) {
     name: directory.INSTANCE_NAME,
     pidfile: path.join(directory.INSTANCE_HOME, "app.pid"),
 
-    // We must redefine the main argument to 'start' because uCoin will receive it as command argument and does not
+    // We must redefine the main argument to 'start' because Duniter will receive it as command argument and does not
     // know about 'restart' command.
     argv: getCommand(overrideCommand)
   });

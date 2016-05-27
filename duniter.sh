@@ -70,7 +70,7 @@ duniter() {
 	fi;
 }
 
-# If the script was launched with parameters, try to launch the uCoin command
+# If the script was launched with parameters, try to launch the Duniter command
 if [ ! -z $1 ]; then
 	duniter $*
 fi

@@ -143,7 +143,7 @@ module.exports = {
     var listenings = interfaces.map(() => false);
 
     if (httpServers.length == 0){
-      throw 'uCoin does not have any interface to listen to.';
+      throw 'Duniter does not have any interface to listen to.';
     }
 
     // Return API

@@ -7,7 +7,6 @@ var async  = require('async');
 var request  = require('request');
 var vucoin = require('vucoin');
 var ucoin  = require('../../../index');
-var bma    = require('../../../app/lib/streams/bma');
 var multicaster = require('../../../app/lib/streams/multicaster');
 var Configuration = require('../../../app/lib/entity/configuration');
 var Peer          = require('../../../app/lib/entity/peer');
@@ -221,13 +220,7 @@ function Node (dbName, options) {
         done && done(err);
       });
     })
-      .then(function(server){
-        return bma(server, [{
-          ip: server.conf.ipv4,
-          port: server.conf.port
-        }])
-          .then((bmapi) => bmapi.openConnections());
-      });
+      .then((server) => server.listenToTheWeb());
   };
 
   function service(callback) {

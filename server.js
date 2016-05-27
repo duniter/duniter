@@ -19,6 +19,7 @@ var dos2unix    = require('./app/lib/dos2unix');
 var Synchroniser = require('./app/lib/sync');
 var multicaster = require('./app/lib/streams/multicaster');
 var upnp        = require('./app/lib/upnp');
+var bma         = require('./app/lib/streams/bma');
 
 function Server (dbConf, overrideConf) {
 
@@ -449,6 +450,14 @@ function Server (dbConf, overrideConf) {
     let upnpAPI = yield upnp(that.conf.port, that.conf.remoteport);
     that.upnpAPI = upnpAPI;
     return upnpAPI;
+  });
+  
+  this.listenToTheWeb = (showLogs) => co(function *() {
+    let bmapi = yield bma(that, [{
+      ip: that.conf.ipv4,
+      port: that.conf.port
+    }], showLogs);
+    return bmapi.openConnections();
   });
 }
 

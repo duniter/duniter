@@ -8,7 +8,7 @@
   "engineStrict": true,
   "private": false,
   "description": "Crypto-currency software allowing to build P2P free currencies",
-  "main": "bin/ucoin",
+  "main": "index.js",
   "directories": {
     "test": "test"
   },

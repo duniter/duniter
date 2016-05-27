@@ -21,6 +21,7 @@ fi
 if [[ -d $DUN_ROOT/node ]]; then
   chmod 755 $DUN_ROOT/sources/bin/ucoind
   sed -i "s/usr\/bin\/env node/opt\/duniter\/node\/bin\/node/g" $DUN_ROOT/sources/bin/ucoind
+  sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_ROOT/sources/duniter.sh
 fi
 # Else will execute with environment node
 

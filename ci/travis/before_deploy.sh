@@ -68,6 +68,7 @@ if [[ ! -f before_deploy ]]; then
   mv duniter-x64.tar.gz ../duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
   pwd
   ls -al
+  pwd
   ls -al ../
 
   ###### NPM release

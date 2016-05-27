@@ -232,9 +232,9 @@ function upnpResolve(noupnp, done) {
   return co(function *() {
     try {
       let conf = yield network.upnpConf(noupnp);
-      done(null, false, conf);
+      done(null, true, conf);
     } catch (err) {
-      done(null, true, {});
+      done(null, false, {});
     }
   });
 }

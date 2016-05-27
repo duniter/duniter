@@ -24,7 +24,6 @@ echo $SRC
 cd ..
 mkdir -p duniter_release/sources
 cp -R ${SRC}/* duniter_release/sources/
-mv duniter_release/sources/node duniter_release/
 rm -Rf duniter_release/sources/ui/node_modules
 rm -Rf duniter_release/sources/ui/bower_components
 
@@ -41,7 +40,6 @@ echo "Zipping..."
 zip -qr ../duniter-desktop.nw *
 cd ../..
 mv duniter_release/duniter-desktop.nw duniter-${ARCH}/opt/duniter/
-mv duniter_release/node duniter-${ARCH}/opt/duniter/sources/
 echo "Making deb package"
 fakeroot dpkg-deb --build duniter-${ARCH}
 mv duniter-${ARCH}.deb duniter-v${DUNITER_VER}-linux-${ARCH}.deb

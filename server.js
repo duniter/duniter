@@ -20,6 +20,7 @@ var Synchroniser = require('./app/lib/sync');
 var multicaster = require('./app/lib/streams/multicaster');
 var upnp        = require('./app/lib/upnp');
 var bma         = require('./app/lib/streams/bma');
+var rawer       = require('./app/lib/rawer');
 
 function Server (dbConf, overrideConf) {
 
@@ -43,13 +44,13 @@ function Server (dbConf, overrideConf) {
 
   // Create document mapping
   let documentsMapping = {
-    'identity':      that.IdentityService.submitIdentity,
-    'certification': that.IdentityService.submitCertification,
-    'revocation':    that.IdentityService.submitRevocation,
-    'membership':    that.MembershipService.submitMembership,
-    'peer':          that.PeeringService.submitP,
-    'transaction':   that.TransactionsService.processTx,
-    'block':         _.partial(that.BlockchainService.submitBlock, _, true, constants.NO_FORK_ALLOWED)
+    'identity':      { action: that.IdentityService.submitIdentity,                                               parser: parsers.parseIdentity },
+    'certification': { action: that.IdentityService.submitCertification,                                          parser: parsers.parseCertification},
+    'revocation':    { action: that.IdentityService.submitRevocation,                                             parser: parsers.parseRevocation },
+    'membership':    { action: that.MembershipService.submitMembership,                                           parser: parsers.parseMembership },
+    'peer':          { action: that.PeeringService.submitP,                                                       parser: parsers.parsePeer },
+    'transaction':   { action: that.TransactionsService.processTx,                                                parser: parsers.parseTransaction },
+    'block':         { action: _.partial(that.BlockchainService.submitBlock, _, true, constants.NO_FORK_ALLOWED), parser: parsers.parseBlock }
   };
 
   // Unused, but made mandatory by Duplex interface
@@ -159,7 +160,7 @@ function Server (dbConf, overrideConf) {
         throw 'Document type not given';
       }
       try {
-        let action = documentsMapping[obj.documentType];
+        let action = documentsMapping[obj.documentType].action;
         let res;
         if (typeof action == 'function') {
           // Handle the incoming object
@@ -458,6 +459,14 @@ function Server (dbConf, overrideConf) {
       port: that.conf.port
     }], showLogs);
     return bmapi.openConnections();
+  });
+
+  this.rawer = rawer;
+
+  this.writeRaw = (raw, type) => co(function *() {
+    let parser = documentsMapping[type] && documentsMapping[type].parser;
+    let obj = parser.syncWrite(raw);
+    return yield that.singleWritePromise(obj);
   });
 }
 

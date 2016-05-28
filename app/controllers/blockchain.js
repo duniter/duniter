@@ -2,11 +2,9 @@
 
 var co               = require('co');
 var _                = require('underscore');
-var moment           = require('moment');
 var rules            = require('../lib/rules');
 var constants        = require('../lib/constants');
 var http2raw         = require('../lib/streams/parsers/http2raw');
-var parsers          = require('../lib/streams/parsers/doc');
 var Membership       = require('../lib/entity/membership');
 var AbstractController = require('./abstract');
 
@@ -29,9 +27,9 @@ function BlockchainBinding (server) {
   var Block      = require('../lib/entity/block');
   var Stat       = require('../lib/entity/stat');
 
-  this.parseMembership = (req) => this.pushEntity(req, http2raw.membership, parsers.parseMembership);
+  this.parseMembership = (req) => this.pushEntity(req, http2raw.membership, constants.ENTITY_MEMBERSHIP);
 
-  this.parseBlock = (req) => this.pushEntity(req, http2raw.block, parsers.parseBlock);
+  this.parseBlock = (req) => this.pushEntity(req, http2raw.block, constants.ENTITY_BLOCK);
 
   this.parameters = () => server.dal.getParameters();
 

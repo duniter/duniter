@@ -13,7 +13,6 @@ let base58 = require('../lib/base58');
 let rawer = require('../lib/rawer');
 let crypto = require('../lib/crypto');
 let http2raw = require('../lib/streams/parsers/http2raw');
-let parsers = require('../lib/streams/parsers/doc');
 let bma = require('../lib/streams/bma');
 let Identity = require('../lib/entity/identity');
 let network = require('../lib/network');
@@ -178,7 +177,7 @@ function WebAdmin (dbConf, overConf) {
     if (!found) {
       let selfCert = rawer.getOfficialIdentity(entity);
       selfCert += crypto.signSync(selfCert, secretKey) + '\n';
-      found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, parsers.parseIdentity);
+      found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, constants.ENTITY_IDENTITY);
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));
     if (_.filter(found.memberships, { membership: 'IN'}).length == 0) {
@@ -193,7 +192,7 @@ function WebAdmin (dbConf, overConf) {
         "certts": block
       });
       join += crypto.signSync(join, secretKey) + '\n';
-      yield that.pushEntity({ body: { membership: join }}, http2raw.membership, parsers.parseMembership);
+      yield that.pushEntity({ body: { membership: join }}, http2raw.membership, constants.ENTITY_MEMBERSHIP);
       yield server.recomputeSelfPeer();
     }
     //

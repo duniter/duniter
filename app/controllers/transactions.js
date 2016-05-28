@@ -4,8 +4,8 @@ var Q                = require('q');
 var async            = require('async');
 var _                = require('underscore');
 var http2raw         = require('../lib/streams/parsers/http2raw');
-var parsers          = require('../lib/streams/parsers/doc');
 var Transaction      = require('../lib/entity/transaction');
+var constants        = require('../lib/constants');
 var AbstractController = require('./abstract');
 
 module.exports = function (server) {
@@ -26,7 +26,7 @@ function TransactionBinding(server) {
 
   let getHistoryP = (pubkey, filter) => Q.nbind(getHistory, this)(pubkey, filter);
 
-  this.parseTransaction = (req) => this.pushEntity(req, http2raw.transaction, parsers.parseTransaction);
+  this.parseTransaction = (req) => this.pushEntity(req, http2raw.transaction, constants.ENTITY_TRANSACTION);
 
   this.getSources = (req) => co(function *() {
     let pubkey = yield ParametersService.getPubkeyP(req);

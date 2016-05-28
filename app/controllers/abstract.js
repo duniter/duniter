@@ -5,11 +5,10 @@ var dos2unix = require('../lib/dos2unix');
 
 module.exports = function AbstractController (server) {
 
-  this.pushEntity = (req, rawer, parser) => co(function *() {
+  this.pushEntity = (req, rawer, type) => co(function *() {
     let rawDocument = rawer(req);
     rawDocument = dos2unix(rawDocument);
-    let obj = parser.syncWrite(rawDocument);
-    let written = yield server.singleWritePromise(obj);
+    let written = yield server.writeRaw(rawDocument, type);
     return written.json();
   });
 };

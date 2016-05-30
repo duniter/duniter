@@ -24,8 +24,8 @@ echo $SRC
 cd ..
 mkdir -p duniter_release/sources
 cp -R ${SRC}/* duniter_release/sources/
-rm -Rf duniter_release/sources/ui/node_modules
-rm -Rf duniter_release/sources/ui/bower_components
+rm -Rf duniter_release/sources/web-ui/node_modules
+rm -Rf duniter_release/sources/web-ui/bower_components
 
 # Creating DEB packaging
 mv duniter_release/sources/ci/travis/debian duniter-${ARCH}

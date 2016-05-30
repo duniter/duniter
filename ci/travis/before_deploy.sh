@@ -15,7 +15,8 @@ if [[ ! -f before_deploy ]]; then
   cd gh_duniter
 
   # Install UI
-  cd ui
+  cd web-ui
+  git submodule init
   git submodule update
   npm install
   cd ..
@@ -23,6 +24,7 @@ if [[ ! -f before_deploy ]]; then
   # Download Node.js
   NVER=`node -v`
   DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
+  DUNITER_VER="0.20.0dev"
   DUNITER_DEB_VER=" $DUNITER_VER"
   wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
   tar xzf node-${NVER}-linux-x64.tar.gz
@@ -43,8 +45,8 @@ if [[ ! -f before_deploy ]]; then
   mv ${NW} ucoin_release/nw
   cp ${SRC}/gui/* ucoin_release/nw/
   cp -R ${SRC}/ ucoin_release/sources/
-  rm -Rf ucoin_release/sources/ui/node_modules
-  rm -Rf ucoin_release/sources/ui/bower_components
+  rm -Rf ucoin_release/sources/web-ui/node_modules
+  rm -Rf ucoin_release/sources/web-ui/bower_components
   cd ucoin_release
   tar czf ../duniter-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
   cd ..

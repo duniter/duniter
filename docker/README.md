@@ -1,14 +1,14 @@
-# Duniter dans un container Docker
+# Duniter in a Docker container
 
-Télécharger les fichiers `Dockerfile` et `go` dans un répertoire.
+Download `Dockerfile` and `go` files in a repository.
 
-#### Construire le container
+#### Build a container
 
 ```sh
 docker build -t="duniter" .
 ```
 
-#### Exécuter le container
+#### Execute the container
 
 ```sh
 docker run -p 8999:8999 -dt duniter

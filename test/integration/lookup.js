@@ -57,7 +57,7 @@ describe("Lookup identity grouping", () => {
     res.results[0].uids[0].should.have.property('uid').equal('cat');
   }));
 
-  it('tic should have only 2 identities in 1 pubkey', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/tic', { json: true }), (res) => {
+  it.skip('tic should have only 2 identities in 1 pubkey', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/tic', { json: true }), (res) => {
     // We want to have only 1 result for the 2 identities
     res.should.have.property('results').length(1);
     // because they share the same pubkey

@@ -373,9 +373,12 @@ function getLocalNetworkOperations(conf, autoconf) {
         var addresses = netInterface.addresses;
         var filtered = _(addresses).where({family: 'IPv6'});
         filtered.forEach(function(addr){
+          var address = addr.address
+          if (addr.scopeid)
+            address += "%" + netInterface.name
           interfaces.push({
-            name: [netInterface.name, addr.address].join(' '),
-            value: addr.address
+            name: [netInterface.name, address].join(' '),
+            value: address
           });
         });
       });

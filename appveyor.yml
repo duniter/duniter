@@ -1,11 +1,13 @@
 environment:
   matrix:
     - nodejs_version: "5.9.1"
+      ADDON_VERSION: "47"
 
 platform:
   - x64
 
 install:
+  - echo %ADDON_VERSION%
   - ps: Install-Product node $env:nodejs_version $env:platform
   - node -v
   - npm install -g npm
@@ -18,36 +20,41 @@ test_script:
 build: off
 
 after_test:
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] powershell .\\ci\\appveyor\\inno_setup.ps1
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %APPDATA%\..\Local\NuGet\Cache
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] choco install -y 7zip InnoSetup
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set PATH="C:\Program Files\7-Zip";"C:\Program Files (x86)\Inno Setup 5";%PATH%
-  # GUI Version
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set PATH="C:\Program Files (x86)\Inno Setup 5";%PATH%
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] git submodule init
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] git submodule update
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd "web-ui"
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] dir
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set SRC=%cd%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %SRC%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy misc\MSVSVersion.py %APPDATA%\npm\node_modules\nw-gyp\gyp\pylib\gyp\MSVSVersion.py
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_VERSION=0.13.0-rc3
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_RELEASE=v0.13.0-rc3
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_VERSION=0.14.5
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_RELEASE=v0.14.5
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW_RELEASE%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd node_modules/wotb
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install --build-from-source
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\wotb.node %cd%\lib\binding\Release\node-v47-win32-x64\wotb.node /Y
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\wotb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\wotb.node /Y
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../naclb
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install --build-from-source
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\naclb.node %cd%\lib\binding\Release\node-v47-win32-x64\naclb.node /Y
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\naclb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\naclb.node /Y
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../scryptb
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install --build-from-source
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\scryptb.node %cd%\lib\binding\Release\node-v47-win32-x64\scryptb.node /Y
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\scryptb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\scryptb.node /Y
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../sqlite3b
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install --build-from-source
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\Release\node-v47-win32-x64\node_sqlite3.node /Y
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\node_sqlite3.node /Y
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm prune --production
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
@@ -62,8 +69,8 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir %cd%\duniter_release\sources
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\gui\* %cd%\duniter_release\nw\ /s /e
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\* %cd%\duniter_release\sources\ /s /e
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\ui\package\node_modules
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\ui\package\bower_components
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\node_modules
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\bower_components
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] iscc %cd%\duniter_release\sources\duniter.iss /DROOT_PATH=%cd%\duniter_release
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\duniter_release\Duniter.exe %cd%\duniter\duniter-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
 
@@ -72,7 +79,7 @@ artifacts:
     name: Duniter
 
 deploy:
-  release: v0.20.0a57
+  release: v0.20.0a84
   provider: GitHub
   auth_token:
     secure: Vp/M0r0i1yhGR2nhrPWEbTiDIF6r0cmwbNDFZUzdFe5clWxPXtuC0lgIpOQI78zt

@@ -26,7 +26,7 @@ module.exports = function(server, interfaces, httpLogs) {
     }
   }
 
-  return network.createServersAndListen('uCoin server', interfaces, httpLogs, null, (app, httpMethods) => {
+  return network.createServersAndListen('Duniter server', interfaces, httpLogs, null, (app, httpMethods) => {
 
     var node         = require('../../controllers/node')(server);
     var blockchain   = require('../../controllers/blockchain')(server);
@@ -93,8 +93,9 @@ module.exports = function(server, interfaces, httpLogs) {
     wssBlock.on('connection', function connection(ws) {
       co(function *() {
         currentBlock = yield server.dal.getCurrent();
-        wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
-        ws.send(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+        if (currentBlock) {
+          ws.send(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+        }
       });
     });
 

@@ -26,62 +26,25 @@ after_success:
 
 before_deploy:
   # Download & embed Nodejs binary
-  - NVER=`node -v`
-  - DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
-  - DUNITER_DEB_VER=" $DUNITER_VER"
-  - wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
-  - tar xzf node-${NVER}-linux-x64.tar.gz
-  - mv node-${NVER}-linux-x64 node
-  - rm node-${NVER}-linux-x64.tar.gz
-  # Clean testing packages
-  - npm prune --production
-  - tar czf ../ucoin-x64.tar.gz ./ --exclude ".git" --exclude "coverage" --exclude "test"
-  - SRC=`pwd`
-  - cd ..
-  # GUI Version
-  - mkdir ucoin_release
-  - NW_RELEASE="v0.13.0-rc2"
-  - NW="nwjs-${NW_RELEASE}-linux-x64"
-  - NW_GZ="${NW}.tar.gz"
-  - wget http://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}
-  - tar xvzf ${NW_GZ}
-  - mv ${NW} ucoin_release/nw
-  - cp ${SRC}/gui/* ucoin_release/nw/
-  - cp -R ${SRC}/ ucoin_release/sources/
-  - rm -Rf ucoin_release/sources/ui/package/node_modules
-  - rm -Rf ucoin_release/sources/ui/package/bower_components
-  - cd ucoin_release
-  - tar czf ../duniter-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
-  - cd ..
-  - git clone https://github.com/ucoin-io/debpkg.git duniter-x64
-  - rm -Rf duniter-x64/.git
-  - mkdir -p duniter-x64/opt/duniter/
-  - chmod 755 duniter-x64/DEBIAN/post*
-  - chmod 755 duniter-x64/DEBIAN/pre*
-  - sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-x64/DEBIAN/control
-  - cd ucoin_release/sources
-  - rm -Rf .git
-  - zip -qr ../duniter-desktop.nw *
-  - cd ../nw
-  - zip -qr ../nw.nwb *
-  - cd ../..
-  - mv ucoin_release/duniter-desktop.nw duniter-x64/opt/duniter/
-  - mv ucoin_release/nw.nwb duniter-x64/opt/duniter/
-  - fakeroot dpkg-deb --build duniter-x64
-  - mv duniter-x64.deb duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-  - mv duniter-x64.tar.gz duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
-
-# Releases deployed on GitHub
+  - ci/travis/before_deploy.sh
 deploy:
-  provider: releases
-  prerelease: true
-  skip_cleanup: true
-  api_key:
-    secure: eZ+DHkTYXkBqoHp/Qea1duDQXTAgJ+oYWbWET7PNlNbq6IGHRae//VqGkOIGaYvPCu6ezZbI/z/nQvBhm794vihYYek1Y8AAXp0QmxmRJhCgsCxRcVmyLu99un2aAYiZzUKKOylQrhc30JsObgo3JrovHAdMJFDf3f123whAPCA=
-  file:
-    - ucoin-x64.tar.gz
-    - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-    - duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
-  on:
-    repo: duniter/duniter
-    tags: true
+  - provider: npm
+    email: cem.moreau@gmail.com
+    skip_cleanup: true
+    api_key:
+      secure: gZV7yLxDwwxD4oQXl1hwugmtnWXqP8vojuVGtAGwtMlwJE0n270w6O5xZHDd7DSmOZLftk6/wue/RdhLDsD6J1z3Uxu+VoUWy7aG/sFcGRaBwct+bGqFGkyd+I1mCXFnAZMDwbtgdkQlOCS9PM1BfMEYq49XXqaLaDnwouR+2bI=
+    on:
+      tags: true
+      repo: duniter/duniter
+  - provider: releases
+    prerelease: true
+    skip_cleanup: true
+    api-key:
+      secure: h+GgYhh8/I/l5EWdI1+bDQYtN57jvDf0xhiwcxlfm/AvaJWOZa+q81HsXdHqtwgmsCoRklKtOqTM/nqgSOcWPXsAditRjEXOui2FjZiJCosDjDPMnN6HKzw6XVLtSOx7CeCX/xFmoNTIdsAuC+HUfDWCUFgrsMj9F0V9J3U1nDs=
+    file:
+    - /home/travis/build/ucoin-x64.tar.gz
+    - /home/travis/build/duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
+    - /home/travis/build/duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
+    on:
+      repo: duniter/duniter
+      tags: true

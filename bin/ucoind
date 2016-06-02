@@ -23,7 +23,6 @@ var multicaster = require('../app/lib/streams/multicaster');
 var signature   = require('../app/lib/signature');
 var crypto      = require('../app/lib/crypto');
 var base58      = require('../app/lib/base58');
-var Synchroniser = require('../app/lib/sync');
 var pjson       = require('../package.json');
 var ucoin       = require('./../index');
 var Peer        = require('../app/lib/entity/peer');
@@ -36,7 +35,7 @@ program
   .version(pjson.version)
   .usage('<command> [options]')
 
-  .option('--home <path>',         'Path to uCoin HOME (defaults to "$HOME/.config/duniter").')
+  .option('--home <path>',         'Path to Duniter HOME (defaults to "$HOME/.config/duniter").')
   .option('-d, --mdb <name>',          'Database name (defaults to "ucoin_default").')
 
   .option('--autoconf',                'With `init` command, will guess the best network and key options witout aksing for confirmation')
@@ -95,12 +94,17 @@ program
 
 program
   .command('start')
-  .description('Start uCoin server.')
+  .description('Start Duniter server.')
   .action(service(serverStart));
 
 program
+  .command('webwait')
+  .description('Start Duniter web admin.')
+  .action(webWait);
+
+program
   .command('webstart')
-  .description('Start uCoin server + web admin.')
+  .description('Start Duniter web admin + immediately start the server.')
   .action(webStart);
 
 program
@@ -119,7 +123,7 @@ program
 
 program
   .command('sync [host] [port] [to]')
-  .description('Synchronize blockchain from a remote uCoin node')
+  .description('Synchronize blockchain from a remote Duniter node')
   .action(service(function (host, port, to, server, conf) {
     if (!host) {
       throw 'Host is required.';
@@ -129,7 +133,14 @@ program
     }
     return co(function *() {
       try {
-        yield sync(server, host, port, conf, to);
+        let cautious;
+        if (program.nocautious) {
+          cautious = false;
+        }
+        if (program.cautious) {
+          cautious = true;
+        }
+        yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers);
       } catch (err) {
         logger.error(err.stack || err.message);
       }
@@ -137,19 +148,6 @@ program
       process.exit();
     });
   }));
-
-function sync(server, host, port, conf, to) {
-  // Synchronize
-  var remote = new Synchroniser(server, host, port, conf, !program.nointeractive);
-  let cautious;
-  if (program.nocautious) {
-    cautious = false;
-  }
-  if (program.cautious) {
-    cautious = true;
-  }
-  return remote.sync(parseInt(to), 0, cautious, program.nopeers);
-}
 
 program
   .command('peer [host] [port]')
@@ -192,7 +190,7 @@ program
 
 program
   .command('forward [host] [port] [to]')
-  .description('Forward local blockchain to a remote uCoin node')
+  .description('Forward local blockchain to a remote Duniter node')
   .action(service(function (host, port, to, server) {
 
     var remoteCurrent;
@@ -405,7 +403,7 @@ program
       .catch(function(err) {
         logger.warn(err.message || err);
         server.disconnect();
-        process.exit();
+        process.exit(1);
       });
   }));
 
@@ -438,44 +436,43 @@ program
   .command('reset [config|data|peers|tx|stats|all]')
   .description('Reset configuration, data, peers, transactions or everything in the database')
   .action((type) => {
-    let init = type != 'peers' ? connect : service;
+    let init = type == 'data' ? server : connect;
     init(function (server) {
-      if(!~['config', 'data', 'peers', 'tx', 'stats', 'all'].indexOf(type)){
-        logger.error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset tx`, `reset stats` or `reset all`');
+      if(!~['config', 'data', 'peers', 'stats', 'all'].indexOf(type)){
+        logger.error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset stats` or `reset all`');
         server.disconnect();
         return;
       }
-      if(type == 'data'){
-        server.resetData(resetDone(server, 'Data successfully reseted.'));
-      }
-      if(type == 'peers'){
-        server.resetPeers(resetDone(server, 'Peers successfully reseted.'));
-      }
-      if(type == 'tx'){
-        server.resetTxs(resetDone(server, 'Transactions successfully reseted.'));
-      }
-      if(type == 'stats'){
-        server.resetStats(resetDone(server, 'Stats successfully reseted.'));
-      }
-      if(type == 'config'){
-        server.resetConf(resetDone(server, 'Configuration successfully reseted.'));
-      }
-      if(type == 'all'){
-        server.reset(resetDone(server, 'Data & Configuration successfully reseted.'));
-      }
+      co(function*(){
+        try {
+          if(type == 'data'){
+            yield server.resetData();
+            logger.warn('Data successfully reseted.');
+          }
+          if(type == 'peers'){
+            yield server.resetPeers();
+            logger.warn('Peers successfully reseted.');
+          }
+          if(type == 'stats'){
+            yield server.resetStats();
+            logger.warn('Stats successfully reseted.');
+          }
+          if(type == 'config'){
+            yield server.resetConf();
+            logger.warn('Configuration successfully reseted.');
+          }
+          if(type == 'all'){
+            yield server.resetAll();
+            logger.warn('Data & Configuration successfully reseted.');
+          }
+        } catch (e) {
+          logger.error(e);
+        }
+        server.disconnect();
+        process.exit();
+      });
     }, type != 'peers')(type);
   });
-
-function resetDone(server, msg) {
-  return function(err) {
-    if(err)
-      logger.error(err);
-    else
-      logger.warn(msg);
-    server.disconnect();
-    process.exit();
-  }
-}
 
 function serverStart(server, conf) {
 
@@ -550,7 +547,7 @@ function getBootstrapOperations(host, port, server, conf) {
   ops = ops.concat([
     function(next) {
       // Reset data
-      server.reset(next);
+      server.resetAll(next);
     },
     function(next) {
       conf.upnp = !program.noupnp;
@@ -732,6 +729,27 @@ function connect(callback, useDefaultConf) {
   };
 }
 
+/**
+ * Super basic server with only its home path set
+ * @param callback
+ * @param useDefaultConf
+ * @returns {Function}
+ */
+function server(callback, useDefaultConf) {
+  return function () {
+    var cbArgs = arguments;
+    var dbName = program.mdb || "duniter_default";
+    var dbHome = program.home;
+
+    var server = ucoin({ home: dbHome, name: dbName }, commandLineConf());
+
+    cbArgs.length--;
+    cbArgs[cbArgs.length++] = server;
+    cbArgs[cbArgs.length++] = server.conf;
+    callback.apply(this, cbArgs);
+  };
+}
+
 function service(callback, nologs) {
 
   return function () {
@@ -807,7 +825,26 @@ program
     process.exit();
   });
 
+function webWait() {
+  return co(function *() {
+    let webminapi = yield webInit();
+    return webminapi.httpLayer.openConnections();
+  })
+    .catch(mainError);
+}
+
 function webStart() {
+  return co(function *() {
+    let webminapi = yield webInit();
+    yield webminapi.httpLayer.openConnections();
+    yield webminapi.webminCtrl.startHTTP();
+    yield webminapi.webminCtrl.startAllServices();
+    yield webminapi.webminCtrl.regularUPnP();
+  })
+    .catch(mainError);
+}
+
+function webInit() {
   return co(function *() {
     var dbName = program.mdb;
     var dbHome = program.home;
@@ -818,9 +855,7 @@ function webStart() {
       // Add log files for this instance
       logger.addHomeLogs(params.home);
     }
-    let webminapi = yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false, program.webmhost, program.webmport);
-    return webminapi.openConnections();
-
+    return yield ucoin.statics.enableHttpAdmin({ home: dbHome, name: dbName, memory: program.memory }, commandLineConf(), false, program.webmhost, program.webmport);
   });
 }
 
@@ -828,13 +863,18 @@ program.parse(process.argv);
 
 if (program.args.length == 0) {
 
-  console.log('No command given, using default: ucoind webstart');
+  console.log('No command given, using default: ucoind webwait');
   return co(function *() {
     try {
-      yield webStart();
+      yield webWait();
     } catch (e) {
       logger.error(e);
       process.exit();
     }
   });
+}
+
+function mainError(err) {
+  logger.error(err.code || err.message || err);
+  process.exit();
 }

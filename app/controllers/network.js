@@ -2,9 +2,7 @@
 var _                = require('underscore');
 var co               = require('co');
 var Q                = require('q');
-var async            = require('async');
 var http2raw         = require('../lib/streams/parsers/http2raw');
-var parsers          = require('../lib/streams/parsers/doc');
 var constants        = require('../lib/constants');
 var Peer             = require('../lib/entity/peer');
 var AbstractController = require('./abstract');
@@ -53,7 +51,7 @@ function NetworkBinding (server) {
     });
   });
 
-  this.peersPost = (req) => this.pushEntity(req, http2raw.peer, parsers.parsePeer);
+  this.peersPost = (req) => this.pushEntity(req, http2raw.peer, constants.ENTITY_PEER);
 
   this.peers = () => co(function *() {
     let peers = yield server.dal.listAllPeers();

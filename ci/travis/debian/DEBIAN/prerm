@@ -1,0 +1,5 @@
+#!/bin/bash
+
+rm /usr/bin/duniter
+rm /usr/bin/duniter-desktop
+rm -Rf /opt/duniter

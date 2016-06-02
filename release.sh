@@ -17,6 +17,9 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
       sed -i "s/title\": .*/title\": \"v$2\",/g" gui/package.json
       sed -i "s/<title>Duniter.*<\/title>/<title>Duniter $2<\/title>/g" gui/index.html
 
+      # Bump the install.sh
+      sed -i "s/echo \"v$current\"/echo \"v$2\"/g" install.sh
+
       # (pre)-release management
       if [[ "$1" =~ ^rel$ ]]; then
         # This is RELEASE: change the version in public installer + add the RELEASE flag
@@ -37,10 +40,10 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
   git reset HEAD
   case "$1" in
     rel)
-      git add package.json .travis.yml appveyor.yml test/integration/branches.js gui/package.json gui/index.html install.sh
+      git add install.sh package.json .travis.yml appveyor.yml test/integration/branches.js gui/package.json gui/index.html install.sh
       ;;
     pre)
-      git add package.json .travis.yml appveyor.yml test/integration/branches.js gui/package.json gui/index.html
+      git add install.sh package.json .travis.yml appveyor.yml test/integration/branches.js gui/package.json gui/index.html
       ;;
   esac
   git commit -m "v$2"

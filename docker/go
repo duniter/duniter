@@ -1,0 +1,10 @@
+#!/bin/bash
+
+locale_ip=`awk 'NR==7 {print $1}' /etc/hosts`
+remote_ip=`curl -s https://4.ifcfg.me/`
+
+duniter init --autoconf
+duniter config --noupnp --remote4 $remote_ip --ipv4 $locale_ip
+duniter sync twiced.fr 9330
+duniter start
+tail -f /dev/null

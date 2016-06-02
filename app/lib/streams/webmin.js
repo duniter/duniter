@@ -13,9 +13,9 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
   var webminCtrl = require('../../controllers/webmin.controller')(dbConf, overConf);
 
-  var fullPath = path.join(__dirname, '../../../ui/package/public');
+  var fullPath = path.join(__dirname, '../../../web-ui/public');
 
-  return network.createServersAndListen('uCoin web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
+  let httpLayer = network.createServersAndListen('Duniter web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
 
     httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
     httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
@@ -120,4 +120,9 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
         }
       }));
   });
+
+  return {
+    httpLayer: httpLayer,
+    webminCtrl: webminCtrl
+  };
 };

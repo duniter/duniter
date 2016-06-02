@@ -232,9 +232,9 @@ function upnpResolve(noupnp, done) {
   return co(function *() {
     try {
       let conf = yield network.upnpConf(noupnp);
-      done(null, false, conf);
+      done(null, true, conf);
     } catch (err) {
-      done(null, true, {});
+      done(null, false, {});
     }
   });
 }
@@ -483,6 +483,7 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
             next();
           });
         } else {
+          conf.remoteipv6 = answers.remoteipv6;
           next();
         }
       });

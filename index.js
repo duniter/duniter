@@ -4,8 +4,6 @@ var co = require('co');
 var Server = require('./server');
 var bma  = require('./app/lib/streams/bma');
 var webmin  = require('./app/lib/streams/webmin');
-var upnp = require('./app/lib/upnp');
-var multicaster = require('./app/lib/streams/multicaster');
 var logger = require('./app/lib/logger')('ucoin');
 
 module.exports = function (dbConf, overConf) {
@@ -27,13 +25,7 @@ module.exports.statics = {
     let bmapi = yield bma(server, null, conf.httplogs);
 
     // Routing documents
-    server
-    // The router asks for multicasting of documents
-      .pipe(server.router())
-      // The documents get sent to peers
-      .pipe(multicaster(server.conf))
-      // The multicaster may answer 'unreachable peer'
-      .pipe(server.router());
+    server.routing();
 
     // Services
     yield module.exports.statics.startServices(server);
@@ -57,7 +49,7 @@ module.exports.statics = {
         if (server.upnpAPI) {
           server.upnpAPI.stopRegular();
         }
-        server.upnpAPI = yield upnp(server.conf.port, server.conf.remoteport);
+        yield server.upnp();
         server.upnpAPI.startRegular();
       } catch (e) {
         logger.warn(e);

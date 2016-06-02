@@ -1,0 +1,8 @@
+Package: duniter
+Version: 0.4
+Section: misc
+Priority: optional
+Architecture: all
+Installed-Size: 200000
+Maintainer: Cedric Moreau <cem.moreau@gmail.com>
+Description: Duniter desktop version

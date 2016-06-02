@@ -117,10 +117,11 @@ function BlockDAL(db) {
   });
 
   this.saveBlock = (block) => co(function *() {
+    let saved = yield saveBlockAs(block, IS_NOT_FORK);
     if (!current || current.number < block.number) {
       current = block;
     }
-    return saveBlockAs(block, IS_NOT_FORK);
+    return saved;
   });
 
   this.saveSideBlock = (block) =>

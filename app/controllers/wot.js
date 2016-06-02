@@ -1,15 +1,7 @@
 "use strict";
 var co = require('co');
-var async    = require('async');
 var _        = require('underscore');
-var Q        = require('q');
-var moment = require('moment');
-var dos2unix = require('../lib/dos2unix');
 var http2raw = require('../lib/streams/parsers/http2raw');
-var jsoner   = require('../lib/streams/jsoner');
-var parsers  = require('../lib/streams/parsers/doc');
-var es       = require('event-stream');
-var http400  = require('../lib/http/http400');
 var constants = require('../lib/constants');
 var AbstractController = require('./abstract');
 var logger   = require('../lib/logger')();
@@ -63,7 +55,11 @@ function WOTBinding (server) {
         let cert = _.clone(signed[j]);
         if (!(excluding && cert.block <= excluding.number)) {
           cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
-          validSigned.push(cert);
+          if (cert.idty) {
+            validSigned.push(cert);
+          } else {
+            logger.debug('A certification to an unknown identity was found (%s => %s)', cert.from, cert.to);
+          }
         }
       }
       idty.signed = validSigned;
@@ -224,9 +220,9 @@ function WOTBinding (server) {
     };
   });
 
-  this.add = (req) => this.pushEntity(req, http2raw.identity, parsers.parseIdentity);
+  this.add = (req) => this.pushEntity(req, http2raw.identity, constants.ENTITY_IDENTITY);
 
-  this.certify = (req) => this.pushEntity(req, http2raw.certification, parsers.parseCertification);
+  this.certify = (req) => this.pushEntity(req, http2raw.certification, constants.ENTITY_CERTIFICATION);
 
-  this.revoke = (req) => this.pushEntity(req, http2raw.revocation, parsers.parseRevocation);
+  this.revoke = (req) => this.pushEntity(req, http2raw.revocation, constants.ENTITY_REVOCATION);
 }

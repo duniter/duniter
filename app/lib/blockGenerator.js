@@ -5,6 +5,7 @@ var co              = require('co');
 var Q               = require('q');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
+var rawer           = require('./rawer');
 var hashf           = require('./hashf');
 var constants       = require('./constants');
 var base58          = require('./base58');
@@ -658,6 +659,9 @@ function BlockGenerator(mainContext, prover) {
           }
         }
       }
+      // InnerHash
+      block.time = block.medianTime;
+      block.inner_hash = hashf(rawer.getBlockInnerPart(block)).toUpperCase();
       return block;
     });
   }

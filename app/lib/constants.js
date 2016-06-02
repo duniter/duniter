@@ -16,7 +16,7 @@ var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 var FINGERPRINT  = "[A-F0-9]{64}";
 var COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
 var UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + INTEGER + "\\))";
-var CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{44,45}\\)|(XHX\\([A-F0-9]{64}\\))))*";
+var CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F0-9]{64}\\))))*";
 //var CONDITIONS   = "(&&|\|\|| |[()]|(SIG\\(\\da-zA-Z\\))|(XHX\\(" + FINGERPRINT + "\\)))*";
 var BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
 var META_TS      = "META:TS:" + BLOCK_UID;
@@ -25,7 +25,15 @@ var IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9
 var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
 module.exports = {
-  
+
+  ENTITY_TRANSACTION: 'transaction',
+  ENTITY_BLOCK: 'block',
+  ENTITY_MEMBERSHIP: 'membership',
+  ENTITY_PEER: 'peer',
+  ENTITY_IDENTITY: 'identity',
+  ENTITY_CERTIFICATION: 'certification',
+  ENTITY_REVOCATION: 'revocation',
+
   ERROR: {
 
     PEER: {
@@ -253,6 +261,8 @@ module.exports = {
     A_WEEK: 3600 * 24 * 7,
     A_MONTH: (3600 * 24 * 365.25) / 12
   },
+
+  DEFAULT_CPU: 0.6,
 
   CONTRACT: {
     DEFAULT: {

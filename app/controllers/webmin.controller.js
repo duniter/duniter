@@ -7,20 +7,16 @@ var _ = require('underscore');
 var Q = require('q');
 let co = require('co');
 let ucoin = require('../../index');
-var upnp = require('../lib/upnp');
 let ucp = require('../lib/ucp');
 let constants = require('../lib/constants');
 let base58 = require('../lib/base58');
 let rawer = require('../lib/rawer');
 let crypto = require('../lib/crypto');
 let http2raw = require('../lib/streams/parsers/http2raw');
-let parsers = require('../lib/streams/parsers/doc');
 let bma = require('../lib/streams/bma');
 let Identity = require('../lib/entity/identity');
 let network = require('../lib/network');
 let AbstractController = require('../controllers/abstract');
-var Synchroniser = require('../lib/sync');
-var multicaster = require('../lib/streams/multicaster');
 var logger = require('../lib/logger')('webmin');
 
 module.exports = (dbConf, overConf) => {
@@ -50,13 +46,7 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedConfP;
 
     // Routing documents
-    server
-    // The router asks for multicasting of documents
-      .pipe(server.router())
-      // The documents get sent to peers
-      .pipe(multicaster(server.conf))
-      // The multicaster may answer 'unreachable peer'
-      .pipe(server.router());
+    server.routing();
 
     return plugForDAL();
   });
@@ -96,7 +86,7 @@ function WebAdmin (dbConf, overConf) {
 
   this.openUPnP = () => co(function *() {
     yield pluggedDALP;
-    return upnp(server.conf.port, server.conf.remoteport);
+    return server.upnp();
   });
 
   this.regularUPnP = () => co(function *() {
@@ -105,7 +95,7 @@ function WebAdmin (dbConf, overConf) {
       server.upnpAPI.stopRegular();
     }
     try {
-      server.upnpAPI = yield upnp(server.conf.port, server.conf.remoteport);
+      yield server.upnp();
       server.upnpAPI.startRegular();
     } catch (e) {
       logger.error(e);
@@ -134,7 +124,7 @@ function WebAdmin (dbConf, overConf) {
     yield server.dal.saveConf({
       routing: true,
       createNext: true,
-      cpu: 0.5,
+      cpu: constants.DEFAULT_CPU,
       ipv4: conf.local_ipv4,
       ipv6: conf.local_ipv6,
       port: conf.lport,
@@ -187,7 +177,7 @@ function WebAdmin (dbConf, overConf) {
     if (!found) {
       let selfCert = rawer.getOfficialIdentity(entity);
       selfCert += crypto.signSync(selfCert, secretKey) + '\n';
-      found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, parsers.parseIdentity);
+      found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, constants.ENTITY_IDENTITY);
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));
     if (_.filter(found.memberships, { membership: 'IN'}).length == 0) {
@@ -202,7 +192,7 @@ function WebAdmin (dbConf, overConf) {
         "certts": block
       });
       join += crypto.signSync(join, secretKey) + '\n';
-      yield that.pushEntity({ body: { membership: join }}, http2raw.membership, parsers.parseMembership);
+      yield that.pushEntity({ body: { membership: join }}, http2raw.membership, constants.ENTITY_MEMBERSHIP);
       yield server.recomputeSelfPeer();
     }
     //
@@ -366,46 +356,48 @@ function WebAdmin (dbConf, overConf) {
   });
 
   this.autoConfNetwork = () => co(function *() {
-    let bestLocal4 = network.getBestLocalIPv4();
-    let bestLocal6 = network.getBestLocalIPv6();
-    let upnpConf = {
-      remoteipv4: bestLocal4,
-      remoteipv6: bestLocal6,
-      upnp: false
-    };
-    try {
-      upnpConf = yield network.upnpConf();
-      upnpConf.upnp = true;
-    } catch (e) {
-      logger.error(e.stack || e);
+    // Reconfigure the network if it has not been initialized yet
+    if (!server.conf.remoteipv4 && !server.conf.remoteipv6 && !server.conf.remotehost) {
+      let bestLocal4 = network.getBestLocalIPv4();
+      let bestLocal6 = network.getBestLocalIPv6();
+      let upnpConf = {
+        remoteipv4: bestLocal4,
+        remoteipv6: bestLocal6,
+        upnp: false
+      };
+      try {
+        upnpConf = yield network.upnpConf();
+        upnpConf.upnp = true;
+      } catch (e) {
+        logger.error(e.stack || e);
+      }
+      let randomPort = network.getRandomPort(server.conf);
+      _.extend(server.conf, {
+        ipv4: bestLocal4,
+        ipv6: bestLocal6,
+        port: randomPort,
+        remoteipv4: upnpConf.remoteipv4,
+        remoteipv6: upnpConf.remoteipv6,
+        remoteport: randomPort,
+        upnp: upnpConf.upnp
+      });
+      yield server.dal.saveConf(server.conf);
+      pluggedConfP = co(function *() {
+        yield bmapi.closeConnections();
+        yield server.loadConf();
+        bmapi = yield bma(server, null, true);
+      });
     }
-    let randomPort = network.getRandomPort(server.conf);
-    _.extend(server.conf, {
-      ipv4: bestLocal4,
-      ipv6: bestLocal6,
-      port: randomPort,
-      remoteipv4: upnpConf.remoteipv4,
-      remoteipv6: upnpConf.remoteipv6,
-      remoteport: randomPort,
-      upnp: upnpConf.upnp
-    });
-    yield server.dal.saveConf(server.conf);
-    pluggedConfP = co(function *() {
-      yield bmapi.closeConnections();
-      yield server.loadConf();
-      bmapi = yield bma(server, null, true);
-    });
     return {};
   });
 
   this.startSync = (req) => co(function *() {
-    // Synchronize
-    var remote = new Synchroniser(server, req.body.host, parseInt(req.body.port), server.conf, false);
-    remote.pipe(es.mapSync(function(data) {
+    let sync = server.synchronize(req.body.host, parseInt(req.body.port), parseInt(req.body.to), parseInt(req.body.chunkLen));
+    sync.flow.pipe(es.mapSync(function(data) {
       // Broadcast block
       that.push(data);
     }));
-    yield remote.sync(parseInt(req.body.to), parseInt(req.body.chunkLen));
+    yield sync.syncPromise;
     return {};
   });
 

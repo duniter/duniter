@@ -6,6 +6,12 @@
 # Wraps bin/ucoind.js that is called with Node.js
 #
 
+DEB_PACKAGING=
+
+if [[ $DEB_PACKAGING ]]; then
+  DUNITER_DIR=/opt/duniter/sources/
+fi
+
 duniter() {
 
 	local NODE
@@ -16,6 +22,9 @@ duniter() {
 		### Production mode
 		if [[ -d $DUNITER_DIR/node ]]; then
 			NODE=$DUNITER_DIR/node/bin/node
+	  else
+	    echo "Node.js is not embedded in this version of Duniter"
+	    return
 		fi;
 	else
 
@@ -26,8 +35,8 @@ duniter() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v5* ]]; then
-	  echo "$NODE v5 is required";
+	if [[ $VERSION != v5* && $VERSION != v6* ]]; then
+	  echo "$NODE v5 or v6 is required";
 	else
 
 		case "$1" in
@@ -36,8 +45,12 @@ duniter() {
 		#  UCOIN DAEMON MANAGEMENT
 		#---------------------------------
 
-		start|stop|restart)
+		webwait|webstart|webstop|webrestart|start|stop|restart)
 		$NODE "$DUNITER_DIR/bin/daemon" $*
+		;;
+
+		direct_start)
+		$NODE "$DUNITER_DIR/bin/ucoind" start ${@:2}
 		;;
 
 		logs)
@@ -57,7 +70,7 @@ duniter() {
 	fi;
 }
 
-# If the script was launched with parameters, try to launch the uCoin command
+# If the script was launched with parameters, try to launch the Duniter command
 if [ ! -z $1 ]; then
 	duniter $*
 fi

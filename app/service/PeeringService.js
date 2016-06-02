@@ -220,26 +220,19 @@ function PeeringService(server) {
           block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
           endpoints: [endpoint]
         };
-        var raw1 = dos2unix(new Peer(p1).getRaw());
         var raw2 = dos2unix(new Peer(p2).getRaw());
-        logger.info('External access:', new Peer(raw1 == raw2 ? p1 : p2).getURL());
-        if (raw1 != raw2) {
-          logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
-          p2.signature = yield Q.nfcall(server.sign, raw2);
-          p2.pubkey = selfPubkey;
-          p2.documentType = 'peer';
-          // Submit & share with the network
-          yield server.submitP(p2, false);
-        } else {
-          p1.documentType = 'peer';
-          // Share with the network
-          server.push(p1);
-        }
+        logger.info('External access:', new Peer(p2).getURL());
+        logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
+        p2.signature = yield Q.nfcall(server.sign, raw2);
+        p2.pubkey = selfPubkey;
+        p2.documentType = 'peer';
+        // Submit & share with the network
+        yield server.submitP(p2, false);
         let selfPeer = yield dal.getPeer(selfPubkey);
         // Set peer's statut to UP
         selfPeer.documentType = 'selfPeer';
         yield that.peer(selfPeer);
-        server.push(selfPeer);
+        server.streamPush(selfPeer);
         logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
         done && done();
         return selfPeer;
@@ -309,6 +302,7 @@ function PeeringService(server) {
       try {
         logger.debug('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
         let node = yield aPeer.connectP();
+        yield checkPeerValidity(aPeer, node);
         //let remotePeer = yield Q.nbind(node.network.peering.get)();
         let json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
         for (let i = 0, len = json.leaves.length; i < len; i++) {
@@ -345,6 +339,7 @@ function PeeringService(server) {
               // Now we test
               let node = yield Q.nfcall(p.connect);
               let peering = yield Q.nfcall(node.network.peering.get);
+              yield checkPeerValidity(p, node);
               // The node answered, it is no more DOWN!
               logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
               yield dal.setPeerUP(p.pubkey);
@@ -404,6 +399,35 @@ function PeeringService(server) {
     return waitRemaining;
   }
 
+  function checkPeerValidity(p, node) {
+    return co(function *() {
+      try {
+        let document = yield Q.nfcall(node.network.peering.get);
+        let thePeer = Peer.statics.peerize(document);
+        let goodSignature = that.checkPeerSignature(thePeer);
+        if (!goodSignature) {
+          throw 'Signature from a peer must match';
+        }
+        if (p.currency !== thePeer.currency) {
+          throw 'Currency has changed from ' + p.currency + ' to ' + thePeer.currency;
+        }
+        if (p.pubkey !== thePeer.pubkey) {
+          throw 'Public key of the peer has changed from ' + p.pubkey + ' to ' + thePeer.pubkey;
+        }
+        let sp1 = p.block.split('-');
+        let sp2 = thePeer.block.split('-');
+        let blockNumber1 = parseInt(sp1[0]);
+        let blockNumber2 = parseInt(sp2[0]);
+        if (blockNumber2 < blockNumber1) {
+          throw 'Signature date has changed from block ' + blockNumber1 + ' to older block ' + blockNumber2;
+        }
+      } catch (e) {
+        logger.warn(e);
+        throw { code: "E_DUNITER_PEER_CHANGED" };
+      }
+    });
+  }
+
   function syncBlock(callback, pubkey) {
     currentSyncP = co(function *() {
       let current = yield dal.getCurrentBlockOrNull();
@@ -420,6 +444,7 @@ function PeeringService(server) {
           try {
             let node = yield Q.nfcall(p.connect);
             node.pubkey = p.pubkey;
+            yield checkPeerValidity(p, node);
             let dao = pulling.abstractDao({
 
               // Get the local blockchain current block
@@ -450,7 +475,10 @@ function PeeringService(server) {
               }),
 
               // Simulate the adding of a single new block on local blockchain
-              applyMainBranch: (block) => server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED),
+              applyMainBranch: (block) => co(function *() {
+                let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
+                server.streamPush(addedBlock);
+              }),
 
               // Eventually remove forks later on
               removeForks: () => Q(),
@@ -497,7 +525,8 @@ function PeeringService(server) {
 
   function isConnectionError(err) {
     return err && (
-      err.code == "EINVAL"
+      err.code == "E_DUNITER_PEER_CHANGED"
+      || err.code == "EINVAL"
       || err.code == "ECONNREFUSED"
       || err.code == "ETIMEDOUT"
       || (err.httpCode !== undefined && err.httpCode !== 404));

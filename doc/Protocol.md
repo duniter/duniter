@@ -1,4 +1,4 @@
-# UCP - uCoin Protocol
+# UCP - Duniter Protocol
 
 > This document is still regularly updated (as of February 2015)
 
@@ -32,7 +32,7 @@
 
 Word                  | Description
 --------------------- | -------------
-UCP                   | Acronym for *UCoin Protocol*. A set of rules to create uCoin based currencies.
+UCP                   | Acronym for *UCoin Protocol*. A set of rules to create Duniter based currencies.
 Signature             | The cryptographical act of certifying a document using a private key.
 WoT                   | Acronym for *Web of Trust*. A groupment of individuals recognizing each other's identity through public keys and certification mechanisms
 UD                    | Acronym for *Universal Dividend*. Means money issuance **directly** and **exclusively** by and to WoT members
@@ -873,7 +873,7 @@ Field | Description
     PROTOCOL_NAME[ OPTIONS]
     [...]
 
-For example, the first written uCoin peering protocol is BASIC_MERKLED_API, which defines an HTTP API. An endpoint of such protocol would look like:
+For example, the first written Duniter peering protocol is BASIC_MERKLED_API, which defines an HTTP API. An endpoint of such protocol would look like:
 
     BASIC_MERKLED_API[ DNS][ IPv4][ IPv6] PORT
 
@@ -1426,10 +1426,10 @@ TRUE
 
 UCP does not imposes a particular API to deal with UCP data. Instead, UCP prefers to allow for any API definition using [Peer](#peer) document, and then leting peers deal themselves with the API(s) they prefer.
 
-At this stage, only [uCoin HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is known as a valid UCP API.
+At this stage, only [Duniter HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is known as a valid UCP API.
 
 ## References
 
 * [Relative Money Theory](http://fr.wikipedia.org/wiki/Th%C3%A9orie_relative_de_la_monnaie), the theoretical reference behind Universal Dividend
-* [OpenUDC](www.openudc.org), the inspiration project of uCoin
+* [OpenUDC](www.openudc.org), the inspiration project of Duniter
 * [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system

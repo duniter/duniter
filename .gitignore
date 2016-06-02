@@ -6,5 +6,3 @@ bin/jpgp*.jar
 .idea/
 naclb/build
 naclb/node_modules
-dump*/
-/ui/

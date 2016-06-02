@@ -2,7 +2,6 @@
 var Q       = require('q');
 var co      = require('co');
 var _       = require('underscore');
-var path    = require('path');
 var hashf   = require('../hashf');
 var wotb    = require('../wot');
 var logger = require('../logger')('filedal');
@@ -25,7 +24,7 @@ function FileDAL(params) {
 
   let rootPath = params.home;
   let myFS = params.fs;
-  let sqlite = params.db;
+  let sqlite = params.dbf();
   let wotbInstance = params.wotb;
   let that = this;
 
@@ -1143,86 +1142,17 @@ function FileDAL(params) {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
   });
 
-  this.cleanDBData = () => co(function *() {
-    yield _.values(that.newDals).map((dal) => dal.cleanData && dal.cleanData());
-    that.wotb.resetWoT();
-    var files = ['stats', 'cores', 'current'];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
-    return resetFiles(files, dirs);
-  });
-
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
     return Q.nbind(sqlite.close, sqlite);
   });
 
-  this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
-    return resetFiles(files, dirs, done);
-  };
-
-  this.resetData = function(done) {
-    var files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
-    return resetFiles(files, dirs, done);
-  };
-
-  this.resetConf = function(done) {
-    var files = ['conf'];
-    var dirs  = [];
-    return resetFiles(files, dirs, done);
-  };
-
-  this.resetStats = function(done) {
-    var files = ['stats'];
-    var dirs  = ['ud_history'];
-    return resetFiles(files, dirs, done);
-  };
-
   this.resetPeers = function(done) {
-    var files = [];
-    var dirs  = ['peers'];
     return co(function *() {
       that.peerDAL.removeAll();
-      yield resetFiles(files, dirs);
       return that.close();
     })
       .then(() => done && done())
       .catch((err) => done && done(err));
   };
-
-  this.resetTransactions = function(done) {
-    var files = [];
-    var dirs  = ['txs'];
-    return resetFiles(files, dirs, done);
-  };
-
-  function resetFiles(files, dirs, done) {
-    return co(function *() {
-      for (let i = 0, len = files.length; i < len; i++) {
-        let fName = files[i];
-        // JSON file?
-        let existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
-        if (existsJSON) {
-          yield myFS.remove(rootPath + '/' + fName + '.json');
-        } else {
-          // Normal file?
-          let existsFile = yield myFS.exists(rootPath + '/' + fName);
-          if (existsFile) {
-            yield myFS.remove(rootPath + '/' + fName);
-          }
-        }
-      }
-      for (let i = 0, len = dirs.length; i < len; i++) {
-        let dirName = dirs[i];
-        let existsDir = yield myFS.exists(rootPath + '/' + dirName);
-        if (existsDir) {
-          yield myFS.removeTree(rootPath + '/' + dirName);
-        }
-      }
-      done && done();
-    })
-      .catch((err) => done && done(err));
-  }
 }

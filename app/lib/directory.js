@@ -41,11 +41,11 @@ let dir = module.exports = {
     let home = params.home;
     yield someDelayFix();
     if (isMemory) {
-      params.db = new sqlite3.Database(':memory:');
+      params.dbf = () => new sqlite3.Database(':memory:');
       params.wotb = require('./wot').memoryInstance();
     } else {
       let sqlitePath = path.join(home, dir.UCOIN_DB_NAME + '.db');
-      params.db = new sqlite3.Database(sqlitePath);
+      params.dbf = () => new sqlite3.Database(sqlitePath);
       params.wotb = require('./wot').fileInstance(path.join(home, dir.WOTB_FILE));
     }
     return params;

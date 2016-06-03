@@ -11,6 +11,7 @@ var constants       = require('./constants');
 var base58          = require('./base58');
 var rules           = require('./rules');
 var signature       = require('./signature');
+var crypto          = require('./crypto');
 var Identity        = require('./entity/identity');
 var Certification   = require('./entity/certification');
 var Membership      = require('./entity/membership');
@@ -460,6 +461,13 @@ function BlockGenerator(mainContext, prover) {
         if (age > conf.idtyWindow) {
           throw 'Too old identity';
         }
+      }
+      let idty = new Identity(identity);
+      idty.currency = conf.currency;
+      let selfCert = idty.rawWithoutSig();
+      let verified = crypto.verify(selfCert, idty.sig, idty.pubkey);
+      if (!verified) {
+        throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
       }
       if (!identity.leaving) {
         if (!current) {

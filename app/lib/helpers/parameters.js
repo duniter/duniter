@@ -1,7 +1,7 @@
 "use strict";
 var async     = require('async');
 var Q = require('q');
-var constants = require('../lib/constants');
+var constants = require('../constants');
 
 module.exports = function () {
   return new ParameterNamespace();

@@ -1,6 +1,6 @@
 "use strict";
 var async  = require('async');
-var crypto = require('./crypto');
+var crypto = require('./duniterKey');
 var base58 = require('./base58');
 
 module.exports = {

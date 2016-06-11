@@ -3,7 +3,7 @@
 var co   = require('co');
 var opts = require('optimist').argv;
 var path = require('path');
-var cfs  = require('./cfs');
+var cfs  = require('./../cfs');
 var Q    = require('q');
 var qfs  = require('q-io/fs');
 var sqlite3 = require("sqlite3b").verbose();
@@ -42,11 +42,11 @@ let dir = module.exports = {
     yield someDelayFix();
     if (isMemory) {
       params.dbf = () => new sqlite3.Database(':memory:');
-      params.wotb = require('./wot').memoryInstance();
+      params.wotb = require('./../wot').memoryInstance();
     } else {
       let sqlitePath = path.join(home, dir.UCOIN_DB_NAME + '.db');
       params.dbf = () => new sqlite3.Database(sqlitePath);
-      params.wotb = require('./wot').fileInstance(path.join(home, dir.WOTB_FILE));
+      params.wotb = require('./../wot').fileInstance(path.join(home, dir.WOTB_FILE));
     }
     return params;
   }),

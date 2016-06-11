@@ -2,8 +2,8 @@
 var should = require('should');
 var async  = require('async');
 var nacl   = require('tweetnacl');
-var base58 = require('../../../app/lib/base58');
-var crypto      = require('../../../app/lib/crypto');
+var base58 = require('../../../app/lib/crypto/base58');
+var crypto      = require('../../../app/lib/crypto/duniterKey');
 
 var enc = nacl.util.encodeBase64,
     dec = nacl.util.decodeBase64;

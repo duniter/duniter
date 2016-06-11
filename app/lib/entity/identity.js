@@ -1,7 +1,7 @@
 "use strict";
 var _ = require('underscore');
-var hashf = require('../hashf');
-var rawer = require('../rawer');
+var hashf = require('../ucp/hashf');
+var rawer = require('../ucp/rawer');
 
 var Identity = function(json) {
 

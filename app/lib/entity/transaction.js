@@ -1,7 +1,7 @@
 "use strict";
 var _ = require('underscore');
-var rawer = require('../rawer');
-var hashf = require('../hashf');
+var rawer = require('../ucp/rawer');
+var hashf = require('../ucp/hashf');
 var constants = require('../constants');
 
 var Transaction = function(obj, currency) {

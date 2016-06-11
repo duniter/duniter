@@ -4,7 +4,7 @@ var co               = require('co');
 var _                = require('underscore');
 var rules            = require('../lib/rules');
 var constants        = require('../lib/constants');
-var http2raw         = require('../lib/streams/parsers/http2raw');
+var http2raw         = require('../lib/helpers/http2raw');
 var Membership       = require('../lib/entity/membership');
 var AbstractController = require('./abstract');
 

@@ -1,7 +1,7 @@
 "use strict";
 var Q               = require('q');
 var rules           = require('../lib/rules');
-var crypto          = require('../lib/crypto');
+var crypto          = require('../lib/crypto/duniterKey');
 var constants       = require('../lib/constants');
 var Block           = require('../../app/lib/entity/block');
 var Identity        = require('../../app/lib/entity/identity');

@@ -1,6 +1,6 @@
 "use strict";
 var _ = require('underscore');
-var hashf = require('../hashf');
+var hashf = require('../ucp/hashf');
 
 module.exports = Block;
 
@@ -111,23 +111,23 @@ function Block(json) {
   };
 
   this.getRawInnerPart = function() {
-    return require('../../lib/rawer').getBlockInnerPart(this);
+    return require('../ucp/rawer').getBlockInnerPart(this);
   };
 
   this.getRaw = function() {
-    return require('../../lib/rawer').getBlockWithInnerHashAndNonce(this);
+    return require('../ucp/rawer').getBlockWithInnerHashAndNonce(this);
   };
 
   this.getSignedPart = function() {
-    return require('../../lib/rawer').getBlockInnerHashAndNonce(this);
+    return require('../ucp/rawer').getBlockInnerHashAndNonce(this);
   };
 
   this.getProofOfWorkPart = function() {
-    return require('../../lib/rawer').getBlockInnerHashAndNonceWithSignature(this);
+    return require('../ucp/rawer').getBlockInnerHashAndNonceWithSignature(this);
   };
 
   this.getRawSigned = function() {
-    return require('../../lib/rawer').getBlock(this);
+    return require('../ucp/rawer').getBlock(this);
   };
 
   this.quickDescription = function () {

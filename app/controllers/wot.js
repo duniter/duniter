@@ -1,7 +1,7 @@
 "use strict";
 var co = require('co');
 var _        = require('underscore');
-var http2raw = require('../lib/streams/parsers/http2raw');
+var http2raw = require('../lib/helpers/http2raw');
 var constants = require('../lib/constants');
 var AbstractController = require('./abstract');
 var logger   = require('../lib/logger')();

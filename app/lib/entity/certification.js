@@ -1,7 +1,7 @@
 "use strict";
 var _ = require('underscore');
-var rawer = require('../rawer');
-var ucp = require('../ucp');
+var rawer = require('../ucp/rawer');
+var ucp = require('../ucp/buid');
 
 var Certification = function(json) {
 

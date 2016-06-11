@@ -1,10 +1,10 @@
 "use strict";
 var GenericParser = require('./GenericParser');
 var util          = require('util');
-var ucp           = require('../../../ucp');
-var rawer         = require('../../../rawer');
-var hashf         = require('../../../hashf');
-var constants     = require('../../../constants');
+var ucp           = require('../../ucp/buid');
+var rawer         = require('../../ucp/rawer');
+var hashf         = require('../../ucp/hashf');
+var constants     = require('../../constants');
 
 module.exports = IdentityParser;
 

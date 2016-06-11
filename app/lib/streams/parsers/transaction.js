@@ -1,7 +1,7 @@
 "use strict";
 var GenericParser = require('./GenericParser');
-var rawer         = require('../../../rawer');
-var constants     = require('../../../constants');
+var rawer         = require('../../ucp/rawer');
+var constants     = require('../../constants');
 var util          = require('util');
 
 module.exports = TransactionParser;

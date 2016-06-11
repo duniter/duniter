@@ -3,7 +3,7 @@ var _           = require('underscore');
 var nacl        = require('tweetnacl');
 var scrypt      = require('scryptb');
 var base58      = require('./base58');
-var rawer       = require('./rawer');
+var rawer       = require('./../ucp/rawer');
 var naclBinding = require('naclb');
 
 nacl.util = require('./nacl-util');

@@ -18,7 +18,7 @@ function Router (PeeringService, conf, dal) {
     dal = theDAL;
   };
 
-  var logger   = require('../../lib/logger')(dal.profile);
+  var logger   = require('../logger')(dal.profile);
 
   stream.Transform.call(this, { objectMode: true });
 

@@ -5,18 +5,18 @@ var co              = require('co');
 var Q               = require('q');
 var moment          = require('moment');
 var inquirer        = require('inquirer');
-var rawer           = require('./rawer');
-var hashf           = require('./hashf');
-var constants       = require('./constants');
-var base58          = require('./base58');
-var rules           = require('./rules');
-var signature       = require('./signature');
-var crypto          = require('./crypto');
-var Identity        = require('./entity/identity');
-var Certification   = require('./entity/certification');
-var Membership      = require('./entity/membership');
-var Block           = require('./entity/block');
-var Transaction     = require('./entity/transaction');
+var rawer           = require('./../ucp/rawer');
+var hashf           = require('./../ucp/hashf');
+var constants       = require('./../constants');
+var base58          = require('./../crypto/base58');
+var rules           = require('./../rules/index');
+var signature       = require('./../crypto/signature');
+var crypto          = require('./../crypto/duniterKey');
+var Identity        = require('./../entity/identity');
+var Certification   = require('./../entity/certification');
+var Membership      = require('./../entity/membership');
+var Block           = require('./../entity/block');
+var Transaction     = require('./../entity/transaction');
 
 module.exports = (mainContext, prover) => new BlockGenerator(mainContext, prover);
 
@@ -30,7 +30,7 @@ function BlockGenerator(mainContext, prover) {
     conf = newConf;
     pair = newPair;
     selfPubkey = base58.encode(pair.publicKey);
-    logger = require('../lib/logger')(dal.profile);
+    logger = require('../logger')(dal.profile);
   };
 
   this.nextBlock = () => generateNextBlock(new NextBlockGenerator(conf, dal));

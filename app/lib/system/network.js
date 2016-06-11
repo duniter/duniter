@@ -11,9 +11,9 @@ var morgan = require('morgan');
 var errorhandler = require('errorhandler');
 var bodyParser = require('body-parser');
 var cors = require('cors');
-var constants = require('./constants');
-var sanitize = require('./sanitize');
-var logger = require('../lib/logger')('network');
+var constants = require('./../constants');
+var sanitize = require('./../streams/sanitize');
+var logger = require('../logger')('network');
 
 module.exports = {
 
@@ -81,7 +81,7 @@ module.exports = {
 
     // all environments
     if (httpLogs) {
-      app.use(morgan('\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m', {
+      app.use(morgan('\x1b[90m:remote-addr - :method :url HTTP/:helpers-version :status :res[content-length] - :response-time ms\x1b[0m', {
         stream: {
           write: function(message){
             message && logger.info(message.replace(/\n$/,''));

@@ -2,11 +2,11 @@
 var co        = require('co');
 var Q         = require('q');
 var constants = require('./constants');
-var network   = require('./network');
+var network   = require('./system/network');
 var async     = require('async');
 var _         = require('underscore');
 var inquirer  = require('inquirer');
-var logger    = require('../lib/logger')('wizard');
+var logger    = require('logger/logger')('wizard');
 
 module.exports = function () {
   return new Wizard();

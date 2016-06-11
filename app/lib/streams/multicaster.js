@@ -11,7 +11,7 @@ var Revocation = require('../../lib/entity/revocation');
 var Membership = require('../../lib/entity/membership');
 var Block = require('../../lib/entity/block');
 var Transaction = require('../../lib/entity/transaction');
-var logger  = require('../../lib/logger')('multicaster');
+var logger  = require('../logger')('multicaster');
 
 const WITH_ISOLATION = true;
 

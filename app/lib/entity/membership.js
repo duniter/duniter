@@ -1,7 +1,7 @@
 "use strict";
 var _ = require('underscore');
 var moment = require('moment');
-var rawer = require('../rawer');
+var rawer = require('../ucp/rawer');
 var constants = require('../constants');
 
 var Membership = function(json) {

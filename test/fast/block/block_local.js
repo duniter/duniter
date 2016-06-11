@@ -1,7 +1,7 @@
 "use strict";
 var co             = require('co');
 var should         = require('should');
-var parsers        = require('../../../app/lib/streams/parsers/doc');
+var parsers        = require('../../../app/lib/streams/parsers');
 var blocks         = require('../../data/blocks');
 var rules          = require('../../../app/lib/rules');
 var parser         = parsers.parseBlock;

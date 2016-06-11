@@ -21,7 +21,7 @@ module.exports.statics = {
 
     logger.info(">> NODE STARTING");
 
-    // Public http interface
+    // Public helpers interface
     let bmapi = yield bma(server, null, conf.httplogs);
 
     // Routing documents

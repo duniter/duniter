@@ -4,7 +4,7 @@
 
 var Q = require('q');
 var co = require('co');
-var logger = require('../../../../app/lib/logger')('idtyDAL');
+var logger = require('../../logger')('idtyDAL');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = IdentityDAL;

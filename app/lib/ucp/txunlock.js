@@ -1,8 +1,8 @@
 "use strict";
 
 let Parser = require("jison").Parser;
-let ucp = require('./ucp');
-let crypto = require('./crypto');
+let ucp = require('./buid');
+let crypto = require('./../crypto/duniterKey');
 
 let grammar = {
   "lex": {
@@ -39,7 +39,7 @@ let grammar = {
   }
 };
 
-let logger = require('../lib/logger')('unlock');
+let logger = require('../logger')('unlock');
 
 module.exports = function unlock(conditionsStr, executions) {
 

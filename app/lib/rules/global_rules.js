@@ -4,13 +4,13 @@ var Q              = require('q');
 var co             = require('co');
 var _              = require('underscore');
 var constants      = require('../constants');
-var crypto         = require('../crypto');
-var rawer          = require('../rawer');
+var crypto         = require('../crypto/duniterKey');
+var rawer          = require('../ucp/rawer');
 var Identity       = require('../entity/identity');
 var Membership     = require('../entity/membership');
 var Certification  = require('../entity/certification');
 var logger         = require('../logger')('globr');
-var unlock         = require('../txunlock');
+var unlock         = require('../ucp/txunlock');
 var local_rules    = require('./local_rules');
 
 let rules = {};

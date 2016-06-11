@@ -2,7 +2,7 @@
 
 var co              = require('co');
 var rules           = require('../lib/rules');
-var hashf           = require('../lib/hashf');
+var hashf           = require('../lib/ucp/hashf');
 var constants       = require('../lib/constants');
 var Membership      = require('../lib/entity/membership');
 var AbstractService = require('./AbstractService');

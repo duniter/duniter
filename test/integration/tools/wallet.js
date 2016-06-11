@@ -1,9 +1,9 @@
 "use strict";
 var async		= require('async');
 var request	= require('request');
-var crypto	= require('../../../app/lib/crypto');
-var rawer		= require('../../../app/lib/rawer');
-var base58	= require('../../../app/lib/base58');
+var crypto	= require('../../../app/lib/crypto/duniterKey');
+var rawer		= require('../../../app/lib/ucp/rawer');
+var base58	= require('../../../app/lib/crypto/base58');
 
 module.exports = function (salt, passwd, node) {
 	return new Wallet(salt, passwd, node);

@@ -1,12 +1,12 @@
 "use strict";
 var async = require('async');
 var moment = require('moment');
-var hashf = require('./hashf');
+var hashf = require('./ucp/hashf');
 var rules = require('./rules');
 var constants = require('./constants');
-var dos2unix = require('./dos2unix');
-var signature = require('./signature');
-var rawer = require('./rawer');
+var dos2unix = require('./system/dos2unix');
+var signature = require('./crypto/signature');
+var rawer = require('./ucp/rawer');
 
 var signatureFunc, lastSecret;
 

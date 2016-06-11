@@ -3,9 +3,9 @@
 var path = require('path');
 var es = require('event-stream');
 var constants = require('../../lib/constants');
-var network = require('../../lib/network');
+var network = require('../system/network');
 var dtos = require('../../lib/streams/dtos');
-var logger = require('../../lib/logger')('webmin');
+var logger = require('../logger')('webmin');
 
 let WebSocketServer = require('ws').Server;
 
@@ -19,10 +19,10 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
     httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
     httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
-    httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/http/stop',          webminCtrl.stopHTTP,  dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/http/upnp/open',     webminCtrl.openUPnP,  dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/http/upnp/regular',  webminCtrl.regularUPnP,  dtos.Boolean);
+    httpMethods.httpGET(  '/webmin/server/helpers/start',         webminCtrl.startHTTP, dtos.Boolean);
+    httpMethods.httpGET(  '/webmin/server/helpers/stop',          webminCtrl.stopHTTP,  dtos.Boolean);
+    httpMethods.httpGET(  '/webmin/server/helpers/upnp/open',     webminCtrl.openUPnP,  dtos.Boolean);
+    httpMethods.httpGET(  '/webmin/server/helpers/upnp/regular',  webminCtrl.regularUPnP,  dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/preview_next',       webminCtrl.previewNext,  dtos.Block);
     httpMethods.httpPOST( '/webmin/server/send_conf',          webminCtrl.sendConf, dtos.Identity);
     httpMethods.httpPOST( '/webmin/server/net_conf',           webminCtrl.applyNetworkConf, dtos.Boolean);

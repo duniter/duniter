@@ -16,7 +16,7 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
-  var logger = require('../../../lib/logger')(this.dal.profile);
+  var logger = require('../../logger')(this.dal.profile);
 
   this.init = () => Promise.resolve();
 

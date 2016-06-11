@@ -6,7 +6,7 @@ var Q = require('q');
 var _ = require('underscore');
 var co = require('co');
 var colors = require('colors');
-var logger = require('../../../../app/lib/logger')('sqlite');
+var logger = require('../../logger')('sqlite');
 
 module.exports = AbstractSQLite;
 

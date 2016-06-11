@@ -1,9 +1,9 @@
 "use strict";
 var GenericParser = require('./GenericParser');
-var rawer         = require('../../../rawer');
+var rawer         = require('../../ucp/rawer');
 var util          = require('util');
-var split         = require('../../../split');
-var constants     = require('../../../constants');
+var split         = require('./helpers/split');
+var constants     = require('../../constants');
 
 module.exports = PeerParser;
 

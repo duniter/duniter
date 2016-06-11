@@ -4,11 +4,11 @@ var Q		    = require('q');
 var async		= require('async');
 var request	= require('request');
 var vucoin	= require('vucoin');
-var ucp     = require('../../../app/lib/ucp');
-var parsers = require('../../../app/lib/streams/parsers/doc');
-var crypto	= require('../../../app/lib/crypto');
-var rawer		= require('../../../app/lib/rawer');
-var base58	= require('../../../app/lib/base58');
+var ucp     = require('../../../app/lib/ucp/buid');
+var parsers = require('../../../app/lib/streams/parsers');
+var crypto	= require('../../../app/lib/crypto/duniterKey');
+var rawer		= require('../../../app/lib/ucp/rawer');
+var base58	= require('../../../app/lib/crypto/base58');
 var constants = require('../../../app/lib/constants');
 var Identity = require('../../../app/lib/entity/identity');
 

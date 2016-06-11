@@ -141,7 +141,7 @@ function Node (dbName, options) {
               that.server.BlockchainService.generateNext().then(_.partial(callback, null)).catch(callback);
             },
             sigFunc: function(callback){
-              require('../../../app/lib/signature').sync(that.server.pair, callback);
+              require('../../../app/lib/crypto/signature').sync(that.server.pair, callback);
             }
           }, next);
         },

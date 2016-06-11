@@ -1,7 +1,7 @@
 "use strict";
 var should   = require('should');
 var assert   = require('assert');
-var parsers  = require('../../app/lib/streams/parsers/doc');
+var parsers  = require('../../app/lib/streams/parsers');
 
 var rawPeer = "" +
   "Version: 2\n" +

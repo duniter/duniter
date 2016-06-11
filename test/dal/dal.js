@@ -4,7 +4,7 @@ var _ = require('underscore');
 var should = require('should');
 var assert = require('assert');
 var dal = require('../../app/lib/dal/fileDAL');
-var dir = require('../../app/lib/directory');
+var dir = require('../../app/lib/system/directory');
 var constants = require('../../app/lib/constants');
 var Peer   = require('../../app/lib/entity/peer');
 

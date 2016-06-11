@@ -1,9 +1,9 @@
 "use strict";
 var util          = require('util');
 var GenericParser = require('./GenericParser');
-var hashf         = require('../../../hashf');
-var rawer         = require('../../../rawer');
-var constants     = require('../../../constants');
+var hashf         = require('../../ucp/hashf');
+var rawer         = require('../../ucp/rawer');
+var constants     = require('../../constants');
 
 module.exports = BlockParser;
 
@@ -50,7 +50,7 @@ function BlockParser (onError) {
     obj.transactions = obj.transactions || [];
     obj.version = obj.version || '';
     obj.type = obj.type || '';
-    obj.hash = hashf(require('../../../rawer').getBlockInnerHashAndNonceWithSignature(obj)).toUpperCase();
+    obj.hash = hashf(require('../../ucp/rawer').getBlockInnerHashAndNonceWithSignature(obj)).toUpperCase();
     obj.inner_hash = obj.inner_hash || '';
     obj.currency = obj.currency || '';
     obj.nonce = obj.nonce || '';

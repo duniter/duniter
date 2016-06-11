@@ -1,7 +1,7 @@
 "use strict";
 var async   = require('async');
 var should  = require('should');
-var parsers = require('../../app/lib/streams/parsers/doc');
+var parsers = require('../../app/lib/streams/parsers');
 
 var raw = "Version: 2\n" +
     "Type: Transaction\n" +

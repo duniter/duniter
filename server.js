@@ -6,21 +6,21 @@ var path        = require('path');
 var co          = require('co');
 var _           = require('underscore');
 var Q           = require('q');
-var parsers     = require('./app/lib/streams/parsers/doc');
+var parsers     = require('./app/lib/streams/parsers');
 var constants   = require('./app/lib/constants');
 var fileDAL     = require('./app/lib/dal/fileDAL');
 var jsonpckg    = require('./package.json');
 var router      = require('./app/lib/streams/router');
-var base58      = require('./app/lib/base58');
-var crypto      = require('./app/lib/crypto');
-var signature   = require('./app/lib/signature');
-var directory   = require('./app/lib/directory');
-var dos2unix    = require('./app/lib/dos2unix');
+var base58      = require('./app/lib/crypto/base58');
+var crypto      = require('./app/lib/crypto/duniterKey');
+var signature   = require('./app/lib/crypto/signature');
+var directory   = require('./app/lib/system/directory');
+var dos2unix    = require('./app/lib/system/dos2unix');
 var Synchroniser = require('./app/lib/sync');
 var multicaster = require('./app/lib/streams/multicaster');
-var upnp        = require('./app/lib/upnp');
+var upnp        = require('./app/lib/system/upnp');
 var bma         = require('./app/lib/streams/bma');
-var rawer       = require('./app/lib/rawer');
+var rawer       = require('./app/lib/ucp/rawer');
 
 function Server (dbConf, overrideConf) {
 
@@ -34,8 +34,8 @@ function Server (dbConf, overrideConf) {
   that.dal = null;
   that.version = jsonpckg.version;
 
-  that.MerkleService       = require("./app/service/MerkleService");
-  that.ParametersService   = require("./app/service/ParametersService")();
+  that.MerkleService       = require("./app/lib/helpers/merkle");
+  that.ParametersService   = require("./app/lib/helpers/parameters")();
   that.IdentityService     = require('./app/service/IdentityService')();
   that.MembershipService   = require('./app/service/MembershipService')();
   that.PeeringService      = require('./app/service/PeeringService')(that);

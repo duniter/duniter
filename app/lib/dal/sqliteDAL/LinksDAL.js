@@ -4,7 +4,7 @@
 
 var Q = require('q');
 var co = require('co');
-var logger = require('../../../../app/lib/logger')('linksDAL');
+var logger = require('../../logger')('linksDAL');
 var AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = LinksDAL;

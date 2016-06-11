@@ -1,11 +1,11 @@
 "use strict";
 var util                 = require('util');
 var stream               = require('stream');
-var hashf                = require('../../../hashf');
-var logger               = require('../../../logger')('gen_parser');
-var constants            = require('../../../constants');
-var simpleLineExtract    = require('../../../simpleLineExtract');
-var multipleLinesExtract = require('../../../multipleLinesExtract');
+var hashf                = require('../../ucp/hashf');
+var logger               = require('../../logger')('gen_parser');
+var constants            = require('../../constants');
+var simpleLineExtract    = require('./helpers/simpleLineExtract');
+var multipleLinesExtract = require('./helpers/multipleLinesExtract');
 
 module.exports = GenericParser;
 

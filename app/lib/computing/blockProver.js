@@ -2,11 +2,11 @@
 var async           = require('async');
 var co              = require('co');
 var Q               = require('q');
-var constants       = require('./constants');
-var base58          = require('../lib/base58');
+var constants       = require('./../constants');
+var base58          = require('../crypto/base58');
 var childProcess    = require('child_process');
 var path            = require('path');
-var Block           = require('./entity/block');
+var Block           = require('./../entity/block');
 
 module.exports = () => new BlockGenerator();
 
@@ -18,7 +18,7 @@ function BlockGenerator() {
     dal = newDAL;
     conf = newConf;
     pair = newPair;
-    logger = require('../lib/logger')(dal.profile);
+    logger = require('../logger')(dal.profile);
   };
 
   var cancels = [];
@@ -113,7 +113,7 @@ function BlockGenerator() {
     var that = this;
     var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.'; };
     var onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
-    that.powProcess = childProcess.fork(path.join(__dirname, '/../lib/proof.js'));
+    that.powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
     var start = null;
     var speedMesured = false;
 

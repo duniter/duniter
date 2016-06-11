@@ -1,9 +1,9 @@
 "use strict";
 var GenericParser = require('./GenericParser');
-var ucp           = require('../../../ucp');
-var rawer         = require('../../../rawer');
+var ucp           = require('../../ucp/buid');
+var rawer         = require('../../ucp/rawer');
 var util          = require('util');
-var constants     = require('../../../constants');
+var constants     = require('../../constants');
 
 module.exports = MembershipParser;
 

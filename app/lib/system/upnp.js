@@ -1,7 +1,7 @@
 var upnp = require('nnupnp');
 var async = require('async');
-var constants  = require('../lib/constants');
-var logger = require('../lib/logger')('upnp');
+var constants  = require('../constants');
+var logger = require('../logger')('upnp');
 var co = require('co');
 var Q = require('q');
 

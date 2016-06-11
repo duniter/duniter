@@ -2,7 +2,7 @@
 var Q = require('q');
 var _ = require('underscore');
 var vucoin = require('vucoin');
-var rawer = require('../rawer');
+var rawer = require('../ucp/rawer');
 
 module.exports = Peer;
 

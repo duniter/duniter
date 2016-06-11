@@ -1,7 +1,7 @@
 
 "use strict";
 var co = require('co');
-var dos2unix = require('../lib/dos2unix');
+var dos2unix = require('../lib/system/dos2unix');
 
 module.exports = function AbstractController (server) {
 

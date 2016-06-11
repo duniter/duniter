@@ -2,9 +2,9 @@
 
 var co = require('co');
 var es = require('event-stream');
-var network = require('../../lib/network');
-var dtos = require('../../lib/streams/dtos');
-var sanitize = require('../../lib/sanitize');
+var network = require('../system/network');
+var dtos = require('./dtos');
+var sanitize = require('./sanitize');
 
 let WebSocketServer = require('ws').Server;
 

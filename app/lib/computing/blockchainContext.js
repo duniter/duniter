@@ -3,17 +3,17 @@ var async           = require('async');
 var _               = require('underscore');
 var co              = require('co');
 var Q               = require('q');
-var hashf           = require('./hashf');
-var rawer           = require('./rawer');
-var constants       = require('./constants');
-var rules           = require('./rules');
-var Identity        = require('./entity/identity');
-var Certification   = require('./entity/certification');
-var Membership      = require('./entity/membership');
-var Block           = require('./entity/block');
-var Link            = require('./entity/link');
-var Source          = require('./entity/source');
-var Transaction     = require('./entity/transaction');
+var hashf           = require('./../ucp/hashf');
+var rawer           = require('./../ucp/rawer');
+var constants       = require('./../constants');
+var rules           = require('./../rules/index');
+var Identity        = require('./../entity/identity');
+var Certification   = require('./../entity/certification');
+var Membership      = require('./../entity/membership');
+var Block           = require('./../entity/block');
+var Link            = require('./../entity/link');
+var Source          = require('./../entity/source');
+var Transaction     = require('./../entity/transaction');
 
 module.exports = () => { return new BlockchainContext() };
 
@@ -25,7 +25,7 @@ function BlockchainContext() {
   this.setConfDAL = (newConf, newDAL) => {
     dal = newDAL;
     conf = newConf;
-    logger = require('../lib/logger')(dal.profile);
+    logger = require('../logger')(dal.profile);
   };
 
   this.checkBlock = function(block, withPoWAndSignature, done) {

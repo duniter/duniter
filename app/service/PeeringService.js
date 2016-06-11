@@ -5,7 +5,7 @@ var async          = require('async');
 var _              = require('underscore');
 var Q              = require('q');
 var events         = require('events');
-var crypto         = require('../lib/crypto/duniterKey');
+var keyring         = require('../lib/crypto/keyring');
 var logger         = require('../lib/logger')('peering');
 var base58         = require('../lib/crypto/base58');
 var dos2unix       = require('../lib/system/dos2unix');
@@ -51,7 +51,7 @@ function PeeringService(server) {
     var raw = rawer.getPeerWithoutSignature(p);
     var sig = p.signature;
     var pub = p.pubkey;
-    var signaturesMatching = crypto.verify(raw, sig, pub);
+    var signaturesMatching = keyring.verify(raw, sig, pub);
     return !!signaturesMatching;
   };
 

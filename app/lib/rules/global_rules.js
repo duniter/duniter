@@ -4,7 +4,7 @@ var Q              = require('q');
 var co             = require('co');
 var _              = require('underscore');
 var constants      = require('../constants');
-var crypto         = require('../crypto/duniterKey');
+var keyring         = require('../crypto/keyring');
 var rawer          = require('../ucp/rawer');
 var Identity       = require('../entity/identity');
 var Membership     = require('../entity/membership');
@@ -354,7 +354,7 @@ rules.FUNCTIONS = {
         sig: idty.sig,
         revocation: ''
       });
-      let sigOK = crypto.verify(rawRevocation, sig, pubkey);
+      let sigOK = keyring.verify(rawRevocation, sig, pubkey);
       if (!sigOK) {
         throw Error("Revocation signature must match");
       }
@@ -629,7 +629,7 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
       else {
         var buid = [cert.block_number, basedBlock.hash].join('-');
         idty.currency = conf.currency;
-        let verified = crypto.isValidCertification(new Identity(idty), cert.from, cert.sig, buid, block.currency);
+        let verified = keyring.isValidCertification(new Identity(idty), cert.from, cert.sig, buid, block.currency);
         if (!verified) {
           throw Error('Wrong signature for certification');
         }

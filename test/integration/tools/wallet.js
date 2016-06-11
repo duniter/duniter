@@ -1,7 +1,7 @@
 "use strict";
 var async		= require('async');
 var request	= require('request');
-var crypto	= require('../../../app/lib/crypto/duniterKey');
+var crypto	= require('../../../app/lib/crypto/keyring');
 var rawer		= require('../../../app/lib/ucp/rawer');
 var base58	= require('../../../app/lib/crypto/base58');
 

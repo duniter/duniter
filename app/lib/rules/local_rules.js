@@ -2,7 +2,7 @@
 
 var co         = require('co');
 var hashf      = require('./../ucp/hashf');
-var crypto     = require('./../crypto/duniterKey');
+var keyring     = require('./../crypto/keyring');
 var rawer      = require('./../ucp/rawer');
 var Identity   = require('../entity/identity');
 var Membership = require('../entity/membership');
@@ -64,7 +64,7 @@ rules.FUNCTIONS = {
   }),
 
   checkBlockSignature: (block) => co(function *() {
-    if (!crypto.verify(block.getSignedPart(), block.signature, block.issuer))
+    if (!keyring.verify(block.getSignedPart(), block.signature, block.issuer))
       throw Error('Block\'s signature must match');
     return true;
   }),
@@ -85,7 +85,7 @@ rules.FUNCTIONS = {
     while (!wrongSig && i < block.identities.length) {
       var idty = Identity.statics.fromInline(block.identities[i]);
       idty.currency = block.currency;
-      wrongSig = !crypto.verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
+      wrongSig = !keyring.verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
       if (wrongSig) {
         throw Error('Identity\'s signature must match');
       }
@@ -429,7 +429,7 @@ function existsPubkeyIn(pubk, memberships) {
 }
 
 function checkSingleMembershipSignature(ms) {
-  return crypto.verify(ms.getRaw(), ms.signature, ms.issuer);
+  return keyring.verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
 function getSigResult(tx) {
@@ -448,7 +448,7 @@ function getSigResult(tx) {
   while (signaturesMatching && i < tx.signatures.length) {
     var sig = tx.signatures[i];
     var pub = tx.issuers[i];
-    signaturesMatching = crypto.verify(raw, sig, pub);
+    signaturesMatching = keyring.verify(raw, sig, pub);
     sigResult.sigs[pub] = {
       matching: signaturesMatching,
       index: i

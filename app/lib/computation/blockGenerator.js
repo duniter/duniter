@@ -11,7 +11,7 @@ var constants       = require('./../constants');
 var base58          = require('./../crypto/base58');
 var rules           = require('./../rules/index');
 var signature       = require('./../crypto/signature');
-var crypto          = require('./../crypto/duniterKey');
+let keyring          = require('./../crypto/keyring');
 var Identity        = require('./../entity/identity');
 var Certification   = require('./../entity/certification');
 var Membership      = require('./../entity/membership');
@@ -465,7 +465,7 @@ function BlockGenerator(mainContext, prover) {
       let idty = new Identity(identity);
       idty.currency = conf.currency;
       let selfCert = idty.rawWithoutSig();
-      let verified = crypto.verify(selfCert, idty.sig, idty.pubkey);
+      let verified = keyring.verify(selfCert, idty.sig, idty.pubkey);
       if (!verified) {
         throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
       }

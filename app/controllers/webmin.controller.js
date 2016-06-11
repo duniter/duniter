@@ -11,7 +11,7 @@ let ucp = require('../lib/ucp/buid');
 let constants = require('../lib/constants');
 let base58 = require('../lib/crypto/base58');
 let rawer = require('../lib/ucp/rawer');
-let crypto = require('../lib/crypto/duniterKey');
+let keyring = require('../lib/crypto/keyring');
 let http2raw = require('../lib/helpers/http2raw');
 let bma = require('../lib/streams/bma');
 let Identity = require('../lib/entity/identity');
@@ -67,7 +67,7 @@ function WebAdmin (dbConf, overConf) {
 
   this.previewPubkey = (req) => co(function *() {
     let conf = http2raw.conf(req);
-    let pair = yield Q.nbind(crypto.getKeyPair, crypto)(conf.idty_entropy, conf.idty_password);
+    let pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
     return {
       "pubkey": base58.encode(pair.publicKey)
     };
@@ -118,7 +118,7 @@ function WebAdmin (dbConf, overConf) {
   this.sendConf = (req) => co(function *() {
     yield pluggedConfP;
     let conf = http2raw.conf(req);
-    let pair = yield Q.nbind(crypto.getKeyPair, crypto)(conf.idty_entropy, conf.idty_password);
+    let pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
     let publicKey = base58.encode(pair.publicKey);
     let secretKey = pair.secretKey;
     yield server.dal.saveConf({
@@ -176,7 +176,7 @@ function WebAdmin (dbConf, overConf) {
     let found = yield server.dal.getIdentityByHashOrNull(entity.getTargetHash());
     if (!found) {
       let selfCert = rawer.getOfficialIdentity(entity);
-      selfCert += crypto.signSync(selfCert, secretKey) + '\n';
+      selfCert += keyring.signSync(selfCert, secretKey) + '\n';
       found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, constants.ENTITY_IDENTITY);
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));
@@ -191,7 +191,7 @@ function WebAdmin (dbConf, overConf) {
         "userid": conf.idty_uid,
         "certts": block
       });
-      join += crypto.signSync(join, secretKey) + '\n';
+      join += keyring.signSync(join, secretKey) + '\n';
       yield that.pushEntity({ body: { membership: join }}, http2raw.membership, constants.ENTITY_MEMBERSHIP);
       yield server.recomputeSelfPeer();
     }
@@ -226,7 +226,7 @@ function WebAdmin (dbConf, overConf) {
   this.applyNewKeyConf = (req) => co(function *() {
     yield pluggedConfP;
     let conf = http2raw.conf(req);
-    let pair = yield Q.nbind(crypto.getKeyPair, crypto)(conf.idty_entropy, conf.idty_password);
+    let pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
     let publicKey = base58.encode(pair.publicKey);
     let secretKey = pair.secretKey;
     yield server.dal.saveConf(_.extend(server.conf, {

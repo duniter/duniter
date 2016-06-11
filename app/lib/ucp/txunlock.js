@@ -2,7 +2,6 @@
 
 let Parser = require("jison").Parser;
 let ucp = require('./buid');
-let crypto = require('./../crypto/duniterKey');
 
 let grammar = {
   "lex": {

@@ -1,7 +1,7 @@
 "use strict";
 var Q               = require('q');
 var rules           = require('../lib/rules');
-var crypto          = require('../lib/crypto/duniterKey');
+var keyring          = require('../lib/crypto/keyring');
 var constants       = require('../lib/constants');
 var Block           = require('../../app/lib/entity/block');
 var Identity        = require('../../app/lib/entity/identity');
@@ -72,7 +72,7 @@ function IdentityService () {
     return that.pushFIFO(() => co(function *() {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
-      let verified = crypto.verify(selfCert, idty.sig, idty.pubkey);
+      let verified = keyring.verify(selfCert, idty.sig, idty.pubkey);
       if (!verified) {
         throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
       }
@@ -162,7 +162,7 @@ function IdentityService () {
     var revoc = new Revocation(obj);
     var raw = revoc.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
-      let verified = crypto.verify(raw, revoc.revocation, revoc.pubkey);
+      let verified = keyring.verify(raw, revoc.revocation, revoc.pubkey);
       if (!verified) {
         throw 'Wrong signature for revocation';
       }

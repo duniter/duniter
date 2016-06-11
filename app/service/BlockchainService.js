@@ -8,9 +8,9 @@ var rules           = require('../lib/rules');
 var base58          = require('../lib/crypto/base58');
 var signature       = require('../lib/crypto/signature');
 var constants       = require('../lib/constants');
-var blockchainCtx   = require('../lib/computing/blockchainContext');
-var blockGenerator  = require('../lib/computing/blockGenerator');
-var blockProver     = require('../lib/computing/blockProver');
+var blockchainCtx   = require('../lib/computation/blockchainContext');
+var blockGenerator  = require('../lib/computation/blockGenerator');
+var blockProver     = require('../lib/computation/blockProver');
 let Identity        = require('../lib/entity/identity');
 var Transaction     = require('../lib/entity/transaction');
 var AbstractService = require('./AbstractService');
@@ -350,7 +350,7 @@ function BlockchainService () {
 
   this.startGeneration = () => co(function *() {
     if (!conf.participate) {
-      throw 'This node is configured for not participating to computing blocks.';
+      throw 'This node is configured for not participating to computation blocks.';
     }
     if (!selfPubkey) {
       throw 'No self pubkey found.';
@@ -359,17 +359,17 @@ function BlockchainService () {
     var isMember = yield dal.isMember(selfPubkey);
     var powCanceled = '';
     if (!isMember) {
-      powCanceled = 'Local node is not a member. Waiting to be a member before computing a block.';
+      powCanceled = 'Local node is not a member. Waiting to be a member before computation a block.';
     }
     else {
       current = yield dal.getCurrentBlockOrNull();
       if (!current) {
-        powCanceled = 'Waiting for a root block before computing new blocks';
+        powCanceled = 'Waiting for a root block before computation new blocks';
       }
       else {
         var lastIssuedByUs = current.issuer == selfPubkey;
         if (lastIssuedByUs) {
-          logger.warn('Waiting ' + conf.powDelay + 's before starting computing next block...');
+          logger.warn('Waiting ' + conf.powDelay + 's before starting computation next block...');
           try {
             yield prover.waitBeforePoW();
           } catch (e) {

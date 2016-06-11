@@ -10,6 +10,19 @@ docker build -t="duniter" .
 
 #### Execute the container
 
+Without your indentity
+
 ```sh
-docker run -p 8999:8999 -dt duniter
+docker run -p 8999:8999 \
+  -e "DUNITER_URL=cgeek.fr" -e "DUNITER_PORT=9330" \
+  -dt duniter
+````
+
+With your indentity
+
+```sh
+docker run -p 8999:8999 \
+  -e "DUNITER_URL=cgeek.fr" -e "DUNITER_PORT=9330" \
+  -e "DUNITER_SALT=<your_key_salt>" -e "DUNITER_PASSWD=<your_passwd>" \
+  -dt duniter
 ````

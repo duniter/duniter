@@ -2,7 +2,7 @@
 
 var assert = require('assert');
 var co = require('co');
-var cfs = require('./../../app/lib/cfs');
+var cfs = require('../../app/lib/cfs');
 var mockFS = require('q-io/fs-mock')({
   'B5_a': {
     "A.json": '{ "text": "Content of A from B5_a" }'

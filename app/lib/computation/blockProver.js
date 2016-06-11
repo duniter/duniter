@@ -2,11 +2,11 @@
 var async           = require('async');
 var co              = require('co');
 var Q               = require('q');
-var constants       = require('./../constants');
+var constants       = require('../constants');
 var base58          = require('../crypto/base58');
 var childProcess    = require('child_process');
 var path            = require('path');
-var Block           = require('./../entity/block');
+var Block           = require('../entity/block');
 
 module.exports = () => new BlockGenerator();
 

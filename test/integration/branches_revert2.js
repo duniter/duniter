@@ -2,8 +2,8 @@
 
 var co = require('co');
 var _         = require('underscore');
-var ucoin     = require('./../../index');
-var bma       = require('./../../app/lib/streams/bma');
+var ucoin     = require('../../index');
+var bma       = require('../../app/lib/streams/bma');
 var user      = require('./tools/user');
 var rp        = require('request-promise');
 var httpTest  = require('./tools/http');

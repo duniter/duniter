@@ -1,9 +1,9 @@
 "use strict";
 
 var co         = require('co');
-var hashf      = require('./../ucp/hashf');
-var keyring     = require('./../crypto/keyring');
-var rawer      = require('./../ucp/rawer');
+var hashf      = require('../ucp/hashf');
+var keyring     = require('../crypto/keyring');
+var rawer      = require('../ucp/rawer');
 var Identity   = require('../entity/identity');
 var Membership = require('../entity/membership');
 

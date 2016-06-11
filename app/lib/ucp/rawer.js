@@ -1,6 +1,6 @@
 "use strict";
-let dos2unix = require('./../system/dos2unix');
-let constants = require('./../constants');
+let dos2unix = require('../system/dos2unix');
+let constants = require('../constants');
 
 module.exports = new function() {
 

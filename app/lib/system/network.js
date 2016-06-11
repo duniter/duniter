@@ -11,8 +11,8 @@ var morgan = require('morgan');
 var errorhandler = require('errorhandler');
 var bodyParser = require('body-parser');
 var cors = require('cors');
-var constants = require('./../constants');
-var sanitize = require('./../streams/sanitize');
+var constants = require('../constants');
+var sanitize = require('../streams/sanitize');
 var logger = require('../logger')('network');
 
 module.exports = {

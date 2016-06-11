@@ -24,7 +24,7 @@ var signature   = require('../app/lib/crypto/signature');
 var crypto      = require('../app/lib/crypto/keyring');
 var base58      = require('../app/lib/crypto/base58');
 var pjson       = require('../package.json');
-var ucoin       = require('./../index');
+var ucoin       = require('../index');
 var Peer        = require('../app/lib/entity/peer');
 var Block       = require('../app/lib/entity/block');
 

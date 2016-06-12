@@ -1,12 +1,9 @@
 "use strict";
-var _ = require('underscore');
+let _ = require('underscore');
 
-var Stat = function(json) {
-
-  var that = this;
-
-  _(json).keys().forEach(function(key) {
-   that[key] = json[key];
+let Stat = function(json) {
+  _(json).keys().forEach((key) => {
+   this[key] = json[key];
   });
 
   this.json = function () {

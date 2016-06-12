@@ -1,37 +1,35 @@
 "use strict";
-var _ = require('underscore');
-var merkle = require('merkle');
+let _ = require('underscore');
+let merkle = require('merkle');
 
 module.exports = Merkle;
 
 function Merkle(json) {
 
-  var that = this;
-
-  _(json || {}).keys().forEach(function(key) {
-    var value = json[key];
+  _(json || {}).keys().forEach((key) => {
+    let value = json[key];
     if (key == "number") {
       value = parseInt(value);
     }
-    that[key] = value;
+    this[key] = value;
   });
 
-  this.initialize = function (leaves) {
-    var tree = merkle('sha256').sync(leaves);
+  this.initialize = (leaves) => {
+    let tree = merkle('sha256').sync(leaves);
     this.depth = tree.depth();
     this.nodes = tree.nodes();
     this.levels = [];
-    for (var i = 0; i < tree.levels(); i++) {
+    for (let i = 0; i < tree.levels(); i++) {
       this.levels[i] = tree.level(i);
     }
     return this;
   };
 
-  this.remove = function (leaf) {
+  this.remove = (leaf) => {
     // If leaf IS present
     if(~this.levels[this.depth].indexOf(leaf)){
-      var leaves = this.leaves();
-      var index = leaves.indexOf(leaf);
+      let leaves = this.leaves();
+      let index = leaves.indexOf(leaf);
       if(~index){
         // Replacement: remove previous hash
         leaves.splice(index, 1);
@@ -41,12 +39,12 @@ function Merkle(json) {
     }
   };
 
-  this.removeMany = function (leaves) {
-    leaves.forEach(function(leaf){
+  this.removeMany = (leaves) => {
+    leaves.forEach((leaf) => {
       // If leaf IS present
       if(~this.levels[this.depth].indexOf(leaf)){
-        var leaves = this.leaves();
-        var index = leaves.indexOf(leaf);
+        let leaves = this.leaves();
+        let index = leaves.indexOf(leaf);
         if(~index){
           // Replacement: remove previous hash
           leaves.splice(index, 1);
@@ -57,13 +55,13 @@ function Merkle(json) {
     this.initialize(leaves);
   };
 
-  this.push = function (leaf, previous) {
+  this.push = (leaf, previous) => {
     // If leaf is not present
     if(this.levels[this.depth].indexOf(leaf) == -1){
-      var leaves = this.leaves();
+      let leaves = this.leaves();
       // Update or replacement ?
       if(previous && leaf != previous){
-        var index = leaves.indexOf(previous);
+        let index = leaves.indexOf(previous);
         if(~index){
           // Replacement: remove previous hash
           leaves.splice(index, 1);
@@ -75,27 +73,20 @@ function Merkle(json) {
     }
   };
 
-  this.pushMany = function (leaves) {
-    var that = this;
-    leaves.forEach(function (leaf) {
+  this.pushMany = (leaves) => {
+    leaves.forEach((leaf) => {
       // If leaf is not present
-      if(that.levels[that.depth].indexOf(leaf) == -1){
-        that.leaves().push(leaf);
+      if(this.levels[this.depth].indexOf(leaf) == -1){
+        this.leaves().push(leaf);
       }
     });
     leaves.sort();
     this.initialize(leaves);
   };
 
-  this.root = function () {
-    return this.levels.length > 0 ? this.levels[0][0] : '';
-  };
+  this.root = () => this.levels.length > 0 ? this.levels[0][0] : '';
 
-  this.leaves = function () {
-    return this.levels[this.depth];
-  };
+  this.leaves = () => this.levels[this.depth];
 
-  this.count = function () {
-    return this.leaves().length;
-  };
+  this.count = () => this.leaves().length;
 }

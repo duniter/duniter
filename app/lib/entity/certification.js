@@ -5,12 +5,10 @@ var ucp = require('../ucp/buid');
 
 var Certification = function(json) {
 
-  var that = this;
-
   this.linked = false;
 
-  _(json).keys().forEach(function(key) {
-   that[key] = json[key];
+  _(json).keys().forEach((key) => {
+   this[key] = json[key];
   });
 
   this.from  = this.pubkey = this.from || this.pubkey || this.issuer;
@@ -20,9 +18,7 @@ var Certification = function(json) {
 
   this.getTargetHash = () => ucp.format.hashf(this.idty_uid + this.idty_buid + this.idty_issuer);
 
-  this.inline = function () {
-    return [this.pubkey, this.to, this.block_number, this.sig].join(':');
-  };
+  this.inline = () => [this.pubkey, this.to, this.block_number, this.sig].join(':');
 
   this.json = () => {
     return {
@@ -42,7 +38,7 @@ var Certification = function(json) {
 Certification.statics = {};
 
 Certification.statics.fromInline = function (inline) {
-  var sp = inline.split(':');
+  let sp = inline.split(':');
   return new Certification({
     pubkey: sp[0],
     to: sp[1],
@@ -53,9 +49,9 @@ Certification.statics.fromInline = function (inline) {
 
 Certification.statics.toInline = function (entity, certificationModel) {
   if (certificationModel) {
-    var model = new certificationModel();
-    _(model.aliases).keys().forEach(function(aliasKey){
-      var alias = model.aliases[aliasKey];
+    let model = new certificationModel();
+    _(model.aliases).keys().forEach((aliasKey) => {
+      let alias = model.aliases[aliasKey];
       entity[aliasKey] = entity[alias];
     });
   }

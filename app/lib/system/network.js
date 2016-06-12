@@ -219,6 +219,7 @@ function handleRequest(method, uri, promiseFunc, dtoContract) {
         let error = getResultingError(e);
         // HTTP error
         res.status(error.httpCode).send(JSON.stringify(error.uerr, null, "  "));
+        throw e
       }
     });
   });

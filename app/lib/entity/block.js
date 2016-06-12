@@ -6,12 +6,10 @@ module.exports = Block;
 
 function Block(json) {
 
-  var that = this;
-
   this.documentType = 'block';
 
-  _(json || {}).keys().forEach(function(key) {
-    var value = json[key];
+  _(json || {}).keys().forEach((key) => {
+    let value = json[key];
     if (
          key == "number"
       || key == "medianTime"
@@ -31,17 +29,16 @@ function Block(json) {
         value = 0;
       }
     }
-    that[key] = value;
+    this[key] = value;
   });
 
   [
     "dividend"
-  ].forEach(function(field){
-    that[field] = parseInt(that[field]) || null;
+  ].forEach((field) => {
+    this[field] = parseInt(this[field]) || null;
   });
 
-  this.json = function() {
-    var that = this;
+  this.json = () => {
     var json = {};
     [
       "version",
@@ -53,8 +50,8 @@ function Block(json) {
       "membersCount",
       "monetaryMass",
       "unitbase"
-    ].forEach(function(field){
-        json[field] = parseInt(that[field], 10);
+    ].forEach((field) => {
+        json[field] = parseInt(this[field], 10);
       });
     [
       "currency",
@@ -62,20 +59,20 @@ function Block(json) {
       "signature",
       "hash",
       "parameters"
-    ].forEach(function(field){
-        json[field] = that[field] || "";
+    ].forEach((field) => {
+        json[field] = this[field] || "";
       });
     [
       "previousHash",
       "previousIssuer",
       "inner_hash"
-    ].forEach(function(field){
-        json[field] = that[field] || null;
+    ].forEach((field) => {
+        json[field] = this[field] || null;
       });
     [
       "dividend"
-    ].forEach(function(field){
-        json[field] = parseInt(that[field]) || null;
+    ].forEach((field) => {
+        json[field] = parseInt(this[field]) || null;
       });
     [
       "identities",
@@ -85,17 +82,17 @@ function Block(json) {
       "revoked",
       "excluded",
       "certifications"
-    ].forEach(function(field){
+    ].forEach((field) => {
         json[field] = [];
-        that[field].forEach(function(raw){
+        this[field].forEach((raw) => {
           json[field].push(raw);
         });
       });
     [
       "transactions"
-    ].forEach(function(field){
+    ].forEach((field) => {
         json[field] = [];
-        that[field].forEach(function(obj){
+        this[field].forEach((obj) => {
           json[field].push(_(obj).omit('raw', 'certifiers', 'hash'));
         });
       });
@@ -103,42 +100,42 @@ function Block(json) {
     return json;
   };
 
-  this.getHash = function() {
+  this.getHash = () => {
     if (!this.hash) {
       this.hash = hashf(this.getProofOfWorkPart()).toUpperCase();
     }
     return this.hash;
   };
 
-  this.getRawInnerPart = function() {
+  this.getRawInnerPart = () => {
     return require('../ucp/rawer').getBlockInnerPart(this);
   };
 
-  this.getRaw = function() {
+  this.getRaw = () => {
     return require('../ucp/rawer').getBlockWithInnerHashAndNonce(this);
   };
 
-  this.getSignedPart = function() {
+  this.getSignedPart = () => {
     return require('../ucp/rawer').getBlockInnerHashAndNonce(this);
   };
 
-  this.getProofOfWorkPart = function() {
+  this.getProofOfWorkPart = () => {
     return require('../ucp/rawer').getBlockInnerHashAndNonceWithSignature(this);
   };
 
-  this.getRawSigned = function() {
+  this.getRawSigned = () => {
     return require('../ucp/rawer').getBlock(this);
   };
 
-  this.quickDescription = function () {
-    var desc = '#' + this.number + ' (';
+  this.quickDescription = () => {
+    let desc = '#' + this.number + ' (';
     desc += this.identities.length + ' newcomers, ' + this.certifications.length + ' certifications)';
     return desc;
   };
 
-  this.getInlineIdentity = function (pubkey) {
-    var i = 0;
-    var found = false;
+  this.getInlineIdentity = (pubkey) => {
+    let i = 0;
+    let found = false;
     while (!found && i < this.identities.length) {
       if (this.identities[i].match(new RegExp('^' + pubkey)))
         found = this.identities[i];
@@ -147,9 +144,9 @@ function Block(json) {
     return found;
   };
 
-  this.isLeaving = function (pubkey) {
-    var i = 0;
-    var found = false;
+  this.isLeaving = (pubkey) => {
+    let i = 0;
+    let found = false;
     while (!found && i < this.leavers.length) {
       if (this.leavers[i].match(new RegExp('^' + pubkey)))
         found = true;
@@ -163,9 +160,9 @@ function Block(json) {
     return found;
   };
 
-  this.isJoining = function (pubkey) {
-    var i = 0;
-    var found = false;
+  this.isJoining = (pubkey) => {
+    let i = 0;
+    let found = false;
     while (!found && i < this.joiners.length) {
       if (this.joiners[i].match(new RegExp('^' + pubkey)))
         found = true;
@@ -174,18 +171,18 @@ function Block(json) {
     return found;
   };
 
-  this.getTransactions = function () {
-    var transactions = [];
-    var version = this.version;
-    var currency = this.currency;
-    this.transactions.forEach(function (simpleTx) {
+  this.getTransactions = () => {
+    let transactions = [];
+    let version = this.version;
+    let currency = this.currency;
+    this.transactions.forEach((simpleTx) => {
       var tx = {};
       tx.issuers = simpleTx.signatories || [];
       tx.signatures = simpleTx.signatures || [];
       // Inputs
       tx.inputs = [];
-      (simpleTx.inputs || []).forEach(function (input) {
-        var sp = input.split(':');
+      (simpleTx.inputs || []).forEach((input) => {
+        let sp = input.split(':');
         tx.inputs.push({
           type: sp[0],
           identifier: sp[1],
@@ -197,8 +194,8 @@ function Block(json) {
       tx.unlocks = simpleTx.unlocks;
       // Outputs
       tx.outputs = [];
-      (simpleTx.outputs || []).forEach(function (output) {
-        var sp = output.split(':');
+      (simpleTx.outputs || []).forEach((output) => {
+        let sp = output.split(':');
         tx.outputs.push({
           amount: parseInt(sp[0]),
           base: parseInt(sp[1]),

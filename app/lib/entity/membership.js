@@ -1,40 +1,40 @@
 "use strict";
-var _ = require('underscore');
-var moment = require('moment');
-var rawer = require('../ucp/rawer');
-var constants = require('../constants');
+let _ = require('underscore');
+let moment = require('moment');
+let rawer = require('../ucp/rawer');
+let constants = require('../constants');
 
-var Membership = function(json) {
+let Membership = function(json) {
 
-  var that = this;
-
-  _(json).keys().forEach(function(key) {
-    that[key] = json[key];
+  _(json).keys().forEach((key) => {
+    this[key] = json[key];
   });
 
   this.blockNumber = isNaN(this.number) ? this.number : parseInt(this.number);
   this.blockHash = this.fpr;
   this.version = constants.DOCUMENTS_VERSION;
 
-  this.keyID = function () {
-    return this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
-  };
+  this.keyID = () => this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
 
-  this.copyValues = function(to) {
-    var obj = this;
+  this.copyValues = (to) => {
+    let obj = this;
     ["version", "currency", "issuer", "membership", "amNumber", "hash", "signature", "sigDate"].forEach(function (key) {
       to[key] = obj[key];
     });
   };
 
-  this.inline = function() {
-    return [this.issuer, this.signature, [this.number, this.fpr].join('-'), this.certts, this.userid].join(':');
-  };
+  this.inline = () => [this.issuer,
+      this.signature,
+      [this.number, this.fpr].join('-'),
+      this.certts,
+      this.userid
+    ].join(':');
 
-  this.json = function() {
-    var obj = this;
-    var json = {};
-    ["version", "currency", "issuer", "membership"].forEach(function (key) {
+
+  this.json = () => {
+    let obj = this;
+    let json = {};
+    ["version", "currency", "issuer", "membership"].forEach((key) => {
       json[key] = obj[key];
     });
     json.date = this.date && moment(this.date).unix();
@@ -43,19 +43,15 @@ var Membership = function(json) {
     return { signature: this.signature, membership: json };
   };
 
-  this.getRaw = function() {
-    return rawer.getMembershipWithoutSignature(this);
-  };
+  this.getRaw = () => rawer.getMembershipWithoutSignature(this);
 
-  this.getRawSigned = function() {
-    return rawer.getMembership(this);
-  };
+  this.getRawSigned = () => rawer.getMembership(this);
 };
 
 Membership.statics = {};
 
 Membership.statics.fromInline = function (inlineMS, type, currency) {
-  var sp = inlineMS.split(':');
+  let sp = inlineMS.split(':');
   return new Membership({
     version:    constants.DOCUMENTS_VERSION,
     currency:   currency,

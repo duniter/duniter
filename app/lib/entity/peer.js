@@ -1,60 +1,53 @@
 "use strict";
-var Q = require('q');
-var _ = require('underscore');
-var vucoin = require('vucoin');
-var rawer = require('../ucp/rawer');
+let Q = require('q');
+let _ = require('underscore');
+let vucoin = require('vucoin');
+let rawer = require('../ucp/rawer');
 
 module.exports = Peer;
 
 let DEFAULT_HOST = 'localhost';
-var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
+let BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 function Peer(json) {
 
-  var that = this;
-
   this.documentType = 'peer';
 
-  _(json).keys().forEach(function(key) {
-   that[key] = json[key];
+  _(json).keys().forEach((key) => {
+   this[key] = json[key];
   });
 
-  that.endpoints = that.endpoints || [];
-  that.statusTS = that.statusTS || 0;
+  this.endpoints = this.endpoints || [];
+  this.statusTS = this.statusTS || 0;
 
-  that.keyID = function () {
-    return that.pubkey && that.pubkey.length > 10 ? that.pubkey.substring(0, 10) : "Unknown";
-  };
+  this.keyID = () => this.pubkey && this.pubkey.length > 10 ? this.pubkey.substring(0, 10) : "Unknown";
 
-  that.copyValues = function(to) {
-    var obj = that;
-    ["version", "currency", "pub", "endpoints", "hash", "status", "statusTS", "block", "signature"].forEach(function (key) {
-      to[key] = obj[key];
+  this.copyValues = (to) => {
+    ["version", "currency", "pub", "endpoints", "hash", "status", "statusTS", "block", "signature"].forEach((key)=> {
+      to[key] = this[key];
     });
   };
 
-  that.copyValuesFrom = function(from) {
-    var obj = that;
-    ["version", "currency", "pub", "endpoints", "block", "signature"].forEach(function (key) {
-      obj[key] = from[key];
+  this.copyValuesFrom = (from) => {
+    ["version", "currency", "pub", "endpoints", "block", "signature"].forEach((key) => {
+      this[key] = from[key];
     });
   };
 
-  that.json = function() {
-    var obj = that;
-    var json = {};
-    ["version", "currency", "endpoints", "status", "block", "signature"].forEach(function (key) {
-      json[key] = obj[key];
+  this.json = () => {
+    let json = {};
+    ["version", "currency", "endpoints", "status", "block", "signature"].forEach((key) => {
+      json[key] = this[key];
     });
-    json.raw = that.getRaw();
-    json.pubkey = that.pubkey;
+    json.raw = this.getRaw();
+    json.pubkey = this.pubkey;
     return json;
   };
 
-  that.getBMA = () => {
+  this.getBMA = () => {
     var bma = null;
-    that.endpoints.forEach(function(ep){
-      var matches = !bma && ep.match(BMA_REGEXP);
+    this.endpoints.forEach((ep) => {
+      let matches = !bma && ep.match(BMA_REGEXP);
       if (matches) {
         bma = {
           "dns": matches[2] || '',
@@ -67,77 +60,76 @@ function Peer(json) {
     return bma || {};
   };
 
-  that.getDns = () => {
-    var bma = that.getBMA();
+  this.getDns = () => {
+    let bma = this.getBMA();
     return bma.dns ? bma.dns : null;
   };
 
-  that.getIPv4 = () => {
-    var bma = that.getBMA();
+  this.getIPv4 = () => {
+    let bma = this.getBMA();
     return bma.ipv4 ? bma.ipv4 : null;
   };
 
-  that.getIPv6 = () => {
-    let bma = that.getBMA();
+  this.getIPv6 = () => {
+    let bma = this.getBMA();
     return bma.ipv6 ? bma.ipv6 : null;
   };
 
-  that.getPort = () => {
-    var bma = that.getBMA();
+  this.getPort = () => {
+    var bma = this.getBMA();
     return bma.port ? bma.port : null;
   };
 
-  that.getHostPreferDNS = () => {
-    let bma = that.getBMA();
+  this.getHostPreferDNS = () => {
+    let bma = this.getBMA();
     return (bma.dns ? bma.dns :
       (bma.ipv4 ? bma.ipv4 :
         (bma.ipv6 ? bma.ipv6 : '')));
   };
 
-  that.getHost = () => {
-    let bma = that.getBMA();
-    return (that.hasValid4(bma) ? bma.ipv4 :
+  this.getHost = () => {
+    let bma = this.getBMA();
+    return (this.hasValid4(bma) ? bma.ipv4 :
       (bma.dns ? bma.dns :
         (bma.ipv6 ? '[' + bma.ipv6 + ']' : DEFAULT_HOST)));
   };
 
-  that.getURL = () => {
-    let bma = that.getBMA();
+  this.getURL = () => {
+    let bma = this.getBMA();
     let base = this.getHost();
     if(bma.port)
       base += ':' + bma.port;
     return base;
   };
 
-  that.hasValid4 = function(bma) {
-    return bma.ipv4 && !bma.ipv4.match(/^127.0/) && !bma.ipv4.match(/^192.168/) ? true : false;
-  };
+  this.hasValid4 = (bma) => bma.ipv4 && !bma.ipv4.match(/^127.0/) && !bma.ipv4.match(/^192.168/) ? true : false;
 
-  that.getNamedURL = () => this.getURL();
+  this.getNamedURL = () => this.getURL();
 
-  that.getRaw = () => rawer.getPeerWithoutSignature(that);
+  this.getRaw = () => rawer.getPeerWithoutSignature(this);
 
-  that.getRawSigned = () => rawer.getPeer(that);
+  this.getRawSigned = () => rawer.getPeer(this);
 
-  that.connect = function (done){
-    vucoin(that.getDns() || that.getIPv6() || that.getIPv4() || DEFAULT_HOST, that.getPort(), done, {
+  this.connect = (done) => {
+    vucoin(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(), done, {
       timeout: 2000
     });
   };
 
-  that.connectP = (timeout) => {
-    return Q.Promise(function(resolve, reject){
-      vucoin(that.getDns() || that.getIPv6() || that.getIPv4() || DEFAULT_HOST, that.getPort(), (err, node) => {
-        if (err) return reject(err);
-        resolve(node);
-      }, {
-        timeout: timeout || 2000
-      });
+  this.connectP = (timeout) => {
+    return Q.Promise((resolve, reject) => {
+      vucoin(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(),
+          (err, node) => {
+            if (err) return reject(err);
+            resolve(node);
+          }, {
+            timeout: timeout || 2000
+          });
     });
   };
 
-  that.isReachable = function () {
-    return that.getURL() ? true : false;
+  this.isReachable = () => {
+    return this.getURL() ? true : false;
   };
 }
 

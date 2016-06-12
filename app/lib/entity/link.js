@@ -1,17 +1,15 @@
 "use strict";
-var _ = require('underscore');
+let _ = require('underscore');
 
 module.exports = Link;
 
 function Link(json) {
 
-  var that = this;
-
-  _(json || {}).keys().forEach(function(key) {
-    var value = json[key];
+  _(json || {}).keys().forEach((key) => {
+    let value = json[key];
     if (key == "number") {
       value = parseInt(value);
     }
-    that[key] = value;
+    this[key] = value;
   });
 }

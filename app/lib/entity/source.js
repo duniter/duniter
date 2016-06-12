@@ -1,21 +1,19 @@
 "use strict";
-var _ = require('underscore');
+let _ = require('underscore');
 
 module.exports = Source;
 
 function Source(json) {
-
-  var that = this;
-
-  _(json || {}).keys().forEach(function(key) {
-    var value = json[key];
+  
+  _(json || {}).keys().forEach((key) => {
+    let value = json[key];
     if (key == "number") {
       value = parseInt(value);
     }
     else if (key == "consumed") {
       value = !!value;
     }
-    that[key] = value;
+    this[key] = value;
   });
 
   this.json = function () {

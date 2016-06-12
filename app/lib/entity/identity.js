@@ -5,8 +5,6 @@ var rawer = require('../ucp/rawer');
 
 var Identity = function(json) {
 
-  var that = this;
-
   this.revoked = false;
   this.currentMSN = -1;
   this.currentINN = -1;
@@ -19,8 +17,8 @@ var Identity = function(json) {
   this.certs = [];
   this.memberships = [];
 
-  _(json).keys().forEach(function(key) {
-    that[key] = json[key];
+  _(json).keys().forEach((key) => {
+    this[key] = json[key];
   });
 
   this.issuer = this.pubkey = (this.issuer || this.pubkey);
@@ -30,9 +28,9 @@ var Identity = function(json) {
   this.hash = hashf(this.uid + this.buid + this.pubkey).toUpperCase();
   this.memberships = this.memberships || [];
 
-  this.json = function () {
-    var others = [];
-    this.certs.forEach(function(cert){
+  this.json = () => {
+    let others = [];
+    this.certs.forEach((cert) => {
       others.push({
         "pubkey": cert.from,
         "meta": {
@@ -44,7 +42,7 @@ var Identity = function(json) {
         "signature": cert.sig
       });
     });
-    var uids = [{
+    let uids = [{
       "uid": this.uid,
       "meta": {
         "timestamp": this.buid
@@ -54,8 +52,8 @@ var Identity = function(json) {
       "self": this.sig,
       "others": others
     }];
-    var signed = [];
-    this.signed.forEach(function(cert) {
+    let signed = [];
+    this.signed.forEach((cert) => {
       signed.push({
         "uid": cert.idty.uid,
         "pubkey": cert.idty.pubkey,
@@ -74,11 +72,11 @@ var Identity = function(json) {
     };
   };
 
-  this.inline = function () {
+  this.inline = () => {
     return [this.pubkey, this.sig, this.buid, this.uid].join(':');
   };
 
-  this.selfCert = function () {
+  this.selfCert = () => {
     return rawer.getOfficialIdentity(this);
   };
 
@@ -90,7 +88,7 @@ var Identity = function(json) {
     return raw;
   };
 
-  this.getTargetHash = function () {
+  this.getTargetHash = () => {
     return hashf(this.uid + this.buid + this.pubkey).toUpperCase();
   };
 
@@ -102,7 +100,7 @@ var Identity = function(json) {
 Identity.statics = {};
 
 Identity.statics.fromInline = function (inline) {
-  var sp = inline.split(':');
+  let sp = inline.split(':');
   return new Identity({
     pubkey: sp[0],
     sig: sp[1],
@@ -112,7 +110,7 @@ Identity.statics.fromInline = function (inline) {
 };
 
 Identity.statics.revocationFromInline = function (inline) {
-  var sp = inline.split(':');
+  let sp = inline.split(':');
   return {
     pubkey: sp[0],
     sig: sp[1]

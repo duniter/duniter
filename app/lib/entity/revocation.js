@@ -1,14 +1,12 @@
 "use strict";
-var _ = require('underscore');
-var rawer = require('../ucp/rawer');
-var ucp = require('../ucp/buid');
+let _ = require('underscore');
+let rawer = require('../ucp/rawer');
+let ucp = require('../ucp/buid');
 
-var Revocation = function(json) {
+let Revocation = function(json) {
 
-  var that = this;
-
-  _(json).keys().forEach(function(key) {
-   that[key] = json[key];
+  _(json).keys().forEach((key) => {
+   this[key] = json[key];
   });
 
   this.getRaw = () => rawer.getOfficialRevocation(this);

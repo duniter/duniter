@@ -1,13 +1,12 @@
 "use strict";
-var _ = require('underscore');
-var rawer = require('../ucp/rawer');
-var hashf = require('../ucp/hashf');
-var constants = require('../constants');
+let _ = require('underscore');
+let rawer = require('../ucp/rawer');
+let hashf = require('../ucp/hashf');
+let constants = require('../constants');
 
-var Transaction = function(obj, currency) {
+let Transaction = function(obj, currency) {
 
-  var that = this;
-  var json = obj || {};
+  let json = obj || {};
 
   this.locktime = 0;
   this.inputs = [];
@@ -15,8 +14,8 @@ var Transaction = function(obj, currency) {
   this.outputs = [];
   this.issuers = [];
 
-  _(json).keys().forEach(function(key) {
-   that[key] = json[key];
+  _(json).keys().forEach((key) => {
+   this[key] = json[key];
   });
 
   this.version = constants.DOCUMENTS_VERSION;
@@ -27,7 +26,7 @@ var Transaction = function(obj, currency) {
   if (this.issuers && this.issuers.length)
     this.signatories = this.issuers;
 
-  this.json = function() {
+  this.json = () => {
     return {
       'version': parseInt(this.version, 10),
       'currency': this.currency,
@@ -43,7 +42,7 @@ var Transaction = function(obj, currency) {
     };
   };
 
-  this.getTransaction = function () {
+  this.getTransaction = () => {
     var tx = {};
     tx.hash = this.hash;
     tx.version = this.version;
@@ -79,20 +78,16 @@ var Transaction = function(obj, currency) {
     return tx;
   };
 
-  this.getRaw = function () {
-    return rawer.getTransaction(this);
-  };
+  this.getRaw = () => rawer.getTransaction(this);
 
-  this.getHash = function (recompute) {
+  this.getHash = (recompute) => {
     if (recompute || !this.hash) {
       this.hash = hashf(rawer.getTransaction(this)).toUpperCase();
     }
     return this.hash;
   };
 
-  this.compact = function () {
-    return rawer.getCompactTransaction(this);
-  };
+  this.compact = () => rawer.getCompactTransaction(this);
 
   this.hash = this.hash || hashf(this.getRaw()).toUpperCase();
 };

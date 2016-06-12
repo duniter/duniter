@@ -8,8 +8,8 @@ var constants     = require('../../constants');
 module.exports = BlockParser;
 
 function BlockParser (onError) {
-  
-  var captures = [
+
+  let captures = [
     {prop: "version",         regexp: constants.BLOCK.VERSION},
     {prop: "type",            regexp: constants.BLOCK.TYPE},
     {prop: "currency",        regexp: constants.BLOCK.CURRENCY},
@@ -35,10 +35,10 @@ function BlockParser (onError) {
     {prop: "inner_hash",      regexp: constants.BLOCK.INNER_HASH},
     {prop: "nonce",           regexp: constants.BLOCK.NONCE}
   ];
-  var multilineFields = [];
+  let multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getBlock, onError);
 
-  this._clean = function (obj) {
+  this._clean = (obj) => {
     obj.documentType = 'block';
     obj.identities = obj.identities || [];
     obj.joiners = obj.joiners || [];
@@ -64,16 +64,16 @@ function BlockParser (onError) {
     obj.previousHash = obj.previousHash || '';
     obj.previousIssuer = obj.previousIssuer || '';
     obj.membersCount = obj.membersCount || '';
-    obj.transactions.map(function(tx) {
+    obj.transactions.map((tx) => {
       tx.version = obj.version;
       tx.currency = obj.currency;
       tx.hash = hashf(rawer.getTransaction(tx)).toUpperCase();
     });
   };
 
-  this._verify = function(obj){
+  this._verify = (obj) => {
     var err = null;
-    var codes = {
+    let codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
       'BAD_NUMBER': 152,
@@ -160,7 +160,7 @@ function splitAndMatch (separator, regexp) {
 }
 
 function extractTransactions(raw) {
-  var regexps = {
+  let regexps = {
     "signatories": constants.TRANSACTION.SENDER,
     "inputs": constants.TRANSACTION.SOURCE,
     "unlocks": constants.TRANSACTION.UNLOCK,
@@ -168,22 +168,22 @@ function extractTransactions(raw) {
     "comments": constants.TRANSACTION.INLINE_COMMENT,
     "signatures": constants.SIG
   };
-  var transactions = [];
-  var lines = raw.split(/\n/);
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
+  let transactions = [];
+  let lines = raw.split(/\n/);
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
     // On each header
     if (line.match(constants.TRANSACTION.HEADER)) {
       // Parse the transaction
-      var currentTX = { raw: line + '\n' };
-      var sp = line.split(':');
-      var nbSignatories = parseInt(sp[2]);
-      var nbInputs = parseInt(sp[3]);
-      var nbUnlocks = parseInt(sp[4]);
-      var nbOutputs = parseInt(sp[5]);
-      var hasComment = parseInt(sp[6]);
+      let currentTX = { raw: line + '\n' };
+      let sp = line.split(':');
+      let nbSignatories = parseInt(sp[2]);
+      let nbInputs = parseInt(sp[3]);
+      let nbUnlocks = parseInt(sp[4]);
+      let nbOutputs = parseInt(sp[5]);
+      let hasComment = parseInt(sp[6]);
       currentTX.locktime = parseInt(sp[7]);
-      var linesToExtract = {
+      let linesToExtract = {
         signatories: {
           start: 1,
           end: nbSignatories
@@ -209,10 +209,10 @@ function extractTransactions(raw) {
           end: 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
         }
       };
-      ['signatories', 'inputs', 'unlocks', 'outputs', 'comments', 'signatures'].forEach(function(prop){
+      ['signatories', 'inputs', 'unlocks', 'outputs', 'comments', 'signatures'].forEach((prop) => {
         currentTX[prop] = currentTX[prop] || [];
-        for (var j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
-          var line = lines[i + j];
+        for (let j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
+          let line = lines[i + j];
           if (line.match(regexps[prop])) {
             currentTX.raw += line + '\n';
             currentTX[prop].push(line);

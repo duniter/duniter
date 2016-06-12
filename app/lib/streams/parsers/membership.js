@@ -8,8 +8,8 @@ var constants     = require('../../constants');
 module.exports = MembershipParser;
 
 function MembershipParser (onError) {
-  
-  var captures = [
+
+  let captures = [
     {prop: "version",           regexp: constants.MEMBERSHIP.VERSION },
     {prop: "currency",          regexp: constants.MEMBERSHIP.CURRENCY },
     {prop: "issuer",            regexp: constants.MEMBERSHIP.ISSUER },
@@ -18,10 +18,10 @@ function MembershipParser (onError) {
     {prop: "block",             regexp: constants.MEMBERSHIP.BLOCK},
     {prop: "certts",            regexp: constants.MEMBERSHIP.CERTTS}
   ];
-  var multilineFields = [];
+  let multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
 
-  this._clean = function (obj) {
+  this._clean = (obj) => {
     obj.documentType = 'membership';
     if (obj.block) {
       obj.number = obj.block.split('-')[0];
@@ -32,7 +32,7 @@ function MembershipParser (onError) {
     }
   };
 
-  this._verify = function(obj){
+  this._verify = (obj) => {
     var err = null;
     var codes = {
       'BAD_VERSION': 150,

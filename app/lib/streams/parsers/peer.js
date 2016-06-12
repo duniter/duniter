@@ -2,7 +2,6 @@
 var GenericParser = require('./GenericParser');
 var rawer         = require('../../ucp/rawer');
 var util          = require('util');
-var split         = require('./helpers/split');
 var constants     = require('../../constants');
 
 module.exports = PeerParser;
@@ -10,18 +9,20 @@ module.exports = PeerParser;
 var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]+))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 function PeerParser (onError) {
-  
-  var captures = [
+
+  let captures = [
     {prop: "version",           regexp: /Version: (.*)/},
     {prop: "currency",          regexp: /Currency: (.*)/},
     {prop: "pubkey",            regexp: /PublicKey: (.*)/},
     {prop: "block",             regexp: constants.PEER.BLOCK},
-    {prop: "endpoints",         regexp: /Endpoints:\n([\s\S]*)/, parser: split("\n")}
+    {
+      prop: "endpoints", regexp: /Endpoints:\n([\s\S]*)/, parser: (str) => str.split("\n")
+    }
   ];
-  var multilineFields = [];
+  let multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getPeer, onError);
 
-  this._clean = function (obj) {
+  this._clean = (obj) => {
     obj.documentType = 'peer';
     obj.endpoints = obj.endpoints || [];
     // Removes trailing space
@@ -29,8 +30,8 @@ function PeerParser (onError) {
       obj.endpoints.splice(obj.endpoints.length - 1, 1);
     obj.getBMA = function() {
       var bma = null;
-      obj.endpoints.forEach(function(ep){
-        var matches = !bma && ep.match(BMA_REGEXP);
+      obj.endpoints.forEach((ep) => {
+        let matches = !bma && ep.match(BMA_REGEXP);
         if (matches) {
           bma = {
             "dns": matches[2] || '',
@@ -44,9 +45,9 @@ function PeerParser (onError) {
     };
   };
 
-  this._verify = function(obj){
+  this._verify = (obj) => {
     var err = null;
-    var codes = {
+    let codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
       'BAD_DNS': 152,
@@ -73,7 +74,7 @@ function PeerParser (onError) {
         err = {code: codes.BAD_BLOCK, message: "Incorrect Block field"};
     }
     // Basic Merkled API requirements
-    var bma = obj.getBMA();
+    let bma = obj.getBMA();
     if(!err){
       // DNS
       if(bma.dns && !bma.dns.match(/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/))

@@ -23,7 +23,7 @@ function RevocationParser (onError) {
   let multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getOfficialRevocation, onError);
 
-  this._clean = function (obj) {
+  this._clean = (obj) => {
     obj.documentType = 'revocation';
     obj.pubkey = obj.issuer;
     obj.revocation = obj.signature;
@@ -32,7 +32,7 @@ function RevocationParser (onError) {
     }
   };
 
-  this._verify = function (obj) {
+  this._verify = (obj) => {
     if (!obj.pubkey) {
       return "No pubkey found";
     }

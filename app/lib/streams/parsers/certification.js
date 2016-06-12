@@ -24,7 +24,7 @@ function CertificationParser (onError) {
   let multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getOfficialCertification, onError);
 
-  this._clean = function (obj) {
+  this._clean = (obj) => {
     obj.documentType = 'certification';
     obj.sig = obj.signature;
     obj.block = obj.buid;

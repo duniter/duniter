@@ -21,7 +21,7 @@ function IdentityParser (onError) {
   let multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getOfficialIdentity, onError);
 
-  this._clean = function (obj) {
+  this._clean = (obj) => {
     obj.documentType = 'identity';
     obj.sig = obj.signature;
     if (obj.uid && obj.buid && obj.pubkey) {
@@ -29,7 +29,7 @@ function IdentityParser (onError) {
     }
   };
 
-  this._verify = function (obj) {
+  this._verify = (obj) => {
     if (!obj.pubkey) {
       return "No pubkey found";
     }

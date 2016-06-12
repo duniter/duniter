@@ -4,28 +4,57 @@ var stream               = require('stream');
 var hashf                = require('../../ucp/hashf');
 var logger               = require('../../logger')('gen_parser');
 var constants            = require('../../constants');
-var simpleLineExtract    = require('./helpers/simpleLineExtract');
-var multipleLinesExtract = require('./helpers/multipleLinesExtract');
 
 module.exports = GenericParser;
+
 
 function GenericParser (captures, multipleLinesFields, rawerFunc) {
 
   stream.Transform.call(this, { decodeStrings: false, objectMode: true });
 
-  var that = this;
   this.rawerFunc = rawerFunc;
+
+  this._simpleLineExtraction = (pr, rawEntry, cap, parser) => {
+    let fieldValue = rawEntry.match(cap.regexp);
+    if(fieldValue && fieldValue.length >= 2){
+      pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1]) : fieldValue[1];
+    }
+    return;
+  };
+
+  this._multipleLinesExtraction = (am, wholeAmend, cap) => {
+    let fieldValue = wholeAmend.match(cap.regexp);
+    let line = 0;
+    am[cap.prop] = [];
+    if(fieldValue && fieldValue.length >= 2)
+    {
+      let lines = fieldValue[1].split(/\n/);
+      if(lines[lines.length - 1].match(/^$/)){
+        for (var i = 0; i < lines.length - 1; i++) {
+          line = lines[i];
+          let fprChange = line.match(/([+-][A-Z\d]{40})/);
+          if(fprChange && fprChange.length == 2){
+            am[cap.prop].push(fprChange[1]);
+          }
+          else{
+            return "Wrong structure for line: '" + line + "'";
+          }
+        }
+      }
+      else return "Wrong structure for line: '" + line + "'";
+    }
+  };
 
   this.syncWrite = (str) => {
     var error;
     var obj = {};
-    that._parse(str, obj);
-    that._clean(obj);
+    this._parse(str, obj);
+    this._clean(obj);
     if (!error) {
-      error = that._verify(obj);
+      error = this._verify(obj);
     }
     if (!error) {
-      var raw = that.rawerFunc(obj);
+      var raw = this.rawerFunc(obj);
       if (hashf(str) != hashf(raw))
         error = constants.ERRORS.WRONG_DOCUMENT;
       if (error) {
@@ -43,7 +72,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
     return obj;
   };
 
-  this._parse = function (str, obj) {
+  this._parse = (str, obj) => {
     var error;
     if(!str){
       error = "No document given";
@@ -62,11 +91,11 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
         obj.raw = sp.slice(0, sp.length - endOffset).join('\n') + '\n';
         var docLF = obj.raw.replace(/\r\n/g, "\n");
         if(docLF.match(/\n$/)){
-          captures.forEach(function (cap) {
+          captures.forEach((cap) => {
             if(~multipleLinesFields.indexOf(multipleLinesFields))
-              error = multipleLinesExtract(obj, docLF, cap);
+              error = this._multipleLinesExtraction(obj, docLF, cap);
             else
-              simpleLineExtract(obj, docLF, cap);
+              this._simpleLineExtraction(obj, docLF, cap);
           });
         }
         else{

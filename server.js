@@ -1,35 +1,35 @@
 "use strict";
-var stream      = require('stream');
-var async       = require('async');
-var util        = require('util');
-var path        = require('path');
-var co          = require('co');
-var _           = require('underscore');
-var Q           = require('q');
-var parsers     = require('./app/lib/streams/parsers');
-var constants   = require('./app/lib/constants');
-var fileDAL     = require('./app/lib/dal/fileDAL');
-var jsonpckg    = require('./package.json');
-var router      = require('./app/lib/streams/router');
-var base58      = require('./app/lib/crypto/base58');
-var crypto      = require('./app/lib/crypto/keyring');
-var signature   = require('./app/lib/crypto/signature');
-var directory   = require('./app/lib/system/directory');
-var dos2unix    = require('./app/lib/system/dos2unix');
-var Synchroniser = require('./app/lib/sync');
-var multicaster = require('./app/lib/streams/multicaster');
-var upnp        = require('./app/lib/system/upnp');
-var bma         = require('./app/lib/streams/bma');
-var rawer       = require('./app/lib/ucp/rawer');
+const stream      = require('stream');
+const async       = require('async');
+const util        = require('util');
+const path        = require('path');
+const co          = require('co');
+const _           = require('underscore');
+const Q           = require('q');
+const parsers     = require('./app/lib/streams/parsers');
+const constants   = require('./app/lib/constants');
+const fileDAL     = require('./app/lib/dal/fileDAL');
+const jsonpckg    = require('./package.json');
+const router      = require('./app/lib/streams/router');
+const base58      = require('./app/lib/crypto/base58');
+const crypto      = require('./app/lib/crypto/keyring');
+const signature   = require('./app/lib/crypto/signature');
+const directory   = require('./app/lib/system/directory');
+const dos2unix    = require('./app/lib/system/dos2unix');
+const Synchroniser = require('./app/lib/sync');
+const multicaster = require('./app/lib/streams/multicaster');
+const upnp        = require('./app/lib/system/upnp');
+const bma         = require('./app/lib/streams/bma');
+const rawer       = require('./app/lib/ucp/rawer');
 
 function Server (dbConf, overrideConf) {
 
   stream.Duplex.call(this, { objectMode: true });
 
-  let home = directory.getHome(dbConf.name, dbConf.home);
-  let paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
-  let logger = require('./app/lib/logger')('server');
-  let that = this;
+  const home = directory.getHome(dbConf.name, dbConf.home);
+  const paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
+  const logger = require('./app/lib/logger')('server');
+  const that = this;
   that.conf = null;
   that.dal = null;
   that.version = jsonpckg.version;
@@ -43,7 +43,7 @@ function Server (dbConf, overrideConf) {
   that.TransactionsService = require('./app/service/TransactionsService')();
 
   // Create document mapping
-  let documentsMapping = {
+  const documentsMapping = {
     'identity':      { action: that.IdentityService.submitIdentity,                                               parser: parsers.parseIdentity },
     'certification': { action: that.IdentityService.submitCertification,                                          parser: parsers.parseCertification},
     'revocation':    { action: that.IdentityService.submitRevocation,                                             parser: parsers.parseRevocation },
@@ -70,7 +70,7 @@ function Server (dbConf, overrideConf) {
 
   this.plugFileSystem = () => co(function *() {
     logger.debug('Plugging file system...');
-    let params = yield paramsP;
+    const params = yield paramsP;
     that.dal = fileDAL(params);
   });
 
@@ -85,7 +85,7 @@ function Server (dbConf, overrideConf) {
     logger.debug('Loading conf...');
     that.conf = yield that.dal.loadConf(overrideConf, useDefaultConf);
     // Default values
-    var defaultValues = {
+    const defaultValues = {
       remoteipv6:         that.conf.ipv6,
       remoteport:         that.conf.port,
       cpu:                constants.DEFAULT_CPU,
@@ -154,13 +154,13 @@ function Server (dbConf, overrideConf) {
     return that;
   });
 
-  this.submit = function (obj, isInnerWrite, done) {
+  this.submit = (obj, isInnerWrite, done) => {
     return co(function *() {
       if (!obj.documentType) {
         throw 'Document type not given';
       }
       try {
-        let action = documentsMapping[obj.documentType].action;
+        const action = documentsMapping[obj.documentType].action;
         let res;
         if (typeof action == 'function') {
           // Handle the incoming object
@@ -197,169 +197,152 @@ function Server (dbConf, overrideConf) {
 
   this.initDAL = () => this.dal.init();
 
-  this.start = function () {
-    return that.checkConfig()
-      .then(function (){
-        // Add signing & public key functions to PeeringService
-        logger.info('Node version: ' + that.version);
-        logger.info('Node pubkey: ' + that.PeeringService.pubkey);
-        return Q.nfcall(that.initPeer);
-      });
-  };
+  this.start = () => co(function*(){
+    yield that.checkConfig();
+    // Add signing & public key functions to PeeringService
+    logger.info('Node version: ' + that.version);
+    logger.info('Node pubkey: ' + that.PeeringService.pubkey);
+    return that.initPeer();
+  });
 
-  this.stop = function () {
+  this.stop = () => {
     that.BlockchainService.stopCleanMemory();
     return that.PeeringService.stopRegular();
   };
 
-  this.recomputeSelfPeer = function() {
+  this.recomputeSelfPeer = () => {
     return Q.nbind(that.PeeringService.generateSelfPeer, that.PeeringService)(that.conf, 0);
   };
 
-  this.initPeer = function (done) {
-    async.waterfall([
-      function (next){
-        that.checkConfig().then(next).catch(next);
-      },
-      function (next){
-        that.PeeringService.regularCrawlPeers(next);
-      },
-      function (next){
-        logger.info('Storing self peer...');
-        that.PeeringService.regularPeerSignal(next);
-      },
-      function(next) {
-        that.PeeringService.regularTestPeers(next);
-      },
-      function (next){
-        that.PeeringService.regularSyncBlock(next);
-      },
-      function (next){
-        that.BlockchainService.regularCleanMemory(next);
-      }
-    ], done);
-  };
+  this.initPeer = () => co(function*(){
+      yield that.checkConfig();
+      yield Q.nbind(that.PeeringService.regularCrawlPeers, that.PeeringService);
+      logger.info('Storing self peer...');
+      yield Q.nbind(that.PeeringService.regularPeerSignal, that.PeeringService);
+      yield Q.nbind(that.PeeringService.regularTestPeers, that.PeeringService);
+      yield Q.nbind(that.PeeringService.regularSyncBlock, that.PeeringService);
+      yield Q.nbind(that.BlockchainService.regularCleanMemory, that.BlockchainService);
+  });
 
   let shouldContinue = false;
 
-  this.stopBlockComputation = function() {
+  this.stopBlockComputation = () => {
     shouldContinue = false;
     that.BlockchainService.stopPoWThenProcessAndRestartPoW();
   };
 
-  this.startBlockComputation = function() {
-    shouldContinue = true;
-    return co(function *() {
-      while (shouldContinue) {
-        try {
-          let block = yield that.BlockchainService.startGeneration();
-          if (block && shouldContinue) {
-            try {
-              let obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
-              yield that.singleWritePromise(obj);
-            } catch (err) {
-              logger.warn('Proof-of-work self-submission: %s', err.message || err);
-            }
+  this._blockComputation = () => co(function *() {
+    while (shouldContinue) {
+      try {
+        const block = yield that.BlockchainService.startGeneration();
+        if (block && shouldContinue) {
+          try {
+            const obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
+            yield that.singleWritePromise(obj);
+          } catch (err) {
+            logger.warn('Proof-of-work self-submission: %s', err.message || err);
           }
         }
-        catch (e) {
-          logger.error(e);
-          shouldContinue = true;
-        }
       }
-      logger.info('Proof-of-work computation STOPPED.');
-    });
+      catch (e) {
+        logger.error(e);
+        shouldContinue = true;
+      }
+    }
+    logger.info('Proof-of-work computation STOPPED.');
+  });
+
+  this.startBlockComputation = () => {
+    shouldContinue = true;
+    return that._blockComputation();
   };
 
-  this.checkConfig = function () {
+  this.checkConfig = () => {
     return that.checkPeeringConf(that.conf);
   };
 
-  this.checkPeeringConf = function (conf) {
-    return Q()
-      .then(function(){
-        if (!conf.pair && conf.passwd == null) {
-          throw new Error('No key password was given.');
-        }
-        if (!conf.pair && conf.salt == null) {
-          throw new Error('No key salt was given.');
-        }
-        if (!conf.currency) {
-          throw new Error('No currency name was given.');
-        }
-        if(!conf.ipv4 && !conf.ipv6){
-          throw new Error("No interface to listen to.");
-        }
-        if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
-          throw new Error('No interface for remote contact.');
-        }
-        if (!conf.remoteport) {
-          throw new Error('No port for remote contact.');
-        }
-      });
-  };
+  this.checkPeeringConf = (conf) => co(function*() {
+      if (!conf.pair && conf.passwd == null) {
+        throw new Error('No key password was given.');
+      }
+      if (!conf.pair && conf.salt == null) {
+        throw new Error('No key salt was given.');
+      }
+      if (!conf.currency) {
+        throw new Error('No currency name was given.');
+      }
+      if(!conf.ipv4 && !conf.ipv6){
+        throw new Error("No interface to listen to.");
+      }
+      if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
+        throw new Error('No interface for remote contact.');
+      }
+      if (!conf.remoteport) {
+        throw new Error('No port for remote contact.');
+      }
+  });
 
-  this.resetAll = function(done) {
-    var files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+  this.resetAll = (done) => {
+    const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
+    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
 
-  this.resetData = function(done) {
+  this.resetData = (done) => {
     return co(function*(){
-      var files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.UCOIN_DB_NAME + '.log', directory.WOTB_FILE];
-      var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+      const files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.UCOIN_DB_NAME + '.log', directory.WOTB_FILE];
+      const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
       yield resetFiles(files, dirs, done);
     });
   };
 
-  this.resetConf = function(done) {
-    var files = ['conf'];
-    var dirs  = [];
+  this.resetConf = (done) => {
+    const files = ['conf'];
+    const dirs  = [];
     return resetFiles(files, dirs, done);
   };
 
-  this.resetStats = function(done) {
-    var files = ['stats'];
-    var dirs  = ['ud_history'];
+  this.resetStats = (done) => {
+    const files = ['stats'];
+    const dirs  = ['ud_history'];
     return resetFiles(files, dirs, done);
   };
 
-  this.resetPeers = function(done) {
+  this.resetPeers = (done) => {
     return that.dal.resetPeers(done);
   };
 
   this.cleanDBData = () => co(function *() {
     yield _.values(that.dal.newDals).map((dal) => dal.cleanData && dal.cleanData());
     that.dal.wotb.resetWoT();
-    var files = ['stats', 'cores', 'current'];
-    var dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current'];
+    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs);
   });
 
   function resetFiles(files, dirs, done) {
     return co(function *() {
-      let params = yield paramsP;
-      let myFS = params.fs;
-      let rootPath = params.home;
+      const params = yield paramsP;
+      const myFS = params.fs;
+      const rootPath = params.home;
       for (let i = 0, len = files.length; i < len; i++) {
         let fName = files[i];
         // JSON file?
-        let existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
+        const existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
         if (existsJSON) {
           yield myFS.remove(rootPath + '/' + fName + '.json');
         } else {
           // Normal file?
-          let normalFile = path.join(rootPath, fName);
-          let existsFile = yield myFS.exists(normalFile);
+          const normalFile = path.join(rootPath, fName);
+          const existsFile = yield myFS.exists(normalFile);
           if (existsFile) {
             yield myFS.remove(normalFile);
           }
         }
       }
       for (let i = 0, len = dirs.length; i < len; i++) {
-        let dirName = dirs[i];
-        let existsDir = yield myFS.exists(rootPath + '/' + dirName);
+        const dirName = dirs[i];
+        const existsDir = yield myFS.exists(rootPath + '/' + dirName);
         if (existsDir) {
           yield myFS.removeTree(rootPath + '/' + dirName);
         }
@@ -372,7 +355,7 @@ function Server (dbConf, overrideConf) {
         });
   }
 
-  this.disconnect = function() {
+  this.disconnect = () => {
     return that.dal && that.dal.close();
   };
 
@@ -380,15 +363,15 @@ function Server (dbConf, overrideConf) {
 
   this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, null, manualValues);
 
-  this.doCheckBlock = function(block) {
-    var parsed = parsers.parseBlock.syncWrite(block.getRawSigned());
+  this.doCheckBlock = (block) => {
+    const parsed = parsers.parseBlock.syncWrite(block.getRawSigned());
     return that.BlockchainService.checkBlock(parsed, false);
   };
 
   this.revert = () => this.BlockchainService.revertCurrentBlock();
 
   this.revertTo = (number) => co(function *() {
-    let current = yield that.BlockchainService.current();
+    const current = yield that.BlockchainService.current();
     for (let i = 0, count = current.number - number; i < count; i++) {
       yield that.BlockchainService.revertCurrentBlock();
     }
@@ -400,9 +383,9 @@ function Server (dbConf, overrideConf) {
 
   this.singleWritePromise = (obj) => that.submit(obj);
 
-  var theRouter;
+  let theRouter;
 
-  this.router = function(active) {
+  this.router = (active) => {
     if (!theRouter) {
       theRouter = router(that.PeeringService, that.conf, that.dal);
     }
@@ -425,8 +408,8 @@ function Server (dbConf, overrideConf) {
    * @param nopeers If true, sync will omit to retrieve peer documents.
    */
   this.synchronize = (onHost, onPort, upTo, chunkLength, interactive, askedCautious, nopeers) => {
-    let remote = new Synchroniser(that, onHost, onPort, that.conf, interactive === true);
-    let syncPromise = remote.sync(upTo, chunkLength, askedCautious, nopeers);
+    const remote = new Synchroniser(that, onHost, onPort, that.conf, interactive === true);
+    const syncPromise = remote.sync(upTo, chunkLength, askedCautious, nopeers);
     return {
       flow: remote,
       syncPromise: syncPromise
@@ -448,13 +431,13 @@ function Server (dbConf, overrideConf) {
   };
 
   this.upnp = () => co(function *() {
-    let upnpAPI = yield upnp(that.conf.port, that.conf.remoteport);
+    const upnpAPI = yield upnp(that.conf.port, that.conf.remoteport);
     that.upnpAPI = upnpAPI;
     return upnpAPI;
   });
   
   this.listenToTheWeb = (showLogs) => co(function *() {
-    let bmapi = yield bma(that, [{
+    const bmapi = yield bma(that, [{
       ip: that.conf.ipv4,
       port: that.conf.port
     }], showLogs);
@@ -464,8 +447,8 @@ function Server (dbConf, overrideConf) {
   this.rawer = rawer;
 
   this.writeRaw = (raw, type) => co(function *() {
-    let parser = documentsMapping[type] && documentsMapping[type].parser;
-    let obj = parser.syncWrite(raw);
+    const parser = documentsMapping[type] && documentsMapping[type].parser;
+    const obj = parser.syncWrite(raw);
     return yield that.singleWritePromise(obj);
   });
 }

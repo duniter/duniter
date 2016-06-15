@@ -1,6 +1,6 @@
 "use strict";
-var _ = require('underscore');
-var hashf = require('../ucp/hashf');
+const _ = require('underscore');
+const hashf = require('../ucp/hashf');
 
 module.exports = Block;
 
@@ -39,7 +39,7 @@ function Block(json) {
   });
 
   this.json = () => {
-    var json = {};
+    const json = {};
     [
       "version",
       "nonce",
@@ -172,17 +172,17 @@ function Block(json) {
   };
 
   this.getTransactions = () => {
-    let transactions = [];
-    let version = this.version;
-    let currency = this.currency;
+    const transactions = [];
+    const version = this.version;
+    const currency = this.currency;
     this.transactions.forEach((simpleTx) => {
-      var tx = {};
+      const tx = {};
       tx.issuers = simpleTx.signatories || [];
       tx.signatures = simpleTx.signatures || [];
       // Inputs
       tx.inputs = [];
       (simpleTx.inputs || []).forEach((input) => {
-        let sp = input.split(':');
+        const sp = input.split(':');
         tx.inputs.push({
           type: sp[0],
           identifier: sp[1],
@@ -195,7 +195,7 @@ function Block(json) {
       // Outputs
       tx.outputs = [];
       (simpleTx.outputs || []).forEach((output) => {
-        let sp = output.split(':');
+        const sp = output.split(':');
         tx.outputs.push({
           amount: parseInt(sp[0]),
           base: parseInt(sp[1]),

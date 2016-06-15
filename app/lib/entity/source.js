@@ -1,5 +1,5 @@
 "use strict";
-let _ = require('underscore');
+const _ = require('underscore');
 
 module.exports = Source;
 

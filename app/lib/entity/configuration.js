@@ -1,8 +1,8 @@
 "use strict";
-var _ = require('underscore');
-var constants = require('../constants');
+const _ = require('underscore');
+const constants = require('../constants');
 
-var defaultConf = function() {
+const defaultConf = function() {
   return {
     "currency": null,
     "port": constants.NETWORK.DEFAULT_PORT,
@@ -42,7 +42,7 @@ var defaultConf = function() {
   };
 };
 
-var Configuration = function(json) {
+const Configuration = function(json) {
 
   _(this).extend(defaultConf);
   _(this).extend(json);

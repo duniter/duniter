@@ -1,9 +1,9 @@
 "use strict";
-var _ = require('underscore');
-var hashf = require('../ucp/hashf');
-var rawer = require('../ucp/rawer');
+const _ = require('underscore');
+const hashf = require('../ucp/hashf');
+const rawer = require('../ucp/rawer');
 
-var Identity = function(json) {
+const Identity = function(json) {
 
   this.revoked = false;
   this.currentMSN = -1;
@@ -29,7 +29,7 @@ var Identity = function(json) {
   this.memberships = this.memberships || [];
 
   this.json = () => {
-    let others = [];
+    const others = [];
     this.certs.forEach((cert) => {
       others.push({
         "pubkey": cert.from,
@@ -42,7 +42,7 @@ var Identity = function(json) {
         "signature": cert.sig
       });
     });
-    let uids = [{
+    const uids = [{
       "uid": this.uid,
       "meta": {
         "timestamp": this.buid
@@ -52,7 +52,7 @@ var Identity = function(json) {
       "self": this.sig,
       "others": others
     }];
-    let signed = [];
+    const signed = [];
     this.signed.forEach((cert) => {
       signed.push({
         "uid": cert.idty.uid,
@@ -81,9 +81,9 @@ var Identity = function(json) {
   };
 
   this.rawWithoutSig = () => {
-    let sig = this.sig;
+    const sig = this.sig;
     this.sig = '';
-    let raw = rawer.getOfficialIdentity(this);
+    const raw = rawer.getOfficialIdentity(this);
     this.sig = sig;
     return raw;
   };
@@ -100,7 +100,7 @@ var Identity = function(json) {
 Identity.statics = {};
 
 Identity.statics.fromInline = function (inline) {
-  let sp = inline.split(':');
+  const sp = inline.split(':');
   return new Identity({
     pubkey: sp[0],
     sig: sp[1],
@@ -110,7 +110,7 @@ Identity.statics.fromInline = function (inline) {
 };
 
 Identity.statics.revocationFromInline = function (inline) {
-  let sp = inline.split(':');
+  const sp = inline.split(':');
   return {
     pubkey: sp[0],
     sig: sp[1]

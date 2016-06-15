@@ -1,14 +1,14 @@
 "use strict";
-var GenericParser = require('./GenericParser');
-var rawer         = require('../../ucp/rawer');
-var constants     = require('../../constants');
-var util          = require('util');
+const GenericParser = require('./GenericParser');
+const rawer         = require('../../ucp/rawer');
+const constants     = require('../../constants');
+const util          = require('util');
 
 module.exports = TransactionParser;
 
 function TransactionParser (onError) {
-  
-  let captures = [
+
+  const captures = [
     {prop: "version",    regexp: /Version: (.*)/},
     {prop: "currency",   regexp: /Currency: (.*)/},
     {prop: "issuers",    regexp: /Issuers:\n([\s\S]*)Inputs/, parser: extractIssuers },
@@ -19,7 +19,7 @@ function TransactionParser (onError) {
     {prop: "locktime",   regexp: constants.TRANSACTION.LOCKTIME },
     {prop: "signatures", regexp: /Outputs:\n([\s\S]*)/,       parser: extractSignatures }
   ];
-  let multilineFields = [];
+  const multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getTransaction, onError);
 
   this._clean = (obj) => {
@@ -30,8 +30,8 @@ function TransactionParser (onError) {
   };
 
   this._verify = (obj) => {
-    var err = null;
-    let codes = {
+    let err = null;
+    const codes = {
       'BAD_VERSION': 150
     };
     if(!err){
@@ -44,10 +44,10 @@ function TransactionParser (onError) {
 }
 
 function extractIssuers(raw) {
-  let issuers = [];
-  let lines = raw.split(/\n/);
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
+  const issuers = [];
+  const lines = raw.split(/\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (line.match(constants.TRANSACTION.SENDER)) {
       issuers.push(line);
     } else {
@@ -59,10 +59,10 @@ function extractIssuers(raw) {
 }
 
 function extractInputs(raw) {
-  let inputs = [];
-  let lines = raw.split(/\n/);
+  const inputs = [];
+  const lines = raw.split(/\n/);
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
     if (line.match(constants.TRANSACTION.SOURCE)) {
       inputs.push(line);
     } else {
@@ -74,10 +74,10 @@ function extractInputs(raw) {
 }
 
 function extractUnlocks(raw) {
-  let unlocks = [];
-  let lines = raw.split(/\n/);
+  const unlocks = [];
+  const lines = raw.split(/\n/);
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
     if (line.match(constants.TRANSACTION.UNLOCK)) {
       unlocks.push(line);
     } else {
@@ -89,10 +89,10 @@ function extractUnlocks(raw) {
 }
 
 function extractOutputs(raw) {
-  let outputs = [];
-  let lines = raw.split(/\n/);
+  const outputs = [];
+  const lines = raw.split(/\n/);
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
     if (line.match(constants.TRANSACTION.TARGET)) {
       outputs.push(line);
     } else {
@@ -104,10 +104,10 @@ function extractOutputs(raw) {
 }
 
 function extractSignatures(raw) {
-  let signatures = [];
-  let lines = raw.split(/\n/);
+  const signatures = [];
+  const lines = raw.split(/\n/);
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
     if (line.match(constants.SIG)) {
       signatures.push(line);
     }

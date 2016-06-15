@@ -1,13 +1,13 @@
 "use strict";
-let Q = require('q');
-let _ = require('underscore');
-let vucoin = require('vucoin');
-let rawer = require('../ucp/rawer');
+const Q = require('q');
+const _ = require('underscore');
+const vucoin = require('vucoin');
+const rawer = require('../ucp/rawer');
 
 module.exports = Peer;
 
-let DEFAULT_HOST = 'localhost';
-let BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
+const DEFAULT_HOST = 'localhost';
+const BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 function Peer(json) {
 
@@ -35,7 +35,7 @@ function Peer(json) {
   };
 
   this.json = () => {
-    let json = {};
+    const json = {};
     ["version", "currency", "endpoints", "status", "block", "signature"].forEach((key) => {
       json[key] = this[key];
     });
@@ -45,9 +45,9 @@ function Peer(json) {
   };
 
   this.getBMA = () => {
-    var bma = null;
+    let bma = null;
     this.endpoints.forEach((ep) => {
-      let matches = !bma && ep.match(BMA_REGEXP);
+      const matches = !bma && ep.match(BMA_REGEXP);
       if (matches) {
         bma = {
           "dns": matches[2] || '',
@@ -61,27 +61,27 @@ function Peer(json) {
   };
 
   this.getDns = () => {
-    let bma = this.getBMA();
+    const bma = this.getBMA();
     return bma.dns ? bma.dns : null;
   };
 
   this.getIPv4 = () => {
-    let bma = this.getBMA();
+    const bma = this.getBMA();
     return bma.ipv4 ? bma.ipv4 : null;
   };
 
   this.getIPv6 = () => {
-    let bma = this.getBMA();
+    const bma = this.getBMA();
     return bma.ipv6 ? bma.ipv6 : null;
   };
 
   this.getPort = () => {
-    var bma = this.getBMA();
+    const bma = this.getBMA();
     return bma.port ? bma.port : null;
   };
 
   this.getHostPreferDNS = () => {
-    let bma = this.getBMA();
+    const bma = this.getBMA();
     return (bma.dns ? bma.dns :
       (bma.ipv4 ? bma.ipv4 :
         (bma.ipv6 ? bma.ipv6 : '')));
@@ -95,7 +95,7 @@ function Peer(json) {
   };
 
   this.getURL = () => {
-    let bma = this.getBMA();
+    const bma = this.getBMA();
     let base = this.getHost();
     if(bma.port)
       base += ':' + bma.port;

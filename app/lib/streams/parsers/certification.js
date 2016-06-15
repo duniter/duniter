@@ -1,16 +1,16 @@
 "use strict";
-var GenericParser = require('./GenericParser');
-var util          = require('util');
-var ucp           = require('../../ucp/buid');
-var rawer         = require('../../ucp/rawer');
-var hashf         = require('../../ucp/hashf');
-var constants     = require('../../constants');
+const GenericParser = require('./GenericParser');
+const util          = require('util');
+const ucp           = require('../../ucp/buid');
+const rawer         = require('../../ucp/rawer');
+const hashf         = require('../../ucp/hashf');
+const constants     = require('../../constants');
 
 module.exports = CertificationParser;
 
 function CertificationParser (onError) {
 
-  let captures = [
+  const captures = [
     {prop: "version",           regexp: constants.DOCUMENTS.DOC_VERSION },
     {prop: "type",              regexp: constants.CERTIFICATION.CERT_TYPE },
     {prop: "currency",          regexp: constants.DOCUMENTS.DOC_CURRENCY },
@@ -21,7 +21,7 @@ function CertificationParser (onError) {
     {prop: "idty_uid",          regexp: constants.CERTIFICATION.IDTY_UID },
     {prop: "buid",              regexp: constants.CERTIFICATION.CERT_TIMESTAMP }
   ];
-  let multilineFields = [];
+  const multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getOfficialCertification, onError);
 
   this._clean = (obj) => {

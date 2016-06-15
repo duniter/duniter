@@ -1,17 +1,17 @@
 "use strict";
-var GenericParser = require('./GenericParser');
-var util          = require('util');
-var moment        = require('moment');
-var ucp           = require('../../ucp/buid');
-var rawer         = require('../../ucp/rawer');
-var hashf         = require('../../ucp/hashf');
-var constants     = require('../../constants');
+const GenericParser = require('./GenericParser');
+const util          = require('util');
+const moment        = require('moment');
+const ucp           = require('../../ucp/buid');
+const rawer         = require('../../ucp/rawer');
+const hashf         = require('../../ucp/hashf');
+const constants     = require('../../constants');
 
 module.exports = RevocationParser;
 
 function RevocationParser (onError) {
 
-  let captures = [
+  const captures = [
     {prop: "version",           regexp: constants.DOCUMENTS.DOC_VERSION },
     {prop: "type",              regexp: constants.REVOCATION.REVOC_TYPE },
     {prop: "currency",          regexp: constants.DOCUMENTS.DOC_CURRENCY },
@@ -20,7 +20,7 @@ function RevocationParser (onError) {
     {prop: "buid",              regexp: constants.REVOCATION.IDTY_TIMESTAMP},
     {prop: "uid",               regexp: constants.REVOCATION.IDTY_UID }
   ];
-  let multilineFields = [];
+  const multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getOfficialRevocation, onError);
 
   this._clean = (obj) => {

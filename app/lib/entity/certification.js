@@ -1,9 +1,9 @@
 "use strict";
-var _ = require('underscore');
-var rawer = require('../ucp/rawer');
-var ucp = require('../ucp/buid');
+const _ = require('underscore');
+const rawer = require('../ucp/rawer');
+const ucp = require('../ucp/buid');
 
-var Certification = function(json) {
+const Certification = function(json) {
 
   this.linked = false;
 
@@ -38,7 +38,7 @@ var Certification = function(json) {
 Certification.statics = {};
 
 Certification.statics.fromInline = function (inline) {
-  let sp = inline.split(':');
+  const sp = inline.split(':');
   return new Certification({
     pubkey: sp[0],
     to: sp[1],

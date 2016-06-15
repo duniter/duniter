@@ -1,16 +1,16 @@
 "use strict";
-var GenericParser = require('./GenericParser');
-var rawer         = require('../../ucp/rawer');
-var util          = require('util');
-var constants     = require('../../constants');
+const GenericParser = require('./GenericParser');
+const rawer         = require('../../ucp/rawer');
+const util          = require('util');
+const constants     = require('../../constants');
 
 module.exports = PeerParser;
 
-var BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]+))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
+const BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]+))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 function PeerParser (onError) {
 
-  let captures = [
+  const captures = [
     {prop: "version",           regexp: /Version: (.*)/},
     {prop: "currency",          regexp: /Currency: (.*)/},
     {prop: "pubkey",            regexp: /PublicKey: (.*)/},
@@ -19,7 +19,7 @@ function PeerParser (onError) {
       prop: "endpoints", regexp: /Endpoints:\n([\s\S]*)/, parser: (str) => str.split("\n")
     }
   ];
-  let multilineFields = [];
+  const multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getPeer, onError);
 
   this._clean = (obj) => {
@@ -29,7 +29,7 @@ function PeerParser (onError) {
     if (obj.endpoints.length > 0)
       obj.endpoints.splice(obj.endpoints.length - 1, 1);
     obj.getBMA = function() {
-      var bma = null;
+      let bma = null;
       obj.endpoints.forEach((ep) => {
         let matches = !bma && ep.match(BMA_REGEXP);
         if (matches) {
@@ -46,8 +46,8 @@ function PeerParser (onError) {
   };
 
   this._verify = (obj) => {
-    var err = null;
-    let codes = {
+    let err = null;
+    const codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
       'BAD_DNS': 152,

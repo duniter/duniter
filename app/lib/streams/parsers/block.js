@@ -1,15 +1,15 @@
 "use strict";
-var util          = require('util');
-var GenericParser = require('./GenericParser');
-var hashf         = require('../../ucp/hashf');
-var rawer         = require('../../ucp/rawer');
-var constants     = require('../../constants');
+const util          = require('util');
+const GenericParser = require('./GenericParser');
+const hashf         = require('../../ucp/hashf');
+const rawer         = require('../../ucp/rawer');
+const constants     = require('../../constants');
 
 module.exports = BlockParser;
 
 function BlockParser (onError) {
 
-  let captures = [
+  const captures = [
     {prop: "version",         regexp: constants.BLOCK.VERSION},
     {prop: "type",            regexp: constants.BLOCK.TYPE},
     {prop: "currency",        regexp: constants.BLOCK.CURRENCY},
@@ -35,7 +35,7 @@ function BlockParser (onError) {
     {prop: "inner_hash",      regexp: constants.BLOCK.INNER_HASH},
     {prop: "nonce",           regexp: constants.BLOCK.NONCE}
   ];
-  let multilineFields = [];
+  const multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getBlock, onError);
 
   this._clean = (obj) => {
@@ -72,8 +72,8 @@ function BlockParser (onError) {
   };
 
   this._verify = (obj) => {
-    var err = null;
-    let codes = {
+    let err = null;
+    const codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
       'BAD_NUMBER': 152,
@@ -149,8 +149,8 @@ function BlockParser (onError) {
 
 function splitAndMatch (separator, regexp) {
   return function (raw) {
-    var lines = raw.split(new RegExp(separator));
-    var kept = [];
+    const lines = raw.split(new RegExp(separator));
+    const kept = [];
     lines.forEach(function(line){
       if (line.match(regexp))
         kept.push(line);
@@ -160,7 +160,7 @@ function splitAndMatch (separator, regexp) {
 }
 
 function extractTransactions(raw) {
-  let regexps = {
+  const regexps = {
     "signatories": constants.TRANSACTION.SENDER,
     "inputs": constants.TRANSACTION.SOURCE,
     "unlocks": constants.TRANSACTION.UNLOCK,
@@ -168,22 +168,22 @@ function extractTransactions(raw) {
     "comments": constants.TRANSACTION.INLINE_COMMENT,
     "signatures": constants.SIG
   };
-  let transactions = [];
-  let lines = raw.split(/\n/);
+  const transactions = [];
+  const lines = raw.split(/\n/);
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
     // On each header
     if (line.match(constants.TRANSACTION.HEADER)) {
       // Parse the transaction
-      let currentTX = { raw: line + '\n' };
-      let sp = line.split(':');
-      let nbSignatories = parseInt(sp[2]);
-      let nbInputs = parseInt(sp[3]);
-      let nbUnlocks = parseInt(sp[4]);
-      let nbOutputs = parseInt(sp[5]);
-      let hasComment = parseInt(sp[6]);
+      const currentTX = { raw: line + '\n' };
+      const sp = line.split(':');
+      const nbSignatories = parseInt(sp[2]);
+      const nbInputs = parseInt(sp[3]);
+      const nbUnlocks = parseInt(sp[4]);
+      const nbOutputs = parseInt(sp[5]);
+      const hasComment = parseInt(sp[6]);
       currentTX.locktime = parseInt(sp[7]);
-      let linesToExtract = {
+      const linesToExtract = {
         signatories: {
           start: 1,
           end: nbSignatories
@@ -212,7 +212,7 @@ function extractTransactions(raw) {
       ['signatories', 'inputs', 'unlocks', 'outputs', 'comments', 'signatures'].forEach((prop) => {
         currentTX[prop] = currentTX[prop] || [];
         for (let j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
-          let line = lines[i + j];
+          const line = lines[i + j];
           if (line.match(regexps[prop])) {
             currentTX.raw += line + '\n';
             currentTX[prop].push(line);

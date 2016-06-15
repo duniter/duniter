@@ -1,10 +1,10 @@
 "use strict";
-let _ = require('underscore');
-let moment = require('moment');
-let rawer = require('../ucp/rawer');
-let constants = require('../constants');
+const _ = require('underscore');
+const moment = require('moment');
+const rawer = require('../ucp/rawer');
+const constants = require('../constants');
 
-let Membership = function(json) {
+const Membership = function(json) {
 
   _(json).keys().forEach((key) => {
     this[key] = json[key];
@@ -17,7 +17,7 @@ let Membership = function(json) {
   this.keyID = () => this.issuer && this.issuer.length > 24 ? "0x" + this.issuer.substring(24) : "0x?";
 
   this.copyValues = (to) => {
-    let obj = this;
+    const obj = this;
     ["version", "currency", "issuer", "membership", "amNumber", "hash", "signature", "sigDate"].forEach(function (key) {
       to[key] = obj[key];
     });
@@ -32,10 +32,9 @@ let Membership = function(json) {
 
 
   this.json = () => {
-    let obj = this;
-    let json = {};
+    const json = {};
     ["version", "currency", "issuer", "membership"].forEach((key) => {
-      json[key] = obj[key];
+      json[key] = this[key];
     });
     json.date = this.date && moment(this.date).unix();
     json.sigDate = this.sigDate && moment(this.sigDate).unix();
@@ -51,7 +50,7 @@ let Membership = function(json) {
 Membership.statics = {};
 
 Membership.statics.fromInline = function (inlineMS, type, currency) {
-  let sp = inlineMS.split(':');
+  const sp = inlineMS.split(':');
   return new Membership({
     version:    constants.DOCUMENTS_VERSION,
     currency:   currency,

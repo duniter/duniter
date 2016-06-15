@@ -43,7 +43,7 @@ let Transaction = function(obj, currency) {
   };
 
   this.getTransaction = () => {
-    var tx = {};
+    const tx = {};
     tx.hash = this.hash;
     tx.version = this.version;
     tx.currency = this.currency;
@@ -52,7 +52,7 @@ let Transaction = function(obj, currency) {
     // Inputs
     tx.inputs = [];
     this.inputs.forEach(function (input) {
-      var sp = input.split(':');
+      const sp = input.split(':');
       tx.inputs.push({
         type: sp[0],
         identifier: sp[1],
@@ -65,7 +65,7 @@ let Transaction = function(obj, currency) {
     // Outputs
     tx.outputs = [];
     this.outputs.forEach(function (output) {
-      var sp = output.split(':');
+      const sp = output.split(':');
       tx.outputs.push({
         amount: parseInt(sp[0]),
         base: parseInt(sp[1]),
@@ -97,7 +97,7 @@ Transaction.statics = {};
 Transaction.statics.fromJSON = (json) => new Transaction(json);
 
 Transaction.statics.outputs2recipients = (tx) => tx.outputs.map(function(out) {
-  let recipent = out.match('SIG\\((.*)\\)');
+  const recipent = out.match('SIG\\((.*)\\)');
   return (recipent && recipent[1]) || 'UNKNOWN';
 });
 

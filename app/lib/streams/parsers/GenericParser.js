@@ -1,9 +1,9 @@
 "use strict";
-var util                 = require('util');
-var stream               = require('stream');
-var hashf                = require('../../ucp/hashf');
-var logger               = require('../../logger')('gen_parser');
-var constants            = require('../../constants');
+const util                 = require('util');
+const stream               = require('stream');
+const hashf                = require('../../ucp/hashf');
+const logger               = require('../../logger')('gen_parser');
+const constants            = require('../../constants');
 
 module.exports = GenericParser;
 
@@ -15,7 +15,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
   this.rawerFunc = rawerFunc;
 
   this._simpleLineExtraction = (pr, rawEntry, cap, parser) => {
-    let fieldValue = rawEntry.match(cap.regexp);
+    const fieldValue = rawEntry.match(cap.regexp);
     if(fieldValue && fieldValue.length >= 2){
       pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1]) : fieldValue[1];
     }
@@ -23,12 +23,12 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
   };
 
   this._multipleLinesExtraction = (am, wholeAmend, cap) => {
-    let fieldValue = wholeAmend.match(cap.regexp);
+    const fieldValue = wholeAmend.match(cap.regexp);
     let line = 0;
     am[cap.prop] = [];
     if(fieldValue && fieldValue.length >= 2)
     {
-      let lines = fieldValue[1].split(/\n/);
+      const lines = fieldValue[1].split(/\n/);
       if(lines[lines.length - 1].match(/^$/)){
         for (var i = 0; i < lines.length - 1; i++) {
           line = lines[i];
@@ -46,15 +46,15 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
   };
 
   this.syncWrite = (str) => {
-    var error;
-    var obj = {};
+    let error;
+    const obj = {};
     this._parse(str, obj);
     this._clean(obj);
     if (!error) {
       error = this._verify(obj);
     }
     if (!error) {
-      var raw = this.rawerFunc(obj);
+      const raw = this.rawerFunc(obj);
       if (hashf(str) != hashf(raw))
         error = constants.ERRORS.WRONG_DOCUMENT;
       if (error) {
@@ -73,23 +73,23 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
   };
 
   this._parse = (str, obj) => {
-    var error;
+    let error;
     if(!str){
       error = "No document given";
     } else {
       error = "";
       obj.hash = hashf(str).toUpperCase();
       // Divide in 2 parts: document & signature
-      var sp = str.split('\n');
+      const sp = str.split('\n');
       if (sp.length < 3) {
         error = "Wrong document: must have at least 2 lines";
       }
       else {
-        let endOffset = str.match(/\n$/) ? 2 : 1;
+        const endOffset = str.match(/\n$/) ? 2 : 1;
         obj.signature = sp[sp.length - endOffset];
         obj.hash = hashf(str).toUpperCase();
         obj.raw = sp.slice(0, sp.length - endOffset).join('\n') + '\n';
-        var docLF = obj.raw.replace(/\r\n/g, "\n");
+        const docLF = obj.raw.replace(/\r\n/g, "\n");
         if(docLF.match(/\n$/)){
           captures.forEach((cap) => {
             if(~multipleLinesFields.indexOf(multipleLinesFields))

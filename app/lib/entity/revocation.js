@@ -1,9 +1,9 @@
 "use strict";
-let _ = require('underscore');
-let rawer = require('../ucp/rawer');
-let ucp = require('../ucp/buid');
+const _ = require('underscore');
+const rawer = require('../ucp/rawer');
+const ucp = require('../ucp/buid');
 
-let Revocation = function(json) {
+const Revocation = function(json) {
 
   _(json).keys().forEach((key) => {
    this[key] = json[key];

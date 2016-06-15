@@ -1,6 +1,6 @@
 "use strict";
-let _ = require('underscore');
-let merkle = require('merkle');
+const _ = require('underscore');
+const merkle = require('merkle');
 
 module.exports = Merkle;
 
@@ -15,7 +15,7 @@ function Merkle(json) {
   });
 
   this.initialize = (leaves) => {
-    let tree = merkle('sha256').sync(leaves);
+    const tree = merkle('sha256').sync(leaves);
     this.depth = tree.depth();
     this.nodes = tree.nodes();
     this.levels = [];
@@ -28,8 +28,8 @@ function Merkle(json) {
   this.remove = (leaf) => {
     // If leaf IS present
     if(~this.levels[this.depth].indexOf(leaf)){
-      let leaves = this.leaves();
-      let index = leaves.indexOf(leaf);
+      const leaves = this.leaves();
+      const index = leaves.indexOf(leaf);
       if(~index){
         // Replacement: remove previous hash
         leaves.splice(index, 1);
@@ -43,8 +43,8 @@ function Merkle(json) {
     leaves.forEach((leaf) => {
       // If leaf IS present
       if(~this.levels[this.depth].indexOf(leaf)){
-        let leaves = this.leaves();
-        let index = leaves.indexOf(leaf);
+        const leaves = this.leaves();
+        const index = leaves.indexOf(leaf);
         if(~index){
           // Replacement: remove previous hash
           leaves.splice(index, 1);
@@ -58,10 +58,10 @@ function Merkle(json) {
   this.push = (leaf, previous) => {
     // If leaf is not present
     if(this.levels[this.depth].indexOf(leaf) == -1){
-      let leaves = this.leaves();
+      const leaves = this.leaves();
       // Update or replacement ?
       if(previous && leaf != previous){
-        let index = leaves.indexOf(previous);
+        const index = leaves.indexOf(previous);
         if(~index){
           // Replacement: remove previous hash
           leaves.splice(index, 1);

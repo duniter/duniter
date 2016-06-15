@@ -1,15 +1,15 @@
 "use strict";
-var GenericParser = require('./GenericParser');
-var ucp           = require('../../ucp/buid');
-var rawer         = require('../../ucp/rawer');
-var util          = require('util');
-var constants     = require('../../constants');
+const GenericParser = require('./GenericParser');
+const ucp           = require('../../ucp/buid');
+const rawer         = require('../../ucp/rawer');
+const util          = require('util');
+const constants     = require('../../constants');
 
 module.exports = MembershipParser;
 
 function MembershipParser (onError) {
 
-  let captures = [
+  const captures = [
     {prop: "version",           regexp: constants.MEMBERSHIP.VERSION },
     {prop: "currency",          regexp: constants.MEMBERSHIP.CURRENCY },
     {prop: "issuer",            regexp: constants.MEMBERSHIP.ISSUER },
@@ -18,7 +18,7 @@ function MembershipParser (onError) {
     {prop: "block",             regexp: constants.MEMBERSHIP.BLOCK},
     {prop: "certts",            regexp: constants.MEMBERSHIP.CERTTS}
   ];
-  let multilineFields = [];
+  const multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getMembership, onError);
 
   this._clean = (obj) => {
@@ -33,8 +33,8 @@ function MembershipParser (onError) {
   };
 
   this._verify = (obj) => {
-    var err = null;
-    var codes = {
+    let err = null;
+    const codes = {
       'BAD_VERSION': 150,
       'BAD_CURRENCY': 151,
       'BAD_ISSUER': 152,

@@ -1,16 +1,16 @@
 "use strict";
-var GenericParser = require('./GenericParser');
-var util          = require('util');
-var ucp           = require('../../ucp/buid');
-var rawer         = require('../../ucp/rawer');
-var hashf         = require('../../ucp/hashf');
-var constants     = require('../../constants');
+const GenericParser = require('./GenericParser');
+const util          = require('util');
+const ucp           = require('../../ucp/buid');
+const rawer         = require('../../ucp/rawer');
+const hashf         = require('../../ucp/hashf');
+const constants     = require('../../constants');
 
 module.exports = IdentityParser;
 
 function IdentityParser (onError) {
 
-  let captures = [
+  const captures = [
     {prop: "version",           regexp: constants.DOCUMENTS.DOC_VERSION },
     {prop: "type",              regexp: constants.IDENTITY.IDTY_TYPE},
     {prop: "currency",          regexp: constants.DOCUMENTS.DOC_CURRENCY },
@@ -18,7 +18,7 @@ function IdentityParser (onError) {
     {prop: "uid",               regexp: constants.IDENTITY.IDTY_UID },
     {prop: "buid",              regexp: constants.DOCUMENTS.TIMESTAMP }
   ];
-  let multilineFields = [];
+  const multilineFields = [];
   GenericParser.call(this, captures, multilineFields, rawer.getOfficialIdentity, onError);
 
   this._clean = (obj) => {

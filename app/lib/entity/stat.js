@@ -1,7 +1,7 @@
 "use strict";
-let _ = require('underscore');
+const _ = require('underscore');
 
-let Stat = function(json) {
+const Stat = function(json) {
   _(json).keys().forEach((key) => {
    this[key] = json[key];
   });

@@ -1,26 +1,26 @@
 "use strict";
-var async           = require('async');
-var _               = require('underscore');
-var co              = require('co');
-var Q               = require('q');
-var hashf           = require('../ucp/hashf');
-var rawer           = require('../ucp/rawer');
-var constants       = require('../constants');
-var rules           = require('../rules/index');
-var Identity        = require('../entity/identity');
-var Certification   = require('../entity/certification');
-var Membership      = require('../entity/membership');
-var Block           = require('../entity/block');
-var Link            = require('../entity/link');
-var Source          = require('../entity/source');
-var Transaction     = require('../entity/transaction');
+const async           = require('async');
+const _               = require('underscore');
+const co              = require('co');
+const Q               = require('q');
+const hashf           = require('../ucp/hashf');
+const rawer           = require('../ucp/rawer');
+const constants       = require('../constants');
+const rules           = require('../rules/index');
+const Identity        = require('../entity/identity');
+const Certification   = require('../entity/certification');
+const Membership      = require('../entity/membership');
+const Block           = require('../entity/block');
+const Link            = require('../entity/link');
+const Source          = require('../entity/source');
+const Transaction     = require('../entity/transaction');
 
 module.exports = () => { return new BlockchainContext() };
 
 function BlockchainContext() {
 
-  var that = this;
-  var conf, dal, logger;
+  const that = this;
+  let conf, dal, logger;
 
   this.setConfDAL = (newConf, newDAL) => {
     dal = newDAL;
@@ -28,59 +28,37 @@ function BlockchainContext() {
     logger = require('../logger')(dal.profile);
   };
 
-  this.checkBlock = function(block, withPoWAndSignature, done) {
-    return Q.Promise(function(resolve, reject){
-      async.waterfall([
-        function (nextOne){
-          if (withPoWAndSignature) {
-            return rules.CHECK.ASYNC.ALL_LOCAL(block, conf, nextOne);
-          }
-          rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW(block, conf, nextOne);
-        },
-        function (nextOne){
-          if (withPoWAndSignature) {
-            return rules.CHECK.ASYNC.ALL_GLOBAL(block, conf, dal, nextOne);
-          }
-          return rules.CHECK.ASYNC.ALL_GLOBAL_BUT_POW(block, conf, dal, nextOne);
-        },
-        function (nextOne) {
-          // Check document's coherence
-          checkIssuer(block, nextOne);
-        }
-      ], function(err) {
-        err ? reject(err) : resolve();
-        done && done(err);
-      });
-    });
-  };
+  this.checkBlock = (block, withPoWAndSignature) => co(function*(){
+    if (withPoWAndSignature) {
+      yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL, rules, block, conf);
+      yield Q.nbind(rules.CHECK.ASYNC.ALL_GLOBAL, rules, block, conf, dal);
+    }
+    else {
+      yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW, rules, block, conf);
+      yield Q.nbind(rules.CHECK.ASYNC.ALL_GLOBAL_BUT_POW, rules, block, conf, dal);
+    }
+    // Check document's coherence
+    yield checkIssuer(block);
+  });
 
-  this.addBlock = function (obj) {
-    return Q.Promise(function(resolve, reject){
-      var start = new Date();
-      var block = new Block(obj);
-      var currentBlock = null;
-      async.waterfall([
-        function (next) {
-          getCurrentBlock(next);
-        },
-        function (current, next){
-          currentBlock = current;
-          block.fork = false;
-          saveBlockData(currentBlock, block, next);
-        }
-      ], function (err) {
-        !err && logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
-        err ? reject(err) : resolve(block);
-      });
-    })
-      .catch(function(err){
-        throw err;
-      });
-  };
+  this.addBlock = (obj) => co(function*(){
+    const start = new Date();
+    const block = new Block(obj);
+    try {
+      const currentBlock = yield Q.nbind(that.current, that);
+      block.fork = false;
+      yield saveBlockData(currentBlock, block);
+      return block;
+    }
+    catch(err) {
+      logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
+      throw err;
+    }
+  });
 
   this.addSideBlock = (obj) => co(function *() {
-    var start = new Date();
-    var block = new Block(obj);
+    const start = new Date();
+    const block = new Block(obj);
     block.fork = true;
     try {
       // Saves the block (DAL)
@@ -94,15 +72,15 @@ function BlockchainContext() {
   });
 
   this.revertCurrentBlock = () => co(function *() {
-    let current = yield that.current();
+    const current = yield that.current();
     logger.debug('Reverting block #%s...', current.number);
-    let res = yield that.revertBlock(current);
+    const res = yield that.revertBlock(current);
     logger.debug('Reverted block #%s', current.number);
     return res;
   });
 
   this.revertBlock = (block) => co(function *() {
-    let previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
+    const previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
     // Set the block as SIDE block (equivalent to removal from main branch)
     yield dal.blockDAL.setSideBlock(block, previousBlock);
     yield undoCertifications(block);
@@ -115,30 +93,20 @@ function BlockchainContext() {
     yield undoDeleteTransactions(block);
   });
 
-  function checkIssuer (block, done) {
-    async.waterfall([
-      function (next){
-        dal.isMember(block.issuer, next);
-      },
-      function (isMember, next){
-        if (isMember)
-          next();
-        else {
-          if (block.number == 0) {
-            if (matchesList(new RegExp('^' + block.issuer + ':'), block.joiners)) {
-              next();
-            } else {
-              next('Block not signed by the root members');
-            }
-          } else {
-            next('Block must be signed by an existing member');
-          }
+  const checkIssuer = (block) => co(function*() {
+    const isMember = yield Q.nbind(dal.isMember, dal, block.issuer);
+    if (!isMember) {
+      if (block.number == 0) {
+        if (!matchesList(new RegExp('^' + block.issuer + ':'), block.joiners)) {
+          throw Error('Block not signed by the root members');
         }
+      } else {
+        throw Error('Block must be signed by an existing member');
       }
-    ], done);
-  }
+    }
+  });
 
-  function matchesList (regexp, list) {
+  const matchesList = (regexp, list) => {
     var i = 0;
     var found = "";
     while (!found && i < list.length) {
@@ -146,62 +114,33 @@ function BlockchainContext() {
       i++;
     }
     return found;
-  }
+  };
 
-  function getCurrentBlock(done) {
+  this.current = (done) => {
     return dal.getCurrentBlockOrNull(done);
-  }
+  };
 
-  that.current = getCurrentBlock;
-
-  function saveBlockData (current, block, done) {
-    async.waterfall([
-      function (next) {
-        updateBlocksComputedVars(current, block, next);
-      },
-      function (next) {
-        // Saves the block (DAL)
-        dal.saveBlock(block, next);
-      },
-      function (next) {
-        that.saveParametersForRootBlock(block, next);
-      },
-      function (next) {
-        // Create/Update members (create new identities if do not exist)
-        updateMembers(block, next);
-      },
-      function (next) {
-        // Create/Update certifications
-        updateCertifications(block, next);
-      },
-      function (next){
-        // Save links
-        updateLinksForBlocks([block], dal.getBlockOrNull.bind(dal)).then(() => next()).catch(next);
-      },
-      function (next){
-        // Compute obsolete links
-        computeObsoleteLinks(block, next);
-      },
-      function (next){
-        // Compute obsolete memberships (active, joiner)
-        computeObsoleteMemberships(block)
-          .then(function() {
-            next();
-          })
-          .catch(next);
-      },
-      function (next){
-        // Update consumed sources & create new ones
-        updateTransactionSources(block, next);
-      },
-      function (next){
-        // Delete eventually present transactions
-        deleteTransactions(block, next);
-      }
-    ], function (err) {
-      done(err, block);
-    });
-  }
+  const saveBlockData = (current, block) => co(function*() {
+    yield Q.nfcall(updateBlocksComputedVars, current, block);
+    // Saves the block (DAL)
+    yield Q.nbind(dal.saveBlock, dal, block);
+    yield Q.nbind(that.saveParametersForRootBlock, that, block);
+    // Create/Update members (create new identities if do not exist)
+    yield Q.nfcall(updateMembers, block);
+    // Create/Update certifications
+    yield Q.nfcall(updateCertifications, block);
+    // Save links
+    yield updateLinksForBlocks([block], dal.getBlockOrNull.bind(dal));
+    // Compute obsolete links
+    yield Q.nfcall(computeObsoleteLinks, block);
+    // Compute obsolete memberships (active, joiner)
+    yield computeObsoleteMemberships(block);
+    // Update consumed sources & create new ones
+    yield Q.nfcall(updateTransactionSources, block);
+    // Delete eventually present transactions
+    yield Q.nfcall(deleteTransactions, block);
+    return block;
+  });
 
   function updateBlocksComputedVars (current, block, done) {
     if (current) {

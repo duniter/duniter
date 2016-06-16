@@ -1,7 +1,5 @@
 "use strict";
 const co               = require('co');
-const Q                = require('q');
-const async            = require('async');
 const _                = require('underscore');
 const http2raw         = require('../lib/helpers/http2raw');
 const Transaction      = require('../lib/entity/transaction');

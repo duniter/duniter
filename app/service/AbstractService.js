@@ -1,8 +1,8 @@
 "use strict";
-var async           = require('async');
-var Q               = require('q');
+const async           = require('async');
+const Q               = require('q');
 
-var fifo = async.queue(function (task, callback) {
+const fifo = async.queue(function (task, callback) {
   task(callback);
 }, 1);
 

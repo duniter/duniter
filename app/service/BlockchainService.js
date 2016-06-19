@@ -519,28 +519,11 @@ function BlockchainService () {
     return dal.pushStats(stats);
   }
 
-  this.obsoleteInMainBranch = (block) => Q.Promise(function(resolve, reject){
-    async.waterfall([
-      function (next){
-        // Compute obsolete links
-        mainContext.computeObsoleteLinks(block)
-            .then(function() {
-              next();
-            })
-            .catch(next);
-      },
-      function (next){
-        // Compute obsolete memberships (active, joiner)
-        mainContext.computeObsoleteMemberships(block)
-          .then(function() {
-            next();
-          })
-          .catch(next);
-      }
-    ], function (err) {
-      if (err) return reject(err);
-      resolve();
-    });
+  this.obsoleteInMainBranch = (block) => co(function*(){
+    // Compute obsolete links
+    yield mainContext.computeObsoleteLinks(block);
+    // Compute obsolete memberships (active, joiner)
+    yield mainContext.computeObsoleteMemberships(block);
   });
 
   this.getCertificationsExludingBlock = function() {

@@ -523,7 +523,11 @@ function BlockchainService () {
     async.waterfall([
       function (next){
         // Compute obsolete links
-        mainContext.computeObsoleteLinks(block, next);
+        mainContext.computeObsoleteLinks(block)
+            .then(function() {
+              next();
+            })
+            .catch(next);
       },
       function (next){
         // Compute obsolete memberships (active, joiner)

@@ -291,7 +291,7 @@ function BlockGenerator(mainContext, prover) {
         if (block.number > 0) {
           try {
             // Will throw an error if not enough links
-            yield Q.nbind(mainContext.checkHaveEnoughLinks, mainContext)(newcomer, newLinks);
+            yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
             // This one does not throw but returns a boolean
             let isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
             if (isOut) {

@@ -1,5 +1,4 @@
 "use strict";
-const async           = require('async');
 const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
@@ -56,10 +55,6 @@ function BlockGenerator(mainContext, prover) {
     const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
     return prover.prove(unsignedBlock, sigF, trialLevel, null, (manualValues && manualValues.time) || null);
   });
-
-  this.getSinglePreJoinData = getSinglePreJoinData;
-  this.computeNewCerts = computeNewCerts;
-  this.newCertsToLinks = newCertsToLinks;
 
   /**
    * Generate next block, gathering both updates & newcomers
@@ -159,8 +154,8 @@ function BlockGenerator(mainContext, prover) {
 
   const findNewcomers = (current, filteringFunc) => co(function*() {
     const updates = {};
-    const preJoinData = yield Q.nfcall(getPreJoinData, current);
-    const joinData = yield Q.nfcall(filteringFunc, preJoinData);
+    const preJoinData = yield getPreJoinData(current);
+    const joinData = yield filteringFunc(preJoinData);
     const members = yield Q.nbind(dal.getMembers, dal);
     const wotMembers = _.pluck(members, 'pubkey');
     // Checking step
@@ -173,10 +168,10 @@ function BlockGenerator(mainContext, prover) {
           joiners: someNewcomers,
           identities: _.filter(newcomers.map((pub) => joinData[pub].identity), { wasMember: false }).map((idty) => idty.pubkey)
         };
-        const newLinks = yield Q.nfcall(computeNewLinks, nextBlockNumber, someNewcomers, joinData, updates);
+        const newLinks = yield computeNewLinks(nextBlockNumber, someNewcomers, joinData, updates);
         yield checkWoTConstraints(nextBlock, newLinks, current);
       }));
-      const newLinks = yield Q.nfcall(computeNewLinks, nextBlockNumber, realNewcomers, joinData, updates);
+      const newLinks = yield computeNewLinks(nextBlockNumber, realNewcomers, joinData, updates);
       const newWoT = wotMembers.concat(realNewcomers);
       const finalJoinData = {};
       realNewcomers.forEach((newcomer) => {
@@ -248,74 +243,41 @@ function BlockGenerator(mainContext, prover) {
     }
   });
 
-  function getPreJoinData(current, done) {
-    var preJoinData = {};
-    async.waterfall([
-      function (next){
-        dal.findNewcomers().then(_.partial(next, null)).catch(next);
-      },
-      function (mss, next){
-        var joiners = [];
-        mss.forEach(function (ms) {
-          joiners.push(ms.issuer);
-        });
-        async.forEach(mss, function(ms, callback){
-          async.waterfall([
-            function(nextOne) {
-              return co(function *() {
-                if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
-                  let msBasedBlock = yield dal.getBlock(ms.block);
-                  let age = current.medianTime - msBasedBlock.medianTime;
-                  if (age > conf.msWindow) {
-                    throw 'Too old membership';
-                  }
-                }
-              }).then(() => nextOne()).catch(nextOne);
-            },
-            function(nextOne) {
-              var idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
-              getSinglePreJoinData(current, idtyHash, nextOne, joiners);
-            },
-            function(join, nextOne) {
-              join.ms = ms;
-              if (!join.identity.revoked && join.identity.currentMSN < parseInt(join.ms.number)) {
-                preJoinData[join.identity.pubkey] = join;
-              }
-              nextOne();
-            }
-          ], (err) => {
-            if (err) {
-              logger.warn(err);
-            }
-            callback();
-          });
-        }, next);
-      }
-    ], function(err) {
-      done(err, preJoinData);
-    });
-  }
-
-  function computeNewLinks (forBlock, theNewcomers, joinData, updates, done) {
-    return computeNewLinksP(forBlock, theNewcomers, joinData, updates)
-      .catch((err) => {
-        done && done(err);
+  const getPreJoinData = (current) => co(function*() {
+    const preJoinData = {};
+    const memberships = yield dal.findNewcomers();
+    const joiners = [];
+    memberships.forEach((ms) =>joiners.push(ms.issuer));
+    for (const m in memberships) {
+      try {
+        const ms = memberships[m];
+        if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
+          let msBasedBlock = yield dal.getBlock(ms.block);
+          let age = current.medianTime - msBasedBlock.medianTime;
+          if (age > conf.msWindow) {
+            throw 'Too old membership';
+          }
+        }
+        const idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
+        const join = yield that.getSinglePreJoinData(current, idtyHash, joiners);
+        join.ms = ms;
+        if (!join.identity.revoked && join.identity.currentMSN < parseInt(join.ms.number)) {
+          preJoinData[join.identity.pubkey] = join;
+        }
+      } catch (err) {
+        logger.warn(err);
         throw err;
-      })
-      .then((res) => {
-        done && done(null, res);
-        return res;
-      });
-  }
+      }
+    }
+    return preJoinData;
+  });
 
-  function computeNewLinksP(forBlock, theNewcomers, joinData, updates) {
-    return co(function *() {
-      let newCerts = yield computeNewCerts(forBlock, theNewcomers, joinData);
-      return newCertsToLinks(newCerts, updates);
-    });
-  }
+  const computeNewLinks = (forBlock, theNewcomers, joinData, updates) => co(function *() {
+    let newCerts = yield that.computeNewCerts(forBlock, theNewcomers, joinData);
+    return that.newCertsToLinks(newCerts, updates);
+  });
 
-  function newCertsToLinks(newCerts, updates) {
+  this.newCertsToLinks = (newCerts, updates) => {
     let newLinks = {};
     _.mapObject(newCerts, function(certs, pubkey) {
       newLinks[pubkey] = _.pluck(certs, 'from');
@@ -324,139 +286,133 @@ function BlockGenerator(mainContext, prover) {
       newLinks[pubkey] = (newLinks[pubkey] || []).concat(_.pluck(certs, 'pubkey'));
     });
     return newLinks;
-  }
+  };
 
-  function computeNewCerts(forBlock, theNewcomers, joinData) {
-    return co(function *() {
-      var newCerts = {}, certifiers = [];
-      var certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
-      for (let i = 0, len = theNewcomers.length; i < len; i++) {
-        let newcomer = theNewcomers[i];
-        // New array of certifiers
-        newCerts[newcomer] = newCerts[newcomer] || [];
-        // Check wether each certification of the block is from valid newcomer/member
-        for (let j = 0, len2 = certsByKey[newcomer].length; j < len2; j++) {
-          let cert = certsByKey[newcomer][j];
-          let isAlreadyCertifying = certifiers.indexOf(cert.from) !== -1;
-          if (!(isAlreadyCertifying && forBlock > 0)) {
-            if (~theNewcomers.indexOf(cert.from)) {
-              // Newcomer to newcomer => valid link
+  this.computeNewCerts = (forBlock, theNewcomers, joinData) => co(function *() {
+    const newCerts = {}, certifiers = [];
+    const certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
+    for (let i = 0, len = theNewcomers.length; i < len; i++) {
+      const newcomer = theNewcomers[i];
+      // New array of certifiers
+      newCerts[newcomer] = newCerts[newcomer] || [];
+      // Check wether each certification of the block is from valid newcomer/member
+      for (let j = 0, len2 = certsByKey[newcomer].length; j < len2; j++) {
+        const cert = certsByKey[newcomer][j];
+        const isAlreadyCertifying = certifiers.indexOf(cert.from) !== -1;
+        if (!(isAlreadyCertifying && forBlock > 0)) {
+          if (~theNewcomers.indexOf(cert.from)) {
+            // Newcomer to newcomer => valid link
+            newCerts[newcomer].push(cert);
+            certifiers.push(cert.from);
+          } else {
+            let isMember = yield dal.isMember(cert.from);
+            // Member to newcomer => valid link
+            if (isMember) {
               newCerts[newcomer].push(cert);
               certifiers.push(cert.from);
-            } else {
-              let isMember = yield dal.isMember(cert.from);
-              // Member to newcomer => valid link
-              if (isMember) {
-                newCerts[newcomer].push(cert);
+            }
+          }
+        }
+      }
+    }
+    return newCerts;
+  });
+
+  this.getSinglePreJoinData = (current, idHash, joiners) => co(function *() {
+    const identity = yield dal.getIdentityByHashOrNull(idHash);
+    let foundCerts = [];
+    const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
+    if (!identity) {
+      throw 'Identity with hash \'' + idHash + '\' not found';
+    }
+    if (!identity.wasMember && identity.buid != constants.BLOCK.SPECIAL_BLOCK) {
+      const idtyBasedBlock = yield dal.getBlock(identity.buid);
+      const age = current.medianTime - idtyBasedBlock.medianTime;
+      if (age > conf.idtyWindow) {
+        throw 'Too old identity';
+      }
+    }
+    const idty = new Identity(identity);
+    idty.currency = conf.currency;
+    const selfCert = idty.rawWithoutSig();
+    const verified = keyring.verify(selfCert, idty.sig, idty.pubkey);
+    if (!verified) {
+      throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
+    }
+    if (!identity.leaving) {
+      if (!current) {
+        // Look for certifications from initial joiners
+        // TODO: check if this is still working
+        const certs = yield dal.certsNotLinkedToTarget(idHash);
+        foundCerts = _.filter(certs, function(cert){
+          return ~joiners.indexOf(cert.from);
+        });
+      } else {
+        // Look for certifications from WoT members
+        let certs = yield dal.certsNotLinkedToTarget(idHash);
+        const certifiers = [];
+        for (let i = 0; i < certs.length; i++) {
+          const cert = certs[i];
+          try {
+            const basedBlock = yield dal.getBlock(cert.block_number);
+            if (!basedBlock) {
+              throw 'Unknown timestamp block for identity';
+            }
+            if (current) {
+              const age = current.medianTime - basedBlock.medianTime;
+              if (age > conf.sigWindow || age > conf.sigValidity) {
+                throw 'Too old certification';
+              }
+            }
+            // Already exists a link not replayable yet?
+            let exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+            if (exists) {
+              throw 'It already exists a similar certification written, which is not replayable yet';
+            }
+            // Already exists a link not chainable yet?
+            exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock);
+            if (exists) {
+              throw 'It already exists a certification written which is not chainable yet';
+            }
+            const isMember = yield dal.isMember(cert.from);
+            const doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
+            if (isMember && !doubleSignature) {
+              var isValid = yield rules.HELPERS.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity, conf, dal);
+              if (isValid) {
                 certifiers.push(cert.from);
+                foundCerts.push(cert);
               }
             }
+          } catch (e) {
+            console.error(e.stack);
+            // Go on
           }
         }
       }
-      return newCerts;
-    });
-  }
+    }
+    return {
+      identity: identity,
+      key: null,
+      idHash: idHash,
+      certs: foundCerts
+    };
+  });
 
-  function getSinglePreJoinData(current, idHash, done, joiners) {
-    return co(function *() {
-      var identity = yield dal.getIdentityByHashOrNull(idHash);
-      var foundCerts = [];
-      let blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
-      if (!identity) {
-        throw 'Identity with hash \'' + idHash + '\' not found';
-      }
-      if (!identity.wasMember && identity.buid != constants.BLOCK.SPECIAL_BLOCK) {
-        let idtyBasedBlock = yield dal.getBlock(identity.buid);
-        let age = current.medianTime - idtyBasedBlock.medianTime;
-        if (age > conf.idtyWindow) {
-          throw 'Too old identity';
-        }
-      }
-      let idty = new Identity(identity);
-      idty.currency = conf.currency;
-      let selfCert = idty.rawWithoutSig();
-      let verified = keyring.verify(selfCert, idty.sig, idty.pubkey);
-      if (!verified) {
-        throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
-      }
-      if (!identity.leaving) {
-        if (!current) {
-          // Look for certifications from initial joiners
-          // TODO: check if this is still working
-          let certs = yield dal.certsNotLinkedToTarget(idHash);
-          foundCerts = _.filter(certs, function(cert){
-            return ~joiners.indexOf(cert.from);
-          });
-        } else {
-          // Look for certifications from WoT members
-          let certs = yield dal.certsNotLinkedToTarget(idHash);
-          var certifiers = [];
-          for (let i = 0; i < certs.length; i++) {
-            let cert = certs[i];
-            try {
-              var basedBlock = yield dal.getBlock(cert.block_number);
-              if (!basedBlock) {
-                throw 'Unknown timestamp block for identity';
-              }
-              if (current) {
-                let age = current.medianTime - basedBlock.medianTime;
-                if (age > conf.sigWindow || age > conf.sigValidity) {
-                  throw 'Too old certification';
-                }
-              }
-              // Already exists a link not replayable yet?
-              var exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
-              if (exists) {
-                throw 'It already exists a similar certification written, which is not replayable yet';
-              }
-              // Already exists a link not chainable yet?
-              exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock);
-              if (exists) {
-                throw 'It already exists a certification written which is not chainable yet';
-              }
-              var isMember = yield dal.isMember(cert.from);
-              var doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
-              if (isMember && !doubleSignature) {
-                var isValid = yield rules.HELPERS.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity, conf, dal);
-                if (isValid) {
-                  certifiers.push(cert.from);
-                  foundCerts.push(cert);
-                }
-              }
-            } catch (e) {
-              console.error(e.stack);
-              // Go on
-            }
-          }
-        }
-      }
-      return {
-        identity: identity,
-        key: null,
-        idHash: idHash,
-        certs: foundCerts
-      };
-    })
-      .then((join) => done(null, join))
-      .catch(done);
-  }
-
-  function createBlock (current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions) {
+  const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions) => {
     // Revocations have an impact on exclusions
     revocations.forEach((idty) => exclusions.push(idty.pubkey));
     // Prevent writing joins/updates for excluded members
     exclusions = _.uniq(exclusions);
-    exclusions.forEach(function (excluded) {
+    exclusions.forEach((excluded) => {
       delete updates[excluded];
       delete joinData[excluded];
       delete leaveData[excluded];
     });
-    _(leaveData).keys().forEach(function (leaver) {
+    _(leaveData).keys().forEach((leaver) => {
       delete updates[leaver];
       delete joinData[leaver];
     });
-    var block = new Block();
+    const block = new Block();
     block.version = constants.DOCUMENTS_VERSION;
     block.currency = current ? current.currency : conf.currency;
     block.nonce = 0;
@@ -473,8 +429,8 @@ function BlockGenerator(mainContext, prover) {
     if (selfPubkey)
       block.issuer = selfPubkey;
     // Members merkle
-    var joiners = _(joinData).keys();
-    var previousCount = current ? current.membersCount : 0;
+    const joiners = _(joinData).keys();
+    const previousCount = current ? current.membersCount : 0;
     if (joiners.length == 0 && !current) {
       throw constants.ERRORS.CANNOT_ROOT_BLOCK_NO_MEMBERS;
     }
@@ -482,8 +438,8 @@ function BlockGenerator(mainContext, prover) {
     block.identities = [];
     // Newcomers + back people
     block.joiners = [];
-    joiners.forEach(function(joiner){
-      var data = joinData[joiner];
+    joiners.forEach((joiner) => {
+      const data = joinData[joiner];
       // Identities only for never-have-been members
       if (!data.identity.member && !data.identity.wasMember) {
         block.identities.push(new Identity(data.identity).inline());
@@ -494,13 +450,13 @@ function BlockGenerator(mainContext, prover) {
       }
     });
     block.identities = _.sortBy(block.identities, (line) => {
-      let sp = line.split(':');
+      const sp = line.split(':');
       return sp[2] + sp[3];
     });
     // Renewed
     block.actives = [];
-    joiners.forEach(function(joiner){
-      var data = joinData[joiner];
+    joiners.forEach((joiner) => {
+      const data = joinData[joiner];
       // Join only for non-members
       if (data.identity.member) {
         block.actives.push(new Membership(data.ms).inline());
@@ -508,8 +464,8 @@ function BlockGenerator(mainContext, prover) {
     });
     // Leavers
     block.leavers = [];
-    var leavers = _(leaveData).keys();
-    leavers.forEach(function(leaver){
+    const leavers = _(leaveData).keys();
+    leavers.forEach((leaver) => {
       var data = leaveData[leaver];
       // Join only for non-members
       if (data.identity.member) {
@@ -526,24 +482,19 @@ function BlockGenerator(mainContext, prover) {
 
     // Certifications from the WoT, to newcomers
     block.certifications = [];
-    joiners.forEach(function(joiner){
-      var data = joinData[joiner] || [];
-      data.certs.forEach(function(cert){
-        block.certifications.push(new Certification(cert).inline());
-      });
+    joiners.forEach((joiner) => {
+      const data = joinData[joiner] || [];
+      data.certs.forEach((cert) => block.certifications.push(new Certification(cert).inline()));
     });
     // Certifications from the WoT, to the WoT
-    _(updates).keys().forEach(function(certifiedMember){
+    _(updates).keys().forEach((certifiedMember) => {
       var certs = updates[certifiedMember] || [];
-      certs.forEach(function(cert){
-        block.certifications.push(new Certification(cert).inline());
-      });
+      certs.forEach((cert) => block.certifications.push(new Certification(cert).inline()));
     });
     // Transactions
     block.transactions = [];
-    transactions.forEach(function (tx) {
-      block.transactions.push({ raw: tx.compact() });
-    });
+    transactions.forEach((tx) => block.transactions.push({ raw: tx.compact() }));
+
     return co(function *() {
       block.powMin = block.number == 0 ? 0 : yield rules.HELPERS.getPoWMin(block.number, conf, dal);
       if (block.number == 0) {
@@ -553,18 +504,18 @@ function BlockGenerator(mainContext, prover) {
         block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
       }
       // Universal Dividend
-      var lastUDTime = lastUDBlock && lastUDBlock.UDTime;
+      let lastUDTime = lastUDBlock && lastUDBlock.UDTime;
       if (!lastUDTime) {
-        let rootBlock = yield dal.getBlockOrNull(0);
+        const rootBlock = yield dal.getBlockOrNull(0);
         lastUDTime = rootBlock && rootBlock.UDTime;
       }
       if (lastUDTime != null) {
         if (current && lastUDTime + conf.dt <= block.medianTime) {
-          var M = current.monetaryMass || 0;
-          var c = conf.c;
-          var N = block.membersCount;
-          var previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-          var previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
+          const M = current.monetaryMass || 0;
+          const c = conf.c;
+          const N = block.membersCount;
+          const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+          const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
           if (N > 0) {
             block.dividend = Math.ceil(Math.max(previousUD, c * M / Math.pow(10,previousUB) / N));
             block.unitbase = previousUB;
@@ -592,75 +543,69 @@ function BlockGenerator(mainContext, prover) {
  */
 function NextBlockGenerator(conf, dal) {
 
-  this.findNewCertsFromWoT = function(current) {
-    return co(function *() {
-      var updates = {};
-      var updatesToFrom = {};
-      var certs = yield dal.certsFindNew();
-      // The block above which (above from current means blocks with number < current)
-      let blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
-      for (var i = 0; i < certs.length; i++) {
-        var cert = certs[i];
-        var exists = false;
-        if (current) {
-          // Already exists a link not replayable yet?
-          exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
-        }
+  const logger = require('../logger')(dal.profile);
+
+  this.findNewCertsFromWoT = (current) => co(function *() {
+    const updates = {};
+    const updatesToFrom = {};
+    const certs = yield dal.certsFindNew();
+    // The block above which (above from current means blocks with number < current)
+    const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
+    for (var i = 0; i < certs.length; i++) {
+      const cert = certs[i];
+      let exists = false;
+      if (current) {
+        // Already exists a link not replayable yet?
+        exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+      }
+      if (!exists) {
+        // Already exists a link not chainable yet?
+        // No chainability block means absolutely nobody can issue certifications yet
+        exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
         if (!exists) {
-          // Already exists a link not chainable yet?
-          // No chainability block means absolutely nobody can issue certifications yet
-          exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
-          if (!exists) {
-            // It does NOT already exists a similar certification written, which is not replayable yet
-            // Signatory must be a member
-            var isSignatoryAMember = yield dal.isMember(cert.from);
-            var isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
-            // Certified must be a member and non-leaver
-            if (isSignatoryAMember && isCertifiedANonLeavingMember) {
-              updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
-              updates[cert.to] = updates[cert.to] || [];
-              if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
-                updates[cert.to].push(cert);
-                updatesToFrom[cert.to].push(cert.from);
-              }
+          // It does NOT already exists a similar certification written, which is not replayable yet
+          // Signatory must be a member
+          const isSignatoryAMember = yield dal.isMember(cert.from);
+          const isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
+          // Certified must be a member and non-leaver
+          if (isSignatoryAMember && isCertifiedANonLeavingMember) {
+            updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
+            updates[cert.to] = updates[cert.to] || [];
+            if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
+              updates[cert.to].push(cert);
+              updatesToFrom[cert.to].push(cert.from);
             }
           }
         }
       }
-      return updates;
-    });
-  };
+    }
+    return updates;
+  });
 
-  this.filterJoiners = function takeAllJoiners(preJoinData, done) {
-    // No manual filtering, takes all BUT already used UID or pubkey
-    var filtered = {};
-    async.forEach(_.keys(preJoinData), function(pubkey, callback) {
-      async.waterfall([
-        function(next) {
-          rules.HELPERS.checkExistsUserID(preJoinData[pubkey].identity.uid, dal).then((exists) => next(null, exists ? true : false)).catch(next);
-        },
-        function(exists, next) {
-          if (exists && !preJoinData[pubkey].identity.wasMember) {
-            return next('UID already taken');
-          }
-          rules.HELPERS.checkExistsPubkey(pubkey, dal).then((exists) => next(null, exists ? true : false)).catch(next);
-        },
-        function(exists, next) {
-          if (exists && !preJoinData[pubkey].identity.wasMember) {
-            return next('Pubkey already taken');
-          }
-          next();
+  this.filterJoiners = (preJoinData) => co(function*() {
+    const filtered = {};
+    const filterings = [];
+    const filter = (pubkey) => co(function*() {
+      try {
+        // No manual filtering, takes all BUT already used UID or pubkey
+        let exists = yield rules.HELPERS.checkExistsUserID(preJoinData[pubkey].identity.uid, dal);
+        if (exists && !preJoinData[pubkey].identity.wasMember) {
+          throw 'UID already taken';
         }
-      ], function(err) {
-        if (!err) {
-          filtered[pubkey] = preJoinData[pubkey];
+        exists = yield rules.HELPERS.checkExistsPubkey(pubkey, dal);
+        if (exists && !preJoinData[pubkey].identity.wasMember) {
+          throw 'Pubkey already taken';
         }
-        callback();
-      });
-    }, function(err) {
-      done(err, filtered);
+        filtered[pubkey] = preJoinData[pubkey];
+      }
+      catch (err) {
+        logger.warn(err);
+      }
     });
-  };
+    _.keys(preJoinData).forEach( (joinPubkey) => filterings.push(filter(joinPubkey)));
+    yield filterings;
+    return filtered;
+  });
 }
 
 /**
@@ -669,17 +614,13 @@ function NextBlockGenerator(conf, dal) {
  */
 function ManualRootGenerator() {
 
-  this.findNewCertsFromWoT = function() {
-    return Q({});
-  };
+  this.findNewCertsFromWoT = () => Q({});
 
-  this.filterJoiners = function(preJoinData, next) {
-    var joinData = {};
-    var newcomers = _(preJoinData).keys();
-    var uids = [];
-    newcomers.forEach(function(newcomer){
-      uids.push(preJoinData[newcomer].ms.userid);
-    });
+  this.filterJoiners = (preJoinData) => co(function*() {
+    const joinData = {};
+    const newcomers = _(preJoinData).keys();
+    const uids = [];
+    newcomers.forEach((newcomer) => uids.push(preJoinData[newcomer].ms.userid));
     if (newcomers.length > 0) {
       inquirer.prompt([{
         type: "checkbox",
@@ -687,18 +628,18 @@ function ManualRootGenerator() {
         message: "Newcomers to add",
         choices: uids,
         default: uids[0]
-      }], function (answers) {
-        newcomers.forEach(function(newcomer){
+      }], (answers) => {
+        newcomers.forEach((newcomer) => {
           if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
             joinData[newcomer] = preJoinData[newcomer];
         });
         if (answers.uids.length == 0)
-          next('No newcomer selected');
+          throw 'No newcomer selected';
         else
-          next(null, joinData);
+          return joinData;
       });
     } else {
-      next('No newcomer found');
+      throw 'No newcomer found';
     }
-  };
+  });
 }

@@ -285,7 +285,7 @@ function BlockchainService () {
 
   this.requirementsOfIdentity = (idty, current) => co(function *() {
     // TODO: this is not clear
-    let join = yield Q.nfcall(generator.getSinglePreJoinData, current, idty.hash);
+    let join = yield generator.getSinglePreJoinData(current, idty.hash);
     let pubkey = join.identity.pubkey;
     // Check WoT stability
     let someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];

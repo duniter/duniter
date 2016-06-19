@@ -123,7 +123,7 @@ function BlockchainContext() {
     yield updateBlocksComputedVars(current, block);
     // Saves the block (DAL)
     yield Q.nbind(dal.saveBlock, dal, block);
-    yield Q.nbind(that.saveParametersForRootBlock, that, block);
+    yield that.saveParametersForRootBlock(block);
     // Create/Update members (create new identities if do not exist)
     yield Q.nfcall(updateMembers, block);
     // Create/Update certifications
@@ -368,38 +368,34 @@ function BlockchainContext() {
     }
   });
 
-  that.saveParametersForRootBlock = (block, done) => {
+  that.saveParametersForRootBlock = (block) => co(function*() {
     if (block.parameters) {
-      var sp = block.parameters.split(':');
+      const sp = block.parameters.split(':');
 
-      conf.c                = parseFloat(sp[0]);
-      conf.dt               = parseInt(sp[1]);
-      conf.ud0              = parseInt(sp[2]);
-      conf.sigPeriod        = parseInt(sp[3]);
-      conf.sigStock         = parseInt(sp[4]);
-      conf.sigWindow        = parseInt(sp[5]);
-      conf.sigValidity      = parseInt(sp[6]);
-      conf.sigQty           = parseInt(sp[7]);
-      conf.idtyWindow       = parseInt(sp[8]);
-      conf.msWindow         = parseInt(sp[9]);
-      conf.xpercent         = parseFloat(sp[10]);
-      conf.msValidity       = parseInt(sp[11]);
-      conf.stepMax          = parseInt(sp[12]);
+      conf.c = parseFloat(sp[0]);
+      conf.dt = parseInt(sp[1]);
+      conf.ud0 = parseInt(sp[2]);
+      conf.sigPeriod = parseInt(sp[3]);
+      conf.sigStock = parseInt(sp[4]);
+      conf.sigWindow = parseInt(sp[5]);
+      conf.sigValidity = parseInt(sp[6]);
+      conf.sigQty = parseInt(sp[7]);
+      conf.idtyWindow = parseInt(sp[8]);
+      conf.msWindow = parseInt(sp[9]);
+      conf.xpercent = parseFloat(sp[10]);
+      conf.msValidity = parseInt(sp[11]);
+      conf.stepMax = parseInt(sp[12]);
       conf.medianTimeBlocks = parseInt(sp[13]);
-      conf.avgGenTime       = parseInt(sp[14]);
-      conf.dtDiffEval       = parseInt(sp[15]);
-      conf.blocksRot        = parseInt(sp[16]);
-      conf.percentRot       = parseFloat(sp[17]);
-      conf.currency         = block.currency;
+      conf.avgGenTime = parseInt(sp[14]);
+      conf.dtDiffEval = parseInt(sp[15]);
+      conf.blocksRot = parseInt(sp[16]);
+      conf.percentRot = parseFloat(sp[17]);
+      conf.currency = block.currency;
       // Super important: adapt wotb module to handle the correct stock
       dal.wotb.setMaxCert(conf.sigStock);
-      return dal.saveConf(conf).then(done).catch(done);
+      return dal.saveConf(conf);
     }
-    else {
-      done && done();
-      return Q();
-    }
-  };
+  });
 
   this.computeObsoleteLinks = (block) => co(function*() {
     yield dal.obsoletesLinks(block.medianTime - conf.sigValidity);

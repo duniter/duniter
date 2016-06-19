@@ -292,11 +292,11 @@ function FileDAL(params) {
 
   this.getIdentityByHashOrNull = function(hash, done) {
     return that.idtyDAL.getByHash(hash)
-      .then(function(idty) {
+      .then((idty) => {
         done && done(null, idty);
         return idty;
       })
-      .catch(function(err) {
+      .catch((err) => {
         if (done) {
           return done(err);
         }

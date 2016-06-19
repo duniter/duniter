@@ -1,29 +1,29 @@
 "use strict";
-var async           = require('async');
-var _               = require('underscore');
-var co              = require('co');
-var Q               = require('q');
-var moment          = require('moment');
-var inquirer        = require('inquirer');
-var rawer           = require('../ucp/rawer');
-var hashf           = require('../ucp/hashf');
-var constants       = require('../constants');
-var base58          = require('../crypto/base58');
-var rules           = require('../rules/index');
-var signature       = require('../crypto/signature');
-let keyring          = require('../crypto/keyring');
-var Identity        = require('../entity/identity');
-var Certification   = require('../entity/certification');
-var Membership      = require('../entity/membership');
-var Block           = require('../entity/block');
-var Transaction     = require('../entity/transaction');
+const async           = require('async');
+const _               = require('underscore');
+const co              = require('co');
+const Q               = require('q');
+const moment          = require('moment');
+const inquirer        = require('inquirer');
+const rawer           = require('../ucp/rawer');
+const hashf           = require('../ucp/hashf');
+const constants       = require('../constants');
+const base58          = require('../crypto/base58');
+const rules           = require('../rules/index');
+const signature       = require('../crypto/signature');
+const keyring          = require('../crypto/keyring');
+const Identity        = require('../entity/identity');
+const Certification   = require('../entity/certification');
+const Membership      = require('../entity/membership');
+const Block           = require('../entity/block');
+const Transaction     = require('../entity/transaction');
 
 module.exports = (mainContext, prover) => new BlockGenerator(mainContext, prover);
 
 function BlockGenerator(mainContext, prover) {
 
-  var that = this;
-  var conf, dal, pair, selfPubkey, logger;
+  const that = this;
+  let conf, dal, pair, selfPubkey, logger;
 
   this.setConfDAL = (newConf, newDAL, newPair) => {
     dal = newDAL;
@@ -36,9 +36,9 @@ function BlockGenerator(mainContext, prover) {
   this.nextBlock = () => generateNextBlock(new NextBlockGenerator(conf, dal));
 
   this.nextEmptyBlock = () => co(function *() {
-    var current = yield dal.getCurrentBlockOrNull();
-    var lastUDBlock = dal.lastUDBlock();
-    var exclusions = yield dal.getToBeKickedPubkeys();
+    const current = yield dal.getCurrentBlockOrNull();
+    const lastUDBlock = dal.lastUDBlock();
+    const exclusions = yield dal.getToBeKickedPubkeys();
     return createBlock(current, {}, {}, {}, [], exclusions, lastUDBlock, []);
   });
 
@@ -51,9 +51,9 @@ function BlockGenerator(mainContext, prover) {
   });
 
   this.makeNextBlock = (block, sigFunc, trial, manualValues) => co(function *() {
-    var unsignedBlock = block || (yield that.nextBlock());
-    var sigF = sigFunc || signature.sync(pair);
-    var trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
+    const unsignedBlock = block || (yield that.nextBlock());
+    const sigF = sigFunc || signature.sync(pair);
+    const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
     return prover.prove(unsignedBlock, sigF, trialLevel, null, (manualValues && manualValues.time) || null);
   });
 
@@ -64,278 +64,189 @@ function BlockGenerator(mainContext, prover) {
   /**
    * Generate next block, gathering both updates & newcomers
    */
-  function generateNextBlock(generator) {
-    return co(function *() {
-      var current = yield dal.getCurrentBlockOrNull();
-      var lastUDBlock = yield dal.lastUDBlock();
-      var revocations = yield dal.getRevocatingMembers();
-      var exclusions = yield dal.getToBeKickedPubkeys();
-      var newCertsFromWoT = yield generator.findNewCertsFromWoT(current);
-      var newcomersLeavers = yield findNewcomersAndLeavers(current, generator.filterJoiners);
-      var transactions = yield findTransactions();
-      var joinData = newcomersLeavers[2];
-      var leaveData = newcomersLeavers[3];
-      var newCertsFromNewcomers = newcomersLeavers[4];
-      var certifiersOfNewcomers = _.uniq(_.keys(joinData).reduce(function(certifiers, newcomer) {
-        return certifiers.concat(_.pluck(joinData[newcomer].certs, 'from'));
-      }, []));
-      var certifiers = [].concat(certifiersOfNewcomers);
-      // Merges updates
-      _(newCertsFromWoT).keys().forEach(function(certified){
-        newCertsFromWoT[certified] = newCertsFromWoT[certified].filter(function(cert) {
-          // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
-          var isCertifier = certifiers.indexOf(cert.from) != -1;
-          if (!isCertifier) {
-            certifiers.push(cert.from);
-          }
-          return !isCertifier;
-        });
-      });
-      _(newCertsFromNewcomers).keys().forEach(function(certified){
-        newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
-      });
-      // Revocations
-      // Create the block
-      return createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions);
-    });
-  }
-
-  function findNewcomersAndLeavers (current, filteringFunc) {
-    return Q.Promise(function(resolve, reject){
-      async.parallel({
-        newcomers: function(callback){
-          findNewcomers(current, filteringFunc, callback);
-        },
-        leavers: function(callback){
-          findLeavers(current, callback);
+  const generateNextBlock = (generator) => co(function *() {
+    const current = yield dal.getCurrentBlockOrNull();
+    const lastUDBlock = yield dal.lastUDBlock();
+    const revocations = yield dal.getRevocatingMembers();
+    const exclusions = yield dal.getToBeKickedPubkeys();
+    const newCertsFromWoT = yield generator.findNewCertsFromWoT(current);
+    const newcomersLeavers = yield findNewcomersAndLeavers(current, generator.filterJoiners);
+    const transactions = yield findTransactions();
+    const joinData = newcomersLeavers[2];
+    const leaveData = newcomersLeavers[3];
+    const newCertsFromNewcomers = newcomersLeavers[4];
+    const certifiersOfNewcomers = _.uniq(_.keys(joinData).reduce((certifiers, newcomer) => {
+      return certifiers.concat(_.pluck(joinData[newcomer].certs, 'from'));
+    }, []));
+    const certifiers = [].concat(certifiersOfNewcomers);
+    // Merges updates
+    _(newCertsFromWoT).keys().forEach(function(certified){
+      newCertsFromWoT[certified] = newCertsFromWoT[certified].filter((cert) => {
+        // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
+        const isCertifier = certifiers.indexOf(cert.from) != -1;
+        if (!isCertifier) {
+          certifiers.push(cert.from);
         }
-      }, function(err, res) {
-        var current = res.newcomers[0];
-        var newWoTMembers = res.newcomers[1];
-        var finalJoinData = res.newcomers[2];
-        var updates = res.newcomers[3];
-        err ? reject(err) : resolve([current, newWoTMembers, finalJoinData, res.leavers, updates]);
+        return !isCertifier;
       });
     });
-  }
+    _(newCertsFromNewcomers).keys().forEach((certified) => {
+      newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
+    });
+    // Revocations
+    // Create the block
+    return createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions);
+  });
 
-  function findTransactions() {
-    return dal.getTransactionsPending()
-      .then(function (txs) {
-        var transactions = [];
-        var passingTxs = [];
-        return Q.Promise(function(resolve, reject){
+  const findNewcomersAndLeavers  = (current, filteringFunc) => co(function*() {
+    const newcomers = yield findNewcomers(current, filteringFunc);
+    const leavers = yield findLeavers(current);
 
-          async.forEachSeries(txs, function (rawtx, callback) {
-            var tx = new Transaction(rawtx, conf.currency);
-            var extractedTX = tx.getTransaction();
-            async.waterfall([
-              function (next) {
-                rules.HELPERS.checkBunchOfTransactions(passingTxs.concat(extractedTX), next);
-              },
-              function (next) {
-                rules.HELPERS.checkSingleTransaction(extractedTX, { medianTime: moment().utc().unix() }, conf, dal).then(() => next()).catch(next);
-              },
-              function (next) {
-                transactions.push(tx);
-                passingTxs.push(extractedTX);
-                next();
-              }
-            ], function (err) {
-              if (err) {
-                logger.error(err);
-                dal.removeTxByHash(extractedTX.hash).then(_.partial(callback, null)).catch(callback);
-              }
-              else {
-                logger.info('Transaction added to block');
-                callback();
-              }
-            });
-          }, function(err) {
-            err ? reject(err) : resolve(transactions);
-          });
-        });
-      });
-  }
+    const cur = newcomers.current;
+    const newWoTMembers = newcomers.newWotMembers;
+    const finalJoinData = newcomers.finalJoinData;
+    const updates = newcomers.updates;
 
-  function findLeavers (current, done) {
-    var leaveData = {};
-    async.waterfall([
-      function (next){
-        dal.findLeavers().then(_.partial(next, null)).catch(next);
-      },
-      function (mss, next){
-        var leavers = [];
-        mss.forEach(function (ms) {
-          leavers.push(ms.issuer);
-        });
-        async.forEach(mss, function(ms, callback){
-          var leave = { identity: null, ms: ms, key: null, idHash: '' };
-          leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
-          async.waterfall([
-            function (next){
-              async.parallel({
-                block: function (callback) {
-                  if (current) {
-                    dal.getBlockOrNull(ms.number, function (err, basedBlock) {
-                      callback(null, err ? null : basedBlock);
-                    });
-                  } else {
-                    callback(null, {});
-                  }
-                },
-                identity: function(callback){
-                  dal.getIdentityByHashOrNull(leave.idHash, callback);
-                }
-              }, next);
-            },
-            function (res, next){
-              if (res.identity && res.block && res.identity.currentMSN < leave.ms.number && res.identity.member) {
-                // MS + matching cert are found
-                leave.identity = res.identity;
-                leaveData[res.identity.pubkey] = leave;
-              }
-              next();
-            }
-          ], callback);
-        }, next);
-      },
-      function (next) {
-        next(null, leaveData);
+    return [cur, newWoTMembers, finalJoinData, leavers, updates];
+  });
+
+  const findTransactions = () => co(function*() {
+    const txs = yield dal.getTransactionsPending();
+    const transactions = [];
+    const passingTxs = [];
+    for(const t in txs) {
+      const tx = new Transaction(txs[t], conf.currency);
+      const extractedTX = tx.getTransaction();
+      try {
+        yield Q.nbind(rules.HELPERS.checkBunchOfTransactions, rules, passingTxs.concat(extractedTX));
+        yield rules.HELPERS.checkSingleTransaction(extractedTX, {medianTime: moment().utc().unix()}, conf, dal);
+        transactions.push(tx);
+        passingTxs.push(extractedTX);
+        logger.info('Transaction added to block');
+      } catch (err) {
+        logger.error(err);
+        yield dal.removeTxByHash(extractedTX.hash);
       }
-    ], done);
-  }
+    }
+    return transactions;
+  });
 
-  function findNewcomers (current, filteringFunc, done) {
-    var wotMembers = [];
-    var joinData = {};
-    var updates = {};
-    async.waterfall([
-      function (next) {
-        getPreJoinData(current, next);
-      },
-      function (preJoinData, next){
-        filteringFunc(preJoinData, next);
-      },
-      function (filteredJoinData, next) {
-        joinData = filteredJoinData;
-        // Cache the members
-        dal.getMembers(next);
-      },
-      function (members, next) {
-        wotMembers = _.pluck(members, 'pubkey');
-        // Checking step
-        var newcomers = _(joinData).keys();
-        var nextBlockNumber = current ? current.number + 1 : 0;
-        // Checking algo is defined by 'checkingWoTFunc'
-        iteratedChecking(newcomers, function (someNewcomers, onceChecked) {
-          var nextBlock = {
-            number: nextBlockNumber,
-            joiners: someNewcomers,
-            identities: _.filter(newcomers.map((pub) => joinData[pub].identity), { wasMember: false }).map((idty) => idty.pubkey)
-          };
-          // Check WoT stability
-          async.waterfall([
-            function (next){
-              computeNewLinks(nextBlockNumber, someNewcomers, joinData, updates, next);
-            },
-            function (newLinks, next){
-              checkWoTConstraints(nextBlock, newLinks, current, next);
-            }
-          ], (err) => {
-            onceChecked(err);
-          });
-        }, function (err, realNewcomers) {
-          err && logger.error(err);
-          async.waterfall([
-            function (next){
-              computeNewLinks(nextBlockNumber, realNewcomers, joinData, updates, next);
-            },
-            function (newLinks, next){
-              var newWoT = wotMembers.concat(realNewcomers);
-              next(err, realNewcomers, newLinks, newWoT);
-            }
-          ], next);
-        });
-      },
-      function (realNewcomers, newLinks, newWoT, next) {
-        var finalJoinData = {};
-        realNewcomers.forEach(function(newcomer){
-          // Only keep membership of selected newcomers
-          finalJoinData[newcomer] = joinData[newcomer];
-          // Only keep certifications from final members
-          var keptCerts = [];
-          joinData[newcomer].certs.forEach(function(cert){
-            var issuer = cert.from;
-            if (~newWoT.indexOf(issuer) && ~newLinks[cert.to].indexOf(issuer)) {
-              keptCerts.push(cert);
-            }
-          });
-          joinData[newcomer].certs = keptCerts;
-        });
-        // Send back the new WoT, the joining data and key updates for newcomers' signature of WoT
-        next(null, current, wotMembers.concat(realNewcomers), finalJoinData, updates);
+  const findLeavers = (current) => co(function*() {
+    const leaveData = {};
+    const memberships = yield dal.findLeavers();
+    const leavers = [];
+    memberships.forEach((ms) => leavers.push(ms.issuer));
+    for (const m in memberships) {
+      const ms = memberships[m];
+      const leave = { identity: null, ms: ms, key: null, idHash: '' };
+      leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
+      let block;
+      if (current) {
+        block = yield Q.nbind(dal.getBlockOrNull, dal, ms.number);
       }
-    ], done);
-  }
+      else {
+        block = {};
+      }
+      const identity = yield Q.nbind(dal.getIdentityByHashOrNull, dal, leave.idHash);
+      if (identity && block && identity.currentMSN < leave.ms.number && identity.member) {
+        // MS + matching cert are found
+        leave.identity = identity;
+        leaveData[identity.pubkey] = leave;
+      }
+    }
+    return leaveData;
+  });
 
-  function checkWoTConstraints (block, newLinks, current, done) {
-    return co(function *() {
-      if (block.number < 0) {
-        throw 'Cannot compute WoT constraint for negative block number';
-      }
-      let newcomers = block.joiners.map((inlineMS) => inlineMS.split(':')[0]);
-      let realNewcomers = block.identities;
-      for (let i = 0, len = newcomers.length; i < len; i++) {
-        let newcomer = newcomers[i];
-        if (block.number > 0) {
-          try {
-            // Will throw an error if not enough links
-            yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
-            // This one does not throw but returns a boolean
-            let isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
-            if (isOut) {
-              throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
-            }
-          } catch (e) {
-            logger.debug(e);
-            throw e;
+  const findNewcomers = (current, filteringFunc) => co(function*() {
+    const updates = {};
+    const preJoinData = yield Q.nfcall(getPreJoinData, current);
+    const joinData = yield Q.nfcall(filteringFunc, preJoinData);
+    const members = yield Q.nbind(dal.getMembers, dal);
+    const wotMembers = _.pluck(members, 'pubkey');
+    // Checking step
+    const newcomers = _(joinData).keys();
+    const nextBlockNumber = current ? current.number + 1 : 0;
+    try {
+      const realNewcomers = yield iteratedChecking(newcomers, (someNewcomers) => co(function*() {
+        const nextBlock = {
+          number: nextBlockNumber,
+          joiners: someNewcomers,
+          identities: _.filter(newcomers.map((pub) => joinData[pub].identity), { wasMember: false }).map((idty) => idty.pubkey)
+        };
+        const newLinks = yield Q.nfcall(computeNewLinks, nextBlockNumber, someNewcomers, joinData, updates);
+        yield checkWoTConstraints(nextBlock, newLinks, current);
+      }));
+      const newLinks = yield Q.nfcall(computeNewLinks, nextBlockNumber, realNewcomers, joinData, updates);
+      const newWoT = wotMembers.concat(realNewcomers);
+      const finalJoinData = {};
+      realNewcomers.forEach((newcomer) => {
+        // Only keep membership of selected newcomers
+        finalJoinData[newcomer] = joinData[newcomer];
+        // Only keep certifications from final members
+        const keptCerts = [];
+        joinData[newcomer].certs.forEach((cert) => {
+          const issuer = cert.from;
+          if (~newWoT.indexOf(issuer) && ~newLinks[cert.to].indexOf(issuer)) {
+            keptCerts.push(cert);
           }
+        });
+        joinData[newcomer].certs = keptCerts;
+      });
+      return {
+        current: current,
+        newWotMembers: wotMembers.concat(realNewcomers),
+        finalJoinData: finalJoinData,
+        updates: updates
+      }
+    } catch(err) {
+      logger.error(err);
+      throw err;
+    }
+  });
+
+  const checkWoTConstraints = (block, newLinks, current) => co(function*() {
+    if (block.number < 0) {
+      throw 'Cannot compute WoT constraint for negative block number';
+    }
+    let newcomers = block.joiners.map((inlineMS) => inlineMS.split(':')[0]);
+    let realNewcomers = block.identities;
+    for (let i = 0, len = newcomers.length; i < len; i++) {
+      let newcomer = newcomers[i];
+      if (block.number > 0) {
+        try {
+          // Will throw an error if not enough links
+          yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
+          // This one does not throw but returns a boolean
+          let isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
+          if (isOut) {
+            throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
+          }
+        } catch (e) {
+          logger.debug(e);
+          throw e;
         }
       }
-    })
-      .then(() => done())
-      .catch(done);
-  }
+    }
+  });
 
-  function iteratedChecking(newcomers, checkWoTForNewcomers, done) {
-    return Q.Promise(function(resolve){
-        var passingNewcomers = [], hadError = false;
-        async.forEachSeries(newcomers, function(newcomer, callback){
-          checkWoTForNewcomers(passingNewcomers.concat(newcomer), function (err) {
-            // If success, add this newcomer to the valid newcomers. Otherwise, reject him.
-            if (!err) {
-              passingNewcomers.push(newcomer);
-            }
-            hadError = hadError || err;
-            callback();
-          });
-        }, function(){
-          if (hadError) {
-            // If at least one newcomer was rejected, test the whole new bunch
-            resolve(iteratedChecking(passingNewcomers, checkWoTForNewcomers));
-          }
-          else {
-            resolve(passingNewcomers);
-          }
-        });
-      })
-      .then(function(passingNewcomers) {
-        done && done(null, passingNewcomers);
-        return passingNewcomers;
-      })
-      .catch(done);
-  }
+  const iteratedChecking = (newcomers, checkWoTForNewcomers) => co(function*() {
+    const passingNewcomers = []
+    let hadError = false;
+    for (const n in newcomers) {
+      const newcomer = newcomers[n];
+      try {
+        yield checkWoTForNewcomers(passingNewcomers.concat(newcomer));
+        passingNewcomers.push(newcomer);
+      } catch (err) {
+        hadError = hadError || err;
+      }
+    }
+    if (hadError) {
+      return yield iteratedChecking(passingNewcomers, checkWoTForNewcomers);
+    } else {
+      return passingNewcomers;
+    }
+  });
 
   function getPreJoinData(current, done) {
     var preJoinData = {};

@@ -2,9 +2,9 @@
  * Created by cgeek on 22/08/15.
  */
 
-var Q = require('q');
-var co = require('co');
-var AbstractSQLite = require('./AbstractSQLite');
+const Q = require('q');
+const co = require('co');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = CertDAL;
 
@@ -14,7 +14,7 @@ function CertDAL(db) {
 
   AbstractSQLite.call(this, db);
 
-  let that = this;
+  const that = this;
 
   this.table = 'cert';
   this.fields = [
@@ -92,9 +92,9 @@ function CertDAL(db) {
   this.existsGivenCert = (cert) => Q(this.sqlExisting(cert));
 
   this.updateBatchOfCertifications = (certs) => co(function *() {
-    let queries = [];
-    let insert = that.getInsertHead();
-    let values = certs.map((cert) => that.getInsertValue(cert));
+    const queries = [];
+    const insert = that.getInsertHead();
+    const values = certs.map((cert) => that.getInsertValue(cert));
     if (certs.length) {
       queries.push(insert + '\n' + values.join(',\n') + ';');
     }

@@ -2,9 +2,9 @@
  * Created by cgeek on 22/08/15.
  */
 
-var Q = require('q');
-var co = require('co');
-var AbstractSQLite = require('./AbstractSQLite');
+const Q = require('q');
+const co = require('co');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = BlockDAL;
 

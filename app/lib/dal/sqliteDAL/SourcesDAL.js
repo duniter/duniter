@@ -2,9 +2,9 @@
  * Created by cgeek on 22/08/15.
  */
 
-var co = require('co');
-var _ = require('underscore');
-var AbstractSQLite = require('./AbstractSQLite');
+const co = require('co');
+const _ = require('underscore');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = SourcesDAL;
 
@@ -14,7 +14,7 @@ function SourcesDAL(db) {
 
   AbstractSQLite.call(this, db);
 
-  let that = this;
+  const that = this;
 
   this.table = 'source';
   this.fields = [
@@ -118,17 +118,17 @@ function SourcesDAL(db) {
   });
 
   this.updateBatchOfSources = (sources) => co(function *() {
-    let inserts = _.filter(sources, { toConsume: false });
-    let updates = _.filter(sources, { toConsume: true });
-    let queries = [];
+    const inserts = _.filter(sources, { toConsume: false });
+    const updates = _.filter(sources, { toConsume: true });
+    const queries = [];
     if (inserts.length) {
-      let insert = that.getInsertHead();
-      let values = inserts.map((src) => that.getInsertValue(_.extend(src, { consumed: false })));
+      const insert = that.getInsertHead();
+      const values = inserts.map((src) => that.getInsertValue(_.extend(src, { consumed: false })));
       queries.push(insert + '\n' + values.join(',\n') + ';');
     }
     if (updates.length) {
-      let del = that.getConsumeHead();
-      let values = that.getConsumeValues(updates);
+      const del = that.getConsumeHead();
+      const values = that.getConsumeValues(updates);
       queries.push(del + '\n' + values + ';');
     }
     if (queries.length) {

@@ -14,7 +14,7 @@ function AbstractSQLite(db) {
 
   "use strict";
 
-  let that = this;
+  const that = this;
 
   this.ASC = false;
   this.DESC = true;
@@ -26,10 +26,10 @@ function AbstractSQLite(db) {
   this.query = (sql, params) => co(function *() {
     try {
       //logger.trace(sql, JSON.stringify(params || []));
-      let start = new Date();
-      let res = yield Q.nbind(db.all, db)(sql, params || []);
-      let duration = (new Date()) - start;
-      let entities = res.map(toEntity);
+      const start = new Date();
+      const res = yield Q.nbind(db.all, db)(sql, params || []);
+      const duration = (new Date()) - start;
+      const entities = res.map(toEntity);
       // Display result
       let msg = sql + ' | %s\t==> %s rows in %s ms';
       if (duration <= 2) {
@@ -56,35 +56,35 @@ function AbstractSQLite(db) {
   this.sqlDeleteAll = () => this.exec("DELETE FROM " + this.table);
 
   this.sqlFind = (obj, sortObj) => co(function *() {
-    let conditions = toConditionsArray(obj).join(' and ');
-    let values = toParams(obj);
-    let sortKeys = _.keys(sortObj);
-    let sort = sortKeys.length ? ' ORDER BY ' + sortKeys.map((k) => "`" + k + "` " + (sortObj[k] ? 'DESC' : 'ASC')).join(',') : '';
+    const conditions = toConditionsArray(obj).join(' and ');
+    const values = toParams(obj);
+    const sortKeys = _.keys(sortObj);
+    const sort = sortKeys.length ? ' ORDER BY ' + sortKeys.map((k) => "`" + k + "` " + (sortObj[k] ? 'DESC' : 'ASC')).join(',') : '';
     return that.query('SELECT * FROM ' + that.table + ' WHERE ' + conditions + sort, values);
   });
 
   this.sqlFindOne = (obj, sortObj) => co(function *() {
-    let res = yield that.sqlFind(obj, sortObj);
+    const res = yield that.sqlFind(obj, sortObj);
     return res[0];
   });
 
   this.sqlFindLikeAny = (obj, sort) => co(function *() {
-    let keys = _.keys(obj);
+    const keys = _.keys(obj);
     return that.query('SELECT * FROM ' + that.table + ' WHERE ' + keys.map((k) => '`' + k + '` like ?').join(' or '), keys.map((k) => obj[k].toUpperCase()), sort);
   });
 
   this.sqlUpdateWhere = (obj, where) => co(function *() {
     // Valorizations
-    let setInstructions = toSetArray(obj).join(', ');
-    let setValues = toParams(obj);
+    const setInstructions = toSetArray(obj).join(', ');
+    const setValues = toParams(obj);
     // Conditions
-    let conditions = toConditionsArray(where).join(' AND ');
-    let condValues = toParams(where);
+    const conditions = toConditionsArray(where).join(' AND ');
+    const condValues = toParams(where);
     return that.query('UPDATE ' + that.table + ' SET ' + setInstructions + ' WHERE ' + conditions, setValues.concat(condValues));
   });
 
   this.sqlRemoveWhere = (obj) => co(function *() {
-    let keys = _.keys(obj);
+    const keys = _.keys(obj);
     return that.query('DELETE FROM ' + that.table + ' WHERE ' + keys.map((k) => '`' + k + '` = ?').join(' and '), keys.map((k) => obj[k]));
   });
 
@@ -95,54 +95,52 @@ function AbstractSQLite(db) {
     if (that.beforeSaveHook) {
       that.beforeSaveHook(toSave);
     }
-    let existing = yield that.getEntity(toSave);
+    const existing = yield that.getEntity(toSave);
     if (existing) {
       toSave = toRow(toSave);
-      let valorizations = that.fields.map((field) => '`' + field + '` = ?').join(', ');
-      let conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
-      let setValues = that.fields.map((field) => toSave[field]);
-      let condValues = getPKFields().map((k) => toSave[k]);
+      const valorizations = that.fields.map((field) => '`' + field + '` = ?').join(', ');
+      const conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
+      const setValues = that.fields.map((field) => toSave[field]);
+      const condValues = getPKFields().map((k) => toSave[k]);
       return that.query('UPDATE ' + that.table + ' SET ' + valorizations + ' WHERE ' + conditions, setValues.concat(condValues));
     }
     yield that.insert(toSave);
   });
 
   this.updateEntity = (entity, values) => co(function *() {
-    let toSave = toRow(entity);
+    const toSave = toRow(entity);
     if (that.beforeSaveHook) {
       that.beforeSaveHook(toSave);
     }
-    let valuesKeys = _.keys(values);
-    let valorizations = valuesKeys.map((field) => '`' + field + '` = ?').join(', ');
-    let conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
-    let setValues = valuesKeys.map((field) => values[field]);
-    let condValues = getPKFields().map((k) => toSave[k]);
+    const valuesKeys = _.keys(values);
+    const valorizations = valuesKeys.map((field) => '`' + field + '` = ?').join(', ');
+    const conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
+    const setValues = valuesKeys.map((field) => values[field]);
+    const condValues = getPKFields().map((k) => toSave[k]);
     return that.query('UPDATE ' + that.table + ' SET ' + valorizations + ' WHERE ' + conditions, setValues.concat(condValues));
   });
 
   this.deleteEntity = (entity) => co(function *() {
-    let toSave = toRow(entity);
+    const toSave = toRow(entity);
     if (that.beforeSaveHook) {
       that.beforeSaveHook(toSave);
     }
-    let conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
-    let condValues = getPKFields().map((k) => toSave[k]);
+    const conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
+    const condValues = getPKFields().map((k) => toSave[k]);
     return that.query('DELETE FROM ' + that.table + ' WHERE ' + conditions, condValues);
   });
 
   this.insert = (entity) => co(function *() {
-    let row = toRow(entity);
-    let values = that.fields.map((f) => row[f]);
+    const row = toRow(entity);
+    const values = that.fields.map((f) => row[f]);
     yield that.query(that.getInsertQuery(), values);
   });
 
-  this.getEntity = function(entity) {
-    return co(function *() {
-      let conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
-      let params = toParams(entity, getPKFields());
-      return (yield that.query('SELECT * FROM ' + that.table + ' WHERE ' + conditions, params))[0];
-    });
-  };
+  this.getEntity = (entity) => co(function *() {
+    const conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
+    const params = toParams(entity, getPKFields());
+    return (yield that.query('SELECT * FROM ' + that.table + ' WHERE ' + conditions, params))[0];
+  });
 
   this.exec = (sql) => co(function *() {
     try {
@@ -157,7 +155,7 @@ function AbstractSQLite(db) {
     "INSERT INTO " + that.table + " (" + getFields(that.fields).map(f => '`' + f + '`').join(',') + ") VALUES (" + "?,".repeat(that.fields.length - 1) + "?);";
 
   this.getInsertHead = () => {
-    let valuesKeys = getFields(that.fields);
+    const valuesKeys = getFields(that.fields);
     return 'INSERT INTO ' + that.table + " (" + valuesKeys.map(f => '`' + f + '`').join(',') + ") VALUES ";
   };
 
@@ -165,9 +163,9 @@ function AbstractSQLite(db) {
     if (that.beforeSaveHook) {
       that.beforeSaveHook(toSave);
     }
-    let row = toRow(toSave);
-    let valuesKeys = getFields(that.fields);
-    let values = valuesKeys.map((field) => escapeToSQLite(row[field]));
+    const row = toRow(toSave);
+    const valuesKeys = getFields(that.fields);
+    const values = valuesKeys.map((field) => escapeToSQLite(row[field]));
     return "(" + values.join(',') + ")";
   };
 
@@ -175,9 +173,9 @@ function AbstractSQLite(db) {
     if (that.beforeSaveHook) {
       that.beforeSaveHook(toSave);
     }
-    let valuesKeys = _.keys(values);
-    let valorizations = valuesKeys.map((field) => '`' + field + '` = ' + escapeToSQLite(values[field])).join(', ');
-    let conditions = getPKFields().map((field) => '`' + field + '` = ' + escapeToSQLite(toSave[field])).join(' and ');
+    const valuesKeys = _.keys(values);
+    const valorizations = valuesKeys.map((field) => '`' + field + '` = ' + escapeToSQLite(values[field])).join(', ');
+    const conditions = getPKFields().map((field) => '`' + field + '` = ' + escapeToSQLite(toSave[field])).join(' and ');
     return 'UPDATE ' + that.table + ' SET ' + valorizations + ' WHERE ' + conditions + ';';
   };
 
@@ -185,7 +183,7 @@ function AbstractSQLite(db) {
     if (that.beforeSaveHook) {
       that.beforeSaveHook(toSave);
     }
-    let conditions = getPKFields().map((field) => '`' + field + '` = ' + escapeToSQLite(toSave[field])).join(' and ');
+    const conditions = getPKFields().map((field) => '`' + field + '` = ' + escapeToSQLite(toSave[field])).join(' and ');
     return 'DELETE FROM ' + that.table + ' WHERE ' + conditions + ';';
   };
 
@@ -198,15 +196,15 @@ function AbstractSQLite(db) {
       if (that.beforeSaveHook) {
         that.beforeSaveHook(toSave);
       }
-      let conditions = getPKFields().map((field) => '`' + field + '` = ' + escapeToSQLite(toSave[field])).join(' and ');
+      const conditions = getPKFields().map((field) => '`' + field + '` = ' + escapeToSQLite(toSave[field])).join(' and ');
       return "(" + conditions + ")";
     }).join(' OR\n ');
   };
 
   this.toInsertValues = (entity) => {
-    let row = toRow(entity);
-    let values = that.fields.map((f) => row[f]);
-    let formatted = values.map(escapeToSQLite);
+    const row = toRow(entity);
+    const values = that.fields.map((f) => row[f]);
+    const formatted = values.map(escapeToSQLite);
     return "(" + formatted.join(',') + ")";
   };
 
@@ -228,12 +226,12 @@ function AbstractSQLite(db) {
     });
   }
 
-  function toSetArray(obj) {
-    let row = toRow(obj);
+  const toSetArray= (obj) => {
+    const row = toRow(obj);
     return _.keys(row).map((k) => '`' + k + '` = ?');
-  }
+  };
 
-  function toParams(obj, fields) {
+  const toParams = (obj, fields) => {
     let params = [];
     (fields || _.keys(obj)).forEach((f) => {
       if (obj[f].$null === undefined) {
@@ -252,9 +250,9 @@ function AbstractSQLite(db) {
       }
     });
     return params;
-  }
+  };
 
-  function escapeToSQLite(val) {
+  const escapeToSQLite = (val) => {
     if (typeof val == "boolean") {
       // SQLite specific: true => 1, false => 0
       return val ? 1 : 0;
@@ -267,54 +265,48 @@ function AbstractSQLite(db) {
     } else {
       return JSON.stringify(val);
     }
-  }
+  };
 
-  function getPKFields() {
-    return getFields(that.pkFields);
-  }
+  const getPKFields = () => getFields(that.pkFields);
 
-  function getFields(fields) {
-    return fields.map((f) => getField(f));
-  }
+  const getFields = (fields) => fields.map((f) => getField(f));
 
-  function getField(f) {
-    return that.translated[f] || f;
-  }
+  const getField = (f) => that.translated[f] || f;
 
-  function toEntity(row) {
+  const toEntity = (row) => {
     for (let i = 0, len = that.arrays.length; i < len; i++) {
-      let arr = that.arrays[i];
+      const arr = that.arrays[i];
       row[arr] = JSON.parse(row[arr]);
     }
     // Big integers are stored as strings to avoid data loss
     for (let i = 0, len = that.bigintegers.length; i < len; i++) {
-      let bigint = that.bigintegers[i];
+      const bigint = that.bigintegers[i];
       row[bigint] = parseInt(row[bigint], 10);
     }
     // Translate some DB fields to obj fields
-    let toTranslate = that.translated || {};
-    let toDBFields = _.keys(toTranslate);
+    const toTranslate = that.translated || {};
+    const toDBFields = _.keys(toTranslate);
     for (let i = 0, len = toDBFields.length; i < len; i++) {
-      let objField = toDBFields[i];
+      const objField = toDBFields[i];
       row[objField] = row[toTranslate[objField]];
     }
     // Booleans
     for (let i = 0, len = that.booleans.length; i < len; i++) {
-      let f = that.booleans[i];
+      const f = that.booleans[i];
       row[f] = Boolean(row[f]);
     }
     return row;
-  }
+  };
 
-  function toRow(entity) {
-    let row = _.clone(entity);
+  const toRow = (entity) => {
+    const row = _.clone(entity);
     for (let i = 0, len = that.arrays.length; i < len; i++) {
       let arr = that.arrays[i];
       row[arr] = JSON.stringify(row[arr] || []);
     }
     // Big integers are stored as strings to avoid data loss
     for (let i = 0, len = that.bigintegers.length; i < len; i++) {
-      let bigint = that.bigintegers[i];
+      const bigint = that.bigintegers[i];
       if (entity[bigint] === null || entity[bigint] === undefined) {
         row[bigint] = null;
       } else {
@@ -322,12 +314,12 @@ function AbstractSQLite(db) {
       }
     }
     // Translate some obj fields to DB field name (because of DB keywords)
-    let toTranslate = that.translated || {};
-    let toDBFields = _.keys(toTranslate);
+    const toTranslate = that.translated || {};
+    const toDBFields = _.keys(toTranslate);
     for (let i = 0, len = toDBFields.length; i < len; i++) {
-      let objField = toDBFields[i];
+      const objField = toDBFields[i];
       row[toTranslate[objField]] = row[objField];
     }
     return row;
-  }
+  };
 }

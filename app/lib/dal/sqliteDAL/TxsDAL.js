@@ -2,11 +2,11 @@
  * Created by cgeek on 22/08/15.
  */
 
-var Q = require('q');
-var co = require('co');
-var moment = require('moment');
-var Transaction = require('../../entity/transaction');
-var AbstractSQLite = require('./AbstractSQLite');
+const Q = require('q');
+const co = require('co');
+const moment = require('moment');
+const Transaction = require('../../entity/transaction');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = TxsDAL;
 
@@ -16,7 +16,7 @@ function TxsDAL(db) {
 
   AbstractSQLite.call(this, db);
 
-  let that = this;
+  const that = this;
 
   this.table = 'txs';
   this.fields = [
@@ -81,7 +81,7 @@ function TxsDAL(db) {
   });
 
   this.removeTX = (hash) => co(function *() {
-    let tx = yield that.sqlFindOne({
+    const tx = yield that.sqlFindOne({
       hash: hash
     });
     if (tx) {
@@ -131,9 +131,9 @@ function TxsDAL(db) {
   this.insertBatchOfTxs = (txs) => co(function *() {
     // // Be sure the recipients field are correctly updated
     Transaction.statics.setRecipients(txs);
-    let queries = [];
-    let insert = that.getInsertHead();
-    let values = txs.map((cert) => that.getInsertValue(cert));
+    const queries = [];
+    const insert = that.getInsertHead();
+    const values = txs.map((cert) => that.getInsertValue(cert));
     if (txs.length) {
       queries.push(insert + '\n' + values.join(',\n') + ';');
     }

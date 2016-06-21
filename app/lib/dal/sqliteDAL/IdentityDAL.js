@@ -2,10 +2,10 @@
  * Created by cgeek on 22/08/15.
  */
 
-var Q = require('q');
-var co = require('co');
-var logger = require('../../logger')('idtyDAL');
-var AbstractSQLite = require('./AbstractSQLite');
+const Q = require('q');
+const co = require('co');
+const logger = require('../../logger')('idtyDAL');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = IdentityDAL;
 
@@ -15,7 +15,7 @@ function IdentityDAL(db, wotb) {
 
   AbstractSQLite.call(this, db);
 
-  let that = this;
+  const that = this;
 
   this.table = 'idty';
   this.fields = [
@@ -80,77 +80,63 @@ function IdentityDAL(db, wotb) {
     });
   };
 
-  this.unrevokeIdentity = (pubkey) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.revoked = false;
-      return that.saveIdentity(idty);
-    });
-  };
+  this.unrevokeIdentity = (pubkey) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.revoked = false;
+    return that.saveIdentity(idty);
+  });
 
-  this.excludeIdentity = (pubkey) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.member = false;
-      idty.kick = false;
-      wotb.setEnabled(false, idty.wotb_id);
-      return that.saveIdentity(idty);
-    });
-  };
+  this.excludeIdentity = (pubkey) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.member = false;
+    idty.kick = false;
+    wotb.setEnabled(false, idty.wotb_id);
+    return that.saveIdentity(idty);
+  });
 
-  this.unacceptIdentity = (pubkey) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.currentMSN = -1;
-      idty.currentINN = -1;
-      idty.written = false;
-      idty.wasMember = false;
-      idty.member = false;
-      idty.kick = false;
-      idty.leaving = false;
-      idty.wotb_id = wotb.removeNode();
-      return that.saveIdentity(idty);
-    });
-  };
+  this.unacceptIdentity = (pubkey) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.currentMSN = -1;
+    idty.currentINN = -1;
+    idty.written = false;
+    idty.wasMember = false;
+    idty.member = false;
+    idty.kick = false;
+    idty.leaving = false;
+    idty.wotb_id = wotb.removeNode();
+    return that.saveIdentity(idty);
+  });
 
-  this.unJoinIdentity = (ms, previousMSN, previousINN) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(ms.issuer);
-      idty.currentMSN = previousMSN;
-      idty.currentINN = previousINN;
-      idty.member = false;
-      wotb.setEnabled(false, idty.wotb_id);
-      return that.saveIdentity(idty);
-    });
-  };
+  this.unJoinIdentity = (ms, previousMSN, previousINN) => co(function *() {
+    const idty = yield that.getFromPubkey(ms.issuer);
+    idty.currentMSN = previousMSN;
+    idty.currentINN = previousINN;
+    idty.member = false;
+    wotb.setEnabled(false, idty.wotb_id);
+    return that.saveIdentity(idty);
+  });
 
-  this.unRenewIdentity = (pubkey, previousMSN, previousINN) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.currentMSN = previousMSN;
-      idty.currentINN = previousINN;
-      return that.saveIdentity(idty);
-    });
-  };
+  this.unRenewIdentity = (pubkey, previousMSN, previousINN) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.currentMSN = previousMSN;
+    idty.currentINN = previousINN;
+    return that.saveIdentity(idty);
+  });
 
-  this.unLeaveIdentity = (pubkey, previousMSN) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.currentMSN = previousMSN;
-      idty.leaving = false;
-      return that.saveIdentity(idty);
-    });
-  };
+  this.unLeaveIdentity = (pubkey, previousMSN) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.currentMSN = previousMSN;
+    idty.leaving = false;
+    return that.saveIdentity(idty);
+  });
 
-  this.unExcludeIdentity = (pubkey, causeWasRevocation) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.member = true;
-      idty.kick = !causeWasRevocation;
-      wotb.setEnabled(true, idty.wotb_id);
-      return that.saveIdentity(idty);
-    });
-  };
+  this.unExcludeIdentity = (pubkey, causeWasRevocation) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.member = true;
+    idty.kick = !causeWasRevocation;
+    wotb.setEnabled(true, idty.wotb_id);
+    return that.saveIdentity(idty);
+  });
 
   this.newIdentity = function(idty) {
     idty.currentMSN = -1; // Will be overidden by joinIdentity()
@@ -164,40 +150,34 @@ function IdentityDAL(db, wotb) {
     return that.saveIdentity(idty);
   };
 
-  this.joinIdentity = (pubkey, currentMSN) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.currentMSN = currentMSN;
-      idty.currentINN = currentMSN;
-      idty.member = true;
-      idty.wasMember = true;
-      idty.leaving = false;
-      wotb.setEnabled(true, idty.wotb_id);
-      return that.saveIdentity(idty);
-    });
-  };
+  this.joinIdentity = (pubkey, currentMSN) =>  co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.currentMSN = currentMSN;
+    idty.currentINN = currentMSN;
+    idty.member = true;
+    idty.wasMember = true;
+    idty.leaving = false;
+    wotb.setEnabled(true, idty.wotb_id);
+    return that.saveIdentity(idty);
+  });
 
-  this.activeIdentity = (pubkey, currentMSN) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.currentMSN = currentMSN;
-      idty.currentINN = currentMSN;
-      idty.member = true;
-      idty.kick = false;
-      idty.leaving = false;
-      wotb.setEnabled(true, idty.wotb_id);
-      return that.saveIdentity(idty);
-    });
-  };
+  this.activeIdentity = (pubkey, currentMSN) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.currentMSN = currentMSN;
+    idty.currentINN = currentMSN;
+    idty.member = true;
+    idty.kick = false;
+    idty.leaving = false;
+    wotb.setEnabled(true, idty.wotb_id);
+    return that.saveIdentity(idty);
+  });
 
-  this.leaveIdentity = (pubkey, currentMSN) => {
-    return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
-      idty.currentMSN = currentMSN;
-      idty.leaving = true;
-      return that.saveIdentity(idty);
-    });
-  };
+  this.leaveIdentity = (pubkey, currentMSN) => co(function *() {
+    const idty = yield that.getFromPubkey(pubkey);
+    idty.currentMSN = currentMSN;
+    idty.leaving = true;
+    return that.saveIdentity(idty);
+  });
 
   this.removeUnWrittenWithPubkey = (pubkey) => this.sqlRemoveWhere({
     pubkey: pubkey,
@@ -209,25 +189,19 @@ function IdentityDAL(db, wotb) {
     written: false
   });
 
-  this.getFromPubkey = function(pubkey) {
-    return that.sqlFindOne({
-      pubkey: pubkey,
-      wasMember: true
-    });
-  };
+  this.getFromPubkey = (pubkey) => this.sqlFindOne({
+    pubkey: pubkey,
+    wasMember: true
+  });
 
-  this.getFromUID = function(uid) {
-    return that.sqlFindOne({
-      uid: uid,
-      wasMember: true
-    });
-  };
+  this.getFromUID = (uid) => this.sqlFindOne({
+    uid: uid,
+    wasMember: true
+  });
 
-  this.getByHash = function(hash) {
-    return that.sqlFindOne({
-      hash: hash
-    });
-  };
+  this.getByHash = (hash) => this.sqlFindOne({
+    hash: hash
+  });
 
   this.getLatestMember = () => that.sqlFindOne({
     wasMember: true
@@ -238,43 +212,35 @@ function IdentityDAL(db, wotb) {
   this.saveIdentity = (idty) =>
     this.saveEntity(idty);
 
-  this.getWhoIsOrWasMember = function() {
-    return that.sqlFind({
-      wasMember: true
-    });
-  };
+  this.getWhoIsOrWasMember = () => that.sqlFind({
+    wasMember: true
+  });
 
-  this.getToRevoke = function() {
-    return that.sqlFind({
-      revocation_sig: { $null: false },
-      revoked: false,
-      wasMember: true
-    });
-  };
+  this.getToRevoke = () => that.sqlFind({
+    revocation_sig: { $null: false },
+    revoked: false,
+    wasMember: true
+  });
 
-  this.getPendingIdentities = function() {
-    return that.sqlFind({
-      wasMember: false
-    });
-  };
+  this.getPendingIdentities = () => that.sqlFind({
+    wasMember: false
+  });
 
   this.listLocalPending = () => Q([]);
 
-  this.searchThoseMatching = function(search) {
-    return that.sqlFindLikeAny({
-      pubkey: "%" + search + "%",
-      uid: "%" + search + "%"
-    });
-  };
+  this.searchThoseMatching = (search) => that.sqlFindLikeAny({
+    pubkey: "%" + search + "%",
+    uid: "%" + search + "%"
+  });
 
   this.kickMembersForMembershipBelow = (maxNumber) => co(function *() {
-    let toKick = yield that.sqlFind({
+    const toKick = yield that.sqlFind({
       currentINN: { $lte: maxNumber },
       kick: false,
       member: true
     });
     for (let i = 0; i < toKick.length; i++) {
-      let idty = toKick[i];
+      const idty = toKick[i];
       logger.trace('Kick %s for currentINN <= %s', idty.uid, maxNumber);
       idty.kick = true;
       yield that.saveEntity(idty);
@@ -282,13 +248,13 @@ function IdentityDAL(db, wotb) {
   });
 
   this.revokeMembersForMembershipBelow = (maxNumber) => co(function *() {
-    let toKick = yield that.sqlFind({
+    const toKick = yield that.sqlFind({
       currentINN: { $lte: maxNumber },
       kick: false,
       member: true
     });
     for (let i = 0; i < toKick.length; i++) {
-      let idty = toKick[i];
+      const idty = toKick[i];
       logger.trace('Revoke %s for currentINN <= %s', idty.uid, maxNumber);
       idty.revoked = true;
       yield that.saveEntity(idty);

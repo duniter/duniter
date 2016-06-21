@@ -2,10 +2,10 @@
  * Created by cgeek on 22/08/15.
  */
 
-var Q = require('q');
-var co = require('co');
-var _ = require('underscore');
-var AbstractSQLite = require('./AbstractSQLite');
+const Q = require('q');
+const co = require('co');
+const _ = require('underscore');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = MembershipDAL;
 
@@ -15,7 +15,7 @@ function MembershipDAL(db) {
 
   AbstractSQLite.call(this, db);
 
-  let that = this;
+  const that = this;
 
   this.table = 'membership';
   this.fields = [
@@ -119,7 +119,7 @@ function MembershipDAL(db) {
   });
 
   this.unwriteMS = (ms) => co(function *() {
-    let existing = yield that.sqlExisting({
+    const existing = yield that.sqlExisting({
       issuer: ms.issuer,
       signature: ms.signature
     });
@@ -131,7 +131,7 @@ function MembershipDAL(db) {
   });
 
   this.saveOfficialMS = (type, ms, blockNumber) => {
-    let obj = _.extend({}, ms);
+    const obj = _.extend({}, ms);
     obj.membership = type.toUpperCase();
     obj.written = true;
     obj.written_number = blockNumber;
@@ -145,9 +145,9 @@ function MembershipDAL(db) {
   };
 
   this.updateBatchOfMemberships = (mss) => co(function *() {
-    let queries = [];
-    let insert = that.getInsertHead();
-    let values = mss.map((cert) => that.getInsertValue(cert));
+    const queries = [];
+    const insert = that.getInsertHead();
+    const values = mss.map((cert) => that.getInsertValue(cert));
     if (mss.length) {
       queries.push(insert + '\n' + values.join(',\n') + ';');
     }

@@ -2,10 +2,10 @@
  * Created by cgeek on 22/08/15.
  */
 
-var Q = require('q');
-var co = require('co');
-var logger = require('../../logger')('linksDAL');
-var AbstractSQLite = require('./AbstractSQLite');
+const Q = require('q');
+const co = require('co');
+const logger = require('../../logger')('linksDAL');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = LinksDAL;
 
@@ -15,7 +15,7 @@ function LinksDAL(db, wotb) {
 
   AbstractSQLite.call(this, db);
 
-  let that = this;
+  const that = this;
 
   this.table = 'link';
   this.fields = [
@@ -87,7 +87,7 @@ function LinksDAL(db, wotb) {
     });
 
   this.obsoletesLinks = (minTimestamp) => co(function *() {
-    let linksToObsolete = yield that.sqlFind({
+    const linksToObsolete = yield that.sqlFind({
       timestamp: { $lte: minTimestamp },
       obsolete: false
     });
@@ -99,7 +99,7 @@ function LinksDAL(db, wotb) {
   });
 
   this.unObsoletesLinks = (minTimestamp) => co(function *() {
-    let linksToUnObsolete = yield that.sqlFind({
+    const linksToUnObsolete = yield that.sqlFind({
       timestamp: { $gte: minTimestamp },
       obsolete: true
     });
@@ -115,9 +115,9 @@ function LinksDAL(db, wotb) {
   });
 
   this.updateBatchOfLinks = (links) => co(function *() {
-    let queries = [];
-    let insert = that.getInsertHead();
-    let values = links.map((link) => {
+    const queries = [];
+    const insert = that.getInsertHead();
+    const values = links.map((link) => {
       wotb.addLink(link.from_wotb_id, link.to_wotb_id);
       return that.getInsertValue(link);
     });

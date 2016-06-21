@@ -2,8 +2,8 @@
  * Created by cgeek on 22/08/15.
  */
 
-var co = require('co');
-var AbstractSQLite = require('./AbstractSQLite');
+const co = require('co');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = PeerDAL;
 
@@ -13,7 +13,7 @@ function PeerDAL(db) {
 
   AbstractSQLite.call(this, db);
 
-  let that = this;
+  const that = this;
 
   this.table = 'peer';
   this.fields = [

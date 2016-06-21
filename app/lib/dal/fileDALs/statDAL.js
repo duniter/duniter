@@ -2,8 +2,8 @@
  * Created by cgeek on 22/08/15.
  */
 
-var co = require('co');
-var _ = require('underscore');
+const co = require('co');
+const _ = require('underscore');
 
 module.exports = StatDAL;
 
@@ -11,7 +11,7 @@ function StatDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   "use strict";
 
-  var that = this;
+  const that = this;
 
   AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
 
@@ -21,16 +21,14 @@ function StatDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   this.getStat = (statName) => that.loadStats().then((stats) => (stats && stats[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 });
 
-  this.pushStats = (statsToPush) => {
-    return co(function *() {
-      var stats = (yield that.loadStats()) || {};
-      _.keys(statsToPush).forEach(function(statName){
-        if (!stats[statName]) {
-          stats[statName] = { blocks: [] };
-        }
-        stats[statName].blocks = stats[statName].blocks.concat(statsToPush[statName].blocks);
-      });
-      return that.coreFS.writeJSON('stats.json', stats);
+  this.pushStats = (statsToPush) => co(function *() {
+    const stats = (yield that.loadStats()) || {};
+    _.keys(statsToPush).forEach(function(statName){
+      if (!stats[statName]) {
+        stats[statName] = { blocks: [] };
+      }
+      stats[statName].blocks = stats[statName].blocks.concat(statsToPush[statName].blocks);
     });
-  };
+    return that.coreFS.writeJSON('stats.json', stats);
+  });
 }

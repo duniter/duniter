@@ -2,7 +2,7 @@
  * Created by cgeek on 22/08/15.
  */
 
-var cfs = require('../../cfs');
+const cfs = require('../../cfs');
 
 module.exports = AbstractCFS;
 

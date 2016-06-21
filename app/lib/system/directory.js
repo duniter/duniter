@@ -1,17 +1,25 @@
 "use strict";
 
-var co   = require('co');
-var opts = require('optimist').argv;
-var path = require('path');
-var cfs  = require('../cfs');
-var Q    = require('q');
-var qfs  = require('q-io/fs');
-var sqlite3 = require("sqlite3b").verbose();
+const co   = require('co');
+const opts = require('optimist').argv;
+const path = require('path');
+const cfs  = require('../cfs');
+const Q    = require('q');
+const qfs  = require('q-io/fs');
+const sqlite3 = require("sqlite3b").verbose();
 
 const DEFAULT_DOMAIN = "duniter_default";
 const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';
 
-let dir = module.exports = {
+const getLogsPath = (profile, dir) => path.join(getHomePath(profile, dir), 'duniter.log');
+
+const getHomePath = (profile, dir) => path.normalize(getUserHome(dir) + '/') + getDomain(profile);
+
+const getUserHome = (dir) => (dir || DEFAULT_HOME);
+
+const getDomain = (profile) => (profile || DEFAULT_DOMAIN);
+
+const dir = module.exports = {
 
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
@@ -22,9 +30,9 @@ let dir = module.exports = {
   getHome: (profile, dir) => getHomePath(profile, dir),
 
   getHomeFS: (isMemory, theHome) => co(function *() {
-    let home = theHome || dir.getHome();
+    const home = theHome || dir.getHome();
     yield someDelayFix();
-    let params = {
+    const params = {
       home: home
     };
     if (isMemory) {
@@ -37,14 +45,14 @@ let dir = module.exports = {
   }),
 
   getHomeParams: (isMemory, theHome) => co(function *() {
-    let params = yield dir.getHomeFS(isMemory, theHome);
-    let home = params.home;
+    const params = yield dir.getHomeFS(isMemory, theHome);
+    const home = params.home;
     yield someDelayFix();
     if (isMemory) {
       params.dbf = () => new sqlite3.Database(':memory:');
       params.wotb = require('../wot').memoryInstance();
     } else {
-      let sqlitePath = path.join(home, dir.UCOIN_DB_NAME + '.db');
+      const sqlitePath = path.join(home, dir.UCOIN_DB_NAME + '.db');
       params.dbf = () => new sqlite3.Database(sqlitePath);
       params.wotb = require('../wot').fileInstance(path.join(home, dir.WOTB_FILE));
     }
@@ -52,29 +60,12 @@ let dir = module.exports = {
   }),
 
   createHomeIfNotExists: (fs, theHome) => co(function *() {
-    let fsHandler = cfs(theHome, fs);
+    const fsHandler = cfs(theHome, fs);
     return fsHandler.makeTree('');
   })
 };
 
-function someDelayFix() {
-  return Q.Promise(function(resolve){
-    setTimeout(resolve, 100);
-  });
-}
+const someDelayFix = () => Q.Promise((resolve) => {
+  setTimeout(resolve, 100);
+});
 
-function getLogsPath(profile, dir) {
-  return path.join(getHomePath(profile, dir), 'duniter.log');
-}
-
-function getHomePath(profile, dir) {
-  return path.normalize(getUserHome(dir) + '/') + getDomain(profile);
-}
-
-function getUserHome(dir) {
-  return dir || DEFAULT_HOME;
-}
-
-function getDomain(profile) {
-  return profile || DEFAULT_DOMAIN;
-}

@@ -1,8 +1,8 @@
 "use strict";
-let hashf = require('./hashf');
-let constants = require('../constants');
+const hashf = require('./hashf');
+const constants = require('../constants');
 
-let buidFunctions = function(number, hash) {
+const buidFunctions = function(number, hash) {
   if (arguments.length === 2) {
     return [number, hash].join('-');
   }

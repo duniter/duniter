@@ -1,19 +1,19 @@
 "use strict";
 
-var co = require('co');
-var os = require('os');
-var Q = require('q');
-var _ = require('underscore');
-var upnp = require('nnupnp');
-var http = require('http');
-var express = require('express');
-var morgan = require('morgan');
-var errorhandler = require('errorhandler');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var constants = require('../constants');
-var sanitize = require('../streams/sanitize');
-var logger = require('../logger')('network');
+const co = require('co');
+const os = require('os');
+const Q = require('q');
+const _ = require('underscore');
+const upnp = require('nnupnp');
+const http = require('http');
+const express = require('express');
+const morgan = require('morgan');
+const errorhandler = require('errorhandler');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const constants = require('../constants');
+const sanitize = require('../streams/sanitize');
+const logger = require('../logger')('network');
 
 module.exports = {
 
@@ -23,9 +23,9 @@ module.exports = {
   getLANIPv6: () => getLAN('IPv6'),
 
   listInterfaces: () => {
-    let netInterfaces = os.networkInterfaces();
-    let keys = _.keys(netInterfaces);
-    let res = [];
+    const netInterfaces = os.networkInterfaces();
+    const keys = _.keys(netInterfaces);
+    const res = [];
     for (let i = 0, len = keys.length; i < len; i++) {
       let name = keys[i];
       res.push({
@@ -37,22 +37,22 @@ module.exports = {
   },
 
   upnpConf: (noupnp) => co(function *() {
-    var conf = {};
-    var client = upnp.createClient();
+    const conf = {};
+    const client = upnp.createClient();
     // Look for 2 random ports
-    var privatePort = module.exports.getRandomPort(conf);
-    var publicPort = privatePort;
+    const privatePort = module.exports.getRandomPort(conf);
+    const publicPort = privatePort;
     logger.info('Checking UPnP features...');
     if (noupnp) {
       throw Error('No UPnP');
     }
-    let publicIP = yield Q.nbind(client.externalIp, client)();
+    const publicIP = yield Q.nbind(client.externalIp, client)();
     yield Q.nbind(client.portMapping, client)({
       public: publicPort,
       private: privatePort,
       ttl: 120
     });
-    let privateIP = yield Q.Promise((resolve, reject) => {
+    const privateIP = yield Q.Promise((resolve, reject) => {
       client.findGateway((err, res, localIP) => {
         if (err) return reject(err);
         resolve(localIP);
@@ -77,7 +77,7 @@ module.exports = {
 
   createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket) => co(function *() {
 
-    var app = express();
+    const app = express();
 
     // all environments
     if (httpLogs) {
@@ -112,11 +112,12 @@ module.exports = {
       app.use(express.static(staticPath));
     }
 
-    var httpServers = interfaces.map(() => {
-      let httpServer = http.createServer(app);
-      let sockets = {}, nextSocketId = 0;
-      httpServer.on('connection', function(socket) {
-        let socketId = nextSocketId++;
+    const httpServers = interfaces.map(() => {
+      const httpServer = http.createServer(app);
+      const sockets = {};
+      let nextSocketId = 0;
+      httpServer.on('connection', (socket) => {
+        const socketId = nextSocketId++;
         sockets[socketId] = socket;
         //logger.debug('socket %s opened', socketId);
 
@@ -125,7 +126,7 @@ module.exports = {
           delete sockets[socketId];
         });
       });
-      httpServer.on('error', function(err) {
+      httpServer.on('error', (err) => {
         httpServer.errorPropagates(err);
       });
       listenWebSocket && listenWebSocket(httpServer);
@@ -140,7 +141,7 @@ module.exports = {
     });
 
     // May be removed when using Node 5.x where httpServer.listening boolean exists
-    var listenings = interfaces.map(() => false);
+    const listenings = interfaces.map(() => false);
 
     if (httpServers.length == 0){
       throw 'Duniter does not have any interface to listen to.';
@@ -151,17 +152,17 @@ module.exports = {
 
       closeConnections: () => co(function *() {
         for (let i = 0, len = httpServers.length; i < len; i++) {
-          let httpServer = httpServers[i].http;
-          let isListening = listenings[i];
+          const httpServer = httpServers[i].http;
+          const isListening = listenings[i];
           if (isListening) {
             listenings[i] = false;
             logger.info(name + ' stop listening');
             yield Q.Promise((resolve, reject) => {
-              httpServer.errorPropagates(function(err) {
+              httpServer.errorPropagates((err) => {
                 reject(err);
               });
               httpServers[i].closeSockets();
-              httpServer.close(function(err) {
+              httpServer.close((err) => {
                 err && logger.error(err.stack || err);
                 resolve();
               });
@@ -173,11 +174,11 @@ module.exports = {
 
       openConnections: () => co(function *() {
         for (let i = 0, len = httpServers.length; i < len; i++) {
-          let httpServer = httpServers[i].http;
-          let isListening = listenings[i];
+          const httpServer = httpServers[i].http;
+          const isListening = listenings[i];
           if (!isListening) {
-            let netInterface = interfaces[i].ip;
-            let port = interfaces[i].port;
+            const netInterface = interfaces[i].ip;
+            const port = interfaces[i].port;
             try {
               yield Q.Promise((resolve, reject) => {
                 // Weird the need of such a hack to catch an exception...
@@ -204,7 +205,7 @@ module.exports = {
   })
 };
 
-function handleRequest(method, uri, promiseFunc, dtoContract) {
+const handleRequest = (method, uri, promiseFunc, dtoContract) => {
   method(uri, function(req, res) {
     res.set('Access-Control-Allow-Origin', '*');
     res.type('application/json');

@@ -1,17 +1,15 @@
 "use strict";
-var util     = require('util');
-var stream   = require('stream');
+const util     = require('util');
+const stream   = require('stream');
 
 module.exports = function (str) {
   if (str)
     return dos2unix(str);
   else
     return new Dos2UnixStream();
-}
+};
 
-function dos2unix(str){
-  return str.replace(/\r\n/g, '\n');
-}
+const dos2unix = (str) => str.replace(/\r\n/g, '\n');
 
 function Dos2UnixStream () {
   stream.Transform.apply(this);

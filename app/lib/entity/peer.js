@@ -110,13 +110,7 @@ function Peer(json) {
 
   this.getRawSigned = () => rawer.getPeer(this);
 
-  this.connect = (done) => {
-    vucoin(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(), done, {
-      timeout: 2000
-    });
-  };
-
-  this.connectP = (timeout) => {
+  this.connect = (timeout) => {
     return Q.Promise((resolve, reject) => {
       vucoin(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(),
           (err, node) => {

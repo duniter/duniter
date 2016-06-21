@@ -1,4 +1,6 @@
 "use strict";
+var Q          = require('q');
+var co          = require('co');
 var _           = require('underscore');
 var nacl        = require('tweetnacl');
 var scrypt      = require('scryptb');
@@ -94,11 +96,10 @@ module.exports = {
   * Generates a new keypair object from salt + password strings.
   * Returns: { publicKey: pubkeyObject, secretKey: secretkeyObject }.
   */
-  getKeyPair: function (salt, key, done) {
-    getScryptKey(key, salt, function(keyBytes) {
-      done(null, nacl.sign.keyPair.fromSeed(keyBytes));
-    });
-  },
+  getKeyPair: (salt, key) => co(function*() {
+    const keyBytes = yield getScryptKey(key, salt);
+    return nacl.sign.keyPair.fromSeed(keyBytes);
+  }),
 
   /*****************************
   *
@@ -121,9 +122,8 @@ module.exports = {
   }
 };
 
-function getScryptKey(key, salt, callback) {
+const getScryptKey = (key, salt) => co(function*() {
   // console.log('Derivating the key...');
-  scrypt.hash(key, TEST_PARAMS, SEED_LENGTH, salt, function (err, res) {
-    callback(dec(res.toString("base64")));
-  });
-}
+  const res = yield Q.nbind(scrypt.hash, scrypt, key, TEST_PARAMS, SEED_LENGTH, salt);
+  return dec(res.toString("base64"));
+});

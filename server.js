@@ -126,7 +126,7 @@ function Server (dbConf, overrideConf) {
       };
     }
     else if (that.conf.passwd || that.conf.salt) {
-      pair = yield Q.nbind(crypto.getKeyPair, crypto)(that.conf.salt, that.conf.passwd);
+      pair = yield crypto.getKeyPair(that.conf.salt, that.conf.passwd);
     }
     else {
       pair = {
@@ -210,15 +210,13 @@ function Server (dbConf, overrideConf) {
     return that.PeeringService.stopRegular();
   };
 
-  this.recomputeSelfPeer = () => {
-    return Q.nbind(that.PeeringService.generateSelfPeer, that.PeeringService)(that.conf, 0);
-  };
+  this.recomputeSelfPeer = () => that.PeeringService.generateSelfPeer(that.conf, 0);
 
   this.initPeer = () => co(function*(){
       yield that.checkConfig();
       yield Q.nbind(that.PeeringService.regularCrawlPeers, that.PeeringService);
       logger.info('Storing self peer...');
-      yield Q.nbind(that.PeeringService.regularPeerSignal, that.PeeringService);
+      yield that.PeeringService.regularPeerSignal();
       yield Q.nbind(that.PeeringService.regularTestPeers, that.PeeringService);
       yield Q.nbind(that.PeeringService.regularSyncBlock, that.PeeringService);
       yield Q.nbind(that.BlockchainService.regularCleanMemory, that.BlockchainService);

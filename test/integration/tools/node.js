@@ -138,7 +138,7 @@ function Node (dbName, options) {
         function(next) {
           async.parallel({
             block: function(callback){
-              that.server.BlockchainService.generateNext().then(_.partial(callback, null)).catch(callback);
+              that.server.BlockchainService.generateNext().then((block) => callback(null, block)).catch(callback);
             },
             sigFunc: function(callback){
               require('../../../app/lib/crypto/signature').sync(that.server.pair, callback);

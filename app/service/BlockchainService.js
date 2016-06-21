@@ -1,19 +1,19 @@
 "use strict";
 
-var async           = require('async');
-var _               = require('underscore');
-var co              = require('co');
-var Q               = require('q');
-var rules           = require('../lib/rules');
-var base58          = require('../lib/crypto/base58');
-var signature       = require('../lib/crypto/signature');
-var constants       = require('../lib/constants');
-var blockchainCtx   = require('../lib/computation/blockchainContext');
-var blockGenerator  = require('../lib/computation/blockGenerator');
-var blockProver     = require('../lib/computation/blockProver');
-let Identity        = require('../lib/entity/identity');
-var Transaction     = require('../lib/entity/transaction');
-var AbstractService = require('./AbstractService');
+const async           = require('async');
+const _               = require('underscore');
+const co              = require('co');
+const Q               = require('q');
+const rules           = require('../lib/rules');
+const base58          = require('../lib/crypto/base58');
+const signature       = require('../lib/crypto/signature');
+const constants       = require('../lib/constants');
+const blockchainCtx   = require('../lib/computation/blockchainContext');
+const blockGenerator  = require('../lib/computation/blockGenerator');
+const blockProver     = require('../lib/computation/blockProver');
+const Identity        = require('../lib/entity/identity');
+const Transaction     = require('../lib/entity/transaction');
+const AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
@@ -26,9 +26,9 @@ function BlockchainService () {
   AbstractService.call(this);
 
   let that = this;
-  let mainContext = blockchainCtx();
-  let prover = blockProver();
-  let generator = blockGenerator(mainContext, prover);
+  const mainContext = blockchainCtx();
+  const prover = blockProver();
+  const generator = blockGenerator(mainContext, prover);
   let conf, dal, pair, logger, selfPubkey;
 
   this.setConfDAL = (newConf, newDAL, newPair) => {
@@ -42,9 +42,9 @@ function BlockchainService () {
     logger = require('../lib/logger')(dal.profile);
   };
 
-  let lastGeneratedWasWrong = false;
+  const lastGeneratedWasWrong = false;
 
-  let statTests = {
+  const statTests = {
     'newcomers': 'identities',
     'certs': 'certifications',
     'joiners': 'joiners',
@@ -55,13 +55,13 @@ function BlockchainService () {
     'ud': 'dividend',
     'tx': 'transactions'
   };
-  let statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
+  const statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
 
   this.current = (done) =>
     dal.getCurrentBlockOrNull(done);
 
   this.promoted = (number) => co(function *() {
-    let bb = yield dal.getPromoted(number);
+    const bb = yield dal.getPromoted(number);
     if (!bb) throw constants.ERRORS.BLOCK_NOT_FOUND;
     return bb;
   });
@@ -74,17 +74,17 @@ function BlockchainService () {
     let forkBlocks = yield dal.blockDAL.getForkBlocks();
     forkBlocks = _.sortBy(forkBlocks, 'number');
     // Get the blocks refering current blockchain
-    let forkables = [];
+    const forkables = [];
     for (let i = 0; i < forkBlocks.length; i++) {
-      let block = forkBlocks[i];
-      let refered = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash);
+      const block = forkBlocks[i];
+      const refered = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash);
       if (refered) {
         forkables.push(block);
       }
     }
-    let branches = getBranches(forkables, _.difference(forkBlocks, forkables));
-    let current = yield mainContext.current();
-    let forks = branches.map((branch) => branch[branch.length - 1]);
+    const branches = getBranches(forkables, _.difference(forkBlocks, forkables));
+    const current = yield mainContext.current();
+    const forks = branches.map((branch) => branch[branch.length - 1]);
     return forks.concat([current]);
   });
 
@@ -93,15 +93,15 @@ function BlockchainService () {
     let branches = forkables.map((fork) => [fork]);
     // For each "pending" block, we try to add it to all branches
     for (let i = 0, len = others.length; i < len; i++) {
-      let other = others[i];
+      const other = others[i];
       for (let j = 0, len2 = branches.length; j < len2; j++) {
-        let branch = branches[j];
-        let last = branch[branch.length - 1];
+        const branch = branches[j];
+        const last = branch[branch.length - 1];
         if (other.number == last.number + 1 && other.previousHash == last.hash) {
           branch.push(other);
         } else if (branch[1]) {
           // We try to find out if another fork block can be forked
-          let diff = other.number - branch[0].number;
+          const diff = other.number - branch[0].number;
           if (diff > 0 && branch[diff - 1] && branch[diff - 1].hash == other.previousHash) {
             // We duplicate the branch, and we add the block to this second branch
             branches.push(branch.slice());
@@ -115,10 +115,10 @@ function BlockchainService () {
     }
     branches = _.sortBy(branches, (branch) => -branch.length);
     if (branches.length) {
-      let maxSize = branches[0].length;
-      let longestsBranches = [];
+      const maxSize = branches[0].length;
+      const longestsBranches = [];
       for (let i = 0, len = branches.length; i < len; i++) {
-        let branch = branches[i];
+        const branch = branches[i];
         if (branch.length == maxSize) {
           longestsBranches.push(branch);
         }
@@ -130,41 +130,40 @@ function BlockchainService () {
 
   this.submitBlock = (obj, doCheck, forkAllowed) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck, forkAllowed));
 
-  function checkAndAddBlock(obj, doCheck, forkAllowed) {
-    return co(function *() {
-      Transaction.statics.setIssuers(obj.transactions);
-      let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
-      if (existing) {
-        throw 'Already processed';
+  const checkAndAddBlock = (obj, doCheck, forkAllowed) => co(function *() {
+    Transaction.statics.setIssuers(obj.transactions);
+    let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
+    if (existing) {
+      throw 'Already processed';
+    }
+    let current = yield mainContext.current();
+    let followsCurrent = !current || (obj.number == current.number + 1 && obj.previousHash == current.hash);
+    if (followsCurrent) {
+      // try to add it on main blockchain
+      if (doCheck) {
+        yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
       }
-      let current = yield mainContext.current();
-      let followsCurrent = !current || (obj.number == current.number + 1 && obj.previousHash == current.hash);
-      if (followsCurrent) {
-        // try to add it on main blockchain
-        if (doCheck) {
-          yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
-        }
-        let res = yield mainContext.addBlock(obj, doCheck);
-        yield pushStatsForBlocks([res]);
-        that.stopPoWThenProcessAndRestartPoW();
-        return res;
-      } else if (forkAllowed) {
-        // add it as side chain
-        if (current.number - obj.number + 1 >= conf.forksize) {
-          throw 'Block out of fork window';
-        }
-        let absolute = yield dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
-        let res = null;
-        if (!absolute) {
-          res = yield mainContext.addSideBlock(obj, doCheck);
-        }
-        yield that.tryToFork(current);
-        return res;
-      } else {
-        throw "Fork block rejected";
+      let res = yield mainContext.addBlock(obj, doCheck);
+      yield pushStatsForBlocks([res]);
+      that.stopPoWThenProcessAndRestartPoW();
+      return res;
+    } else if (forkAllowed) {
+      // add it as side chain
+      if (current.number - obj.number + 1 >= conf.forksize) {
+        throw 'Block out of fork window';
       }
-    });
-  }
+      let absolute = yield dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash);
+      let res = null;
+      if (!absolute) {
+        res = yield mainContext.addSideBlock(obj, doCheck);
+      }
+      yield that.tryToFork(current);
+      return res;
+    } else {
+      throw "Fork block rejected";
+    }
+  });
+
 
   that.tryToFork = (current) => co(function *() {
     yield eventuallySwitchOnSideChain(current);
@@ -175,92 +174,81 @@ function BlockchainService () {
     }
   });
 
-  function eventuallySwitchOnSideChain(current) {
-    return co(function *() {
-      let branches = yield that.branches();
-      let potentials = _.without(branches, current);
-      let blocksAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES / (conf.avgGenTime / 60);
-      let timeAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60;
-      // We switch only to blockchain with X_MIN advance considering both theoretical time by block + written time
-      potentials = _.filter(potentials, (p) => p.number - current.number >= blocksAdvance && p.medianTime - current.medianTime >= timeAdvance);
-      logger.trace('SWITCH: %s branches...', branches.length);
-      logger.trace('SWITCH: %s potential side chains...', potentials.length);
-      for (let i = 0, len = potentials.length; i < len; i++) {
-        let potential = potentials[i];
-        logger.info('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);
-        let sideChain = yield getWholeForkBranch(potential);
-        logger.info('SWITCH: revert main chain to block #%s...', sideChain[0].number - 1);
-        yield revertToBlock(sideChain[0].number - 1);
-        try {
-          logger.info('SWITCH: apply side chain #%s-%s...', potential.number, potential.hash);
-          yield applySideChain(sideChain);
-        } catch (e) {
-          logger.warn('SWITCH: error %s', e.stack || e);
-          // Revert the revert (so we go back to original chain)
-          let revertedChain = yield getWholeForkBranch(current);
-          yield revertToBlock(revertedChain[0].number - 1);
-          yield applySideChain(revertedChain);
-          yield markSideChainAsWrong(sideChain);
-        }
+  const eventuallySwitchOnSideChain = (current) => co(function *() {
+    const branches = yield that.branches();
+    const blocksAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES / (conf.avgGenTime / 60);
+    const timeAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60;
+    let potentials = _.without(branches, current);
+    // We switch only to blockchain with X_MIN advance considering both theoretical time by block + written time
+    potentials = _.filter(potentials, (p) => p.number - current.number >= blocksAdvance
+                                  && p.medianTime - current.medianTime >= timeAdvance);
+    logger.trace('SWITCH: %s branches...', branches.length);
+    logger.trace('SWITCH: %s potential side chains...', potentials.length);
+    for (let i = 0, len = potentials.length; i < len; i++) {
+      const potential = potentials[i];
+      logger.info('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);
+      const sideChain = yield getWholeForkBranch(potential);
+      logger.info('SWITCH: revert main chain to block #%s...', sideChain[0].number - 1);
+      yield revertToBlock(sideChain[0].number - 1);
+      try {
+        logger.info('SWITCH: apply side chain #%s-%s...', potential.number, potential.hash);
+        yield applySideChain(sideChain);
+      } catch (e) {
+        logger.warn('SWITCH: error %s', e.stack || e);
+        // Revert the revert (so we go back to original chain)
+        const revertedChain = yield getWholeForkBranch(current);
+        yield revertToBlock(revertedChain[0].number - 1);
+        yield applySideChain(revertedChain);
+        yield markSideChainAsWrong(sideChain);
       }
-    });
-  }
+    }
+  });
 
-  function getWholeForkBranch(topForkBlock) {
-    return co(function *() {
-      let fullBranch = [];
-      let isForkBlock = true;
-      let next = topForkBlock;
-      while (isForkBlock) {
-        fullBranch.push(next);
-        logger.trace('SWITCH: get absolute #%s-%s...', next.number - 1, next.previousHash);
-        next = yield dal.getAbsoluteBlockByNumberAndHash(next.number - 1, next.previousHash);
-        isForkBlock = next.fork;
-      }
-      //fullBranch.push(next);
-      // Revert order so we have a crescending branch
-      return fullBranch.reverse();
-    });
-  }
+  const getWholeForkBranch = (topForkBlock) => co(function *() {
+    const fullBranch = [];
+    let isForkBlock = true;
+    let next = topForkBlock;
+    while (isForkBlock) {
+      fullBranch.push(next);
+      logger.trace('SWITCH: get absolute #%s-%s...', next.number - 1, next.previousHash);
+      next = yield dal.getAbsoluteBlockByNumberAndHash(next.number - 1, next.previousHash);
+      isForkBlock = next.fork;
+    }
+    //fullBranch.push(next);
+    // Revert order so we have a crescending branch
+    return fullBranch.reverse();
+  });
 
-  function revertToBlock(number) {
-    return co(function *() {
-      let nowCurrent = yield that.current();
-      logger.trace('SWITCH: main chain current = #%s-%s...', nowCurrent.number, nowCurrent.hash);
-      while (nowCurrent.number > number) {
-        logger.trace('SWITCH: main chain revert #%s-%s...', nowCurrent.number, nowCurrent.hash);
-        yield mainContext.revertCurrentBlock();
-        nowCurrent = yield that.current();
-      }
-    });
-  }
+  const revertToBlock = (number) => co(function *() {
+    let nowCurrent = yield that.current();
+    logger.trace('SWITCH: main chain current = #%s-%s...', nowCurrent.number, nowCurrent.hash);
+    while (nowCurrent.number > number) {
+      logger.trace('SWITCH: main chain revert #%s-%s...', nowCurrent.number, nowCurrent.hash);
+      yield mainContext.revertCurrentBlock();
+      nowCurrent = yield that.current();
+    }
+  });
 
-  function applySideChain(chain) {
-    return co(function *() {
-      for (let i = 0, len = chain.length; i < len; i++) {
-        let block = chain[i];
-        logger.trace('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
-        yield checkAndAddBlock(block, CHECK_ALL_RULES);
-      }
-    });
-  }
+  const applySideChain = (chain) => co(function *() {
+    for (let i = 0, len = chain.length; i < len; i++) {
+      let block = chain[i];
+      logger.trace('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
+      yield checkAndAddBlock(block, CHECK_ALL_RULES);
+    }
+  });
 
-  function markSideChainAsWrong(chain) {
-    return co(function *() {
-      for (let i = 0, len = chain.length; i < len; i++) {
-        let block = chain[i];
-        block.wrong = true;
-        // Saves the block (DAL)
-        yield dal.saveSideBlockInFile(block);
-      }
-    });
-  }
+  const markSideChainAsWrong = (chain) => co(function *() {
+    for (let i = 0, len = chain.length; i < len; i++) {
+      const block = chain[i];
+      block.wrong = true;
+      // Saves the block (DAL)
+      yield dal.saveSideBlockInFile(block);
+    }
+  });
 
   this.revertCurrentBlock = () => this.pushFIFO(() => mainContext.revertCurrentBlock());
 
-  this.stopPoWThenProcessAndRestartPoW = function () {
-    prover.cancel();
-  };
+  this.stopPoWThenProcessAndRestartPoW = () => prover.cancel();
 
   /**
    * Generates root block with manual selection of root members.
@@ -285,35 +273,35 @@ function BlockchainService () {
 
   this.requirementsOfIdentity = (idty, current) => co(function *() {
     // TODO: this is not clear
-    let join = yield generator.getSinglePreJoinData(current, idty.hash);
-    let pubkey = join.identity.pubkey;
+    const join = yield generator.getSinglePreJoinData(current, idty.hash);
+    const pubkey = join.identity.pubkey;
     // Check WoT stability
-    let someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];
-    let nextBlockNumber = current ? current.number + 1 : 0;
-    let joinData = {};
+    const someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];
+    const nextBlockNumber = current ? current.number + 1 : 0;
+    const joinData = {};
     joinData[join.identity.pubkey] = join;
-    let updates = {};
-    let newCerts = yield generator.computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
-    let newLinks = generator.newCertsToLinks(newCerts, updates);
-    let certs = yield that.getValidCerts(pubkey, newCerts);
-    let outdistanced = yield rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, conf, dal);
+    const updates = {};
+    const newCerts = yield generator.computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
+    const newLinks = generator.newCertsToLinks(newCerts, updates);
+    const certs = yield that.getValidCerts(pubkey, newCerts);
+    const outdistanced = yield rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, conf, dal);
+    const currentTime = current ? current.medianTime : 0;
     let expiresMS = 0;
-    let currentTime = current ? current.medianTime : 0;
     // Expiration of current membershship
     if (join.identity.currentMSN >= 0) {
-      let msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
+      const msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
       expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
     }
     // Expiration of pending membership
+    const lastJoin = yield dal.lastJoinOfIdentity(idty.hash);
     let expiresPending = 0;
-    let lastJoin = yield dal.lastJoinOfIdentity(idty.hash);
     if (lastJoin) {
-      let msBlock = yield dal.getBlockOrNull(lastJoin.blockNumber);
+      const msBlock = yield dal.getBlockOrNull(lastJoin.blockNumber);
       expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
     }
     // Expiration of certifications
     for (let i = 0, len = certs.length; i < len; i++) {
-      let cert = certs[i];
+      const cert = certs[i];
       cert.expiresIn = Math.max(0, cert.timestamp + conf.sigValidity - currentTime);
     }
     return {
@@ -330,13 +318,13 @@ function BlockchainService () {
   });
 
   this.getValidCerts = (newcomer, newCerts) => co(function *() {
-    let links = yield dal.getValidLinksTo(newcomer);
-    let certsFromLinks = links.map((lnk) => { return { from: lnk.source, to: lnk.target, timestamp: lnk.timestamp }; });
-    let certsFromCerts = [];
-    let certs = newCerts[newcomer] || [];
+    const links = yield dal.getValidLinksTo(newcomer);
+    const certsFromLinks = links.map((lnk) => { return { from: lnk.source, to: lnk.target, timestamp: lnk.timestamp }; });
+    const certsFromCerts = [];
+    const certs = newCerts[newcomer] || [];
     for (let i = 0, len = certs.length; i < len; i++) {
-      let cert = certs[i];
-      let block = yield dal.getBlockOrNull(cert.block_number);
+      const cert = certs[i];
+      const block = yield dal.getBlockOrNull(cert.block_number);
       certsFromCerts.push({
         from: cert.from,
         to: cert.to,
@@ -355,9 +343,9 @@ function BlockchainService () {
     if (!selfPubkey) {
       throw 'No self pubkey found.';
     }
-    var block, current;
-    var isMember = yield dal.isMember(selfPubkey);
-    var powCanceled = '';
+    let block, current;
+    const isMember = yield dal.isMember(selfPubkey);
+    let powCanceled = '';
     if (!isMember) {
       powCanceled = 'Local node is not a member. Waiting to be a member before computation a block.';
     }
@@ -367,7 +355,7 @@ function BlockchainService () {
         powCanceled = 'Waiting for a root block before computation new blocks';
       }
       else {
-        var lastIssuedByUs = current.issuer == selfPubkey;
+        const lastIssuedByUs = current.issuer == selfPubkey;
         if (lastIssuedByUs) {
           logger.warn('Waiting ' + conf.powDelay + 's before starting computation next block...');
           try {
@@ -380,16 +368,16 @@ function BlockchainService () {
             return null;
           }
         }
-        var trial = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
+        const trial = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
         if (trial > (current.powMin + 2)) {
           powCanceled = 'Too high difficulty: waiting for other members to write next block';
         }
         else {
-          var block2 = lastGeneratedWasWrong ?
+          const block2 = lastGeneratedWasWrong ?
             yield generator.nextEmptyBlock() :
             yield generator.nextBlock();
-          var signature2 = signature.sync(pair);
-          var trial2 = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
+          const signature2 = signature.sync(pair);
+          const trial2 = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
           prover.computing();
           return yield generator.makeNextBlock(block2, signature2, trial2);
         }
@@ -420,8 +408,8 @@ function BlockchainService () {
       yield that.saveParametersForRootBlock(blocks[0]);
     }
     // Helper to retrieve a block with local cache
-    let getBlockOrNull = (number) => {
-      let firstLocalNumber = blocks[0].number;
+    const getBlockOrNull = (number) => {
+      const firstLocalNumber = blocks[0].number;
       if (number >= firstLocalNumber) {
         let offset = number - firstLocalNumber;
         return Q(blocks[offset]);
@@ -429,18 +417,18 @@ function BlockchainService () {
       return dal.getBlockOrNull(number);
     };
     // Insert a bunch of blocks
-    let lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
-    let dividends = [];
+    const lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
+    const dividends = [];
     for (let i = 0; i < blocks.length; i++) {
-      let previous = i > 0 ? blocks[i - 1] : lastPrevious;
-      let block = blocks[i];
+      const previous = i > 0 ? blocks[i - 1] : lastPrevious;
+      const block = blocks[i];
       block.fork = false;
       // Monetary mass & UD Time recording before inserting elements
       block.monetaryMass = (previous && previous.monetaryMass) || 0;
       block.unitbase = block.unitbase || 0;
       block.dividend = block.dividend || null;
       // UD Time update
-      let previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;
+      const previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;
       if (block.number == 0) {
         block.UDTime = block.medianTime; // Root = first UD time
       }
@@ -450,13 +438,8 @@ function BlockchainService () {
       } else {
         block.UDTime = previousBlock.UDTime;
       }
-      yield Q.Promise(function(resolve, reject){
-        // Create/Update members (create new identities if do not exist)
-        mainContext.updateMembers(block, function (err) {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
+      yield mainContext.updateMembers(block);
+
       // Dividends
       if (block.dividend) {
         // Get the members at THAT moment (only them should have the UD)
@@ -496,20 +479,20 @@ function BlockchainService () {
   });
 
   function pushStatsForBlocks(blocks) {
-    let stats = {};
+    const stats = {};
     // Stats
     for (let i = 0; i < blocks.length; i++) {
-      let block = blocks[i];
+      const block = blocks[i];
       for (let j = 0; j < statNames.length; j++) {
         let statName = statNames[j];
         if (!stats[statName]) {
           stats[statName] = { blocks: [] };
         }
-        let stat = stats[statName];
-        var testProperty = statTests[statName];
-        var value = block[testProperty];
-        var isPositiveValue = value && typeof value != 'object';
-        var isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+        const stat = stats[statName];
+        const testProperty = statTests[statName];
+        const value = block[testProperty];
+        const isPositiveValue = value && typeof value != 'object';
+        const isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
         if (isPositiveValue || isNonEmptyArray) {
           stat.blocks.push(block.number);
         }
@@ -526,21 +509,20 @@ function BlockchainService () {
     yield mainContext.computeObsoleteMemberships(block);
   });
 
-  this.getCertificationsExludingBlock = function() {
-    return dal.getCurrent()
-      .then(function(current){
-        return dal.getCertificationExcludingBlock(current, conf.sigValidity);
-      })
-      .catch(function(){
+  this.getCertificationsExludingBlock = () => co(function*() {
+    try {
+      const current = yield dal.getCurrent();
+      return yield dal.getCertificationExcludingBlock(current, conf.sigValidity);
+    } catch (err) {
         return { number: -1 };
-      });
-  };
+    }
+  });
 
   this.blocksBetween = (from, count) => co(function *() {
     if (count > 5000) {
       throw 'Count is too high';
     }
-    let current = yield that.current();
+    const current = yield that.current();
     count = Math.min(current.number - from + 1, count);
     if (!current || current.number < from) {
       throw 'Starting block #' + from + ' does not exist';
@@ -548,8 +530,8 @@ function BlockchainService () {
     return dal.getBlocksBetween(from, from + count - 1);
   });
 
-  var cleanMemFifo = async.queue((task, callback) => task(callback), 1);
-  var cleanMemFifoInterval = null;
+  const cleanMemFifo = async.queue((task, callback) => task(callback), 1);
+  let cleanMemFifoInterval = null;
   this.regularCleanMemory = function (done) {
     if (cleanMemFifoInterval)
       clearInterval(cleanMemFifoInterval);
@@ -559,7 +541,7 @@ function BlockchainService () {
 
   this.stopCleanMemory = () => clearInterval(cleanMemFifoInterval);
 
-  function cleanMemory(done) {
+  const cleanMemory = (done) => {
     dal.blockDAL.migrateOldBlocks()
       .then(() => done())
       .catch((err) => {

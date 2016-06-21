@@ -125,7 +125,7 @@ function BlockchainContext() {
     yield Q.nbind(dal.saveBlock, dal, block);
     yield that.saveParametersForRootBlock(block);
     // Create/Update members (create new identities if do not exist)
-    yield Q.nfcall(updateMembers, block);
+    yield that.updateMembers(block);
     // Create/Update certifications
     yield that.updateCertifications(block);
     // Save links
@@ -171,58 +171,52 @@ function BlockchainContext() {
     }
   });
 
-  this.updateMembers = updateMembers;
-
   let cleanRejectedIdentities = (idty) => co(function *() {
     yield dal.removeUnWrittenWithPubkey(idty.pubkey);
     yield dal.removeUnWrittenWithUID(idty.uid);
   });
 
-  function updateMembers (block, done) {
-    return co(function *() {
-      // Newcomers
-      for (let i = 0, len = block.identities.length; i < len; i++) {
-        let identity = block.identities[i];
-        let idty = Identity.statics.fromInline(identity);
-        // Computes the hash if not done yet
-        if (!idty.hash)
-          idty.hash = (hashf(rawer.getOfficialIdentity(idty)) + "").toUpperCase();
-        yield dal.newIdentity(idty);
-        yield cleanRejectedIdentities(idty);
-      }
-      // Joiners (come back)
-      for (let i = 0, len = block.joiners.length; i < len; i++) {
-        let inlineMS = block.joiners[i];
-        let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.joinIdentity(ms.issuer, ms.number);
-      }
-      // Actives
-      for (let i = 0, len = block.actives.length; i < len; i++) {
-        let inlineMS = block.actives[i];
-        let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.activeIdentity(ms.issuer, ms.number);
-      }
-      // Leavers
-      for (let i = 0, len = block.leavers.length; i < len; i++) {
-        let inlineMS = block.leavers[i];
-        let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.leaveIdentity(ms.issuer, ms.number);
-      }
-      // Revoked
-      for (let i = 0, len = block.revoked.length; i < len; i++) {
-        let inlineRevocation = block.revoked[i];
-        let revocation = Identity.statics.revocationFromInline(inlineRevocation);
-        yield dal.revokeIdentity(revocation.pubkey);
-      }
-      // Excluded
-      for (let i = 0, len = block.excluded.length; i < len; i++) {
-        let excluded = block.excluded[i];
-        dal.excludeIdentity(excluded);
-      }
-      done();
-    })
-      .catch(done);
-  }
+  this.updateMembers = (block) => co(function *() {
+    // Newcomers
+    for (let i = 0, len = block.identities.length; i < len; i++) {
+      let identity = block.identities[i];
+      let idty = Identity.statics.fromInline(identity);
+      // Computes the hash if not done yet
+      if (!idty.hash)
+        idty.hash = (hashf(rawer.getOfficialIdentity(idty)) + "").toUpperCase();
+      yield dal.newIdentity(idty);
+      yield cleanRejectedIdentities(idty);
+    }
+    // Joiners (come back)
+    for (let i = 0, len = block.joiners.length; i < len; i++) {
+      let inlineMS = block.joiners[i];
+      let ms = Membership.statics.fromInline(inlineMS);
+      yield dal.joinIdentity(ms.issuer, ms.number);
+    }
+    // Actives
+    for (let i = 0, len = block.actives.length; i < len; i++) {
+      let inlineMS = block.actives[i];
+      let ms = Membership.statics.fromInline(inlineMS);
+      yield dal.activeIdentity(ms.issuer, ms.number);
+    }
+    // Leavers
+    for (let i = 0, len = block.leavers.length; i < len; i++) {
+      let inlineMS = block.leavers[i];
+      let ms = Membership.statics.fromInline(inlineMS);
+      yield dal.leaveIdentity(ms.issuer, ms.number);
+    }
+    // Revoked
+    for (let i = 0, len = block.revoked.length; i < len; i++) {
+      let inlineRevocation = block.revoked[i];
+      let revocation = Identity.statics.revocationFromInline(inlineRevocation);
+      yield dal.revokeIdentity(revocation.pubkey);
+    }
+    // Excluded
+    for (let i = 0, len = block.excluded.length; i < len; i++) {
+      let excluded = block.excluded[i];
+      dal.excludeIdentity(excluded);
+    }
+  });
 
   function undoMembersUpdate (block) {
     return co(function *() {

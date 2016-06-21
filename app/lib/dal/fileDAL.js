@@ -693,79 +693,78 @@ function FileDAL(params) {
     });
   };
 
-  this.getCertificationExcludingBlock = function(current, certValidtyTime) {
-    return co(function *() {
-      var currentExcluding;
-      if (current.number > 0) {
-        try {
-          currentExcluding = yield that.indicatorsDAL.getCurrentCertificationExcludingBlock();
-        } catch(e){
-          currentExcluding = null;
-        }
+  this.getCertificationExcludingBlock = (current, certValidtyTime) => co(function *() {
+    let currentExcluding;
+    if (current.number > 0) {
+      try {
+        currentExcluding = yield that.indicatorsDAL.getCurrentCertificationExcludingBlock();
+      } catch(e){
+        currentExcluding = null;
       }
-      if (!currentExcluding) {
-        var root = yield that.getRootBlock();
-        var delaySinceStart = current.medianTime - root.medianTime;
-        if (delaySinceStart > certValidtyTime) {
-          return that.indicatorsDAL.writeCurrentExcludingForCert(root).then(() => root);
-        }
+    }
+    if (!currentExcluding) {
+      const root = yield that.getRootBlock();
+      const delaySinceStart = current.medianTime - root.medianTime;
+      if (delaySinceStart > certValidtyTime) {
+        return that.indicatorsDAL.writeCurrentExcludingForCert(root).then(() => root);
+      }
+    } else {
+      // Check current position
+      const currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
+      if (isExcluding(current, currentExcluding, currentNextBlock, certValidtyTime)) {
+        return currentExcluding;
       } else {
-        // Check current position
-        let currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
-        if (isExcluding(current, currentExcluding, currentNextBlock, certValidtyTime)) {
-          return currentExcluding;
-        } else {
-          // Have to look for new one
-          var start = currentExcluding.number;
-          let newExcluding;
-          let top = current.number, bottom = start;
-          // Binary tree search
-          do {
-            let middle = top - bottom;
-            if (middle % 2 != 0) {
-              middle = middle + 1;
-            }
-            middle /= 2;
-            middle += bottom;
-            if (middle == top) {
-              middle--;
-              bottom--; // Helps not being stuck looking at 'top'
-            }
-            let middleBlock = yield that.getBlock(middle);
-            let middleNextB = yield that.getBlock(middle + 1);
-            var delaySinceMiddle = current.medianTime - middleBlock.medianTime;
-            var delaySinceNextB = current.medianTime - middleNextB.medianTime;
-            let isValidPeriod = delaySinceMiddle <= certValidtyTime;
-            let isValidPeriodB = delaySinceNextB <= certValidtyTime;
-            let isExcludin = !isValidPeriod && isValidPeriodB;
-            //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
-            if (isExcludin) {
-              // Found
-              yield that.indicatorsDAL.writeCurrentExcludingForCert(middleBlock);
-              newExcluding = middleBlock;
-            }
-            else if (isValidPeriod) {
-              // Look down in the blockchain
-              top = middle;
-            }
-            else {
-              // Look up in the blockchain
-              bottom = middle;
-            }
-          } while (!newExcluding);
-          return newExcluding;
-        }
+        // Have to look for new one
+        const start = currentExcluding.number;
+        let newExcluding;
+        let top = current.number;
+        let bottom = start;
+        // Binary tree search
+        do {
+          let middle = top - bottom;
+          if (middle % 2 != 0) {
+            middle = middle + 1;
+          }
+          middle /= 2;
+          middle += bottom;
+          if (middle == top) {
+            middle--;
+            bottom--; // Helps not being stuck looking at 'top'
+          }
+          const middleBlock = yield that.getBlock(middle);
+          const middleNextB = yield that.getBlock(middle + 1);
+          const delaySinceMiddle = current.medianTime - middleBlock.medianTime;
+          const delaySinceNextB = current.medianTime - middleNextB.medianTime;
+          const isValidPeriod = delaySinceMiddle <= certValidtyTime;
+          const isValidPeriodB = delaySinceNextB <= certValidtyTime;
+          const isExcludin = !isValidPeriod && isValidPeriodB;
+          //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
+          if (isExcludin) {
+            // Found
+            yield that.indicatorsDAL.writeCurrentExcludingForCert(middleBlock);
+            newExcluding = middleBlock;
+          }
+          else if (isValidPeriod) {
+            // Look down in the blockchain
+            top = middle;
+          }
+          else {
+            // Look up in the blockchain
+            bottom = middle;
+          }
+        } while (!newExcluding);
+        return newExcluding;
       }
-    });
-  };
+    }
+  });
 
-  function isExcluding(current, excluding, nextBlock, certValidtyTime) {
-    var delaySinceMiddle = current.medianTime - excluding.medianTime;
-    var delaySinceNextB = current.medianTime - nextBlock.medianTime;
-    let isValidPeriod = delaySinceMiddle <= certValidtyTime;
-    let isValidPeriodB = delaySinceNextB <= certValidtyTime;
+  const isExcluding = (current, excluding, nextBlock, certValidtyTime) => {
+    const delaySinceMiddle = current.medianTime - excluding.medianTime;
+    const delaySinceNextB = current.medianTime - nextBlock.medianTime;
+    const isValidPeriod = delaySinceMiddle <= certValidtyTime;
+    const isValidPeriodB = delaySinceNextB <= certValidtyTime;
     return !isValidPeriod && isValidPeriodB;
-  }
+  };
 
   this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
   this.revokeWithOutdatedMemberships = (maxNumber) => this.idtyDAL.revokeMembersForMembershipBelow(maxNumber);

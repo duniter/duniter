@@ -1,12 +1,12 @@
 "use strict";
 
-var co               = require('co');
-var _                = require('underscore');
-var rules            = require('../lib/rules');
-var constants        = require('../lib/constants');
-var http2raw         = require('../lib/helpers/http2raw');
-var Membership       = require('../lib/entity/membership');
-var AbstractController = require('./abstract');
+const co               = require('co');
+const _                = require('underscore');
+const rules            = require('../lib/rules');
+const constants        = require('../lib/constants');
+const http2raw         = require('../lib/helpers/http2raw');
+const Membership       = require('../lib/entity/membership');
+const AbstractController = require('./abstract');
 
 module.exports = function (server) {
   return new BlockchainBinding(server);
@@ -16,16 +16,16 @@ function BlockchainBinding (server) {
 
   AbstractController.call(this, server);
 
-  var conf = server.conf;
+  const conf = server.conf;
 
   // Services
-  var ParametersService = server.ParametersService;
-  var BlockchainService = server.BlockchainService;
-  var IdentityService   = server.IdentityService;
+  const ParametersService = server.ParametersService;
+  const BlockchainService = server.BlockchainService;
+  const IdentityService   = server.IdentityService;
 
   // Models
-  var Block      = require('../lib/entity/block');
-  var Stat       = require('../lib/entity/stat');
+  const Block      = require('../lib/entity/block');
+  const Stat       = require('../lib/entity/stat');
 
   this.parseMembership = (req) => this.pushEntity(req, http2raw.membership, constants.ENTITY_MEMBERSHIP);
 
@@ -54,41 +54,41 @@ function BlockchainBinding (server) {
   }
 
   this.promoted = (req) => co(function *() {
-    let number = yield ParametersService.getNumberP(req);
-    let promoted = yield BlockchainService.promoted(number);
+    const number = yield ParametersService.getNumberP(req);
+    const promoted = yield BlockchainService.promoted(number);
     return new Block(promoted).json();
   });
 
   this.blocks = (req) => co(function *() {
-    let params = ParametersService.getCountAndFrom(req);
-    var count = parseInt(params.count);
-    var from = parseInt(params.from);
+    const params = ParametersService.getCountAndFrom(req);
+    const count = parseInt(params.count);
+    const from = parseInt(params.from);
     let blocks = yield BlockchainService.blocksBetween(from, count);
     blocks = blocks.map((b) => (new Block(b).json()));
     return blocks;
   });
 
   this.current = () => co(function *() {
-    let current = yield server.dal.getCurrentBlockOrNull();
+    const current = yield server.dal.getCurrentBlockOrNull();
     if (!current) throw constants.ERRORS.NO_CURRENT_BLOCK;
     return new Block(current).json();
   });
 
   this.hardship = (req) => co(function *() {
     let nextBlockNumber = 0;
-    let search = yield ParametersService.getSearchP(req);
-    let idty = yield IdentityService.findMemberWithoutMemberships(search);
+    const search = yield ParametersService.getSearchP(req);
+    const idty = yield IdentityService.findMemberWithoutMemberships(search);
     if (!idty) {
       throw constants.ERRORS.NO_MATCHING_IDENTITY;
     }
     if (!idty.member) {
       throw constants.ERRORS.NOT_A_MEMBER;
     }
-    let current = yield BlockchainService.current();
+    const current = yield BlockchainService.current();
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    let difficulty = yield rules.HELPERS.getTrialLevel(idty.pubkey, conf, server.dal);
+    const difficulty = yield rules.HELPERS.getTrialLevel(idty.pubkey, conf, server.dal);
     return {
       "block": nextBlockNumber,
       "level": difficulty
@@ -96,14 +96,14 @@ function BlockchainBinding (server) {
   });
 
   this.difficulties = () => co(function *() {
-    let current = yield server.dal.getCurrent();
-    let number = (current && current.number) || 0;
-    let issuers = yield server.dal.getUniqueIssuersBetween(number - 1 - conf.blocksRot, number - 1);
-    let difficulties = [];
+    const current = yield server.dal.getCurrent();
+    const number = (current && current.number) || 0;
+    const issuers = yield server.dal.getUniqueIssuersBetween(number - 1 - conf.blocksRot, number - 1);
+    const difficulties = [];
     for (let i = 0, len = issuers.length; i < len; i++) {
-      let issuer = issuers[i];
-      let member = yield server.dal.getWrittenIdtyByPubkey(issuer);
-      let difficulty = yield rules.HELPERS.getTrialLevel(member.pubkey, conf, server.dal);
+      const issuer = issuers[i];
+      const member = yield server.dal.getWrittenIdtyByPubkey(issuer);
+      const difficulty = yield rules.HELPERS.getTrialLevel(member.pubkey, conf, server.dal);
       difficulties.push({
         uid: member.uid,
         level: difficulty
@@ -116,16 +116,16 @@ function BlockchainBinding (server) {
   });
 
   this.memberships = (req) => co(function *() {
-    let search = yield ParametersService.getSearchP(req);
-    let idty = yield IdentityService.findMember(search);
-    var json = {
+    const search = yield ParametersService.getSearchP(req);
+    const idty = yield IdentityService.findMember(search);
+    const json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
       memberships: []
     };
     json.memberships = idty.memberships.map((msObj) => {
-      let ms = new Membership(msObj);
+      const ms = new Membership(msObj);
       return {
         version: ms.version,
         currency: conf.currency,
@@ -141,8 +141,8 @@ function BlockchainBinding (server) {
   });
 
   this.branches = () => co(function *() {
-    let branches = yield BlockchainService.branches();
-    let blocks = branches.map((b) => new Block(b).json());
+    const branches = yield BlockchainService.branches();
+    const blocks = branches.map((b) => new Block(b).json());
     return {
       blocks: blocks
     };

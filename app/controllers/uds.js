@@ -1,7 +1,7 @@
 "use strict";
-var co = require('co');
-var Q = require('q');
-var _ = require('underscore');
+const co = require('co');
+const Q = require('q');
+const _ = require('underscore');
 
 module.exports = function (server) {
   return new UDBinding(server);
@@ -9,23 +9,23 @@ module.exports = function (server) {
 
 function UDBinding(server) {
 
-  var conf = server.conf;
+  const conf = server.conf;
 
   // Services
-  var ParametersService = server.ParametersService;
+  const ParametersService = server.ParametersService;
 
   // Models
-  var Source = require('../lib/entity/source');
+  const Source = require('../lib/entity/source');
 
   this.getHistory = (req) => co(function *() {
-    let pubkey = yield ParametersService.getPubkeyP(req);
+    const pubkey = yield ParametersService.getPubkeyP(req);
     return getUDSources(pubkey, (results) => results);
   });
 
   this.getHistoryBetweenBlocks = (req) => co(function *() {
-    let pubkey = yield ParametersService.getPubkeyP(req);
-    let from = yield ParametersService.getFromP(req);
-    let to = yield ParametersService.getToP(req);
+    const pubkey = yield ParametersService.getPubkeyP(req);
+    const from = yield ParametersService.getFromP(req);
+    const to = yield ParametersService.getToP(req);
     return getUDSources(pubkey, (results) => {
       results.history.history = _.filter(results.history.history, function(ud){ return ud.block_number >= from && ud.block_number <= to; });
       return results;
@@ -33,9 +33,9 @@ function UDBinding(server) {
   });
 
   this.getHistoryBetweenTimes = (req) => co(function *() {
-    let pubkey = yield ParametersService.getPubkeyP(req);
-    let from = yield ParametersService.getFromP(req);
-    let to = yield ParametersService.getToP(req);
+    const pubkey = yield ParametersService.getPubkeyP(req);
+    const from = yield ParametersService.getFromP(req);
+    const to = yield ParametersService.getToP(req);
     return getUDSources(pubkey, (results) => {
       results.history.history = _.filter(results.history.history, function(ud){ return ud.time >= from && ud.time <= to; });
       return results;
@@ -44,14 +44,14 @@ function UDBinding(server) {
 
   function getUDSources(pubkey, filter) {
     return co(function *() {
-      let history = yield server.dal.getUDHistory(pubkey);
-      var result = {
+      const history = yield server.dal.getUDHistory(pubkey);
+      const result = {
         "currency": conf.currency,
         "pubkey": pubkey,
         "history": history
       };
-      _.keys(history).map(function(key) {
-        history[key].map(function (src, index) {
+      _.keys(history).map((key) => {
+        history[key].map((src, index) => {
           history[key][index] = _.omit(new Source(src).UDjson(), 'currency', 'raw');
           _.extend(history[key][index], { block_number: src && src.block_number, time: src && src.time });
         });

@@ -1,36 +1,35 @@
 "use strict";
+const co               = require('co');
 
 module.exports = {
 
-  processForURL: function (req, merkle, valueCB, done) {
+  processForURL: (req, merkle, valueCoroutine) => co(function*() {
     // Result
-    var json = {
+    const json = {
       "depth": merkle.depth,
       "nodesCount": merkle.nodes,
       "leavesCount": merkle.levels[merkle.depth].length,
       "root": merkle.levels[0][0] || ""
     };
-    if(req.query.leaves){
+    if (req.query.leaves) {
       // Leaves
       json.leaves = merkle.leaves();
-      done(null, json);
+      return json;
     } else if (req.query.leaf) {
       // Extract of a leaf
       json.leaves = {};
-      var hashes = [req.query.leaf];
+      const hashes = [req.query.leaf];
       // This code is in a loop for historic reasons. Should be set to non-loop style.
-      valueCB(hashes, function (err, values) {
-        if (err) return done(err);
-        hashes.forEach(function (hash){
-          json.leaf = {
-            "hash": hash,
-            "value": values[hash] || ""
-          };
-        });
-        done(null, json);
+      const values = yield valueCoroutine(hashes);
+      hashes.forEach((hash) => {
+        json.leaf = {
+          "hash": hash,
+          "value": values[hash] || ""
+        };
       });
+      return json;
     } else {
-      done(null, json);
+      return json;
     }
-  }
-};
+  })
+}

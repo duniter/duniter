@@ -370,9 +370,9 @@ function FileDAL(params) {
 
   this.findPeersWhoseHashIsIn = function(hashes) {
     return that.peerDAL.listAll()
-      .then(function(peers){
+      .then((peers) => {
         return _.chain(peers).
-          filter(function(p){ return hashes.indexOf(p.hash) !== -1; }).
+          filter((p) => hashes.indexOf(p.hash) !== -1).
           value();
       });
   };

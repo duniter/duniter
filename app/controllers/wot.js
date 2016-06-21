@@ -1,10 +1,10 @@
 "use strict";
-var co = require('co');
-var _        = require('underscore');
-var http2raw = require('../lib/helpers/http2raw');
-var constants = require('../lib/constants');
-var AbstractController = require('./abstract');
-var logger   = require('../lib/logger')();
+const co = require('co');
+const _        = require('underscore');
+const http2raw = require('../lib/helpers/http2raw');
+const constants = require('../lib/constants');
+const AbstractController = require('./abstract');
+const logger   = require('../lib/logger')();
 
 module.exports = function (server) {
   return new WOTBinding(server);
@@ -14,33 +14,31 @@ function WOTBinding (server) {
 
   AbstractController.call(this, server);
 
-  var ParametersService = server.ParametersService;
-  var IdentityService   = server.IdentityService;
-  var BlockchainService   = server.BlockchainService;
+  const ParametersService = server.ParametersService;
+  const IdentityService   = server.IdentityService;
+  const BlockchainService   = server.BlockchainService;
 
-  var Identity = require('../lib/entity/identity');
+  const Identity = require('../lib/entity/identity');
 
   this.lookup = (req) => co(function *() {
-    var search = yield ParametersService.getSearchP(req);
-    var identities = yield IdentityService.searchIdentities(search);
-    identities.forEach(function(idty, index){
-      identities[index] = new Identity(idty);
-    });
-    var excluding = yield BlockchainService.getCertificationsExludingBlock();
+    const search = yield ParametersService.getSearchP(req);
+    const identities = yield IdentityService.searchIdentities(search);
+    identities.forEach((idty, index) => identities[index] = new Identity(idty));
+    const excluding = yield BlockchainService.getCertificationsExludingBlock();
     for (let i = 0; i < identities.length; i++) {
-      let idty = identities[i];
-      var certs = yield server.dal.certsToTarget(idty.getTargetHash());
-      var validCerts = [];
+      const idty = identities[i];
+      const certs = yield server.dal.certsToTarget(idty.getTargetHash());
+      const validCerts = [];
       for (let j = 0; j < certs.length; j++) {
-        let cert = certs[j];
+        const cert = certs[j];
         if (!(excluding && cert.block <= excluding.number)) {
-          let member = yield IdentityService.getWrittenByPubkey(cert.from);
+          const member = yield IdentityService.getWrittenByPubkey(cert.from);
           if (member) {
             cert.uids = [member.uid];
             cert.isMember = member.member;
             cert.wasMember = member.wasMember;
           } else {
-            let potentials = yield IdentityService.getPendingFromPubkey(cert.from);
+            const potentials = yield IdentityService.getPendingFromPubkey(cert.from);
             cert.uids = _(potentials).pluck('uid');
             cert.isMember = false;
             cert.wasMember = false;
@@ -49,10 +47,10 @@ function WOTBinding (server) {
         }
       }
       idty.certs = validCerts;
-      var signed = yield server.dal.certsFrom(idty.pubkey);
-      var validSigned = [];
+      const signed = yield server.dal.certsFrom(idty.pubkey);
+      const validSigned = [];
       for (let j = 0; j < signed.length; j++) {
-        let cert = _.clone(signed[j]);
+        const cert = _.clone(signed[j]);
         if (!(excluding && cert.block <= excluding.number)) {
           cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
           if (cert.idty) {
@@ -64,7 +62,7 @@ function WOTBinding (server) {
       }
       idty.signed = validSigned;
     }
-    var json = {
+    const json = {
       partial: false,
       results: []
     };
@@ -78,26 +76,24 @@ function WOTBinding (server) {
   });
 
   this.members = () => co(function *() {
-    let identities = yield server.dal.getMembersP();
-    let json = {
+    const identities = yield server.dal.getMembersP();
+    const json = {
       results: []
     };
-    identities.forEach(function(identity){
-      json.results.push({ pubkey: identity.pubkey, uid: identity.uid });
-    });
+    identities.forEach((identity) => json.results.push({ pubkey: identity.pubkey, uid: identity.uid }));
     return json;
   });
 
   this.certifiersOf = (req) => co(function *() {
-    let search = yield ParametersService.getSearchP(req);
-    let idty = yield IdentityService.findMemberWithoutMemberships(search);
-    let excluding = yield BlockchainService.getCertificationsExludingBlock();
-    let certs = yield server.dal.certsToTarget(idty.getTargetHash());
+    const search = yield ParametersService.getSearchP(req);
+    const idty = yield IdentityService.findMemberWithoutMemberships(search);
+    const excluding = yield BlockchainService.getCertificationsExludingBlock();
+    const certs = yield server.dal.certsToTarget(idty.getTargetHash());
     idty.certs = [];
     for (let i = 0; i < certs.length; i++) {
-      let cert = certs[i];
+      const cert = certs[i];
       if (!(excluding && cert.block <= excluding.number)) {
-        let certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
+        const certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
         if (certifier) {
           cert.uid = certifier.uid;
           cert.isMember = certifier.member;
@@ -115,7 +111,7 @@ function WOTBinding (server) {
         }
       }
     }
-    var json = {
+    const json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
@@ -141,9 +137,9 @@ function WOTBinding (server) {
   });
 
   this.requirements = (req) => co(function *() {
-    let search = yield ParametersService.getSearchP(req);
-    let identities = yield IdentityService.searchIdentities(search);
-    let all = yield BlockchainService.requirementsOfIdentities(identities);
+    const search = yield ParametersService.getSearchP(req);
+    const identities = yield IdentityService.searchIdentities(search);
+    const all = yield BlockchainService.requirementsOfIdentities(identities);
     if (!all || !all.length) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
@@ -153,15 +149,15 @@ function WOTBinding (server) {
   });
 
   this.certifiedBy = (req) => co(function *() {
-    let search = yield ParametersService.getSearchP(req);
-    let idty = yield IdentityService.findMemberWithoutMemberships(search);
-    let excluding = yield BlockchainService.getCertificationsExludingBlock();
-    let certs = yield server.dal.certsFrom(idty.pubkey);
+    const search = yield ParametersService.getSearchP(req);
+    const idty = yield IdentityService.findMemberWithoutMemberships(search);
+    const excluding = yield BlockchainService.getCertificationsExludingBlock();
+    const certs = yield server.dal.certsFrom(idty.pubkey);
     idty.certs = [];
     for (let i = 0; i < certs.length; i++) {
-      let cert = certs[i];
+      const cert = certs[i];
       if (!(excluding && cert.block <= excluding.number)) {
-        let certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
+        const certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
         if (certified) {
           cert.uid = certified.uid;
           cert.isMember = certified.member;
@@ -179,15 +175,14 @@ function WOTBinding (server) {
         }
       }
     }
-    var json = {
+    const json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
       isMember: idty.member,
       certifications: []
     };
-    idty.certs.forEach(function(cert){
-      json.certifications.push({
+    idty.certs.forEach((cert) => json.certifications.push({
         pubkey: cert.to,
         uid: cert.uid,
         isMember: cert.isMember,
@@ -199,8 +194,8 @@ function WOTBinding (server) {
           hash: cert.written_hash
         } : null,
         signature: cert.sig
-      });
-    });
+      })
+    );
     return json;
   });
 

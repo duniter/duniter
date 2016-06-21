@@ -1,23 +1,23 @@
 "use strict";
 
-var util = require('util');
-var es = require('event-stream');
-var stream      = require('stream');
-var _ = require('underscore');
-var Q = require('q');
-let co = require('co');
-let ucoin = require('../../index');
-let ucp = require('../lib/ucp/buid');
-let constants = require('../lib/constants');
-let base58 = require('../lib/crypto/base58');
-let rawer = require('../lib/ucp/rawer');
-let keyring = require('../lib/crypto/keyring');
-let http2raw = require('../lib/helpers/http2raw');
-let bma = require('../lib/streams/bma');
-let Identity = require('../lib/entity/identity');
-let network = require('../lib/system/network');
-let AbstractController = require('../controllers/abstract');
-var logger = require('../lib/logger')('webmin');
+const util = require('util');
+const es = require('event-stream');
+const stream      = require('stream');
+const _ = require('underscore');
+const Q = require('q');
+const co = require('co');
+const ucoin = require('../../index');
+const ucp = require('../lib/ucp/buid');
+const constants = require('../lib/constants');
+const base58 = require('../lib/crypto/base58');
+const rawer = require('../lib/ucp/rawer');
+const keyring = require('../lib/crypto/keyring');
+const http2raw = require('../lib/helpers/http2raw');
+const bma = require('../lib/streams/bma');
+const Identity = require('../lib/entity/identity');
+const network = require('../lib/system/network');
+const AbstractController = require('../controllers/abstract');
+const logger = require('../lib/logger')('webmin');
 
 module.exports = (dbConf, overConf) => {
   return new WebAdmin(dbConf, overConf);
@@ -26,9 +26,9 @@ module.exports = (dbConf, overConf) => {
 function WebAdmin (dbConf, overConf) {
 
   // Node instance: this is the object to be managed by the web admin
-  let server = this.server = ucoin(dbConf, overConf);
+  const server = this.server = ucoin(dbConf, overConf);
   let bmapi;
-  let that = this;
+  const that = this;
 
   AbstractController.call(this, server);
 
@@ -53,9 +53,9 @@ function WebAdmin (dbConf, overConf) {
 
   this.summary = () => co(function *() {
     yield pluggedDALP;
-    let host = server.conf ? [server.conf.ipv4, server.conf.port].join(':') : '';
-    let current = yield server.dal.getCurrentBlockOrNull();
-    let parameters = yield server.dal.getParameters();
+    const host = server.conf ? [server.conf.ipv4, server.conf.port].join(':') : '';
+    const current = yield server.dal.getCurrentBlockOrNull();
+    const parameters = yield server.dal.getParameters();
     return {
       "version": server.version,
       "host": host,
@@ -66,8 +66,8 @@ function WebAdmin (dbConf, overConf) {
   });
 
   this.previewPubkey = (req) => co(function *() {
-    let conf = http2raw.conf(req);
-    let pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
+    const conf = http2raw.conf(req);
+    const pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
     return {
       "pubkey": base58.encode(pair.publicKey)
     };
@@ -110,17 +110,17 @@ function WebAdmin (dbConf, overConf) {
 
   this.previewNext = () => co(function *() {
     yield pluggedDALP;
-    let block = yield server.doMakeNextBlock();
+    const block = yield server.doMakeNextBlock();
     block.raw = rawer.getBlock(block);
     return block;
   });
 
   this.sendConf = (req) => co(function *() {
     yield pluggedConfP;
-    let conf = http2raw.conf(req);
-    let pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
-    let publicKey = base58.encode(pair.publicKey);
-    let secretKey = pair.secretKey;
+    const conf = http2raw.conf(req);
+    const pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
+    const publicKey = base58.encode(pair.publicKey);
+    const secretKey = pair.secretKey;
     yield server.dal.saveConf({
       routing: true,
       createNext: true,
@@ -166,8 +166,8 @@ function WebAdmin (dbConf, overConf) {
       return bmapi.openConnections();
     });
     yield pluggedConfP;
-    let buid = '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-    let entity = Identity.statics.fromJSON({
+    const buid = '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
+    const entity = Identity.statics.fromJSON({
       buid: buid,
       uid: conf.idty_uid,
       issuer: publicKey,
@@ -181,8 +181,8 @@ function WebAdmin (dbConf, overConf) {
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));
     if (_.filter(found.memberships, { membership: 'IN'}).length == 0) {
-      var block = ucp.format.buid(null);
-      var join = rawer.getMembershipWithoutSignature({
+      const block = ucp.format.buid(null);
+      let join = rawer.getMembershipWithoutSignature({
         "version": constants.DOCUMENTS_VERSION,
         "currency": conf.currency,
         "issuer": publicKey,
@@ -201,7 +201,7 @@ function WebAdmin (dbConf, overConf) {
 
   this.applyNetworkConf = (req) => co(function *() {
     yield pluggedConfP;
-    let conf = http2raw.conf(req);
+    const conf = http2raw.conf(req);
     yield server.dal.saveConf(_.extend(server.conf, {
       ipv4: conf.local_ipv4,
       ipv6: conf.local_ipv6,
@@ -225,10 +225,10 @@ function WebAdmin (dbConf, overConf) {
 
   this.applyNewKeyConf = (req) => co(function *() {
     yield pluggedConfP;
-    let conf = http2raw.conf(req);
-    let pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
-    let publicKey = base58.encode(pair.publicKey);
-    let secretKey = pair.secretKey;
+    const conf = http2raw.conf(req);
+    const pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
+    const publicKey = base58.encode(pair.publicKey);
+    const secretKey = pair.secretKey;
     yield server.dal.saveConf(_.extend(server.conf, {
       salt: conf.idty_entropy,
       passwd: conf.idty_password,
@@ -245,20 +245,20 @@ function WebAdmin (dbConf, overConf) {
   });
 
   this.listInterfaces = () => co(function *() {
-    let upnp = {
+    const upnp = {
       name: 'upnp',
       addresses: []
     };
-    let manual = {
+    const manual = {
       name: 'conf',
       addresses: []
     };
-    let lan = {
+    const lan = {
       name: 'lan',
       addresses: []
     };
     yield pluggedConfP;
-    let conf = server.conf;
+    const conf = server.conf;
     if (conf.remoteipv4) {
       manual.addresses.push({ family: 'IPv4', address: conf.remoteipv4 });
     }
@@ -283,21 +283,21 @@ function WebAdmin (dbConf, overConf) {
     } catch (e) {
       logger.error(e.stack || e);
     }
-    let lanIPv4 = network.getLANIPv4();
+    const lanIPv4 = network.getLANIPv4();
     lanIPv4.forEach(function(addr) {
       lan.addresses.push({
         family: 'IPv4',
         address: addr.value
       });
     });
-    let lanIPv6 = network.getLANIPv6();
+    const lanIPv6 = network.getLANIPv6();
     lanIPv6.forEach(function(addr) {
       lan.addresses.push({
         family: 'IPv6',
         address: addr.value
       });
     });
-    let randomPort = network.getRandomPort(conf);
+    const randomPort = network.getRandomPort(conf);
     return {
       local: network.listInterfaces(),
       remote: [upnp, manual, lan],
@@ -336,7 +336,7 @@ function WebAdmin (dbConf, overConf) {
     // Allow services to be stopped
     stopServicesP = null;
     if (!server.conf.salt && !server.conf.passwd) {
-      let conf = {
+      const conf = {
         idty_entropy: ~~(Math.random() * 2147483647) + "",
         idty_password: ~~(Math.random() * 2147483647) + ""
       };
@@ -358,8 +358,8 @@ function WebAdmin (dbConf, overConf) {
   this.autoConfNetwork = () => co(function *() {
     // Reconfigure the network if it has not been initialized yet
     if (!server.conf.remoteipv4 && !server.conf.remoteipv6 && !server.conf.remotehost) {
-      let bestLocal4 = network.getBestLocalIPv4();
-      let bestLocal6 = network.getBestLocalIPv6();
+      const bestLocal4 = network.getBestLocalIPv4();
+      const bestLocal6 = network.getBestLocalIPv6();
       let upnpConf = {
         remoteipv4: bestLocal4,
         remoteipv6: bestLocal6,
@@ -392,7 +392,7 @@ function WebAdmin (dbConf, overConf) {
   });
 
   this.startSync = (req) => co(function *() {
-    let sync = server.synchronize(req.body.host, parseInt(req.body.port), parseInt(req.body.to), parseInt(req.body.chunkLen));
+    const sync = server.synchronize(req.body.host, parseInt(req.body.port), parseInt(req.body.to), parseInt(req.body.chunkLen));
     sync.flow.pipe(es.mapSync(function(data) {
       // Broadcast block
       that.push(data);

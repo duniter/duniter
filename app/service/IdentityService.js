@@ -1,14 +1,14 @@
 "use strict";
-var Q               = require('q');
-var rules           = require('../lib/rules');
-var keyring          = require('../lib/crypto/keyring');
-var constants       = require('../lib/constants');
-var Block           = require('../../app/lib/entity/block');
-var Identity        = require('../../app/lib/entity/identity');
-var Certification   = require('../../app/lib/entity/certification');
-var Revocation      = require('../../app/lib/entity/revocation');
-var AbstractService = require('./AbstractService');
-var co              = require('co');
+const Q               = require('q');
+const rules           = require('../lib/rules');
+const keyring          = require('../lib/crypto/keyring');
+const constants       = require('../lib/constants');
+const Block           = require('../../app/lib/entity/block');
+const Identity        = require('../../app/lib/entity/identity');
+const Certification   = require('../../app/lib/entity/certification');
+const Revocation      = require('../../app/lib/entity/revocation');
+const AbstractService = require('./AbstractService');
+const co              = require('co');
 
 module.exports = () => new IdentityService();
 
@@ -16,7 +16,7 @@ function IdentityService () {
 
   AbstractService.call(this);
 
-  let that = this;
+  const that = this;
   let dal, conf, logger;
 
   this.setConfDAL = (newConf, newDAL) => {
@@ -25,9 +25,7 @@ function IdentityService () {
     logger = require('../lib/logger')(dal.profile);
   };
 
-  this.searchIdentities = function(search) {
-    return dal.searchJustIdentities(search);
-  };
+  this.searchIdentities = (search) => dal.searchJustIdentities(search);
 
   this.findMember = (search) => co(function *() {
     let idty = null;
@@ -58,17 +56,13 @@ function IdentityService () {
     return new Identity(idty);
   });
 
-  this.getWrittenByPubkey = function(pubkey) {
-    return dal.getWrittenIdtyByPubkey(pubkey);
-  };
+  this.getWrittenByPubkey = (pubkey) => dal.getWrittenIdtyByPubkey(pubkey);
 
-  this.getPendingFromPubkey = function(pubkey) {
-    return dal.getNonWritten(pubkey);
-  };
+  this.getPendingFromPubkey = (pubkey) => dal.getNonWritten(pubkey);
 
-  this.submitIdentity = function(obj) {
-    var idty = new Identity(obj);
-    var selfCert = idty.rawWithoutSig();
+  this.submitIdentity = (obj) => {
+    let idty = new Identity(obj);
+    const selfCert = idty.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
@@ -99,11 +93,11 @@ function IdentityService () {
   };
 
   this.submitCertification = (obj) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
+    const current = yield dal.getCurrentBlockOrNull();
     // Prepare validator for certifications
-    let potentialNext = new Block({ currency: conf.currency, identities: [], number: current ? current.number + 1 : 0 });
-    let cert = Certification.statics.fromJSON(obj);
-    let targetHash = cert.getTargetHash();
+    const potentialNext = new Block({ currency: conf.currency, identities: [], number: current ? current.number + 1 : 0 });
+    const cert = Certification.statics.fromJSON(obj);
+    const targetHash = cert.getTargetHash();
     let idty = yield dal.getIdentityByHashOrNull(targetHash);
     if (!idty) {
       idty = yield that.submitIdentity({
@@ -131,7 +125,7 @@ function IdentityService () {
           };
         }
         cert.block_hash = basedBlock.hash;
-        var mCert = new Certification({
+        const mCert = new Certification({
           pubkey: cert.from,
           sig: cert.sig,
           block_number: cert.block_number,
@@ -158,15 +152,15 @@ function IdentityService () {
     }));
   });
 
-  this.submitRevocation = function(obj) {
-    var revoc = new Revocation(obj);
-    var raw = revoc.rawWithoutSig();
+  this.submitRevocation = (obj) => {
+    const revoc = new Revocation(obj);
+    const raw = revoc.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
       let verified = keyring.verify(raw, revoc.revocation, revoc.pubkey);
       if (!verified) {
         throw 'Wrong signature for revocation';
       }
-      let existing = yield dal.getIdentityByHashOrNull(obj.hash);
+      const existing = yield dal.getIdentityByHashOrNull(obj.hash);
       if (existing) {
         // Modify
         if (existing.revoked) {

@@ -240,26 +240,26 @@ function PeeringService(server) {
     }
     logger.info('Crawling the network...');
     return co(function *() {
-      let peers = yield dal.listAllPeersWithStatusNewUPWithtout(selfPubkey);
+      const peers = yield dal.listAllPeersWithStatusNewUPWithtout(selfPubkey);
       if (peers.length > constants.NETWORK.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == DONT_IF_MORE_THAN_FOUR_PEERS) {
         return;
       }
       let peersToTest = peers.slice().map((p) => Peer.statics.peerize(p));
       let tested = [];
-      let found = [];
+      const found = [];
       while (peersToTest.length > 0) {
-        let results = yield peersToTest.map(crawlPeer);
+        const results = yield peersToTest.map(crawlPeer);
         tested = tested.concat(peersToTest.map((p) => p.pubkey));
         // End loop condition
         peersToTest.splice(0);
         // Eventually continue the loop
         for (let i = 0, len = results.length; i < len; i++) {
-          let res = results[i];
+          const res = results[i];
           for (let j = 0, len2 = res.length; j < len2; j++) {
             try {
-              let subpeer = res[j].leaf.value;
+              const subpeer = res[j].leaf.value;
               if (subpeer.currency && tested.indexOf(subpeer.pubkey) === -1) {
-                let p = Peer.statics.peerize(subpeer);
+                const p = Peer.statics.peerize(subpeer);
                 peersToTest.push(p);
                 found.push(p);
               }
@@ -286,26 +286,24 @@ function PeeringService(server) {
       .then(() => done()).catch(done);
   };
 
-  function crawlPeer(aPeer) {
-    return co(function *() {
-      let subpeers = [];
-      try {
-        logger.debug('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
-        let node = yield aPeer.connect();
-        yield checkPeerValidity(aPeer, node);
-        //let remotePeer = yield Q.nbind(node.network.peering.get)();
-        let json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
-        for (let i = 0, len = json.leaves.length; i < len; i++) {
-          let leaf = json.leaves[i];
-          let subpeer = yield Q.nbind(node.network.peering.peers.get, node)({ leaf: leaf });
-          subpeers.push(subpeer);
-        }
-        return subpeers;
-      } catch (e) {
-        return subpeers;
+  const crawlPeer = (aPeer) => co(function *() {
+    let subpeers = [];
+    try {
+      logger.debug('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
+      const node = yield aPeer.connect();
+      yield checkPeerValidity(aPeer, node);
+      //let remotePeer = yield Q.nbind(node.network.peering.get)();
+      const json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
+      for (let i = 0, len = json.leaves.length; i < len; i++) {
+        let leaf = json.leaves[i];
+        let subpeer = yield Q.nbind(node.network.peering.peers.get, node)({ leaf: leaf });
+        subpeers.push(subpeer);
       }
-    });
-  }
+      return subpeers;
+    } catch (e) {
+      return subpeers;
+    }
+  });
 
   const testPeers = (displayDelays, done) => co(function *() {
     let peers = yield dal.listAllPeers();

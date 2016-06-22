@@ -208,6 +208,8 @@ function BlockchainContext() {
       logger.trace('Block median time +%s', block.medianTime - current.medianTime);
       logger.trace('Block time ' + ((block.time - current.time) >= 0 ? '+' : '') + '%d', block.time - current.time);
     }
+    // Unit Base
+    block.unitbase = (block.dividend && block.unitbase) || (current && current.unitbase) || 0;
     // Monetary Mass update
     if (current) {
       block.monetaryMass = (current.monetaryMass || 0) + (block.dividend || 0) * Math.pow(10, block.unitbase || 0) * block.membersCount;

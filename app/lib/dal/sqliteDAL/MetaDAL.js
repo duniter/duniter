@@ -4,10 +4,11 @@
  * Created by cgeek on 22/08/15.
  */
 
-var co = require('co');
-var logger = require('../../logger')('metaDAL');
-var Transaction = require('../../entity/transaction');
-var AbstractSQLite = require('./AbstractSQLite');
+const co = require('co');
+const _ = require('underscore');
+const logger = require('../../logger')('metaDAL');
+const Transaction = require('../../entity/transaction');
+const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = MetaDAL;
 
@@ -28,15 +29,50 @@ function MetaDAL(db) {
   this.translated = {};
 
   let migrations = {
+
+    // Test
     0: 'BEGIN; COMMIT;',
+
+    // Test
     1: 'BEGIN; COMMIT;',
+
+    // New `receveid` column
     2: 'BEGIN; ALTER TABLE txs ADD COLUMN received INTEGER NULL; COMMIT;',
+
+    // Update wrong recipients field (was not filled in)
     3: () => co(function*() {
       let txsDAL = new (require('./TxsDAL'))(db);
       let txs = yield txsDAL.sqlListAll();
       Transaction.statics.setRecipients(txs);
       for (let i = 0; i < txs.length; i++) {
         yield txsDAL.saveEntity(txs[i]);
+      }
+    }),
+
+    // Migrates wrong unitbases
+    4: () => co(function*() {
+      let blockDAL = new (require('./BlockDAL'))(db);
+      let dividendBlocks = yield blockDAL.getDividendBlocks();
+      let bases = { 0: 0 }; // The first base is always 0 at block 0
+      for (let i = 0; i < dividendBlocks.length; i++) {
+        let block = dividendBlocks[i];
+        if (!bases[block.unitbase]) {
+          bases[block.unitbase] = block.number;
+        } else {
+          bases[block.unitbase] = Math.min(bases[block.unitbase], block.number);
+        }
+      }
+      let baseNumbers = _.keys(bases);
+      for (let i = 0; i < baseNumbers.length; i++) {
+        let base = parseInt(baseNumbers[i]);
+        let fromBlock = bases[base];
+        let upTo = bases[base + 1] || null;
+        if (upTo != null) {
+          yield blockDAL.exec('UPDATE block SET unitbase = ' + base + ' WHERE number >= ' + fromBlock + ' AND number < ' + upTo);
+        } else {
+          // The last base has not a successor yet, so we can take all following blocks
+          yield blockDAL.exec('UPDATE block SET unitbase = ' + base + ' WHERE number >= ' + fromBlock);
+        }
       }
     })
   };

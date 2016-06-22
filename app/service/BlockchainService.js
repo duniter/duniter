@@ -437,7 +437,7 @@ function BlockchainService () {
       block.fork = false;
       // Monetary mass & UD Time recording before inserting elements
       block.monetaryMass = (previous && previous.monetaryMass) || 0;
-      block.unitbase = block.unitbase || 0;
+      block.unitbase = (block.dividend && block.unitbase) || (previous && previous.unitbase) || 0;
       block.dividend = block.dividend || null;
       // UD Time update
       let previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;

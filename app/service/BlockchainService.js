@@ -446,7 +446,7 @@ function BlockchainService () {
       }
       else if (block.dividend) {
         block.UDTime = conf.dt + previousBlock.UDTime;
-        block.monetaryMass += block.dividend * block.membersCount;
+        block.monetaryMass += block.dividend * Math.pow(10, block.unitbase || 0) * block.membersCount;
       } else {
         block.UDTime = previousBlock.UDTime;
       }

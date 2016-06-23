@@ -74,6 +74,31 @@ function MetaDAL(db) {
           yield blockDAL.exec('UPDATE block SET unitbase = ' + base + ' WHERE number >= ' + fromBlock);
         }
       }
+    }),
+
+    // Migrates wrong monetary masses
+    5: () => co(function*() {
+      let blockDAL = new (require('./BlockDAL'))(db);
+      let udBlocks = yield blockDAL.getDividendBlocks();
+      let monetaryMass = 0;
+      let lastUDBlock = 0;
+      for (let i = 0; i < udBlocks.length; i++) {
+        let udBlock = udBlocks[i];
+        if (i == 0) {
+          // First UD
+          yield blockDAL.exec('UPDATE block SET monetaryMass = 0 WHERE number < ' + udBlock.number);
+        } else {
+          // Other UDs
+          let prevUDBlock = udBlocks[i - 1];
+          let fromBlock = prevUDBlock.number;
+          let upToExcluded = udBlock.number;
+          yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + fromBlock + ' AND number < ' + upToExcluded);
+        }
+        lastUDBlock = udBlock.number;
+        monetaryMass += udBlock.dividend * Math.pow(10, udBlock.unitbase) * udBlock.membersCount;
+      }
+      // Blocks since last UD have the same monetary mass as last UD block
+      yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + lastUDBlock);
     })
   };
 

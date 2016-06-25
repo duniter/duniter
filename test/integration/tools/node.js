@@ -54,13 +54,13 @@ function getTxNode(testSuite, afterBeforeHook){
   before(() => co(function*() {
     yield node2.startTesting();
     // Self certifications
-    yield tic.selfCertP();
-    yield toc.selfCertP();
+    yield tic.selfCert();
+    yield toc.selfCert();
     // Certification;
-    yield tic.certP(toc);
-    yield toc.certP(tic);
-    yield tic.joinP();
-    yield toc.joinP();
+    yield tic.cert(toc);
+    yield toc.cert(tic);
+    yield tic.join();
+    yield toc.join();
     yield node2.commitP();
     yield node2.commitP();
     yield tic.sendP(51, toc);
@@ -281,18 +281,6 @@ function Node (dbName, options) {
         }
       }, UNTIL_TIMEOUT);
     });
-  };
-
-  this.current = function(callback) {
-    return function(done) {
-      async.waterfall([
-        function(next) {
-          that.http.blockchain.current(next);
-        }
-      ], function(err, current) {
-        callback(current, done);
-      });
-    };
   };
 
   this.block = function(number, callback) {

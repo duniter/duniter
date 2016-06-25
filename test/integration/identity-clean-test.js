@@ -47,9 +47,9 @@ describe("Identities cleaned", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCertPromise();
-      yield tic.selfCertPromise();
-      yield toc.selfCertPromise();
+      yield cat.selfCert();
+      yield tic.selfCert();
+      yield toc.selfCert();
 
       yield expectAnswer(rp('http://127.0.0.1:7733/wot/lookup/cat', { json: true }), function(res) {
         res.should.have.property('results').length(2);
@@ -58,10 +58,10 @@ describe("Identities cleaned", function() {
         res.results[1].uids[0].should.have.property('uid').equal('cat'); // This is toc
       });
 
-      yield cat.certPromise(tic);
-      yield tic.certPromise(cat);
-      yield cat.joinPromise();
-      yield tic.joinPromise();
+      yield cat.cert(tic);
+      yield tic.cert(cat);
+      yield cat.join();
+      yield tic.join();
       yield commitS1();
 
       // We have the following WoT (diameter 1):

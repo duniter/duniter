@@ -53,18 +53,18 @@ describe("Identities collision", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCertPromise();
-      yield tac.selfCertPromise();
-      yield toc.selfCertPromise();
-      yield tic.selfCertPromise();
-      yield toc.certPromise(cat);
-      yield cat.certPromise(toc);
-      yield cat.certPromise(tic);
-      yield tic.certPromise(tac);
-      yield cat.joinPromise();
-      yield toc.joinPromise();
-      yield tic.joinPromise();
-      yield tac.joinPromise();
+      yield cat.selfCert();
+      yield tac.selfCert();
+      yield toc.selfCert();
+      yield tic.selfCert();
+      yield toc.cert(cat);
+      yield cat.cert(toc);
+      yield cat.cert(tic);
+      yield tic.cert(tac);
+      yield cat.join();
+      yield toc.join();
+      yield tic.join();
+      yield tac.join();
       yield commitS1();
       yield commitS1();
 
@@ -77,32 +77,32 @@ describe("Identities collision", function() {
       // cat is the sentry
 
       // Man1 is someone who just needs a commit to join
-      yield man1.selfCertPromise();
-      yield man1.joinPromise();
-      yield tac.certPromise(man1);
+      yield man1.selfCert();
+      yield man1.join();
+      yield tac.cert(man1);
 
       /**
        *  toc <=> cat -> tic -> tac -> man1
        */
 
       // Man2 is someone who has no certifications yet has sent a JOIN
-      yield man2.selfCertPromise();
-      yield man2.joinPromise();
+      yield man2.selfCert();
+      yield man2.join();
 
       // Man3 is someone who has only published its identity
-      yield man3.selfCertPromise();
+      yield man3.selfCert();
 
       // tic RENEW, but not written
-      yield tic.joinPromise();
+      yield tic.join();
 
       try {
-        yield tic.selfCertPromise();
+        yield tic.selfCert();
         throw 'Should have thrown an error for already used pubkey';
       } catch (e) {
         JSON.parse(e).message.should.equal('Pubkey already used in the blockchain');
       }
       try {
-        yield tic2.selfCertPromise();
+        yield tic2.selfCert();
         throw 'Should have thrown an error for already used uid';
       } catch (e) {
         JSON.parse(e).message.should.equal('UID already used in the blockchain');

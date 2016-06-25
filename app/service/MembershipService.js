@@ -21,7 +21,7 @@ function MembershipService () {
     logger = require('../lib/logger')(dal.profile);
   };
 
-  this.current = (done) => dal.getCurrentBlockOrNull(done);
+  this.current = () => dal.getCurrentBlockOrNull();
 
   this.submitMembership = (ms) => this.pushFIFO(() => co(function *() {
     const entry = new Membership(ms);

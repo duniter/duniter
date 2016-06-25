@@ -41,15 +41,15 @@ describe("HTTP API", function() {
       .then(function(){
         return Q()
           .then(function() {
-            return cat.selfCertPromise();
+            return cat.selfCert();
           })
           .then(function() {
-            return toc.selfCertPromise();
+            return toc.selfCert();
           })
-          .then(_.partial(toc.certPromise, cat))
-          .then(_.partial(cat.certPromise, toc))
-          .then(cat.joinPromise)
-          .then(toc.joinPromise)
+          .then(_.partial(toc.cert, cat))
+          .then(_.partial(cat.cert, toc))
+          .then(cat.join)
+          .then(toc.join)
           .then(commit)
           .then(commit)
           .then(commit)

@@ -187,32 +187,32 @@ describe("Integration", function() {
         let now = Math.round(new Date().getTime() / 1000);
 
         // Self certifications
-        yield cat.selfCertP();
-        yield tac.selfCertP();
-        yield tic.selfCertP();
-        yield toc.selfCertP();
-        yield cat.certP(tac);
-        yield cat.certP(tic);
-        yield cat.certP(toc);
-        yield tac.certP(cat);
-        yield tac.certP(tic);
-        yield tic.certP(cat);
-        yield tic.certP(tac);
-        yield toc.certP(cat);
-        yield cat.joinP();
-        yield tac.joinP();
-        yield tic.joinP();
-        yield toc.joinP();
+        yield cat.selfCert();
+        yield tac.selfCert();
+        yield tic.selfCert();
+        yield toc.selfCert();
+        yield cat.cert(tac);
+        yield cat.cert(tic);
+        yield cat.cert(toc);
+        yield tac.cert(cat);
+        yield tac.cert(tic);
+        yield tic.cert(cat);
+        yield tic.cert(tac);
+        yield toc.cert(cat);
+        yield cat.join();
+        yield tac.join();
+        yield tic.join();
+        yield toc.join();
         yield commit(node3)({
           time: now
         });
         yield commit(node3)();
-        yield toc.leaveP();
+        yield toc.leave();
         yield commit(node3)();
-        yield tac.certP(toc);
-        yield tic.certP(toc);
-        yield toc.certP(tic); // Should be taken in 1 block
-        yield toc.certP(tac); // Should be taken in 1 other block
+        yield tac.cert(toc);
+        yield tic.cert(toc);
+        yield toc.cert(tic); // Should be taken in 1 block
+        yield toc.cert(tac); // Should be taken in 1 other block
         yield commit(node3)({
           time: now + 200
         });

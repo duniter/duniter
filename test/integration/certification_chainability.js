@@ -53,21 +53,21 @@ describe("Certification chainability", function() {
        * tac <===> cat
        */
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCertPromise();
-      yield tac.selfCertPromise();
-      yield cat.certPromise(tac);
-      yield tac.certPromise(cat);
-      yield cat.joinPromise();
-      yield tac.joinPromise();
+      yield cat.selfCert();
+      yield tac.selfCert();
+      yield cat.cert(tac);
+      yield tac.cert(cat);
+      yield cat.join();
+      yield tac.join();
       yield commitS1({ now });
       yield commitS1({
         time: now + 395
       });
 
       // Should not happen on the first commit due to certPeriod
-      yield tic.selfCertPromise();
-      yield tic.joinPromise();
-      yield cat.certPromise(tic);
+      yield tic.selfCert();
+      yield tic.join();
+      yield cat.cert(tic);
       yield commitS1({ now });
       yield commitS1({ now });
       // We still are at +195, and the certPeriod must be OVER (or equal to) current time to allow new certs from cat.

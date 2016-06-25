@@ -32,13 +32,13 @@ describe("Testing transactions", function() {
       .then(function(){
         return co(function *() {
           // Self certifications
-          yield tic.selfCertP();
-          yield toc.selfCertP();
+          yield tic.selfCert();
+          yield toc.selfCert();
           // Certification;
-          yield tic.certP(toc);
-          yield toc.certP(tic);
-          yield tic.joinP();
-          yield toc.joinP();
+          yield tic.cert(toc);
+          yield toc.cert(tic);
+          yield tic.join();
+          yield toc.join();
           yield node2.commitP();
           yield node2.commitP();
           yield tic.sendP(51, toc);

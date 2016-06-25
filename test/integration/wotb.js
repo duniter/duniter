@@ -93,12 +93,12 @@ describe("WOTB module", function() {
          */
         yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s1.dal.wotb;
-        yield cat.selfCertPromise();
-        yield toc.selfCertPromise();
-        yield toc.certPromise(cat);
-        yield cat.certPromise(toc);
-        yield cat.joinPromise();
-        yield toc.joinPromise();
+        yield cat.selfCert();
+        yield toc.selfCert();
+        yield toc.cert(cat);
+        yield cat.cert(toc);
+        yield cat.join();
+        yield toc.join();
         yield commit(s1)({
           time: now + 500
         });
@@ -131,9 +131,9 @@ describe("WOTB module", function() {
         /**
          * cat <==> toc --> tic
          */
-        yield tic.selfCertPromise();
-        yield toc.certPromise(tic);
-        yield tic.joinPromise();
+        yield tic.selfCert();
+        yield toc.cert(tic);
+        yield tic.join();
         yield commit(s1)();
         let itic = yield s1.dal.getWrittenIdtyByUID("tic");
         itic.should.have.property('wotb_id').equal(2);
@@ -162,18 +162,18 @@ describe("WOTB module", function() {
          */
         yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s2.dal.wotb;
-        yield cat2.selfCertPromise();
-        yield toc2.selfCertPromise();
-        yield tic2.selfCertPromise();
+        yield cat2.selfCert();
+        yield toc2.selfCert();
+        yield tic2.selfCert();
         // toc2 <==> cat2
-        yield toc2.certPromise(cat2);
-        yield cat2.certPromise(toc2);
+        yield toc2.cert(cat2);
+        yield cat2.cert(toc2);
         // tic2 <==> cat2
-        yield tic2.certPromise(cat2);
-        yield cat2.certPromise(tic2);
-        yield cat2.joinPromise();
-        yield toc2.joinPromise();
-        yield tic2.joinPromise();
+        yield tic2.cert(cat2);
+        yield cat2.cert(tic2);
+        yield cat2.join();
+        yield toc2.join();
+        yield tic2.join();
         yield commit(s2)();
         // Should make MS expire for toc2
         yield commit(s2)({
@@ -182,8 +182,8 @@ describe("WOTB module", function() {
         yield commit(s2)({
           time: now + 800
         });
-        yield cat2.joinPromise(); // Renew for not to be kicked!
-        yield tic2.joinPromise(); // Renew for not to be kicked!
+        yield cat2.join(); // Renew for not to be kicked!
+        yield tic2.join(); // Renew for not to be kicked!
         yield commit(s2)();
         // Members excluded
         yield commit(s2)();
@@ -209,7 +209,7 @@ describe("WOTB module", function() {
 
     it('a leaver who joins back should be enabled', function() {
       return co(function *() {
-        yield toc2.joinPromise();
+        yield toc2.join();
         yield commit(s2)();
         wotb.isEnabled(0).should.equal(true);
         wotb.isEnabled(1).should.equal(true);
@@ -236,13 +236,13 @@ describe("WOTB module", function() {
       return co(function *() {
         yield s3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s3.dal.wotb;
-        yield cat3.selfCertPromise();
-        yield tic3.selfCertPromise();
+        yield cat3.selfCert();
+        yield tic3.selfCert();
         // cat <==> tic
-        yield tic3.certPromise(cat3);
-        yield cat3.certPromise(tic3);
-        yield cat3.joinPromise();
-        yield tic3.joinPromise();
+        yield tic3.cert(cat3);
+        yield cat3.cert(tic3);
+        yield cat3.join();
+        yield tic3.join();
       });
     });
 
@@ -272,9 +272,9 @@ describe("WOTB module", function() {
           time: now + 2400
         });
         // MedianTime is now +500 for next certs
-        yield toc3.selfCertPromise();
-        yield toc3.joinPromise();
-        yield tic3.certPromise(toc3);
+        yield toc3.selfCert();
+        yield toc3.join();
+        yield tic3.cert(toc3);
         yield commit(s3)({
           time: now + 4000
         });
@@ -296,7 +296,7 @@ describe("WOTB module", function() {
 
     it('fifth commit: cat still here, but not its certs', function() {
       return co(function *() {
-        yield toc3.certPromise(tic3);
+        yield toc3.cert(tic3);
         yield commit(s3)({
           time: now + 4000
         });
@@ -337,8 +337,8 @@ describe("WOTB module", function() {
 
     it('seventh commit: toc is gone, but not its cert to tic', function() {
       return co(function *() {
-        yield tic3.certPromise(cat3);
-        yield cat3.joinPromise();
+        yield tic3.cert(cat3);
+        yield cat3.join();
         yield commit(s3)({
           time: now + 1800
         });

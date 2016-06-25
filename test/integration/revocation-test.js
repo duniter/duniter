@@ -46,16 +46,16 @@ describe("Revocation", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCertPromise();
-      yield tic.selfCertPromise();
-      yield toc.selfCertPromise();
-      yield cat.certPromise(tic);
-      yield tic.certPromise(cat);
-      yield tic.certPromise(toc);
-      yield toc.certPromise(tic);
-      yield cat.joinPromise();
-      yield tic.joinPromise();
-      yield toc.joinPromise();
+      yield cat.selfCert();
+      yield tic.selfCert();
+      yield toc.selfCert();
+      yield cat.cert(tic);
+      yield tic.cert(cat);
+      yield tic.cert(toc);
+      yield toc.cert(tic);
+      yield cat.join();
+      yield tic.join();
+      yield toc.join();
       yield commitS1();
 
       // We have the following WoT:
@@ -136,7 +136,7 @@ describe("Revocation", function() {
   });
 
   it('cat should not be able to join back', () => co(function *() {
-    yield cat.joinP();
+    yield cat.join();
     yield commitS1();
     return expectAnswer(rp('http://127.0.0.1:9964/wot/members', { json: true }), function(res) {
       res.should.have.property('results').length(2);

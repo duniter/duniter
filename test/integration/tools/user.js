@@ -50,105 +50,54 @@ function User (uid, options, node) {
     }
   }
 
-  this.selfCert = function (useRoot) {
-    return function(done) {
-      async.waterfall([
-        function(next) {
-          if (!pub) {
-            init(next);
-          }
-          else next();
-        },
-        function(next) {
-          node.server.BlockchainService.current(next);
-        },
-        function(current, next) {
-          let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-          selfCert = rawer.getOfficialIdentity({
-            buid: buid,
-            uid: uid,
-            issuer: pub,
-            currency: node.server.conf.currency
-          });
-          selfCert += crypto.signSync(selfCert, sec) + '\n';
-          post('/wot/add', {
-            "identity": selfCert
-          }, next);
-        }
-      ], function(err) {
-        done(err);
-      });
-    };
-  };
-
-  this.selfCertPromise = function(useRoot) {
-    return Q.Promise(function(resolve, reject){
-      that.selfCert(useRoot)(function(err) {
-        err ? reject(err) : resolve();
-      });
+  this.selfCert = (useRoot) => co(function*() {
+    if (!pub)
+      yield Q.nfcall(init);
+    const current = yield node.server.BlockchainService.current();
+    let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
+    selfCert = rawer.getOfficialIdentity({
+      buid: buid,
+      uid: uid,
+      issuer: pub,
+      currency: node.server.conf.currency
     });
-  };
-
-  this.certPromise = function(user, fromServer) {
-    return Q.Promise(function(resolve, reject){
-      that.cert(user, fromServer)(function(err) {
-        err ? reject(err) : resolve();
-      });
+    selfCert += crypto.signSync(selfCert, sec) + '\n';
+    yield Q.nfcall(post, '/wot/add', {
+      "identity": selfCert
     });
-  };
+  });
 
-  this.cert = function (user, fromServer) {
-    return function(done) {
-      async.waterfall([
-        function(next) {
-          async.parallel({
-            lookup: lookup(user.pub, fromServer, function(res, callback) {
-              callback(null, res);
-            }),
-            current: function(callback){
-              node.server.BlockchainService.current(callback);
-            }
-          }, next);
-        },
-        function(res, next) {
-          var current = res.current;
-          var idty = res.lookup.results[0].uids[0];
-          let buid = current ? ucp.format.buid(current.number, current.hash) : ucp.format.buid();
-          var cert = rawer.getOfficialCertification({
-            "version": constants.DOCUMENTS_VERSION,
-            "currency": node.server.conf.currency,
-            "issuer": pub,
-            "idty_issuer": user.pub,
-            "idty_uid": idty.uid,
-            "idty_buid": idty.meta.timestamp,
-            "idty_sig": idty.self,
-            "buid": buid
-          });
-          var sig = crypto.signSync(cert, sec);
-          post('/wot/certify', {
-            "cert": cert + sig + "\n"
-          }, next);
-        }
-      ], function(err) {
-        done(err);
-      });
-    };
-  };
+  this.cert = (user, fromServer) => co(function*() {
+    const lookup = yield that.lookup(user.pub, fromServer);
+    const current = yield node.server.BlockchainService.current();
+    const idty = lookup.results[0].uids[0];
+    let buid = current ? ucp.format.buid(current.number, current.hash) : ucp.format.buid();
+    const cert = rawer.getOfficialCertification({
+      "version": constants.DOCUMENTS_VERSION,
+      "currency": node.server.conf.currency,
+      "issuer": pub,
+      "idty_issuer": user.pub,
+      "idty_uid": idty.uid,
+      "idty_buid": idty.meta.timestamp,
+      "idty_sig": idty.self,
+      "buid": buid
+    });
+    const sig = crypto.signSync(cert, sec);
+    yield Q.nfcall(post, '/wot/certify', {
+      "cert": cert + sig + "\n"
+    });
+  });
 
-  this.join = function () {
-    return that.sendMembership("IN");
-  };
+  this.join = () => co(function*() {
+    return yield that.sendMembership("IN");
+  });
 
-  this.joinPromise = function () {
-    return that.sendMembershipPromise("IN");
-  };
-
-  this.leave = function () {
-    return that.sendMembership("OUT");
-  };
+  this.leave = () => co(function*() {
+    return yield that.sendMembership("OUT");
+  });
 
   this.revoke = () => co(function *() {
-    let res = yield lookupP(pub);
+    let res = yield that.lookup(pub);
     let idty = Identity.statics.fromJSON({
       uid: res.results[0].uids[0].uid,
       buid: res.results[0].uids[0].meta.timestamp,
@@ -170,46 +119,25 @@ function User (uid, options, node) {
     });
   });
 
-  this.sendMembershipPromise = function(type) {
-    return Q.nfcall(that.sendMembership(type));
-  };
-
-  this.sendMembership = function (type) {
-    return function(done) {
-      async.waterfall([
-        function(next) {
-          async.parallel({
-            lookup: lookup(pub, null, function(res, callback) {
-              callback(null, res);
-            }),
-            current: function(callback){
-              node.server.BlockchainService.current(callback);
-            }
-          }, next);
-        },
-        function(res, next) {
-          var current = res.current;
-          var idty = res.lookup.results[0].uids[0];
-          var block = ucp.format.buid(current);
-          var join = rawer.getMembershipWithoutSignature({
-            "version": constants.DOCUMENTS_VERSION,
-            "currency": node.server.conf.currency,
-            "issuer": pub,
-            "block": block,
-            "membership": type,
-            "userid": uid,
-            "certts": idty.meta.timestamp
-          });
-          var sig = crypto.signSync(join, sec);
-          post('/blockchain/membership', {
-            "membership": join + sig + '\n'
-          }, next);
-        }
-      ], function(err) {
-        done(err);
+  this.sendMembership = (type) => co(function*() {
+    const lookup = yield that.lookup(pub, null);
+    const current = yield node.server.BlockchainService.current();
+    const idty = lookup.results[0].uids[0];
+    const block = ucp.format.buid(current);
+    const join = rawer.getMembershipWithoutSignature({
+        "version": constants.DOCUMENTS_VERSION,
+        "currency": node.server.conf.currency,
+        "issuer": pub,
+        "block": block,
+        "membership": type,
+        "userid": uid,
+        "certts": idty.meta.timestamp
       });
-    };
-  };
+    const sig = crypto.signSync(join, sec);
+    yield Q.nfcall(post, '/blockchain/membership', {
+      "membership": join + sig + '\n'
+    });
+  });
 
   this.send = function (amount, recipient, comment) {
     return function(done) {
@@ -373,31 +301,10 @@ function User (uid, options, node) {
     });
   }
 
-  function lookup(pubkey, fromServer, done) {
-    return function(calback) {
-      getVucoin(fromServer)
-        .then(function(node2){
-          node2.wot.lookup(pubkey, function(err, res) {
-            if (err) {
-              console.error(err);
-            }
-            done(res, calback);
-          });
-        })
-        .catch(done);
-    };
-  }
+  this.lookup = (pubkey, fromServer) => co(function*() {
+    const node2 = yield getVucoin(fromServer);
+    return yield Q.nbind(node2.wot.lookup, node2.wot, pubkey);
+  });
 
-  function lookupP(pubkey) {
-    return co(function *() {
-      let node2 = yield getVucoin();
-      return Q.nbind(node2.wot.lookup, node2)(pubkey);
-    });
-  }
-
-  this.selfCertP = (when) => Q.nfcall(this.selfCert(when));
-  this.certP = (user) => Q.nfcall(this.cert(user));
-  this.joinP = () => Q.nfcall(this.join());
-  this.leaveP = () => Q.nfcall(this.leave());
   this.sendP = (amount, userid, comment) => Q.nfcall(this.send.apply(this, [amount, userid, comment]));
 }

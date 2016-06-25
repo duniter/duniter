@@ -18,7 +18,7 @@ let rules = {};
 rules.FUNCTIONS = {
 
   checkNumber: (block, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     if (!current && block.number != 0) {
       throw Error('Root block required first');
     }
@@ -60,7 +60,7 @@ rules.FUNCTIONS = {
   }),
 
   checkUD: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     let lastUDBlock = yield dal.lastUDBlock();
     let root = yield dal.getBlock(0);
     var lastUDTime = lastUDBlock ? lastUDBlock.UDTime : (root != null ? root.medianTime : 0);
@@ -94,7 +94,7 @@ rules.FUNCTIONS = {
   }),
 
   checkPreviousHash: (block, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     if (current && block.previousHash != current.hash) {
       throw Error('PreviousHash not matching hash of current block');
     }
@@ -102,7 +102,7 @@ rules.FUNCTIONS = {
   }),
 
   checkPreviousIssuer: (block, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     if (current && block.previousIssuer != current.issuer) {
       throw Error('PreviousIssuer not matching issuer of current block');
     }
@@ -110,7 +110,7 @@ rules.FUNCTIONS = {
   }),
 
   checkMembersCountIsGood: (block, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     var currentCount = current ? current.membersCount : 0;
     var variation = block.joiners.length - block.excluded.length;
     if (block.membersCount != currentCount + variation) {
@@ -193,7 +193,7 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationsPeriodIsRespected: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     for (let i = 0, len = block.certifications.length; i < len; i++) {
       let cert = Certification.statics.fromInline(block.certifications[i]);
       let previous = yield dal.getLastValidFrom(cert.from);
@@ -212,7 +212,7 @@ rules.FUNCTIONS = {
   }),
 
   checkIdentitiesAreWritable: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     for (let i = 0, len = block.identities.length; i < len; i++) {
       let idty = Identity.statics.fromInline(block.identities[i]);
       let found = yield dal.getWrittenIdtyByUID(idty.uid);
@@ -233,7 +233,7 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationsAreWritable: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     for (let i = 0, len = block.certifications.length; i < len; i++) {
       let cert = Certification.statics.fromInline(block.certifications[i]);
       if (current) {
@@ -250,7 +250,7 @@ rules.FUNCTIONS = {
   }),
 
   checkMembershipsAreWritable: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     let fields = ['joiners', 'actives', 'leavers'];
     for (let m = 0, len2 = fields.length; m < len2; m++) {
       let field = fields[m];
@@ -592,7 +592,7 @@ function checkMSTarget (ms, block, conf, dal) {
       } catch (e) {
         throw Error('Membership based on an unexisting block');
       }
-      let current = yield dal.getCurrent();
+      let current = yield dal.getCurrentBlockOrNull();
       if (current && current.medianTime > basedBlock.medianTime + conf.msValidity) {
         throw Error('Membership has expired');
       }
@@ -617,7 +617,7 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
         }
       }
       let idty = yield findIdtyFunc(block, cert.to, dal);
-      let current = block.number == 0 ? null : yield dal.getCurrent();
+      let current = block.number == 0 ? null : yield dal.getCurrentBlockOrNull();
       if (!idty) {
         throw Error('Identity does not exist for certified');
       }
@@ -642,7 +642,7 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
 function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) {
   return co(function *() {
     let wotb = dal.wotb;
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     let membersCount = current ? current.membersCount : 0;
     // TODO: make a temporary copy of the WoT in RAM
     // We add temporarily the newcomers to the WoT, to integrate their new links
@@ -703,7 +703,7 @@ function getTrialLevel (issuer, conf, dal) {
   return co(function *() {
     // Compute exactly how much zeros are required for this block's issuer
     let percentRot = conf.percentRot;
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     if (!current) {
       return 0;
     }

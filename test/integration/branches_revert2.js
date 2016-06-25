@@ -45,12 +45,12 @@ describe("Revert two blocks", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCertPromise();
-      yield toc.selfCertPromise();
-      yield toc.certPromise(cat);
-      yield cat.certPromise(toc);
-      yield cat.joinPromise();
-      yield toc.joinPromise();
+      yield cat.selfCert();
+      yield toc.selfCert();
+      yield toc.cert(cat);
+      yield cat.cert(toc);
+      yield cat.join();
+      yield toc.join();
       yield commit(s1)();
       yield commit(s1)();
       yield cat.sendP(51, toc);

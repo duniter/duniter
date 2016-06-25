@@ -66,12 +66,12 @@ describe("Crosschain transactions", function() {
         yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
         // Initialize BETA
-        yield ticB.selfCertPromise();
-        yield tocB.selfCertPromise();
-        yield tocB.certPromise(ticB);
-        yield ticB.certPromise(tocB);
-        yield ticB.joinPromise();
-        yield tocB.joinPromise();
+        yield ticB.selfCert();
+        yield tocB.selfCert();
+        yield tocB.cert(ticB);
+        yield ticB.cert(tocB);
+        yield ticB.join();
+        yield tocB.join();
         yield commit(sB)();
         yield commit(sB)();
         // Preparation: we create a source transaction for our transfer
@@ -82,12 +82,12 @@ describe("Crosschain transactions", function() {
         yield commit(sB)();
 
         // Initialize META
-        yield ticM.selfCertPromise();
-        yield tocM.selfCertPromise();
-        yield tocM.certPromise(ticM);
-        yield ticM.certPromise(tocM);
-        yield ticM.joinPromise();
-        yield tocM.joinPromise();
+        yield ticM.selfCert();
+        yield tocM.selfCert();
+        yield tocM.cert(ticM);
+        yield ticM.cert(tocM);
+        yield ticM.join();
+        yield tocM.join();
         yield commit(sM)();
         yield commit(sM)();
         // Preparation: we create a source transaction for our transfer
@@ -232,12 +232,12 @@ describe("Crosschain transactions", function() {
         yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
         // Initialize BETA
-        yield ticB.selfCertPromise();
-        yield tocB.selfCertPromise();
-        yield tocB.certPromise(ticB);
-        yield ticB.certPromise(tocB);
-        yield ticB.joinPromise();
-        yield tocB.joinPromise();
+        yield ticB.selfCert();
+        yield tocB.selfCert();
+        yield tocB.cert(ticB);
+        yield ticB.cert(tocB);
+        yield ticB.join();
+        yield tocB.join();
         yield commit(sB)();
         yield commit(sB)();
         // Preparation: we create a source transaction for our transfer
@@ -248,12 +248,12 @@ describe("Crosschain transactions", function() {
         yield commit(sB)();
 
         // Initialize META
-        yield ticM.selfCertPromise();
-        yield tocM.selfCertPromise();
-        yield tocM.certPromise(ticM);
-        yield ticM.certPromise(tocM);
-        yield ticM.joinPromise();
-        yield tocM.joinPromise();
+        yield ticM.selfCert();
+        yield tocM.selfCert();
+        yield tocM.cert(ticM);
+        yield ticM.cert(tocM);
+        yield ticM.join();
+        yield tocM.join();
         yield commit(sM)();
         yield commit(sM)();
         // Preparation: we create a source transaction for our transfer

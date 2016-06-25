@@ -53,7 +53,7 @@ function BlockGenerator(mainContext, prover) {
     const unsignedBlock = block || (yield that.nextBlock());
     const sigF = sigFunc || signature.sync(pair);
     const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
-    return prover.prove(unsignedBlock, sigF, trialLevel, null, (manualValues && manualValues.time) || null);
+    return prover.prove(unsignedBlock, sigF, trialLevel, (manualValues && manualValues.time) || null);
   });
 
   /**

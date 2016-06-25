@@ -47,19 +47,19 @@ describe("Pending data", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCertPromise();
-      yield toc.selfCertPromise();
-      yield toc.certPromise(cat);
-      yield cat.certPromise(toc);
-      yield cat.joinPromise();
-      yield toc.joinPromise();
+      yield cat.selfCert();
+      yield toc.selfCert();
+      yield toc.cert(cat);
+      yield cat.cert(toc);
+      yield cat.join();
+      yield toc.join();
       yield commitS1();
       yield commitS1();
-      yield tic.selfCertPromise();
-      yield cat.certPromise(tic);
-      yield toc.certPromise(tic);
-      yield tuc.selfCertPromise();
-      yield tuc.joinPromise();
+      yield tic.selfCert();
+      yield cat.cert(tic);
+      yield toc.cert(tic);
+      yield tuc.selfCert();
+      yield tuc.join();
       yield commitS1();
       yield commitS1();
       yield commitS1();

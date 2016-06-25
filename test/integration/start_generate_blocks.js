@@ -83,12 +83,12 @@ describe("Generation", function() {
       nodeS1 = vucoin_p('127.0.0.1', s1.conf.port);
       nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
       // Server 1
-      yield cat.selfCertPromise();
-      yield toc.selfCertPromise();
-      yield toc.certPromise(cat);
-      yield cat.certPromise(toc);
-      yield cat.joinPromise();
-      yield toc.joinPromise();
+      yield cat.selfCert();
+      yield toc.selfCert();
+      yield toc.cert(cat);
+      yield cat.cert(toc);
+      yield cat.join();
+      yield toc.join();
       yield commitS1();
       // Server 2 syncs block 0
       yield sync(0, 0, s1, s2);

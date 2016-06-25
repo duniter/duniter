@@ -33,7 +33,7 @@ var conf = {
 function getDAL(overrides) {
   return _.extend({
     wotb: wotb.memoryInstance(),
-    getCurrent: () => Q(null),
+    getCurrentBlockOrNull: () => Q(null),
     getWrittenIdtyByUID: () => Q(null),
     getWrittenIdtyByPubkey: () => Q(null),
     getToBeKicked: () => Q([]),
@@ -55,7 +55,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a valid (next) block should not have any error', validate(blocks.VALID_NEXT, getDAL({
-    getCurrent: () => Q({ number: 2, hash: '52DC8A585C5D89571C511BB83F7E7D3382F0041452064B1272E65F0B42B82D57', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, time: 1411776000, medianTime: 1411776000 }),
+    getCurrentBlockOrNull: () => Q({ number: 2, hash: '52DC8A585C5D89571C511BB83F7E7D3382F0041452064B1272E65F0B42B82D57', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, time: 1411776000, medianTime: 1411776000 }),
     getBlock: (number) => {
       if (number == 1) {
         return Q({ time: 1411776000, powMin: 1 });
@@ -72,42 +72,42 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with positive number while no root exists should fail', test(rules.GLOBAL.checkNumber, blocks.ROOT_BLOCK_REQUIRED, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Root block required first');
   }));
 
   it('a block with same number as current should fail', test(rules.GLOBAL.checkNumber, blocks.SAME_BLOCK_NUMBER, {
-    getCurrent: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
+    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Too late for this block');
   }));
 
   it('a block with older number than current should fail', test(rules.GLOBAL.checkNumber, blocks.OLD_BLOCK_NUMBER, {
-    getCurrent: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
+    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Too late for this block');
   }));
 
   it('a block with too far future number than current should fail', test(rules.GLOBAL.checkNumber, blocks.FAR_FUTURE_BLOCK_NUMBER, {
-    getCurrent: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
+    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Too early for this block');
   }));
 
   it('a block with wrong PreviousHash should fail', test(rules.GLOBAL.checkPreviousHash, blocks.WRONG_PREVIOUS_HASH, {
-    getCurrent: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
+    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('PreviousHash not matching hash of current block');
   }));
 
   it('a block with wrong PreviousIssuer should fail', test(rules.GLOBAL.checkPreviousIssuer, blocks.WRONG_PREVIOUS_ISSUER, {
-    getCurrent: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
+    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('PreviousIssuer not matching issuer of current block');
@@ -121,28 +121,28 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with joiner for root block without root number shoud fail', test(rules.GLOBAL.checkJoiners, blocks.WRONG_JOIN_ROOT_NUMBER, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Number must be 0 for root block\'s memberships');
   }));
 
   it('a block with joiner for root block without root hash shoud fail', test(rules.GLOBAL.checkJoiners, blocks.WRONG_JOIN_ROOT_HASH, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Hash must be E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855 for root block\'s memberships');
   }));
 
   it('a block with joiner targeting unexisting block fail', test(rules.GLOBAL.checkJoiners, blocks.WRONG_JOIN_BLOCK_TARGET, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Membership based on an unexisting block');
   }));
 
   it('a block with joiner membership number lower or equal than previous should fail', test(rules.GLOBAL.checkJoiners, blocks.WRONG_JOIN_NUMBER_TOO_LOW, {
-    getCurrent: () => Q(null),
+    getCurrentBlockOrNull: () => Q(null),
     getWrittenIdtyByPubkey: () => Q({ currentMSN: 2 }),
     getBlockByNumberAndHash: () => Q({ number: 3, powMin: 1 })
   }, function (err) {
@@ -154,7 +154,7 @@ describe("Block global coherence:", function(){
     isMember: () => Q(true),
     getWrittenIdtyByPubkey: () => Q({ currentMSN: 2, member: true }),
     getBlockByNumberAndHash: () => Q({ number: 3, powMin: 1 }),
-    getCurrent: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
+    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Cannot be in joiners if already a member');
@@ -182,7 +182,7 @@ describe("Block global coherence:", function(){
   it('a block with expired membership should fail', test(rules.GLOBAL.checkJoiners, blocks.EXPIRED_MEMBERSHIP, {
     getWrittenIdtyByPubkey: () => Q({ currentMSN: 2 }),
     getBlockByNumberAndHash: () => Q({ medianTime: 1411775000, powMin: 1 }),
-    getCurrent: () => Q({ time: 1443333600, medianTime: 1443333600 })
+    getCurrentBlockOrNull: () => Q({ time: 1443333600, medianTime: 1443333600 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Membership has expired');
@@ -197,7 +197,7 @@ describe("Block global coherence:", function(){
       removeNode: () => 1,
       isOutdistanced: () => true
     },
-    getCurrent: () => Q({ number: 2, hash: '52DC8A585C5D89571C511BB83F7E7D3382F0041452064B1272E65F0B42B82D57', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, time: 1411776000, medianTime: 1411776000 }),
+    getCurrentBlockOrNull: () => Q({ number: 2, hash: '52DC8A585C5D89571C511BB83F7E7D3382F0041452064B1272E65F0B42B82D57', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3, time: 1411776000, medianTime: 1411776000 }),
     getWrittenIdtyByPubkey: () => Q({ wotb_id: 0 })
   }, function (err) {
     should.exist(err);
@@ -205,14 +205,14 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with active targeting unexisting block fail', test(rules.GLOBAL.checkActives, blocks.WRONG_ACTIVE_BLOCK_TARGET, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Membership based on an unexisting block');
   }));
 
   it('a block with certification of unknown pubkey should fail', test(rules.GLOBAL.checkCertificationsAreValid, blocks.WRONGLY_SIGNED_CERTIFICATION, {
-    getCurrent: () => Q(null),
+    getCurrentBlockOrNull: () => Q(null),
     getBlock: () => Q({}),
     getBlockByNumberAndHash: () => Q({})
   }, function (err) {
@@ -221,21 +221,21 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with certification to non-zero block for root block should fail', test(rules.GLOBAL.checkCertificationsAreValid, blocks.CERT_BASED_ON_NON_ZERO_FOR_ROOT, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Number must be 0 for root block\'s certifications');
   }));
 
   it('a block with certification to unknown block should fail', test(rules.GLOBAL.checkCertificationsAreValid, blocks.CERT_BASED_ON_NON_EXISTING_BLOCK, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Certification based on an unexisting block');
   }));
 
   it('a block with expired certifications should fail', test(rules.GLOBAL.checkCertificationsAreValid, blocks.EXPIRED_CERTIFICATIONS, {
-    getCurrent: () => Q({ time: 1443333600, medianTime: 1443333600 }),
+    getCurrentBlockOrNull: () => Q({ time: 1443333600, medianTime: 1443333600 }),
     getBlock: () => Q({ medianTime: 1411775000, powMin: 1 })
   }, function (err) {
     should.exist(err);
@@ -243,7 +243,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with certification from non-member pubkey should fail', test(rules.GLOBAL.checkCertificationsAreMadeByMembers, blocks.UNKNOWN_CERTIFIER, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Certification from non-member');
@@ -311,14 +311,14 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with wrong members count should fail', test(rules.GLOBAL.checkMembersCountIsGood, blocks.WRONG_MEMBERS_COUNT, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Wrong members count');
   }));
 
   it('a block not starting with a leading zero should fail', test(rules.GLOBAL.checkProofOfWork, blocks.NO_LEADING_ZERO, {
-    getCurrent: () => Q({ number: 2 }),
+    getCurrentBlockOrNull: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
     getBlock: () => Q({ powMin: 8 }),
     getBlocksBetween: () => Q([{ issuer: 'a' }])
@@ -328,7 +328,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block requiring 2 leading zeros but providing less should fail', test(rules.GLOBAL.checkProofOfWork, blocks.REQUIRES_7_LEADING_ZEROS, {
-    getCurrent: () => Q({ number: 2 }),
+    getCurrentBlockOrNull: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
     getBlock: () => Q({ powMin: 6 }),
     getBlocksBetween: () => Q([{ issuer: 'a' },{ issuer: 'b' }])
@@ -338,7 +338,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block requiring 1 leading zeros but providing less should fail', test(rules.GLOBAL.checkProofOfWork, blocks.REQUIRES_6_LEADING_ZEROS, {
-    getCurrent: () => Q({ number: 2 }),
+    getCurrentBlockOrNull: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
     getBlock: () => Q({ powMin: 8 }),
     getBlocksBetween: () => Q([{ issuer: 'a' }])
@@ -348,13 +348,13 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block requiring 1 leading zeros as first block of newcomer should succeed', test(rules.GLOBAL.checkProofOfWork, blocks.FIRST_BLOCK_OF_NEWCOMER, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.not.exist(err);
   }));
 
   it('a block requiring 40 leading zeros as second block of newcomer should fail', test(rules.GLOBAL.checkProofOfWork, blocks.SECOND_BLOCK_OF_NEWCOMER, {
-    getCurrent: () => Q({ number: 2 }),
+    getCurrentBlockOrNull: () => Q({ number: 2 }),
     lastBlockOfIssuer: () => Q({ number: 2 }),
     getBlock: () => Q({ powMin: 160 }),
     getBlocksBetween: () => Q([{ issuer: 'a' }])
@@ -364,7 +364,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a root block should not fail for time reason', test(rules.GLOBAL.checkTimes, blocks.WRONG_ROOT_DATES, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.not.exist(err);
   }));
@@ -408,7 +408,7 @@ describe("Block global coherence:", function(){
   it('a root block with Universal Dividend should fail', test(rules.GLOBAL.checkUD, blocks.ROOT_BLOCK_WITH_UD, {
     lastUDBlock: () => Q(null),
     getBlock: () => Q(null),
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Root block cannot have UniversalDividend field');
@@ -417,7 +417,7 @@ describe("Block global coherence:", function(){
   it('first block with Universal Dividend should not happen before root time + dt', test(rules.GLOBAL.checkUD, blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULDNT, {
     lastUDBlock: () => Q(null),
     getBlock: () => Q({ hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855', medianTime: 1411773000, powMin: 1 }),
-    getCurrent: () => Q({ number: 19, time: 1411773000, medianTime: 1411773000 })
+    getCurrentBlockOrNull: () => Q({ number: 19, time: 1411773000, medianTime: 1411773000 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('This block cannot have UniversalDividend');
@@ -426,7 +426,7 @@ describe("Block global coherence:", function(){
   it('first block with Universal Dividend should happen on root time + dt', test(rules.GLOBAL.checkUD, blocks.FIRST_UD_BLOCK_WITH_UD_THAT_SHOULD, {
     lastUDBlock: () => Q(null),
     getBlock: () => Q({ hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855', medianTime: 1411773000, powMin: 1 }),
-    getCurrent: () => Q({ number: 19, time: 1411773000, medianTime: 1411773000 })
+    getCurrentBlockOrNull: () => Q({ number: 19, time: 1411773000, medianTime: 1411773000 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Block must have a UniversalDividend field');
@@ -435,7 +435,7 @@ describe("Block global coherence:", function(){
   it('a block without Universal Dividend whereas it have to have one should fail', test(rules.GLOBAL.checkUD, blocks.UD_BLOCK_WIHTOUT_UD, {
     lastUDBlock: () => Q(null),
     getBlock: () => Q({ hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855', medianTime: 1411773000, powMin: 1 }),
-    getCurrent: () => Q({ number: 19, time: 1411773000, medianTime: 1411773000 })
+    getCurrentBlockOrNull: () => Q({ number: 19, time: 1411773000, medianTime: 1411773000 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Block must have a UniversalDividend field');
@@ -444,7 +444,7 @@ describe("Block global coherence:", function(){
   it('a block with wrong Universal Dividend value should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_WITH_WRONG_UD, {
     lastUDBlock: () => Q({ UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 }),
     getBlock: () => Q(),
-    getCurrent: () => Q({ time: 1411777000, medianTime: 1411777000 })
+    getCurrentBlockOrNull: () => Q({ time: 1411777000, medianTime: 1411777000 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('UniversalDividend must be equal to 121');
@@ -453,7 +453,7 @@ describe("Block global coherence:", function(){
   it('a block with wrong UnitBase value should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_WITH_WRONG_UNIT_BASE, {
     lastUDBlock: () => Q({ UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 12345678900, dividend: 100, unitbase: 2 }),
     getBlock: () => Q(),
-    getCurrent: () => Q({ time: 1411777000, medianTime: 1411777000 })
+    getCurrentBlockOrNull: () => Q({ time: 1411777000, medianTime: 1411777000 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('UnitBase must be equal to 3');
@@ -462,7 +462,7 @@ describe("Block global coherence:", function(){
   it('a root block with unlegitimated Universal Dividend presence should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_UNLEGITIMATE_UD, {
     lastUDBlock: () => Q({ UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 }),
     getBlock: () => Q(),
-    getCurrent: () => Q({ time: 1411777000, medianTime: 1411777000 })
+    getCurrentBlockOrNull: () => Q({ time: 1411777000, medianTime: 1411777000 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('This block cannot have UniversalDividend');
@@ -471,7 +471,7 @@ describe("Block global coherence:", function(){
   it('a root block with unlegitimated Universal Dividend presence should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_UNLEGITIMATE_UD_2, {
     lastUDBlock: () => Q({ UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 }),
     getBlock: () => Q(),
-    getCurrent: () => Q({ time: 1411777000, medianTime: 1411777000 })
+    getCurrentBlockOrNull: () => Q({ time: 1411777000, medianTime: 1411777000 })
   }, function (err) {
     should.exist(err);
     err.message.should.equal('This block cannot have UniversalDividend');
@@ -479,7 +479,7 @@ describe("Block global coherence:", function(){
 
 
   it('a block without transactions should pass', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_WITHOUT_TRANSACTIONS, {
-    getCurrent: () => Q(null)
+    getCurrentBlockOrNull: () => Q(null)
   }, function (err) {
     should.not.exist(err);
   }));

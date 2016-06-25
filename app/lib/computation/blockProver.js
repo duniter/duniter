@@ -72,7 +72,7 @@ function BlockGenerator() {
     };
   });
 
-  this.prove = function (block, sigFunc, difficulty, done, forcedTime) {
+  this.prove = function (block, sigFunc, difficulty, forcedTime) {
 
     var remainder = difficulty % 16;
     var nbZeros = (difficulty - remainder) / 16;
@@ -90,7 +90,6 @@ function BlockGenerator() {
       powWorker.setOnPoW(function(err, powBlock) {
         var theBlock = (powBlock && new Block(powBlock)) || null;
         resolve(theBlock);
-        done && done(null, theBlock);
       });
 
       powWorker.setOnError((err) => {

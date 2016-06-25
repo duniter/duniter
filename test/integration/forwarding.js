@@ -64,10 +64,10 @@ describe("Forwarding", function() {
               yield tic.selfCert();
               yield toc.selfCert();
               // Certifications
-              yield cat.certP(tac);
-              yield tac.certP(cat);
-              yield cat.joinP();
-              yield tac.joinP();
+              yield cat.cert(tac);
+              yield tac.cert(cat);
+              yield cat.join();
+              yield tac.join();
               yield node1.commitP();
             })
           ]);

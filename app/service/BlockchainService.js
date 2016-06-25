@@ -57,8 +57,7 @@ function BlockchainService () {
   };
   const statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
 
-  this.current = (done) =>
-    dal.getCurrentBlockOrNull(done);
+  this.current = () => dal.getCurrentBlockOrNull();
 
   this.promoted = (number) => co(function *() {
     const bb = yield dal.getPromoted(number);
@@ -262,7 +261,7 @@ function BlockchainService () {
 
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];
-    let current = yield dal.getCurrent();
+    let current = yield dal.getCurrentBlockOrNull();
     for (let i = 0, len = identities.length; i < len; i++) {
       let idty = new Identity(identities[i]);
       let reqs = yield that.requirementsOfIdentity(idty, current);
@@ -511,7 +510,7 @@ function BlockchainService () {
 
   this.getCertificationsExludingBlock = () => co(function*() {
     try {
-      const current = yield dal.getCurrent();
+      const current = yield dal.getCurrentBlockOrNull();
       return yield dal.getCertificationExcludingBlock(current, conf.sigValidity);
     } catch (err) {
         return { number: -1 };

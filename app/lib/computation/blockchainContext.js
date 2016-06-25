@@ -44,7 +44,7 @@ function BlockchainContext() {
     const start = new Date();
     const block = new Block(obj);
     try {
-      const currentBlock = yield Q.nbind(that.current, that);
+      const currentBlock = yield that.current();
       block.fork = false;
       yield saveBlockData(currentBlock, block);
       return block;
@@ -115,9 +115,7 @@ function BlockchainContext() {
     return found;
   };
 
-  this.current = (done) => {
-    return dal.getCurrentBlockOrNull(done);
-  };
+  this.current = () => dal.getCurrentBlockOrNull();
 
   const saveBlockData = (current, block) => co(function*() {
     yield updateBlocksComputedVars(current, block);

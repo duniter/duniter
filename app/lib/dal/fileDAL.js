@@ -1,20 +1,20 @@
 "use strict";
-var Q       = require('q');
-var co      = require('co');
-var _       = require('underscore');
-var hashf   = require('../ucp/hashf');
-var wotb    = require('../wot');
-var logger = require('../logger')('filedal');
-var directory = require('../system/directory');
-var Configuration = require('../entity/configuration');
-var Membership = require('../entity/membership');
-var Merkle = require('../entity/merkle');
-var Transaction = require('../entity/transaction');
-var constants = require('../constants');
-var ConfDAL = require('./fileDALs/confDAL');
-var StatDAL = require('./fileDALs/statDAL');
-var IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
-var CFSStorage = require('./fileDALs/AbstractCFS');
+const Q       = require('q');
+const co      = require('co');
+const _       = require('underscore');
+const hashf   = require('../ucp/hashf');
+const wotb    = require('../wot');
+const logger = require('../logger')('filedal');
+const directory = require('../system/directory');
+const Configuration = require('../entity/configuration');
+const Membership = require('../entity/membership');
+const Merkle = require('../entity/merkle');
+const Transaction = require('../entity/transaction');
+const constants = require('../constants');
+const ConfDAL = require('./fileDALs/confDAL');
+const StatDAL = require('./fileDALs/statDAL');
+const IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
+const CFSStorage = require('./fileDALs/AbstractCFS');
 
 module.exports = (params) => {
   return new FileDAL(params);
@@ -22,11 +22,11 @@ module.exports = (params) => {
 
 function FileDAL(params) {
 
-  let rootPath = params.home;
-  let myFS = params.fs;
-  let sqlite = params.dbf();
-  let wotbInstance = params.wotb;
-  let that = this;
+  const rootPath = params.home;
+  const myFS = params.fs;
+  const sqlite = params.dbf();
+  const wotbInstance = params.wotb;
+  const that = this;
 
   this.profile = 'DAL';
   this.wotb = wotbInstance;
@@ -75,17 +75,17 @@ function FileDAL(params) {
     }
   };
 
-  var currency = '';
+  let currency = '';
 
   this.init = () => co(function *() {
-    let dalNames = _.keys(that.newDals);
+    const dalNames = _.keys(that.newDals);
     for (let i = 0; i < dalNames.length; i++) {
-      let dal = that.newDals[dalNames[i]];
+      const dal = that.newDals[dalNames[i]];
       yield dal.init();
     }
     logger.debug("Upgrade database...");
     yield that.metaDAL.upgradeDatabase();
-    let latestMember = yield that.idtyDAL.getLatestMember();
+    const latestMember = yield that.idtyDAL.getLatestMember();
     if (latestMember && that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
       logger.warn('Maintenance: cleaning wotb...');
       while (that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
@@ -93,7 +93,7 @@ function FileDAL(params) {
       }
     }
     // Update the maximum certifications count a member can issue into the C++ addon
-    let currencyParams = yield that.getParameters();
+    const currencyParams = yield that.getParameters();
     if (currencyParams && currencyParams.sigStock !== undefined && currencyParams.sigStock !== null) {
       that.wotb.setMaxCert(currencyParams.sigStock);
     }
@@ -101,20 +101,14 @@ function FileDAL(params) {
   
   this.getDBVersion = () => that.metaDAL.getVersion();
 
-  this.getCurrency = function() {
-    return currency;
-  };
+  this.getCurrency = () => currency;
 
-  that.writeFileOfBlock = function(block) {
-    return that.blockDAL.saveBlock(block);
-  };
+  that.writeFileOfBlock = (block) => that.blockDAL.saveBlock(block);
 
   this.writeSideFileOfBlock = (block) =>
     that.blockDAL.saveSideBlock(block);
 
-  this.listAllPeers = function() {
-    return that.peerDAL.listAll();
-  };
+  this.listAllPeers = () => that.peerDAL.listAll();
 
   function nullIfError(promise, done) {
     return promise
@@ -147,57 +141,37 @@ function FileDAL(params) {
       });
   }
 
-  this.getPeer = function(pubkey) {
-    return that.peerDAL.getPeer(pubkey)
-      .catch(function() {
-        throw Error('Unknown peer ' + pubkey);
-      });
-  };
+  this.getPeer = (pubkey) => co(function*() {
+    try {
+      return that.peerDAL.getPeer(pubkey)
+    } catch (err) {
+      throw Error('Unknown peer ' + pubkey);
+    }
+  });
 
-  this.getBlock = function(number, done) {
-    return that.blockDAL.getBlock(number)
-      .catch(function(){
-        throw 'Block ' + number + ' not found';
-      })
-      .then(function(block){
-        done && done(null, block || null);
-        return block;
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+  this.getBlock = (number) => co(function*() {
+    const block = yield that.blockDAL.getBlock(number);
+    return block || null;
+  });
 
   this.getAbsoluteBlockByNumberAndHash = (number, hash) =>
     that.blockDAL.getAbsoluteBlock(number, hash);
 
-  this.getBlockByNumberAndHash = function(number, hash, done) {
-    return that.getBlock(number)
-      .then(function(block){
-        if (block.hash != hash) throw "Not found";
-        else return block;
-      })
-      .catch(function(){
-        throw 'Block ' + [number, hash].join('-') + ' not found';
-      })
-      .then(function(block){
-        done && done(null, block);
+  this.getBlockByNumberAndHash = (number, hash) => co(function*(){
+    try {
+      const block = yield that.getBlock(number);
+      if (!block || block.hash != hash)
+        throw "Not found";
+      else
         return block;
-      })
-      .catch(function(err){
-        done && done(err);
-        throw err;
-      });
-  };
+    } catch (err) {
+      throw 'Block ' + [number, hash].join('-') + ' not found';
+    }
+  });
 
-  this.getBlockByNumberAndHashOrNull = function(number, hash) {
-    return nullIfError(that.getBlock(number)
-      .then(function(block){
-        if (!block || block.hash != hash) throw "Not found";
-        else return block;
-      }));
-  };
+  this.getBlockByNumberAndHashOrNull = (number, hash) => co(function*(){
+    return yield nullIfError(that.getBlockByNumberAndHash(number, hash));
+  });
 
   this.getChainabilityBlock = (currentTime, sigPeriod) => co(function *() {
     // AGE = current_time - block_time
@@ -216,24 +190,16 @@ function FileDAL(params) {
   });
 
 
-  this.getCurrentBlockOrNull = function(done) {
-    return nullIfErrorIs(that.getBlockCurrent(), constants.ERROR.BLOCK.NO_CURRENT_BLOCK, done);
-  };
+  this.getCurrentBlockOrNull = () => co(function*() {
+    return nullIfErrorIs(that.getBlockCurrent(), constants.ERROR.BLOCK.NO_CURRENT_BLOCK);
+  });
 
-  this.getCurrent = this.getCurrentBlockOrNull;
-
-  this.getPromoted = function(number, done) {
-    return that.getBlock(number, done);
-  };
+  this.getPromoted = (number) => that.getBlock(number);
 
   // Block
-  this.lastUDBlock = function() {
-    return Q(that.blockDAL.lastBlockWithDividend());
-  };
+  this.lastUDBlock = () => that.blockDAL.lastBlockWithDividend();
 
-  this.getRootBlock = function(done) {
-    return that.getBlock(0, done);
-  };
+  this.getRootBlock = () => that.getBlock(0);
 
   this.lastBlockOfIssuer = function(issuer) {
     return that.blockDAL.lastBlockOfIssuer(issuer);
@@ -251,7 +217,7 @@ function FileDAL(params) {
   };
 
   this.getBlockFrom = function(number) {
-    return that.getCurrent()
+    return that.getCurrentBlockOrNull()
       .then(function(current){
         return that.getBlocksBetween(number, current.number);
       });

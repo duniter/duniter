@@ -76,7 +76,7 @@ function WOTBinding (server) {
   });
 
   this.members = () => co(function *() {
-    const identities = yield server.dal.getMembersP();
+    const identities = yield server.dal.getMembers();
     const json = {
       results: []
     };

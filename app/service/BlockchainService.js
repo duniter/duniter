@@ -442,7 +442,7 @@ function BlockchainService () {
       // Dividends
       if (block.dividend) {
         // Get the members at THAT moment (only them should have the UD)
-        let idties = yield dal.getMembersP();
+        let idties = yield dal.getMembers();
         for (let j = 0, len2 = idties.length; j < len2; j++) {
           let idty = idties[j];
           dividends.push({

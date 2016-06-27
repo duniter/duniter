@@ -137,12 +137,12 @@ function BlockGenerator(mainContext, prover) {
       leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
       let block;
       if (current) {
-        block = yield Q.nbind(dal.getBlockOrNull, dal, ms.number);
+        block = yield dal.getBlockOrNull(ms.number);
       }
       else {
         block = {};
       }
-      const identity = yield Q.nbind(dal.getIdentityByHashOrNull, dal, leave.idHash);
+      const identity = yield dal.getIdentityByHashOrNull(leave.idHash);
       if (identity && block && identity.currentMSN < leave.ms.number && identity.member) {
         // MS + matching cert are found
         leave.identity = identity;
@@ -156,7 +156,7 @@ function BlockGenerator(mainContext, prover) {
     const updates = {};
     const preJoinData = yield getPreJoinData(current);
     const joinData = yield filteringFunc(preJoinData);
-    const members = yield Q.nbind(dal.getMembers, dal);
+    const members = yield dal.getMembers();
     const wotMembers = _.pluck(members, 'pubkey');
     // Checking step
     const newcomers = _(joinData).keys();
@@ -203,8 +203,8 @@ function BlockGenerator(mainContext, prover) {
     if (block.number < 0) {
       throw 'Cannot compute WoT constraint for negative block number';
     }
-    let newcomers = block.joiners.map((inlineMS) => inlineMS.split(':')[0]);
-    let realNewcomers = block.identities;
+    const newcomers = block.joiners.map((inlineMS) => inlineMS.split(':')[0]);
+    const realNewcomers = block.identities;
     for (let i = 0, len = newcomers.length; i < len; i++) {
       let newcomer = newcomers[i];
       if (block.number > 0) {
@@ -212,7 +212,7 @@ function BlockGenerator(mainContext, prover) {
           // Will throw an error if not enough links
           yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
           // This one does not throw but returns a boolean
-          let isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
+          const isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
           if (isOut) {
             throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
           }

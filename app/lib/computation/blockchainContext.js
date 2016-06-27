@@ -93,7 +93,7 @@ function BlockchainContext() {
   });
 
   const checkIssuer = (block) => co(function*() {
-    const isMember = yield Q.nbind(dal.isMember, dal, block.issuer);
+    const isMember = yield dal.isMember(block.issuer);
     if (!isMember) {
       if (block.number == 0) {
         if (!matchesList(new RegExp('^' + block.issuer + ':'), block.joiners)) {
@@ -120,7 +120,7 @@ function BlockchainContext() {
   const saveBlockData = (current, block) => co(function*() {
     yield updateBlocksComputedVars(current, block);
     // Saves the block (DAL)
-    yield Q.nbind(dal.saveBlock, dal, block);
+    yield dal.saveBlock(block);
     yield that.saveParametersForRootBlock(block);
     // Create/Update members (create new identities if do not exist)
     yield that.updateMembers(block);
@@ -342,10 +342,10 @@ function BlockchainContext() {
     for (let c in block.certifications) {
       const inlineCert = block.certifications[c];
       let cert = Certification.statics.fromInline(inlineCert);
-      let idty = yield Q.nbind(dal.getWritten, dal, cert.to);
+      let idty = yield dal.getWritten(cert.to);
       cert.target = new Identity(idty).getTargetHash();
       const to_uid = idty.uid;
-      idty = yield Q.nbind(dal.getWritten, dal, cert.from);
+      idty = yield dal.getWritten(cert.from);
       const from_uid = idty.uid;
       const existing = yield dal.existsCert(cert);
       if (existing) {
@@ -391,13 +391,13 @@ function BlockchainContext() {
 
   this.computeObsoleteLinks = (block) => co(function*() {
     yield dal.obsoletesLinks(block.medianTime - conf.sigValidity);
-    const members = yield Q.nbind(dal.getMembers, dal);
+    const members = yield dal.getMembers();
     for (const m in members) {
       const idty = members[m];
       try {
         yield that.checkHaveEnoughLinks(idty.pubkey, {});
       } catch (notEnoughLinks) {
-        yield Q.nbind(dal.setKicked, dal, idty.pubkey, new Identity(idty).getTargetHash(),
+        yield dal.setKicked(idty.pubkey, new Identity(idty).getTargetHash(),
             notEnoughLinks ? true : false);
       }
     }
@@ -425,7 +425,7 @@ function BlockchainContext() {
 
   this.updateSources = (block) => co(function*() {
     if (block.dividend) {
-      const idties = yield Q.nfcall(dal.getMembers);
+      const idties = yield dal.getMembers();
       for (const i in idties) {
         const idty = idties[i];
         yield dal.saveSource(new Source({

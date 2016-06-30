@@ -14,7 +14,7 @@ A vos claviers !
 * [Niveau IV : dialoguer via l'API HTTP](#niveau-iv--dialoguer-via-lapi-http)
 * [Niveau V : lancer et utiliser l'interface graphique](#niveau-v--lancer-et-utiliser-linterface-graphique)
 * [Niveau VI : utiliser un Environnement de Développement Intégré (EDI)](#niveau-vi--utiliser-un-environnement-de-développement-intégré-edi)
-* [Niveau VII : exécuter les tests unitaires via WebStorm](#niveau-vii---exécuter-les-tests-unitaires-via-webstorm)
+* [Niveau VII : exécuter les tests unitaires via WebStorm](#niveau-vii--exécuter-les-tests-unitaires-via-webstorm)
 * [Niveau VIII : lancer un test unitaire précis](#niveau-viii--lancer-un-test-unitaire-précis)
 * [Niveau IX : lancer Duniter avec WebStorm](#niveau-ix--lancer-duniter-avec-webstorm)
 * [Niveau X : observer l'exécution du code avec un point d'arrêt](#niveau-x--observer-lexécution-du-code-avec-un-point-darrêt)
